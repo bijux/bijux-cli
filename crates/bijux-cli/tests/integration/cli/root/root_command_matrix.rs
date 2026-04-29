@@ -4,9 +4,11 @@
 use std::process::{Command, Output};
 
 use bijux_cli::api::runtime::run_app;
+use bijux_cli::contracts::known_bijux_tool_by_query;
 use libc as _;
 use serde_json::Value;
 use shlex as _;
+use tempfile::TempDir;
 use thiserror as _;
 
 fn run(args: &[&str]) -> Output {
@@ -128,6 +130,8 @@ fn parity_doctor_against_current_expected_behavior() {
     assert!(out.status.success());
     let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
     assert!(payload.get("status").is_some());
+    assert!(payload.get("severity").is_some());
+    assert!(payload.get("checks").and_then(Value::as_array).is_some());
     let install = payload.get("install").expect("install report");
     assert!(install.get("legacy_installer_conflicts").is_some());
     assert!(install.get("legacy_installer_conflict_paths").and_then(Value::as_array).is_some());
@@ -136,6 +140,89 @@ fn parity_doctor_against_current_expected_behavior() {
     assert_eq!(out.status.code(), Some(core.exit_code));
     assert_eq!(String::from_utf8_lossy(&out.stdout), core.stdout);
     assert_eq!(String::from_utf8_lossy(&out.stderr), core.stderr);
+}
+
+#[test]
+fn doctor_paths_reports_state_locations_and_permissions() {
+    let payload = run_ok_json(&["doctor", "paths", "--format", "json", "--no-pretty"]);
+    assert!(payload["paths"]["config"]["path"].is_string());
+    assert!(payload["paths"]["history"]["writable"].is_boolean());
+    assert!(payload["diagnostics"]["issues"].is_array());
+}
+
+#[test]
+fn doctor_routing_reports_routes_aliases_and_registry() {
+    let payload = run_ok_json(&["doctor", "routing", "--format", "json", "--no-pretty"]);
+    assert_eq!(payload["status"], "ok");
+    assert!(payload["summary"]["route_count"].as_u64().unwrap_or_default() > 0);
+    assert!(payload["aliases"].as_array().is_some_and(|items| !items.is_empty()));
+    assert!(payload["namespaces"].as_array().is_some_and(|items| !items.is_empty()));
+}
+
+#[test]
+fn doctor_python_reports_bridge_inventory() {
+    let payload = run_ok_json(&["doctor", "python", "--format", "json", "--no-pretty"]);
+    assert!(payload["interpreters"].is_array());
+    assert!(payload["bridge"].is_object());
+    assert!(payload["environment"].is_object());
+}
+
+#[test]
+fn doctor_bundle_writes_artifacts_under_current_directory() {
+    let temp = TempDir::new().expect("tempdir");
+    let out = Command::new(env!("CARGO_BIN_EXE_bijux"))
+        .current_dir(temp.path())
+        .args(["doctor", "--bundle", "--format", "json", "--no-pretty"])
+        .output()
+        .expect("binary should execute");
+    assert!(out.status.success(), "stderr:\n{}", String::from_utf8_lossy(&out.stderr));
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
+    let bundle_path = payload["bundle"]["path"].as_str().expect("bundle path");
+    assert!(bundle_path.ends_with("artifacts/bijux-cli/doctor-bundle"));
+    assert!(temp.path().join("artifacts/bijux-cli/doctor-bundle/doctor.json").exists());
+    assert!(temp
+        .path()
+        .join("artifacts/bijux-cli/doctor-bundle/generated-config-reference.md")
+        .exists());
+}
+
+#[test]
+fn doctor_app_subject_delegates_to_official_app_doctor() {
+    let canonical = known_bijux_tool_by_query("dag").expect("known official app");
+    let root = run_ok_json(&["doctor", "dag", "--format", "json", "--no-pretty"]);
+    let apps = run_ok_json(&["apps", "doctor", "dag", "--format", "json", "--no-pretty"]);
+    assert_eq!(root["namespace"], canonical.namespace.to_string());
+    assert_eq!(root["namespace"], apps["namespace"]);
+    assert_eq!(root["matched_via"], apps["matched_via"]);
+    assert_eq!(root["app"]["namespace"], apps["app"]["namespace"]);
+    assert_eq!(root["app"]["entrypoint"], apps["app"]["entrypoint"]);
+}
+
+#[test]
+fn doctor_shims_reports_legacy_app_shims_on_path() {
+    let temp = TempDir::new().expect("tempdir");
+    let shim_bin = temp.path().join("shim-bin");
+    std::fs::create_dir_all(&shim_bin).expect("shim bin");
+    let shim = shim_bin.join("bijux-dag");
+    std::fs::write(&shim, "#!/bin/sh\n").expect("shim");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&shim, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+    }
+
+    let old_path = std::env::var_os("PATH");
+    let joined_path = std::env::join_paths([&shim_bin]).expect("join path");
+    std::env::set_var("PATH", joined_path);
+    let payload = run_ok_json(&["doctor", "shims", "--format", "json", "--no-pretty"]);
+    if let Some(value) = old_path {
+        std::env::set_var("PATH", value);
+    } else {
+        std::env::remove_var("PATH");
+    }
+
+    assert_eq!(payload["severity"], "warning");
+    assert!(payload["legacy_app_shims"].as_array().is_some_and(|items| !items.is_empty()));
 }
 
 #[test]
@@ -188,6 +275,7 @@ fn help_snapshot_exists_for_every_root_command() {
         "inspect",
         "docs",
         "audit",
+        "apps",
         "config",
         "plugins",
         "history",
@@ -236,6 +324,8 @@ fn machine_readable_root_commands_support_json_and_yaml() {
         &["inspect"],
         &["docs"],
         &["audit"],
+        &["apps", "list"],
+        &["apps", "doctor"],
         &["history"],
         &["install", "cli", "--dry-run"],
         &["memory"],
@@ -363,6 +453,30 @@ fn unknown_help_topics_include_suggestions_for_alias_typoes() {
     let alias_stderr = String::from_utf8(alias_typo.stderr).expect("utf-8");
     assert!(alias_stderr.contains("Unknown help topic: versoin."));
     assert!(alias_stderr.contains("bijux help version"));
+}
+
+#[test]
+fn root_help_surfaces_official_apps_and_plugin_inventory_sections() {
+    let out = run(&["--help"]);
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8(out.stdout).expect("utf-8");
+    assert!(stdout.contains("Official apps:"));
+    assert!(stdout.contains("Installed plugins:"));
+    assert!(stdout.contains("bijux apps list"));
+    assert!(stdout.contains("bijux dag --help"));
+}
+
+#[test]
+fn unknown_routes_suggest_canonical_official_app_names() {
+    let out = run(&["workflw", "status"]);
+    assert_eq!(out.status.code(), Some(2));
+    let combined = format!(
+        "{}{}",
+        String::from_utf8(out.stdout).expect("utf-8"),
+        String::from_utf8(out.stderr).expect("utf-8")
+    );
+    assert!(combined.contains("bijux dag"));
+    assert!(combined.contains("bijux help dag"));
 }
 
 #[test]

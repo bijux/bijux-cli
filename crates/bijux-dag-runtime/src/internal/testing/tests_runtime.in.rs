@@ -1,13 +1,15 @@
 mod tests {
     use super::*;
     use crate::clock::FixedClock;
-    use crate::{Fs, StdFs};
     use crate::test_support::{docker_available, param_object, sample_graph};
-    use bijux_dag_core::{ContainerSpec, Edge, Effect, ParamValue, PortRef, Severity, SPEC_VERSION};
+    use crate::{Fs, StdFs};
+    use bijux_dag_core::{
+        ContainerSpec, Edge, Effect, ParamValue, PortRef, Severity, SPEC_VERSION,
+    };
     use std::ffi::OsString;
+    use std::fs;
     use std::io;
     use std::path::{Path, PathBuf};
-    use std::fs;
     use std::sync::{Arc, Mutex, OnceLock};
 
     fn process_env_lock() -> std::sync::MutexGuard<'static, ()> {
@@ -92,9 +94,7 @@ mod tests {
         }
 
         fn write(&self, path: &Path, data: &[u8]) -> io::Result<()> {
-            if self
-                .fail_write_suffix
-                .is_some_and(|suffix| path.to_string_lossy().ends_with(suffix))
+            if self.fail_write_suffix.is_some_and(|suffix| path.to_string_lossy().ends_with(suffix))
             {
                 return Err(io::Error::new(io::ErrorKind::PermissionDenied, "intercepted write"));
             }
@@ -153,62 +153,30 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
         let diags = sample_graph().validate_with_warnings();
-        assert!(
-            !diags.iter().any(|d| d.severity == Severity::Error),
-            "{:?}",
-            diags
-        );
-        let final_path = runtime
-            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
-            .unwrap();
+        assert!(!diags.iter().any(|d| d.severity == Severity::Error), "{:?}", diags);
+        let final_path =
+            runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap();
         assert!(final_path.join("manifest.json").exists());
+        assert!(final_path.join("manifest.finalized.json").exists());
+        assert!(final_path.join(".run-complete.json").exists());
+        assert!(final_path.join("run.schema.json").exists());
         assert!(final_path.join("graph.snapshot.json").exists());
-        assert!(final_path
-            .join("nodes")
-            .join("a")
-            .join("resolved_params.json")
-            .exists());
-        assert!(final_path
-            .join("nodes")
-            .join("b")
-            .join("resolved_params.json")
-            .exists());
-        assert!(final_path
-            .join("nodes")
-            .join("b")
-            .join("trace.json")
-            .exists());
-        assert!(final_path
-            .join("nodes")
-            .join("b")
-            .join("trace.json")
-            .exists());
-        assert!(final_path
-            .join("nodes")
-            .join("b")
-            .join("stdout.log")
-            .exists());
-        assert!(final_path
-            .join("nodes")
-            .join("b")
-            .join("outputs")
-            .join("index.json")
-            .exists());
+        assert!(final_path.join("nodes").join("a").join("resolved_params.json").exists());
+        assert!(final_path.join("nodes").join("b").join("resolved_params.json").exists());
+        assert!(final_path.join("nodes").join("b").join("trace.json").exists());
+        assert!(final_path.join("nodes").join("b").join("trace.json").exists());
+        assert!(final_path.join("nodes").join("b").join("stdout.log").exists());
+        assert!(final_path.join("nodes").join("b").join("outputs").join("index.json").exists());
     }
 
     #[test]
     fn shell_outputs_index_contains_stdout() {
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
-            .unwrap();
+        let final_path =
+            runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap();
         let index = fs::read_to_string(
-            final_path
-                .join("nodes")
-                .join("b")
-                .join("outputs")
-                .join("index.json"),
+            final_path.join("nodes").join("b").join("outputs").join("index.json"),
         )
         .unwrap();
         assert!(index.contains("out_b"));
@@ -218,11 +186,13 @@ mod tests {
     fn artifact_tree_contains_expected_entries() {
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
-            .unwrap();
+        let final_path =
+            runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap();
         let expected = vec![
             "manifest.json",
+            "manifest.finalized.json",
+            ".run-complete.json",
+            "run.schema.json",
             "provenance.json",
             "graph.snapshot.json",
             "run.log.jsonl",
@@ -254,11 +224,7 @@ mod tests {
             param_object(vec![("argv", Value::Array(vec![Value::from("false")]))]);
         let runtime = Runtime::new();
         let diags = graph.validate_with_warnings();
-        assert!(
-            !diags.iter().any(|d| d.severity == Severity::Error),
-            "{:?}",
-            diags
-        );
+        assert!(!diags.iter().any(|d| d.severity == Severity::Error), "{:?}", diags);
         graph.resolve_graph().unwrap();
         let result = runtime.run(&graph, dir.path(), RuntimeConfig::default());
         if let Err(err) = &result {
@@ -274,15 +240,9 @@ mod tests {
     fn jobs_consistent() {
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
-        let opt1 = RuntimeConfig {
-            jobs: 1,
-            ..RuntimeConfig::default()
-        };
+        let opt1 = RuntimeConfig { jobs: 1, ..RuntimeConfig::default() };
         let run1 = runtime.run(&sample_graph(), dir.path(), opt1).unwrap();
-        let opt2 = RuntimeConfig {
-            jobs: 4,
-            ..RuntimeConfig::default()
-        };
+        let opt2 = RuntimeConfig { jobs: 4, ..RuntimeConfig::default() };
         let run2 = runtime.run(&sample_graph(), dir.path(), opt2).unwrap();
         let snap1 = fs::read_to_string(run1.join("graph.snapshot.json")).unwrap();
         let snap2 = fs::read_to_string(run2.join("graph.snapshot.json")).unwrap();
@@ -300,11 +260,9 @@ mod tests {
                 Node {
                     id: "b".to_string(),
                     kind: NodeKind::Const,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput {
-                        name: "out".to_string(),
-                        path: "out".to_string(),
-                    }],
+                    outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                     params: param_object(vec![("value", Value::from(1))]),
                     container: None,
                     timeout_ms: None,
@@ -314,10 +272,13 @@ mod tests {
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
                 Node {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
                     outputs: vec![FileOutput {
                         name: "out_a".to_string(),
@@ -332,6 +293,8 @@ mod tests {
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
             ],
             edges: vec![],
@@ -353,8 +316,10 @@ mod tests {
             ..RuntimeConfig::default()
         };
         let run = runtime.run(&graph, dir.path(), include).unwrap();
-        let trace_a = std::fs::read_to_string(run.join("nodes").join("a").join("trace.json")).unwrap();
-        let trace_b = std::fs::read_to_string(run.join("nodes").join("b").join("trace.json")).unwrap();
+        let trace_a =
+            std::fs::read_to_string(run.join("nodes").join("a").join("trace.json")).unwrap();
+        let trace_b =
+            std::fs::read_to_string(run.join("nodes").join("b").join("trace.json")).unwrap();
         assert!(trace_a.contains("\"status\""));
         assert!(trace_b.contains("\"status\""));
 
@@ -367,8 +332,10 @@ mod tests {
             ..RuntimeConfig::default()
         };
         let run = runtime.run(&graph, dir.path(), exclude).unwrap();
-        let trace_b = std::fs::read_to_string(run.join("nodes").join("b").join("trace.json")).unwrap();
-        let trace_a = std::fs::read_to_string(run.join("nodes").join("a").join("trace.json")).unwrap();
+        let trace_b =
+            std::fs::read_to_string(run.join("nodes").join("b").join("trace.json")).unwrap();
+        let trace_a =
+            std::fs::read_to_string(run.join("nodes").join("a").join("trace.json")).unwrap();
         assert!(trace_a.contains("\"status\""));
         assert!(trace_b.contains("\"status\""));
     }
@@ -380,15 +347,11 @@ mod tests {
         let runtime = Runtime::with_io(Arc::new(StdFs), clock);
 
         let run1 = tempfile::tempdir().unwrap();
-        let path_1 = runtime
-            .run(&graph, run1.path(), RuntimeConfig::default())
-            .unwrap();
+        let path_1 = runtime.run(&graph, run1.path(), RuntimeConfig::default()).unwrap();
         let out1 = std::fs::read_to_string(path_1.join("outputs").join("index.json")).unwrap();
 
         let run2 = tempfile::tempdir().unwrap();
-        let path_2 = runtime
-            .run(&graph, run2.path(), RuntimeConfig::default())
-            .unwrap();
+        let path_2 = runtime.run(&graph, run2.path(), RuntimeConfig::default()).unwrap();
         let out2 = std::fs::read_to_string(path_2.join("outputs").join("index.json")).unwrap();
 
         let log1 = std::fs::read_to_string(path_1.join("run.log.jsonl")).unwrap();
@@ -408,19 +371,20 @@ mod tests {
                 Node {
                     id: "long_a".to_string(),
                     kind: NodeKind::Shell,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
                     outputs: vec![FileOutput {
                         name: "out".to_string(),
                         path: "out_a".to_string(),
                     }],
-                    params: param_object(vec![
-                        (
-                            "argv",
-                            serde_json::json!(
-                                ["/bin/sh", "-c", "sleep 0.05; echo done > ../outputs/out_a"]
-                            ),
-                        ),
-                    ]),
+                    params: param_object(vec![(
+                        "argv",
+                        serde_json::json!([
+                            "/bin/sh",
+                            "-c",
+                            "sleep 0.05; echo done > ../outputs/out_a"
+                        ]),
+                    )]),
                     container: None,
                     timeout_ms: None,
                     resources: None,
@@ -429,23 +393,22 @@ mod tests {
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
                 Node {
                     id: "long_b".to_string(),
                     kind: NodeKind::Shell,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
                     outputs: vec![FileOutput {
                         name: "out".to_string(),
                         path: "out_b".to_string(),
                     }],
-                    params: param_object(vec![
-                        (
-                            "argv",
-                            serde_json::json!(
-                                ["/bin/sh", "-c", "echo skipped > ../outputs/out_b"]
-                            ),
-                        ),
-                    ]),
+                    params: param_object(vec![(
+                        "argv",
+                        serde_json::json!(["/bin/sh", "-c", "echo skipped > ../outputs/out_b"]),
+                    )]),
                     container: None,
                     timeout_ms: None,
                     resources: None,
@@ -454,6 +417,8 @@ mod tests {
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
             ],
             edges: vec![],
@@ -465,11 +430,7 @@ mod tests {
             .run(
                 &graph,
                 dir.path(),
-                RuntimeConfig {
-                    run_timeout_ms: Some(10),
-                    jobs: 1,
-                    ..RuntimeConfig::default()
-                },
+                RuntimeConfig { run_timeout_ms: Some(10), jobs: 1, ..RuntimeConfig::default() },
             )
             .unwrap();
 
@@ -520,12 +481,7 @@ mod tests {
         assert!(trace_a.contains("\"corrupt_detected\": true"));
 
         // ensure outputs still exist
-        assert!(run1
-            .join("nodes")
-            .join("b")
-            .join("outputs")
-            .join("index.json")
-            .exists());
+        assert!(run1.join("nodes").join("b").join("outputs").join("index.json").exists());
     }
 
     #[test]
@@ -558,14 +514,10 @@ mod tests {
             &fs::read_to_string(run2.join("nodes").join("b").join("trace.json")).unwrap(),
         )
         .unwrap();
-        let src_a = trace_a
-            .get("cache_proof")
-            .and_then(|v| v.get("source"))
-            .and_then(|v| v.as_str());
-        let src_b = trace_b
-            .get("cache_proof")
-            .and_then(|v| v.get("source"))
-            .and_then(|v| v.as_str());
+        let src_a =
+            trace_a.get("cache_proof").and_then(|v| v.get("source")).and_then(|v| v.as_str());
+        let src_b =
+            trace_b.get("cache_proof").and_then(|v| v.get("source")).and_then(|v| v.as_str());
         assert!(src_a == Some("remote") || src_b == Some("remote"));
     }
 
@@ -621,9 +573,8 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let clock = Arc::new(FixedClock::new(123));
         let runtime = Runtime::with_io(Arc::new(StdFs), clock);
-        let final_path = runtime
-            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
-            .unwrap();
+        let final_path =
+            runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap();
         let log = fs::read_to_string(final_path.join("run.log.jsonl")).unwrap();
         for line in log.lines() {
             let v: serde_json::Value = serde_json::from_str(line).unwrap();
@@ -643,6 +594,7 @@ mod tests {
                 Node {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
                     outputs: vec![FileOutput {
                         name: "out_a".to_string(),
@@ -657,10 +609,13 @@ mod tests {
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
                 Node {
                     id: "b".to_string(),
                     kind: NodeKind::Shell,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec!["in".to_string()],
                     outputs: vec![FileOutput {
                         name: "out_b".to_string(),
@@ -682,47 +637,33 @@ mod tests {
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
             ],
             edges: vec![Edge {
-                from: PortRef {
-                    node_id: "a".to_string(),
-                    port: "out_a".to_string(),
-                },
-                to: PortRef {
-                    node_id: "b".to_string(),
-                    port: "in".to_string(),
-                },
+                id: None,
+                kind: bijux_dag_core::EdgeKind::Data,
+                decision: None,
+                from: PortRef { node_id: "a".to_string(), port: "out_a".to_string() },
+                to: PortRef { node_id: "b".to_string(), port: "in".to_string() },
             }],
         };
         let runtime = Runtime::new();
         let diags = graph.validate_with_warnings();
-        assert!(
-            !diags.iter().any(|d| d.severity == Severity::Error),
-            "{:?}",
-            diags
-        );
+        assert!(!diags.iter().any(|d| d.severity == Severity::Error), "{:?}", diags);
         graph.resolve_graph().unwrap();
         let result = runtime.run(&graph, dir.path(), RuntimeConfig::default());
         if let Err(err) = &result {
             panic!("{:?}", err);
         }
         let final_path = result.unwrap();
-        let out = fs::read_to_string(
-            final_path
-                .join("nodes")
-                .join("b")
-                .join("outputs")
-                .join("out_b"),
-        )
-        .unwrap();
+        let out =
+            fs::read_to_string(final_path.join("nodes").join("b").join("outputs").join("out_b"))
+                .unwrap();
         assert!(out.contains("hello"));
         let inputs_index = fs::read_to_string(
-            final_path
-                .join("nodes")
-                .join("b")
-                .join("inputs")
-                .join("index.json"),
+            final_path.join("nodes").join("b").join("inputs").join("index.json"),
         )
         .unwrap();
         assert!(inputs_index.contains("a/in"));
@@ -740,7 +681,8 @@ mod tests {
                 Node {
                     id: "a".to_string(),
                     kind: NodeKind::Shell,
-                    inputs: vec![],
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+inputs: vec![],
                     outputs: vec![
                         FileOutput {
                             name: "a".to_string(),
@@ -767,11 +709,14 @@ mod tests {
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
                     group: None,
-                },
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
+},
                 Node {
                     id: "b".to_string(),
                     kind: NodeKind::Shell,
-                    inputs: vec!["in".to_string()],
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+inputs: vec!["in".to_string()],
                     outputs: vec![FileOutput {
                         name: "out_b".to_string(),
                         path: "out_b".to_string(),
@@ -792,9 +737,14 @@ mod tests {
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
                     group: None,
-                },
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
+},
             ],
             edges: vec![Edge {
+                id: None,
+                kind: bijux_dag_core::EdgeKind::Data,
+                decision: None,
                 from: PortRef {
                     node_id: "a".to_string(),
                     port: "a".to_string(),
@@ -807,30 +757,15 @@ mod tests {
         };
         let runtime = Runtime::new();
         let diags = graph.validate_with_warnings();
-        assert!(
-            !diags.iter().any(|d| d.severity == Severity::Error),
-            "{:?}",
-            diags
-        );
+        assert!(!diags.iter().any(|d| d.severity == Severity::Error), "{:?}", diags);
         graph.resolve_graph().unwrap();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeConfig::default())
-            .unwrap();
-        let out = fs::read_to_string(
-            final_path
-                .join("nodes")
-                .join("b")
-                .join("outputs")
-                .join("out_b"),
-        )
-        .unwrap();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let out =
+            fs::read_to_string(final_path.join("nodes").join("b").join("outputs").join("out_b"))
+                .unwrap();
         assert!(out.contains("a"));
         let inputs_index = fs::read_to_string(
-            final_path
-                .join("nodes")
-                .join("b")
-                .join("inputs")
-                .join("index.json"),
+            final_path.join("nodes").join("b").join("inputs").join("index.json"),
         )
         .unwrap();
         assert!(inputs_index.contains("a/in"));
@@ -841,10 +776,7 @@ mod tests {
     fn retry_succeeds_on_second_attempt() {
         let dir = tempfile::tempdir().unwrap();
         let mut graph = sample_graph();
-        graph.nodes[1].retry = bijux_dag_core::RetryPolicy {
-            max_attempts: 1,
-            backoff_ms: 0,
-        };
+        graph.nodes[1].retry = bijux_dag_core::RetryPolicy { max_attempts: 1, backoff_ms: 0 };
         graph.nodes[1].params = param_object(vec![(
             "argv",
             Value::Array(vec![
@@ -856,9 +788,7 @@ mod tests {
             ]),
         )]);
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeConfig::default())
-            .unwrap();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
         let trace =
             fs::read_to_string(final_path.join("nodes").join("b").join("trace.json")).unwrap();
         assert!(trace.contains("\"attempt\": 2"));
@@ -877,6 +807,7 @@ mod tests {
                 Node {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
                     outputs: vec![FileOutput {
                         name: "out_a".to_string(),
@@ -891,10 +822,13 @@ mod tests {
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
                 Node {
                     id: "b".to_string(),
                     kind: NodeKind::Const,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
                     outputs: vec![FileOutput {
                         name: "out_b".to_string(),
@@ -909,10 +843,13 @@ mod tests {
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
                 Node {
                     id: "c".to_string(),
                     kind: NodeKind::Const,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
                     outputs: vec![FileOutput {
                         name: "out_c".to_string(),
@@ -927,16 +864,14 @@ mod tests {
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
                 },
             ],
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let opt = RuntimeConfig {
-            jobs: 3,
-            cpu_budget: Some(2),
-            ..RuntimeConfig::default()
-        };
+        let opt = RuntimeConfig { jobs: 3, cpu_budget: Some(2), ..RuntimeConfig::default() };
         let final_path = runtime.run(&graph, dir.path(), opt).unwrap();
         let log = fs::read_to_string(final_path.join("run.log.jsonl")).unwrap();
         let mut scheduled = Vec::new();
@@ -965,11 +900,9 @@ mod tests {
             nodes: vec![Node {
                 id: "c1".to_string(),
                 kind: NodeKind::Container,
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "out_c".to_string(),
-                    path: "out_c".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out_c".to_string(), path: "out_c".to_string() }],
                 params: ParamValue::default(),
                 container: Some(ContainerSpec {
                     image: "alpine:3.19".to_string(),
@@ -989,23 +922,15 @@ mod tests {
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
             }],
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeConfig::default())
-            .unwrap();
-        let out = final_path
-            .join("nodes")
-            .join("c1")
-            .join("outputs")
-            .join("out_c");
-        let out_alt = final_path
-            .join("nodes")
-            .join("c1")
-            .join("outputs")
-            .join("out");
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let out = final_path.join("nodes").join("c1").join("outputs").join("out_c");
+        let out_alt = final_path.join("nodes").join("c1").join("outputs").join("out");
         if !out.exists() && !out_alt.exists() {
             return;
         }
@@ -1024,11 +949,9 @@ mod tests {
             nodes: vec![Node {
                 id: "c1".to_string(),
                 kind: NodeKind::Container,
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "out.txt".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out".to_string(), path: "out.txt".to_string() }],
                 params: ParamValue::default(),
                 container: Some(ContainerSpec {
                     image: "alpine:3.19".to_string(),
@@ -1048,13 +971,15 @@ mod tests {
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
             }],
             edges: vec![],
         };
         let runtime = Runtime::new();
         let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
-        let trace = fs::read_to_string(final_path.join("nodes").join("c1").join("trace.json"))
-            .unwrap();
+        let trace =
+            fs::read_to_string(final_path.join("nodes").join("c1").join("trace.json")).unwrap();
         assert!(trace.contains("\"status\": \"failed\""));
         assert!(trace.contains("\"kind\": \"Infrastructure\""));
         assert!(trace.contains("\"code\": \"CONTAINER_ENGINE_UNAVAILABLE\""));
@@ -1074,11 +999,9 @@ mod tests {
             nodes: vec![Node {
                 id: "env".to_string(),
                 kind: NodeKind::Shell,
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "out".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: param_object(vec![(
                     "argv",
                     Value::Array(vec![
@@ -1095,13 +1018,13 @@ mod tests {
                 effects: vec![Effect::Filesystem, Effect::Env],
                 env_allowlist: vec!["BIJUX_TEST_FOO".to_string()],
                 group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
             }],
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeConfig::default())
-            .unwrap();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
         let stdout =
             fs::read_to_string(final_path.join("nodes").join("env").join("stdout.log")).unwrap();
         assert!(stdout.contains("BIJUX_TEST_FOO=allowed"));
@@ -1127,11 +1050,7 @@ mod tests {
         let adapter_dir = dir.path().join("adapters");
         fs::create_dir_all(&adapter_dir).unwrap();
         let adapter_path = adapter_dir.join("fake-adapter");
-        fs::write(
-            &adapter_path,
-            include_str!("../../../tests/bin/fake_adapter.sh"),
-        )
-        .unwrap();
+        fs::write(&adapter_path, include_str!("../../../tests/bin/fake_adapter.sh")).unwrap();
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -1149,11 +1068,9 @@ mod tests {
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::External("fake".to_string()),
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "out".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: None,
@@ -1163,19 +1080,15 @@ mod tests {
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
             }],
             edges: vec![],
         };
 
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeConfig::default())
-            .unwrap();
-        let out = final_path
-            .join("nodes")
-            .join("n1")
-            .join("outputs")
-            .join("out");
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let out = final_path.join("nodes").join("n1").join("outputs").join("out");
         assert!(out.exists());
         std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
     }
@@ -1191,7 +1104,7 @@ mod tests {
             &adapter_path,
             r#"#!/bin/sh
 if [ "$1" = "info" ]; then
-  echo '{"id":"fake","version":"0.1","required_effects":{"filesystem":true,"env":true,"network":false,"clock":false},"supported_kinds":["fake"],"produces_outputs_schema_version":"v0.1"}'
+  echo '{"protocol_version":"bijux-dag-adapter/v1","adapter_id":"fake","adapter_version":"0.1","required_effects":{"filesystem":true,"env":true,"network":false,"clock":false},"supported_kinds":["fake"],"output_schema":"v0.1"}'
   exit 0
 fi
 if [ "$1" = "execute" ]; then
@@ -1229,11 +1142,9 @@ exit 1
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::External("fake".to_string()),
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "out".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: None,
@@ -1243,21 +1154,16 @@ exit 1
                 effects: vec![Effect::Filesystem, Effect::Env],
                 env_allowlist: vec!["BIJUX_TEST_FOO".to_string()],
                 group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
             }],
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeConfig::default())
-            .unwrap();
-        let out = fs::read_to_string(
-            final_path
-                .join("nodes")
-                .join("n1")
-                .join("outputs")
-                .join("out"),
-        )
-        .unwrap();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let out =
+            fs::read_to_string(final_path.join("nodes").join("n1").join("outputs").join("out"))
+                .unwrap();
         assert!(out.contains("BIJUX_TEST_FOO=allowed"));
         assert!(!out.contains("BIJUX_TEST_BAR=blocked"));
         std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
@@ -1272,11 +1178,7 @@ exit 1
         let adapter_dir = dir.path().join("adapters");
         fs::create_dir_all(&adapter_dir).unwrap();
         let adapter_path = adapter_dir.join("fake-adapter");
-        fs::write(
-            &adapter_path,
-            include_str!("../../../tests/bin/fake_adapter.sh"),
-        )
-        .unwrap();
+        fs::write(&adapter_path, include_str!("../../../tests/bin/fake_adapter.sh")).unwrap();
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -1294,11 +1196,9 @@ exit 1
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::External("fake".to_string()),
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "out".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: param_object(vec![("payload", Value::String(big))]),
                 container: None,
                 timeout_ms: None,
@@ -1308,15 +1208,15 @@ exit 1
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
             }],
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeConfig::default())
-            .unwrap();
-        let trace = fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json"))
-            .unwrap();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let trace =
+            fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json")).unwrap();
         assert!(trace.contains("node spec payload exceeds"));
         std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
     }
@@ -1331,10 +1231,8 @@ exit 1
             fs::create_dir_all(outdir.join("safe")).unwrap();
             symlink(outdir.join("safe"), outdir.join("link")).unwrap();
             fs::write(outdir.join("safe").join("result.txt"), b"ok").unwrap();
-            let outputs = vec![FileOutput {
-                name: "out".to_string(),
-                path: "link/result.txt".to_string(),
-            }];
+            let outputs =
+                vec![FileOutput { name: "out".to_string(), path: "link/result.txt".to_string() }];
             let failure = validate_outputs_dir(&outdir, &outputs).expect("must fail");
             assert_eq!(failure.code, "OUTPUT_PATH_INVALID");
             assert!(failure.message.contains("traverses symlink"));
@@ -1344,10 +1242,8 @@ exit 1
     #[test]
     fn output_validation_rejects_non_normalized_declared_paths() {
         let dir = tempfile::tempdir().unwrap();
-        let outputs = vec![FileOutput {
-            name: "bad".to_string(),
-            path: "nested//out.txt".to_string(),
-        }];
+        let outputs =
+            vec![FileOutput { name: "bad".to_string(), path: "nested//out.txt".to_string() }];
         let failure = validate_outputs_dir(dir.path(), &outputs).expect("must fail");
         assert_eq!(failure.code, "OUTPUT_PATH_INVALID");
         assert!(failure.message.contains("invalid output path"));
@@ -1382,11 +1278,9 @@ exit 1
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::Shell,
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "out".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: param_object(vec![(
                     "argv",
                     Value::Array(vec![
@@ -1403,15 +1297,15 @@ exit 1
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
             }],
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeConfig::default())
-            .unwrap();
-        let trace = fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json"))
-            .unwrap();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let trace =
+            fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json")).unwrap();
         assert!(trace.contains("timed out"));
         let run_log = fs::read_to_string(final_path.join("run.log.jsonl")).unwrap();
         assert!(run_log.contains("\"event\":\"node_attempt_started\""));
@@ -1433,11 +1327,9 @@ exit 1
             nodes: vec![Node {
                 id: "c".to_string(),
                 kind: NodeKind::Container,
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "out".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: ParamValue::default(),
                 container: Some(ContainerSpec {
                     engine: "docker".to_string(),
@@ -1457,15 +1349,15 @@ exit 1
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
             }],
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeConfig::default())
-            .unwrap();
-        let trace = fs::read_to_string(final_path.join("nodes").join("c").join("trace.json"))
-            .unwrap();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let trace =
+            fs::read_to_string(final_path.join("nodes").join("c").join("trace.json")).unwrap();
         assert!(trace.contains("timed out"));
     }
 
@@ -1480,6 +1372,7 @@ exit 1
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::Shell,
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
                 outputs: vec![FileOutput {
                     name: "declared".to_string(),
@@ -1490,7 +1383,9 @@ exit 1
                     Value::Array(vec![
                         Value::from("/bin/sh"),
                         Value::from("-c"),
-                        Value::from("echo ok > ../outputs/declared.txt && echo bad > ../outputs/extra.txt"),
+                        Value::from(
+                            "echo ok > ../outputs/declared.txt && echo bad > ../outputs/extra.txt",
+                        ),
                     ]),
                 )]),
                 container: None,
@@ -1501,15 +1396,15 @@ exit 1
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
             }],
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let final_path = runtime
-            .run(&graph, dir.path(), RuntimeConfig::default())
-            .unwrap();
-        let trace = fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json"))
-            .unwrap();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let trace =
+            fs::read_to_string(final_path.join("nodes").join("n1").join("trace.json")).unwrap();
         assert!(trace.contains("\"OUTPUT_UNDECLARED\""));
     }
 
@@ -1517,16 +1412,12 @@ exit 1
     fn adapter_metadata_present_for_run_and_replay() {
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
-        let original = runtime
-            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
-            .unwrap();
-        let replay = runtime
-            .run(&sample_graph(), dir.path(), RuntimeConfig::default())
-            .unwrap();
-        let trace_a = fs::read_to_string(original.join("nodes").join("a").join("trace.json"))
-            .unwrap();
-        let trace_b = fs::read_to_string(replay.join("nodes").join("a").join("trace.json"))
-            .unwrap();
+        let original = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap();
+        let replay = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap();
+        let trace_a =
+            fs::read_to_string(original.join("nodes").join("a").join("trace.json")).unwrap();
+        let trace_b =
+            fs::read_to_string(replay.join("nodes").join("a").join("trace.json")).unwrap();
         assert!(trace_a.contains("\"adapter_id\""));
         assert!(trace_b.contains("\"adapter_id\""));
     }
@@ -1560,11 +1451,7 @@ exit 1
         };
         let final_path = runtime.run(&graph, dir.path(), options).unwrap();
         let inputs_index = fs::read_to_string(
-            final_path
-                .join("nodes")
-                .join("b")
-                .join("inputs")
-                .join("index.json"),
+            final_path.join("nodes").join("b").join("inputs").join("index.json"),
         )
         .unwrap();
         assert!(inputs_index.contains("\"path\": \"a/in\""));
@@ -1582,11 +1469,9 @@ exit 1
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::External("missing-kind".to_string()),
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "out".to_string(),
-                }],
+                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: None,
@@ -1596,6 +1481,8 @@ exit 1
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
             }],
             edges: vec![],
         };
@@ -1619,12 +1506,12 @@ exit 1
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
         for mode in [CacheMode::Off, CacheMode::Read, CacheMode::ReadWrite] {
-            let options = RuntimeConfig {
-                cache_mode: mode,
-                ..RuntimeConfig::default()
-            };
+            let options = RuntimeConfig { cache_mode: mode, ..RuntimeConfig::default() };
             let run_dir = runtime.run(&sample_graph(), dir.path(), options).unwrap();
             assert!(run_dir.join("manifest.json").exists());
+            assert!(run_dir.join("manifest.finalized.json").exists());
+            assert!(run_dir.join(".run-complete.json").exists());
+            assert!(run_dir.join("run.schema.json").exists());
         }
     }
 
@@ -1632,10 +1519,8 @@ exit 1
     fn run_id_collision_is_deterministic_error() {
         let dir = tempfile::tempdir().unwrap();
         let runtime = Runtime::new();
-        let options = RuntimeConfig {
-            run_id: Some("fixed-run-id".to_string()),
-            ..RuntimeConfig::default()
-        };
+        let options =
+            RuntimeConfig { run_id: Some("fixed-run-id".to_string()), ..RuntimeConfig::default() };
         let first = runtime.run(&sample_graph(), dir.path(), options.clone());
         assert!(first.is_ok());
         let second = runtime.run(&sample_graph(), dir.path(), options);
@@ -1651,10 +1536,7 @@ exit 1
             .run(
                 &sample_graph(),
                 dir.path(),
-                RuntimeConfig {
-                    latest_symlink: Some(latest.clone()),
-                    ..RuntimeConfig::default()
-                },
+                RuntimeConfig { latest_symlink: Some(latest.clone()), ..RuntimeConfig::default() },
             )
             .unwrap();
         let first_manifest = fs::read_to_string(first.join("manifest.json")).unwrap();
@@ -1663,10 +1545,7 @@ exit 1
             .run(
                 &sample_graph(),
                 dir.path(),
-                RuntimeConfig {
-                    latest_symlink: Some(latest.clone()),
-                    ..RuntimeConfig::default()
-                },
+                RuntimeConfig { latest_symlink: Some(latest.clone()), ..RuntimeConfig::default() },
             )
             .unwrap();
         let first_manifest_after = fs::read_to_string(first.join("manifest.json")).unwrap();
@@ -1678,7 +1557,10 @@ exit 1
     #[test]
     fn run_snapshot_write_failures_abort_the_run() {
         let dir = tempfile::tempdir().unwrap();
-        let runtime = Runtime::with_io(Arc::new(InterceptFs::fail_write("run.snapshot.json")), Arc::new(SystemClock));
+        let runtime = Runtime::with_io(
+            Arc::new(InterceptFs::fail_write("run.snapshot.json")),
+            Arc::new(SystemClock),
+        );
         let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
         assert!(matches!(err, RuntimeError::Io(_)));
     }
@@ -1686,7 +1568,10 @@ exit 1
     #[test]
     fn run_attempt_write_failures_abort_the_run() {
         let dir = tempfile::tempdir().unwrap();
-        let runtime = Runtime::with_io(Arc::new(InterceptFs::fail_write("run.attempts.json")), Arc::new(SystemClock));
+        let runtime = Runtime::with_io(
+            Arc::new(InterceptFs::fail_write("run.attempts.json")),
+            Arc::new(SystemClock),
+        );
         let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
         assert!(matches!(err, RuntimeError::Io(_)));
     }
@@ -1707,7 +1592,10 @@ exit 1
             )
             .unwrap_err();
         let rendered = format!("{err}");
-        assert!(matches!(err, RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)));
+        assert!(matches!(
+            err,
+            RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)
+        ));
         assert!(rendered.contains("lineage snapshot"));
     }
 
@@ -1731,7 +1619,10 @@ exit 1
             )
             .unwrap_err();
         let rendered = format!("{err}");
-        assert!(matches!(err, RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)));
+        assert!(matches!(
+            err,
+            RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)
+        ));
         assert!(rendered.contains("lineage visualization"));
     }
 
@@ -1751,15 +1642,20 @@ exit 1
             )
             .unwrap_err();
         let rendered = format!("{err}");
-        assert!(matches!(err, RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)));
+        assert!(matches!(
+            err,
+            RuntimeError::Executor(_) | RuntimeError::Artifact(_) | RuntimeError::Io(_)
+        ));
         assert!(rendered.contains("timeline export"));
     }
 
     #[test]
     fn observability_payload_write_failures_abort_the_run() {
         let dir = tempfile::tempdir().unwrap();
-        let runtime =
-            Runtime::with_io(Arc::new(InterceptFs::fail_write("observability.root-causes.json")), Arc::new(SystemClock));
+        let runtime = Runtime::with_io(
+            Arc::new(InterceptFs::fail_write("observability.root-causes.json")),
+            Arc::new(SystemClock),
+        );
         let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
         assert!(matches!(err, RuntimeError::Io(_)));
     }
@@ -1767,8 +1663,10 @@ exit 1
     #[test]
     fn audit_index_write_failures_abort_the_run() {
         let dir = tempfile::tempdir().unwrap();
-        let runtime =
-            Runtime::with_io(Arc::new(InterceptFs::fail_write("run-log.index.json")), Arc::new(SystemClock));
+        let runtime = Runtime::with_io(
+            Arc::new(InterceptFs::fail_write("run-log.index.json")),
+            Arc::new(SystemClock),
+        );
         let err = runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap_err();
         assert!(matches!(err, RuntimeError::Io(_)));
     }

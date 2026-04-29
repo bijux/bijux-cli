@@ -152,8 +152,12 @@ pub enum FailurePropagationMode {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScheduleDecision {
+    pub ready_candidates: Vec<String>,
     pub batch: Vec<String>,
     pub blocked_by_budget: Vec<String>,
+    pub blocked_reasons: BTreeMap<String, String>,
+    pub decision_reason: String,
+    pub tie_break_reason: Option<String>,
     pub timed_out: bool,
     pub cancelled: bool,
 }
@@ -162,8 +166,14 @@ pub struct ScheduleDecision {
 pub struct ExecutionCheckpoint {
     pub loop_index: u64,
     pub ready_queue_depth: usize,
+    pub ready_queue: Vec<String>,
+    pub inflight: Vec<String>,
     pub scheduled: Vec<String>,
     pub blocked_by_budget: Vec<String>,
+    pub blocked_reasons: BTreeMap<String, String>,
+    pub completed_statuses: BTreeMap<String, String>,
+    pub failure_propagation_mode: String,
+    pub dependency_closure_enabled: bool,
     pub generated_unix_ms: u128,
 }
 
@@ -183,12 +193,14 @@ pub enum SchedulerModel {
 #[serde(rename_all = "snake_case")]
 pub enum SchedulerPriorityModel {
     StaticAbsent,
+    StaticHints,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum ReadyTieBreak {
     LexicographicNodeId,
+    PriorityCpuFitThenNodeId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -203,8 +215,8 @@ pub fn scheduler_contract_profile() -> SchedulerContractProfile {
     SchedulerContractProfile {
         canonical_unit: SchedulerUnit::Node,
         model: SchedulerModel::EventDriven,
-        priority_model: SchedulerPriorityModel::StaticAbsent,
-        ready_tie_break: ReadyTieBreak::LexicographicNodeId,
+        priority_model: SchedulerPriorityModel::StaticHints,
+        ready_tie_break: ReadyTieBreak::PriorityCpuFitThenNodeId,
     }
 }
 
@@ -293,6 +305,8 @@ impl SchedulerState {
             node_id,
             Some(format!("mode={}", failure_mode_name(&mode))),
         );
+        let _ = self.ready.take(node_id);
+        self.retry_queue.remove(node_id);
         self.completion_by_node.insert(node_id.to_string(), "failed".to_string());
         if failure_allows_downstream_readiness(mode) {
             self.release_downstream(node_id)
@@ -321,6 +335,8 @@ impl SchedulerState {
     }
 
     fn mark_completion(&mut self, node_id: &str, status: &str) -> Vec<String> {
+        let _ = self.ready.take(node_id);
+        self.retry_queue.remove(node_id);
         self.completion_by_node.insert(node_id.to_string(), status.to_string());
         self.release_downstream(node_id)
     }
@@ -398,6 +414,10 @@ impl ReadyQueue {
         Self { ordered, queue }
     }
 
+    pub fn empty() -> Self {
+        Self { ordered: BTreeSet::new(), queue: VecDeque::new() }
+    }
+
     pub fn insert(&mut self, id: String) {
         if self.ordered.insert(id.clone()) {
             self.queue.push_back(id);
@@ -418,6 +438,14 @@ impl ReadyQueue {
             }
         }
         None
+    }
+
+    pub fn take(&mut self, id: &str) -> Option<String> {
+        if !self.ordered.remove(id) {
+            return None;
+        }
+        self.queue.retain(|queued| queued != id);
+        Some(id.to_string())
     }
 
     pub fn is_empty(&self) -> bool {
@@ -467,6 +495,13 @@ impl DependencyCounter {
 
 pub struct DeterministicScheduler;
 
+#[derive(Debug, Clone)]
+struct ReadyCandidate {
+    node_id: String,
+    priority: u8,
+    cpu: u32,
+}
+
 fn preflight_decision(
     options: &RuntimeConfig,
     started: Instant,
@@ -474,8 +509,12 @@ fn preflight_decision(
 ) -> Option<ScheduleDecision> {
     if cancellation_requested {
         return Some(ScheduleDecision {
+            ready_candidates: Vec::new(),
             batch: Vec::new(),
             blocked_by_budget: Vec::new(),
+            blocked_reasons: BTreeMap::new(),
+            decision_reason: "cancelled".to_string(),
+            tie_break_reason: None,
             timed_out: false,
             cancelled: true,
         });
@@ -483,8 +522,12 @@ fn preflight_decision(
     if let Some(limit_ms) = options.run_timeout_ms {
         if started.elapsed() > Duration::from_millis(limit_ms) {
             return Some(ScheduleDecision {
+                ready_candidates: Vec::new(),
                 batch: Vec::new(),
                 blocked_by_budget: Vec::new(),
+                blocked_reasons: BTreeMap::new(),
+                decision_reason: "run_timeout".to_string(),
+                tie_break_reason: None,
                 timed_out: true,
                 cancelled: false,
             });
@@ -513,29 +556,60 @@ impl Scheduler for DeterministicScheduler {
         let mut used_cpu = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
-        let mut candidates = ready_queue.snapshot_sorted();
-        for id in candidates.drain(..) {
+        let mut blocked_reasons = BTreeMap::new();
+        let mut candidates = ready_queue
+            .snapshot_sorted()
+            .into_iter()
+            .map(|node_id| ReadyCandidate {
+                priority: node_priority(graph, &node_id),
+                cpu: node_cpu(graph, &node_id),
+                node_id,
+            })
+            .collect::<Vec<_>>();
+        candidates.sort_by(|a, b| {
+            b.priority
+                .cmp(&a.priority)
+                .then_with(|| a.cpu.cmp(&b.cpu))
+                .then_with(|| a.node_id.cmp(&b.node_id))
+        });
+        let ready_candidates =
+            candidates.iter().map(|candidate| candidate.node_id.clone()).collect::<Vec<_>>();
+        for candidate in &candidates {
             if batch.len()
                 >= options.scheduler_policy.max_parallelism.max(1).min(options.jobs.max(1))
             {
-                blocked.push(id);
+                blocked.push(candidate.node_id.clone());
+                blocked_reasons
+                    .insert(candidate.node_id.clone(), "blocked_by_parallelism".to_string());
                 continue;
             }
-            let cpu = node_cpu(graph, &id);
-            if used_cpu + cpu > cpu_budget {
-                blocked.push(id);
+            if used_cpu + candidate.cpu > cpu_budget {
+                blocked.push(candidate.node_id.clone());
+                blocked_reasons.insert(candidate.node_id.clone(), "blocked_by_cpu".to_string());
                 continue;
             }
-            used_cpu += cpu;
-            let _ = ready_queue.pop_deterministic();
-            batch.push(id);
+            used_cpu += candidate.cpu;
+            let _ = ready_queue.take(&candidate.node_id);
+            batch.push(candidate.node_id.clone());
         }
+        let mut decision_reason = "ready_batch".to_string();
         if batch.is_empty() {
-            if let Some(id) = ready_queue.pop_deterministic() {
-                batch.push(id);
+            if let Some(candidate) = candidates.first() {
+                let _ = ready_queue.take(&candidate.node_id);
+                batch.push(candidate.node_id.clone());
+                decision_reason = "forced_single_progress".to_string();
             }
         }
-        ScheduleDecision { batch, blocked_by_budget: blocked, timed_out: false, cancelled: false }
+        ScheduleDecision {
+            ready_candidates,
+            batch,
+            blocked_by_budget: blocked,
+            blocked_reasons,
+            decision_reason,
+            tie_break_reason: Some("priority_cpu_fit_then_node_id".to_string()),
+            timed_out: false,
+            cancelled: false,
+        }
     }
 }
 
@@ -561,6 +635,8 @@ impl Scheduler for ThroughputScheduler {
         let mut used_cpu = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
+        let mut blocked_reasons = BTreeMap::new();
+        let ready_candidates = ready_queue.snapshot_sorted();
         while !ready_queue.is_empty()
             && batch.len()
                 < options.scheduler_policy.max_parallelism.max(1).min(options.jobs.max(1))
@@ -571,6 +647,7 @@ impl Scheduler for ThroughputScheduler {
             };
             let cpu = node_cpu(graph, &id);
             if used_cpu + cpu > cpu_budget {
+                blocked_reasons.insert(id.clone(), "blocked_by_cpu".to_string());
                 blocked.push(id);
                 continue;
             }
@@ -580,7 +657,16 @@ impl Scheduler for ThroughputScheduler {
         for id in blocked.clone() {
             ready_queue.insert(id);
         }
-        ScheduleDecision { batch, blocked_by_budget: blocked, timed_out: false, cancelled: false }
+        ScheduleDecision {
+            ready_candidates,
+            batch,
+            blocked_by_budget: blocked,
+            blocked_reasons,
+            decision_reason: "fifo_throughput".to_string(),
+            tie_break_reason: Some("fifo".to_string()),
+            timed_out: false,
+            cancelled: false,
+        }
     }
 }
 
@@ -606,14 +692,60 @@ pub fn failure_mode_name(mode: &FailurePropagationMode) -> &'static str {
 }
 
 pub fn scheduler_invariants_hold(state: &SchedulerState) -> bool {
+    scheduler_invariant_violations(state).is_empty()
+}
+
+pub fn scheduler_invariant_violations(state: &SchedulerState) -> Vec<String> {
+    let mut violations = Vec::new();
     let mut seen = BTreeSet::new();
     for event in &state.events {
         if !seen.insert(event.sequence) {
-            return false;
+            violations.push(format!("duplicate scheduler event sequence {}", event.sequence));
         }
     }
-    let retry_conflict = state.retry_queue.iter().any(|id| state.ready.ordered.contains(id));
-    !retry_conflict
+    for node_id in &state.retry_queue {
+        if state.ready.ordered.contains(node_id) {
+            violations.push(format!("node {} is present in both ready and retry queues", node_id));
+        }
+    }
+    for node_id in state.ready.snapshot_sorted() {
+        if state.completion_by_node.contains_key(&node_id) {
+            violations.push(format!("node {} is ready after reaching terminal state", node_id));
+        }
+    }
+    violations
+}
+
+pub fn replay_scheduler_checkpoint(
+    plan: &ExecutionPlan,
+    checkpoint: &ExecutionCheckpoint,
+) -> Result<SchedulerState, String> {
+    let known_nodes = plan.nodes.iter().map(|node| node.id.as_str()).collect::<BTreeSet<_>>();
+    for node_id in checkpoint
+        .ready_queue
+        .iter()
+        .chain(checkpoint.inflight.iter())
+        .chain(checkpoint.scheduled.iter())
+        .chain(checkpoint.blocked_by_budget.iter())
+        .chain(checkpoint.completed_statuses.keys())
+    {
+        if !known_nodes.contains(node_id.as_str()) {
+            return Err(format!("checkpoint references unknown node '{}'", node_id));
+        }
+    }
+
+    let mut state = SchedulerState::from_plan(plan);
+    state.ready = ReadyQueue::empty();
+    for node_id in &checkpoint.ready_queue {
+        state.ready.insert(node_id.clone());
+    }
+    state.completion_by_node = checkpoint.completed_statuses.clone();
+    let violations = scheduler_invariant_violations(&state);
+    if violations.is_empty() {
+        Ok(state)
+    } else {
+        Err(violations.join("; "))
+    }
 }
 
 pub fn scheduler_debug_event_log(state: &SchedulerState) -> Vec<SchedulerEvent> {
@@ -655,9 +787,49 @@ pub fn validate_schedule_registry(registry: &ScheduleRegistry) -> Result<(), Str
 }
 
 pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> Result<(), String> {
+    if definition.id.trim().is_empty() {
+        return Err("schedule id must not be blank".to_string());
+    }
+    if definition.dag_name.trim().is_empty() {
+        return Err(format!("schedule '{}' must declare dag_name", definition.id));
+    }
+    if definition.dag_version_policy.trim().is_empty() {
+        return Err(format!("schedule '{}' must declare dag_version_policy", definition.id));
+    }
+    if definition.queue.queue_name.trim().is_empty() {
+        return Err(format!("schedule '{}' must declare queue_name", definition.id));
+    }
+    if definition.queue.tenant.as_deref().is_some_and(|tenant| tenant.trim().is_empty()) {
+        return Err(format!("schedule '{}' tenant must not be blank", definition.id));
+    }
+    for (name, value) in [
+        ("per_dag", definition.concurrency.per_dag),
+        ("per_queue", definition.concurrency.per_queue),
+        ("per_tenant", definition.concurrency.per_tenant),
+        ("per_node_group", definition.concurrency.per_node_group),
+    ] {
+        if value == Some(0) {
+            return Err(format!(
+                "schedule '{}' concurrency layer '{}' must be greater than zero",
+                definition.id, name
+            ));
+        }
+    }
     if definition.catch_up.enabled && definition.catch_up.max_catch_up_runs == 0 {
         return Err(format!(
             "schedule '{}' enables catch-up but max_catch_up_runs is zero",
+            definition.id
+        ));
+    }
+    if !definition.catch_up.enabled && definition.catch_up.max_catch_up_runs > 0 {
+        return Err(format!(
+            "schedule '{}' disables catch-up but leaves max_catch_up_runs non-zero",
+            definition.id
+        ));
+    }
+    if definition.catch_up.enabled && !matches!(definition.trigger, TriggerSpec::Cron { .. }) {
+        return Err(format!(
+            "schedule '{}' only supports catch-up on cron triggers",
             definition.id
         ));
     }
@@ -665,6 +837,12 @@ pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> 
         let TriggerSpec::Backfill(backfill) = &definition.trigger else {
             unreachable!();
         };
+        if backfill.window_end_unix_ms < backfill.window_start_unix_ms {
+            return Err(format!(
+                "schedule '{}' backfill window_end_unix_ms must not precede window_start_unix_ms",
+                definition.id
+            ));
+        }
         if backfill.max_parallelism == 0 {
             return Err(format!(
                 "schedule '{}' backfill requires max_parallelism > 0",
@@ -677,6 +855,14 @@ pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> 
                 definition.id
             ));
         }
+        if definition.concurrency.per_queue.is_some_and(|cap| backfill.max_parallelism > cap) {
+            return Err(format!(
+                "schedule '{}' backfill max_parallelism exceeds queue concurrency cap",
+                definition.id
+            ));
+        }
+    } else if definition.concurrency.per_queue.is_none() {
+        return Err(format!("schedule '{}' must declare queue concurrency cap", definition.id));
     }
     Ok(())
 }
@@ -753,4 +939,19 @@ fn node_cpu(graph: &Graph, node_id: &str) -> u32 {
         .and_then(|n| n.resources.as_ref().map(|r| r.cpu))
         .unwrap_or(1)
         .max(1)
+}
+
+fn node_priority(graph: &Graph, node_id: &str) -> u8 {
+    let Some(node) = graph.nodes.iter().find(|node| node.id == node_id) else {
+        return 1;
+    };
+    if node.tags.iter().any(|tag| tag == "critical" || tag == "priority:critical") {
+        4
+    } else if node.tags.iter().any(|tag| tag == "high" || tag == "priority:high") {
+        3
+    } else if node.tags.iter().any(|tag| tag == "low" || tag == "priority:low") {
+        1
+    } else {
+        2
+    }
 }

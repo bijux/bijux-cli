@@ -1,0 +1,49 @@
+{
+  "bundle_version": "export-bundle/v0.1",
+  "export_mode": "with-files",
+  "provenance": {
+    "source": "native-run",
+    "imported": false,
+    "source_run_dir": "[fixture]",
+    "source_run_id": "historic-run-2",
+    "parent_run_id": "historic-run-1",
+    "lineage": ["seed", "echo"]
+  },
+  "manifest": {
+    "manifest_version": "run-manifest/v0.1",
+    "run_id": "historic-run-2",
+    "graph_snapshot": "graph.snapshot.json",
+    "status": "success",
+    "spec": "bijux-dag/v0.1",
+    "graph_fingerprint": "graph-fp-2",
+    "tool_version": "fixture"
+  },
+  "graph_snapshot": {
+    "spec": "bijux-dag/v0.1",
+    "nodes": [],
+    "edges": []
+  },
+  "node_traces": {
+    "echo": {
+      "node_id": "echo",
+      "status": "success"
+    }
+  },
+  "outputs": {
+    "echo": {
+      "files": [
+        {
+          "path": "report.txt",
+          "sha256": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03",
+          "node_id": "echo",
+          "node_fingerprint": "node-fp-echo"
+        }
+      ]
+    }
+  },
+  "files": {
+    "echo": {
+      "report.txt": "aGVsbG8K"
+    }
+  }
+}

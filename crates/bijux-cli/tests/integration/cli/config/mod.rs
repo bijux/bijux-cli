@@ -9,6 +9,7 @@ mod config_fuzz_targets;
 mod config_get_parity;
 mod config_get_performance;
 mod config_key_value_parity;
+mod config_layered_surface;
 mod config_mutation_matrix;
 mod config_mutation_parity;
 mod config_parity;

@@ -17,9 +17,23 @@
       "enum": ["strict_equivalent", "diverged"]
     },
     "equivalent": { "type": "boolean" },
+    "safety_level": {
+      "type": "string",
+      "enum": [
+        "equivalent",
+        "safe_with_drift",
+        "risky",
+        "forbidden",
+        "incomplete_evidence",
+        "unsupported"
+      ]
+    },
     "reasons": { "type": "array", "items": { "type": "string" } },
     "reason_report": { "type": "object" },
     "cause_groups": { "type": "object" },
+    "branch_decision_drift_nodes": { "type": "array", "items": { "type": "string" } },
+    "source_evidence_gaps": { "type": "array", "items": { "type": "string" } },
+    "replay_evidence_gaps": { "type": "array", "items": { "type": "string" } },
     "source_run_id": { "type": "string" },
     "replay_run_id": { "type": "string" }
   }

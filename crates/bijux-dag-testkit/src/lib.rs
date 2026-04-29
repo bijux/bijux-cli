@@ -1,8 +1,12 @@
 //! Shared test helpers for workspace crates.
 
+pub mod fake_adapter;
+pub mod workflows;
+
 use bijux_dag_artifacts::{Manifest, NodeTrace};
 use bijux_dag_core::{
-    Edge, Effect, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RetryPolicy, SPEC_VERSION,
+    Edge, EdgeKind, Effect, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RetryPolicy,
+    SemanticNodeKind, TriggerRule, SPEC_VERSION,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -10,6 +14,13 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+pub use fake_adapter::{FakeAdapterExecution, FakeAdapterHarness, FakeAdapterScenario};
+pub use workflows::{
+    collect_run_dir_snapshot, fixture_path_string, fixture_snapshot_path,
+    graph_branch_join_fixture, graph_map_reduce_fixture, update_or_assert_snapshot,
+    write_graph_fixture, DagFixture,
+};
 
 pub fn load_workspace_fixture_text(manifest_dir: &str, relative_path: &str) -> String {
     let workspace_root = workspace_root_from_manifest_dir(manifest_dir);
@@ -199,6 +210,35 @@ pub fn graph_replay() -> Graph {
     graph_diamond()
 }
 
+pub fn branch_semantics_graph_json() -> &'static str {
+    r#"{
+      "spec":"bijux-dag/v0.1",
+      "meta":{"name":"branch-contract","owners":[],"tags":[]},
+      "nodes":[
+        {"id":"seed","kind":"const","inputs":[],"outputs":[{"name":"out","path":"seed/out"}],"params":{"value":1}},
+        {
+          "id":"decide",
+          "kind":"shell",
+          "semantic_kind":"branch",
+          "inputs":["in"],
+          "outputs":[{"name":"decision","path":"decide/decision.txt"}],
+          "effects":["filesystem"],
+          "params":{"argv":["echo","left"]},
+          "branch":{"decisions":["left","right"],"default_decision":"left","decision_output":"decision"}
+        },
+        {"id":"left","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":"left"},"trigger_rule":"any_success"},
+        {"id":"right","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"right/out"}],"params":{"value":"right"},"trigger_rule":"any_success"},
+        {"id":"join","kind":"shell","inputs":["lhs"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]}
+      ],
+      "edges":[
+        {"id":"seed-to-decide","from":{"node_id":"seed","port":"out"},"to":{"node_id":"decide","port":"in"}},
+        {"id":"branch-left","kind":"conditional","decision":"left","from":{"node_id":"decide","port":"decision"},"to":{"node_id":"left","port":"in"}},
+        {"id":"branch-right","kind":"conditional","decision":"right","from":{"node_id":"decide","port":"decision"},"to":{"node_id":"right","port":"in"}},
+        {"id":"left-to-join","kind":"control","from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"lhs"}}
+      ]
+    }"#
+}
+
 pub fn graph_failure() -> Graph {
     let mut g = graph_chain();
     g.nodes[1].params = param_object(vec![(
@@ -291,6 +331,9 @@ fn graph_from_nodes(nodes: Vec<Node>, edges: Vec<(&str, &str, &str, &str)>) -> G
         edges: edges
             .into_iter()
             .map(|(from_node, from_port, to_node, to_port)| Edge {
+                id: None,
+                kind: EdgeKind::Data,
+                decision: None,
                 from: PortRef { node_id: from_node.to_string(), port: from_port.to_string() },
                 to: PortRef { node_id: to_node.to_string(), port: to_port.to_string() },
             })
@@ -302,6 +345,7 @@ fn const_node(id: &str) -> Node {
     Node {
         id: id.to_string(),
         kind: NodeKind::Const,
+        semantic_kind: SemanticNodeKind::Task,
         inputs: vec![],
         outputs: vec![FileOutput { name: "out".to_string(), path: format!("out_{id}") }],
         params: param_object(vec![("value", Value::from("ok"))]),
@@ -313,6 +357,8 @@ fn const_node(id: &str) -> Node {
         effects: vec![],
         env_allowlist: vec![],
         group: None,
+        trigger_rule: TriggerRule::AllSuccess,
+        branch: None,
     }
 }
 
@@ -320,6 +366,7 @@ fn shell_node(id: &str) -> Node {
     Node {
         id: id.to_string(),
         kind: NodeKind::Shell,
+        semantic_kind: SemanticNodeKind::Task,
         inputs: vec!["in".to_string()],
         outputs: vec![FileOutput { name: "out".to_string(), path: format!("out_{id}") }],
         params: param_object(vec![(
@@ -338,6 +385,8 @@ fn shell_node(id: &str) -> Node {
         effects: vec![Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
+        trigger_rule: TriggerRule::AllSuccess,
+        branch: None,
     }
 }
 

@@ -15,6 +15,7 @@ fn contracts_schema_query_shape_is_stable() {
             "output-envelope-v1".to_string(),
             "error-envelope-v1".to_string(),
             "plugin-manifest-v2".to_string(),
+            "product-mount-descriptor-v1".to_string(),
         ]
     );
 }

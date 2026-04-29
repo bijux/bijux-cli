@@ -4,6 +4,7 @@
 
 use bijux_cli::contracts::{
     error_envelope_v1_schema, output_envelope_v1_schema, plugin_manifest_v2_schema,
+    product_mount_descriptor_schema,
 };
 use clap as _;
 use proptest as _;
@@ -30,6 +31,10 @@ fn schema_snapshots_are_deterministic_and_match_expected_files() {
         (
             plugin_manifest_v2_schema as fn() -> schemars::schema::RootSchema,
             "tests/routing/snapshots/plugin_manifest_v2.schema.json",
+        ),
+        (
+            product_mount_descriptor_schema as fn() -> schemars::schema::RootSchema,
+            "tests/routing/snapshots/product_mount_descriptor_v1.schema.json",
         ),
     ];
 

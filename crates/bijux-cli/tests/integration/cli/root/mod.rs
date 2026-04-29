@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 //! root integration suites.
 
+mod apps_command_matrix;
 mod bin_core_integration;
 mod cli_command_matrix;
 mod cross_surface_equivalence;

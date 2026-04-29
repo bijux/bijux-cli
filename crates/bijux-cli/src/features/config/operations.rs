@@ -6,6 +6,7 @@ use std::path::Path;
 use anyhow::{anyhow, Result};
 use serde_json::Value;
 
+use super::layered::{self, LayeredConfigOptions};
 use crate::features::config::service::{
     ConfigService, DefaultConfigService, StaticConfigPathProvider,
 };
@@ -51,5 +52,51 @@ pub(crate) fn export_to(config_file: &Path, export_path: &Path) -> Result<Value>
 pub(crate) fn load_from(config_file: &Path, source_path: &Path) -> Result<Value> {
     config_service(config_file)
         .load_from(source_path)
+        .map_err(|err| anyhow!("Failed to load config: {}", err))
+}
+
+pub(crate) fn schema(scope: Option<&str>) -> Result<Value> {
+    layered::schema_report(scope).map_err(|err| anyhow!(err.to_string()))
+}
+
+pub(crate) fn docs(scope: Option<&str>) -> Result<Value> {
+    layered::schema_docs_report(scope).map_err(|err| anyhow!(err.to_string()))
+}
+
+pub(crate) fn validate(config_file: &Path, cwd: &Path, profile: Option<&str>) -> Result<Value> {
+    layered::validate_report(config_file, cwd, profile).map_err(|err| anyhow!(err.to_string()))
+}
+
+pub(crate) fn explain(
+    config_file: &Path,
+    cwd: &Path,
+    key: &str,
+    profile: Option<&str>,
+    include_secrets: bool,
+) -> Result<Value> {
+    layered::explain_report(config_file, cwd, key, profile, include_secrets)
+        .map_err(|err| anyhow!(err.to_string()))
+}
+
+pub(crate) fn repair(config_file: &Path) -> Result<Value> {
+    layered::repair_report(config_file).map_err(|err| anyhow!(err.to_string()))
+}
+
+pub(crate) fn export_with_options(
+    config_file: &Path,
+    cwd: &Path,
+    export_path: &Path,
+    options: &LayeredConfigOptions,
+) -> Result<Value> {
+    layered::export_report(config_file, cwd, export_path, options)
+        .map_err(|err| anyhow!(err.to_string()))
+}
+
+pub(crate) fn load_with_options(
+    config_file: &Path,
+    source_path: &Path,
+    options: &LayeredConfigOptions,
+) -> Result<Value> {
+    layered::load_report(config_file, source_path, options)
         .map_err(|err| anyhow!("Failed to load config: {}", err))
 }

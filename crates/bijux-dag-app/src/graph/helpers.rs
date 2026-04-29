@@ -1,5 +1,8 @@
 use crate::run_data::{env_cache_dir, load_snapshot};
-use crate::{check_engine, parse_graph, read_file, Graph, LintDiagnostic, Severity, SPEC_VERSION};
+use crate::{
+    check_engine, config_fingerprint, default_runtime_config, parse_graph, read_file, Graph,
+    LintDiagnostic, Severity, SPEC_VERSION,
+};
 use bijux_dag_runtime::{registered_adapters, Selector, SelectorSet};
 use serde_json::json;
 use std::fs;
@@ -105,6 +108,11 @@ pub(crate) fn graph_to_dot(graph: &Graph) -> String {
 }
 
 pub(crate) fn doctor_report() -> Result<serde_json::Value, ExitCode> {
+    let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("repo root")
+        .to_path_buf();
     let cache_dir = env_cache_dir();
     let cache_status = if let Some(dir) = cache_dir.as_ref() {
         if fs::create_dir_all(dir).is_ok() {
@@ -126,6 +134,24 @@ pub(crate) fn doctor_report() -> Result<serde_json::Value, ExitCode> {
     let docker = check_engine("docker");
     let podman = check_engine("podman");
     let adapters = registered_adapters();
+    let schema_root = repo_root.join("configs").join("dag").join("schema");
+    let schema_files =
+        if schema_root.exists() { walk_json_files(&schema_root)? } else { Vec::new() };
+    let runtime_schema = schema_root.join("runtime_config.schema.json");
+    let env_overrides_present = [
+        "BIJUX_DAG_JOBS",
+        "BIJUX_DAG_CACHE_MODE",
+        "BIJUX_DAG_MATERIALIZE_INPUTS",
+        "BIJUX_DAG_POLICY_JSON",
+    ]
+    .into_iter()
+    .filter(|key| std::env::var(key).is_ok())
+    .collect::<Vec<_>>();
+    let runtime_config = json!({
+        "schema_found": runtime_schema.exists(),
+        "defaults_fingerprint": config_fingerprint(&default_runtime_config()),
+        "env_overrides_present": env_overrides_present,
+    });
 
     let hardlink_ok = {
         let dir = tempfile::tempdir().map_err(|_| ExitCode::from(3))?;
@@ -135,16 +161,42 @@ pub(crate) fn doctor_report() -> Result<serde_json::Value, ExitCode> {
         fs::hard_link(&a, &b).is_ok()
     };
 
-    let status = if cache_status["status"] == "error" { "error" } else { "ok" };
+    let status =
+        if cache_status["status"] == "error" || !runtime_schema.exists() { "error" } else { "ok" };
 
     Ok(json!({
         "status": status,
         "cache": cache_status,
         "container": { "docker": docker, "podman": podman },
         "adapters": adapters,
+        "schema_files": {
+            "root": schema_root,
+            "count": schema_files.len(),
+            "runtime_config_schema_found": runtime_schema.exists(),
+            "files": schema_files,
+        },
+        "runtime_config": runtime_config,
         "filesystem": { "hardlink": hardlink_ok },
         "policy": { "clock": "allowed_by_default" }
     }))
+}
+
+fn walk_json_files(root: &Path) -> Result<Vec<String>, ExitCode> {
+    let mut files = Vec::new();
+    let mut pending = vec![root.to_path_buf()];
+    while let Some(dir) = pending.pop() {
+        for entry in fs::read_dir(&dir).map_err(|_| ExitCode::from(3))? {
+            let entry = entry.map_err(|_| ExitCode::from(3))?;
+            let path = entry.path();
+            if path.is_dir() {
+                pending.push(path);
+            } else if path.extension().and_then(|value| value.to_str()) == Some("json") {
+                files.push(path.strip_prefix(root).unwrap_or(&path).display().to_string());
+            }
+        }
+    }
+    files.sort();
+    Ok(files)
 }
 
 pub(crate) fn migrate_dag(path: &Path, from: &str, to: &str) -> Result<String, ExitCode> {
@@ -238,7 +290,7 @@ pub(crate) fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_selector, parse_selectors};
+    use super::{doctor_report, parse_selector, parse_selectors};
     use std::process::ExitCode;
 
     #[test]
@@ -265,5 +317,12 @@ mod tests {
             let err = parse_selector(raw).expect_err("invalid selector must fail");
             assert_eq!(err, ExitCode::from(2), "selector should reject: {raw}");
         }
+    }
+
+    #[test]
+    fn doctor_report_exposes_schema_and_runtime_config_status() {
+        let report = doctor_report().expect("doctor report");
+        assert!(report["schema_files"]["count"].as_u64().is_some());
+        assert!(report["runtime_config"]["defaults_fingerprint"].as_str().is_some());
     }
 }

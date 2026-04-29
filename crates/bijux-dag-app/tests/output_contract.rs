@@ -15,10 +15,11 @@ use tempfile as _;
 use thiserror as _;
 
 use std::path::PathBuf;
-use std::process::Command;
 
-fn repo_target_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").join("artifacts/target")
+mod support;
+
+fn repo_root() -> PathBuf {
+    support::repo_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))
 }
 
 fn examples_file(file_name: &str) -> String {
@@ -31,46 +32,24 @@ fn examples_file(file_name: &str) -> String {
 #[test]
 #[ignore = "slow"]
 fn app_text_validate_output_contract() {
-    let output = Command::new("cargo")
-        .env("CARGO_TARGET_DIR", repo_target_dir())
-        .args([
-            "run",
-            "-p",
-            "bijux-dag-cli",
-            "--",
-            "dag",
-            "validate",
-            &examples_file("hello.dag.json"),
-        ])
-        .output()
-        .expect("run validate");
+    let output =
+        support::run_dag_command(&["validate", &examples_file("hello.dag.json")], &repo_root());
 
-    assert!(output.status.success());
-    let text = String::from_utf8_lossy(&output.stdout);
+    assert_eq!(output.0, 0);
+    let text = output.1;
     assert!(text.contains("status:"));
 }
 
 #[test]
 #[ignore = "slow"]
 fn app_json_validate_output_contract() {
-    let output = Command::new("cargo")
-        .env("CARGO_TARGET_DIR", repo_target_dir())
-        .args([
-            "run",
-            "-p",
-            "bijux-dag-cli",
-            "--",
-            "dag",
-            "validate",
-            "--json",
-            &examples_file("hello.dag.json"),
-        ])
-        .output()
-        .expect("run validate json");
+    let output = support::run_dag_command(
+        &["validate", "--json", &examples_file("hello.dag.json")],
+        &repo_root(),
+    );
 
-    assert!(output.status.success());
-    let payload: serde_json::Value =
-        serde_json::from_slice(&output.stdout).expect("parse json response");
+    assert_eq!(output.0, 0);
+    let payload: serde_json::Value = serde_json::from_str(&output.1).expect("parse json response");
     assert_eq!(payload["command"], "dag.validate");
     assert_eq!(payload["ok"], true);
     assert!(payload["data"].is_object());

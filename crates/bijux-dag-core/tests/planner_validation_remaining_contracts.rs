@@ -185,11 +185,13 @@ fn planner_inclusion_exclusion_and_capability_diagnostics_are_stable() {
     .expect_err("shell should be rejected");
     assert!(matches!(
         capability_err,
-        PlannerError::UnsupportedNodeKind(ref k) if k == "shell"
+        PlannerError::UnsupportedNodeKinds(ref nodes)
+            if nodes == &vec!["transform:shell".to_string()]
     ));
 
     let planner_diags = planner_diagnostics_from_error(&capability_err);
-    assert_eq!(planner_diags[0].id, "P4000");
+    assert_eq!(planner_diags[0].id, "P4013");
+    assert_eq!(planner_diags[0].node_id.as_deref(), Some("transform"));
 }
 
 #[test]
@@ -216,4 +218,75 @@ fn planner_plan_dump_is_deterministic_and_schema_compatible_for_replay_oriented_
     for field in required.iter().filter_map(Value::as_str) {
         assert!(plan_json.get(field).is_some(), "missing required field: {field}");
     }
+}
+
+#[test]
+fn validation_rejects_branch_contracts_that_do_not_match_conditional_edges() {
+    let graph = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"branch-contract-mismatch","owners":[],"tags":[]},
+          "nodes":[
+            {
+              "id":"decide",
+              "kind":"shell",
+              "semantic_kind":"branch",
+              "inputs":["in"],
+              "outputs":[{"name":"decision","path":"decide/decision.txt"}],
+              "effects":["filesystem"],
+              "params":{"argv":["echo","left"]},
+              "branch":{
+                "decisions":["left","right"],
+                "default_decision":"left",
+                "decision_output":"decision"
+              }
+            },
+            {"id":"left","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":1}},
+            {"id":"join","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"join/out"}],"params":{"value":2},"trigger_rule":"any_success"}
+          ],
+          "edges":[
+            {"id":"left-only","kind":"conditional","decision":"left","from":{"node_id":"decide","port":"decision"},"to":{"node_id":"left","port":"in"}},
+            {"from":{"node_id":"decide","port":"decision"},"to":{"node_id":"join","port":"in"}}
+          ]
+        }"#,
+    );
+
+    let diags = graph.validate_with_warnings();
+    assert!(diags.iter().any(|d| d.code == "E1028" && d.message.contains("right")));
+    assert!(diags
+        .iter()
+        .any(|d| d.code == "E1030" && d.message.contains("must only drive conditional edges")));
+}
+
+#[test]
+fn validation_rejects_conditional_targets_with_all_success_trigger_rule() {
+    let graph = graph_from(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"conditional-trigger-mismatch","owners":[],"tags":[]},
+          "nodes":[
+            {
+              "id":"decide",
+              "kind":"shell",
+              "semantic_kind":"branch",
+              "inputs":["in"],
+              "outputs":[{"name":"decision","path":"decide/decision.txt"}],
+              "effects":["filesystem"],
+              "params":{"argv":["echo","left"]},
+              "branch":{
+                "decisions":["left"],
+                "default_decision":"left",
+                "decision_output":"decision"
+              }
+            },
+            {"id":"sink","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"sink/out"}],"params":{"value":1},"trigger_rule":"all_success"}
+          ],
+          "edges":[
+            {"id":"left-branch","kind":"conditional","decision":"left","from":{"node_id":"decide","port":"decision"},"to":{"node_id":"sink","port":"in"}}
+          ]
+        }"#,
+    );
+
+    let diags = graph.validate_with_warnings();
+    assert!(diags.iter().any(|d| d.code == "E1030" && d.path == "/nodes/sink/trigger_rule"));
 }

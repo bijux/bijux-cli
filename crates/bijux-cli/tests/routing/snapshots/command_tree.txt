@@ -1,3 +1,4 @@
+apps
 audit
 cli
 completion

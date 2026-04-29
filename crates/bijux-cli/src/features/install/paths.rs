@@ -101,6 +101,35 @@ fn executable_candidates(entry: PathBuf) -> Vec<PathBuf> {
     vec![entry.join(canonical_executable_name())]
 }
 
+#[cfg(windows)]
+fn named_executable_candidates(entry: PathBuf, executable_name: &str) -> Vec<PathBuf> {
+    executable_extensions()
+        .into_iter()
+        .map(|ext| entry.join(format!("{executable_name}{ext}")))
+        .collect()
+}
+
+#[cfg(not(windows))]
+fn named_executable_candidates(entry: PathBuf, executable_name: &str) -> Vec<PathBuf> {
+    let extension = std::env::consts::EXE_EXTENSION;
+    let file_name = if extension.is_empty() {
+        executable_name.to_string()
+    } else {
+        format!("{executable_name}.{extension}")
+    };
+    vec![entry.join(file_name)]
+}
+
+/// Collect discovered binaries for an arbitrary executable name in PATH order.
+#[must_use]
+pub fn discover_named_path_binaries(path_value: &str, executable_name: &str) -> Vec<String> {
+    path_entries(path_value)
+        .flat_map(|entry| named_executable_candidates(entry, executable_name))
+        .filter(|candidate| is_executable_like(candidate))
+        .map(|candidate| candidate.display().to_string())
+        .collect()
+}
+
 /// Collect discovered `bijux` binaries in PATH order.
 #[must_use]
 pub fn discover_path_binaries(path_value: &str) -> Vec<String> {

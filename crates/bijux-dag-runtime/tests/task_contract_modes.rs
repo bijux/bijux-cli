@@ -31,6 +31,7 @@ fn task_contract_supports_all_isolation_modes() {
     graph.nodes.push(bijux_dag_core::Node {
         id: "subprocess_mode".to_string(),
         kind: NodeKind::Shell,
+        semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
         inputs: vec![],
         outputs: vec![bijux_dag_core::FileOutput {
             name: "out".to_string(),
@@ -56,10 +57,13 @@ fn task_contract_supports_all_isolation_modes() {
         effects: vec![bijux_dag_core::Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
+        trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+        branch: None,
     });
     graph.nodes.push(bijux_dag_core::Node {
         id: "container_mode".to_string(),
         kind: NodeKind::Container,
+        semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
         inputs: vec![],
         outputs: vec![bijux_dag_core::FileOutput {
             name: "out".to_string(),
@@ -80,10 +84,13 @@ fn task_contract_supports_all_isolation_modes() {
         effects: vec![bijux_dag_core::Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
+        trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+        branch: None,
     });
     graph.nodes.push(bijux_dag_core::Node {
         id: "external_mode".to_string(),
         kind: NodeKind::External("fake".to_string()),
+        semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
         inputs: vec![],
         outputs: vec![bijux_dag_core::FileOutput {
             name: "out".to_string(),
@@ -98,6 +105,8 @@ fn task_contract_supports_all_isolation_modes() {
         effects: vec![bijux_dag_core::Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
+        trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+        branch: None,
     });
 
     let options = RuntimeConfig::default();

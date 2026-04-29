@@ -19,15 +19,283 @@ mod engine_observe;
 #[path = "engine_record.rs"]
 mod engine_record;
 use bijux_dag_artifacts::{
-    write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance,
-    ReplayProvenance, RunDir, RunMetadata,
+    finalize_run_manifest, write_incomplete_run_marker, write_provenance, write_run_outputs_index,
+    write_run_schema_index, FailureInfo, Manifest, NodeCounts, Provenance, ReplayProvenance,
+    RunDir, RunDirSchemaIndex, RunMetadata,
 };
-use bijux_dag_core::{Effect, Graph, Node, NodeKind, SPEC_VERSION};
+use bijux_dag_core::{Effect, Graph, Node, NodeKind, SemanticNodeKind, SPEC_VERSION};
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::{atomic::Ordering, Arc, Mutex};
 use std::time::{Duration, Instant};
+
+#[derive(Debug, Clone)]
+struct BranchResolution {
+    decision: String,
+    used_default: bool,
+}
+
+fn resolve_branch_decision(
+    ctx: &RunContext,
+    node: &Node,
+) -> Result<Option<BranchResolution>, FailureInfo> {
+    if node.semantic_kind != SemanticNodeKind::Branch {
+        return Ok(None);
+    }
+    let Some(branch) = &node.branch else {
+        return Ok(None);
+    };
+    let Some(output) = node.outputs.iter().find(|output| output.name == branch.decision_output)
+    else {
+        return Err(FailureInfo {
+            kind: "Execution".to_string(),
+            code: "BRANCH_OUTPUT_MISSING".to_string(),
+            message: format!(
+                "branch node {} is missing declared decision output {}",
+                node.id, branch.decision_output
+            ),
+            details: Some(serde_json::json!({
+                "node_id": node.id,
+                "decision_output": branch.decision_output,
+            })),
+        });
+    };
+    let output_path = ctx.run_dir.node_outputs_dir(&node.id).join(&output.path);
+    let raw = ctx.fs.read_to_string(&output_path).map_err(|_| FailureInfo {
+        kind: "Execution".to_string(),
+        code: "BRANCH_DECISION_UNREADABLE".to_string(),
+        message: format!("branch decision output for {} could not be read", node.id),
+        details: Some(serde_json::json!({
+            "node_id": node.id,
+            "path": output.path,
+        })),
+    })?;
+    let decision = serde_json::from_str::<Value>(&raw)
+        .ok()
+        .and_then(|value| match value {
+            Value::String(text) => Some(text),
+            Value::Number(number) => Some(number.to_string()),
+            Value::Bool(flag) => Some(flag.to_string()),
+            _ => None,
+        })
+        .unwrap_or_else(|| raw.trim().to_string());
+    if branch.decisions.iter().any(|candidate| candidate == &decision) {
+        return Ok(Some(BranchResolution { decision: decision.clone(), used_default: false }));
+    }
+    if let Some(default_decision) = &branch.default_decision {
+        return Ok(Some(BranchResolution {
+            decision: default_decision.clone(),
+            used_default: true,
+        }));
+    }
+    Err(FailureInfo {
+        kind: "Execution".to_string(),
+        code: "INVALID_BRANCH_DECISION".to_string(),
+        message: format!("branch node {} produced undeclared decision {}", node.id, decision),
+        details: Some(serde_json::json!({
+            "node_id": node.id,
+            "produced_decision": decision,
+            "declared_decisions": branch.decisions,
+        })),
+    })
+}
+
+fn branch_nodes_to_skip(
+    plan: &crate::ExecutionPlan,
+    branch_node_id: &str,
+    selected_decision: &str,
+) -> Vec<String> {
+    let mut selected_reachable = BTreeSet::new();
+    let mut by_decision = BTreeMap::<String, BTreeSet<String>>::new();
+    for path in plan.branch_paths.iter().filter(|path| path.branch_node_id == branch_node_id) {
+        let nodes = by_decision.entry(path.decision.clone()).or_default();
+        nodes.extend(path.direct_targets.iter().cloned());
+        nodes.extend(path.reachable_nodes.iter().cloned());
+    }
+    if let Some(selected) = by_decision.get(selected_decision) {
+        selected_reachable.extend(selected.iter().cloned());
+    }
+    let mut pruned = BTreeSet::new();
+    for (decision, nodes) in by_decision {
+        if decision == selected_decision {
+            continue;
+        }
+        for node_id in nodes {
+            if !selected_reachable.contains(&node_id) {
+                pruned.insert(node_id);
+            }
+        }
+    }
+    pruned.into_iter().collect()
+}
+
+fn partial_rerun_selected(options: &RuntimeConfig) -> bool {
+    options.parent_run_id.is_some() && !options.selectors.include.is_empty()
+}
+
+fn selector_matches(node: &Node, selector: &crate::Selector) -> bool {
+    match selector {
+        crate::Selector::IdPrefix(prefix) => node.id.starts_with(prefix),
+        crate::Selector::Tag(tag) => node.tags.iter().any(|candidate| candidate == tag),
+        crate::Selector::Kind(kind) => node.kind.as_str() == kind,
+    }
+}
+
+fn selected_rerun_targets(graph: &Graph, options: &RuntimeConfig) -> Vec<String> {
+    let mut selected = graph
+        .nodes
+        .iter()
+        .filter(|node| {
+            options.selectors.include.iter().any(|selector| selector_matches(node, selector))
+                && !options
+                    .selectors
+                    .exclude
+                    .iter()
+                    .any(|selector| selector_matches(node, selector))
+        })
+        .map(|node| node.id.clone())
+        .collect::<Vec<_>>();
+    selected.sort();
+    selected
+}
+
+fn trigger_rule_value(graph: &Graph, node_id: &str) -> serde_json::Value {
+    graph
+        .nodes
+        .iter()
+        .find(|node| node.id == node_id)
+        .and_then(|node| serde_json::to_value(&node.trigger_rule).ok())
+        .unwrap_or_else(|| serde_json::Value::String("unknown".to_string()))
+}
+
+fn upstream_nodes(dep_map: &HashMap<String, BTreeSet<String>>, node_id: &str) -> Vec<String> {
+    let mut upstreams = dep_map
+        .get(node_id)
+        .map(|deps| deps.iter().cloned().collect::<Vec<_>>())
+        .unwrap_or_default();
+    upstreams.sort();
+    upstreams
+}
+
+fn invalidated_downstream_nodes(graph: &Graph, selected_nodes: &[String]) -> Vec<String> {
+    let mut adjacency = BTreeMap::<String, Vec<String>>::new();
+    for edge in &graph.edges {
+        adjacency.entry(edge.from.node_id.clone()).or_default().push(edge.to.node_id.clone());
+    }
+    let mut visited = BTreeSet::new();
+    let mut queue = selected_nodes.iter().cloned().collect::<Vec<_>>();
+    while let Some(node_id) = queue.pop() {
+        if let Some(children) = adjacency.get(&node_id) {
+            for child in children {
+                if visited.insert(child.clone()) {
+                    queue.push(child.clone());
+                }
+            }
+        }
+    }
+    for selected in selected_nodes {
+        visited.remove(selected);
+    }
+    visited.into_iter().collect()
+}
+
+fn write_scheduler_invariant_bundle(
+    ctx: &RunContext,
+    loop_index: u64,
+    checkpoint: &ExecutionCheckpoint,
+    violations: &[String],
+) -> Result<(), RuntimeError> {
+    let payload = serde_json::json!({
+        "loop_index": loop_index,
+        "checkpoint": checkpoint,
+        "violations": violations,
+    });
+    ctx.fs.write(
+        &ctx.run_dir.staging_path().join("scheduler.invariant-bundle.json"),
+        &serde_json::to_vec_pretty(&payload)?,
+    )?;
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn record_skipped_node(
+    runtime: &Runtime,
+    ctx: &RunContext,
+    graph: &Graph,
+    run_log: &mut std::fs::File,
+    run_log_index: &mut Vec<serde_json::Value>,
+    failure_propagation_records: &mut Vec<serde_json::Value>,
+    status_map: &mut HashMap<String, NodeStatus>,
+    options: &RuntimeConfig,
+    node_id: &str,
+    reason: &str,
+) -> Result<(), RuntimeError> {
+    if status_map.contains_key(node_id) {
+        return Ok(());
+    }
+    sacred_execution::guard_terminal_node_status(&NodeStatus::Skipped)?;
+    status_map.insert(node_id.to_string(), NodeStatus::Skipped);
+    let node_kind = graph
+        .nodes
+        .iter()
+        .find(|n| n.id == node_id)
+        .map(|n| n.kind.clone())
+        .unwrap_or(NodeKind::Const);
+    let (aid, aver) = runtime.adapter_meta_for_kind(&node_kind);
+    let aschema = runtime.adapter_schema_for_kind(&node_kind);
+    let adapter_hash = runtime.adapter_for_kind(&node_kind).ok().and_then(|a| a.binary_hash());
+    let started = ctx.clock.now_unix_ms();
+    sacred_execution::run_write_trace(
+        ctx,
+        graph,
+        node_id,
+        NodeStatus::Skipped,
+        None,
+        started,
+        started,
+        1,
+        None,
+        &aid,
+        &aver,
+        &aschema,
+        None,
+        adapter_hash,
+        None,
+        Some(bijux_dag_artifacts::SkipReason { reason: reason.to_string() }),
+        Some(crate::transition_cause_for_skip_reason(reason).to_string()),
+        Some(ReplayProvenance {
+            node_action: "skipped".to_string(),
+            source_run_id: options.parent_run_id.clone(),
+        }),
+    )?;
+    failure_propagation_records.push(serde_json::json!({
+        "node_id": node_id,
+        "status": "skipped",
+        "cause": crate::transition_cause_for_skip_reason(reason).to_lowercase(),
+    }));
+    engine_record::append_indexed_event(
+        run_log,
+        run_log_index,
+        serde_json::json!({
+            "event": "node_blocked",
+            "ts": ctx.clock.now_unix_ms(),
+            "node_id": node_id,
+            "reason": reason,
+        }),
+    )?;
+    engine_record::append_indexed_event(
+        run_log,
+        run_log_index,
+        serde_json::json!({
+            "event": "node_skipped",
+            "ts": ctx.clock.now_unix_ms(),
+            "node_id": node_id,
+            "reason": reason,
+        }),
+    )?;
+    Ok(())
+}
 
 pub fn execute(
     runtime: &Runtime,
@@ -185,6 +453,22 @@ pub fn execute(
                 .map(|selector| crate::requested_selector_label("exclude", selector)),
         )
         .collect();
+    if partial_rerun_selected(&options) && !options.partial_rerun_dependency_closure {
+        return Err(RuntimeError::Executor(
+            "partial rerun requires dependency closure to prevent stale downstream reuse"
+                .to_string(),
+        ));
+    }
+    let explicit_rerun_targets = selected_rerun_targets(graph, &options);
+    let partial_rerun_contract =
+        partial_rerun_selected(&options).then(|| crate::PartialRerunContract {
+            selected_nodes: explicit_rerun_targets.clone(),
+            invalidated_downstream_nodes: invalidated_downstream_nodes(
+                graph,
+                &explicit_rerun_targets,
+            ),
+            stale_downstream_reuse_forbidden: true,
+        });
     let run_snapshot = RunSnapshot {
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
         graph_snapshot_path: "graph.snapshot.json".to_string(),
@@ -201,9 +485,15 @@ pub fn execute(
         selected_nodes: plan.order.clone(),
         dependency_closure_enabled: options.partial_rerun_dependency_closure,
         replay_source_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
+        partial_rerun_contract,
     };
     let run_snapshot_path = ctx.run_dir.staging_path().join("run.snapshot.json");
     ctx.fs.write(&run_snapshot_path, &serde_json::to_vec_pretty(&run_snapshot)?)?;
+    write_incomplete_run_marker(
+        ctx.run_dir.staging_path(),
+        "run not finalized; recover or repair before treating artifacts as complete",
+    )
+    .map_err(|err| RuntimeError::Executor(format!("incomplete run marker write failed: {err}")))?;
     let run_attempt = RunAttempt {
         attempt_index: 1,
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
@@ -224,9 +514,11 @@ pub fn execute(
     let dep_map = plan.dep_map.clone();
     let mut dependency_counter = sacred_execution::resolve_dependencies(&plan);
     let mut ready_queue = sacred_execution::ready_queue_from_dependencies(&dependency_counter);
+    let initial_ready = ready_queue.snapshot_sorted();
     let mut scheduler = crate::build_scheduler(&options.scheduler_policy);
     let scheduler_hook = crate::NoopSchedulerEventHook;
     let mut loop_index: u64 = 0;
+    let mut branch_pruned_nodes = BTreeSet::new();
     engine_record::append_indexed_event(
         &mut run_log,
         &mut run_log_index,
@@ -236,19 +528,19 @@ pub fn execute(
             "nodes": graph.nodes.len(),
         }),
     )?;
+    for node_id in &initial_ready {
+        scheduler_hook.on_node_eligible(node_id);
+    }
+    for event in engine_observe::node_eligible_events(
+        &initial_ready,
+        ctx.clock.now_unix_ms(),
+        "root_ready",
+        "all_success",
+    ) {
+        engine_record::append_indexed_event(&mut run_log, &mut run_log_index, event)?;
+    }
     while !ready_queue.is_empty() {
         loop_index = loop_index.saturating_add(1);
-        let ready_vec: Vec<String> = ready_queue.snapshot_sorted();
-        for node_id in &ready_vec {
-            scheduler_hook.on_node_eligible(node_id);
-            let events = engine_observe::node_eligible_events(
-                std::slice::from_ref(node_id),
-                ctx.clock.now_unix_ms(),
-            );
-            for event in events {
-                crate::append_event(&mut run_log, event)?;
-            }
-        }
         let decision = engine_dispatch::next_scheduler_decision(
             scheduler.as_mut(),
             graph,
@@ -275,17 +567,43 @@ pub fn execute(
             }));
             break;
         }
+        let ready_candidates = decision.ready_candidates.clone();
+        let blocked_reasons = decision.blocked_reasons.clone();
+        let decision_reason = decision.decision_reason.clone();
+        let tie_break_reason = decision.tie_break_reason.clone();
         let batch = decision.batch;
         let mut blocked_by_budget = decision.blocked_by_budget;
         blocked_by_budget.sort();
+        engine_record::append_indexed_event(
+            &mut run_log,
+            &mut run_log_index,
+            serde_json::json!({
+                "event": "scheduler_decision",
+                "ts": ctx.clock.now_unix_ms(),
+                "loop_index": loop_index,
+                "ready_queue_depth": ready_queue.len(),
+                "ready_candidates": ready_candidates,
+                "batch": batch.clone(),
+                "blocked_by_budget": blocked_by_budget.clone(),
+                "blocked_reasons": blocked_reasons.clone(),
+                "decision_reason": decision_reason,
+                "tie_break_reason": tie_break_reason,
+            }),
+        )?;
         for node_id in &blocked_by_budget {
             scheduler_hook.on_node_blocked_by_budget(node_id);
-            crate::append_event(
+            let reason_code = blocked_reasons
+                .get(node_id)
+                .cloned()
+                .unwrap_or_else(|| "blocked_by_policy".to_string());
+            engine_record::append_indexed_event(
                 &mut run_log,
+                &mut run_log_index,
                 serde_json::json!({
-                    "event": "blocked_by_budget",
+                    "event": "node_blocked",
                     "ts": ctx.clock.now_unix_ms(),
                     "node_id": node_id,
+                    "reason": reason_code,
                 }),
             )?;
         }
@@ -298,6 +616,13 @@ pub fn execute(
         let mut preflight_failures: Vec<(String, Node, FailureInfo, String)> = Vec::new();
 
         for node_id in &batch {
+            if status_map.contains_key(node_id) {
+                continue;
+            }
+            if branch_pruned_nodes.contains(node_id) {
+                skipped.push((node_id.clone(), "branch_decision_not_selected".to_string()));
+                continue;
+            }
             if let Some(reason) = plan.filter_reasons.get(node_id) {
                 skipped.push((node_id.clone(), reason.clone()));
                 continue;
@@ -349,6 +674,17 @@ pub fn execute(
                         },
                         "DependencyFailed".to_string(),
                     ));
+                    engine_record::append_indexed_event(
+                        &mut run_log,
+                        &mut run_log_index,
+                        serde_json::json!({
+                            "event": "node_blocked",
+                            "ts": ctx.clock.now_unix_ms(),
+                            "node_id": node_id,
+                            "reason": "blocked_by_dependency",
+                            "blocking_nodes": deps,
+                        }),
+                    )?;
                     continue;
                 }
             }
@@ -511,60 +847,18 @@ pub fn execute(
 
         skipped.sort_by(|a, b| a.0.cmp(&b.0));
         for (node_id, reason) in &skipped {
-            status_map.insert(node_id.clone(), NodeStatus::Skipped);
-            let node_kind = graph
-                .nodes
-                .iter()
-                .find(|n| n.id == *node_id)
-                .map(|n| n.kind.clone())
-                .unwrap_or(NodeKind::Const);
-            let (aid, aver) = runtime.adapter_meta_for_kind(&node_kind);
-            let aschema = runtime.adapter_schema_for_kind(&node_kind);
-            let adapter_hash =
-                runtime.adapter_for_kind(&node_kind).ok().and_then(|a| a.binary_hash());
-            let started = ctx.clock.now_unix_ms();
-            sacred_execution::run_write_trace(
+            record_skipped_node(
+                runtime,
                 &ctx,
                 graph,
-                node_id,
-                NodeStatus::Skipped,
-                None,
-                started,
-                started,
-                1,
-                None,
-                &aid,
-                &aver,
-                &aschema,
-                None,
-                adapter_hash,
-                Some(bijux_dag_artifacts::SkipReason { reason: reason.clone() }),
-                Some(crate::transition_cause_for_skip_reason(reason).to_string()),
-                Some(ReplayProvenance {
-                    node_action: "skipped".to_string(),
-                    source_run_id: options.parent_run_id.clone(),
-                }),
-            )?;
-            failure_propagation_records.push(serde_json::json!({
-                "node_id": node_id,
-                "status": "skipped",
-                "cause": crate::transition_cause_for_skip_reason(reason).to_lowercase(),
-            }));
-            crate::append_event(
                 &mut run_log,
-                serde_json::json!({
-                    "event": "node_skipped",
-                    "ts": ctx.clock.now_unix_ms(),
-                    "node_id": node_id,
-                    "reason": reason,
-                }),
+                &mut run_log_index,
+                &mut failure_propagation_records,
+                &mut status_map,
+                &options,
+                node_id,
+                reason,
             )?;
-            run_log_index.push(serde_json::json!({
-                "event": "node_skipped",
-                "ts": ctx.clock.now_unix_ms(),
-                "node_id": node_id,
-                "reason": reason,
-            }));
         }
         preflight_failures.sort_by(|a, b| a.0.cmp(&b.0));
         for (node_id, node, failure, transition_cause) in &preflight_failures {
@@ -590,6 +884,7 @@ pub fn execute(
                 &aschema,
                 None,
                 adapter_hash,
+                None,
                 None,
                 Some(transition_cause.clone()),
                 Some(ReplayProvenance {
@@ -653,14 +948,38 @@ pub fn execute(
         let checkpoint = ExecutionCheckpoint {
             loop_index,
             ready_queue_depth: ready_queue.len(),
+            ready_queue: ready_queue.snapshot_sorted(),
+            inflight: started_ids.clone(),
             scheduled: started_ids.clone(),
             blocked_by_budget: blocked_by_budget.clone(),
+            blocked_reasons: blocked_reasons.clone(),
+            completed_statuses: status_map
+                .iter()
+                .map(|(node_id, status)| match status {
+                    NodeStatus::Success => (node_id.clone(), "success".to_string()),
+                    NodeStatus::Failed => (node_id.clone(), "failed".to_string()),
+                    NodeStatus::Skipped => (node_id.clone(), "skipped".to_string()),
+                    NodeStatus::Cached => (node_id.clone(), "cached".to_string()),
+                })
+                .collect(),
+            failure_propagation_mode: crate::failure_mode_name(&options.failure_propagation)
+                .to_string(),
+            dependency_closure_enabled: options.partial_rerun_dependency_closure,
             generated_unix_ms: ctx.clock.now_unix_ms(),
         };
         let checkpoint_path = ctx.run_dir.staging_path().join("scheduler.checkpoint.json");
         let _ = ctx
             .fs
             .write(&checkpoint_path, &serde_json::to_vec_pretty(&checkpoint).unwrap_or_default());
+        let replay_state = crate::replay_scheduler_checkpoint(&plan, &checkpoint)
+            .map_err(RuntimeError::Executor)?;
+        let replay_violations = crate::scheduler_invariant_violations(&replay_state);
+        if !replay_violations.is_empty() {
+            write_scheduler_invariant_bundle(&ctx, loop_index, &checkpoint, &replay_violations)?;
+            return Err(RuntimeError::Executor(
+                "scheduler state invariants violated after checkpoint replay".to_string(),
+            ));
+        }
         for node_id in &started_ids {
             crate::append_event(
                 &mut run_log,
@@ -677,20 +996,54 @@ pub fn execute(
             }));
         }
 
+        let mut branch_pruned = BTreeSet::new();
         for (node_id, node, cache_proof) in &cached {
-            sacred_execution::guard_terminal_node_status(&NodeStatus::Cached)?;
-            status_map.insert(node_id.clone(), NodeStatus::Cached);
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
             let adapter_hash =
                 runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
             let started = ctx.clock.now_unix_ms();
+            let branch_resolution = resolve_branch_decision(&ctx, node);
+            let (status, failure, branch_decision, transition_cause) = match branch_resolution {
+                Ok(Some(selection)) => {
+                    engine_record::append_indexed_event(
+                        &mut run_log,
+                        &mut run_log_index,
+                        serde_json::json!({
+                            "event": "branch_decision_selected",
+                            "ts": ctx.clock.now_unix_ms(),
+                            "node_id": node_id,
+                            "decision": selection.decision,
+                            "used_default": selection.used_default,
+                        }),
+                    )?;
+                    for pruned in branch_nodes_to_skip(&plan, node_id, &selection.decision) {
+                        branch_pruned_nodes.insert(pruned.clone());
+                        branch_pruned.insert(pruned);
+                    }
+                    (
+                        NodeStatus::Cached,
+                        None,
+                        Some(selection.decision),
+                        Some("CachedReuse".to_string()),
+                    )
+                }
+                Ok(None) => (NodeStatus::Cached, None, None, Some("CachedReuse".to_string())),
+                Err(failure) => (
+                    NodeStatus::Failed,
+                    Some(failure.clone()),
+                    None,
+                    Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
+                ),
+            };
+            sacred_execution::guard_terminal_node_status(&status)?;
+            status_map.insert(node_id.clone(), status.clone());
             sacred_execution::run_write_trace(
                 &ctx,
                 graph,
                 node_id,
-                NodeStatus::Cached,
-                None,
+                status.clone(),
+                failure.clone(),
                 started,
                 started,
                 1,
@@ -700,41 +1053,43 @@ pub fn execute(
                 &aschema,
                 None,
                 adapter_hash,
+                branch_decision,
                 None,
-                Some("CachedReuse".to_string()),
+                transition_cause,
                 Some(ReplayProvenance {
                     node_action: "reused".to_string(),
                     source_run_id: options.parent_run_id.clone(),
                 }),
             )?;
-            crate::append_event(
+            engine_record::append_indexed_event(
                 &mut run_log,
+                &mut run_log_index,
                 serde_json::json!({
                     "event": "node_finished",
                     "ts": ctx.clock.now_unix_ms(),
                     "node_id": node_id,
-                    "status": "cached",
+                    "status": crate::status_string(&status),
                 }),
             )?;
-            run_log_index.push(serde_json::json!({
-                "event": "node_finished",
-                "ts": ctx.clock.now_unix_ms(),
-                "node_id": node_id,
-                "status": "cached",
-            }));
-            let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
-            let aschema = runtime.adapter_schema_for_kind(&node.kind);
-            let node_fp = node_fingerprint_from_ctx(&ctx, &node.id);
-            sacred_execution::run_cache_write(
-                &options,
-                node,
-                &node_fp,
-                &ctx,
-                Arc::clone(&ctx.fs),
-                &aid,
-                &aver,
-                &aschema,
-            )?;
+            if status == NodeStatus::Failed {
+                failure_propagation_records.push(serde_json::json!({
+                    "node_id": node_id,
+                    "status": "failed",
+                    "cause": crate::failure_propagation_cause(failure.as_ref()),
+                }));
+            } else {
+                let node_fp = node_fingerprint_from_ctx(&ctx, &node.id);
+                sacred_execution::run_cache_write(
+                    &options,
+                    node,
+                    &node_fp,
+                    &ctx,
+                    Arc::clone(&ctx.fs),
+                    &aid,
+                    &aver,
+                    &aschema,
+                )?;
+            }
         }
 
         for (node_id, node, params) in &to_start {
@@ -788,13 +1143,11 @@ pub fn execute(
         results.sort_by(|a, b| a.0.cmp(&b.0));
         for (node_id, node, started, finished, res) in results {
             match res {
-                Ok(result) => {
-                    sacred_execution::guard_terminal_node_status(&result.status)?;
+                Ok(mut result) => {
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
                     let aschema = runtime.adapter_schema_for_kind(&node.kind);
                     let adapter_hash =
                         runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
-                    let trace_failure = result.failure.clone();
                     let cache_proof = cache_proofs.get(&node_id).cloned();
                     for attempt in &result.attempt_events {
                         crate::append_event(
@@ -831,6 +1184,35 @@ pub fn execute(
                         }));
                     }
                     crate::write_attempt_events(&ctx, &node_id, &result.attempt_events)?;
+                    let branch_decision = match resolve_branch_decision(&ctx, &node) {
+                        Ok(Some(selection)) => {
+                            engine_record::append_indexed_event(
+                                &mut run_log,
+                                &mut run_log_index,
+                                serde_json::json!({
+                                            "event": "branch_decision_selected",
+                                            "ts": ctx.clock.now_unix_ms(),
+                                            "node_id": node_id,
+                                            "decision": selection.decision,
+                                    "used_default": selection.used_default,
+                                }),
+                            )?;
+                            for pruned in branch_nodes_to_skip(&plan, &node_id, &selection.decision)
+                            {
+                                branch_pruned_nodes.insert(pruned.clone());
+                                branch_pruned.insert(pruned);
+                            }
+                            Some(selection.decision)
+                        }
+                        Ok(None) => None,
+                        Err(failure) => {
+                            result.status = NodeStatus::Failed;
+                            result.failure = Some(failure);
+                            None
+                        }
+                    };
+                    sacred_execution::guard_terminal_node_status(&result.status)?;
+                    let trace_failure = result.failure.clone();
                     let replay_action = match result.status {
                         NodeStatus::Cached => ReplayNodeAction::Reused,
                         NodeStatus::Skipped => ReplayNodeAction::Skipped,
@@ -862,6 +1244,7 @@ pub fn execute(
                         &aschema,
                         result.container_meta.clone(),
                         adapter_hash,
+                        branch_decision,
                         None,
                         Some(
                             if result.status == NodeStatus::Failed {
@@ -969,6 +1352,7 @@ pub fn execute(
                         None,
                         adapter_hash,
                         None,
+                        None,
                         Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
                         Some(ReplayProvenance {
                             node_action: "reexecuted".to_string(),
@@ -1012,8 +1396,46 @@ pub fn execute(
             }
         }
 
-        for node_id in batch {
+        let mut completed_node_ids = batch.clone();
+        let mut branch_pruned_ids = branch_pruned.into_iter().collect::<Vec<_>>();
+        branch_pruned_ids.sort();
+        for node_id in &branch_pruned_ids {
+            record_skipped_node(
+                runtime,
+                &ctx,
+                graph,
+                &mut run_log,
+                &mut run_log_index,
+                &mut failure_propagation_records,
+                &mut status_map,
+                &options,
+                node_id,
+                "branch_decision_not_selected",
+            )?;
+            completed_node_ids.push(node_id.clone());
+        }
+
+        for node_id in completed_node_ids {
             for newly_ready in dependency_counter.mark_completed(&node_id) {
+                if status_map.contains_key(&newly_ready) {
+                    continue;
+                }
+                scheduler_hook.on_node_eligible(&newly_ready);
+                engine_record::append_indexed_event(
+                    &mut run_log,
+                    &mut run_log_index,
+                    serde_json::json!({
+                        "event": "node_ready",
+                        "ts": ctx.clock.now_unix_ms(),
+                        "node_id": newly_ready,
+                        "reason": {
+                            "code": "dependencies_satisfied",
+                            "upstreams": upstream_nodes(&dep_map, &newly_ready),
+                            "trigger_rule": trigger_rule_value(graph, &newly_ready),
+                            "released_by": node_id,
+                        },
+                    }),
+                )?;
                 ready_queue.insert(newly_ready);
             }
         }
@@ -1059,6 +1481,7 @@ pub fn execute(
                 &aschema,
                 None,
                 runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
+                None,
                 None,
                 Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
                 Some(ReplayProvenance {
@@ -1106,6 +1529,7 @@ pub fn execute(
                 None,
                 runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
                 None,
+                None,
                 Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
                 Some(ReplayProvenance {
                     node_action: "skipped".to_string(),
@@ -1147,6 +1571,7 @@ pub fn execute(
                     &aschema,
                     None,
                     runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
+                    None,
                     Some(bijux_dag_artifacts::SkipReason { reason: "cancelled".to_string() }),
                     Some("CancelRequested".to_string()),
                     Some(ReplayProvenance {
@@ -1339,6 +1764,14 @@ pub fn execute(
         &ctx.run_dir.staging_path().join("failure-propagation.json"),
         &serde_json::to_vec_pretty(&failure_propagation_records)?,
     )?;
+    write_run_schema_index(
+        ctx.run_dir.staging_path().join("run.schema.json"),
+        &RunDirSchemaIndex::default(),
+    )
+    .map_err(|err| RuntimeError::Executor(format!("run schema index write failed: {err}")))?;
+    finalize_run_manifest(ctx.run_dir.staging_path()).map_err(|err| {
+        RuntimeError::Executor(format!("run finalization marker write failed: {err}"))
+    })?;
 
     let final_path = run_dir.finalize()?;
     if let Some(latest) = options.latest_symlink {

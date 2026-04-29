@@ -42,6 +42,8 @@ pub struct Graph {
 pub struct Node {
     pub id: String,
     pub kind: NodeKind,
+    #[serde(default, skip_serializing_if = "semantic_kind_is_default")]
+    pub semantic_kind: SemanticNodeKind,
     #[serde(default)]
     pub inputs: Vec<String>,
     #[serde(default)]
@@ -64,6 +66,10 @@ pub struct Node {
     pub env_allowlist: Vec<String>,
     #[serde(default)]
     pub group: Option<String>,
+    #[serde(default, skip_serializing_if = "trigger_rule_is_default")]
+    pub trigger_rule: TriggerRule,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branch: Option<BranchSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -174,9 +180,59 @@ pub enum Effect {
     Clock,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum SemanticNodeKind {
+    #[default]
+    Task,
+    Branch,
+    Barrier,
+    Map,
+    Reduce,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum TriggerRule {
+    AllSuccess,
+    AnySuccess,
+    AllDone,
+    NoneFailed,
+}
+
+impl Default for TriggerRule {
+    fn default() -> Self {
+        Self::AllSuccess
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct BranchSpec {
+    pub decisions: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_decision: Option<String>,
+    pub decision_output: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EdgeKind {
+    #[default]
+    Data,
+    Control,
+    Conditional,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Edge {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "edge_kind_is_default")]
+    pub kind: EdgeKind,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub decision: Option<String>,
     pub from: PortRef,
     pub to: PortRef,
 }
@@ -227,4 +283,16 @@ pub struct ValidationDiagnostic {
 pub enum Severity {
     Error,
     Warning,
+}
+
+pub fn trigger_rule_is_default(rule: &TriggerRule) -> bool {
+    matches!(rule, TriggerRule::AllSuccess)
+}
+
+pub fn semantic_kind_is_default(kind: &SemanticNodeKind) -> bool {
+    matches!(kind, SemanticNodeKind::Task)
+}
+
+pub fn edge_kind_is_default(kind: &EdgeKind) -> bool {
+    matches!(kind, EdgeKind::Data)
 }

@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProductMountDescriptor",
+  "type": "object",
+  "required": [
+    "control_entrypoint",
+    "display_name",
+    "entrypoint",
+    "help",
+    "namespace"
+  ],
+  "properties": {
+    "aliases": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Namespace"
+      }
+    },
+    "capabilities": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "compatibility": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ProductCompatibilityWindow"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "control_entrypoint": {
+      "$ref": "#/definitions/ProductEntrypoint"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "entrypoint": {
+      "$ref": "#/definitions/ProductEntrypoint"
+    },
+    "help": {
+      "$ref": "#/definitions/ProductHelpMetadata"
+    },
+    "namespace": {
+      "$ref": "#/definitions/Namespace"
+    },
+    "version": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "definitions": {
+    "Namespace": {
+      "description": "Canonical command namespace segment.",
+      "type": "string"
+    },
+    "ProductCompatibilityWindow": {
+      "type": "object",
+      "required": [
+        "min_cli_version"
+      ],
+      "properties": {
+        "max_cli_version_exclusive": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "min_cli_version": {
+          "type": "string"
+        }
+      }
+    },
+    "ProductEntrypoint": {
+      "type": "object",
+      "required": [
+        "command",
+        "kind"
+      ],
+      "properties": {
+        "command": {
+          "type": "string"
+        },
+        "function": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "$ref": "#/definitions/ProductEntrypointKind"
+        },
+        "module": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ProductEntrypointKind": {
+      "type": "string",
+      "enum": [
+        "binary",
+        "python_module",
+        "python_console_script",
+        "plugin_process",
+        "embedded_rust"
+      ]
+    },
+    "ProductHelpMetadata": {
+      "type": "object",
+      "required": [
+        "summary"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

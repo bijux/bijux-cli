@@ -63,6 +63,10 @@ pub fn finalize_run_manifest(run_dir: impl AsRef<Path>) -> Result<(), ArtifactEr
     }
     let finalized = run_dir.join("manifest.finalized.json");
     fs::copy(&manifest, &finalized)?;
+    let incomplete_marker_path = run_dir.join(".run-incomplete.json");
+    if incomplete_marker_path.exists() {
+        fs::remove_file(&incomplete_marker_path)?;
+    }
     let marker_path = run_dir.join(".run-complete.json");
     let marker = serde_json::json!({"status": "complete", "manifest": "manifest.finalized.json"});
     write_json_atomic_durable(marker_path, &marker)

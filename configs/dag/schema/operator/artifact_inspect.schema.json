@@ -4,8 +4,10 @@
   "type": "object",
   "required": [
     "artifact_id",
+    "legacy_artifact_id",
     "artifact_sha256",
     "node_id",
+    "output_name",
     "node_fingerprint",
     "path",
     "size_bytes",
@@ -16,8 +18,10 @@
   ],
   "properties": {
     "artifact_id": { "type": "string" },
+    "legacy_artifact_id": { "type": "string" },
     "artifact_sha256": { "type": "string" },
     "node_id": { "type": "string" },
+    "output_name": { "type": "string" },
     "node_fingerprint": { "type": "string" },
     "path": { "type": "string" },
     "size_bytes": { "type": ["integer", "null"], "minimum": 0 },
@@ -47,22 +51,41 @@
     },
     "identity_explain": {
       "type": "object",
-      "required": ["artifact_id", "composed_from", "hash_algorithm", "identity_scope"],
+      "required": [
+        "artifact_id",
+        "canonical_artifact_id",
+        "legacy_artifact_id",
+        "composed_from",
+        "hash_algorithm",
+        "identity_scope",
+        "collision_safe"
+      ],
       "properties": {
         "artifact_id": { "type": "string" },
+        "canonical_artifact_id": { "type": "string" },
+        "legacy_artifact_id": { "type": "string" },
         "composed_from": {
           "type": "object",
-          "required": ["run_id", "node_id", "node_fingerprint", "artifact_sha256", "path"],
+          "required": [
+            "run_id",
+            "node_id",
+            "output_name",
+            "node_fingerprint",
+            "artifact_sha256",
+            "path"
+          ],
           "properties": {
             "run_id": { "type": "string" },
             "node_id": { "type": "string" },
+            "output_name": { "type": "string" },
             "node_fingerprint": { "type": "string" },
             "artifact_sha256": { "type": "string" },
             "path": { "type": "string" }
           }
         },
         "hash_algorithm": { "type": "string" },
-        "identity_scope": { "type": "string" }
+        "identity_scope": { "type": "string" },
+        "collision_safe": { "type": "boolean" }
       }
     }
   }

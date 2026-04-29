@@ -19,6 +19,10 @@ pub struct ContainerMount {
     pub readonly: bool,
 }
 
+pub fn supported_container_engines() -> &'static [&'static str] {
+    &["docker", "podman"]
+}
+
 pub fn validate_container_contract(contract: &ContainerExecutionContract) -> Result<(), String> {
     if contract.image.trim().is_empty() {
         return Err("missing container image".to_string());
@@ -31,6 +35,100 @@ pub fn validate_container_contract(contract: &ContainerExecutionContract) -> Res
     }
     for output in &contract.declared_outputs {
         validate_container_relative_path(output)?;
+    }
+    Ok(())
+}
+
+pub fn container_engine_discovery(engine: &str) -> Result<String, String> {
+    let output = std::process::Command::new(engine)
+        .arg("--version")
+        .output()
+        .map_err(|_| format!("container engine unavailable: {}", engine))?;
+    if !output.status.success() {
+        return Err(format!("container engine unavailable: {}", engine));
+    }
+    let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if version.is_empty() {
+        return Err(format!("container engine unavailable: {}", engine));
+    }
+    Ok(version)
+}
+
+pub fn container_network_policy_args(
+    engine: &str,
+    deny_network: bool,
+) -> Result<Vec<String>, String> {
+    if !deny_network {
+        return Ok(Vec::new());
+    }
+    if supported_container_engines().iter().any(|candidate| candidate == &engine) {
+        return Ok(vec!["--network".to_string(), "none".to_string()]);
+    }
+    Err(format!(
+        "container engine {} cannot enforce deny_network with the built-in adapter",
+        engine
+    ))
+}
+
+pub fn container_volume_contract(node_dir: &Path) -> Vec<ContainerMount> {
+    vec![
+        ContainerMount {
+            local_path: node_dir.join("inputs").display().to_string(),
+            container_path: "/bijux/node/inputs".to_string(),
+            readonly: true,
+        },
+        ContainerMount {
+            local_path: node_dir.join("outputs").display().to_string(),
+            container_path: "/bijux/node/outputs".to_string(),
+            readonly: false,
+        },
+        ContainerMount {
+            local_path: node_dir.join("work").display().to_string(),
+            container_path: "/bijux/node/work".to_string(),
+            readonly: false,
+        },
+    ]
+}
+
+pub fn validate_container_mount_contract(
+    mounts: &[ContainerMount],
+    node_dir: &Path,
+) -> Result<(), String> {
+    if mounts.is_empty() {
+        return Err("missing container mounts".to_string());
+    }
+    let allowed_root = node_dir.to_string_lossy().replace('\\', "/");
+    let mut inputs_ok = false;
+    let mut outputs_ok = false;
+    let mut work_ok = false;
+    for mount in mounts {
+        let normalized_local = mount.local_path.replace('\\', "/");
+        if !normalized_local.starts_with(&allowed_root) {
+            return Err(format!("container mount escapes node root: {}", mount.local_path));
+        }
+        match mount.container_path.as_str() {
+            "/bijux/node/inputs" => {
+                inputs_ok = mount.readonly;
+            }
+            "/bijux/node/outputs" => {
+                outputs_ok = !mount.readonly;
+            }
+            "/bijux/node/work" => {
+                work_ok = !mount.readonly;
+            }
+            _ => {
+                return Err(format!("unexpected container mount target: {}", mount.container_path))
+            }
+        }
+    }
+    if !inputs_ok {
+        return Err("container inputs mount must be read-only".to_string());
+    }
+    if !outputs_ok {
+        return Err("container outputs mount must be writable".to_string());
+    }
+    if !work_ok {
+        return Err("container work mount must be writable".to_string());
     }
     Ok(())
 }

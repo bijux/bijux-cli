@@ -84,6 +84,7 @@ fn resource_retry_trace_event_volume_stays_bounded() {
         resolved_params: Some(json!({"argv":["/bin/sh","-c","exit 1"]})),
         container: None,
         cache_proof: None,
+        branch_decision: None,
         skip_reason: None,
         failure: Some(bijux_dag_artifacts::FailureInfo {
             kind: "execution".to_string(),

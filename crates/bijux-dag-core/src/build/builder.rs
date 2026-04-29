@@ -1,7 +1,7 @@
 use crate::compile::{compile_graph, DagCompileResult};
 use crate::{
-    parse_graph_strict, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue,
-    PortRef, Resources, RetryPolicy,
+    parse_graph_strict, BranchSpec, Edge, EdgeKind, Effect, FileOutput, Graph, GraphMeta, Node,
+    NodeKind, ParamValue, PortRef, Resources, RetryPolicy, SemanticNodeKind, TriggerRule,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -59,6 +59,9 @@ impl DagBuilder {
 
     pub fn edge(mut self, from_node: &str, from_port: &str, to_node: &str, to_port: &str) -> Self {
         self.edges.push(Edge {
+            id: None,
+            kind: EdgeKind::Data,
+            decision: None,
             from: PortRef { node_id: from_node.to_string(), port: from_port.to_string() },
             to: PortRef { node_id: to_node.to_string(), port: to_port.to_string() },
         });
@@ -85,6 +88,7 @@ impl DagBuilder {
 pub struct NodeBuilder {
     id: String,
     kind: NodeKind,
+    semantic_kind: SemanticNodeKind,
     inputs: Vec<String>,
     outputs: Vec<FileOutput>,
     params: ParamValue,
@@ -95,6 +99,8 @@ pub struct NodeBuilder {
     effects: Vec<Effect>,
     env_allowlist: Vec<String>,
     group: Option<String>,
+    trigger_rule: TriggerRule,
+    branch: Option<BranchSpec>,
 }
 
 impl Default for NodeBuilder {
@@ -102,6 +108,7 @@ impl Default for NodeBuilder {
         Self {
             id: String::new(),
             kind: NodeKind::Const,
+            semantic_kind: SemanticNodeKind::Task,
             inputs: Vec::new(),
             outputs: Vec::new(),
             params: ParamValue::Literal(Value::Null),
@@ -112,6 +119,8 @@ impl Default for NodeBuilder {
             effects: Vec::new(),
             env_allowlist: Vec::new(),
             group: None,
+            trigger_rule: TriggerRule::AllSuccess,
+            branch: None,
         }
     }
 }
@@ -119,6 +128,11 @@ impl Default for NodeBuilder {
 impl NodeBuilder {
     pub fn new(id: &str, kind: NodeKind) -> Self {
         Self { id: id.to_string(), kind, ..Self::default() }
+    }
+
+    pub fn semantic_kind(mut self, value: SemanticNodeKind) -> Self {
+        self.semantic_kind = value;
+        self
     }
 
     pub fn input(mut self, name: &str) -> Self {
@@ -151,10 +165,21 @@ impl NodeBuilder {
         self
     }
 
+    pub fn trigger_rule(mut self, value: TriggerRule) -> Self {
+        self.trigger_rule = value;
+        self
+    }
+
+    pub fn branch(mut self, value: BranchSpec) -> Self {
+        self.branch = Some(value);
+        self
+    }
+
     pub fn build(self) -> Node {
         Node {
             id: self.id,
             kind: self.kind,
+            semantic_kind: self.semantic_kind,
             inputs: self.inputs,
             outputs: self.outputs,
             params: self.params,
@@ -166,6 +191,8 @@ impl NodeBuilder {
             effects: self.effects,
             env_allowlist: self.env_allowlist,
             group: self.group,
+            trigger_rule: self.trigger_rule,
+            branch: self.branch,
         }
     }
 }

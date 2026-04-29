@@ -4,7 +4,8 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 
 use super::catalog::normalize_command_path;
 use crate::contracts::{
-    known_bijux_tool_namespaces, ColorMode, LogLevel, OutputFormat, PrettyMode,
+    canonical_bijux_tool_namespace, known_bijux_tool_namespaces, ColorMode, LogLevel, OutputFormat,
+    PrettyMode,
 };
 
 /// Parsed and normalized global options.
@@ -233,6 +234,20 @@ pub fn root_command() -> Command {
         .hide(true)
         .global(true);
 
+    let profile_arg = || Arg::new("profile").long("profile").num_args(1).value_name("PROFILE");
+    let portable_arg = || {
+        Arg::new("portable")
+            .long("portable")
+            .action(ArgAction::SetTrue)
+            .help("Use the portable config bundle format")
+    };
+    let include_secrets_arg = || {
+        Arg::new("include-secrets")
+            .long("include-secrets")
+            .action(ArgAction::SetTrue)
+            .help("Include secret values in output")
+    };
+
     let config_group = Command::new("config")
         .subcommand_required(false)
         .subcommand(Command::new("list"))
@@ -241,8 +256,29 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("unset").arg(Arg::new("key").num_args(1)))
         .subcommand(Command::new("clear"))
         .subcommand(Command::new("reload"))
-        .subcommand(Command::new("export").arg(Arg::new("path").num_args(1)))
-        .subcommand(Command::new("load").arg(Arg::new("path").num_args(1)));
+        .subcommand(Command::new("validate").arg(profile_arg()))
+        .subcommand(Command::new("schema").arg(Arg::new("scope").num_args(1)))
+        .subcommand(Command::new("docs").arg(Arg::new("scope").num_args(1)))
+        .subcommand(
+            Command::new("explain")
+                .arg(Arg::new("key").num_args(1))
+                .arg(profile_arg())
+                .arg(include_secrets_arg()),
+        )
+        .subcommand(Command::new("repair"))
+        .subcommand(
+            Command::new("export")
+                .arg(Arg::new("path").num_args(1))
+                .arg(profile_arg())
+                .arg(portable_arg())
+                .arg(include_secrets_arg()),
+        )
+        .subcommand(
+            Command::new("load")
+                .arg(Arg::new("path").num_args(1))
+                .arg(profile_arg())
+                .arg(portable_arg()),
+        );
 
     let plugins_group = Command::new("plugins")
         .subcommand(Command::new("list"))
@@ -293,7 +329,14 @@ pub fn root_command() -> Command {
     let cli_group = Command::new("cli")
         .subcommand(Command::new("status"))
         .subcommand(Command::new("paths"))
-        .subcommand(Command::new("doctor"))
+        .subcommand(
+            Command::new("doctor").arg(Arg::new("subject").num_args(1)).arg(
+                Arg::new("bundle")
+                    .long("bundle")
+                    .action(ArgAction::SetTrue)
+                    .help("Write a diagnostics bundle under ./artifacts"),
+            ),
+        )
         .subcommand(Command::new("version"))
         .subcommand(Command::new("repl"))
         .subcommand(completion_group.clone())
@@ -301,6 +344,25 @@ pub fn root_command() -> Command {
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
         .subcommand(plugins_group.clone());
+    let apps_group = Command::new("apps")
+        .subcommand(Command::new("list"))
+        .subcommand(Command::new("doctor").arg(Arg::new("namespace").num_args(1)))
+        .subcommand(Command::new("which").arg(Arg::new("namespace").num_args(1).required(true)))
+        .subcommand(Command::new("version").arg(Arg::new("namespace").num_args(1).required(true)))
+        .subcommand(
+            Command::new("capabilities").arg(Arg::new("namespace").num_args(1).required(true)),
+        )
+        .subcommand(Command::new("schema"))
+        .subcommand(
+            Command::new("validate-manifest").arg(Arg::new("path").num_args(1).required(true)),
+        )
+        .subcommand(
+            Command::new("scaffold")
+                .arg(Arg::new("kind").num_args(1).required(true))
+                .arg(Arg::new("namespace").num_args(1).required(true))
+                .arg(Arg::new("path").long("path").num_args(1))
+                .arg(Arg::new("force").long("force").action(ArgAction::SetTrue)),
+        );
 
     Command::new("bijux")
         .args([
@@ -321,13 +383,21 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("status"))
         .subcommand(Command::new("audit"))
         .subcommand(Command::new("docs"))
-        .subcommand(Command::new("doctor"))
+        .subcommand(
+            Command::new("doctor").arg(Arg::new("subject").num_args(1)).arg(
+                Arg::new("bundle")
+                    .long("bundle")
+                    .action(ArgAction::SetTrue)
+                    .help("Write a diagnostics bundle under ./artifacts"),
+            ),
+        )
         .subcommand(Command::new("version"))
         .subcommand(
             Command::new("install")
                 .arg(Arg::new("target").num_args(1))
                 .arg(Arg::new("dry-run").long("dry-run").action(ArgAction::SetTrue)),
         )
+        .subcommand(apps_group)
         .subcommand(config_group)
         .subcommand(plugins_group)
         .subcommand(Command::new("repl"))
@@ -397,6 +467,7 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
     let normalize_external_globals = matches!(
         command_path.as_slice(),
         [a, ..] if known_bijux_tool_namespaces().contains(&a.as_str())
+            || canonical_bijux_tool_namespace(a).is_some()
     );
 
     let global_flags = if normalize_external_globals {

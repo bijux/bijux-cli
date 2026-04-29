@@ -1,5 +1,9 @@
 use crate::ExitCode;
 use bijux_dag_artifacts::OutputsIndex;
+use bijux_dag_runtime::{
+    cache_entry_has_required_proof, cache_key_explanation, cache_metadata_version_supported,
+    CacheKeyInput,
+};
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -200,59 +204,147 @@ pub(crate) fn explain_cache_key(
 ) -> Result<Value, ExitCode> {
     let entry = cache_dir.join(key);
     let mut reasons = Vec::new();
+    let mut taxonomy = Vec::new();
     if !entry.exists() {
         reasons.push("missing cache entry directory".to_string());
+        taxonomy.push("no_entry".to_string());
         return Ok(json!({
             "key": key,
             "eligible": false,
-            "reasons": reasons
+            "reasons": reasons,
+            "taxonomy": taxonomy
         }));
     }
     let meta_path = entry.join("meta.json");
     let index_path = entry.join("outputs").join("index.json");
     if !meta_path.exists() {
         reasons.push("missing meta.json".to_string());
+        taxonomy.push("artifact_missing".to_string());
     }
     if !index_path.exists() {
         reasons.push("missing outputs/index.json".to_string());
+        taxonomy.push("artifact_missing".to_string());
     }
     let mut meta = Value::Null;
+    let mut key_components = Value::Null;
     if meta_path.exists() {
         meta = serde_json::from_str::<Value>(
             &fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?,
         )
         .map_err(|_| ExitCode::from(3))?;
+        let key_input = CacheKeyInput {
+            node_fingerprint: meta
+                .get("node_fingerprint")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string(),
+            adapter_id: meta
+                .get("adapter_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string(),
+            adapter_version: meta
+                .get("adapter_version")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string(),
+            output_schema_version: meta
+                .get("produces_outputs_schema_version")
+                .or_else(|| meta.get("output_schema_version"))
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string(),
+            policy_fingerprint: meta
+                .get("policy_fingerprint")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string(),
+            config_fingerprint: meta
+                .get("config_fingerprint")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string(),
+            backend_class: meta
+                .get("backend_class")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string(),
+        };
+        let explanation = cache_key_explanation(&key_input);
+        key_components = json!({
+            "graph_fingerprint_component": Value::Null,
+            "node_fingerprint_component": meta.get("node_fingerprint").cloned().unwrap_or(Value::Null),
+            "inputs_index_component": meta.get("config_fingerprint").cloned().unwrap_or(Value::Null),
+            "adapter_component": {
+                "adapter_id": meta.get("adapter_id").cloned().unwrap_or(Value::Null),
+                "adapter_version": meta.get("adapter_version").cloned().unwrap_or(Value::Null),
+                "output_schema_version": meta.get("produces_outputs_schema_version")
+                    .or_else(|| meta.get("output_schema_version"))
+                    .cloned()
+                    .unwrap_or(Value::Null),
+            },
+            "policy_component": meta.get("policy_fingerprint").cloned().unwrap_or(Value::Null),
+            "env_component": {
+                "backend_class": meta.get("backend_class").cloned().unwrap_or(Value::Null),
+                "note": "runtime env fingerprint is not currently persisted in cache meta"
+            },
+            "computed_cache_key": explanation.key,
+            "intentional_inputs": explanation.intentional_inputs,
+        });
+        if meta.get("cache_key").and_then(|v| v.as_str()) != Some(key) {
+            reasons.push("cache key does not match requested key".to_string());
+            taxonomy.push("hash_mismatch".to_string());
+        }
         if meta.get("node_fingerprint").and_then(|v| v.as_str()) != Some(key) {
             reasons.push("node_fingerprint mismatch".to_string());
+            taxonomy.push("hash_mismatch".to_string());
         }
         if !expected_adapter_id.is_empty()
             && meta.get("adapter_id").and_then(|v| v.as_str()) != Some(expected_adapter_id)
         {
             reasons.push("adapter_id mismatch".to_string());
+            taxonomy.push("adapter_mismatch".to_string());
         }
         if !expected_adapter_version.is_empty()
             && meta.get("adapter_version").and_then(|v| v.as_str())
                 != Some(expected_adapter_version)
         {
             reasons.push("adapter_version mismatch".to_string());
+            taxonomy.push("adapter_mismatch".to_string());
+        }
+        if !cache_metadata_version_supported(&meta) {
+            reasons.push("cache metadata version is unsupported".to_string());
+            taxonomy.push("schema_mismatch".to_string());
+        }
+        if !cache_entry_has_required_proof(&meta) {
+            reasons.push("cache entry is missing required proof fields".to_string());
+            taxonomy.push("policy_mismatch".to_string());
         }
     }
-    let eligible = reasons.is_empty()
-        && verify_cache_entry_cli(
-            entry.as_path(),
-            key,
-            expected_adapter_id,
-            expected_adapter_version,
-        )?;
+    let proof_valid = verify_cache_entry_cli(
+        entry.as_path(),
+        key,
+        expected_adapter_id,
+        expected_adapter_version,
+    )?;
+    let eligible = reasons.is_empty() && proof_valid;
+    if !proof_valid {
+        taxonomy.push("artifact_corrupt".to_string());
+    }
     if !eligible && reasons.is_empty() {
         reasons.push("output proof verification failed".to_string());
     }
+    taxonomy.sort();
+    taxonomy.dedup();
     Ok(json!({
         "key": key,
         "eligible": eligible,
         "entry_dir": entry,
         "meta": meta,
-        "reasons": reasons
+        "reasons": reasons,
+        "taxonomy": taxonomy,
+        "key_components": key_components,
+        "proof_verified": proof_valid
     }))
 }
 
@@ -417,4 +509,103 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{explain_cache_key, pack_cache_entry, unpack_cache_entry};
+    use serde_json::json;
+    use std::fs;
+    use std::process::ExitCode;
+
+    #[test]
+    fn explain_cache_key_reports_taxonomy_and_components() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let cache_dir = tmp.path().join("cache");
+        let entry = cache_dir.join("key-a");
+        fs::create_dir_all(entry.join("outputs")).expect("mkdir outputs");
+        fs::write(
+            entry.join("meta.json"),
+            serde_json::to_vec_pretty(&json!({
+                "cache_key":"key-a",
+                "cache_metadata_version":"cache-meta/v0.1",
+                "node_fingerprint":"node-a",
+                "adapter_id":"shell",
+                "adapter_version":"1.0.0",
+                "produces_outputs_schema_version":"schema/v1",
+                "policy_fingerprint":"policy-a",
+                "config_fingerprint":"config-a",
+                "backend_class":"local"
+            }))
+            .expect("meta"),
+        )
+        .expect("write meta");
+        fs::write(
+            entry.join("outputs/index.json"),
+            serde_json::to_vec_pretty(&json!({
+                "files":[{"path":"report.txt","sha256":"deadbeef","node_id":"n1","node_fingerprint":"node-a"}]
+            }))
+            .expect("index"),
+        )
+        .expect("write index");
+        fs::write(entry.join("outputs/report.txt"), b"payload").expect("payload");
+
+        let report =
+            explain_cache_key(&cache_dir, "key-a", "shell", "1.0.0").expect("explain cache key");
+        assert_eq!(report["eligible"], false);
+        assert!(report["taxonomy"].as_array().is_some_and(|items| !items.is_empty()));
+        assert!(report["key_components"].is_object());
+    }
+
+    #[test]
+    fn cache_pack_unpack_preserves_metadata_and_rejects_corruption() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let entry = tmp.path().join("entry");
+        fs::create_dir_all(entry.join("outputs")).expect("mkdir outputs");
+        fs::write(
+            entry.join("meta.json"),
+            serde_json::to_vec_pretty(&json!({
+                "cache_key":"cache-key",
+                "cache_metadata_version":"cache-meta/v0.1",
+                "node_fingerprint":"node-key",
+                "adapter_id":"shell",
+                "adapter_version":"1.0.0",
+                "policy_fingerprint":"policy-a",
+                "config_fingerprint":"config-a",
+                "backend_class":"local"
+            }))
+            .expect("meta"),
+        )
+        .expect("write meta");
+        fs::write(entry.join("outputs/data.txt"), b"payload").expect("payload");
+        fs::write(
+            entry.join("outputs/index.json"),
+            serde_json::to_vec_pretty(&json!({
+                "files":[{
+                    "path":"data.txt",
+                    "sha256": bijux_dag_artifacts::hash::sha256_hex(b"payload"),
+                    "node_id":"n1",
+                    "node_fingerprint":"node-key"
+                }]
+            }))
+            .expect("index"),
+        )
+        .expect("write index");
+
+        let pack = tmp.path().join("entry.tgz");
+        pack_cache_entry(&entry, &pack).expect("pack entry");
+        let unpack_dir = tmp.path().join("cache");
+        unpack_cache_entry(&pack, &unpack_dir).expect("unpack entry");
+
+        let unpacked_meta: serde_json::Value = serde_json::from_slice(
+            &fs::read(unpack_dir.join("node-key").join("meta.json")).expect("read unpacked meta"),
+        )
+        .expect("parse unpacked meta");
+        assert_eq!(unpacked_meta["adapter_id"], "shell");
+        assert_eq!(unpacked_meta["cache_source"], "pack");
+
+        fs::write(&pack, b"corrupt-pack").expect("corrupt pack");
+        let corrupt = unpack_cache_entry(&pack, &unpack_dir);
+        assert!(matches!(corrupt, Err(code) if code == ExitCode::from(3)));
+    }
 }

@@ -100,6 +100,7 @@ fn imported_runs_are_distinguishable_from_native_runs() {
         selected_nodes: vec![],
         dependency_closure_enabled: true,
         replay_source_run_id: None,
+        partial_rerun_contract: None,
     };
     assert!(imported_run_distinguishable(&imported));
 }

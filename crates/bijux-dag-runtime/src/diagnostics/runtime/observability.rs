@@ -35,7 +35,7 @@ pub const REQUIRED_RUNTIME_EVENT_NAMES: &[&str] = &[
     "node_attempt_started",
     "node_attempt_finished",
     "node_scheduled",
-    "node_failed",
+    "node_finished",
     "run_finished",
 ];
 
@@ -62,6 +62,17 @@ pub fn event_names_emitted_once(events: &[EventRecord], names: &[&str]) -> bool 
 pub fn event_contains_sensitive_material(event: &EventRecord) -> bool {
     let serialized = event.details.to_string().to_lowercase();
     serialized.contains("secret") || serialized.contains("token") || serialized.contains("password")
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct EventLogCompletenessReport {
+    pub complete: bool,
+    pub required_names_present: bool,
+    pub required_event_field_gaps: Vec<String>,
+    pub missing_required_names: Vec<String>,
+    pub monotonic_timestamps: bool,
+    pub timeline_matches_reconstruction: bool,
+    pub gaps: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -162,6 +173,64 @@ pub struct TimelineExport {
     pub entries: Vec<TimelineEntry>,
 }
 
+pub fn reconstruct_timeline_from_events(events: &[EventRecord]) -> TimelineExport {
+    TimelineExport {
+        schema_version: "v0.1".to_string(),
+        entries: events
+            .iter()
+            .map(|event| TimelineEntry {
+                unix_ms: event.unix_ms,
+                category: format!("{:?}", event.category).to_lowercase(),
+                label: event.name.clone(),
+                node_id: event.node_id.clone(),
+            })
+            .collect(),
+    }
+}
+
+pub fn verify_event_log_completeness(
+    events: &[EventRecord],
+    timeline: Option<&TimelineExport>,
+) -> EventLogCompletenessReport {
+    let missing_required_names = validate_required_event_names(events);
+    let required_event_field_gaps = events
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, event)| (!required_event_fields_present(event)).then_some((idx, event)))
+        .map(|(idx, event)| format!("event[{idx}] missing required fields: {}", event.name))
+        .collect::<Vec<_>>();
+    let monotonic_timestamps =
+        events.windows(2).all(|window| window[0].unix_ms <= window[1].unix_ms);
+    let reconstructed = reconstruct_timeline_from_events(events);
+    let timeline_matches_reconstruction =
+        timeline.map(|candidate| candidate == &reconstructed).unwrap_or(true);
+
+    let mut gaps = Vec::new();
+    if !missing_required_names.is_empty() {
+        gaps.push(format!(
+            "missing required runtime events: {}",
+            missing_required_names.join(", ")
+        ));
+    }
+    gaps.extend(required_event_field_gaps.iter().cloned());
+    if !monotonic_timestamps {
+        gaps.push("event timestamps are not monotonic".to_string());
+    }
+    if timeline.is_some() && !timeline_matches_reconstruction {
+        gaps.push("stored timeline does not match reconstructed event timeline".to_string());
+    }
+
+    EventLogCompletenessReport {
+        complete: gaps.is_empty(),
+        required_names_present: missing_required_names.is_empty(),
+        required_event_field_gaps,
+        missing_required_names,
+        monotonic_timestamps,
+        timeline_matches_reconstruction,
+        gaps,
+    }
+}
+
 pub trait EventSink: Send + Sync {
     fn write_event(&self, event: &EventRecord) -> Result<(), String>;
 }
@@ -240,14 +309,16 @@ pub fn summarize_failure_root_causes(events: &[EventRecord]) -> Vec<String> {
 pub fn category_from_runtime_event_name(name: &str) -> EventCategory {
     match name {
         "plan_built" => EventCategory::Plan,
-        "node_scheduled" => EventCategory::Schedule,
+        "scheduler_decision" | "node_ready" | "node_scheduled" | "node_blocked" => {
+            EventCategory::Schedule
+        }
         "node_dispatch" => EventCategory::Dispatch,
         "node_started" | "run_started" => EventCategory::Start,
         "node_attempt_started" | "node_attempt_finished" => EventCategory::Retry,
         "run_timeout" => EventCategory::Timeout,
         "cache_hit" => EventCategory::CacheHit,
         "cache_miss" => EventCategory::CacheMiss,
-        "node_failed" | "policy_denied" => EventCategory::Failure,
+        "node_failed" | "node_finished" | "policy_denied" => EventCategory::Failure,
         "replay_reused" | "replay_reexecuted" => EventCategory::Replay,
         "verify_completed" => EventCategory::Verify,
         _ => EventCategory::Dispatch,

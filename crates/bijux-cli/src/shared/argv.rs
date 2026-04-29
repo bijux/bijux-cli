@@ -74,6 +74,7 @@ pub fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<Stri
             || token == "--log-level"
             || token == "--color"
             || token == "--config-path"
+            || token == "--profile"
         {
             i += 2;
             continue;
@@ -82,6 +83,7 @@ pub fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<Stri
             || token.starts_with("--log-level=")
             || token.starts_with("--color=")
             || token.starts_with("--config-path=")
+            || token.starts_with("--profile=")
         {
             i += 1;
             continue;

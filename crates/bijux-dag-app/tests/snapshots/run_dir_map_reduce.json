@@ -1,0 +1,1077 @@
+{
+  "files": [
+    ".run-complete.json",
+    "failure-propagation.json",
+    "graph.snapshot.json",
+    "lineage.snapshot.json",
+    "manifest.finalized.json",
+    "manifest.json",
+    "nodes/map_left/attempts.json",
+    "nodes/map_left/inputs/index.json",
+    "nodes/map_left/inputs/seed/in",
+    "nodes/map_left/outputs/index.json",
+    "nodes/map_left/outputs/map_left.txt",
+    "nodes/map_left/resolved_params.json",
+    "nodes/map_left/stderr.log",
+    "nodes/map_left/stdout.log",
+    "nodes/map_left/trace.json",
+    "nodes/map_mid/attempts.json",
+    "nodes/map_mid/inputs/index.json",
+    "nodes/map_mid/inputs/seed/in",
+    "nodes/map_mid/outputs/index.json",
+    "nodes/map_mid/outputs/map_mid.txt",
+    "nodes/map_mid/resolved_params.json",
+    "nodes/map_mid/stderr.log",
+    "nodes/map_mid/stdout.log",
+    "nodes/map_mid/trace.json",
+    "nodes/map_right/attempts.json",
+    "nodes/map_right/inputs/index.json",
+    "nodes/map_right/inputs/seed/in",
+    "nodes/map_right/outputs/index.json",
+    "nodes/map_right/outputs/map_right.txt",
+    "nodes/map_right/resolved_params.json",
+    "nodes/map_right/stderr.log",
+    "nodes/map_right/stdout.log",
+    "nodes/map_right/trace.json",
+    "nodes/reduce/attempts.json",
+    "nodes/reduce/inputs/index.json",
+    "nodes/reduce/inputs/map_left/left",
+    "nodes/reduce/inputs/map_mid/mid",
+    "nodes/reduce/inputs/map_right/right",
+    "nodes/reduce/outputs/index.json",
+    "nodes/reduce/outputs/reduce.txt",
+    "nodes/reduce/resolved_params.json",
+    "nodes/reduce/stderr.log",
+    "nodes/reduce/stdout.log",
+    "nodes/reduce/trace.json",
+    "nodes/seed/attempts.json",
+    "nodes/seed/inputs/index.json",
+    "nodes/seed/outputs/index.json",
+    "nodes/seed/outputs/seed/out.json",
+    "nodes/seed/resolved_params.json",
+    "nodes/seed/stderr.log",
+    "nodes/seed/stdout.log",
+    "nodes/seed/trace.json",
+    "observability.events.json",
+    "observability.graph-visualization.json",
+    "observability.lineage-visualization.json",
+    "observability.metrics.json",
+    "observability.root-causes.json",
+    "observability.timeline.json",
+    "outputs/index.json",
+    "provenance.json",
+    "run-log.index.json",
+    "run.attempts.json",
+    "run.audit.json",
+    "run.log.jsonl",
+    "run.schema.json",
+    "run.snapshot.json",
+    "scheduler.checkpoint.json"
+  ],
+  "graph_snapshot": {
+    "graph": {
+      "edges": [
+        {
+          "from": {
+            "node_id": "map_left",
+            "port": "out"
+          },
+          "to": {
+            "node_id": "reduce",
+            "port": "left"
+          }
+        },
+        {
+          "from": {
+            "node_id": "map_mid",
+            "port": "out"
+          },
+          "to": {
+            "node_id": "reduce",
+            "port": "mid"
+          }
+        },
+        {
+          "from": {
+            "node_id": "map_right",
+            "port": "out"
+          },
+          "to": {
+            "node_id": "reduce",
+            "port": "right"
+          }
+        },
+        {
+          "from": {
+            "node_id": "seed",
+            "port": "out"
+          },
+          "to": {
+            "node_id": "map_left",
+            "port": "in"
+          }
+        },
+        {
+          "from": {
+            "node_id": "seed",
+            "port": "out"
+          },
+          "to": {
+            "node_id": "map_mid",
+            "port": "in"
+          }
+        },
+        {
+          "from": {
+            "node_id": "seed",
+            "port": "out"
+          },
+          "to": {
+            "node_id": "map_right",
+            "port": "in"
+          }
+        }
+      ],
+      "inputs": {},
+      "meta": null,
+      "nodes": [
+        {
+          "container": null,
+          "effects": [
+            "filesystem"
+          ],
+          "env_allowlist": [],
+          "group": null,
+          "id": "map_left",
+          "inputs": [
+            "in"
+          ],
+          "kind": "shell",
+          "outputs": [
+            {
+              "name": "out",
+              "path": "map_left.txt"
+            }
+          ],
+          "params": {
+            "argv": [
+              "/bin/sh",
+              "-c",
+              "printf left > ../outputs/map_left.txt"
+            ]
+          },
+          "resources": null,
+          "retry": {
+            "backoff_ms": 0,
+            "max_attempts": 0
+          },
+          "tags": [],
+          "timeout_ms": null
+        },
+        {
+          "container": null,
+          "effects": [
+            "filesystem"
+          ],
+          "env_allowlist": [],
+          "group": null,
+          "id": "map_mid",
+          "inputs": [
+            "in"
+          ],
+          "kind": "shell",
+          "outputs": [
+            {
+              "name": "out",
+              "path": "map_mid.txt"
+            }
+          ],
+          "params": {
+            "argv": [
+              "/bin/sh",
+              "-c",
+              "printf mid > ../outputs/map_mid.txt"
+            ]
+          },
+          "resources": null,
+          "retry": {
+            "backoff_ms": 0,
+            "max_attempts": 0
+          },
+          "tags": [],
+          "timeout_ms": null
+        },
+        {
+          "container": null,
+          "effects": [
+            "filesystem"
+          ],
+          "env_allowlist": [],
+          "group": null,
+          "id": "map_right",
+          "inputs": [
+            "in"
+          ],
+          "kind": "shell",
+          "outputs": [
+            {
+              "name": "out",
+              "path": "map_right.txt"
+            }
+          ],
+          "params": {
+            "argv": [
+              "/bin/sh",
+              "-c",
+              "printf right > ../outputs/map_right.txt"
+            ]
+          },
+          "resources": null,
+          "retry": {
+            "backoff_ms": 0,
+            "max_attempts": 0
+          },
+          "tags": [],
+          "timeout_ms": null
+        },
+        {
+          "container": null,
+          "effects": [
+            "filesystem"
+          ],
+          "env_allowlist": [],
+          "group": null,
+          "id": "reduce",
+          "inputs": [
+            "left",
+            "mid",
+            "right"
+          ],
+          "kind": "shell",
+          "outputs": [
+            {
+              "name": "out",
+              "path": "reduce.txt"
+            }
+          ],
+          "params": {
+            "argv": [
+              "/bin/sh",
+              "-c",
+              "printf '%s-%s-%s' \"$(cat ../inputs/map_left/map_left.txt)\" \"$(cat ../inputs/map_mid/map_mid.txt)\" \"$(cat ../inputs/map_right/map_right.txt)\" > ../outputs/reduce.txt"
+            ]
+          },
+          "resources": null,
+          "retry": {
+            "backoff_ms": 0,
+            "max_attempts": 0
+          },
+          "tags": [],
+          "timeout_ms": null
+        },
+        {
+          "container": null,
+          "effects": [],
+          "env_allowlist": [],
+          "group": null,
+          "id": "seed",
+          "inputs": [],
+          "kind": "const",
+          "outputs": [
+            {
+              "name": "out",
+              "path": "seed/out.json"
+            }
+          ],
+          "params": {
+            "items": [
+              "a",
+              "b",
+              "c"
+            ]
+          },
+          "resources": null,
+          "retry": {
+            "backoff_ms": 0,
+            "max_attempts": 0
+          },
+          "tags": [],
+          "timeout_ms": null
+        }
+      ],
+      "nondeterminism_allowed": false,
+      "spec": "bijux-dag/v0.1"
+    },
+    "graph_fingerprint": "83d6435fc8d75a636aaa48dbeb9344657a5be99bf6a890d5b1eba26f7f0b924f"
+  },
+  "manifest": {
+    "adapters": [
+      {
+        "adapter_id": "const",
+        "adapter_version": "0.1",
+        "effects": []
+      },
+      {
+        "adapter_id": "container",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
+        "adapter_id": "shell",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      }
+    ],
+    "created_unix_ms": 0,
+    "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
+    "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
+    "finished_unix_ms": 0,
+    "graph_fingerprint": "83d6435fc8d75a636aaa48dbeb9344657a5be99bf6a890d5b1eba26f7f0b924f",
+    "graph_snapshot": "graph.snapshot.json",
+    "jobs": 1,
+    "manifest_version": "run-manifest/v0.1",
+    "node_counts": {
+      "cached": 0,
+      "failed": 0,
+      "skipped": 0,
+      "success": 5
+    },
+    "outputs": [
+      {
+        "file": "map_left.txt",
+        "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+        "node_id": "map_left",
+        "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
+      },
+      {
+        "file": "map_mid.txt",
+        "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+        "node_id": "map_mid",
+        "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
+      },
+      {
+        "file": "map_right.txt",
+        "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+        "node_id": "map_right",
+        "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
+      },
+      {
+        "file": "reduce.txt",
+        "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+        "node_id": "reduce",
+        "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
+      },
+      {
+        "file": "seed/out.json",
+        "node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+        "node_id": "seed",
+        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      }
+    ],
+    "planner_contract_version": "bijux-dag-planner/v1",
+    "planner_fingerprint": "399475149cb1a9960d0e7dfeeda3f2b5df263e55a793dcb78df152bf38da018d",
+    "policy": {
+      "clean_env": true,
+      "deny_clock": false,
+      "deny_env": false,
+      "deny_network": false
+    },
+    "run_id": "map-reduce-fixed",
+    "run_metadata": {
+      "labels": [],
+      "operator": "unknown",
+      "submission_source": "manual",
+      "trigger_source": "cli"
+    },
+    "run_summary": {
+      "cached": 0,
+      "failed": 0,
+      "skipped": 0,
+      "success": 5,
+      "total_nodes": 5
+    },
+    "spec": "bijux-dag/v0.1",
+    "started_unix_ms": 0,
+    "status": "success",
+    "tool_version": "0.0.0+snapshot"
+  },
+  "node_indexes": {
+    "map_left": {
+      "inputs": {
+        "files": [
+          {
+            "from_node": "seed",
+            "from_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+            "from_output": "out",
+            "path": "seed/in",
+            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+            "node_id": "map_left",
+            "path": "map_left.txt",
+            "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
+          }
+        ]
+      }
+    },
+    "map_mid": {
+      "inputs": {
+        "files": [
+          {
+            "from_node": "seed",
+            "from_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+            "from_output": "out",
+            "path": "seed/in",
+            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+            "node_id": "map_mid",
+            "path": "map_mid.txt",
+            "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
+          }
+        ]
+      }
+    },
+    "map_right": {
+      "inputs": {
+        "files": [
+          {
+            "from_node": "seed",
+            "from_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+            "from_output": "out",
+            "path": "seed/in",
+            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+            "node_id": "map_right",
+            "path": "map_right.txt",
+            "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
+          }
+        ]
+      }
+    },
+    "reduce": {
+      "inputs": {
+        "files": [
+          {
+            "from_node": "map_left",
+            "from_node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+            "from_output": "out",
+            "path": "map_left/left",
+            "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
+          },
+          {
+            "from_node": "map_mid",
+            "from_node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+            "from_output": "out",
+            "path": "map_mid/mid",
+            "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
+          },
+          {
+            "from_node": "map_right",
+            "from_node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+            "from_output": "out",
+            "path": "map_right/right",
+            "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+            "node_id": "reduce",
+            "path": "reduce.txt",
+            "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
+          }
+        ]
+      }
+    },
+    "seed": {
+      "inputs": {
+        "files": []
+      },
+      "outputs": {
+        "files": [
+          {
+            "node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+            "node_id": "seed",
+            "path": "seed/out.json",
+            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+          }
+        ]
+      }
+    }
+  },
+  "node_outputs": {
+    "map_left": {
+      "outputs/map_left.txt": "left"
+    },
+    "map_mid": {
+      "outputs/map_mid.txt": "mid"
+    },
+    "map_right": {
+      "outputs/map_right.txt": "right"
+    },
+    "reduce": {
+      "outputs/reduce.txt": "--"
+    }
+  },
+  "node_traces": {
+    "map_left": {
+      "adapter_id": "shell",
+      "adapter_outputs_schema_version": "v0.1",
+      "adapter_version": "0.1",
+      "attempt": 1,
+      "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
+      "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
+      "fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+      "finished_unix_ms": 0,
+      "inputs_index": "inputs/index.json",
+      "node_id": "map_left",
+      "planner_contract_version": "bijux-dag-planner/v1",
+      "replay_provenance": {
+        "node_action": "reexecuted",
+        "source_run_id": null
+      },
+      "resolved_params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "printf left > ../outputs/map_left.txt"
+        ]
+      },
+      "started_unix_ms": 0,
+      "status": "success",
+      "transition_cause": "ExecutionSucceeded"
+    },
+    "map_mid": {
+      "adapter_id": "shell",
+      "adapter_outputs_schema_version": "v0.1",
+      "adapter_version": "0.1",
+      "attempt": 1,
+      "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
+      "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
+      "fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+      "finished_unix_ms": 0,
+      "inputs_index": "inputs/index.json",
+      "node_id": "map_mid",
+      "planner_contract_version": "bijux-dag-planner/v1",
+      "replay_provenance": {
+        "node_action": "reexecuted",
+        "source_run_id": null
+      },
+      "resolved_params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "printf mid > ../outputs/map_mid.txt"
+        ]
+      },
+      "started_unix_ms": 0,
+      "status": "success",
+      "transition_cause": "ExecutionSucceeded"
+    },
+    "map_right": {
+      "adapter_id": "shell",
+      "adapter_outputs_schema_version": "v0.1",
+      "adapter_version": "0.1",
+      "attempt": 1,
+      "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
+      "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
+      "fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+      "finished_unix_ms": 0,
+      "inputs_index": "inputs/index.json",
+      "node_id": "map_right",
+      "planner_contract_version": "bijux-dag-planner/v1",
+      "replay_provenance": {
+        "node_action": "reexecuted",
+        "source_run_id": null
+      },
+      "resolved_params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "printf right > ../outputs/map_right.txt"
+        ]
+      },
+      "started_unix_ms": 0,
+      "status": "success",
+      "transition_cause": "ExecutionSucceeded"
+    },
+    "reduce": {
+      "adapter_id": "shell",
+      "adapter_outputs_schema_version": "v0.1",
+      "adapter_version": "0.1",
+      "attempt": 1,
+      "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
+      "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
+      "fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+      "finished_unix_ms": 0,
+      "inputs_index": "inputs/index.json",
+      "node_id": "reduce",
+      "planner_contract_version": "bijux-dag-planner/v1",
+      "replay_provenance": {
+        "node_action": "reexecuted",
+        "source_run_id": null
+      },
+      "resolved_params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "printf '%s-%s-%s' \"$(cat ../inputs/map_left/map_left.txt)\" \"$(cat ../inputs/map_mid/map_mid.txt)\" \"$(cat ../inputs/map_right/map_right.txt)\" > ../outputs/reduce.txt"
+        ]
+      },
+      "started_unix_ms": 0,
+      "status": "success",
+      "transition_cause": "ExecutionSucceeded"
+    },
+    "seed": {
+      "adapter_id": "const",
+      "adapter_outputs_schema_version": "v0.1",
+      "adapter_version": "0.1",
+      "attempt": 1,
+      "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
+      "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
+      "fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+      "finished_unix_ms": 0,
+      "inputs_index": "inputs/index.json",
+      "node_id": "seed",
+      "planner_contract_version": "bijux-dag-planner/v1",
+      "replay_provenance": {
+        "node_action": "reexecuted",
+        "source_run_id": null
+      },
+      "resolved_params": {
+        "items": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "started_unix_ms": 0,
+      "status": "success",
+      "transition_cause": "ExecutionSucceeded"
+    }
+  },
+  "outputs_index": {
+    "files": [
+      {
+        "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+        "node_id": "map_left",
+        "path": "nodes/map_left/outputs/map_left.txt",
+        "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
+      },
+      {
+        "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+        "node_id": "map_mid",
+        "path": "nodes/map_mid/outputs/map_mid.txt",
+        "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
+      },
+      {
+        "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+        "node_id": "map_right",
+        "path": "nodes/map_right/outputs/map_right.txt",
+        "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
+      },
+      {
+        "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+        "node_id": "reduce",
+        "path": "nodes/reduce/outputs/reduce.txt",
+        "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
+      },
+      {
+        "node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+        "node_id": "seed",
+        "path": "nodes/seed/outputs/seed/out.json",
+        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      }
+    ]
+  },
+  "root_outputs": {},
+  "run_log_events": [
+    {
+      "event": "run_started",
+      "ts": 0
+    },
+    {
+      "event": "plan_built",
+      "nodes": 5,
+      "ts": 0
+    },
+    {
+      "event": "node_ready",
+      "node_id": "seed",
+      "reason": {
+        "code": "root_ready",
+        "trigger_rule": "all_success",
+        "upstreams": []
+      },
+      "ts": 0
+    },
+    {
+      "batch": [
+        "seed"
+      ],
+      "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
+      "event": "scheduler_decision",
+      "loop_index": 1,
+      "ready_candidates": [
+        "seed"
+      ],
+      "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "ts": 0
+    },
+    {
+      "event": "cache_miss",
+      "node_id": "seed",
+      "ts": 0
+    },
+    {
+      "event": "node_scheduled",
+      "node_id": "seed",
+      "reason": "ready",
+      "ts": 0
+    },
+    {
+      "event": "node_started",
+      "node_id": "seed",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_started",
+      "node_id": "seed",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "seed",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "node_id": "seed",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_ready",
+      "node_id": "map_left",
+      "reason": {
+        "code": "dependencies_satisfied",
+        "released_by": "seed",
+        "trigger_rule": "all_success",
+        "upstreams": [
+          "seed"
+        ]
+      },
+      "ts": 0
+    },
+    {
+      "event": "node_ready",
+      "node_id": "map_mid",
+      "reason": {
+        "code": "dependencies_satisfied",
+        "released_by": "seed",
+        "trigger_rule": "all_success",
+        "upstreams": [
+          "seed"
+        ]
+      },
+      "ts": 0
+    },
+    {
+      "event": "node_ready",
+      "node_id": "map_right",
+      "reason": {
+        "code": "dependencies_satisfied",
+        "released_by": "seed",
+        "trigger_rule": "all_success",
+        "upstreams": [
+          "seed"
+        ]
+      },
+      "ts": 0
+    },
+    {
+      "batch": [
+        "map_left"
+      ],
+      "blocked_by_budget": [
+        "map_mid",
+        "map_right"
+      ],
+      "blocked_reasons": {
+        "map_mid": "blocked_by_parallelism",
+        "map_right": "blocked_by_parallelism"
+      },
+      "decision_reason": "ready_batch",
+      "event": "scheduler_decision",
+      "loop_index": 2,
+      "ready_candidates": [
+        "map_left",
+        "map_mid",
+        "map_right"
+      ],
+      "ready_queue_depth": 2,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "ts": 0
+    },
+    {
+      "event": "node_blocked",
+      "node_id": "map_mid",
+      "reason": "blocked_by_parallelism",
+      "ts": 0
+    },
+    {
+      "event": "node_blocked",
+      "node_id": "map_right",
+      "reason": "blocked_by_parallelism",
+      "ts": 0
+    },
+    {
+      "event": "cache_miss",
+      "node_id": "map_left",
+      "ts": 0
+    },
+    {
+      "event": "node_scheduled",
+      "node_id": "map_left",
+      "reason": "ready",
+      "ts": 0
+    },
+    {
+      "event": "node_started",
+      "node_id": "map_left",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_started",
+      "node_id": "map_left",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "map_left",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "node_id": "map_left",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "batch": [
+        "map_mid"
+      ],
+      "blocked_by_budget": [
+        "map_right"
+      ],
+      "blocked_reasons": {
+        "map_right": "blocked_by_parallelism"
+      },
+      "decision_reason": "ready_batch",
+      "event": "scheduler_decision",
+      "loop_index": 3,
+      "ready_candidates": [
+        "map_mid",
+        "map_right"
+      ],
+      "ready_queue_depth": 1,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "ts": 0
+    },
+    {
+      "event": "node_blocked",
+      "node_id": "map_right",
+      "reason": "blocked_by_parallelism",
+      "ts": 0
+    },
+    {
+      "event": "cache_miss",
+      "node_id": "map_mid",
+      "ts": 0
+    },
+    {
+      "event": "node_scheduled",
+      "node_id": "map_mid",
+      "reason": "ready",
+      "ts": 0
+    },
+    {
+      "event": "node_started",
+      "node_id": "map_mid",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_started",
+      "node_id": "map_mid",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "map_mid",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "node_id": "map_mid",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "batch": [
+        "map_right"
+      ],
+      "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
+      "event": "scheduler_decision",
+      "loop_index": 4,
+      "ready_candidates": [
+        "map_right"
+      ],
+      "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "ts": 0
+    },
+    {
+      "event": "cache_miss",
+      "node_id": "map_right",
+      "ts": 0
+    },
+    {
+      "event": "node_scheduled",
+      "node_id": "map_right",
+      "reason": "ready",
+      "ts": 0
+    },
+    {
+      "event": "node_started",
+      "node_id": "map_right",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_started",
+      "node_id": "map_right",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "map_right",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "node_id": "map_right",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_ready",
+      "node_id": "reduce",
+      "reason": {
+        "code": "dependencies_satisfied",
+        "released_by": "map_right",
+        "trigger_rule": "all_success",
+        "upstreams": [
+          "map_left",
+          "map_mid",
+          "map_right"
+        ]
+      },
+      "ts": 0
+    },
+    {
+      "batch": [
+        "reduce"
+      ],
+      "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
+      "event": "scheduler_decision",
+      "loop_index": 5,
+      "ready_candidates": [
+        "reduce"
+      ],
+      "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "ts": 0
+    },
+    {
+      "event": "cache_miss",
+      "node_id": "reduce",
+      "ts": 0
+    },
+    {
+      "event": "node_scheduled",
+      "node_id": "reduce",
+      "reason": "ready",
+      "ts": 0
+    },
+    {
+      "event": "node_started",
+      "node_id": "reduce",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_started",
+      "node_id": "reduce",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "reduce",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "node_id": "reduce",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "run_finished",
+      "status": "success",
+      "ts": 0
+    }
+  ]
+}

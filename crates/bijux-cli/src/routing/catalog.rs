@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 //! Canonical command catalog for normalization and route recognition.
 
+use crate::contracts::canonical_bijux_tool_namespace;
+
 fn contains(values: &[&str], value: &str) -> bool {
     values.contains(&value)
 }
@@ -27,6 +29,13 @@ pub fn cli_plugins_subcommands() -> &'static [&'static str] {
 #[must_use]
 pub fn normalize_command_path(path: &[String]) -> Vec<String> {
     match path {
+        [a, rest @ ..] if canonical_bijux_tool_namespace(a).is_some() => {
+            let mut normalized = vec![canonical_bijux_tool_namespace(a)
+                .expect("checked canonical namespace")
+                .to_string()];
+            normalized.extend(rest.iter().cloned());
+            normalized
+        }
         [a] if contains(super::model::CLI_ROOT_ALIASES, a) => vec!["cli".to_string(), a.clone()],
         [a, b] if a == "config" && contains(super::model::CLI_CONFIG_SUBCOMMANDS, b) => {
             vec!["cli".to_string(), "config".to_string(), b.clone()]

@@ -6,11 +6,23 @@ use std::sync::OnceLock;
 
 pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "completion", "repl", "inspect"];
 pub const ROOT_RUNTIME_COMMANDS: &[&str] =
-    &["status", "audit", "docs", "doctor", "version", "install"];
+    &["status", "audit", "docs", "doctor", "version", "install", "apps"];
 pub const ROOT_STATE_COMMANDS: &[&str] = &["history", "memory"];
 pub const ROOT_INTERACTION_COMMANDS: &[&str] = &["repl", "completion", "cli"];
-pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
-    &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
+pub const ROOT_APPS_SUBCOMMANDS: &[&str] = &[
+    "list",
+    "doctor",
+    "which",
+    "version",
+    "capabilities",
+    "schema",
+    "validate-manifest",
+    "scaffold",
+];
+pub const CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
+    "get", "set", "unset", "clear", "reload", "validate", "schema", "docs", "explain", "repair",
+    "export", "load", "list",
+];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "list",
     "info",
@@ -52,6 +64,11 @@ const ALIAS_REWRITES: &[(&str, &str)] = &[
     ("config unset", "cli config unset"),
     ("config clear", "cli config clear"),
     ("config reload", "cli config reload"),
+    ("config validate", "cli config validate"),
+    ("config schema", "cli config schema"),
+    ("config docs", "cli config docs"),
+    ("config explain", "cli config explain"),
+    ("config repair", "cli config repair"),
     ("config export", "cli config export"),
     ("config load", "cli config load"),
     ("config list", "config"),
@@ -82,6 +99,15 @@ fn build_built_in_route_paths() -> Vec<String> {
         "audit".to_string(),
         "docs".to_string(),
         "install".to_string(),
+        "apps".to_string(),
+        "apps list".to_string(),
+        "apps doctor".to_string(),
+        "apps which".to_string(),
+        "apps version".to_string(),
+        "apps capabilities".to_string(),
+        "apps schema".to_string(),
+        "apps validate-manifest".to_string(),
+        "apps scaffold".to_string(),
         "config".to_string(),
         "config list".to_string(),
         "history".to_string(),

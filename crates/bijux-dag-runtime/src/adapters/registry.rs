@@ -34,7 +34,7 @@ mod tests {
     use super::{
         reject_duplicate_adapter_identity, select_deterministic_adapter, AdapterCandidate,
     };
-    use crate::adapter::{AdapterDescriptor, AdapterOrigin, EffectSet};
+    use crate::adapter::{AdapterDescriptor, AdapterOrigin, CacheCompatibilityMode, EffectSet};
 
     fn descriptor(id: &str, version: &str) -> AdapterDescriptor {
         AdapterDescriptor {
@@ -44,6 +44,11 @@ mod tests {
             required_effects: EffectSet::default(),
             produces_outputs_schema_version: "v0.1".to_string(),
             origin: AdapterOrigin::BuiltIn,
+            protocol_version: "bijux-dag-adapter/v1".to_string(),
+            cache_compatibility: CacheCompatibilityMode::FingerprintExact,
+            supports_timeout: true,
+            supports_cancel: false,
+            binary_hash: None,
         }
     }
 

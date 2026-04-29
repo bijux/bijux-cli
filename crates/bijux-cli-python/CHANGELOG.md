@@ -7,6 +7,13 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="unreleased"></a>
 
+### Added
+- Added `bijux_cli_py.app_sdk` with mounted-app manifest builders, compatibility-window helpers, JSON success/failure envelopes, and a callable runner that preserves clean stdout contracts.
+
+### Changed
+- Relaxed facade fallback behavior so packaging and helper tests can keep working when the native bridge is unavailable but explicit Python fallback is allowed.
+- Documented the mounted-app packaging flow and shared it with the Rust root runtime contract.
+
 ---
 
 <!-- towncrier start -->

@@ -25,7 +25,8 @@ flowchart LR
 ## Diagnostic Surfaces
 
 - `status`: runtime, state, plugins, and install summary
-- `doctor`: configuration, install, state, and plugin health checks
+- `doctor`: configuration, install, state, plugin, Python bridge, and app-mount health checks
+- `doctor --bundle`: write a reproducible diagnostics bundle under `./artifacts`
 - `audit`: consolidated check inventory and issues
 - `plugins doctor` and `plugins explain`: plugin-specific diagnostics
 

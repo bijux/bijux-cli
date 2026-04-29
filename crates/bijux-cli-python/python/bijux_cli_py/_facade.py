@@ -70,6 +70,9 @@ def _allow_native_import_fallback(exc: Exception) -> bool:
     if isinstance(exc, ModuleNotFoundError):
         return _is_missing_native_module(exc)
     if isinstance(exc, ImportError):
+        configured = os.environ.get("BIJUX_PY_ALLOW_NATIVE_OSERROR_FALLBACK", "")
+        if configured.strip().lower() in {"1", "true", "yes", "on"}:
+            return True
         return _is_missing_native_module(exc)
     if isinstance(exc, OSError):
         configured = os.environ.get("BIJUX_PY_ALLOW_NATIVE_OSERROR_FALLBACK", "")

@@ -1,7 +1,7 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
+use bijux_dag_testkit::branch_semantics_graph_json;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -74,6 +74,34 @@ fn runtime_plan_preserves_dependency_port_bindings() {
     assert_eq!(left.from_port, "out");
     assert_eq!(left.to, "join");
     assert_eq!(left.to_port, "l");
+}
+
+#[test]
+fn runtime_plan_preserves_branch_semantics_and_paths() {
+    let graph =
+        parse_graph_strict(branch_semantics_graph_json()).expect("parse branch contract graph");
+
+    let plan = build_plan(&graph, &RuntimeConfig::default());
+    let branch = plan.planned_nodes.iter().find(|node| node.id == "decide").expect("branch node");
+    assert_eq!(branch.semantic_kind, bijux_dag_core::SemanticNodeKind::Branch);
+    assert_eq!(branch.executor_kind, "shell");
+    assert_eq!(branch.branch.as_ref().expect("branch").decision_output, "decision");
+
+    let conditional = plan
+        .planned_dependencies
+        .iter()
+        .find(|edge| edge.id.as_deref() == Some("branch-left"))
+        .expect("conditional edge");
+    assert_eq!(conditional.kind, bijux_dag_core::EdgeKind::Conditional);
+    assert_eq!(conditional.decision.as_deref(), Some("left"));
+
+    let path = plan
+        .branch_paths
+        .iter()
+        .find(|path| path.branch_node_id == "decide" && path.decision == "left")
+        .expect("branch path");
+    assert_eq!(path.direct_targets, vec!["left".to_string()]);
+    assert!(path.reachable_nodes.contains(&"join".to_string()));
 }
 
 #[test]

@@ -109,6 +109,15 @@ pub struct RunSnapshot {
     pub selected_nodes: Vec<String>,
     pub dependency_closure_enabled: bool,
     pub replay_source_run_id: Option<RunId>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partial_rerun_contract: Option<PartialRerunContract>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PartialRerunContract {
+    pub selected_nodes: Vec<String>,
+    pub invalidated_downstream_nodes: Vec<String>,
+    pub stale_downstream_reuse_forbidden: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
