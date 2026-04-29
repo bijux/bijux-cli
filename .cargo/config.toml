@@ -20,6 +20,7 @@ verbose = false
 
 [env]
 LLVM_PROFILE_FILE = { value = "artifacts/coverage/profraw/default_%m_%p.profraw", relative = true }
+NEXTEST_CACHE_DIR = { value = "artifacts/rust/target/nextest", relative = true }
 
 [alias]
 fmt-check = "fmt --all -- --check"
