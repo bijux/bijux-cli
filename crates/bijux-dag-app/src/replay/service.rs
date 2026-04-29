@@ -126,6 +126,7 @@ pub(crate) fn why_rerun_payload(
         "cause_groups": diff.replay_equivalence.cause_groups,
         "branch_decision_drift_nodes": diff.replay_equivalence.branch_decision_drift_nodes,
         "container_digest_drift_nodes": diff.replay_equivalence.container_digest_drift_nodes,
+        "adapter_binary_drift_nodes": diff.replay_equivalence.adapter_binary_drift_nodes,
         "causal_chain": build_causal_chain(&material_a, &material_b, &diff, node),
     }))
 }
@@ -306,6 +307,8 @@ fn summary_payload(
         "reasons": diff.replay_equivalence.reasons,
         "cause_groups": diff.replay_equivalence.cause_groups,
         "branch_decision_drift_nodes": diff.replay_equivalence.branch_decision_drift_nodes,
+        "container_digest_drift_nodes": diff.replay_equivalence.container_digest_drift_nodes,
+        "adapter_binary_drift_nodes": diff.replay_equivalence.adapter_binary_drift_nodes,
         "evidence_fingerprint_explanation": evidence_fingerprint_explanation(material_a, material_b, node),
         "compared_dimensions": diff.replay_equivalence.reason_report.compared_dimensions,
         "mismatch_dimensions": diff.replay_equivalence.reason_report.mismatch_dimensions,
@@ -410,6 +413,20 @@ fn build_causal_chain(
             "summary": "branch decisions changed for one or more nodes"
         }));
     }
+    if !diff.replay_equivalence.container_digest_drift_nodes.is_empty() {
+        chain.push(json!({
+            "level": "container_digest",
+            "nodes": diff.replay_equivalence.container_digest_drift_nodes,
+            "summary": "container image digests changed for one or more nodes"
+        }));
+    }
+    if !diff.replay_equivalence.adapter_binary_drift_nodes.is_empty() {
+        chain.push(json!({
+            "level": "adapter_binary",
+            "nodes": diff.replay_equivalence.adapter_binary_drift_nodes,
+            "summary": "adapter binary hashes changed for one or more nodes"
+        }));
+    }
     if !diff.outputs.is_empty() {
         chain.push(json!({
             "level": "artifacts",
@@ -436,6 +453,8 @@ fn semantic_payload(
         diff.nodes.retain(|id, _| id == node_id);
         diff.outputs.retain(|id, _| id == node_id);
         diff.replay_equivalence.branch_decision_drift_nodes.retain(|id| id == node_id);
+        diff.replay_equivalence.container_digest_drift_nodes.retain(|id| id == node_id);
+        diff.replay_equivalence.adapter_binary_drift_nodes.retain(|id| id == node_id);
         if let Some(count) = diff.replay_equivalence.cause_groups.get_mut("node_outcomes") {
             *count = diff.nodes.len();
         }
