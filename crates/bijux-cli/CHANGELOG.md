@@ -9,9 +9,12 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ### Added
 - Added a crate-native mounted-app SDK with `ProductMount`, `BijuxApp`, `CommandContext`, `CommandResult`, diagnostics builders, output-envelope helpers, an in-process harness, and snapshot helpers for Rust app authors.
+- Added Python-callable mount manifest fields (`module`, `function`) plus compatibility windows to the product-mount descriptor contract and published schema snapshot.
+- Added `bijux apps doctor <namespace>` as a focused runtime/import diagnostic for mounted apps with Python interpreter provenance.
 
 ### Changed
 - Switched `bijux apps scaffold` to generate its manifest contract through the same mounted-app SDK builder used by the new Rust app-author surface.
+- Switched Python app scaffolds and runtime delegation to use callable-aware mount descriptors, interpreter discovery, and shared Rust/Python JSON envelope helpers.
 
 ---
 

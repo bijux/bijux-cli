@@ -20,7 +20,8 @@ This package provides:
 
 - the `bijux` console entrypoint,
 - a native Rust bridge module (`bijux_cli_py._native`) when available,
-- a Python facade fallback for portability and compatibility checks.
+- a Python facade fallback for portability and compatibility checks,
+- a lightweight `bijux_cli_py.app_sdk` helper for mounted Python apps.
 
 ## What This Package Is
 
@@ -42,10 +43,47 @@ bijux --help
 python -m bijux_cli_py --help
 ```
 
+## Mounted Python Apps
+
+This package also ships `bijux_cli_py.app_sdk` for Python apps mounted under the
+root `bijux` runtime.
+
+It gives app authors:
+
+- `build_python_mount_manifest(...)` for root-mount descriptors with Python
+  `module` / `function` entrypoints,
+- `CompatibilityWindow` and `compatibility_report(...)` for host-runtime checks,
+- `success(...)` and `failure(...)` helpers that emit the same envelope shape as
+  the Rust runtime,
+- `run_json_app(...)` to keep structured JSON on stdout while redirecting ad hoc
+  app logs to stderr.
+
+Typical packaging flow:
+
+```python
+from bijux_cli_py.app_sdk import build_python_mount_manifest, run_json_app, success
+
+def main(argv: list[str]):
+    return success({"argv": argv}, command=["sample"])
+
+manifest = build_python_mount_manifest(
+    namespace="sample",
+    display_name="Sample App",
+    module="sample_app.cli",
+    function="main",
+    summary="Sample mounted Python app",
+)
+```
+
+Then publish the app package with a standard `pyproject.toml`, expose the
+callable through your module, and place the generated manifest under
+`.bijux/apps/<namespace>.mount.json` or a managed discovery path.
+
 ## Source of Truth
 
 - Runtime crate: [`crates/bijux-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli)
 - Python bridge crate: [`crates/bijux-cli-python`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli-python)
+- Mounted app guide: [`crates/bijux-cli-python/docs/MOUNTED_APPS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/MOUNTED_APPS.md)
 - Package changelog: [`crates/bijux-cli-python/CHANGELOG.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/CHANGELOG.md)
 - Repository handbook: [CLI handbook](https://bijux.io/bijux-core/bijux-cli/)
 

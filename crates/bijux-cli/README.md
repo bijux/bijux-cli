@@ -56,6 +56,12 @@ Core surfaces:
 - `BijuxCliHarness`: in-process harness for mounted app tests
 - `SnapshotHelper`: stable rendering helper for app-level snapshot contracts
 
+Recent SDK additions:
+
+- compatibility windows on mounted manifests so apps can declare supported `bijux` host ranges
+- Python callable entrypoints with explicit `module` / `function` fields for mounted package flows
+- checked Rust/Python envelope parity through shared success-envelope fixtures
+
 Minimal example:
 
 ```rust
@@ -86,6 +92,13 @@ impl BijuxApp for HelloApp {
     }
 }
 ```
+
+Python-mounted apps use the same descriptor contract. The runtime now validates
+`python_module` entrypoints with optional callable fields, resolves a concrete
+interpreter from the active environment or project `.venv`, and exposes
+`bijux apps doctor <namespace>` for import, version, and callable diagnostics.
+The companion package guide lives at
+[`crates/bijux-cli-python/docs/MOUNTED_APPS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/MOUNTED_APPS.md).
 
 ## Tests
 
