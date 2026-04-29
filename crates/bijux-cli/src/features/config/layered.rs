@@ -686,10 +686,14 @@ fn config_lock(path: &Path) -> Result<StateLockGuard, ConfigError> {
 }
 
 fn render_env_map(values: &BTreeMap<String, String>) -> String {
-    values
-        .iter()
-        .map(|(key, value)| format!("BIJUXCLI_{}={value}\n", key.to_ascii_uppercase()))
-        .collect()
+    let mut rendered = String::new();
+    for (key, value) in values {
+        let _ = std::fmt::Write::write_fmt(
+            &mut rendered,
+            format_args!("BIJUXCLI_{}={value}\n", key.to_ascii_uppercase()),
+        );
+    }
+    rendered
 }
 
 struct RepairReport {

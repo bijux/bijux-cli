@@ -516,9 +516,9 @@ fn config_inheritance_payload(simulation: &Path) -> Result<ConfigInheritanceRepo
         gaps.push("merged configuration is missing review-required keys".to_string());
     }
     Ok(ConfigInheritanceReport {
-        explicit_override_count,
         merged,
         review_required_keys_present,
+        explicit_override_count,
         gaps,
     })
 }

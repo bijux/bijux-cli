@@ -455,7 +455,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
             "edge_count": snapshot.edges.len(),
             "missing_producer_edges": missing_producer_edges,
             "unknown_upstream_artifact_ids": unknown_upstream_artifact_ids,
-            "complete": snapshot.edges.len() > 0
+            "complete": !snapshot.edges.is_empty()
                 && missing_producer_edges.is_empty()
                 && unknown_upstream_artifact_ids.is_empty()
         })

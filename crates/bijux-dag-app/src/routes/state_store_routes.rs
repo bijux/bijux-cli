@@ -1088,7 +1088,7 @@ mod tests {
         };
         let (payload, ok) = amplification_payload(simulation);
         assert!(!ok);
-        assert!(payload["gaps"].as_array().expect("gaps").len() >= 1);
+        assert!(!payload["gaps"].as_array().expect("gaps").is_empty());
     }
 
     #[test]

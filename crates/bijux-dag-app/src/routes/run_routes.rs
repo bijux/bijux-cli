@@ -77,7 +77,7 @@ pub(crate) fn handle_run_command(
             CacheModeArg::Readwrite => CacheMode::ReadWrite,
         },
         cache_dir: cache_dir.clone(),
-        remote_cache_dir: remote_cache_dir,
+        remote_cache_dir,
         run_id: req.run_id,
         latest_symlink: req.latest,
         policy: bijux_dag_runtime::PolicyConfig { deny_network, deny_env, deny_clock, clean_env },

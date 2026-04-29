@@ -53,12 +53,9 @@ fn malformed_external_adapter_handshakes_are_rejected_with_exact_reasons() {
         &adapters.join("stderr-noise"),
         "#!/bin/sh\nif [ \"$1\" = \"info\" ]; then echo '{\"protocol_version\":\"bijux-dag-adapter/v1\",\"adapter_id\":\"bad\",\"adapter_version\":\"0.1\",\"required_effects\":{\"filesystem\":true,\"env\":false,\"network\":false,\"clock\":false},\"supported_kinds\":[\"fake\"],\"output_schema\":\"v0.1\"}'; echo 'noise' >&2; exit 0; fi\nexit 1\n",
     );
+    let huge_schema = "x".repeat(70_000);
     let huge_payload = format!(
-        "#!/bin/sh\nif [ \"$1\" = \"info\" ]; then printf '%s' '{}'; exit 0; fi\nexit 1\n",
-        format!(
-            "{{\"protocol_version\":\"bijux-dag-adapter/v1\",\"adapter_id\":\"huge\",\"adapter_version\":\"0.1\",\"required_effects\":{{\"filesystem\":true,\"env\":false,\"network\":false,\"clock\":false}},\"supported_kinds\":[\"fake\"],\"output_schema\":\"{}\"}}",
-            "x".repeat(70_000)
-        )
+        "#!/bin/sh\nif [ \"$1\" = \"info\" ]; then printf '%s' '{{\"protocol_version\":\"bijux-dag-adapter/v1\",\"adapter_id\":\"huge\",\"adapter_version\":\"0.1\",\"required_effects\":{{\"filesystem\":true,\"env\":false,\"network\":false,\"clock\":false}},\"supported_kinds\":[\"fake\"],\"output_schema\":\"{huge_schema}\"}}'; exit 0; fi\nexit 1\n"
     );
     write_script(&adapters.join("huge-payload"), &huge_payload);
 

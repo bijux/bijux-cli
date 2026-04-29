@@ -17,10 +17,12 @@ impl Default for DagFixture {
 }
 
 impl DagFixture {
+    #[must_use]
     pub fn new() -> Self {
         Self { builder: DagBuilder::new() }
     }
 
+    #[must_use]
     pub fn const_node(self, id: &str, value: Value) -> Self {
         self.node(
             NodeBuilder::new(id, NodeKind::Const)
@@ -30,6 +32,7 @@ impl DagFixture {
         )
     }
 
+    #[must_use]
     pub fn shell_node<S: AsRef<str>>(
         self,
         id: &str,
@@ -49,6 +52,7 @@ impl DagFixture {
         self.node(builder.build())
     }
 
+    #[must_use]
     pub fn branch_node<S: AsRef<str>>(
         self,
         id: &str,
@@ -79,6 +83,7 @@ impl DagFixture {
         self.node(builder.build())
     }
 
+    #[must_use]
     pub fn container_node<S: AsRef<str>>(
         self,
         id: &str,
@@ -100,6 +105,7 @@ impl DagFixture {
         self.node(node)
     }
 
+    #[must_use]
     pub fn external_node(self, id: &str, adapter_kind: &str, output_path: &str) -> Self {
         self.node(
             NodeBuilder::new(id, NodeKind::External(adapter_kind.to_string()))
@@ -110,11 +116,13 @@ impl DagFixture {
         )
     }
 
+    #[must_use]
     pub fn node(mut self, node: bijux_dag_core::Node) -> Self {
         self.builder = self.builder.node(node);
         self
     }
 
+    #[must_use]
     pub fn edge(mut self, from_node: &str, from_port: &str, to_node: &str, to_port: &str) -> Self {
         self.builder = self.builder.edge(from_node, from_port, to_node, to_port);
         self

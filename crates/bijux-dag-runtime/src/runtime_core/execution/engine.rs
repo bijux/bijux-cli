@@ -955,11 +955,11 @@ pub fn execute(
             blocked_reasons: blocked_reasons.clone(),
             completed_statuses: status_map
                 .iter()
-                .filter_map(|(node_id, status)| match status {
-                    NodeStatus::Success => Some((node_id.clone(), "success".to_string())),
-                    NodeStatus::Failed => Some((node_id.clone(), "failed".to_string())),
-                    NodeStatus::Skipped => Some((node_id.clone(), "skipped".to_string())),
-                    NodeStatus::Cached => Some((node_id.clone(), "cached".to_string())),
+                .map(|(node_id, status)| match status {
+                    NodeStatus::Success => (node_id.clone(), "success".to_string()),
+                    NodeStatus::Failed => (node_id.clone(), "failed".to_string()),
+                    NodeStatus::Skipped => (node_id.clone(), "skipped".to_string()),
+                    NodeStatus::Cached => (node_id.clone(), "cached".to_string()),
                 })
                 .collect(),
             failure_propagation_mode: crate::failure_mode_name(&options.failure_propagation)

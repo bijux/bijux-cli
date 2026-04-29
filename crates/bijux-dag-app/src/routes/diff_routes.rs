@@ -25,7 +25,7 @@ pub(crate) fn handle_diff_command(
             let semantic = if matches!(mode, DiffModeArg::Semantic) {
                 Some(&payload)
             } else {
-                payload.get("semantic").or_else(|| Some(&payload))
+                payload.get("semantic").or(Some(&payload))
             };
             if let Some(semantic) = semantic {
                 let replay_equivalent = semantic
