@@ -151,7 +151,7 @@ fn unknown_suggestions_and_reserved_namespace_boundaries_are_safe_under_ambiguit
 #[test]
 fn plugin_namespace_cannot_hijack_reserved_paths_and_hidden_alias_roots() {
     let mut registry = RouteRegistry::default();
-    for blocked in ["help", "version", "cli", "doctor"] {
+    for blocked in ["apps", "help", "version", "cli", "doctor"] {
         let err =
             registry.register_plugin_namespace(blocked).expect_err("blocked namespace should fail");
         assert!(matches!(err, RouteError::Reserved(_) | RouteError::Conflict(_)));

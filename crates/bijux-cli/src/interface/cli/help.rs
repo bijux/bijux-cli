@@ -3,8 +3,8 @@
 use anyhow::Result;
 
 use crate::routing::model::{
-    CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, ROOT_INTERACTION_COMMANDS,
-    ROOT_RUNTIME_COMMANDS, ROOT_STATE_COMMANDS,
+    CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, ROOT_APPS_SUBCOMMANDS,
+    ROOT_INTERACTION_COMMANDS, ROOT_RUNTIME_COMMANDS, ROOT_STATE_COMMANDS,
 };
 use crate::routing::parser::root_command;
 
@@ -195,6 +195,30 @@ fn help_subcommand_guide(path: &[&str]) -> Option<String> {
             "self-test  Deterministic runtime self-checks".to_string(),
             "plugins    Canonical plugin lifecycle namespace".to_string(),
         ])),
+        ["apps"] => {
+            let rows = ROOT_APPS_SUBCOMMANDS
+                .iter()
+                .map(|command| match *command {
+                    "list" => {
+                        "list         List known official apps and resolution health".to_string()
+                    }
+                    "doctor" => {
+                        "doctor       Diagnose official app mounts and discovery status".to_string()
+                    }
+                    "which" => {
+                        "which        Show the exact resolved runtime entrypoint".to_string()
+                    }
+                    "version" => {
+                        "version      Report manifest or probed runtime version".to_string()
+                    }
+                    "capabilities" => {
+                        "capabilities Show declared app capability contract".to_string()
+                    }
+                    other => format!("{other:<12} App command"),
+                })
+                .collect::<Vec<_>>();
+            Some(render_subcommand_guide(&rows))
+        }
         ["config"] | ["cli", "config"] => {
             let rows = CLI_CONFIG_SUBCOMMANDS
                 .iter()
@@ -245,6 +269,12 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux install cli --dry-run".to_string(),
             "bijux install dev-cli --dry-run".to_string(),
             "bijux install atlas --dry-run".to_string(),
+        ],
+        ["apps"] => vec![
+            "bijux apps list".to_string(),
+            "bijux apps doctor".to_string(),
+            "bijux apps which dag".to_string(),
+            "bijux apps capabilities dag".to_string(),
         ],
         ["doctor"] => vec!["bijux doctor".to_string(), "bijux doctor --format json".to_string()],
         ["version"] => vec!["bijux version".to_string(), "bijux --version".to_string()],

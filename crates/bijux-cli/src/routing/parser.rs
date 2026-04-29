@@ -301,6 +301,14 @@ pub fn root_command() -> Command {
         .subcommand(config_group.clone())
         .subcommand(Command::new("self-test"))
         .subcommand(plugins_group.clone());
+    let apps_group = Command::new("apps")
+        .subcommand(Command::new("list"))
+        .subcommand(Command::new("doctor"))
+        .subcommand(Command::new("which").arg(Arg::new("namespace").num_args(1).required(true)))
+        .subcommand(Command::new("version").arg(Arg::new("namespace").num_args(1).required(true)))
+        .subcommand(
+            Command::new("capabilities").arg(Arg::new("namespace").num_args(1).required(true)),
+        );
 
     Command::new("bijux")
         .args([
@@ -328,6 +336,7 @@ pub fn root_command() -> Command {
                 .arg(Arg::new("target").num_args(1))
                 .arg(Arg::new("dry-run").long("dry-run").action(ArgAction::SetTrue)),
         )
+        .subcommand(apps_group)
         .subcommand(config_group)
         .subcommand(plugins_group)
         .subcommand(Command::new("repl"))

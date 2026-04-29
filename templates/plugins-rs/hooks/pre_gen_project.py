@@ -14,6 +14,7 @@ SEMVER_PATTERN = re.compile(
 )
 RESERVED_NAMESPACES = {
     "agent",
+    "apps",
     "atlas",
     "cli",
     "completion",

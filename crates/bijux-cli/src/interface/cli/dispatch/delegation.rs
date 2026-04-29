@@ -3,6 +3,7 @@
 use std::process::Command;
 
 use crate::contracts::known_bijux_tool;
+use crate::features::apps::{resolve_control_command, resolve_runtime_command};
 
 use super::AppRunResult;
 
@@ -41,7 +42,9 @@ fn delegated_known_bijux_tool_command(argv: &[String]) -> Option<DelegatedKnownT
             let namespace = argv.get(2)?;
             let tool = known_bijux_tool(namespace)?;
             Some(DelegatedKnownToolCommand {
-                binary: tool.control_binary(),
+                binary: resolve_control_command(namespace)
+                    .map(|resolved| resolved.command)
+                    .unwrap_or_else(|| tool.control_binary()),
                 package_name: tool.control_package(),
                 command_surface: format!("bijux dev {}", tool.namespace),
                 forwarded_args: argv[3..].to_vec(),
@@ -50,7 +53,9 @@ fn delegated_known_bijux_tool_command(argv: &[String]) -> Option<DelegatedKnownT
         Some(namespace) => {
             let tool = known_bijux_tool(namespace)?;
             Some(DelegatedKnownToolCommand {
-                binary: tool.runtime_binary(),
+                binary: resolve_runtime_command(namespace)
+                    .map(|resolved| resolved.command)
+                    .unwrap_or_else(|| tool.runtime_binary()),
                 package_name: tool.runtime_package(),
                 command_surface: format!("bijux {}", tool.namespace),
                 forwarded_args: argv[2..].to_vec(),

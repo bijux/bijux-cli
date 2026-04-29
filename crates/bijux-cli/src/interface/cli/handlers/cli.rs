@@ -105,6 +105,13 @@ fn resolve_completion_shell(argv: &[String]) -> (CompletionShell, &'static str) 
     (CompletionShell::Bash, "default")
 }
 
+pub(crate) fn runtime_error_payload(message: String) -> Value {
+    json!({
+        "status": "error",
+        "message": message,
+    })
+}
+
 pub(crate) fn completion_report(argv: &[String]) -> Value {
     let (active_shell, selection_source) = resolve_completion_shell(argv);
     let supported_shells = [
