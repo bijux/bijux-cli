@@ -116,3 +116,65 @@ fn adapters_doctor_reports_external_handshake_rejections_with_reasons() {
     assert_eq!(reports[0]["status"], "rejected");
     assert!(reports[0]["reason"].as_str().unwrap_or_default().contains("invalid adapter manifest"));
 }
+
+#[test]
+#[ignore = "slow"]
+fn adapters_conformance_json_reports_scenario_matrix() {
+    let root = repo_root();
+    let (code, payload, stderr) = run_json(&root, &["--json", "adapters", "conformance"]);
+    assert_eq!(code, 0, "command failed: {stderr}");
+    let suites = payload["data"]["suites"].as_array().expect("suites");
+    let shell = suites
+        .iter()
+        .find(|suite| suite["adapter_id"] == "shell")
+        .expect("shell suite");
+    let scenarios = shell["scenarios"].as_array().expect("shell scenarios");
+    assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "timeout"));
+    assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "cache_output"));
+}
+
+#[test]
+#[ignore = "slow"]
+fn adapters_cache_compat_json_rejects_schema_drift() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmpdir");
+    let meta = tmp.path().join("meta.json");
+    fs::write(
+        &meta,
+        r#"{
+          "adapter_id":"shell",
+          "adapter_version":"0.1",
+          "produces_outputs_schema_version":"schema/v1"
+        }"#,
+    )
+    .expect("write");
+    let (code, payload, stderr) = run_json(
+        &root,
+        &[
+            "--json",
+            "adapters",
+            "cache-compat",
+            meta.to_string_lossy().as_ref(),
+            "--expected-schema",
+            "schema/v2",
+        ],
+    );
+    assert_eq!(code, 3, "unexpected command status: {stderr}");
+    assert_eq!(payload["data"]["compatible"], false);
+    assert!(payload["data"]["reason"].as_str().unwrap_or_default().contains("fingerprint-exact"));
+}
+
+#[test]
+#[ignore = "slow"]
+fn adapters_reference_prints_generated_markdown_contract() {
+    let root = repo_root();
+    let output = dag_command(&root)
+        .args(["adapters", "reference"])
+        .output()
+        .expect("run dag command");
+    assert_eq!(output.status.code().unwrap_or(1), 0);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("# Adapter Contract"));
+    assert!(stdout.contains("## Registered adapters"));
+    assert!(stdout.contains("## Fake batch executor"));
+}

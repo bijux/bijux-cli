@@ -858,6 +858,14 @@ pub(crate) enum AdaptersCommands {
     Dump,
     Describe,
     Admit { dag: PathBuf },
+    Conformance,
+    #[command(name = "cache-compat")]
+    CacheCompat {
+        meta: PathBuf,
+        #[arg(long)]
+        expected_schema: String,
+    },
+    Reference,
     Doctor,
 }
 

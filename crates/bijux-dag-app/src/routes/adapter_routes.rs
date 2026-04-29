@@ -2,10 +2,13 @@ use crate::commands::{AdaptersCommands, DagCli};
 use crate::routes::preconditions::require_file;
 use crate::{check_engine, emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
-    adapter_admission_matrix, adapter_registry_dump, probe_external_adapters,
-    registered_adapter_descriptors, registered_adapters,
+    adapter_admission_matrix, adapter_conformance_suite, adapter_registry_dump,
+    generate_adapter_reference_markdown, probe_external_adapters,
+    registered_adapter_descriptors, registered_adapter_reference_document, registered_adapters,
+    validate_output_schema_compatibility, CacheCompatibilityMode,
 };
 use serde_json::json;
+use std::path::Path;
 
 pub(crate) fn handle_adapters_command(
     cli: &DagCli,
@@ -111,6 +114,78 @@ pub(crate) fn handle_adapters_command(
                 Err(ExitCode::from(3))
             }
         }
+        AdaptersCommands::Conformance => {
+            let suites = adapter_conformance_suite().map_err(|_| ExitCode::from(3))?;
+            let ok = suites.iter().all(|suite| {
+                suite
+                    .scenarios
+                    .iter()
+                    .all(|scenario| !matches!(scenario.status, bijux_dag_runtime::AdapterScenarioStatus::Fail))
+            });
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.adapters.conformance",
+                    ok,
+                    json!({ "suites": suites }),
+                    Vec::new(),
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            for suite in suites {
+                println!("{} {}", suite.adapter_id, suite.adapter_version);
+                for scenario in suite.scenarios {
+                    println!("  {} {:?}", scenario.scenario, scenario.status);
+                }
+            }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
+        }
+        AdaptersCommands::CacheCompat { meta, expected_schema } => {
+            require_file(meta)?;
+            let report = cache_compatibility_payload(meta, expected_schema)?;
+            let ok = report["compatible"].as_bool().unwrap_or(false);
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.adapters.cache-compat",
+                    ok,
+                    report,
+                    Vec::new(),
+                    if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
+                );
+            }
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&report).map_err(|_| ExitCode::from(3))?
+            );
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
+        }
+        AdaptersCommands::Reference => {
+            let document = registered_adapter_reference_document();
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.adapters.reference",
+                    true,
+                    json!({
+                        "document": document,
+                        "markdown": generate_adapter_reference_markdown(&document),
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", generate_adapter_reference_markdown(&document));
+            Ok(ExitCode::SUCCESS)
+        }
         AdaptersCommands::Doctor => {
             let docker = check_engine("docker");
             let podman = check_engine("podman");
@@ -166,6 +241,38 @@ pub(crate) fn handle_adapters_command(
     }
 }
 
+fn cache_compatibility_payload(
+    meta: &Path,
+    expected_schema: &str,
+) -> Result<serde_json::Value, ExitCode> {
+    let data = read_file(meta)?;
+    let meta: serde_json::Value = serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+    let adapter_id = meta.get("adapter_id").and_then(|value| value.as_str()).unwrap_or("unknown");
+    let adapter_version =
+        meta.get("adapter_version").and_then(|value| value.as_str()).unwrap_or("unknown");
+    let produced_schema_version = meta
+        .get("produces_outputs_schema_version")
+        .or_else(|| meta.get("output_schema_version"))
+        .and_then(|value| value.as_str())
+        .unwrap_or_default();
+    let compatibility_mode = registered_adapter_descriptors()
+        .into_iter()
+        .find(|descriptor| descriptor.id == adapter_id && descriptor.version == adapter_version)
+        .map(|descriptor| descriptor.cache_compatibility)
+        .unwrap_or(CacheCompatibilityMode::FingerprintExact);
+    let report =
+        validate_output_schema_compatibility(compatibility_mode, produced_schema_version, expected_schema);
+    Ok(json!({
+        "adapter_id": adapter_id,
+        "adapter_version": adapter_version,
+        "compatible": report.compatible,
+        "compatibility_mode": report.compatibility_mode,
+        "produced_schema_version": report.produced_schema_version,
+        "expected_schema_version": report.expected_schema_version,
+        "reason": report.reason,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::handle_adapters_command;
@@ -200,6 +307,29 @@ mod tests {
         )
         .expect("write graph");
         let result = handle_adapters_command(&cli(true), &AdaptersCommands::Admit { dag });
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn adapter_cache_compat_rejects_schema_mismatch() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let meta = dir.path().join("meta.json");
+        fs::write(
+            &meta,
+            r#"{
+              "adapter_id":"shell",
+              "adapter_version":"0.1",
+              "produces_outputs_schema_version":"schema/v1"
+            }"#,
+        )
+        .expect("write meta");
+        let result = handle_adapters_command(
+            &cli(true),
+            &AdaptersCommands::CacheCompat {
+                meta,
+                expected_schema: "schema/v2".to_string(),
+            },
+        );
         assert!(result.is_err());
     }
 }
