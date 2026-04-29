@@ -4,19 +4,19 @@ use bijux_dag_artifacts::{
     AdapterInfo, Manifest, NodeCounts, NodeTrace, OutputSummary, PolicyInfo, RunMetadata,
     RunOutputsIndex,
 };
+use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use bijux_dag_runtime::{
     audit_dispatch_discipline, audit_run_event_log, build_cancellation_audit_report,
-    build_execution_isolation_report, build_retry_decision_report,
-    build_heartbeat_audit_report, build_manual_intervention_audit_report,
-    build_pause_resume_audit_report, build_timeout_audit_report, build_transition_audit_report,
+    build_execution_isolation_report, build_heartbeat_audit_report,
+    build_manual_intervention_audit_report, build_pause_resume_audit_report,
+    build_retry_decision_report, build_timeout_audit_report, build_transition_audit_report,
     check_run_consistency, detect_stuck_run, evaluate_pause_state, reconcile_orphaned_node,
     should_quarantine_run, validate_and_repair_run_metadata, BatchAttemptState,
     BatchLifecycleEvent, DispatchKeyRecord, InterruptionClass, ManualInterventionRecord, NodeState,
-    NodeTransition, OperatorRetryPolicy, ResumePolicy, RunPausePolicy, RunSnapshot,
-    RunState, RunSummaryV2, RunTransition, RuntimeConfig, SchedulerRecoveryRule, StuckRunPolicy,
+    NodeTransition, OperatorRetryPolicy, ResumePolicy, RunPausePolicy, RunSnapshot, RunState,
+    RunSummaryV2, RunTransition, RuntimeConfig, SchedulerRecoveryRule, StuckRunPolicy,
     TaskIsolationMode,
 };
-use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -71,6 +71,14 @@ struct InterventionSimulation {
     record: ManualInterventionRecord,
     policy: OperatorRetryPolicy,
     manual_attempts_so_far: u32,
+    #[serde(default)]
+    lineage_recorded: bool,
+    #[serde(default)]
+    required_artifacts: Vec<String>,
+    #[serde(default)]
+    present_artifacts: Vec<String>,
+    #[serde(default)]
+    allow_missing_required_artifacts: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -120,6 +128,8 @@ struct DurableStateAuditReport {
     durable_components: Vec<String>,
     missing_components: Vec<String>,
     node_trace_count: usize,
+    checkpoint_present: bool,
+    incomplete_marker_present: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -163,6 +173,7 @@ struct RunRepairReport {
     index_path: String,
     manifest_rewritten: bool,
     index_rewritten: bool,
+    incomplete_marker_present: bool,
     notes: Vec<String>,
 }
 
@@ -220,7 +231,8 @@ fn read_node_traces(run_dir: &Path) -> Result<Vec<NodeTrace>, ExitCode> {
         if !trace_path.exists() {
             continue;
         }
-        let trace: NodeTrace = serde_json::from_str(&read_file(&trace_path)?).map_err(|_| ExitCode::from(3))?;
+        let trace: NodeTrace =
+            serde_json::from_str(&read_file(&trace_path)?).map_err(|_| ExitCode::from(3))?;
         traces.push(trace);
     }
     Ok(traces)
@@ -240,6 +252,8 @@ fn audit_durable_state(run_dir: &Path) -> Result<DurableStateAuditReport, ExitCo
     let outputs_index_path = run_dir.join("outputs").join("index.json");
     let lineage_snapshot_path = run_dir.join("lineage.snapshot.json");
     let timeline_path = run_dir.join("observability.timeline.json");
+    let checkpoint_path = run_dir.join("scheduler.checkpoint.json");
+    let incomplete_marker_path = run_dir.join(".run-incomplete.json");
 
     let mut durable_components = Vec::new();
     let mut missing_components = Vec::new();
@@ -252,6 +266,7 @@ fn audit_durable_state(run_dir: &Path) -> Result<DurableStateAuditReport, ExitCo
         ("outputs_index", outputs_index_path.as_path()),
         ("lineage_snapshot", lineage_snapshot_path.as_path()),
         ("timeline", timeline_path.as_path()),
+        ("scheduler_checkpoint", checkpoint_path.as_path()),
     ] {
         if path.exists() {
             durable_components.push(name.to_string());
@@ -284,6 +299,8 @@ fn audit_durable_state(run_dir: &Path) -> Result<DurableStateAuditReport, ExitCo
         durable_components,
         missing_components,
         node_trace_count,
+        checkpoint_present: checkpoint_path.exists(),
+        incomplete_marker_present: incomplete_marker_path.exists(),
     })
 }
 
@@ -336,7 +353,8 @@ fn audit_write_discipline(run_dir: &Path) -> Result<WriteDisciplineAuditReport, 
         .collect::<Vec<_>>();
     let (index_entry_count, index_in_sync) = match fs::read(run_dir.join("run-log.index.json")) {
         Ok(bytes) => {
-            let index: Vec<Value> = serde_json::from_slice(&bytes).map_err(|_| ExitCode::from(3))?;
+            let index: Vec<Value> =
+                serde_json::from_slice(&bytes).map_err(|_| ExitCode::from(3))?;
             let in_sync = index.len() == events.len()
                 && index.iter().zip(events.iter()).all(|(entry, event)| {
                     entry.get("event").and_then(Value::as_str)
@@ -376,7 +394,9 @@ fn audit_write_discipline(run_dir: &Path) -> Result<WriteDisciplineAuditReport, 
     })
 }
 
-fn build_worker_recovery_report(simulation: &WorkerRecoverySimulation) -> WorkerRecoveryAuditReport {
+fn build_worker_recovery_report(
+    simulation: &WorkerRecoverySimulation,
+) -> WorkerRecoveryAuditReport {
     let recovered_state = reconcile_orphaned_node(&simulation.rule);
     let manual_review_required = simulation.side_effect_uncertain
         && matches!(simulation.rule.action, bijux_dag_runtime::SchedulerRecoveryAction::Requeue);
@@ -426,7 +446,8 @@ fn build_control_recovery_report(
         .iter()
         .map(|entry| (entry.node_id.clone(), entry.state.clone()))
         .collect::<Vec<_>>();
-    let consistency = check_run_consistency(&node_states, &simulation.artifact_nodes, &simulation.summary);
+    let consistency =
+        check_run_consistency(&node_states, &simulation.artifact_nodes, &simulation.summary);
     let quarantine_reason = should_quarantine_run(&simulation.summary.state, &consistency);
     let repair_outcome = validate_and_repair_run_metadata(
         simulation.manifest_exists,
@@ -452,9 +473,39 @@ fn build_control_recovery_report(
     }
 }
 
+fn enforce_mark_success_gate(
+    simulation: &InterventionSimulation,
+    report: &mut bijux_dag_runtime::ManualInterventionAuditReport,
+) {
+    if report.action != "mark-success" {
+        return;
+    }
+
+    let required = simulation.required_artifacts.iter().cloned().collect::<BTreeSet<_>>();
+    let present = simulation.present_artifacts.iter().cloned().collect::<BTreeSet<_>>();
+    let missing = required.difference(&present).cloned().collect::<Vec<_>>();
+
+    if simulation.record.node_id.is_none() {
+        report.allowed = false;
+        report.notes.push("mark-success requires a target node_id".to_string());
+    }
+    if !simulation.lineage_recorded {
+        report.allowed = false;
+        report.notes.push("mark-success requires recorded affected lineage".to_string());
+    }
+    if !missing.is_empty() && !simulation.allow_missing_required_artifacts {
+        report.allowed = false;
+        report.notes.push(format!(
+            "mark-success cannot fabricate missing required artifacts: {}",
+            missing.join(", ")
+        ));
+    }
+}
+
 fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
     let run_snapshot: RunSnapshot =
-        serde_json::from_str(&read_file(&run_dir.join("run.snapshot.json"))?).map_err(|_| ExitCode::from(3))?;
+        serde_json::from_str(&read_file(&run_dir.join("run.snapshot.json"))?)
+            .map_err(|_| ExitCode::from(3))?;
     let graph_snapshot = read_json_value(&run_dir.join("graph.snapshot.json"))?;
     let traces = read_node_traces(run_dir)?;
     let outputs_index = if run_dir.join("outputs").join("index.json").exists() {
@@ -566,9 +617,11 @@ fn apply_run_repairs(run_dir: &Path) -> Result<RunRepairReport, ExitCode> {
     let mut notes = Vec::new();
     let mut manifest_rewritten = false;
     let mut index_rewritten = false;
+    let incomplete_marker_present = run_dir.join(".run-incomplete.json").exists();
     let run_id = if run_dir.join("run.snapshot.json").exists() {
         let snapshot: RunSnapshot =
-            serde_json::from_str(&read_file(&run_dir.join("run.snapshot.json"))?).map_err(|_| ExitCode::from(3))?;
+            serde_json::from_str(&read_file(&run_dir.join("run.snapshot.json"))?)
+                .map_err(|_| ExitCode::from(3))?;
         snapshot.run_id.to_string()
     } else {
         run_dir
@@ -603,13 +656,13 @@ fn apply_run_repairs(run_dir: &Path) -> Result<RunRepairReport, ExitCode> {
             .filter(|line| !line.trim().is_empty())
             .map(|line| serde_json::from_str::<Value>(line).map_err(|_| ExitCode::from(3)))
             .collect::<Result<Vec<_>, _>>()?;
-        fs::write(
-            &index_path,
-            serde_json::to_vec_pretty(&rebuilt).map_err(|_| ExitCode::from(3))?,
-        )
-        .map_err(|_| ExitCode::from(3))?;
+        fs::write(&index_path, serde_json::to_vec_pretty(&rebuilt).map_err(|_| ExitCode::from(3))?)
+            .map_err(|_| ExitCode::from(3))?;
         index_rewritten = true;
         notes.push("run log index rebuilt from event journal".to_string());
+    }
+    if incomplete_marker_present {
+        notes.push("run is still marked incomplete; investigate scheduler.checkpoint.json before treating artifacts as complete".to_string());
     }
 
     Ok(RunRepairReport {
@@ -618,6 +671,7 @@ fn apply_run_repairs(run_dir: &Path) -> Result<RunRepairReport, ExitCode> {
         index_path: index_path.display().to_string(),
         manifest_rewritten,
         index_rewritten,
+        incomplete_marker_present,
         notes,
     })
 }
@@ -629,8 +683,8 @@ pub(crate) fn handle_runtime_command(
     match command {
         RuntimeCommands::Isolation { dag } => {
             let graph = parse_graph(&read_file(dag)?)?;
-            let report =
-                build_execution_isolation_report(&graph, &RuntimeConfig::default()).map_err(|_| ExitCode::from(3))?;
+            let report = build_execution_isolation_report(&graph, &RuntimeConfig::default())
+                .map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
                     cli,
@@ -702,7 +756,11 @@ pub(crate) fn handle_runtime_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         RuntimeCommands::WriteDiscipline { run_dir } => {
             let report = audit_write_discipline(run_dir)?;
@@ -725,7 +783,11 @@ pub(crate) fn handle_runtime_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
-            if report.exactly_once_ready { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if report.exactly_once_ready {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         RuntimeCommands::WorkerRecovery { simulation } => {
             let simulation: WorkerRecoverySimulation = parse_json_file(simulation)?;
@@ -766,7 +828,11 @@ pub(crate) fn handle_runtime_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         RuntimeCommands::Repair { run_dir, apply } => {
             let manifest_valid = run_dir.join("manifest.json").exists()
@@ -794,7 +860,11 @@ pub(crate) fn handle_runtime_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         RuntimeCommands::Retry { dag, node_id, attempt, failure_class } => {
             let graph = parse_graph(&read_file(dag)?)?;
@@ -925,11 +995,12 @@ pub(crate) fn handle_runtime_command(
         }
         RuntimeCommands::Intervention { simulation } => {
             let simulation: InterventionSimulation = parse_json_file(simulation)?;
-            let report = build_manual_intervention_audit_report(
+            let mut report = build_manual_intervention_audit_report(
                 &simulation.record,
                 &simulation.policy,
                 simulation.manual_attempts_so_far,
             );
+            enforce_mark_success_gate(&simulation, &mut report);
             let ok = report.allowed;
             if cli.json {
                 return emit_json(
@@ -950,7 +1021,11 @@ pub(crate) fn handle_runtime_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         RuntimeCommands::Transition { simulation } => {
             let simulation: TransitionSimulation = parse_json_file(simulation)?;
@@ -983,7 +1058,11 @@ pub(crate) fn handle_runtime_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         RuntimeCommands::Events { run_dir } => {
             let report = audit_run_event_log(run_dir).map_err(|_| ExitCode::from(3))?;
@@ -1010,7 +1089,11 @@ pub(crate) fn handle_runtime_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
     }
 }
@@ -1084,9 +1167,7 @@ mod tests {
         let result = std::panic::catch_unwind(|| {
             let _ = handle_runtime_command(
                 &cli,
-                &RuntimeCommands::Dispatch {
-                    simulation: PathBuf::from("/missing/dispatch.json"),
-                },
+                &RuntimeCommands::Dispatch { simulation: PathBuf::from("/missing/dispatch.json") },
             );
         });
         assert!(result.is_ok());
@@ -1216,13 +1297,9 @@ mod tests {
         )
         .expect("write simulation");
 
-        let cli =
-            quiet_json_cli(RuntimeCommands::Heartbeat { simulation: simulation.clone() });
-        let code = handle_runtime_command(
-            &cli,
-            &RuntimeCommands::Heartbeat { simulation },
-        )
-        .expect("heartbeat");
+        let cli = quiet_json_cli(RuntimeCommands::Heartbeat { simulation: simulation.clone() });
+        let code = handle_runtime_command(&cli, &RuntimeCommands::Heartbeat { simulation })
+            .expect("heartbeat");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 
@@ -1304,14 +1381,41 @@ mod tests {
         )
         .expect("write simulation");
 
-        let cli =
-            quiet_json_cli(RuntimeCommands::Intervention { simulation: simulation.clone() });
-        let code = handle_runtime_command(
-            &cli,
-            &RuntimeCommands::Intervention { simulation },
-        )
-        .expect("intervention");
+        let cli = quiet_json_cli(RuntimeCommands::Intervention { simulation: simulation.clone() });
+        let code = handle_runtime_command(&cli, &RuntimeCommands::Intervention { simulation })
+            .expect("intervention");
         assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_routes_reject_mark_success_without_lineage_or_artifacts() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let simulation = dir.path().join("mark-success.json");
+        fs::write(
+            &simulation,
+            r#"{
+              "record":{
+                "run_id":"run-1",
+                "node_id":"node-a",
+                "operator":"operator-a",
+                "action":"mark-success",
+                "reason":"operator override",
+                "recorded_unix_ms":123
+              },
+              "policy":{"max_manual_attempts":2,"require_reason":true,"requires_audit_record":true},
+              "manual_attempts_so_far":0,
+              "lineage_recorded":false,
+              "required_artifacts":["result.json"],
+              "present_artifacts":[],
+              "allow_missing_required_artifacts":false
+            }"#,
+        )
+        .expect("write simulation");
+
+        let cli = quiet_json_cli(RuntimeCommands::Intervention { simulation: simulation.clone() });
+        let exit = handle_runtime_command(&cli, &RuntimeCommands::Intervention { simulation })
+            .expect_err("mark-success must fail");
+        assert_eq!(exit, ExitCode::from(3));
     }
 
     #[test]
@@ -1335,14 +1439,9 @@ mod tests {
         )
         .expect("write simulation");
 
-        let cli = quiet_json_cli(RuntimeCommands::Transition {
-            simulation: simulation.clone(),
-        });
-        let exit = handle_runtime_command(
-            &cli,
-            &RuntimeCommands::Transition { simulation },
-        )
-        .expect_err("transition");
+        let cli = quiet_json_cli(RuntimeCommands::Transition { simulation: simulation.clone() });
+        let exit = handle_runtime_command(&cli, &RuntimeCommands::Transition { simulation })
+            .expect_err("transition");
         assert_eq!(exit, ExitCode::from(3));
     }
 
@@ -1377,7 +1476,8 @@ mod tests {
               "requested_selectors":[],
               "selected_nodes":[],
               "dependency_closure_enabled":false,
-              "replay_source_run_id":null
+              "replay_source_run_id":null,
+              "partial_rerun_contract":null
             }"#,
         )
         .expect("run snapshot");
@@ -1395,15 +1495,24 @@ mod tests {
         .expect("index");
         std::fs::write(dir.path().join("outputs").join("index.json"), r#"{"files":[]}"#)
             .expect("outputs index");
-        std::fs::write(dir.path().join("lineage.snapshot.json"), r#"{"schema_version":"v0.1","edges":[]}"#)
-            .expect("lineage");
+        std::fs::write(
+            dir.path().join("lineage.snapshot.json"),
+            r#"{"schema_version":"v0.1","edges":[]}"#,
+        )
+        .expect("lineage");
         std::fs::write(
             dir.path().join("observability.timeline.json"),
             r#"{"schema_version":"v0.1","entries":[]}"#,
         )
         .expect("timeline");
+        std::fs::write(
+            dir.path().join("scheduler.checkpoint.json"),
+            r#"{"loop_index":1,"ready_queue_depth":0,"ready_queue":[],"inflight":[],"scheduled":[],"blocked_by_budget":[],"blocked_reasons":{},"completed_statuses":{},"failure_propagation_mode":"isolate_branch","dependency_closure_enabled":false,"generated_unix_ms":1}"#,
+        )
+        .expect("checkpoint");
 
-        let state_cli = quiet_json_cli(RuntimeCommands::State { run_dir: dir.path().to_path_buf() });
+        let state_cli =
+            quiet_json_cli(RuntimeCommands::State { run_dir: dir.path().to_path_buf() });
         let state = handle_runtime_command(
             &state_cli,
             &RuntimeCommands::State { run_dir: dir.path().to_path_buf() },
@@ -1501,7 +1610,8 @@ mod tests {
               "requested_selectors":[],
               "selected_nodes":["extract"],
               "dependency_closure_enabled":false,
-              "replay_source_run_id":null
+              "replay_source_run_id":null,
+              "partial_rerun_contract":null
             }"#,
         )
         .expect("run snapshot");
@@ -1540,6 +1650,90 @@ mod tests {
     }
 
     #[test]
+    fn runtime_state_and_repair_surface_report_incomplete_marker() {
+        let dir = tempfile::tempdir().expect("tmp");
+        std::fs::create_dir_all(dir.path().join("outputs")).expect("outputs");
+        std::fs::write(
+            dir.path().join("manifest.json"),
+            r#"{"run_id":"run-1","status":"failed","graph_fingerprint":"fp"}"#,
+        )
+        .expect("manifest");
+        std::fs::write(
+            dir.path().join("graph.snapshot.json"),
+            r#"{"graph":{"nodes":[],"edges":[]},"graph_fingerprint":"fp"}"#,
+        )
+        .expect("graph snapshot");
+        std::fs::write(
+            dir.path().join("run.snapshot.json"),
+            r#"{
+              "run_id":"run-1",
+              "graph_snapshot_path":"graph.snapshot.json",
+              "planner_config":"{}",
+              "scheduler_config":"{}",
+              "policy_config":"{}",
+              "provenance":"{}",
+              "submission_source":"manual",
+              "trigger_source":"manual",
+              "operator":"ops",
+              "labels":[],
+              "parent_run_id":null,
+              "requested_selectors":[],
+              "selected_nodes":[],
+              "dependency_closure_enabled":true,
+              "replay_source_run_id":null,
+              "partial_rerun_contract":null
+            }"#,
+        )
+        .expect("run snapshot");
+        std::fs::write(dir.path().join("run.log.jsonl"), "{\"event\":\"run_started\",\"ts\":1}\n")
+            .expect("log");
+        std::fs::write(dir.path().join("run-log.index.json"), r#"[{"event":"run_started"}]"#)
+            .expect("index");
+        std::fs::write(dir.path().join("outputs").join("index.json"), r#"{"files":[]}"#)
+            .expect("outputs");
+        std::fs::write(
+            dir.path().join("lineage.snapshot.json"),
+            r#"{"schema_version":"v0.1","edges":[]}"#,
+        )
+        .expect("lineage");
+        std::fs::write(
+            dir.path().join("observability.timeline.json"),
+            r#"{"schema_version":"v0.1","entries":[]}"#,
+        )
+        .expect("timeline");
+        std::fs::write(
+            dir.path().join("scheduler.checkpoint.json"),
+            r#"{"loop_index":1,"ready_queue_depth":0,"ready_queue":[],"inflight":[],"scheduled":[],"blocked_by_budget":[],"blocked_reasons":{},"completed_statuses":{},"failure_propagation_mode":"isolate_branch","dependency_closure_enabled":true,"generated_unix_ms":1}"#,
+        )
+        .expect("checkpoint");
+        std::fs::write(
+            dir.path().join(".run-incomplete.json"),
+            r#"{"status":"incomplete","reason":"interrupted"}"#,
+        )
+        .expect("incomplete marker");
+
+        let state_cli =
+            quiet_json_cli(RuntimeCommands::State { run_dir: dir.path().to_path_buf() });
+        let state_exit = handle_runtime_command(
+            &state_cli,
+            &RuntimeCommands::State { run_dir: dir.path().to_path_buf() },
+        )
+        .expect("state");
+        assert_eq!(state_exit, ExitCode::SUCCESS);
+
+        let repair_cli = quiet_json_cli(RuntimeCommands::Repair {
+            run_dir: dir.path().to_path_buf(),
+            apply: true,
+        });
+        let repair_exit = handle_runtime_command(
+            &repair_cli,
+            &RuntimeCommands::Repair { run_dir: dir.path().to_path_buf(), apply: true },
+        )
+        .expect("repair");
+        assert_eq!(repair_exit, ExitCode::SUCCESS);
+    }
+
+    #[test]
     fn runtime_routes_support_event_log_audits() {
         let dir = tempfile::tempdir().expect("tmp");
         std::fs::write(dir.path().join("manifest.json"), r#"{"run_id":"run-1"}"#)
@@ -1568,8 +1762,7 @@ mod tests {
         )
         .expect("timeline");
 
-        let cli =
-            quiet_json_cli(RuntimeCommands::Events { run_dir: dir.path().to_path_buf() });
+        let cli = quiet_json_cli(RuntimeCommands::Events { run_dir: dir.path().to_path_buf() });
         let code = handle_runtime_command(
             &cli,
             &RuntimeCommands::Events { run_dir: dir.path().to_path_buf() },

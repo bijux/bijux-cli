@@ -453,6 +453,12 @@ pub fn build_manual_intervention_audit_report(
         notes.push("reason is required by policy".to_string());
         allowed = false;
     }
+    if action == "mark-success"
+        && record.node_id.as_deref().map(|node_id| node_id.trim().is_empty()).unwrap_or(true)
+    {
+        notes.push("mark-success requires a node_id".to_string());
+        allowed = false;
+    }
     if action == "retry" && manual_attempts_so_far >= policy.max_manual_attempts {
         notes.push("manual retry budget exhausted".to_string());
         allowed = false;

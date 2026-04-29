@@ -79,10 +79,7 @@ fn is_external_artifact_id(artifact_id: &str) -> bool {
 }
 
 fn is_known_wildcard_upstream(artifact_id: &str, known_node_ids: &BTreeSet<String>) -> bool {
-    artifact_id
-        .strip_suffix(":*")
-        .map(|node_id| known_node_ids.contains(node_id))
-        .unwrap_or(false)
+    artifact_id.strip_suffix(":*").map(|node_id| known_node_ids.contains(node_id)).unwrap_or(false)
 }
 
 pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, ExitCode> {
@@ -194,6 +191,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
 
     let finalized_manifest_path = run_dir.join("manifest.finalized.json");
     let complete_marker_path = run_dir.join(".run-complete.json");
+    let incomplete_marker_path = run_dir.join(".run-incomplete.json");
     if finalized_manifest_path.exists() {
         let finalized: Value = read_typed_json(&finalized_manifest_path)?;
         if finalized != manifest_json {
@@ -208,6 +206,9 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
         if marker.get("manifest").and_then(Value::as_str) != Some("manifest.finalized.json") {
             errors.push(".run-complete.json does not point to manifest.finalized.json".to_string());
         }
+    }
+    if incomplete_marker_path.exists() {
+        errors.push(".run-incomplete.json is present; run must be repaired or resumed before it can be considered complete".to_string());
     }
 
     let required_root_files = schema_index_ref
@@ -244,12 +245,8 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
     let mut outputs_count = 0usize;
     let mut produced_artifacts = Vec::new();
     let mut produced_legacy_ids = BTreeSet::new();
-    let produced_node_ids = snapshot
-        .graph
-        .nodes
-        .iter()
-        .map(|node| node.id.clone())
-        .collect::<BTreeSet<_>>();
+    let produced_node_ids =
+        snapshot.graph.nodes.iter().map(|node| node.id.clone()).collect::<BTreeSet<_>>();
     if !outputs_index_path.exists() {
         errors.push("missing outputs/index.json".to_string());
     } else {
@@ -547,6 +544,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
             "schema_index": schema_index_path.exists(),
             "manifest_finalized": finalized_manifest_path.exists(),
             "run_complete_marker": complete_marker_path.exists()
+                && !incomplete_marker_path.exists()
         },
         "evidence_completeness": {
             "required_root_files": required_root_files,
