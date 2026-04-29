@@ -210,7 +210,7 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
         prefer_throughput_scheduler: false,
     });
     let profile = scheduler_contract_profile();
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "LexicographicNodeId");
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuFitThenNodeId");
     assert!(failure_allows_downstream_readiness(FailurePropagationMode::ContinueIndependent));
 
     let graph = tiny_graph();

@@ -305,6 +305,8 @@ impl SchedulerState {
             node_id,
             Some(format!("mode={}", failure_mode_name(&mode))),
         );
+        let _ = self.ready.take(node_id);
+        self.retry_queue.remove(node_id);
         self.completion_by_node.insert(node_id.to_string(), "failed".to_string());
         if failure_allows_downstream_readiness(mode) {
             self.release_downstream(node_id)

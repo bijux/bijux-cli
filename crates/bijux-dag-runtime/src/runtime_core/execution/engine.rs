@@ -1417,6 +1417,9 @@ pub fn execute(
 
         for node_id in completed_node_ids {
             for newly_ready in dependency_counter.mark_completed(&node_id) {
+                if status_map.contains_key(&newly_ready) {
+                    continue;
+                }
                 scheduler_hook.on_node_eligible(&newly_ready);
                 engine_record::append_indexed_event(
                     &mut run_log,
