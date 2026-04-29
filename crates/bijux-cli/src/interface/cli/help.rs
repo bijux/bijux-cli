@@ -132,16 +132,14 @@ fn render_official_apps_section() -> String {
         } else {
             format!(" ({})", tool.aliases.join(", "))
         };
-        out.push_str(&format!(
-            "  {:<12} {}{}\n",
-            tool.namespace, tool.help_summary, aliases
-        ));
+        out.push_str(&format!("  {:<12} {}{}\n", tool.namespace, tool.help_summary, aliases));
     }
     out.trim_end().to_string()
 }
 
 fn render_installed_plugins_section() -> String {
-    "Installed plugins:\n  Use `bijux plugins list` to inspect the current plugin inventory.".to_string()
+    "Installed plugins:\n  Use `bijux plugins list` to inspect the current plugin inventory."
+        .to_string()
 }
 
 fn help_grouped_guide(path: &[&str]) -> Option<String> {
@@ -246,9 +244,7 @@ fn help_subcommand_guide(path: &[&str]) -> Option<String> {
                     "validate-manifest" => {
                         "validate-manifest Validate one app mount manifest on disk".to_string()
                     }
-                    "scaffold" => {
-                        "scaffold     Generate a starter mounted app project".to_string()
-                    }
+                    "scaffold" => "scaffold     Generate a starter mounted app project".to_string(),
                     other => format!("{other:<12} App command"),
                 })
                 .collect::<Vec<_>>();
@@ -316,7 +312,13 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux apps validate-manifest ./.bijux/apps/sample.mount.json".to_string(),
             "bijux apps scaffold python sample --path ./sample-app".to_string(),
         ],
-        ["doctor"] => vec!["bijux doctor".to_string(), "bijux doctor --format json".to_string()],
+        ["doctor"] => vec![
+            "bijux doctor".to_string(),
+            "bijux doctor paths".to_string(),
+            "bijux doctor routing --format json".to_string(),
+            "bijux doctor dag".to_string(),
+            "bijux doctor shims".to_string(),
+        ],
         ["version"] => vec!["bijux version".to_string(), "bijux --version".to_string()],
         ["config"] => vec![
             "bijux config list".to_string(),

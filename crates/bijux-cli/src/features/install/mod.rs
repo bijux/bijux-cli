@@ -32,8 +32,8 @@ pub use metadata::{
 };
 #[allow(unused_imports)]
 pub use paths::{
-    detect_stale_wrapper_scripts, discover_path_binaries, initialize_first_run_state,
-    legacy_installer_conflicts, resolve_active_binary,
+    detect_stale_wrapper_scripts, discover_named_path_binaries, discover_path_binaries,
+    initialize_first_run_state, legacy_installer_conflicts, resolve_active_binary,
 };
 #[allow(unused_imports)]
 pub use state::{
@@ -100,6 +100,20 @@ mod tests {
         assert_eq!(discovered.len(), 2);
         assert!(discovered[0].contains("first"));
         assert!(discovered[1].contains("second"));
+    }
+
+    #[test]
+    fn named_path_binary_discovery_supports_app_shim_names() {
+        let temp = TempDir::new().expect("tempdir");
+        let shim_bin = temp.path().join("shim-bin");
+        std::fs::create_dir_all(&shim_bin).expect("shim bin");
+        write_executable(&shim_bin.join("bijux-dag"), b"#!/bin/sh\n");
+        let path_value = std::env::join_paths([&shim_bin]).expect("join path");
+
+        let discovered =
+            discover_named_path_binaries(path_value.to_str().expect("utf-8 path"), "bijux-dag");
+        assert_eq!(discovered.len(), 1);
+        assert!(discovered[0].ends_with("bijux-dag"));
     }
 
     #[cfg(unix)]

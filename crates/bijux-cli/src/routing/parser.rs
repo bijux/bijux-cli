@@ -4,8 +4,8 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 
 use super::catalog::normalize_command_path;
 use crate::contracts::{
-    canonical_bijux_tool_namespace, known_bijux_tool_namespaces, ColorMode, LogLevel,
-    OutputFormat, PrettyMode,
+    canonical_bijux_tool_namespace, known_bijux_tool_namespaces, ColorMode, LogLevel, OutputFormat,
+    PrettyMode,
 };
 
 /// Parsed and normalized global options.
@@ -294,7 +294,7 @@ pub fn root_command() -> Command {
     let cli_group = Command::new("cli")
         .subcommand(Command::new("status"))
         .subcommand(Command::new("paths"))
-        .subcommand(Command::new("doctor"))
+        .subcommand(Command::new("doctor").arg(Arg::new("subject").num_args(1)))
         .subcommand(Command::new("version"))
         .subcommand(Command::new("repl"))
         .subcommand(completion_group.clone())
@@ -341,7 +341,7 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("status"))
         .subcommand(Command::new("audit"))
         .subcommand(Command::new("docs"))
-        .subcommand(Command::new("doctor"))
+        .subcommand(Command::new("doctor").arg(Arg::new("subject").num_args(1)))
         .subcommand(Command::new("version"))
         .subcommand(
             Command::new("install")

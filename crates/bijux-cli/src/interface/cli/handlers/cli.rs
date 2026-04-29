@@ -1,21 +1,24 @@
 //! `cli` command handlers.
 
 use serde_json::{json, Value};
+use std::collections::BTreeSet;
 use std::env;
 use std::path::Path;
 
 use crate::api::config::validate_config_file;
 use crate::api::version::{runtime_semver, runtime_version_info};
+use crate::features::apps::{app_doctor_report, apps_doctor_report};
 use crate::features::diagnostics::state_paths::{state_diagnostics, ResolvedStatePaths};
+use crate::features::diagnostics::{registry_inventory, route_inventory, state_diagnostics_query};
 use crate::features::install::{
-    completion_file_path, completion_script, detect_shell, install_health_report,
-    post_install_hint, CompletionShell,
+    completion_file_path, completion_script, detect_shell, discover_named_path_binaries,
+    install_health_report, post_install_hint, CompletionShell,
 };
 use crate::features::plugins::{
     compatibility_warnings, list_plugins, plugin_doctor, plugin_origin_metadata,
 };
 use crate::routing::registry::RouteRegistry;
-use crate::shared::argv::command_option_value;
+use crate::shared::argv::{command_option_value, command_positionals};
 
 fn completion_shell_name(shell: CompletionShell) -> &'static str {
     match shell {
@@ -79,9 +82,84 @@ fn install_warning_messages(install: &Value) -> Vec<&'static str> {
     .collect()
 }
 
+fn severity_rank(severity: &str) -> u8 {
+    match severity {
+        "blocked" => 4,
+        "error" => 3,
+        "warning" => 2,
+        "info" => 1,
+        _ => 0,
+    }
+}
+
+fn max_severity<'a>(severities: impl IntoIterator<Item = &'a str>) -> &'static str {
+    let mut highest = 0;
+    for severity in severities {
+        highest = highest.max(severity_rank(severity));
+    }
+    match highest {
+        4 => "blocked",
+        3 => "error",
+        2 => "warning",
+        1 => "info",
+        _ => "ok",
+    }
+}
+
+fn status_from_severity(severity: &str) -> &'static str {
+    match severity {
+        "blocked" | "error" => "degraded",
+        "warning" => "warning",
+        _ => "ok",
+    }
+}
+
+fn doctor_issue(area: &str, severity: &str, message: impl Into<String>) -> Value {
+    json!({
+        "area": area,
+        "severity": severity,
+        "message": message.into(),
+    })
+}
+
+fn doctor_check(
+    name: &str,
+    severity: &str,
+    message: impl Into<String>,
+    details: Value,
+    suggestions: Vec<String>,
+) -> Value {
+    json!({
+        "name": name,
+        "severity": severity,
+        "status": status_from_severity(severity),
+        "message": message.into(),
+        "details": details,
+        "suggestions": suggestions,
+    })
+}
+
+fn aggregate_suggestions(checks: &[Value]) -> Vec<Value> {
+    let mut seen = BTreeSet::new();
+    let mut out = Vec::new();
+    for check in checks {
+        let Some(items) = check.get("suggestions").and_then(Value::as_array) else {
+            continue;
+        };
+        for item in items.iter().filter_map(Value::as_str) {
+            if seen.insert(item.to_string()) {
+                out.push(json!(item));
+            }
+        }
+    }
+    out
+}
+
 fn issue_status(issues: &[Value]) -> &'static str {
     if issues.iter().any(|item| {
-        item.get("status") == Some(&json!("error")) || item.get("severity") == Some(&json!("error"))
+        item.get("status") == Some(&json!("error"))
+            || item.get("severity") == Some(&json!("error"))
+            || item.get("severity") == Some(&json!("blocked"))
     }) {
         "degraded"
     } else if issues.is_empty() {
@@ -139,85 +217,341 @@ pub(crate) fn completion_report(argv: &[String]) -> Value {
     })
 }
 
-pub(crate) fn doctor_report(paths: &ResolvedStatePaths, plugin_registry_path: &Path) -> Value {
-    let install = install_report_payload();
-    let config_result = validate_config_file(&paths.config_file);
-    let state = state_diagnostics(paths);
-    let plugins = plugin_doctor(plugin_registry_path);
-
-    let mut checks = Vec::<Value>::new();
+fn install_doctor_check(install: &Value) -> (Value, Vec<Value>) {
     let mut issues = Vec::<Value>::new();
+    let mut suggestions = Vec::<String>::new();
 
-    let config_status = match &config_result {
-        Ok(()) => "ok",
-        Err(_) => "error",
-    };
-    let config_message = match config_result {
-        Ok(()) if paths.config_file.exists() => "config file parsed successfully".to_string(),
-        Ok(()) => "config file is absent and will be treated as empty".to_string(),
-        Err(error) => error,
-    };
-    checks.push(json!({
-        "name": "config",
-        "status": config_status,
-        "message": config_message,
-    }));
+    if install["has_path_shadowing"] == json!(true) {
+        issues.push(doctor_issue(
+            "install",
+            "warning",
+            "multiple bijux binaries are visible on PATH",
+        ));
+        suggestions.push(
+            "Remove older bijux binaries from PATH so one canonical runtime resolves first."
+                .to_string(),
+        );
+    }
+    if install["has_duplicate_installs"] == json!(true) {
+        issues.push(doctor_issue("install", "warning", "duplicate bijux installs were detected"));
+        suggestions.push(
+            "Keep either the cargo or Python install path active and remove the duplicate install."
+                .to_string(),
+        );
+    }
+    if install["has_mismatched_wheel_binary_versions"] == json!(true) {
+        issues.push(doctor_issue("install", "warning", "wheel and binary versions do not match"));
+        suggestions.push(
+            "Reinstall bijux so the Python wheel and active binary come from the same release."
+                .to_string(),
+        );
+    }
+    if install["stale_wrapper_scripts"].as_array().is_some_and(|items| !items.is_empty()) {
+        issues.push(doctor_issue("install", "warning", "stale wrapper scripts were found"));
+        suggestions.push(
+            "Remove stale wrapper scripts or replace them with a canonical `bijux` binary."
+                .to_string(),
+        );
+    }
+    if install["legacy_installer_conflicts"].as_array().is_some_and(|items| !items.is_empty()) {
+        issues.push(doctor_issue("install", "warning", "legacy installer conflicts were found"));
+        suggestions.push(
+            "Remove legacy installer shims so only supported bijux entrypoints remain on PATH."
+                .to_string(),
+        );
+    }
 
-    let install_warnings = install_warning_messages(&install);
-    let install_status = if install_warnings.is_empty() { "ok" } else { "warning" };
-    checks.push(json!({
-        "name": "install",
-        "status": install_status,
-        "message": if install_warnings.is_empty() {
-            "runtime install paths evaluated".to_string()
+    let severity = max_severity(
+        issues.iter().filter_map(|issue| issue.get("severity").and_then(Value::as_str)),
+    );
+    let check = doctor_check(
+        "install",
+        severity,
+        if issues.is_empty() {
+            "runtime install paths evaluated"
         } else {
-            install_warnings.join("; ")
+            "install surface needs attention"
         },
-    }));
+        install.clone(),
+        suggestions,
+    );
+    (check, issues)
+}
 
-    let state_issue_count =
-        state.get("issues").and_then(Value::as_array).map_or(0, std::vec::Vec::len);
-    checks.push(json!({
-        "name": "state",
-        "status": if state_issue_count == 0 { "ok" } else { "warning" },
-        "message": "runtime state files evaluated",
-        "issue_count": state_issue_count,
-    }));
+fn state_paths_doctor_report(paths: &ResolvedStatePaths) -> Value {
+    let query = state_diagnostics_query(
+        &paths.config_file,
+        &paths.history_file,
+        &paths.plugin_registry_file,
+        &paths.memory_file,
+    );
+    let diagnostics = state_diagnostics(paths);
+    let mut issues =
+        diagnostics.get("issues").and_then(Value::as_array).cloned().unwrap_or_default();
+    let mut suggestions = BTreeSet::new();
 
-    match plugins {
+    let statuses = [
+        ("config", &query.config),
+        ("history", &query.history),
+        ("plugin_registry", &query.plugins_registry),
+        ("memory", &query.memory),
+    ];
+    for (label, status) in statuses {
+        if status.exists && !status.readable {
+            issues.push(doctor_issue(
+                "paths",
+                "error",
+                format!("{label} is not readable: {}", status.path.display()),
+            ));
+            suggestions.insert(format!(
+                "Grant read access for {} or move it to a readable location.",
+                status.path.display()
+            ));
+        }
+        if !status.writable {
+            issues.push(doctor_issue(
+                "paths",
+                "warning",
+                format!("{label} is not writable: {}", status.path.display()),
+            ));
+            suggestions.insert(format!(
+                "Grant write access for {} or update BIJUX state path overrides.",
+                status.path.display()
+            ));
+        }
+    }
+
+    let severity = max_severity(
+        issues.iter().filter_map(|issue| issue.get("severity").and_then(Value::as_str)),
+    );
+
+    json!({
+        "status": status_from_severity(severity),
+        "severity": severity,
+        "paths": {
+            "config": crate::features::diagnostics::state_paths::state_path_status_value(&query.config),
+            "history": crate::features::diagnostics::state_paths::state_path_status_value(&query.history),
+            "plugin_registry": crate::features::diagnostics::state_paths::state_path_status_value(&query.plugins_registry),
+            "memory": crate::features::diagnostics::state_paths::state_path_status_value(&query.memory),
+        },
+        "compatibility_config": paths.compatibility_config_file,
+        "compatibility_config_warning": paths.compatibility_config_warning,
+        "issues": issues,
+        "suggestions": suggestions.into_iter().map(Value::from).collect::<Vec<_>>(),
+        "diagnostics": diagnostics,
+    })
+}
+
+fn routing_doctor_report(registry: &RouteRegistry) -> Value {
+    let route_inventory = route_inventory(registry);
+    let registry_inventory = registry_inventory(registry);
+    json!({
+        "status": "ok",
+        "severity": "ok",
+        "summary": {
+            "route_count": route_inventory.routes.len(),
+            "alias_count": route_inventory.aliases.len(),
+            "namespace_count": registry_inventory.namespaces.len(),
+        },
+        "routes": route_inventory.routes,
+        "aliases": route_inventory.aliases,
+        "namespaces": registry_inventory.namespaces,
+        "issues": [],
+        "suggestions": [
+            "Use `bijux inspect --format json` when you need runtime route-source provenance."
+        ],
+    })
+}
+
+fn shim_doctor_report() -> Value {
+    let path_value = env::var("PATH").unwrap_or_default();
+    let mut legacy_app_shims = Vec::<Value>::new();
+    for tool in crate::contracts::known_bijux_tools() {
+        let mut shim_names = vec![format!("bijux-{}", tool.namespace)];
+        shim_names.extend(tool.aliases.iter().map(|alias| format!("bijux-{alias}")));
+        shim_names.sort();
+        shim_names.dedup();
+        for shim_name in shim_names {
+            let paths = discover_named_path_binaries(&path_value, &shim_name);
+            if !paths.is_empty() {
+                legacy_app_shims.push(json!({
+                    "namespace": tool.namespace,
+                    "shim": shim_name,
+                    "paths": paths,
+                }));
+            }
+        }
+    }
+
+    let legacy_installer_conflicts =
+        crate::features::install::legacy_installer_conflicts(&path_value);
+    let mut suggestions = Vec::<String>::new();
+    let mut issues = Vec::<Value>::new();
+    if !legacy_app_shims.is_empty() {
+        issues.push(doctor_issue(
+            "shims",
+            "warning",
+            "legacy app shim binaries were found on PATH",
+        ));
+        suggestions.push(
+            "Prefer `bijux <app> ...` routes and remove `bijux-<app>` compatibility shims from PATH."
+                .to_string(),
+        );
+    }
+    if !legacy_installer_conflicts.is_empty() {
+        issues.push(doctor_issue(
+            "shims",
+            "warning",
+            "legacy installer wrappers were found on PATH",
+        ));
+        suggestions.push(
+            "Remove legacy installer wrapper files so they cannot shadow supported bijux entrypoints."
+                .to_string(),
+        );
+    }
+    let severity = max_severity(
+        issues.iter().filter_map(|issue| issue.get("severity").and_then(Value::as_str)),
+    );
+    json!({
+        "status": status_from_severity(severity),
+        "severity": severity,
+        "legacy_app_shims": legacy_app_shims,
+        "legacy_installer_conflicts": legacy_installer_conflicts,
+        "issues": issues,
+        "suggestions": suggestions,
+    })
+}
+
+pub(crate) fn doctor_report(
+    paths: &ResolvedStatePaths,
+    registry: &RouteRegistry,
+    plugin_registry_path: &Path,
+) -> Value {
+    let install = install_report_payload();
+    let (install_check, mut issues) = install_doctor_check(&install);
+    let state = state_paths_doctor_report(paths);
+    let shims = shim_doctor_report();
+    let routing = routing_doctor_report(registry);
+    let apps = serde_json::to_value(apps_doctor_report(paths, plugin_registry_path))
+        .expect("apps doctor report");
+    let plugins = match plugin_doctor(plugin_registry_path) {
         Ok(report) => {
-            let status = if report.broken.is_empty() && report.incompatible.is_empty() {
+            let severity = if report.broken.is_empty() && report.incompatible.is_empty() {
                 "ok"
             } else {
                 "warning"
             };
-            checks.push(json!({
-                "name": "plugins",
-                "status": status,
-                "message": if status == "ok" {
-                    "plugin registry health evaluated".to_string()
+            let suggestions = if severity == "ok" {
+                Vec::new()
+            } else {
+                vec![
+                    "Run `bijux plugins doctor` or `bijux plugins inspect <namespace>` to repair incompatible plugins."
+                        .to_string(),
+                ]
+            };
+            doctor_check(
+                "plugins",
+                severity,
+                if severity == "ok" {
+                    "plugin registry health evaluated"
                 } else {
-                    "installed plugins need attention".to_string()
+                    "installed plugins need attention"
                 },
-                "installed": report.installed,
-                "broken": report.broken,
-                "incompatible": report.incompatible,
+                json!({
+                    "installed": report.installed,
+                    "broken": report.broken,
+                    "incompatible": report.incompatible,
+                }),
+                suggestions,
+            )
+        }
+        Err(error) => doctor_check(
+            "plugins",
+            "error",
+            error.to_string(),
+            json!({ "status": "unavailable" }),
+            vec!["Repair or recreate the plugin registry file before relying on plugin routes."
+                .to_string()],
+        ),
+    };
+    let apps_check = doctor_check(
+        "apps",
+        if apps["status"] == json!("ok") { "ok" } else { "warning" },
+        if apps["status"] == json!("ok") {
+            "official app discovery is healthy"
+        } else {
+            "some official app mounts need attention"
+        },
+        apps.clone(),
+        vec!["Run `bijux doctor <app>` for one app or `bijux apps which <app>` for the resolved entrypoint."
+            .to_string()],
+    );
+    let routing_check = doctor_check(
+        "routing",
+        "ok",
+        "route registry inventory evaluated",
+        routing.clone(),
+        vec!["Run `bijux doctor routing --format json` for the full route and alias inventory."
+            .to_string()],
+    );
+    let state_check = doctor_check(
+        "paths",
+        state["severity"].as_str().unwrap_or("ok"),
+        if state["issues"].as_array().is_some_and(|items| items.is_empty()) {
+            "runtime state files evaluated"
+        } else {
+            "runtime state paths need attention"
+        },
+        state.clone(),
+        state["suggestions"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(ToOwned::to_owned)
+            .collect(),
+    );
+    let shims_check = doctor_check(
+        "shims",
+        shims["severity"].as_str().unwrap_or("ok"),
+        if shims["issues"].as_array().is_some_and(|items| items.is_empty()) {
+            "legacy shim scan completed"
+        } else {
+            "legacy compatibility shims were found"
+        },
+        shims.clone(),
+        shims["suggestions"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(ToOwned::to_owned)
+            .collect(),
+    );
+
+    let checks = vec![install_check, state_check, plugins, apps_check, routing_check, shims_check];
+    for report in [&state, &shims] {
+        if let Some(items) = report.get("issues").and_then(Value::as_array) {
+            issues.extend(items.iter().cloned());
+        }
+    }
+    for check in &checks {
+        let severity = check.get("severity").and_then(Value::as_str).unwrap_or("ok");
+        if severity != "ok" {
+            issues.push(json!({
+                "area": check["name"],
+                "severity": severity,
+                "message": check["message"],
             }));
         }
-        Err(error) => checks.push(json!({
-            "name": "plugins",
-            "status": "error",
-            "message": error.to_string(),
-        })),
     }
-
-    issues.extend(checks.iter().filter(|check| check["status"] != "ok").cloned());
-    if let Some(items) = state.get("issues").and_then(Value::as_array) {
-        issues.extend(items.iter().cloned());
-    }
+    let severity = max_severity(
+        checks.iter().filter_map(|check| check.get("severity").and_then(Value::as_str)),
+    );
 
     json!({
-        "status": issue_status(&issues),
+        "status": status_from_severity(severity),
+        "severity": severity,
         "checks": checks,
         "install": {
             "has_path_shadowing": install["has_path_shadowing"],
@@ -227,8 +561,34 @@ pub(crate) fn doctor_report(paths: &ResolvedStatePaths, plugin_registry_path: &P
             "legacy_installer_conflict_paths": install["legacy_installer_conflicts"],
             "has_mismatched_wheel_binary_versions": install["has_mismatched_wheel_binary_versions"],
         },
+        "routing": routing,
+        "paths": state,
+        "apps": apps,
+        "shims": shims,
         "issues": issues,
+        "suggestions": aggregate_suggestions(&checks),
     })
+}
+
+fn doctor_topic_report(
+    argv: &[String],
+    paths: &ResolvedStatePaths,
+    registry: &RouteRegistry,
+    plugin_registry_path: &Path,
+) -> Value {
+    let subject = command_positionals(argv, &["cli", "doctor"]).first().cloned();
+    match subject.as_deref() {
+        None => doctor_report(paths, registry, plugin_registry_path),
+        Some("routing") => routing_doctor_report(registry),
+        Some("paths") => state_paths_doctor_report(paths),
+        Some("apps") => serde_json::to_value(apps_doctor_report(paths, plugin_registry_path))
+            .expect("apps doctor report"),
+        Some("shims") => shim_doctor_report(),
+        Some(query) => match app_doctor_report(query, paths) {
+            Ok(report) => serde_json::to_value(report).expect("app doctor report"),
+            Err(_) => runtime_error_payload(format!("unknown doctor topic: {query}")),
+        },
+    }
 }
 
 pub(crate) fn runtime_status_report(
@@ -505,7 +865,9 @@ pub(crate) fn try_handle(
                 "build_profile": version.build_profile,
             }))
         }
-        [a, b] if a == "cli" && b == "doctor" => Some(doctor_report(paths, plugin_registry_path)),
+        [a, b] if a == "cli" && b == "doctor" => {
+            Some(doctor_topic_report(argv, paths, registry, plugin_registry_path))
+        }
         [a, b] if a == "cli" && b == "repl" => Some(json!({
             "status": "ready",
             "mode": "interactive",
@@ -642,8 +1004,12 @@ pub(crate) fn try_handle(
 mod tests {
     use tempfile::tempdir;
 
-    use super::{completion_report, doctor_report, runtime_audit_report, runtime_status_report};
+    use super::{
+        completion_report, doctor_report, doctor_topic_report, runtime_audit_report,
+        runtime_status_report,
+    };
     use crate::features::diagnostics::state_paths::ResolvedStatePaths;
+    use crate::routing::registry::RouteRegistry;
     use crate::shared::telemetry::TEST_ENV_LOCK;
 
     #[test]
@@ -702,7 +1068,7 @@ mod tests {
             compatibility_config_file: temp.path().join("compatibility.env"),
             compatibility_config_warning: None,
         };
-        let report = doctor_report(&paths, &paths.plugin_registry_file);
+        let report = doctor_report(&paths, &RouteRegistry::default(), &paths.plugin_registry_file);
 
         if let Some(value) = old_path {
             std::env::set_var("PATH", value);
@@ -717,6 +1083,85 @@ mod tests {
 
         assert_eq!(report["status"], serde_json::json!("warning"));
         assert_eq!(report["install"]["has_path_shadowing"], serde_json::json!(true));
+        assert_eq!(report["severity"], serde_json::json!("warning"));
+        assert!(report["suggestions"].as_array().is_some_and(|items| !items.is_empty()));
+    }
+
+    #[test]
+    fn doctor_paths_topic_reports_permission_surface() {
+        let temp = tempdir().expect("temp dir");
+        let paths = ResolvedStatePaths {
+            config_file: temp.path().join("config.env"),
+            history_file: temp.path().join("history.txt"),
+            plugins_dir: temp.path().join("plugins"),
+            plugin_registry_file: temp.path().join("plugins/registry.json"),
+            memory_file: temp.path().join("memory.json"),
+            compatibility_config_file: temp.path().join("compatibility.env"),
+            compatibility_config_warning: Some("compat warning".to_string()),
+        };
+        let argv = vec!["bijux".to_string(), "doctor".to_string(), "paths".to_string()];
+
+        let report = doctor_topic_report(
+            &argv,
+            &paths,
+            &RouteRegistry::default(),
+            &paths.plugin_registry_file,
+        );
+
+        assert!(report["paths"]["config"]["path"].is_string());
+        assert!(report["suggestions"].as_array().is_some());
+        assert_eq!(report["compatibility_config_warning"], serde_json::json!("compat warning"));
+    }
+
+    #[test]
+    fn doctor_routing_topic_reports_registry_inventory() {
+        let temp = tempdir().expect("temp dir");
+        let paths = ResolvedStatePaths {
+            config_file: temp.path().join("config.env"),
+            history_file: temp.path().join("history.txt"),
+            plugins_dir: temp.path().join("plugins"),
+            plugin_registry_file: temp.path().join("plugins/registry.json"),
+            memory_file: temp.path().join("memory.json"),
+            compatibility_config_file: temp.path().join("compatibility.env"),
+            compatibility_config_warning: None,
+        };
+        let argv = vec!["bijux".to_string(), "doctor".to_string(), "routing".to_string()];
+
+        let report = doctor_topic_report(
+            &argv,
+            &paths,
+            &RouteRegistry::default(),
+            &paths.plugin_registry_file,
+        );
+
+        assert_eq!(report["status"], serde_json::json!("ok"));
+        assert!(report["summary"]["route_count"].as_u64().unwrap_or_default() > 0);
+        assert!(report["aliases"].as_array().is_some_and(|items| !items.is_empty()));
+    }
+
+    #[test]
+    fn doctor_unknown_topic_returns_runtime_error_payload() {
+        let temp = tempdir().expect("temp dir");
+        let paths = ResolvedStatePaths {
+            config_file: temp.path().join("config.env"),
+            history_file: temp.path().join("history.txt"),
+            plugins_dir: temp.path().join("plugins"),
+            plugin_registry_file: temp.path().join("plugins/registry.json"),
+            memory_file: temp.path().join("memory.json"),
+            compatibility_config_file: temp.path().join("compatibility.env"),
+            compatibility_config_warning: None,
+        };
+        let argv = vec!["bijux".to_string(), "doctor".to_string(), "unknown-topic".to_string()];
+
+        let report = doctor_topic_report(
+            &argv,
+            &paths,
+            &RouteRegistry::default(),
+            &paths.plugin_registry_file,
+        );
+
+        assert_eq!(report["status"], serde_json::json!("error"));
+        assert_eq!(report["message"], serde_json::json!("unknown doctor topic: unknown-topic"));
     }
 
     #[test]
