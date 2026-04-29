@@ -9,7 +9,16 @@ pub const ROOT_RUNTIME_COMMANDS: &[&str] =
     &["status", "audit", "docs", "doctor", "version", "install", "apps"];
 pub const ROOT_STATE_COMMANDS: &[&str] = &["history", "memory"];
 pub const ROOT_INTERACTION_COMMANDS: &[&str] = &["repl", "completion", "cli"];
-pub const ROOT_APPS_SUBCOMMANDS: &[&str] = &["list", "doctor", "which", "version", "capabilities"];
+pub const ROOT_APPS_SUBCOMMANDS: &[&str] = &[
+    "list",
+    "doctor",
+    "which",
+    "version",
+    "capabilities",
+    "schema",
+    "validate-manifest",
+    "scaffold",
+];
 pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
     &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
@@ -89,6 +98,9 @@ fn build_built_in_route_paths() -> Vec<String> {
         "apps which".to_string(),
         "apps version".to_string(),
         "apps capabilities".to_string(),
+        "apps schema".to_string(),
+        "apps validate-manifest".to_string(),
+        "apps scaffold".to_string(),
         "config".to_string(),
         "config list".to_string(),
         "history".to_string(),

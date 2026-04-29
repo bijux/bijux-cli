@@ -309,6 +309,17 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("version").arg(Arg::new("namespace").num_args(1).required(true)))
         .subcommand(
             Command::new("capabilities").arg(Arg::new("namespace").num_args(1).required(true)),
+        )
+        .subcommand(Command::new("schema"))
+        .subcommand(
+            Command::new("validate-manifest").arg(Arg::new("path").num_args(1).required(true)),
+        )
+        .subcommand(
+            Command::new("scaffold")
+                .arg(Arg::new("kind").num_args(1).required(true))
+                .arg(Arg::new("namespace").num_args(1).required(true))
+                .arg(Arg::new("path").long("path").num_args(1))
+                .arg(Arg::new("force").long("force").action(ArgAction::SetTrue)),
         );
 
     Command::new("bijux")

@@ -12,7 +12,7 @@ use super::AppRunResult;
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct DelegatedKnownToolCommand {
     resolved: ResolvedAppCommand,
-    package_name: String,
+    install_hint: Option<String>,
     command_surface: String,
     forwarded_args: Vec<String>,
 }
@@ -56,7 +56,11 @@ fn locate_known_tool_route(argv: &[String]) -> Option<(bool, String, usize)> {
         let query = argv.get(command_start + 1)?;
         known_bijux_tool_by_query(query).map(|_| (true, query.clone(), command_start + 2))
     } else {
-        known_bijux_tool_by_query(first).map(|_| (false, first.clone(), command_start + 1))
+        if known_bijux_tool_by_query(first).is_some() || resolve_runtime_command(first).is_some() {
+            Some((false, first.clone(), command_start + 1))
+        } else {
+            None
+        }
     }
 }
 
@@ -172,7 +176,7 @@ fn delegate_to_embedded_handler(
 
 fn delegate_to_resolved_command(
     resolved: &ResolvedAppCommand,
-    package_name: &str,
+    install_hint: Option<&str>,
     command_surface: &str,
     forwarded_args: &[String],
 ) -> AppRunResult {
@@ -191,10 +195,15 @@ fn delegate_to_resolved_command(
             stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
         },
         Err(error) => {
-            let message = format!(
-                "failed to run `{command_surface}` via `{}`: {error}\ninstall with `cargo install {package_name}` or `pip install {package_name}`\n",
+            let mut message = format!(
+                "failed to run `{command_surface}` via `{}`: {error}\n",
                 resolved.display_command
             );
+            if let Some(install_hint) = install_hint {
+                message.push_str(&format!(
+                    "install with `cargo install {install_hint}` or `pip install {install_hint}`\n"
+                ));
+            }
             AppRunResult { exit_code: 1, stdout: String::new(), stderr: message }
         }
     }
@@ -202,9 +211,9 @@ fn delegate_to_resolved_command(
 
 fn delegated_known_bijux_tool_command(argv: &[String]) -> Option<DelegatedKnownToolCommand> {
     let (control_plane, query, forwarded_start) = locate_known_tool_route(argv)?;
-    let tool = known_bijux_tool_by_query(&query)?;
 
     if control_plane {
+        let tool = known_bijux_tool_by_query(&query)?;
         Some(DelegatedKnownToolCommand {
             resolved: resolve_control_command(&query).unwrap_or_else(|| ResolvedAppCommand {
                 command: tool.control_binary(),
@@ -215,13 +224,14 @@ fn delegated_known_bijux_tool_command(argv: &[String]) -> Option<DelegatedKnownT
                 namespace: tool.namespace.to_string(),
                 descriptor: tool.descriptor(),
             }),
-            package_name: tool.control_package(),
+            install_hint: Some(tool.control_package().to_string()),
             command_surface: format!("bijux dev {}", tool.namespace),
             forwarded_args: argv[forwarded_start..].to_vec(),
         })
     } else {
-        Some(DelegatedKnownToolCommand {
-            resolved: resolve_runtime_command(&query).unwrap_or_else(|| ResolvedAppCommand {
+        let install_hint = known_bijux_tool_by_query(&query).map(|tool| tool.runtime_package().to_string());
+        let resolved = if let Some(tool) = known_bijux_tool_by_query(&query) {
+            resolve_runtime_command(&query).unwrap_or_else(|| ResolvedAppCommand {
                 command: tool.runtime_binary(),
                 args: Vec::new(),
                 display_command: tool.runtime_binary(),
@@ -229,9 +239,14 @@ fn delegated_known_bijux_tool_command(argv: &[String]) -> Option<DelegatedKnownT
                 kind: ProductEntrypointKind::Binary,
                 namespace: tool.namespace.to_string(),
                 descriptor: tool.descriptor(),
-            }),
-            package_name: tool.runtime_package(),
-            command_surface: format!("bijux {}", tool.namespace),
+            })
+        } else {
+            resolve_runtime_command(&query)?
+        };
+        Some(DelegatedKnownToolCommand {
+            command_surface: format!("bijux {}", resolved.namespace),
+            resolved,
+            install_hint,
             forwarded_args: argv[forwarded_start..].to_vec(),
         })
     }
@@ -242,7 +257,7 @@ pub(super) fn is_known_bijux_tool_route(path: &[String]) -> bool {
         [dev, namespace, ..] => {
             dev == "dev" && known_bijux_tool_by_query(namespace).is_some()
         }
-        [namespace, ..] => known_bijux_tool_by_query(namespace).is_some(),
+        [namespace, ..] => resolve_runtime_command(namespace).is_some(),
         [] => false,
     }
 }
@@ -255,7 +270,7 @@ pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunRes
     let command = delegated_known_bijux_tool_command(argv)?;
     Some(delegate_to_resolved_command(
         &command.resolved,
-        &command.package_name,
+        command.install_hint.as_deref(),
         &command.command_surface,
         &command.forwarded_args,
     ))

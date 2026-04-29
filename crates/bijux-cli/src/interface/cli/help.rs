@@ -240,6 +240,15 @@ fn help_subcommand_guide(path: &[&str]) -> Option<String> {
                     "capabilities" => {
                         "capabilities Show declared app capability contract".to_string()
                     }
+                    "schema" => {
+                        "schema       Show the app mount descriptor JSON schema".to_string()
+                    }
+                    "validate-manifest" => {
+                        "validate-manifest Validate one app mount manifest on disk".to_string()
+                    }
+                    "scaffold" => {
+                        "scaffold     Generate a starter mounted app project".to_string()
+                    }
                     other => format!("{other:<12} App command"),
                 })
                 .collect::<Vec<_>>();
@@ -303,6 +312,9 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux apps doctor".to_string(),
             "bijux apps which dag".to_string(),
             "bijux apps capabilities dag".to_string(),
+            "bijux apps schema".to_string(),
+            "bijux apps validate-manifest ./.bijux/apps/sample.mount.json".to_string(),
+            "bijux apps scaffold python sample --path ./sample-app".to_string(),
         ],
         ["doctor"] => vec!["bijux doctor".to_string(), "bijux doctor --format json".to_string()],
         ["version"] => vec!["bijux version".to_string(), "bijux --version".to_string()],

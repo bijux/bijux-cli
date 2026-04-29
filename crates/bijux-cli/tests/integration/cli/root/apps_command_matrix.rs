@@ -380,3 +380,168 @@ fn project_local_embedded_mount_handles_status_and_help_without_external_binary(
     assert!(help_stdout.contains("Usage: bijux dag"));
     assert!(help_stdout.contains("Embedded DAG shell"));
 }
+
+#[test]
+fn apps_schema_reports_product_mount_descriptor_contract() {
+    let root = temp_dir("apps-schema");
+    let payload = parse_json(run_with(
+        &root,
+        &["apps", "schema", "--format", "json", "--no-pretty"],
+        &[],
+    ));
+
+    assert_eq!(payload["schema"], "product-mount-descriptor-v1");
+    assert!(
+        payload["schema_json"]["definitions"]["ProductMountDescriptor"].is_object()
+            || payload["schema_json"]["$defs"]["ProductMountDescriptor"].is_object()
+            || payload["schema_json"]["properties"].is_object()
+    );
+    assert!(payload["entrypoint_kinds"]
+        .as_array()
+        .expect("entrypoint kinds")
+        .iter()
+        .any(|value| value == "python_module"));
+}
+
+#[test]
+fn apps_validate_manifest_accepts_valid_and_rejects_invalid_descriptors() {
+    let root = temp_dir("apps-validate-manifest");
+    let app_dir = root.join(".bijux/apps");
+    fs::create_dir_all(&app_dir).expect("mkdir app dir");
+    let valid = app_dir.join("sample.mount.json");
+    fs::write(
+        &valid,
+        r#"{
+  "namespace": "sample",
+  "display_name": "Sample App",
+  "aliases": ["samp"],
+  "entrypoint": { "kind": "python_module", "command": "sample_app" },
+  "control_entrypoint": { "kind": "python_module", "command": "sample_app" },
+  "help": { "summary": "Sample app" },
+  "capabilities": ["json_output"],
+  "version": "0.1.0"
+}"#,
+    )
+    .expect("write valid manifest");
+    let invalid = app_dir.join("broken.mount.json");
+    fs::write(
+        &invalid,
+        r#"{
+  "namespace": "broken",
+  "display_name": "",
+  "entrypoint": { "kind": "binary", "command": "" },
+  "control_entrypoint": { "kind": "binary", "command": "" },
+  "help": { "summary": "" },
+  "capabilities": [""]
+}"#,
+    )
+    .expect("write invalid manifest");
+
+    let ok_payload = parse_json(run_with(
+        &root,
+        &[
+            "apps",
+            "validate-manifest",
+            valid.to_str().expect("utf-8"),
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
+        &[],
+    ));
+    assert_eq!(ok_payload["status"], "ok");
+    assert_eq!(ok_payload["valid"], true);
+    assert_eq!(ok_payload["namespace"], "sample");
+    assert_eq!(ok_payload["entrypoint_kind"], "python_module");
+
+    let invalid_payload = parse_json(run_with(
+        &root,
+        &[
+            "apps",
+            "validate-manifest",
+            invalid.to_str().expect("utf-8"),
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
+        &[],
+    ));
+    assert_eq!(invalid_payload["status"], "invalid");
+    assert_eq!(invalid_payload["valid"], false);
+    assert!(invalid_payload["issues"]
+        .as_array()
+        .expect("issues")
+        .iter()
+        .any(|value| value.as_str().is_some_and(|text| text.contains("display_name"))));
+}
+
+#[test]
+fn apps_scaffold_python_generates_manifest_and_module_files() {
+    let root = temp_dir("apps-scaffold-python");
+    let target = root.join("sample-python-app");
+    let payload = parse_json(run_with(
+        &root,
+        &[
+            "apps",
+            "scaffold",
+            "python",
+            "sample",
+            "--path",
+            target.to_str().expect("utf-8"),
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
+        &[],
+    ));
+
+    assert_eq!(payload["status"], "scaffolded");
+    assert_eq!(payload["kind"], "python");
+    assert_eq!(payload["namespace"], "sample");
+    assert_eq!(payload["entrypoint_kind"], "python_module");
+    assert!(target.join(".bijux/apps/sample.mount.json").exists());
+    assert!(target.join("sample_app/__init__.py").exists());
+    assert!(target.join("sample_app/__main__.py").exists());
+}
+
+#[test]
+fn scaffolded_custom_python_mount_routes_from_project_root() {
+    let root = temp_dir("apps-custom-python-route");
+    let target = root.join("sample-python-app");
+    let scaffold = parse_json(run_with(
+        &root,
+        &[
+            "apps",
+            "scaffold",
+            "python",
+            "sample",
+            "--path",
+            target.to_str().expect("utf-8"),
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
+        &[],
+    ));
+    assert_eq!(scaffold["status"], "scaffolded");
+
+    let bin_dir = root.join("bin");
+    fs::create_dir_all(&bin_dir).expect("mkdir bin dir");
+    write_stub_binary(&bin_dir, "fake-python", "fake-python 3.11.0");
+    let out = run_with(
+        &target,
+        &["sample", "version"],
+        &[(
+            "BIJUX_PYTHON_BIN",
+            bin_dir
+                .join(if cfg!(windows) { "fake-python.bat" } else { "fake-python" })
+                .display()
+                .to_string(),
+        )],
+    );
+
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8(out.stdout).expect("utf-8");
+    assert!(stdout.contains("stub:fake-python"));
+    assert!(stdout.contains("args:-m sample_app version"));
+}

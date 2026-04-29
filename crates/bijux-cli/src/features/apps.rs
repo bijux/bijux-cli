@@ -3,13 +3,16 @@
 
 use std::env;
 use std::fs;
+use std::path::Component;
 use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
 use serde::Serialize;
+use serde_json::{json, Value};
 
 use crate::contracts::{
-    known_bijux_tool_by_query, known_bijux_tools, KnownBijuxTool, ProductEntrypoint,
+    known_bijux_tool_by_query, known_bijux_tools, product_mount_descriptor_schema,
+    validate_product_mount_descriptor, KnownBijuxTool, Namespace, ProductEntrypoint,
     ProductEntrypointKind, ProductHelpMetadata, ProductMountDescriptor,
 };
 use crate::features::diagnostics::state_paths::ResolvedStatePaths;
@@ -18,6 +21,24 @@ use crate::features::plugins::list_plugins;
 const DEFAULT_SYSTEM_APPS_DIR: &str = "/etc/bijux/apps";
 const BIJUX_APP_PATH: &str = "BIJUX_APP_PATH";
 const BIJUX_SYSTEM_APP_PATH: &str = "BIJUX_SYSTEM_APP_PATH";
+const APP_SCAFFOLD_VERSION: &str = "0.1.0";
+const RESERVED_APP_NAMESPACES: &[&str] = &[
+    "apps",
+    "cli",
+    "completion",
+    "config",
+    "doctor",
+    "help",
+    "history",
+    "inspect",
+    "install",
+    "memory",
+    "plugins",
+    "repl",
+    "self",
+    "status",
+    "version",
+];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -158,6 +179,37 @@ pub struct AppCapabilitiesReport {
     pub help_summary: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AppManifestSchemaReport {
+    pub status: String,
+    pub schema: String,
+    pub schema_json: Value,
+    pub entrypoint_kinds: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AppManifestValidationReport {
+    pub status: String,
+    pub path: String,
+    pub valid: bool,
+    pub namespace: Option<String>,
+    pub entrypoint_kind: Option<ProductEntrypointKind>,
+    pub issues: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AppScaffoldReport {
+    pub status: String,
+    pub kind: String,
+    pub namespace: String,
+    pub root: String,
+    pub manifest_path: String,
+    pub entrypoint_kind: ProductEntrypointKind,
+    pub entrypoint: String,
+    pub files: Vec<String>,
+    pub guidance: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedAppCommand {
     pub command: String,
@@ -270,6 +322,19 @@ fn env_apps_dirs() -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
+fn custom_descriptor_dirs() -> Vec<(AppDiscoverySource, PathBuf)> {
+    let mut rows = Vec::new();
+    if let Ok(cwd) = env::current_dir() {
+        rows.push((AppDiscoverySource::ProjectLocal, cwd.join(".bijux/apps")));
+    }
+    rows.extend(env_apps_dirs().into_iter().map(|directory| (AppDiscoverySource::EnvironmentPath, directory)));
+    if let Some(directory) = user_apps_dir() {
+        rows.push((AppDiscoverySource::UserLocal, directory));
+    }
+    rows.push((AppDiscoverySource::SystemLocal, system_apps_dir()));
+    rows
+}
+
 fn primary_descriptor_path(dir: &Path, namespace: &str) -> PathBuf {
     dir.join(format!("{namespace}.mount.json"))
 }
@@ -284,6 +349,18 @@ fn descriptor_paths(dir: &Path, namespace: &str) -> Vec<PathBuf> {
 
 fn disabled_registry_path(dir: &Path) -> PathBuf {
     dir.join("disabled.json")
+}
+
+fn is_safe_scaffold_path(path: &Path) -> bool {
+    !path.components().any(|component| matches!(component, Component::ParentDir))
+}
+
+fn app_module_name(namespace: &str) -> String {
+    format!("{}_app", namespace.replace('-', "_"))
+}
+
+fn rust_app_entrypoint_name(namespace: &str) -> String {
+    format!("{namespace}-app")
 }
 
 fn discovery_paths_for(namespace: &str, paths: &ResolvedStatePaths) -> Vec<AppDiscoveryPath> {
@@ -493,6 +570,180 @@ fn absolutize_entrypoint(
     entrypoint
 }
 
+fn load_full_mount_descriptor(raw: &str, path: &Path) -> Result<ProductMountDescriptor, String> {
+    let mut descriptor = serde_json::from_str::<ProductMountDescriptor>(raw)
+        .map_err(|error| format!("failed to parse descriptor JSON: {error}"))?;
+    descriptor.entrypoint = absolutize_entrypoint(descriptor.entrypoint, path.parent());
+    descriptor.control_entrypoint = absolutize_entrypoint(descriptor.control_entrypoint, path.parent());
+    validate_product_mount_descriptor(&descriptor)?;
+    Ok(descriptor)
+}
+
+fn read_mount_descriptor(path: &Path) -> Result<ProductMountDescriptor, String> {
+    let raw =
+        fs::read_to_string(path).map_err(|error| format!("failed to read descriptor file: {error}"))?;
+    load_full_mount_descriptor(&raw, path)
+}
+
+fn custom_mount_is_disabled(descriptor: &ProductMountDescriptor) -> bool {
+    for candidate in disabled_registry_candidates() {
+        if !candidate.location.exists() {
+            continue;
+        }
+        let Ok(raw) = fs::read_to_string(&candidate.location) else {
+            continue;
+        };
+        let Ok(registry) = serde_json::from_str::<DisabledProductsRegistry>(&raw) else {
+            continue;
+        };
+        if registry.contains(descriptor.namespace.as_str())
+            || descriptor.aliases.iter().any(|alias| registry.contains(alias.as_str()))
+        {
+            return true;
+        }
+    }
+    false
+}
+
+fn descriptor_matches_query(descriptor: &ProductMountDescriptor, query: &str) -> bool {
+    let normalized = Namespace::normalize(query);
+    descriptor.namespace.as_str() == normalized
+        || descriptor.aliases.iter().any(|alias| alias.as_str() == normalized)
+}
+
+fn resolve_descriptor_runtime_command(
+    descriptor: ProductMountDescriptor,
+    source: AppDiscoverySource,
+) -> ResolvedAppCommand {
+    match descriptor.entrypoint.kind {
+        ProductEntrypointKind::Binary
+        | ProductEntrypointKind::PythonConsoleScript
+        | ProductEntrypointKind::PluginProcess => {
+            let command = descriptor.entrypoint.command.clone();
+            let resolved =
+                which_in_path(&command).map(|path| path.display().to_string()).unwrap_or(command);
+            ResolvedAppCommand {
+                display_command: resolved.clone(),
+                command: resolved,
+                args: Vec::new(),
+                source,
+                kind: descriptor.entrypoint.kind.clone(),
+                namespace: descriptor.namespace.as_str().to_string(),
+                descriptor,
+            }
+        }
+        ProductEntrypointKind::PythonModule => {
+            let interpreter = resolve_python_interpreter()
+                .map(|path| path.display().to_string())
+                .unwrap_or_else(|| {
+                    env::var("BIJUX_PYTHON_BIN").unwrap_or_else(|_| "python3".to_string())
+                });
+            let args = vec!["-m".to_string(), descriptor.entrypoint.command.clone()];
+            ResolvedAppCommand {
+                display_command: format_display_command(&interpreter, &args),
+                command: interpreter,
+                args,
+                source,
+                kind: ProductEntrypointKind::PythonModule,
+                namespace: descriptor.namespace.as_str().to_string(),
+                descriptor,
+            }
+        }
+        ProductEntrypointKind::EmbeddedRust => ResolvedAppCommand {
+            display_command: format!("embedded:{}", descriptor.entrypoint.command),
+            command: descriptor.entrypoint.command.clone(),
+            args: Vec::new(),
+            source,
+            kind: ProductEntrypointKind::EmbeddedRust,
+            namespace: descriptor.namespace.as_str().to_string(),
+            descriptor,
+        },
+    }
+}
+
+fn resolve_descriptor_control_command(
+    descriptor: ProductMountDescriptor,
+    source: AppDiscoverySource,
+) -> ResolvedAppCommand {
+    match descriptor.control_entrypoint.kind {
+        ProductEntrypointKind::Binary
+        | ProductEntrypointKind::PythonConsoleScript
+        | ProductEntrypointKind::PluginProcess => {
+            let command = descriptor.control_entrypoint.command.clone();
+            let resolved =
+                which_in_path(&command).map(|path| path.display().to_string()).unwrap_or(command);
+            ResolvedAppCommand {
+                display_command: resolved.clone(),
+                command: resolved,
+                args: Vec::new(),
+                source,
+                kind: descriptor.control_entrypoint.kind.clone(),
+                namespace: descriptor.namespace.as_str().to_string(),
+                descriptor,
+            }
+        }
+        ProductEntrypointKind::PythonModule => {
+            let interpreter = resolve_python_interpreter()
+                .map(|path| path.display().to_string())
+                .unwrap_or_else(|| {
+                    env::var("BIJUX_PYTHON_BIN").unwrap_or_else(|_| "python3".to_string())
+                });
+            let args = vec!["-m".to_string(), descriptor.control_entrypoint.command.clone()];
+            ResolvedAppCommand {
+                display_command: format_display_command(&interpreter, &args),
+                command: interpreter,
+                args,
+                source,
+                kind: ProductEntrypointKind::PythonModule,
+                namespace: descriptor.namespace.as_str().to_string(),
+                descriptor,
+            }
+        }
+        ProductEntrypointKind::EmbeddedRust => ResolvedAppCommand {
+            display_command: format!("embedded:{}", descriptor.control_entrypoint.command),
+            command: descriptor.control_entrypoint.command.clone(),
+            args: Vec::new(),
+            source,
+            kind: ProductEntrypointKind::EmbeddedRust,
+            namespace: descriptor.namespace.as_str().to_string(),
+            descriptor,
+        },
+    }
+}
+
+fn discover_custom_mount(query: &str) -> Option<(ProductMountDescriptor, AppDiscoverySource)> {
+    for (source, directory) in custom_descriptor_dirs() {
+        let Ok(entries) = fs::read_dir(&directory) else {
+            continue;
+        };
+        let mut files = entries
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .filter(|path| path.is_file())
+            .filter(|path| {
+                path.file_name()
+                    .and_then(|value| value.to_str())
+                    .is_some_and(|value| {
+                        value.ends_with(".mount.json")
+                            || (value.ends_with(".json") && value != "disabled.json")
+                    })
+            })
+            .collect::<Vec<_>>();
+        files.sort();
+
+        for path in files {
+            let Ok(descriptor) = read_mount_descriptor(&path) else {
+                continue;
+            };
+            if !descriptor_matches_query(&descriptor, query) || custom_mount_is_disabled(&descriptor) {
+                continue;
+            }
+            return Some((descriptor, source));
+        }
+    }
+    None
+}
+
 fn format_display_command(command: &str, args: &[String]) -> String {
     if args.is_empty() {
         command.to_string()
@@ -630,51 +881,81 @@ fn resolve_tool(
             }
 
             match fs::read_to_string(&candidate.location) {
-                Ok(raw) => match serde_json::from_str::<ProductMountOverride>(&raw) {
-                    Ok(overlay) => match apply_override(&mut descriptor, overlay.clone(), &candidate)
-                    {
-                        Ok(applied_or_disabled) => {
-                            descriptor_source = candidate.source;
-                            disabled = disabled || overlay.disabled.unwrap_or(false);
-                            probes.push(AppProbe {
-                                source: candidate.source,
-                                location: candidate.location.display().to_string(),
-                                status: "ok".to_string(),
-                                message: if disabled {
-                                    "descriptor loaded and product is disabled".to_string()
-                                } else if applied_or_disabled {
-                                    "descriptor loaded and applied".to_string()
-                                } else {
-                                    "descriptor loaded with no changes".to_string()
-                                },
-                            });
-                            break;
-                        }
-                        Err(error) => {
+                Ok(raw) => {
+                    if let Ok(full_descriptor) = load_full_mount_descriptor(&raw, &candidate.location) {
+                        if full_descriptor.namespace.as_str() != tool.namespace {
+                            let message = format!(
+                                "descriptor namespace `{}` does not match requested namespace `{}`",
+                                full_descriptor.namespace.as_str(),
+                                tool.namespace
+                            );
                             health = AppHealth::BadManifest;
-                            issues.push(error.clone());
+                            issues.push(message.clone());
                             probes.push(AppProbe {
                                 source: candidate.source,
                                 location: candidate.location.display().to_string(),
                                 status: "bad_manifest".to_string(),
-                                message: error,
+                                message,
                             });
                             break;
                         }
-                    },
-                    Err(error) => {
-                        health = AppHealth::BadManifest;
-                        let message = format!("failed to parse descriptor JSON: {error}");
-                        issues.push(message.clone());
+                        descriptor = full_descriptor;
+                        descriptor_source = candidate.source;
                         probes.push(AppProbe {
                             source: candidate.source,
                             location: candidate.location.display().to_string(),
-                            status: "bad_manifest".to_string(),
-                            message,
+                            status: "ok".to_string(),
+                            message: "descriptor loaded as full mount contract".to_string(),
                         });
                         break;
                     }
-                },
+
+                    match serde_json::from_str::<ProductMountOverride>(&raw) {
+                        Ok(overlay) => match apply_override(&mut descriptor, overlay.clone(), &candidate)
+                        {
+                            Ok(applied_or_disabled) => {
+                                descriptor_source = candidate.source;
+                                disabled = disabled || overlay.disabled.unwrap_or(false);
+                                probes.push(AppProbe {
+                                    source: candidate.source,
+                                    location: candidate.location.display().to_string(),
+                                    status: "ok".to_string(),
+                                    message: if disabled {
+                                        "descriptor loaded and product is disabled".to_string()
+                                    } else if applied_or_disabled {
+                                        "descriptor loaded and applied".to_string()
+                                    } else {
+                                        "descriptor loaded with no changes".to_string()
+                                    },
+                                });
+                                break;
+                            }
+                            Err(error) => {
+                                health = AppHealth::BadManifest;
+                                issues.push(error.clone());
+                                probes.push(AppProbe {
+                                    source: candidate.source,
+                                    location: candidate.location.display().to_string(),
+                                    status: "bad_manifest".to_string(),
+                                    message: error,
+                                });
+                                break;
+                            }
+                        },
+                        Err(error) => {
+                            health = AppHealth::BadManifest;
+                            let message = format!("failed to parse descriptor JSON: {error}");
+                            issues.push(message.clone());
+                            probes.push(AppProbe {
+                                source: candidate.source,
+                                location: candidate.location.display().to_string(),
+                                status: "bad_manifest".to_string(),
+                                message,
+                            });
+                            break;
+                        }
+                    }
+                }
                 Err(error) => {
                     health = AppHealth::BadManifest;
                     let message = format!("failed to read descriptor file: {error}");
@@ -1002,82 +1283,37 @@ fn app_summary(apps: &[AppMountReport]) -> AppMountSummary {
 
 /// Resolve the runtime command used for official app delegation.
 pub fn resolve_runtime_command(query: &str) -> Option<ResolvedAppCommand> {
-    let tool = known_bijux_tool_by_query(query)?;
-    let paths = ResolvedStatePaths {
-        config_file: PathBuf::new(),
-        history_file: PathBuf::new(),
-        plugins_dir: PathBuf::new(),
-        plugin_registry_file: PathBuf::new(),
-        memory_file: PathBuf::new(),
-        compatibility_config_file: PathBuf::new(),
-        compatibility_config_warning: None,
-    };
-    let resolution = resolve_tool(tool, &paths, ResolutionConfig { probe_version: false });
-    resolution.runtime_resolution.or_else(|| {
-        let descriptor = resolution.descriptor;
-        let command = descriptor.entrypoint.command.clone();
-        let kind = descriptor.entrypoint.kind.clone();
-        Some(ResolvedAppCommand {
-            command: command.clone(),
-            args: Vec::new(),
-            display_command: command,
-            source: resolution.descriptor_source,
-            kind,
-            namespace: tool.namespace.to_string(),
-            descriptor,
-        })
-    })
+    if let Some(tool) = known_bijux_tool_by_query(query) {
+        let paths = ResolvedStatePaths {
+            config_file: PathBuf::new(),
+            history_file: PathBuf::new(),
+            plugins_dir: PathBuf::new(),
+            plugin_registry_file: PathBuf::new(),
+            memory_file: PathBuf::new(),
+            compatibility_config_file: PathBuf::new(),
+            compatibility_config_warning: None,
+        };
+        let resolution = resolve_tool(tool, &paths, ResolutionConfig { probe_version: false });
+        return resolution
+            .runtime_resolution
+            .or_else(|| Some(resolve_descriptor_runtime_command(resolution.descriptor, resolution.descriptor_source)));
+    }
+
+    discover_custom_mount(query)
+        .map(|(descriptor, source)| resolve_descriptor_runtime_command(descriptor, source))
 }
 
 /// Resolve the control-plane command used for official app delegation.
 pub fn resolve_control_command(query: &str) -> Option<ResolvedAppCommand> {
-    let tool = known_bijux_tool_by_query(query)?;
-    let descriptor = tool.descriptor();
-    let entrypoint = descriptor.control_entrypoint.clone();
-    match entrypoint.kind {
-        ProductEntrypointKind::Binary
-        | ProductEntrypointKind::PythonConsoleScript
-        | ProductEntrypointKind::PluginProcess => {
-            let command = entrypoint.command;
-            let resolved =
-                which_in_path(&command).map(|path| path.display().to_string()).unwrap_or(command);
-            Some(ResolvedAppCommand {
-                display_command: resolved.clone(),
-                command: resolved,
-                args: Vec::new(),
-                source: AppDiscoverySource::PathFallback,
-                kind: entrypoint.kind,
-                namespace: tool.namespace.to_string(),
-                descriptor,
-            })
-        }
-        ProductEntrypointKind::PythonModule => {
-            let interpreter = resolve_python_interpreter()
-                .map(|path| path.display().to_string())
-                .unwrap_or_else(|| {
-                    env::var("BIJUX_PYTHON_BIN").unwrap_or_else(|_| "python3".to_string())
-                });
-            let args = vec!["-m".to_string(), entrypoint.command.clone()];
-            Some(ResolvedAppCommand {
-                display_command: format_display_command(&interpreter, &args),
-                command: interpreter,
-                args,
-                source: AppDiscoverySource::PathFallback,
-                kind: ProductEntrypointKind::PythonModule,
-                namespace: tool.namespace.to_string(),
-                descriptor,
-            })
-        }
-        ProductEntrypointKind::EmbeddedRust => Some(ResolvedAppCommand {
-            display_command: format!("embedded:{}", entrypoint.command),
-            command: entrypoint.command,
-            args: Vec::new(),
-            source: AppDiscoverySource::CompiledOfficialRegistry,
-            kind: ProductEntrypointKind::EmbeddedRust,
-            namespace: tool.namespace.to_string(),
-            descriptor,
-        }),
+    if let Some(tool) = known_bijux_tool_by_query(query) {
+        return Some(resolve_descriptor_control_command(
+            tool.descriptor(),
+            AppDiscoverySource::CompiledOfficialRegistry,
+        ));
     }
+
+    discover_custom_mount(query)
+        .map(|(descriptor, source)| resolve_descriptor_control_command(descriptor, source))
 }
 
 /// Build root `apps list` output.
@@ -1190,5 +1426,216 @@ pub fn app_capabilities_report(
         source: resolution.descriptor_source,
         health: resolution.health,
         help_summary: resolution.descriptor.help.summary,
+    })
+}
+
+/// Build root `apps schema` output.
+pub fn app_manifest_schema_report() -> AppManifestSchemaReport {
+    AppManifestSchemaReport {
+        status: "ok".to_string(),
+        schema: "product-mount-descriptor-v1".to_string(),
+        schema_json: json!(product_mount_descriptor_schema()),
+        entrypoint_kinds: vec![
+            "binary".to_string(),
+            "python_module".to_string(),
+            "python_console_script".to_string(),
+            "plugin_process".to_string(),
+            "embedded_rust".to_string(),
+        ],
+    }
+}
+
+/// Validate a full app manifest contract on disk.
+pub fn validate_app_manifest_report(path: &Path) -> AppManifestValidationReport {
+    match read_mount_descriptor(path) {
+        Ok(descriptor) => AppManifestValidationReport {
+            status: "ok".to_string(),
+            path: path.display().to_string(),
+            valid: true,
+            namespace: Some(descriptor.namespace.as_str().to_string()),
+            entrypoint_kind: Some(descriptor.entrypoint.kind),
+            issues: Vec::new(),
+        },
+        Err(error) => AppManifestValidationReport {
+            status: "invalid".to_string(),
+            path: path.display().to_string(),
+            valid: false,
+            namespace: None,
+            entrypoint_kind: None,
+            issues: vec![error],
+        },
+    }
+}
+
+fn rust_app_entrypoint_script(binary_name: &str) -> String {
+    format!(
+        "#!/usr/bin/env sh\nset -eu\n\nSCRIPT_DIR=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\ncd \"$SCRIPT_DIR\"\n\nexport CARGO_TARGET_DIR=\"$SCRIPT_DIR/artifacts/rust-target\"\nBIN_PATH=\"$CARGO_TARGET_DIR/debug/{binary_name}\"\nif [ ! -x \"$BIN_PATH\" ] || [ \"$SCRIPT_DIR/Cargo.toml\" -nt \"$BIN_PATH\" ] || [ -d \"$SCRIPT_DIR/src\" ] && find \"$SCRIPT_DIR/src\" -type f -name '*.rs' -newer \"$BIN_PATH\" -print -quit | grep -q .; then\n  cargo build --quiet --locked\nfi\nexec \"$BIN_PATH\" \"$@\"\n",
+    )
+}
+
+#[cfg(unix)]
+fn mark_executable(path: &Path) -> Result<(), String> {
+    use std::os::unix::fs::PermissionsExt;
+
+    fs::set_permissions(path, fs::Permissions::from_mode(0o755))
+        .map_err(|error| format!("failed to set executable bit on `{}`: {error}", path.display()))
+}
+
+#[cfg(not(unix))]
+fn mark_executable(_path: &Path) -> Result<(), String> {
+    Ok(())
+}
+
+/// Generate a starter app mount and entrypoint surface.
+pub fn scaffold_app_mount(
+    kind: &str,
+    namespace: &str,
+    force: bool,
+    target_root: &Path,
+) -> Result<AppScaffoldReport, String> {
+    let namespace = Namespace::new(namespace)?;
+    if RESERVED_APP_NAMESPACES.contains(&namespace.as_str()) {
+        return Err(format!("app namespace is reserved: {}", namespace.as_str()));
+    }
+    if known_bijux_tool_by_query(namespace.as_str()).is_some() {
+        return Err(format!(
+            "app namespace collides with an official product mount: {}",
+            namespace.as_str()
+        ));
+    }
+    if !is_safe_scaffold_path(target_root) {
+        return Err("scaffold path is unsafe".to_string());
+    }
+
+    if target_root.exists() {
+        if !force {
+            return Err("scaffold path already exists; pass --force to overwrite".to_string());
+        }
+        if target_root.is_dir() {
+            fs::remove_dir_all(target_root).map_err(|error| {
+                format!("failed to remove existing scaffold directory `{}`: {error}", target_root.display())
+            })?;
+        } else {
+            fs::remove_file(target_root).map_err(|error| {
+                format!("failed to remove existing scaffold file `{}`: {error}", target_root.display())
+            })?;
+        }
+    }
+
+    fs::create_dir_all(target_root)
+        .map_err(|error| format!("failed to create scaffold root `{}`: {error}", target_root.display()))?;
+    let apps_dir = target_root.join(".bijux/apps");
+    fs::create_dir_all(&apps_dir)
+        .map_err(|error| format!("failed to create app manifest directory `{}`: {error}", apps_dir.display()))?;
+
+    let descriptor = match kind {
+        "python" => {
+            let module_name = app_module_name(namespace.as_str());
+            let module_dir = target_root.join(&module_name);
+            fs::create_dir_all(&module_dir).map_err(|error| {
+                format!("failed to create python module directory `{}`: {error}", module_dir.display())
+            })?;
+            fs::write(
+                module_dir.join("__init__.py"),
+                "\"\"\"Scaffolded Bijux app package.\"\"\"\n",
+            )
+            .map_err(|error| format!("failed to write python module init: {error}"))?;
+            fs::write(
+                module_dir.join("__main__.py"),
+                format!(
+                    "import json\nimport sys\n\n\ndef main() -> int:\n    argv = sys.argv[1:]\n    if any(arg in ('--help', '-h', 'help') for arg in argv):\n        print('Usage: bijux {namespace} [ARGS]')\n        print('\\nScaffolded Python app mount for {namespace}.')\n        return 0\n    if argv[:1] == ['version']:\n        print('{namespace} {APP_SCAFFOLD_VERSION}')\n        return 0\n    print(json.dumps({{'status': 'ok', 'namespace': '{namespace}', 'argv': argv}}, indent=2))\n    return 0\n\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n",
+                    namespace = namespace.as_str(),
+                ),
+            )
+            .map_err(|error| format!("failed to write python module main: {error}"))?;
+
+            ProductMountDescriptor::builder(namespace.clone())
+                .display_name(format!("{} App", namespace.as_str()))
+                .entrypoint(ProductEntrypointKind::PythonModule, module_name.clone())
+                .control_entrypoint(ProductEntrypointKind::PythonModule, module_name)
+                .help_summary(format!("Scaffolded Python app for {}", namespace.as_str()))
+                .capability("json_output")
+                .version(APP_SCAFFOLD_VERSION)
+                .build()?
+        }
+        "rust" => {
+            let binary_name = rust_app_entrypoint_name(namespace.as_str());
+            let src_dir = target_root.join("src");
+            fs::create_dir_all(&src_dir).map_err(|error| {
+                format!("failed to create Rust source directory `{}`: {error}", src_dir.display())
+            })?;
+            fs::write(
+                target_root.join("Cargo.toml"),
+                format!(
+                    "[package]\nname = \"{binary_name}\"\nversion = \"{APP_SCAFFOLD_VERSION}\"\nedition = \"2021\"\nlicense = \"Apache-2.0\"\ndescription = \"Scaffolded Bijux app for {}\"\n\n[dependencies]\nserde_json = \"1\"\n",
+                    namespace.as_str(),
+                ),
+            )
+            .map_err(|error| format!("failed to write Cargo.toml: {error}"))?;
+            fs::write(
+                src_dir.join("main.rs"),
+                format!(
+                    "fn main() {{\n    let argv = std::env::args().skip(1).collect::<Vec<_>>();\n    if argv.iter().any(|arg| matches!(arg.as_str(), \"--help\" | \"-h\" | \"help\")) {{\n        println!(\"Usage: bijux {} [ARGS]\\n\\nScaffolded Rust app mount for {}.\");\n        return;\n    }}\n    if argv.first().is_some_and(|arg| arg == \"version\") {{\n        println!(\"{} {APP_SCAFFOLD_VERSION}\");\n        return;\n    }}\n    println!(\"{{}}\", serde_json::to_string_pretty(&serde_json::json!({{\"status\": \"ok\", \"namespace\": \"{}\", \"argv\": argv}})).expect(\"json\"));\n}}\n",
+                    namespace.as_str(),
+                    namespace.as_str(),
+                    namespace.as_str(),
+                    namespace.as_str(),
+                ),
+            )
+            .map_err(|error| format!("failed to write Rust main.rs: {error}"))?;
+            let wrapper = target_root.join(&binary_name);
+            fs::write(&wrapper, rust_app_entrypoint_script(&binary_name))
+                .map_err(|error| format!("failed to write Rust app entrypoint wrapper: {error}"))?;
+            mark_executable(&wrapper)?;
+
+            ProductMountDescriptor::builder(namespace.clone())
+                .display_name(format!("{} App", namespace.as_str()))
+                .entrypoint(
+                    ProductEntrypointKind::PluginProcess,
+                    format!("../../{binary_name}"),
+                )
+                .control_entrypoint(
+                    ProductEntrypointKind::PluginProcess,
+                    format!("../../{binary_name}"),
+                )
+                .help_summary(format!("Scaffolded Rust app for {}", namespace.as_str()))
+                .capability("json_output")
+                .version(APP_SCAFFOLD_VERSION)
+                .build()?
+        }
+        other => return Err(format!("app scaffold kind must be one of: python, rust; got `{other}`")),
+    };
+
+    let manifest_path = apps_dir.join(format!("{}.mount.json", namespace.as_str()));
+    let manifest_json = serde_json::to_string_pretty(&descriptor)
+        .map_err(|error| format!("failed to serialize app manifest: {error}"))?;
+    fs::write(&manifest_path, format!("{manifest_json}\n"))
+        .map_err(|error| format!("failed to write app manifest `{}`: {error}", manifest_path.display()))?;
+
+    let mut files = vec![manifest_path.display().to_string()];
+    if kind == "python" {
+        let module_name = app_module_name(namespace.as_str());
+        files.push(target_root.join(&module_name).join("__init__.py").display().to_string());
+        files.push(target_root.join(module_name).join("__main__.py").display().to_string());
+    } else {
+        files.push(target_root.join("Cargo.toml").display().to_string());
+        files.push(target_root.join("src/main.rs").display().to_string());
+        files.push(target_root.join(rust_app_entrypoint_name(namespace.as_str())).display().to_string());
+    }
+    files.sort();
+
+    Ok(AppScaffoldReport {
+        status: "scaffolded".to_string(),
+        kind: kind.to_string(),
+        namespace: namespace.as_str().to_string(),
+        root: target_root.display().to_string(),
+        manifest_path: manifest_path.display().to_string(),
+        entrypoint_kind: descriptor.entrypoint.kind.clone(),
+        entrypoint: descriptor.entrypoint.command.clone(),
+        files,
+        guidance: vec![
+            format!("Run `cd {}` before invoking the scaffolded app mount.", target_root.display()),
+            format!("Invoke `bijux {} --help` to exercise the mounted surface.", namespace.as_str()),
+        ],
     })
 }
