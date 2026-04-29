@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import redirect_stdout
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 import io
 import json
 import sys
@@ -35,7 +35,7 @@ def _normalize_segments(command: Sequence[str] | None) -> list[str]:
 def _timestamp(value: str | None = None) -> str:
     if value:
         return value
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _semver_tuple(value: str) -> tuple[int, int, int]:
@@ -216,7 +216,10 @@ def run_json_app(
             "python_app_exception",
             str(exc),
             command=command,
-            details={"exception": type(exc).__name__, "traceback": traceback.format_exc()},
+            details={
+                "exception": type(exc).__name__,
+                "traceback": traceback.format_exc(),
+            },
             timestamp=timestamp,
         ).emit()
 
