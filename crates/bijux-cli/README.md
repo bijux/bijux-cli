@@ -43,6 +43,50 @@ for runtime command semantics shared by the native binary and Python bridge.
 - Maintainer commands stay outside the runtime binary; this crate does not parse or execute `bijux-dev-cli` surfaces.
 - The process entrypoint stays thin: decode argv, call the runtime, write streams, map exit codes.
 
+## Rust App SDK
+
+`bijux-cli` now exposes a crate-native SDK for mounted Rust apps under [`src/sdk`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli/src/sdk).
+
+Core surfaces:
+
+- `ProductMount`: high-level mounted-app builder for binary, Python-module, console-script, plugin-process, and embedded-Rust entrypoints
+- `BijuxApp`: trait for routed app implementations
+- `CommandContext`: stable execution context for mounted handlers
+- `CommandResult`: root-compatible result envelope with explicit stream policy
+- `BijuxCliHarness`: in-process harness for mounted app tests
+- `SnapshotHelper`: stable rendering helper for app-level snapshot contracts
+
+Minimal example:
+
+```rust
+use bijux_cli::sdk::{
+    BijuxApp, CommandContext, CommandResult, OutputEnvelopeHelper, ProductMount,
+};
+
+struct HelloApp;
+
+impl BijuxApp for HelloApp {
+    fn mount(&self) -> ProductMount {
+        ProductMount::new("hello")
+            .expect("namespace")
+            .binary("bijux-hello")
+            .summary("Minimal hello app")
+    }
+
+    fn route(&self, argv: &[String], ctx: &CommandContext) -> CommandResult {
+        let command = ctx.command_path(&["status"]).expect("command path");
+        CommandResult::success(
+            OutputEnvelopeHelper::success(
+                command,
+                serde_json::json!({ "status": "ok", "argv": argv }),
+                "1970-01-01T00:00:00Z",
+            )
+            .expect("success envelope"),
+        )
+    }
+}
+```
+
 ## Tests
 
 - [`tests/architecture.rs`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/tests/architecture.rs): boundary and ownership checks.

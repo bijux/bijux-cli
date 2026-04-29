@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="unreleased"></a>
 
+### Added
+- Added a crate-native mounted-app SDK with `ProductMount`, `BijuxApp`, `CommandContext`, `CommandResult`, diagnostics builders, output-envelope helpers, an in-process harness, and snapshot helpers for Rust app authors.
+
+### Changed
+- Switched `bijux apps scaffold` to generate its manifest contract through the same mounted-app SDK builder used by the new Rust app-author surface.
+
 ---
 
 <!-- towncrier start -->
