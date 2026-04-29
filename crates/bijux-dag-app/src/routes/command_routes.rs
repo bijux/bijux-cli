@@ -38,40 +38,21 @@ fn command_group(path: &str) -> CommandGroup {
     let head = path.split(' ').next().unwrap_or(path);
     match head {
         "cache" => CommandGroup::Cache,
-        "artifact"
-        | "artifact-inspect"
-        | "diff"
-        | "explain"
-        | "explain-plan"
-        | "export"
-        | "fsck"
-        | "import"
-        | "node"
-        | "proof-summary"
-        | "prove"
-        | "run-bundle"
-        | "runs"
-        | "status"
-        | "trace-artifact"
-        | "trace-node"
-        | "verify"
-        | "why-cache-missed"
+        "artifact" | "artifact-inspect" | "diff" | "explain" | "explain-plan" | "export"
+        | "fsck" | "import" | "node" | "proof-summary" | "prove" | "run-bundle" | "runs"
+        | "status" | "trace-artifact" | "trace-node" | "verify" | "why-cache-missed"
         | "why-rerun" => CommandGroup::Evidence,
-        "adapters" | "capabilities" | "commands" | "doctor" | "semantic-portability"
-        | "version" | "version-inspect" => CommandGroup::Diagnostics,
-        "control-plane"
-        | "dataset"
-        | "enterprise"
-        | "federation"
-        | "fleet"
-        | "governance"
-        | "incident"
-        | "lab"
-        | "release"
-        | "runtime"
-        | "schedule"
-        | "security"
-        | "state-store" => CommandGroup::Lab,
+        "adapters"
+        | "capabilities"
+        | "commands"
+        | "doctor"
+        | "semantic-portability"
+        | "version"
+        | "version-inspect" => CommandGroup::Diagnostics,
+        "control-plane" | "dataset" | "enterprise" | "federation" | "fleet" | "governance"
+        | "incident" | "lab" | "release" | "runtime" | "schedule" | "security" | "state-store" => {
+            CommandGroup::Lab
+        }
         "replay" | "run" => CommandGroup::Runtime,
         _ => CommandGroup::Core,
     }
@@ -102,8 +83,10 @@ fn command_maturity(path: &str) -> CommandMaturity {
     {
         return CommandMaturity::Experimental;
     }
-    if matches!(head, "capabilities" | "equivalence-proof" | "semantic-portability" | "version-inspect")
-    {
+    if matches!(
+        head,
+        "capabilities" | "equivalence-proof" | "semantic-portability" | "version-inspect"
+    ) {
         return CommandMaturity::Internal;
     }
     CommandMaturity::Stable
@@ -229,9 +212,12 @@ mod tests {
         assert!(flattened.iter().any(|entry| entry.path == "lab federation schedule"));
         assert!(flattened.iter().any(|entry| entry.path == "artifact fetch"));
         assert!(flattened.iter().any(|entry| entry.path == "trace-node"));
-        assert!(flattened
-            .iter()
-            .any(|entry| entry.path == "doctor" && entry.maturity == CommandMaturity::Experimental));
+        assert!(
+            flattened
+                .iter()
+                .any(|entry| entry.path == "doctor"
+                    && entry.maturity == CommandMaturity::Experimental)
+        );
     }
 
     #[test]

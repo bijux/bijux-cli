@@ -69,7 +69,8 @@ pub fn slurm_adapter_design_contract() -> SlurmAdapterDesignContractReport {
         },
         submit_status_cancel_documented: true,
         log_collection_mode: hpc_log_collection_semantics(2).mode,
-        artifact_collection_mode: "stage outputs from scratch to run-dir artifact store".to_string(),
+        artifact_collection_mode: "stage outputs from scratch to run-dir artifact store"
+            .to_string(),
         failure_mapping_examples: BTreeMap::from([
             (
                 "SLURM_WALLTIME_EXCEEDED".to_string(),
@@ -97,11 +98,20 @@ pub fn kubernetes_adapter_contract() -> KubernetesAdapterContractReport {
             log_flow: "stdout-stderr-pod-log-stream".to_string(),
             cancellation_behavior: "delete-job-with-grace-period".to_string(),
         },
-        job_spec_mapping: "node resources and retry policy map into Job requests, limits, deadline, and backoff".to_string(),
-        pod_status_mapping: "terminal pod phases reconcile into runtime success/failure with retry classification".to_string(),
-        log_collection_mode: "stdout/stderr streamed from pod logs and copied into node evidence".to_string(),
-        artifact_collection_mode: "declared output files collected from mounted workdir after terminal pod state".to_string(),
-        timeout_cancel_behavior: "active deadline seconds and termination grace map from node timeout and cancel policy".to_string(),
+        job_spec_mapping:
+            "node resources and retry policy map into Job requests, limits, deadline, and backoff"
+                .to_string(),
+        pod_status_mapping:
+            "terminal pod phases reconcile into runtime success/failure with retry classification"
+                .to_string(),
+        log_collection_mode: "stdout/stderr streamed from pod logs and copied into node evidence"
+            .to_string(),
+        artifact_collection_mode:
+            "declared output files collected from mounted workdir after terminal pod state"
+                .to_string(),
+        timeout_cancel_behavior:
+            "active deadline seconds and termination grace map from node timeout and cancel policy"
+                .to_string(),
         unsupported_field_rejection: vec![
             "hostNetwork".to_string(),
             "hostPID".to_string(),

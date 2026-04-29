@@ -266,7 +266,9 @@ fn promotion_payload(simulation: &std::path::Path) -> Result<ReleasePromotionRep
     let mut satisfied_gates = Vec::new();
     let mut unmet_gates = Vec::new();
 
-    if simulation.test_results.iter().all(|check| check.passed) && !simulation.test_results.is_empty() {
+    if simulation.test_results.iter().all(|check| check.passed)
+        && !simulation.test_results.is_empty()
+    {
         satisfied_gates.push("tests".to_string());
     } else {
         unmet_gates.push("tests".to_string());
@@ -380,7 +382,12 @@ fn checkpoint_payload(simulation: &std::path::Path) -> Result<ReleaseCheckpointR
     } else {
         "unsafe".to_string()
     };
-    Ok(ReleaseCheckpointReport { action: simulation.action, approval_state, ready: blockers.is_empty(), blockers })
+    Ok(ReleaseCheckpointReport {
+        action: simulation.action,
+        approval_state,
+        ready: blockers.is_empty(),
+        blockers,
+    })
 }
 
 fn shadow_payload(simulation: &std::path::Path) -> Result<ReleaseShadowReport, ExitCode> {
@@ -398,7 +405,8 @@ fn shadow_payload(simulation: &std::path::Path) -> Result<ReleaseShadowReport, E
     if simulation.critical_drift_nodes > 0 {
         warnings.push("shadow run reports critical drift".to_string());
     }
-    let comparable = warnings.is_empty() || (warnings.len() == 1 && simulation.differing_nodes == 0);
+    let comparable =
+        warnings.is_empty() || (warnings.len() == 1 && simulation.differing_nodes == 0);
     let drift_class = if simulation.critical_drift_nodes > 0 {
         "critical".to_string()
     } else if simulation.differing_nodes > 0 {
@@ -446,7 +454,13 @@ fn canary_payload(simulation: &std::path::Path) -> Result<ReleaseCanaryReport, E
     } else {
         "abort_canary".to_string()
     };
-    Ok(ReleaseCanaryReport { target: simulation.target, within_scope, healthy, recommendation, blockers })
+    Ok(ReleaseCanaryReport {
+        target: simulation.target,
+        within_scope,
+        healthy,
+        recommendation,
+        blockers,
+    })
 }
 
 fn rollback_payload(simulation: &std::path::Path) -> Result<ReleaseRollbackReport, ExitCode> {
@@ -479,23 +493,26 @@ fn node_signature(node: &Node) -> Vec<String> {
     let mut signature = Vec::new();
     signature.push(format!("kind:{}", node.kind.as_str()));
     signature.push(format!("inputs:{:?}", node.inputs));
-    let outputs =
-        node.outputs.iter().map(|output| format!("{}->{}", output.name, output.path)).collect::<Vec<_>>();
+    let outputs = node
+        .outputs
+        .iter()
+        .map(|output| format!("{}->{}", output.name, output.path))
+        .collect::<Vec<_>>();
     signature.push(format!("outputs:{outputs:?}"));
     signature.push(format!("timeout:{:?}", node.timeout_ms));
     signature.push(format!("resources:{:?}", node.resources.as_ref().map(|r| (r.cpu, r.mem_mb))));
     signature.push(format!("retry:{}:{}", node.retry.max_attempts, node.retry.backoff_ms));
-    let mut effects = node
-        .effects
-        .iter()
-        .map(|effect| format!("{effect:?}").to_lowercase())
-        .collect::<Vec<_>>();
+    let mut effects =
+        node.effects.iter().map(|effect| format!("{effect:?}").to_lowercase()).collect::<Vec<_>>();
     effects.sort();
     signature.push(format!("effects:{effects:?}"));
     signature
 }
 
-fn classify_payload(before: &std::path::Path, after: &std::path::Path) -> Result<ReleaseClassificationReport, ExitCode> {
+fn classify_payload(
+    before: &std::path::Path,
+    after: &std::path::Path,
+) -> Result<ReleaseClassificationReport, ExitCode> {
     let before_graph: Graph = parse_graph(&read_file(before)?)?;
     let after_graph: Graph = parse_graph(&read_file(after)?)?;
 
@@ -524,7 +541,9 @@ fn classify_payload(before: &std::path::Path, after: &std::path::Path) -> Result
             let after_signature = node_signature(after_node);
             if before_signature != after_signature {
                 let mut changes = Vec::new();
-                for (before_entry, after_entry) in before_signature.iter().zip(after_signature.iter()) {
+                for (before_entry, after_entry) in
+                    before_signature.iter().zip(after_signature.iter())
+                {
                     if before_entry != after_entry {
                         changes.push(format!("{before_entry} -> {after_entry}"));
                     }
@@ -539,7 +558,9 @@ fn classify_payload(before: &std::path::Path, after: &std::path::Path) -> Result
 
     let compatibility_class = if !removed_nodes.is_empty()
         || changed_nodes.values().flatten().any(|change| {
-            change.starts_with("kind:") || change.starts_with("outputs:") || change.starts_with("inputs:")
+            change.starts_with("kind:")
+                || change.starts_with("outputs:")
+                || change.starts_with("inputs:")
         }) {
         "breaking".to_string()
     } else if !changed_nodes.is_empty() || graph_policy_changed {
@@ -632,12 +653,7 @@ fn health_payload(simulation: &std::path::Path) -> Result<ReleaseHealthReport, E
     }
     .to_string();
 
-    Ok(ReleaseHealthReport {
-        revision_id: simulation.revision_id,
-        score,
-        status,
-        reasons,
-    })
+    Ok(ReleaseHealthReport { revision_id: simulation.revision_id, score, status, reasons })
 }
 
 pub(crate) fn handle_release_command(
@@ -646,12 +662,13 @@ pub(crate) fn handle_release_command(
 ) -> Result<ExitCode, ExitCode> {
     match command {
         ReleaseCommands::Version { dag } => {
-            let payload = serde_json::to_value(version_payload(dag)?).map_err(|_| ExitCode::from(3))?;
+            let payload =
+                serde_json::to_value(version_payload(dag)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.version", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         ReleaseCommands::Promotion { simulation } => {
-            let payload =
-                serde_json::to_value(promotion_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(promotion_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.promotion", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         ReleaseCommands::Deprecation { simulation } => {
@@ -660,8 +677,8 @@ pub(crate) fn handle_release_command(
             emit_json(cli, "dag.release.deprecation", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         ReleaseCommands::Checkpoint { simulation } => {
-            let payload =
-                serde_json::to_value(checkpoint_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(checkpoint_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.checkpoint", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         ReleaseCommands::Shadow { simulation } => {
@@ -675,18 +692,18 @@ pub(crate) fn handle_release_command(
             emit_json(cli, "dag.release.canary", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         ReleaseCommands::Rollback { simulation } => {
-            let payload =
-                serde_json::to_value(rollback_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(rollback_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.rollback", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         ReleaseCommands::Classify { before, after } => {
-            let payload =
-                serde_json::to_value(classify_payload(before, after)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(classify_payload(before, after)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.classify", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         ReleaseCommands::Evidence { simulation } => {
-            let payload =
-                serde_json::to_value(evidence_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(evidence_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.release.evidence", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         ReleaseCommands::Health { simulation } => {
@@ -732,8 +749,8 @@ mod tests {
         )
         .expect("write dag");
         let cli = quiet_json_cli(ReleaseCommands::Version { dag: dag.clone() });
-        let code =
-            handle_release_command(&cli, &ReleaseCommands::Version { dag: dag.clone() }).expect("version");
+        let code = handle_release_command(&cli, &ReleaseCommands::Version { dag: dag.clone() })
+            .expect("version");
         assert_eq!(code, ExitCode::SUCCESS);
         let payload = super::version_payload(&dag).expect("payload");
         assert!(payload.release_ready);
@@ -765,10 +782,9 @@ mod tests {
         assert_eq!(payload_json["release_ready"], Value::Bool(false));
         let gaps = payload_json["gaps"].as_array().expect("gaps");
         assert!(gaps.iter().any(|v| v.as_str() == Some("workflow revision has no owners")));
-        assert!(
-            gaps.iter()
-                .any(|v| v.as_str() == Some("workflow revision has no release taxonomy tags"))
-        );
+        assert!(gaps
+            .iter()
+            .any(|v| v.as_str() == Some("workflow revision has no release taxonomy tags")));
     }
 
     #[test]
@@ -826,7 +842,9 @@ mod tests {
         .expect("write simulation");
         let report = super::promotion_payload(&simulation).expect("report");
         assert!(!report.ready);
-        for expected in ["tests", "simulations", "approvals", "rollback", "classification", "shadow", "canary"] {
+        for expected in
+            ["tests", "simulations", "approvals", "rollback", "classification", "shadow", "canary"]
+        {
             assert!(report.unmet_gates.iter().any(|gate| gate == expected));
         }
     }
@@ -882,9 +900,10 @@ mod tests {
         let report = super::deprecation_payload(&simulation).expect("report");
         assert!(!report.ready);
         assert!(report.gaps.iter().any(|gap| gap == "deprecation window is not ordered"));
-        assert!(
-            report.gaps.iter().any(|gap| gap == "deprecation must be announced through at least two channels")
-        );
+        assert!(report
+            .gaps
+            .iter()
+            .any(|gap| gap == "deprecation must be announced through at least two channels"));
         assert!(report.gaps.iter().any(|gap| gap == "deprecation is missing migration guidance"));
     }
 
@@ -1156,7 +1175,10 @@ mod tests {
             }"#,
         )
         .expect("write after");
-        let cli = quiet_json_cli(ReleaseCommands::Classify { before: before.clone(), after: after.clone() });
+        let cli = quiet_json_cli(ReleaseCommands::Classify {
+            before: before.clone(),
+            after: after.clone(),
+        });
         let code = handle_release_command(
             &cli,
             &ReleaseCommands::Classify { before: before.clone(), after: after.clone() },

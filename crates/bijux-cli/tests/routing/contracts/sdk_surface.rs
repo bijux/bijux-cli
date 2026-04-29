@@ -86,8 +86,7 @@ fn product_mount_builder_materializes_valid_descriptor_and_manifest_json() {
             ..FeatureCapabilityDeclaration::default()
         })
         .compatibility(
-            SdkCompatibilityWindow::new("0.3.0", Some("1.0.0".to_string()))
-                .expect("compatibility"),
+            SdkCompatibilityWindow::new("0.3.0", Some("1.0.0".to_string())).expect("compatibility"),
         )
         .version("0.2.0");
 

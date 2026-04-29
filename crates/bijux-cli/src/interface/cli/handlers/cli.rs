@@ -9,18 +9,18 @@ use std::process::Command;
 
 use crate::api::config::validate_config_file;
 use crate::api::version::{runtime_semver, runtime_version_info};
-use crate::features::config::layered::schema_docs_report;
 use crate::features::apps::{app_doctor_report, apps_doctor_report};
+use crate::features::config::layered::schema_docs_report;
 use crate::features::diagnostics::state_paths::{state_diagnostics, ResolvedStatePaths};
 use crate::features::diagnostics::{registry_inventory, route_inventory, state_diagnostics_query};
 use crate::features::install::{
     completion_file_path, completion_script, detect_shell, discover_named_path_binaries,
     install_health_report, post_install_hint, CompletionShell,
 };
+use crate::features::plugins::runtime::{detected_python_interpreters, resolve_python_interpreter};
 use crate::features::plugins::{
     compatibility_warnings, list_plugins, plugin_doctor, plugin_origin_metadata,
 };
-use crate::features::plugins::runtime::{detected_python_interpreters, resolve_python_interpreter};
 use crate::routing::registry::RouteRegistry;
 use crate::shared::argv::{command_has_flag, command_option_value, command_positionals};
 
@@ -481,8 +481,8 @@ fn python_bridge_doctor_report() -> Value {
 
     let mut issues = Vec::<Value>::new();
     let mut suggestions = Vec::<String>::new();
-    let configured_interpreter = env::var_os("BIJUX_PYTHON_BIN")
-        .map(|value| value.to_string_lossy().into_owned());
+    let configured_interpreter =
+        env::var_os("BIJUX_PYTHON_BIN").map(|value| value.to_string_lossy().into_owned());
     let active_venv = env::var_os("VIRTUAL_ENV").map(|value| value.to_string_lossy().into_owned());
 
     let mut bridge = json!({
@@ -553,10 +553,7 @@ fn python_bridge_doctor_report() -> Value {
         );
     }
 
-    if bridge
-        .get("console_scripts")
-        .and_then(Value::as_array)
-        .is_none_or(|items| items.is_empty())
+    if bridge.get("console_scripts").and_then(Value::as_array).is_none_or(|items| items.is_empty())
     {
         issues.push(doctor_issue(
             "python",
@@ -593,21 +590,23 @@ fn python_bridge_doctor_report() -> Value {
 }
 
 fn doctor_bundle_root() -> Result<std::path::PathBuf, String> {
-    let cwd = env::current_dir().map_err(|error| format!("failed to resolve current directory: {error}"))?;
+    let cwd = env::current_dir()
+        .map_err(|error| format!("failed to resolve current directory: {error}"))?;
     Ok(cwd.join("artifacts").join("bijux-cli").join("doctor-bundle"))
 }
 
 fn write_bundle_text(path: &Path, contents: &str) -> Result<(), String> {
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|error| format!("failed to create {}: {error}", parent.display()))?;
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("failed to create {}: {error}", parent.display()))?;
     }
     crate::infrastructure::fs_store::atomic_write_text(path, contents)
         .map_err(|error| format!("failed to write {}: {error}", path.display()))
 }
 
 fn write_bundle_json(path: &Path, payload: &Value) -> Result<(), String> {
-    let rendered =
-        serde_json::to_string_pretty(payload).map_err(|error| format!("failed to render JSON: {error}"))?;
+    let rendered = serde_json::to_string_pretty(payload)
+        .map_err(|error| format!("failed to render JSON: {error}"))?;
     write_bundle_text(path, &(rendered + "\n"))
 }
 
@@ -1280,7 +1279,7 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{
-        completion_report, doctor_report, doctor_topic_report, docs_inventory_report_at,
+        completion_report, docs_inventory_report_at, doctor_report, doctor_topic_report,
         runtime_audit_report, runtime_status_report,
     };
     use crate::features::diagnostics::state_paths::ResolvedStatePaths;
@@ -1445,8 +1444,12 @@ mod tests {
         let workspace_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = docs_inventory_report_at(&workspace_root);
         let references = report["references"].as_array().expect("references");
-        assert!(references.iter().any(|item| item["path"] == "docs/bijux-cli/interfaces/generated-config-reference.md"));
-        assert!(references.iter().any(|item| item["path"] == "docs/bijux-cli/operations/migration-guide.md"));
+        assert!(references
+            .iter()
+            .any(|item| item["path"] == "docs/bijux-cli/interfaces/generated-config-reference.md"));
+        assert!(references
+            .iter()
+            .any(|item| item["path"] == "docs/bijux-cli/operations/migration-guide.md"));
     }
 
     #[test]

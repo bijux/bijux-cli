@@ -252,7 +252,7 @@ fn schedule_dedup_returns_success_for_event_stream() {
 fn schedule_sla_returns_success_for_metric_simulation() {
     let (_tmp, simulation) = write_sla_simulation_fixture();
     let cli = quiet_json_cli();
-    let code = handle_schedule_command(&cli, &ScheduleCommands::Sla { simulation })
-        .expect("schedule sla");
+    let code =
+        handle_schedule_command(&cli, &ScheduleCommands::Sla { simulation }).expect("schedule sla");
     assert_eq!(code, ExitCode::SUCCESS);
 }

@@ -7,10 +7,10 @@ use std::path::Component;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use semver::Version;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{json, Value};
-use semver::Version;
 
 use crate::contracts::{
     known_bijux_tool_by_query, known_bijux_tools, product_mount_descriptor_schema,
@@ -446,7 +446,11 @@ fn custom_descriptor_dirs() -> Vec<(AppDiscoverySource, PathBuf)> {
     if let Ok(cwd) = env::current_dir() {
         rows.push((AppDiscoverySource::ProjectLocal, cwd.join(".bijux/apps")));
     }
-    rows.extend(env_apps_dirs().into_iter().map(|directory| (AppDiscoverySource::EnvironmentPath, directory)));
+    rows.extend(
+        env_apps_dirs()
+            .into_iter()
+            .map(|directory| (AppDiscoverySource::EnvironmentPath, directory)),
+    );
     if let Some(directory) = user_apps_dir() {
         rows.push((AppDiscoverySource::UserLocal, directory));
     }
@@ -536,14 +540,9 @@ fn discovery_paths_for(namespace: &str, paths: &ResolvedStatePaths) -> Vec<AppDi
 fn override_candidates(namespace: &str) -> Vec<OverrideCandidate> {
     let mut rows = Vec::new();
     if let Ok(cwd) = env::current_dir() {
-        rows.extend(
-            descriptor_paths(&cwd.join(".bijux/apps"), namespace)
-                .into_iter()
-                .map(|location| OverrideCandidate {
-                    source: AppDiscoverySource::ProjectLocal,
-                    location,
-                }),
-        );
+        rows.extend(descriptor_paths(&cwd.join(".bijux/apps"), namespace).into_iter().map(
+            |location| OverrideCandidate { source: AppDiscoverySource::ProjectLocal, location },
+        ));
     }
     for directory in env_apps_dirs() {
         rows.extend(descriptor_paths(&directory, namespace).into_iter().map(|location| {
@@ -693,14 +692,15 @@ fn load_full_mount_descriptor(raw: &str, path: &Path) -> Result<ProductMountDesc
     let mut descriptor = serde_json::from_str::<ProductMountDescriptor>(raw)
         .map_err(|error| format!("failed to parse descriptor JSON: {error}"))?;
     descriptor.entrypoint = absolutize_entrypoint(descriptor.entrypoint, path.parent());
-    descriptor.control_entrypoint = absolutize_entrypoint(descriptor.control_entrypoint, path.parent());
+    descriptor.control_entrypoint =
+        absolutize_entrypoint(descriptor.control_entrypoint, path.parent());
     validate_product_mount_descriptor(&descriptor)?;
     Ok(descriptor)
 }
 
 fn read_mount_descriptor(path: &Path) -> Result<ProductMountDescriptor, String> {
-    let raw =
-        fs::read_to_string(path).map_err(|error| format!("failed to read descriptor file: {error}"))?;
+    let raw = fs::read_to_string(path)
+        .map_err(|error| format!("failed to read descriptor file: {error}"))?;
     load_full_mount_descriptor(&raw, path)
 }
 
@@ -757,7 +757,9 @@ fn resolve_descriptor_runtime_command(
                 .selected
                 .as_ref()
                 .map(|(_, path)| path.display().to_string())
-                .unwrap_or_else(|| env::var(BIJUX_PYTHON_BIN).unwrap_or_else(|_| "python3".to_string()));
+                .unwrap_or_else(|| {
+                    env::var(BIJUX_PYTHON_BIN).unwrap_or_else(|_| "python3".to_string())
+                });
             let args = python_runtime_args(&descriptor.entrypoint);
             ResolvedAppCommand {
                 display_command: format_display_command(&interpreter, &args),
@@ -808,7 +810,9 @@ fn resolve_descriptor_control_command(
                 .selected
                 .as_ref()
                 .map(|(_, path)| path.display().to_string())
-                .unwrap_or_else(|| env::var(BIJUX_PYTHON_BIN).unwrap_or_else(|_| "python3".to_string()));
+                .unwrap_or_else(|| {
+                    env::var(BIJUX_PYTHON_BIN).unwrap_or_else(|_| "python3".to_string())
+                });
             let args = python_runtime_args(&descriptor.control_entrypoint);
             ResolvedAppCommand {
                 display_command: format_display_command(&interpreter, &args),
@@ -842,12 +846,10 @@ fn discover_custom_mount(query: &str) -> Option<(ProductMountDescriptor, AppDisc
             .map(|entry| entry.path())
             .filter(|path| path.is_file())
             .filter(|path| {
-                path.file_name()
-                    .and_then(|value| value.to_str())
-                    .is_some_and(|value| {
-                        value.ends_with(".mount.json")
-                            || (value.ends_with(".json") && value != "disabled.json")
-                    })
+                path.file_name().and_then(|value| value.to_str()).is_some_and(|value| {
+                    value.ends_with(".mount.json")
+                        || (value.ends_with(".json") && value != "disabled.json")
+                })
             })
             .collect::<Vec<_>>();
         files.sort();
@@ -856,7 +858,9 @@ fn discover_custom_mount(query: &str) -> Option<(ProductMountDescriptor, AppDisc
             let Ok(descriptor) = read_mount_descriptor(&path) else {
                 continue;
             };
-            if !descriptor_matches_query(&descriptor, query) || custom_mount_is_disabled(&descriptor) {
+            if !descriptor_matches_query(&descriptor, query)
+                || custom_mount_is_disabled(&descriptor)
+            {
                 continue;
             }
             return Some((descriptor, source));
@@ -940,7 +944,8 @@ fn resolve_python_interpreter() -> PythonInterpreterResolution {
             source: PythonInterpreterSource::ActiveVenv,
             location: root.display().to_string(),
             status: "missing".to_string(),
-            message: "active virtual environment does not expose a usable python executable".to_string(),
+            message: "active virtual environment does not expose a usable python executable"
+                .to_string(),
         });
     }
 
@@ -965,7 +970,8 @@ fn resolve_python_interpreter() -> PythonInterpreterResolution {
                 source: PythonInterpreterSource::ProjectVenv,
                 location: candidate_root.display().to_string(),
                 status: "missing".to_string(),
-                message: "project .venv exists but no usable python executable was found".to_string(),
+                message: "project .venv exists but no usable python executable was found"
+                    .to_string(),
             });
         }
     }
@@ -1017,11 +1023,8 @@ fn resolve_python_interpreter() -> PythonInterpreterResolution {
 }
 
 fn probe_version(invocation: &ResolvedAppCommand) -> Option<String> {
-    let output = Command::new(&invocation.command)
-        .args(&invocation.args)
-        .arg("--version")
-        .output()
-        .ok()?;
+    let output =
+        Command::new(&invocation.command).args(&invocation.args).arg("--version").output().ok()?;
     if !output.status.success() {
         return None;
     }
@@ -1041,10 +1044,7 @@ fn probe_python_doctor(
         module: module.clone(),
         function: function.clone(),
         interpreter_source: resolution.selected.as_ref().map(|(source, _)| *source),
-        interpreter: resolution
-            .selected
-            .as_ref()
-            .map(|(_, path)| path.display().to_string()),
+        interpreter: resolution.selected.as_ref().map(|(_, path)| path.display().to_string()),
         attempts: resolution.attempts.clone(),
         import_ok: false,
         import_error: None,
@@ -1059,12 +1059,7 @@ fn probe_python_doctor(
     };
 
     let output = Command::new(interpreter)
-        .args([
-            "-c",
-            PYTHON_DOCTOR_PROBE,
-            module.as_str(),
-            function.as_deref().unwrap_or("-"),
-        ])
+        .args(["-c", PYTHON_DOCTOR_PROBE, module.as_str(), function.as_deref().unwrap_or("-")])
         .output();
 
     let Ok(output) = output else {
@@ -1072,11 +1067,8 @@ fn probe_python_doctor(
         return report;
     };
 
-    let payload = if output.stdout.is_empty() {
-        output.stderr.clone()
-    } else {
-        output.stdout.clone()
-    };
+    let payload =
+        if output.stdout.is_empty() { output.stderr.clone() } else { output.stdout.clone() };
     let parsed = serde_json::from_slice::<Value>(&payload);
     let Ok(parsed) = parsed else {
         report.import_error = Some(format!(
@@ -1099,10 +1091,8 @@ fn compatibility_report_json(descriptor: &ProductMountDescriptor) -> Option<Valu
     let host_cli_version = crate::shared::version::runtime_semver().to_string();
     let host = Version::parse(&host_cli_version).ok()?;
     let min = Version::parse(&window.min_cli_version).ok()?;
-    let max = window
-        .max_cli_version_exclusive
-        .as_ref()
-        .and_then(|value| Version::parse(value).ok());
+    let max =
+        window.max_cli_version_exclusive.as_ref().and_then(|value| Version::parse(value).ok());
     let mut reasons = Vec::new();
     if host < min {
         reasons.push(format!(
@@ -1162,7 +1152,10 @@ fn resolution_policy(shadowed_plugins: &[String]) -> String {
     }
 }
 
-fn is_disabled_by_registry(tool: &KnownBijuxTool, probes: &mut Vec<AppProbe>) -> Result<bool, String> {
+fn is_disabled_by_registry(
+    tool: &KnownBijuxTool,
+    probes: &mut Vec<AppProbe>,
+) -> Result<bool, String> {
     for candidate in disabled_registry_candidates() {
         if !candidate.location.exists() {
             continue;
@@ -1233,7 +1226,9 @@ fn resolve_tool(
 
             match fs::read_to_string(&candidate.location) {
                 Ok(raw) => {
-                    if let Ok(full_descriptor) = load_full_mount_descriptor(&raw, &candidate.location) {
+                    if let Ok(full_descriptor) =
+                        load_full_mount_descriptor(&raw, &candidate.location)
+                    {
                         if full_descriptor.namespace.as_str() != tool.namespace {
                             let message = format!(
                                 "descriptor namespace `{}` does not match requested namespace `{}`",
@@ -1262,37 +1257,38 @@ fn resolve_tool(
                     }
 
                     match serde_json::from_str::<ProductMountOverride>(&raw) {
-                        Ok(overlay) => match apply_override(&mut descriptor, overlay.clone(), &candidate)
-                        {
-                            Ok(applied_or_disabled) => {
-                                descriptor_source = candidate.source;
-                                disabled = disabled || overlay.disabled.unwrap_or(false);
-                                probes.push(AppProbe {
-                                    source: candidate.source,
-                                    location: candidate.location.display().to_string(),
-                                    status: "ok".to_string(),
-                                    message: if disabled {
-                                        "descriptor loaded and product is disabled".to_string()
-                                    } else if applied_or_disabled {
-                                        "descriptor loaded and applied".to_string()
-                                    } else {
-                                        "descriptor loaded with no changes".to_string()
-                                    },
-                                });
-                                break;
+                        Ok(overlay) => {
+                            match apply_override(&mut descriptor, overlay.clone(), &candidate) {
+                                Ok(applied_or_disabled) => {
+                                    descriptor_source = candidate.source;
+                                    disabled = disabled || overlay.disabled.unwrap_or(false);
+                                    probes.push(AppProbe {
+                                        source: candidate.source,
+                                        location: candidate.location.display().to_string(),
+                                        status: "ok".to_string(),
+                                        message: if disabled {
+                                            "descriptor loaded and product is disabled".to_string()
+                                        } else if applied_or_disabled {
+                                            "descriptor loaded and applied".to_string()
+                                        } else {
+                                            "descriptor loaded with no changes".to_string()
+                                        },
+                                    });
+                                    break;
+                                }
+                                Err(error) => {
+                                    health = AppHealth::BadManifest;
+                                    issues.push(error.clone());
+                                    probes.push(AppProbe {
+                                        source: candidate.source,
+                                        location: candidate.location.display().to_string(),
+                                        status: "bad_manifest".to_string(),
+                                        message: error,
+                                    });
+                                    break;
+                                }
                             }
-                            Err(error) => {
-                                health = AppHealth::BadManifest;
-                                issues.push(error.clone());
-                                probes.push(AppProbe {
-                                    source: candidate.source,
-                                    location: candidate.location.display().to_string(),
-                                    status: "bad_manifest".to_string(),
-                                    message: error,
-                                });
-                                break;
-                            }
-                        },
+                        }
                         Err(error) => {
                             health = AppHealth::BadManifest;
                             let message = format!("failed to parse descriptor JSON: {error}");
@@ -1434,36 +1430,36 @@ fn resolve_tool(
                 python_resolution = Some(probe_python_doctor(&descriptor.entrypoint, &resolution));
             }
             match resolution.selected.as_ref().map(|(_, path)| path.clone()) {
-            Some(path) if !is_executable(&path) => {
-                health = AppHealth::PermissionDenied;
-                issues.push(format!(
-                    "resolved python interpreter exists but is not executable: {}",
-                    path.display()
-                ));
-                probes.push(AppProbe {
-                    source: AppDiscoverySource::PathFallback,
-                    location: path.display().to_string(),
-                    status: "permission_denied".to_string(),
-                    message: "python interpreter is not executable".to_string(),
-                });
-                let args = python_runtime_args(&descriptor.entrypoint);
-                Some(ResolvedAppCommand {
-                    command: path.display().to_string(),
-                    display_command: format_display_command(&path.display().to_string(), &args),
-                    args,
-                    source: AppDiscoverySource::PathFallback,
-                    kind: ProductEntrypointKind::PythonModule,
-                    namespace: tool.namespace.to_string(),
-                    descriptor: descriptor.clone(),
-                })
-            }
-            Some(path) => {
-                let selected_source = resolution
-                    .selected
-                    .as_ref()
-                    .map(|(source, _)| *source)
-                    .unwrap_or(PythonInterpreterSource::SystemPath);
-                probes.push(AppProbe {
+                Some(path) if !is_executable(&path) => {
+                    health = AppHealth::PermissionDenied;
+                    issues.push(format!(
+                        "resolved python interpreter exists but is not executable: {}",
+                        path.display()
+                    ));
+                    probes.push(AppProbe {
+                        source: AppDiscoverySource::PathFallback,
+                        location: path.display().to_string(),
+                        status: "permission_denied".to_string(),
+                        message: "python interpreter is not executable".to_string(),
+                    });
+                    let args = python_runtime_args(&descriptor.entrypoint);
+                    Some(ResolvedAppCommand {
+                        command: path.display().to_string(),
+                        display_command: format_display_command(&path.display().to_string(), &args),
+                        args,
+                        source: AppDiscoverySource::PathFallback,
+                        kind: ProductEntrypointKind::PythonModule,
+                        namespace: tool.namespace.to_string(),
+                        descriptor: descriptor.clone(),
+                    })
+                }
+                Some(path) => {
+                    let selected_source = resolution
+                        .selected
+                        .as_ref()
+                        .map(|(source, _)| *source)
+                        .unwrap_or(PythonInterpreterSource::SystemPath);
+                    probes.push(AppProbe {
                     source: AppDiscoverySource::PathFallback,
                     location: path.display().to_string(),
                     status: "ok".to_string(),
@@ -1472,51 +1468,53 @@ fn resolve_tool(
                     )
                     .to_ascii_lowercase(),
                 });
-                if !matches!(health, AppHealth::Conflict) {
-                    health = AppHealth::Ok;
-                }
-                let args = python_runtime_args(&descriptor.entrypoint);
-                Some(ResolvedAppCommand {
-                    command: path.display().to_string(),
-                    display_command: format_display_command(&path.display().to_string(), &args),
-                    args,
-                    source: AppDiscoverySource::PathFallback,
-                    kind: ProductEntrypointKind::PythonModule,
-                    namespace: tool.namespace.to_string(),
-                    descriptor: descriptor.clone(),
-                })
-            }
-            None => {
-                for attempt in &resolution.attempts {
-                    probes.push(AppProbe {
+                    if !matches!(health, AppHealth::Conflict) {
+                        health = AppHealth::Ok;
+                    }
+                    let args = python_runtime_args(&descriptor.entrypoint);
+                    Some(ResolvedAppCommand {
+                        command: path.display().to_string(),
+                        display_command: format_display_command(&path.display().to_string(), &args),
+                        args,
                         source: AppDiscoverySource::PathFallback,
-                        location: attempt.location.clone(),
-                        status: attempt.status.clone(),
-                        message: format!(
-                            "{} ({})",
-                            attempt.message,
-                            serde_json::to_string(&attempt.source)
-                                .unwrap_or_else(|_| "\"unknown\"".to_string())
-                                .trim_matches('"')
-                        ),
-                    });
+                        kind: ProductEntrypointKind::PythonModule,
+                        namespace: tool.namespace.to_string(),
+                        descriptor: descriptor.clone(),
+                    })
                 }
-                if !matches!(health, AppHealth::Conflict | AppHealth::BadManifest) {
-                    health = AppHealth::Missing;
+                None => {
+                    for attempt in &resolution.attempts {
+                        probes.push(AppProbe {
+                            source: AppDiscoverySource::PathFallback,
+                            location: attempt.location.clone(),
+                            status: attempt.status.clone(),
+                            message: format!(
+                                "{} ({})",
+                                attempt.message,
+                                serde_json::to_string(&attempt.source)
+                                    .unwrap_or_else(|_| "\"unknown\"".to_string())
+                                    .trim_matches('"')
+                            ),
+                        });
+                    }
+                    if !matches!(health, AppHealth::Conflict | AppHealth::BadManifest) {
+                        health = AppHealth::Missing;
+                    }
+                    let command =
+                        env::var(BIJUX_PYTHON_BIN).unwrap_or_else(|_| "python3".to_string());
+                    let args = python_runtime_args(&descriptor.entrypoint);
+                    Some(ResolvedAppCommand {
+                        display_command: format_display_command(&command, &args),
+                        command,
+                        args,
+                        source: AppDiscoverySource::PathFallback,
+                        kind: ProductEntrypointKind::PythonModule,
+                        namespace: tool.namespace.to_string(),
+                        descriptor: descriptor.clone(),
+                    })
                 }
-                let command = env::var(BIJUX_PYTHON_BIN).unwrap_or_else(|_| "python3".to_string());
-                let args = python_runtime_args(&descriptor.entrypoint);
-                Some(ResolvedAppCommand {
-                    display_command: format_display_command(&command, &args),
-                    command,
-                    args,
-                    source: AppDiscoverySource::PathFallback,
-                    kind: ProductEntrypointKind::PythonModule,
-                    namespace: tool.namespace.to_string(),
-                    descriptor: descriptor.clone(),
-                })
             }
-        }}
+        }
         ProductEntrypointKind::EmbeddedRust => {
             probes.push(AppProbe {
                 source: descriptor_source,
@@ -1665,14 +1663,14 @@ pub fn resolve_runtime_command(query: &str) -> Option<ResolvedAppCommand> {
         let resolution = resolve_tool(
             tool,
             &paths,
-            ResolutionConfig {
-                probe_version: false,
-                probe_python: false,
-            },
+            ResolutionConfig { probe_version: false, probe_python: false },
         );
-        return resolution
-            .runtime_resolution
-            .or_else(|| Some(resolve_descriptor_runtime_command(resolution.descriptor, resolution.descriptor_source)));
+        return resolution.runtime_resolution.or_else(|| {
+            Some(resolve_descriptor_runtime_command(
+                resolution.descriptor,
+                resolution.descriptor_source,
+            ))
+        });
     }
 
     discover_custom_mount(query)
@@ -1705,10 +1703,7 @@ pub fn apps_list_report(
                 resolve_tool(
                     tool,
                     paths,
-                    ResolutionConfig {
-                        probe_version: false,
-                        probe_python: false,
-                    },
+                    ResolutionConfig { probe_version: false, probe_python: false },
                 ),
             )
         })
@@ -1738,10 +1733,7 @@ pub fn apps_doctor_report(
                 resolve_tool(
                     tool,
                     paths,
-                    ResolutionConfig {
-                        probe_version: true,
-                        probe_python: true,
-                    },
+                    ResolutionConfig { probe_version: true, probe_python: true },
                 ),
             )
         })
@@ -1760,17 +1752,14 @@ pub fn apps_doctor_report(
 }
 
 /// Build root `apps doctor <query>` output.
-pub fn app_doctor_report(query: &str, paths: &ResolvedStatePaths) -> Result<AppDoctorReport, String> {
+pub fn app_doctor_report(
+    query: &str,
+    paths: &ResolvedStatePaths,
+) -> Result<AppDoctorReport, String> {
     let tool =
         known_bijux_tool_by_query(query).ok_or_else(|| format!("unknown official app: {query}"))?;
-    let resolution = resolve_tool(
-        tool,
-        paths,
-        ResolutionConfig {
-            probe_version: true,
-            probe_python: true,
-        },
-    );
+    let resolution =
+        resolve_tool(tool, paths, ResolutionConfig { probe_version: true, probe_python: true });
     Ok(AppDoctorReport {
         status: status_from_healths(&[resolution.health]),
         query: query.to_string(),
@@ -1784,14 +1773,8 @@ pub fn app_doctor_report(query: &str, paths: &ResolvedStatePaths) -> Result<AppD
 pub fn app_which_report(query: &str, paths: &ResolvedStatePaths) -> Result<AppWhichReport, String> {
     let tool =
         known_bijux_tool_by_query(query).ok_or_else(|| format!("unknown official app: {query}"))?;
-    let resolution = resolve_tool(
-        tool,
-        paths,
-        ResolutionConfig {
-            probe_version: false,
-            probe_python: false,
-        },
-    );
+    let resolution =
+        resolve_tool(tool, paths, ResolutionConfig { probe_version: false, probe_python: false });
     let status = status_from_healths(&[resolution.health]);
     let resolution_policy = resolution_policy(&resolution.shadowed_plugins);
     Ok(AppWhichReport {
@@ -1818,14 +1801,8 @@ pub fn app_version_report(
 ) -> Result<AppVersionReport, String> {
     let tool =
         known_bijux_tool_by_query(query).ok_or_else(|| format!("unknown official app: {query}"))?;
-    let resolution = resolve_tool(
-        tool,
-        paths,
-        ResolutionConfig {
-            probe_version: true,
-            probe_python: false,
-        },
-    );
+    let resolution =
+        resolve_tool(tool, paths, ResolutionConfig { probe_version: true, probe_python: false });
     Ok(AppVersionReport {
         status: status_from_healths(&[resolution.health]),
         query: query.to_string(),
@@ -1845,14 +1822,8 @@ pub fn app_capabilities_report(
 ) -> Result<AppCapabilitiesReport, String> {
     let tool =
         known_bijux_tool_by_query(query).ok_or_else(|| format!("unknown official app: {query}"))?;
-    let resolution = resolve_tool(
-        tool,
-        paths,
-        ResolutionConfig {
-            probe_version: false,
-            probe_python: false,
-        },
-    );
+    let resolution =
+        resolve_tool(tool, paths, ResolutionConfig { probe_version: false, probe_python: false });
     Ok(AppCapabilitiesReport {
         status: status_from_healths(&[resolution.health]),
         query: query.to_string(),
@@ -1957,27 +1928,38 @@ pub fn scaffold_app_mount(
         }
         if target_root.is_dir() {
             fs::remove_dir_all(target_root).map_err(|error| {
-                format!("failed to remove existing scaffold directory `{}`: {error}", target_root.display())
+                format!(
+                    "failed to remove existing scaffold directory `{}`: {error}",
+                    target_root.display()
+                )
             })?;
         } else {
             fs::remove_file(target_root).map_err(|error| {
-                format!("failed to remove existing scaffold file `{}`: {error}", target_root.display())
+                format!(
+                    "failed to remove existing scaffold file `{}`: {error}",
+                    target_root.display()
+                )
             })?;
         }
     }
 
-    fs::create_dir_all(target_root)
-        .map_err(|error| format!("failed to create scaffold root `{}`: {error}", target_root.display()))?;
+    fs::create_dir_all(target_root).map_err(|error| {
+        format!("failed to create scaffold root `{}`: {error}", target_root.display())
+    })?;
     let apps_dir = target_root.join(".bijux/apps");
-    fs::create_dir_all(&apps_dir)
-        .map_err(|error| format!("failed to create app manifest directory `{}`: {error}", apps_dir.display()))?;
+    fs::create_dir_all(&apps_dir).map_err(|error| {
+        format!("failed to create app manifest directory `{}`: {error}", apps_dir.display())
+    })?;
 
     let descriptor = match kind {
         "python" => {
             let module_name = app_module_name(namespace.as_str());
             let module_dir = target_root.join(&module_name);
             fs::create_dir_all(&module_dir).map_err(|error| {
-                format!("failed to create python module directory `{}`: {error}", module_dir.display())
+                format!(
+                    "failed to create python module directory `{}`: {error}",
+                    module_dir.display()
+                )
             })?;
             fs::write(
                 target_root.join("pyproject.toml"),
@@ -2019,12 +2001,10 @@ pub fn scaffold_app_mount(
                     ..FeatureCapabilityDeclaration::default()
                 })
                 .version(APP_SCAFFOLD_VERSION)
-                .compatibility(
-                    crate::sdk::SdkCompatibilityWindow::new(
-                        crate::shared::version::runtime_semver().to_string(),
-                        None,
-                    )?,
-                )
+                .compatibility(crate::sdk::SdkCompatibilityWindow::new(
+                    crate::shared::version::runtime_semver().to_string(),
+                    None,
+                )?)
                 .build_descriptor()?
         }
         "rust" => {
@@ -2071,14 +2051,17 @@ pub fn scaffold_app_mount(
                 .version(APP_SCAFFOLD_VERSION)
                 .build_descriptor()?
         }
-        other => return Err(format!("app scaffold kind must be one of: python, rust; got `{other}`")),
+        other => {
+            return Err(format!("app scaffold kind must be one of: python, rust; got `{other}`"))
+        }
     };
 
     let manifest_path = apps_dir.join(format!("{}.mount.json", namespace.as_str()));
     let manifest_json = serde_json::to_string_pretty(&descriptor)
         .map_err(|error| format!("failed to serialize app manifest: {error}"))?;
-    fs::write(&manifest_path, format!("{manifest_json}\n"))
-        .map_err(|error| format!("failed to write app manifest `{}`: {error}", manifest_path.display()))?;
+    fs::write(&manifest_path, format!("{manifest_json}\n")).map_err(|error| {
+        format!("failed to write app manifest `{}`: {error}", manifest_path.display())
+    })?;
 
     let mut files = vec![manifest_path.display().to_string()];
     if kind == "python" {
@@ -2090,7 +2073,9 @@ pub fn scaffold_app_mount(
     } else {
         files.push(target_root.join("Cargo.toml").display().to_string());
         files.push(target_root.join("src/main.rs").display().to_string());
-        files.push(target_root.join(rust_app_entrypoint_name(namespace.as_str())).display().to_string());
+        files.push(
+            target_root.join(rust_app_entrypoint_name(namespace.as_str())).display().to_string(),
+        );
     }
     files.sort();
 
@@ -2105,7 +2090,10 @@ pub fn scaffold_app_mount(
         files,
         guidance: vec![
             format!("Run `cd {}` before invoking the scaffolded app mount.", target_root.display()),
-            format!("Invoke `bijux {} --help` to exercise the mounted surface.", namespace.as_str()),
+            format!(
+                "Invoke `bijux {} --help` to exercise the mounted surface.",
+                namespace.as_str()
+            ),
         ],
     })
 }

@@ -1,17 +1,17 @@
 use crate::commands::{ControlPlaneCommands, DagCli};
 use crate::{emit_json, read_file, ExitCode};
-use bijux_dag_runtime::{merge_timeout_and_exit_events, thread_safety_audit};
 use bijux_dag_runtime::simulated_platform::{
-    deduplicate_across_replicas, fence_allows_mutation, idempotent_run_creation,
-    invalidate_decision_cache, is_stale_leader, next_epoch, ordering_during_failover,
-    resolve_environment_values, select_dag_version, validate_task_lease_semantics,
-    ApiCompatibilityRule, ApiVersion, CompatibilityDecision, DagRegistry,
-    DagVersionSelectionPolicy, DurableRunQueueEntry, EnvironmentConfiguration,
+    check_api_compatibility, deduplicate_across_replicas, fence_allows_mutation,
+    idempotent_run_creation, invalidate_decision_cache, is_stale_leader, next_epoch,
+    ordering_during_failover, resolve_environment_values, select_dag_version,
+    validate_task_lease_semantics, ApiCompatibilityRule, ApiVersion, CompatibilityDecision,
+    DagRegistry, DagVersionSelectionPolicy, DurableRunQueueEntry, EnvironmentConfiguration,
     LeaderElectionState, PolicyDecisionCache, QueueOwnershipTransfer, QueuePartition,
     QueueShardLease, RegionId, RegionQueuePartition, ScheduleDedupRecord, SchedulerEpoch,
-    SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
-    TypedControlPlaneResponse, WorkLease, check_api_compatibility,
+    SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest, TypedControlPlaneResponse,
+    WorkLease,
 };
+use bijux_dag_runtime::{merge_timeout_and_exit_events, thread_safety_audit};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
@@ -253,8 +253,13 @@ fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, Exi
 }
 
 fn api_payload(simulation: ApiSimulation) -> (serde_json::Value, bool) {
-    let ApiSimulation { request, replica_ids, responses, load_balanced, hidden_in_memory_authority } =
-        simulation;
+    let ApiSimulation {
+        request,
+        replica_ids,
+        responses,
+        load_balanced,
+        hidden_in_memory_authority,
+    } = simulation;
     let first = responses.first();
     let response_consistent = first.is_some()
         && responses.iter().all(|response| {
@@ -380,14 +385,16 @@ fn sharding_payload(simulation: ShardingSimulation) -> (serde_json::Value, bool)
         .iter()
         .filter_map(|partition| partition.tenant_id.clone())
         .collect::<BTreeSet<_>>();
-    let assigned_regions = region_partitions
+    let assigned_regions =
+        region_partitions.iter().map(|partition| partition.region.clone()).collect::<BTreeSet<_>>();
+    let all_tenants_assigned =
+        active_tenants.iter().all(|tenant| assigned_tenants.contains(tenant));
+    let all_regions_assigned =
+        active_regions.iter().all(|region| assigned_regions.contains(region));
+    let shared_region_edges = region_partitions
         .iter()
-        .map(|partition| partition.region.clone())
-        .collect::<BTreeSet<_>>();
-    let all_tenants_assigned = active_tenants.iter().all(|tenant| assigned_tenants.contains(tenant));
-    let all_regions_assigned = active_regions.iter().all(|region| assigned_regions.contains(region));
-    let shared_region_edges =
-        region_partitions.iter().map(|partition| partition.shared_with_regions.len()).sum::<usize>();
+        .map(|partition| partition.shared_with_regions.len())
+        .sum::<usize>();
     let mut gaps = Vec::new();
     if queue_partitions.is_empty() {
         gaps.push("control-plane sharding requires at least one queue partition".to_string());
@@ -468,16 +475,10 @@ fn idempotency_payload(simulation: IdempotencySimulation) -> (serde_json::Value,
         proposed_record,
         queue_entries,
     } = simulation;
-    let canonical_run_key = idempotent_run_creation(
-        &mut existing_dedup,
-        &repeated_dedup_key,
-        &first_run_key,
-    );
-    let replay_run_key = idempotent_run_creation(
-        &mut existing_dedup,
-        &repeated_dedup_key,
-        &replayed_run_key,
-    );
+    let canonical_run_key =
+        idempotent_run_creation(&mut existing_dedup, &repeated_dedup_key, &first_run_key);
+    let replay_run_key =
+        idempotent_run_creation(&mut existing_dedup, &repeated_dedup_key, &replayed_run_key);
     let stable_run_key = canonical_run_key == replay_run_key;
     let replica_unique = deduplicate_across_replicas(&replica_records, &proposed_record);
     let canonical_order = ordering_during_failover(queue_entries.clone());
@@ -613,7 +614,9 @@ fn cache_payload(simulation: CacheSimulation) -> (serde_json::Value, bool) {
         gaps.push("policy decision cache still mixes bundle versions".to_string());
     }
     if current_env.parent.is_some() && parent_env.is_none() {
-        gaps.push("environment inheritance declares a parent but no parent configuration".to_string());
+        gaps.push(
+            "environment inheritance declares a parent but no parent configuration".to_string(),
+        );
     }
     if !environment_resolved {
         gaps.push("effective environment values did not resolve".to_string());
@@ -799,20 +802,19 @@ pub(crate) fn handle_control_plane_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        api_payload, backpressure_payload, cache_payload, leadership_payload, planning_payload,
-        fan_in_payload, migration_payload, ApiSimulation, BackpressureSimulation,
-        CacheSimulation, FanInSimulation, LeadershipSimulation, IdempotencySimulation,
-        LeasesSimulation, MigrationSimulation, PlanningSimulation, ShardingSimulation,
-        idempotency_payload, leases_payload, sharding_payload,
+        api_payload, backpressure_payload, cache_payload, fan_in_payload, idempotency_payload,
+        leadership_payload, leases_payload, migration_payload, planning_payload, sharding_payload,
+        ApiSimulation, BackpressureSimulation, CacheSimulation, FanInSimulation,
+        IdempotencySimulation, LeadershipSimulation, LeasesSimulation, MigrationSimulation,
+        PlanningSimulation, ShardingSimulation,
     };
     use bijux_dag_runtime::simulated_platform::{
-        ApiCompatibilityRule, ApiVersion, DagRegistry, DagVersionRecord,
-        DagVersionSelectionPolicy, DagVersionStatus, DecisionType, DurableRunQueueEntry,
-        EnvironmentConfiguration, EnvironmentMode, LeaderElectionState, PolicyDecisionCache,
-        PolicyDecisionCacheEntry, QueueOwnershipTransfer, QueuePartition, QueueShardLease,
-        RegionId, RegionQueuePartition, RunControlOperation, ScheduleDedupRecord,
-        SchedulerEpoch, SchedulerFenceToken, TaskLeaseSemantics, TypedControlPlaneRequest,
-        TypedControlPlaneResponse, WorkLease,
+        ApiCompatibilityRule, ApiVersion, DagRegistry, DagVersionRecord, DagVersionSelectionPolicy,
+        DagVersionStatus, DecisionType, DurableRunQueueEntry, EnvironmentConfiguration,
+        EnvironmentMode, LeaderElectionState, PolicyDecisionCache, PolicyDecisionCacheEntry,
+        QueueOwnershipTransfer, QueuePartition, QueueShardLease, RegionId, RegionQueuePartition,
+        RunControlOperation, ScheduleDedupRecord, SchedulerEpoch, SchedulerFenceToken,
+        TaskLeaseSemantics, TypedControlPlaneRequest, TypedControlPlaneResponse, WorkLease,
     };
     use serde_json::json;
     use std::collections::{BTreeMap, BTreeSet};
@@ -1427,11 +1429,7 @@ mod tests {
     #[test]
     fn fan_in_flags_unbounded_merge_or_missing_audit_coverage() {
         let simulation = FanInSimulation {
-            timed_out_nodes: vec![
-                "node-a".to_string(),
-                "node-b".to_string(),
-                "node-c".to_string(),
-            ],
+            timed_out_nodes: vec!["node-a".to_string(), "node-b".to_string(), "node-c".to_string()],
             exited_nodes: vec!["node-d".to_string()],
             fan_in_limit: 2,
             aggregator_threads: 3,

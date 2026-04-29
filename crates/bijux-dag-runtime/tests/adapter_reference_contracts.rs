@@ -10,7 +10,9 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{generate_adapter_reference_markdown, registered_adapter_reference_document};
+use bijux_dag_runtime::{
+    generate_adapter_reference_markdown, registered_adapter_reference_document,
+};
 use std::fs;
 use std::path::PathBuf;
 

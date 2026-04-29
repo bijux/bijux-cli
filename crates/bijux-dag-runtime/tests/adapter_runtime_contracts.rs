@@ -67,10 +67,7 @@ fn external_graph(kind: &str, timeout_ms: Option<u64>) -> Graph {
             kind: NodeKind::External(kind.to_string()),
             semantic_kind: SemanticNodeKind::Task,
             inputs: vec![],
-            outputs: vec![FileOutput {
-                name: "out".to_string(),
-                path: "out".to_string(),
-            }],
+            outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
             params: ParamValue::default(),
             container: None,
             timeout_ms,
@@ -273,11 +270,7 @@ fn external_adapter_info_stderr_boundary_is_rejected() {
     let reports = probe_external_adapters().expect("probe");
     std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
     assert_eq!(reports[0].status, bijux_dag_runtime::ExternalAdapterHandshakeStatus::Rejected);
-    assert!(reports[0]
-        .reason
-        .as_deref()
-        .unwrap_or_default()
-        .contains("stdout only"));
+    assert!(reports[0].reason.as_deref().unwrap_or_default().contains("stdout only"));
 }
 
 #[test]
@@ -331,9 +324,8 @@ exit 1
     assert_eq!(trace["failure"]["code"], "EXEC_TIMEOUT");
     assert_eq!(trace["failure"]["details"]["timeout_class"], "external_adapter_process");
     assert!(trace["adapter_binary_sha256"].as_str().is_some());
-    let quarantine_dir = trace["failure"]["details"]["quarantined_outputs_dir"]
-        .as_str()
-        .expect("quarantine dir");
+    let quarantine_dir =
+        trace["failure"]["details"]["quarantined_outputs_dir"].as_str().expect("quarantine dir");
     let quarantine_path = {
         let raw = std::path::Path::new(quarantine_dir);
         if raw.is_absolute() {

@@ -330,14 +330,12 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("status"))
         .subcommand(Command::new("paths"))
         .subcommand(
-            Command::new("doctor")
-                .arg(Arg::new("subject").num_args(1))
-                .arg(
-                    Arg::new("bundle")
-                        .long("bundle")
-                        .action(ArgAction::SetTrue)
-                        .help("Write a diagnostics bundle under ./artifacts"),
-                ),
+            Command::new("doctor").arg(Arg::new("subject").num_args(1)).arg(
+                Arg::new("bundle")
+                    .long("bundle")
+                    .action(ArgAction::SetTrue)
+                    .help("Write a diagnostics bundle under ./artifacts"),
+            ),
         )
         .subcommand(Command::new("version"))
         .subcommand(Command::new("repl"))
@@ -386,14 +384,12 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("audit"))
         .subcommand(Command::new("docs"))
         .subcommand(
-            Command::new("doctor")
-                .arg(Arg::new("subject").num_args(1))
-                .arg(
-                    Arg::new("bundle")
-                        .long("bundle")
-                        .action(ArgAction::SetTrue)
-                        .help("Write a diagnostics bundle under ./artifacts"),
-                ),
+            Command::new("doctor").arg(Arg::new("subject").num_args(1)).arg(
+                Arg::new("bundle")
+                    .long("bundle")
+                    .action(ArgAction::SetTrue)
+                    .help("Write a diagnostics bundle under ./artifacts"),
+            ),
         )
         .subcommand(Command::new("version"))
         .subcommand(

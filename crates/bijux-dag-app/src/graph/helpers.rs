@@ -135,7 +135,8 @@ pub(crate) fn doctor_report() -> Result<serde_json::Value, ExitCode> {
     let podman = check_engine("podman");
     let adapters = registered_adapters();
     let schema_root = repo_root.join("configs").join("dag").join("schema");
-    let schema_files = if schema_root.exists() { walk_json_files(&schema_root)? } else { Vec::new() };
+    let schema_files =
+        if schema_root.exists() { walk_json_files(&schema_root)? } else { Vec::new() };
     let runtime_schema = schema_root.join("runtime_config.schema.json");
     let env_overrides_present = [
         "BIJUX_DAG_JOBS",
@@ -160,11 +161,8 @@ pub(crate) fn doctor_report() -> Result<serde_json::Value, ExitCode> {
         fs::hard_link(&a, &b).is_ok()
     };
 
-    let status = if cache_status["status"] == "error" || !runtime_schema.exists() {
-        "error"
-    } else {
-        "ok"
-    };
+    let status =
+        if cache_status["status"] == "error" || !runtime_schema.exists() { "error" } else { "ok" };
 
     Ok(json!({
         "status": status,

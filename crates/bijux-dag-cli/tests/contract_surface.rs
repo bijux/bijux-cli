@@ -158,8 +158,7 @@ fn dag_commands_groups_surface_is_stable_enough() {
 
 #[test]
 fn dag_commands_json_exposes_group_and_maturity_metadata() {
-    let output =
-        dag_command().args(["dag", "--json", "commands"]).output().expect("commands json");
+    let output = dag_command().args(["dag", "--json", "commands"]).output().expect("commands json");
     assert!(output.status.success());
     let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("commands json");
     let commands = payload["data"]["commands"].as_array().expect("commands array");
@@ -173,7 +172,8 @@ fn dag_commands_json_exposes_group_and_maturity_metadata() {
 fn dag_doctor_json_includes_schema_and_runtime_config_status() {
     let output = dag_command().args(["dag", "--json", "doctor"]).output().expect("doctor json");
     assert!(output.status.success());
-    let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("doctor payload");
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("doctor payload");
     assert!(payload["data"]["schema_files"]["count"].as_u64().is_some());
     assert!(payload["data"]["runtime_config"]["defaults_fingerprint"].as_str().is_some());
 }
@@ -254,7 +254,8 @@ fn dag_trace_node_artifact_fetch_and_bundle_surfaces_work_end_to_end() {
         .output()
         .expect("trace node");
     assert!(trace.status.success(), "trace stderr: {}", String::from_utf8_lossy(&trace.stderr));
-    let trace_payload: serde_json::Value = serde_json::from_slice(&trace.stdout).expect("trace json");
+    let trace_payload: serde_json::Value =
+        serde_json::from_slice(&trace.stdout).expect("trace json");
     assert_eq!(trace_payload["data"]["node_id"], "const1");
 
     let copied = tempdir().expect("copy out");
@@ -278,14 +279,7 @@ fn dag_trace_node_artifact_fetch_and_bundle_surfaces_work_end_to_end() {
     let bundle = tempdir().expect("bundle out");
     let bundle_path = bundle.path().join("bundle.json");
     let bundle_output = dag_command()
-        .args([
-            "dag",
-            "--json",
-            "run-bundle",
-            run_dir,
-            "--out",
-            bundle_path.to_str().unwrap(),
-        ])
+        .args(["dag", "--json", "run-bundle", run_dir, "--out", bundle_path.to_str().unwrap()])
         .output()
         .expect("run bundle");
     assert!(bundle_output.status.success());
@@ -293,7 +287,8 @@ fn dag_trace_node_artifact_fetch_and_bundle_surfaces_work_end_to_end() {
         serde_json::from_slice(&bundle_output.stdout).expect("bundle payload");
     assert_eq!(bundle_payload["data"]["bundle"], bundle_path.to_string_lossy().to_string());
     let bundle_json: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(&bundle_path).expect("bundle file")).expect("bundle json");
+        serde_json::from_slice(&std::fs::read(&bundle_path).expect("bundle file"))
+            .expect("bundle json");
     assert_eq!(bundle_json["bundle_version"], "export-bundle/v0.1");
     assert!(bundle_json["files"].is_object());
 }

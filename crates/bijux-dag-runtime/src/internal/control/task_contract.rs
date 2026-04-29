@@ -236,10 +236,7 @@ fn build_retry_policy(node: &Node) -> RetryPolicyV2 {
         })
         .filter(|values| !values.is_empty())
         .unwrap_or_else(|| {
-            vec![
-                RetryableFailureClass::ExecutionTransient,
-                RetryableFailureClass::TimeoutTransient,
-            ]
+            vec![RetryableFailureClass::ExecutionTransient, RetryableFailureClass::TimeoutTransient]
         });
     RetryPolicyV2 {
         max_attempts: node.retry.max_attempts,

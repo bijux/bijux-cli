@@ -12,9 +12,8 @@ use bijux_dag_runtime::{
     validate_schedule_registry, BackfillRequest, BackfillThrottlingPolicy, CatchUpPolicy,
     ConcurrencyPolicyLayers, FailurePropagationMode, PlannerGuardrails, PlannerPhase,
     PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyNode, RetryPolicySemantics,
-    RunBatchPolicy, RuntimeConfig, ScheduleDefinition, ScheduleRegistry,
-    ScheduleSubmissionStatus, ScheduledSubmission, SchedulerFairness, SchedulerPolicy,
-    SelectorSet, TriggerSpec,
+    RunBatchPolicy, RuntimeConfig, ScheduleDefinition, ScheduleRegistry, ScheduleSubmissionStatus,
+    ScheduledSubmission, SchedulerFairness, SchedulerPolicy, SelectorSet, TriggerSpec,
 };
 use bijux_dag_testkit as _;
 use ctrlc as _;
@@ -228,7 +227,10 @@ fn schedule_validation_rejects_blank_queue_and_noncron_catchup() {
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
         trigger: TriggerSpec::Manual,
-        queue: QueueIdentity { queue_name: "   ".to_string(), tenant: Some("tenant-a".to_string()) },
+        queue: QueueIdentity {
+            queue_name: "   ".to_string(),
+            tenant: Some("tenant-a".to_string()),
+        },
         priority: PriorityClass::Standard,
         concurrency: ConcurrencyPolicyLayers {
             per_dag: Some(1),

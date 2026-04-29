@@ -9,8 +9,8 @@ use bijux_dag_artifacts::store::{
     ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
 };
 use bijux_dag_artifacts::{
-    build_artifact_identity, hash::sha256_hex, write_outputs_index, OutputsIndex, RunDirSchemaIndex,
-    RunOutputFile, RunOutputsIndex,
+    build_artifact_identity, hash::sha256_hex, write_outputs_index, OutputsIndex,
+    RunDirSchemaIndex, RunOutputFile, RunOutputsIndex,
 };
 use bijux_dag_testkit as _;
 use hex as _;

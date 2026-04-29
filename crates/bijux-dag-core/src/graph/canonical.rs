@@ -83,14 +83,14 @@ impl Graph {
                 &left.decision,
             )
                 .cmp(&(
-                edge_kind_order(&right.kind),
-                &right.from.node_id,
-                &right.from.port,
-                &right.to.node_id,
-                &right.to.port,
-                &right.id,
-                &right.decision,
-            ))
+                    edge_kind_order(&right.kind),
+                    &right.from.node_id,
+                    &right.from.port,
+                    &right.to.node_id,
+                    &right.to.port,
+                    &right.id,
+                    &right.decision,
+                ))
         });
 
         let mut inputs = self.inputs.clone();

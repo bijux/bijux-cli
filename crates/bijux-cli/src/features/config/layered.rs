@@ -624,13 +624,16 @@ Use `bijux config docs --format json` when you need the same content from the ru
         markdown.push_str("\n## `");
         markdown.push_str(&scope_entry.scope);
         markdown.push_str("`\n\n");
-        markdown.push_str("| Logical key | Storage key | Type | Environment | Sensitive | Description |\n");
+        markdown.push_str(
+            "| Logical key | Storage key | Type | Environment | Sensitive | Description |\n",
+        );
         markdown.push_str("| --- | --- | --- | --- | --- | --- |\n");
         for field in &scope_entry.fields {
             let env_vars = if field.env_vars.is_empty() {
                 "-".to_string()
             } else {
-                field.env_vars
+                field
+                    .env_vars
                     .iter()
                     .map(|value| format!("`{value}`"))
                     .collect::<Vec<_>>()

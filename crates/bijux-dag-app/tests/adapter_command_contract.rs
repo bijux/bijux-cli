@@ -124,10 +124,7 @@ fn adapters_conformance_json_reports_scenario_matrix() {
     let (code, payload, stderr) = run_json(&root, &["--json", "adapters", "conformance"]);
     assert_eq!(code, 0, "command failed: {stderr}");
     let suites = payload["data"]["suites"].as_array().expect("suites");
-    let shell = suites
-        .iter()
-        .find(|suite| suite["adapter_id"] == "shell")
-        .expect("shell suite");
+    let shell = suites.iter().find(|suite| suite["adapter_id"] == "shell").expect("shell suite");
     let scenarios = shell["scenarios"].as_array().expect("shell scenarios");
     assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "timeout"));
     assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "cache_output"));
@@ -168,10 +165,8 @@ fn adapters_cache_compat_json_rejects_schema_drift() {
 #[ignore = "slow"]
 fn adapters_reference_prints_generated_markdown_contract() {
     let root = repo_root();
-    let output = dag_command(&root)
-        .args(["adapters", "reference"])
-        .output()
-        .expect("run dag command");
+    let output =
+        dag_command(&root).args(["adapters", "reference"]).output().expect("run dag command");
     assert_eq!(output.status.code().unwrap_or(1), 0);
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("# Adapter Contract"));

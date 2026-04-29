@@ -1,31 +1,29 @@
 use crate::commands::{DagCli, SecurityCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
-    can_renew_credential, credential_is_expired, credential_scopes_matrix,
-    builtin_role_definitions, evaluate_authorization_acceptance, evaluate_dry_run,
-    is_action_allowed_in_environment, validate_custom_role,
-    local_dev_bypass_allowed, readiness_for_federation, revoked_principals_set, trust_health_report,
-    Action, ActionKind, AuthenticationEvent, CredentialLifecycle, CredentialRevocation,
-    CredentialScope, CustomRoleDefinition, DecisionType, EnvironmentAuthorizationRule,
-    IdentityPrincipal, LocalDevAuthBypassRule, PolicyEvaluationRequest, ResourceKind, ResourceRef,
-    ResourceScope, SubjectIdentity, SubjectKind, TrustHealthReport,
-    check_scheduler_admission, enforce_tenant_plugin_allowlist, resolve_tenant_overlay,
-    scope_lineage_query, tenant_provisioning_bootstrap, validate_tenant_isolation,
-    can_promote_artifact, require_provenance_completeness, verify_attestation_or_fail,
-    ArtifactTrustLabel, PromotionPolicy, ProvenanceCompletenessPolicy,
-    RuntimeSecretContract,
-    RunProvenanceAttestation, SignedArtifactManifest,
-    TenantConfigOverlay, TenantId, TenantLineageScope, TenantPluginAllowlist,
-    TenantPolicyBundleRef, TenantProvisioningSpec, TenantQueueIsolationPolicy,
-    TenantRegistryPartition, TenantSchedulerAdmission,
+    builtin_role_definitions, can_promote_artifact, can_renew_credential,
+    check_scheduler_admission, credential_is_expired, credential_scopes_matrix,
+    enforce_tenant_plugin_allowlist, evaluate_authorization_acceptance, evaluate_dry_run,
+    is_action_allowed_in_environment, local_dev_bypass_allowed, readiness_for_federation,
+    require_provenance_completeness, resolve_tenant_overlay, revoked_principals_set,
+    scope_lineage_query, tenant_provisioning_bootstrap, trust_health_report, validate_custom_role,
+    validate_tenant_isolation, verify_attestation_or_fail, Action, ActionKind, ArtifactTrustLabel,
+    AuthenticationEvent, CredentialLifecycle, CredentialRevocation, CredentialScope,
+    CustomRoleDefinition, DecisionType, EnvironmentAuthorizationRule, IdentityPrincipal,
+    LocalDevAuthBypassRule, PolicyEvaluationRequest, PromotionPolicy, ProvenanceCompletenessPolicy,
+    ResourceKind, ResourceRef, ResourceScope, RunProvenanceAttestation, RuntimeSecretContract,
+    SignedArtifactManifest, SubjectIdentity, SubjectKind, TenantConfigOverlay, TenantId,
+    TenantLineageScope, TenantPluginAllowlist, TenantPolicyBundleRef, TenantProvisioningSpec,
+    TenantQueueIsolationPolicy, TenantRegistryPartition, TenantSchedulerAdmission,
+    TrustHealthReport,
 };
 use bijux_dag_runtime::{
-    authorize_input_path, authorize_output_path,
-    leak_conformance_check, secret_readiness, secret_scope_allows, secure_cleanup_required,
-    secure_mode_effective, select_secret_version, summarize_sensitive_classes,
-    validate_secret_delivery_mode, SecretDeliveryPolicy, SecretInjectionMode,
-    SecretMaskingPolicy, SecretRotationRule, SecretScopeRule, SecretSource, SecretUsageAuditEvent,
-    SecureExecutionMode, SecureTeardownPolicy, SecureWorkspaceRule, SensitiveArtifactRestriction,
+    authorize_input_path, authorize_output_path, leak_conformance_check, secret_readiness,
+    secret_scope_allows, secure_cleanup_required, secure_mode_effective, select_secret_version,
+    summarize_sensitive_classes, validate_secret_delivery_mode, SecretDeliveryPolicy,
+    SecretInjectionMode, SecretMaskingPolicy, SecretRotationRule, SecretScopeRule, SecretSource,
+    SecretUsageAuditEvent, SecureExecutionMode, SecureTeardownPolicy, SecureWorkspaceRule,
+    SensitiveArtifactRestriction,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -279,8 +277,10 @@ fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
 fn auth_payload(simulation: &Path) -> Result<AuthReport, ExitCode> {
     let simulation: AuthSimulation = load_json_file(simulation)?;
     let revoked = revoked_principals_set(&simulation.revocations);
-    let local_bypass_blocked =
-        simulation.bypass_rules.iter().all(|rule| !local_dev_bypass_allowed(&simulation.environment, rule));
+    let local_bypass_blocked = simulation
+        .bypass_rules
+        .iter()
+        .all(|rule| !local_dev_bypass_allowed(&simulation.environment, rule));
     let federation = readiness_for_federation(
         &simulation.bypass_rules,
         simulation.revocation_propagation_supported,
@@ -337,7 +337,10 @@ fn authz_payload(simulation: &Path) -> Result<AuthzReport, ExitCode> {
             kind: simulation.subject_kind,
             tenant_id: simulation.tenant_id.clone(),
         },
-        action: Action { name: simulation.action_name.clone(), kind: simulation.action_kind.clone() },
+        action: Action {
+            name: simulation.action_name.clone(),
+            kind: simulation.action_kind.clone(),
+        },
         resource: ResourceRef {
             kind: simulation.resource_kind,
             id: simulation.resource_id,
@@ -349,9 +352,16 @@ fn authz_payload(simulation: &Path) -> Result<AuthzReport, ExitCode> {
         },
         environment: simulation.environment.clone(),
     };
-    let dry_run = evaluate_dry_run(&request, &simulation.granted_permissions, &simulation.policy_bundle_version);
-    let environment_allows =
-        is_action_allowed_in_environment(&simulation.action_name, &simulation.environment, &simulation.environment_rules);
+    let dry_run = evaluate_dry_run(
+        &request,
+        &simulation.granted_permissions,
+        &simulation.policy_bundle_version,
+    );
+    let environment_allows = is_action_allowed_in_environment(
+        &simulation.action_name,
+        &simulation.environment,
+        &simulation.environment_rules,
+    );
     let acceptance =
         evaluate_authorization_acceptance(&simulation.decisions, &simulation.cross_tenant_denials);
     let custom_role_valid = simulation
@@ -406,16 +416,22 @@ fn tenant_payload(simulation: &Path) -> Result<TenantReport, ExitCode> {
         max_enqueued_runs: simulation.max_enqueued_runs,
         max_dispatches_per_tick: simulation.max_dispatches_per_tick,
     };
-    let scheduler_admitted =
-        check_scheduler_admission(simulation.queued_runs, simulation.pending_dispatches, &admission);
-    let allowlist =
-        TenantPluginAllowlist { tenant_id: requested_tenant.clone(), allowed_plugins: simulation.allowed_plugins };
+    let scheduler_admitted = check_scheduler_admission(
+        simulation.queued_runs,
+        simulation.pending_dispatches,
+        &admission,
+    );
+    let allowlist = TenantPluginAllowlist {
+        tenant_id: requested_tenant.clone(),
+        allowed_plugins: simulation.allowed_plugins,
+    };
     let plugin_allowed = enforce_tenant_plugin_allowlist(&simulation.plugin_name, &allowlist);
     let lineage_scope = TenantLineageScope {
         tenant_id: requested_tenant.clone(),
         allowed_artifact_ids: simulation.allowed_artifact_ids,
     };
-    let visible_artifact_ids = scope_lineage_query(&simulation.requested_artifact_ids, &lineage_scope);
+    let visible_artifact_ids =
+        scope_lineage_query(&simulation.requested_artifact_ids, &lineage_scope);
     let overlay = TenantConfigOverlay {
         tenant_id: requested_tenant.clone(),
         values: simulation.overlay_values,
@@ -469,7 +485,8 @@ fn secrets_payload(simulation: &Path) -> Result<SecretsReport, ExitCode> {
         &simulation.rotation,
         simulation.is_backfill,
     );
-    let delivery_allowed = validate_secret_delivery_mode(&simulation.delivery_mode, &simulation.delivery_policy);
+    let delivery_allowed =
+        validate_secret_delivery_mode(&simulation.delivery_mode, &simulation.delivery_policy);
     let scope_allowed = secret_scope_allows(&simulation.allowed_scope, &simulation.requested_scope);
     let readiness = secret_readiness(
         &simulation.sources,
@@ -477,15 +494,18 @@ fn secrets_payload(simulation: &Path) -> Result<SecretsReport, ExitCode> {
         &simulation.audit_events,
         simulation.secure_mode.enabled,
     );
-    let strict_mode_effective = secure_mode_effective(&simulation.secure_mode.environment, &simulation.secure_mode);
-    let cleanup_required = secure_cleanup_required(&simulation.workspace_rule, &simulation.teardown_policy);
+    let strict_mode_effective =
+        secure_mode_effective(&simulation.secure_mode.environment, &simulation.secure_mode);
+    let cleanup_required =
+        secure_cleanup_required(&simulation.workspace_rule, &simulation.teardown_policy);
     let leak_clean = leak_conformance_check(&simulation.observed_outputs);
     let brokered_credentials = !simulation.uses_static_secret
         && simulation
             .sources
             .iter()
             .any(|source| matches!(source, SecretSource::ExternalManager { .. }));
-    let region_allowed = simulation.allowed_regions.iter().any(|region| region == &simulation.requested_region);
+    let region_allowed =
+        simulation.allowed_regions.iter().any(|region| region == &simulation.requested_region);
     let sensitive_classes = summarize_sensitive_classes(&simulation.restrictions);
     let mut gaps = Vec::new();
     if selection.is_none() {
@@ -515,7 +535,9 @@ fn secrets_payload(simulation: &Path) -> Result<SecretsReport, ExitCode> {
     if !region_allowed {
         gaps.push("requested region is outside the approved secret region set".to_string());
     }
-    if simulation.secret_contract.secret_refs.is_empty() || !simulation.secret_contract.redaction_required {
+    if simulation.secret_contract.secret_refs.is_empty()
+        || !simulation.secret_contract.redaction_required
+    {
         gaps.push("runtime secret contract is incomplete".to_string());
     }
 
@@ -546,13 +568,13 @@ fn supply_chain_payload(simulation: &Path) -> Result<SupplyChainReport, ExitCode
         &simulation.completeness_policy,
     );
     let completeness_passed = verify_attestation_or_fail(verification.clone()).is_ok();
-    let promotion_allowed =
-        can_promote_artifact(&simulation.trust_label, completeness_passed, &simulation.promotion_policy);
+    let promotion_allowed = can_promote_artifact(
+        &simulation.trust_label,
+        completeness_passed,
+        &simulation.promotion_policy,
+    );
     let pinned_inputs = !simulation.attestation.output_digests.is_empty()
-        && simulation
-            .signed_manifests
-            .iter()
-            .all(|manifest| !manifest.digest.trim().is_empty());
+        && simulation.signed_manifests.iter().all(|manifest| !manifest.digest.trim().is_empty());
     let trust_domain_bound = !simulation.attestation.environment.trust_domain.trim().is_empty();
     let mut gaps = verification.errors;
     if !promotion_allowed {
@@ -576,10 +598,16 @@ fn supply_chain_payload(simulation: &Path) -> Result<SupplyChainReport, ExitCode
 
 fn data_access_payload(simulation: &Path) -> Result<DataAccessReport, ExitCode> {
     let simulation: DataAccessSimulation = load_json_file(simulation)?;
-    let input_path_allowed =
-        authorize_input_path(Path::new(&simulation.input_root), Path::new(&simulation.candidate_input)).is_ok();
-    let output_path_allowed =
-        authorize_output_path(Path::new(&simulation.output_root), Path::new(&simulation.candidate_output)).is_ok();
+    let input_path_allowed = authorize_input_path(
+        Path::new(&simulation.input_root),
+        Path::new(&simulation.candidate_input),
+    )
+    .is_ok();
+    let output_path_allowed = authorize_output_path(
+        Path::new(&simulation.output_root),
+        Path::new(&simulation.candidate_output),
+    )
+    .is_ok();
     let allowed_datasets =
         simulation.allowed_dataset_ids.into_iter().collect::<std::collections::BTreeSet<_>>();
     let dataset_entitlements_ok =
@@ -588,7 +616,8 @@ fn data_access_payload(simulation: &Path) -> Result<DataAccessReport, ExitCode> 
         tenant_id: parse_tenant_id(&simulation.tenant_id)?,
         allowed_artifact_ids: simulation.allowed_artifact_ids,
     };
-    let visible_artifact_ids = scope_lineage_query(&simulation.requested_artifact_ids, &lineage_scope);
+    let visible_artifact_ids =
+        scope_lineage_query(&simulation.requested_artifact_ids, &lineage_scope);
 
     let mut gaps = Vec::new();
     if !input_path_allowed {
@@ -622,7 +651,10 @@ fn override_payload(simulation: &Path) -> Result<OverrideReport, ExitCode> {
             kind: SubjectKind::User,
             tenant_id: simulation.tenant_id.clone(),
         },
-        action: Action { name: simulation.action_name.clone(), kind: simulation.action_kind.clone() },
+        action: Action {
+            name: simulation.action_name.clone(),
+            kind: simulation.action_kind.clone(),
+        },
         resource: ResourceRef {
             kind: simulation.resource_kind,
             id: simulation.resource_id,
@@ -634,9 +666,16 @@ fn override_payload(simulation: &Path) -> Result<OverrideReport, ExitCode> {
         },
         environment: simulation.environment.clone(),
     };
-    let dry_run = evaluate_dry_run(&request, &simulation.granted_permissions, &simulation.policy_bundle_version);
-    let environment_allows =
-        is_action_allowed_in_environment(&simulation.action_name, &simulation.environment, &simulation.environment_rules);
+    let dry_run = evaluate_dry_run(
+        &request,
+        &simulation.granted_permissions,
+        &simulation.policy_bundle_version,
+    );
+    let environment_allows = is_action_allowed_in_environment(
+        &simulation.action_name,
+        &simulation.environment,
+        &simulation.environment_rules,
+    );
     let reason_recorded = !simulation.reason.trim().is_empty();
     let audit_recorded =
         simulation.audit_event_id.as_ref().is_some_and(|value| !value.trim().is_empty());
@@ -687,11 +726,8 @@ fn override_payload(simulation: &Path) -> Result<OverrideReport, ExitCode> {
 
 fn safe_defaults_payload(dag: &Path) -> Result<SafeDefaultsReport, ExitCode> {
     let graph = parse_graph(&read_file(dag)?)?;
-    let workflow_name = graph
-        .meta
-        .as_ref()
-        .map(|meta| meta.name.clone())
-        .unwrap_or_else(|| "unnamed".to_string());
+    let workflow_name =
+        graph.meta.as_ref().map(|meta| meta.name.clone()).unwrap_or_else(|| "unnamed".to_string());
     let mut nodes = Vec::new();
     let mut gaps = Vec::new();
     if graph.meta.as_ref().is_none_or(|meta| meta.owners.is_empty()) {
@@ -705,11 +741,8 @@ fn safe_defaults_payload(dag: &Path) -> Result<SafeDefaultsReport, ExitCode> {
     }
     for node in &graph.nodes {
         let mut risky_defaults = Vec::new();
-        let container_env_allowlist = node
-            .container
-            .as_ref()
-            .map(|spec| spec.env_allowlist.as_slice())
-            .unwrap_or(&[]);
+        let container_env_allowlist =
+            node.container.as_ref().map(|spec| spec.env_allowlist.as_slice()).unwrap_or(&[]);
         if node.timeout_ms.is_none() {
             risky_defaults.push("missing-timeout".to_string());
         }
@@ -749,40 +782,58 @@ pub(crate) fn handle_security_command(
 ) -> Result<ExitCode, ExitCode> {
     match command {
         SecurityCommands::Auth { simulation } => {
-            let payload = serde_json::to_value(auth_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload =
+                serde_json::to_value(auth_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.auth", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         SecurityCommands::Authz { simulation } => {
-            let payload = serde_json::to_value(authz_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload =
+                serde_json::to_value(authz_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.authz", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         SecurityCommands::Tenant { simulation } => {
-            let payload = serde_json::to_value(tenant_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload =
+                serde_json::to_value(tenant_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.tenant", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         SecurityCommands::Secrets { simulation } => {
-            let payload = serde_json::to_value(secrets_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(secrets_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.secrets", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         SecurityCommands::SupplyChain { simulation } => {
-            let payload =
-                serde_json::to_value(supply_chain_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
-            emit_json(cli, "dag.security.supply-chain", true, payload, Vec::new(), ExitCode::SUCCESS)
+            let payload = serde_json::to_value(supply_chain_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.supply-chain",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
         }
         SecurityCommands::DataAccess { simulation } => {
-            let payload =
-                serde_json::to_value(data_access_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(data_access_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.data-access", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         SecurityCommands::Override { simulation } => {
-            let payload =
-                serde_json::to_value(override_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(override_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.override", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         SecurityCommands::SafeDefaults { dag } => {
             let payload =
                 serde_json::to_value(safe_defaults_payload(dag)?).map_err(|_| ExitCode::from(3))?;
-            emit_json(cli, "dag.security.safe-defaults", true, payload, Vec::new(), ExitCode::SUCCESS)
+            emit_json(
+                cli,
+                "dag.security.safe-defaults",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
         }
     }
 }
@@ -826,8 +877,11 @@ mod tests {
         )
         .expect("write simulation");
         let cli = quiet_json_cli(SecurityCommands::Auth { simulation: simulation.clone() });
-        let code = handle_security_command(&cli, &SecurityCommands::Auth { simulation: simulation.clone() })
-            .expect("auth");
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::Auth { simulation: simulation.clone() },
+        )
+        .expect("auth");
         assert_eq!(code, ExitCode::SUCCESS);
         let report = super::auth_payload(&simulation).expect("report");
         assert!(report.anonymous_access_blocked);
@@ -900,9 +954,11 @@ mod tests {
         )
         .expect("write simulation");
         let cli = quiet_json_cli(SecurityCommands::Authz { simulation: simulation.clone() });
-        let code =
-            handle_security_command(&cli, &SecurityCommands::Authz { simulation: simulation.clone() })
-                .expect("authz");
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::Authz { simulation: simulation.clone() },
+        )
+        .expect("authz");
         assert_eq!(code, ExitCode::SUCCESS);
         let report = super::authz_payload(&simulation).expect("report");
         assert!(report.dry_run_allow);
@@ -987,8 +1043,11 @@ mod tests {
         )
         .expect("write simulation");
         let cli = quiet_json_cli(SecurityCommands::Tenant { simulation: simulation.clone() });
-        let code = handle_security_command(&cli, &SecurityCommands::Tenant { simulation: simulation.clone() })
-            .expect("tenant");
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::Tenant { simulation: simulation.clone() },
+        )
+        .expect("tenant");
         assert_eq!(code, ExitCode::SUCCESS);
         let report = super::tenant_payload(&simulation).expect("report");
         assert!(report.isolated);
@@ -1079,9 +1138,11 @@ mod tests {
         )
         .expect("write simulation");
         let cli = quiet_json_cli(SecurityCommands::Secrets { simulation: simulation.clone() });
-        let code =
-            handle_security_command(&cli, &SecurityCommands::Secrets { simulation: simulation.clone() })
-                .expect("secrets");
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::Secrets { simulation: simulation.clone() },
+        )
+        .expect("secrets");
         assert_eq!(code, ExitCode::SUCCESS);
         let report = super::secrets_payload(&simulation).expect("report");
         assert_eq!(report.selected_version.as_deref(), Some("v2"));
@@ -1248,8 +1309,10 @@ mod tests {
         std::fs::create_dir_all(&output_root).expect("output root");
         let candidate_input = input_root.join("a/file.txt");
         let candidate_output = output_root.join("b/file.txt");
-        std::fs::create_dir_all(candidate_input.parent().expect("input parent")).expect("input parent");
-        std::fs::create_dir_all(candidate_output.parent().expect("output parent")).expect("output parent");
+        std::fs::create_dir_all(candidate_input.parent().expect("input parent"))
+            .expect("input parent");
+        std::fs::create_dir_all(candidate_output.parent().expect("output parent"))
+            .expect("output parent");
         std::fs::write(&candidate_input, "ok").expect("write input");
         std::fs::write(&candidate_output, "ok").expect("write output");
         let simulation = dir.path().join("data-access.json");
@@ -1360,9 +1423,11 @@ mod tests {
         )
         .expect("write simulation");
         let cli = quiet_json_cli(SecurityCommands::Override { simulation: simulation.clone() });
-        let code =
-            handle_security_command(&cli, &SecurityCommands::Override { simulation: simulation.clone() })
-                .expect("override");
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::Override { simulation: simulation.clone() },
+        )
+        .expect("override");
         assert_eq!(code, ExitCode::SUCCESS);
         let report = super::override_payload(&simulation).expect("report");
         assert!(report.override_allowed);
@@ -1503,5 +1568,4 @@ mod tests {
             assert!(node_gap.contains(expected));
         }
     }
-
 }

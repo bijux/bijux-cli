@@ -61,7 +61,8 @@ impl FakeBatchExecutor {
         job_id: &str,
         next: FakeBatchJobStatus,
     ) -> Result<FakeBatchJobRecord, String> {
-        let record = self.jobs.get_mut(job_id).ok_or_else(|| format!("unknown fake batch job {job_id}"))?;
+        let record =
+            self.jobs.get_mut(job_id).ok_or_else(|| format!("unknown fake batch job {job_id}"))?;
         let current = record.status.clone();
         let legal = matches!(
             (&current, &next),
@@ -72,10 +73,7 @@ impl FakeBatchExecutor {
                 | (FakeBatchJobStatus::Running, FakeBatchJobStatus::Cancelled)
         );
         if !legal {
-            return Err(format!(
-                "illegal fake batch transition {:?} -> {:?}",
-                current, next
-            ));
+            return Err(format!("illegal fake batch transition {:?} -> {:?}", current, next));
         }
         record.status = next;
         Ok(record.clone())
@@ -87,7 +85,8 @@ impl FakeBatchExecutor {
         exit_code: i32,
         diagnostic: &str,
     ) -> Result<FakeBatchJobRecord, String> {
-        let record = self.jobs.get_mut(job_id).ok_or_else(|| format!("unknown fake batch job {job_id}"))?;
+        let record =
+            self.jobs.get_mut(job_id).ok_or_else(|| format!("unknown fake batch job {job_id}"))?;
         if !matches!(record.status, FakeBatchJobStatus::Running) {
             return Err("fake batch failure can only be recorded from running".to_string());
         }
@@ -98,10 +97,13 @@ impl FakeBatchExecutor {
     }
 
     pub fn cancel(&mut self, job_id: &str, diagnostic: &str) -> Result<FakeBatchJobRecord, String> {
-        let record = self.jobs.get_mut(job_id).ok_or_else(|| format!("unknown fake batch job {job_id}"))?;
+        let record =
+            self.jobs.get_mut(job_id).ok_or_else(|| format!("unknown fake batch job {job_id}"))?;
         if matches!(
             record.status,
-            FakeBatchJobStatus::Completed | FakeBatchJobStatus::Failed | FakeBatchJobStatus::Cancelled
+            FakeBatchJobStatus::Completed
+                | FakeBatchJobStatus::Failed
+                | FakeBatchJobStatus::Cancelled
         ) {
             return Err("fake batch cancel requires a non-terminal job".to_string());
         }

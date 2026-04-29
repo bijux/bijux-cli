@@ -1,8 +1,8 @@
 use crate::commands::{DagCli, GovernanceCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::hash::sha256_hex;
-use bijux_dag_core::{compile_graph, node_io_contract, NodeInputSource, Severity};
 use bijux_dag_core::node::derive_interface;
+use bijux_dag_core::{compile_graph, node_io_contract, NodeInputSource, Severity};
 use serde::Serialize;
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -246,17 +246,15 @@ fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, Exi
 }
 
 fn graph_name(graph: &bijux_dag_core::Graph) -> String {
-    graph.meta
+    graph
+        .meta
         .as_ref()
         .map(|meta| meta.name.clone())
         .unwrap_or_else(|| "unnamed-workflow".to_string())
 }
 
 fn graph_tags(graph: &bijux_dag_core::Graph) -> Vec<String> {
-    graph.meta
-        .as_ref()
-        .map(|meta| meta.tags.clone())
-        .unwrap_or_default()
+    graph.meta.as_ref().map(|meta| meta.tags.clone()).unwrap_or_default()
 }
 
 fn normalize_tag(tag: &str) -> String {
@@ -264,20 +262,14 @@ fn normalize_tag(tag: &str) -> String {
 }
 
 fn criticality_tag(tags: &[String]) -> Option<String> {
-    tags.iter()
-        .map(|tag| normalize_tag(tag))
-        .find(|tag| CRITICALITY_TAGS.contains(&tag.as_str()))
+    tags.iter().map(|tag| normalize_tag(tag)).find(|tag| CRITICALITY_TAGS.contains(&tag.as_str()))
 }
 
 fn environment_tag(tags: &[String]) -> Option<String> {
-    tags.iter()
-        .map(|tag| normalize_tag(tag))
-        .find(|tag| ENVIRONMENT_TAGS.contains(&tag.as_str()))
+    tags.iter().map(|tag| normalize_tag(tag)).find(|tag| ENVIRONMENT_TAGS.contains(&tag.as_str()))
 }
 
-fn governance_contracts_payload(
-    dag: &Path,
-) -> Result<(serde_json::Value, bool), ExitCode> {
+fn governance_contracts_payload(dag: &Path) -> Result<(serde_json::Value, bool), ExitCode> {
     let graph = load_graph(dag)?;
     let compiled = compile_graph(&graph).map_err(|_| ExitCode::from(3))?;
     let mut node_contracts = Vec::new();
@@ -363,17 +355,17 @@ fn governance_contracts_payload(
             })
         })
         .collect::<Vec<_>>();
-    let diagnostic_counts = compiled
-        .diagnostics
-        .iter()
-        .fold(BTreeMap::<String, usize>::new(), |mut acc, diagnostic| {
+    let diagnostic_counts = compiled.diagnostics.iter().fold(
+        BTreeMap::<String, usize>::new(),
+        |mut acc, diagnostic| {
             let key = match diagnostic.severity {
                 Severity::Error => "error",
                 Severity::Warning => "warning",
             };
             *acc.entry(key.to_string()).or_insert(0) += 1;
             acc
-        });
+        },
+    );
     let ok = unresolved_count == 0
         && compiled.diagnostics.iter().all(|diagnostic| diagnostic.severity != Severity::Error);
     Ok((
@@ -414,10 +406,8 @@ fn ownership_payload(dag: &Path) -> Result<(serde_json::Value, bool), ExitCode> 
     if criticality.as_deref() == Some("critical") && owners.len() < 2 {
         gaps.push("critical workflows require at least two owners".to_string());
     }
-    let escalation_targets = owners
-        .iter()
-        .map(|owner| format!("pager:{owner}"))
-        .collect::<Vec<_>>();
+    let escalation_targets =
+        owners.iter().map(|owner| format!("pager:{owner}")).collect::<Vec<_>>();
     let report = OwnershipReport {
         workflow_name: graph_name(&graph),
         owner_count: owners.len(),
@@ -550,10 +540,7 @@ fn alerts_payload(dag: &Path, event: &str) -> Result<(serde_json::Value, bool), 
             }
         })
         .collect::<Vec<_>>();
-    let secondary_targets = owners
-        .iter()
-        .map(|owner| format!("slack:{owner}"))
-        .collect::<Vec<_>>();
+    let secondary_targets = owners.iter().map(|owner| format!("slack:{owner}")).collect::<Vec<_>>();
     let report = AlertRoutingReport {
         workflow_name: graph_name(&graph),
         event: event.to_string(),
@@ -573,17 +560,11 @@ fn policy_check_payload(
 ) -> Result<(serde_json::Value, bool), ExitCode> {
     let graph = load_graph(dag)?;
     let policy: GovernancePolicyInput = parse_json_file(policy_path)?;
-    let owners = graph
-        .meta
-        .as_ref()
-        .map(|meta| meta.owners.clone())
-        .unwrap_or_default();
-    let graph_tags = graph_tags(&graph).into_iter().map(|tag| normalize_tag(&tag)).collect::<Vec<_>>();
-    let forbidden_effects = policy
-        .forbidden_effects
-        .iter()
-        .map(|effect| normalize_tag(effect))
-        .collect::<Vec<_>>();
+    let owners = graph.meta.as_ref().map(|meta| meta.owners.clone()).unwrap_or_default();
+    let graph_tags =
+        graph_tags(&graph).into_iter().map(|tag| normalize_tag(&tag)).collect::<Vec<_>>();
+    let forbidden_effects =
+        policy.forbidden_effects.iter().map(|effect| normalize_tag(effect)).collect::<Vec<_>>();
     let mut violations = Vec::new();
     if policy.require_owners && owners.is_empty() {
         violations.push("workflow owners are required".to_string());
@@ -608,10 +589,16 @@ fn policy_check_payload(
                 violations.push(format!("node '{}' uses forbidden effect '{}'", node.id, effect));
             }
         }
-        if policy.require_retry_for_effectful_nodes && !node.effects.is_empty() && node.retry.max_attempts == 0 {
+        if policy.require_retry_for_effectful_nodes
+            && !node.effects.is_empty()
+            && node.retry.max_attempts == 0
+        {
             violations.push(format!("effectful node '{}' requires retry policy", node.id));
         }
-        if policy.require_timeout_for_effectful_nodes && !node.effects.is_empty() && node.timeout_ms.is_none() {
+        if policy.require_timeout_for_effectful_nodes
+            && !node.effects.is_empty()
+            && node.timeout_ms.is_none()
+        {
             violations.push(format!("effectful node '{}' requires timeout_ms", node.id));
         }
         if let Some(max_retry_attempts) = policy.max_retry_attempts {
@@ -649,10 +636,19 @@ fn catalog_export_payload(
         .collect::<Vec<_>>();
     let run_record = if let Some(run_dir) = run_dir {
         let manifest: serde_json::Value = parse_json_file(&run_dir.join("manifest.json"))?;
-        let outputs_index: serde_json::Value = parse_json_file(&run_dir.join("outputs").join("index.json"))?;
+        let outputs_index: serde_json::Value =
+            parse_json_file(&run_dir.join("outputs").join("index.json"))?;
         Some(CatalogRunRecord {
-            run_id: manifest.get("run_id").and_then(serde_json::Value::as_str).unwrap_or("unknown-run").to_string(),
-            status: manifest.get("status").and_then(serde_json::Value::as_str).unwrap_or("unknown").to_string(),
+            run_id: manifest
+                .get("run_id")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unknown-run")
+                .to_string(),
+            status: manifest
+                .get("status")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unknown")
+                .to_string(),
             artifact_count: outputs_index
                 .get("files")
                 .and_then(serde_json::Value::as_array)
@@ -817,7 +813,11 @@ pub(crate) fn handle_governance_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         GovernanceCommands::Ownership { dag } => {
             let (payload, ok) = ownership_payload(dag)?;
@@ -840,7 +840,11 @@ pub(crate) fn handle_governance_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         GovernanceCommands::Tags { dag } => {
             let (payload, ok) = tags_payload(dag)?;
@@ -863,13 +867,13 @@ pub(crate) fn handle_governance_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
-        GovernanceCommands::Cost {
-            dag,
-            cpu_core_hour_rate,
-            memory_gb_hour_rate,
-        } => {
+        GovernanceCommands::Cost { dag, cpu_core_hour_rate, memory_gb_hour_rate } => {
             let (payload, ok) = cost_payload(dag, *cpu_core_hour_rate, *memory_gb_hour_rate)?;
             if cli.json {
                 return emit_json(
@@ -890,7 +894,11 @@ pub(crate) fn handle_governance_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         GovernanceCommands::Alerts { dag, event } => {
             let (payload, ok) = alerts_payload(dag, event)?;
@@ -913,7 +921,11 @@ pub(crate) fn handle_governance_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         GovernanceCommands::PolicyCheck { dag, policy } => {
             let (payload, ok) = policy_check_payload(dag, policy)?;
@@ -936,7 +948,11 @@ pub(crate) fn handle_governance_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         GovernanceCommands::CatalogExport { dag, run_dir } => {
             let payload = catalog_export_payload(dag, run_dir)?;
@@ -974,7 +990,11 @@ pub(crate) fn handle_governance_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         GovernanceCommands::Promotion { simulation } => {
             let (payload, ok) = promotion_payload(simulation)?;
@@ -997,7 +1017,11 @@ pub(crate) fn handle_governance_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
         GovernanceCommands::Compliance { simulation } => {
             let (payload, ok) = compliance_payload(simulation)?;
@@ -1020,7 +1044,11 @@ pub(crate) fn handle_governance_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
     }
 }
@@ -1061,8 +1089,8 @@ mod tests {
         let dag = dir.path().join("graph.json");
         write_valid_graph(&dag);
         let cli = quiet_json_cli(GovernanceCommands::Contracts { dag: dag.clone() });
-        let code =
-            handle_governance_command(&cli, &GovernanceCommands::Contracts { dag }).expect("contracts");
+        let code = handle_governance_command(&cli, &GovernanceCommands::Contracts { dag })
+            .expect("contracts");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 
@@ -1090,13 +1118,8 @@ mod tests {
 
     #[test]
     fn governance_contracts_missing_file_does_not_panic() {
-        let cli = DagCli::parse_from([
-            "dag",
-            "--json",
-            "governance",
-            "contracts",
-            "/missing/file.json",
-        ]);
+        let cli =
+            DagCli::parse_from(["dag", "--json", "governance", "contracts", "/missing/file.json"]);
         let result = std::panic::catch_unwind(|| {
             let _ = handle_governance_command(
                 &cli,
@@ -1112,8 +1135,8 @@ mod tests {
         let dag = dir.path().join("graph.json");
         write_valid_graph(&dag);
         let cli = quiet_json_cli(GovernanceCommands::Ownership { dag: dag.clone() });
-        let code =
-            handle_governance_command(&cli, &GovernanceCommands::Ownership { dag }).expect("ownership");
+        let code = handle_governance_command(&cli, &GovernanceCommands::Ownership { dag })
+            .expect("ownership");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 
@@ -1143,8 +1166,8 @@ mod tests {
         let dag = dir.path().join("graph.json");
         write_valid_graph(&dag);
         let cli = quiet_json_cli(GovernanceCommands::Tags { dag: dag.clone() });
-        let code = handle_governance_command(&cli, &GovernanceCommands::Tags { dag })
-            .expect("tags");
+        let code =
+            handle_governance_command(&cli, &GovernanceCommands::Tags { dag }).expect("tags");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 
@@ -1191,11 +1214,7 @@ mod tests {
         });
         let code = handle_governance_command(
             &cli,
-            &GovernanceCommands::Cost {
-                dag,
-                cpu_core_hour_rate: 0.04,
-                memory_gb_hour_rate: 0.005,
-            },
+            &GovernanceCommands::Cost { dag, cpu_core_hour_rate: 0.04, memory_gb_hour_rate: 0.005 },
         )
         .expect("cost");
         assert_eq!(code, ExitCode::SUCCESS);
@@ -1278,11 +1297,9 @@ mod tests {
             dag: dag.clone(),
             policy: policy.clone(),
         });
-        let code = handle_governance_command(
-            &cli,
-            &GovernanceCommands::PolicyCheck { dag, policy },
-        )
-        .expect("policy check");
+        let code =
+            handle_governance_command(&cli, &GovernanceCommands::PolicyCheck { dag, policy })
+                .expect("policy check");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 
@@ -1320,11 +1337,9 @@ mod tests {
             dag: dag.clone(),
             policy: policy.clone(),
         });
-        let exit = handle_governance_command(
-            &cli,
-            &GovernanceCommands::PolicyCheck { dag, policy },
-        )
-        .expect_err("policy violations should fail");
+        let exit =
+            handle_governance_command(&cli, &GovernanceCommands::PolicyCheck { dag, policy })
+                .expect_err("policy violations should fail");
         assert_eq!(exit, ExitCode::from(3));
     }
 
@@ -1335,11 +1350,8 @@ mod tests {
         write_valid_graph(&dag);
         let run_dir = dir.path().join("run-01");
         std::fs::create_dir_all(run_dir.join("outputs")).expect("outputs");
-        std::fs::write(
-            run_dir.join("manifest.json"),
-            r#"{"run_id":"run-01","status":"success"}"#,
-        )
-        .expect("manifest");
+        std::fs::write(run_dir.join("manifest.json"), r#"{"run_id":"run-01","status":"success"}"#)
+            .expect("manifest");
         std::fs::write(
             run_dir.join("outputs").join("index.json"),
             r#"{"files":[{"node_id":"extract","node_fingerprint":"fp","sha256":"abc","path":"nodes/extract/report.json"}]}"#,
@@ -1374,14 +1386,9 @@ mod tests {
             }"#,
         )
         .expect("audit simulation");
-        let cli = quiet_json_cli(GovernanceCommands::AuditEvent {
-            simulation: simulation.clone(),
-        });
-        let code = handle_governance_command(
-            &cli,
-            &GovernanceCommands::AuditEvent { simulation },
-        )
-        .expect("audit event");
+        let cli = quiet_json_cli(GovernanceCommands::AuditEvent { simulation: simulation.clone() });
+        let code = handle_governance_command(&cli, &GovernanceCommands::AuditEvent { simulation })
+            .expect("audit event");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 
@@ -1400,14 +1407,9 @@ mod tests {
             }"#,
         )
         .expect("audit simulation");
-        let cli = quiet_json_cli(GovernanceCommands::AuditEvent {
-            simulation: simulation.clone(),
-        });
-        let exit = handle_governance_command(
-            &cli,
-            &GovernanceCommands::AuditEvent { simulation },
-        )
-        .expect_err("invalid audit event should fail");
+        let cli = quiet_json_cli(GovernanceCommands::AuditEvent { simulation: simulation.clone() });
+        let exit = handle_governance_command(&cli, &GovernanceCommands::AuditEvent { simulation })
+            .expect_err("invalid audit event should fail");
         assert_eq!(exit, ExitCode::from(3));
     }
 
@@ -1427,14 +1429,9 @@ mod tests {
             }"#,
         )
         .expect("promotion simulation");
-        let cli = quiet_json_cli(GovernanceCommands::Promotion {
-            simulation: simulation.clone(),
-        });
-        let code = handle_governance_command(
-            &cli,
-            &GovernanceCommands::Promotion { simulation },
-        )
-        .expect("promotion");
+        let cli = quiet_json_cli(GovernanceCommands::Promotion { simulation: simulation.clone() });
+        let code = handle_governance_command(&cli, &GovernanceCommands::Promotion { simulation })
+            .expect("promotion");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 
@@ -1452,14 +1449,9 @@ mod tests {
             }"#,
         )
         .expect("promotion simulation");
-        let cli = quiet_json_cli(GovernanceCommands::Promotion {
-            simulation: simulation.clone(),
-        });
-        let exit = handle_governance_command(
-            &cli,
-            &GovernanceCommands::Promotion { simulation },
-        )
-        .expect_err("promotion should fail");
+        let cli = quiet_json_cli(GovernanceCommands::Promotion { simulation: simulation.clone() });
+        let exit = handle_governance_command(&cli, &GovernanceCommands::Promotion { simulation })
+            .expect_err("promotion should fail");
         assert_eq!(exit, ExitCode::from(3));
     }
 
@@ -1479,14 +1471,9 @@ mod tests {
             }"#,
         )
         .expect("compliance simulation");
-        let cli = quiet_json_cli(GovernanceCommands::Compliance {
-            simulation: simulation.clone(),
-        });
-        let code = handle_governance_command(
-            &cli,
-            &GovernanceCommands::Compliance { simulation },
-        )
-        .expect("compliance");
+        let cli = quiet_json_cli(GovernanceCommands::Compliance { simulation: simulation.clone() });
+        let code = handle_governance_command(&cli, &GovernanceCommands::Compliance { simulation })
+            .expect("compliance");
         assert_eq!(code, ExitCode::SUCCESS);
     }
 
@@ -1503,14 +1490,9 @@ mod tests {
             }"#,
         )
         .expect("compliance simulation");
-        let cli = quiet_json_cli(GovernanceCommands::Compliance {
-            simulation: simulation.clone(),
-        });
-        let exit = handle_governance_command(
-            &cli,
-            &GovernanceCommands::Compliance { simulation },
-        )
-        .expect_err("compliance should fail");
+        let cli = quiet_json_cli(GovernanceCommands::Compliance { simulation: simulation.clone() });
+        let exit = handle_governance_command(&cli, &GovernanceCommands::Compliance { simulation })
+            .expect_err("compliance should fail");
         assert_eq!(exit, ExitCode::from(3));
     }
 }

@@ -199,11 +199,11 @@ pub fn verify_event_log_completeness(
         .filter_map(|(idx, event)| (!required_event_fields_present(event)).then_some((idx, event)))
         .map(|(idx, event)| format!("event[{idx}] missing required fields: {}", event.name))
         .collect::<Vec<_>>();
-    let monotonic_timestamps = events.windows(2).all(|window| window[0].unix_ms <= window[1].unix_ms);
+    let monotonic_timestamps =
+        events.windows(2).all(|window| window[0].unix_ms <= window[1].unix_ms);
     let reconstructed = reconstruct_timeline_from_events(events);
-    let timeline_matches_reconstruction = timeline
-        .map(|candidate| candidate == &reconstructed)
-        .unwrap_or(true);
+    let timeline_matches_reconstruction =
+        timeline.map(|candidate| candidate == &reconstructed).unwrap_or(true);
 
     let mut gaps = Vec::new();
     if !missing_required_names.is_empty() {

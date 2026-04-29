@@ -28,10 +28,7 @@ fn fixture_path(name: &str) -> PathBuf {
 }
 
 fn run_json(args: &[&str], cwd: &Path) -> (i32, Value) {
-    let output = dag_bin(cwd)
-        .args(args)
-        .output()
-        .expect("run dag command");
+    let output = dag_bin(cwd).args(args).output().expect("run dag command");
     (
         output.status.code().unwrap_or(1),
         serde_json::from_slice(&output.stdout).expect("parse json output"),
@@ -41,18 +38,11 @@ fn run_json(args: &[&str], cwd: &Path) -> (i32, Value) {
 #[test]
 fn checked_in_replay_bundle_fixtures_import_with_expected_fidelity() {
     let root = repo_root();
-    for (fixture, expected_level) in [
-        ("historic_manifest_only.json", "graded"),
-        ("historic_with_files.json", "exact"),
-    ] {
+    for (fixture, expected_level) in
+        [("historic_manifest_only.json", "graded"), ("historic_with_files.json", "exact")]
+    {
         let (code, payload) = run_json(
-            &[
-                "dag",
-                "--json",
-                "import",
-                "--verify-only",
-                fixture_path(fixture).to_str().unwrap(),
-            ],
+            &["dag", "--json", "import", "--verify-only", fixture_path(fixture).to_str().unwrap()],
             &root,
         );
         assert_eq!(code, 0, "fixture import failed for {fixture}");

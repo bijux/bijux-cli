@@ -7,8 +7,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use serde_json::json;
 use std::path::PathBuf;
-use std::process::Output;
 use std::process::Command;
+use std::process::Output;
 use std::sync::Arc;
 
 const MAX_NODE_SPEC_BYTES: usize = 256 * 1024;
@@ -129,12 +129,8 @@ impl Adapter for ExternalAdapter {
             Err(RuntimeError::Executor(message)) if message.contains("timed out") => {
                 exec.fs.write(&stdout_path, b"")?;
                 exec.fs.write(&stderr_path, message.as_bytes())?;
-                let quarantined_outputs_dir = quarantine_partial_outputs(
-                    exec,
-                    &outputs_dir,
-                    &node_dir,
-                    "timeout",
-                )?;
+                let quarantined_outputs_dir =
+                    quarantine_partial_outputs(exec, &outputs_dir, &node_dir, "timeout")?;
                 return Ok(NodeResult {
                     status: crate::NodeStatus::Failed,
                     stdout_path: stdout_path.display().to_string(),
@@ -367,10 +363,7 @@ fn validate_info_handshake_output(output: &Output) -> Result<(), String> {
         ));
     }
     if output.stdout.len() > MAX_INFO_HANDSHAKE_BYTES {
-        return Err(format!(
-            "info handshake payload exceeds {} bytes",
-            MAX_INFO_HANDSHAKE_BYTES
-        ));
+        return Err(format!("info handshake payload exceeds {} bytes", MAX_INFO_HANDSHAKE_BYTES));
     }
     Ok(())
 }
@@ -395,7 +388,8 @@ fn quarantine_partial_outputs(
     }
     let quarantine_root = node_dir.join("quarantine");
     exec.fs.create_dir_all(&quarantine_root)?;
-    let quarantine_dir = quarantine_root.join(format!("{}-outputs-{}", reason, exec.clock.now_unix_ms()));
+    let quarantine_dir =
+        quarantine_root.join(format!("{}-outputs-{}", reason, exec.clock.now_unix_ms()));
     exec.fs.rename(outputs_dir, &quarantine_dir)?;
     exec.fs.create_dir_all(outputs_dir)?;
     let relative = quarantine_dir

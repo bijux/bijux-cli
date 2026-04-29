@@ -67,10 +67,8 @@ fn malformed_external_adapter_handshakes_are_rejected_with_exact_reasons() {
     std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
 
     assert_eq!(reports.len(), 5);
-    let reasons = reports
-        .iter()
-        .map(|report| report.reason.clone().unwrap_or_default())
-        .collect::<Vec<_>>();
+    let reasons =
+        reports.iter().map(|report| report.reason.clone().unwrap_or_default()).collect::<Vec<_>>();
     assert!(reasons.iter().any(|reason| reason.contains("invalid adapter manifest")));
     assert!(reasons.iter().any(|reason| reason.contains("descriptor validation failed")));
     assert!(reasons.iter().any(|reason| reason.contains("stdout only")));

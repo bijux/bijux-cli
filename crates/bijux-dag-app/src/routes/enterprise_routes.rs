@@ -1,17 +1,16 @@
 use crate::commands::{DagCli, EnterpriseCommands};
 use crate::{emit_json, read_file, ExitCode};
+use bijux_dag_runtime::simulated_platform::{
+    approval_gate_ready, authorize, can_renew_credential, check_api_compatibility,
+    credential_is_expired, ApiCompatibilityRule, ApiVersion, ApprovalGateNode, AuthContext,
+    AuthenticationPrincipal, AuthorizationRule, ClientSdkShape, CredentialLifecycle,
+    CredentialScope, EventSubscription, IncidentClassification, IncidentSeverity, QueueResource,
+    ServiceArchitectureNote, TenantOwnershipMetadata, TenantScopedDagName, WorkerCredentialBinding,
+    WorkflowFamilyImpactAnalysis, WorkflowPortfolio,
+};
 use bijux_dag_runtime::{
     execution_mode_status, remote_handoff_valid, validate_remote_identity, ExecutionModeStatus,
     RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
-};
-use bijux_dag_runtime::simulated_platform::{
-    approval_gate_ready,
-    authorize, check_api_compatibility, ApiCompatibilityRule, ApiVersion, AuthContext,
-    AuthenticationPrincipal, AuthorizationRule, ClientSdkShape, EventSubscription,
-    can_renew_credential, credential_is_expired, ApprovalGateNode, CredentialLifecycle,
-    CredentialScope, IncidentClassification, IncidentSeverity, QueueResource,
-    ServiceArchitectureNote, TenantOwnershipMetadata, TenantScopedDagName,
-    WorkerCredentialBinding, WorkflowFamilyImpactAnalysis, WorkflowPortfolio,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -627,7 +626,9 @@ fn dependency_catalog_payload(
         }
     }
     if impact.impacted_workflows.is_empty() {
-        gaps.push("dependency catalog should identify impacted workflows for outage analysis".to_string());
+        gaps.push(
+            "dependency catalog should identify impacted workflows for outage analysis".to_string(),
+        );
     }
     let report = DependencyCatalogReport {
         workflow_family,
@@ -693,7 +694,8 @@ fn export_payload(simulation: ExportSimulation) -> (serde_json::Value, bool) {
     let ExportSimulation { api_version, compatibility, sdk, subscriptions, exported_domains } =
         simulation;
     let compatibility_ok = check_api_compatibility(&api_version, &compatibility);
-    let active_subscription_count = subscriptions.iter().filter(|subscription| subscription.active).count();
+    let active_subscription_count =
+        subscriptions.iter().filter(|subscription| subscription.active).count();
     let mut gaps = Vec::new();
     if !compatibility_ok {
         gaps.push("export API version is outside the supported compatibility window".to_string());
@@ -786,7 +788,9 @@ pub(crate) fn handle_enterprise_command(
         if ok {
             Vec::new()
         } else {
-            vec![json!({"message":"enterprise integration posture is incomplete","remediation":"fix the reported enterprise boundary gaps before treating this integration as production-ready"})]
+            vec![
+                json!({"message":"enterprise integration posture is incomplete","remediation":"fix the reported enterprise boundary gaps before treating this integration as production-ready"}),
+            ]
         },
         if ok { ExitCode::SUCCESS } else { ExitCode::from(2) },
     )
@@ -801,16 +805,15 @@ mod tests {
         CalendarSimulation, CredentialSimulation, DependencyCatalogSimulation, ExportSimulation,
         IncidentHookSimulation, QueueSimulation, ServiceContractSimulation, WebhookSimulation,
     };
+    use bijux_dag_runtime::simulated_platform::{
+        ApiCompatibilityRule, ApiVersion, ApprovalGateNode, AuthContext, AuthenticationPrincipal,
+        AuthorizationRule, ClientSdkShape, CredentialLifecycle, CredentialScope, EventSubscription,
+        IncidentClassification, IncidentSeverity, QueueResource, ServiceArchitectureNote, TenantId,
+        TenantOwnershipMetadata, TenantScopedDagName, WorkerCredentialBinding,
+        WorkflowFamilyImpactAnalysis, WorkflowPortfolio,
+    };
     use bijux_dag_runtime::{
         RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
-    };
-    use bijux_dag_runtime::simulated_platform::{
-        ApiCompatibilityRule, ApiVersion, ApprovalGateNode, AuthContext,
-        AuthenticationPrincipal, AuthorizationRule, ClientSdkShape, CredentialLifecycle,
-        CredentialScope, EventSubscription, IncidentClassification, IncidentSeverity,
-        QueueResource, ServiceArchitectureNote, TenantId, TenantOwnershipMetadata,
-        TenantScopedDagName, WorkerCredentialBinding, WorkflowFamilyImpactAnalysis,
-        WorkflowPortfolio,
     };
 
     #[test]
@@ -1199,7 +1202,12 @@ mod tests {
                 max_renewals: 3,
             },
             renewal_count: 1,
-            scope: CredentialScope { cli: false, api_client: false, scheduler: false, worker: true },
+            scope: CredentialScope {
+                cli: false,
+                api_client: false,
+                scheduler: false,
+                worker: true,
+            },
             binding: WorkerCredentialBinding {
                 worker_id: "worker-1".to_string(),
                 lease_id: "lease-1".to_string(),
@@ -1224,7 +1232,12 @@ mod tests {
                 max_renewals: 0,
             },
             renewal_count: 1,
-            scope: CredentialScope { cli: true, api_client: false, scheduler: false, worker: false },
+            scope: CredentialScope {
+                cli: true,
+                api_client: false,
+                scheduler: false,
+                worker: false,
+            },
             binding: WorkerCredentialBinding {
                 worker_id: String::new(),
                 lease_id: String::new(),

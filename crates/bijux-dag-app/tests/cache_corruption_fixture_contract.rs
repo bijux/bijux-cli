@@ -25,10 +25,7 @@ fn repo_root() -> PathBuf {
 }
 
 fn run_command(args: &[&str], cwd: &Path) -> (i32, String, String) {
-    let output = dag_bin(cwd)
-        .args(args)
-        .output()
-        .expect("run dag command");
+    let output = dag_bin(cwd).args(args).output().expect("run dag command");
     let code = output.status.code().unwrap_or(1);
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -59,11 +56,7 @@ fn default_meta(key: &str) -> Value {
 fn write_cache_entry(base: &Path, key: &str, meta: &Value, payload: &[u8]) {
     let entry = base.join(key);
     fs::create_dir_all(entry.join("outputs")).expect("create outputs dir");
-    fs::write(
-        entry.join("outputs").join("payload.bin"),
-        payload,
-    )
-    .expect("write payload");
+    fs::write(entry.join("outputs").join("payload.bin"), payload).expect("write payload");
     let index = OutputsIndex {
         files: vec![OutputFile {
             path: "payload.bin".to_string(),
@@ -77,11 +70,8 @@ fn write_cache_entry(base: &Path, key: &str, meta: &Value, payload: &[u8]) {
         serde_json::to_vec_pretty(&index).expect("serialize outputs index"),
     )
     .expect("write outputs index");
-    fs::write(
-        entry.join("meta.json"),
-        serde_json::to_vec_pretty(meta).expect("serialize meta"),
-    )
-    .expect("write meta");
+    fs::write(entry.join("meta.json"), serde_json::to_vec_pretty(meta).expect("serialize meta"))
+        .expect("write meta");
 }
 
 fn apply_corruption(cache_dir: &Path, fixture_name: &str) -> String {
@@ -90,7 +80,8 @@ fn apply_corruption(cache_dir: &Path, fixture_name: &str) -> String {
     let entry = cache_dir.join(&key);
     match fixture_name {
         "hash_mismatch" => {
-            fs::write(entry.join("outputs").join("payload.bin"), b"tampered\n").expect("tamper payload");
+            fs::write(entry.join("outputs").join("payload.bin"), b"tampered\n")
+                .expect("tamper payload");
         }
         "missing_meta" => {
             fs::remove_file(entry.join("meta.json")).expect("remove meta");
@@ -133,8 +124,8 @@ fn cache_corruption_fixtures_are_classified_by_verify_and_explain() {
         "truncated_meta",
         "unsupported_metadata_version",
     ] {
-        let _fixture_payload =
-            fs::read_to_string(fixture_root.join(format!("{fixture}.json"))).expect("read evidence fixture");
+        let _fixture_payload = fs::read_to_string(fixture_root.join(format!("{fixture}.json")))
+            .expect("read evidence fixture");
         let temp = tempfile::tempdir().expect("tempdir");
         let cache_dir = temp.path().join("cache");
         fs::create_dir_all(&cache_dir).expect("create cache dir");
@@ -182,10 +173,7 @@ fn cache_corruption_fixtures_are_classified_by_verify_and_explain() {
         let explain_payload = parse_json(&explain_stdout, explain_code, &explain_stderr);
         assert!(explain_code == 0 || explain_code == 3);
         let taxonomy = explain_payload["data"]["taxonomy"].as_array().expect("taxonomy");
-        assert!(
-            !taxonomy.is_empty(),
-            "expected explain taxonomy for corruption fixture {fixture}"
-        );
+        assert!(!taxonomy.is_empty(), "expected explain taxonomy for corruption fixture {fixture}");
         let expected_labels: &[&str] = match fixture {
             "hash_mismatch" => &["hash_mismatch", "artifact_corrupt"],
             "missing_meta" => &["artifact_missing"],
@@ -195,7 +183,9 @@ fn cache_corruption_fixtures_are_classified_by_verify_and_explain() {
         };
         assert!(
             taxonomy.iter().any(|entry| {
-                entry.as_str().is_some_and(|label| expected_labels.iter().any(|expected| label == *expected))
+                entry
+                    .as_str()
+                    .is_some_and(|label| expected_labels.iter().any(|expected| label == *expected))
             }),
             "taxonomy {:?} missing expected labels {:?} for fixture {}",
             taxonomy,

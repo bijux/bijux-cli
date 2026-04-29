@@ -20,23 +20,16 @@ use bijux_dag_runtime::{
 fn fake_batch_executor_supports_queued_running_failed_completed_and_cancelled_states() {
     let mut executor = FakeBatchExecutor::default();
     let job_a = executor.submit("run-1", "node-a");
-    assert_eq!(
-        executor.snapshot(&job_a).expect("queued").status,
-        FakeBatchJobStatus::Queued
-    );
+    assert_eq!(executor.snapshot(&job_a).expect("queued").status, FakeBatchJobStatus::Queued);
     executor.transition(&job_a, FakeBatchJobStatus::Running).expect("running");
-    executor
-        .complete_failure(&job_a, 17, "remote worker crashed")
-        .expect("failed");
+    executor.complete_failure(&job_a, 17, "remote worker crashed").expect("failed");
     let failed = executor.snapshot(&job_a).expect("failed snapshot");
     assert_eq!(failed.status, FakeBatchJobStatus::Failed);
     assert_eq!(failed.exit_code, Some(17));
 
     let job_b = executor.submit("run-1", "node-b");
     executor.transition(&job_b, FakeBatchJobStatus::Running).expect("running");
-    executor
-        .transition(&job_b, FakeBatchJobStatus::Completed)
-        .expect("completed");
+    executor.transition(&job_b, FakeBatchJobStatus::Completed).expect("completed");
     assert_eq!(
         executor.snapshot(&job_b).expect("completed snapshot").status,
         FakeBatchJobStatus::Completed

@@ -1,6 +1,6 @@
 use bijux_dag_core::{
     Edge, EdgeKind, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RefSpec, RetryPolicy,
-    SPEC_VERSION, SemanticNodeKind, TriggerRule,
+    SemanticNodeKind, TriggerRule, SPEC_VERSION,
 };
 use criterion as _;
 use hex as _;

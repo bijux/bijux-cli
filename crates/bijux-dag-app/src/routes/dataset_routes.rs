@@ -102,7 +102,11 @@ pub(crate) fn handle_dataset_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            if ok { Ok(ExitCode::SUCCESS) } else { Err(ExitCode::from(3)) }
+            if ok {
+                Ok(ExitCode::SUCCESS)
+            } else {
+                Err(ExitCode::from(3))
+            }
         }
     }
 }
@@ -115,11 +119,7 @@ mod tests {
     use clap::Parser;
 
     fn quiet_json_cli(command: DatasetCommands) -> DagCli {
-        DagCli {
-            json: true,
-            quiet: true,
-            command: crate::commands::Commands::Dataset { command },
-        }
+        DagCli { json: true, quiet: true, command: crate::commands::Commands::Dataset { command } }
     }
 
     #[test]
@@ -187,13 +187,7 @@ mod tests {
 
     #[test]
     fn dataset_routes_reject_missing_simulation_without_panic() {
-        let cli = DagCli::parse_from([
-            "dag",
-            "--json",
-            "dataset",
-            "mapping",
-            "/missing/file.json",
-        ]);
+        let cli = DagCli::parse_from(["dag", "--json", "dataset", "mapping", "/missing/file.json"]);
         let result = std::panic::catch_unwind(|| {
             let _ = handle_dataset_command(
                 &cli,

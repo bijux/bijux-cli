@@ -3,8 +3,8 @@ use crate::routes::preconditions::require_file;
 use crate::{check_engine, emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::{
     adapter_admission_matrix, adapter_conformance_suite, adapter_registry_dump,
-    generate_adapter_reference_markdown, probe_external_adapters,
-    registered_adapter_descriptors, registered_adapter_reference_document, registered_adapters,
+    generate_adapter_reference_markdown, probe_external_adapters, registered_adapter_descriptors,
+    registered_adapter_reference_document, registered_adapters,
     validate_output_schema_compatibility, CacheCompatibilityMode,
 };
 use serde_json::json;
@@ -117,10 +117,9 @@ pub(crate) fn handle_adapters_command(
         AdaptersCommands::Conformance => {
             let suites = adapter_conformance_suite().map_err(|_| ExitCode::from(3))?;
             let ok = suites.iter().all(|suite| {
-                suite
-                    .scenarios
-                    .iter()
-                    .all(|scenario| !matches!(scenario.status, bijux_dag_runtime::AdapterScenarioStatus::Fail))
+                suite.scenarios.iter().all(|scenario| {
+                    !matches!(scenario.status, bijux_dag_runtime::AdapterScenarioStatus::Fail)
+                })
             });
             if cli.json {
                 return emit_json(
@@ -158,10 +157,7 @@ pub(crate) fn handle_adapters_command(
                     if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
                 );
             }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&report).map_err(|_| ExitCode::from(3))?
-            );
+            println!("{}", serde_json::to_string_pretty(&report).map_err(|_| ExitCode::from(3))?);
             if ok {
                 Ok(ExitCode::SUCCESS)
             } else {
@@ -260,8 +256,11 @@ fn cache_compatibility_payload(
         .find(|descriptor| descriptor.id == adapter_id && descriptor.version == adapter_version)
         .map(|descriptor| descriptor.cache_compatibility)
         .unwrap_or(CacheCompatibilityMode::FingerprintExact);
-    let report =
-        validate_output_schema_compatibility(compatibility_mode, produced_schema_version, expected_schema);
+    let report = validate_output_schema_compatibility(
+        compatibility_mode,
+        produced_schema_version,
+        expected_schema,
+    );
     Ok(json!({
         "adapter_id": adapter_id,
         "adapter_version": adapter_version,
@@ -325,10 +324,7 @@ mod tests {
         .expect("write meta");
         let result = handle_adapters_command(
             &cli(true),
-            &AdaptersCommands::CacheCompat {
-                meta,
-                expected_schema: "schema/v2".to_string(),
-            },
+            &AdaptersCommands::CacheCompat { meta, expected_schema: "schema/v2".to_string() },
         );
         assert!(result.is_err());
     }

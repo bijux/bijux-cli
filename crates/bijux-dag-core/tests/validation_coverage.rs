@@ -10,7 +10,7 @@ use unicode_normalization as _;
 
 use bijux_dag_core::{
     parse_graph_strict, BranchSpec, Edge, EdgeKind, FileOutput, Graph, GraphMeta, Node, NodeKind,
-    PortRef, SemanticNodeKind, Severity, SPEC_VERSION, TriggerRule,
+    PortRef, SemanticNodeKind, Severity, TriggerRule, SPEC_VERSION,
 };
 
 #[test]
@@ -453,10 +453,7 @@ fn graph_for_code(code: &str) -> Graph {
                     id: Some("branch-left".to_string()),
                     kind: EdgeKind::Conditional,
                     decision: Some("right".to_string()),
-                    from: PortRef {
-                        node_id: "branch".to_string(),
-                        port: "decision".to_string(),
-                    },
+                    from: PortRef { node_id: "branch".to_string(), port: "decision".to_string() },
                     to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
                 }],
             };
@@ -501,10 +498,7 @@ fn graph_for_code(code: &str) -> Graph {
                     id: Some("branch-left".to_string()),
                     kind: EdgeKind::Conditional,
                     decision: Some("left".to_string()),
-                    from: PortRef {
-                        node_id: "branch".to_string(),
-                        port: "decision".to_string(),
-                    },
+                    from: PortRef { node_id: "branch".to_string(), port: "decision".to_string() },
                     to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
                 }],
             };

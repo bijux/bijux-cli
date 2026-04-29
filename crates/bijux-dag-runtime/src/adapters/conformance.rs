@@ -97,7 +97,9 @@ pub fn validate_output_schema_compatibility(
     expected_schema_version: &str,
 ) -> AdapterOutputSchemaCompatibilityReport {
     let compatible = match mode {
-        CacheCompatibilityMode::FingerprintExact => produced_schema_version == expected_schema_version,
+        CacheCompatibilityMode::FingerprintExact => {
+            produced_schema_version == expected_schema_version
+        }
     };
     let reason = if compatible {
         "produced output schema matches the expected adapter schema".to_string()
@@ -137,8 +139,9 @@ fn scenario(
 pub fn build_adapter_conformance_suite(
     descriptor: &AdapterDescriptor,
 ) -> AdapterConformanceSuiteReport {
-    let process_backed =
-        descriptor.id == "shell" || descriptor.id == "container" || matches!(descriptor.origin, AdapterOrigin::External);
+    let process_backed = descriptor.id == "shell"
+        || descriptor.id == "container"
+        || matches!(descriptor.origin, AdapterOrigin::External);
     let schema_compatibility = validate_output_schema_compatibility(
         descriptor.cache_compatibility.clone(),
         &descriptor.produces_outputs_schema_version,
@@ -296,7 +299,9 @@ pub fn generate_adapter_reference_markdown(document: &AdapterReferenceDocument) 
     lines.push("## External adapter handshake boundary".to_string());
     lines.push("- `info --json` must emit machine JSON on stdout only.".to_string());
     lines.push("- non-empty stderr during the info handshake is rejected.".to_string());
-    lines.push("- external adapter binaries are fingerprinted into node trace evidence.".to_string());
+    lines.push(
+        "- external adapter binaries are fingerprinted into node trace evidence.".to_string(),
+    );
     lines.push(String::new());
     lines.push("## Slurm contract".to_string());
     lines.push(format!(
@@ -322,11 +327,10 @@ pub fn generate_adapter_reference_markdown(document: &AdapterReferenceDocument) 
     lines.push("## Fake batch executor".to_string());
     lines.push(format!(
         "- submit=`{}`, poll=`{}`, cancel=`{}`",
-        document.fake_batch.submit_api, document.fake_batch.poll_api, document.fake_batch.cancel_api
+        document.fake_batch.submit_api,
+        document.fake_batch.poll_api,
+        document.fake_batch.cancel_api
     ));
-    lines.push(format!(
-        "- states: {}",
-        document.fake_batch.supported_states.join(", ")
-    ));
+    lines.push(format!("- states: {}", document.fake_batch.supported_states.join(", ")));
     lines.join("\n")
 }

@@ -18,8 +18,12 @@ fn synth_graph(state: &mut u64, nodes: usize) -> Graph {
         if idx > 1 && (lcg_next(state) & 1) == 0 {
             let extra_parent = (lcg_next(state) as usize) % idx;
             if extra_parent != parent {
-                fixture =
-                    fixture.edge(&format!("n{extra_parent:02}"), "out", &format!("n{idx:02}"), "in");
+                fixture = fixture.edge(
+                    &format!("n{extra_parent:02}"),
+                    "out",
+                    &format!("n{idx:02}"),
+                    "in",
+                );
             }
         }
     }

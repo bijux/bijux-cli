@@ -30,16 +30,16 @@ pub(crate) fn try_handle(
             serde_json::to_value(apps_list_report(paths, plugin_registry_path))
                 .expect("apps list report"),
         ),
-        [a, b] if a == "apps" && b == "doctor" => Some(
-            match command_positionals(argv, &["apps", "doctor"]).first().cloned() {
+        [a, b] if a == "apps" && b == "doctor" => {
+            Some(match command_positionals(argv, &["apps", "doctor"]).first().cloned() {
                 Some(namespace) => match app_doctor_report(&namespace, paths) {
                     Ok(report) => serde_json::to_value(report).expect("app doctor report"),
                     Err(error) => runtime_error_payload(error),
                 },
                 None => serde_json::to_value(apps_doctor_report(paths, plugin_registry_path))
                     .expect("apps doctor report"),
-            },
-        ),
+            })
+        }
         [a, b] if a == "apps" && b == "which" => {
             let namespace = command_positionals(argv, &["apps", "which"]).first().cloned();
             Some(match namespace.as_deref() {
@@ -89,19 +89,16 @@ pub(crate) fn try_handle(
             let target = command_option_value(argv, &["apps", "scaffold"], "--path")
                 .map(std::path::PathBuf::from)
                 .unwrap_or_else(|| {
-                    let stem = namespace
-                        .clone()
-                        .unwrap_or_else(|| "sample-app".to_string());
-                    std::env::current_dir()
-                        .unwrap_or_default()
-                        .join(format!("{stem}-app"))
+                    let stem = namespace.clone().unwrap_or_else(|| "sample-app".to_string());
+                    std::env::current_dir().unwrap_or_default().join(format!("{stem}-app"))
                 });
             Some(match (kind.as_deref(), namespace.as_deref()) {
-                (Some(kind), Some(namespace)) => match scaffold_app_mount(kind, namespace, force, &target)
-                {
-                    Ok(report) => serde_json::to_value(report).expect("apps scaffold report"),
-                    Err(error) => runtime_error_payload(error),
-                },
+                (Some(kind), Some(namespace)) => {
+                    match scaffold_app_mount(kind, namespace, force, &target) {
+                        Ok(report) => serde_json::to_value(report).expect("apps scaffold report"),
+                        Err(error) => runtime_error_payload(error),
+                    }
+                }
                 _ => runtime_error_payload(
                     "Missing arguments: kind and namespace required".to_string(),
                 ),

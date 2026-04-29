@@ -68,26 +68,19 @@ fn nearest_root(query: &str) -> Option<String> {
     for root in ROOT_COMMANDS {
         let score = similarity_score(&query.to_ascii_lowercase(), root);
         let candidate = (score, root.len(), 0usize, (*root).to_string());
-        if best
-            .as_ref()
-            .is_none_or(|existing| candidate.0 > existing.0 || (candidate.0 == existing.0 && candidate.1 > existing.1))
-        {
+        if best.as_ref().is_none_or(|existing| {
+            candidate.0 > existing.0 || (candidate.0 == existing.0 && candidate.1 > existing.1)
+        }) {
             best = Some(candidate);
         }
     }
 
     for tool in known_bijux_tools() {
         let canonical_score = similarity_score(&query.to_ascii_lowercase(), tool.namespace);
-        let canonical = (
-            canonical_score,
-            tool.namespace.len(),
-            0usize,
-            tool.namespace.to_string(),
-        );
-        if best
-            .as_ref()
-            .is_none_or(|existing| canonical.0 > existing.0 || (canonical.0 == existing.0 && canonical.1 > existing.1))
-        {
+        let canonical = (canonical_score, tool.namespace.len(), 0usize, tool.namespace.to_string());
+        if best.as_ref().is_none_or(|existing| {
+            canonical.0 > existing.0 || (canonical.0 == existing.0 && canonical.1 > existing.1)
+        }) {
             best = Some(canonical);
         }
 

@@ -27,15 +27,8 @@ fn repo_root() -> PathBuf {
 }
 
 fn run_json(args: &[&str], cwd: &Path) -> Value {
-    let output = dag_bin(cwd)
-        .args(args)
-        .output()
-        .expect("run dag command");
-    assert!(
-        output.status.success(),
-        "command failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
+    let output = dag_bin(cwd).args(args).output().expect("run dag command");
+    assert!(output.status.success(), "command failed: {}", String::from_utf8_lossy(&output.stderr));
     serde_json::from_slice(&output.stdout).expect("parse json envelope")
 }
 

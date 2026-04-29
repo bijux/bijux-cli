@@ -109,12 +109,9 @@ fn config_docs_and_doctor_bundle_parse_successfully() {
     assert_eq!(config_docs.command_path, vec!["config", "docs"]);
     assert_eq!(config_docs.normalized_path, vec!["cli", "config", "docs"]);
 
-    let doctor_bundle = parse_intent(&[
-        "bijux".to_string(),
-        "doctor".to_string(),
-        "--bundle".to_string(),
-    ])
-    .expect("parse should succeed");
+    let doctor_bundle =
+        parse_intent(&["bijux".to_string(), "doctor".to_string(), "--bundle".to_string()])
+            .expect("parse should succeed");
     assert_eq!(doctor_bundle.command_path, vec!["doctor"]);
     assert_eq!(doctor_bundle.normalized_path, vec!["cli", "doctor"]);
 }

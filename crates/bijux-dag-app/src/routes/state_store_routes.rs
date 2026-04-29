@@ -2,14 +2,13 @@ use crate::commands::{DagCli, StateStoreCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_artifacts::hash::sha256_hex;
 use bijux_dag_artifacts::NodeCounts;
-use bijux_dag_runtime::{
-    build_cost_model, forecast_storage_growth,
-    check_run_consistency, event_names_emitted_once, required_event_fields_present,
-    validate_and_repair_run_metadata, validate_required_event_names, EventRecord, NodeState,
-    PersistedRunSnapshotRef, RunCompactionPolicy, RunId, RunState, RunSummaryV2,
-    StorageHealthReport, validate_storage_relative_path,
-};
 use bijux_dag_runtime::simulated_platform::{clock_within_assumption, SchedulerClockAssumption};
+use bijux_dag_runtime::{
+    build_cost_model, check_run_consistency, event_names_emitted_once, forecast_storage_growth,
+    required_event_fields_present, validate_and_repair_run_metadata, validate_required_event_names,
+    validate_storage_relative_path, EventRecord, NodeState, PersistedRunSnapshotRef,
+    RunCompactionPolicy, RunId, RunState, RunSummaryV2, StorageHealthReport,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::fs;
@@ -250,8 +249,10 @@ fn transaction_payload(simulation: TransactionSimulation) -> (serde_json::Value,
         state: run_state,
         counts,
     };
-    let state_pairs =
-        node_states.iter().map(|record| (record.node_id.clone(), record.state.clone())).collect::<Vec<_>>();
+    let state_pairs = node_states
+        .iter()
+        .map(|record| (record.node_id.clone(), record.state.clone()))
+        .collect::<Vec<_>>();
     let consistency = check_run_consistency(&state_pairs, &artifact_nodes, &summary);
     let mut materialized_components = Vec::new();
     if manifest_written {
@@ -264,8 +265,8 @@ fn transaction_payload(simulation: TransactionSimulation) -> (serde_json::Value,
         materialized_components.push("index".to_string());
     }
     let all_components_written = manifest_written && journal_written && index_written;
-    let atomic_visible_state = (all_components_written && consistency.summary_matches_node_states)
-        || rollback_recorded;
+    let atomic_visible_state =
+        (all_components_written && consistency.summary_matches_node_states) || rollback_recorded;
     let mut gaps = Vec::new();
     if run_id.trim().is_empty() {
         gaps.push("transaction audit requires a stable run id".to_string());
@@ -299,9 +300,7 @@ fn journal_payload(simulation: JournalSimulation) -> (serde_json::Value, bool) {
     let JournalSimulation { events, rewrite_detected } = simulation;
     let required_names_present = validate_required_event_names(&events).is_empty();
     let append_only = !rewrite_detected;
-    let monotonic_timestamps = events
-        .windows(2)
-        .all(|pair| pair[0].unix_ms <= pair[1].unix_ms);
+    let monotonic_timestamps = events.windows(2).all(|pair| pair[0].unix_ms <= pair[1].unix_ms);
     let singleton_boundaries_ok =
         event_names_emitted_once(&events, &["run_started", "run_finished"]);
     let all_fields_present = events.iter().all(required_event_fields_present);
@@ -348,22 +347,28 @@ fn snapshot_payload(simulation: SnapshotSimulation) -> (serde_json::Value, bool)
     let snapshot_present = snapshot.is_some();
     let compaction_due = event_count >= compaction_policy.max_event_count_before_compaction;
     let persisted_after_threshold = match snapshot.as_ref() {
-        Some(snapshot) => !snapshot.run_id.trim().is_empty()
-            && !snapshot.snapshot_path.trim().is_empty()
-            && snapshot.persisted_unix_ms > 0,
+        Some(snapshot) => {
+            !snapshot.run_id.trim().is_empty()
+                && !snapshot.snapshot_path.trim().is_empty()
+                && snapshot.persisted_unix_ms > 0
+        }
         None => !compaction_due,
     };
     let keep_latest_attempts_respected =
         latest_attempts_kept >= compaction_policy.keep_latest_attempts;
     let mut gaps = Vec::new();
     if compaction_due && !snapshot_present {
-        gaps.push("snapshot is missing even though compaction threshold has been crossed".to_string());
+        gaps.push(
+            "snapshot is missing even though compaction threshold has been crossed".to_string(),
+        );
     }
     if !persisted_after_threshold {
         gaps.push("persisted snapshot reference is incomplete or not durable".to_string());
     }
     if !keep_latest_attempts_respected {
-        gaps.push("snapshot retention does not preserve the configured latest attempts".to_string());
+        gaps.push(
+            "snapshot retention does not preserve the configured latest attempts".to_string(),
+        );
     }
     if !rebuildable_from_journal {
         gaps.push("snapshot cannot be rebuilt from the append-only journal".to_string());
@@ -395,8 +400,10 @@ fn index_payload(simulation: IndexSimulation) -> (serde_json::Value, bool) {
     let required = ["owner", "tag", "partition", "failure_class"];
     let all_required_dimensions_indexed =
         required.iter().all(|dimension| indexed_dimensions.iter().any(|value| value == dimension));
-    let high_cardinality_ready =
-        owner_cardinality > 0 && tag_cardinality > 0 && partition_cardinality > 0 && failure_class_cardinality > 0;
+    let high_cardinality_ready = owner_cardinality > 0
+        && tag_cardinality > 0
+        && partition_cardinality > 0
+        && failure_class_cardinality > 0;
     let lookup_within_limit = p95_lookup_ms <= max_lookup_ms;
     let mut gaps = Vec::new();
     if run_count == 0 {
@@ -435,7 +442,8 @@ fn archive_payload(simulation: ArchiveSimulation) -> (serde_json::Value, bool) {
         cold_cost_per_gb,
     } = simulation;
     let growth = forecast_storage_growth(daily_gb);
-    let costs = build_cost_model(hot_store_gb, cold_store_gb, 0.0, hot_cost_per_gb, cold_cost_per_gb, 0.0);
+    let costs =
+        build_cost_model(hot_store_gb, cold_store_gb, 0.0, hot_cost_per_gb, cold_cost_per_gb, 0.0);
     let searchable_after_archive = searchable_manifest_entries >= archived_run_count;
     let reconstructible_after_archive = reconstructible_run_count >= archived_run_count;
     let cold_storage_cheaper = costs.object_store_monthly_cost < costs.local_store_monthly_cost;
@@ -466,11 +474,7 @@ fn archive_payload(simulation: ArchiveSimulation) -> (serde_json::Value, bool) {
 }
 
 fn checksum_payload(run_dir: &Path) -> (serde_json::Value, bool) {
-    let required = [
-        "manifest.json",
-        "graph.snapshot.json",
-        "outputs/index.json",
-    ];
+    let required = ["manifest.json", "graph.snapshot.json", "outputs/index.json"];
     let mut files = Vec::new();
     let mut validated_paths = Vec::new();
     let mut anomalies = Vec::new();
@@ -558,8 +562,8 @@ fn retention_payload(simulation: RetentionSimulation) -> (serde_json::Value, boo
         oldest_hot_age_days,
         oldest_archive_age_days,
     } = simulation;
-    let tiers_strictly_ordered =
-        hot_partition_days < archive_partition_days && archive_partition_days < delete_partition_days;
+    let tiers_strictly_ordered = hot_partition_days < archive_partition_days
+        && archive_partition_days < delete_partition_days;
     let partitions_non_overlapping = !overlap_detected;
     let all_events_partitioned = unpartitioned_event_count == 0;
     let old_data_moved_out_of_hot_tier = oldest_hot_age_days <= hot_partition_days
@@ -575,7 +579,9 @@ fn retention_payload(simulation: RetentionSimulation) -> (serde_json::Value, boo
         gaps.push("some events are not assigned to a retention partition".to_string());
     }
     if !old_data_moved_out_of_hot_tier {
-        gaps.push("aged data remains in a hotter tier than the retention policy allows".to_string());
+        gaps.push(
+            "aged data remains in a hotter tier than the retention policy allows".to_string(),
+        );
     }
     let report = RetentionReport {
         tiers_strictly_ordered,
@@ -645,7 +651,8 @@ fn clock_payload(simulation: ClockSimulation) -> (serde_json::Value, bool) {
         clock_within_assumption(planner_unix_ms, reference_unix_ms, &assumption);
     let scheduler_within_skew =
         clock_within_assumption(scheduler_unix_ms, reference_unix_ms, &assumption);
-    let persisted_after_reference = persisted_unix_ms + assumption.tick_grace_ms as u128 >= reference_unix_ms;
+    let persisted_after_reference =
+        persisted_unix_ms + assumption.tick_grace_ms as u128 >= reference_unix_ms;
     let source_tags_present = source_tags.iter().any(|tag| tag == "planner")
         && source_tags.iter().any(|tag| tag == "scheduler")
         && source_tags.iter().any(|tag| tag == "persistence");
@@ -657,10 +664,14 @@ fn clock_payload(simulation: ClockSimulation) -> (serde_json::Value, bool) {
         gaps.push("scheduler clock exceeds the declared skew assumption".to_string());
     }
     if !persisted_after_reference {
-        gaps.push("persisted timestamps fall behind the authoritative schedule reference".to_string());
+        gaps.push(
+            "persisted timestamps fall behind the authoritative schedule reference".to_string(),
+        );
     }
     if !source_tags_present {
-        gaps.push("clock records are missing planner, scheduler, or persistence source tags".to_string());
+        gaps.push(
+            "clock records are missing planner, scheduler, or persistence source tags".to_string(),
+        );
     }
     let report = ClockReport {
         planner_within_skew,
@@ -755,8 +766,8 @@ mod tests {
         ConsistencySimulation, IndexSimulation, JournalSimulation, NodeStateRecord,
         RetentionSimulation, SnapshotSimulation, TransactionSimulation,
     };
-    use bijux_dag_artifacts::RunDir;
     use bijux_dag_artifacts::NodeCounts;
+    use bijux_dag_artifacts::RunDir;
     use bijux_dag_runtime::{
         EventCategory, EventRecord, NodeState, PersistedRunSnapshotRef, RunCompactionPolicy,
         RunState,
@@ -1030,9 +1041,7 @@ mod tests {
             br#"{"run_id":"run-1","status":"success"}"#,
         )
         .expect("manifest");
-        run_dir
-            .write_graph_snapshot("{\"nodes\":[]}")
-            .expect("graph snapshot");
+        run_dir.write_graph_snapshot("{\"nodes\":[]}").expect("graph snapshot");
         let outputs_index = run_dir.run_outputs_index_path();
         let outputs_dir = outputs_index.parent().expect("outputs parent");
         fs::create_dir_all(outputs_dir).expect("outputs dir");

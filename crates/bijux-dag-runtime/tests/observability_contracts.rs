@@ -11,8 +11,8 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    event_contains_sensitive_material, event_names_emitted_once, required_event_fields_present,
-    reconstruct_timeline_from_events, validate_required_event_names, verify_event_log_completeness,
+    event_contains_sensitive_material, event_names_emitted_once, reconstruct_timeline_from_events,
+    required_event_fields_present, validate_required_event_names, verify_event_log_completeness,
     EventCategory, EventRecord, TimelineExport, REQUIRED_RUNTIME_EVENT_NAMES,
 };
 use serde_json::json;
@@ -110,10 +110,8 @@ fn completeness_verifier_accepts_monotonic_reconstructible_event_log() {
 #[test]
 fn completeness_verifier_flags_missing_names_and_timeline_drift() {
     let events = vec![base_event("run_started", 2), base_event("run_finished", 1)];
-    let mismatched_timeline = TimelineExport {
-        schema_version: "v0.1".to_string(),
-        entries: vec![],
-    };
+    let mismatched_timeline =
+        TimelineExport { schema_version: "v0.1".to_string(), entries: vec![] };
     let report = verify_event_log_completeness(&events, Some(&mismatched_timeline));
     assert!(!report.complete);
     assert!(!report.required_names_present);

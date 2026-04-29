@@ -1,4 +1,4 @@
-use bijux_dag_core::{parse_graph_strict, Effect, EdgeKind};
+use bijux_dag_core::{parse_graph_strict, EdgeKind, Effect};
 use bijux_dag_testkit::branch_semantics_graph_json;
 
 fn base_graph() -> bijux_dag_core::Graph {
@@ -24,11 +24,8 @@ fn semantic_mutations_change_graph_identity() {
     assert_ne!(base_id, changed_effects.graph_id().expect("changed effects id"));
 
     let mut changed_branch = base.clone();
-    changed_branch.nodes[1]
-        .branch
-        .as_mut()
-        .expect("branch spec")
-        .default_decision = Some("right".to_string());
+    changed_branch.nodes[1].branch.as_mut().expect("branch spec").default_decision =
+        Some("right".to_string());
     assert_ne!(base_id, changed_branch.graph_id().expect("changed branch id"));
 
     let mut changed_edge_kind = base.clone();

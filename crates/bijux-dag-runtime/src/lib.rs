@@ -179,49 +179,49 @@ pub use adapter::{AdapterDescriptor, CacheCompatibilityMode};
 pub use adapter_conformance::{
     build_adapter_conformance_suite, generate_adapter_reference_markdown,
     validate_output_schema_compatibility, AdapterConformanceSuiteReport,
-    AdapterOutputSchemaCompatibilityReport, AdapterReferenceDocument,
-    AdapterScenarioResult, AdapterScenarioStatus,
+    AdapterOutputSchemaCompatibilityReport, AdapterReferenceDocument, AdapterScenarioResult,
+    AdapterScenarioStatus,
 };
 pub use adapter_sdk::{
     AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest,
 };
 pub use async_adapter::AsyncAdapter;
+pub use backend::fake::{
+    fake_batch_backend_reference, fake_batch_executor_contract, FakeBatchExecutor,
+    FakeBatchExecutorContract, FakeBatchJobRecord, FakeBatchJobStatus,
+};
 pub use backend_cluster::{
     artifact_collection_state, backend_ready_for_admission, canonical_k8s_terminal_events,
     capture_hpc_scheduler_version, classify_hpc_failure, classify_k8s_failure,
     effective_hpc_retry_policy, equivalent_to_local, hpc_array_job_supported,
     hpc_environment_fingerprint, hpc_log_collection_semantics, hpc_poll_response_recovered,
     hpc_replay_fidelity_from_module_fingerprints, hpc_resource_fingerprint,
-    hpc_scratch_staging_semantics, k8s_capability_declaration, map_node_policy_to_k8s_job,
-    map_node_resources_to_k8s, map_node_to_hpc_queue_partition, map_timeout_to_hpc_walltime,
-    matches_placement_policy, normalize_backend_failure, outputs_logs_equivalent,
-    quota_saturation_percent, reconcile_k8s_watch_stream,
+    hpc_scratch_staging_semantics, k8s_capability_declaration, kubernetes_adapter_contract,
+    map_node_policy_to_k8s_job, map_node_resources_to_k8s, map_node_to_hpc_queue_partition,
+    map_timeout_to_hpc_walltime, matches_placement_policy, normalize_backend_failure,
+    outputs_logs_equivalent, quota_saturation_percent, reconcile_k8s_watch_stream,
     reject_unsupported_hpc_scheduler_features, reject_unsupported_k8s_fields,
-    replay_allowed_across_backends, scratch_retention_required, staged_input_cleanup_required,
-    validate_k8s_injection, workdir_semantics, AdapterExecutionOutcome, ArtifactCollectionState,
-    BackendCapabilityDescriptor, BackendCleanupGuarantee, BackendConformanceSuite,
-    BackendFailureMappingRule, BackendLogCollectionContract, BackendMaintenanceMode,
-    BackendOutageSimulationFixture, BackendProductionReadinessChecklist, BackendQuotaMetrics,
-    BackendReadinessProbe, CrossBackendReplayRule, GenericBatchExecutorContract,
-    HpcFailureClassification, HpcLogCollectionSemantics, HpcNodeExecutionContract,
-    HpcQueuePartitionMapping, HpcReplayFidelity, HpcResourceFingerprintInput,
-    HpcRetryPolicyDecision, HpcSchedulerVersionMetadata, HpcScratchStagingSemantics,
-    ImageResolutionProvenance, K8sBackendVersionMetadata, K8sCapabilityDeclaration,
-    K8sFailureClass, K8sInjectionAvailability, K8sInjectionRequest, K8sJobPolicyMapping,
-    K8sResourceMapping, K8sResourceRequest, K8sWatchEvent, KubernetesAdapterContractReport,
-    KubernetesExecutorContractV2, NodeAffinityHint, NodeExecutionContract, PlacementPolicyRule,
-    QueueBackendRoutingPolicy, RemoteArtifactStagingProtocol, SlurmAdapterDesignContractReport,
-    SlurmExecutorContract, WorkdirSemantics, WorkdirVolumeKind, kubernetes_adapter_contract,
-    slurm_adapter_design_contract,
+    replay_allowed_across_backends, scratch_retention_required, slurm_adapter_design_contract,
+    staged_input_cleanup_required, validate_k8s_injection, workdir_semantics,
+    AdapterExecutionOutcome, ArtifactCollectionState, BackendCapabilityDescriptor,
+    BackendCleanupGuarantee, BackendConformanceSuite, BackendFailureMappingRule,
+    BackendLogCollectionContract, BackendMaintenanceMode, BackendOutageSimulationFixture,
+    BackendProductionReadinessChecklist, BackendQuotaMetrics, BackendReadinessProbe,
+    CrossBackendReplayRule, GenericBatchExecutorContract, HpcFailureClassification,
+    HpcLogCollectionSemantics, HpcNodeExecutionContract, HpcQueuePartitionMapping,
+    HpcReplayFidelity, HpcResourceFingerprintInput, HpcRetryPolicyDecision,
+    HpcSchedulerVersionMetadata, HpcScratchStagingSemantics, ImageResolutionProvenance,
+    K8sBackendVersionMetadata, K8sCapabilityDeclaration, K8sFailureClass, K8sInjectionAvailability,
+    K8sInjectionRequest, K8sJobPolicyMapping, K8sResourceMapping, K8sResourceRequest,
+    K8sWatchEvent, KubernetesAdapterContractReport, KubernetesExecutorContractV2, NodeAffinityHint,
+    NodeExecutionContract, PlacementPolicyRule, QueueBackendRoutingPolicy,
+    RemoteArtifactStagingProtocol, SlurmAdapterDesignContractReport, SlurmExecutorContract,
+    WorkdirSemantics, WorkdirVolumeKind,
 };
 pub use batch_execution::{
     cancel_batch_attempt, duplicate_status_delivery_detected, execution_mode_report,
     heartbeat_stale, restart_recovery_supported, retry_attempt, validate_batch_metadata,
     BatchAttemptState, BatchHeartbeat, BatchJobMetadata, BatchLifecycleEvent, BatchModeReport,
-};
-pub use backend::fake::{
-    fake_batch_backend_reference, fake_batch_executor_contract, FakeBatchExecutor,
-    FakeBatchExecutorContract, FakeBatchJobRecord, FakeBatchJobStatus,
 };
 use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
@@ -1456,9 +1456,7 @@ pub fn adapter_conformance_suite() -> Result<Vec<AdapterConformanceSuiteReport>,
             descriptors.push(descriptor);
         }
     }
-    descriptors.sort_by(|left, right| {
-        (&left.id, &left.version).cmp(&(&right.id, &right.version))
-    });
+    descriptors.sort_by(|left, right| (&left.id, &left.version).cmp(&(&right.id, &right.version)));
     Ok(descriptors
         .into_iter()
         .map(|descriptor| build_adapter_conformance_suite(&descriptor))
@@ -1468,8 +1466,7 @@ pub fn adapter_conformance_suite() -> Result<Vec<AdapterConformanceSuiteReport>,
 pub fn registered_adapter_reference_document() -> AdapterReferenceDocument {
     let mut descriptors = registered_adapter_descriptors();
     descriptors.sort_by(|left, right| (&left.id, &left.version).cmp(&(&right.id, &right.version)));
-    let conformance =
-        descriptors.iter().map(build_adapter_conformance_suite).collect::<Vec<_>>();
+    let conformance = descriptors.iter().map(build_adapter_conformance_suite).collect::<Vec<_>>();
     AdapterReferenceDocument {
         descriptors,
         conformance,

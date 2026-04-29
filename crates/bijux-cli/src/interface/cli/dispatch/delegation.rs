@@ -65,12 +65,8 @@ fn locate_known_tool_route(argv: &[String]) -> Option<(bool, String, usize)> {
 }
 
 fn render_embedded_descriptor_help(command_surface: &str, resolved: &ResolvedAppCommand) -> String {
-    let aliases = resolved
-        .descriptor
-        .aliases
-        .iter()
-        .map(|alias| alias.0.as_str())
-        .collect::<Vec<_>>();
+    let aliases =
+        resolved.descriptor.aliases.iter().map(|alias| alias.0.as_str()).collect::<Vec<_>>();
     let alias_line = if aliases.is_empty() {
         String::new()
     } else {
@@ -103,9 +99,7 @@ fn run_embedded_descriptor_shell(
     forwarded_args: &[String],
 ) -> AppRunResult {
     let first = forwarded_args.first().map(String::as_str);
-    if forwarded_args
-        .iter()
-        .any(|arg| matches!(arg.as_str(), "--help" | "-h"))
+    if forwarded_args.iter().any(|arg| matches!(arg.as_str(), "--help" | "-h"))
         || matches!(first, Some("help"))
     {
         return AppRunResult {
@@ -124,7 +118,11 @@ fn run_embedded_descriptor_shell(
             .version
             .clone()
             .unwrap_or_else(|| format!("{} embedded", resolved.namespace));
-        return AppRunResult { exit_code: 0, stdout: format!("{version}\n"), stderr: String::new() };
+        return AppRunResult {
+            exit_code: 0,
+            stdout: format!("{version}\n"),
+            stderr: String::new(),
+        };
     }
 
     if forwarded_args.is_empty() || matches!(first, Some("status")) {
@@ -163,7 +161,9 @@ fn delegate_to_embedded_handler(
     forwarded_args: &[String],
 ) -> AppRunResult {
     match resolved.command.as_str() {
-        "descriptor-shell" => run_embedded_descriptor_shell(resolved, command_surface, forwarded_args),
+        "descriptor-shell" => {
+            run_embedded_descriptor_shell(resolved, command_surface, forwarded_args)
+        }
         other => AppRunResult {
             exit_code: 2,
             stdout: String::new(),
@@ -184,11 +184,7 @@ fn delegate_to_resolved_command(
         return delegate_to_embedded_handler(resolved, command_surface, forwarded_args);
     }
 
-    match Command::new(&resolved.command)
-        .args(&resolved.args)
-        .args(forwarded_args)
-        .output()
-    {
+    match Command::new(&resolved.command).args(&resolved.args).args(forwarded_args).output() {
         Ok(output) => AppRunResult {
             exit_code: output.status.code().unwrap_or(1),
             stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
@@ -229,7 +225,8 @@ fn delegated_known_bijux_tool_command(argv: &[String]) -> Option<DelegatedKnownT
             forwarded_args: argv[forwarded_start..].to_vec(),
         })
     } else {
-        let install_hint = known_bijux_tool_by_query(&query).map(|tool| tool.runtime_package().to_string());
+        let install_hint =
+            known_bijux_tool_by_query(&query).map(|tool| tool.runtime_package().to_string());
         let resolved = if let Some(tool) = known_bijux_tool_by_query(&query) {
             resolve_runtime_command(&query).unwrap_or_else(|| ResolvedAppCommand {
                 command: tool.runtime_binary(),
@@ -254,9 +251,7 @@ fn delegated_known_bijux_tool_command(argv: &[String]) -> Option<DelegatedKnownT
 
 pub(super) fn is_known_bijux_tool_route(path: &[String]) -> bool {
     match path {
-        [dev, namespace, ..] => {
-            dev == "dev" && known_bijux_tool_by_query(namespace).is_some()
-        }
+        [dev, namespace, ..] => dev == "dev" && known_bijux_tool_by_query(namespace).is_some(),
         [namespace, ..] => resolve_runtime_command(namespace).is_some(),
         [] => false,
     }

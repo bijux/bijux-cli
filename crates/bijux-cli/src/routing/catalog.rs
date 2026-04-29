@@ -30,11 +30,9 @@ pub fn cli_plugins_subcommands() -> &'static [&'static str] {
 pub fn normalize_command_path(path: &[String]) -> Vec<String> {
     match path {
         [a, rest @ ..] if canonical_bijux_tool_namespace(a).is_some() => {
-            let mut normalized = vec![
-                canonical_bijux_tool_namespace(a)
-                    .expect("checked canonical namespace")
-                    .to_string(),
-            ];
+            let mut normalized = vec![canonical_bijux_tool_namespace(a)
+                .expect("checked canonical namespace")
+                .to_string()];
             normalized.extend(rest.iter().cloned());
             normalized
         }

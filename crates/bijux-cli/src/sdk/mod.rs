@@ -11,12 +11,12 @@ use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
+use crate::contracts::diagnostics::DiagnosticRecord;
 use crate::contracts::{
     ColorMode, CommandPath, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExitCode, LogLevel,
     Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat, PrettyMode,
     ProductCompatibilityWindow, ProductEntrypoint, ProductEntrypointKind, ProductMountDescriptor,
 };
-use crate::contracts::diagnostics::DiagnosticRecord;
 use crate::shared::output::{emit_error, emit_success, EmitterConfig};
 use crate::shared::version::runtime_semver;
 
@@ -247,13 +247,13 @@ impl ProductMount {
     }
 
     #[must_use]
-    fn runtime_entrypoint(mut self, kind: ProductEntrypointKind, command: impl Into<String>) -> Self {
-        self.runtime_entrypoint = Some(ProductEntrypoint {
-            kind,
-            command: command.into(),
-            module: None,
-            function: None,
-        });
+    fn runtime_entrypoint(
+        mut self,
+        kind: ProductEntrypointKind,
+        command: impl Into<String>,
+    ) -> Self {
+        self.runtime_entrypoint =
+            Some(ProductEntrypoint { kind, command: command.into(), module: None, function: None });
         self
     }
 
@@ -263,12 +263,8 @@ impl ProductMount {
         kind: ProductEntrypointKind,
         command: impl Into<String>,
     ) -> Self {
-        self.control_entrypoint = Some(ProductEntrypoint {
-            kind,
-            command: command.into(),
-            module: None,
-            function: None,
-        });
+        self.control_entrypoint =
+            Some(ProductEntrypoint { kind, command: command.into(), module: None, function: None });
         self
     }
 
@@ -296,10 +292,8 @@ impl ProductMount {
             .display_name
             .clone()
             .unwrap_or_else(|| default_display_name(self.namespace.as_str()));
-        let summary = self
-            .summary
-            .clone()
-            .ok_or_else(|| "product mount summary is required".to_string())?;
+        let summary =
+            self.summary.clone().ok_or_else(|| "product mount summary is required".to_string())?;
         let aliases = self
             .aliases
             .iter()
@@ -360,8 +354,8 @@ impl ProductMount {
         };
 
         let host_cli_version = runtime_semver().to_string();
-        let host =
-            Version::parse(&host_cli_version).map_err(|error| format!("host semver is invalid: {error}"))?;
+        let host = Version::parse(&host_cli_version)
+            .map_err(|error| format!("host semver is invalid: {error}"))?;
         let min = Version::parse(&window.min_cli_version)
             .map_err(|error| format!("min_cli_version is invalid: {error}"))?;
         let max = window
@@ -661,9 +655,7 @@ impl CommandResult {
                 let stderr = if matches!(self.stderr_policy, StreamPolicy::Never) {
                     String::new()
                 } else {
-                    emit_error(envelope, emitter)
-                        .map_err(|error| error.to_string())?
-                        .content
+                    emit_error(envelope, emitter).map_err(|error| error.to_string())?.content
                 };
                 Ok(RenderedCommandResult {
                     exit_code: self.exit_code,

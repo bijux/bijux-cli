@@ -2,7 +2,7 @@ use crate::commands::{DagCli, IncidentCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     evaluate_slo, health_dashboard_score, integrated_verification_lane_default,
-    replay_trust_warnings, release_policy_allows, AuditReadinessChecklist, ErrorBudgetPolicy,
+    release_policy_allows, replay_trust_warnings, AuditReadinessChecklist, ErrorBudgetPolicy,
     GamedayScenario, IncidentClassification, IncidentSeverity, IntegratedVerificationLane,
     LifecycleGovernanceRule, OperatorTrainingCatalog, PlatformAcceptanceBoard,
     PlatformHealthDashboard, PlatformInvariantCatalog, PostmortemTemplate, ProductBoundary,
@@ -390,12 +390,12 @@ fn blast_radius_payload(simulation: BlastRadiusSimulation) -> (serde_json::Value
     let failing_set = failing_components.iter().cloned().collect::<BTreeSet<_>>();
     let impacted_workflows = workflows
         .iter()
-        .filter(|workflow| workflow.dependencies.iter().any(|dependency| failing_set.contains(dependency)))
+        .filter(|workflow| {
+            workflow.dependencies.iter().any(|dependency| failing_set.contains(dependency))
+        })
         .collect::<Vec<_>>();
-    let impacted_workflow_ids = impacted_workflows
-        .iter()
-        .map(|workflow| workflow.workflow_id.clone())
-        .collect::<Vec<_>>();
+    let impacted_workflow_ids =
+        impacted_workflows.iter().map(|workflow| workflow.workflow_id.clone()).collect::<Vec<_>>();
     let impacted_tenants = impacted_workflows
         .iter()
         .map(|workflow| workflow.tenant_id.clone())
@@ -465,7 +465,9 @@ fn safe_stop_payload(simulation: SafeStopSimulation) -> (serde_json::Value, bool
         gaps.push("safe-stop must halt new task dispatch".to_string());
     }
     if !drain_running_work {
-        gaps.push("safe-stop must define whether running work drains or is interrupted".to_string());
+        gaps.push(
+            "safe-stop must define whether running work drains or is interrupted".to_string(),
+        );
     }
     if !preserve_artifact_commits {
         gaps.push("safe-stop should preserve artifact commit integrity".to_string());
@@ -528,7 +530,9 @@ fn degraded_mode_payload(simulation: DegradedModeSimulation) -> (serde_json::Val
         gaps.push("degraded mode should state which platform guarantees still hold".to_string());
     }
     if boundary.operator_responsibilities.is_empty() {
-        gaps.push("degraded mode should state the operator responsibilities that remain".to_string());
+        gaps.push(
+            "degraded mode should state the operator responsibilities that remain".to_string(),
+        );
     }
     let report = DegradedModeReport {
         missing_dependencies,
@@ -561,7 +565,9 @@ fn annotation_payload(simulation: IncidentAnnotationSimulation) -> (serde_json::
         gaps.push("incident annotation requires a non-empty note".to_string());
     }
     if run_ids.is_empty() && tenant_ids.is_empty() && artifact_ids.is_empty() {
-        gaps.push("incident annotation should link at least one run, tenant, or artifact".to_string());
+        gaps.push(
+            "incident annotation should link at least one run, tenant, or artifact".to_string(),
+        );
     }
     if author.trim().is_empty() {
         gaps.push("incident annotation requires an author".to_string());
@@ -707,7 +713,10 @@ fn replay_validation_payload(simulation: ReplayValidationSimulation) -> (serde_j
         gaps.push("replay validation detected provenance drift".to_string());
     }
     if !release_policy_ready {
-        gaps.push("replay validation requires evidence, compatibility results, and rollback plan".to_string());
+        gaps.push(
+            "replay validation requires evidence, compatibility results, and rollback plan"
+                .to_string(),
+        );
     }
     if !outputs_match {
         gaps.push("replayed outputs do not match the expected recovery result".to_string());
@@ -821,10 +830,8 @@ fn scorecard_payload(simulation: ResilienceScorecardSimulation) -> (serde_json::
         .iter()
         .map(|section| section.trim().to_lowercase())
         .collect::<BTreeSet<_>>();
-    let missing_sections = required_sections
-        .iter()
-        .filter(|section| !postmortem_sections.contains(**section))
-        .count();
+    let missing_sections =
+        required_sections.iter().filter(|section| !postmortem_sections.contains(**section)).count();
     if missing_sections == 0 {
         score += 10.0;
     } else {
@@ -943,7 +950,9 @@ pub(crate) fn handle_incident_command(
         if ok {
             Vec::new()
         } else {
-            vec![json!({"message":"incident posture is incomplete","remediation":"fill the reported incident-mode gaps before treating the workflow family as incident-ready"})]
+            vec![
+                json!({"message":"incident posture is incomplete","remediation":"fill the reported incident-mode gaps before treating the workflow family as incident-ready"}),
+            ]
         },
         if ok { ExitCode::SUCCESS } else { ExitCode::from(2) },
     )
@@ -959,19 +968,19 @@ mod tests {
     use bijux_dag_runtime::simulated_platform::{
         AuditReadinessChecklist, BinaryComponent, BinaryProvenanceRecord, EnvironmentAttestation,
         ErrorBudgetPolicy, GamedayScenario, IncidentClassification, IncidentSeverity,
-        LifecycleGovernanceRule, OperatorTrainingCatalog, PlatformAcceptanceBoard,
-        PlatformHealthDashboard, PlatformInvariantCatalog, PluginProvenanceRecord,
-        PluginTrustTier, PostmortemTemplate, ProductBoundary, ReleaseGovernancePolicy,
-        RunProvenanceAttestation, RunbookEntry, ServiceLevelIndicators, ServiceLevelObjective,
-        SupportabilityModel, SustainabilityOwnership, IntegratedVerificationLane,
+        IntegratedVerificationLane, LifecycleGovernanceRule, OperatorTrainingCatalog,
+        PlatformAcceptanceBoard, PlatformHealthDashboard, PlatformInvariantCatalog,
+        PluginProvenanceRecord, PluginTrustTier, PostmortemTemplate, ProductBoundary,
+        ReleaseGovernancePolicy, RunProvenanceAttestation, RunbookEntry, ServiceLevelIndicators,
+        ServiceLevelObjective, SupportabilityModel, SustainabilityOwnership,
     };
     use std::collections::{BTreeMap, BTreeSet};
 
     use super::{
-        BlastRadiusSimulation, DegradedModeSimulation, IncidentModeSimulation, SafeStopSimulation,
-        WorkflowImpact, IncidentAnnotationSimulation, RepairWindowSimulation,
-        IncidentTimelineEvent, IncidentTimelineSimulation, ReadinessReviewSimulation,
-        ReplayValidationSimulation, ResilienceScorecardSimulation,
+        BlastRadiusSimulation, DegradedModeSimulation, IncidentAnnotationSimulation,
+        IncidentModeSimulation, IncidentTimelineEvent, IncidentTimelineSimulation,
+        ReadinessReviewSimulation, RepairWindowSimulation, ReplayValidationSimulation,
+        ResilienceScorecardSimulation, SafeStopSimulation, WorkflowImpact,
     };
 
     #[test]
@@ -1086,7 +1095,10 @@ mod tests {
                 artifact_ids: Vec::new(),
                 dependencies: vec!["authz".to_string()],
             }],
-            service_context: BTreeMap::from([("scheduler".to_string(), vec!["planner".to_string()])]),
+            service_context: BTreeMap::from([(
+                "scheduler".to_string(),
+                vec!["planner".to_string()],
+            )]),
         };
         let (payload, ok) = blast_radius_payload(simulation);
         assert!(!ok);
@@ -1104,11 +1116,17 @@ mod tests {
             stop_new_dispatch: true,
             drain_running_work: true,
             preserve_artifact_commits: true,
-            restart_conditions: vec!["leadership stable".to_string(), "artifact store green".to_string()],
+            restart_conditions: vec![
+                "leadership stable".to_string(),
+                "artifact store green".to_string(),
+            ],
             runbook: RunbookEntry {
                 name: "platform freeze".to_string(),
                 trigger: "severe control-plane instability".to_string(),
-                required_evidence: vec!["scheduler fence".to_string(), "queue snapshot".to_string()],
+                required_evidence: vec![
+                    "scheduler fence".to_string(),
+                    "queue snapshot".to_string(),
+                ],
             },
             approval_required: true,
         };
@@ -1232,7 +1250,10 @@ mod tests {
             scope: vec!["tenant-a".to_string(), "artifact-registry".to_string()],
             run_ids: vec!["run-9".to_string()],
             tenant_ids: vec!["tenant-a".to_string()],
-            repair_actions: vec!["rebuild output index".to_string(), "replay failed branch".to_string()],
+            repair_actions: vec![
+                "rebuild output index".to_string(),
+                "replay failed branch".to_string(),
+            ],
             outcome_tracking: vec!["audit_event_id".to_string(), "post_check_status".to_string()],
             lifecycle_rule: LifecycleGovernanceRule {
                 feature_name: "repair-window".to_string(),
@@ -1325,9 +1346,7 @@ mod tests {
                 run_id: None,
                 tenant_id: None,
             }],
-            postmortem: PostmortemTemplate {
-                required_sections: vec!["summary".to_string()],
-            },
+            postmortem: PostmortemTemplate { required_sections: vec!["summary".to_string()] },
         };
         let (payload, ok) = timeline_payload(simulation);
         assert!(!ok);
@@ -1514,12 +1533,21 @@ mod tests {
                 supported_backends: BTreeSet::from(["remote".to_string(), "hpc".to_string()]),
             },
             sustainability: SustainabilityOwnership {
-                subsystem_owners: BTreeMap::from([("scheduler".to_string(), "team-platform".to_string())]),
-                review_routing: BTreeMap::from([("scheduler".to_string(), "platform-review".to_string())]),
+                subsystem_owners: BTreeMap::from([(
+                    "scheduler".to_string(),
+                    "team-platform".to_string(),
+                )]),
+                review_routing: BTreeMap::from([(
+                    "scheduler".to_string(),
+                    "platform-review".to_string(),
+                )]),
             },
             acceptance_board: PlatformAcceptanceBoard {
                 members: vec!["platform".to_string(), "security".to_string()],
-                preview_to_stable_criteria: vec!["gameday green".to_string(), "slo green".to_string()],
+                preview_to_stable_criteria: vec![
+                    "gameday green".to_string(),
+                    "slo green".to_string(),
+                ],
             },
             error_budget: ErrorBudgetPolicy {
                 scheduler_outage_minutes_per_quarter: 20.0,
@@ -1556,9 +1584,7 @@ mod tests {
                 policy_health: 0.55,
             },
             gamedays: Vec::new(),
-            postmortem: PostmortemTemplate {
-                required_sections: vec!["summary".to_string()],
-            },
+            postmortem: PostmortemTemplate { required_sections: vec!["summary".to_string()] },
             invariants: Some(PlatformInvariantCatalog { invariants: Vec::new() }),
             verification_lane: Some(IntegratedVerificationLane {
                 name: "thin".to_string(),

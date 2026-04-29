@@ -275,11 +275,9 @@ fn apps_doctor_reports_shadowed_plugin_conflicts_for_official_namespace() {
     assert_eq!(dag["health"], "conflict");
     assert_eq!(dag["resolution_policy"], "official_wins");
     assert_eq!(dag["shadowed_plugins"], serde_json::json!(["workflow"]));
-    assert!(dag["issues"]
-        .as_array()
-        .expect("issues")
-        .iter()
-        .any(|value| value.as_str().is_some_and(|text| text.contains("conflicting plugin namespaces"))));
+    assert!(dag["issues"].as_array().expect("issues").iter().any(|value| value
+        .as_str()
+        .is_some_and(|text| text.contains("conflicting plugin namespaces"))));
 }
 
 #[test]
@@ -353,7 +351,13 @@ fn project_local_python_module_mount_delegates_through_configured_interpreter() 
         &["dag", "validate", "graph.json"],
         &[
             ("PATH", root.join("empty-bin").display().to_string()),
-            ("BIJUX_PYTHON_BIN", bin_dir.join(if cfg!(windows) { "fake-python.bat" } else { "fake-python" }).display().to_string()),
+            (
+                "BIJUX_PYTHON_BIN",
+                bin_dir
+                    .join(if cfg!(windows) { "fake-python.bat" } else { "fake-python" })
+                    .display()
+                    .to_string(),
+            ),
         ],
     );
 
@@ -421,16 +425,10 @@ fn apps_doctor_query_reports_python_dependency_details() {
     let app_dir = root.join(".bijux/apps");
     fs::create_dir_all(&app_dir).expect("mkdir app dir");
     fs::create_dir_all(root.join("dag_py_app")).expect("mkdir module dir");
-    fs::write(
-        root.join("dag_py_app/__init__.py"),
-        "\"\"\"test module\"\"\"\n",
-    )
-    .expect("write init");
-    fs::write(
-        root.join("dag_py_app/cli.py"),
-        "def main(argv):\n    return {'argv': argv}\n",
-    )
-    .expect("write cli");
+    fs::write(root.join("dag_py_app/__init__.py"), "\"\"\"test module\"\"\"\n")
+        .expect("write init");
+    fs::write(root.join("dag_py_app/cli.py"), "def main(argv):\n    return {'argv': argv}\n")
+        .expect("write cli");
     fs::write(
         app_dir.join("dag.mount.json"),
         r#"{
@@ -457,10 +455,7 @@ fn apps_doctor_query_reports_python_dependency_details() {
     let payload = parse_json(run_with(
         &root,
         &["apps", "doctor", "dag", "--format", "json", "--no-pretty"],
-        &[
-            ("BIJUX_PYTHON_BIN", python_runtime()),
-            ("PYTHONPATH", root.display().to_string()),
-        ],
+        &[("BIJUX_PYTHON_BIN", python_runtime()), ("PYTHONPATH", root.display().to_string())],
     ));
 
     assert_eq!(payload["namespace"], "dag");
@@ -477,11 +472,8 @@ fn project_local_python_callable_mount_routes_function_and_preserves_clean_json_
     let app_dir = root.join(".bijux/apps");
     fs::create_dir_all(&app_dir).expect("mkdir app dir");
     fs::create_dir_all(root.join("dag_py_app")).expect("mkdir module dir");
-    fs::write(
-        root.join("dag_py_app/__init__.py"),
-        "\"\"\"test module\"\"\"\n",
-    )
-    .expect("write init");
+    fs::write(root.join("dag_py_app/__init__.py"), "\"\"\"test module\"\"\"\n")
+        .expect("write init");
     fs::write(
         root.join("dag_py_app/cli.py"),
         "def main(argv):\n    print('python-log-line')\n    return {'argv': argv, 'mode': 'callable'}\n",
@@ -513,10 +505,7 @@ fn project_local_python_callable_mount_routes_function_and_preserves_clean_json_
     let out = run_with(
         &root,
         &["dag", "validate", "graph.json"],
-        &[
-            ("BIJUX_PYTHON_BIN", python_runtime()),
-            ("PYTHONPATH", root.display().to_string()),
-        ],
+        &[("BIJUX_PYTHON_BIN", python_runtime()), ("PYTHONPATH", root.display().to_string())],
     );
 
     assert_eq!(out.status.code(), Some(0));
@@ -563,11 +552,8 @@ fn project_local_embedded_mount_handles_status_and_help_without_external_binary(
 #[test]
 fn apps_schema_reports_product_mount_descriptor_contract() {
     let root = temp_dir("apps-schema");
-    let payload = parse_json(run_with(
-        &root,
-        &["apps", "schema", "--format", "json", "--no-pretty"],
-        &[],
-    ));
+    let payload =
+        parse_json(run_with(&root, &["apps", "schema", "--format", "json", "--no-pretty"], &[]));
 
     assert_eq!(payload["schema"], "product-mount-descriptor-v1");
     assert!(
@@ -720,14 +706,12 @@ fn scaffolded_custom_python_mount_routes_from_project_root() {
         .join("../bijux-cli-python/python")
         .display()
         .to_string();
-    let python_path = format!("{}{}{}", target.display(), if cfg!(windows) { ";" } else { ":" }, helper_path);
+    let python_path =
+        format!("{}{}{}", target.display(), if cfg!(windows) { ";" } else { ":" }, helper_path);
     let out = run_with(
         &target,
         &["sample", "version"],
-        &[
-            ("BIJUX_PYTHON_BIN", python_runtime()),
-            ("PYTHONPATH", python_path),
-        ],
+        &[("BIJUX_PYTHON_BIN", python_runtime()), ("PYTHONPATH", python_path)],
     );
 
     assert_eq!(out.status.code(), Some(0));

@@ -398,9 +398,16 @@ pub(crate) enum HashCommands {
 
 #[derive(Subcommand)]
 pub(crate) enum PlanCommands {
-    Explain { dag: PathBuf },
-    Diagnostics { dag: PathBuf },
-    Diff { before: PathBuf, after: PathBuf },
+    Explain {
+        dag: PathBuf,
+    },
+    Diagnostics {
+        dag: PathBuf,
+    },
+    Diff {
+        before: PathBuf,
+        after: PathBuf,
+    },
     Closure {
         dag: PathBuf,
         #[arg(long, action = clap::ArgAction::Append)]
@@ -418,7 +425,9 @@ pub(crate) enum PlanCommands {
 
 #[derive(Subcommand)]
 pub(crate) enum ScheduleCommands {
-    Validate { registry: PathBuf },
+    Validate {
+        registry: PathBuf,
+    },
     Preview {
         registry: PathBuf,
         #[arg(long)]
@@ -440,23 +449,43 @@ pub(crate) enum ScheduleCommands {
         #[arg(long, default_value_t = 3)]
         next_runs: usize,
     },
-    Dedup { events: PathBuf },
-    Sla { simulation: PathBuf },
-    Order { simulation: PathBuf },
-    Throttle { simulation: PathBuf },
+    Dedup {
+        events: PathBuf,
+    },
+    Sla {
+        simulation: PathBuf,
+    },
+    Order {
+        simulation: PathBuf,
+    },
+    Throttle {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
 pub(crate) enum RuntimeCommands {
-    Isolation { dag: PathBuf },
-    Dispatch { simulation: PathBuf },
-    State { run_dir: PathBuf },
+    Isolation {
+        dag: PathBuf,
+    },
+    Dispatch {
+        simulation: PathBuf,
+    },
+    State {
+        run_dir: PathBuf,
+    },
     #[command(name = "write-discipline")]
-    WriteDiscipline { run_dir: PathBuf },
+    WriteDiscipline {
+        run_dir: PathBuf,
+    },
     #[command(name = "worker-recovery")]
-    WorkerRecovery { simulation: PathBuf },
+    WorkerRecovery {
+        simulation: PathBuf,
+    },
     #[command(name = "control-recovery")]
-    ControlRecovery { simulation: PathBuf },
+    ControlRecovery {
+        simulation: PathBuf,
+    },
     Repair {
         run_dir: PathBuf,
         #[arg(long)]
@@ -488,12 +517,24 @@ pub(crate) enum RuntimeCommands {
         #[arg(long)]
         sla_timeout_ms: Option<u64>,
     },
-    Heartbeat { simulation: PathBuf },
-    Cancel { simulation: PathBuf },
-    Pause { simulation: PathBuf },
-    Intervention { simulation: PathBuf },
-    Transition { simulation: PathBuf },
-    Events { run_dir: PathBuf },
+    Heartbeat {
+        simulation: PathBuf,
+    },
+    Cancel {
+        simulation: PathBuf,
+    },
+    Pause {
+        simulation: PathBuf,
+    },
+    Intervention {
+        simulation: PathBuf,
+    },
+    Transition {
+        simulation: PathBuf,
+    },
+    Events {
+        run_dir: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -504,7 +545,9 @@ pub(crate) enum ArtifactCommands {
         #[arg(long)]
         out: PathBuf,
     },
-    Registry { run_dir: PathBuf },
+    Registry {
+        run_dir: PathBuf,
+    },
     Lineage {
         run_dir: PathBuf,
         #[arg(long)]
@@ -517,17 +560,37 @@ pub(crate) enum ArtifactCommands {
 
 #[derive(Subcommand)]
 pub(crate) enum ControlPlaneCommands {
-    Api { simulation: PathBuf },
-    Leadership { simulation: PathBuf },
-    Planning { simulation: PathBuf },
-    Sharding { simulation: PathBuf },
-    Leases { simulation: PathBuf },
-    Idempotency { simulation: PathBuf },
-    Backpressure { simulation: PathBuf },
-    Cache { simulation: PathBuf },
-    Migration { simulation: PathBuf },
+    Api {
+        simulation: PathBuf,
+    },
+    Leadership {
+        simulation: PathBuf,
+    },
+    Planning {
+        simulation: PathBuf,
+    },
+    Sharding {
+        simulation: PathBuf,
+    },
+    Leases {
+        simulation: PathBuf,
+    },
+    Idempotency {
+        simulation: PathBuf,
+    },
+    Backpressure {
+        simulation: PathBuf,
+    },
+    Cache {
+        simulation: PathBuf,
+    },
+    Migration {
+        simulation: PathBuf,
+    },
     #[command(name = "fan-in")]
-    FanIn { simulation: PathBuf },
+    FanIn {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -552,42 +615,88 @@ pub(crate) enum DatasetCommands {
 
 #[derive(Subcommand)]
 pub(crate) enum EnterpriseCommands {
-    Webhook { simulation: PathBuf },
-    Queue { simulation: PathBuf },
+    Webhook {
+        simulation: PathBuf,
+    },
+    Queue {
+        simulation: PathBuf,
+    },
     #[command(name = "service-contract")]
-    ServiceContract { simulation: PathBuf },
+    ServiceContract {
+        simulation: PathBuf,
+    },
     #[command(name = "incident-hook")]
-    IncidentHook { simulation: PathBuf },
+    IncidentHook {
+        simulation: PathBuf,
+    },
     #[command(name = "asset-link")]
-    AssetLink { simulation: PathBuf },
-    Calendar { simulation: PathBuf },
-    Approval { simulation: PathBuf },
+    AssetLink {
+        simulation: PathBuf,
+    },
+    Calendar {
+        simulation: PathBuf,
+    },
+    Approval {
+        simulation: PathBuf,
+    },
     #[command(name = "dependency-catalog")]
-    DependencyCatalog { simulation: PathBuf },
-    Credentials { simulation: PathBuf },
-    Export { simulation: PathBuf },
+    DependencyCatalog {
+        simulation: PathBuf,
+    },
+    Credentials {
+        simulation: PathBuf,
+    },
+    Export {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
 pub(crate) enum FleetCommands {
-    Register { simulation: PathBuf },
-    Capabilities { simulation: PathBuf },
-    Drain { simulation: PathBuf },
-    Autoscale { simulation: PathBuf },
+    Register {
+        simulation: PathBuf,
+    },
+    Capabilities {
+        simulation: PathBuf,
+    },
+    Drain {
+        simulation: PathBuf,
+    },
+    Autoscale {
+        simulation: PathBuf,
+    },
     #[command(name = "warm-pool")]
-    WarmPool { simulation: PathBuf },
-    Isolation { simulation: PathBuf },
-    Preemption { simulation: PathBuf },
-    Trust { simulation: PathBuf },
-    Gossip { simulation: PathBuf },
-    Fragmentation { simulation: PathBuf },
+    WarmPool {
+        simulation: PathBuf,
+    },
+    Isolation {
+        simulation: PathBuf,
+    },
+    Preemption {
+        simulation: PathBuf,
+    },
+    Trust {
+        simulation: PathBuf,
+    },
+    Gossip {
+        simulation: PathBuf,
+    },
+    Fragmentation {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
 pub(crate) enum GovernanceCommands {
-    Contracts { dag: PathBuf },
-    Ownership { dag: PathBuf },
-    Tags { dag: PathBuf },
+    Contracts {
+        dag: PathBuf,
+    },
+    Ownership {
+        dag: PathBuf,
+    },
+    Tags {
+        dag: PathBuf,
+    },
     Cost {
         dag: PathBuf,
         #[arg(long, default_value_t = 0.04)]
@@ -612,47 +721,93 @@ pub(crate) enum GovernanceCommands {
         run_dir: Option<PathBuf>,
     },
     #[command(name = "audit-event")]
-    AuditEvent { simulation: PathBuf },
-    Promotion { simulation: PathBuf },
-    Compliance { simulation: PathBuf },
+    AuditEvent {
+        simulation: PathBuf,
+    },
+    Promotion {
+        simulation: PathBuf,
+    },
+    Compliance {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
 pub(crate) enum IncidentCommands {
-    Mode { simulation: PathBuf },
+    Mode {
+        simulation: PathBuf,
+    },
     #[command(name = "blast-radius")]
-    BlastRadius { simulation: PathBuf },
+    BlastRadius {
+        simulation: PathBuf,
+    },
     #[command(name = "safe-stop")]
-    SafeStop { simulation: PathBuf },
+    SafeStop {
+        simulation: PathBuf,
+    },
     #[command(name = "degraded-mode")]
-    DegradedMode { simulation: PathBuf },
-    Annotation { simulation: PathBuf },
+    DegradedMode {
+        simulation: PathBuf,
+    },
+    Annotation {
+        simulation: PathBuf,
+    },
     #[command(name = "repair-window")]
-    RepairWindow { simulation: PathBuf },
-    Timeline { simulation: PathBuf },
+    RepairWindow {
+        simulation: PathBuf,
+    },
+    Timeline {
+        simulation: PathBuf,
+    },
     #[command(name = "replay-validation")]
-    ReplayValidation { simulation: PathBuf },
+    ReplayValidation {
+        simulation: PathBuf,
+    },
     #[command(name = "readiness-review")]
-    ReadinessReview { simulation: PathBuf },
-    Scorecard { simulation: PathBuf },
+    ReadinessReview {
+        simulation: PathBuf,
+    },
+    Scorecard {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
 pub(crate) enum FederationCommands {
-    Schedule { simulation: PathBuf },
-    Failover { simulation: PathBuf },
-    Lineage { simulation: PathBuf },
-    Sovereignty { simulation: PathBuf },
-    Replay { simulation: PathBuf },
+    Schedule {
+        simulation: PathBuf,
+    },
+    Failover {
+        simulation: PathBuf,
+    },
+    Lineage {
+        simulation: PathBuf,
+    },
+    Sovereignty {
+        simulation: PathBuf,
+    },
+    Replay {
+        simulation: PathBuf,
+    },
     #[command(name = "policy-distribution")]
-    PolicyDistribution { simulation: PathBuf },
+    PolicyDistribution {
+        simulation: PathBuf,
+    },
     #[command(name = "audit-integrity")]
-    AuditIntegrity { simulation: PathBuf },
+    AuditIntegrity {
+        simulation: PathBuf,
+    },
     #[command(name = "trust-tier")]
-    TrustTier { simulation: PathBuf },
-    Delegation { simulation: PathBuf },
+    TrustTier {
+        simulation: PathBuf,
+    },
+    Delegation {
+        simulation: PathBuf,
+    },
     #[command(name = "config-inheritance")]
-    ConfigInheritance { simulation: PathBuf },
+    ConfigInheritance {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -681,17 +836,33 @@ pub(crate) enum LabCommands {
 
 #[derive(Subcommand)]
 pub(crate) enum SecurityCommands {
-    Auth { simulation: PathBuf },
-    Authz { simulation: PathBuf },
-    Tenant { simulation: PathBuf },
-    Secrets { simulation: PathBuf },
+    Auth {
+        simulation: PathBuf,
+    },
+    Authz {
+        simulation: PathBuf,
+    },
+    Tenant {
+        simulation: PathBuf,
+    },
+    Secrets {
+        simulation: PathBuf,
+    },
     #[command(name = "supply-chain")]
-    SupplyChain { simulation: PathBuf },
+    SupplyChain {
+        simulation: PathBuf,
+    },
     #[command(name = "data-access")]
-    DataAccess { simulation: PathBuf },
-    Override { simulation: PathBuf },
+    DataAccess {
+        simulation: PathBuf,
+    },
+    Override {
+        simulation: PathBuf,
+    },
     #[command(name = "safe-defaults")]
-    SafeDefaults { dag: PathBuf },
+    SafeDefaults {
+        dag: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -857,7 +1028,9 @@ pub(crate) enum AdaptersCommands {
     Ls,
     Dump,
     Describe,
-    Admit { dag: PathBuf },
+    Admit {
+        dag: PathBuf,
+    },
     Conformance,
     #[command(name = "cache-compat")]
     CacheCompat {

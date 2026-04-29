@@ -9,8 +9,8 @@ mod suggest;
 use anyhow::Result;
 use serde_json::json;
 
-use crate::contracts::OutputFormat;
 use crate::contracts::known_bijux_tools;
+use crate::contracts::OutputFormat;
 use crate::interface::cli::handlers::install as install_handler;
 use crate::interface::cli::help::render_command_help;
 use crate::interface::cli::parser::parse_intent;

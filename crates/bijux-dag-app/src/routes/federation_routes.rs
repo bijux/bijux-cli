@@ -1,17 +1,17 @@
 use crate::commands::{DagCli, FederationCommands};
 use crate::{emit_json, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
-    build_consistency_catalog, classify_resource_consistency, geo_ready, region_write_allowed,
-    delegation_allowed, domain_healthy, federation_conformance_passes, resolve_tenant_overlay,
-    select_delegation_failure_action, ConsistencyBoundaryNote, ConsistencyClass,
-    CrossDomainReplaySafety, CrossRegionFailoverRule, DelegationFailureAction,
-    DelegationFailurePolicy, DisasterRecoveryPlaybook, DomainHealthSnapshot,
-    FederatedConformanceGate, FederationDomainIdentity, GeoReadyAcceptanceGate,
-    GeoSimulationScenario, InterSchedulerFlowControl, PeeringObservabilityContract,
-    RegionAffinityPolicy, RegionAwareDagActivation, RegionLineageRecord, RegionPolicyOverlay,
-    RegionQueuePartition, RegionScheduleRule, ReplayTrustWarning, RunProvenanceAttestation,
-    TenantConfigOverlay, TrustTierRoutingRule, WriteRoutingRule, replay_trust_warnings,
-    trust_tier_allows_domain,
+    build_consistency_catalog, classify_resource_consistency, delegation_allowed, domain_healthy,
+    federation_conformance_passes, geo_ready, region_write_allowed, replay_trust_warnings,
+    resolve_tenant_overlay, select_delegation_failure_action, trust_tier_allows_domain,
+    ConsistencyBoundaryNote, ConsistencyClass, CrossDomainReplaySafety, CrossRegionFailoverRule,
+    DelegationFailureAction, DelegationFailurePolicy, DisasterRecoveryPlaybook,
+    DomainHealthSnapshot, FederatedConformanceGate, FederationDomainIdentity,
+    GeoReadyAcceptanceGate, GeoSimulationScenario, InterSchedulerFlowControl,
+    PeeringObservabilityContract, RegionAffinityPolicy, RegionAwareDagActivation,
+    RegionLineageRecord, RegionPolicyOverlay, RegionQueuePartition, RegionScheduleRule,
+    ReplayTrustWarning, RunProvenanceAttestation, TenantConfigOverlay, TrustTierRoutingRule,
+    WriteRoutingRule,
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -211,19 +211,23 @@ fn schedule_payload(simulation: &Path) -> Result<ScheduleReport, ExitCode> {
     .cloned()
     .collect::<BTreeSet<_>>();
     let affinity_preserved = !selected.is_empty();
-    let schedule_rules_complete = affinity_preserved && selected.iter().all(|region| {
-        simulation.schedule_rules.iter().any(|rule| {
-            &rule.region == region && !rule.timezone.trim().is_empty() && (!rule.utc_anchor_required || !rule.failover_regions.is_empty())
-        })
-    });
-    let queue_partitioned = affinity_preserved && selected.iter().all(|region| {
-        simulation
-            .queue_partitions
-            .iter()
-            .filter(|partition| &partition.region == region)
-            .count()
-            == 1
-    });
+    let schedule_rules_complete = affinity_preserved
+        && selected.iter().all(|region| {
+            simulation.schedule_rules.iter().any(|rule| {
+                &rule.region == region
+                    && !rule.timezone.trim().is_empty()
+                    && (!rule.utc_anchor_required || !rule.failover_regions.is_empty())
+            })
+        });
+    let queue_partitioned = affinity_preserved
+        && selected.iter().all(|region| {
+            simulation
+                .queue_partitions
+                .iter()
+                .filter(|partition| &partition.region == region)
+                .count()
+                == 1
+        });
     let geo_ready = geo_ready(&simulation.gate);
     let mut gaps = Vec::new();
     if !geo_ready {
@@ -251,7 +255,8 @@ fn schedule_payload(simulation: &Path) -> Result<ScheduleReport, ExitCode> {
 fn failover_payload(simulation: &Path) -> Result<FailoverReport, ExitCode> {
     let simulation: FailoverSimulation = load_json_file(simulation)?;
     let target_region = simulation.rule.secondary_regions.first().map(|region| region.0.clone());
-    let within_rto = simulation.scenario.delayed_failover_seconds <= simulation.rule.max_failover_seconds;
+    let within_rto =
+        simulation.scenario.delayed_failover_seconds <= simulation.rule.max_failover_seconds;
     let playbook_complete = simulation.playbook.region == simulation.rule.primary_region
         && !simulation.playbook.control_plane_outage_steps.is_empty()
         && !simulation.playbook.artifact_store_outage_steps.is_empty();
@@ -296,7 +301,10 @@ fn lineage_payload(simulation: &Path) -> Result<LineageReport, ExitCode> {
     }
     Ok(LineageReport {
         producer_region: simulation.record.producer_region.0,
-        visible_consumer_regions: visible_consumer_regions.into_iter().map(|region| region.0).collect(),
+        visible_consumer_regions: visible_consumer_regions
+            .into_iter()
+            .map(|region| region.0)
+            .collect(),
         queryable,
         regional_boundary_preserved,
         gaps,
@@ -313,12 +321,16 @@ fn consistency_class_name(class: &ConsistencyClass) -> &'static str {
 
 fn sovereignty_payload(simulation: &Path) -> Result<SovereigntyReport, ExitCode> {
     let simulation: SovereigntySimulation = load_json_file(simulation)?;
-    let write_allowed = region_write_allowed(&simulation.write_rule, &simulation.requested_write_region);
-    let consistency_class = classify_resource_consistency(&simulation.resource, &simulation.consistency_notes);
+    let write_allowed =
+        region_write_allowed(&simulation.write_rule, &simulation.requested_write_region);
+    let consistency_class =
+        classify_resource_consistency(&simulation.resource, &simulation.consistency_notes);
     let consistency_catalog = build_consistency_catalog(&simulation.consistency_notes);
     let mut gaps = Vec::new();
     if !write_allowed {
-        gaps.push("requested region is not allowed to perform writes for this resource".to_string());
+        gaps.push(
+            "requested region is not allowed to perform writes for this resource".to_string(),
+        );
     }
     if simulation.overlay.regulatory_profile.trim().is_empty() {
         gaps.push("region overlay is missing a regulatory profile".to_string());
@@ -326,7 +338,10 @@ fn sovereignty_payload(simulation: &Path) -> Result<SovereigntyReport, ExitCode>
     if simulation.overlay.regulatory_profile != "unrestricted"
         && matches!(consistency_class, ConsistencyClass::EventuallyReplicated)
     {
-        gaps.push("regulated region cannot rely on eventually replicated writes for this resource".to_string());
+        gaps.push(
+            "regulated region cannot rely on eventually replicated writes for this resource"
+                .to_string(),
+        );
     }
     Ok(SovereigntyReport {
         write_allowed,
@@ -339,8 +354,10 @@ fn sovereignty_payload(simulation: &Path) -> Result<SovereigntyReport, ExitCode>
 
 fn replay_payload(simulation: &Path) -> Result<ReplayReport, ExitCode> {
     let simulation: ReplaySimulation = load_json_file(simulation)?;
-    let replay_safe = bijux_dag_runtime::simulated_platform::cross_domain_replay_safe(&simulation.safety);
-    let warnings = replay_trust_warnings(&simulation.run_id, &simulation.baseline, &simulation.candidate);
+    let replay_safe =
+        bijux_dag_runtime::simulated_platform::cross_domain_replay_safe(&simulation.safety);
+    let warnings =
+        replay_trust_warnings(&simulation.run_id, &simulation.baseline, &simulation.candidate);
     let mut gaps = Vec::new();
     if !replay_safe {
         gaps.push("cross-domain replay safety contract does not hold".to_string());
@@ -353,11 +370,8 @@ fn replay_payload(simulation: &Path) -> Result<ReplayReport, ExitCode> {
 
 fn policy_distribution_payload(simulation: &Path) -> Result<PolicyDistributionReport, ExitCode> {
     let simulation: PolicyDistributionSimulation = load_json_file(simulation)?;
-    let covered_regions = simulation
-        .overlays
-        .iter()
-        .map(|overlay| overlay.region.clone())
-        .collect::<BTreeSet<_>>();
+    let covered_regions =
+        simulation.overlays.iter().map(|overlay| overlay.region.clone()).collect::<BTreeSet<_>>();
     let all_regions_covered = simulation.active_regions.is_subset(&covered_regions);
     let conformance_passed = federation_conformance_passes(&simulation.gate);
     let distinct_profiles = simulation
@@ -385,7 +399,12 @@ fn policy_distribution_payload(simulation: &Path) -> Result<PolicyDistributionRe
     }) {
         gaps.push("one or more region overlays are incomplete".to_string());
     }
-    Ok(PolicyDistributionReport { all_regions_covered, conformance_passed, distinct_profiles, gaps })
+    Ok(PolicyDistributionReport {
+        all_regions_covered,
+        conformance_passed,
+        distinct_profiles,
+        gaps,
+    })
 }
 
 fn audit_integrity_payload(simulation: &Path) -> Result<AuditIntegrityReport, ExitCode> {
@@ -427,8 +446,8 @@ fn trust_tier_rank(value: &str) -> usize {
 fn trust_tier_payload(simulation: &Path) -> Result<TrustTierReport, ExitCode> {
     let simulation: TrustTierSimulation = load_json_file(simulation)?;
     let domain_allowed = trust_tier_allows_domain(&simulation.rule, &simulation.domain.domain_id);
-    let tier_sufficient =
-        trust_tier_rank(&simulation.domain.trust_tier) >= trust_tier_rank(&simulation.rule.min_trust_tier);
+    let tier_sufficient = trust_tier_rank(&simulation.domain.trust_tier)
+        >= trust_tier_rank(&simulation.rule.min_trust_tier);
     let mut gaps = Vec::new();
     if !domain_allowed {
         gaps.push("selected domain is not in the allowed trust-tier routing set".to_string());
@@ -510,28 +529,40 @@ pub(crate) fn handle_federation_command(
 ) -> Result<ExitCode, ExitCode> {
     match command {
         FederationCommands::Schedule { simulation } => {
-            let payload = serde_json::to_value(schedule_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(schedule_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.schedule", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         FederationCommands::Failover { simulation } => {
-            let payload = serde_json::to_value(failover_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(failover_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.failover", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         FederationCommands::Lineage { simulation } => {
-            let payload = serde_json::to_value(lineage_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(lineage_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.lineage", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         FederationCommands::Sovereignty { simulation } => {
-            let payload = serde_json::to_value(sovereignty_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
-            emit_json(cli, "dag.federation.sovereignty", true, payload, Vec::new(), ExitCode::SUCCESS)
+            let payload = serde_json::to_value(sovereignty_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.federation.sovereignty",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
         }
         FederationCommands::Replay { simulation } => {
-            let payload = serde_json::to_value(replay_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload =
+                serde_json::to_value(replay_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.federation.replay", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         FederationCommands::PolicyDistribution { simulation } => {
-            let payload =
-                serde_json::to_value(policy_distribution_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(policy_distribution_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.federation.policy-distribution",
@@ -542,8 +573,8 @@ pub(crate) fn handle_federation_command(
             )
         }
         FederationCommands::AuditIntegrity { simulation } => {
-            let payload =
-                serde_json::to_value(audit_integrity_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(audit_integrity_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.federation.audit-integrity",
@@ -554,16 +585,32 @@ pub(crate) fn handle_federation_command(
             )
         }
         FederationCommands::TrustTier { simulation } => {
-            let payload = serde_json::to_value(trust_tier_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
-            emit_json(cli, "dag.federation.trust-tier", true, payload, Vec::new(), ExitCode::SUCCESS)
+            let payload = serde_json::to_value(trust_tier_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.federation.trust-tier",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
         }
         FederationCommands::Delegation { simulation } => {
-            let payload = serde_json::to_value(delegation_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
-            emit_json(cli, "dag.federation.delegation", true, payload, Vec::new(), ExitCode::SUCCESS)
+            let payload = serde_json::to_value(delegation_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.federation.delegation",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
         }
         FederationCommands::ConfigInheritance { simulation } => {
-            let payload =
-                serde_json::to_value(config_inheritance_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(config_inheritance_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.federation.config-inheritance",
@@ -793,7 +840,8 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli = quiet_json_cli(FederationCommands::Sovereignty { simulation: simulation.clone() });
+        let cli =
+            quiet_json_cli(FederationCommands::Sovereignty { simulation: simulation.clone() });
         let code = handle_federation_command(
             &cli,
             &FederationCommands::Sovereignty { simulation: simulation.clone() },
@@ -934,7 +982,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli = quiet_json_cli(FederationCommands::PolicyDistribution { simulation: simulation.clone() });
+        let cli = quiet_json_cli(FederationCommands::PolicyDistribution {
+            simulation: simulation.clone(),
+        });
         let code = handle_federation_command(
             &cli,
             &FederationCommands::PolicyDistribution { simulation: simulation.clone() },
@@ -985,7 +1035,8 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli = quiet_json_cli(FederationCommands::AuditIntegrity { simulation: simulation.clone() });
+        let cli =
+            quiet_json_cli(FederationCommands::AuditIntegrity { simulation: simulation.clone() });
         let code = handle_federation_command(
             &cli,
             &FederationCommands::AuditIntegrity { simulation: simulation.clone() },
@@ -1141,8 +1192,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli =
-            quiet_json_cli(FederationCommands::ConfigInheritance { simulation: simulation.clone() });
+        let cli = quiet_json_cli(FederationCommands::ConfigInheritance {
+            simulation: simulation.clone(),
+        });
         let code = handle_federation_command(
             &cli,
             &FederationCommands::ConfigInheritance { simulation: simulation.clone() },

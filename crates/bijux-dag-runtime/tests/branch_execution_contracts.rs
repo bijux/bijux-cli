@@ -112,7 +112,8 @@ fn runtime_prunes_left_path_when_branch_selects_right() {
 
 #[test]
 fn runtime_uses_branch_default_when_node_outputs_unknown_decision() {
-    let graph = parse_graph_strict(&branch_graph_json("unknown", Some("left"))).expect("parse graph");
+    let graph =
+        parse_graph_strict(&branch_graph_json("unknown", Some("left"))).expect("parse graph");
     let runtime = Runtime::new();
     let out_dir = tempfile::tempdir().expect("tempdir");
     let run_dir =

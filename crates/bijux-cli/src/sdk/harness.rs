@@ -163,8 +163,9 @@ impl BijuxCliHarness {
                         .message("mounted app is not compatible with this bijux host")
                         .context(
                             "compatibility",
-                            serde_json::to_value(report)
-                                .map_err(|error| format!("failed to serialize compatibility report: {error}"))?,
+                            serde_json::to_value(report).map_err(|error| {
+                                format!("failed to serialize compatibility report: {error}")
+                            })?,
                         )
                         .build()?,
                     ExitCode::Usage,

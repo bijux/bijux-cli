@@ -1,6 +1,6 @@
 use bijux_dag_core::{
-    BranchSpec, ContainerSpec, DagBuilder, Effect, Graph, NodeBuilder, NodeKind,
-    SemanticNodeKind, TriggerRule,
+    BranchSpec, ContainerSpec, DagBuilder, Effect, Graph, NodeBuilder, NodeKind, SemanticNodeKind,
+    TriggerRule,
 };
 use serde_json::{json, Map, Value};
 use std::fs;
@@ -286,7 +286,8 @@ pub fn collect_run_dir_snapshot(run_dir: &Path) -> Value {
             if let Some(inputs) = read_json_if_exists(&node_dir.join("inputs").join("index.json")) {
                 indexes.insert("inputs".to_string(), inputs);
             }
-            if let Some(outputs) = read_json_if_exists(&node_dir.join("outputs").join("index.json")) {
+            if let Some(outputs) = read_json_if_exists(&node_dir.join("outputs").join("index.json"))
+            {
                 indexes.insert("outputs".to_string(), outputs);
             }
             if !indexes.is_empty() {
@@ -296,9 +297,7 @@ pub fn collect_run_dir_snapshot(run_dir: &Path) -> Value {
                 let mut node_outputs = Map::new();
                 for output_entry in output_entries.flatten() {
                     let output_path = output_entry.path();
-                    if output_path
-                        .file_name()
-                        .and_then(|value| value.to_str())
+                    if output_path.file_name().and_then(|value| value.to_str())
                         == Some("index.json")
                     {
                         continue;
@@ -373,10 +372,8 @@ pub fn fixture_path_string(path: &Path) -> String {
 }
 
 pub fn update_or_assert_snapshot(path: &Path, actual: &Value) {
-    let rendered = format!(
-        "{}\n",
-        serde_json::to_string_pretty(actual).expect("render snapshot payload")
-    );
+    let rendered =
+        format!("{}\n", serde_json::to_string_pretty(actual).expect("render snapshot payload"));
     if std::env::var("BIJUX_UPDATE_GOLDENS").as_deref() == Ok("1") {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent).expect("create snapshot parent");

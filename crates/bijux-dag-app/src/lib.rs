@@ -85,8 +85,8 @@ use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
 use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
-    CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg, HashCommands,
-    MigrateCommands, PolicyCommands,
+    CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg, HashCommands, MigrateCommands,
+    PolicyCommands,
 };
 use config_resolution::{
     show_effective_config, show_effective_policy, ShowEffectiveConfigRequest,
@@ -369,7 +369,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Governance { command } => {
             routes::governance_routes::handle_governance_command(&cli, command)
         }
-        Commands::Incident { command } => routes::incident_routes::handle_incident_command(&cli, command),
+        Commands::Incident { command } => {
+            routes::incident_routes::handle_incident_command(&cli, command)
+        }
         Commands::Lab { command } => match command {
             commands::LabCommands::Federation { command } => {
                 routes::federation_routes::handle_federation_command(&cli, command)
@@ -390,8 +392,12 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Federation { command } => {
             routes::federation_routes::handle_federation_command(&cli, command)
         }
-        Commands::Security { command } => routes::security_routes::handle_security_command(&cli, command),
-        Commands::Release { command } => routes::release_routes::handle_release_command(&cli, command),
+        Commands::Security { command } => {
+            routes::security_routes::handle_security_command(&cli, command)
+        }
+        Commands::Release { command } => {
+            routes::release_routes::handle_release_command(&cli, command)
+        }
         Commands::CanonicalBytes { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
@@ -461,8 +467,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::ExplainPlan { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let analysis =
-                routes::plan_routes::build_default_planner_analysis(&graph).map_err(|_| ExitCode::from(3))?;
+            let analysis = routes::plan_routes::build_default_planner_analysis(&graph)
+                .map_err(|_| ExitCode::from(3))?;
             let payload = routes::plan_routes::plan_explain_payload(&analysis);
             if cli.json {
                 return emit_json(
@@ -483,7 +489,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Schedule { command } => {
             routes::schedule_routes::handle_schedule_command(&cli, command)
         }
-        Commands::Runtime { command } => routes::runtime_routes::handle_runtime_command(&cli, command),
+        Commands::Runtime { command } => {
+            routes::runtime_routes::handle_runtime_command(&cli, command)
+        }
         Commands::Graph { dag, format } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
@@ -662,18 +670,20 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 explain_scheduling: *explain_scheduling,
             },
         ),
-        Commands::RunBundle { run_dir, out, redact } => routes::export_import_routes::handle_export_command(
-            &cli,
-            &Some(run_dir.clone()),
-            &None,
-            out,
-            false,
-            false,
-            false,
-            *redact,
-            true,
-            false,
-        ),
+        Commands::RunBundle { run_dir, out, redact } => {
+            routes::export_import_routes::handle_export_command(
+                &cli,
+                &Some(run_dir.clone()),
+                &None,
+                out,
+                false,
+                false,
+                false,
+                *redact,
+                true,
+                false,
+            )
+        }
         Commands::Explain { run_dir, node } => {
             routes::inspect_routes::handle_explain_command(&cli, run_dir, node)
         }

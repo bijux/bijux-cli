@@ -2,14 +2,14 @@ use crate::commands::{DagCli, FleetCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::derive_autoscaling_hint;
 use bijux_dag_runtime::simulated_platform::{
-    cancellation_delivered_in_time, check_scheduler_admission,
-    check_worker_version_compatibility, classify_heartbeat, validate_worker_identity, worker_alive,
-    validate_task_lease_semantics, worker_pool_satisfies_capability_request, LivenessPolicy,
-    HeartbeatClass, HeartbeatSemantics, MutualAuthDesignNote, PlacementHint, QueuePartition,
-    ReassignmentRule, SchedulerScalingPlan, TaskLeaseSemantics, TenantConcurrencyQuota,
-    TenantQueueIsolationPolicy, TenantSchedulerAdmission, TrustDomain, WorkLease,
-    WorkerBootstrapTrustFlow, WorkerCapabilities, WorkerHeartbeat, WorkerIdentity, WorkerPool,
-    WorkerPoolCapabilityRequest, WorkerRegistration, WorkerVersionCompatibilityRule,
+    cancellation_delivered_in_time, check_scheduler_admission, check_worker_version_compatibility,
+    classify_heartbeat, validate_task_lease_semantics, validate_worker_identity, worker_alive,
+    worker_pool_satisfies_capability_request, HeartbeatClass, HeartbeatSemantics, LivenessPolicy,
+    MutualAuthDesignNote, PlacementHint, QueuePartition, ReassignmentRule, SchedulerScalingPlan,
+    TaskLeaseSemantics, TenantConcurrencyQuota, TenantQueueIsolationPolicy,
+    TenantSchedulerAdmission, TrustDomain, WorkLease, WorkerBootstrapTrustFlow, WorkerCapabilities,
+    WorkerHeartbeat, WorkerIdentity, WorkerPool, WorkerPoolCapabilityRequest, WorkerRegistration,
+    WorkerVersionCompatibilityRule,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -306,8 +306,8 @@ fn capability_payload(simulation: CapabilitySimulation) -> (serde_json::Value, b
         simulation;
     let capability_match = worker_pool_satisfies_capability_request(&capabilities, &request);
     let preferred_pool_match = placement_hint.preferred_pool == pool.pool_id;
-    let preferred_label_match = placement_hint.preferred_worker_labels.iter().all(|(key, value)| {
-        match key.as_str() {
+    let preferred_label_match =
+        placement_hint.preferred_worker_labels.iter().all(|(key, value)| match key.as_str() {
             "backend_kind" => value == "any",
             "supports_container" => {
                 value == if capabilities.supports_container { "true" } else { "false" }
@@ -317,8 +317,7 @@ fn capability_payload(simulation: CapabilitySimulation) -> (serde_json::Value, b
                 capabilities.supports_sandbox_profiles.iter().any(|profile| profile == value)
             }
             _ => false,
-        }
-    });
+        });
     let mut gaps = Vec::new();
     if worker_id.trim().is_empty() {
         gaps.push("capability advertisement requires a worker identifier".to_string());
@@ -330,7 +329,10 @@ fn capability_payload(simulation: CapabilitySimulation) -> (serde_json::Value, b
         gaps.push("worker must appear in the declared worker pool membership".to_string());
     }
     if !capability_match {
-        gaps.push("declared worker capabilities do not satisfy the requested placement contract".to_string());
+        gaps.push(
+            "declared worker capabilities do not satisfy the requested placement contract"
+                .to_string(),
+        );
     }
     if !preferred_pool_match {
         gaps.push("placement hint points to a different worker pool".to_string());
@@ -365,19 +367,17 @@ fn drain_payload(simulation: DrainSimulation) -> (serde_json::Value, bool) {
         replacement_pool_ready,
     } = simulation;
     let semantics_valid = validate_task_lease_semantics(&lease_semantics).is_ok();
-    let worker_leases: Vec<_> = leases.into_iter().filter(|lease| lease.worker_id == worker_id).collect();
-    let active_leases = worker_leases
-        .iter()
-        .filter(|lease| lease.expires_unix_ms >= now_unix_ms)
-        .count();
-    let expired_leases = worker_leases
-        .iter()
-        .filter(|lease| lease.expires_unix_ms < now_unix_ms)
-        .count();
+    let worker_leases: Vec<_> =
+        leases.into_iter().filter(|lease| lease.worker_id == worker_id).collect();
+    let active_leases =
+        worker_leases.iter().filter(|lease| lease.expires_unix_ms >= now_unix_ms).count();
+    let expired_leases =
+        worker_leases.iter().filter(|lease| lease.expires_unix_ms < now_unix_ms).count();
     let recoverable_leases = worker_leases
         .iter()
         .filter(|lease| {
-            now_unix_ms.saturating_sub(lease.expires_unix_ms) <= lease_semantics.recovery_grace_ms as u128
+            now_unix_ms.saturating_sub(lease.expires_unix_ms)
+                <= lease_semantics.recovery_grace_ms as u128
         })
         .count();
     let mut gaps = Vec::new();
@@ -426,8 +426,12 @@ fn autoscale_payload(simulation: AutoscaleSimulation) -> (serde_json::Value, boo
         saturation_pct,
         current_replicas,
     } = simulation;
-    let hint =
-        derive_autoscaling_hint(queue_depth, dispatch_lag_seconds, saturation_pct, current_replicas);
+    let hint = derive_autoscaling_hint(
+        queue_depth,
+        dispatch_lag_seconds,
+        saturation_pct,
+        current_replicas,
+    );
     let mut gaps = Vec::new();
     if queue_partition.queue_name.trim().is_empty() {
         gaps.push("autoscaling hook requires a named queue partition".to_string());
@@ -442,7 +446,9 @@ fn autoscale_payload(simulation: AutoscaleSimulation) -> (serde_json::Value, boo
         gaps.push("scheduler scaling plan must declare a sharding key".to_string());
     }
     if hint.recommended_replicas < current_replicas {
-        gaps.push("autoscaling hint should not undercut the currently declared replicas".to_string());
+        gaps.push(
+            "autoscaling hint should not undercut the currently declared replicas".to_string(),
+        );
     }
     if saturation_pct > 80 && hint.recommended_replicas == current_replicas {
         gaps.push("high saturation should drive an increased replica recommendation".to_string());
@@ -493,7 +499,9 @@ fn warm_pool_payload(simulation: WarmPoolSimulation) -> (serde_json::Value, bool
         gaps.push("warm pool should declare at least one preloaded profile".to_string());
     }
     if startup_improvement_ms == 0 {
-        gaps.push("warm pool must demonstrate a startup improvement over cold capacity".to_string());
+        gaps.push(
+            "warm pool must demonstrate a startup improvement over cold capacity".to_string(),
+        );
     }
     if monthly_cost_estimate <= 0.0 {
         gaps.push("warm pool cost must be visible to operators".to_string());
@@ -531,11 +539,16 @@ fn isolation_payload(simulation: IsolationSimulation) -> (serde_json::Value, boo
         check_scheduler_admission(queued_runs, pending_dispatches, &scheduler_admission);
     let isolated_queues = queue_partitions
         .iter()
-        .filter(|partition| partition.tenant_id.as_deref() == Some(queue_policy.tenant_id.0.as_str()))
+        .filter(|partition| {
+            partition.tenant_id.as_deref() == Some(queue_policy.tenant_id.0.as_str())
+        })
         .map(|partition| partition.queue_name.clone())
         .collect::<Vec<_>>();
     let mut gaps = Vec::new();
-    if tenant_id != queue_policy.tenant_id.0 || tenant_id != quota.tenant_id.0 || tenant_id != scheduler_admission.tenant_id.0 {
+    if tenant_id != queue_policy.tenant_id.0
+        || tenant_id != quota.tenant_id.0
+        || tenant_id != scheduler_admission.tenant_id.0
+    {
         gaps.push("tenant isolation inputs must all target the same tenant".to_string());
     }
     if !queue_policy.hard_isolation {
@@ -624,8 +637,14 @@ fn preemption_payload(simulation: PreemptionSimulation) -> (serde_json::Value, b
 }
 
 fn trust_payload(simulation: TrustSimulation) -> (serde_json::Value, bool) {
-    let TrustSimulation { identity, bootstrap, trust_domain, mutual_auth, enrollment_approved, attested_image } =
-        simulation;
+    let TrustSimulation {
+        identity,
+        bootstrap,
+        trust_domain,
+        mutual_auth,
+        enrollment_approved,
+        attested_image,
+    } = simulation;
     let identity_valid = validate_worker_identity(&identity).is_ok();
     let trust_domain_name = format!(
         "{}/{}/{}",
@@ -642,7 +661,9 @@ fn trust_payload(simulation: TrustSimulation) -> (serde_json::Value, bool) {
         gaps.push("worker bootstrap flow is bound to a different trust domain".to_string());
     }
     if identity.backend_kind != trust_domain.execution_backend {
-        gaps.push("worker backend kind does not match the declared trust domain backend".to_string());
+        gaps.push(
+            "worker backend kind does not match the declared trust domain backend".to_string(),
+        );
     }
     if !enrollment_approved {
         gaps.push("ephemeral worker enrollment is not approved".to_string());
@@ -713,7 +734,10 @@ fn gossip_payload(simulation: GossipSimulation) -> (serde_json::Value, bool) {
         gaps.push("gossip view does not converge to the authoritative worker set".to_string());
     }
     if lost_workers > 0 && delayed_workers == 0 {
-        gaps.push("lost workers must surface a delayed state before they become authoritative loss".to_string());
+        gaps.push(
+            "lost workers must surface a delayed state before they become authoritative loss"
+                .to_string(),
+        );
     }
     let report = GossipReport {
         healthy_workers,
@@ -735,9 +759,8 @@ fn fragmentation_payload(simulation: FragmentationSimulation) -> (serde_json::Va
     let mut unplaceable_requests = 0usize;
     let mut stranded_capacity_detected = false;
     for request in &requests {
-        let placeable = workers
-            .iter()
-            .any(|worker| worker_pool_satisfies_capability_request(worker, request));
+        let placeable =
+            workers.iter().any(|worker| worker_pool_satisfies_capability_request(worker, request));
         if !placeable {
             unplaceable_requests += 1;
             if total_cpu_capacity >= request.required_min_cpu_capacity
@@ -755,10 +778,15 @@ fn fragmentation_payload(simulation: FragmentationSimulation) -> (serde_json::Va
         gaps.push("fragmentation audit requires at least one placement request".to_string());
     }
     if unplaceable_requests > 0 {
-        gaps.push("some placement requests cannot be satisfied by any individual worker".to_string());
+        gaps.push(
+            "some placement requests cannot be satisfied by any individual worker".to_string(),
+        );
     }
     if stranded_capacity_detected {
-        gaps.push("aggregate capacity exists but is stranded across incompatible worker shapes".to_string());
+        gaps.push(
+            "aggregate capacity exists but is stranded across incompatible worker shapes"
+                .to_string(),
+        );
     }
     let report = FragmentationReport {
         worker_count: workers.len(),
@@ -850,12 +878,11 @@ pub(crate) fn handle_fleet_command(
 #[cfg(test)]
 mod tests {
     use super::{
-        autoscale_payload, capability_payload, drain_payload, registration_payload,
-        warm_pool_payload, isolation_payload, AutoscaleSimulation, CapabilitySimulation,
-        DrainSimulation, IsolationSimulation, PreemptionSimulation, RegistrationSimulation,
-        TrustSimulation, WarmPoolSimulation, GossipSimulation, FragmentationSimulation,
-        fragmentation_payload, gossip_payload,
-        preemption_payload, trust_payload,
+        autoscale_payload, capability_payload, drain_payload, fragmentation_payload,
+        gossip_payload, isolation_payload, preemption_payload, registration_payload, trust_payload,
+        warm_pool_payload, AutoscaleSimulation, CapabilitySimulation, DrainSimulation,
+        FragmentationSimulation, GossipSimulation, IsolationSimulation, PreemptionSimulation,
+        RegistrationSimulation, TrustSimulation, WarmPoolSimulation,
     };
     use bijux_dag_runtime::simulated_platform::{
         HeartbeatSemantics, LivenessPolicy, MutualAuthDesignNote, PlacementHint, QueuePartition,
@@ -1118,10 +1145,7 @@ mod tests {
                 tenant_id: None,
                 max_concurrency: 0,
             },
-            scaling_plan: SchedulerScalingPlan {
-                worker_count: 0,
-                sharding_key: String::new(),
-            },
+            scaling_plan: SchedulerScalingPlan { worker_count: 0, sharding_key: String::new() },
             queue_depth: 2_000,
             dispatch_lag_seconds: 45,
             saturation_pct: 90,

@@ -92,10 +92,7 @@ impl ProductCompatibilityWindow {
         min_cli_version: impl Into<String>,
         max_cli_version_exclusive: Option<String>,
     ) -> Result<Self, String> {
-        let window = Self {
-            min_cli_version: min_cli_version.into(),
-            max_cli_version_exclusive,
-        };
+        let window = Self { min_cli_version: min_cli_version.into(), max_cli_version_exclusive };
         validate_compatibility_window(&window)?;
         Ok(window)
     }
@@ -169,12 +166,8 @@ impl ProductMountDescriptorBuilder {
 
     #[must_use]
     pub fn entrypoint(mut self, kind: ProductEntrypointKind, command: impl Into<String>) -> Self {
-        self.entrypoint = Some(ProductEntrypoint {
-            kind,
-            command: command.into(),
-            module: None,
-            function: None,
-        });
+        self.entrypoint =
+            Some(ProductEntrypoint { kind, command: command.into(), module: None, function: None });
         self
     }
 
@@ -190,12 +183,8 @@ impl ProductMountDescriptorBuilder {
         kind: ProductEntrypointKind,
         command: impl Into<String>,
     ) -> Self {
-        self.control_entrypoint = Some(ProductEntrypoint {
-            kind,
-            command: command.into(),
-            module: None,
-            function: None,
-        });
+        self.control_entrypoint =
+            Some(ProductEntrypoint { kind, command: command.into(), module: None, function: None });
         self
     }
 
@@ -262,7 +251,9 @@ impl ProductMountDescriptorBuilder {
     }
 }
 
-pub fn validate_product_mount_descriptor(descriptor: &ProductMountDescriptor) -> Result<(), String> {
+pub fn validate_product_mount_descriptor(
+    descriptor: &ProductMountDescriptor,
+) -> Result<(), String> {
     if descriptor.display_name.trim().is_empty() {
         return Err("product mount display_name cannot be empty".to_string());
     }
@@ -342,11 +333,7 @@ fn validate_entrypoint(label: &str, entrypoint: &ProductEntrypoint) -> Result<()
                     "product mount {label} only supports `module` for python_module entrypoints"
                 ));
             }
-            if entrypoint
-                .function
-                .as_deref()
-                .is_some_and(|value| !value.trim().is_empty())
-            {
+            if entrypoint.function.as_deref().is_some_and(|value| !value.trim().is_empty()) {
                 return Err(format!(
                     "product mount {label} only supports `function` for python_module entrypoints"
                 ));
@@ -365,7 +352,7 @@ fn validate_compatibility_window(window: &ProductCompatibilityWindow) -> Result<
             .map_err(|error| format!("max_cli_version_exclusive is not valid semver: {error}"))?;
         if max_version <= min {
             return Err(
-                "max_cli_version_exclusive must be greater than min_cli_version".to_string(),
+                "max_cli_version_exclusive must be greater than min_cli_version".to_string()
             );
         }
     }

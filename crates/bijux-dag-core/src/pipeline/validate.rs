@@ -1,7 +1,7 @@
 use crate::canonical::{error, is_valid_canonical_name, is_valid_output_path, severity_rank, warn};
 use crate::{
-    EdgeKind, Effect, Graph, GraphError, Node, ParamValue, SemanticNodeKind, Severity,
-    TriggerRule, ValidationDiagnostic,
+    EdgeKind, Effect, Graph, GraphError, Node, ParamValue, SemanticNodeKind, Severity, TriggerRule,
+    ValidationDiagnostic,
 };
 use std::collections::{BTreeSet, HashMap};
 
@@ -252,7 +252,9 @@ impl Graph {
                         "E1028",
                         format!("branch node missing branch contract: {}", node.id),
                         format!("/nodes/{}/branch", node.id),
-                        Some("Provide decisions and a decision_output for branch nodes".to_string()),
+                        Some(
+                            "Provide decisions and a decision_output for branch nodes".to_string(),
+                        ),
                     );
                 }
                 (SemanticNodeKind::Branch, Some(branch)) => {
@@ -312,7 +314,9 @@ impl Graph {
                                     default_decision, node.id
                                 ),
                                 format!("/nodes/{}/branch/default_decision", node.id),
-                                Some("default_decision must be one of branch.decisions".to_string()),
+                                Some(
+                                    "default_decision must be one of branch.decisions".to_string(),
+                                ),
                             );
                         }
                     }
@@ -439,7 +443,10 @@ impl Graph {
                                     expected_output.unwrap_or("<missing>")
                                 ),
                                 format!("/edges/from/{}/{}", edge.from.node_id, edge.from.port),
-                                Some("Point conditional edges at the declared decision_output".to_string()),
+                                Some(
+                                    "Point conditional edges at the declared decision_output"
+                                        .to_string(),
+                                ),
                             );
                         }
                         match &edge.decision {
@@ -504,7 +511,10 @@ impl Graph {
                                 decision, node.id
                             ),
                             format!("/nodes/{}/branch/decisions", node.id),
-                            Some("Add a conditional edge for every declared branch decision".to_string()),
+                            Some(
+                                "Add a conditional edge for every declared branch decision"
+                                    .to_string(),
+                            ),
                         );
                     }
                 }
