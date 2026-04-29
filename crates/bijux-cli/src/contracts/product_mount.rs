@@ -3,6 +3,7 @@
 use std::sync::OnceLock;
 
 use schemars::JsonSchema;
+use semver::Version;
 use serde::{Deserialize, Serialize};
 
 use super::command::Namespace;
@@ -67,11 +68,37 @@ pub enum ProductEntrypointKind {
 pub struct ProductEntrypoint {
     pub kind: ProductEntrypointKind,
     pub command: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub module: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub function: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct ProductHelpMetadata {
     pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ProductCompatibilityWindow {
+    pub min_cli_version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_cli_version_exclusive: Option<String>,
+}
+
+impl ProductCompatibilityWindow {
+    /// Build a compatibility window validated as semver.
+    pub fn new(
+        min_cli_version: impl Into<String>,
+        max_cli_version_exclusive: Option<String>,
+    ) -> Result<Self, String> {
+        let window = Self {
+            min_cli_version: min_cli_version.into(),
+            max_cli_version_exclusive,
+        };
+        validate_compatibility_window(&window)?;
+        Ok(window)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -87,6 +114,8 @@ pub struct ProductMountDescriptor {
     pub capabilities: Vec<String>,
     #[serde(default)]
     pub version: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compatibility: Option<ProductCompatibilityWindow>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -99,6 +128,7 @@ pub struct ProductMountDescriptorBuilder {
     help_summary: Option<String>,
     capabilities: Vec<String>,
     version: Option<String>,
+    compatibility: Option<ProductCompatibilityWindow>,
 }
 
 impl ProductMountDescriptor {
@@ -113,6 +143,7 @@ impl ProductMountDescriptor {
             help_summary: None,
             capabilities: Vec::new(),
             version: None,
+            compatibility: None,
         }
     }
 }
@@ -138,7 +169,18 @@ impl ProductMountDescriptorBuilder {
 
     #[must_use]
     pub fn entrypoint(mut self, kind: ProductEntrypointKind, command: impl Into<String>) -> Self {
-        self.entrypoint = Some(ProductEntrypoint { kind, command: command.into() });
+        self.entrypoint = Some(ProductEntrypoint {
+            kind,
+            command: command.into(),
+            module: None,
+            function: None,
+        });
+        self
+    }
+
+    #[must_use]
+    pub fn entrypoint_value(mut self, entrypoint: ProductEntrypoint) -> Self {
+        self.entrypoint = Some(entrypoint);
         self
     }
 
@@ -148,7 +190,18 @@ impl ProductMountDescriptorBuilder {
         kind: ProductEntrypointKind,
         command: impl Into<String>,
     ) -> Self {
-        self.control_entrypoint = Some(ProductEntrypoint { kind, command: command.into() });
+        self.control_entrypoint = Some(ProductEntrypoint {
+            kind,
+            command: command.into(),
+            module: None,
+            function: None,
+        });
+        self
+    }
+
+    #[must_use]
+    pub fn control_entrypoint_value(mut self, entrypoint: ProductEntrypoint) -> Self {
+        self.control_entrypoint = Some(entrypoint);
         self
     }
 
@@ -176,6 +229,12 @@ impl ProductMountDescriptorBuilder {
         self
     }
 
+    #[must_use]
+    pub fn compatibility(mut self, value: ProductCompatibilityWindow) -> Self {
+        self.compatibility = Some(value);
+        self
+    }
+
     pub fn build(self) -> Result<ProductMountDescriptor, String> {
         let descriptor = ProductMountDescriptor {
             namespace: self.namespace,
@@ -196,6 +255,7 @@ impl ProductMountDescriptorBuilder {
             },
             capabilities: self.capabilities,
             version: self.version,
+            compatibility: self.compatibility,
         };
         validate_product_mount_descriptor(&descriptor)?;
         Ok(descriptor)
@@ -209,12 +269,8 @@ pub fn validate_product_mount_descriptor(descriptor: &ProductMountDescriptor) ->
     if descriptor.help.summary.trim().is_empty() {
         return Err("product mount help summary cannot be empty".to_string());
     }
-    if descriptor.entrypoint.command.trim().is_empty() {
-        return Err("product mount entrypoint command cannot be empty".to_string());
-    }
-    if descriptor.control_entrypoint.command.trim().is_empty() {
-        return Err("product mount control entrypoint command cannot be empty".to_string());
-    }
+    validate_entrypoint("entrypoint", &descriptor.entrypoint)?;
+    validate_entrypoint("control entrypoint", &descriptor.control_entrypoint)?;
 
     let mut alias_set = std::collections::BTreeSet::new();
     for alias in &descriptor.aliases {
@@ -257,6 +313,62 @@ pub fn validate_product_mount_descriptor(descriptor: &ProductMountDescriptor) ->
         }
     }
 
+    if let Some(compatibility) = &descriptor.compatibility {
+        validate_compatibility_window(compatibility)?;
+    }
+
+    Ok(())
+}
+
+fn validate_entrypoint(label: &str, entrypoint: &ProductEntrypoint) -> Result<(), String> {
+    match entrypoint.kind {
+        ProductEntrypointKind::PythonModule => {
+            let module = entrypoint.module.as_deref().unwrap_or(entrypoint.command.as_str()).trim();
+            if module.is_empty() {
+                return Err(format!("product mount {label} python module cannot be empty"));
+            }
+            if let Some(function) = &entrypoint.function {
+                if function.trim().is_empty() {
+                    return Err(format!("product mount {label} python function cannot be empty"));
+                }
+            }
+        }
+        _ => {
+            if entrypoint.command.trim().is_empty() {
+                return Err(format!("product mount {label} command cannot be empty"));
+            }
+            if entrypoint.module.as_deref().is_some_and(|value| !value.trim().is_empty()) {
+                return Err(format!(
+                    "product mount {label} only supports `module` for python_module entrypoints"
+                ));
+            }
+            if entrypoint
+                .function
+                .as_deref()
+                .is_some_and(|value| !value.trim().is_empty())
+            {
+                return Err(format!(
+                    "product mount {label} only supports `function` for python_module entrypoints"
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_compatibility_window(window: &ProductCompatibilityWindow) -> Result<(), String> {
+    let min = Version::parse(&window.min_cli_version)
+        .map_err(|error| format!("min_cli_version is not valid semver: {error}"))?;
+    if let Some(max) = &window.max_cli_version_exclusive {
+        let max_version = Version::parse(max)
+            .map_err(|error| format!("max_cli_version_exclusive is not valid semver: {error}"))?;
+        if max_version <= min {
+            return Err(
+                "max_cli_version_exclusive must be greater than min_cli_version".to_string(),
+            );
+        }
+    }
     Ok(())
 }
 
@@ -332,14 +444,19 @@ impl KnownBijuxTool {
             entrypoint: ProductEntrypoint {
                 kind: ProductEntrypointKind::Binary,
                 command: self.runtime_binary(),
+                module: None,
+                function: None,
             },
             control_entrypoint: ProductEntrypoint {
                 kind: ProductEntrypointKind::Binary,
                 command: self.control_binary(),
+                module: None,
+                function: None,
             },
             help: ProductHelpMetadata { summary: self.help_summary.to_string() },
             capabilities: self.capabilities.iter().map(|value| (*value).to_string()).collect(),
             version: self.version.map(ToOwned::to_owned),
+            compatibility: None,
         }
     }
 }
@@ -581,14 +698,19 @@ mod tests {
             entrypoint: super::ProductEntrypoint {
                 kind: ProductEntrypointKind::Binary,
                 command: "workflow".to_string(),
+                module: None,
+                function: None,
             },
             control_entrypoint: super::ProductEntrypoint {
                 kind: ProductEntrypointKind::Binary,
                 command: "workflow".to_string(),
+                module: None,
+                function: None,
             },
             help: super::ProductHelpMetadata { summary: "Workflow runtime".to_string() },
             capabilities: vec!["json_output".to_string()],
             version: None,
+            compatibility: None,
         };
 
         let error = validate_product_mount_descriptor(&descriptor).expect_err("must reject");

@@ -69,6 +69,20 @@ fn parse_json(out: Output) -> Value {
     serde_json::from_slice(&out.stdout).expect("stdout should be valid json")
 }
 
+fn python_runtime() -> String {
+    if let Ok(explicit) = env::var("BIJUX_TEST_PYTHON") {
+        return explicit;
+    }
+    for candidate in ["python3", "python"] {
+        if let Ok(out) = Command::new(candidate).arg("--version").output() {
+            if out.status.success() {
+                return candidate.to_string();
+            }
+        }
+    }
+    panic!("python runtime is required for python app integration tests");
+}
+
 #[test]
 fn apps_list_reports_known_products_and_health_fields() {
     let root = temp_dir("apps-list");
@@ -350,6 +364,171 @@ fn project_local_python_module_mount_delegates_through_configured_interpreter() 
 }
 
 #[test]
+fn apps_validate_manifest_reports_python_callable_fields_and_compatibility() {
+    let root = temp_dir("apps-validate-python-callable");
+    let app_dir = root.join(".bijux/apps");
+    fs::create_dir_all(&app_dir).expect("mkdir app dir");
+    let manifest = app_dir.join("dag.mount.json");
+    fs::write(
+        &manifest,
+        r#"{
+  "namespace": "dag",
+  "display_name": "DAG Python App",
+  "entrypoint": {
+    "kind": "python_module",
+    "command": "dag_py_app.cli",
+    "module": "dag_py_app.cli",
+    "function": "main"
+  },
+  "control_entrypoint": {
+    "kind": "python_module",
+    "command": "dag_py_app.cli",
+    "module": "dag_py_app.cli",
+    "function": "main"
+  },
+  "help": { "summary": "Python callable app" },
+  "capabilities": ["json_output"],
+  "compatibility": {
+    "min_cli_version": "0.3.0",
+    "max_cli_version_exclusive": "1.0.0"
+  }
+}"#,
+    )
+    .expect("write manifest");
+
+    let payload = parse_json(run_with(
+        &root,
+        &[
+            "apps",
+            "validate-manifest",
+            manifest.to_str().expect("utf-8"),
+            "--format",
+            "json",
+            "--no-pretty",
+        ],
+        &[],
+    ));
+
+    assert_eq!(payload["valid"], true);
+    assert_eq!(payload["python_module"], "dag_py_app.cli");
+    assert_eq!(payload["python_function"], "main");
+    assert_eq!(payload["compatibility"]["compatible"], true);
+}
+
+#[test]
+fn apps_doctor_query_reports_python_dependency_details() {
+    let root = temp_dir("apps-doctor-python-query");
+    let app_dir = root.join(".bijux/apps");
+    fs::create_dir_all(&app_dir).expect("mkdir app dir");
+    fs::create_dir_all(root.join("dag_py_app")).expect("mkdir module dir");
+    fs::write(
+        root.join("dag_py_app/__init__.py"),
+        "\"\"\"test module\"\"\"\n",
+    )
+    .expect("write init");
+    fs::write(
+        root.join("dag_py_app/cli.py"),
+        "def main(argv):\n    return {'argv': argv}\n",
+    )
+    .expect("write cli");
+    fs::write(
+        app_dir.join("dag.mount.json"),
+        r#"{
+  "namespace": "dag",
+  "display_name": "DAG Python App",
+  "entrypoint": {
+    "kind": "python_module",
+    "command": "dag_py_app.cli",
+    "module": "dag_py_app.cli",
+    "function": "main"
+  },
+  "control_entrypoint": {
+    "kind": "python_module",
+    "command": "dag_py_app.cli",
+    "module": "dag_py_app.cli",
+    "function": "main"
+  },
+  "help": { "summary": "Python callable app" },
+  "capabilities": ["json_output"]
+}"#,
+    )
+    .expect("write manifest");
+
+    let payload = parse_json(run_with(
+        &root,
+        &["apps", "doctor", "dag", "--format", "json", "--no-pretty"],
+        &[
+            ("BIJUX_PYTHON_BIN", python_runtime()),
+            ("PYTHONPATH", root.display().to_string()),
+        ],
+    ));
+
+    assert_eq!(payload["namespace"], "dag");
+    assert_eq!(payload["app"]["python"]["module"], "dag_py_app.cli");
+    assert_eq!(payload["app"]["python"]["function"], "main");
+    assert_eq!(payload["app"]["python"]["import_ok"], true);
+    assert_eq!(payload["app"]["python"]["callable_ok"], true);
+    assert!(payload["app"]["python"]["attempts"].is_array());
+}
+
+#[test]
+fn project_local_python_callable_mount_routes_function_and_preserves_clean_json_stdout() {
+    let root = temp_dir("apps-python-callable-runtime");
+    let app_dir = root.join(".bijux/apps");
+    fs::create_dir_all(&app_dir).expect("mkdir app dir");
+    fs::create_dir_all(root.join("dag_py_app")).expect("mkdir module dir");
+    fs::write(
+        root.join("dag_py_app/__init__.py"),
+        "\"\"\"test module\"\"\"\n",
+    )
+    .expect("write init");
+    fs::write(
+        root.join("dag_py_app/cli.py"),
+        "def main(argv):\n    print('python-log-line')\n    return {'argv': argv, 'mode': 'callable'}\n",
+    )
+    .expect("write cli");
+    fs::write(
+        app_dir.join("dag.mount.json"),
+        r#"{
+  "namespace": "dag",
+  "display_name": "DAG Python App",
+  "entrypoint": {
+    "kind": "python_module",
+    "command": "dag_py_app.cli",
+    "module": "dag_py_app.cli",
+    "function": "main"
+  },
+  "control_entrypoint": {
+    "kind": "python_module",
+    "command": "dag_py_app.cli",
+    "module": "dag_py_app.cli",
+    "function": "main"
+  },
+  "help": { "summary": "Python callable app" },
+  "capabilities": ["json_output"]
+}"#,
+    )
+    .expect("write manifest");
+
+    let out = run_with(
+        &root,
+        &["dag", "validate", "graph.json"],
+        &[
+            ("BIJUX_PYTHON_BIN", python_runtime()),
+            ("PYTHONPATH", root.display().to_string()),
+        ],
+    );
+
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8(out.stdout).expect("stdout utf-8");
+    let payload: Value = serde_json::from_str(&stdout).expect("callable json stdout");
+    assert_eq!(payload["mode"], "callable");
+    assert_eq!(payload["argv"], serde_json::json!(["validate", "graph.json"]));
+    let stderr = String::from_utf8(out.stderr).expect("stderr utf-8");
+    assert!(stderr.contains("python-log-line"));
+}
+
+#[test]
 fn project_local_embedded_mount_handles_status_and_help_without_external_binary() {
     let root = temp_dir("apps-embedded");
     let app_dir = root.join(".bijux/apps");
@@ -500,8 +679,20 @@ fn apps_scaffold_python_generates_manifest_and_module_files() {
     assert_eq!(payload["namespace"], "sample");
     assert_eq!(payload["entrypoint_kind"], "python_module");
     assert!(target.join(".bijux/apps/sample.mount.json").exists());
+    assert!(target.join("pyproject.toml").exists());
     assert!(target.join("sample_app/__init__.py").exists());
+    assert!(target.join("sample_app/cli.py").exists());
     assert!(target.join("sample_app/__main__.py").exists());
+
+    let manifest: Value = serde_json::from_slice(
+        &fs::read(target.join(".bijux/apps/sample.mount.json")).expect("read manifest"),
+    )
+    .expect("manifest json");
+    assert_eq!(manifest["entrypoint"]["module"], "sample_app.cli");
+    assert_eq!(manifest["entrypoint"]["function"], "main");
+    assert!(manifest["compatibility"]["min_cli_version"]
+        .as_str()
+        .is_some_and(|value| value.starts_with(env!("CARGO_PKG_VERSION"))));
 }
 
 #[test]
@@ -525,23 +716,24 @@ fn scaffolded_custom_python_mount_routes_from_project_root() {
     ));
     assert_eq!(scaffold["status"], "scaffolded");
 
-    let bin_dir = root.join("bin");
-    fs::create_dir_all(&bin_dir).expect("mkdir bin dir");
-    write_stub_binary(&bin_dir, "fake-python", "fake-python 3.11.0");
+    let helper_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../bijux-cli-python/python")
+        .display()
+        .to_string();
+    let python_path = format!("{}{}{}", target.display(), if cfg!(windows) { ";" } else { ":" }, helper_path);
     let out = run_with(
         &target,
         &["sample", "version"],
-        &[(
-            "BIJUX_PYTHON_BIN",
-            bin_dir
-                .join(if cfg!(windows) { "fake-python.bat" } else { "fake-python" })
-                .display()
-                .to_string(),
-        )],
+        &[
+            ("BIJUX_PYTHON_BIN", python_runtime()),
+            ("PYTHONPATH", python_path),
+        ],
     );
 
     assert_eq!(out.status.code(), Some(0));
     let stdout = String::from_utf8(out.stdout).expect("utf-8");
-    assert!(stdout.contains("stub:fake-python"));
-    assert!(stdout.contains("args:-m sample_app version"));
+    let payload: Value = serde_json::from_str(&stdout).expect("scaffolded route json");
+    assert_eq!(payload["status"], "ok");
+    assert_eq!(payload["data"]["namespace"], "sample");
+    assert_eq!(payload["data"]["version"], "0.1.0");
 }

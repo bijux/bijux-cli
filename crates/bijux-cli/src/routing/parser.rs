@@ -304,7 +304,7 @@ pub fn root_command() -> Command {
         .subcommand(plugins_group.clone());
     let apps_group = Command::new("apps")
         .subcommand(Command::new("list"))
-        .subcommand(Command::new("doctor"))
+        .subcommand(Command::new("doctor").arg(Arg::new("namespace").num_args(1)))
         .subcommand(Command::new("which").arg(Arg::new("namespace").num_args(1).required(true)))
         .subcommand(Command::new("version").arg(Arg::new("namespace").num_args(1).required(true)))
         .subcommand(

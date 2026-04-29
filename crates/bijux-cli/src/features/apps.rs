@@ -5,10 +5,12 @@ use std::env;
 use std::fs;
 use std::path::Component;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::{json, Value};
+use semver::Version;
 
 use crate::contracts::{
     known_bijux_tool_by_query, known_bijux_tools, product_mount_descriptor_schema,
@@ -22,7 +24,73 @@ use crate::sdk::{FeatureCapabilityDeclaration, ProductMount};
 const DEFAULT_SYSTEM_APPS_DIR: &str = "/etc/bijux/apps";
 const BIJUX_APP_PATH: &str = "BIJUX_APP_PATH";
 const BIJUX_SYSTEM_APP_PATH: &str = "BIJUX_SYSTEM_APP_PATH";
+const BIJUX_PYTHON_BIN: &str = "BIJUX_PYTHON_BIN";
 const APP_SCAFFOLD_VERSION: &str = "0.1.0";
+const PYTHON_CALLABLE_RUNNER: &str = r#"import importlib, io, json, sys
+from contextlib import redirect_stdout
+module_name = sys.argv[1]
+function_name = sys.argv[2]
+argv = sys.argv[3:]
+module = importlib.import_module(module_name)
+target = getattr(module, function_name)
+if not callable(target):
+    raise TypeError(f"{module_name}.{function_name} is not callable")
+log_buffer = io.StringIO()
+with redirect_stdout(log_buffer):
+    result = target(argv)
+logs = log_buffer.getvalue()
+if logs:
+    sys.stderr.write(logs)
+if hasattr(result, "emit") and callable(result.emit):
+    raise SystemExit(int(result.emit()))
+if result is None:
+    raise SystemExit(0)
+if isinstance(result, bool):
+    raise SystemExit(0 if result else 1)
+if isinstance(result, int):
+    raise SystemExit(result)
+if isinstance(result, (dict, list)):
+    print(json.dumps(result, indent=2))
+    raise SystemExit(0)
+if isinstance(result, str):
+    print(result)
+    raise SystemExit(0)
+raise SystemExit(int(result))
+"#;
+const PYTHON_DOCTOR_PROBE: &str = r#"import importlib, importlib.metadata, json, sys
+module_name = sys.argv[1]
+function_name = None if sys.argv[2] == "-" else sys.argv[2]
+payload = {
+    "module": module_name,
+    "function": function_name,
+    "import_ok": False,
+    "import_error": None,
+    "package_version": None,
+    "callable_ok": None,
+    "callable_error": None,
+}
+try:
+    module = importlib.import_module(module_name)
+    payload["import_ok"] = True
+    for candidate in (module_name, module_name.split(".")[0]):
+        try:
+            payload["package_version"] = importlib.metadata.version(candidate)
+            break
+        except importlib.metadata.PackageNotFoundError:
+            pass
+    if function_name is not None:
+        try:
+            target = getattr(module, function_name)
+            payload["callable_ok"] = callable(target)
+            if not payload["callable_ok"]:
+                payload["callable_error"] = f"{module_name}.{function_name} is not callable"
+        except Exception as exc:
+            payload["callable_ok"] = False
+            payload["callable_error"] = f"{type(exc).__name__}: {exc}"
+except Exception as exc:
+    payload["import_error"] = f"{type(exc).__name__}: {exc}"
+print(json.dumps(payload))
+"#;
 const RESERVED_APP_NAMESPACES: &[&str] = &[
     "apps",
     "cli",
@@ -72,6 +140,15 @@ pub enum AppQueryMatch {
     Alias,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PythonInterpreterSource {
+    ActiveVenv,
+    ProjectVenv,
+    SystemPath,
+    Configured,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AppDiscoveryPath {
     pub source: AppDiscoverySource,
@@ -85,6 +162,28 @@ pub struct AppProbe {
     pub location: String,
     pub status: String,
     pub message: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PythonInterpreterAttempt {
+    pub source: PythonInterpreterSource,
+    pub location: String,
+    pub status: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PythonDoctorReport {
+    pub module: String,
+    pub function: Option<String>,
+    pub interpreter_source: Option<PythonInterpreterSource>,
+    pub interpreter: Option<String>,
+    pub attempts: Vec<PythonInterpreterAttempt>,
+    pub import_ok: bool,
+    pub import_error: Option<String>,
+    pub package_version: Option<String>,
+    pub callable_ok: Option<bool>,
+    pub callable_error: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -107,6 +206,8 @@ pub struct AppMountReport {
     pub probes: Vec<AppProbe>,
     pub issues: Vec<String>,
     pub help_summary: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub python: Option<PythonDoctorReport>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -135,6 +236,15 @@ pub struct AppsDoctorReport {
     pub discovery_paths: Vec<AppDiscoveryPath>,
     pub summary: AppMountSummary,
     pub apps: Vec<AppMountReport>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AppDoctorReport {
+    pub status: String,
+    pub query: String,
+    pub matched_via: AppQueryMatch,
+    pub namespace: String,
+    pub app: AppMountReport,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -195,6 +305,12 @@ pub struct AppManifestValidationReport {
     pub valid: bool,
     pub namespace: Option<String>,
     pub entrypoint_kind: Option<ProductEntrypointKind>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub python_module: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub python_function: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub compatibility: Option<Value>,
     pub issues: Vec<String>,
 }
 
@@ -280,6 +396,7 @@ struct DisabledRegistryCandidate {
 #[derive(Debug, Clone)]
 struct ResolutionConfig {
     probe_version: bool,
+    probe_python: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -294,6 +411,7 @@ struct AppResolution {
     probes: Vec<AppProbe>,
     version: Option<String>,
     version_source: Option<String>,
+    python: Option<PythonDoctorReport>,
 }
 
 fn precedence_names() -> Vec<String> {
@@ -634,12 +752,13 @@ fn resolve_descriptor_runtime_command(
             }
         }
         ProductEntrypointKind::PythonModule => {
-            let interpreter = resolve_python_interpreter()
-                .map(|path| path.display().to_string())
-                .unwrap_or_else(|| {
-                    env::var("BIJUX_PYTHON_BIN").unwrap_or_else(|_| "python3".to_string())
-                });
-            let args = vec!["-m".to_string(), descriptor.entrypoint.command.clone()];
+            let resolution = resolve_python_interpreter();
+            let interpreter = resolution
+                .selected
+                .as_ref()
+                .map(|(_, path)| path.display().to_string())
+                .unwrap_or_else(|| env::var(BIJUX_PYTHON_BIN).unwrap_or_else(|_| "python3".to_string()));
+            let args = python_runtime_args(&descriptor.entrypoint);
             ResolvedAppCommand {
                 display_command: format_display_command(&interpreter, &args),
                 command: interpreter,
@@ -684,12 +803,13 @@ fn resolve_descriptor_control_command(
             }
         }
         ProductEntrypointKind::PythonModule => {
-            let interpreter = resolve_python_interpreter()
-                .map(|path| path.display().to_string())
-                .unwrap_or_else(|| {
-                    env::var("BIJUX_PYTHON_BIN").unwrap_or_else(|_| "python3".to_string())
-                });
-            let args = vec!["-m".to_string(), descriptor.control_entrypoint.command.clone()];
+            let resolution = resolve_python_interpreter();
+            let interpreter = resolution
+                .selected
+                .as_ref()
+                .map(|(_, path)| path.display().to_string())
+                .unwrap_or_else(|| env::var(BIJUX_PYTHON_BIN).unwrap_or_else(|_| "python3".to_string()));
+            let args = python_runtime_args(&descriptor.control_entrypoint);
             ResolvedAppCommand {
                 display_command: format_display_command(&interpreter, &args),
                 command: interpreter,
@@ -753,17 +873,151 @@ fn format_display_command(command: &str, args: &[String]) -> String {
     }
 }
 
-fn resolve_python_interpreter() -> Option<PathBuf> {
-    if let Some(explicit) = env::var_os("BIJUX_PYTHON_BIN") {
-        let path = PathBuf::from(explicit);
-        return path.exists().then_some(path);
+#[derive(Debug, Clone)]
+struct PythonInterpreterResolution {
+    selected: Option<(PythonInterpreterSource, PathBuf)>,
+    attempts: Vec<PythonInterpreterAttempt>,
+}
+
+fn python_runtime_args(entrypoint: &ProductEntrypoint) -> Vec<String> {
+    let module = python_module_name(entrypoint);
+    let function = entrypoint.function.as_deref().map(str::trim).filter(|value| !value.is_empty());
+    match function {
+        Some(function) => vec![
+            "-c".to_string(),
+            PYTHON_CALLABLE_RUNNER.to_string(),
+            module.to_string(),
+            function.to_string(),
+        ],
+        None => vec!["-m".to_string(), module.to_string()],
+    }
+}
+
+fn python_module_name(entrypoint: &ProductEntrypoint) -> &str {
+    entrypoint
+        .module
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or(entrypoint.command.as_str())
+}
+
+fn python_interpreter_names() -> &'static [&'static str] {
+    if cfg!(windows) {
+        &["python.exe", "python"]
+    } else {
+        &["python3", "python"]
+    }
+}
+
+fn python_executable_in(root: &Path) -> Option<PathBuf> {
+    let names = python_interpreter_names();
+    let candidates = if cfg!(windows) {
+        vec![root.join("Scripts").join(names[0]), root.join("Scripts").join(names[1])]
+    } else {
+        vec![root.join("bin").join(names[0]), root.join("bin").join(names[1])]
+    };
+    candidates.into_iter().find(|candidate| candidate.exists())
+}
+
+fn resolve_python_interpreter() -> PythonInterpreterResolution {
+    let mut attempts = Vec::new();
+
+    if let Some(active_venv) = env::var_os("VIRTUAL_ENV") {
+        let root = PathBuf::from(active_venv);
+        if let Some(candidate) = python_executable_in(&root) {
+            attempts.push(PythonInterpreterAttempt {
+                source: PythonInterpreterSource::ActiveVenv,
+                location: candidate.display().to_string(),
+                status: "ok".to_string(),
+                message: "selected interpreter from active virtual environment".to_string(),
+            });
+            return PythonInterpreterResolution {
+                selected: Some((PythonInterpreterSource::ActiveVenv, candidate)),
+                attempts,
+            };
+        }
+        attempts.push(PythonInterpreterAttempt {
+            source: PythonInterpreterSource::ActiveVenv,
+            location: root.display().to_string(),
+            status: "missing".to_string(),
+            message: "active virtual environment does not expose a usable python executable".to_string(),
+        });
     }
 
-    which_in_path("python3").or_else(|| which_in_path("python"))
+    if let Ok(cwd) = env::current_dir() {
+        for candidate_root in cwd.ancestors().map(|value| value.join(".venv")) {
+            if !candidate_root.exists() {
+                continue;
+            }
+            if let Some(candidate) = python_executable_in(&candidate_root) {
+                attempts.push(PythonInterpreterAttempt {
+                    source: PythonInterpreterSource::ProjectVenv,
+                    location: candidate.display().to_string(),
+                    status: "ok".to_string(),
+                    message: "selected interpreter from project .venv".to_string(),
+                });
+                return PythonInterpreterResolution {
+                    selected: Some((PythonInterpreterSource::ProjectVenv, candidate)),
+                    attempts,
+                };
+            }
+            attempts.push(PythonInterpreterAttempt {
+                source: PythonInterpreterSource::ProjectVenv,
+                location: candidate_root.display().to_string(),
+                status: "missing".to_string(),
+                message: "project .venv exists but no usable python executable was found".to_string(),
+            });
+        }
+    }
+
+    for candidate_name in python_interpreter_names() {
+        if let Some(candidate) = which_in_path(candidate_name) {
+            attempts.push(PythonInterpreterAttempt {
+                source: PythonInterpreterSource::SystemPath,
+                location: candidate.display().to_string(),
+                status: "ok".to_string(),
+                message: format!("selected interpreter from PATH lookup for `{candidate_name}`"),
+            });
+            return PythonInterpreterResolution {
+                selected: Some((PythonInterpreterSource::SystemPath, candidate)),
+                attempts,
+            };
+        }
+        attempts.push(PythonInterpreterAttempt {
+            source: PythonInterpreterSource::SystemPath,
+            location: candidate_name.to_string(),
+            status: "missing".to_string(),
+            message: "interpreter name was not found on PATH".to_string(),
+        });
+    }
+
+    if let Some(explicit) = env::var_os(BIJUX_PYTHON_BIN) {
+        let path = PathBuf::from(explicit);
+        if path.exists() {
+            attempts.push(PythonInterpreterAttempt {
+                source: PythonInterpreterSource::Configured,
+                location: path.display().to_string(),
+                status: "ok".to_string(),
+                message: format!("selected interpreter from {BIJUX_PYTHON_BIN}"),
+            });
+            return PythonInterpreterResolution {
+                selected: Some((PythonInterpreterSource::Configured, path)),
+                attempts,
+            };
+        }
+        attempts.push(PythonInterpreterAttempt {
+            source: PythonInterpreterSource::Configured,
+            location: path.display().to_string(),
+            status: "missing".to_string(),
+            message: format!("{BIJUX_PYTHON_BIN} points to a missing interpreter"),
+        });
+    }
+
+    PythonInterpreterResolution { selected: None, attempts }
 }
 
 fn probe_version(invocation: &ResolvedAppCommand) -> Option<String> {
-    let output = std::process::Command::new(&invocation.command)
+    let output = Command::new(&invocation.command)
         .args(&invocation.args)
         .arg("--version")
         .output()
@@ -775,6 +1029,102 @@ fn probe_version(invocation: &ResolvedAppCommand) -> Option<String> {
         .lines()
         .find(|line| !line.trim().is_empty())
         .map(|line| line.trim().to_string())
+}
+
+fn probe_python_doctor(
+    entrypoint: &ProductEntrypoint,
+    resolution: &PythonInterpreterResolution,
+) -> PythonDoctorReport {
+    let module = python_module_name(entrypoint).to_string();
+    let function = entrypoint.function.clone();
+    let mut report = PythonDoctorReport {
+        module: module.clone(),
+        function: function.clone(),
+        interpreter_source: resolution.selected.as_ref().map(|(source, _)| *source),
+        interpreter: resolution
+            .selected
+            .as_ref()
+            .map(|(_, path)| path.display().to_string()),
+        attempts: resolution.attempts.clone(),
+        import_ok: false,
+        import_error: None,
+        package_version: None,
+        callable_ok: function.as_ref().map(|_| false),
+        callable_error: None,
+    };
+
+    let Some((_, interpreter)) = &resolution.selected else {
+        report.import_error = Some("no python interpreter resolved".to_string());
+        return report;
+    };
+
+    let output = Command::new(interpreter)
+        .args([
+            "-c",
+            PYTHON_DOCTOR_PROBE,
+            module.as_str(),
+            function.as_deref().unwrap_or("-"),
+        ])
+        .output();
+
+    let Ok(output) = output else {
+        report.import_error = Some("failed to execute python dependency probe".to_string());
+        return report;
+    };
+
+    let payload = if output.stdout.is_empty() {
+        output.stderr.clone()
+    } else {
+        output.stdout.clone()
+    };
+    let parsed = serde_json::from_slice::<Value>(&payload);
+    let Ok(parsed) = parsed else {
+        report.import_error = Some(format!(
+            "python dependency probe returned non-json output: {}",
+            String::from_utf8_lossy(&payload).trim()
+        ));
+        return report;
+    };
+
+    report.import_ok = parsed["import_ok"].as_bool().unwrap_or(false);
+    report.import_error = parsed["import_error"].as_str().map(ToOwned::to_owned);
+    report.package_version = parsed["package_version"].as_str().map(ToOwned::to_owned);
+    report.callable_ok = parsed["callable_ok"].as_bool();
+    report.callable_error = parsed["callable_error"].as_str().map(ToOwned::to_owned);
+    report
+}
+
+fn compatibility_report_json(descriptor: &ProductMountDescriptor) -> Option<Value> {
+    let window = descriptor.compatibility.as_ref()?;
+    let host_cli_version = crate::shared::version::runtime_semver().to_string();
+    let host = Version::parse(&host_cli_version).ok()?;
+    let min = Version::parse(&window.min_cli_version).ok()?;
+    let max = window
+        .max_cli_version_exclusive
+        .as_ref()
+        .and_then(|value| Version::parse(value).ok());
+    let mut reasons = Vec::new();
+    if host < min {
+        reasons.push(format!(
+            "host version `{host_cli_version}` is below required minimum `{}`",
+            window.min_cli_version
+        ));
+    }
+    if let Some(max_version) = &max {
+        if host >= *max_version {
+            reasons.push(format!(
+                "host version `{host_cli_version}` is not below exclusive maximum `{}`",
+                max_version
+            ));
+        }
+    }
+    Some(json!({
+        "compatible": reasons.is_empty(),
+        "host_cli_version": host_cli_version,
+        "min_cli_version": window.min_cli_version,
+        "max_cli_version_exclusive": window.max_cli_version_exclusive,
+        "reasons": reasons,
+    }))
 }
 
 fn plugin_conflicts(tool: &KnownBijuxTool, plugin_registry_path: &Path) -> Vec<String> {
@@ -986,6 +1336,7 @@ fn resolve_tool(
             probes,
             version: None,
             version_source: None,
+            python: None,
         };
     }
 
@@ -1004,6 +1355,8 @@ fn resolve_tool(
         issues.push(conflict);
         health = AppHealth::Conflict;
     }
+
+    let mut python_resolution = None;
 
     let runtime_resolution = match descriptor.entrypoint.kind {
         ProductEntrypointKind::Binary
@@ -1075,7 +1428,12 @@ fn resolve_tool(
                 }
             }
         }
-        ProductEntrypointKind::PythonModule => match resolve_python_interpreter() {
+        ProductEntrypointKind::PythonModule => {
+            let resolution = resolve_python_interpreter();
+            if config.probe_python {
+                python_resolution = Some(probe_python_doctor(&descriptor.entrypoint, &resolution));
+            }
+            match resolution.selected.as_ref().map(|(_, path)| path.clone()) {
             Some(path) if !is_executable(&path) => {
                 health = AppHealth::PermissionDenied;
                 issues.push(format!(
@@ -1088,14 +1446,11 @@ fn resolve_tool(
                     status: "permission_denied".to_string(),
                     message: "python interpreter is not executable".to_string(),
                 });
+                let args = python_runtime_args(&descriptor.entrypoint);
                 Some(ResolvedAppCommand {
                     command: path.display().to_string(),
-                    args: vec!["-m".to_string(), descriptor.entrypoint.command.clone()],
-                    display_command: format!(
-                        "{} -m {}",
-                        path.display(),
-                        descriptor.entrypoint.command
-                    ),
+                    display_command: format_display_command(&path.display().to_string(), &args),
+                    args,
                     source: AppDiscoverySource::PathFallback,
                     kind: ProductEntrypointKind::PythonModule,
                     namespace: tool.namespace.to_string(),
@@ -1103,23 +1458,28 @@ fn resolve_tool(
                 })
             }
             Some(path) => {
+                let selected_source = resolution
+                    .selected
+                    .as_ref()
+                    .map(|(source, _)| *source)
+                    .unwrap_or(PythonInterpreterSource::SystemPath);
                 probes.push(AppProbe {
                     source: AppDiscoverySource::PathFallback,
                     location: path.display().to_string(),
                     status: "ok".to_string(),
-                    message: "python module will be executed through resolved interpreter".to_string(),
+                    message: format!(
+                        "python module will be executed through resolved interpreter ({selected_source:?})"
+                    )
+                    .to_ascii_lowercase(),
                 });
                 if !matches!(health, AppHealth::Conflict) {
                     health = AppHealth::Ok;
                 }
+                let args = python_runtime_args(&descriptor.entrypoint);
                 Some(ResolvedAppCommand {
                     command: path.display().to_string(),
-                    args: vec!["-m".to_string(), descriptor.entrypoint.command.clone()],
-                    display_command: format!(
-                        "{} -m {}",
-                        path.display(),
-                        descriptor.entrypoint.command
-                    ),
+                    display_command: format_display_command(&path.display().to_string(), &args),
+                    args,
                     source: AppDiscoverySource::PathFallback,
                     kind: ProductEntrypointKind::PythonModule,
                     namespace: tool.namespace.to_string(),
@@ -1127,30 +1487,36 @@ fn resolve_tool(
                 })
             }
             None => {
-                probes.push(AppProbe {
-                    source: AppDiscoverySource::PathFallback,
-                    location: "python3|python".to_string(),
-                    status: "missing".to_string(),
-                    message: "python interpreter was not found on PATH".to_string(),
-                });
+                for attempt in &resolution.attempts {
+                    probes.push(AppProbe {
+                        source: AppDiscoverySource::PathFallback,
+                        location: attempt.location.clone(),
+                        status: attempt.status.clone(),
+                        message: format!(
+                            "{} ({})",
+                            attempt.message,
+                            serde_json::to_string(&attempt.source)
+                                .unwrap_or_else(|_| "\"unknown\"".to_string())
+                                .trim_matches('"')
+                        ),
+                    });
+                }
                 if !matches!(health, AppHealth::Conflict | AppHealth::BadManifest) {
                     health = AppHealth::Missing;
                 }
+                let command = env::var(BIJUX_PYTHON_BIN).unwrap_or_else(|_| "python3".to_string());
+                let args = python_runtime_args(&descriptor.entrypoint);
                 Some(ResolvedAppCommand {
-                    command: env::var("BIJUX_PYTHON_BIN").unwrap_or_else(|_| "python3".to_string()),
-                    args: vec!["-m".to_string(), descriptor.entrypoint.command.clone()],
-                    display_command: format!(
-                        "{} -m {}",
-                        env::var("BIJUX_PYTHON_BIN").unwrap_or_else(|_| "python3".to_string()),
-                        descriptor.entrypoint.command
-                    ),
+                    display_command: format_display_command(&command, &args),
+                    command,
+                    args,
                     source: AppDiscoverySource::PathFallback,
                     kind: ProductEntrypointKind::PythonModule,
                     namespace: tool.namespace.to_string(),
                     descriptor: descriptor.clone(),
                 })
             }
-        },
+        }}
         ProductEntrypointKind::EmbeddedRust => {
             probes.push(AppProbe {
                 source: descriptor_source,
@@ -1221,6 +1587,7 @@ fn resolve_tool(
         probes,
         version,
         version_source,
+        python: python_resolution,
     }
 }
 
@@ -1255,6 +1622,7 @@ fn mount_report(tool: &KnownBijuxTool, resolution: AppResolution) -> AppMountRep
         probes: resolution.probes,
         issues: resolution.issues,
         help_summary: resolution.descriptor.help.summary,
+        python: resolution.python,
     }
 }
 
@@ -1294,7 +1662,14 @@ pub fn resolve_runtime_command(query: &str) -> Option<ResolvedAppCommand> {
             compatibility_config_file: PathBuf::new(),
             compatibility_config_warning: None,
         };
-        let resolution = resolve_tool(tool, &paths, ResolutionConfig { probe_version: false });
+        let resolution = resolve_tool(
+            tool,
+            &paths,
+            ResolutionConfig {
+                probe_version: false,
+                probe_python: false,
+            },
+        );
         return resolution
             .runtime_resolution
             .or_else(|| Some(resolve_descriptor_runtime_command(resolution.descriptor, resolution.descriptor_source)));
@@ -1325,7 +1700,17 @@ pub fn apps_list_report(
     let apps = known_bijux_tools()
         .iter()
         .map(|tool| {
-            mount_report(tool, resolve_tool(tool, paths, ResolutionConfig { probe_version: false }))
+            mount_report(
+                tool,
+                resolve_tool(
+                    tool,
+                    paths,
+                    ResolutionConfig {
+                        probe_version: false,
+                        probe_python: false,
+                    },
+                ),
+            )
         })
         .collect::<Vec<_>>();
     let healths = apps.iter().map(|item| item.health).collect::<Vec<_>>();
@@ -1348,7 +1733,17 @@ pub fn apps_doctor_report(
     let apps = known_bijux_tools()
         .iter()
         .map(|tool| {
-            mount_report(tool, resolve_tool(tool, paths, ResolutionConfig { probe_version: true }))
+            mount_report(
+                tool,
+                resolve_tool(
+                    tool,
+                    paths,
+                    ResolutionConfig {
+                        probe_version: true,
+                        probe_python: true,
+                    },
+                ),
+            )
         })
         .collect::<Vec<_>>();
     let healths = apps.iter().map(|item| item.health).collect::<Vec<_>>();
@@ -1364,11 +1759,39 @@ pub fn apps_doctor_report(
     }
 }
 
+/// Build root `apps doctor <query>` output.
+pub fn app_doctor_report(query: &str, paths: &ResolvedStatePaths) -> Result<AppDoctorReport, String> {
+    let tool =
+        known_bijux_tool_by_query(query).ok_or_else(|| format!("unknown official app: {query}"))?;
+    let resolution = resolve_tool(
+        tool,
+        paths,
+        ResolutionConfig {
+            probe_version: true,
+            probe_python: true,
+        },
+    );
+    Ok(AppDoctorReport {
+        status: status_from_healths(&[resolution.health]),
+        query: query.to_string(),
+        matched_via: query_match(tool, query),
+        namespace: tool.namespace.to_string(),
+        app: mount_report(tool, resolution),
+    })
+}
+
 /// Build root `apps which` output.
 pub fn app_which_report(query: &str, paths: &ResolvedStatePaths) -> Result<AppWhichReport, String> {
     let tool =
         known_bijux_tool_by_query(query).ok_or_else(|| format!("unknown official app: {query}"))?;
-    let resolution = resolve_tool(tool, paths, ResolutionConfig { probe_version: false });
+    let resolution = resolve_tool(
+        tool,
+        paths,
+        ResolutionConfig {
+            probe_version: false,
+            probe_python: false,
+        },
+    );
     let status = status_from_healths(&[resolution.health]);
     let resolution_policy = resolution_policy(&resolution.shadowed_plugins);
     Ok(AppWhichReport {
@@ -1395,7 +1818,14 @@ pub fn app_version_report(
 ) -> Result<AppVersionReport, String> {
     let tool =
         known_bijux_tool_by_query(query).ok_or_else(|| format!("unknown official app: {query}"))?;
-    let resolution = resolve_tool(tool, paths, ResolutionConfig { probe_version: true });
+    let resolution = resolve_tool(
+        tool,
+        paths,
+        ResolutionConfig {
+            probe_version: true,
+            probe_python: false,
+        },
+    );
     Ok(AppVersionReport {
         status: status_from_healths(&[resolution.health]),
         query: query.to_string(),
@@ -1415,7 +1845,14 @@ pub fn app_capabilities_report(
 ) -> Result<AppCapabilitiesReport, String> {
     let tool =
         known_bijux_tool_by_query(query).ok_or_else(|| format!("unknown official app: {query}"))?;
-    let resolution = resolve_tool(tool, paths, ResolutionConfig { probe_version: false });
+    let resolution = resolve_tool(
+        tool,
+        paths,
+        ResolutionConfig {
+            probe_version: false,
+            probe_python: false,
+        },
+    );
     Ok(AppCapabilitiesReport {
         status: status_from_healths(&[resolution.health]),
         query: query.to_string(),
@@ -1454,7 +1891,10 @@ pub fn validate_app_manifest_report(path: &Path) -> AppManifestValidationReport 
             path: path.display().to_string(),
             valid: true,
             namespace: Some(descriptor.namespace.as_str().to_string()),
-            entrypoint_kind: Some(descriptor.entrypoint.kind),
+            entrypoint_kind: Some(descriptor.entrypoint.kind.clone()),
+            python_module: descriptor.entrypoint.module.clone(),
+            python_function: descriptor.entrypoint.function.clone(),
+            compatibility: compatibility_report_json(&descriptor),
             issues: Vec::new(),
         },
         Err(error) => AppManifestValidationReport {
@@ -1463,6 +1903,9 @@ pub fn validate_app_manifest_report(path: &Path) -> AppManifestValidationReport 
             valid: false,
             namespace: None,
             entrypoint_kind: None,
+            python_module: None,
+            python_function: None,
+            compatibility: None,
             issues: vec![error],
         },
     }
@@ -1537,23 +1980,38 @@ pub fn scaffold_app_mount(
                 format!("failed to create python module directory `{}`: {error}", module_dir.display())
             })?;
             fs::write(
+                target_root.join("pyproject.toml"),
+                format!(
+                    "[project]\nname = \"bijux-{namespace}-app\"\nversion = \"{APP_SCAFFOLD_VERSION}\"\ndescription = \"Scaffolded Bijux Python app for {namespace}\"\nrequires-python = \">=3.11\"\ndependencies = [\"bijux-cli>=0.3\"]\n\n[project.scripts]\n{namespace} = \"{module_name}.__main__:entrypoint\"\n",
+                    namespace = namespace.as_str(),
+                    module_name = module_name,
+                ),
+            )
+            .map_err(|error| format!("failed to write python pyproject.toml: {error}"))?;
+            fs::write(
                 module_dir.join("__init__.py"),
                 "\"\"\"Scaffolded Bijux app package.\"\"\"\n",
             )
             .map_err(|error| format!("failed to write python module init: {error}"))?;
             fs::write(
-                module_dir.join("__main__.py"),
+                module_dir.join("cli.py"),
                 format!(
-                    "import json\nimport sys\n\n\ndef main() -> int:\n    argv = sys.argv[1:]\n    if any(arg in ('--help', '-h', 'help') for arg in argv):\n        print('Usage: bijux {namespace} [ARGS]')\n        print('\\nScaffolded Python app mount for {namespace}.')\n        return 0\n    if argv[:1] == ['version']:\n        print('{namespace} {APP_SCAFFOLD_VERSION}')\n        return 0\n    print(json.dumps({{'status': 'ok', 'namespace': '{namespace}', 'argv': argv}}, indent=2))\n    return 0\n\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n",
+                    "from bijux_cli_py.app_sdk import compatibility_report, success\n\n\ndef main(argv: list[str]):\n    if any(arg in ('--help', '-h', 'help') for arg in argv):\n        return success({{'usage': 'bijux {namespace} [ARGS]', 'summary': 'Scaffolded Python app mount for {namespace}.'}}, command=['{namespace}', 'help'])\n    if argv[:1] == ['version']:\n        return success({{'namespace': '{namespace}', 'version': '{APP_SCAFFOLD_VERSION}'}}, command=['{namespace}', 'version'])\n    if argv[:1] == ['compatibility']:\n        return success(compatibility_report('{min_cli_version}'), command=['{namespace}', 'compatibility'])\n    return success({{'status': 'ok', 'namespace': '{namespace}', 'argv': argv}}, command=['{namespace}'])\n",
                     namespace = namespace.as_str(),
+                    min_cli_version = crate::shared::version::runtime_semver(),
                 ),
+            )
+            .map_err(|error| format!("failed to write python module cli: {error}"))?;
+            fs::write(
+                module_dir.join("__main__.py"),
+                "import sys\n\nfrom bijux_cli_py.app_sdk import run_json_app\n\nfrom .cli import main\n\n\ndef entrypoint() -> int:\n    return run_json_app(main, argv=sys.argv[1:])\n\n\nif __name__ == '__main__':\n    raise SystemExit(entrypoint())\n",
             )
             .map_err(|error| format!("failed to write python module main: {error}"))?;
 
             ProductMount::new(namespace.as_str())?
                 .display_name(format!("{} App", namespace.as_str()))
-                .python_module(module_name.clone())
-                .control_python_module(module_name)
+                .python_callable(format!("{module_name}.cli"), "main")
+                .control_python_callable(format!("{module_name}.cli"), "main")
                 .summary(format!("Scaffolded Python app for {}", namespace.as_str()))
                 .capability("json_output")
                 .feature_capabilities(FeatureCapabilityDeclaration {
@@ -1561,6 +2019,12 @@ pub fn scaffold_app_mount(
                     ..FeatureCapabilityDeclaration::default()
                 })
                 .version(APP_SCAFFOLD_VERSION)
+                .compatibility(
+                    crate::sdk::SdkCompatibilityWindow::new(
+                        crate::shared::version::runtime_semver().to_string(),
+                        None,
+                    )?,
+                )
                 .build_descriptor()?
         }
         "rust" => {
@@ -1619,7 +2083,9 @@ pub fn scaffold_app_mount(
     let mut files = vec![manifest_path.display().to_string()];
     if kind == "python" {
         let module_name = app_module_name(namespace.as_str());
+        files.push(target_root.join("pyproject.toml").display().to_string());
         files.push(target_root.join(&module_name).join("__init__.py").display().to_string());
+        files.push(target_root.join(&module_name).join("cli.py").display().to_string());
         files.push(target_root.join(module_name).join("__main__.py").display().to_string());
     } else {
         files.push(target_root.join("Cargo.toml").display().to_string());

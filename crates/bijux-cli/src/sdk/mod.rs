@@ -14,7 +14,7 @@ use serde_json::{json, Value};
 use crate::contracts::{
     ColorMode, CommandPath, ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, ExitCode, LogLevel,
     Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat, PrettyMode,
-    ProductEntrypoint, ProductEntrypointKind, ProductMountDescriptor,
+    ProductCompatibilityWindow, ProductEntrypoint, ProductEntrypointKind, ProductMountDescriptor,
 };
 use crate::contracts::diagnostics::DiagnosticRecord;
 use crate::shared::output::{emit_error, emit_success, EmitterConfig};
@@ -61,34 +61,7 @@ impl FeatureCapabilityDeclaration {
 }
 
 /// Runtime compatibility declaration for mounted apps.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub struct SdkCompatibilityWindow {
-    pub min_cli_version: String,
-    pub max_cli_version_exclusive: Option<String>,
-}
-
-impl SdkCompatibilityWindow {
-    /// Build a compatibility window validated as semver.
-    pub fn new(
-        min_cli_version: impl Into<String>,
-        max_cli_version_exclusive: Option<String>,
-    ) -> Result<Self, String> {
-        let min_cli_version = min_cli_version.into();
-        Version::parse(&min_cli_version)
-            .map_err(|error| format!("min_cli_version is not valid semver: {error}"))?;
-        if let Some(max) = &max_cli_version_exclusive {
-            let min = Version::parse(&min_cli_version).expect("validated min semver");
-            let max_version = Version::parse(max)
-                .map_err(|error| format!("max_cli_version_exclusive is not valid semver: {error}"))?;
-            if max_version <= min {
-                return Err(
-                    "max_cli_version_exclusive must be greater than min_cli_version".to_string(),
-                );
-            }
-        }
-        Ok(Self { min_cli_version, max_cli_version_exclusive })
-    }
-}
+pub type SdkCompatibilityWindow = ProductCompatibilityWindow;
 
 /// Compatibility-check report for mounted apps.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -202,6 +175,22 @@ impl ProductMount {
     }
 
     #[must_use]
+    pub fn python_callable(
+        mut self,
+        module: impl Into<String>,
+        function: impl Into<String>,
+    ) -> Self {
+        let module = module.into();
+        self.runtime_entrypoint = Some(ProductEntrypoint {
+            kind: ProductEntrypointKind::PythonModule,
+            command: module.clone(),
+            module: Some(module),
+            function: Some(function.into()),
+        });
+        self
+    }
+
+    #[must_use]
     pub fn python_console_script(self, command: impl Into<String>) -> Self {
         self.runtime_entrypoint(ProductEntrypointKind::PythonConsoleScript, command)
     }
@@ -227,6 +216,22 @@ impl ProductMount {
     }
 
     #[must_use]
+    pub fn control_python_callable(
+        mut self,
+        module: impl Into<String>,
+        function: impl Into<String>,
+    ) -> Self {
+        let module = module.into();
+        self.control_entrypoint = Some(ProductEntrypoint {
+            kind: ProductEntrypointKind::PythonModule,
+            command: module.clone(),
+            module: Some(module),
+            function: Some(function.into()),
+        });
+        self
+    }
+
+    #[must_use]
     pub fn control_python_console_script(self, command: impl Into<String>) -> Self {
         self.control_entrypoint(ProductEntrypointKind::PythonConsoleScript, command)
     }
@@ -243,7 +248,12 @@ impl ProductMount {
 
     #[must_use]
     fn runtime_entrypoint(mut self, kind: ProductEntrypointKind, command: impl Into<String>) -> Self {
-        self.runtime_entrypoint = Some(ProductEntrypoint { kind, command: command.into() });
+        self.runtime_entrypoint = Some(ProductEntrypoint {
+            kind,
+            command: command.into(),
+            module: None,
+            function: None,
+        });
         self
     }
 
@@ -253,7 +263,12 @@ impl ProductMount {
         kind: ProductEntrypointKind,
         command: impl Into<String>,
     ) -> Self {
-        self.control_entrypoint = Some(ProductEntrypoint { kind, command: command.into() });
+        self.control_entrypoint = Some(ProductEntrypoint {
+            kind,
+            command: command.into(),
+            module: None,
+            function: None,
+        });
         self
     }
 
@@ -293,11 +308,8 @@ impl ProductMount {
 
         let mut builder = ProductMountDescriptor::builder(self.namespace.clone())
             .display_name(display_name)
-            .entrypoint(runtime_entrypoint.kind.clone(), runtime_entrypoint.command.clone())
-            .control_entrypoint(
-                control_entrypoint.kind.clone(),
-                control_entrypoint.command.clone(),
-            )
+            .entrypoint_value(runtime_entrypoint)
+            .control_entrypoint_value(control_entrypoint)
             .help_summary(summary);
 
         for alias in aliases {
@@ -308,6 +320,9 @@ impl ProductMount {
         }
         if let Some(version) = &self.version {
             builder = builder.version(version.clone());
+        }
+        if let Some(compatibility) = &self.compatibility {
+            builder = builder.compatibility(compatibility.clone());
         }
         builder.build()
     }

@@ -75,8 +75,8 @@ fn product_mount_builder_materializes_valid_descriptor_and_manifest_json() {
         .expect("namespace")
         .display_name("Sample App")
         .alias("sample")
-        .binary("bijux-sample-app")
-        .control_binary("bijux-sample-app")
+        .python_callable("sample_app.cli", "main")
+        .control_python_callable("sample_app.cli", "main")
         .summary("Sample mounted app")
         .capability("json_output")
         .capability("json_output")
@@ -85,6 +85,10 @@ fn product_mount_builder_materializes_valid_descriptor_and_manifest_json() {
             supports_repl: true,
             ..FeatureCapabilityDeclaration::default()
         })
+        .compatibility(
+            SdkCompatibilityWindow::new("0.3.0", Some("1.0.0".to_string()))
+                .expect("compatibility"),
+        )
         .version("0.2.0");
 
     let descriptor = mount.build_descriptor().expect("descriptor");
@@ -97,7 +101,10 @@ fn product_mount_builder_materializes_valid_descriptor_and_manifest_json() {
     let manifest = mount.manifest_json().expect("manifest json");
     let parsed: serde_json::Value = serde_json::from_str(&manifest).expect("manifest parse");
     assert_eq!(parsed["namespace"], "sample-app");
-    assert_eq!(parsed["entrypoint"]["kind"], "binary");
+    assert_eq!(parsed["entrypoint"]["kind"], "python_module");
+    assert_eq!(parsed["entrypoint"]["module"], "sample_app.cli");
+    assert_eq!(parsed["entrypoint"]["function"], "main");
+    assert_eq!(parsed["compatibility"]["min_cli_version"], "0.3.0");
 }
 
 #[test]
@@ -158,6 +165,23 @@ fn diagnostics_builder_and_output_helpers_emit_root_compatible_shapes() {
         error.details.as_ref().expect("details").context["expected"],
         json!(["status", "fail"])
     );
+}
+
+#[test]
+fn rust_and_python_sdk_success_envelopes_match_checked_fixture() {
+    let envelope = OutputEnvelopeHelper::success(
+        CommandPath::new(&["sample"]).expect("command"),
+        json!({ "value": 1 }),
+        "2026-01-01T00:00:00Z",
+    )
+    .expect("success envelope");
+
+    let rendered = serde_json::to_string_pretty(&envelope).expect("rendered envelope");
+    let fixture_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../bijux-cli-python/tests/python/fixtures/app_sdk_success_envelope.json");
+    let expected = std::fs::read_to_string(fixture_path).expect("python fixture");
+
+    assert_eq!(rendered.trim(), expected.trim());
 }
 
 #[test]

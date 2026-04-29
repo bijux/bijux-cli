@@ -5,8 +5,9 @@ use std::path::Path;
 use serde_json::Value;
 
 use crate::features::apps::{
-    app_capabilities_report, app_manifest_schema_report, app_version_report, app_which_report,
-    apps_doctor_report, apps_list_report, scaffold_app_mount, validate_app_manifest_report,
+    app_capabilities_report, app_doctor_report, app_manifest_schema_report, app_version_report,
+    app_which_report, apps_doctor_report, apps_list_report, scaffold_app_mount,
+    validate_app_manifest_report,
 };
 use crate::features::diagnostics::state_paths::ResolvedStatePaths;
 use crate::shared::argv::{command_has_flag, command_option_value, command_positionals};
@@ -30,8 +31,14 @@ pub(crate) fn try_handle(
                 .expect("apps list report"),
         ),
         [a, b] if a == "apps" && b == "doctor" => Some(
-            serde_json::to_value(apps_doctor_report(paths, plugin_registry_path))
-                .expect("apps doctor report"),
+            match command_positionals(argv, &["apps", "doctor"]).first().cloned() {
+                Some(namespace) => match app_doctor_report(&namespace, paths) {
+                    Ok(report) => serde_json::to_value(report).expect("app doctor report"),
+                    Err(error) => runtime_error_payload(error),
+                },
+                None => serde_json::to_value(apps_doctor_report(paths, plugin_registry_path))
+                    .expect("apps doctor report"),
+            },
         ),
         [a, b] if a == "apps" && b == "which" => {
             let namespace = command_positionals(argv, &["apps", "which"]).first().cloned();

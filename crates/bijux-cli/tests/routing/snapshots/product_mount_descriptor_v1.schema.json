@@ -24,6 +24,16 @@
         "type": "string"
       }
     },
+    "compatibility": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ProductCompatibilityWindow"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "control_entrypoint": {
       "$ref": "#/definitions/ProductEntrypoint"
     },
@@ -52,6 +62,23 @@
       "description": "Canonical command namespace segment.",
       "type": "string"
     },
+    "ProductCompatibilityWindow": {
+      "type": "object",
+      "required": [
+        "min_cli_version"
+      ],
+      "properties": {
+        "max_cli_version_exclusive": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "min_cli_version": {
+          "type": "string"
+        }
+      }
+    },
     "ProductEntrypoint": {
       "type": "object",
       "required": [
@@ -62,8 +89,20 @@
         "command": {
           "type": "string"
         },
+        "function": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "kind": {
           "$ref": "#/definitions/ProductEntrypointKind"
+        },
+        "module": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },

@@ -1,6 +1,14 @@
 {
   "entries": [
     {
+      "python_test_file": "crates/bijux-cli-python/tests/python/test_app_sdk.py",
+      "coverage_level": "better",
+      "rust_test_files": [
+        "crates/bijux-cli/tests/routing/contracts/sdk_surface.rs",
+        "crates/bijux-cli/tests/integration/cli/root/apps_command_matrix.rs"
+      ]
+    },
+    {
       "python_test_file": "crates/bijux-cli-python/tests/python/test_packaging_contracts.py",
       "coverage_level": "better",
       "rust_test_files": [
