@@ -1,5 +1,8 @@
 //! Shared test helpers for workspace crates.
 
+pub mod fake_adapter;
+pub mod workflows;
+
 use bijux_dag_artifacts::{Manifest, NodeTrace};
 use bijux_dag_core::{
     Edge, EdgeKind, Effect, FileOutput, Graph, Node, NodeKind, ParamValue, PortRef, RetryPolicy,
@@ -11,6 +14,12 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+pub use fake_adapter::{FakeAdapterExecution, FakeAdapterHarness, FakeAdapterScenario};
+pub use workflows::{
+    collect_run_dir_snapshot, fixture_path_string, fixture_snapshot_path, graph_branch_join_fixture,
+    graph_map_reduce_fixture, update_or_assert_snapshot, write_graph_fixture, DagFixture,
+};
 
 pub fn load_workspace_fixture_text(manifest_dir: &str, relative_path: &str) -> String {
     let workspace_root = workspace_root_from_manifest_dir(manifest_dir);
