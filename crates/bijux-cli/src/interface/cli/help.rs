@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 
+use crate::contracts::known_bijux_tools;
 use crate::routing::model::{
     CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, ROOT_APPS_SUBCOMMANDS,
     ROOT_INTERACTION_COMMANDS, ROOT_RUNTIME_COMMANDS, ROOT_STATE_COMMANDS,
@@ -95,6 +96,10 @@ fn append_help_sections(rendered: &mut String, path: &[&str]) {
     if let Some(grouped) = help_grouped_guide(path) {
         sections.push(grouped);
     }
+    if path.is_empty() {
+        sections.push(render_official_apps_section());
+        sections.push(render_installed_plugins_section());
+    }
     if let Some(subcommands) = help_subcommand_guide(path) {
         sections.push(subcommands);
     }
@@ -119,11 +124,32 @@ fn format_command_group_row(name: &str, commands: &[&str]) -> String {
     format!("{name:<12} {}", commands.join(", "))
 }
 
+fn render_official_apps_section() -> String {
+    let mut out = String::from("Official apps:\n");
+    for tool in known_bijux_tools() {
+        let aliases = if tool.aliases.is_empty() {
+            String::new()
+        } else {
+            format!(" ({})", tool.aliases.join(", "))
+        };
+        out.push_str(&format!(
+            "  {:<12} {}{}\n",
+            tool.namespace, tool.help_summary, aliases
+        ));
+    }
+    out.trim_end().to_string()
+}
+
+fn render_installed_plugins_section() -> String {
+    "Installed plugins:\n  Use `bijux plugins list` to inspect the current plugin inventory.".to_string()
+}
+
 fn help_grouped_guide(path: &[&str]) -> Option<String> {
     match path {
         [] => Some(format!(
             "Management Commands:\n\
   {}\n\
+  apps         apps\n\
   config       config\n\
   plugins      plugins\n\
   {}\n\
@@ -251,6 +277,8 @@ fn help_examples(path: &[&str]) -> Vec<String> {
     match path {
         [] => vec![
             "bijux status".to_string(),
+            "bijux apps list".to_string(),
+            "bijux dag --help".to_string(),
             "bijux install atlas --dry-run".to_string(),
             "bijux config get foo".to_string(),
             "bijux config set foo=bar".to_string(),

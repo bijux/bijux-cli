@@ -369,6 +369,30 @@ fn unknown_help_topics_include_suggestions_for_alias_typoes() {
 }
 
 #[test]
+fn root_help_surfaces_official_apps_and_plugin_inventory_sections() {
+    let out = run(&["--help"]);
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8(out.stdout).expect("utf-8");
+    assert!(stdout.contains("Official apps:"));
+    assert!(stdout.contains("Installed plugins:"));
+    assert!(stdout.contains("bijux apps list"));
+    assert!(stdout.contains("bijux dag --help"));
+}
+
+#[test]
+fn unknown_routes_suggest_canonical_official_app_names() {
+    let out = run(&["workflw", "status"]);
+    assert_eq!(out.status.code(), Some(2));
+    let combined = format!(
+        "{}{}",
+        String::from_utf8(out.stdout).expect("utf-8"),
+        String::from_utf8(out.stderr).expect("utf-8")
+    );
+    assert!(combined.contains("bijux dag"));
+    assert!(combined.contains("bijux help dag"));
+}
+
+#[test]
 fn malformed_input_is_rejected_for_argument_taking_root_commands() {
     let malformed: &[&[&str]] = &[
         &["config", "get"],

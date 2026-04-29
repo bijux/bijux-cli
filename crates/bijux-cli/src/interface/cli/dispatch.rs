@@ -10,6 +10,7 @@ use anyhow::Result;
 use serde_json::json;
 
 use crate::contracts::OutputFormat;
+use crate::contracts::known_bijux_tools;
 use crate::interface::cli::handlers::install as install_handler;
 use crate::interface::cli::help::render_command_help;
 use crate::interface::cli::parser::parse_intent;
@@ -104,6 +105,10 @@ fn levenshtein_distance(left: &str, right: &str) -> usize {
 fn known_help_topics() -> Vec<String> {
     let mut topics = built_in_route_paths().to_vec();
     topics.extend(alias_rewrites().iter().map(|(alias, _)| (*alias).to_string()));
+    topics.extend(known_bijux_tools().iter().map(|tool| tool.namespace.to_string()));
+    for tool in known_bijux_tools() {
+        topics.extend(tool.aliases.iter().map(|alias| (*alias).to_string()));
+    }
     topics.push("help".to_string());
     let mut expanded = Vec::new();
     for topic in topics {

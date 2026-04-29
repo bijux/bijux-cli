@@ -2,6 +2,7 @@
 
 use std::cmp::max;
 
+use crate::contracts::known_bijux_tools;
 use crate::routing::model::{CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, CLI_ROOT_ALIASES};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -12,19 +13,22 @@ pub(super) struct RouteCorrection {
 }
 
 const ROOT_COMMANDS: &[&str] = &[
+    "apps",
     "cli",
-    "status",
     "audit",
+    "completion",
+    "config",
     "docs",
     "doctor",
-    "version",
-    "config",
+    "help",
+    "history",
+    "inspect",
+    "install",
+    "memory",
     "plugins",
     "repl",
-    "completion",
-    "history",
-    "memory",
-    "help",
+    "status",
+    "version",
 ];
 
 const CLI_COMMANDS: &[&str] = &["status", "paths", "config", "self-test", "plugins"];
@@ -50,12 +54,58 @@ fn suggest_path(path: &[String]) -> Option<Vec<String>> {
         "cli" => suggest_cli(rest),
         known if ROOT_COMMANDS.contains(&known) => Some(path.to_vec()),
         _ => {
-            let best_root = nearest(first, ROOT_COMMANDS)?;
-            let mut out = vec![best_root.to_string()];
+            let best_root = nearest_root(first)?;
+            let mut out = vec![best_root];
             out.extend(rest.iter().cloned());
             Some(out)
         }
     }
+}
+
+fn nearest_root(query: &str) -> Option<String> {
+    let mut best: Option<(usize, usize, usize, String)> = None;
+
+    for root in ROOT_COMMANDS {
+        let score = similarity_score(&query.to_ascii_lowercase(), root);
+        let candidate = (score, root.len(), 0usize, (*root).to_string());
+        if best
+            .as_ref()
+            .is_none_or(|existing| candidate.0 > existing.0 || (candidate.0 == existing.0 && candidate.1 > existing.1))
+        {
+            best = Some(candidate);
+        }
+    }
+
+    for tool in known_bijux_tools() {
+        let canonical_score = similarity_score(&query.to_ascii_lowercase(), tool.namespace);
+        let canonical = (
+            canonical_score,
+            tool.namespace.len(),
+            0usize,
+            tool.namespace.to_string(),
+        );
+        if best
+            .as_ref()
+            .is_none_or(|existing| canonical.0 > existing.0 || (canonical.0 == existing.0 && canonical.1 > existing.1))
+        {
+            best = Some(canonical);
+        }
+
+        for alias in tool.aliases {
+            let score = similarity_score(&query.to_ascii_lowercase(), alias);
+            let candidate = (score, alias.len(), 1usize, tool.namespace.to_string());
+            if best.as_ref().is_none_or(|existing| {
+                candidate.0 > existing.0
+                    || (candidate.0 == existing.0
+                        && (candidate.2 < existing.2
+                            || (candidate.2 == existing.2 && candidate.1 > existing.1)))
+            }) {
+                best = Some(candidate);
+            }
+        }
+    }
+
+    best.map(|(_, _, _, canonical)| canonical)
 }
 
 fn suggest_cli(rest: &[String]) -> Option<Vec<String>> {
