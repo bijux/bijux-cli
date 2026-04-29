@@ -37,6 +37,6 @@ fn repository_root_does_not_contain_target_directory() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     assert!(
         !root.join("target").exists(),
-        "root target directory is forbidden; use artifacts/target via CARGO_TARGET_DIR"
+        "root target directory is forbidden; use artifacts/rust/target and artifacts/rust/target/nextest"
     );
 }
