@@ -110,6 +110,22 @@ The root `doctor` surface now acts as the operator-facing runtime diagnostic ent
 - `bijux doctor shims`: legacy `bijux-<app>` PATH shim detection
 - `bijux doctor <app>`: focused official app discovery and runtime diagnostics
 
+## Layered Configuration
+
+The config surface now supports a stronger operator workflow than plain key-value
+mutation:
+
+- `bijux config schema [scope]`: inspect the built-in config registry for `cli`,
+  `dag`, and mounted-app scopes
+- `bijux config validate [--profile name]`: validate effective config across the
+  global env file, named profile overlays, project `.bijux/config.{toml,json}`,
+  and environment overrides
+- `bijux config explain KEY`: show the effective source chain for one key with
+  secret-aware redaction
+- `bijux config repair`: recover malformed global env state and write a backup
+- `bijux config export/load --portable`: round-trip a logical-key JSON bundle
+  instead of only dotenv-style env files
+
 ## Tests
 
 - [`tests/architecture.rs`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/tests/architecture.rs): boundary and ownership checks.
