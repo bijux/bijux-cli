@@ -1,0 +1,14 @@
+{
+  "bundle_version": "export-bundle/v9.9",
+  "export_mode": "manifest-only",
+  "provenance": {
+    "source": "native-run",
+    "imported": false,
+    "source_run_dir": "[fixture]",
+    "source_run_id": "historic-run-x"
+  },
+  "manifest": {},
+  "graph_snapshot": {},
+  "node_traces": {},
+  "outputs": {}
+}

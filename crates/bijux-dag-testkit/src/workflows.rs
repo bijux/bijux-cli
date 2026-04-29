@@ -204,9 +204,12 @@ fn normalize_snapshot_value(value: &mut Value) {
                         | "started_unix_ms"
                         | "finished_unix_ms"
                         | "unix_ms"
+                        | "ts"
                         | "pid"
                 ) {
                     *child = Value::from(0);
+                } else if key == "tool_version" {
+                    *child = Value::String("0.0.0+snapshot".to_string());
                 } else {
                     normalize_snapshot_value(child);
                 }
