@@ -176,6 +176,12 @@ mod upgrade_compatibility;
 mod workflow_product;
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 pub use adapter::{AdapterDescriptor, CacheCompatibilityMode};
+pub use adapter_conformance::{
+    build_adapter_conformance_suite, generate_adapter_reference_markdown,
+    validate_output_schema_compatibility, AdapterConformanceSuiteReport,
+    AdapterOutputSchemaCompatibilityReport, AdapterReferenceDocument,
+    AdapterScenarioResult, AdapterScenarioStatus,
+};
 pub use adapter_sdk::{
     AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest,
 };
@@ -202,14 +208,20 @@ pub use backend_cluster::{
     HpcRetryPolicyDecision, HpcSchedulerVersionMetadata, HpcScratchStagingSemantics,
     ImageResolutionProvenance, K8sBackendVersionMetadata, K8sCapabilityDeclaration,
     K8sFailureClass, K8sInjectionAvailability, K8sInjectionRequest, K8sJobPolicyMapping,
-    K8sResourceMapping, K8sResourceRequest, K8sWatchEvent, KubernetesExecutorContractV2,
-    NodeAffinityHint, NodeExecutionContract, PlacementPolicyRule, QueueBackendRoutingPolicy,
-    RemoteArtifactStagingProtocol, SlurmExecutorContract, WorkdirSemantics, WorkdirVolumeKind,
+    K8sResourceMapping, K8sResourceRequest, K8sWatchEvent, KubernetesAdapterContractReport,
+    KubernetesExecutorContractV2, NodeAffinityHint, NodeExecutionContract, PlacementPolicyRule,
+    QueueBackendRoutingPolicy, RemoteArtifactStagingProtocol, SlurmAdapterDesignContractReport,
+    SlurmExecutorContract, WorkdirSemantics, WorkdirVolumeKind, kubernetes_adapter_contract,
+    slurm_adapter_design_contract,
 };
 pub use batch_execution::{
     cancel_batch_attempt, duplicate_status_delivery_detected, execution_mode_report,
     heartbeat_stale, restart_recovery_supported, retry_attempt, validate_batch_metadata,
     BatchAttemptState, BatchHeartbeat, BatchJobMetadata, BatchLifecycleEvent, BatchModeReport,
+};
+pub use backend::fake::{
+    fake_batch_backend_reference, fake_batch_executor_contract, FakeBatchExecutor,
+    FakeBatchExecutorContract, FakeBatchJobRecord, FakeBatchJobStatus,
 };
 use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
@@ -1437,6 +1449,36 @@ pub fn registered_adapter_descriptors() -> Vec<adapter::AdapterDescriptor> {
     registry.descriptors()
 }
 
+pub fn adapter_conformance_suite() -> Result<Vec<AdapterConformanceSuiteReport>, RuntimeError> {
+    let mut descriptors = registered_adapter_descriptors();
+    for handshake in probe_external_adapters()? {
+        if let Some(descriptor) = handshake.descriptor {
+            descriptors.push(descriptor);
+        }
+    }
+    descriptors.sort_by(|left, right| {
+        (&left.id, &left.version).cmp(&(&right.id, &right.version))
+    });
+    Ok(descriptors
+        .into_iter()
+        .map(|descriptor| build_adapter_conformance_suite(&descriptor))
+        .collect())
+}
+
+pub fn registered_adapter_reference_document() -> AdapterReferenceDocument {
+    let mut descriptors = registered_adapter_descriptors();
+    descriptors.sort_by(|left, right| (&left.id, &left.version).cmp(&(&right.id, &right.version)));
+    let conformance =
+        descriptors.iter().map(build_adapter_conformance_suite).collect::<Vec<_>>();
+    AdapterReferenceDocument {
+        descriptors,
+        conformance,
+        slurm: slurm_adapter_design_contract(),
+        kubernetes: kubernetes_adapter_contract(),
+        fake_batch: fake_batch_executor_contract(),
+    }
+}
+
 pub fn adapter_admission_matrix(graph: &Graph) -> AdapterAdmissionReport {
     let descriptors = registered_adapter_descriptors();
     let mut by_kind = std::collections::BTreeMap::new();
@@ -1780,9 +1822,17 @@ fn verify_cache_entry(
     {
         return Ok(false);
     }
-    if meta.get("produces_outputs_schema_version").and_then(|v| v.as_str())
-        != Some(expected_input.output_schema_version.as_str())
-    {
+    let produced_output_schema_version = meta
+        .get("produces_outputs_schema_version")
+        .and_then(|v| v.as_str())
+        .or_else(|| meta.get("output_schema_version").and_then(|v| v.as_str()))
+        .unwrap_or_default();
+    let schema_compatibility = validate_output_schema_compatibility(
+        CacheCompatibilityMode::FingerprintExact,
+        produced_output_schema_version,
+        expected_input.output_schema_version.as_str(),
+    );
+    if !schema_compatibility.compatible {
         return Ok(false);
     }
     if meta.get("policy_fingerprint").and_then(|v| v.as_str())
