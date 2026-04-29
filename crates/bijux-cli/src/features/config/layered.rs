@@ -1,0 +1,791 @@
+#![forbid(unsafe_code)]
+
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::thread;
+use std::time::Duration;
+
+use serde_json::{json, Map, Value};
+
+use crate::features::config::error::ConfigError;
+use crate::features::config::schema::{
+    config_schema_registry, config_schema_scope, env_candidates_for_storage_key, infer_scope,
+    logical_key_to_storage_key, normalize_selector_to_storage_key, redact_value,
+    schema_field_for_key, storage_key_to_logical_key, validate_schema_value,
+};
+use crate::features::config::storage::{ConfigRepository, FileConfigRepository};
+use crate::features::install::{acquire_state_lock, CompatibilityError, StateLockGuard};
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct LayeredConfigOptions {
+    pub profile: Option<String>,
+    pub include_secrets: bool,
+    pub portable: bool,
+}
+
+#[derive(Debug, Clone)]
+struct LayerSource {
+    name: &'static str,
+    path: Option<PathBuf>,
+    profile: Option<String>,
+    format: &'static str,
+    entries: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct ProjectConfigDiscovery {
+    root: Option<PathBuf>,
+    config_path: Option<PathBuf>,
+    config_format: Option<&'static str>,
+    profile_path: Option<PathBuf>,
+    profile_format: Option<&'static str>,
+}
+
+pub(crate) fn schema_report(scope: Option<&str>) -> Result<Value, ConfigError> {
+    if let Some(scope_name) = scope {
+        let scope_payload = config_schema_scope(scope_name).ok_or_else(|| {
+            ConfigError::not_found(format!("Unknown config schema scope: {scope_name}"))
+        })?;
+        return Ok(json!({
+            "status": "ok",
+            "scope": scope_payload.scope,
+            "source": scope_payload.source,
+            "fields": scope_payload.fields,
+        }));
+    }
+
+    let registry = config_schema_registry();
+    Ok(json!({
+        "status": "ok",
+        "schema_version": "bijux-cli-config-schema-v1",
+        "scopes": registry,
+    }))
+}
+
+pub(crate) fn validate_report(
+    global_config_path: &Path,
+    cwd: &Path,
+    profile: Option<&str>,
+) -> Result<Value, ConfigError> {
+    let resolved = resolve_layered_config(global_config_path, cwd, profile)?;
+    let mut warnings = resolved.warnings;
+    warnings.extend(warnings_for_unknown_entries(&resolved.effective_entries));
+
+    let errors = validate_entries(&resolved.effective_entries)
+        .into_iter()
+        .map(|message| json!(message))
+        .collect::<Vec<_>>();
+
+    Ok(json!({
+        "status": if errors.is_empty() { "ok" } else { "error" },
+        "valid": errors.is_empty(),
+        "profile": profile,
+        "project_discovery": project_discovery_payload(&resolved.project_discovery),
+        "layers": resolved
+            .layers
+            .iter()
+            .map(|layer| layer_report(layer, false))
+            .collect::<Vec<_>>(),
+        "effective": effective_entries_payload(&resolved.effective_entries, false),
+        "errors": errors,
+        "warnings": warnings.into_iter().map(|message| json!(message)).collect::<Vec<_>>(),
+    }))
+}
+
+pub(crate) fn explain_report(
+    global_config_path: &Path,
+    cwd: &Path,
+    raw_key: &str,
+    profile: Option<&str>,
+    include_secrets: bool,
+) -> Result<Value, ConfigError> {
+    let resolved = resolve_layered_config(global_config_path, cwd, profile)?;
+    let storage_key = normalize_selector(raw_key)?;
+    let logical_key = storage_key_to_logical_key(&storage_key);
+    let effective_value = resolved
+        .effective_entries
+        .get(&storage_key)
+        .cloned()
+        .ok_or_else(|| ConfigError::not_found(format!("Config key not found: {raw_key}")))?;
+
+    let field = schema_field_for_key(&storage_key);
+    let env_candidates = env_candidates_for_storage_key(&storage_key);
+    let layer_entries = resolved
+        .layers
+        .iter()
+        .filter_map(|layer| {
+            layer.entries.get(&storage_key).map(|value| {
+                json!({
+                    "layer": layer.name,
+                    "path": layer.path,
+                    "profile": layer.profile,
+                    "format": layer.format,
+                    "value": redact_value(&storage_key, value, include_secrets),
+                    "redacted": !include_secrets && redact_value(&storage_key, value, false) != *value,
+                })
+            })
+        })
+        .collect::<Vec<_>>();
+
+    let env_values = env_candidates
+        .iter()
+        .filter_map(|env_key| std::env::var(env_key).ok().map(|value| (env_key, value)))
+        .map(|(env_key, value)| {
+            json!({
+                "env": env_key,
+                "value": redact_value(&storage_key, &value, include_secrets),
+                "redacted": !include_secrets && redact_value(&storage_key, &value, false) != value,
+            })
+        })
+        .collect::<Vec<_>>();
+
+    Ok(json!({
+        "status": "ok",
+        "key": raw_key,
+        "logical_key": logical_key,
+        "storage_key": storage_key,
+        "scope": field.as_ref().map(|entry| entry.scope.clone()).unwrap_or_else(|| infer_scope(&storage_key)),
+        "schema": field,
+        "effective": {
+            "value": redact_value(&storage_key, &effective_value, include_secrets),
+            "redacted": !include_secrets && redact_value(&storage_key, &effective_value, false) != effective_value,
+        },
+        "layers": layer_entries,
+        "environment": {
+            "candidates": env_candidates,
+            "active": env_values,
+        },
+        "project_discovery": project_discovery_payload(&resolved.project_discovery),
+    }))
+}
+
+pub(crate) fn repair_report(global_config_path: &Path) -> Result<Value, ConfigError> {
+    let original = if global_config_path.exists() {
+        fs::read_to_string(global_config_path)
+            .map_err(|err| ConfigError::persistence(err.to_string()))?
+    } else {
+        String::new()
+    };
+    let repaired = repair_env_text(&original)?;
+    let repaired_text = render_env_map(&repaired.entries);
+    let changed = repaired_text != original;
+
+    let backup_path = changed.then(|| global_config_path.with_extension("bak"));
+    if changed {
+        let _guard = config_lock(global_config_path)?;
+        if let Some(path) = &backup_path {
+            fs::write(path, &original).map_err(|err| ConfigError::persistence(err.to_string()))?;
+        }
+        FileConfigRepository
+            .save(global_config_path, &repaired.entries)
+            .map_err(|err| ConfigError::persistence(err.to_string()))?;
+    }
+
+    Ok(json!({
+        "status": "ok",
+        "changed": changed,
+        "file": global_config_path,
+        "backup": backup_path,
+        "warnings": repaired.warnings.into_iter().map(|message| json!(message)).collect::<Vec<_>>(),
+        "entry_count": repaired.entries.len(),
+    }))
+}
+
+pub(crate) fn export_report(
+    global_config_path: &Path,
+    cwd: &Path,
+    target_path: &Path,
+    options: &LayeredConfigOptions,
+) -> Result<Value, ConfigError> {
+    if options.portable {
+        let resolved = resolve_layered_config(global_config_path, cwd, options.profile.as_deref())?;
+        let payload = json!({
+            "format": "bijux-cli-config-bundle-v1",
+            "profile": options.profile,
+            "project_discovery": project_discovery_payload(&resolved.project_discovery),
+            "entries": effective_entries_payload(&resolved.effective_entries, options.include_secrets),
+        });
+        write_json_pretty(target_path, &payload)?;
+        return Ok(json!({
+            "status": "exported",
+            "file": target_path,
+            "file_format": "portable_json",
+            "profile": options.profile,
+        }));
+    }
+
+    let source_path = profile_env_path(global_config_path, options.profile.as_deref())
+        .unwrap_or_else(|| global_config_path.to_path_buf());
+    let values = FileConfigRepository.load(&source_path)?;
+    FileConfigRepository.save(target_path, &values)?;
+    Ok(json!({
+        "status": "exported",
+        "file": target_path,
+        "source": source_path,
+        "file_format": "env",
+        "profile": options.profile,
+    }))
+}
+
+pub(crate) fn load_report(
+    global_config_path: &Path,
+    source_path: &Path,
+    options: &LayeredConfigOptions,
+) -> Result<Value, ConfigError> {
+    if !source_path.exists() {
+        return Err(ConfigError::not_found(format!(
+            "Config source file not found: {}",
+            source_path.display()
+        )));
+    }
+    if !source_path.is_file() {
+        return Err(ConfigError::validation(format!(
+            "Config source path must be a file: {}",
+            source_path.display()
+        )));
+    }
+
+    let target_path = profile_env_path(global_config_path, options.profile.as_deref())
+        .unwrap_or_else(|| global_config_path.to_path_buf());
+    let _guard = config_lock(&target_path)?;
+    let values = if options.portable {
+        let payload: Value = serde_json::from_str(
+            &fs::read_to_string(source_path)
+                .map_err(|err| ConfigError::persistence(err.to_string()))?,
+        )
+        .map_err(|err| ConfigError::parse(format!("Invalid portable config bundle: {err}")))?;
+        let entries = payload.get("entries").and_then(Value::as_object).ok_or_else(|| {
+            ConfigError::parse("Portable config bundle is missing `entries` object")
+        })?;
+        parse_portable_entries(entries)?
+    } else {
+        FileConfigRepository.load(source_path)?
+    };
+    FileConfigRepository.save(&target_path, &values)?;
+    Ok(json!({
+        "status": "loaded",
+        "file": source_path,
+        "target": target_path,
+        "file_format": if options.portable { "portable_json" } else { "env" },
+        "profile": options.profile,
+    }))
+}
+
+#[derive(Debug, Clone)]
+struct ResolvedConfig {
+    layers: Vec<LayerSource>,
+    effective_entries: BTreeMap<String, String>,
+    warnings: Vec<String>,
+    project_discovery: ProjectConfigDiscovery,
+}
+
+fn resolve_layered_config(
+    global_config_path: &Path,
+    cwd: &Path,
+    profile: Option<&str>,
+) -> Result<ResolvedConfig, ConfigError> {
+    let mut layers = Vec::new();
+    let mut warnings = Vec::new();
+
+    layers.push(LayerSource {
+        name: "global_file",
+        path: Some(global_config_path.to_path_buf()),
+        profile: None,
+        format: "env",
+        entries: FileConfigRepository.load(global_config_path)?,
+    });
+
+    if let Some(profile_name) = profile {
+        if let Some((path, format)) =
+            discover_profile_layer(global_config_path.parent(), profile_name)?
+        {
+            layers.push(LayerSource {
+                name: "global_profile",
+                path: Some(path.clone()),
+                profile: Some(profile_name.to_string()),
+                format,
+                entries: load_layer_file(&path, format)?,
+            });
+        }
+    }
+
+    let project_discovery = discover_project_config(cwd, profile)?;
+    if let Some(path) = &project_discovery.config_path {
+        let format = project_discovery.config_format.expect("config format");
+        layers.push(LayerSource {
+            name: "project_file",
+            path: Some(path.clone()),
+            profile: None,
+            format,
+            entries: load_layer_file(path, format)?,
+        });
+    }
+    if let Some(path) = &project_discovery.profile_path {
+        let format = project_discovery.profile_format.expect("profile format");
+        layers.push(LayerSource {
+            name: "project_profile",
+            path: Some(path.clone()),
+            profile: profile.map(ToOwned::to_owned),
+            format,
+            entries: load_layer_file(path, format)?,
+        });
+    }
+
+    let env_entries = gather_env_overrides();
+    if !env_entries.is_empty() {
+        layers.push(LayerSource {
+            name: "environment",
+            path: None,
+            profile: None,
+            format: "env",
+            entries: env_entries,
+        });
+    }
+
+    if project_discovery.config_path.is_none() {
+        warnings
+            .push("No project config file discovered under .bijux/config.{toml,json}".to_string());
+    }
+    if profile.is_some() && project_discovery.profile_path.is_none() {
+        warnings.push("No project profile overlay discovered for the selected profile".to_string());
+    }
+
+    let mut effective_entries = BTreeMap::new();
+    for layer in &layers {
+        for (key, value) in &layer.entries {
+            effective_entries.insert(key.clone(), value.clone());
+        }
+    }
+
+    Ok(ResolvedConfig { layers, effective_entries, warnings, project_discovery })
+}
+
+fn load_layer_file(
+    path: &Path,
+    format: &'static str,
+) -> Result<BTreeMap<String, String>, ConfigError> {
+    match format {
+        "env" => FileConfigRepository.load(path),
+        "json" => load_json_layer(path),
+        "toml" => load_toml_layer(path),
+        other => Err(ConfigError::validation(format!("Unsupported config layer format: {other}"))),
+    }
+}
+
+fn load_json_layer(path: &Path) -> Result<BTreeMap<String, String>, ConfigError> {
+    let payload: Value = serde_json::from_str(
+        &fs::read_to_string(path).map_err(|err| ConfigError::persistence(err.to_string()))?,
+    )
+    .map_err(|err| ConfigError::parse(format!("Invalid JSON config: {err}")))?;
+    let mut out = BTreeMap::new();
+    flatten_json_value(None, &payload, &mut out)?;
+    Ok(out)
+}
+
+fn flatten_json_value(
+    prefix: Option<&str>,
+    value: &Value,
+    out: &mut BTreeMap<String, String>,
+) -> Result<(), ConfigError> {
+    match value {
+        Value::Object(map) => {
+            for (key, child) in map {
+                let next = match prefix {
+                    Some(existing) => format!("{existing}.{key}"),
+                    None => key.to_string(),
+                };
+                flatten_json_value(Some(&next), child, out)?;
+            }
+            Ok(())
+        }
+        Value::Null => Err(ConfigError::validation("Null values are not allowed in config layers")),
+        Value::String(text) => {
+            let selector = prefix.ok_or_else(|| {
+                ConfigError::validation(
+                    "Top-level scalar config values require an explicit object key",
+                )
+            })?;
+            out.insert(logical_key_to_storage_key(selector), text.clone());
+            Ok(())
+        }
+        Value::Bool(flag) => {
+            let selector = prefix.ok_or_else(|| {
+                ConfigError::validation(
+                    "Top-level scalar config values require an explicit object key",
+                )
+            })?;
+            out.insert(logical_key_to_storage_key(selector), flag.to_string());
+            Ok(())
+        }
+        Value::Number(number) => {
+            let selector = prefix.ok_or_else(|| {
+                ConfigError::validation(
+                    "Top-level scalar config values require an explicit object key",
+                )
+            })?;
+            out.insert(logical_key_to_storage_key(selector), number.to_string());
+            Ok(())
+        }
+        Value::Array(_) => {
+            let selector = prefix.ok_or_else(|| {
+                ConfigError::validation(
+                    "Top-level array config values require an explicit object key",
+                )
+            })?;
+            out.insert(logical_key_to_storage_key(selector), value.to_string());
+            Ok(())
+        }
+    }
+}
+
+fn load_toml_layer(path: &Path) -> Result<BTreeMap<String, String>, ConfigError> {
+    let payload: toml::Value = toml::from_str(
+        &fs::read_to_string(path).map_err(|err| ConfigError::persistence(err.to_string()))?,
+    )
+    .map_err(|err| ConfigError::parse(format!("Invalid TOML config: {err}")))?;
+    let json_value = serde_json::to_value(payload)
+        .map_err(|err| ConfigError::parse(format!("Invalid TOML conversion: {err}")))?;
+    let mut out = BTreeMap::new();
+    flatten_json_value(None, &json_value, &mut out)?;
+    Ok(out)
+}
+
+fn gather_env_overrides() -> BTreeMap<String, String> {
+    let mut out = BTreeMap::new();
+    for scope in config_schema_registry() {
+        for field in scope.fields {
+            for env_key in env_candidates_for_storage_key(&field.storage_key) {
+                if let Ok(value) = std::env::var(&env_key) {
+                    out.insert(field.storage_key.clone(), value);
+                    break;
+                }
+            }
+        }
+    }
+    out
+}
+
+fn discover_profile_layer(
+    parent: Option<&Path>,
+    profile: &str,
+) -> Result<Option<(PathBuf, &'static str)>, ConfigError> {
+    let Some(parent_dir) = parent else {
+        return Ok(None);
+    };
+    let profile_dir = parent_dir.join("profiles");
+    let env_path = profile_dir.join(format!("{profile}.env"));
+    if env_path.exists() {
+        return Ok(Some((env_path, "env")));
+    }
+    let toml_path = profile_dir.join(format!("{profile}.toml"));
+    if toml_path.exists() {
+        return Ok(Some((toml_path, "toml")));
+    }
+    let json_path = profile_dir.join(format!("{profile}.json"));
+    if json_path.exists() {
+        return Ok(Some((json_path, "json")));
+    }
+    Ok(None)
+}
+
+fn discover_project_config(
+    cwd: &Path,
+    profile: Option<&str>,
+) -> Result<ProjectConfigDiscovery, ConfigError> {
+    for candidate in cwd.ancestors() {
+        let bijux_dir = candidate.join(".bijux");
+        if !bijux_dir.is_dir() {
+            continue;
+        }
+        let mut discovery = ProjectConfigDiscovery {
+            root: Some(candidate.to_path_buf()),
+            ..ProjectConfigDiscovery::default()
+        };
+        let toml_path = bijux_dir.join("config.toml");
+        let json_path = bijux_dir.join("config.json");
+        if toml_path.exists() {
+            discovery.config_path = Some(toml_path);
+            discovery.config_format = Some("toml");
+        } else if json_path.exists() {
+            discovery.config_path = Some(json_path);
+            discovery.config_format = Some("json");
+        }
+        if let Some(profile_name) = profile {
+            let profile_dir = bijux_dir.join("profiles");
+            let profile_toml = profile_dir.join(format!("{profile_name}.toml"));
+            let profile_json = profile_dir.join(format!("{profile_name}.json"));
+            if profile_toml.exists() {
+                discovery.profile_path = Some(profile_toml);
+                discovery.profile_format = Some("toml");
+            } else if profile_json.exists() {
+                discovery.profile_path = Some(profile_json);
+                discovery.profile_format = Some("json");
+            }
+        }
+        return Ok(discovery);
+    }
+    Ok(ProjectConfigDiscovery::default())
+}
+
+fn project_discovery_payload(discovery: &ProjectConfigDiscovery) -> Value {
+    json!({
+        "root": discovery.root,
+        "config_path": discovery.config_path,
+        "config_format": discovery.config_format,
+        "profile_path": discovery.profile_path,
+        "profile_format": discovery.profile_format,
+    })
+}
+
+fn layer_report(layer: &LayerSource, include_secrets: bool) -> Value {
+    json!({
+        "name": layer.name,
+        "path": layer.path,
+        "profile": layer.profile,
+        "format": layer.format,
+        "entries": effective_entries_payload(&layer.entries, include_secrets),
+    })
+}
+
+fn effective_entries_payload(
+    values: &BTreeMap<String, String>,
+    include_secrets: bool,
+) -> BTreeMap<String, Value> {
+    values
+        .iter()
+        .map(|(storage_key, value)| {
+            (
+                storage_key_to_logical_key(storage_key),
+                json!({
+                    "storage_key": storage_key,
+                    "value": redact_value(storage_key, value, include_secrets),
+                    "redacted": !include_secrets && redact_value(storage_key, value, false) != *value,
+                }),
+            )
+        })
+        .collect()
+}
+
+fn warnings_for_unknown_entries(values: &BTreeMap<String, String>) -> Vec<String> {
+    values
+        .keys()
+        .filter(|storage_key| schema_field_for_key(storage_key).is_none())
+        .map(|storage_key| {
+            format!("Unknown config key `{storage_key}` is present in the effective configuration")
+        })
+        .collect()
+}
+
+fn validate_entries(values: &BTreeMap<String, String>) -> Vec<String> {
+    let mut errors = Vec::new();
+    for (storage_key, value) in values {
+        if let Err(err) = validate_schema_value(storage_key, value) {
+            errors.push(err.to_string());
+        }
+    }
+    errors
+}
+
+fn normalize_selector(raw_key: &str) -> Result<String, ConfigError> {
+    normalize_selector_to_storage_key(raw_key)
+}
+
+fn profile_env_path(global_config_path: &Path, profile: Option<&str>) -> Option<PathBuf> {
+    profile.map(|name| {
+        global_config_path
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .join("profiles")
+            .join(format!("{name}.env"))
+    })
+}
+
+fn config_lock(path: &Path) -> Result<StateLockGuard, ConfigError> {
+    let file_name = path.file_name().and_then(|entry| entry.to_str()).unwrap_or("config");
+    let lock_path = path.with_file_name(format!("{file_name}.lock"));
+    for attempt in 0..100 {
+        match acquire_state_lock(&lock_path) {
+            Ok(guard) => return Ok(guard),
+            Err(CompatibilityError::LockHeld(_)) if attempt < 99 => {
+                thread::sleep(Duration::from_millis(10));
+            }
+            Err(err) => return Err(ConfigError::persistence(err.to_string())),
+        }
+    }
+    Err(ConfigError::persistence(format!("state lock remained held at {}", lock_path.display())))
+}
+
+fn render_env_map(values: &BTreeMap<String, String>) -> String {
+    values
+        .iter()
+        .map(|(key, value)| format!("BIJUXCLI_{}={value}\n", key.to_ascii_uppercase()))
+        .collect()
+}
+
+struct RepairReport {
+    entries: BTreeMap<String, String>,
+    warnings: Vec<String>,
+}
+
+fn repair_env_text(text: &str) -> Result<RepairReport, ConfigError> {
+    let mut entries = BTreeMap::new();
+    let mut warnings = Vec::new();
+    let mut seen = BTreeSet::new();
+    for (index, raw_line) in text.lines().enumerate() {
+        let line_no = index + 1;
+        let trimmed = raw_line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        let Some((raw_key, raw_value)) = raw_line.split_once('=') else {
+            warnings.push(format!("Dropped malformed line {line_no}: {raw_line}"));
+            continue;
+        };
+        let normalized = normalize_selector(raw_key)?;
+        if let Err(err) = validate_schema_value(&normalized, raw_value.trim()) {
+            warnings
+                .push(format!("Dropped invalid value for `{normalized}` at line {line_no}: {err}"));
+            continue;
+        }
+        if seen.contains(&normalized) {
+            warnings.push(format!(
+                "Replaced duplicate key `{normalized}` at line {line_no} with last value"
+            ));
+        }
+        seen.insert(normalized.clone());
+        entries.insert(normalized, raw_value.trim().to_string());
+    }
+    Ok(RepairReport { entries, warnings })
+}
+
+fn parse_portable_entries(
+    entries: &Map<String, Value>,
+) -> Result<BTreeMap<String, String>, ConfigError> {
+    let mut out = BTreeMap::new();
+    for (logical_key, payload) in entries {
+        let storage_key = logical_key_to_storage_key(logical_key);
+        let value = payload.get("value").and_then(Value::as_str).ok_or_else(|| {
+            ConfigError::parse(format!("Portable entry `{logical_key}` is missing string `value`"))
+        })?;
+        validate_schema_value(&storage_key, value)?;
+        out.insert(storage_key, value.to_string());
+    }
+    Ok(out)
+}
+
+fn write_json_pretty(path: &Path, payload: &Value) -> Result<(), ConfigError> {
+    let _guard = config_lock(path)?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|err| ConfigError::persistence(err.to_string()))?;
+    }
+    let rendered = serde_json::to_string_pretty(payload)
+        .map_err(|err| ConfigError::persistence(err.to_string()))?;
+    crate::infrastructure::fs_store::atomic_write_text(path, &(rendered + "\n"))
+        .map_err(|err| ConfigError::persistence(err.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use serde_json::json;
+
+    use super::{
+        discover_project_config, explain_report, parse_portable_entries, repair_env_text,
+        resolve_layered_config, schema_report, LayeredConfigOptions,
+    };
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+        let root = std::env::temp_dir().join(format!("bijux-layered-config-{name}-{nanos}"));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).expect("mkdir");
+        root
+    }
+
+    #[test]
+    fn schema_report_exposes_cli_scope() {
+        let payload = schema_report(Some("cli")).expect("schema");
+        assert_eq!(payload["scope"], "cli");
+        assert!(payload["fields"].as_array().is_some_and(|items| !items.is_empty()));
+    }
+
+    #[test]
+    fn project_discovery_prefers_toml_and_profile_overlay() {
+        let root = temp_dir("project-discovery");
+        let project = root.join("repo");
+        fs::create_dir_all(project.join(".bijux/profiles")).expect("mkdir");
+        fs::write(project.join(".bijux/config.toml"), "[dag]\njobs = 4\n").expect("toml");
+        fs::write(project.join(".bijux/config.json"), "{\"dag\":{\"jobs\":3}}").expect("json");
+        fs::write(project.join(".bijux/profiles/dev.toml"), "[cli]\nlog_level = 'debug'\n")
+            .expect("profile");
+
+        let discovery = discover_project_config(&project, Some("dev")).expect("discovery");
+        assert_eq!(discovery.config_format, Some("toml"));
+        assert_eq!(discovery.profile_format, Some("toml"));
+    }
+
+    #[test]
+    fn layered_resolution_merges_global_project_and_env_layers() {
+        let root = temp_dir("resolve");
+        let global = root.join("global.env");
+        let project = root.join("project");
+        fs::create_dir_all(project.join(".bijux/profiles")).expect("mkdir");
+        fs::write(&global, "BIJUXCLI_CLI_LOG_LEVEL=info\n").expect("global");
+        fs::write(project.join(".bijux/config.toml"), "[dag]\njobs = 3\n").expect("project");
+        fs::write(project.join(".bijux/profiles/dev.toml"), "[dag]\ncache_mode = 'strict'\n")
+            .expect("profile");
+        std::env::set_var("BIJUX_DAG_JOBS", "6");
+
+        let resolved = resolve_layered_config(&global, &project, Some("dev")).expect("resolved");
+        assert_eq!(
+            resolved.effective_entries.get("cli_log_level").map(String::as_str),
+            Some("info")
+        );
+        assert_eq!(resolved.effective_entries.get("dag_jobs").map(String::as_str), Some("6"));
+        assert_eq!(
+            resolved.effective_entries.get("dag_cache_mode").map(String::as_str),
+            Some("strict")
+        );
+
+        std::env::remove_var("BIJUX_DAG_JOBS");
+    }
+
+    #[test]
+    fn explain_report_redacts_secret_like_values() {
+        let root = temp_dir("explain");
+        let global = root.join("global.env");
+        fs::write(&global, "BIJUXCLI_CLI_ACCESS_TOKEN=secret-token\n").expect("global");
+
+        let payload =
+            explain_report(&global, &root, "cli.access_token", None, false).expect("explain");
+        assert_eq!(payload["effective"]["value"], "[redacted]");
+    }
+
+    #[test]
+    fn repair_env_text_drops_bad_lines_and_keeps_last_duplicate() {
+        let repaired =
+            repair_env_text("BIJUXCLI_ALPHA=1\nBROKEN\nBIJUXCLI_ALPHA=2\n").expect("repair");
+        assert_eq!(repaired.entries.get("alpha").map(String::as_str), Some("2"));
+        assert_eq!(repaired.warnings.len(), 2);
+    }
+
+    #[test]
+    fn portable_entries_require_string_values() {
+        let err =
+            parse_portable_entries(json!({"dag.jobs": {"value": 2}}).as_object().expect("object"))
+                .expect_err("must fail");
+        assert!(err.to_string().contains("missing string `value`"));
+    }
+
+    #[test]
+    fn layered_options_default_to_nonportable_and_redacted() {
+        let options = LayeredConfigOptions::default();
+        assert!(!options.portable);
+        assert!(!options.include_secrets);
+        assert!(options.profile.is_none());
+    }
+}

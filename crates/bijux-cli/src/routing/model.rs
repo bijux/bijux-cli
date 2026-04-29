@@ -19,8 +19,10 @@ pub const ROOT_APPS_SUBCOMMANDS: &[&str] = &[
     "validate-manifest",
     "scaffold",
 ];
-pub const CLI_CONFIG_SUBCOMMANDS: &[&str] =
-    &["get", "set", "unset", "clear", "reload", "export", "load", "list"];
+pub const CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
+    "get", "set", "unset", "clear", "reload", "validate", "schema", "explain", "repair", "export",
+    "load", "list",
+];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "list",
     "info",
@@ -62,6 +64,10 @@ const ALIAS_REWRITES: &[(&str, &str)] = &[
     ("config unset", "cli config unset"),
     ("config clear", "cli config clear"),
     ("config reload", "cli config reload"),
+    ("config validate", "cli config validate"),
+    ("config schema", "cli config schema"),
+    ("config explain", "cli config explain"),
+    ("config repair", "cli config repair"),
     ("config export", "cli config export"),
     ("config load", "cli config load"),
     ("config list", "config"),

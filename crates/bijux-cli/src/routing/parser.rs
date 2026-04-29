@@ -234,6 +234,20 @@ pub fn root_command() -> Command {
         .hide(true)
         .global(true);
 
+    let profile_arg = || Arg::new("profile").long("profile").num_args(1).value_name("PROFILE");
+    let portable_arg = || {
+        Arg::new("portable")
+            .long("portable")
+            .action(ArgAction::SetTrue)
+            .help("Use the portable config bundle format")
+    };
+    let include_secrets_arg = || {
+        Arg::new("include-secrets")
+            .long("include-secrets")
+            .action(ArgAction::SetTrue)
+            .help("Include secret values in output")
+    };
+
     let config_group = Command::new("config")
         .subcommand_required(false)
         .subcommand(Command::new("list"))
@@ -242,8 +256,28 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("unset").arg(Arg::new("key").num_args(1)))
         .subcommand(Command::new("clear"))
         .subcommand(Command::new("reload"))
-        .subcommand(Command::new("export").arg(Arg::new("path").num_args(1)))
-        .subcommand(Command::new("load").arg(Arg::new("path").num_args(1)));
+        .subcommand(Command::new("validate").arg(profile_arg()))
+        .subcommand(Command::new("schema").arg(Arg::new("scope").num_args(1)))
+        .subcommand(
+            Command::new("explain")
+                .arg(Arg::new("key").num_args(1))
+                .arg(profile_arg())
+                .arg(include_secrets_arg()),
+        )
+        .subcommand(Command::new("repair"))
+        .subcommand(
+            Command::new("export")
+                .arg(Arg::new("path").num_args(1))
+                .arg(profile_arg())
+                .arg(portable_arg())
+                .arg(include_secrets_arg()),
+        )
+        .subcommand(
+            Command::new("load")
+                .arg(Arg::new("path").num_args(1))
+                .arg(profile_arg())
+                .arg(portable_arg()),
+        );
 
     let plugins_group = Command::new("plugins")
         .subcommand(Command::new("list"))
