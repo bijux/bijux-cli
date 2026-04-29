@@ -15,10 +15,11 @@ use tempfile as _;
 use thiserror as _;
 
 use std::path::PathBuf;
-use std::process::Command;
 
-fn repo_target_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").join("artifacts/target")
+mod support;
+
+fn repo_root() -> PathBuf {
+    support::repo_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))
 }
 
 fn examples_file(file_name: &str) -> String {
@@ -31,25 +32,13 @@ fn examples_file(file_name: &str) -> String {
 #[test]
 #[ignore = "slow"]
 fn representative_json_error_snapshot_is_stable() {
-    let output = Command::new("cargo")
-        .env("CARGO_TARGET_DIR", repo_target_dir())
-        .args([
-            "run",
-            "-p",
-            "bijux-dag-cli",
-            "--",
-            "dag",
-            "lint",
-            "--strict",
-            "--json",
-            &examples_file("hello.dag.json"),
-        ])
-        .output()
-        .expect("run lint strict json");
+    let output = support::run_dag_command(
+        &["lint", "--strict", "--json", &examples_file("hello.dag.json")],
+        &repo_root(),
+    );
 
-    assert!(!output.status.success());
-    let payload: serde_json::Value =
-        serde_json::from_slice(&output.stdout).expect("parse json response");
+    assert_ne!(output.0, 0);
+    let payload: serde_json::Value = serde_json::from_str(&output.1).expect("parse json response");
 
     let snapshot = serde_json::json!({
         "ok": payload["ok"],

@@ -18,10 +18,11 @@ use thiserror as _;
 use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+
+mod support;
 
 fn repo_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    support::repo_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))
 }
 
 fn output_path_string(path: &Path) -> String {
@@ -29,18 +30,7 @@ fn output_path_string(path: &Path) -> String {
 }
 
 fn run_dag(args: &[&str], cwd: &Path) -> (i32, String, String) {
-    let output = Command::new("cargo")
-        .current_dir(cwd)
-        .env("CARGO_TARGET_DIR", cwd.join("artifacts/target"))
-        .args(["run", "-p", "bijux-dag-cli", "--", "dag"])
-        .args(args)
-        .output()
-        .expect("run dag command");
-    (
-        output.status.code().unwrap_or(1),
-        String::from_utf8_lossy(&output.stdout).to_string(),
-        String::from_utf8_lossy(&output.stderr).to_string(),
-    )
+    support::run_dag_command(args, cwd)
 }
 
 fn run_json(args: &[&str], cwd: &Path) -> Value {
