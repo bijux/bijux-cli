@@ -35,6 +35,7 @@ flowchart LR
 - `config reload`
 - `config validate [--profile NAME]`
 - `config schema [SCOPE]`
+- `config docs [SCOPE]`
 - `config explain KEY [--profile NAME]`
 - `config repair`
 - `config export PATH`
@@ -52,6 +53,7 @@ flowchart LR
 - explain and portable export redact secret-like values unless secrets are explicitly requested
 - repair writes a backup file before rewriting malformed global env state
 - import/export uses dotenv-compatible key-value syntax for native files and a logical-key JSON bundle for portable files
+- schema-backed markdown reference generation must come from the same built-in field registry as runtime validation
 - command results should include status and path context where relevant
 
 ## Code Anchors

@@ -105,7 +105,9 @@ The companion package guide lives at
 The root `doctor` surface now acts as the operator-facing runtime diagnostic entrypoint:
 
 - `bijux doctor`: unified install, state-path, plugin, app-mount, routing, and shim health
+- `bijux doctor --bundle`: export a bug-report-ready runtime bundle under `./artifacts`
 - `bijux doctor paths`: resolved state files plus read/write diagnostics
+- `bijux doctor python`: Python bridge interpreter, import, and console-script diagnostics
 - `bijux doctor routing`: canonical built-in routes, aliases, and namespace inventory
 - `bijux doctor shims`: legacy `bijux-<app>` PATH shim detection
 - `bijux doctor <app>`: focused official app discovery and runtime diagnostics
@@ -117,6 +119,8 @@ mutation:
 
 - `bijux config schema [scope]`: inspect the built-in config registry for `cli`,
   `dag`, and mounted-app scopes
+- `bijux config docs [scope]`: generate a markdown reference from the same
+  built-in schema registry
 - `bijux config validate [--profile name]`: validate effective config across the
   global env file, named profile overlays, project `.bijux/config.{toml,json}`,
   and environment overrides
@@ -125,6 +129,9 @@ mutation:
 - `bijux config repair`: recover malformed global env state and write a backup
 - `bijux config export/load --portable`: round-trip a logical-key JSON bundle
   instead of only dotenv-style env files
+
+The generated handbook reference lives at
+[`docs/bijux-cli/interfaces/generated-config-reference.md`](https://github.com/bijux/bijux-core/blob/main/docs/bijux-cli/interfaces/generated-config-reference.md).
 
 ## Tests
 
