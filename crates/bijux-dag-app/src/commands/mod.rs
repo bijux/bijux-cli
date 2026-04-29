@@ -856,6 +856,8 @@ pub(crate) enum CacheCommands {
 pub(crate) enum AdaptersCommands {
     Ls,
     Dump,
+    Describe,
+    Admit { dag: PathBuf },
     Doctor,
 }
 

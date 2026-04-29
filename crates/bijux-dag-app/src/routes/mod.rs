@@ -1,3 +1,4 @@
+pub(crate) mod adapter_routes;
 pub(crate) mod artifact_routes;
 pub(crate) mod command_routes;
 pub(crate) mod control_plane_routes;

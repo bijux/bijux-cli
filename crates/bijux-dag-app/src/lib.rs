@@ -80,13 +80,13 @@ use crate::integrity_service::{check_engine, hash_run_dir, verify_run};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use bijux_dag_core::{Graph, GraphError, Severity, SPEC_VERSION};
-use bijux_dag_runtime::{adapter_registry_dump, registered_adapters, CacheMode, Runtime, RuntimeConfig};
+use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
 #[cfg(test)]
 use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
-    AdaptersCommands, CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg,
-    HashCommands, MigrateCommands, PolicyCommands,
+    CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg, HashCommands,
+    MigrateCommands, PolicyCommands,
 };
 use config_resolution::{
     show_effective_config, show_effective_policy, ShowEffectiveConfigRequest,
@@ -945,78 +945,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 Ok(ExitCode::SUCCESS)
             }
         },
-        Commands::Adapters { command } => match command {
-            AdaptersCommands::Ls => {
-                let adapters = registered_adapters();
-                if cli.json {
-                    return emit_json(
-                        &cli,
-                        "dag.adapters.ls",
-                        true,
-                        json!(adapters),
-                        Vec::new(),
-                        ExitCode::SUCCESS,
-                    );
-                } else {
-                    for a in adapters {
-                        println!("{} {} effects={:?}", a.adapter_id, a.adapter_version, a.effects);
-                    }
-                }
-                Ok(ExitCode::SUCCESS)
-            }
-            AdaptersCommands::Dump => {
-                let data = adapter_registry_dump();
-                if cli.json {
-                    return emit_json(
-                        &cli,
-                        "dag.adapters.dump",
-                        true,
-                        data,
-                        Vec::new(),
-                        ExitCode::SUCCESS,
-                    );
-                }
-                println!("{}", serde_json::to_string_pretty(&data).map_err(|_| ExitCode::from(3))?);
-                Ok(ExitCode::SUCCESS)
-            }
-            AdaptersCommands::Doctor => {
-                let docker = check_engine("docker");
-                let podman = check_engine("podman");
-                if cli.json {
-                    let ok = docker
-                        .get("status")
-                        .and_then(|v| v.as_str())
-                        .map(|v| v == "ok")
-                        .unwrap_or(false)
-                        || podman
-                            .get("status")
-                            .and_then(|v| v.as_str())
-                            .map(|v| v == "ok")
-                            .unwrap_or(false);
-                    return emit_json(
-                        &cli,
-                        "dag.adapters.doctor",
-                        ok,
-                        json!({ "docker": docker, "podman": podman }),
-                        Vec::new(),
-                        if ok { ExitCode::SUCCESS } else { ExitCode::from(3) },
-                    );
-                } else {
-                    println!("docker: {}", docker["status"]);
-                    if let Some(v) = docker.get("version").and_then(|v| v.as_str()) {
-                        println!("docker_version: {}", v);
-                    }
-                    println!("podman: {}", podman["status"]);
-                    if let Some(v) = podman.get("version").and_then(|v| v.as_str()) {
-                        println!("podman_version: {}", v);
-                    }
-                }
-                if docker["status"] != "ok" && podman["status"] != "ok" {
-                    return Err(ExitCode::from(3));
-                }
-                Ok(ExitCode::SUCCESS)
-            }
-        },
+        Commands::Adapters { command } => {
+            routes::adapter_routes::handle_adapters_command(&cli, command)
+        }
         Commands::Export {
             run_dir,
             from_run,
