@@ -9,7 +9,8 @@ use bijux_dag_artifacts::store::{
     ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
 };
 use bijux_dag_artifacts::{
-    hash::sha256_hex, write_outputs_index, OutputsIndex, RunOutputFile, RunOutputsIndex,
+    build_artifact_identity, hash::sha256_hex, write_outputs_index, OutputsIndex, RunDirSchemaIndex,
+    RunOutputFile, RunOutputsIndex,
 };
 use bijux_dag_testkit as _;
 use hex as _;
@@ -33,6 +34,34 @@ fn duplicate_content_can_have_distinct_provenance_records() {
     };
     assert_ne!(first.artifact_id, second.artifact_id);
     assert_eq!(digest, sha256_hex(b"same-content"));
+}
+
+#[test]
+fn canonical_artifact_identity_is_stable_and_explainable() {
+    let identity = build_artifact_identity(
+        "run-42",
+        "extract",
+        "nodes/extract/outputs/report.json",
+        "fp-extract",
+        "abc123",
+    );
+    assert_eq!(identity.legacy_artifact_id, "extract:report.json");
+    assert_eq!(
+        identity.canonical_artifact_id,
+        "run=run-42;node=extract;path=nodes/extract/outputs/report.json;sha256=abc123"
+    );
+    assert_eq!(identity.output_name, "report.json");
+    assert_eq!(identity.node_fingerprint, "fp-extract");
+}
+
+#[test]
+fn run_dir_schema_index_defaults_cover_root_and_node_requirements() {
+    let schema = RunDirSchemaIndex::default();
+    assert_eq!(schema.schema_version, "run-dir-schema/v0.1");
+    assert!(schema.required_root_files.contains(&"run.schema.json".to_string()));
+    assert!(schema.required_root_files.contains(&"manifest.json".to_string()));
+    assert!(schema.required_node_files.contains(&"trace.json".to_string()));
+    assert!(schema.required_node_files.contains(&"outputs/index.json".to_string()));
 }
 
 #[test]

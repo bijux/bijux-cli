@@ -103,6 +103,62 @@ pub struct RunSummary {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RunDirSchemaIndex {
+    pub schema_version: String,
+    pub manifest_version: String,
+    pub manifest_schema: String,
+    pub node_trace_schema: String,
+    pub outputs_index_schema: String,
+    pub lineage_schema_version: String,
+    pub timeline_schema_version: String,
+    pub event_log_schema_version: String,
+    pub required_root_files: Vec<String>,
+    pub required_node_files: Vec<String>,
+    pub optional_root_files: Vec<String>,
+}
+
+impl Default for RunDirSchemaIndex {
+    fn default() -> Self {
+        Self {
+            schema_version: "run-dir-schema/v0.1".to_string(),
+            manifest_version: default_manifest_version(),
+            manifest_schema: "configs/dag/schema/run_manifest.schema.json".to_string(),
+            node_trace_schema: "configs/dag/schema/node_trace.schema.json".to_string(),
+            outputs_index_schema: "configs/dag/schema/outputs_index.schema.json".to_string(),
+            lineage_schema_version: "lineage/v0.1".to_string(),
+            timeline_schema_version: "v0.1".to_string(),
+            event_log_schema_version: "runtime-events/v0.1".to_string(),
+            required_root_files: vec![
+                "manifest.json".to_string(),
+                "graph.snapshot.json".to_string(),
+                "outputs/index.json".to_string(),
+                "provenance.json".to_string(),
+                "lineage.snapshot.json".to_string(),
+                "observability.events.json".to_string(),
+                "observability.timeline.json".to_string(),
+                "run.log.jsonl".to_string(),
+                "run.schema.json".to_string(),
+            ],
+            required_node_files: vec![
+                "trace.json".to_string(),
+                "attempts.json".to_string(),
+                "resolved_params.json".to_string(),
+                "inputs/index.json".to_string(),
+                "outputs/index.json".to_string(),
+            ],
+            optional_root_files: vec![
+                "manifest.finalized.json".to_string(),
+                ".run-complete.json".to_string(),
+                ".run-incomplete.json".to_string(),
+                "observability.root-causes.json".to_string(),
+                "observability.metrics.json".to_string(),
+                "run.audit.json".to_string(),
+            ],
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ReplayProvenance {
     pub node_action: String,
     pub source_run_id: Option<String>,
@@ -168,6 +224,18 @@ pub struct OutputSummary {
     pub node_fingerprint: String,
     pub file: String,
     pub sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ArtifactIdentity {
+    pub canonical_artifact_id: String,
+    pub legacy_artifact_id: String,
+    pub run_id: String,
+    pub node_id: String,
+    pub output_name: String,
+    pub output_path: String,
+    pub node_fingerprint: String,
+    pub artifact_sha256: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
