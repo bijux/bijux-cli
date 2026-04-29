@@ -65,6 +65,9 @@ fn runtime_executes_const_graph_and_emits_output_trace() {
         serde_json::from_str(&fs::read_to_string(&manifest).expect("read manifest")).unwrap();
     assert_eq!(data["status"], "success");
     assert!(data["graph_fingerprint"].as_str().is_some());
+    assert!(run_dir.join("manifest.finalized.json").exists());
+    assert!(run_dir.join(".run-complete.json").exists());
+    assert!(run_dir.join("run.schema.json").exists());
 
     let output_file = run_dir.join("nodes").join("const1").join("outputs").join("value.txt");
     let rendered = fs::read_to_string(&output_file).expect("output file");

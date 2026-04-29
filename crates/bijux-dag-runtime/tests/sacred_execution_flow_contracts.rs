@@ -38,6 +38,9 @@ fn engine_flow_executes_minimal_graph_and_materializes_run_dir() {
     let runtime = Runtime::new();
     let run_dir = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run succeeds");
     assert!(run_dir.join("manifest.json").exists());
+    assert!(run_dir.join("manifest.finalized.json").exists());
+    assert!(run_dir.join(".run-complete.json").exists());
+    assert!(run_dir.join("run.schema.json").exists());
     assert!(run_dir.join("graph.snapshot.json").exists());
 }
 

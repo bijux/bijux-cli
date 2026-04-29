@@ -19,8 +19,9 @@ mod engine_observe;
 #[path = "engine_record.rs"]
 mod engine_record;
 use bijux_dag_artifacts::{
-    write_provenance, write_run_outputs_index, FailureInfo, Manifest, NodeCounts, Provenance,
-    ReplayProvenance, RunDir, RunMetadata,
+    finalize_run_manifest, write_provenance, write_run_outputs_index, write_run_schema_index,
+    FailureInfo, Manifest, NodeCounts, Provenance, ReplayProvenance, RunDir, RunDirSchemaIndex,
+    RunMetadata,
 };
 use bijux_dag_core::{Effect, Graph, Node, NodeKind, SemanticNodeKind, SPEC_VERSION};
 use serde_json::Value;
@@ -1603,6 +1604,13 @@ pub fn execute(
         &ctx.run_dir.staging_path().join("failure-propagation.json"),
         &serde_json::to_vec_pretty(&failure_propagation_records)?,
     )?;
+    write_run_schema_index(
+        ctx.run_dir.staging_path().join("run.schema.json"),
+        &RunDirSchemaIndex::default(),
+    )
+    .map_err(|err| RuntimeError::Executor(format!("run schema index write failed: {err}")))?;
+    finalize_run_manifest(ctx.run_dir.staging_path())
+        .map_err(|err| RuntimeError::Executor(format!("run finalization marker write failed: {err}")))?;
 
     let final_path = run_dir.finalize()?;
     if let Some(latest) = options.latest_symlink {

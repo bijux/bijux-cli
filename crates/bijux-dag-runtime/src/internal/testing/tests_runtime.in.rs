@@ -157,6 +157,9 @@ mod tests {
         let final_path =
             runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap();
         assert!(final_path.join("manifest.json").exists());
+        assert!(final_path.join("manifest.finalized.json").exists());
+        assert!(final_path.join(".run-complete.json").exists());
+        assert!(final_path.join("run.schema.json").exists());
         assert!(final_path.join("graph.snapshot.json").exists());
         assert!(final_path.join("nodes").join("a").join("resolved_params.json").exists());
         assert!(final_path.join("nodes").join("b").join("resolved_params.json").exists());
@@ -187,6 +190,9 @@ mod tests {
             runtime.run(&sample_graph(), dir.path(), RuntimeConfig::default()).unwrap();
         let expected = vec![
             "manifest.json",
+            "manifest.finalized.json",
+            ".run-complete.json",
+            "run.schema.json",
             "provenance.json",
             "graph.snapshot.json",
             "run.log.jsonl",
@@ -1503,6 +1509,9 @@ exit 1
             let options = RuntimeConfig { cache_mode: mode, ..RuntimeConfig::default() };
             let run_dir = runtime.run(&sample_graph(), dir.path(), options).unwrap();
             assert!(run_dir.join("manifest.json").exists());
+            assert!(run_dir.join("manifest.finalized.json").exists());
+            assert!(run_dir.join(".run-complete.json").exists());
+            assert!(run_dir.join("run.schema.json").exists());
         }
     }
 
