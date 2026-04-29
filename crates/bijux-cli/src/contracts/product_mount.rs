@@ -89,6 +89,177 @@ pub struct ProductMountDescriptor {
     pub version: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductMountDescriptorBuilder {
+    namespace: Namespace,
+    display_name: Option<String>,
+    aliases: Vec<Namespace>,
+    entrypoint: Option<ProductEntrypoint>,
+    control_entrypoint: Option<ProductEntrypoint>,
+    help_summary: Option<String>,
+    capabilities: Vec<String>,
+    version: Option<String>,
+}
+
+impl ProductMountDescriptor {
+    #[must_use]
+    pub fn builder(namespace: Namespace) -> ProductMountDescriptorBuilder {
+        ProductMountDescriptorBuilder {
+            namespace,
+            display_name: None,
+            aliases: Vec::new(),
+            entrypoint: None,
+            control_entrypoint: None,
+            help_summary: None,
+            capabilities: Vec::new(),
+            version: None,
+        }
+    }
+}
+
+impl ProductMountDescriptorBuilder {
+    #[must_use]
+    pub fn display_name(mut self, value: impl Into<String>) -> Self {
+        self.display_name = Some(value.into());
+        self
+    }
+
+    #[must_use]
+    pub fn alias(mut self, value: Namespace) -> Self {
+        self.aliases.push(value);
+        self
+    }
+
+    #[must_use]
+    pub fn aliases(mut self, values: Vec<Namespace>) -> Self {
+        self.aliases.extend(values);
+        self
+    }
+
+    #[must_use]
+    pub fn entrypoint(mut self, kind: ProductEntrypointKind, command: impl Into<String>) -> Self {
+        self.entrypoint = Some(ProductEntrypoint { kind, command: command.into() });
+        self
+    }
+
+    #[must_use]
+    pub fn control_entrypoint(
+        mut self,
+        kind: ProductEntrypointKind,
+        command: impl Into<String>,
+    ) -> Self {
+        self.control_entrypoint = Some(ProductEntrypoint { kind, command: command.into() });
+        self
+    }
+
+    #[must_use]
+    pub fn help_summary(mut self, value: impl Into<String>) -> Self {
+        self.help_summary = Some(value.into());
+        self
+    }
+
+    #[must_use]
+    pub fn capability(mut self, value: impl Into<String>) -> Self {
+        self.capabilities.push(value.into());
+        self
+    }
+
+    #[must_use]
+    pub fn capabilities(mut self, values: Vec<String>) -> Self {
+        self.capabilities.extend(values);
+        self
+    }
+
+    #[must_use]
+    pub fn version(mut self, value: impl Into<String>) -> Self {
+        self.version = Some(value.into());
+        self
+    }
+
+    pub fn build(self) -> Result<ProductMountDescriptor, String> {
+        let descriptor = ProductMountDescriptor {
+            namespace: self.namespace,
+            display_name: self
+                .display_name
+                .ok_or_else(|| "product mount display_name is required".to_string())?,
+            aliases: self.aliases,
+            entrypoint: self
+                .entrypoint
+                .ok_or_else(|| "product mount entrypoint is required".to_string())?,
+            control_entrypoint: self
+                .control_entrypoint
+                .ok_or_else(|| "product mount control_entrypoint is required".to_string())?,
+            help: ProductHelpMetadata {
+                summary: self
+                    .help_summary
+                    .ok_or_else(|| "product mount help summary is required".to_string())?,
+            },
+            capabilities: self.capabilities,
+            version: self.version,
+        };
+        validate_product_mount_descriptor(&descriptor)?;
+        Ok(descriptor)
+    }
+}
+
+pub fn validate_product_mount_descriptor(descriptor: &ProductMountDescriptor) -> Result<(), String> {
+    if descriptor.display_name.trim().is_empty() {
+        return Err("product mount display_name cannot be empty".to_string());
+    }
+    if descriptor.help.summary.trim().is_empty() {
+        return Err("product mount help summary cannot be empty".to_string());
+    }
+    if descriptor.entrypoint.command.trim().is_empty() {
+        return Err("product mount entrypoint command cannot be empty".to_string());
+    }
+    if descriptor.control_entrypoint.command.trim().is_empty() {
+        return Err("product mount control entrypoint command cannot be empty".to_string());
+    }
+
+    let mut alias_set = std::collections::BTreeSet::new();
+    for alias in &descriptor.aliases {
+        if alias.as_str() == descriptor.namespace.as_str() {
+            return Err(format!(
+                "product mount `{}` cannot repeat itself as an alias",
+                descriptor.namespace.as_str()
+            ));
+        }
+        if RESERVED_ROOT_NAMESPACES.contains(&alias.as_str()) {
+            return Err(format!(
+                "product mount alias `{}` collides with reserved runtime root",
+                alias.as_str()
+            ));
+        }
+        if !alias_set.insert(alias.as_str().to_string()) {
+            return Err(format!(
+                "product mount `{}` declares duplicate alias `{}`",
+                descriptor.namespace.as_str(),
+                alias.as_str()
+            ));
+        }
+    }
+
+    let mut capability_set = std::collections::BTreeSet::new();
+    for capability in &descriptor.capabilities {
+        let normalized = capability.trim().to_ascii_lowercase().replace(' ', "_");
+        if normalized.is_empty() {
+            return Err(format!(
+                "product mount `{}` has an empty capability entry",
+                descriptor.namespace.as_str()
+            ));
+        }
+        if !capability_set.insert(normalized.clone()) {
+            return Err(format!(
+                "product mount `{}` declares duplicate capability `{}`",
+                descriptor.namespace.as_str(),
+                normalized
+            ));
+        }
+    }
+
+    Ok(())
+}
+
 /// Canonical metadata for known Bijux tool projects.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct KnownBijuxTool {
@@ -376,3 +547,51 @@ pub fn canonical_bijux_tool_namespace(query: &str) -> Option<&'static str> {
 
 /// Smallest metadata contract required for reserved product mounts.
 pub type ProductMountMetadata = ProductMountDescriptor;
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        validate_product_mount_descriptor, Namespace, ProductEntrypointKind, ProductMountDescriptor,
+    };
+
+    #[test]
+    fn descriptor_builder_builds_valid_mount() {
+        let descriptor = ProductMountDescriptor::builder(Namespace::new("workflow").expect("ns"))
+            .display_name("Workflow")
+            .entrypoint(ProductEntrypointKind::PythonModule, "workflow_app")
+            .control_entrypoint(ProductEntrypointKind::PythonModule, "workflow_app")
+            .help_summary("Workflow runtime")
+            .capability("json_output")
+            .build()
+            .expect("descriptor");
+
+        assert_eq!(descriptor.namespace.as_str(), "workflow");
+        assert_eq!(descriptor.entrypoint.command, "workflow_app");
+    }
+
+    #[test]
+    fn descriptor_validation_rejects_duplicate_aliases() {
+        let descriptor = ProductMountDescriptor {
+            namespace: Namespace::new("workflow").expect("ns"),
+            display_name: "Workflow".to_string(),
+            aliases: vec![
+                Namespace::new("wf").expect("alias"),
+                Namespace::new("wf").expect("alias"),
+            ],
+            entrypoint: super::ProductEntrypoint {
+                kind: ProductEntrypointKind::Binary,
+                command: "workflow".to_string(),
+            },
+            control_entrypoint: super::ProductEntrypoint {
+                kind: ProductEntrypointKind::Binary,
+                command: "workflow".to_string(),
+            },
+            help: super::ProductHelpMetadata { summary: "Workflow runtime".to_string() },
+            capabilities: vec!["json_output".to_string()],
+            version: None,
+        };
+
+        let error = validate_product_mount_descriptor(&descriptor).expect_err("must reject");
+        assert!(error.contains("duplicate alias"));
+    }
+}

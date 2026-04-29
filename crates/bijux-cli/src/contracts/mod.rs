@@ -37,10 +37,11 @@ pub use product_mount::{
     canonical_bijux_tool_namespace, known_bijux_tool, known_bijux_tool_by_query,
     known_bijux_tool_namespaces, known_bijux_tools, official_product_namespaces, KnownBijuxTool,
     ProductEntrypoint, ProductEntrypointKind, ProductHelpMetadata, ProductMountDescriptor,
-    ProductMountMetadata, ProductRegistryDocument, ProductRegistryEntry,
+    ProductMountDescriptorBuilder, ProductMountMetadata, ProductRegistryDocument,
+    ProductRegistryEntry, validate_product_mount_descriptor,
 };
 pub use query::{contracts_schema_query, ContractsSchemaQuery};
 pub use schema::{
     error_envelope_v1_schema, official_product_registry_schema, output_envelope_v1_schema,
-    plugin_manifest_v2_schema,
+    plugin_manifest_v2_schema, product_mount_descriptor_schema,
 };

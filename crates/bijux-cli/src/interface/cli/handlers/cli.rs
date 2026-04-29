@@ -599,7 +599,12 @@ pub(crate) fn try_handle(
                 "integrity_status": if integrity_issues.is_empty() { "ok" } else { "degraded" },
                 "integrity_issues": integrity_issues,
                 "contracts": {
-                    "schemas": ["output-envelope-v1", "error-envelope-v1", "plugin-manifest-v2"],
+                    "schemas": [
+                        "output-envelope-v1",
+                        "error-envelope-v1",
+                        "plugin-manifest-v2",
+                        "product-mount-descriptor-v1"
+                    ],
                     "version": "v1",
                 }
             }))
