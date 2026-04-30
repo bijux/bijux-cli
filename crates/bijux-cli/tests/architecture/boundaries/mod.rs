@@ -2,6 +2,7 @@
 //! Boundary law suites for architecture rules.
 
 mod architecture_boundaries;
+mod cli_dependency_direction_boundaries;
 mod cli_kernel_domain_boundaries;
 mod config_architecture_boundaries;
 mod python_bridge_ownership_boundaries;

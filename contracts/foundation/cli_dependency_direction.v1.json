@@ -1,0 +1,31 @@
+{
+  "schema_version": "foundation-cli-dependency-direction/v1",
+  "rules": [
+    {
+      "crate": "bijux-cli",
+      "allowed_workspace_normal_deps": [],
+      "forbidden_workspace_normal_deps": [
+        "bijux-dag-core",
+        "bijux-dag-runtime",
+        "bijux-dag-artifacts",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+        "bijux-dag-testkit",
+        "bijux-dev"
+      ]
+    },
+    {
+      "crate": "bijux-cli-python",
+      "allowed_workspace_normal_deps": ["bijux-cli"],
+      "forbidden_workspace_normal_deps": [
+        "bijux-dag-core",
+        "bijux-dag-runtime",
+        "bijux-dag-artifacts",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+        "bijux-dag-testkit",
+        "bijux-dev"
+      ]
+    }
+  ]
+}
