@@ -160,6 +160,30 @@ struct MediumAcceptanceGateReport {
     failed_checks: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ProductionCandidateSimulation {
+    workflows: Vec<ProductionCandidateWorkflow>,
+}
+
+#[derive(Debug, serde::Deserialize, Serialize)]
+struct ProductionCandidateWorkflow {
+    name: String,
+    cache_verified: bool,
+    replay_verified: bool,
+    diagnostics_bundle_verified: bool,
+    retention_policy_verified: bool,
+    evidence_verified: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ProductionCandidateReport {
+    policy_lane: &'static str,
+    candidate_passed: bool,
+    verified_workflow_count: usize,
+    failing_workflows: Vec<String>,
+    workflows: Vec<ProductionCandidateWorkflow>,
+}
+
 fn module_surface_budgets_payload(
     simulation: &Path,
 ) -> Result<ModuleSurfaceBudgetsReport, ExitCode> {
@@ -405,6 +429,31 @@ fn medium_acceptance_gate_payload(
     })
 }
 
+fn production_candidate_payload(simulation: &Path) -> Result<ProductionCandidateReport, ExitCode> {
+    let simulation: ProductionCandidateSimulation = load_json_file(simulation)?;
+    let mut failing_workflows = simulation
+        .workflows
+        .iter()
+        .filter(|workflow| {
+            !(workflow.cache_verified
+                && workflow.replay_verified
+                && workflow.diagnostics_bundle_verified
+                && workflow.retention_policy_verified
+                && workflow.evidence_verified)
+        })
+        .map(|workflow| workflow.name.clone())
+        .collect::<Vec<_>>();
+    failing_workflows.sort();
+    let candidate_passed = !simulation.workflows.is_empty() && failing_workflows.is_empty();
+    Ok(ProductionCandidateReport {
+        policy_lane: "ENFORCED",
+        candidate_passed,
+        verified_workflow_count: simulation.workflows.len().saturating_sub(failing_workflows.len()),
+        failing_workflows,
+        workflows: simulation.workflows,
+    })
+}
+
 pub(crate) fn handle_durability_command(
     cli: &DagCli,
     command: &DurabilityCommands,
@@ -500,6 +549,18 @@ pub(crate) fn handle_durability_command(
             emit_json(
                 cli,
                 "dag.durability.medium-acceptance-gate",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        DurabilityCommands::ProductionCandidate { simulation } => {
+            let payload =
+                serde_json::to_value(production_candidate_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.durability.production-candidate",
                 true,
                 payload,
                 Vec::new(),
@@ -993,5 +1054,80 @@ mod tests {
                 "bundle-export-import".to_string()
             ]
         );
+    }
+
+    #[test]
+    fn durability_production_candidate_passes_when_all_workflows_verified() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("production-candidate-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "workflows":[
+                {
+                  "name":"workflow-a",
+                  "cache_verified":true,
+                  "replay_verified":true,
+                  "diagnostics_bundle_verified":true,
+                  "retention_policy_verified":true,
+                  "evidence_verified":true
+                },
+                {
+                  "name":"workflow-b",
+                  "cache_verified":true,
+                  "replay_verified":true,
+                  "diagnostics_bundle_verified":true,
+                  "retention_policy_verified":true,
+                  "evidence_verified":true
+                }
+              ]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(DurabilityCommands::ProductionCandidate { simulation: simulation.clone() });
+        let code = handle_durability_command(
+            &cli,
+            &DurabilityCommands::ProductionCandidate { simulation: simulation.clone() },
+        )
+        .expect("production candidate");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::production_candidate_payload(&simulation).expect("report");
+        assert!(report.candidate_passed);
+        assert_eq!(report.verified_workflow_count, 2);
+        assert!(report.failing_workflows.is_empty());
+    }
+
+    #[test]
+    fn durability_production_candidate_flags_incomplete_workflows() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("production-candidate-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "workflows":[
+                {
+                  "name":"workflow-a",
+                  "cache_verified":true,
+                  "replay_verified":false,
+                  "diagnostics_bundle_verified":true,
+                  "retention_policy_verified":true,
+                  "evidence_verified":true
+                },
+                {
+                  "name":"workflow-b",
+                  "cache_verified":true,
+                  "replay_verified":true,
+                  "diagnostics_bundle_verified":true,
+                  "retention_policy_verified":true,
+                  "evidence_verified":true
+                }
+              ]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::production_candidate_payload(&simulation).expect("report");
+        assert!(!report.candidate_passed);
+        assert_eq!(report.verified_workflow_count, 1);
+        assert_eq!(report.failing_workflows, vec!["workflow-a".to_string()]);
     }
 }

@@ -999,6 +999,10 @@ pub(crate) enum DurabilityCommands {
     MediumAcceptanceGate {
         simulation: PathBuf,
     },
+    #[command(name = "production-candidate")]
+    ProductionCandidate {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
