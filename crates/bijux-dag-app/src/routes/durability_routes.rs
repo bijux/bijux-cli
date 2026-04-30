@@ -143,6 +143,23 @@ struct ReleaseNotesEvidenceReport {
     entries: Vec<ReleaseNoteEvidenceEntry>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct MediumAcceptanceGateSimulation {
+    nested_graph: bool,
+    branch_join: bool,
+    cache_reuse: bool,
+    forced_rerun: bool,
+    bundle_export_import: bool,
+    root_cli_mount_parity: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct MediumAcceptanceGateReport {
+    policy_lane: &'static str,
+    gate_passed: bool,
+    failed_checks: Vec<String>,
+}
+
 fn module_surface_budgets_payload(
     simulation: &Path,
 ) -> Result<ModuleSurfaceBudgetsReport, ExitCode> {
@@ -357,6 +374,37 @@ fn release_notes_evidence_payload(
     })
 }
 
+fn medium_acceptance_gate_payload(
+    simulation: &Path,
+) -> Result<MediumAcceptanceGateReport, ExitCode> {
+    let simulation: MediumAcceptanceGateSimulation = load_json_file(simulation)?;
+    let mut failed_checks = Vec::new();
+    if !simulation.nested_graph {
+        failed_checks.push("nested-graph".to_string());
+    }
+    if !simulation.branch_join {
+        failed_checks.push("branch-join".to_string());
+    }
+    if !simulation.cache_reuse {
+        failed_checks.push("cache-reuse".to_string());
+    }
+    if !simulation.forced_rerun {
+        failed_checks.push("forced-rerun".to_string());
+    }
+    if !simulation.bundle_export_import {
+        failed_checks.push("bundle-export-import".to_string());
+    }
+    if !simulation.root_cli_mount_parity {
+        failed_checks.push("root-cli-mount-parity".to_string());
+    }
+    let gate_passed = failed_checks.is_empty();
+    Ok(MediumAcceptanceGateReport {
+        policy_lane: "ENFORCED",
+        gate_passed,
+        failed_checks,
+    })
+}
+
 pub(crate) fn handle_durability_command(
     cli: &DagCli,
     command: &DurabilityCommands,
@@ -440,6 +488,18 @@ pub(crate) fn handle_durability_command(
             emit_json(
                 cli,
                 "dag.durability.release-notes-evidence",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        DurabilityCommands::MediumAcceptanceGate { simulation } => {
+            let payload =
+                serde_json::to_value(medium_acceptance_gate_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.durability.medium-acceptance-gate",
                 true,
                 payload,
                 Vec::new(),
@@ -876,5 +936,62 @@ mod tests {
         let report = super::release_notes_evidence_payload(&simulation).expect("report");
         assert!(!report.evidence_complete);
         assert_eq!(report.entries_without_evidence, vec!["add release lane".to_string()]);
+    }
+
+    #[test]
+    fn durability_medium_acceptance_gate_passes_full_checklist() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("medium-acceptance-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "nested_graph":true,
+              "branch_join":true,
+              "cache_reuse":true,
+              "forced_rerun":true,
+              "bundle_export_import":true,
+              "root_cli_mount_parity":true
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(DurabilityCommands::MediumAcceptanceGate { simulation: simulation.clone() });
+        let code = handle_durability_command(
+            &cli,
+            &DurabilityCommands::MediumAcceptanceGate { simulation: simulation.clone() },
+        )
+        .expect("medium acceptance gate");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::medium_acceptance_gate_payload(&simulation).expect("report");
+        assert!(report.gate_passed);
+        assert!(report.failed_checks.is_empty());
+    }
+
+    #[test]
+    fn durability_medium_acceptance_gate_flags_missing_scenarios() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("medium-acceptance-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "nested_graph":true,
+              "branch_join":false,
+              "cache_reuse":false,
+              "forced_rerun":true,
+              "bundle_export_import":false,
+              "root_cli_mount_parity":true
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::medium_acceptance_gate_payload(&simulation).expect("report");
+        assert!(!report.gate_passed);
+        assert_eq!(
+            report.failed_checks,
+            vec![
+                "branch-join".to_string(),
+                "cache-reuse".to_string(),
+                "bundle-export-import".to_string()
+            ]
+        );
     }
 }
