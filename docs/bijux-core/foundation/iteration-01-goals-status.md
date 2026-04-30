@@ -16,25 +16,25 @@ Status legend: `not-started`, `in-progress`, `done`, `deferred`, `blocked`.
 | 8 | Reduce root-level policy sprawl. | not-started | backlog baseline |
 | 9 | Codify version compatibility lanes. | not-started | backlog baseline |
 | 10 | Create the first hard release gate. | not-started | backlog baseline |
-| 11 | Stabilize the `bijux` root grammar. | in-progress | iteration-01 target |
+| 11 | Stabilize the `bijux` root grammar. | done | implemented in feat/deep-foundation iteration-01 |
 | 12 | Define the command envelope as product API. | in-progress | iteration-01 target |
 | 13 | Define the error envelope as product API. | not-started | backlog baseline |
 | 14 | Make official app mounting explicit. | not-started | backlog baseline |
-| 15 | Harden legacy shim behavior. | in-progress | iteration-01 target |
+| 15 | Harden legacy shim behavior. | done | implemented in feat/deep-foundation iteration-01 |
 | 16 | Align Rust and Python entrypoints. | not-started | backlog baseline |
 | 17 | Make root help app-aware. | not-started | backlog baseline |
-| 18 | Standardize output mode handling. | in-progress | iteration-01 target |
-| 19 | Add script-safety rules. | in-progress | iteration-01 target |
-| 20 | Add root command explain. | in-progress | iteration-01 target |
+| 18 | Standardize output mode handling. | done | implemented in feat/deep-foundation iteration-01 |
+| 19 | Add script-safety rules. | done | implemented in feat/deep-foundation iteration-01 |
+| 20 | Add root command explain. | done | implemented in feat/deep-foundation iteration-01 |
 | 21 | Make layered config deterministic. | not-started | backlog baseline |
 | 22 | Version the config schema registry. | not-started | backlog baseline |
-| 23 | Add config diff and explain. | in-progress | iteration-01 target |
+| 23 | Add config diff and explain. | done | implemented in feat/deep-foundation iteration-01 |
 | 24 | Harden config repair. | not-started | backlog baseline |
 | 25 | Define plugin manifest contracts. | not-started | backlog baseline |
-| 26 | Separate official apps from plugins. | in-progress | iteration-01 target |
-| 27 | Harden plugin process execution. | in-progress | iteration-01 target |
+| 26 | Separate official apps from plugins. | done | implemented in feat/deep-foundation iteration-01 |
+| 27 | Harden plugin process execution. | done | implemented in feat/deep-foundation iteration-01 |
 | 28 | Make `doctor` actionable. | not-started | backlog baseline |
-| 29 | Add routing inventory export. | in-progress | iteration-01 target |
+| 29 | Add routing inventory export. | done | implemented in feat/deep-foundation iteration-01 |
 | 30 | Make REPL behavior contract-driven. | not-started | backlog baseline |
 | 31 | Freeze the graph spec header. | not-started | backlog baseline |
 | 32 | Define node identity invariants. | not-started | backlog baseline |
