@@ -787,4 +787,23 @@ mod tests {
         assert_eq!(payload["safe_output_modes"][0], "json");
         assert_eq!(payload["unsafe_for_parsing"][0], "text");
     }
+
+    #[test]
+    fn cli_routes_exports_inventory_bundle() {
+        let result = run_app(&[
+            "bijux".to_string(),
+            "cli".to_string(),
+            "routes".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+        ])
+        .expect("run");
+        assert_eq!(result.exit_code, 0);
+        let payload: Value = serde_json::from_str(result.stdout.trim()).expect("json");
+        assert_eq!(payload["status"], "ok");
+        assert_eq!(payload["schema_version"], "bijux-cli-route-inventory-v1");
+        assert!(payload["inventory"]["builtins"].is_array());
+        assert!(payload["inventory"]["aliases"].is_array());
+        assert!(payload["inventory"]["namespaces"].is_array());
+    }
 }

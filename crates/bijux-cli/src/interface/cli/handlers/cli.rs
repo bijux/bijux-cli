@@ -408,6 +408,35 @@ fn routing_doctor_report(registry: &RouteRegistry) -> Value {
     })
 }
 
+fn route_inventory_export_report(registry: &RouteRegistry) -> Value {
+    let routing = routing_doctor_report(registry);
+    let shims = shim_doctor_report();
+    json!({
+        "status": "ok",
+        "schema_version": "bijux-cli-route-inventory-v1",
+        "inventory": {
+            "builtins": routing["routes"],
+            "aliases": routing["aliases"],
+            "namespaces": routing["namespaces"],
+            "legacy_app_shims": shims["legacy_app_shims"],
+            "legacy_installer_conflicts": shims["legacy_installer_conflicts"],
+        },
+        "summary": {
+            "route_count": routing["summary"]["route_count"],
+            "alias_count": routing["summary"]["alias_count"],
+            "namespace_count": routing["summary"]["namespace_count"],
+            "legacy_shim_count": shims["legacy_app_shims"]
+                .as_array()
+                .map(|rows| rows.len())
+                .unwrap_or(0),
+            "legacy_installer_conflict_count": shims["legacy_installer_conflicts"]
+                .as_array()
+                .map(|rows| rows.len())
+                .unwrap_or(0),
+        }
+    })
+}
+
 fn shim_doctor_report() -> Value {
     let path_value = env::var("PATH").unwrap_or_default();
     let mut legacy_app_shims = Vec::<Value>::new();
@@ -1275,6 +1304,7 @@ pub(crate) fn try_handle(
         [a, b] if a == "cli" && b == "status" => {
             Some(runtime_status_report(paths, plugin_registry_path))
         }
+        [a, b] if a == "cli" && b == "routes" => Some(route_inventory_export_report(registry)),
         [a, b] if a == "cli" && b == "script-contract" => Some(script_contract_report()),
         [a, b] if a == "cli" && b == "paths" => {
             let install = install_report_payload();
