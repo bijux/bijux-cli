@@ -30,6 +30,7 @@ pub(crate) mod runtime_routes;
 pub(crate) mod schedule_routes;
 pub(crate) mod security_routes;
 pub(crate) mod selector_grammar;
+pub(crate) mod simulation_io;
 pub(crate) mod state_store_routes;
 pub(crate) mod surface_routes;
 pub(crate) mod validate_routes;

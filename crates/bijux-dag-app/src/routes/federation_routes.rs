@@ -1,4 +1,5 @@
 use crate::commands::{DagCli, FederationCommands};
+use crate::routes::simulation_io::load_json_file;
 use crate::{emit_json, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     build_consistency_catalog, classify_resource_consistency, delegation_allowed, domain_healthy,
@@ -13,10 +14,8 @@ use bijux_dag_runtime::simulated_platform::{
     ReplayTrustWarning, RunProvenanceAttestation, TenantConfigOverlay, TrustTierRoutingRule,
     WriteRoutingRule,
 };
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::BTreeSet;
-use std::fs;
 use std::path::Path;
 
 #[derive(Debug, serde::Deserialize)]
@@ -182,11 +181,6 @@ struct ConfigInheritanceReport {
     review_required_keys_present: bool,
     explicit_override_count: usize,
     gaps: Vec<String>,
-}
-
-fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
-    let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
-    serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
 }
 
 fn region_intersection(

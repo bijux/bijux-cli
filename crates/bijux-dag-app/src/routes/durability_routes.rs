@@ -1,8 +1,7 @@
 use crate::commands::{DagCli, DurabilityCommands};
+use crate::routes::simulation_io::load_json_file;
 use crate::{emit_json, ExitCode};
-use serde::de::DeserializeOwned;
 use serde::Serialize;
-use std::fs;
 use std::path::Path;
 
 #[derive(Debug, serde::Deserialize)]
@@ -142,11 +141,6 @@ struct ReleaseNotesEvidenceReport {
     evidence_complete: bool,
     entries_without_evidence: Vec<String>,
     entries: Vec<ReleaseNoteEvidenceEntry>,
-}
-
-fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
-    let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
-    serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
 }
 
 fn module_surface_budgets_payload(

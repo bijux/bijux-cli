@@ -1,4 +1,5 @@
 use crate::commands::{DagCli, SecurityCommands};
+use crate::routes::simulation_io::load_json_file;
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_runtime::simulated_platform::{
     builtin_role_definitions, can_promote_artifact, can_renew_credential,
@@ -27,9 +28,7 @@ use bijux_dag_runtime::{
     SecretUsageAuditEvent, SecureExecutionMode, SecureTeardownPolicy, SecureWorkspaceRule,
     SensitiveArtifactRestriction,
 };
-use serde::de::DeserializeOwned;
 use serde::Serialize;
-use std::fs;
 use std::path::Path;
 
 #[derive(Debug, serde::Deserialize)]
@@ -542,11 +541,6 @@ struct SafeDefaultsReport {
     safe_by_default: bool,
     nodes: Vec<SafeDefaultsNodeReport>,
     gaps: Vec<String>,
-}
-
-fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
-    let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
-    serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
 }
 
 fn filesystem_allowlist_payload(simulation: &Path) -> Result<FilesystemAllowlistReport, ExitCode> {
