@@ -1,0 +1,50 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "foundation-hard-release-gate"
+  },
+  "nodes": [
+    {
+      "id": "seed",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "seed_out",
+          "path": "seed.txt"
+        }
+      ],
+      "params": {
+        "value": "bijux-hard-release-gate"
+      }
+    },
+    {
+      "id": "derive",
+      "kind": "const",
+      "inputs": [
+        "input"
+      ],
+      "outputs": [
+        {
+          "name": "derive_out",
+          "path": "derive.txt"
+        }
+      ],
+      "params": {
+        "value": "deterministic-replay"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node_id": "seed",
+        "port": "seed_out"
+      },
+      "to": {
+        "node_id": "derive",
+        "port": "input"
+      }
+    }
+  ]
+}

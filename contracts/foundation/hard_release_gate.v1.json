@@ -1,0 +1,16 @@
+{
+  "schema_version": "foundation-hard-release-gate/v1",
+  "fixture_workflow": "crates/bijux-dev/tests/data/foundation/hard_release_gate_graph.json",
+  "required_steps": [
+    "root-cli-routing",
+    "graph-parse",
+    "graph-validate",
+    "graph-canonicalize",
+    "plan-lowering",
+    "local-run",
+    "artifact-inventory",
+    "cache-explain",
+    "replay-proof",
+    "evidence-verify"
+  ]
+}
