@@ -99,6 +99,19 @@ fn render_json(value: &Value, pretty: bool) -> Result<String, EmitError> {
     }
 }
 
+fn render_jsonl(value: &Value) -> Result<String, EmitError> {
+    match value {
+        Value::Array(items) => {
+            let mut lines = Vec::with_capacity(items.len());
+            for item in items {
+                lines.push(serde_json::to_string(item).map_err(EmitError::from)?);
+            }
+            Ok(lines.join("\n"))
+        }
+        _ => serde_json::to_string(value).map_err(EmitError::from),
+    }
+}
+
 fn scalar_text(value: &Value) -> Option<String> {
     match value {
         Value::Null => Some("null".to_string()),
@@ -183,6 +196,7 @@ fn render_text(value: &Value) -> String {
 /// Render arbitrary value in configured format.
 pub fn render_value(value: &Value, cfg: EmitterConfig) -> Result<String, EmitError> {
     match cfg.format {
+        OutputFormat::Jsonl => render_jsonl(value),
         OutputFormat::Yaml => serde_yaml::to_string(value).map_err(EmitError::from),
         OutputFormat::Text => Ok(render_text(value)),
         _ => render_json(value, cfg.pretty),
@@ -219,4 +233,25 @@ pub fn emit_error(
         _ => with_trailing_newline(render_value(&value, cfg)?),
     };
     Ok(RenderedOutput { stream: OutputStream::Stderr, content: with_trailing_newline(content) })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{render_value, EmitterConfig};
+    use crate::contracts::OutputFormat;
+    use serde_json::json;
+
+    #[test]
+    fn render_value_jsonl_emits_one_line_per_array_item() {
+        let cfg = EmitterConfig { format: OutputFormat::Jsonl, ..EmitterConfig::default() };
+        let rendered = render_value(&json!([{"a": 1}, {"b": 2}]), cfg).expect("jsonl");
+        assert_eq!(rendered, "{\"a\":1}\n{\"b\":2}");
+    }
+
+    #[test]
+    fn render_value_jsonl_emits_single_line_for_object() {
+        let cfg = EmitterConfig { format: OutputFormat::Jsonl, ..EmitterConfig::default() };
+        let rendered = render_value(&json!({"status": "ok"}), cfg).expect("jsonl");
+        assert_eq!(rendered, "{\"status\":\"ok\"}");
+    }
 }

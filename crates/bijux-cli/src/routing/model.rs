@@ -46,7 +46,7 @@ pub const REPL_REFERENCE_COMMANDS: &[&str] = &[
     ":help <command>",
     ":set trace on|off",
     ":set quiet on|off",
-    ":set format json|yaml|text",
+    ":set format json|jsonl|yaml|text",
     ":exit",
 ];
 

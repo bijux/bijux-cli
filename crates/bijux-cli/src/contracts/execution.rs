@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 pub enum OutputFormat {
     /// JSON output.
     Json,
+    /// JSON Lines output.
+    Jsonl,
     /// YAML output.
     Yaml,
     /// Human-readable text output.

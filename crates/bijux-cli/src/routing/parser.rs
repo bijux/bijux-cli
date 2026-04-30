@@ -53,6 +53,7 @@ pub enum ParseError {
 fn parse_output_format(raw: Option<&String>) -> Result<Option<OutputFormat>, ParseError> {
     raw.map(|v| match v.as_str() {
         "json" => Ok(OutputFormat::Json),
+        "jsonl" => Ok(OutputFormat::Jsonl),
         "yaml" => Ok(OutputFormat::Yaml),
         "text" => Ok(OutputFormat::Text),
         other => Err(ParseError::InvalidFormat(other.to_string())),
@@ -179,7 +180,7 @@ pub fn root_command() -> Command {
         .num_args(1)
         .global(true)
         .value_name("FORMAT")
-        .help("Output format: text, json, or yaml");
+        .help("Output format: text, json, jsonl, or yaml");
 
     let quiet_arg = Arg::new("quiet")
         .long("quiet")
@@ -502,7 +503,8 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
 
 #[cfg(test)]
 mod tests {
-    use super::root_command;
+    use super::{parse_intent, root_command};
+    use crate::contracts::OutputFormat;
 
     #[test]
     fn cli_help_lists_registered_subcommands() {
@@ -517,5 +519,17 @@ mod tests {
         assert!(help.contains("Commands:"));
         assert!(help.contains("status"));
         assert!(help.contains("plugins"));
+    }
+
+    #[test]
+    fn parse_intent_accepts_jsonl_output_format() {
+        let argv = vec![
+            "bijux".to_string(),
+            "--format".to_string(),
+            "jsonl".to_string(),
+            "status".to_string(),
+        ];
+        let intent = parse_intent(&argv).expect("intent");
+        assert_eq!(intent.global_flags.output_format, Some(OutputFormat::Jsonl));
     }
 }
