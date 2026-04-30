@@ -248,6 +248,14 @@ pub fn root_command() -> Command {
             .action(ArgAction::SetTrue)
             .help("Include secret values in output")
     };
+    let override_arg = || {
+        Arg::new("override")
+            .long("override")
+            .num_args(1)
+            .action(ArgAction::Append)
+            .value_name("KEY=VALUE")
+            .help("Apply one highest-precedence config override (repeatable)")
+    };
 
     let config_group = Command::new("config")
         .subcommand_required(false)
@@ -257,13 +265,14 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("unset").arg(Arg::new("key").num_args(1)))
         .subcommand(Command::new("clear"))
         .subcommand(Command::new("reload"))
-        .subcommand(Command::new("validate").arg(profile_arg()))
+        .subcommand(Command::new("validate").arg(profile_arg()).arg(override_arg()))
         .subcommand(Command::new("schema").arg(Arg::new("scope").num_args(1)))
         .subcommand(Command::new("docs").arg(Arg::new("scope").num_args(1)))
         .subcommand(
             Command::new("explain")
                 .arg(Arg::new("key").num_args(1))
                 .arg(profile_arg())
+                .arg(override_arg())
                 .arg(include_secrets_arg()),
         )
         .subcommand(
@@ -273,6 +282,7 @@ pub fn root_command() -> Command {
                     Arg::new("from-profile").long("from-profile").num_args(1).value_name("PROFILE"),
                 )
                 .arg(Arg::new("to-profile").long("to-profile").num_args(1).value_name("PROFILE"))
+                .arg(override_arg())
                 .arg(include_secrets_arg()),
         )
         .subcommand(Command::new("repair"))

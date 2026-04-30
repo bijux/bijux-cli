@@ -63,8 +63,14 @@ pub(crate) fn docs(scope: Option<&str>) -> Result<Value> {
     layered::schema_docs_report(scope).map_err(|err| anyhow!(err.to_string()))
 }
 
-pub(crate) fn validate(config_file: &Path, cwd: &Path, profile: Option<&str>) -> Result<Value> {
-    layered::validate_report(config_file, cwd, profile).map_err(|err| anyhow!(err.to_string()))
+pub(crate) fn validate(
+    config_file: &Path,
+    cwd: &Path,
+    profile: Option<&str>,
+    overrides: &[String],
+) -> Result<Value> {
+    layered::validate_report(config_file, cwd, profile, overrides)
+        .map_err(|err| anyhow!(err.to_string()))
 }
 
 pub(crate) fn explain(
@@ -72,9 +78,10 @@ pub(crate) fn explain(
     cwd: &Path,
     key: &str,
     profile: Option<&str>,
+    overrides: &[String],
     include_secrets: bool,
 ) -> Result<Value> {
-    layered::explain_report(config_file, cwd, key, profile, include_secrets)
+    layered::explain_report(config_file, cwd, key, profile, overrides, include_secrets)
         .map_err(|err| anyhow!(err.to_string()))
 }
 
@@ -84,9 +91,10 @@ pub(crate) fn diff(
     key: Option<&str>,
     from_profile: Option<&str>,
     to_profile: Option<&str>,
+    overrides: &[String],
     include_secrets: bool,
 ) -> Result<Value> {
-    layered::diff_report(config_file, cwd, key, from_profile, to_profile, include_secrets)
+    layered::diff_report(config_file, cwd, key, from_profile, to_profile, overrides, include_secrets)
         .map_err(|err| anyhow!(err.to_string()))
 }
 

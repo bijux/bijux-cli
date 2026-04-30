@@ -222,3 +222,42 @@ fn config_validate_reports_invalid_typed_value() {
         .as_str()
         .is_some_and(|text| text.contains("expects an integer value")))));
 }
+
+#[test]
+fn config_validate_override_takes_highest_precedence() {
+    let root = temp_dir("validate-override");
+    let global = root.join("global.env");
+    let project = root.join("project");
+    fs::create_dir_all(project.join(".bijux")).expect("mkdir");
+    fs::write(&global, "BIJUXCLI_CLI_LOG_LEVEL=info\n").expect("global");
+    fs::write(project.join(".bijux/config.toml"), "[cli]\nlog_level = 'warn'\n").expect("project");
+
+    let payload = assert_success_json(&run_in(
+        &project,
+        &[
+            "config",
+            "validate",
+            "--override",
+            "cli.log_level=debug",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            global.to_str().expect("utf-8"),
+        ],
+        &[("BIJUXCLI_CLI_LOG_LEVEL", "error")],
+    ));
+    assert_eq!(payload["effective"]["cli.log_level"]["value"], "debug");
+    assert_eq!(
+        payload["precedence"],
+        serde_json::json!([
+            "defaults",
+            "global_file",
+            "global_profile",
+            "project_file",
+            "project_profile",
+            "environment",
+            "cli_overrides"
+        ])
+    );
+}

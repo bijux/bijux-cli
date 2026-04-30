@@ -77,6 +77,7 @@ pub fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<Stri
             || token == "--profile"
             || token == "--from-profile"
             || token == "--to-profile"
+            || token == "--override"
         {
             i += 2;
             continue;
@@ -88,6 +89,7 @@ pub fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<Stri
             || token.starts_with("--profile=")
             || token.starts_with("--from-profile=")
             || token.starts_with("--to-profile=")
+            || token.starts_with("--override=")
         {
             i += 1;
             continue;
@@ -129,6 +131,41 @@ pub fn command_option_value(
     None
 }
 
+/// Read repeated option values from command extras (`--opt value` and `--opt=value`).
+#[must_use]
+pub fn command_option_values(
+    argv: &[String],
+    command_tokens: &[&str],
+    option: &str,
+) -> Vec<String> {
+    let extras = extras_window(argv, command_tokens);
+    let mut values = Vec::new();
+    let mut i = 0;
+    while i < extras.len() {
+        let token = &extras[i];
+        if token == option {
+            if let Some(next) = extras.get(i + 1) {
+                if !next.starts_with('-') {
+                    values.push(next.clone());
+                    i += 2;
+                    continue;
+                }
+            }
+            i += 1;
+            continue;
+        }
+        if token.starts_with(&(option.to_string() + "=")) {
+            if let Some((_, value)) = token.split_once('=') {
+                values.push(value.to_string());
+            }
+            i += 1;
+            continue;
+        }
+        i += 1;
+    }
+    values
+}
+
 /// Return true when the exact flag token is present in argv.
 #[must_use]
 pub fn command_has_flag(argv: &[String], flag: &str) -> bool {
@@ -137,7 +174,7 @@ pub fn command_has_flag(argv: &[String], flag: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{command_option_value, command_positionals};
+    use super::{command_option_value, command_option_values, command_positionals};
 
     #[test]
     fn command_option_value_supports_space_and_equals_forms() {
@@ -209,6 +246,22 @@ mod tests {
         assert_eq!(
             command_positionals(&argv, &["config", "diff"]),
             vec!["cli.log_level".to_string()]
+        );
+    }
+
+    #[test]
+    fn command_option_values_collects_repeated_entries() {
+        let argv = vec![
+            "bijux".to_string(),
+            "config".to_string(),
+            "validate".to_string(),
+            "--override".to_string(),
+            "cli.log_level=debug".to_string(),
+            "--override=dag.jobs=8".to_string(),
+        ];
+        assert_eq!(
+            command_option_values(&argv, &["config", "validate"], "--override"),
+            vec!["cli.log_level=debug".to_string(), "dag.jobs=8".to_string()]
         );
     }
 }

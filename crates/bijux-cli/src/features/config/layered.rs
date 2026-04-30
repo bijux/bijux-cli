@@ -22,6 +22,7 @@ pub(crate) struct LayeredConfigOptions {
     pub profile: Option<String>,
     pub include_secrets: bool,
     pub portable: bool,
+    pub overrides: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -77,8 +78,9 @@ pub(crate) fn validate_report(
     global_config_path: &Path,
     cwd: &Path,
     profile: Option<&str>,
+    overrides: &[String],
 ) -> Result<Value, ConfigError> {
-    let resolved = resolve_layered_config(global_config_path, cwd, profile)?;
+    let resolved = resolve_layered_config_with_overrides(global_config_path, cwd, profile, overrides)?;
     let mut warnings = resolved.warnings;
     warnings.extend(warnings_for_unknown_entries(&resolved.effective_entries));
 
@@ -91,6 +93,7 @@ pub(crate) fn validate_report(
         "status": if errors.is_empty() { "ok" } else { "error" },
         "valid": errors.is_empty(),
         "profile": profile,
+        "precedence": precedence_names(),
         "project_discovery": project_discovery_payload(&resolved.project_discovery),
         "layers": resolved
             .layers
@@ -108,9 +111,10 @@ pub(crate) fn explain_report(
     cwd: &Path,
     raw_key: &str,
     profile: Option<&str>,
+    overrides: &[String],
     include_secrets: bool,
 ) -> Result<Value, ConfigError> {
-    let resolved = resolve_layered_config(global_config_path, cwd, profile)?;
+    let resolved = resolve_layered_config_with_overrides(global_config_path, cwd, profile, overrides)?;
     let storage_key = normalize_selector(raw_key)?;
     let logical_key = storage_key_to_logical_key(&storage_key);
     let effective_value = resolved
@@ -153,6 +157,7 @@ pub(crate) fn explain_report(
     Ok(json!({
         "status": "ok",
         "key": raw_key,
+        "precedence": precedence_names(),
         "logical_key": logical_key,
         "storage_key": storage_key,
         "scope": field.as_ref().map(|entry| entry.scope.clone()).unwrap_or_else(|| infer_scope(&storage_key)),
@@ -176,10 +181,12 @@ pub(crate) fn diff_report(
     raw_key: Option<&str>,
     from_profile: Option<&str>,
     to_profile: Option<&str>,
+    overrides: &[String],
     include_secrets: bool,
 ) -> Result<Value, ConfigError> {
-    let from = resolve_layered_config(global_config_path, cwd, from_profile)?;
-    let to = resolve_layered_config(global_config_path, cwd, to_profile)?;
+    let from =
+        resolve_layered_config_with_overrides(global_config_path, cwd, from_profile, overrides)?;
+    let to = resolve_layered_config_with_overrides(global_config_path, cwd, to_profile, overrides)?;
 
     let keys = if let Some(key) = raw_key {
         BTreeSet::from([normalize_selector(key)?])
@@ -227,6 +234,7 @@ pub(crate) fn diff_report(
     Ok(json!({
         "status": "ok",
         "key": raw_key,
+        "precedence": precedence_names(),
         "from_profile": from_profile,
         "to_profile": to_profile,
         "changed_count": changes.len(),
@@ -282,7 +290,12 @@ pub(crate) fn export_report(
     options: &LayeredConfigOptions,
 ) -> Result<Value, ConfigError> {
     if options.portable {
-        let resolved = resolve_layered_config(global_config_path, cwd, options.profile.as_deref())?;
+        let resolved = resolve_layered_config_with_overrides(
+            global_config_path,
+            cwd,
+            options.profile.as_deref(),
+            &options.overrides,
+        )?;
         let payload = json!({
             "format": "bijux-cli-config-bundle-v1",
             "profile": options.profile,
@@ -363,13 +376,31 @@ struct ResolvedConfig {
     project_discovery: ProjectConfigDiscovery,
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 fn resolve_layered_config(
     global_config_path: &Path,
     cwd: &Path,
     profile: Option<&str>,
 ) -> Result<ResolvedConfig, ConfigError> {
+    resolve_layered_config_with_overrides(global_config_path, cwd, profile, &[])
+}
+
+fn resolve_layered_config_with_overrides(
+    global_config_path: &Path,
+    cwd: &Path,
+    profile: Option<&str>,
+    overrides: &[String],
+) -> Result<ResolvedConfig, ConfigError> {
     let mut layers = Vec::new();
     let mut warnings = Vec::new();
+
+    layers.push(LayerSource {
+        name: "defaults",
+        path: None,
+        profile: None,
+        format: "built_in",
+        entries: default_entries(),
+    });
 
     layers.push(LayerSource {
         name: "global_file",
@@ -426,6 +457,17 @@ fn resolve_layered_config(
         });
     }
 
+    let cli_overrides = parse_cli_overrides(overrides)?;
+    if !cli_overrides.is_empty() {
+        layers.push(LayerSource {
+            name: "cli_overrides",
+            path: None,
+            profile: None,
+            format: "argv",
+            entries: cli_overrides,
+        });
+    }
+
     if project_discovery.config_path.is_none() {
         warnings
             .push("No project config file discovered under .bijux/config.{toml,json}".to_string());
@@ -442,6 +484,37 @@ fn resolve_layered_config(
     }
 
     Ok(ResolvedConfig { layers, effective_entries, warnings, project_discovery })
+}
+
+fn default_entries() -> BTreeMap<String, String> {
+    BTreeMap::new()
+}
+
+fn parse_cli_overrides(overrides: &[String]) -> Result<BTreeMap<String, String>, ConfigError> {
+    let mut out = BTreeMap::new();
+    for raw in overrides {
+        let Some((raw_key, raw_value)) = raw.split_once('=') else {
+            return Err(ConfigError::validation(format!(
+                "Invalid override `{raw}`; expected KEY=VALUE"
+            )));
+        };
+        let storage_key = normalize_selector(raw_key)?;
+        validate_schema_value(&storage_key, raw_value)?;
+        out.insert(storage_key, raw_value.to_string());
+    }
+    Ok(out)
+}
+
+fn precedence_names() -> Vec<&'static str> {
+    vec![
+        "defaults",
+        "global_file",
+        "global_profile",
+        "project_file",
+        "project_profile",
+        "environment",
+        "cli_overrides",
+    ]
 }
 
 fn load_layer_file(
@@ -842,6 +915,7 @@ mod tests {
     use super::{
         diff_report, discover_project_config, explain_report, parse_portable_entries,
         repair_env_text, resolve_layered_config, schema_docs_report, schema_report,
+        validate_report,
         LayeredConfigOptions,
     };
 
@@ -916,8 +990,15 @@ mod tests {
         let global = root.join("global.env");
         fs::write(&global, "BIJUXCLI_CLI_ACCESS_TOKEN=secret-token\n").expect("global");
 
-        let payload =
-            explain_report(&global, &root, "cli.access_token", None, false).expect("explain");
+        let payload = explain_report(
+            &global,
+            &root,
+            "cli.access_token",
+            None,
+            &Vec::new(),
+            false,
+        )
+        .expect("explain");
         assert_eq!(payload["effective"]["value"], "[redacted]");
     }
 
@@ -932,11 +1013,54 @@ mod tests {
         fs::write(project.join(".bijux/profiles/dev.toml"), "[cli]\nlog_level = 'debug'\n")
             .expect("profile");
 
-        let payload = diff_report(&global, &project, None, None, Some("dev"), false).expect("diff");
+        let payload = diff_report(
+            &global,
+            &project,
+            None,
+            None,
+            Some("dev"),
+            &Vec::new(),
+            false,
+        )
+        .expect("diff");
         assert_eq!(payload["status"], "ok");
         assert!(payload["changed_count"].as_u64().is_some_and(|count| count >= 1));
         let changes = payload["changes"].as_array().expect("changes");
         assert!(changes.iter().any(|entry| entry["logical_key"] == "cli.log_level"));
+    }
+
+    #[test]
+    fn validate_report_declares_deterministic_precedence_and_cli_overrides() {
+        let root = temp_dir("validate-precedence");
+        let global = root.join("global.env");
+        let project = root.join("project");
+        fs::create_dir_all(project.join(".bijux")).expect("mkdir");
+        fs::write(&global, "BIJUXCLI_CLI_LOG_LEVEL=info\n").expect("global");
+        fs::write(project.join(".bijux/config.toml"), "[cli]\nlog_level = 'warn'\n").expect("project");
+        std::env::set_var("BIJUXCLI_CLI_LOG_LEVEL", "error");
+
+        let payload = validate_report(
+            &global,
+            &project,
+            None,
+            &["cli.log_level=debug".to_string()],
+        )
+        .expect("validate");
+        assert_eq!(
+            payload["precedence"],
+            json!([
+                "defaults",
+                "global_file",
+                "global_profile",
+                "project_file",
+                "project_profile",
+                "environment",
+                "cli_overrides"
+            ])
+        );
+        assert_eq!(payload["effective"]["cli.log_level"]["value"], "debug");
+
+        std::env::remove_var("BIJUXCLI_CLI_LOG_LEVEL");
     }
 
     #[test]
