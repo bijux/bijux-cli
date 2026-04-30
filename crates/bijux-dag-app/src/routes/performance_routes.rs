@@ -122,6 +122,22 @@ struct ArtifactWriteProfileReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct MemoryCeilingsSimulation {
+    phase_metrics_mb: std::collections::BTreeMap<String, u64>,
+    phase_ceilings_mb: std::collections::BTreeMap<String, u64>,
+}
+
+#[derive(Debug, Serialize)]
+struct MemoryCeilingsReport {
+    policy_lane: &'static str,
+    phase_metrics_mb: std::collections::BTreeMap<String, u64>,
+    phase_ceilings_mb: std::collections::BTreeMap<String, u64>,
+    over_ceiling_phases: Vec<String>,
+    within_ceiling: bool,
+    gaps: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -303,6 +319,35 @@ fn artifact_write_profile_payload(
     })
 }
 
+fn memory_ceilings_payload(simulation: &Path) -> Result<MemoryCeilingsReport, ExitCode> {
+    let simulation: MemoryCeilingsSimulation = load_json_file(simulation)?;
+    let mut over_ceiling_phases = Vec::new();
+    let mut gaps = Vec::new();
+    for (phase, observed_mb) in &simulation.phase_metrics_mb {
+        match simulation.phase_ceilings_mb.get(phase) {
+            Some(ceiling_mb) => {
+                if observed_mb > ceiling_mb {
+                    over_ceiling_phases.push(phase.clone());
+                    gaps.push(format!("{phase} exceeds memory ceiling"));
+                }
+            }
+            None => {
+                gaps.push(format!("{phase} has no configured memory ceiling"));
+            }
+        }
+    }
+    over_ceiling_phases.sort();
+    let within_ceiling = over_ceiling_phases.is_empty();
+    Ok(MemoryCeilingsReport {
+        policy_lane: "ENFORCED",
+        phase_metrics_mb: simulation.phase_metrics_mb,
+        phase_ceilings_mb: simulation.phase_ceilings_mb,
+        over_ceiling_phases,
+        within_ceiling,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_performance_command(
     cli: &DagCli,
     command: &PerformanceCommands,
@@ -362,6 +407,18 @@ pub(crate) fn handle_performance_command(
             emit_json(
                 cli,
                 "dag.performance.artifact-write-profile",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        PerformanceCommands::MemoryCeilings { simulation } => {
+            let payload =
+                serde_json::to_value(memory_ceilings_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.performance.memory-ceilings",
                 true,
                 payload,
                 Vec::new(),
@@ -654,5 +711,68 @@ mod tests {
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
+    }
+
+    #[test]
+    fn performance_memory_ceilings_accepts_bounded_phases() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("memory-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "phase_metrics_mb":{
+                "parse":128,
+                "canonicalize":192,
+                "plan":256,
+                "expansion":320,
+                "run-history-import":200
+              },
+              "phase_ceilings_mb":{
+                "parse":256,
+                "canonicalize":256,
+                "plan":300,
+                "expansion":512,
+                "run-history-import":256
+              }
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(PerformanceCommands::MemoryCeilings { simulation: simulation.clone() });
+        let code = handle_performance_command(
+            &cli,
+            &PerformanceCommands::MemoryCeilings { simulation: simulation.clone() },
+        )
+        .expect("memory ceilings");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::memory_ceilings_payload(&simulation).expect("report");
+        assert!(report.within_ceiling);
+        assert!(report.over_ceiling_phases.is_empty());
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn performance_memory_ceilings_flags_overages_and_missing_ceilings() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("memory-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "phase_metrics_mb":{
+                "parse":512,
+                "canonicalize":128,
+                "plan":400
+              },
+              "phase_ceilings_mb":{
+                "parse":256,
+                "canonicalize":256
+              }
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::memory_ceilings_payload(&simulation).expect("report");
+        assert!(!report.within_ceiling);
+        assert_eq!(report.over_ceiling_phases, vec!["parse".to_string()]);
+        assert!(report.gaps.iter().any(|gap| gap == "parse exceeds memory ceiling"));
+        assert!(report.gaps.iter().any(|gap| gap == "plan has no configured memory ceiling"));
     }
 }

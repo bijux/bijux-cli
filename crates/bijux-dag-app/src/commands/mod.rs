@@ -935,6 +935,10 @@ pub(crate) enum PerformanceCommands {
     ArtifactWriteProfile {
         simulation: PathBuf,
     },
+    #[command(name = "memory-ceilings")]
+    MemoryCeilings {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
