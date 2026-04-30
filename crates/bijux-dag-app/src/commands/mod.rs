@@ -852,6 +852,10 @@ pub(crate) enum SecurityCommands {
     CommandInjection {
         simulation: PathBuf,
     },
+    #[command(name = "artifact-secrets")]
+    ArtifactSecrets {
+        simulation: PathBuf,
+    },
     Auth {
         simulation: PathBuf,
     },

@@ -117,6 +117,24 @@ struct CommandInjectionReport {
 }
 
 #[derive(Debug, serde::Deserialize)]
+struct ArtifactSecretsSimulation {
+    #[serde(default)]
+    durable_fields: std::collections::BTreeMap<String, String>,
+    redaction_enabled: bool,
+    refuse_on_secret: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ArtifactSecretsReport {
+    policy_lane: &'static str,
+    flagged_fields: Vec<String>,
+    redacted_fields: std::collections::BTreeMap<String, String>,
+    durable_write_allowed: bool,
+    action: &'static str,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
 struct AuthSimulation {
     environment: String,
     now_unix_ms: u128,
@@ -563,6 +581,69 @@ fn command_injection_payload(simulation: &Path) -> Result<CommandInjectionReport
         implicit_shell_detected,
         risky_tokens,
         injection_hardened,
+        gaps,
+    })
+}
+
+fn artifact_field_looks_secret(path: &str, value: &str) -> bool {
+    let field = path.to_ascii_lowercase();
+    let body = value.to_ascii_lowercase();
+    field.contains("secret")
+        || field.contains("password")
+        || field.contains("token")
+        || field.contains("apikey")
+        || field.contains("api_key")
+        || body.contains("bearer ")
+        || body.contains("token=")
+        || body.contains("password=")
+        || body.contains("api_key=")
+        || body.contains("secret=")
+}
+
+fn artifact_secrets_payload(simulation: &Path) -> Result<ArtifactSecretsReport, ExitCode> {
+    let simulation: ArtifactSecretsSimulation = load_json_file(simulation)?;
+    let mut flagged_fields = simulation
+        .durable_fields
+        .iter()
+        .filter(|(path, value)| artifact_field_looks_secret(path, value))
+        .map(|(path, _)| path.clone())
+        .collect::<Vec<_>>();
+    flagged_fields.sort();
+
+    let mut redacted_fields = simulation.durable_fields.clone();
+    if simulation.redaction_enabled {
+        for field in &flagged_fields {
+            if let Some(value) = redacted_fields.get_mut(field) {
+                *value = "[REDACTED]".to_string();
+            }
+        }
+    }
+
+    let durable_write_allowed = flagged_fields.is_empty()
+        || (simulation.redaction_enabled && !simulation.refuse_on_secret);
+    let action = if flagged_fields.is_empty() {
+        "clean"
+    } else if simulation.refuse_on_secret {
+        "refused"
+    } else if simulation.redaction_enabled {
+        "redacted"
+    } else {
+        "violating"
+    };
+    let mut gaps = Vec::new();
+    if !flagged_fields.is_empty() && !simulation.redaction_enabled && !simulation.refuse_on_secret {
+        gaps.push("secret-bearing durable fields were neither redacted nor refused".to_string());
+    }
+    if !flagged_fields.is_empty() && simulation.refuse_on_secret {
+        gaps.push("durable artifact write refused due to secret-bearing fields".to_string());
+    }
+
+    Ok(ArtifactSecretsReport {
+        policy_lane: "ENFORCED",
+        flagged_fields,
+        redacted_fields,
+        durable_write_allowed,
+        action,
         gaps,
     })
 }
@@ -1122,6 +1203,18 @@ pub(crate) fn handle_security_command(
                 ExitCode::SUCCESS,
             )
         }
+        SecurityCommands::ArtifactSecrets { simulation } => {
+            let payload =
+                serde_json::to_value(artifact_secrets_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.artifact-secrets",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
         SecurityCommands::Auth { simulation } => {
             let payload =
                 serde_json::to_value(auth_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
@@ -1447,6 +1540,64 @@ mod tests {
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
+    }
+
+    #[test]
+    fn security_artifact_secrets_accepts_clean_durable_fields() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("artifact-secrets-clean.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "durable_fields":{
+                "logs.stdout":"run completed",
+                "config.profile":"prod",
+                "outputs.summary":"ok"
+              },
+              "redaction_enabled":true,
+              "refuse_on_secret":true
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(SecurityCommands::ArtifactSecrets { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::ArtifactSecrets { simulation: simulation.clone() },
+        )
+        .expect("artifact secrets");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::artifact_secrets_payload(&simulation).expect("report");
+        assert!(report.flagged_fields.is_empty());
+        assert!(report.durable_write_allowed);
+        assert_eq!(report.action, "clean");
+    }
+
+    #[test]
+    fn security_artifact_secrets_redacts_or_refuses_seeded_secret_fields() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("artifact-secrets-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "durable_fields":{
+                "logs.stderr":"Bearer token=abc123",
+                "config.db_password":"super-secret",
+                "outputs.api_key":"AKIAEXAMPLE"
+              },
+              "redaction_enabled":true,
+              "refuse_on_secret":true
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::artifact_secrets_payload(&simulation).expect("report");
+        assert!(!report.flagged_fields.is_empty());
+        assert!(report.flagged_fields.iter().any(|field| field == "logs.stderr"));
+        assert!(report.flagged_fields.iter().any(|field| field == "config.db_password"));
+        assert!(report.flagged_fields.iter().any(|field| field == "outputs.api_key"));
+        assert!(!report.durable_write_allowed);
+        assert_eq!(report.action, "refused");
+        assert!(report.gaps.iter().any(|gap| gap == "durable artifact write refused due to secret-bearing fields"));
     }
 
     #[test]
