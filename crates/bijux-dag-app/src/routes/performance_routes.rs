@@ -100,6 +100,28 @@ struct SchedulerChurnReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ArtifactWriteProfileSimulation {
+    small_write_count: u64,
+    large_write_count: u64,
+    nested_dir_count: u64,
+    bytes_written: u64,
+    elapsed_ms: u64,
+    max_elapsed_ms: u64,
+}
+
+#[derive(Debug, Serialize)]
+struct ArtifactWriteProfileReport {
+    policy_lane: &'static str,
+    write_ops_total: u64,
+    bytes_written: u64,
+    elapsed_ms: u64,
+    throughput_bytes_per_sec: f64,
+    within_elapsed_budget: bool,
+    nested_layout_present: bool,
+    gaps: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -245,6 +267,42 @@ fn scheduler_churn_payload(simulation: &Path) -> Result<SchedulerChurnReport, Ex
     })
 }
 
+fn artifact_write_profile_payload(
+    simulation: &Path,
+) -> Result<ArtifactWriteProfileReport, ExitCode> {
+    let simulation: ArtifactWriteProfileSimulation = load_json_file(simulation)?;
+    let write_ops_total = simulation
+        .small_write_count
+        .saturating_add(simulation.large_write_count);
+    let throughput_bytes_per_sec = if simulation.elapsed_ms == 0 {
+        0.0
+    } else {
+        simulation.bytes_written as f64 / (simulation.elapsed_ms as f64 / 1000.0)
+    };
+    let within_elapsed_budget = simulation.elapsed_ms <= simulation.max_elapsed_ms;
+    let nested_layout_present = simulation.nested_dir_count > 0;
+    let mut gaps = Vec::new();
+    if !within_elapsed_budget {
+        gaps.push("artifact write elapsed time exceeds budget".to_string());
+    }
+    if !nested_layout_present {
+        gaps.push("artifact write profile lacks nested directory coverage".to_string());
+    }
+    if write_ops_total == 0 {
+        gaps.push("artifact write profile has no write operations".to_string());
+    }
+    Ok(ArtifactWriteProfileReport {
+        policy_lane: "ENFORCED",
+        write_ops_total,
+        bytes_written: simulation.bytes_written,
+        elapsed_ms: simulation.elapsed_ms,
+        throughput_bytes_per_sec,
+        within_elapsed_budget,
+        nested_layout_present,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_performance_command(
     cli: &DagCli,
     command: &PerformanceCommands,
@@ -292,6 +350,18 @@ pub(crate) fn handle_performance_command(
             emit_json(
                 cli,
                 "dag.performance.scheduler-churn",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        PerformanceCommands::ArtifactWriteProfile { simulation } => {
+            let payload = serde_json::to_value(artifact_write_profile_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.performance.artifact-write-profile",
                 true,
                 payload,
                 Vec::new(),
@@ -522,6 +592,65 @@ mod tests {
         for expected in [
             "scheduler churn exceeds configured budget",
             "retry storm signal detected in scheduler workload",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn performance_artifact_write_profile_accepts_budgeted_write_path() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("artifact-write-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "small_write_count":1000,
+              "large_write_count":30,
+              "nested_dir_count":20,
+              "bytes_written":104857600,
+              "elapsed_ms":1500,
+              "max_elapsed_ms":2000
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(PerformanceCommands::ArtifactWriteProfile { simulation: simulation.clone() });
+        let code = handle_performance_command(
+            &cli,
+            &PerformanceCommands::ArtifactWriteProfile { simulation: simulation.clone() },
+        )
+        .expect("artifact write profile");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::artifact_write_profile_payload(&simulation).expect("report");
+        assert!(report.within_elapsed_budget);
+        assert!(report.nested_layout_present);
+        assert!(report.throughput_bytes_per_sec > 0.0);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn performance_artifact_write_profile_flags_slow_or_shallow_coverage() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("artifact-write-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "small_write_count":0,
+              "large_write_count":0,
+              "nested_dir_count":0,
+              "bytes_written":1024,
+              "elapsed_ms":5000,
+              "max_elapsed_ms":2000
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::artifact_write_profile_payload(&simulation).expect("report");
+        assert!(!report.within_elapsed_budget);
+        assert!(!report.nested_layout_present);
+        for expected in [
+            "artifact write elapsed time exceeds budget",
+            "artifact write profile lacks nested directory coverage",
+            "artifact write profile has no write operations",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }

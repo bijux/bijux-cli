@@ -931,6 +931,10 @@ pub(crate) enum PerformanceCommands {
     SchedulerChurn {
         simulation: PathBuf,
     },
+    #[command(name = "artifact-write-profile")]
+    ArtifactWriteProfile {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
