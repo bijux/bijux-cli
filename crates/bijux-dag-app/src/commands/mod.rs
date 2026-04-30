@@ -879,6 +879,10 @@ pub(crate) enum SecurityCommands {
     Override {
         simulation: PathBuf,
     },
+    #[command(name = "override-audit")]
+    OverrideAudit {
+        simulation: PathBuf,
+    },
     #[command(name = "safe-defaults")]
     SafeDefaults {
         dag: PathBuf,

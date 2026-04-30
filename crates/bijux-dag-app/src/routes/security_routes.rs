@@ -359,6 +359,32 @@ struct OverrideReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct OverrideAuditSimulation {
+    actor: String,
+    run_id: String,
+    forced_rerun: bool,
+    bypassed_policy: bool,
+    cache_disabled: bool,
+    accepted_degraded_evidence: bool,
+    retention_change: Option<String>,
+    reason: String,
+    evidence_pointer: Option<String>,
+    audit_event_id: Option<String>,
+    timestamp_unix_ms: u128,
+}
+
+#[derive(Debug, Serialize)]
+struct OverrideAuditReport {
+    policy_lane: &'static str,
+    audit_complete: bool,
+    recorded_actions: Vec<String>,
+    missing_records: Vec<String>,
+    actor: String,
+    run_id: String,
+    audit_event_id: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
 struct SafeDefaultsNodeReport {
     node_id: String,
@@ -1098,6 +1124,61 @@ fn override_payload(simulation: &Path) -> Result<OverrideReport, ExitCode> {
     })
 }
 
+fn override_audit_payload(simulation: &Path) -> Result<OverrideAuditReport, ExitCode> {
+    let simulation: OverrideAuditSimulation = load_json_file(simulation)?;
+    let mut recorded_actions = Vec::new();
+    if simulation.forced_rerun {
+        recorded_actions.push("forced-rerun".to_string());
+    }
+    if simulation.bypassed_policy {
+        recorded_actions.push("bypassed-policy".to_string());
+    }
+    if simulation.cache_disabled {
+        recorded_actions.push("cache-disabled".to_string());
+    }
+    if simulation.accepted_degraded_evidence {
+        recorded_actions.push("accepted-degraded-evidence".to_string());
+    }
+    if simulation.retention_change.is_some() {
+        recorded_actions.push("retention-changed".to_string());
+    }
+
+    let reason_recorded = !simulation.reason.trim().is_empty();
+    let evidence_recorded = simulation
+        .evidence_pointer
+        .as_ref()
+        .is_some_and(|pointer| !pointer.trim().is_empty());
+    let event_recorded = simulation
+        .audit_event_id
+        .as_ref()
+        .is_some_and(|event_id| !event_id.trim().is_empty());
+    let timestamp_recorded = simulation.timestamp_unix_ms > 0;
+
+    let mut missing_records = Vec::new();
+    if !recorded_actions.is_empty() && !reason_recorded {
+        missing_records.push("override reason is missing".to_string());
+    }
+    if !recorded_actions.is_empty() && !evidence_recorded {
+        missing_records.push("evidence pointer is missing".to_string());
+    }
+    if !recorded_actions.is_empty() && !event_recorded {
+        missing_records.push("audit event id is missing".to_string());
+    }
+    if !recorded_actions.is_empty() && !timestamp_recorded {
+        missing_records.push("audit timestamp is missing".to_string());
+    }
+
+    Ok(OverrideAuditReport {
+        policy_lane: "ENFORCED",
+        audit_complete: missing_records.is_empty(),
+        recorded_actions,
+        missing_records,
+        actor: simulation.actor,
+        run_id: simulation.run_id,
+        audit_event_id: simulation.audit_event_id,
+    })
+}
+
 fn safe_defaults_payload(dag: &Path) -> Result<SafeDefaultsReport, ExitCode> {
     let graph = parse_graph(&read_file(dag)?)?;
     let workflow_name =
@@ -1256,6 +1337,18 @@ pub(crate) fn handle_security_command(
             let payload = serde_json::to_value(override_payload(simulation)?)
                 .map_err(|_| ExitCode::from(3))?;
             emit_json(cli, "dag.security.override", true, payload, Vec::new(), ExitCode::SUCCESS)
+        }
+        SecurityCommands::OverrideAudit { simulation } => {
+            let payload =
+                serde_json::to_value(override_audit_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.override-audit",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
         }
         SecurityCommands::SafeDefaults { dag } => {
             let payload =
@@ -2230,6 +2323,84 @@ mod tests {
             "break-glass override is not fully justified",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn security_override_audit_accepts_complete_override_audit_record() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("override-audit.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "actor":"operator-a",
+              "run_id":"run-42",
+              "forced_rerun":true,
+              "bypassed_policy":true,
+              "cache_disabled":true,
+              "accepted_degraded_evidence":true,
+              "retention_change":"audit",
+              "reason":"incident containment",
+              "evidence_pointer":"artifacts/overrides/run-42.json",
+              "audit_event_id":"audit-override-42",
+              "timestamp_unix_ms":1714471234000
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(SecurityCommands::OverrideAudit { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::OverrideAudit { simulation: simulation.clone() },
+        )
+        .expect("override audit");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::override_audit_payload(&simulation).expect("report");
+        assert!(report.audit_complete);
+        assert_eq!(
+            report.recorded_actions,
+            vec![
+                "forced-rerun".to_string(),
+                "bypassed-policy".to_string(),
+                "cache-disabled".to_string(),
+                "accepted-degraded-evidence".to_string(),
+                "retention-changed".to_string(),
+            ]
+        );
+        assert!(report.missing_records.is_empty());
+        assert_eq!(report.actor, "operator-a");
+        assert_eq!(report.run_id, "run-42");
+    }
+
+    #[test]
+    fn security_override_audit_flags_missing_audit_fields() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("override-audit-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "actor":"operator-a",
+              "run_id":"run-42",
+              "forced_rerun":true,
+              "bypassed_policy":false,
+              "cache_disabled":true,
+              "accepted_degraded_evidence":false,
+              "retention_change":null,
+              "reason":"",
+              "evidence_pointer":null,
+              "audit_event_id":null,
+              "timestamp_unix_ms":0
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::override_audit_payload(&simulation).expect("report");
+        assert!(!report.audit_complete);
+        for expected in [
+            "override reason is missing",
+            "evidence pointer is missing",
+            "audit event id is missing",
+            "audit timestamp is missing",
+        ] {
+            assert!(report.missing_records.iter().any(|gap| gap == expected));
         }
     }
 
