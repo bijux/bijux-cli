@@ -106,6 +106,23 @@ struct CompatibilityFixturesReport {
     fixture_count_by_category: std::collections::BTreeMap<String, usize>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ChangeImpactLabelsSimulation {
+    changed_surfaces: Vec<String>,
+    pr_labels: Vec<String>,
+    required_labels_by_surface: std::collections::BTreeMap<String, String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ChangeImpactLabelsReport {
+    policy_lane: &'static str,
+    labels_complete: bool,
+    missing_labels: Vec<String>,
+    unexpected_labels: Vec<String>,
+    changed_surfaces: Vec<String>,
+    pr_labels: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -266,6 +283,43 @@ fn compatibility_fixtures_payload(
     })
 }
 
+fn change_impact_labels_payload(simulation: &Path) -> Result<ChangeImpactLabelsReport, ExitCode> {
+    let simulation: ChangeImpactLabelsSimulation = load_json_file(simulation)?;
+    let mut missing_labels = simulation
+        .changed_surfaces
+        .iter()
+        .filter_map(|surface| {
+            simulation
+                .required_labels_by_surface
+                .get(surface)
+                .filter(|required_label| !simulation.pr_labels.contains(*required_label))
+                .map(|required_label| format!("{surface}->{required_label}"))
+        })
+        .collect::<Vec<_>>();
+    missing_labels.sort();
+    let required_labels = simulation
+        .changed_surfaces
+        .iter()
+        .filter_map(|surface| simulation.required_labels_by_surface.get(surface))
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut unexpected_labels = simulation
+        .pr_labels
+        .iter()
+        .filter(|label| !required_labels.contains(label))
+        .cloned()
+        .collect::<Vec<_>>();
+    unexpected_labels.sort();
+    let labels_complete = missing_labels.is_empty();
+    Ok(ChangeImpactLabelsReport {
+        policy_lane: "ENFORCED",
+        labels_complete,
+        missing_labels,
+        unexpected_labels,
+        changed_surfaces: simulation.changed_surfaces,
+        pr_labels: simulation.pr_labels,
+    })
+}
+
 pub(crate) fn handle_durability_command(
     cli: &DagCli,
     command: &DurabilityCommands,
@@ -325,6 +379,18 @@ pub(crate) fn handle_durability_command(
             emit_json(
                 cli,
                 "dag.durability.compatibility-fixtures",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        DurabilityCommands::ChangeImpactLabels { simulation } => {
+            let payload =
+                serde_json::to_value(change_impact_labels_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.durability.change-impact-labels",
                 true,
                 payload,
                 Vec::new(),
@@ -655,5 +721,57 @@ mod tests {
         assert!(!report.version_depth_ok);
         assert_eq!(report.missing_categories, vec!["run_manifest".to_string()]);
         assert_eq!(report.underfilled_categories, vec!["graph_spec".to_string()]);
+    }
+
+    #[test]
+    fn durability_change_impact_labels_accepts_required_surface_labels() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("change-impact-labels-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "changed_surfaces":["cli","runtime","artifact"],
+              "pr_labels":["impact:cli","impact:runtime","impact:artifact"],
+              "required_labels_by_surface":{
+                "cli":"impact:cli",
+                "runtime":"impact:runtime",
+                "artifact":"impact:artifact"
+              }
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(DurabilityCommands::ChangeImpactLabels { simulation: simulation.clone() });
+        let code = handle_durability_command(
+            &cli,
+            &DurabilityCommands::ChangeImpactLabels { simulation: simulation.clone() },
+        )
+        .expect("change impact labels");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::change_impact_labels_payload(&simulation).expect("report");
+        assert!(report.labels_complete);
+        assert!(report.missing_labels.is_empty());
+    }
+
+    #[test]
+    fn durability_change_impact_labels_flags_missing_required_labels() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("change-impact-labels-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "changed_surfaces":["cli","runtime"],
+              "pr_labels":["impact:cli","impact:docs"],
+              "required_labels_by_surface":{
+                "cli":"impact:cli",
+                "runtime":"impact:runtime"
+              }
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::change_impact_labels_payload(&simulation).expect("report");
+        assert!(!report.labels_complete);
+        assert_eq!(report.missing_labels, vec!["runtime->impact:runtime".to_string()]);
+        assert_eq!(report.unexpected_labels, vec!["impact:docs".to_string()]);
     }
 }

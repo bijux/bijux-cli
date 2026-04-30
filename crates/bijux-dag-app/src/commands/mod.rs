@@ -987,6 +987,10 @@ pub(crate) enum DurabilityCommands {
     CompatibilityFixtures {
         simulation: PathBuf,
     },
+    #[command(name = "change-impact-labels")]
+    ChangeImpactLabels {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
