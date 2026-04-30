@@ -4,7 +4,8 @@ use std::cmp::max;
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::contracts::{
-    known_bijux_tool, official_product_namespaces, CommandPath, Namespace, NamespaceMetadata,
+    known_bijux_tool, known_bijux_tools, official_product_namespaces, CommandPath, Namespace,
+    NamespaceMetadata,
 };
 
 /// Route target categories.
@@ -65,6 +66,9 @@ impl Default for RouteRegistry {
             "inspect".to_string(),
         ]);
         reserved.extend(official_product_namespaces().iter().map(std::string::ToString::to_string));
+        for tool in known_bijux_tools() {
+            reserved.extend(tool.aliases.iter().map(|alias| (*alias).to_string()));
+        }
 
         Self {
             built_ins,
