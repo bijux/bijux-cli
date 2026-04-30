@@ -1,3 +1,4 @@
+use crate::routes::selector_grammar::{SelectorExpression, SelectorField};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -108,7 +109,7 @@ pub fn explain_run_id(root: &Path, run_id: &str) -> Result<Value, std::io::Error
 }
 
 pub fn runs_history(root: &Path) -> Result<Value, std::io::Error> {
-    runs_history_query(root, None, None, None)
+    runs_history_query_with_selectors(root, None, None, None, None)
 }
 
 pub fn runs_history_query(
@@ -117,12 +118,23 @@ pub fn runs_history_query(
     source_filter: Option<&str>,
     pagination: Option<(usize, usize)>,
 ) -> Result<Value, std::io::Error> {
+    runs_history_query_with_selectors(root, status_filter, source_filter, pagination, None)
+}
+
+pub(crate) fn runs_history_query_with_selectors(
+    root: &Path,
+    status_filter: Option<&str>,
+    source_filter: Option<&str>,
+    pagination: Option<(usize, usize)>,
+    selectors: Option<&[SelectorExpression]>,
+) -> Result<Value, std::io::Error> {
     let run_ids = list_runs(root)?;
     let mut rows = Vec::new();
     for run_id in run_ids {
         let run_dir = resolve_run_dir(root, &run_id);
         let manifest = read_json(&run_dir.join("manifest.json"))?;
         let metadata = manifest.get("run_metadata").cloned().unwrap_or_else(|| json!({}));
+        let labels = metadata.get("labels").and_then(Value::as_array).cloned().unwrap_or_default();
         let row = json!({
             "run_id": manifest.get("run_id").cloned().unwrap_or(json!(run_id)),
             "status": manifest.get("status").cloned().unwrap_or(Value::Null),
@@ -130,7 +142,8 @@ pub fn runs_history_query(
             "parent_run_id": metadata.get("parent_run_id").cloned().unwrap_or(Value::Null),
             "source_run_id": metadata.get("source_run_id").cloned().unwrap_or(Value::Null),
             "submission_source": metadata.get("submission_source").cloned().unwrap_or(Value::Null),
-            "trigger_source": metadata.get("trigger_source").cloned().unwrap_or(Value::Null)
+            "trigger_source": metadata.get("trigger_source").cloned().unwrap_or(Value::Null),
+            "labels": labels
         });
         rows.push(row);
     }
@@ -141,6 +154,11 @@ pub fn runs_history_query(
     if let Some(filter_source) = source_filter {
         rows.retain(|row| {
             row.get("submission_source").and_then(Value::as_str) == Some(filter_source)
+        });
+    }
+    if let Some(selector_filters) = selectors {
+        rows.retain(|row| {
+            selector_filters.iter().all(|selector| selector_matches_row(selector, row))
         });
     }
 
@@ -162,6 +180,34 @@ pub fn runs_history_query(
         }));
     }
     Ok(json!({ "runs": window }))
+}
+
+fn selector_matches_row(selector: &SelectorExpression, row: &Value) -> bool {
+    match selector.field {
+        SelectorField::Run => {
+            row.get("run_id").and_then(Value::as_str) == Some(selector.value.as_str())
+        }
+        SelectorField::State => {
+            row.get("status").and_then(Value::as_str) == Some(selector.value.as_str())
+        }
+        SelectorField::Tag => row
+            .get("labels")
+            .and_then(Value::as_array)
+            .map(|labels| {
+                labels.iter().any(|label| label.as_str() == Some(selector.value.as_str()))
+            })
+            .unwrap_or(false),
+        SelectorField::Id => row
+            .get("run_id")
+            .and_then(Value::as_str)
+            .map(|run_id| run_id.starts_with(selector.value.as_str()))
+            .unwrap_or(false),
+        SelectorField::Node
+        | SelectorField::Artifact
+        | SelectorField::Branch
+        | SelectorField::Attempt
+        | SelectorField::Kind => false,
+    }
 }
 
 pub fn run_tree(run_dir: &Path) -> Result<Value, std::io::Error> {
@@ -469,4 +515,53 @@ fn read_node_traces(
         map.insert(node_id, trace);
     }
     Ok(map)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::runs_history_query_with_selectors;
+    use crate::routes::selector_grammar::parse_selector_expressions;
+    use serde_json::json;
+
+    fn write_manifest(root: &std::path::Path, run_id: &str, source: &str, labels: &[&str]) {
+        let run_dir = root.join(run_id);
+        std::fs::create_dir_all(&run_dir).expect("mkdir");
+        std::fs::write(
+            run_dir.join("manifest.json"),
+            serde_json::to_vec_pretty(&json!({
+                "run_id": run_id,
+                "status": "success",
+                "created_unix_ms": 1,
+                "run_metadata": {
+                    "submission_source": source,
+                    "trigger_source": "cli",
+                    "labels": labels
+                }
+            }))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
+    }
+
+    #[test]
+    fn history_query_applies_selector_filters_with_pagination() {
+        let temp = tempfile::tempdir().expect("tmp");
+        write_manifest(temp.path(), "run-a", "manual", &["etl"]);
+        write_manifest(temp.path(), "run-b", "imported", &["etl", "imported"]);
+        let selectors =
+            parse_selector_expressions(&["run:run-b".to_string(), "tag:etl".to_string()])
+                .expect("selectors");
+        let report = runs_history_query_with_selectors(
+            temp.path(),
+            Some("success"),
+            Some("imported"),
+            Some((0, 10)),
+            Some(selectors.as_slice()),
+        )
+        .expect("history");
+        let runs = report["runs"].as_array().expect("runs");
+        assert_eq!(runs.len(), 1);
+        assert_eq!(runs[0]["run_id"], "run-b");
+        assert_eq!(report["page"]["total"], 1);
+    }
 }

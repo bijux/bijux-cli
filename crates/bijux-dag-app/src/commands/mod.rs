@@ -898,6 +898,16 @@ pub(crate) enum RunsCommands {
     History {
         #[arg(long)]
         root: PathBuf,
+        #[arg(long)]
+        status: Option<String>,
+        #[arg(long)]
+        source: Option<String>,
+        #[arg(long)]
+        offset: Option<usize>,
+        #[arg(long)]
+        limit: Option<usize>,
+        #[arg(long, action = clap::ArgAction::Append)]
+        select: Vec<String>,
     },
     IdExplain {
         run_id: String,

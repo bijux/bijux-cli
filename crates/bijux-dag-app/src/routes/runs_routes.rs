@@ -1,5 +1,6 @@
 use crate::commands::{DagCli, RunsCommands};
 use crate::inspect_service;
+use crate::routes::selector_grammar::parse_selector_expressions;
 use crate::{
     emit_json, format_inspect_human, format_show_human, list_runs, print_human_diff,
     replay_service, resolve_run_dir, runs_compare, runs_failures, runs_flakes, runs_summary,
@@ -58,8 +59,16 @@ pub(crate) fn handle_runs_command(
             println!("{}", format_inspect_human(&summary));
             Ok(ExitCode::SUCCESS)
         }
-        RunsCommands::History { root } => {
-            let report = inspect_service::run_history_for_root(root)?;
+        RunsCommands::History { root, status, source, offset, limit, select } => {
+            let selectors = parse_selector_expressions(select)?;
+            let pagination = limit.map(|value| (offset.unwrap_or(0), value));
+            let report = inspect_service::run_history_query_for_root(
+                root,
+                status.as_deref(),
+                source.as_deref(),
+                pagination,
+                Some(selectors.as_slice()),
+            )?;
             if cli.json {
                 return emit_json(
                     cli,
@@ -311,10 +320,11 @@ mod tests {
             "started_unix_ms": 1,
             "finished_unix_ms": 2,
             "node_counts": {"success": 1, "failed": 0, "skipped": 0, "cached": 0},
-            "run_metadata": {"submission_source": "manual", "trigger_source": "manual"}
+            "run_metadata": {"submission_source": "manual", "trigger_source": "manual", "labels": ["etl"]}
         });
         if imported {
             manifest["run_metadata"]["submission_source"] = json!("imported");
+            manifest["run_metadata"]["labels"] = json!(["etl", "imported"]);
         }
         fs::write(
             run.join("manifest.json"),
@@ -394,6 +404,27 @@ mod tests {
         )
         .expect("inspect");
         assert_eq!(inspect, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runs_history_supports_filter_and_pagination_flags() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        write_run(tmp.path(), "run-a", false);
+        write_run(tmp.path(), "run-b", true);
+        let cli = quiet_json_cli();
+        let history = handle_runs_command(
+            &cli,
+            &RunsCommands::History {
+                root: tmp.path().to_path_buf(),
+                status: Some("success".to_string()),
+                source: Some("imported".to_string()),
+                offset: Some(0),
+                limit: Some(10),
+                select: vec!["tag:etl".to_string(), "run:run-b".to_string()],
+            },
+        )
+        .expect("history");
+        assert_eq!(history, ExitCode::SUCCESS);
     }
 
     #[test]
