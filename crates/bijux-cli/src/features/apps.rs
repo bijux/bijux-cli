@@ -926,6 +926,40 @@ fn python_executable_in(root: &Path) -> Option<PathBuf> {
 fn resolve_python_interpreter() -> PythonInterpreterResolution {
     let mut attempts = Vec::new();
 
+    if let Some(explicit) = env::var_os(BIJUX_PYTHON_BIN) {
+        let configured = explicit.to_string_lossy().trim().to_string();
+        if configured.is_empty() {
+            attempts.push(PythonInterpreterAttempt {
+                source: PythonInterpreterSource::Configured,
+                location: String::new(),
+                status: "missing".to_string(),
+                message: format!("{BIJUX_PYTHON_BIN} was provided but empty"),
+            });
+        } else {
+            let configured_path = PathBuf::from(&configured);
+            let resolved = which_in_path(&configured)
+                .or_else(|| configured_path.exists().then_some(configured_path.clone()));
+            if let Some(path) = resolved {
+                attempts.push(PythonInterpreterAttempt {
+                    source: PythonInterpreterSource::Configured,
+                    location: path.display().to_string(),
+                    status: "ok".to_string(),
+                    message: format!("selected interpreter from {BIJUX_PYTHON_BIN}"),
+                });
+                return PythonInterpreterResolution {
+                    selected: Some((PythonInterpreterSource::Configured, path)),
+                    attempts,
+                };
+            }
+            attempts.push(PythonInterpreterAttempt {
+                source: PythonInterpreterSource::Configured,
+                location: configured,
+                status: "missing".to_string(),
+                message: format!("{BIJUX_PYTHON_BIN} points to a missing interpreter"),
+            });
+        }
+    }
+
     if let Some(active_venv) = env::var_os("VIRTUAL_ENV") {
         let root = PathBuf::from(active_venv);
         if let Some(candidate) = python_executable_in(&root) {
@@ -994,28 +1028,6 @@ fn resolve_python_interpreter() -> PythonInterpreterResolution {
             location: candidate_name.to_string(),
             status: "missing".to_string(),
             message: "interpreter name was not found on PATH".to_string(),
-        });
-    }
-
-    if let Some(explicit) = env::var_os(BIJUX_PYTHON_BIN) {
-        let path = PathBuf::from(explicit);
-        if path.exists() {
-            attempts.push(PythonInterpreterAttempt {
-                source: PythonInterpreterSource::Configured,
-                location: path.display().to_string(),
-                status: "ok".to_string(),
-                message: format!("selected interpreter from {BIJUX_PYTHON_BIN}"),
-            });
-            return PythonInterpreterResolution {
-                selected: Some((PythonInterpreterSource::Configured, path)),
-                attempts,
-            };
-        }
-        attempts.push(PythonInterpreterAttempt {
-            source: PythonInterpreterSource::Configured,
-            location: path.display().to_string(),
-            status: "missing".to_string(),
-            message: format!("{BIJUX_PYTHON_BIN} points to a missing interpreter"),
         });
     }
 
