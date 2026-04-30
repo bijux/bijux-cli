@@ -1,21 +1,41 @@
 use serde_json::json;
 
+const LANE_ENFORCED: &str = "ENFORCED";
+const LANE_SIMULATED: &str = "SIMULATED";
+
+fn execution_lane(status: &str) -> &'static str {
+    match status {
+        "implemented" => LANE_ENFORCED,
+        _ => LANE_SIMULATED,
+    }
+}
+
+fn base_payload(backend: &str, status: &str) -> serde_json::Value {
+    let lane = execution_lane(status);
+    json!({
+        "format": "capabilities/v1",
+        "backend": backend,
+        "status": status,
+        "execution_lane": lane,
+        "production_ready": lane == LANE_ENFORCED
+    })
+}
+
 pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value> {
     match name {
-        "local" => Some(json!({
-            "format": "capabilities/v1",
-            "backend": "local",
-            "status": "implemented",
-            "capabilities": {
+        "local" => {
+            let mut payload = base_payload("local", "implemented");
+            payload["capabilities"] = json!({
                 "runtime_execution": true,
                 "replay_support": true,
                 "stream_capture": true
-            },
-            "notes": [
+            });
+            payload["notes"] = json!([
                 "local execution is implemented in this repository",
                 "local capability contract is evidence-backed"
-            ]
-        })),
+            ]);
+            Some(payload)
+        }
         "k8s" | "kubernetes" => {
             let version = bijux_dag_runtime::K8sBackendVersionMetadata {
                 k8s_version: "simulated-v1.30".to_string(),
@@ -23,40 +43,34 @@ pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value
                 cluster_uid: "simulated-cluster".to_string(),
             };
             let caps = bijux_dag_runtime::k8s_capability_declaration();
-            Some(json!({
-                "format": "capabilities/v1",
-                "backend": "kubernetes",
-                "status": "simulated",
-                "capabilities": {
-                    "node_selector": caps.supports_node_selector,
-                    "node_affinity": caps.supports_node_affinity,
-                    "pod_affinity": caps.supports_pod_affinity
-                },
-                "version_metadata": version,
-                "notes": [
-                    "kubernetes execution remains simulated in this repository",
-                    "capability declaration is contract-level and evidence-backed"
-                ]
-            }))
+            let mut payload = base_payload("kubernetes", "simulated");
+            payload["capabilities"] = json!({
+                "node_selector": caps.supports_node_selector,
+                "node_affinity": caps.supports_node_affinity,
+                "pod_affinity": caps.supports_pod_affinity
+            });
+            payload["version_metadata"] = json!(version);
+            payload["notes"] = json!([
+                "kubernetes execution remains simulated in this repository",
+                "capability declaration is contract-level and evidence-backed"
+            ]);
+            Some(payload)
         }
         "hpc" | "slurm" => {
             let version = bijux_dag_runtime::capture_hpc_scheduler_version("slurm", "23.11.5");
             let retry = bijux_dag_runtime::effective_hpc_retry_policy(true, true);
-            Some(json!({
-                "format": "capabilities/v1",
-                "backend": "hpc",
-                "status": "simulated",
-                "capabilities": {
-                    "queue_partition_mapping": true,
-                    "walltime_mapping": true,
-                    "scheduler_retry_precedence": retry.effective_retry_owner
-                },
-                "version_metadata": version,
-                "notes": [
-                    "hpc execution remains simulated in this repository",
-                    "slurm contract semantics are evidence-backed"
-                ]
-            }))
+            let mut payload = base_payload("hpc", "simulated");
+            payload["capabilities"] = json!({
+                "queue_partition_mapping": true,
+                "walltime_mapping": true,
+                "scheduler_retry_precedence": retry.effective_retry_owner
+            });
+            payload["version_metadata"] = json!(version);
+            payload["notes"] = json!([
+                "hpc execution remains simulated in this repository",
+                "slurm contract semantics are evidence-backed"
+            ]);
+            Some(payload)
         }
         "remote" | "distributed" => {
             let lease = bijux_dag_runtime::simulated_platform::TaskLeaseSemantics {
@@ -70,33 +84,30 @@ pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value
                 timeout_ms: 5_000,
                 delayed_threshold_ms: 2_500,
             };
-            Some(json!({
-                "format": "capabilities/v1",
-                "backend": "remote",
-                "status": "simulated",
-                "capabilities": {
-                    "task_lease_semantics": {
-                        "lease_duration_ms": lease.lease_duration_ms,
-                        "renew_before_expiry_ms": lease.renew_before_expiry_ms,
-                        "max_renewals": lease.max_renewals,
-                        "recovery_grace_ms": lease.recovery_grace_ms
-                    },
-                    "heartbeat_semantics": {
-                        "interval_ms": heartbeat.interval_ms,
-                        "timeout_ms": heartbeat.timeout_ms,
-                        "delayed_threshold_ms": heartbeat.delayed_threshold_ms
-                    },
-                    "duplicate_dispatch_prevention": true,
-                    "artifact_upload_commit_contract": true,
-                    "status_event_ordering_contract": true,
-                    "version_mismatch_rejection": true,
-                    "worker_pool_capability_negotiation": true
+            let mut payload = base_payload("remote", "simulated");
+            payload["capabilities"] = json!({
+                "task_lease_semantics": {
+                    "lease_duration_ms": lease.lease_duration_ms,
+                    "renew_before_expiry_ms": lease.renew_before_expiry_ms,
+                    "max_renewals": lease.max_renewals,
+                    "recovery_grace_ms": lease.recovery_grace_ms
                 },
-                "notes": [
-                    "remote execution remains simulated in this repository",
-                    "worker protocol contract semantics are evidence-backed"
-                ]
-            }))
+                "heartbeat_semantics": {
+                    "interval_ms": heartbeat.interval_ms,
+                    "timeout_ms": heartbeat.timeout_ms,
+                    "delayed_threshold_ms": heartbeat.delayed_threshold_ms
+                },
+                "duplicate_dispatch_prevention": true,
+                "artifact_upload_commit_contract": true,
+                "status_event_ordering_contract": true,
+                "version_mismatch_rejection": true,
+                "worker_pool_capability_negotiation": true
+            });
+            payload["notes"] = json!([
+                "remote execution remains simulated in this repository",
+                "worker protocol contract semantics are evidence-backed"
+            ]);
+            Some(payload)
         }
         _ => None,
     }
@@ -114,6 +125,8 @@ mod tests {
         assert_eq!(first["format"], "capabilities/v1");
         assert_eq!(first["backend"], "kubernetes");
         assert_eq!(first["status"], "simulated");
+        assert_eq!(first["execution_lane"], "SIMULATED");
+        assert_eq!(first["production_ready"], false);
     }
 
     #[test]
@@ -124,6 +137,8 @@ mod tests {
         assert_eq!(first["format"], "capabilities/v1");
         assert_eq!(first["backend"], "local");
         assert_eq!(first["status"], "implemented");
+        assert_eq!(first["execution_lane"], "ENFORCED");
+        assert_eq!(first["production_ready"], true);
     }
 
     #[test]
@@ -134,6 +149,8 @@ mod tests {
         assert_eq!(first["format"], "capabilities/v1");
         assert_eq!(first["backend"], "hpc");
         assert_eq!(first["status"], "simulated");
+        assert_eq!(first["execution_lane"], "SIMULATED");
+        assert_eq!(first["production_ready"], false);
     }
 
     #[test]
@@ -144,6 +161,8 @@ mod tests {
         assert_eq!(first["format"], "capabilities/v1");
         assert_eq!(first["backend"], "remote");
         assert_eq!(first["status"], "simulated");
+        assert_eq!(first["execution_lane"], "SIMULATED");
+        assert_eq!(first["production_ready"], false);
     }
 
     #[test]
@@ -170,6 +189,16 @@ mod tests {
                 !rendered.contains(forbidden),
                 "capability payload should exclude modeled-only token: {forbidden}"
             );
+        }
+    }
+
+    #[test]
+    fn simulated_backends_are_never_reported_as_enforced() {
+        for backend in ["kubernetes", "hpc", "remote"] {
+            let payload = backend_capability_payload(backend).expect("payload");
+            assert_eq!(payload["status"], "simulated");
+            assert_eq!(payload["execution_lane"], "SIMULATED");
+            assert_eq!(payload["production_ready"], false);
         }
     }
 }
