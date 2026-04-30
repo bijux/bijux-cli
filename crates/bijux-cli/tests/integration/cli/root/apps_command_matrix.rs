@@ -226,6 +226,22 @@ fn official_runtime_delegation_prefers_project_descriptor_entrypoint() {
 }
 
 #[test]
+fn official_runtime_delegation_reports_missing_runtime_binary() {
+    let root = temp_dir("apps-missing-runtime-binary");
+    let out = run_with(
+        &root,
+        &["dag", "status"],
+        &[("PATH", root.join("empty-bin").display().to_string())],
+    );
+
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    let stderr = String::from_utf8(out.stderr).expect("utf-8");
+    assert!(stderr.contains("failed to run `bijux dag`"));
+    assert!(stderr.contains("bijux-dag"));
+}
+
+#[test]
 fn apps_disabled_registry_marks_mount_as_disabled_without_descriptor_override() {
     let root = temp_dir("apps-disabled-registry");
     let app_dir = root.join(".bijux/apps");

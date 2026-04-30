@@ -13,9 +13,9 @@ use serde::Serialize;
 use serde_json::{json, Value};
 
 use crate::contracts::{
-    known_bijux_tool_by_query, known_bijux_tools, product_mount_descriptor_schema,
-    validate_product_mount_descriptor, KnownBijuxTool, Namespace, ProductEntrypoint,
-    ProductEntrypointKind, ProductHelpMetadata, ProductMountDescriptor,
+    known_bijux_tool_by_query, known_bijux_tools, official_status_allows_runtime_dispatch,
+    product_mount_descriptor_schema, validate_product_mount_descriptor, KnownBijuxTool, Namespace,
+    ProductEntrypoint, ProductEntrypointKind, ProductHelpMetadata, ProductMountDescriptor,
 };
 use crate::features::diagnostics::state_paths::ResolvedStatePaths;
 use crate::features::plugins::list_plugins;
@@ -1206,6 +1206,19 @@ fn resolve_tool(
     let mut probes = Vec::new();
     let discovery_paths = discovery_paths_for(tool.namespace, paths);
     let mut disabled = false;
+    if !official_status_allows_runtime_dispatch(tool.status) {
+        disabled = true;
+        probes.push(AppProbe {
+            source: AppDiscoverySource::CompiledOfficialRegistry,
+            location: "official_product_namespace_registry.json".to_string(),
+            status: "disabled".to_string(),
+            message: format!("official status `{}` disables runtime routing", tool.status),
+        });
+        issues.push(format!(
+            "official status `{}` marks this product as unsupported for runtime routing",
+            tool.status
+        ));
+    }
 
     match is_disabled_by_registry(tool, &mut probes) {
         Ok(true) => {
@@ -1663,6 +1676,9 @@ fn app_summary(apps: &[AppMountReport]) -> AppMountSummary {
 /// Resolve the runtime command used for official app delegation.
 pub fn resolve_runtime_command(query: &str) -> Option<ResolvedAppCommand> {
     if let Some(tool) = known_bijux_tool_by_query(query) {
+        if !official_status_allows_runtime_dispatch(tool.status) {
+            return None;
+        }
         let paths = ResolvedStatePaths {
             config_file: PathBuf::new(),
             history_file: PathBuf::new(),
