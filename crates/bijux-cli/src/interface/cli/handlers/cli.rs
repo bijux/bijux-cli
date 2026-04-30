@@ -159,12 +159,60 @@ fn status_from_severity(severity: &str) -> &'static str {
     }
 }
 
-fn doctor_issue(area: &str, severity: &str, message: impl Into<String>) -> Value {
+fn doctor_evidence_path(area: &str) -> &'static str {
+    match area {
+        "install" => "/checks/install/details",
+        "paths" => "/checks/paths/details",
+        "routing" => "/checks/routing/details",
+        "plugins" => "/checks/plugins/details",
+        "apps" => "/checks/apps/details",
+        "shims" => "/checks/shims/details",
+        "python" => "/checks/python/details",
+        _ => "/checks",
+    }
+}
+
+fn default_doctor_remediation(area: &str, message: &str) -> String {
+    match area {
+        "install" => {
+            "run `bijux doctor` and align PATH/wheel installs so one canonical runtime is active"
+                .to_string()
+        }
+        "paths" => "fix file permissions or configure BIJUX state path overrides".to_string(),
+        "plugins" => "run `bijux plugins doctor` and repair incompatible plugin entries".to_string(),
+        "apps" => "run `bijux apps doctor` and resolve mount metadata or runtime entrypoints"
+            .to_string(),
+        "shims" => "remove legacy shim wrappers and prefer `bijux <app> ...` routes".to_string(),
+        "python" => {
+            "install a supported Python runtime and validate `bijux_cli_py` import parity"
+                .to_string()
+        }
+        "routing" => "inspect route inventory and clear namespace collisions".to_string(),
+        _ => {
+            format!("inspect doctor findings for `{area}` and apply the documented remediation: {message}")
+        }
+    }
+}
+
+fn doctor_issue_with_remediation(
+    area: &str,
+    severity: &str,
+    message: impl Into<String>,
+    remediation: Option<String>,
+) -> Value {
+    let message = message.into();
     json!({
         "area": area,
+        "affected_surface": area,
         "severity": severity,
-        "message": message.into(),
+        "message": message,
+        "evidence_path": doctor_evidence_path(area),
+        "remediation": remediation.unwrap_or_else(|| default_doctor_remediation(area, &message)),
     })
+}
+
+fn doctor_issue(area: &str, severity: &str, message: impl Into<String>) -> Value {
+    doctor_issue_with_remediation(area, severity, message, None)
 }
 
 fn doctor_check(
@@ -828,11 +876,15 @@ pub(crate) fn doctor_report(
     for check in &checks {
         let severity = check.get("severity").and_then(Value::as_str).unwrap_or("ok");
         if severity != "ok" {
-            issues.push(json!({
-                "area": check["name"],
-                "severity": severity,
-                "message": check["message"],
-            }));
+            let area = check["name"].as_str().unwrap_or("unknown");
+            let message = check["message"].as_str().unwrap_or("doctor check reported a non-ok state");
+            let remediation = check
+                .get("suggestions")
+                .and_then(Value::as_array)
+                .and_then(|items| items.first())
+                .and_then(Value::as_str)
+                .map(ToOwned::to_owned);
+            issues.push(doctor_issue_with_remediation(area, severity, message, remediation));
         }
     }
     let severity = max_severity(
@@ -1433,6 +1485,13 @@ mod tests {
         assert_eq!(report["install"]["has_path_shadowing"], serde_json::json!(true));
         assert_eq!(report["severity"], serde_json::json!("warning"));
         assert!(report["suggestions"].as_array().is_some_and(|items| !items.is_empty()));
+        assert!(report["issues"]
+            .as_array()
+            .expect("issues")
+            .iter()
+            .all(|issue| issue.get("affected_surface").is_some()
+                && issue.get("evidence_path").is_some()
+                && issue.get("remediation").is_some()));
     }
 
     #[test]
