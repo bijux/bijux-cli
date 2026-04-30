@@ -7,12 +7,18 @@ use serde_json::json;
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "kebab-case")]
 enum CommandGroup {
-    Core,
-    Runtime,
-    Evidence,
+    Graph,
+    Plan,
+    Run,
+    Inspect,
+    Replay,
     Cache,
-    Diagnostics,
-    Lab,
+    Artifact,
+    Config,
+    Migrate,
+    Doctor,
+    Prove,
+    ExportImport,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
@@ -37,24 +43,101 @@ struct CommandCatalogEntry {
 fn command_group(path: &str) -> CommandGroup {
     let head = path.split(' ').next().unwrap_or(path);
     match head {
-        "cache" => CommandGroup::Cache,
-        "artifact" | "artifact-inspect" | "diff" | "explain" | "explain-plan" | "export"
-        | "fsck" | "import" | "node" | "proof-summary" | "prove" | "run-bundle" | "runs"
-        | "status" | "trace-artifact" | "trace-node" | "verify" | "why-cache-missed"
-        | "why-rerun" => CommandGroup::Evidence,
-        "adapters"
-        | "capabilities"
-        | "commands"
-        | "doctor"
-        | "semantic-portability"
-        | "version"
-        | "version-inspect" => CommandGroup::Diagnostics,
-        "control-plane" | "dataset" | "enterprise" | "federation" | "fleet" | "governance"
-        | "incident" | "lab" | "release" | "runtime" | "schedule" | "security" | "state-store" => {
-            CommandGroup::Lab
+        "init" | "validate" | "canonicalize" | "lint" | "graph-lint" | "canonical-bytes"
+        | "canonical-diff" | "fingerprint" | "graph" => CommandGroup::Graph,
+        "plan" | "explain-plan" | "show-effective-graph" => CommandGroup::Plan,
+        "run" | "runtime" | "schedule" => CommandGroup::Run,
+        "runs" | "status" | "node" | "trace-node" | "diff" | "why-rerun" => {
+            CommandGroup::Inspect
         }
-        "replay" | "run" => CommandGroup::Runtime,
-        _ => CommandGroup::Core,
+        "replay" => CommandGroup::Replay,
+        "cache" => CommandGroup::Cache,
+        "artifact" | "artifact-inspect" | "trace-artifact" => CommandGroup::Artifact,
+        "config"
+        | "policy"
+        | "version"
+        | "version-inspect"
+        | "capabilities"
+        | "semantic-portability"
+        | "equivalence-proof"
+        | "commands"
+        | "adapters"
+        | "control-plane"
+        | "state-store"
+        | "dataset"
+        | "enterprise"
+        | "fleet"
+        | "governance"
+        | "incident"
+        | "lab"
+        | "federation"
+        | "security"
+        | "release" => CommandGroup::Config,
+        "migrate" => CommandGroup::Migrate,
+        "doctor" => CommandGroup::Doctor,
+        "prove" | "proof-summary" | "verify" | "fsck" => CommandGroup::Prove,
+        "export" | "import" | "run-bundle" => CommandGroup::ExportImport,
+        _ => {
+            if path.starts_with("plan ") {
+                return CommandGroup::Plan;
+            }
+            if path.starts_with("runs ") {
+                return CommandGroup::Inspect;
+            }
+            if path.starts_with("replay ") {
+                return CommandGroup::Replay;
+            }
+            if path.starts_with("artifact ") {
+                return CommandGroup::Artifact;
+            }
+            if path.starts_with("config ") || path.starts_with("policy ") {
+                return CommandGroup::Config;
+            }
+            if path.starts_with("cache ") {
+                return CommandGroup::Cache;
+            }
+            if path.starts_with("migrate ") {
+                return CommandGroup::Migrate;
+            }
+            if path.starts_with("export ") || path.starts_with("import ") {
+                return CommandGroup::ExportImport;
+            }
+            if path.starts_with("run ") {
+                return CommandGroup::Run;
+            }
+            if path.starts_with("graph ") {
+                return CommandGroup::Graph;
+            }
+            if path.starts_with("prove ") {
+                return CommandGroup::Prove;
+            }
+            if path.starts_with("doctor ") {
+                return CommandGroup::Doctor;
+            }
+            if path.starts_with("schedule ") || path.starts_with("runtime ") {
+                return CommandGroup::Run;
+            }
+            if path.starts_with("status ") || path.starts_with("node ") || path.starts_with("diff ")
+            {
+                return CommandGroup::Inspect;
+            }
+            if path.starts_with("trace-artifact ") {
+                return CommandGroup::Artifact;
+            }
+            if path.starts_with("version ")
+                || path.starts_with("capabilities ")
+                || path.starts_with("commands ")
+            {
+                return CommandGroup::Config;
+            }
+            if path.starts_with("canonicalize ")
+                || path.starts_with("validate ")
+                || path.starts_with("lint ")
+            {
+                return CommandGroup::Graph;
+            }
+            CommandGroup::Inspect
+        }
     }
 }
 
@@ -223,11 +306,17 @@ mod tests {
     #[test]
     fn command_groups_cover_public_taxonomy() {
         let groups = command_groups(&command_catalog());
-        assert!(groups.contains(&"core".to_string()));
-        assert!(groups.contains(&"runtime".to_string()));
-        assert!(groups.contains(&"evidence".to_string()));
+        assert!(groups.contains(&"graph".to_string()));
+        assert!(groups.contains(&"plan".to_string()));
+        assert!(groups.contains(&"run".to_string()));
+        assert!(groups.contains(&"inspect".to_string()));
+        assert!(groups.contains(&"replay".to_string()));
         assert!(groups.contains(&"cache".to_string()));
-        assert!(groups.contains(&"diagnostics".to_string()));
-        assert!(groups.contains(&"lab".to_string()));
+        assert!(groups.contains(&"artifact".to_string()));
+        assert!(groups.contains(&"config".to_string()));
+        assert!(groups.contains(&"migrate".to_string()));
+        assert!(groups.contains(&"doctor".to_string()));
+        assert!(groups.contains(&"prove".to_string()));
+        assert!(groups.contains(&"export-import".to_string()));
     }
 }
