@@ -343,6 +343,27 @@ struct InventoryComponentReport {
 }
 
 #[derive(Debug, serde::Deserialize)]
+struct TrustClassesSimulation {
+    run_id: String,
+    evidence_complete: bool,
+    advisory_only_controls: bool,
+    simulated_backend: bool,
+    release_controls_met: bool,
+    audit_controls_met: bool,
+    policy_violations: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct TrustClassesReport {
+    policy_lane: &'static str,
+    run_id: String,
+    run_trust_class: &'static str,
+    artifact_trust_class: &'static str,
+    evidence_complete: bool,
+    classification_reasons: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
 struct DataAccessSimulation {
     input_root: String,
     candidate_input: String,
@@ -1088,6 +1109,44 @@ fn supply_inventory_payload(simulation: &Path) -> Result<SupplyInventoryReport, 
     })
 }
 
+fn trust_classes_payload(simulation: &Path) -> Result<TrustClassesReport, ExitCode> {
+    let simulation: TrustClassesSimulation = load_json_file(simulation)?;
+    let mut classification_reasons = Vec::new();
+    let (run_trust_class, artifact_trust_class) = if simulation.simulated_backend {
+        classification_reasons.push("simulated backend execution".to_string());
+        ("simulated", "simulated")
+    } else if simulation.policy_violations > 0 {
+        classification_reasons.push(format!(
+            "policy violations present: {}",
+            simulation.policy_violations
+        ));
+        ("draft", "draft")
+    } else if !simulation.evidence_complete {
+        classification_reasons.push("required evidence is incomplete".to_string());
+        ("operational", "operational")
+    } else if simulation.advisory_only_controls {
+        classification_reasons.push("control coverage is advisory-only".to_string());
+        ("advisory", "advisory")
+    } else if simulation.release_controls_met {
+        classification_reasons.push("release controls and evidence are complete".to_string());
+        ("release", "release")
+    } else if simulation.audit_controls_met {
+        classification_reasons.push("audit controls and evidence are complete".to_string());
+        ("audit", "audit")
+    } else {
+        classification_reasons.push("baseline enforced controls passed".to_string());
+        ("operational", "operational")
+    };
+    Ok(TrustClassesReport {
+        policy_lane: "ENFORCED",
+        run_id: simulation.run_id,
+        run_trust_class,
+        artifact_trust_class,
+        evidence_complete: simulation.evidence_complete,
+        classification_reasons,
+    })
+}
+
 fn data_access_payload(simulation: &Path) -> Result<DataAccessReport, ExitCode> {
     let simulation: DataAccessSimulation = load_json_file(simulation)?;
     let input_path_allowed = authorize_input_path(
@@ -1426,6 +1485,18 @@ pub(crate) fn handle_security_command(
             emit_json(
                 cli,
                 "dag.security.supply-inventory",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        SecurityCommands::TrustClasses { simulation } => {
+            let payload =
+                serde_json::to_value(trust_classes_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.trust-classes",
                 true,
                 payload,
                 Vec::new(),
@@ -2302,6 +2373,61 @@ mod tests {
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
+    }
+
+    #[test]
+    fn security_trust_classes_classifies_release_grade_evidence() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("trust-classes.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "run_id":"run-900",
+              "evidence_complete":true,
+              "advisory_only_controls":false,
+              "simulated_backend":false,
+              "release_controls_met":true,
+              "audit_controls_met":true,
+              "policy_violations":0
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(SecurityCommands::TrustClasses { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::TrustClasses { simulation: simulation.clone() },
+        )
+        .expect("trust classes");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::trust_classes_payload(&simulation).expect("report");
+        assert_eq!(report.run_trust_class, "release");
+        assert_eq!(report.artifact_trust_class, "release");
+        assert!(report.classification_reasons.iter().any(|reason| {
+            reason == "release controls and evidence are complete"
+        }));
+    }
+
+    #[test]
+    fn security_trust_classes_downgrades_simulated_or_incomplete_runs() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("trust-classes-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "run_id":"run-901",
+              "evidence_complete":false,
+              "advisory_only_controls":true,
+              "simulated_backend":true,
+              "release_controls_met":false,
+              "audit_controls_met":false,
+              "policy_violations":2
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::trust_classes_payload(&simulation).expect("report");
+        assert_eq!(report.run_trust_class, "simulated");
+        assert_eq!(report.artifact_trust_class, "simulated");
+        assert!(report.classification_reasons.iter().any(|reason| reason == "simulated backend execution"));
     }
 
     #[test]
