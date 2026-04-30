@@ -185,6 +185,29 @@ struct RunHistoryCompactionReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct BenchmarkReportGovernanceSimulation {
+    fixture_id: String,
+    hardware_note: String,
+    run_version: String,
+    variance_pct: f64,
+    max_variance_pct: f64,
+    reproducible: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct BenchmarkReportGovernanceReport {
+    policy_lane: &'static str,
+    fixture_id: String,
+    hardware_note: String,
+    run_version: String,
+    variance_pct: f64,
+    max_variance_pct: f64,
+    reproducible: bool,
+    governance_passed: bool,
+    gaps: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -458,6 +481,40 @@ fn run_history_compaction_payload(
     })
 }
 
+fn benchmark_report_governance_payload(
+    simulation: &Path,
+) -> Result<BenchmarkReportGovernanceReport, ExitCode> {
+    let simulation: BenchmarkReportGovernanceSimulation = load_json_file(simulation)?;
+    let mut gaps = Vec::new();
+    if simulation.fixture_id.trim().is_empty() {
+        gaps.push("benchmark report fixture identity is missing".to_string());
+    }
+    if simulation.hardware_note.trim().is_empty() {
+        gaps.push("benchmark report hardware note is missing".to_string());
+    }
+    if simulation.run_version.trim().is_empty() {
+        gaps.push("benchmark report version is missing".to_string());
+    }
+    if simulation.variance_pct > simulation.max_variance_pct {
+        gaps.push("benchmark report variance exceeds allowed budget".to_string());
+    }
+    if !simulation.reproducible {
+        gaps.push("benchmark run is not reproducible".to_string());
+    }
+    let governance_passed = gaps.is_empty();
+    Ok(BenchmarkReportGovernanceReport {
+        policy_lane: "ENFORCED",
+        fixture_id: simulation.fixture_id,
+        hardware_note: simulation.hardware_note,
+        run_version: simulation.run_version,
+        variance_pct: simulation.variance_pct,
+        max_variance_pct: simulation.max_variance_pct,
+        reproducible: simulation.reproducible,
+        governance_passed,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_performance_command(
     cli: &DagCli,
     command: &PerformanceCommands,
@@ -553,6 +610,18 @@ pub(crate) fn handle_performance_command(
             emit_json(
                 cli,
                 "dag.performance.run-history-compaction",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        PerformanceCommands::BenchmarkReportGovernance { simulation } => {
+            let payload = serde_json::to_value(benchmark_report_governance_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.performance.benchmark-report-governance",
                 true,
                 payload,
                 Vec::new(),
@@ -1019,6 +1088,65 @@ mod tests {
             "compaction increased run-history record count",
             "compaction increased run-history storage bytes",
             "post-compaction run-history query p95 exceeds budget",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn performance_benchmark_report_governance_accepts_complete_reproducible_report() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("benchmark-governance-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "fixture_id":"planner-large-v1",
+              "hardware_note":"apple-m2-32gb",
+              "run_version":"perf-2026-04-30",
+              "variance_pct":3.2,
+              "max_variance_pct":5.0,
+              "reproducible":true
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(PerformanceCommands::BenchmarkReportGovernance {
+            simulation: simulation.clone(),
+        });
+        let code = handle_performance_command(
+            &cli,
+            &PerformanceCommands::BenchmarkReportGovernance { simulation: simulation.clone() },
+        )
+        .expect("benchmark report governance");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::benchmark_report_governance_payload(&simulation).expect("report");
+        assert!(report.governance_passed);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn performance_benchmark_report_governance_flags_missing_metadata_and_variance_drift() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("benchmark-governance-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "fixture_id":"",
+              "hardware_note":"",
+              "run_version":"",
+              "variance_pct":8.5,
+              "max_variance_pct":5.0,
+              "reproducible":false
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::benchmark_report_governance_payload(&simulation).expect("report");
+        assert!(!report.governance_passed);
+        for expected in [
+            "benchmark report fixture identity is missing",
+            "benchmark report hardware note is missing",
+            "benchmark report version is missing",
+            "benchmark report variance exceeds allowed budget",
+            "benchmark run is not reproducible",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }

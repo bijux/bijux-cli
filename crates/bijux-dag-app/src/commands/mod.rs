@@ -947,6 +947,10 @@ pub(crate) enum PerformanceCommands {
     RunHistoryCompaction {
         simulation: PathBuf,
     },
+    #[command(name = "benchmark-report-governance")]
+    BenchmarkReportGovernance {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
