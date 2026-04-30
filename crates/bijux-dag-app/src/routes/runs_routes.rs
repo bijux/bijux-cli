@@ -419,6 +419,23 @@ pub(crate) fn handle_runs_command(
             println!("wrote diagnostics bundle: {}", out.display());
             Ok(ExitCode::SUCCESS)
         }
+        RunsCommands::Index { root } => {
+            let path = inspect_service::rebuild_run_history_index_for_root(root)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runs.index",
+                    true,
+                    serde_json::json!({
+                        "index_path": path
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("wrote run history index: {}", path.display());
+            Ok(ExitCode::SUCCESS)
+        }
     }
 }
 
@@ -619,5 +636,17 @@ mod tests {
             bundle["manifest"]["run_metadata"]["api_token"], "[REDACTED]",
             "secret metadata must be redacted in exported bundle"
         );
+    }
+
+    #[test]
+    fn runs_index_writes_history_index_file() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        write_run(tmp.path(), "run-indexed", false);
+        let cli = quiet_json_cli();
+        let result =
+            handle_runs_command(&cli, &RunsCommands::Index { root: tmp.path().to_path_buf() })
+                .expect("index");
+        assert_eq!(result, ExitCode::SUCCESS);
+        assert!(tmp.path().join(".bijux-run-history-index.json").exists());
     }
 }

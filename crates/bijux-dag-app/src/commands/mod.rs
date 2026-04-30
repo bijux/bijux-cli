@@ -985,6 +985,10 @@ pub(crate) enum RunsCommands {
         #[arg(long)]
         redact: bool,
     },
+    Index {
+        #[arg(long)]
+        root: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
