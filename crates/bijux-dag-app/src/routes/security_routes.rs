@@ -99,6 +99,24 @@ struct NetworkPolicyReport {
 }
 
 #[derive(Debug, serde::Deserialize)]
+struct CommandInjectionSimulation {
+    command_argv: Vec<String>,
+    explicit_shell: bool,
+    allow_metacharacters: bool,
+    working_directory: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct CommandInjectionReport {
+    policy_lane: &'static str,
+    shell_interpretation_requested: bool,
+    implicit_shell_detected: bool,
+    risky_tokens: Vec<String>,
+    injection_hardened: bool,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
 struct AuthSimulation {
     environment: String,
     now_unix_ms: u128,
@@ -505,6 +523,46 @@ fn network_policy_payload(dag: &Path) -> Result<NetworkPolicyReport, ExitCode> {
         cache_trust_impact: if network_nodes_present { "reduced" } else { "none" },
         replay_trust_impact: if network_nodes_present { "reduced" } else { "none" },
         node_reports,
+        gaps,
+    })
+}
+
+fn token_looks_shell_interpreted(token: &str) -> bool {
+    [';', '|', '&', '`', '$', '>', '<'].iter().any(|ch| token.contains(*ch))
+}
+
+fn command_injection_payload(simulation: &Path) -> Result<CommandInjectionReport, ExitCode> {
+    let simulation: CommandInjectionSimulation = load_json_file(simulation)?;
+    let argv = simulation.command_argv;
+    let implicit_shell_detected = argv.len() >= 2
+        && (argv[0].ends_with("sh") || argv[0].ends_with("bash") || argv[0].ends_with("zsh"))
+        && argv[1] == "-c";
+    let shell_interpretation_requested = simulation.explicit_shell || implicit_shell_detected;
+    let mut risky_tokens =
+        argv.iter().filter(|token| token_looks_shell_interpreted(token)).cloned().collect::<Vec<_>>();
+    risky_tokens.sort();
+    risky_tokens.dedup();
+
+    let mut gaps = Vec::new();
+    if implicit_shell_detected && !simulation.explicit_shell {
+        gaps.push("implicit shell interpretation is forbidden; require explicit_shell=true".to_string());
+    }
+    if !risky_tokens.is_empty() && !simulation.allow_metacharacters {
+        gaps.push("metacharacter-bearing argv tokens require explicit allow_metacharacters".to_string());
+    }
+    if let Some(cwd) = simulation.working_directory.as_deref() {
+        if cwd.contains("..") {
+            gaps.push("working_directory contains parent traversal segments".to_string());
+        }
+    }
+
+    let injection_hardened = gaps.is_empty();
+    Ok(CommandInjectionReport {
+        policy_lane: "ENFORCED",
+        shell_interpretation_requested,
+        implicit_shell_detected,
+        risky_tokens,
+        injection_hardened,
         gaps,
     })
 }
@@ -1052,6 +1110,18 @@ pub(crate) fn handle_security_command(
                 ExitCode::SUCCESS,
             )
         }
+        SecurityCommands::CommandInjection { simulation } => {
+            let payload = serde_json::to_value(command_injection_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.command-injection",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
         SecurityCommands::Auth { simulation } => {
             let payload =
                 serde_json::to_value(auth_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
@@ -1322,6 +1392,61 @@ mod tests {
         assert!(!report.network_nodes_approved);
         assert_eq!(report.cache_trust_impact, "reduced");
         assert!(report.gaps.iter().any(|gap| gap.contains("network-approved tag")));
+    }
+
+    #[test]
+    fn security_command_injection_accepts_safe_argv_contract() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("inj.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "command_argv":["/usr/bin/python3","script.py","--input","file.txt"],
+              "explicit_shell":false,
+              "allow_metacharacters":false,
+              "working_directory":"./work"
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(SecurityCommands::CommandInjection { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::CommandInjection { simulation: simulation.clone() },
+        )
+        .expect("command injection");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::command_injection_payload(&simulation).expect("report");
+        assert!(report.injection_hardened);
+        assert!(!report.shell_interpretation_requested);
+        assert!(report.risky_tokens.is_empty());
+    }
+
+    #[test]
+    fn security_command_injection_flags_implicit_shell_and_metacharacters() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("inj-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "command_argv":["/bin/sh","-c","cat input.txt | grep token=foo"],
+              "explicit_shell":false,
+              "allow_metacharacters":false,
+              "working_directory":"../escape"
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::command_injection_payload(&simulation).expect("report");
+        assert!(!report.injection_hardened);
+        assert!(report.implicit_shell_detected);
+        assert!(report.risky_tokens.iter().any(|token| token.contains("|")));
+        for expected in [
+            "implicit shell interpretation is forbidden; require explicit_shell=true",
+            "metacharacter-bearing argv tokens require explicit allow_metacharacters",
+            "working_directory contains parent traversal segments",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
     }
 
     #[test]

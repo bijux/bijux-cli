@@ -848,6 +848,10 @@ pub(crate) enum SecurityCommands {
     NetworkPolicy {
         dag: PathBuf,
     },
+    #[command(name = "command-injection")]
+    CommandInjection {
+        simulation: PathBuf,
+    },
     Auth {
         simulation: PathBuf,
     },
