@@ -106,6 +106,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: SecurityCommands,
     },
+    Performance {
+        #[command(subcommand)]
+        command: PerformanceCommands,
+    },
     Release {
         #[command(subcommand)]
         command: ReleaseCommands,
@@ -832,6 +836,10 @@ pub(crate) enum LabCommands {
         #[command(subcommand)]
         command: SecurityCommands,
     },
+    Performance {
+        #[command(subcommand)]
+        command: PerformanceCommands,
+    },
 }
 
 #[derive(Subcommand)]
@@ -902,6 +910,14 @@ pub(crate) enum SecurityCommands {
     #[command(name = "safe-defaults")]
     SafeDefaults {
         dag: PathBuf,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum PerformanceCommands {
+    #[command(name = "latency-budgets")]
+    LatencyBudgets {
+        simulation: PathBuf,
     },
 }
 

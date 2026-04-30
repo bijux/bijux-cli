@@ -388,12 +388,18 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             commands::LabCommands::Security { command } => {
                 routes::security_routes::handle_security_command(&cli, command)
             }
+            commands::LabCommands::Performance { command } => {
+                routes::performance_routes::handle_performance_command(&cli, command)
+            }
         },
         Commands::Federation { command } => {
             routes::federation_routes::handle_federation_command(&cli, command)
         }
         Commands::Security { command } => {
             routes::security_routes::handle_security_command(&cli, command)
+        }
+        Commands::Performance { command } => {
+            routes::performance_routes::handle_performance_command(&cli, command)
         }
         Commands::Release { command } => {
             routes::release_routes::handle_release_command(&cli, command)
