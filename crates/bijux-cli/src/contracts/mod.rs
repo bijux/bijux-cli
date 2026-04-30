@@ -23,7 +23,8 @@ pub mod schema;
 
 pub use command::{CommandMetadata, CommandPath, Namespace, NamespaceMetadata};
 pub use envelope::{
-    ErrorDetailsV1, ErrorEnvelopeV1, ErrorPayloadV1, OutputEnvelopeMetaV1, OutputEnvelopeV1,
+    CommandEnvelopeV1, CommandErrorSummaryV1, CommandWarningV1, ErrorDetailsV1, ErrorEnvelopeV1,
+    ErrorPayloadV1, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
 pub use execution::{
     ColorMode, ConfigSource, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel, OutputFormat,
@@ -46,6 +47,6 @@ pub use query::{
     VersionCompatibilityLaneQuery, VersionCompatibilitySurface,
 };
 pub use schema::{
-    error_envelope_v1_schema, official_product_registry_schema, output_envelope_v1_schema,
-    plugin_manifest_v2_schema, product_mount_descriptor_schema,
+    command_envelope_v1_schema, error_envelope_v1_schema, official_product_registry_schema,
+    output_envelope_v1_schema, plugin_manifest_v2_schema, product_mount_descriptor_schema,
 };

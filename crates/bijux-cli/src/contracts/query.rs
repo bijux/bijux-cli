@@ -37,12 +37,13 @@ pub struct VersionCompatibilitySurface {
 pub fn contracts_schema_query() -> ContractsSchemaQuery {
     ContractsSchemaQuery {
         schema_ids: vec![
+            "command-envelope-v1".to_string(),
             "output-envelope-v1".to_string(),
             "error-envelope-v1".to_string(),
             "plugin-manifest-v2".to_string(),
             "product-mount-descriptor-v1".to_string(),
         ],
-        schema_version: "v2".to_string(),
+        schema_version: "v3".to_string(),
     }
 }
 
@@ -52,6 +53,15 @@ pub fn version_compatibility_lanes_query() -> VersionCompatibilityLaneQuery {
     VersionCompatibilityLaneQuery {
         schema_version: "v1".to_string(),
         surfaces: vec![
+            VersionCompatibilitySurface {
+                surface: "cli-command-envelope".to_string(),
+                current_versions: vec!["command-envelope-v1".to_string()],
+                accepted_previous_versions: Vec::new(),
+                refused_versions: vec![
+                    "command-envelope-v0".to_string(),
+                    "command-envelope-v2".to_string(),
+                ],
+            },
             VersionCompatibilitySurface {
                 surface: "cli-output-envelope".to_string(),
                 current_versions: vec!["output-envelope-v1".to_string()],

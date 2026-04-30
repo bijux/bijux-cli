@@ -1357,6 +1357,7 @@ pub(crate) fn try_handle(
                 "integrity_issues": integrity_issues,
                 "contracts": {
                     "schemas": [
+                        "command-envelope-v1",
                         "output-envelope-v1",
                         "error-envelope-v1",
                         "plugin-manifest-v2",

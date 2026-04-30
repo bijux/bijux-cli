@@ -1,0 +1,22 @@
+{
+  "schema_version": "command-envelope-v1",
+  "command": {
+    "segments": [
+      "status"
+    ]
+  },
+  "success": true,
+  "code": "ok",
+  "data": {
+    "status": "ok",
+    "runtime": "bijux-cli"
+  },
+  "warnings": [
+    {
+      "code": "install.path_shadowing",
+      "message": "multiple bijux binaries were detected on PATH"
+    }
+  ],
+  "errors": [],
+  "timestamp": "2026-04-30T00:00:00Z"
+}

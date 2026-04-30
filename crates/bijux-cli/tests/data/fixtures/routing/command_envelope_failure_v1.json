@@ -1,0 +1,20 @@
+{
+  "schema_version": "command-envelope-v1",
+  "command": {
+    "segments": [
+      "config",
+      "get"
+    ]
+  },
+  "success": false,
+  "code": "usage.missing_key",
+  "data": {},
+  "warnings": [],
+  "errors": [
+    {
+      "code": "usage.missing_key",
+      "message": "Missing argument: KEY required"
+    }
+  ],
+  "timestamp": "2026-04-30T00:00:00Z"
+}
