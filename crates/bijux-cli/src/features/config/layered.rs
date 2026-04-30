@@ -277,12 +277,37 @@ pub(crate) fn repair_report(global_config_path: &Path) -> Result<Value, ConfigEr
             .map_err(|err| ConfigError::persistence(err.to_string()))?;
     }
 
+    let warning_rows = repaired.warnings.iter().map(|message| json!(message)).collect::<Vec<_>>();
+    let issue_rows = repaired
+        .issues
+        .iter()
+        .map(|issue| {
+            json!({
+                "line": issue.line,
+                "content": issue.content,
+                "issue": issue.issue,
+                "remediation": issue.remediation,
+            })
+        })
+        .collect::<Vec<_>>();
+    let remediation = repaired
+        .issues
+        .iter()
+        .map(|issue| issue.remediation.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let dropped_line_count = repaired.issues.len();
+
     Ok(json!({
         "status": "ok",
         "changed": changed,
         "file": global_config_path,
         "backup": backup_path,
-        "warnings": repaired.warnings.into_iter().map(|message| json!(message)).collect::<Vec<_>>(),
+        "warnings": warning_rows,
+        "issues": issue_rows,
+        "remediation": remediation,
+        "dropped_line_count": dropped_line_count,
         "entry_count": repaired.entries.len(),
     }))
 }
@@ -857,11 +882,21 @@ fn render_env_map(values: &BTreeMap<String, String>) -> String {
 struct RepairReport {
     entries: BTreeMap<String, String>,
     warnings: Vec<String>,
+    issues: Vec<RepairIssue>,
+}
+
+#[derive(Debug, Clone)]
+struct RepairIssue {
+    line: usize,
+    content: String,
+    issue: String,
+    remediation: String,
 }
 
 fn repair_env_text(text: &str) -> Result<RepairReport, ConfigError> {
     let mut entries = BTreeMap::new();
     let mut warnings = Vec::new();
+    let mut issues = Vec::new();
     let mut seen = BTreeSet::new();
     for (index, raw_line) in text.lines().enumerate() {
         let line_no = index + 1;
@@ -871,12 +906,43 @@ fn repair_env_text(text: &str) -> Result<RepairReport, ConfigError> {
         }
         let Some((raw_key, raw_value)) = raw_line.split_once('=') else {
             warnings.push(format!("Dropped malformed line {line_no}: {raw_line}"));
+            issues.push(RepairIssue {
+                line: line_no,
+                content: raw_line.to_string(),
+                issue: "malformed-line".to_string(),
+                remediation: "Use KEY=VALUE format for each non-comment config line.".to_string(),
+            });
             continue;
         };
-        let normalized = normalize_selector(raw_key)?;
+        let normalized = match normalize_selector(raw_key) {
+            Ok(value) => value,
+            Err(err) => {
+                warnings.push(format!(
+                    "Dropped invalid key at line {line_no}: {} ({err})",
+                    raw_key.trim()
+                ));
+                issues.push(RepairIssue {
+                    line: line_no,
+                    content: raw_line.to_string(),
+                    issue: "invalid-key".to_string(),
+                    remediation:
+                        "Use ASCII keys with letters, numbers, underscore, or dot notation."
+                            .to_string(),
+                });
+                continue;
+            }
+        };
         if let Err(err) = validate_schema_value(&normalized, raw_value.trim()) {
             warnings
                 .push(format!("Dropped invalid value for `{normalized}` at line {line_no}: {err}"));
+            issues.push(RepairIssue {
+                line: line_no,
+                content: raw_line.to_string(),
+                issue: "invalid-value".to_string(),
+                remediation: format!(
+                    "Provide a value compatible with the schema for `{normalized}`."
+                ),
+            });
             continue;
         }
         if seen.contains(&normalized) {
@@ -887,7 +953,7 @@ fn repair_env_text(text: &str) -> Result<RepairReport, ConfigError> {
         seen.insert(normalized.clone());
         entries.insert(normalized, raw_value.trim().to_string());
     }
-    Ok(RepairReport { entries, warnings })
+    Ok(RepairReport { entries, warnings, issues })
 }
 
 fn parse_portable_entries(
@@ -1089,6 +1155,17 @@ mod tests {
             repair_env_text("BIJUXCLI_ALPHA=1\nBROKEN\nBIJUXCLI_ALPHA=2\n").expect("repair");
         assert_eq!(repaired.entries.get("alpha").map(String::as_str), Some("2"));
         assert_eq!(repaired.warnings.len(), 2);
+        assert_eq!(repaired.issues.len(), 1);
+        assert_eq!(repaired.issues[0].issue, "malformed-line");
+    }
+
+    #[test]
+    fn repair_env_text_drops_invalid_keys_without_aborting_repair() {
+        let repaired = repair_env_text("BIJUXCLI_ALPHA=1\nBIJUXCLI_BÄD=2\n").expect("repair");
+        assert_eq!(repaired.entries.get("alpha").map(String::as_str), Some("1"));
+        assert_eq!(repaired.issues.len(), 1);
+        assert_eq!(repaired.issues[0].issue, "invalid-key");
+        assert!(repaired.issues[0].remediation.contains("ASCII keys"));
     }
 
     #[test]

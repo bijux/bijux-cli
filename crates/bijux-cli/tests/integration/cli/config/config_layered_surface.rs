@@ -124,7 +124,8 @@ fn config_explain_redacts_sensitive_values_and_reports_candidates() {
 fn config_repair_writes_backup_and_sanitizes_file() {
     let root = temp_dir("repair");
     let global = root.join("global.env");
-    fs::write(&global, "BIJUXCLI_ALPHA=1\nBROKEN\nBIJUXCLI_ALPHA=2\n").expect("global");
+    fs::write(&global, "BIJUXCLI_ALPHA=1\nBROKEN\nBIJUXCLI_BÄD=2\nBIJUXCLI_ALPHA=2\n")
+        .expect("global");
 
     let repair = assert_success_json(&run_in(
         &root,
@@ -140,6 +141,16 @@ fn config_repair_writes_backup_and_sanitizes_file() {
         &[],
     ));
     assert_eq!(repair["changed"], true);
+    assert_eq!(repair["dropped_line_count"], 2);
+    assert!(repair["issues"]
+        .as_array()
+        .is_some_and(|items| items.iter().any(|entry| entry["issue"] == "malformed-line")));
+    assert!(repair["issues"]
+        .as_array()
+        .is_some_and(|items| items.iter().any(|entry| entry["issue"] == "invalid-key")));
+    assert!(repair["remediation"].as_array().is_some_and(|items| items
+        .iter()
+        .any(|entry| entry == "Use KEY=VALUE format for each non-comment config line.")));
     let repaired_text = fs::read_to_string(&global).expect("repaired file");
     assert_eq!(repaired_text, "BIJUXCLI_ALPHA=2\n");
     assert!(global.with_extension("bak").exists());
