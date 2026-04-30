@@ -923,6 +923,10 @@ pub(crate) enum PerformanceCommands {
     LargeGraphCorpus {
         simulation: PathBuf,
     },
+    #[command(name = "canonicalization-profile")]
+    CanonicalizationProfile {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]

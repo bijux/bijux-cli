@@ -56,6 +56,30 @@ struct LargeGraphCorpusReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct CanonicalizationProfileSimulation {
+    samples: Vec<CanonicalizationSample>,
+    max_allowed_regression_pct: f64,
+}
+
+#[derive(Debug, serde::Deserialize, Serialize)]
+struct CanonicalizationSample {
+    fixture: String,
+    before_ms: u64,
+    after_ms: u64,
+}
+
+#[derive(Debug, Serialize)]
+struct CanonicalizationProfileReport {
+    policy_lane: &'static str,
+    average_before_ms: f64,
+    average_after_ms: f64,
+    average_speedup_pct: f64,
+    regression_fixtures: Vec<String>,
+    within_regression_budget: bool,
+    samples: Vec<CanonicalizationSample>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -129,6 +153,46 @@ fn large_graph_corpus_payload(simulation: &Path) -> Result<LargeGraphCorpusRepor
     })
 }
 
+fn canonicalization_profile_payload(
+    simulation: &Path,
+) -> Result<CanonicalizationProfileReport, ExitCode> {
+    let simulation: CanonicalizationProfileSimulation = load_json_file(simulation)?;
+    let sample_count = simulation.samples.len().max(1) as f64;
+    let total_before = simulation.samples.iter().map(|sample| sample.before_ms as f64).sum::<f64>();
+    let total_after = simulation.samples.iter().map(|sample| sample.after_ms as f64).sum::<f64>();
+    let average_before_ms = total_before / sample_count;
+    let average_after_ms = total_after / sample_count;
+    let average_speedup_pct = if average_before_ms == 0.0 {
+        0.0
+    } else {
+        ((average_before_ms - average_after_ms) / average_before_ms) * 100.0
+    };
+    let mut regression_fixtures = simulation
+        .samples
+        .iter()
+        .filter(|sample| {
+            let regression_pct = if sample.before_ms == 0 {
+                0.0
+            } else {
+                ((sample.after_ms as f64 - sample.before_ms as f64) / sample.before_ms as f64) * 100.0
+            };
+            regression_pct > simulation.max_allowed_regression_pct
+        })
+        .map(|sample| sample.fixture.clone())
+        .collect::<Vec<_>>();
+    regression_fixtures.sort();
+    let within_regression_budget = regression_fixtures.is_empty();
+    Ok(CanonicalizationProfileReport {
+        policy_lane: "ENFORCED",
+        average_before_ms,
+        average_after_ms,
+        average_speedup_pct,
+        regression_fixtures,
+        within_regression_budget,
+        samples: simulation.samples,
+    })
+}
+
 pub(crate) fn handle_performance_command(
     cli: &DagCli,
     command: &PerformanceCommands,
@@ -152,6 +216,18 @@ pub(crate) fn handle_performance_command(
             emit_json(
                 cli,
                 "dag.performance.large-graph-corpus",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        PerformanceCommands::CanonicalizationProfile { simulation } => {
+            let payload = serde_json::to_value(canonicalization_profile_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.performance.canonicalization-profile",
                 true,
                 payload,
                 Vec::new(),
@@ -281,5 +357,55 @@ mod tests {
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
+    }
+
+    #[test]
+    fn performance_canonicalization_profile_accepts_speedup() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("canonicalization-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "samples":[
+                {"fixture":"small","before_ms":40,"after_ms":30},
+                {"fixture":"medium","before_ms":80,"after_ms":60},
+                {"fixture":"large","before_ms":120,"after_ms":90}
+              ],
+              "max_allowed_regression_pct":5.0
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(PerformanceCommands::CanonicalizationProfile { simulation: simulation.clone() });
+        let code = handle_performance_command(
+            &cli,
+            &PerformanceCommands::CanonicalizationProfile { simulation: simulation.clone() },
+        )
+        .expect("canonicalization profile");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::canonicalization_profile_payload(&simulation).expect("report");
+        assert!(report.within_regression_budget);
+        assert!(report.average_speedup_pct > 0.0);
+        assert!(report.regression_fixtures.is_empty());
+    }
+
+    #[test]
+    fn performance_canonicalization_profile_flags_over_budget_regression() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("canonicalization-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "samples":[
+                {"fixture":"small","before_ms":40,"after_ms":60},
+                {"fixture":"large","before_ms":120,"after_ms":121}
+              ],
+              "max_allowed_regression_pct":10.0
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::canonicalization_profile_payload(&simulation).expect("report");
+        assert!(!report.within_regression_budget);
+        assert_eq!(report.regression_fixtures, vec!["small".to_string()]);
     }
 }
