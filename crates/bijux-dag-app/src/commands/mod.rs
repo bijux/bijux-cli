@@ -975,6 +975,10 @@ pub(crate) enum DurabilityCommands {
     TypedContracts {
         simulation: PathBuf,
     },
+    #[command(name = "public-api-review")]
+    PublicApiReview {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]

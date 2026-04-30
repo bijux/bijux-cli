@@ -43,6 +43,29 @@ struct TypedContractsReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct PublicApiReviewSimulation {
+    crates: Vec<PublicApiCrateSurface>,
+}
+
+#[derive(Debug, serde::Deserialize, Serialize)]
+struct PublicApiCrateSurface {
+    crate_name: String,
+    stable: usize,
+    experimental: usize,
+    test_only: usize,
+    accidental: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct PublicApiReviewReport {
+    policy_lane: &'static str,
+    total_public_items: usize,
+    accidental_items: Vec<String>,
+    review_passed: bool,
+    crates: Vec<PublicApiCrateSurface>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -103,6 +126,39 @@ fn typed_contracts_payload(simulation: &Path) -> Result<TypedContractsReport, Ex
     })
 }
 
+fn public_api_review_payload(simulation: &Path) -> Result<PublicApiReviewReport, ExitCode> {
+    let simulation: PublicApiReviewSimulation = load_json_file(simulation)?;
+    let mut accidental_items = simulation
+        .crates
+        .iter()
+        .flat_map(|crate_surface| {
+            crate_surface
+                .accidental
+                .iter()
+                .map(|item| format!("{}::{item}", crate_surface.crate_name))
+        })
+        .collect::<Vec<_>>();
+    accidental_items.sort();
+    let total_public_items = simulation
+        .crates
+        .iter()
+        .map(|crate_surface| {
+            crate_surface.stable
+                + crate_surface.experimental
+                + crate_surface.test_only
+                + crate_surface.accidental.len()
+        })
+        .sum::<usize>();
+    let review_passed = accidental_items.is_empty();
+    Ok(PublicApiReviewReport {
+        policy_lane: "ENFORCED",
+        total_public_items,
+        accidental_items,
+        review_passed,
+        crates: simulation.crates,
+    })
+}
+
 pub(crate) fn handle_durability_command(
     cli: &DagCli,
     command: &DurabilityCommands,
@@ -126,6 +182,18 @@ pub(crate) fn handle_durability_command(
             emit_json(
                 cli,
                 "dag.durability.typed-contracts",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        DurabilityCommands::PublicApiReview { simulation } => {
+            let payload =
+                serde_json::to_value(public_api_review_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.durability.public-api-review",
                 true,
                 payload,
                 Vec::new(),
@@ -249,5 +317,75 @@ mod tests {
             .gaps
             .iter()
             .any(|gap| gap == "typed contract coverage missing for surface run_state"));
+    }
+
+    #[test]
+    fn durability_public_api_review_accepts_no_accidental_items() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("public-api-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "crates":[
+                {
+                  "crate_name":"bijux-dag-core",
+                  "stable":42,
+                  "experimental":4,
+                  "test_only":2,
+                  "accidental":[]
+                },
+                {
+                  "crate_name":"bijux-dag-runtime",
+                  "stable":28,
+                  "experimental":3,
+                  "test_only":1,
+                  "accidental":[]
+                }
+              ]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(DurabilityCommands::PublicApiReview { simulation: simulation.clone() });
+        let code = handle_durability_command(
+            &cli,
+            &DurabilityCommands::PublicApiReview { simulation: simulation.clone() },
+        )
+        .expect("public api review");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::public_api_review_payload(&simulation).expect("report");
+        assert!(report.review_passed);
+        assert!(report.accidental_items.is_empty());
+        assert_eq!(report.total_public_items, 80);
+    }
+
+    #[test]
+    fn durability_public_api_review_flags_accidental_items() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("public-api-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "crates":[
+                {
+                  "crate_name":"bijux-dag-core",
+                  "stable":40,
+                  "experimental":3,
+                  "test_only":2,
+                  "accidental":["internal::legacy_hash","routes::debug_surface"]
+                }
+              ]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::public_api_review_payload(&simulation).expect("report");
+        assert!(!report.review_passed);
+        assert_eq!(
+            report.accidental_items,
+            vec![
+                "bijux-dag-core::internal::legacy_hash".to_string(),
+                "bijux-dag-core::routes::debug_surface".to_string()
+            ]
+        );
     }
 }
