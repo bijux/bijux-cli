@@ -66,6 +66,29 @@ struct PublicApiReviewReport {
     crates: Vec<PublicApiCrateSurface>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ContractAlignmentSimulation {
+    contracts: Vec<ContractCoverageEntry>,
+}
+
+#[derive(Debug, serde::Deserialize, Serialize)]
+struct ContractCoverageEntry {
+    crate_name: String,
+    has_contract: bool,
+    has_ownership: bool,
+    has_non_goals: bool,
+    has_stable_outputs: bool,
+    has_forbidden_dependencies: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct ContractAlignmentReport {
+    policy_lane: &'static str,
+    aligned: bool,
+    missing_sections: Vec<String>,
+    contracts: Vec<ContractCoverageEntry>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -159,6 +182,37 @@ fn public_api_review_payload(simulation: &Path) -> Result<PublicApiReviewReport,
     })
 }
 
+fn contract_alignment_payload(simulation: &Path) -> Result<ContractAlignmentReport, ExitCode> {
+    let simulation: ContractAlignmentSimulation = load_json_file(simulation)?;
+    let mut missing_sections = Vec::new();
+    for contract in &simulation.contracts {
+        if !contract.has_contract {
+            missing_sections.push(format!("{} missing CONTRACT.md", contract.crate_name));
+        }
+        if !contract.has_ownership {
+            missing_sections.push(format!("{} missing ownership section", contract.crate_name));
+        }
+        if !contract.has_non_goals {
+            missing_sections.push(format!("{} missing non-goals section", contract.crate_name));
+        }
+        if !contract.has_stable_outputs {
+            missing_sections.push(format!("{} missing stable outputs section", contract.crate_name));
+        }
+        if !contract.has_forbidden_dependencies {
+            missing_sections
+                .push(format!("{} missing forbidden dependencies section", contract.crate_name));
+        }
+    }
+    missing_sections.sort();
+    let aligned = missing_sections.is_empty();
+    Ok(ContractAlignmentReport {
+        policy_lane: "ENFORCED",
+        aligned,
+        missing_sections,
+        contracts: simulation.contracts,
+    })
+}
+
 pub(crate) fn handle_durability_command(
     cli: &DagCli,
     command: &DurabilityCommands,
@@ -194,6 +248,18 @@ pub(crate) fn handle_durability_command(
             emit_json(
                 cli,
                 "dag.durability.public-api-review",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        DurabilityCommands::ContractAlignment { simulation } => {
+            let payload =
+                serde_json::to_value(contract_alignment_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.durability.contract-alignment",
                 true,
                 payload,
                 Vec::new(),
@@ -385,6 +451,78 @@ mod tests {
             vec![
                 "bijux-dag-core::internal::legacy_hash".to_string(),
                 "bijux-dag-core::routes::debug_surface".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn durability_contract_alignment_accepts_complete_contract_sections() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("contract-alignment-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "contracts":[
+                {
+                  "crate_name":"bijux-dag-core",
+                  "has_contract":true,
+                  "has_ownership":true,
+                  "has_non_goals":true,
+                  "has_stable_outputs":true,
+                  "has_forbidden_dependencies":true
+                },
+                {
+                  "crate_name":"bijux-dag-runtime",
+                  "has_contract":true,
+                  "has_ownership":true,
+                  "has_non_goals":true,
+                  "has_stable_outputs":true,
+                  "has_forbidden_dependencies":true
+                }
+              ]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(DurabilityCommands::ContractAlignment { simulation: simulation.clone() });
+        let code = handle_durability_command(
+            &cli,
+            &DurabilityCommands::ContractAlignment { simulation: simulation.clone() },
+        )
+        .expect("contract alignment");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::contract_alignment_payload(&simulation).expect("report");
+        assert!(report.aligned);
+        assert!(report.missing_sections.is_empty());
+    }
+
+    #[test]
+    fn durability_contract_alignment_flags_missing_contract_sections() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("contract-alignment-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "contracts":[
+                {
+                  "crate_name":"bijux-dag-core",
+                  "has_contract":true,
+                  "has_ownership":false,
+                  "has_non_goals":true,
+                  "has_stable_outputs":false,
+                  "has_forbidden_dependencies":true
+                }
+              ]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::contract_alignment_payload(&simulation).expect("report");
+        assert!(!report.aligned);
+        assert_eq!(
+            report.missing_sections,
+            vec![
+                "bijux-dag-core missing ownership section".to_string(),
+                "bijux-dag-core missing stable outputs section".to_string()
             ]
         );
     }

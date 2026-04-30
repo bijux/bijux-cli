@@ -979,6 +979,10 @@ pub(crate) enum DurabilityCommands {
     PublicApiReview {
         simulation: PathBuf,
     },
+    #[command(name = "contract-alignment")]
+    ContractAlignment {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
