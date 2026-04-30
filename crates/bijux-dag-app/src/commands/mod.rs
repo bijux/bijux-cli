@@ -983,6 +983,10 @@ pub(crate) enum DurabilityCommands {
     ContractAlignment {
         simulation: PathBuf,
     },
+    #[command(name = "compatibility-fixtures")]
+    CompatibilityFixtures {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]

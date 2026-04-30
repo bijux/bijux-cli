@@ -89,6 +89,23 @@ struct ContractAlignmentReport {
     contracts: Vec<ContractCoverageEntry>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct CompatibilityFixturesSimulation {
+    fixtures: std::collections::BTreeMap<String, Vec<String>>,
+    required_categories: Vec<String>,
+    min_versions_per_category: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct CompatibilityFixturesReport {
+    policy_lane: &'static str,
+    has_required_categories: bool,
+    version_depth_ok: bool,
+    missing_categories: Vec<String>,
+    underfilled_categories: Vec<String>,
+    fixture_count_by_category: std::collections::BTreeMap<String, usize>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -213,6 +230,42 @@ fn contract_alignment_payload(simulation: &Path) -> Result<ContractAlignmentRepo
     })
 }
 
+fn compatibility_fixtures_payload(
+    simulation: &Path,
+) -> Result<CompatibilityFixturesReport, ExitCode> {
+    let simulation: CompatibilityFixturesSimulation = load_json_file(simulation)?;
+    let fixture_count_by_category = simulation
+        .fixtures
+        .iter()
+        .map(|(category, fixtures)| (category.clone(), fixtures.len()))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut missing_categories = simulation
+        .required_categories
+        .iter()
+        .filter(|category| !simulation.fixtures.contains_key(*category))
+        .cloned()
+        .collect::<Vec<_>>();
+    missing_categories.sort();
+    let mut underfilled_categories = simulation
+        .fixtures
+        .iter()
+        .filter(|(_, fixtures)| fixtures.len() < simulation.min_versions_per_category)
+        .map(|(category, _)| category.clone())
+        .collect::<Vec<_>>();
+    underfilled_categories.sort();
+
+    let has_required_categories = missing_categories.is_empty();
+    let version_depth_ok = underfilled_categories.is_empty();
+    Ok(CompatibilityFixturesReport {
+        policy_lane: "ENFORCED",
+        has_required_categories,
+        version_depth_ok,
+        missing_categories,
+        underfilled_categories,
+        fixture_count_by_category,
+    })
+}
+
 pub(crate) fn handle_durability_command(
     cli: &DagCli,
     command: &DurabilityCommands,
@@ -260,6 +313,18 @@ pub(crate) fn handle_durability_command(
             emit_json(
                 cli,
                 "dag.durability.contract-alignment",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        DurabilityCommands::CompatibilityFixtures { simulation } => {
+            let payload = serde_json::to_value(compatibility_fixtures_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.durability.compatibility-fixtures",
                 true,
                 payload,
                 Vec::new(),
@@ -525,5 +590,70 @@ mod tests {
                 "bijux-dag-core missing stable outputs section".to_string()
             ]
         );
+    }
+
+    #[test]
+    fn durability_compatibility_fixtures_accepts_required_coverage() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("compatibility-fixtures-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "fixtures":{
+                "graph_spec":["v1.json","v2.json"],
+                "plan":["v1.json","v2.json"],
+                "run_manifest":["v1.json","v2.json"],
+                "artifact_index":["v1.json","v2.json"],
+                "cache_key":["v1.json","v2.json"],
+                "cli_envelope":["v1.json","v2.json"]
+              },
+              "required_categories":[
+                "graph_spec",
+                "plan",
+                "run_manifest",
+                "artifact_index",
+                "cache_key",
+                "cli_envelope"
+              ],
+              "min_versions_per_category":2
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(DurabilityCommands::CompatibilityFixtures { simulation: simulation.clone() });
+        let code = handle_durability_command(
+            &cli,
+            &DurabilityCommands::CompatibilityFixtures { simulation: simulation.clone() },
+        )
+        .expect("compatibility fixtures");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::compatibility_fixtures_payload(&simulation).expect("report");
+        assert!(report.has_required_categories);
+        assert!(report.version_depth_ok);
+        assert!(report.missing_categories.is_empty());
+        assert!(report.underfilled_categories.is_empty());
+    }
+
+    #[test]
+    fn durability_compatibility_fixtures_flags_missing_and_shallow_categories() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("compatibility-fixtures-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "fixtures":{
+                "graph_spec":["v1.json"],
+                "plan":["v1.json","v2.json"]
+              },
+              "required_categories":["graph_spec","plan","run_manifest"],
+              "min_versions_per_category":2
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::compatibility_fixtures_payload(&simulation).expect("report");
+        assert!(!report.has_required_categories);
+        assert!(!report.version_depth_ok);
+        assert_eq!(report.missing_categories, vec!["run_manifest".to_string()]);
+        assert_eq!(report.underfilled_categories, vec!["graph_spec".to_string()]);
     }
 }
