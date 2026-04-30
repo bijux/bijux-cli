@@ -10,8 +10,8 @@ Issue class contract: `contracts/foundation/backlog_issue_class_routing.v1.json`
 | 3 | foundation-ownership-boundary | bijux-dev | contracts/foundation/dag_dependency_direction.v1.json | done | DAG dependency direction contract and tests enforced |
 | 4 | foundation-ownership-boundary | bijux-dev | contracts/foundation/cli_dependency_direction.v1.json | done | CLI dependency direction contract and route boundary tests enforced |
 | 5 | foundation-ownership-boundary | bijux-dev | contracts/foundation/module_surface_lanes.v1.json | done | module lane contract and export checks enforced |
-| 7 | foundation-backlog-governance | bijux-dev | contracts/foundation/backlog_issue_class_routing.v1.json | in-progress | routing contract and maintainer validation added in this iteration |
-| 8 | foundation-backlog-governance | bijux-dev | docs/bijux-core/foundation/root-policy-surface-report.md | not-started | root policy sprawl inventory and mapping pending |
-| 9 | foundation-compatibility-lanes | bijux-cli | contracts/foundation/version_compatibility_lanes.v1.json | not-started | compatibility lane contract and fixtures pending |
-| 10 | foundation-release-gate | bijux-dev | crates/bijux-dev/tests/foundation_hard_release_gate_contracts.rs | not-started | deterministic hard gate workflow pending |
-| 28 | foundation-operator-diagnostics | bijux-cli | crates/bijux-cli/src/interface/cli/handlers/cli.rs | not-started | doctor finding evidence/remediation contract pending |
+| 7 | foundation-backlog-governance | bijux-dev | contracts/foundation/backlog_issue_class_routing.v1.json | done | routing contract and maintainer validation enforced |
+| 8 | foundation-backlog-governance | bijux-dev | contracts/foundation/root_policy_surface_inventory.v1.json | done | root policy inventory contract and report mapping enforced |
+| 9 | foundation-compatibility-lanes | bijux-cli | contracts/foundation/version_compatibility_lanes.v1.json | done | compatibility lanes, fixtures, and query contract enforced |
+| 10 | foundation-release-gate | bijux-dev | crates/bijux-dev/tests/foundation_hard_release_gate_contracts.rs | done | deterministic hard gate workflow enforced through fixture gate |
+| 28 | foundation-operator-diagnostics | bijux-cli | crates/bijux-cli/src/interface/cli/handlers/cli.rs | done | doctor findings now expose severity, surface, evidence path, remediation |
