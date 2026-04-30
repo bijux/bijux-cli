@@ -1,3 +1,4 @@
+use crate::routes::selector_grammar::{parse_selector_expression, SelectorField};
 use crate::run_data::{env_cache_dir, load_snapshot};
 use crate::{
     check_engine, config_fingerprint, default_runtime_config, parse_graph, read_file, Graph,
@@ -24,16 +25,17 @@ pub(crate) fn parse_selectors(
 }
 
 pub(crate) fn parse_selector(raw: &str) -> Result<Selector, ExitCode> {
-    if let Some(rest) = raw.strip_prefix("id:") {
-        return Ok(Selector::IdPrefix(rest.to_string()));
+    let selector = parse_selector_expression(raw)?;
+    match selector.field {
+        SelectorField::Id | SelectorField::Node => Ok(Selector::IdPrefix(selector.value)),
+        SelectorField::Tag => Ok(Selector::Tag(selector.value)),
+        SelectorField::Kind => Ok(Selector::Kind(selector.value)),
+        SelectorField::Run
+        | SelectorField::State
+        | SelectorField::Artifact
+        | SelectorField::Branch
+        | SelectorField::Attempt => Err(ExitCode::from(2)),
     }
-    if let Some(rest) = raw.strip_prefix("tag:") {
-        return Ok(Selector::Tag(rest.to_string()));
-    }
-    if let Some(rest) = raw.strip_prefix("kind:") {
-        return Ok(Selector::Kind(rest.to_string()));
-    }
-    Err(ExitCode::from(2))
 }
 
 pub(crate) fn lint_graph(graph: &Graph) -> Vec<LintDiagnostic> {
@@ -313,10 +315,16 @@ mod tests {
 
     #[test]
     fn selector_parser_rejects_invalid_syntax() {
-        for raw in ["", "id", "tag", "kind", "name:node", "id=", "node:a"] {
+        for raw in ["", "id", "tag", "kind", "name:node", "id=", "attempt:latest"] {
             let err = parse_selector(raw).expect_err("invalid selector must fail");
             assert_eq!(err, ExitCode::from(2), "selector should reject: {raw}");
         }
+    }
+
+    #[test]
+    fn selector_parser_accepts_node_alias_for_execution_selectors() {
+        let by_node = parse_selector("node:train").expect("node selector");
+        assert_eq!(format!("{by_node:?}"), "IdPrefix(\"train\")");
     }
 
     #[test]
