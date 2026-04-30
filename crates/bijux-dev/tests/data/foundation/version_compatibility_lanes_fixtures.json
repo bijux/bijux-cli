@@ -1,0 +1,21 @@
+{
+  "fixtures": [
+    {"surface": "cli-output-envelope", "version": "output-envelope-v1", "expected_lane": "current"},
+    {"surface": "cli-output-envelope", "version": "output-envelope-v0", "expected_lane": "refused"},
+    {"surface": "cli-error-envelope", "version": "error-envelope-v1", "expected_lane": "current"},
+    {"surface": "cli-error-envelope", "version": "error-envelope-v0", "expected_lane": "refused"},
+    {"surface": "mount-descriptor", "version": "product-mount-descriptor-v1", "expected_lane": "current"},
+    {"surface": "mount-descriptor", "version": "product-mount-descriptor-v2", "expected_lane": "refused"},
+    {"surface": "graph-spec", "version": "bijux-dag/v0.1", "expected_lane": "current"},
+    {"surface": "graph-spec", "version": "v1", "expected_lane": "previous"},
+    {"surface": "graph-spec", "version": "v0.1", "expected_lane": "previous"},
+    {"surface": "graph-spec", "version": "v9", "expected_lane": "refused"},
+    {"surface": "run-manifest", "version": "run-manifest/v0.1", "expected_lane": "current"},
+    {"surface": "run-manifest", "version": "run-manifest/v2", "expected_lane": "refused"},
+    {"surface": "artifact-index", "version": "run-dir-schema/v0.1", "expected_lane": "current"},
+    {"surface": "artifact-index", "version": "run-dir-schema/v2", "expected_lane": "refused"},
+    {"surface": "replay-bundle", "version": "export-bundle/v0.1", "expected_lane": "current"},
+    {"surface": "replay-bundle", "version": "proof-bundle/v0.1", "expected_lane": "current"},
+    {"surface": "replay-bundle", "version": "export-bundle/v2", "expected_lane": "refused"}
+  ]
+}

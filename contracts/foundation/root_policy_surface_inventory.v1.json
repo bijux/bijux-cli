@@ -50,6 +50,15 @@
       ]
     },
     {
+      "path": "contracts/foundation/version_compatibility_lanes.v1.json",
+      "gates_behavior": "codifies current, previous, and refused version lanes for core product surfaces",
+      "owning_crate": "bijux-cli",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_version_compatibility_lanes_contracts.rs",
+        "crates/bijux-cli/tests/routing/registry/query_interfaces.rs"
+      ]
+    },
+    {
       "path": "contracts/official_product_namespace_registry.json",
       "gates_behavior": "controls official namespace mounting and plugin collision policy",
       "owning_crate": "bijux-cli",

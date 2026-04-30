@@ -12,6 +12,7 @@ This report tracks root policy files that gate product behavior and maps each to
 | contracts/foundation/module_surface_lanes.v1.json | bijux-dev | Classifies stable, experimental, simulated, and private module lanes. | crates/bijux-dev/tests/foundation_module_surface_contracts.rs |
 | contracts/foundation/root_policy_surface_inventory.v1.json | bijux-dev | Defines the root policy inventory boundary and ownership mapping itself. | crates/bijux-dev/tests/foundation_root_policy_surface_inventory_contracts.rs |
 | contracts/foundation/workspace_product_map.v1.json | bijux-dev | Declares product ownership and maintainer boundaries. | crates/bijux-dev/tests/foundation_product_map_contracts.rs |
+| contracts/foundation/version_compatibility_lanes.v1.json | bijux-cli | Codifies current, previous, and refused version lanes for core product surfaces. | crates/bijux-dev/tests/foundation_version_compatibility_lanes_contracts.rs |
 | contracts/official_product_namespace_registry.json | bijux-cli | Controls official namespace mounting and plugin collision policy. | crates/bijux-cli/tests/routing/laws/route_law_consistency.rs |
 | contracts/product_mount_metadata_contract.json | bijux-cli | Defines required mount descriptor metadata for product routing. | crates/bijux-cli/src/contracts/product_mount.rs |
 | contracts/schemas/error-envelope-v1.schema.json | bijux-cli | Fixes machine-readable CLI failure envelope shape. | crates/bijux-cli/tests/routing/registry/query_interfaces.rs |

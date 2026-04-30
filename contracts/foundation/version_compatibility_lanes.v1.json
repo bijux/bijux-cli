@@ -1,0 +1,47 @@
+{
+  "schema_version": "foundation-version-compatibility-lanes/v1",
+  "surfaces": [
+    {
+      "surface": "cli-output-envelope",
+      "current_versions": ["output-envelope-v1"],
+      "accepted_previous_versions": [],
+      "refused_versions": ["output-envelope-v0", "output-envelope-v2"]
+    },
+    {
+      "surface": "cli-error-envelope",
+      "current_versions": ["error-envelope-v1"],
+      "accepted_previous_versions": [],
+      "refused_versions": ["error-envelope-v0", "error-envelope-v2"]
+    },
+    {
+      "surface": "mount-descriptor",
+      "current_versions": ["product-mount-descriptor-v1"],
+      "accepted_previous_versions": [],
+      "refused_versions": ["product-mount-descriptor-v0", "product-mount-descriptor-v2"]
+    },
+    {
+      "surface": "graph-spec",
+      "current_versions": ["bijux-dag/v0.1"],
+      "accepted_previous_versions": ["v1", "v0.1", "0.1"],
+      "refused_versions": ["v9", "bijux-dag/v9"]
+    },
+    {
+      "surface": "run-manifest",
+      "current_versions": ["run-manifest/v0.1"],
+      "accepted_previous_versions": [],
+      "refused_versions": ["run-manifest/v0", "run-manifest/v2"]
+    },
+    {
+      "surface": "artifact-index",
+      "current_versions": ["run-dir-schema/v0.1"],
+      "accepted_previous_versions": [],
+      "refused_versions": ["run-dir-schema/v0", "run-dir-schema/v2"]
+    },
+    {
+      "surface": "replay-bundle",
+      "current_versions": ["export-bundle/v0.1", "proof-bundle/v0.1"],
+      "accepted_previous_versions": [],
+      "refused_versions": ["export-bundle/v0", "proof-bundle/v0", "export-bundle/v2", "proof-bundle/v2"]
+    }
+  ]
+}

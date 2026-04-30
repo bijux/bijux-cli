@@ -41,7 +41,10 @@ pub use product_mount::{
     ProductMountDescriptorBuilder, ProductMountMetadata, ProductRegistryDocument,
     ProductRegistryEntry,
 };
-pub use query::{contracts_schema_query, ContractsSchemaQuery};
+pub use query::{
+    contracts_schema_query, version_compatibility_lanes_query, ContractsSchemaQuery,
+    VersionCompatibilityLaneQuery, VersionCompatibilitySurface,
+};
 pub use schema::{
     error_envelope_v1_schema, official_product_registry_schema, output_envelope_v1_schema,
     plugin_manifest_v2_schema, product_mount_descriptor_schema,

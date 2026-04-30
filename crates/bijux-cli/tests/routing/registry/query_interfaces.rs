@@ -3,7 +3,7 @@
 
 use bijux_cli::api::diagnostics::{registry_inventory, route_inventory};
 use bijux_cli::api::routing::registry::RouteRegistry;
-use bijux_cli::contracts::contracts_schema_query;
+use bijux_cli::contracts::{contracts_schema_query, version_compatibility_lanes_query};
 
 #[test]
 fn contracts_schema_query_shape_is_stable() {
@@ -17,6 +17,28 @@ fn contracts_schema_query_shape_is_stable() {
             "plugin-manifest-v2".to_string(),
             "product-mount-descriptor-v1".to_string(),
         ]
+    );
+}
+
+#[test]
+fn compatibility_lane_query_shape_is_stable() {
+    let query = version_compatibility_lanes_query();
+    assert_eq!(query.schema_version, "v1");
+    assert_eq!(query.surfaces.len(), 7);
+    assert_eq!(query.surfaces[0].surface, "cli-output-envelope");
+    assert_eq!(
+        query.surfaces[0].current_versions,
+        vec!["output-envelope-v1".to_string()]
+    );
+    assert_eq!(query.surfaces[3].surface, "graph-spec");
+    assert_eq!(
+        query.surfaces[3].accepted_previous_versions,
+        vec!["v1".to_string(), "v0.1".to_string(), "0.1".to_string()]
+    );
+    assert_eq!(query.surfaces[6].surface, "replay-bundle");
+    assert_eq!(
+        query.surfaces[6].current_versions,
+        vec!["export-bundle/v0.1".to_string(), "proof-bundle/v0.1".to_string()]
     );
 }
 
