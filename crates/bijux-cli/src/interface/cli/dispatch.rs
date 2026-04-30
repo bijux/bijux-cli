@@ -806,4 +806,21 @@ mod tests {
         assert!(payload["inventory"]["aliases"].is_array());
         assert!(payload["inventory"]["namespaces"].is_array());
     }
+
+    #[test]
+    fn cli_shims_reports_lifecycle_policy() {
+        let result = run_app(&[
+            "bijux".to_string(),
+            "cli".to_string(),
+            "shims".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+        ])
+        .expect("run");
+        assert_eq!(result.exit_code, 0);
+        let payload: Value = serde_json::from_str(result.stdout.trim()).expect("json");
+        assert_eq!(payload["lifecycle_policy"]["shim_support"], "deprecated");
+        assert_eq!(payload["lifecycle_policy"]["shadowing_policy"], "refused");
+        assert!(payload["legacy_app_shims"].is_array());
+    }
 }

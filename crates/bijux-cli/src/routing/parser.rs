@@ -340,6 +340,7 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("status"))
         .subcommand(Command::new("paths"))
         .subcommand(Command::new("routes"))
+        .subcommand(Command::new("shims"))
         .subcommand(Command::new("script-contract"))
         .subcommand(
             Command::new("doctor").arg(Arg::new("subject").num_args(1)).arg(

@@ -134,6 +134,7 @@ fn build_built_in_route_paths() -> Vec<String> {
         "cli status".to_string(),
         "cli paths".to_string(),
         "cli routes".to_string(),
+        "cli shims".to_string(),
         "cli script-contract".to_string(),
         "cli self-test".to_string(),
     ];

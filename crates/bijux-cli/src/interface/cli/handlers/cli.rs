@@ -486,9 +486,22 @@ fn shim_doctor_report() -> Value {
     let severity = max_severity(
         issues.iter().filter_map(|issue| issue.get("severity").and_then(Value::as_str)),
     );
+    let policy_status = if legacy_app_shims.is_empty() && legacy_installer_conflicts.is_empty() {
+        "clear"
+    } else if !legacy_installer_conflicts.is_empty() {
+        "refused"
+    } else {
+        "deprecated"
+    };
     json!({
         "status": status_from_severity(severity),
         "severity": severity,
+        "lifecycle_policy": {
+            "shim_support": "deprecated",
+            "preferred_invocation": "bijux <app> ...",
+            "shadowing_policy": "refused",
+            "policy_status": policy_status,
+        },
         "legacy_app_shims": legacy_app_shims,
         "legacy_installer_conflicts": legacy_installer_conflicts,
         "issues": issues,
@@ -1305,6 +1318,7 @@ pub(crate) fn try_handle(
             Some(runtime_status_report(paths, plugin_registry_path))
         }
         [a, b] if a == "cli" && b == "routes" => Some(route_inventory_export_report(registry)),
+        [a, b] if a == "cli" && b == "shims" => Some(shim_doctor_report()),
         [a, b] if a == "cli" && b == "script-contract" => Some(script_contract_report()),
         [a, b] if a == "cli" && b == "paths" => {
             let install = install_report_payload();
