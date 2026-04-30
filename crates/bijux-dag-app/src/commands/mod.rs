@@ -971,6 +971,10 @@ pub(crate) enum DurabilityCommands {
     ModuleSurfaceBudgets {
         simulation: PathBuf,
     },
+    #[command(name = "typed-contracts")]
+    TypedContracts {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
