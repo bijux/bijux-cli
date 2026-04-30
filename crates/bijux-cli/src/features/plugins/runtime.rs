@@ -1,7 +1,8 @@
 #![forbid(unsafe_code)]
 
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
@@ -59,6 +60,76 @@ for part in callable_name.split('.'):
 result = target(argv)
 json.dump({"result": result}, sys.stdout)
 "#;
+
+const DEFAULT_PLUGIN_TIMEOUT_SECONDS: u64 = 30;
+const MAX_PLUGIN_TIMEOUT_SECONDS: u64 = 600;
+
+fn plugin_timeout() -> Duration {
+    let raw = std::env::var("BIJUX_PLUGIN_TIMEOUT_SECONDS")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .unwrap_or(DEFAULT_PLUGIN_TIMEOUT_SECONDS)
+        .clamp(1, MAX_PLUGIN_TIMEOUT_SECONDS);
+    Duration::from_secs(raw)
+}
+
+fn apply_plugin_env_policy(command: &mut Command) {
+    const PASSTHROUGH_KEYS: &[&str] = &[
+        "PATH",
+        "HOME",
+        "USER",
+        "SHELL",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "SYSTEMROOT",
+        "COMSPEC",
+        "WINDIR",
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "LC_MESSAGES",
+    ];
+
+    command.env_clear();
+    for key in PASSTHROUGH_KEYS {
+        if let Ok(value) = std::env::var(key) {
+            command.env(key, value);
+        }
+    }
+    for (key, value) in std::env::vars() {
+        if key.starts_with("BIJUX_") || key.starts_with("PYTHON") {
+            command.env(key, value);
+        }
+    }
+}
+
+fn run_command_with_timeout(
+    command: &mut Command,
+    timeout: Duration,
+    timeout_message: String,
+) -> Result<PluginProcessResult> {
+    let mut child =
+        command.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
+    let start = Instant::now();
+
+    loop {
+        if child.try_wait()?.is_some() {
+            let output = child.wait_with_output()?;
+            return Ok(render_process_result(output));
+        }
+        if start.elapsed() >= timeout {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Ok(PluginProcessResult {
+                exit_code: 124,
+                stdout: String::new(),
+                stderr: timeout_message,
+            });
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
 
 fn ensure_plugin_is_routable(namespace: &str, state: PluginLifecycleState) -> Result<()> {
     match state {
@@ -152,21 +223,28 @@ fn run_python_plugin(
     forwarded_args: &[String],
 ) -> Result<PluginRouteOutput> {
     let python = resolve_python_interpreter().ok_or_else(|| python_runtime_error(namespace))?;
-    let output = Command::new(&python.command)
+    let timeout = plugin_timeout();
+    let mut command = Command::new(&python.command);
+    command
         .current_dir(manifest_root)
         .arg("-c")
         .arg(PYTHON_PLUGIN_BRIDGE)
         .arg(manifest_root)
         .arg(module_name)
         .arg(callable_name)
-        .args(forwarded_args)
-        .output()
-        .with_context(|| format!("failed to launch python runtime for plugin `{namespace}`"))?;
-    if !output.status.success() {
-        return Ok(PluginRouteOutput::Process(render_process_result(output)));
+        .args(forwarded_args);
+    apply_plugin_env_policy(&mut command);
+    let output = run_command_with_timeout(
+        &mut command,
+        timeout,
+        format!("plugin `{namespace}` timed out after {} seconds", timeout.as_secs()),
+    )
+    .with_context(|| format!("failed to launch python runtime for plugin `{namespace}`"))?;
+    if output.exit_code != 0 {
+        return Ok(PluginRouteOutput::Process(output));
     }
 
-    let envelope: PythonBridgeEnvelope = serde_json::from_slice(&output.stdout)
+    let envelope: PythonBridgeEnvelope = serde_json::from_str(&output.stdout)
         .with_context(|| format!("plugin `{namespace}` returned an invalid structured payload"))?;
     Ok(PluginRouteOutput::Structured(envelope.result))
 }
@@ -177,15 +255,20 @@ fn run_external_plugin(
     manifest_root: Option<&Path>,
     forwarded_args: &[String],
 ) -> Result<PluginRouteOutput> {
+    let timeout = plugin_timeout();
     let mut command = Command::new(entrypoint_path);
     if let Some(root) = manifest_root {
         command.current_dir(root);
     }
-    let output = command
-        .args(forwarded_args)
-        .output()
-        .with_context(|| format!("failed to launch external plugin `{namespace}`"))?;
-    Ok(PluginRouteOutput::Process(render_process_result(output)))
+    command.args(forwarded_args);
+    apply_plugin_env_policy(&mut command);
+    let output = run_command_with_timeout(
+        &mut command,
+        timeout,
+        format!("plugin `{namespace}` timed out after {} seconds", timeout.as_secs()),
+    )
+    .with_context(|| format!("failed to launch external plugin `{namespace}`"))?;
+    Ok(PluginRouteOutput::Process(output))
 }
 
 pub(crate) fn execute_plugin_route(
@@ -244,5 +327,34 @@ pub(crate) fn execute_plugin_route(
             )
         }
         PluginKind::Native => Err(PluginError::UnsupportedKind(PluginKind::Native).into()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Mutex, OnceLock};
+
+    use super::{plugin_timeout, DEFAULT_PLUGIN_TIMEOUT_SECONDS, MAX_PLUGIN_TIMEOUT_SECONDS};
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    #[test]
+    fn plugin_timeout_uses_default_when_env_is_absent() {
+        let _guard = env_lock().lock().expect("lock");
+        std::env::remove_var("BIJUX_PLUGIN_TIMEOUT_SECONDS");
+        assert_eq!(plugin_timeout().as_secs(), DEFAULT_PLUGIN_TIMEOUT_SECONDS);
+    }
+
+    #[test]
+    fn plugin_timeout_clamps_invalid_or_large_values() {
+        let _guard = env_lock().lock().expect("lock");
+        std::env::set_var("BIJUX_PLUGIN_TIMEOUT_SECONDS", "0");
+        assert_eq!(plugin_timeout().as_secs(), 1);
+        std::env::set_var("BIJUX_PLUGIN_TIMEOUT_SECONDS", "999999");
+        assert_eq!(plugin_timeout().as_secs(), MAX_PLUGIN_TIMEOUT_SECONDS);
+        std::env::remove_var("BIJUX_PLUGIN_TIMEOUT_SECONDS");
     }
 }
