@@ -1,0 +1,23 @@
+{
+  "schema_version": "command-envelope-v1",
+  "command": {
+    "segments": [
+      "apps",
+      "validate-manifest"
+    ]
+  },
+  "success": false,
+  "code": "validation.invalid_manifest",
+  "data": {},
+  "warnings": [],
+  "errors": [
+    {
+      "code": "validation.invalid_manifest",
+      "failure_class": "validation",
+      "message": "product mount display_name cannot be empty",
+      "remediation_hint": "Set a non-empty `display_name` in the manifest and re-run validation.",
+      "evidence_pointer": "artifacts/cli/errors/invalid-manifest.log"
+    }
+  ],
+  "timestamp": "2026-04-30T00:00:00Z"
+}

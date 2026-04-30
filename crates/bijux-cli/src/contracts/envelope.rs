@@ -135,25 +135,62 @@ impl CommandWarningV1 {
     }
 }
 
-/// Stable command error summary used by machine-readable command envelopes.
+/// Stable failure class used for machine-readable command failures.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub struct CommandErrorSummaryV1 {
-    /// Stable error code.
-    pub code: String,
-    /// Human-readable error message.
-    pub message: String,
+#[serde(rename_all = "snake_case")]
+pub enum CommandFailureClassV1 {
+    Parse,
+    Validation,
+    Runtime,
+    Io,
+    Usage,
+    Internal,
 }
 
-impl CommandErrorSummaryV1 {
-    /// Build a validated command error summary.
-    pub fn new(code: &str, message: &str) -> Result<Self, String> {
+/// Stable command failure record used by machine-readable command envelopes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct CommandFailureV1 {
+    /// Stable error code.
+    pub code: String,
+    /// Stable failure class.
+    pub failure_class: CommandFailureClassV1,
+    /// Human-readable failure message.
+    pub message: String,
+    /// Actionable remediation hint.
+    pub remediation_hint: String,
+    /// Optional evidence pointer for logs/artifacts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence_pointer: Option<String>,
+}
+
+impl CommandFailureV1 {
+    /// Build a validated command failure record.
+    pub fn new(
+        code: &str,
+        failure_class: CommandFailureClassV1,
+        message: &str,
+        remediation_hint: &str,
+        evidence_pointer: Option<&str>,
+    ) -> Result<Self, String> {
         if code.trim().is_empty() {
             return Err("errors[].code cannot be empty".to_string());
         }
         if message.trim().is_empty() {
             return Err("errors[].message cannot be empty".to_string());
         }
-        Ok(Self { code: code.to_string(), message: message.to_string() })
+        if remediation_hint.trim().is_empty() {
+            return Err("errors[].remediation_hint cannot be empty".to_string());
+        }
+        if evidence_pointer.is_some_and(|value| value.trim().is_empty()) {
+            return Err("errors[].evidence_pointer cannot be empty when present".to_string());
+        }
+        Ok(Self {
+            code: code.to_string(),
+            failure_class,
+            message: message.to_string(),
+            remediation_hint: remediation_hint.to_string(),
+            evidence_pointer: evidence_pointer.map(ToString::to_string),
+        })
     }
 }
 
@@ -175,7 +212,7 @@ pub struct CommandEnvelopeV1 {
     pub warnings: Vec<CommandWarningV1>,
     /// Fatal error summaries (empty on success).
     #[serde(default)]
-    pub errors: Vec<CommandErrorSummaryV1>,
+    pub errors: Vec<CommandFailureV1>,
     /// RFC3339 timestamp for envelope creation.
     pub timestamp: String,
 }
@@ -189,7 +226,7 @@ impl CommandEnvelopeV1 {
         code: &str,
         data: Value,
         warnings: Vec<CommandWarningV1>,
-        errors: Vec<CommandErrorSummaryV1>,
+        errors: Vec<CommandFailureV1>,
         timestamp: &str,
     ) -> Result<Self, String> {
         if schema_version.trim().is_empty() {

@@ -1,0 +1,23 @@
+{
+  "schema_version": "command-envelope-v1",
+  "command": {
+    "segments": [
+      "config",
+      "load"
+    ]
+  },
+  "success": false,
+  "code": "io.read_failed",
+  "data": {},
+  "warnings": [],
+  "errors": [
+    {
+      "code": "io.read_failed",
+      "failure_class": "io",
+      "message": "failed to read config source file",
+      "remediation_hint": "Verify file path and permissions, then rerun the command.",
+      "evidence_pointer": "artifacts/cli/errors/config-load-io.log"
+    }
+  ],
+  "timestamp": "2026-04-30T00:00:00Z"
+}

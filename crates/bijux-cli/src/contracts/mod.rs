@@ -23,8 +23,8 @@ pub mod schema;
 
 pub use command::{CommandMetadata, CommandPath, Namespace, NamespaceMetadata};
 pub use envelope::{
-    CommandEnvelopeV1, CommandErrorSummaryV1, CommandWarningV1, ErrorDetailsV1, ErrorEnvelopeV1,
-    ErrorPayloadV1, OutputEnvelopeMetaV1, OutputEnvelopeV1,
+    CommandEnvelopeV1, CommandFailureClassV1, CommandFailureV1, CommandWarningV1, ErrorDetailsV1,
+    ErrorEnvelopeV1, ErrorPayloadV1, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
 pub use execution::{
     ColorMode, ConfigSource, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel, OutputFormat,
