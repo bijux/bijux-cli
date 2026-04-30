@@ -18,9 +18,11 @@ use bijux_dag_runtime::simulated_platform::{
     TrustHealthReport,
 };
 use bijux_dag_runtime::{
-    authorize_input_path, authorize_output_path, leak_conformance_check, secret_readiness,
+    authorize_input_path, authorize_output_path, is_allowed_env_key, is_denied_env_key,
+    leak_conformance_check, secret_readiness,
     secret_scope_allows, secure_cleanup_required, secure_mode_effective, select_secret_version,
-    summarize_sensitive_classes, validate_secret_delivery_mode, SecretDeliveryPolicy,
+    shape_environment, summarize_sensitive_classes, validate_secret_delivery_mode,
+    SecretDeliveryPolicy,
     SecretInjectionMode, SecretMaskingPolicy, SecretRotationRule, SecretScopeRule, SecretSource,
     SecretUsageAuditEvent, SecureExecutionMode, SecureTeardownPolicy, SecureWorkspaceRule,
     SensitiveArtifactRestriction,
@@ -52,6 +54,27 @@ struct FilesystemAllowlistReport {
     all_writes_allowed: bool,
     read_results: Vec<FilesystemCandidateReport>,
     write_results: Vec<FilesystemCandidateReport>,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct EnvAllowlistSimulation {
+    clean_env: bool,
+    allowlist: Vec<String>,
+    denylist: Vec<String>,
+    #[serde(default)]
+    ambient_env: std::collections::BTreeMap<String, String>,
+    #[serde(default)]
+    explicit_env: std::collections::BTreeMap<String, String>,
+}
+
+#[derive(Debug, Serialize)]
+struct EnvAllowlistReport {
+    policy_lane: &'static str,
+    passed_keys: Vec<String>,
+    blocked_keys: Vec<String>,
+    leaked_keys: Vec<String>,
+    secret_like_keys_blocked: bool,
     gaps: Vec<String>,
 }
 
@@ -352,6 +375,66 @@ fn filesystem_allowlist_payload(simulation: &Path) -> Result<FilesystemAllowlist
         all_writes_allowed,
         read_results,
         write_results,
+        gaps,
+    })
+}
+
+fn is_secret_like_env_key(key: &str) -> bool {
+    let upper = key.to_ascii_uppercase();
+    upper.contains("SECRET") || upper.contains("TOKEN") || upper.contains("PASSWORD")
+}
+
+fn env_allowlist_payload(simulation: &Path) -> Result<EnvAllowlistReport, ExitCode> {
+    let simulation: EnvAllowlistSimulation = load_json_file(simulation)?;
+    let shaped = shape_environment(
+        &simulation.ambient_env,
+        simulation.clean_env,
+        &simulation.allowlist,
+        &simulation.denylist,
+        &simulation.explicit_env,
+    );
+    let mut passed_keys = shaped.keys().cloned().collect::<Vec<_>>();
+    passed_keys.sort();
+
+    let all_input_keys =
+        simulation.ambient_env.keys().chain(simulation.explicit_env.keys()).cloned().collect::<
+            std::collections::BTreeSet<_>,
+        >();
+    let mut blocked_keys = all_input_keys
+        .iter()
+        .filter(|key| !shaped.contains_key(*key))
+        .cloned()
+        .collect::<Vec<_>>();
+    blocked_keys.sort();
+
+    let mut leaked_keys = shaped
+        .keys()
+        .filter(|key| {
+            is_secret_like_env_key(key)
+                || (!simulation.allowlist.is_empty() && !is_allowed_env_key(key, &simulation.allowlist))
+                || is_denied_env_key(key, &simulation.denylist)
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    leaked_keys.sort();
+
+    let secret_like_keys_blocked = shaped.keys().all(|key| !is_secret_like_env_key(key));
+    let mut gaps = Vec::new();
+    if !leaked_keys.is_empty() {
+        gaps.push("effective environment still exposes sensitive or non-compliant keys".to_string());
+    }
+    if !secret_like_keys_blocked {
+        gaps.push("secret-like environment keys are not fully blocked".to_string());
+    }
+    if simulation.allowlist.is_empty() {
+        gaps.push("allowlist is empty; environment filtering is policy-weak".to_string());
+    }
+    Ok(EnvAllowlistReport {
+        policy_lane: "ENFORCED",
+        passed_keys,
+        blocked_keys,
+        leaked_keys,
+        secret_like_keys_blocked,
         gaps,
     })
 }
@@ -875,6 +958,18 @@ pub(crate) fn handle_security_command(
                 ExitCode::SUCCESS,
             )
         }
+        SecurityCommands::EnvAllowlist { simulation } => {
+            let payload =
+                serde_json::to_value(env_allowlist_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.env-allowlist",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
         SecurityCommands::Auth { simulation } => {
             let payload =
                 serde_json::to_value(auth_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
@@ -1034,6 +1129,60 @@ mod tests {
         assert!(!report.all_reads_allowed);
         assert!(!report.all_writes_allowed);
         assert!(report.gaps.iter().any(|gap| gap.contains("escapes authorized root")));
+    }
+
+    #[test]
+    fn security_env_allowlist_accepts_clean_filtered_environment() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("env.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "clean_env":false,
+              "allowlist":["BIJUX_*"],
+              "denylist":["BIJUX_DENY_*"],
+              "ambient_env":{"BIJUX_ALLOWED_A":"1","BIJUX_DENY_A":"2","SECRET_TOKEN":"raw"},
+              "explicit_env":{"BIJUX_ALLOWED_B":"3"}
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(SecurityCommands::EnvAllowlist { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::EnvAllowlist { simulation: simulation.clone() },
+        )
+        .expect("env allowlist");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::env_allowlist_payload(&simulation).expect("report");
+        assert_eq!(report.policy_lane, "ENFORCED");
+        assert_eq!(
+            report.passed_keys,
+            vec!["BIJUX_ALLOWED_A".to_string(), "BIJUX_ALLOWED_B".to_string()]
+        );
+        assert!(report.secret_like_keys_blocked);
+        assert!(report.leaked_keys.is_empty());
+    }
+
+    #[test]
+    fn security_env_allowlist_flags_secret_like_environment_leaks() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("env-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "clean_env":false,
+              "allowlist":["*"],
+              "denylist":[],
+              "ambient_env":{"SECRET_TOKEN":"raw","BIJUX_ALLOWED_A":"1"},
+              "explicit_env":{"PASSWORD":"raw"}
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::env_allowlist_payload(&simulation).expect("report");
+        assert!(!report.secret_like_keys_blocked);
+        assert!(report.leaked_keys.iter().any(|key| key == "SECRET_TOKEN"));
+        assert!(report.leaked_keys.iter().any(|key| key == "PASSWORD"));
+        assert!(report.gaps.iter().any(|gap| gap == "secret-like environment keys are not fully blocked"));
     }
 
     #[test]

@@ -840,6 +840,10 @@ pub(crate) enum SecurityCommands {
     FilesystemAllowlist {
         simulation: PathBuf,
     },
+    #[command(name = "env-allowlist")]
+    EnvAllowlist {
+        simulation: PathBuf,
+    },
     Auth {
         simulation: PathBuf,
     },
