@@ -1057,6 +1057,35 @@ pub(crate) fn docs_inventory_report() -> Value {
     docs_inventory_report_at(&workspace_root)
 }
 
+fn script_contract_report() -> Value {
+    json!({
+        "status": "ok",
+        "schema_version": "bijux-cli-script-contract-v1",
+        "stable_for_automation": {
+            "status": ["status", "runtime", "state", "plugins", "issues"],
+            "doctor": ["status", "severity", "checks", "issues", "suggestions"],
+            "version": ["name", "version", "semver", "source", "git_commit", "git_dirty", "build_profile"],
+            "config_explain": ["status", "key", "logical_key", "storage_key", "effective", "layers", "environment"],
+            "config_diff": ["status", "key", "from_profile", "to_profile", "changed_count", "changes"],
+            "explain": ["status", "requested_command", "requested_path", "normalized_path", "route", "envelope"],
+        },
+        "unstable_human_text": [
+            "Rendered `text` output intended for human operators",
+            "Help prose, examples, and suggestion wording",
+            "Diagnostics message phrasing outside machine fields",
+        ],
+        "safe_output_modes": ["json", "jsonl", "yaml"],
+        "unsafe_for_parsing": ["text"],
+        "exit_code_contract": {
+            "0": "success",
+            "1": "runtime_error",
+            "2": "usage_or_validation_error",
+            "3": "encoding_error",
+            "130": "aborted",
+        }
+    })
+}
+
 pub(crate) fn self_test_report(
     paths: &ResolvedStatePaths,
     registry: &RouteRegistry,
@@ -1246,6 +1275,7 @@ pub(crate) fn try_handle(
         [a, b] if a == "cli" && b == "status" => {
             Some(runtime_status_report(paths, plugin_registry_path))
         }
+        [a, b] if a == "cli" && b == "script-contract" => Some(script_contract_report()),
         [a, b] if a == "cli" && b == "paths" => {
             let install = install_report_payload();
             let hint = install

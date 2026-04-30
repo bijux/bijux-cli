@@ -339,6 +339,7 @@ pub fn root_command() -> Command {
     let cli_group = Command::new("cli")
         .subcommand(Command::new("status"))
         .subcommand(Command::new("paths"))
+        .subcommand(Command::new("script-contract"))
         .subcommand(
             Command::new("doctor").arg(Arg::new("subject").num_args(1)).arg(
                 Arg::new("bundle")

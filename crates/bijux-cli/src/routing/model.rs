@@ -133,6 +133,7 @@ fn build_built_in_route_paths() -> Vec<String> {
         "plugins doctor".to_string(),
         "cli status".to_string(),
         "cli paths".to_string(),
+        "cli script-contract".to_string(),
         "cli self-test".to_string(),
     ];
 

@@ -217,6 +217,7 @@ fn help_subcommand_guide(path: &[&str]) -> Option<String> {
         ["cli"] => Some(render_subcommand_guide(&[
             "status     Runtime status summary".to_string(),
             "paths      Runtime state and filesystem paths".to_string(),
+            "script-contract Stable machine-readable automation contract".to_string(),
             "doctor     Runtime environment diagnostics".to_string(),
             "version    Runtime identity and provenance".to_string(),
             "repl       Interactive runtime shell".to_string(),
@@ -304,6 +305,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
         ["cli"] => vec![
             "bijux cli status".to_string(),
             "bijux cli paths".to_string(),
+            "bijux cli script-contract --format json".to_string(),
             "bijux cli config list".to_string(),
             "bijux cli plugins list".to_string(),
         ],

@@ -769,4 +769,22 @@ mod tests {
         assert_eq!(payload["status"], "error");
         assert_eq!(payload["route"]["target_class"], "unknown");
     }
+
+    #[test]
+    fn cli_script_contract_is_machine_readable() {
+        let result = run_app(&[
+            "bijux".to_string(),
+            "cli".to_string(),
+            "script-contract".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+        ])
+        .expect("run");
+        assert_eq!(result.exit_code, 0);
+        let payload: Value = serde_json::from_str(result.stdout.trim()).expect("json");
+        assert_eq!(payload["status"], "ok");
+        assert_eq!(payload["schema_version"], "bijux-cli-script-contract-v1");
+        assert_eq!(payload["safe_output_modes"][0], "json");
+        assert_eq!(payload["unsafe_for_parsing"][0], "text");
+    }
 }
