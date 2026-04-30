@@ -927,6 +927,10 @@ pub(crate) enum PerformanceCommands {
     CanonicalizationProfile {
         simulation: PathBuf,
     },
+    #[command(name = "scheduler-churn")]
+    SchedulerChurn {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]

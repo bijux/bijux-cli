@@ -80,6 +80,26 @@ struct CanonicalizationProfileReport {
     samples: Vec<CanonicalizationSample>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct SchedulerChurnSimulation {
+    ready_queue_ops: u64,
+    trigger_evaluations: u64,
+    branch_propagations: u64,
+    retry_events: u64,
+    churn_budget_ops: u64,
+}
+
+#[derive(Debug, Serialize)]
+struct SchedulerChurnReport {
+    policy_lane: &'static str,
+    churn_ops_total: u64,
+    churn_budget_ops: u64,
+    within_budget: bool,
+    retry_storm_detected: bool,
+    pressure_index: f64,
+    gaps: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -193,6 +213,38 @@ fn canonicalization_profile_payload(
     })
 }
 
+fn scheduler_churn_payload(simulation: &Path) -> Result<SchedulerChurnReport, ExitCode> {
+    let simulation: SchedulerChurnSimulation = load_json_file(simulation)?;
+    let churn_ops_total = simulation
+        .ready_queue_ops
+        .saturating_add(simulation.trigger_evaluations)
+        .saturating_add(simulation.branch_propagations)
+        .saturating_add(simulation.retry_events);
+    let within_budget = churn_ops_total <= simulation.churn_budget_ops;
+    let retry_storm_detected = simulation.retry_events > simulation.ready_queue_ops.max(1) / 2;
+    let pressure_index = if simulation.churn_budget_ops == 0 {
+        0.0
+    } else {
+        churn_ops_total as f64 / simulation.churn_budget_ops as f64
+    };
+    let mut gaps = Vec::new();
+    if !within_budget {
+        gaps.push("scheduler churn exceeds configured budget".to_string());
+    }
+    if retry_storm_detected {
+        gaps.push("retry storm signal detected in scheduler workload".to_string());
+    }
+    Ok(SchedulerChurnReport {
+        policy_lane: "ENFORCED",
+        churn_ops_total,
+        churn_budget_ops: simulation.churn_budget_ops,
+        within_budget,
+        retry_storm_detected,
+        pressure_index,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_performance_command(
     cli: &DagCli,
     command: &PerformanceCommands,
@@ -228,6 +280,18 @@ pub(crate) fn handle_performance_command(
             emit_json(
                 cli,
                 "dag.performance.canonicalization-profile",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        PerformanceCommands::SchedulerChurn { simulation } => {
+            let payload =
+                serde_json::to_value(scheduler_churn_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.performance.scheduler-churn",
                 true,
                 payload,
                 Vec::new(),
@@ -407,5 +471,59 @@ mod tests {
         let report = super::canonicalization_profile_payload(&simulation).expect("report");
         assert!(!report.within_regression_budget);
         assert_eq!(report.regression_fixtures, vec!["small".to_string()]);
+    }
+
+    #[test]
+    fn performance_scheduler_churn_accepts_budgeted_workload() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("scheduler-churn-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "ready_queue_ops":1000,
+              "trigger_evaluations":800,
+              "branch_propagations":300,
+              "retry_events":100,
+              "churn_budget_ops":3000
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(PerformanceCommands::SchedulerChurn { simulation: simulation.clone() });
+        let code = handle_performance_command(
+            &cli,
+            &PerformanceCommands::SchedulerChurn { simulation: simulation.clone() },
+        )
+        .expect("scheduler churn");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::scheduler_churn_payload(&simulation).expect("report");
+        assert!(report.within_budget);
+        assert!(!report.retry_storm_detected);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn performance_scheduler_churn_flags_budget_overrun_and_retry_storm() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("scheduler-churn-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "ready_queue_ops":100,
+              "trigger_evaluations":200,
+              "branch_propagations":200,
+              "retry_events":80,
+              "churn_budget_ops":300
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::scheduler_churn_payload(&simulation).expect("report");
+        assert!(!report.within_budget);
+        assert!(report.retry_storm_detected);
+        for expected in [
+            "scheduler churn exceeds configured budget",
+            "retry storm signal detected in scheduler workload",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
     }
 }
