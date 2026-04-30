@@ -75,6 +75,8 @@ pub fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<Stri
             || token == "--color"
             || token == "--config-path"
             || token == "--profile"
+            || token == "--from-profile"
+            || token == "--to-profile"
         {
             i += 2;
             continue;
@@ -84,6 +86,8 @@ pub fn command_positionals(argv: &[String], command_tokens: &[&str]) -> Vec<Stri
             || token.starts_with("--color=")
             || token.starts_with("--config-path=")
             || token.starts_with("--profile=")
+            || token.starts_with("--from-profile=")
+            || token.starts_with("--to-profile=")
         {
             i += 1;
             continue;
@@ -187,6 +191,24 @@ mod tests {
         assert_eq!(
             command_positionals(&argv, &["cli", "plugins", "inspect"]),
             vec!["community".to_string()]
+        );
+    }
+
+    #[test]
+    fn command_positionals_ignore_profile_diff_options() {
+        let argv = vec![
+            "bijux".to_string(),
+            "config".to_string(),
+            "diff".to_string(),
+            "--from-profile".to_string(),
+            "dev".to_string(),
+            "--to-profile".to_string(),
+            "prod".to_string(),
+            "cli.log_level".to_string(),
+        ];
+        assert_eq!(
+            command_positionals(&argv, &["config", "diff"]),
+            vec!["cli.log_level".to_string()]
         );
     }
 }

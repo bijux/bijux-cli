@@ -20,8 +20,8 @@ pub const ROOT_APPS_SUBCOMMANDS: &[&str] = &[
     "scaffold",
 ];
 pub const CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
-    "get", "set", "unset", "clear", "reload", "validate", "schema", "docs", "explain", "repair",
-    "export", "load", "list",
+    "get", "set", "unset", "clear", "reload", "validate", "schema", "docs", "explain", "diff",
+    "repair", "export", "load", "list",
 ];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "list",
@@ -68,6 +68,7 @@ const ALIAS_REWRITES: &[(&str, &str)] = &[
     ("config schema", "cli config schema"),
     ("config docs", "cli config docs"),
     ("config explain", "cli config explain"),
+    ("config diff", "cli config diff"),
     ("config repair", "cli config repair"),
     ("config export", "cli config export"),
     ("config load", "cli config load"),

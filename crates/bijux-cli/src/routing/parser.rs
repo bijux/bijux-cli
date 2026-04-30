@@ -266,6 +266,15 @@ pub fn root_command() -> Command {
                 .arg(profile_arg())
                 .arg(include_secrets_arg()),
         )
+        .subcommand(
+            Command::new("diff")
+                .arg(Arg::new("key").num_args(1))
+                .arg(
+                    Arg::new("from-profile").long("from-profile").num_args(1).value_name("PROFILE"),
+                )
+                .arg(Arg::new("to-profile").long("to-profile").num_args(1).value_name("PROFILE"))
+                .arg(include_secrets_arg()),
+        )
         .subcommand(Command::new("repair"))
         .subcommand(
             Command::new("export")

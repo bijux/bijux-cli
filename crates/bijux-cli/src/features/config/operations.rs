@@ -78,6 +78,18 @@ pub(crate) fn explain(
         .map_err(|err| anyhow!(err.to_string()))
 }
 
+pub(crate) fn diff(
+    config_file: &Path,
+    cwd: &Path,
+    key: Option<&str>,
+    from_profile: Option<&str>,
+    to_profile: Option<&str>,
+    include_secrets: bool,
+) -> Result<Value> {
+    layered::diff_report(config_file, cwd, key, from_profile, to_profile, include_secrets)
+        .map_err(|err| anyhow!(err.to_string()))
+}
+
 pub(crate) fn repair(config_file: &Path) -> Result<Value> {
     layered::repair_report(config_file).map_err(|err| anyhow!(err.to_string()))
 }

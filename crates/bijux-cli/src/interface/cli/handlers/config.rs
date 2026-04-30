@@ -25,6 +25,7 @@ pub(crate) fn execute_config_command(
     let schema_tokens = config_command_tokens(argv, &["schema"]);
     let docs_tokens = config_command_tokens(argv, &["docs"]);
     let explain_tokens = config_command_tokens(argv, &["explain"]);
+    let diff_tokens = config_command_tokens(argv, &["diff"]);
     let repair_tokens = config_command_tokens(argv, &["repair"]);
     let export_tokens = config_command_tokens(argv, &["export"]);
     let load_tokens = config_command_tokens(argv, &["load"]);
@@ -96,6 +97,21 @@ pub(crate) fn execute_config_command(
                 include_secrets,
             )?)
         }
+        [a, b, c] if a == "cli" && b == "config" && c == "diff" => {
+            let positional = command_positionals(argv, diff_tokens);
+            let raw_key = positional.first().map(String::as_str);
+            let from_profile = command_option_value(argv, diff_tokens, "--from-profile");
+            let to_profile = command_option_value(argv, diff_tokens, "--to-profile");
+            let include_secrets = command_has_flag(argv, "--include-secrets");
+            Some(config_operations::diff(
+                config_file,
+                &current_dir,
+                raw_key,
+                from_profile.as_deref(),
+                to_profile.as_deref(),
+                include_secrets,
+            )?)
+        }
         [a, b, c] if a == "cli" && b == "config" && c == "repair" => {
             let _ = command_positionals(argv, repair_tokens);
             Some(config_operations::repair(config_file)?)
@@ -153,6 +169,7 @@ fn config_command_tokens<'a>(argv: &[String], suffix: &'a [&'a str]) -> &'a [&'a
             ["schema"] => &["config", "schema"],
             ["docs"] => &["config", "docs"],
             ["explain"] => &["config", "explain"],
+            ["diff"] => &["config", "diff"],
             ["repair"] => &["config", "repair"],
             ["export"] => &["config", "export"],
             ["load"] => &["config", "load"],
@@ -170,6 +187,7 @@ fn config_command_tokens<'a>(argv: &[String], suffix: &'a [&'a str]) -> &'a [&'a
             ["schema"] => &["cli", "config", "schema"],
             ["docs"] => &["cli", "config", "docs"],
             ["explain"] => &["cli", "config", "explain"],
+            ["diff"] => &["cli", "config", "diff"],
             ["repair"] => &["cli", "config", "repair"],
             ["export"] => &["cli", "config", "export"],
             ["load"] => &["cli", "config", "load"],

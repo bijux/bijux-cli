@@ -184,6 +184,7 @@ fn config_subcommand_help(command: &str) -> &'static str {
         "schema" => "Show the config schema registry",
         "docs" => "Generate markdown config reference from the schema",
         "explain" => "Explain the effective value and source of one key",
+        "diff" => "Compare effective config values between contexts",
         "repair" => "Recover a malformed config file and write a backup",
         "export" => "Write config to a target path",
         "load" => "Load config from a source path",
@@ -337,6 +338,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux config list".to_string(),
             "bijux config get foo".to_string(),
             "bijux config set foo=bar".to_string(),
+            "bijux config diff --from-profile dev --to-profile prod".to_string(),
             "bijux config docs cli".to_string(),
             "bijux config export ./bijux.env".to_string(),
         ],
@@ -380,6 +382,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux cli config list".to_string(),
             "bijux cli config get foo".to_string(),
             "bijux cli config set foo=bar".to_string(),
+            "bijux cli config diff --from-profile dev --to-profile prod".to_string(),
         ],
         ["cli", "plugins"] => vec![
             "bijux cli plugins list".to_string(),

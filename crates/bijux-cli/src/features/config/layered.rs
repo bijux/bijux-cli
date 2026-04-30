@@ -170,6 +170,79 @@ pub(crate) fn explain_report(
     }))
 }
 
+pub(crate) fn diff_report(
+    global_config_path: &Path,
+    cwd: &Path,
+    raw_key: Option<&str>,
+    from_profile: Option<&str>,
+    to_profile: Option<&str>,
+    include_secrets: bool,
+) -> Result<Value, ConfigError> {
+    let from = resolve_layered_config(global_config_path, cwd, from_profile)?;
+    let to = resolve_layered_config(global_config_path, cwd, to_profile)?;
+
+    let keys = if let Some(key) = raw_key {
+        BTreeSet::from([normalize_selector(key)?])
+    } else {
+        from.effective_entries
+            .keys()
+            .chain(to.effective_entries.keys())
+            .cloned()
+            .collect::<BTreeSet<_>>()
+    };
+
+    let mut changes = Vec::new();
+    let mut unchanged_count = 0usize;
+
+    for storage_key in keys {
+        let before = from.effective_entries.get(&storage_key).cloned();
+        let after = to.effective_entries.get(&storage_key).cloned();
+        if before == after {
+            unchanged_count += 1;
+            continue;
+        }
+
+        let before_redacted = before
+            .as_ref()
+            .map(|value| !include_secrets && redact_value(&storage_key, value, false) != *value)
+            .unwrap_or(false);
+        let after_redacted = after
+            .as_ref()
+            .map(|value| !include_secrets && redact_value(&storage_key, value, false) != *value)
+            .unwrap_or(false);
+        let field = schema_field_for_key(&storage_key);
+
+        changes.push(json!({
+            "logical_key": storage_key_to_logical_key(&storage_key),
+            "storage_key": storage_key,
+            "scope": field.as_ref().map(|entry| entry.scope.clone()).unwrap_or_else(|| infer_scope(&storage_key)),
+            "schema": field,
+            "from": before.as_ref().map(|value| redact_value(&storage_key, value, include_secrets)),
+            "from_redacted": before_redacted,
+            "to": after.as_ref().map(|value| redact_value(&storage_key, value, include_secrets)),
+            "to_redacted": after_redacted,
+        }));
+    }
+
+    Ok(json!({
+        "status": "ok",
+        "key": raw_key,
+        "from_profile": from_profile,
+        "to_profile": to_profile,
+        "changed_count": changes.len(),
+        "unchanged_count": unchanged_count,
+        "changes": changes,
+        "from_context": {
+            "profile": from_profile,
+            "project_discovery": project_discovery_payload(&from.project_discovery),
+        },
+        "to_context": {
+            "profile": to_profile,
+            "project_discovery": project_discovery_payload(&to.project_discovery),
+        }
+    }))
+}
+
 pub(crate) fn repair_report(global_config_path: &Path) -> Result<Value, ConfigError> {
     let original = if global_config_path.exists() {
         fs::read_to_string(global_config_path)
@@ -767,8 +840,9 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        discover_project_config, explain_report, parse_portable_entries, repair_env_text,
-        resolve_layered_config, schema_docs_report, schema_report, LayeredConfigOptions,
+        diff_report, discover_project_config, explain_report, parse_portable_entries,
+        repair_env_text, resolve_layered_config, schema_docs_report, schema_report,
+        LayeredConfigOptions,
     };
 
     fn temp_dir(name: &str) -> PathBuf {
@@ -845,6 +919,24 @@ mod tests {
         let payload =
             explain_report(&global, &root, "cli.access_token", None, false).expect("explain");
         assert_eq!(payload["effective"]["value"], "[redacted]");
+    }
+
+    #[test]
+    fn diff_report_compares_profiles_with_redaction() {
+        let root = temp_dir("diff");
+        let global = root.join("global.env");
+        let project = root.join("project");
+        fs::create_dir_all(project.join(".bijux/profiles")).expect("mkdir");
+        fs::write(&global, "BIJUXCLI_CLI_LOG_LEVEL=info\nBIJUXCLI_CLI_ACCESS_TOKEN=alpha\n")
+            .expect("global");
+        fs::write(project.join(".bijux/profiles/dev.toml"), "[cli]\nlog_level = 'debug'\n")
+            .expect("profile");
+
+        let payload = diff_report(&global, &project, None, None, Some("dev"), false).expect("diff");
+        assert_eq!(payload["status"], "ok");
+        assert!(payload["changed_count"].as_u64().is_some_and(|count| count >= 1));
+        let changes = payload["changes"].as_array().expect("changes");
+        assert!(changes.iter().any(|entry| entry["logical_key"] == "cli.log_level"));
     }
 
     #[test]
