@@ -99,6 +99,7 @@ fn append_help_sections(rendered: &mut String, path: &[&str]) {
     if path.is_empty() {
         sections.push(render_official_apps_section());
         sections.push(render_installed_plugins_section());
+        sections.push(render_diagnostics_section());
     }
     if let Some(subcommands) = help_subcommand_guide(path) {
         sections.push(subcommands);
@@ -139,6 +140,11 @@ fn render_official_apps_section() -> String {
 
 fn render_installed_plugins_section() -> String {
     "Installed plugins:\n  Use `bijux plugins list` to inspect the current plugin inventory."
+        .to_string()
+}
+
+fn render_diagnostics_section() -> String {
+    "Diagnostics:\n  Use `bijux doctor` for runtime health and `bijux apps doctor` for app mount health."
         .to_string()
 }
 
