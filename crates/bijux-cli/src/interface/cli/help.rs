@@ -287,12 +287,18 @@ fn help_examples(path: &[&str]) -> Vec<String> {
     match path {
         [] => vec![
             "bijux status".to_string(),
+            "bijux explain status".to_string(),
             "bijux apps list".to_string(),
             "bijux dag --help".to_string(),
             "bijux install atlas --dry-run".to_string(),
             "bijux config get foo".to_string(),
             "bijux config set foo=bar".to_string(),
             "bijux plugins list".to_string(),
+        ],
+        ["explain"] => vec![
+            "bijux explain status".to_string(),
+            "bijux explain dag run".to_string(),
+            "bijux explain plugins list --format json".to_string(),
         ],
         ["cli"] => vec![
             "bijux cli status".to_string(),

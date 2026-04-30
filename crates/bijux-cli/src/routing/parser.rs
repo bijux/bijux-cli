@@ -397,6 +397,10 @@ pub fn root_command() -> Command {
                 .arg(Arg::new("target").num_args(1))
                 .arg(Arg::new("dry-run").long("dry-run").action(ArgAction::SetTrue)),
         )
+        .subcommand(
+            Command::new("explain")
+                .arg(Arg::new("command").num_args(1..).required(true).trailing_var_arg(true)),
+        )
         .subcommand(apps_group)
         .subcommand(config_group)
         .subcommand(plugins_group)

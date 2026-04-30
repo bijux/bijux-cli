@@ -711,4 +711,62 @@ mod tests {
         assert_eq!(no_args.stdout, explicit.stdout);
         assert_eq!(no_args.stderr, explicit.stderr);
     }
+
+    #[test]
+    fn explain_reports_built_in_route_metadata() {
+        let result = run_app(&[
+            "bijux".to_string(),
+            "explain".to_string(),
+            "status".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+        ])
+        .expect("run");
+        assert_eq!(result.exit_code, 0);
+        let payload: Value = serde_json::from_str(result.stdout.trim()).expect("json");
+        assert_eq!(payload["status"], "ok");
+        assert_eq!(payload["route"]["target_class"], "built_in");
+        assert_eq!(payload["route"]["owner"], "bijux-cli");
+        assert_eq!(payload["route"]["descriptor_source"], "built-in route registry");
+        assert_eq!(payload["envelope"]["success_schema"], "output-envelope-v1");
+    }
+
+    #[test]
+    fn explain_reports_official_app_route_metadata() {
+        let result = run_app(&[
+            "bijux".to_string(),
+            "explain".to_string(),
+            "dag".to_string(),
+            "run".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+        ])
+        .expect("run");
+        assert_eq!(result.exit_code, 0);
+        let payload: Value = serde_json::from_str(result.stdout.trim()).expect("json");
+        assert_eq!(payload["status"], "ok");
+        assert_eq!(payload["route"]["target_class"], "official_app");
+        assert_eq!(payload["route"]["owner"], "dag");
+        assert_eq!(
+            payload["route"]["descriptor_source"],
+            "official_product_namespace_registry.json"
+        );
+        assert_eq!(payload["route"]["side_effect_class"], "external-exec");
+    }
+
+    #[test]
+    fn explain_reports_unknown_route_metadata() {
+        let result = run_app(&[
+            "bijux".to_string(),
+            "explain".to_string(),
+            "definitely-not-a-command".to_string(),
+            "--format".to_string(),
+            "json".to_string(),
+        ])
+        .expect("run");
+        assert_eq!(result.exit_code, 0);
+        let payload: Value = serde_json::from_str(result.stdout.trim()).expect("json");
+        assert_eq!(payload["status"], "error");
+        assert_eq!(payload["route"]["target_class"], "unknown");
+    }
 }
