@@ -26,6 +26,14 @@
       ]
     },
     {
+      "path": "contracts/foundation/hard_release_gate.v1.json",
+      "gates_behavior": "defines the deterministic foundation release gate workflow and required lifecycle checks",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_hard_release_gate_contracts.rs"
+      ]
+    },
+    {
       "path": "contracts/foundation/module_surface_lanes.v1.json",
       "gates_behavior": "classifies stable, experimental, simulated, and private module surfaces",
       "owning_crate": "bijux-dev",

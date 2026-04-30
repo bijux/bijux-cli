@@ -9,6 +9,7 @@ This report tracks root policy files that gate product behavior and maps each to
 | contracts/foundation/backlog_issue_class_routing.v1.json | bijux-dev | Enforces backlog issue-class ownership and rejects uncategorized backlog intake. | crates/bijux-dev/tests/foundation_backlog_issue_routing_contracts.rs |
 | contracts/foundation/cli_dependency_direction.v1.json | bijux-cli | Locks CLI dependency direction and DAG boundary isolation. | crates/bijux-cli/tests/architecture/boundaries/cli_dependency_direction_boundaries.rs |
 | contracts/foundation/dag_dependency_direction.v1.json | bijux-dev | Locks DAG dependency direction and source import boundaries. | crates/bijux-dev/tests/foundation_dag_dependency_direction_contracts.rs |
+| contracts/foundation/hard_release_gate.v1.json | bijux-dev | Defines the deterministic foundation release gate workflow and required lifecycle checks. | crates/bijux-dev/tests/foundation_hard_release_gate_contracts.rs |
 | contracts/foundation/module_surface_lanes.v1.json | bijux-dev | Classifies stable, experimental, simulated, and private module lanes. | crates/bijux-dev/tests/foundation_module_surface_contracts.rs |
 | contracts/foundation/root_policy_surface_inventory.v1.json | bijux-dev | Defines the root policy inventory boundary and ownership mapping itself. | crates/bijux-dev/tests/foundation_root_policy_surface_inventory_contracts.rs |
 | contracts/foundation/workspace_product_map.v1.json | bijux-dev | Declares product ownership and maintainer boundaries. | crates/bijux-dev/tests/foundation_product_map_contracts.rs |
