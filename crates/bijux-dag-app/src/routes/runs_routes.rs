@@ -2,10 +2,112 @@ use crate::commands::{DagCli, RunsCommands};
 use crate::inspect_service;
 use crate::routes::selector_grammar::parse_selector_expressions;
 use crate::{
-    emit_json, format_inspect_human, format_show_human, list_runs, print_human_diff,
+    emit_json, format_inspect_human, format_show_human, list_runs, print_human_diff, read_file,
     replay_service, resolve_run_dir, runs_compare, runs_failures, runs_flakes, runs_summary,
     runs_trend, verify_run, ExitCode,
 };
+use serde_json::Value;
+use std::collections::BTreeMap;
+use std::fs;
+use std::path::Path;
+
+fn read_optional_json(path: &Path) -> Value {
+    read_file(path)
+        .ok()
+        .and_then(|raw| serde_json::from_str::<Value>(&raw).ok())
+        .unwrap_or(Value::Null)
+}
+
+fn redact_value(value: &Value) -> Value {
+    match value {
+        Value::Object(map) => {
+            let mut redacted = serde_json::Map::with_capacity(map.len());
+            for (key, child) in map {
+                let key_lc = key.to_ascii_lowercase();
+                if key_lc.contains("secret")
+                    || key_lc.contains("token")
+                    || key_lc.contains("password")
+                    || key_lc.contains("api_key")
+                {
+                    redacted.insert(key.clone(), Value::String("[REDACTED]".to_string()));
+                } else {
+                    redacted.insert(key.clone(), redact_value(child));
+                }
+            }
+            Value::Object(redacted)
+        }
+        Value::Array(items) => Value::Array(items.iter().map(redact_value).collect()),
+        _ => value.clone(),
+    }
+}
+
+fn collect_node_traces(run_dir: &Path) -> Result<Value, ExitCode> {
+    let nodes_dir = run_dir.join("nodes");
+    if !nodes_dir.exists() {
+        return Ok(Value::Object(serde_json::Map::new()));
+    }
+    let mut traces = BTreeMap::<String, Value>::new();
+    for entry in fs::read_dir(nodes_dir).map_err(|_| ExitCode::from(3))? {
+        let entry = entry.map_err(|_| ExitCode::from(3))?;
+        let node_id = entry.file_name().to_string_lossy().to_string();
+        let trace = read_optional_json(&entry.path().join("trace.json"));
+        traces.insert(node_id, trace);
+    }
+    Ok(serde_json::to_value(traces).unwrap_or(Value::Null))
+}
+
+fn diagnostics_bundle_payload(run_dir: &Path, redact: bool) -> Result<Value, ExitCode> {
+    let manifest = read_optional_json(&run_dir.join("manifest.json"));
+    let graph_snapshot = if run_dir.join("graph.snapshot.json").exists() {
+        read_optional_json(&run_dir.join("graph.snapshot.json"))
+    } else {
+        read_optional_json(&run_dir.join("snapshot.json"))
+    };
+    let plan = read_optional_json(&run_dir.join("plan.json"));
+    let artifact_inventory = if run_dir.join("outputs/index.json").exists() {
+        read_optional_json(&run_dir.join("outputs/index.json"))
+    } else {
+        read_optional_json(&run_dir.join("outputs.index.json"))
+    };
+    let payload = serde_json::json!({
+        "bundle_version": "dag-diagnostics-bundle/v0.1",
+        "run_id": manifest.get("run_id").cloned().unwrap_or(Value::Null),
+        "run_dir": run_dir.display().to_string(),
+        "manifest": manifest,
+        "graph": graph_snapshot,
+        "plan": plan,
+        "config": {
+            "policy": manifest.get("policy").cloned().unwrap_or(Value::Null),
+            "runtime": manifest.get("runtime").cloned().unwrap_or(Value::Null)
+        },
+        "traces": collect_node_traces(run_dir)?,
+        "logs": {
+            "events": read_optional_json(&run_dir.join("observability.events.json")),
+            "timeline": read_optional_json(&run_dir.join("observability.timeline.json")),
+            "root_causes": read_optional_json(&run_dir.join("observability.root-causes.json"))
+        },
+        "artifact_inventory": artifact_inventory,
+        "cache_proof": read_optional_json(&run_dir.join("cache.proof.json")),
+        "command_context": {
+            "submission_source": manifest
+                .get("run_metadata")
+                .and_then(|m| m.get("submission_source"))
+                .cloned()
+                .unwrap_or(Value::Null),
+            "trigger_source": manifest
+                .get("run_metadata")
+                .and_then(|m| m.get("trigger_source"))
+                .cloned()
+                .unwrap_or(Value::Null),
+            "operator": manifest
+                .get("run_metadata")
+                .and_then(|m| m.get("operator"))
+                .cloned()
+                .unwrap_or(Value::Null)
+        }
+    });
+    Ok(if redact { redact_value(&payload) } else { payload })
+}
 
 pub(crate) fn handle_runs_command(
     cli: &DagCli,
@@ -292,6 +394,31 @@ pub(crate) fn handle_runs_command(
             println!("{}", serde_json::to_string_pretty(&report).unwrap());
             Ok(ExitCode::SUCCESS)
         }
+        RunsCommands::DiagnosticsBundle { run_id, root, out, redact } => {
+            let run_dir = resolve_run_dir(root, run_id);
+            let payload = diagnostics_bundle_payload(&run_dir, *redact)?;
+            if let Some(parent) = out.parent() {
+                fs::create_dir_all(parent).map_err(|_| ExitCode::from(3))?;
+            }
+            fs::write(out, serde_json::to_vec_pretty(&payload).map_err(|_| ExitCode::from(3))?)
+                .map_err(|_| ExitCode::from(3))?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runs.diagnostics-bundle",
+                    true,
+                    serde_json::json!({
+                        "run_id": run_id,
+                        "run_dir": run_dir,
+                        "bundle_path": out
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("wrote diagnostics bundle: {}", out.display());
+            Ok(ExitCode::SUCCESS)
+        }
     }
 }
 
@@ -445,5 +572,52 @@ mod tests {
         });
         assert!(result.is_ok(), "timeline flow should not panic");
         assert!(result.expect("result").is_ok());
+    }
+
+    #[test]
+    fn runs_diagnostics_bundle_exports_redacted_payload() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        write_run(tmp.path(), "run-secret", true);
+        let run_manifest_path = tmp.path().join("run-secret").join("manifest.json");
+        let mut manifest: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&run_manifest_path).expect("read manifest"))
+                .expect("parse manifest");
+        manifest["run_metadata"]["api_token"] = serde_json::json!("secret-token-value");
+        fs::write(
+            &run_manifest_path,
+            serde_json::to_vec_pretty(&manifest).expect("encode manifest"),
+        )
+        .expect("write manifest");
+        fs::write(
+            tmp.path().join("run-secret").join("observability.events.json"),
+            b"{\"status\":\"ok\"}",
+        )
+        .expect("write events");
+
+        let bundle_path = tmp.path().join("bundle.json");
+        let cli = quiet_json_cli();
+        let result = handle_runs_command(
+            &cli,
+            &RunsCommands::DiagnosticsBundle {
+                run_id: "run-secret".to_string(),
+                root: tmp.path().to_path_buf(),
+                out: bundle_path.clone(),
+                redact: true,
+            },
+        )
+        .expect("bundle");
+        assert_eq!(result, ExitCode::SUCCESS);
+
+        let bundle: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(bundle_path).expect("read bundle"))
+                .expect("parse bundle");
+        assert_eq!(bundle["bundle_version"], "dag-diagnostics-bundle/v0.1");
+        assert_eq!(bundle["command_context"]["submission_source"], "imported");
+        assert_eq!(bundle["command_context"]["operator"], serde_json::Value::Null);
+        assert_eq!(bundle["run_dir"], tmp.path().join("run-secret").display().to_string());
+        assert_eq!(
+            bundle["manifest"]["run_metadata"]["api_token"], "[REDACTED]",
+            "secret metadata must be redacted in exported bundle"
+        );
     }
 }

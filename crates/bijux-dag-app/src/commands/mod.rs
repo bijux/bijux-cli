@@ -975,6 +975,16 @@ pub(crate) enum RunsCommands {
         #[arg(long)]
         root: PathBuf,
     },
+    #[command(name = "diagnostics-bundle")]
+    DiagnosticsBundle {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
+        #[arg(long)]
+        redact: bool,
+    },
 }
 
 #[derive(Subcommand)]
