@@ -1086,6 +1086,16 @@ pub(crate) enum MigrateCommands {
         #[arg(long, default_value_t = false)]
         dry_run: bool,
     },
+    Inspect {
+        #[arg(long)]
+        dag: Option<PathBuf>,
+        #[arg(long)]
+        run_dir: Option<PathBuf>,
+        #[arg(long)]
+        from: String,
+        #[arg(long)]
+        to: String,
+    },
 }
 
 #[derive(Subcommand)]

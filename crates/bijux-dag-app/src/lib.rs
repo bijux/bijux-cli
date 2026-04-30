@@ -741,6 +741,25 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                         result
                     }
                 }
+                MigrateCommands::Inspect { dag, run_dir, from, to } => {
+                    let report = match (dag, run_dir) {
+                        (Some(path), None) => inspect_migrate_dag(path, from, to)?,
+                        (None, Some(path)) => inspect_migrate_run(path, from, to)?,
+                        _ => return Err(ExitCode::from(2)),
+                    };
+                    if cli.json {
+                        return emit_json(
+                            &cli,
+                            "dag.migrate.inspect",
+                            true,
+                            report,
+                            Vec::new(),
+                            ExitCode::SUCCESS,
+                        );
+                    }
+                    println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                    return Ok(ExitCode::SUCCESS);
+                }
             };
             if cli.json {
                 return emit_json(
