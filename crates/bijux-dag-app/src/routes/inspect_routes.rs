@@ -1,5 +1,6 @@
 use crate::commands::DagCli;
 use crate::routes::path_resolution::{manifest_path, node_outputs_index_path, node_trace_path};
+use crate::routes::preconditions::require_run_directory;
 use crate::routes::run_lookup::read_manifest_json;
 use crate::run_data::{load_snapshot, read_node_traces};
 use crate::{emit_json, read_file, ExitCode};
@@ -23,6 +24,7 @@ pub(crate) fn handle_explain_command(
     run_dir: &Path,
     node: &Option<String>,
 ) -> Result<ExitCode, ExitCode> {
+    require_run_directory(run_dir)?;
     let manifest = read_file(&manifest_path(run_dir))?;
     if let Some(node_id) = node.as_ref() {
         let snapshot = load_snapshot(run_dir)?;
@@ -121,6 +123,7 @@ pub(crate) fn handle_node_command(
     run_dir: &Path,
     node: &str,
 ) -> Result<ExitCode, ExitCode> {
+    require_run_directory(run_dir)?;
     let trace = read_file(&node_trace_path(run_dir, node))?;
     let index = read_file(&node_outputs_index_path(run_dir, node))?;
     if cli.json {
@@ -139,6 +142,7 @@ pub(crate) fn handle_node_command(
 }
 
 pub(crate) fn handle_status_command(cli: &DagCli, run_dir: &Path) -> Result<ExitCode, ExitCode> {
+    require_run_directory(run_dir)?;
     let manifest = read_file(&manifest_path(run_dir))?;
     let nodes_dir = run_dir.join("nodes");
     let manifest_json = serde_json::from_str::<Value>(&manifest).unwrap_or(Value::Null);

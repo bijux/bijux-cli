@@ -1,6 +1,6 @@
 use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
 use crate::routes::plan_routes::{concise_plan_lines, plan_explain_payload};
-use crate::routes::preconditions::require_file;
+use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::run_data::map_materialize_mode;
 use crate::{emit_json, parse_graph, parse_selectors, read_file, ExitCode};
 use bijux_dag_runtime::{
@@ -56,6 +56,7 @@ pub(crate) fn handle_run_command(
     req: RunRouteRequest<'_>,
 ) -> Result<ExitCode, ExitCode> {
     require_file(req.dag)?;
+    require_safe_path(req.out)?;
     let input = read_file(req.dag)?;
     let graph = parse_graph(&input)?;
     let runtime = Runtime::new();

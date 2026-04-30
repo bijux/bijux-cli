@@ -1,6 +1,7 @@
 use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
 use crate::graph_helpers::parse_selectors;
 use crate::replay_cmd::ReplayCommandResponse;
+use crate::routes::preconditions::{require_run_directory, require_safe_path};
 use crate::run_data::{load_snapshot, map_materialize_mode};
 use crate::{
     build_run_proof_bundle, emit_json, read_run_id, selector_cli_string, CacheMode, ExitCode,
@@ -33,6 +34,8 @@ pub(crate) fn handle_replay_command(
     materialize_inputs: MaterializeModeArg,
     remote_cache_dir: Option<PathBuf>,
 ) -> Result<ExitCode, ExitCode> {
+    require_run_directory(run_dir)?;
+    require_safe_path(out)?;
     let snapshot = load_snapshot(run_dir)?;
     let source_run_id = read_run_id(run_dir).ok();
     let runtime = Runtime::new();
@@ -180,6 +183,7 @@ pub(crate) fn handle_replay_command(
 }
 
 pub(crate) fn handle_prove_command(cli: &DagCli, run_dir: &Path) -> Result<ExitCode, ExitCode> {
+    require_run_directory(run_dir)?;
     let proof = build_run_proof_bundle(run_dir)?;
     let complete = proof.get("complete").and_then(Value::as_bool).unwrap_or(false);
     if cli.json {
@@ -212,6 +216,7 @@ pub(crate) fn handle_proof_summary_command(
     cli: &DagCli,
     run_dir: &Path,
 ) -> Result<ExitCode, ExitCode> {
+    require_run_directory(run_dir)?;
     let proof = build_run_proof_bundle(run_dir)?;
     let complete = proof.get("complete").and_then(Value::as_bool).unwrap_or(false);
     let status = proof.get("status").and_then(Value::as_str).unwrap_or("incomplete");
