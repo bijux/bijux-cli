@@ -1,0 +1,95 @@
+{
+  "schema_version": "foundation-workspace-product-map/v1",
+  "owner": "bijux-core",
+  "products": [
+    {
+      "crate": "bijux-cli",
+      "runtime_binary": "bijux",
+      "lane": "released-product",
+      "owns": [
+        "root command runtime and routing",
+        "command envelopes and output contracts",
+        "config, diagnostics, plugin and app discovery",
+        "interactive REPL behavior",
+        "Rust app SDK contracts"
+      ]
+    },
+    {
+      "crate": "bijux-cli-python",
+      "runtime_binary": null,
+      "lane": "released-product",
+      "owns": [
+        "Python package bridge to the Rust command runtime",
+        "Python entrypoint parity for root command semantics"
+      ]
+    },
+    {
+      "crate": "bijux-dag-core",
+      "runtime_binary": null,
+      "lane": "released-product",
+      "owns": [
+        "DAG schema, parsing, validation, and canonicalization",
+        "graph identity and semantic analysis",
+        "graph-to-plan lowering contracts"
+      ]
+    },
+    {
+      "crate": "bijux-dag-runtime",
+      "runtime_binary": null,
+      "lane": "released-product",
+      "owns": [
+        "execution and scheduling kernel behavior",
+        "adapter execution policy",
+        "cache and replay runtime decisions",
+        "runtime diagnostics and state transitions"
+      ]
+    },
+    {
+      "crate": "bijux-dag-artifacts",
+      "runtime_binary": null,
+      "lane": "released-product",
+      "owns": [
+        "run artifact models and indexes",
+        "artifact persistence and integrity contracts",
+        "artifact lineage and retention primitives"
+      ]
+    },
+    {
+      "crate": "bijux-dag-app",
+      "runtime_binary": null,
+      "lane": "released-product",
+      "owns": [
+        "DAG command orchestration surface",
+        "operator output formatting",
+        "inspect, replay, and verification command payloads"
+      ]
+    },
+    {
+      "crate": "bijux-dag-cli",
+      "runtime_binary": "bijux-dag",
+      "lane": "released-product",
+      "owns": [
+        "thin binary wrapper over bijux-dag-app command surface"
+      ]
+    },
+    {
+      "crate": "bijux-dag-testkit",
+      "runtime_binary": null,
+      "lane": "released-product",
+      "owns": [
+        "deterministic DAG fixtures",
+        "fake adapters and reusable DAG assertions"
+      ]
+    },
+    {
+      "crate": "bijux-dev",
+      "runtime_binary": "bijux-dev-cli",
+      "lane": "maintainer-control-plane",
+      "owns": [
+        "maintainer reports and governance checks",
+        "suite orchestration and release evidence checks",
+        "verification and inventory tooling for product contracts"
+      ]
+    }
+  ]
+}
