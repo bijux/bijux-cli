@@ -872,6 +872,10 @@ pub(crate) enum SecurityCommands {
     SupplyChain {
         simulation: PathBuf,
     },
+    #[command(name = "supply-inventory")]
+    SupplyInventory {
+        simulation: PathBuf,
+    },
     #[command(name = "data-access")]
     DataAccess {
         simulation: PathBuf,

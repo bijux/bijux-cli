@@ -304,6 +304,45 @@ struct SupplyChainReport {
 }
 
 #[derive(Debug, serde::Deserialize)]
+struct SupplyInventorySimulation {
+    run_id: String,
+    #[serde(default)]
+    binaries: Vec<InventoryComponent>,
+    #[serde(default)]
+    containers: Vec<InventoryComponent>,
+    #[serde(default)]
+    plugins: Vec<InventoryComponent>,
+    #[serde(default)]
+    adapters: Vec<InventoryComponent>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct InventoryComponent {
+    id: String,
+    version: String,
+    checksum: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct SupplyInventoryReport {
+    policy_lane: &'static str,
+    run_id: String,
+    binaries: Vec<InventoryComponentReport>,
+    containers: Vec<InventoryComponentReport>,
+    plugins: Vec<InventoryComponentReport>,
+    adapters: Vec<InventoryComponentReport>,
+    inventory_complete: bool,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct InventoryComponentReport {
+    id: String,
+    version: String,
+    checksum_present: bool,
+}
+
+#[derive(Debug, serde::Deserialize)]
 struct DataAccessSimulation {
     input_root: String,
     candidate_input: String,
@@ -996,6 +1035,59 @@ fn supply_chain_payload(simulation: &Path) -> Result<SupplyChainReport, ExitCode
     })
 }
 
+fn map_inventory_components(
+    kind: &str,
+    components: &[InventoryComponent],
+    gaps: &mut Vec<String>,
+) -> Vec<InventoryComponentReport> {
+    components
+        .iter()
+        .map(|component| {
+            let checksum_present = component
+                .checksum
+                .as_ref()
+                .is_some_and(|value| !value.trim().is_empty());
+            if !checksum_present {
+                gaps.push(format!(
+                    "{kind} component {}@{} is missing a checksum",
+                    component.id, component.version
+                ));
+            }
+            if component.id.trim().is_empty() || component.version.trim().is_empty() {
+                gaps.push(format!("{kind} component has missing id/version fields"));
+            }
+            InventoryComponentReport {
+                id: component.id.clone(),
+                version: component.version.clone(),
+                checksum_present,
+            }
+        })
+        .collect()
+}
+
+fn supply_inventory_payload(simulation: &Path) -> Result<SupplyInventoryReport, ExitCode> {
+    let simulation: SupplyInventorySimulation = load_json_file(simulation)?;
+    let mut gaps = Vec::new();
+    let binaries = map_inventory_components("binary", &simulation.binaries, &mut gaps);
+    let containers = map_inventory_components("container", &simulation.containers, &mut gaps);
+    let plugins = map_inventory_components("plugin", &simulation.plugins, &mut gaps);
+    let adapters = map_inventory_components("adapter", &simulation.adapters, &mut gaps);
+    if binaries.is_empty() && containers.is_empty() && plugins.is_empty() && adapters.is_empty() {
+        gaps.push("supply inventory is empty".to_string());
+    }
+    let inventory_complete = gaps.is_empty();
+    Ok(SupplyInventoryReport {
+        policy_lane: "ENFORCED",
+        run_id: simulation.run_id,
+        binaries,
+        containers,
+        plugins,
+        adapters,
+        inventory_complete,
+        gaps,
+    })
+}
+
 fn data_access_payload(simulation: &Path) -> Result<DataAccessReport, ExitCode> {
     let simulation: DataAccessSimulation = load_json_file(simulation)?;
     let input_path_allowed = authorize_input_path(
@@ -1322,6 +1414,18 @@ pub(crate) fn handle_security_command(
             emit_json(
                 cli,
                 "dag.security.supply-chain",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        SecurityCommands::SupplyInventory { simulation } => {
+            let payload = serde_json::to_value(supply_inventory_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.supply-inventory",
                 true,
                 payload,
                 Vec::new(),
@@ -2140,6 +2244,61 @@ mod tests {
             "artifact promotion policy rejected this trust posture",
             "artifact digests are not fully pinned",
             "environment trust domain is missing",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn security_supply_inventory_accepts_checksum_complete_inventory() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("supply-inventory.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "run_id":"run-77",
+              "binaries":[{"id":"bijux-dag","version":"0.3.5","checksum":"sha256:111"}],
+              "containers":[{"id":"ghcr.io/bijux/runtime","version":"2026.04","checksum":"sha256:222"}],
+              "plugins":[{"id":"builtin-python","version":"1.2.0","checksum":"sha256:333"}],
+              "adapters":[{"id":"shell","version":"1","checksum":"sha256:444"}]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(SecurityCommands::SupplyInventory { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::SupplyInventory { simulation: simulation.clone() },
+        )
+        .expect("supply inventory");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::supply_inventory_payload(&simulation).expect("report");
+        assert!(report.inventory_complete);
+        assert!(report.gaps.is_empty());
+        assert_eq!(report.run_id, "run-77");
+    }
+
+    #[test]
+    fn security_supply_inventory_flags_missing_component_checksums() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("supply-inventory-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "run_id":"run-88",
+              "binaries":[{"id":"bijux-dag","version":"0.3.5","checksum":null}],
+              "containers":[{"id":"ghcr.io/bijux/runtime","version":"2026.04","checksum":" "}],
+              "plugins":[{"id":"builtin-python","version":"1.2.0","checksum":"sha256:333"}],
+              "adapters":[{"id":"shell","version":"","checksum":"sha256:444"}]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::supply_inventory_payload(&simulation).expect("report");
+        assert!(!report.inventory_complete);
+        for expected in [
+            "binary component bijux-dag@0.3.5 is missing a checksum",
+            "container component ghcr.io/bijux/runtime@2026.04 is missing a checksum",
+            "adapter component has missing id/version fields",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
