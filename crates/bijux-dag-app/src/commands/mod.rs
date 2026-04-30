@@ -939,6 +939,10 @@ pub(crate) enum PerformanceCommands {
     MemoryCeilings {
         simulation: PathBuf,
     },
+    #[command(name = "streaming-output")]
+    StreamingOutput {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]

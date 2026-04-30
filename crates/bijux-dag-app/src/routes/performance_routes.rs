@@ -138,6 +138,28 @@ struct MemoryCeilingsReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct StreamingOutputSimulation {
+    stream_name: String,
+    total_bytes: u64,
+    chunk_bytes: u64,
+    peak_in_memory_bytes: u64,
+    max_in_memory_bytes: u64,
+}
+
+#[derive(Debug, Serialize)]
+struct StreamingOutputReport {
+    policy_lane: &'static str,
+    stream_name: String,
+    total_bytes: u64,
+    chunk_bytes: u64,
+    peak_in_memory_bytes: u64,
+    max_in_memory_bytes: u64,
+    bounded_memory: bool,
+    streaming_effective: bool,
+    gaps: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -348,6 +370,35 @@ fn memory_ceilings_payload(simulation: &Path) -> Result<MemoryCeilingsReport, Ex
     })
 }
 
+fn streaming_output_payload(simulation: &Path) -> Result<StreamingOutputReport, ExitCode> {
+    let simulation: StreamingOutputSimulation = load_json_file(simulation)?;
+    let bounded_memory = simulation.peak_in_memory_bytes <= simulation.max_in_memory_bytes;
+    let streaming_effective = simulation.chunk_bytes > 0
+        && simulation.chunk_bytes < simulation.total_bytes
+        && bounded_memory;
+    let mut gaps = Vec::new();
+    if !bounded_memory {
+        gaps.push("stream handling exceeded memory ceiling".to_string());
+    }
+    if simulation.chunk_bytes == 0 {
+        gaps.push("chunk size must be greater than zero".to_string());
+    }
+    if simulation.total_bytes > 0 && simulation.chunk_bytes >= simulation.total_bytes {
+        gaps.push("chunk size indicates non-streaming full-buffer behavior".to_string());
+    }
+    Ok(StreamingOutputReport {
+        policy_lane: "ENFORCED",
+        stream_name: simulation.stream_name,
+        total_bytes: simulation.total_bytes,
+        chunk_bytes: simulation.chunk_bytes,
+        peak_in_memory_bytes: simulation.peak_in_memory_bytes,
+        max_in_memory_bytes: simulation.max_in_memory_bytes,
+        bounded_memory,
+        streaming_effective,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_performance_command(
     cli: &DagCli,
     command: &PerformanceCommands,
@@ -419,6 +470,18 @@ pub(crate) fn handle_performance_command(
             emit_json(
                 cli,
                 "dag.performance.memory-ceilings",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        PerformanceCommands::StreamingOutput { simulation } => {
+            let payload =
+                serde_json::to_value(streaming_output_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.performance.streaming-output",
                 true,
                 payload,
                 Vec::new(),
@@ -774,5 +837,60 @@ mod tests {
         assert_eq!(report.over_ceiling_phases, vec!["parse".to_string()]);
         assert!(report.gaps.iter().any(|gap| gap == "parse exceeds memory ceiling"));
         assert!(report.gaps.iter().any(|gap| gap == "plan has no configured memory ceiling"));
+    }
+
+    #[test]
+    fn performance_streaming_output_accepts_bounded_chunked_path() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("streaming-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "stream_name":"stdout",
+              "total_bytes":10485760,
+              "chunk_bytes":65536,
+              "peak_in_memory_bytes":262144,
+              "max_in_memory_bytes":1048576
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(PerformanceCommands::StreamingOutput { simulation: simulation.clone() });
+        let code = handle_performance_command(
+            &cli,
+            &PerformanceCommands::StreamingOutput { simulation: simulation.clone() },
+        )
+        .expect("streaming output");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::streaming_output_payload(&simulation).expect("report");
+        assert!(report.bounded_memory);
+        assert!(report.streaming_effective);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn performance_streaming_output_flags_full_buffer_or_overflow() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("streaming-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "stream_name":"stderr",
+              "total_bytes":1024,
+              "chunk_bytes":1024,
+              "peak_in_memory_bytes":8192,
+              "max_in_memory_bytes":4096
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::streaming_output_payload(&simulation).expect("report");
+        assert!(!report.bounded_memory);
+        assert!(!report.streaming_effective);
+        for expected in [
+            "stream handling exceeded memory ceiling",
+            "chunk size indicates non-streaming full-buffer behavior",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
     }
 }
