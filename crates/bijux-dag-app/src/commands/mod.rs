@@ -106,6 +106,10 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: SecurityCommands,
     },
+    Durability {
+        #[command(subcommand)]
+        command: DurabilityCommands,
+    },
     Performance {
         #[command(subcommand)]
         command: PerformanceCommands,
@@ -836,6 +840,10 @@ pub(crate) enum LabCommands {
         #[command(subcommand)]
         command: SecurityCommands,
     },
+    Durability {
+        #[command(subcommand)]
+        command: DurabilityCommands,
+    },
     Performance {
         #[command(subcommand)]
         command: PerformanceCommands,
@@ -953,6 +961,14 @@ pub(crate) enum PerformanceCommands {
     },
     #[command(name = "performance-regression-gates")]
     PerformanceRegressionGates {
+        simulation: PathBuf,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum DurabilityCommands {
+    #[command(name = "module-surface-budgets")]
+    ModuleSurfaceBudgets {
         simulation: PathBuf,
     },
 }

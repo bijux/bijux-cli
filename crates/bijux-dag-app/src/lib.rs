@@ -388,6 +388,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             commands::LabCommands::Security { command } => {
                 routes::security_routes::handle_security_command(&cli, command)
             }
+            commands::LabCommands::Durability { command } => {
+                routes::durability_routes::handle_durability_command(&cli, command)
+            }
             commands::LabCommands::Performance { command } => {
                 routes::performance_routes::handle_performance_command(&cli, command)
             }
@@ -397,6 +400,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         }
         Commands::Security { command } => {
             routes::security_routes::handle_security_command(&cli, command)
+        }
+        Commands::Durability { command } => {
+            routes::durability_routes::handle_durability_command(&cli, command)
         }
         Commands::Performance { command } => {
             routes::performance_routes::handle_performance_command(&cli, command)
