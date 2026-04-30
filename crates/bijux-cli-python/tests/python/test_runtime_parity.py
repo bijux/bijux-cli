@@ -132,6 +132,23 @@ def test_json_and_yaml_output_parity() -> None:
     assert "status:" in wrapped_yaml
 
 
+def test_entrypoint_command_matrix_parity_for_stable_root_surfaces() -> None:
+    runtime = _runtime_binary()
+    command_matrix = [
+        ["version"],
+        ["status", "--format", "json", "--no-pretty"],
+        ["cli", "routes", "--format", "json", "--no-pretty"],
+        ["config", "schema", "cli", "--format", "json", "--no-pretty"],
+    ]
+
+    for command in command_matrix:
+        direct = subprocess.run([runtime, *command], capture_output=True, text=True, check=False)
+        wrapped = execution_facade_with_status(command)
+        assert wrapped.exit_code == direct.returncode, f"exit mismatch for {command}"
+        assert wrapped.stdout.strip() == direct.stdout.strip(), f"stdout mismatch for {command}"
+        assert wrapped.stderr.strip() == direct.stderr.strip(), f"stderr mismatch for {command}"
+
+
 def test_plugin_and_repl_startup_parity_smoke() -> None:
     runtime = _runtime_binary()
     direct_plugins = subprocess.run(
