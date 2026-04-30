@@ -29,6 +29,33 @@ struct LatencyBudgetReport {
     measurements: Vec<LatencyMeasurement>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct LargeGraphCorpusSimulation {
+    target_node_counts: Vec<usize>,
+    avg_fanout: usize,
+    expansion_multiplier: usize,
+    max_generated_nodes: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct LargeGraphCorpusEntry {
+    target_nodes: usize,
+    generated_nodes: usize,
+    generated_edges: usize,
+    expanded_nodes: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct LargeGraphCorpusReport {
+    policy_lane: &'static str,
+    corpus_entries: Vec<LargeGraphCorpusEntry>,
+    includes_100_nodes: bool,
+    includes_1k_nodes: bool,
+    includes_10k_nodes: bool,
+    within_generation_bound: bool,
+    gaps: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -57,6 +84,51 @@ fn latency_budgets_payload(simulation: &Path) -> Result<LatencyBudgetReport, Exi
     })
 }
 
+fn large_graph_corpus_payload(simulation: &Path) -> Result<LargeGraphCorpusReport, ExitCode> {
+    let simulation: LargeGraphCorpusSimulation = load_json_file(simulation)?;
+    let mut corpus_entries = simulation
+        .target_node_counts
+        .iter()
+        .map(|target| {
+            let generated_nodes = *target;
+            let generated_edges = generated_nodes.saturating_mul(simulation.avg_fanout);
+            let expanded_nodes = generated_nodes.saturating_mul(simulation.expansion_multiplier);
+            LargeGraphCorpusEntry { target_nodes: *target, generated_nodes, generated_edges, expanded_nodes }
+        })
+        .collect::<Vec<_>>();
+    corpus_entries.sort_by_key(|entry| entry.target_nodes);
+
+    let includes_100_nodes = corpus_entries.iter().any(|entry| entry.target_nodes == 100);
+    let includes_1k_nodes = corpus_entries.iter().any(|entry| entry.target_nodes == 1_000);
+    let includes_10k_nodes = corpus_entries.iter().any(|entry| entry.target_nodes == 10_000);
+    let within_generation_bound = corpus_entries
+        .iter()
+        .all(|entry| entry.expanded_nodes <= simulation.max_generated_nodes);
+    let mut gaps = Vec::new();
+    if !includes_100_nodes {
+        gaps.push("corpus does not include 100-node fixture".to_string());
+    }
+    if !includes_1k_nodes {
+        gaps.push("corpus does not include 1k-node fixture".to_string());
+    }
+    if !includes_10k_nodes {
+        gaps.push("corpus does not include 10k-node fixture".to_string());
+    }
+    if !within_generation_bound {
+        gaps.push("expanded corpus exceeds configured generation bound".to_string());
+    }
+
+    Ok(LargeGraphCorpusReport {
+        policy_lane: "ENFORCED",
+        corpus_entries,
+        includes_100_nodes,
+        includes_1k_nodes,
+        includes_10k_nodes,
+        within_generation_bound,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_performance_command(
     cli: &DagCli,
     command: &PerformanceCommands,
@@ -68,6 +140,18 @@ pub(crate) fn handle_performance_command(
             emit_json(
                 cli,
                 "dag.performance.latency-budgets",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        PerformanceCommands::LargeGraphCorpus { simulation } => {
+            let payload = serde_json::to_value(large_graph_corpus_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.performance.large-graph-corpus",
                 true,
                 payload,
                 Vec::new(),
@@ -139,5 +223,63 @@ mod tests {
             report.breached_measurements,
             vec!["graph_parse".to_string(), "route_dispatch".to_string()]
         );
+    }
+
+    #[test]
+    fn performance_large_graph_corpus_accepts_required_scale_targets() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("corpus-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "target_node_counts":[100,1000,10000],
+              "avg_fanout":2,
+              "expansion_multiplier":2,
+              "max_generated_nodes":25000
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(PerformanceCommands::LargeGraphCorpus { simulation: simulation.clone() });
+        let code = handle_performance_command(
+            &cli,
+            &PerformanceCommands::LargeGraphCorpus { simulation: simulation.clone() },
+        )
+        .expect("large graph corpus");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::large_graph_corpus_payload(&simulation).expect("report");
+        assert!(report.includes_100_nodes);
+        assert!(report.includes_1k_nodes);
+        assert!(report.includes_10k_nodes);
+        assert!(report.within_generation_bound);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn performance_large_graph_corpus_flags_missing_targets_and_bounds() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("corpus-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "target_node_counts":[128,2048],
+              "avg_fanout":3,
+              "expansion_multiplier":8,
+              "max_generated_nodes":10000
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::large_graph_corpus_payload(&simulation).expect("report");
+        assert!(!report.includes_100_nodes);
+        assert!(!report.includes_1k_nodes);
+        assert!(!report.includes_10k_nodes);
+        assert!(!report.within_generation_bound);
+        for expected in [
+            "corpus does not include 100-node fixture",
+            "corpus does not include 1k-node fixture",
+            "corpus does not include 10k-node fixture",
+            "expanded corpus exceeds configured generation bound",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
     }
 }

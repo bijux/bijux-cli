@@ -919,6 +919,10 @@ pub(crate) enum PerformanceCommands {
     LatencyBudgets {
         simulation: PathBuf,
     },
+    #[command(name = "large-graph-corpus")]
+    LargeGraphCorpus {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
