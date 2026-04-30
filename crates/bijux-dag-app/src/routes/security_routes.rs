@@ -364,6 +364,54 @@ struct TrustClassesReport {
 }
 
 #[derive(Debug, serde::Deserialize)]
+struct MalformedInputFuzzSimulation {
+    #[serde(default)]
+    graph_payloads: Vec<String>,
+    #[serde(default)]
+    config_payloads: Vec<String>,
+    #[serde(default)]
+    route_argv_sets: Vec<Vec<String>>,
+    #[serde(default)]
+    plugin_manifest_payloads: Vec<String>,
+    #[serde(default)]
+    bundle_payloads: Vec<String>,
+    #[serde(default)]
+    run_manifest_payloads: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct MalformedInputFuzzReport {
+    policy_lane: &'static str,
+    cases_total: usize,
+    panics_observed: usize,
+    graph_rejections: usize,
+    config_rejections: usize,
+    route_rejections: usize,
+    plugin_manifest_rejections: usize,
+    bundle_rejections: usize,
+    run_manifest_rejections: usize,
+    crash_free: bool,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct PluginManifestProbe {
+    namespace: String,
+    version: String,
+    entrypoint: String,
+    #[serde(default)]
+    capabilities: Vec<String>,
+    trust_class: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct RunManifestProbe {
+    manifest_version: String,
+    run_id: String,
+    status: String,
+}
+
+#[derive(Debug, serde::Deserialize)]
 struct DataAccessSimulation {
     input_root: String,
     candidate_input: String,
@@ -1147,6 +1195,121 @@ fn trust_classes_payload(simulation: &Path) -> Result<TrustClassesReport, ExitCo
     })
 }
 
+fn malformed_input_fuzz_payload(simulation: &Path) -> Result<MalformedInputFuzzReport, ExitCode> {
+    let simulation: MalformedInputFuzzSimulation = load_json_file(simulation)?;
+    let mut graph_rejections = 0usize;
+    let mut config_rejections = 0usize;
+    let mut route_rejections = 0usize;
+    let mut plugin_manifest_rejections = 0usize;
+    let mut bundle_rejections = 0usize;
+    let mut run_manifest_rejections = 0usize;
+    let mut panics_observed = 0usize;
+
+    for payload in &simulation.graph_payloads {
+        let outcome = std::panic::catch_unwind(|| parse_graph(payload));
+        match outcome {
+            Ok(Ok(_)) => {}
+            Ok(Err(_)) => graph_rejections += 1,
+            Err(_) => panics_observed += 1,
+        }
+    }
+    for payload in &simulation.config_payloads {
+        let outcome =
+            std::panic::catch_unwind(|| serde_json::from_str::<crate::PartialRuntimeSurfaceConfig>(payload));
+        match outcome {
+            Ok(Ok(_)) => {}
+            Ok(Err(_)) => config_rejections += 1,
+            Err(_) => panics_observed += 1,
+        }
+    }
+    for argv in &simulation.route_argv_sets {
+        let outcome = std::panic::catch_unwind(|| {
+            let mut args = Vec::with_capacity(argv.len() + 1);
+            args.push("bijux-dag".to_string());
+            args.extend(argv.iter().cloned());
+            crate::dag_command().try_get_matches_from(args)
+        });
+        match outcome {
+            Ok(Ok(_)) => {}
+            Ok(Err(_)) => route_rejections += 1,
+            Err(_) => panics_observed += 1,
+        }
+    }
+    for payload in &simulation.plugin_manifest_payloads {
+        let outcome = std::panic::catch_unwind(|| serde_json::from_str::<PluginManifestProbe>(payload));
+        match outcome {
+            Ok(Ok(manifest)) => {
+                if manifest.namespace.trim().is_empty()
+                    || manifest.version.trim().is_empty()
+                    || manifest.entrypoint.trim().is_empty()
+                    || manifest.trust_class.trim().is_empty()
+                    || manifest.capabilities.is_empty()
+                {
+                    plugin_manifest_rejections += 1;
+                }
+            }
+            Ok(Err(_)) => plugin_manifest_rejections += 1,
+            Err(_) => panics_observed += 1,
+        }
+    }
+    for payload in &simulation.bundle_payloads {
+        let outcome = std::panic::catch_unwind(|| serde_json::from_str::<serde_json::Value>(payload));
+        match outcome {
+            Ok(Ok(bundle)) => {
+                if !crate::verify_bundle_invariants(&bundle).is_empty() {
+                    bundle_rejections += 1;
+                }
+            }
+            Ok(Err(_)) => bundle_rejections += 1,
+            Err(_) => panics_observed += 1,
+        }
+    }
+    for payload in &simulation.run_manifest_payloads {
+        let outcome = std::panic::catch_unwind(|| serde_json::from_str::<RunManifestProbe>(payload));
+        match outcome {
+            Ok(Ok(manifest)) => {
+                if manifest.manifest_version.trim().is_empty()
+                    || manifest.run_id.trim().is_empty()
+                    || manifest.status.trim().is_empty()
+                {
+                    run_manifest_rejections += 1;
+                }
+            }
+            Ok(Err(_)) => run_manifest_rejections += 1,
+            Err(_) => panics_observed += 1,
+        }
+    }
+
+    let cases_total = simulation.graph_payloads.len()
+        + simulation.config_payloads.len()
+        + simulation.route_argv_sets.len()
+        + simulation.plugin_manifest_payloads.len()
+        + simulation.bundle_payloads.len()
+        + simulation.run_manifest_payloads.len();
+    let mut gaps = Vec::new();
+    if cases_total == 0 {
+        gaps.push("fuzz corpus is empty".to_string());
+    }
+    if panics_observed > 0 {
+        gaps.push("one or more malformed inputs triggered panic behavior".to_string());
+    }
+    let crash_free = panics_observed == 0;
+
+    Ok(MalformedInputFuzzReport {
+        policy_lane: "ENFORCED",
+        cases_total,
+        panics_observed,
+        graph_rejections,
+        config_rejections,
+        route_rejections,
+        plugin_manifest_rejections,
+        bundle_rejections,
+        run_manifest_rejections,
+        crash_free,
+        gaps,
+    })
+}
+
 fn data_access_payload(simulation: &Path) -> Result<DataAccessReport, ExitCode> {
     let simulation: DataAccessSimulation = load_json_file(simulation)?;
     let input_path_allowed = authorize_input_path(
@@ -1497,6 +1660,18 @@ pub(crate) fn handle_security_command(
             emit_json(
                 cli,
                 "dag.security.trust-classes",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        SecurityCommands::MalformedInputFuzz { simulation } => {
+            let payload = serde_json::to_value(malformed_input_fuzz_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.malformed-input-fuzz",
                 true,
                 payload,
                 Vec::new(),
@@ -2428,6 +2603,62 @@ mod tests {
         assert_eq!(report.run_trust_class, "simulated");
         assert_eq!(report.artifact_trust_class, "simulated");
         assert!(report.classification_reasons.iter().any(|reason| reason == "simulated backend execution"));
+    }
+
+    #[test]
+    fn security_malformed_input_fuzz_reports_crash_free_corpus() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("malformed-fuzz.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "graph_payloads":["{bad","{\"spec\":\"bijux-dag/v0.1\",\"nodes\":[],\"edges\":[]}"],
+              "config_payloads":["{\"cache\":\"unknown\"}","{\"jobs\":-1}"],
+              "route_argv_sets":[["validate"],["run","--out"]],
+              "plugin_manifest_payloads":["{bad-json","{\"namespace\":\"\",\"version\":\"1\",\"entrypoint\":\"\",\"trust_class\":\"\",\"capabilities\":[]}"],
+              "bundle_payloads":["{bad-json","{\"kind\":\"bundle\"}"],
+              "run_manifest_payloads":["{bad-json","{\"manifest_version\":\"\",\"run_id\":\"\",\"status\":\"\"}"]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(SecurityCommands::MalformedInputFuzz { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::MalformedInputFuzz { simulation: simulation.clone() },
+        )
+        .expect("malformed-input-fuzz");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::malformed_input_fuzz_payload(&simulation).expect("report");
+        assert!(report.crash_free);
+        assert_eq!(report.panics_observed, 0);
+        assert!(report.graph_rejections > 0);
+        assert!(report.config_rejections > 0);
+        assert!(report.route_rejections > 0);
+        assert!(report.plugin_manifest_rejections > 0);
+        assert!(report.bundle_rejections > 0);
+        assert!(report.run_manifest_rejections > 0);
+    }
+
+    #[test]
+    fn security_malformed_input_fuzz_flags_empty_corpus() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("malformed-empty.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "graph_payloads":[],
+              "config_payloads":[],
+              "route_argv_sets":[],
+              "plugin_manifest_payloads":[],
+              "bundle_payloads":[],
+              "run_manifest_payloads":[]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::malformed_input_fuzz_payload(&simulation).expect("report");
+        assert_eq!(report.cases_total, 0);
+        assert!(report.gaps.iter().any(|gap| gap == "fuzz corpus is empty"));
     }
 
     #[test]

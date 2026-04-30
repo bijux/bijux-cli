@@ -880,6 +880,10 @@ pub(crate) enum SecurityCommands {
     TrustClasses {
         simulation: PathBuf,
     },
+    #[command(name = "malformed-input-fuzz")]
+    MalformedInputFuzz {
+        simulation: PathBuf,
+    },
     #[command(name = "data-access")]
     DataAccess {
         simulation: PathBuf,
