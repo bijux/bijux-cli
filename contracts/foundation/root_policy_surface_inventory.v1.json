@@ -1,0 +1,114 @@
+{
+  "schema_version": "foundation-root-policy-surface-inventory/v1",
+  "policy_files": [
+    {
+      "path": "contracts/foundation/backlog_issue_class_routing.v1.json",
+      "gates_behavior": "enforces backlog issue-class ownership and forbids uncategorized intake",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_backlog_issue_routing_contracts.rs"
+      ]
+    },
+    {
+      "path": "contracts/foundation/cli_dependency_direction.v1.json",
+      "gates_behavior": "locks CLI crate dependency direction and DAG boundary isolation",
+      "owning_crate": "bijux-cli",
+      "enforced_by": [
+        "crates/bijux-cli/tests/architecture/boundaries/cli_dependency_direction_boundaries.rs"
+      ]
+    },
+    {
+      "path": "contracts/foundation/dag_dependency_direction.v1.json",
+      "gates_behavior": "locks DAG crate dependency direction and source-level import boundaries",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_dag_dependency_direction_contracts.rs"
+      ]
+    },
+    {
+      "path": "contracts/foundation/module_surface_lanes.v1.json",
+      "gates_behavior": "classifies stable, experimental, simulated, and private module surfaces",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_module_surface_contracts.rs"
+      ]
+    },
+    {
+      "path": "contracts/foundation/root_policy_surface_inventory.v1.json",
+      "gates_behavior": "defines the root policy inventory boundary and ownership mapping itself",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_root_policy_surface_inventory_contracts.rs"
+      ]
+    },
+    {
+      "path": "contracts/foundation/workspace_product_map.v1.json",
+      "gates_behavior": "declares workspace product ownership and maintainer lane boundaries",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_product_map_contracts.rs"
+      ]
+    },
+    {
+      "path": "contracts/official_product_namespace_registry.json",
+      "gates_behavior": "controls official namespace mounting and plugin collision policy",
+      "owning_crate": "bijux-cli",
+      "enforced_by": [
+        "crates/bijux-cli/tests/routing/laws/route_law_consistency.rs",
+        "crates/bijux-cli/tests/architecture/ownership/release_contracts.rs"
+      ]
+    },
+    {
+      "path": "contracts/product_mount_metadata_contract.json",
+      "gates_behavior": "defines required mount descriptor metadata consumed by product routing",
+      "owning_crate": "bijux-cli",
+      "enforced_by": [
+        "crates/bijux-cli/src/contracts/product_mount.rs",
+        "crates/bijux-cli/tests/routing/registry/registry_resolution.rs"
+      ]
+    },
+    {
+      "path": "contracts/schemas/error-envelope-v1.schema.json",
+      "gates_behavior": "fixes machine-readable CLI failure envelope shape",
+      "owning_crate": "bijux-cli",
+      "enforced_by": [
+        "crates/bijux-cli/tests/routing/registry/query_interfaces.rs",
+        "crates/bijux-dev/src/repo/layout.rs"
+      ]
+    },
+    {
+      "path": "contracts/schemas/output-envelope-v1.schema.json",
+      "gates_behavior": "fixes machine-readable CLI success envelope shape",
+      "owning_crate": "bijux-cli",
+      "enforced_by": [
+        "crates/bijux-cli/tests/routing/registry/query_interfaces.rs",
+        "crates/bijux-dev/src/repo/layout.rs"
+      ]
+    },
+    {
+      "path": "contracts/schemas/plugin-manifest-v2.schema.json",
+      "gates_behavior": "fixes plugin manifest compatibility and capability schema",
+      "owning_crate": "bijux-cli",
+      "enforced_by": [
+        "crates/bijux-cli/tests/integration/cli/plugins/plugin_cli_lifecycle.rs",
+        "crates/bijux-dev/src/repo/layout.rs"
+      ]
+    },
+    {
+      "path": "configs/status/compatibility_baseline.json",
+      "gates_behavior": "pins compatibility warning baselines used by quality suites",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/src/maintainer/suites/quality/plugin_quality_compatibility.rs"
+      ]
+    },
+    {
+      "path": "configs/status/route_special_cases_baseline.json",
+      "gates_behavior": "pins route special-case baseline contracts for command-surface quality",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/src/maintainer/suites/quality/command_surface.rs"
+      ]
+    }
+  ]
+}
