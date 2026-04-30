@@ -31,6 +31,31 @@ use std::fs;
 use std::path::Path;
 
 #[derive(Debug, serde::Deserialize)]
+struct FilesystemAllowlistSimulation {
+    input_root: String,
+    output_root: String,
+    read_candidates: Vec<String>,
+    write_candidates: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct FilesystemCandidateReport {
+    path: String,
+    allowed: bool,
+    reason: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct FilesystemAllowlistReport {
+    policy_lane: &'static str,
+    all_reads_allowed: bool,
+    all_writes_allowed: bool,
+    read_results: Vec<FilesystemCandidateReport>,
+    write_results: Vec<FilesystemCandidateReport>,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
 struct AuthSimulation {
     environment: String,
     now_unix_ms: u128,
@@ -272,6 +297,63 @@ struct SafeDefaultsReport {
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
+}
+
+fn filesystem_allowlist_payload(simulation: &Path) -> Result<FilesystemAllowlistReport, ExitCode> {
+    let simulation: FilesystemAllowlistSimulation = load_json_file(simulation)?;
+    let input_root = Path::new(&simulation.input_root);
+    let output_root = Path::new(&simulation.output_root);
+
+    let mut read_results = Vec::new();
+    let mut write_results = Vec::new();
+    let mut gaps = Vec::new();
+
+    for candidate in &simulation.read_candidates {
+        match authorize_input_path(input_root, Path::new(candidate)) {
+            Ok(_) => read_results.push(FilesystemCandidateReport {
+                path: candidate.clone(),
+                allowed: true,
+                reason: None,
+            }),
+            Err(reason) => {
+                gaps.push(format!("read candidate denied: {candidate} ({reason})"));
+                read_results.push(FilesystemCandidateReport {
+                    path: candidate.clone(),
+                    allowed: false,
+                    reason: Some(reason),
+                });
+            }
+        }
+    }
+
+    for candidate in &simulation.write_candidates {
+        match authorize_output_path(output_root, Path::new(candidate)) {
+            Ok(_) => write_results.push(FilesystemCandidateReport {
+                path: candidate.clone(),
+                allowed: true,
+                reason: None,
+            }),
+            Err(reason) => {
+                gaps.push(format!("write candidate denied: {candidate} ({reason})"));
+                write_results.push(FilesystemCandidateReport {
+                    path: candidate.clone(),
+                    allowed: false,
+                    reason: Some(reason),
+                });
+            }
+        }
+    }
+
+    let all_reads_allowed = read_results.iter().all(|item| item.allowed);
+    let all_writes_allowed = write_results.iter().all(|item| item.allowed);
+    Ok(FilesystemAllowlistReport {
+        policy_lane: "ENFORCED",
+        all_reads_allowed,
+        all_writes_allowed,
+        read_results,
+        write_results,
+        gaps,
+    })
 }
 
 fn auth_payload(simulation: &Path) -> Result<AuthReport, ExitCode> {
@@ -781,6 +863,18 @@ pub(crate) fn handle_security_command(
     command: &SecurityCommands,
 ) -> Result<ExitCode, ExitCode> {
     match command {
+        SecurityCommands::FilesystemAllowlist { simulation } => {
+            let payload = serde_json::to_value(filesystem_allowlist_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.filesystem-allowlist",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
         SecurityCommands::Auth { simulation } => {
             let payload =
                 serde_json::to_value(auth_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
@@ -846,6 +940,100 @@ mod tests {
 
     fn quiet_json_cli(command: SecurityCommands) -> DagCli {
         DagCli { json: true, quiet: true, command: Commands::Security { command } }
+    }
+
+    #[test]
+    fn security_filesystem_allowlist_accepts_scoped_candidates() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let input_root = dir.path().join("inputs");
+        let output_root = dir.path().join("outputs");
+        std::fs::create_dir_all(&input_root).expect("input root");
+        std::fs::create_dir_all(&output_root).expect("output root");
+        let read_file = input_root.join("a").join("in.txt");
+        let write_file = output_root.join("b").join("out.txt");
+        std::fs::create_dir_all(read_file.parent().expect("read parent")).expect("read parent");
+        std::fs::create_dir_all(write_file.parent().expect("write parent")).expect("write parent");
+        std::fs::write(&read_file, "ok").expect("write read file");
+        std::fs::write(&write_file, "ok").expect("write write file");
+
+        let simulation = dir.path().join("filesystem.json");
+        std::fs::write(
+            &simulation,
+            format!(
+                r#"{{
+                  "input_root":"{}",
+                  "output_root":"{}",
+                  "read_candidates":["{}"],
+                  "write_candidates":["{}"]
+                }}"#,
+                input_root.display(),
+                output_root.display(),
+                read_file.display(),
+                write_file.display()
+            ),
+        )
+        .expect("write simulation");
+
+        let cli =
+            quiet_json_cli(SecurityCommands::FilesystemAllowlist { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::FilesystemAllowlist { simulation: simulation.clone() },
+        )
+        .expect("filesystem allowlist");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::filesystem_allowlist_payload(&simulation).expect("report");
+        assert_eq!(report.policy_lane, "ENFORCED");
+        assert!(report.all_reads_allowed);
+        assert!(report.all_writes_allowed);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn security_filesystem_allowlist_rejects_traversal_and_symlink_escape() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let input_root = dir.path().join("inputs");
+        let output_root = dir.path().join("outputs");
+        let outside_root = dir.path().join("outside");
+        std::fs::create_dir_all(&input_root).expect("input root");
+        std::fs::create_dir_all(&output_root).expect("output root");
+        std::fs::create_dir_all(&outside_root).expect("outside root");
+        let outside_read = outside_root.join("outside.txt");
+        let outside_write = outside_root.join("outside-out.txt");
+        std::fs::write(&outside_read, "outside").expect("outside read");
+        std::fs::write(&outside_write, "outside").expect("outside write");
+
+        let symlink_in = input_root.join("escape-link");
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(&outside_read, &symlink_in).expect("create symlink");
+        #[cfg(not(unix))]
+        std::fs::copy(&outside_read, &symlink_in).expect("copy fallback");
+
+        let escaped_read = input_root.join("..").join("outside").join("outside.txt");
+        let escaped_write = output_root.join("..").join("outside").join("outside-out.txt");
+        let simulation = dir.path().join("filesystem-bad.json");
+        std::fs::write(
+            &simulation,
+            format!(
+                r#"{{
+                  "input_root":"{}",
+                  "output_root":"{}",
+                  "read_candidates":["{}","{}"],
+                  "write_candidates":["{}"]
+                }}"#,
+                input_root.display(),
+                output_root.display(),
+                escaped_read.display(),
+                symlink_in.display(),
+                escaped_write.display()
+            ),
+        )
+        .expect("write simulation");
+
+        let report = super::filesystem_allowlist_payload(&simulation).expect("report");
+        assert!(!report.all_reads_allowed);
+        assert!(!report.all_writes_allowed);
+        assert!(report.gaps.iter().any(|gap| gap.contains("escapes authorized root")));
     }
 
     #[test]

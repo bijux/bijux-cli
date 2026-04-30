@@ -836,6 +836,10 @@ pub(crate) enum LabCommands {
 
 #[derive(Subcommand)]
 pub(crate) enum SecurityCommands {
+    #[command(name = "filesystem-allowlist")]
+    FilesystemAllowlist {
+        simulation: PathBuf,
+    },
     Auth {
         simulation: PathBuf,
     },
