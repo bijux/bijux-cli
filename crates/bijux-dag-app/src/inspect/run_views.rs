@@ -492,7 +492,7 @@ pub fn render_run_summary(summary: &Value) -> String {
         _ => "native",
     };
     format!(
-        "run_id: {}\nstatus: {}\norigin: {}\nintegrity_state: {}\nretry_count: {}\ncache_hits: {}\nartifact_count: {}",
+        "note: human output is operator-facing; use --json for stable automation\nrun_id: {}\nstatus: {}\norigin: {}\nintegrity_state: {}\nretry_count: {}\ncache_hits: {}\nartifact_count: {}",
         summary.get("run_id").unwrap_or(&Value::Null),
         summary.get("status").unwrap_or(&Value::Null),
         origin,
