@@ -208,6 +208,34 @@ struct BenchmarkReportGovernanceReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct PerformanceRegressionGatesSimulation {
+    metrics: Vec<RegressionMetricSample>,
+    max_regression_pct: f64,
+    override_applied: bool,
+    override_reason: Option<String>,
+    override_ticket: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize, Serialize)]
+struct RegressionMetricSample {
+    metric: String,
+    baseline_ms: u64,
+    current_ms: u64,
+}
+
+#[derive(Debug, Serialize)]
+struct PerformanceRegressionGatesReport {
+    policy_lane: &'static str,
+    failing_metrics: Vec<String>,
+    gates_passed: bool,
+    override_applied: bool,
+    override_valid: bool,
+    override_reason: Option<String>,
+    override_ticket: Option<String>,
+    gaps: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -515,6 +543,57 @@ fn benchmark_report_governance_payload(
     })
 }
 
+fn performance_regression_gates_payload(
+    simulation: &Path,
+) -> Result<PerformanceRegressionGatesReport, ExitCode> {
+    let simulation: PerformanceRegressionGatesSimulation = load_json_file(simulation)?;
+    let mut failing_metrics = simulation
+        .metrics
+        .iter()
+        .filter(|sample| {
+            if sample.baseline_ms == 0 {
+                false
+            } else {
+                ((sample.current_ms as f64 - sample.baseline_ms as f64) / sample.baseline_ms as f64) * 100.0
+                    > simulation.max_regression_pct
+            }
+        })
+        .map(|sample| sample.metric.clone())
+        .collect::<Vec<_>>();
+    failing_metrics.sort();
+
+    let override_valid = if simulation.override_applied {
+        simulation
+            .override_reason
+            .as_ref()
+            .is_some_and(|reason| !reason.trim().is_empty())
+            && simulation
+                .override_ticket
+                .as_ref()
+                .is_some_and(|ticket| !ticket.trim().is_empty())
+    } else {
+        true
+    };
+    let gates_passed = failing_metrics.is_empty() || (simulation.override_applied && override_valid);
+    let mut gaps = Vec::new();
+    if !failing_metrics.is_empty() && !simulation.override_applied {
+        gaps.push("performance regression gate failure requires override or fix".to_string());
+    }
+    if simulation.override_applied && !override_valid {
+        gaps.push("performance regression override is missing reason or ticket".to_string());
+    }
+    Ok(PerformanceRegressionGatesReport {
+        policy_lane: "ENFORCED",
+        failing_metrics,
+        gates_passed,
+        override_applied: simulation.override_applied,
+        override_valid,
+        override_reason: simulation.override_reason,
+        override_ticket: simulation.override_ticket,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_performance_command(
     cli: &DagCli,
     command: &PerformanceCommands,
@@ -622,6 +701,18 @@ pub(crate) fn handle_performance_command(
             emit_json(
                 cli,
                 "dag.performance.benchmark-report-governance",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        PerformanceCommands::PerformanceRegressionGates { simulation } => {
+            let payload = serde_json::to_value(performance_regression_gates_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.performance.performance-regression-gates",
                 true,
                 payload,
                 Vec::new(),
@@ -1150,5 +1241,83 @@ mod tests {
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }
+    }
+
+    #[test]
+    fn performance_regression_gates_accepts_clean_or_approved_override_state() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let clean = dir.path().join("regression-clean.json");
+        std::fs::write(
+            &clean,
+            r#"{
+              "metrics":[
+                {"metric":"graph-parse","baseline_ms":100,"current_ms":103},
+                {"metric":"plan-lowering","baseline_ms":220,"current_ms":230}
+              ],
+              "max_regression_pct":8.0,
+              "override_applied":false,
+              "override_reason":null,
+              "override_ticket":null
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::performance_regression_gates_payload(&clean).expect("report");
+        assert!(report.gates_passed);
+        assert!(report.failing_metrics.is_empty());
+
+        let overridden = dir.path().join("regression-override.json");
+        std::fs::write(
+            &overridden,
+            r#"{
+              "metrics":[
+                {"metric":"canonicalize","baseline_ms":100,"current_ms":140}
+              ],
+              "max_regression_pct":8.0,
+              "override_applied":true,
+              "override_reason":"known slowdown from integrity checks",
+              "override_ticket":"PERF-102"
+            }"#,
+        )
+        .expect("write simulation");
+        let cli = quiet_json_cli(PerformanceCommands::PerformanceRegressionGates {
+            simulation: overridden.clone(),
+        });
+        let code = handle_performance_command(
+            &cli,
+            &PerformanceCommands::PerformanceRegressionGates { simulation: overridden.clone() },
+        )
+        .expect("performance regression gates");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let override_report =
+            super::performance_regression_gates_payload(&overridden).expect("override report");
+        assert!(override_report.gates_passed);
+        assert!(override_report.override_valid);
+    }
+
+    #[test]
+    fn performance_regression_gates_flag_unapproved_or_unjustified_failures() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("regression-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "metrics":[
+                {"metric":"graph-parse","baseline_ms":100,"current_ms":130}
+              ],
+              "max_regression_pct":8.0,
+              "override_applied":true,
+              "override_reason":"",
+              "override_ticket":null
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::performance_regression_gates_payload(&simulation).expect("report");
+        assert!(!report.gates_passed);
+        assert!(!report.override_valid);
+        assert_eq!(report.failing_metrics, vec!["graph-parse".to_string()]);
+        assert!(report
+            .gaps
+            .iter()
+            .any(|gap| gap == "performance regression override is missing reason or ticket"));
     }
 }

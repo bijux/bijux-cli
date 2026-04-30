@@ -951,6 +951,10 @@ pub(crate) enum PerformanceCommands {
     BenchmarkReportGovernance {
         simulation: PathBuf,
     },
+    #[command(name = "performance-regression-gates")]
+    PerformanceRegressionGates {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
