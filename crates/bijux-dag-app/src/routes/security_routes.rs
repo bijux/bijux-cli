@@ -412,6 +412,43 @@ struct RunManifestProbe {
 }
 
 #[derive(Debug, serde::Deserialize)]
+struct DependencyRiskSimulation {
+    #[serde(default)]
+    dependencies: Vec<DependencyRiskEntry>,
+    core_runtime_threshold: f64,
+    tooling_threshold: f64,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct DependencyRiskEntry {
+    name: String,
+    surface: DependencySurface,
+    risk_score: f64,
+    known_vulnerabilities: u32,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum DependencySurface {
+    CoreRuntime,
+    DocsTooling,
+    DevTooling,
+    ReleaseTooling,
+}
+
+#[derive(Debug, Serialize)]
+struct DependencyRiskReport {
+    policy_lane: &'static str,
+    core_runtime_risk_score: f64,
+    tooling_risk_score: f64,
+    core_runtime_exceeds_threshold: bool,
+    tooling_exceeds_threshold: bool,
+    core_runtime_dependencies: Vec<String>,
+    tooling_dependencies: Vec<String>,
+    gaps: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
 struct DataAccessSimulation {
     input_root: String,
     candidate_input: String,
@@ -1310,6 +1347,61 @@ fn malformed_input_fuzz_payload(simulation: &Path) -> Result<MalformedInputFuzzR
     })
 }
 
+fn dependency_risk_payload(simulation: &Path) -> Result<DependencyRiskReport, ExitCode> {
+    let simulation: DependencyRiskSimulation = load_json_file(simulation)?;
+    let mut core_runtime_risk_score = 0.0f64;
+    let mut tooling_risk_score = 0.0f64;
+    let mut core_runtime_dependencies = Vec::new();
+    let mut tooling_dependencies = Vec::new();
+    let mut gaps = Vec::new();
+
+    for dependency in &simulation.dependencies {
+        let weighted_score = dependency.risk_score + (dependency.known_vulnerabilities as f64 * 0.5);
+        match dependency.surface {
+            DependencySurface::CoreRuntime => {
+                core_runtime_risk_score += weighted_score;
+                core_runtime_dependencies.push(dependency.name.clone());
+            }
+            DependencySurface::DocsTooling
+            | DependencySurface::DevTooling
+            | DependencySurface::ReleaseTooling => {
+                tooling_risk_score += weighted_score;
+                tooling_dependencies.push(dependency.name.clone());
+            }
+        }
+    }
+
+    core_runtime_dependencies.sort();
+    tooling_dependencies.sort();
+    let core_runtime_exceeds_threshold =
+        core_runtime_risk_score > simulation.core_runtime_threshold;
+    let tooling_exceeds_threshold = tooling_risk_score > simulation.tooling_threshold;
+
+    if core_runtime_dependencies.is_empty() {
+        gaps.push("core-runtime dependency inventory is empty".to_string());
+    }
+    if tooling_dependencies.is_empty() {
+        gaps.push("tooling dependency inventory is empty".to_string());
+    }
+    if core_runtime_exceeds_threshold {
+        gaps.push("core-runtime dependency risk exceeds threshold".to_string());
+    }
+    if tooling_exceeds_threshold {
+        gaps.push("tooling dependency risk exceeds threshold".to_string());
+    }
+
+    Ok(DependencyRiskReport {
+        policy_lane: "ENFORCED",
+        core_runtime_risk_score,
+        tooling_risk_score,
+        core_runtime_exceeds_threshold,
+        tooling_exceeds_threshold,
+        core_runtime_dependencies,
+        tooling_dependencies,
+        gaps,
+    })
+}
+
 fn data_access_payload(simulation: &Path) -> Result<DataAccessReport, ExitCode> {
     let simulation: DataAccessSimulation = load_json_file(simulation)?;
     let input_path_allowed = authorize_input_path(
@@ -1672,6 +1764,18 @@ pub(crate) fn handle_security_command(
             emit_json(
                 cli,
                 "dag.security.malformed-input-fuzz",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        SecurityCommands::DependencyRisk { simulation } => {
+            let payload = serde_json::to_value(dependency_risk_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.dependency-risk",
                 true,
                 payload,
                 Vec::new(),
@@ -2659,6 +2763,79 @@ mod tests {
         let report = super::malformed_input_fuzz_payload(&simulation).expect("report");
         assert_eq!(report.cases_total, 0);
         assert!(report.gaps.iter().any(|gap| gap == "fuzz corpus is empty"));
+    }
+
+    #[test]
+    fn security_dependency_risk_distinguishes_core_and_tooling_surfaces() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("dependency-risk.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "dependencies":[
+                {"name":"tokio","surface":"core-runtime","risk_score":1.5,"known_vulnerabilities":0},
+                {"name":"serde","surface":"core-runtime","risk_score":0.5,"known_vulnerabilities":0},
+                {"name":"mkdocs","surface":"docs-tooling","risk_score":1.0,"known_vulnerabilities":1},
+                {"name":"cargo-audit","surface":"dev-tooling","risk_score":0.8,"known_vulnerabilities":0},
+                {"name":"release-please","surface":"release-tooling","risk_score":0.7,"known_vulnerabilities":0}
+              ],
+              "core_runtime_threshold":3.0,
+              "tooling_threshold":4.0
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(SecurityCommands::DependencyRisk { simulation: simulation.clone() });
+        let code = handle_security_command(
+            &cli,
+            &SecurityCommands::DependencyRisk { simulation: simulation.clone() },
+        )
+        .expect("dependency risk");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::dependency_risk_payload(&simulation).expect("report");
+        assert_eq!(report.core_runtime_risk_score, 2.0);
+        assert_eq!(report.tooling_risk_score, 3.0);
+        assert!(!report.core_runtime_exceeds_threshold);
+        assert!(!report.tooling_exceeds_threshold);
+        assert_eq!(
+            report.core_runtime_dependencies,
+            vec!["serde".to_string(), "tokio".to_string()]
+        );
+        assert_eq!(
+            report.tooling_dependencies,
+            vec![
+                "cargo-audit".to_string(),
+                "mkdocs".to_string(),
+                "release-please".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn security_dependency_risk_flags_threshold_breaches() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("dependency-risk-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "dependencies":[
+                {"name":"tokio","surface":"core-runtime","risk_score":3.0,"known_vulnerabilities":2},
+                {"name":"mkdocs","surface":"docs-tooling","risk_score":2.0,"known_vulnerabilities":3}
+              ],
+              "core_runtime_threshold":2.0,
+              "tooling_threshold":2.5
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::dependency_risk_payload(&simulation).expect("report");
+        assert!(report.core_runtime_exceeds_threshold);
+        assert!(report.tooling_exceeds_threshold);
+        for expected in [
+            "core-runtime dependency risk exceeds threshold",
+            "tooling dependency risk exceeds threshold",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
     }
 
     #[test]

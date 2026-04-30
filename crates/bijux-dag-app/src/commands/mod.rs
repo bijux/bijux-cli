@@ -884,6 +884,10 @@ pub(crate) enum SecurityCommands {
     MalformedInputFuzz {
         simulation: PathBuf,
     },
+    #[command(name = "dependency-risk")]
+    DependencyRisk {
+        simulation: PathBuf,
+    },
     #[command(name = "data-access")]
     DataAccess {
         simulation: PathBuf,
