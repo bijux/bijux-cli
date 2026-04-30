@@ -160,6 +160,31 @@ struct StreamingOutputReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct RunHistoryCompactionSimulation {
+    records_before: u64,
+    records_after: u64,
+    bytes_before: u64,
+    bytes_after: u64,
+    query_p95_before_ms: u64,
+    query_p95_after_ms: u64,
+    max_query_p95_ms: u64,
+}
+
+#[derive(Debug, Serialize)]
+struct RunHistoryCompactionReport {
+    policy_lane: &'static str,
+    records_before: u64,
+    records_after: u64,
+    bytes_before: u64,
+    bytes_after: u64,
+    compaction_ratio: f64,
+    query_p95_before_ms: u64,
+    query_p95_after_ms: u64,
+    query_within_budget: bool,
+    gaps: Vec<String>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -399,6 +424,40 @@ fn streaming_output_payload(simulation: &Path) -> Result<StreamingOutputReport, 
     })
 }
 
+fn run_history_compaction_payload(
+    simulation: &Path,
+) -> Result<RunHistoryCompactionReport, ExitCode> {
+    let simulation: RunHistoryCompactionSimulation = load_json_file(simulation)?;
+    let compaction_ratio = if simulation.bytes_before == 0 {
+        1.0
+    } else {
+        simulation.bytes_after as f64 / simulation.bytes_before as f64
+    };
+    let query_within_budget = simulation.query_p95_after_ms <= simulation.max_query_p95_ms;
+    let mut gaps = Vec::new();
+    if simulation.records_after > simulation.records_before {
+        gaps.push("compaction increased run-history record count".to_string());
+    }
+    if simulation.bytes_after > simulation.bytes_before {
+        gaps.push("compaction increased run-history storage bytes".to_string());
+    }
+    if !query_within_budget {
+        gaps.push("post-compaction run-history query p95 exceeds budget".to_string());
+    }
+    Ok(RunHistoryCompactionReport {
+        policy_lane: "ENFORCED",
+        records_before: simulation.records_before,
+        records_after: simulation.records_after,
+        bytes_before: simulation.bytes_before,
+        bytes_after: simulation.bytes_after,
+        compaction_ratio,
+        query_p95_before_ms: simulation.query_p95_before_ms,
+        query_p95_after_ms: simulation.query_p95_after_ms,
+        query_within_budget,
+        gaps,
+    })
+}
+
 pub(crate) fn handle_performance_command(
     cli: &DagCli,
     command: &PerformanceCommands,
@@ -482,6 +541,18 @@ pub(crate) fn handle_performance_command(
             emit_json(
                 cli,
                 "dag.performance.streaming-output",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        PerformanceCommands::RunHistoryCompaction { simulation } => {
+            let payload =
+                serde_json::to_value(run_history_compaction_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.performance.run-history-compaction",
                 true,
                 payload,
                 Vec::new(),
@@ -889,6 +960,65 @@ mod tests {
         for expected in [
             "stream handling exceeded memory ceiling",
             "chunk size indicates non-streaming full-buffer behavior",
+        ] {
+            assert!(report.gaps.iter().any(|gap| gap == expected));
+        }
+    }
+
+    #[test]
+    fn performance_run_history_compaction_accepts_compacted_low_latency_history() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("history-compact-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "records_before":100000,
+              "records_after":20000,
+              "bytes_before":104857600,
+              "bytes_after":15728640,
+              "query_p95_before_ms":400,
+              "query_p95_after_ms":120,
+              "max_query_p95_ms":200
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(PerformanceCommands::RunHistoryCompaction { simulation: simulation.clone() });
+        let code = handle_performance_command(
+            &cli,
+            &PerformanceCommands::RunHistoryCompaction { simulation: simulation.clone() },
+        )
+        .expect("run history compaction");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::run_history_compaction_payload(&simulation).expect("report");
+        assert!(report.query_within_budget);
+        assert!(report.compaction_ratio < 1.0);
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn performance_run_history_compaction_flags_regressions() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("history-compact-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "records_before":1000,
+              "records_after":1200,
+              "bytes_before":2048,
+              "bytes_after":4096,
+              "query_p95_before_ms":200,
+              "query_p95_after_ms":350,
+              "max_query_p95_ms":300
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::run_history_compaction_payload(&simulation).expect("report");
+        assert!(!report.query_within_budget);
+        for expected in [
+            "compaction increased run-history record count",
+            "compaction increased run-history storage bytes",
+            "post-compaction run-history query p95 exceeds budget",
         ] {
             assert!(report.gaps.iter().any(|gap| gap == expected));
         }

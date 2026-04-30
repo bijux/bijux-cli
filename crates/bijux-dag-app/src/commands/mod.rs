@@ -943,6 +943,10 @@ pub(crate) enum PerformanceCommands {
     StreamingOutput {
         simulation: PathBuf,
     },
+    #[command(name = "run-history-compaction")]
+    RunHistoryCompaction {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
