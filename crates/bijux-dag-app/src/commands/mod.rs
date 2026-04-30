@@ -844,6 +844,10 @@ pub(crate) enum SecurityCommands {
     EnvAllowlist {
         simulation: PathBuf,
     },
+    #[command(name = "network-policy")]
+    NetworkPolicy {
+        dag: PathBuf,
+    },
     Auth {
         simulation: PathBuf,
     },

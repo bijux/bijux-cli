@@ -78,6 +78,26 @@ struct EnvAllowlistReport {
     gaps: Vec<String>,
 }
 
+#[derive(Debug, Serialize)]
+struct NetworkPolicyNodeReport {
+    node_id: String,
+    approved_for_network: bool,
+    cache_trust_impact: &'static str,
+    replay_trust_impact: &'static str,
+    policy_lane: &'static str,
+}
+
+#[derive(Debug, Serialize)]
+struct NetworkPolicyReport {
+    policy_lane: &'static str,
+    network_nodes_present: bool,
+    network_nodes_approved: bool,
+    cache_trust_impact: &'static str,
+    replay_trust_impact: &'static str,
+    node_reports: Vec<NetworkPolicyNodeReport>,
+    gaps: Vec<String>,
+}
+
 #[derive(Debug, serde::Deserialize)]
 struct AuthSimulation {
     environment: String,
@@ -435,6 +455,56 @@ fn env_allowlist_payload(simulation: &Path) -> Result<EnvAllowlistReport, ExitCo
         blocked_keys,
         leaked_keys,
         secret_like_keys_blocked,
+        gaps,
+    })
+}
+
+fn network_policy_payload(dag: &Path) -> Result<NetworkPolicyReport, ExitCode> {
+    let graph = parse_graph(&read_file(dag)?)?;
+    let mut node_reports = Vec::new();
+    let mut gaps = Vec::new();
+    let mut network_nodes_present = false;
+    let mut network_nodes_approved = true;
+
+    for node in &graph.nodes {
+        let has_network_effect =
+            node.effects.iter().any(|effect| matches!(effect, bijux_dag_core::Effect::Network));
+        if !has_network_effect {
+            continue;
+        }
+        network_nodes_present = true;
+        let approved_for_network =
+            node.tags.iter().any(|tag| tag == "network-approved" || tag == "egress-reviewed");
+        if !approved_for_network {
+            network_nodes_approved = false;
+            gaps.push(format!(
+                "node {} declares network effect without network-approved tag",
+                node.id
+            ));
+        }
+        node_reports.push(NetworkPolicyNodeReport {
+            node_id: node.id.clone(),
+            approved_for_network,
+            cache_trust_impact: "reduced",
+            replay_trust_impact: "reduced",
+            policy_lane: "ADVISORY",
+        });
+    }
+
+    if network_nodes_present {
+        gaps.push(
+            "network effects reduce cache/replay trust unless non-cacheable enforcement is active"
+                .to_string(),
+        );
+    }
+    let policy_lane = if network_nodes_present { "ADVISORY" } else { "ENFORCED" };
+    Ok(NetworkPolicyReport {
+        policy_lane,
+        network_nodes_present,
+        network_nodes_approved,
+        cache_trust_impact: if network_nodes_present { "reduced" } else { "none" },
+        replay_trust_impact: if network_nodes_present { "reduced" } else { "none" },
+        node_reports,
         gaps,
     })
 }
@@ -970,6 +1040,18 @@ pub(crate) fn handle_security_command(
                 ExitCode::SUCCESS,
             )
         }
+        SecurityCommands::NetworkPolicy { dag } => {
+            let payload =
+                serde_json::to_value(network_policy_payload(dag)?).map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.security.network-policy",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
         SecurityCommands::Auth { simulation } => {
             let payload =
                 serde_json::to_value(auth_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
@@ -1183,6 +1265,63 @@ mod tests {
         assert!(report.leaked_keys.iter().any(|key| key == "SECRET_TOKEN"));
         assert!(report.leaked_keys.iter().any(|key| key == "PASSWORD"));
         assert!(report.gaps.iter().any(|gap| gap == "secret-like environment keys are not fully blocked"));
+    }
+
+    #[test]
+    fn security_network_policy_accepts_graph_without_network_effects() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let dag = dir.path().join("dag.json");
+        std::fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"no-network","owners":["team-core"],"tags":["prod"]},
+              "nodes":[{"id":"n1","kind":"const","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{"value":"ok"}}],
+              "edges":[]
+            }"#,
+        )
+        .expect("write dag");
+        let cli = quiet_json_cli(SecurityCommands::NetworkPolicy { dag: dag.clone() });
+        let code = handle_security_command(&cli, &SecurityCommands::NetworkPolicy { dag: dag.clone() })
+            .expect("network policy");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::network_policy_payload(&dag).expect("report");
+        assert_eq!(report.policy_lane, "ENFORCED");
+        assert!(!report.network_nodes_present);
+        assert_eq!(report.cache_trust_impact, "none");
+        assert!(report.gaps.is_empty());
+    }
+
+    #[test]
+    fn security_network_policy_flags_unapproved_network_effects_as_advisory() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let dag = dir.path().join("dag.json");
+        std::fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"with-network","owners":["team-core"],"tags":["prod"]},
+              "nodes":[
+                {
+                  "id":"n1",
+                  "kind":"shell",
+                  "inputs":[],
+                  "outputs":[{"name":"out","path":"out"}],
+                  "params":{"argv":["/bin/true"]},
+                  "effects":["filesystem","network"],
+                  "tags":["filesystem-reviewed"]
+                }
+              ],
+              "edges":[]
+            }"#,
+        )
+        .expect("write dag");
+        let report = super::network_policy_payload(&dag).expect("report");
+        assert_eq!(report.policy_lane, "ADVISORY");
+        assert!(report.network_nodes_present);
+        assert!(!report.network_nodes_approved);
+        assert_eq!(report.cache_trust_impact, "reduced");
+        assert!(report.gaps.iter().any(|gap| gap.contains("network-approved tag")));
     }
 
     #[test]
