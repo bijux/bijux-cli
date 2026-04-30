@@ -40,10 +40,11 @@ pub fn contracts_schema_query() -> ContractsSchemaQuery {
             "command-envelope-v1".to_string(),
             "output-envelope-v1".to_string(),
             "error-envelope-v1".to_string(),
+            "config-schema-registry-v1".to_string(),
             "plugin-manifest-v2".to_string(),
             "product-mount-descriptor-v1".to_string(),
         ],
-        schema_version: "v3".to_string(),
+        schema_version: "v4".to_string(),
     }
 }
 
@@ -81,6 +82,15 @@ pub fn version_compatibility_lanes_query() -> VersionCompatibilityLaneQuery {
                 ],
             },
             VersionCompatibilitySurface {
+                surface: "config-schema-registry".to_string(),
+                current_versions: vec!["config-schema-registry-v1".to_string()],
+                accepted_previous_versions: Vec::new(),
+                refused_versions: vec![
+                    "config-schema-registry-v0".to_string(),
+                    "config-schema-registry-v2".to_string(),
+                ],
+            },
+            VersionCompatibilitySurface {
                 surface: "mount-descriptor".to_string(),
                 current_versions: vec!["product-mount-descriptor-v1".to_string()],
                 accepted_previous_versions: Vec::new(),
@@ -103,7 +113,10 @@ pub fn version_compatibility_lanes_query() -> VersionCompatibilityLaneQuery {
                 surface: "run-manifest".to_string(),
                 current_versions: vec!["run-manifest/v0.1".to_string()],
                 accepted_previous_versions: Vec::new(),
-                refused_versions: vec!["run-manifest/v0".to_string(), "run-manifest/v2".to_string()],
+                refused_versions: vec![
+                    "run-manifest/v0".to_string(),
+                    "run-manifest/v2".to_string(),
+                ],
             },
             VersionCompatibilitySurface {
                 surface: "artifact-index".to_string(),
@@ -116,7 +129,10 @@ pub fn version_compatibility_lanes_query() -> VersionCompatibilityLaneQuery {
             },
             VersionCompatibilitySurface {
                 surface: "replay-bundle".to_string(),
-                current_versions: vec!["export-bundle/v0.1".to_string(), "proof-bundle/v0.1".to_string()],
+                current_versions: vec![
+                    "export-bundle/v0.1".to_string(),
+                    "proof-bundle/v0.1".to_string(),
+                ],
                 accepted_previous_versions: Vec::new(),
                 refused_versions: vec![
                     "export-bundle/v0".to_string(),

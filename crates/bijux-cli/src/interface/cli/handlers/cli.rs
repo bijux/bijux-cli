@@ -179,14 +179,15 @@ fn default_doctor_remediation(area: &str, message: &str) -> String {
                 .to_string()
         }
         "paths" => "fix file permissions or configure BIJUX state path overrides".to_string(),
-        "plugins" => "run `bijux plugins doctor` and repair incompatible plugin entries".to_string(),
-        "apps" => "run `bijux apps doctor` and resolve mount metadata or runtime entrypoints"
-            .to_string(),
-        "shims" => "remove legacy shim wrappers and prefer `bijux <app> ...` routes".to_string(),
-        "python" => {
-            "install a supported Python runtime and validate `bijux_cli_py` import parity"
-                .to_string()
+        "plugins" => {
+            "run `bijux plugins doctor` and repair incompatible plugin entries".to_string()
         }
+        "apps" => {
+            "run `bijux apps doctor` and resolve mount metadata or runtime entrypoints".to_string()
+        }
+        "shims" => "remove legacy shim wrappers and prefer `bijux <app> ...` routes".to_string(),
+        "python" => "install a supported Python runtime and validate `bijux_cli_py` import parity"
+            .to_string(),
         "routing" => "inspect route inventory and clear namespace collisions".to_string(),
         _ => {
             format!("inspect doctor findings for `{area}` and apply the documented remediation: {message}")
@@ -877,7 +878,8 @@ pub(crate) fn doctor_report(
         let severity = check.get("severity").and_then(Value::as_str).unwrap_or("ok");
         if severity != "ok" {
             let area = check["name"].as_str().unwrap_or("unknown");
-            let message = check["message"].as_str().unwrap_or("doctor check reported a non-ok state");
+            let message =
+                check["message"].as_str().unwrap_or("doctor check reported a non-ok state");
             let remediation = check
                 .get("suggestions")
                 .and_then(Value::as_array)
@@ -1360,6 +1362,7 @@ pub(crate) fn try_handle(
                         "command-envelope-v1",
                         "output-envelope-v1",
                         "error-envelope-v1",
+                        "config-schema-registry-v1",
                         "plugin-manifest-v2",
                         "product-mount-descriptor-v1"
                     ],
@@ -1486,13 +1489,11 @@ mod tests {
         assert_eq!(report["install"]["has_path_shadowing"], serde_json::json!(true));
         assert_eq!(report["severity"], serde_json::json!("warning"));
         assert!(report["suggestions"].as_array().is_some_and(|items| !items.is_empty()));
-        assert!(report["issues"]
-            .as_array()
-            .expect("issues")
-            .iter()
-            .all(|issue| issue.get("affected_surface").is_some()
-                && issue.get("evidence_path").is_some()
-                && issue.get("remediation").is_some()));
+        assert!(report["issues"].as_array().expect("issues").iter().all(|issue| issue
+            .get("affected_surface")
+            .is_some()
+            && issue.get("evidence_path").is_some()
+            && issue.get("remediation").is_some()));
     }
 
     #[test]

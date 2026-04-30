@@ -10,9 +10,10 @@ use serde_json::{json, Map, Value};
 
 use crate::features::config::error::ConfigError;
 use crate::features::config::schema::{
-    config_schema_registry, config_schema_scope, env_candidates_for_storage_key, infer_scope,
-    logical_key_to_storage_key, normalize_selector_to_storage_key, redact_value,
-    schema_field_for_key, storage_key_to_logical_key, validate_schema_value,
+    config_schema_registry, config_schema_registry_v1, config_schema_scope,
+    env_candidates_for_storage_key, infer_scope, logical_key_to_storage_key,
+    normalize_selector_to_storage_key, redact_value, schema_field_for_key,
+    storage_key_to_logical_key, validate_schema_value, CONFIG_SCHEMA_REGISTRY_VERSION,
 };
 use crate::features::config::storage::{ConfigRepository, FileConfigRepository};
 use crate::features::install::{acquire_state_lock, CompatibilityError, StateLockGuard};
@@ -50,17 +51,18 @@ pub(crate) fn schema_report(scope: Option<&str>) -> Result<Value, ConfigError> {
         })?;
         return Ok(json!({
             "status": "ok",
+            "schema_version": CONFIG_SCHEMA_REGISTRY_VERSION,
             "scope": scope_payload.scope,
             "source": scope_payload.source,
             "fields": scope_payload.fields,
         }));
     }
 
-    let registry = config_schema_registry();
+    let registry = config_schema_registry_v1();
     Ok(json!({
         "status": "ok",
-        "schema_version": "bijux-cli-config-schema-v1",
-        "scopes": registry,
+        "schema_version": registry.schema_version,
+        "scopes": registry.scopes,
     }))
 }
 
@@ -68,7 +70,7 @@ pub(crate) fn schema_docs_report(scope: Option<&str>) -> Result<Value, ConfigErr
     let markdown = schema_docs_markdown(scope)?;
     Ok(json!({
         "status": "ok",
-        "schema_version": "bijux-cli-config-schema-v1",
+        "schema_version": CONFIG_SCHEMA_REGISTRY_VERSION,
         "scope": scope,
         "markdown": markdown,
     }))
@@ -80,7 +82,8 @@ pub(crate) fn validate_report(
     profile: Option<&str>,
     overrides: &[String],
 ) -> Result<Value, ConfigError> {
-    let resolved = resolve_layered_config_with_overrides(global_config_path, cwd, profile, overrides)?;
+    let resolved =
+        resolve_layered_config_with_overrides(global_config_path, cwd, profile, overrides)?;
     let mut warnings = resolved.warnings;
     warnings.extend(warnings_for_unknown_entries(&resolved.effective_entries));
 
@@ -114,7 +117,8 @@ pub(crate) fn explain_report(
     overrides: &[String],
     include_secrets: bool,
 ) -> Result<Value, ConfigError> {
-    let resolved = resolve_layered_config_with_overrides(global_config_path, cwd, profile, overrides)?;
+    let resolved =
+        resolve_layered_config_with_overrides(global_config_path, cwd, profile, overrides)?;
     let storage_key = normalize_selector(raw_key)?;
     let logical_key = storage_key_to_logical_key(&storage_key);
     let effective_value = resolved
@@ -759,7 +763,7 @@ audience: mixed\n\
 type: generated-reference\n\
 status: canonical\n\
 owner: bijux-cli-docs\n\
-generated_from: bijux-cli-config-schema-v1\n\
+generated_from: bijux-cli-config-schema-registry-v1\n\
 ---\n\n\
 # Generated Config Reference\n\n\
 This page is generated from the built-in `bijux-cli` config schema registry.\n\
@@ -771,9 +775,9 @@ Use `bijux config docs --format json` when you need the same content from the ru
         markdown.push_str(&scope_entry.scope);
         markdown.push_str("`\n\n");
         markdown.push_str(
-            "| Logical key | Storage key | Type | Environment | Sensitive | Description |\n",
+            "| Logical key | Storage key | Type | Environment | Sensitive | Default | Deprecation | Description |\n",
         );
-        markdown.push_str("| --- | --- | --- | --- | --- | --- |\n");
+        markdown.push_str("| --- | --- | --- | --- | --- | --- | --- | --- |\n");
         for field in &scope_entry.fields {
             let env_vars = if field.env_vars.is_empty() {
                 "-".to_string()
@@ -786,7 +790,7 @@ Use `bijux config docs --format json` when you need the same content from the ru
                     .join("<br>")
             };
             markdown.push_str(&format!(
-                "| `{}` | `{}` | `{}` | {} | `{}` | {} |\n",
+                "| `{}` | `{}` | `{}` | {} | `{}` | {} | `{}` | {} |\n",
                 field.logical_key,
                 field.storage_key,
                 serde_json::to_string(&field.value_kind)
@@ -794,6 +798,14 @@ Use `bijux config docs --format json` when you need the same content from the ru
                     .trim_matches('"'),
                 env_vars,
                 if field.sensitive { "yes" } else { "no" },
+                field
+                    .default_value
+                    .as_deref()
+                    .map(|value| format!("`{value}`"))
+                    .unwrap_or_else(|| "-".to_string()),
+                serde_json::to_string(&field.deprecation_status)
+                    .unwrap_or_else(|_| "\"active\"".to_string())
+                    .trim_matches('"'),
                 field.description.replace('|', "\\|"),
             ));
         }
@@ -912,11 +924,13 @@ mod tests {
 
     use serde_json::json;
 
+    use crate::contracts::ConfigSchemaRegistryV1;
+    use crate::features::config::schema::CONFIG_SCHEMA_REGISTRY_VERSION;
+
     use super::{
         diff_report, discover_project_config, explain_report, parse_portable_entries,
         repair_env_text, resolve_layered_config, schema_docs_report, schema_report,
-        validate_report,
-        LayeredConfigOptions,
+        validate_report, LayeredConfigOptions,
     };
 
     fn temp_dir(name: &str) -> PathBuf {
@@ -935,12 +949,36 @@ mod tests {
     }
 
     #[test]
+    fn schema_report_roundtrip_uses_versioned_registry_contract() {
+        let payload = schema_report(None).expect("schema");
+        assert_eq!(payload["schema_version"], CONFIG_SCHEMA_REGISTRY_VERSION);
+        let registry_payload = json!({
+            "schema_version": payload["schema_version"],
+            "scopes": payload["scopes"],
+        });
+        let registry: ConfigSchemaRegistryV1 =
+            serde_json::from_value(registry_payload).expect("registry contract");
+        assert!(!registry.scopes.is_empty(), "registry should expose at least one scope");
+    }
+
+    #[test]
     fn schema_docs_report_emits_markdown_reference() {
         let payload = schema_docs_report(Some("cli")).expect("docs");
         let markdown = payload["markdown"].as_str().expect("markdown");
         assert!(markdown.contains("# Generated Config Reference"));
         assert!(markdown.contains("## `cli`"));
         assert!(markdown.contains("`cli.access_token`"));
+        assert!(markdown.contains("| Logical key | Storage key | Type | Environment | Sensitive | Default | Deprecation | Description |"));
+    }
+
+    #[test]
+    fn schema_docs_report_matches_checked_in_generated_reference() {
+        let payload = schema_docs_report(None).expect("docs");
+        let markdown = payload["markdown"].as_str().expect("markdown");
+        let reference_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../docs/bijux-cli/interfaces/generated-config-reference.md");
+        let expected = fs::read_to_string(reference_path).expect("generated reference doc");
+        assert_eq!(format!("{markdown}\n"), expected);
     }
 
     #[test]
@@ -990,15 +1028,8 @@ mod tests {
         let global = root.join("global.env");
         fs::write(&global, "BIJUXCLI_CLI_ACCESS_TOKEN=secret-token\n").expect("global");
 
-        let payload = explain_report(
-            &global,
-            &root,
-            "cli.access_token",
-            None,
-            &Vec::new(),
-            false,
-        )
-        .expect("explain");
+        let payload = explain_report(&global, &root, "cli.access_token", None, &Vec::new(), false)
+            .expect("explain");
         assert_eq!(payload["effective"]["value"], "[redacted]");
     }
 
@@ -1013,16 +1044,8 @@ mod tests {
         fs::write(project.join(".bijux/profiles/dev.toml"), "[cli]\nlog_level = 'debug'\n")
             .expect("profile");
 
-        let payload = diff_report(
-            &global,
-            &project,
-            None,
-            None,
-            Some("dev"),
-            &Vec::new(),
-            false,
-        )
-        .expect("diff");
+        let payload = diff_report(&global, &project, None, None, Some("dev"), &Vec::new(), false)
+            .expect("diff");
         assert_eq!(payload["status"], "ok");
         assert!(payload["changed_count"].as_u64().is_some_and(|count| count >= 1));
         let changes = payload["changes"].as_array().expect("changes");
@@ -1036,16 +1059,13 @@ mod tests {
         let project = root.join("project");
         fs::create_dir_all(project.join(".bijux")).expect("mkdir");
         fs::write(&global, "BIJUXCLI_CLI_LOG_LEVEL=info\n").expect("global");
-        fs::write(project.join(".bijux/config.toml"), "[cli]\nlog_level = 'warn'\n").expect("project");
+        fs::write(project.join(".bijux/config.toml"), "[cli]\nlog_level = 'warn'\n")
+            .expect("project");
         std::env::set_var("BIJUXCLI_CLI_LOG_LEVEL", "error");
 
-        let payload = validate_report(
-            &global,
-            &project,
-            None,
-            &["cli.log_level=debug".to_string()],
-        )
-        .expect("validate");
+        let payload =
+            validate_report(&global, &project, None, &["cli.log_level=debug".to_string()])
+                .expect("validate");
         assert_eq!(
             payload["precedence"],
             json!([

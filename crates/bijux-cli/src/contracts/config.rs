@@ -158,6 +158,85 @@ pub struct ConfigWriteResult {
     pub target_path: String,
 }
 
+/// Stable value kind contract for schema-registry fields.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ConfigSchemaValueKindV1 {
+    /// UTF-8 text value.
+    String,
+    /// Signed integer value.
+    Integer,
+    /// Boolean value.
+    Boolean,
+    /// Filesystem path value.
+    Path,
+    /// JSON text value.
+    Json,
+}
+
+/// Stable field source classification for config schema entries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ConfigSchemaSourceV1 {
+    /// Field is owned directly by this crate.
+    BuiltIn,
+    /// Field is generated from shared app policy.
+    BuiltInShared,
+}
+
+/// Stable deprecation status for config schema entries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ConfigDeprecationStatusV1 {
+    /// Field is active and fully supported.
+    Active,
+    /// Field remains available but is scheduled for removal.
+    Deprecated,
+}
+
+/// Stable schema-field contract for one logical config key.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ConfigSchemaFieldV1 {
+    /// Scope identifier (`cli`, `dag`, mounted app namespace, ...).
+    pub scope: String,
+    /// Operator-facing logical dotted key.
+    pub logical_key: String,
+    /// Storage key persisted in env-style files.
+    pub storage_key: String,
+    /// Environment variable aliases checked in precedence order.
+    pub env_vars: Vec<String>,
+    /// Field value kind.
+    pub value_kind: ConfigSchemaValueKindV1,
+    /// Whether the value is secret-bearing and should be redacted by default.
+    pub sensitive: bool,
+    /// Optional default value used by core runtime policy.
+    pub default_value: Option<String>,
+    /// Deprecation status marker.
+    pub deprecation_status: ConfigDeprecationStatusV1,
+    /// Human description for docs and explain surfaces.
+    pub description: String,
+}
+
+/// Stable registry scope contract grouping config keys by scope.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ConfigSchemaScopeV1 {
+    /// Scope identifier.
+    pub scope: String,
+    /// Scope source class.
+    pub source: ConfigSchemaSourceV1,
+    /// Fields within this scope.
+    pub fields: Vec<ConfigSchemaFieldV1>,
+}
+
+/// Stable versioned config-schema registry contract.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ConfigSchemaRegistryV1 {
+    /// Registry schema id.
+    pub schema_version: String,
+    /// Scope inventory.
+    pub scopes: Vec<ConfigSchemaScopeV1>,
+}
+
 /// Export format for config output.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]

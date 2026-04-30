@@ -22,6 +22,10 @@ pub mod query;
 pub mod schema;
 
 pub use command::{CommandMetadata, CommandPath, Namespace, NamespaceMetadata};
+pub use config::{
+    ConfigDeprecationStatusV1, ConfigSchemaFieldV1, ConfigSchemaRegistryV1, ConfigSchemaScopeV1,
+    ConfigSchemaSourceV1, ConfigSchemaValueKindV1,
+};
 pub use envelope::{
     CommandEnvelopeV1, CommandFailureClassV1, CommandFailureV1, CommandWarningV1, ErrorDetailsV1,
     ErrorEnvelopeV1, ErrorPayloadV1, OutputEnvelopeMetaV1, OutputEnvelopeV1,
@@ -47,6 +51,7 @@ pub use query::{
     VersionCompatibilityLaneQuery, VersionCompatibilitySurface,
 };
 pub use schema::{
-    command_envelope_v1_schema, error_envelope_v1_schema, official_product_registry_schema,
-    output_envelope_v1_schema, plugin_manifest_v2_schema, product_mount_descriptor_schema,
+    command_envelope_v1_schema, config_schema_registry_v1_schema, error_envelope_v1_schema,
+    official_product_registry_schema, output_envelope_v1_schema, plugin_manifest_v2_schema,
+    product_mount_descriptor_schema,
 };
