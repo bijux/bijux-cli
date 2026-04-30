@@ -4,6 +4,7 @@
 
 use bijux_cli::contracts::{
     CommandPath, CompatibilityRange, Namespace, PluginCapability, PluginKind, PluginManifestV2,
+    PluginTrustClass,
 };
 use proptest::prelude::*;
 use serde as _;
@@ -62,6 +63,7 @@ fn plugin_manifest_constructor_enforces_invariants() {
         compatibility,
         namespace,
         PluginKind::Delegated,
+        PluginTrustClass::Community,
         vec!["sample-status".to_string()],
         "sample_plugin:main",
         vec![capability],

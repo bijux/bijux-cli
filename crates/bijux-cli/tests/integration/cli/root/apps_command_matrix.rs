@@ -279,6 +279,7 @@ fn apps_doctor_reports_shadowed_plugin_conflicts_for_official_namespace() {
         "compatibility": { "min_inclusive": "0.1.0", "max_exclusive": "1.0.0" },
         "namespace": "workflow",
         "kind": "external-exec",
+        "trust_class": "community",
         "aliases": [],
         "entrypoint": "workflow-plugin",
         "capabilities": []

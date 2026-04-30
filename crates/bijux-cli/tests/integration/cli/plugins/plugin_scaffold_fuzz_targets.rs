@@ -225,6 +225,7 @@ fn fuzz_plugin_inspect_payload_and_check_diagnostics_rendering_are_stable() {
   "compatibility": {{ "min_inclusive": "0.1.0", "max_exclusive": "2.0.0" }},
   "namespace": "extcheck",
   "kind": "external-exec",
+  "trust_class": "community",
   "aliases": ["extcheck-run"],
   "entrypoint": "{}",
   "capabilities": [{{"name":"exec","version":"1"}}]

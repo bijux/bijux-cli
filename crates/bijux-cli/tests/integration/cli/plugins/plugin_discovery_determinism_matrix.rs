@@ -76,6 +76,7 @@ fn install_external_exec(root: &Path, plugins_dir: &Path, namespace: &str, entry
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "{namespace}",
   "kind": "external-exec",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "{}",
   "capabilities": []

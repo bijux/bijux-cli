@@ -221,7 +221,10 @@ fn validate_symbol_path(path: &str, kind: PluginKind) -> Result<(), PluginError>
 mod tests {
     use super::validate_manifest;
     use crate::api::version::runtime_semver;
-    use crate::contracts::{CompatibilityRange, Namespace, PluginKind, PluginManifestV2};
+    use crate::contracts::{
+        CompatibilityRange, Namespace, PluginCapability, PluginKind, PluginManifestV2,
+        PluginTrustClass,
+    };
     use semver::{Prerelease, Version};
 
     fn current_plugin_host_floor() -> String {
@@ -252,9 +255,13 @@ mod tests {
             },
             namespace: Namespace::new("sample").expect("namespace"),
             kind: PluginKind::Python,
+            trust_class: PluginTrustClass::Community,
             aliases: Vec::new(),
             entrypoint: "plugin:main".to_string(),
-            capabilities: Vec::new(),
+            capabilities: vec![PluginCapability {
+                name: "inspect".to_string(),
+                version: Some("1".to_string()),
+            }],
         }
     }
 

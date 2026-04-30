@@ -37,6 +37,7 @@ pub use execution::{
 pub use marker::ContractMarker;
 pub use plugin::{
     CompatibilityRange, PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV2,
+    PluginTrustClass,
 };
 pub use product_mount::{
     canonical_bijux_tool_namespace, known_bijux_tool, known_bijux_tool_by_query,

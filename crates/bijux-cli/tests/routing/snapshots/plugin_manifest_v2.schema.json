@@ -11,6 +11,7 @@
     "name",
     "namespace",
     "schema_version",
+    "trust_class",
     "version"
   ],
   "properties": {
@@ -69,6 +70,14 @@
     "schema_version": {
       "description": "Plugin schema version.",
       "type": "string"
+    },
+    "trust_class": {
+      "description": "Declared trust class.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/PluginTrustClass"
+        }
+      ]
     },
     "version": {
       "description": "Plugin version.",
@@ -149,6 +158,39 @@
           "type": "string",
           "enum": [
             "external-exec"
+          ]
+        }
+      ]
+    },
+    "PluginTrustClass": {
+      "description": "Stable plugin trust-class declaration.",
+      "oneOf": [
+        {
+          "description": "Built and governed by core maintainers.",
+          "type": "string",
+          "enum": [
+            "core"
+          ]
+        },
+        {
+          "description": "Trusted and verified third-party plugin.",
+          "type": "string",
+          "enum": [
+            "verified"
+          ]
+        },
+        {
+          "description": "Community plugin without elevated trust guarantees.",
+          "type": "string",
+          "enum": [
+            "community"
+          ]
+        },
+        {
+          "description": "Unknown trust provenance.",
+          "type": "string",
+          "enum": [
+            "unknown"
           ]
         }
       ]

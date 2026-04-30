@@ -81,6 +81,20 @@ pub enum PluginKind {
     ExternalExec,
 }
 
+/// Stable plugin trust-class declaration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum PluginTrustClass {
+    /// Built and governed by core maintainers.
+    Core,
+    /// Trusted and verified third-party plugin.
+    Verified,
+    /// Community plugin without elevated trust guarantees.
+    Community,
+    /// Unknown trust provenance.
+    Unknown,
+}
+
 /// Stable plugin lifecycle state in registry and diagnostics.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
@@ -120,6 +134,8 @@ pub struct PluginManifestV2 {
     /// Plugin execution kind.
     #[serde(default)]
     pub kind: PluginKind,
+    /// Declared trust class.
+    pub trust_class: PluginTrustClass,
     /// Declared command aliases.
     #[serde(default)]
     pub aliases: Vec<String>,
@@ -140,6 +156,7 @@ impl PluginManifestV2 {
         compatibility: CompatibilityRange,
         namespace: Namespace,
         kind: PluginKind,
+        trust_class: PluginTrustClass,
         aliases: Vec<String>,
         entrypoint: &str,
         capabilities: Vec<PluginCapability>,
@@ -173,6 +190,7 @@ impl PluginManifestV2 {
             compatibility,
             namespace,
             kind,
+            trust_class,
             aliases,
             entrypoint: entrypoint.to_string(),
             capabilities,

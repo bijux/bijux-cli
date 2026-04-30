@@ -91,6 +91,7 @@ fn write_external_exec_manifest(path: &Path, namespace: &str, entrypoint: &Path)
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "{namespace}",
   "kind": "external-exec",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "{}",
   "capabilities": []
