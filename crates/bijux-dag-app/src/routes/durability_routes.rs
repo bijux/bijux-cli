@@ -123,6 +123,27 @@ struct ChangeImpactLabelsReport {
     pr_labels: Vec<String>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ReleaseNotesEvidenceSimulation {
+    entries: Vec<ReleaseNoteEvidenceEntry>,
+}
+
+#[derive(Debug, serde::Deserialize, Serialize)]
+struct ReleaseNoteEvidenceEntry {
+    title: String,
+    contracts: Vec<String>,
+    fixtures: Vec<String>,
+    verifications: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct ReleaseNotesEvidenceReport {
+    policy_lane: &'static str,
+    evidence_complete: bool,
+    entries_without_evidence: Vec<String>,
+    entries: Vec<ReleaseNoteEvidenceEntry>,
+}
+
 fn load_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
@@ -320,6 +341,28 @@ fn change_impact_labels_payload(simulation: &Path) -> Result<ChangeImpactLabelsR
     })
 }
 
+fn release_notes_evidence_payload(
+    simulation: &Path,
+) -> Result<ReleaseNotesEvidenceReport, ExitCode> {
+    let simulation: ReleaseNotesEvidenceSimulation = load_json_file(simulation)?;
+    let mut entries_without_evidence = simulation
+        .entries
+        .iter()
+        .filter(|entry| {
+            entry.contracts.is_empty() || entry.fixtures.is_empty() || entry.verifications.is_empty()
+        })
+        .map(|entry| entry.title.clone())
+        .collect::<Vec<_>>();
+    entries_without_evidence.sort();
+    let evidence_complete = entries_without_evidence.is_empty();
+    Ok(ReleaseNotesEvidenceReport {
+        policy_lane: "ENFORCED",
+        evidence_complete,
+        entries_without_evidence,
+        entries: simulation.entries,
+    })
+}
+
 pub(crate) fn handle_durability_command(
     cli: &DagCli,
     command: &DurabilityCommands,
@@ -391,6 +434,18 @@ pub(crate) fn handle_durability_command(
             emit_json(
                 cli,
                 "dag.durability.change-impact-labels",
+                true,
+                payload,
+                Vec::new(),
+                ExitCode::SUCCESS,
+            )
+        }
+        DurabilityCommands::ReleaseNotesEvidence { simulation } => {
+            let payload = serde_json::to_value(release_notes_evidence_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
+            emit_json(
+                cli,
+                "dag.durability.release-notes-evidence",
                 true,
                 payload,
                 Vec::new(),
@@ -773,5 +828,59 @@ mod tests {
         assert!(!report.labels_complete);
         assert_eq!(report.missing_labels, vec!["runtime->impact:runtime".to_string()]);
         assert_eq!(report.unexpected_labels, vec!["impact:docs".to_string()]);
+    }
+
+    #[test]
+    fn durability_release_notes_evidence_accepts_entries_with_proof() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("release-notes-evidence-good.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "entries":[
+                {
+                  "title":"enforce typed contracts on run-state surfaces",
+                  "contracts":["contracts/runtime-typed-state.md"],
+                  "fixtures":["fixtures/durability/typed-contracts-v2.json"],
+                  "verifications":["cargo test -p bijux-dag-app durability_typed_contracts_"]
+                }
+              ]
+            }"#,
+        )
+        .expect("write simulation");
+        let cli =
+            quiet_json_cli(DurabilityCommands::ReleaseNotesEvidence { simulation: simulation.clone() });
+        let code = handle_durability_command(
+            &cli,
+            &DurabilityCommands::ReleaseNotesEvidence { simulation: simulation.clone() },
+        )
+        .expect("release notes evidence");
+        assert_eq!(code, ExitCode::SUCCESS);
+        let report = super::release_notes_evidence_payload(&simulation).expect("report");
+        assert!(report.evidence_complete);
+        assert!(report.entries_without_evidence.is_empty());
+    }
+
+    #[test]
+    fn durability_release_notes_evidence_flags_entries_without_proof() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let simulation = dir.path().join("release-notes-evidence-bad.json");
+        std::fs::write(
+            &simulation,
+            r#"{
+              "entries":[
+                {
+                  "title":"add release lane",
+                  "contracts":[],
+                  "fixtures":["fixtures/release/lane.json"],
+                  "verifications":["cargo test -p bijux-dag-app release_lane"]
+                }
+              ]
+            }"#,
+        )
+        .expect("write simulation");
+        let report = super::release_notes_evidence_payload(&simulation).expect("report");
+        assert!(!report.evidence_complete);
+        assert_eq!(report.entries_without_evidence, vec!["add release lane".to_string()]);
     }
 }

@@ -991,6 +991,10 @@ pub(crate) enum DurabilityCommands {
     ChangeImpactLabels {
         simulation: PathBuf,
     },
+    #[command(name = "release-notes-evidence")]
+    ReleaseNotesEvidence {
+        simulation: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
