@@ -200,11 +200,90 @@ pub fn reconstruct_useful_timeline(
     })
 }
 
+/// Input metrics captured for a run.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunMetricsSampleV1 {
+    pub run_id: String,
+    pub queue_time_ms: u64,
+    pub run_time_ms: u64,
+    pub retry_count: u32,
+    pub io_bytes: u64,
+    pub cache_hits: u64,
+    pub cache_misses: u64,
+    pub failure_count: u32,
+    pub verification_state: String,
+}
+
+/// Actionable metrics report for operators.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ActionableRunMetricsV1 {
+    pub run_id: String,
+    pub queue_time_ms: u64,
+    pub run_time_ms: u64,
+    pub retry_count: u32,
+    pub io_bytes: u64,
+    pub cache_hit_ratio: f64,
+    pub failure_count: u32,
+    pub verification_state: String,
+    pub diagnostics: Vec<String>,
+}
+
+/// Build actionable run metrics diagnostics for performance and failure debugging.
+pub fn build_actionable_run_metrics(sample: &RunMetricsSampleV1) -> Result<ActionableRunMetricsV1, String> {
+    if sample.run_id.trim().is_empty() {
+        return Err("run metrics require run_id".to_string());
+    }
+    if sample.verification_state.trim().is_empty() {
+        return Err("run metrics require verification_state".to_string());
+    }
+    let cache_total = sample.cache_hits + sample.cache_misses;
+    let cache_hit_ratio = if cache_total == 0 {
+        0.0
+    } else {
+        sample.cache_hits as f64 / cache_total as f64
+    };
+
+    let mut diagnostics = Vec::new();
+    if sample.queue_time_ms > sample.run_time_ms {
+        diagnostics.push("queue_time dominates run_time; inspect scheduler capacity".to_string());
+    }
+    if sample.retry_count > 0 {
+        diagnostics.push(format!("run observed {} retries; inspect unstable nodes", sample.retry_count));
+    }
+    if sample.failure_count > 0 {
+        diagnostics.push(format!(
+            "run observed {} failures; inspect node failure root causes",
+            sample.failure_count
+        ));
+    }
+    if cache_total > 0 && cache_hit_ratio < 0.2 {
+        diagnostics.push("low cache hit ratio; inspect cache keys and materialized outputs".to_string());
+    }
+    if sample.verification_state != "verified" {
+        diagnostics.push(format!(
+            "verification state is '{}'; inspect missing or invalid evidence",
+            sample.verification_state
+        ));
+    }
+
+    Ok(ActionableRunMetricsV1 {
+        run_id: sample.run_id.clone(),
+        queue_time_ms: sample.queue_time_ms,
+        run_time_ms: sample.run_time_ms,
+        retry_count: sample.retry_count,
+        io_bytes: sample.io_bytes,
+        cache_hit_ratio,
+        failure_count: sample.failure_count,
+        verification_state: sample.verification_state.clone(),
+        diagnostics,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        reconstruct_useful_timeline, validate_end_to_end_correlation_ids, verify_event_taxonomy_complete,
-        CorrelationChainV1,
+        build_actionable_run_metrics, reconstruct_useful_timeline, validate_end_to_end_correlation_ids,
+        verify_event_taxonomy_complete, CorrelationChainV1, RunMetricsSampleV1,
         ObservabilityEventDomainV1, ObservabilityEventRecordV1,
     };
 
@@ -297,5 +376,34 @@ mod tests {
         assert_eq!(report.entries[1].duration_ms_since_previous, Some(25));
         assert_eq!(report.entries[2].duration_ms_since_previous, Some(30));
         assert_eq!(report.total_duration_ms, 55);
+    }
+
+    #[test]
+    fn g164_run_metrics_report_queue_runtime_retries_cache_failures_and_verification() {
+        let report = build_actionable_run_metrics(&RunMetricsSampleV1 {
+            run_id: "run-17".to_string(),
+            queue_time_ms: 15_000,
+            run_time_ms: 9_000,
+            retry_count: 3,
+            io_bytes: 4_096_000,
+            cache_hits: 1,
+            cache_misses: 9,
+            failure_count: 2,
+            verification_state: "incomplete".to_string(),
+        })
+        .expect("metrics report should build");
+        assert_eq!(report.queue_time_ms, 15_000);
+        assert_eq!(report.run_time_ms, 9_000);
+        assert_eq!(report.retry_count, 3);
+        assert_eq!(report.failure_count, 2);
+        assert!(report.cache_hit_ratio < 0.2);
+        assert!(report
+            .diagnostics
+            .iter()
+            .any(|line| line.contains("queue_time dominates run_time")));
+        assert!(report
+            .diagnostics
+            .iter()
+            .any(|line| line.contains("verification state is 'incomplete'")));
     }
 }
