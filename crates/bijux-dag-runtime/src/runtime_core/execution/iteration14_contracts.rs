@@ -181,11 +181,51 @@ pub fn plan_multi_run_fairness(
     MultiRunSchedulingReportV1 { decisions, starvation_detected, diagnostics }
 }
 
+/// Pause/resume scope for runtime controls.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PauseScopeV1 {
+    Graph,
+    Pool,
+    Adapter,
+    NodeSelector,
+}
+
+/// Pause transition event.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PauseTransitionEventV1 {
+    pub scope: PauseScopeV1,
+    pub target: String,
+    pub from_state: String,
+    pub to_state: String,
+}
+
+/// Validate pause/resume transitions at scope level.
+pub fn validate_pause_resume_transitions(events: &[PauseTransitionEventV1]) -> Result<(), String> {
+    for event in events {
+        if event.target.trim().is_empty() {
+            return Err("pause/resume event must include target".to_string());
+        }
+        let legal = matches!(
+            (event.from_state.as_str(), event.to_state.as_str()),
+            ("running", "paused") | ("paused", "running")
+        );
+        if !legal {
+            return Err(format!(
+                "illegal pause transition for {:?}/{}: {} -> {}",
+                event.scope, event.target, event.from_state, event.to_state
+            ));
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         plan_multi_run_fairness, validate_durable_run_queue_snapshot, validate_node_leases,
-        DurableRunQueueSnapshotV1, MultiRunDemandV1, QueueAttemptRecordV1, QueueLeaseRecordV1,
+        validate_pause_resume_transitions, DurableRunQueueSnapshotV1, MultiRunDemandV1,
+        PauseScopeV1, PauseTransitionEventV1, QueueAttemptRecordV1, QueueLeaseRecordV1,
         SchedulerDecisionRecordV1,
     };
     use std::collections::BTreeMap;
@@ -291,5 +331,33 @@ mod tests {
         assert_eq!(assigned_total, 3);
         assert!(report.decisions.iter().any(|decision| decision.run_id == "run-a" && decision.assigned_slots > 0));
         assert!(report.decisions.iter().any(|decision| decision.run_id == "run-b" && decision.assigned_slots > 0));
+    }
+
+    #[test]
+    fn g134_pause_resume_scope_transitions_are_legal_and_visible() {
+        let events = vec![
+            PauseTransitionEventV1 {
+                scope: PauseScopeV1::Graph,
+                target: "run-graph-a".to_string(),
+                from_state: "running".to_string(),
+                to_state: "paused".to_string(),
+            },
+            PauseTransitionEventV1 {
+                scope: PauseScopeV1::Pool,
+                target: "gpu".to_string(),
+                from_state: "paused".to_string(),
+                to_state: "running".to_string(),
+            },
+        ];
+        validate_pause_resume_transitions(&events).expect("legal transitions");
+
+        let illegal = vec![PauseTransitionEventV1 {
+            scope: PauseScopeV1::Adapter,
+            target: "shell".to_string(),
+            from_state: "running".to_string(),
+            to_state: "running".to_string(),
+        }];
+        let error = validate_pause_resume_transitions(&illegal).expect_err("must reject illegal transition");
+        assert!(error.contains("illegal pause transition"));
     }
 }
