@@ -15,6 +15,8 @@ pub mod hardening;
 pub mod hash;
 #[path = "integrity/index.rs"]
 pub mod index;
+#[path = "integrity/iteration07_contracts.rs"]
+pub mod iteration07_contracts;
 #[path = "lifecycle/lineage.rs"]
 pub mod lineage;
 #[path = "storage/models.rs"]
