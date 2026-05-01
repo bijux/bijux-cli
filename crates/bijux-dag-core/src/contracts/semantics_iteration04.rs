@@ -400,13 +400,86 @@ pub fn build_optional_upstream_evidence_report(
     OptionalUpstreamEvidenceReportV1 { records, missing_optional_inputs, missing_required_inputs }
 }
 
+/// Trigger rule profiles covered by semantic truth tables.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TriggerRuleProfileV1 {
+    AllSuccess,
+    AllDone,
+    AnySuccess,
+    NoneFailed,
+    QuorumSuccess,
+    SkippedAwareAnySuccess,
+}
+
+/// Input row for trigger-rule truth table evaluation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TriggerTruthTableRowV1 {
+    /// Trigger profile.
+    pub profile: TriggerRuleProfileV1,
+    /// Parent states in evaluation set.
+    pub parent_states: Vec<UpstreamTerminalStateV1>,
+    /// Optional quorum threshold for quorum profiles.
+    pub quorum_threshold: Option<usize>,
+    /// Whether row is runnable.
+    pub runnable: bool,
+}
+
+/// Evaluate a single trigger-rule truth-table row.
+pub fn evaluate_trigger_truth_table_row(
+    profile: TriggerRuleProfileV1,
+    parent_states: Vec<UpstreamTerminalStateV1>,
+    quorum_threshold: Option<usize>,
+) -> Result<TriggerTruthTableRowV1, String> {
+    let success = parent_states
+        .iter()
+        .filter(|state| **state == UpstreamTerminalStateV1::Success)
+        .count();
+    let failed = parent_states
+        .iter()
+        .filter(|state| **state == UpstreamTerminalStateV1::Failed)
+        .count();
+    let skipped = parent_states
+        .iter()
+        .filter(|state| **state == UpstreamTerminalStateV1::Skipped)
+        .count();
+    let done = parent_states
+        .iter()
+        .filter(|state| {
+            matches!(
+                state,
+                UpstreamTerminalStateV1::Success
+                    | UpstreamTerminalStateV1::Failed
+                    | UpstreamTerminalStateV1::Skipped
+                    | UpstreamTerminalStateV1::Cancelled
+            )
+        })
+        .count();
+    let total = parent_states.len();
+
+    let runnable = match profile {
+        TriggerRuleProfileV1::AllSuccess => success == total,
+        TriggerRuleProfileV1::AllDone => done == total,
+        TriggerRuleProfileV1::AnySuccess => success > 0,
+        TriggerRuleProfileV1::NoneFailed => failed == 0,
+        TriggerRuleProfileV1::QuorumSuccess => {
+            let threshold = quorum_threshold.ok_or("quorum threshold is required")?;
+            success >= threshold
+        }
+        TriggerRuleProfileV1::SkippedAwareAnySuccess => success > 0 || (success == 0 && skipped == total),
+    };
+
+    Ok(TriggerTruthTableRowV1 { profile, parent_states, quorum_threshold, runnable })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_branch_decision_artifact, build_edge_semantics_snapshot,
         build_optional_upstream_evidence_report,
-        evaluate_trigger_readiness_from_states, validate_barrier_semantics,
-        validate_reducer_semantics, ReducerOrderingPolicyV1, UpstreamTerminalStateV1,
+        evaluate_trigger_readiness_from_states, evaluate_trigger_truth_table_row,
+        validate_barrier_semantics, validate_reducer_semantics, ReducerOrderingPolicyV1,
+        TriggerRuleProfileV1, UpstreamTerminalStateV1,
     };
     use crate::{BranchSpec, DagBuilder, EdgeKind, NodeBuilder, NodeKind, SemanticNodeKind, TriggerRule};
     use std::collections::{BTreeMap, BTreeSet};
@@ -575,5 +648,28 @@ mod tests {
             report.missing_optional_inputs,
             vec!["consumer.optional_in".to_string()]
         );
+    }
+
+    #[test]
+    fn g037_trigger_rule_truth_tables_cover_quorum_and_skipped_aware_profiles() {
+        let quorum_row = evaluate_trigger_truth_table_row(
+            TriggerRuleProfileV1::QuorumSuccess,
+            vec![
+                UpstreamTerminalStateV1::Success,
+                UpstreamTerminalStateV1::Skipped,
+                UpstreamTerminalStateV1::Success,
+            ],
+            Some(2),
+        )
+        .expect("quorum row");
+        assert!(quorum_row.runnable);
+
+        let skipped_aware = evaluate_trigger_truth_table_row(
+            TriggerRuleProfileV1::SkippedAwareAnySuccess,
+            vec![UpstreamTerminalStateV1::Skipped, UpstreamTerminalStateV1::Skipped],
+            None,
+        )
+        .expect("skipped-aware row");
+        assert!(skipped_aware.runnable);
     }
 }
