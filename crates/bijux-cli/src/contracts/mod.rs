@@ -37,7 +37,19 @@ pub use execution::{
     PrettyMode,
 };
 pub use marker::ContractMarker;
-pub use operator_iteration01::{build_compact_operator_help_entrypoint, CompactHelpEntryPointV1};
+pub use operator_iteration01::{
+    build_actionable_error_envelope, build_command_explain_record,
+    build_compact_operator_help_entrypoint, build_completion_snapshot_from_registry,
+    build_install_diagnosis_bundle, build_official_app_discovery_report,
+    build_python_bridge_command_parity_report, build_script_stable_command_envelope,
+    classify_command_side_effect, evaluate_output_mode_parity, ActionableErrorEnvelopeV1,
+    ActionableFailureClassV1, CommandExplainV1, CommandSideEffectClassV1,
+    CommandSideEffectPreviewV1, CompactHelpEntryPointV1, CompletionRouteEntryV1,
+    CompletionSnapshotV1, InstallDiagnosticComponentV1, InstallDiagnosisBundleV1,
+    OfficialAppDiscoveryReportV1, OfficialAppRouteDescriptorV1, OutputModeParityEntryV1,
+    OutputModeParityReportV1, PythonBridgeParityEntryV1, PythonBridgeParityReportV1,
+    ScriptStableCommandEnvelopeV1,
+};
 pub use plugin::{
     CompatibilityRange, PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV2,
     PluginTrustClass,
