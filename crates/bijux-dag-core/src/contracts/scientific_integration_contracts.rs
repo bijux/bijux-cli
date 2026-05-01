@@ -482,6 +482,71 @@ pub fn audit_scientific_overrides(
     })
 }
 
+/// Uncertainty state carried by scientific inputs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ScientificUncertaintyStateV1 {
+    Missing,
+    Partial,
+    Contradictory,
+    Advisory,
+    Clear,
+}
+
+/// Input uncertainty declaration.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScientificUncertaintyInputV1 {
+    pub field: String,
+    pub state: ScientificUncertaintyStateV1,
+    pub assumption_acknowledged: bool,
+}
+
+/// Uncertainty evaluation report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScientificUncertaintyReportV1 {
+    pub blocking_fields: Vec<String>,
+    pub advisory_fields: Vec<String>,
+    pub admitted: bool,
+}
+
+/// Evaluate uncertainty declarations and refuse silent guesses.
+pub fn evaluate_scientific_uncertainty(
+    inputs: &[ScientificUncertaintyInputV1],
+) -> Result<ScientificUncertaintyReportV1, String> {
+    if inputs.is_empty() {
+        return Err("scientific uncertainty evaluation requires at least one input".to_string());
+    }
+    let mut blocking_fields = Vec::<String>::new();
+    let mut advisory_fields = Vec::<String>::new();
+    for input in inputs {
+        if input.field.trim().is_empty() {
+            return Err("scientific uncertainty field must not be empty".to_string());
+        }
+        match input.state {
+            ScientificUncertaintyStateV1::Clear => {}
+            ScientificUncertaintyStateV1::Advisory => advisory_fields.push(input.field.clone()),
+            ScientificUncertaintyStateV1::Missing
+            | ScientificUncertaintyStateV1::Partial
+            | ScientificUncertaintyStateV1::Contradictory => {
+                if !input.assumption_acknowledged {
+                    blocking_fields.push(input.field.clone());
+                } else {
+                    advisory_fields.push(input.field.clone());
+                }
+            }
+        }
+    }
+    blocking_fields.sort();
+    blocking_fields.dedup();
+    advisory_fields.sort();
+    advisory_fields.dedup();
+    Ok(ScientificUncertaintyReportV1 {
+        admitted: blocking_fields.is_empty(),
+        blocking_fields,
+        advisory_fields,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -490,10 +555,12 @@ mod tests {
         ScientificFindingClassV1, ScientificFindingModeV1, ScientificFindingV1,
         ReferenceAliasPolicyV1, ReferenceIdentityMetadataV1, SampleIdentityMismatchActionV1,
         ScientificRunTrustClassV1,
+        ScientificUncertaintyInputV1, ScientificUncertaintyStateV1,
         ScientificOverrideRecordV1, ScientificOverrideTypeV1,
         SampleIdentityPolicyV1, TruthSetComparisonV1, TruthSetEvidenceEnvelopeV1,
         attach_truth_set_comparison, evaluate_scientific_trust_promotion,
         normalize_scientific_findings, validate_reference_identity_metadata, audit_scientific_overrides,
+        evaluate_scientific_uncertainty,
     };
     use std::collections::BTreeMap;
 
@@ -678,5 +745,33 @@ mod tests {
         .expect("override audit should succeed");
         assert_eq!(report.override_count, 2);
         assert_eq!(report.high_risk_override_ids, vec!["ovr-1".to_string()]);
+    }
+
+    #[test]
+    fn g178_uncertainty_is_first_class_and_blocks_silent_guesses() {
+        let report = evaluate_scientific_uncertainty(&[
+            ScientificUncertaintyInputV1 {
+                field: "tumor_purity".to_string(),
+                state: ScientificUncertaintyStateV1::Missing,
+                assumption_acknowledged: false,
+            },
+            ScientificUncertaintyInputV1 {
+                field: "panel_version".to_string(),
+                state: ScientificUncertaintyStateV1::Advisory,
+                assumption_acknowledged: true,
+            },
+            ScientificUncertaintyInputV1 {
+                field: "reference_synonym".to_string(),
+                state: ScientificUncertaintyStateV1::Contradictory,
+                assumption_acknowledged: true,
+            },
+        ])
+        .expect("uncertainty evaluation should succeed");
+        assert!(!report.admitted);
+        assert_eq!(report.blocking_fields, vec!["tumor_purity".to_string()]);
+        assert_eq!(
+            report.advisory_fields,
+            vec!["panel_version".to_string(), "reference_synonym".to_string()]
+        );
     }
 }
