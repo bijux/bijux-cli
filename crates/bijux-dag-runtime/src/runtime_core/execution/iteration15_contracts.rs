@@ -84,9 +84,59 @@ pub fn enforce_container_image_identity(
     }
 }
 
+/// Apptainer support boundary status.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ApptainerSupportStateV1 {
+    Supported,
+    Refused,
+    Advisory,
+}
+
+/// Apptainer execution boundary report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ApptainerBoundaryReportV1 {
+    pub state: ApptainerSupportStateV1,
+    pub engine: String,
+    pub reason: String,
+    pub smoke_behavior: String,
+}
+
+/// Evaluate explicit Apptainer/Singularity support boundary.
+pub fn evaluate_apptainer_boundary(
+    engine: &str,
+    binary_available: bool,
+    production_mode: bool,
+) -> ApptainerBoundaryReportV1 {
+    if !binary_available {
+        return ApptainerBoundaryReportV1 {
+            state: ApptainerSupportStateV1::Refused,
+            engine: engine.to_string(),
+            reason: "apptainer/singularity binary is unavailable".to_string(),
+            smoke_behavior: "refused".to_string(),
+        };
+    }
+    if production_mode {
+        ApptainerBoundaryReportV1 {
+            state: ApptainerSupportStateV1::Advisory,
+            engine: engine.to_string(),
+            reason: "apptainer backend remains advisory until full runtime parity is proven".to_string(),
+            smoke_behavior: "advisory-smoke-only".to_string(),
+        }
+    } else {
+        ApptainerBoundaryReportV1 {
+            state: ApptainerSupportStateV1::Supported,
+            engine: engine.to_string(),
+            reason: "apptainer descriptor is accepted for non-production smoke execution".to_string(),
+            smoke_behavior: "smoke-enabled".to_string(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        evaluate_apptainer_boundary, ApptainerSupportStateV1,
         enforce_container_image_identity, validate_docker_smoke_execution,
         DockerSmokeExecutionRecordV1,
     };
@@ -127,5 +177,19 @@ mod tests {
 
         let strict = enforce_container_image_identity("ghcr.io/bijux/tool@sha256:abc123", true, false);
         assert!(strict.accepted);
+    }
+
+    #[test]
+    fn g143_apptainer_boundary_reports_explicit_support_or_refusal() {
+        let refused = evaluate_apptainer_boundary("apptainer", false, false);
+        assert_eq!(refused.state, ApptainerSupportStateV1::Refused);
+        assert_eq!(refused.smoke_behavior, "refused");
+
+        let advisory = evaluate_apptainer_boundary("apptainer", true, true);
+        assert_eq!(advisory.state, ApptainerSupportStateV1::Advisory);
+        assert!(advisory.reason.contains("advisory"));
+
+        let supported = evaluate_apptainer_boundary("apptainer", true, false);
+        assert_eq!(supported.state, ApptainerSupportStateV1::Supported);
     }
 }
