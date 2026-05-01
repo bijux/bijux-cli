@@ -262,11 +262,71 @@ pub fn build_partial_rerun_preview(
     PartialRerunPreviewReportV1 { previewable: !selected_nodes.is_empty(), selected_nodes }
 }
 
+/// Adapter checkpoint behavior mode.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AdapterCheckpointModeV1 {
+    Restartable,
+    Resumable,
+    CleanupRequired,
+    FreshOnly,
+}
+
+/// Adapter checkpoint contract row.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdapterCheckpointContractV1 {
+    pub node_id: String,
+    pub adapter_kind: String,
+    pub mode: AdapterCheckpointModeV1,
+}
+
+/// Resume decision from adapter checkpoint behavior.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CheckpointResumeDecisionV1 {
+    pub node_id: String,
+    pub resume_allowed: bool,
+    pub cleanup_required: bool,
+    pub reason: String,
+}
+
+/// Evaluate resume behavior while honoring adapter checkpoint contract.
+pub fn evaluate_checkpoint_resume(
+    contract: &AdapterCheckpointContractV1,
+) -> CheckpointResumeDecisionV1 {
+    match contract.mode {
+        AdapterCheckpointModeV1::Restartable => CheckpointResumeDecisionV1 {
+            node_id: contract.node_id.clone(),
+            resume_allowed: true,
+            cleanup_required: false,
+            reason: "restartable adapter permits resume from checkpoint boundary".to_string(),
+        },
+        AdapterCheckpointModeV1::Resumable => CheckpointResumeDecisionV1 {
+            node_id: contract.node_id.clone(),
+            resume_allowed: true,
+            cleanup_required: false,
+            reason: "resumable adapter supports in-place continuation".to_string(),
+        },
+        AdapterCheckpointModeV1::CleanupRequired => CheckpointResumeDecisionV1 {
+            node_id: contract.node_id.clone(),
+            resume_allowed: true,
+            cleanup_required: true,
+            reason: "adapter requires cleanup before safe resume".to_string(),
+        },
+        AdapterCheckpointModeV1::FreshOnly => CheckpointResumeDecisionV1 {
+            node_id: contract.node_id.clone(),
+            resume_allowed: false,
+            cleanup_required: true,
+            reason: "fresh-only adapter refuses checkpoint resume".to_string(),
+        },
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_partial_rerun_preview, plan_multi_run_fairness,
         validate_durable_run_queue_snapshot, validate_node_leases, validate_pause_resume_transitions,
+        evaluate_checkpoint_resume, AdapterCheckpointContractV1, AdapterCheckpointModeV1,
         DurableRunQueueSnapshotV1, MultiRunDemandV1, PartialRerunPreviewRequestV1,
         PartialRerunSelectorKindV1, PauseScopeV1, PauseTransitionEventV1, QueueAttemptRecordV1,
         QueueLeaseRecordV1, SchedulerDecisionRecordV1,
@@ -420,5 +480,25 @@ mod tests {
         let report = build_partial_rerun_preview(&request);
         assert!(report.previewable);
         assert_eq!(report.selected_nodes, vec!["node-a".to_string(), "node-c".to_string()]);
+    }
+
+    #[test]
+    fn g136_checkpoint_resume_honors_adapter_contract_mode() {
+        let resumable = evaluate_checkpoint_resume(&AdapterCheckpointContractV1 {
+            node_id: "node-resume".to_string(),
+            adapter_kind: "shell".to_string(),
+            mode: AdapterCheckpointModeV1::Resumable,
+        });
+        assert!(resumable.resume_allowed);
+        assert!(!resumable.cleanup_required);
+
+        let fresh_only = evaluate_checkpoint_resume(&AdapterCheckpointContractV1 {
+            node_id: "node-fresh".to_string(),
+            adapter_kind: "external".to_string(),
+            mode: AdapterCheckpointModeV1::FreshOnly,
+        });
+        assert!(!fresh_only.resume_allowed);
+        assert!(fresh_only.cleanup_required);
+        assert!(fresh_only.reason.contains("refuses checkpoint resume"));
     }
 }
