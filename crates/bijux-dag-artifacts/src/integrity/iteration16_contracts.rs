@@ -33,9 +33,52 @@ pub fn validate_artifact_schema_descriptor(
     Ok(())
 }
 
+/// Artifact lifecycle states.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArtifactLifecycleStateV1 {
+    Draft,
+    Verified,
+    Retained,
+    Archived,
+    Exported,
+    Deleted,
+}
+
+/// Validate explicit lifecycle transition.
+pub fn validate_artifact_lifecycle_transition(
+    from: ArtifactLifecycleStateV1,
+    to: ArtifactLifecycleStateV1,
+) -> Result<(), String> {
+    use ArtifactLifecycleStateV1::{Archived, Deleted, Draft, Exported, Retained, Verified};
+    let legal = matches!(
+        (from, to),
+        (Draft, Verified)
+            | (Verified, Retained)
+            | (Retained, Archived)
+            | (Archived, Exported)
+            | (Draft, Deleted)
+            | (Verified, Deleted)
+            | (Retained, Deleted)
+            | (Archived, Deleted)
+            | (Exported, Deleted)
+    );
+    if legal {
+        Ok(())
+    } else {
+        Err(format!(
+            "illegal artifact lifecycle transition {:?} -> {:?}",
+            from, to
+        ))
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{validate_artifact_schema_descriptor, ArtifactSchemaDescriptorV1};
+    use super::{
+        validate_artifact_lifecycle_transition, validate_artifact_schema_descriptor,
+        ArtifactLifecycleStateV1, ArtifactSchemaDescriptorV1,
+    };
 
     #[test]
     fn g151_artifact_schema_descriptor_requires_media_role_version_verifier_and_contract() {
@@ -53,5 +96,17 @@ mod tests {
         invalid.media_type = "json".to_string();
         let error = validate_artifact_schema_descriptor(&invalid).expect_err("invalid media type");
         assert!(error.contains("type/subtype"));
+    }
+
+    #[test]
+    fn g152_artifact_lifecycle_transitions_are_explicit_and_queryable() {
+        use ArtifactLifecycleStateV1::{Archived, Draft, Exported, Retained, Verified};
+        validate_artifact_lifecycle_transition(Draft, Verified).expect("draft->verified");
+        validate_artifact_lifecycle_transition(Verified, Retained).expect("verified->retained");
+        validate_artifact_lifecycle_transition(Retained, Archived).expect("retained->archived");
+        validate_artifact_lifecycle_transition(Archived, Exported).expect("archived->exported");
+        let error =
+            validate_artifact_lifecycle_transition(Draft, Exported).expect_err("must reject skip transition");
+        assert!(error.contains("illegal artifact lifecycle transition"));
     }
 }
