@@ -3736,6 +3736,13 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             serde_json::to_string(&app_integration_report).unwrap_or_else(|_| "invalid report".to_string())
         ));
     }
+    let limitations_report = evaluate_limitations_visibility(&root)?;
+    if !limitations_report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "user-facing limitations visibility contract failed: {}",
+            serde_json::to_string(&limitations_report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
 }
 
@@ -5046,6 +5053,73 @@ fn evaluate_app_integration_documentation(root: &Path) -> Result<Value, String> 
         "doc": doc_rel,
         "required_command_count": required_commands.len(),
         "required_asset_count": required_assets.len(),
+        "violations": violations,
+    }))
+}
+
+fn evaluate_limitations_visibility(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/limitations_visibility_contract.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let commands = contract["commands"]
+        .as_array()
+        .ok_or_else(|| "limitations visibility contract must contain commands array".to_string())?;
+
+    let mut violations = Vec::new();
+    let mut command_reports = Vec::new();
+    for command in commands {
+        let id = command.get("id").and_then(Value::as_str).unwrap_or("<missing-id>");
+        let run = command.get("run").and_then(Value::as_str).unwrap_or("");
+        if run.trim().is_empty() {
+            violations.push(format!("command `{id}` is missing run field"));
+            continue;
+        }
+        let output = if id == "dag-capabilities" {
+            command_stdout(root, "cargo", &["run", "-q", "-p", "bijux-dag-cli", "--", "dag", "capabilities", "--json"])?
+        } else if id == "root-doctor" {
+            command_stdout(root, "cargo", &["run", "-q", "-p", "bijux-cli", "--", "--json", "doctor"])?
+        } else {
+            violations.push(format!("unknown limitations command id `{id}`"));
+            continue;
+        };
+        let payload: Value =
+            serde_json::from_str(&output).map_err(|err| format!("command `{id}` did not emit JSON: {err}"))?;
+        let rendered = serde_json::to_string(&payload).map_err(|err| err.to_string())?;
+        for token in command["required_tokens"]
+            .as_array()
+            .ok_or_else(|| format!("command `{id}` missing required_tokens"))?
+        {
+            let Some(token) = token.as_str() else {
+                violations.push(format!("command `{id}` required_tokens must be strings"));
+                continue;
+            };
+            if !rendered.contains(token) {
+                violations.push(format!("command `{id}` output missing required token `{token}`"));
+            }
+        }
+
+        if id == "dag-capabilities" {
+            let matrix = payload["data"]["backend_capability_matrix"].as_array().cloned().unwrap_or_default();
+            if matrix.is_empty() {
+                violations.push("dag capabilities must return backend_capability_matrix entries".to_string());
+            }
+            for row in matrix {
+                if row.get("status").is_none() || row.get("production_ready").is_none() {
+                    violations.push("dag capabilities backend entries must include status and production_ready".to_string());
+                    break;
+                }
+            }
+        }
+        command_reports.push(json!({"id": id, "ok": true}));
+    }
+
+    Ok(json!({
+        "goal": "G199",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "commands_checked": command_reports,
         "violations": violations,
     }))
 }
