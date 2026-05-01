@@ -412,6 +412,55 @@ pub fn dispatch_allowed_with_circuit_breaker(
     now_epoch_ms >= state.open_until_epoch_ms
 }
 
+/// Runtime upgrade compatibility input.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeUpgradeCompatibilityInputV1 {
+    pub run_id: String,
+    pub from_runtime_version: String,
+    pub to_runtime_version: String,
+    pub schema_compatible: bool,
+}
+
+/// Runtime upgrade recovery decision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeUpgradeRecoveryDecisionV1 {
+    pub run_id: String,
+    pub can_resume: bool,
+    pub reason: String,
+}
+
+/// Evaluate upgrade safety for active run recovery.
+pub fn evaluate_runtime_upgrade_recovery(
+    input: &RuntimeUpgradeCompatibilityInputV1,
+) -> RuntimeUpgradeRecoveryDecisionV1 {
+    let incompatible_major = major_version(&input.from_runtime_version)
+        .zip(major_version(&input.to_runtime_version))
+        .is_some_and(|(from, to)| from != to);
+    if !input.schema_compatible {
+        return RuntimeUpgradeRecoveryDecisionV1 {
+            run_id: input.run_id.clone(),
+            can_resume: false,
+            reason: "runtime upgrade refused because schema compatibility failed".to_string(),
+        };
+    }
+    if incompatible_major {
+        return RuntimeUpgradeRecoveryDecisionV1 {
+            run_id: input.run_id.clone(),
+            can_resume: false,
+            reason: "runtime upgrade refused because major version changed".to_string(),
+        };
+    }
+    RuntimeUpgradeRecoveryDecisionV1 {
+        run_id: input.run_id.clone(),
+        can_resume: true,
+        reason: "runtime upgrade allows resume".to_string(),
+    }
+}
+
+fn major_version(version: &str) -> Option<&str> {
+    version.split('.').next().filter(|value| !value.trim().is_empty())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -420,7 +469,8 @@ mod tests {
         evaluate_checkpoint_resume, AdapterCheckpointContractV1, AdapterCheckpointModeV1,
         evaluate_backpressure, BackpressureActionV1, BackpressureSignalsV1,
         dispatch_allowed_with_circuit_breaker, register_adapter_failure,
-        AdapterCircuitBreakerStateV1,
+        evaluate_runtime_upgrade_recovery, AdapterCircuitBreakerStateV1,
+        RuntimeUpgradeCompatibilityInputV1,
         DurableRunQueueSnapshotV1, MultiRunDemandV1, PartialRerunPreviewRequestV1,
         PartialRerunSelectorKindV1, PauseScopeV1, PauseTransitionEventV1, QueueAttemptRecordV1,
         QueueLeaseRecordV1, SchedulerDecisionRecordV1,
@@ -633,5 +683,26 @@ mod tests {
         let after_third = register_adapter_failure(after_second, 11_000, 5_000);
         assert!(!dispatch_allowed_with_circuit_breaker(&after_third, 12_000));
         assert!(dispatch_allowed_with_circuit_breaker(&after_third, 16_001));
+    }
+
+    #[test]
+    fn g139_runtime_upgrade_recovery_checks_schema_and_major_compatibility() {
+        let schema_failure = evaluate_runtime_upgrade_recovery(&RuntimeUpgradeCompatibilityInputV1 {
+            run_id: "run-upgrade-1".to_string(),
+            from_runtime_version: "1.4.0".to_string(),
+            to_runtime_version: "1.5.0".to_string(),
+            schema_compatible: false,
+        });
+        assert!(!schema_failure.can_resume);
+        assert!(schema_failure.reason.contains("schema compatibility failed"));
+
+        let major_change = evaluate_runtime_upgrade_recovery(&RuntimeUpgradeCompatibilityInputV1 {
+            run_id: "run-upgrade-2".to_string(),
+            from_runtime_version: "1.9.0".to_string(),
+            to_runtime_version: "2.0.0".to_string(),
+            schema_compatible: true,
+        });
+        assert!(!major_change.can_resume);
+        assert!(major_change.reason.contains("major version changed"));
     }
 }
