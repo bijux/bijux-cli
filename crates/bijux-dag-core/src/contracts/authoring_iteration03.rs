@@ -618,6 +618,118 @@ pub fn validate_graph_package_import(
     GraphPackageImportReportV1 { accepted: refusals.is_empty(), refusals }
 }
 
+/// Refusal details for graph migration attempts.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphMigrationRefusalV1 {
+    /// Stable refusal code.
+    pub code: String,
+    /// Reason text.
+    pub reason: String,
+    /// Remediation guidance.
+    pub remediation: String,
+}
+
+/// User-facing migration preview surface.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphMigrationPreviewV1 {
+    /// Source spec version.
+    pub from_spec: String,
+    /// Target spec version.
+    pub to_spec: String,
+    /// Deterministic list of previewed changes.
+    pub changes: Vec<String>,
+    /// Whether migration is safe to apply.
+    pub safe_to_apply: bool,
+    /// Refusal details for unsafe migrations.
+    pub refusal: Option<GraphMigrationRefusalV1>,
+    /// Migrated graph when safe.
+    pub migrated_graph: Option<Graph>,
+}
+
+/// Preview graph migration changes or produce an explicit unsafe refusal.
+pub fn preview_graph_migration(graph: &Graph, target_spec: &str) -> GraphMigrationPreviewV1 {
+    let mut changes = Vec::new();
+    if target_spec.trim().is_empty() {
+        return GraphMigrationPreviewV1 {
+            from_spec: graph.spec.clone(),
+            to_spec: target_spec.to_string(),
+            changes,
+            safe_to_apply: false,
+            refusal: Some(GraphMigrationRefusalV1 {
+                code: "M5001_INVALID_TARGET_SPEC".to_string(),
+                reason: "target spec is empty".to_string(),
+                remediation: "provide a non-empty target spec".to_string(),
+            }),
+            migrated_graph: None,
+        };
+    }
+
+    let from = graph.spec.as_str();
+    let migratable_alias = matches!(from, "0.1" | "v0.1");
+    let already_target = from == target_spec;
+    let target_supported = target_spec == crate::SPEC_VERSION;
+    if !already_target && !migratable_alias {
+        return GraphMigrationPreviewV1 {
+            from_spec: graph.spec.clone(),
+            to_spec: target_spec.to_string(),
+            changes,
+            safe_to_apply: false,
+            refusal: Some(GraphMigrationRefusalV1 {
+                code: "M5002_UNSUPPORTED_SOURCE_SPEC".to_string(),
+                reason: format!("source spec {} is not recognized for safe migration", graph.spec),
+                remediation:
+                    "migrate through supported bridge versions or regenerate graph from current schema"
+                        .to_string(),
+            }),
+            migrated_graph: None,
+        };
+    }
+    if !target_supported {
+        return GraphMigrationPreviewV1 {
+            from_spec: graph.spec.clone(),
+            to_spec: target_spec.to_string(),
+            changes,
+            safe_to_apply: false,
+            refusal: Some(GraphMigrationRefusalV1 {
+                code: "M5003_UNSUPPORTED_TARGET_SPEC".to_string(),
+                reason: format!("target spec {target_spec} is not supported"),
+                remediation: format!("target spec must be {}", crate::SPEC_VERSION),
+            }),
+            migrated_graph: None,
+        };
+    }
+
+    let mut migrated = graph.clone();
+    if migratable_alias {
+        migrated.spec = target_spec.to_string();
+        changes.push(format!("normalize graph spec {} -> {}", graph.spec, target_spec));
+    }
+    if migrated.meta.is_none() {
+        changes.push("meta remains absent; no default owners introduced".to_string());
+    }
+    if changes.is_empty() {
+        changes.push("graph already matches current schema contract".to_string());
+    }
+
+    GraphMigrationPreviewV1 {
+        from_spec: graph.spec.clone(),
+        to_spec: target_spec.to_string(),
+        changes,
+        safe_to_apply: true,
+        refusal: None,
+        migrated_graph: Some(migrated),
+    }
+}
+
+/// Apply graph migration when preview indicates a safe transition.
+pub fn apply_graph_migration(graph: &Graph, target_spec: &str) -> Result<Graph, GraphMigrationRefusalV1> {
+    let preview = preview_graph_migration(graph, target_spec);
+    if preview.safe_to_apply {
+        return Ok(preview.migrated_graph.expect("safe migration should include graph"));
+    }
+    Err(preview.refusal.expect("unsafe migration should include refusal"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -625,7 +737,7 @@ mod tests {
         build_cycle_reachability_rejection_report, build_graph_examples_execution_report,
         build_port_contract_enforcement_report, build_surgical_validation_diagnostic,
         validate_graph_package_import, GraphExampleExecutionEntryV1, GraphPackageBundleV1,
-        GraphPackageFileEntryV1,
+        GraphPackageFileEntryV1, apply_graph_migration, preview_graph_migration,
     };
     use crate::{DagBuilder, Edge, EdgeKind, Effect, NodeBuilder, NodeKind, PortRef};
     use std::collections::BTreeSet;
@@ -816,5 +928,30 @@ mod tests {
         assert!(codes.contains("B4003_UNSAFE_PATH"));
         assert!(codes.contains("B4004_INVALID_FILE_DIGEST"));
         assert!(codes.contains("B4005_MISSING_EXPECTED_ARTIFACT"));
+    }
+
+    #[test]
+    fn g028_graph_migration_preview_and_apply_are_user_visible() {
+        let legacy_graph_json = r#"
+        {
+          "spec": "v0.1",
+          "nodes": [
+            {
+              "id": "step",
+              "kind": "const",
+              "inputs": [],
+              "outputs": [{"name":"out","path":"artifacts/out.json"}]
+            }
+          ],
+          "edges": []
+        }
+        "#;
+        let legacy_graph = crate::parse_graph_strict(legacy_graph_json).expect("legacy graph parse");
+        let preview = preview_graph_migration(&legacy_graph, crate::SPEC_VERSION);
+        assert!(preview.safe_to_apply);
+        assert!(!preview.changes.is_empty());
+
+        let migrated = apply_graph_migration(&legacy_graph, crate::SPEC_VERSION).expect("migrate");
+        assert_eq!(migrated.spec, crate::SPEC_VERSION);
     }
 }
