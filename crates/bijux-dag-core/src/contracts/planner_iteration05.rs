@@ -380,13 +380,102 @@ pub fn build_parameter_explain_report(
     ParameterExplainReportV1 { parameters }
 }
 
+/// Availability map for preflight capability checks.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlanPreflightCapabilitiesV1 {
+    pub shell_available: bool,
+    pub container_available: bool,
+    pub network_allowed: bool,
+    pub filesystem_writable: bool,
+    pub max_cpu: u32,
+    pub max_mem_mb: u32,
+}
+
+/// Preflight diagnostic row for one node.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlanPreflightDiagnosticV1 {
+    pub node_id: String,
+    pub code: String,
+    pub message: String,
+}
+
+/// Preflight report integrated into planning.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlanPreflightReportV1 {
+    pub runnable: bool,
+    pub diagnostics: Vec<PlanPreflightDiagnosticV1>,
+}
+
+/// Evaluate planning preflight checks for adapter/runtime capability availability.
+pub fn run_plan_preflight(
+    graph: &Graph,
+    capabilities: &PlanPreflightCapabilitiesV1,
+) -> PlanPreflightReportV1 {
+    let mut diagnostics = Vec::new();
+    for node in &graph.nodes {
+        match node.kind {
+            crate::NodeKind::Shell if !capabilities.shell_available => {
+                diagnostics.push(PlanPreflightDiagnosticV1 {
+                    node_id: node.id.clone(),
+                    code: "PF4501_SHELL_UNAVAILABLE".to_string(),
+                    message: "shell adapter unavailable in planner preflight".to_string(),
+                });
+            }
+            crate::NodeKind::Container if !capabilities.container_available => {
+                diagnostics.push(PlanPreflightDiagnosticV1 {
+                    node_id: node.id.clone(),
+                    code: "PF4502_CONTAINER_UNAVAILABLE".to_string(),
+                    message: "container adapter unavailable in planner preflight".to_string(),
+                });
+            }
+            _ => {}
+        }
+        if node.effects.contains(&crate::Effect::Network) && !capabilities.network_allowed {
+            diagnostics.push(PlanPreflightDiagnosticV1 {
+                node_id: node.id.clone(),
+                code: "PF4503_NETWORK_BLOCKED".to_string(),
+                message: "network side effects are disallowed in this planning profile".to_string(),
+            });
+        }
+        if node.effects.contains(&crate::Effect::Filesystem) && !capabilities.filesystem_writable {
+            diagnostics.push(PlanPreflightDiagnosticV1 {
+                node_id: node.id.clone(),
+                code: "PF4504_FILESYSTEM_BLOCKED".to_string(),
+                message: "filesystem writes unavailable for planner preflight".to_string(),
+            });
+        }
+        if let Some(resources) = &node.resources {
+            if resources.cpu > capabilities.max_cpu {
+                diagnostics.push(PlanPreflightDiagnosticV1 {
+                    node_id: node.id.clone(),
+                    code: "PF4505_CPU_EXCEEDS_CAP".to_string(),
+                    message: format!("cpu hint {} exceeds max {}", resources.cpu, capabilities.max_cpu),
+                });
+            }
+            if resources.mem_mb > capabilities.max_mem_mb {
+                diagnostics.push(PlanPreflightDiagnosticV1 {
+                    node_id: node.id.clone(),
+                    code: "PF4506_MEM_EXCEEDS_CAP".to_string(),
+                    message: format!(
+                        "memory hint {} exceeds max {}",
+                        resources.mem_mb, capabilities.max_mem_mb
+                    ),
+                });
+            }
+        }
+    }
+    diagnostics.sort_by(|left, right| left.node_id.cmp(&right.node_id).then_with(|| left.code.cmp(&right.code)));
+    PlanPreflightReportV1 { runnable: diagnostics.is_empty(), diagnostics }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_complete_dry_plan_output, build_parameter_explain_report, build_plan_explain_report,
-        diff_plans_semantically, ParameterSourceKindV1,
+        diff_plans_semantically, run_plan_preflight, ParameterSourceKindV1,
+        PlanPreflightCapabilitiesV1,
     };
-    use crate::{DagBuilder, Effect, GraphMeta, NodeBuilder, NodeKind};
+    use crate::{DagBuilder, Effect, GraphMeta, NodeBuilder, NodeKind, Resources};
     use std::collections::BTreeSet;
 
     #[test]
@@ -490,5 +579,43 @@ mod tests {
             threads.sources.last().map(|entry| entry.source.clone()),
             Some(ParameterSourceKindV1::AdapterConstraint)
         );
+    }
+
+    #[test]
+    fn g045_planner_preflight_converts_missing_capabilities_into_diagnostics() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("shell_step", NodeKind::Shell)
+                    .output("out", "artifacts/shell.json")
+                    .effect(Effect::Filesystem)
+                    .effect(Effect::Network)
+                    .build(),
+            )
+            .node(
+                NodeBuilder::new("heavy_step", NodeKind::Const)
+                    .output("out", "artifacts/heavy.json")
+                    .build(),
+            )
+            .build();
+        let mut graph = graph;
+        graph.nodes[1].resources = Some(Resources { cpu: 64, mem_mb: 131_072 });
+        let capabilities = PlanPreflightCapabilitiesV1 {
+            shell_available: false,
+            container_available: true,
+            network_allowed: false,
+            filesystem_writable: false,
+            max_cpu: 32,
+            max_mem_mb: 65536,
+        };
+        let report = run_plan_preflight(&graph, &capabilities);
+        assert!(!report.runnable);
+        assert!(report
+            .diagnostics
+            .iter()
+            .any(|diag| diag.code == "PF4501_SHELL_UNAVAILABLE"));
+        assert!(report
+            .diagnostics
+            .iter()
+            .any(|diag| diag.code == "PF4505_CPU_EXCEEDS_CAP"));
     }
 }
