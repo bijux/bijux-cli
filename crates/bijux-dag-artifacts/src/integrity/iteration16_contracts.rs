@@ -73,9 +73,59 @@ pub fn validate_artifact_lifecycle_transition(
     }
 }
 
+/// Artifact retention classes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RetentionClassV1 {
+    Ephemeral,
+    Operational,
+    Audit,
+    Release,
+    Scientific,
+}
+
+/// Retention decision for one artifact.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RetentionDecisionV1 {
+    pub class: RetentionClassV1,
+    pub replay_critical: bool,
+    pub allow_delete: bool,
+    pub reason: String,
+}
+
+/// Enforce retention class behavior with replay-critical protection.
+pub fn enforce_retention_class(
+    class: RetentionClassV1,
+    age_days: u32,
+    replay_critical: bool,
+) -> RetentionDecisionV1 {
+    if replay_critical {
+        return RetentionDecisionV1 {
+            class,
+            replay_critical,
+            allow_delete: false,
+            reason: "replay-critical evidence cannot be deleted by retention policy".to_string(),
+        };
+    }
+    let allow_delete = match class {
+        RetentionClassV1::Ephemeral => age_days > 7,
+        RetentionClassV1::Operational => age_days > 30,
+        RetentionClassV1::Audit => age_days > 365,
+        RetentionClassV1::Release => age_days > 730,
+        RetentionClassV1::Scientific => age_days > 1825,
+    };
+    let reason = if allow_delete {
+        "retention policy allows deletion by class age threshold".to_string()
+    } else {
+        "retention policy keeps artifact within class age threshold".to_string()
+    };
+    RetentionDecisionV1 { class, replay_critical, allow_delete, reason }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        enforce_retention_class, RetentionClassV1,
         validate_artifact_lifecycle_transition, validate_artifact_schema_descriptor,
         ArtifactLifecycleStateV1, ArtifactSchemaDescriptorV1,
     };
@@ -108,5 +158,16 @@ mod tests {
         let error =
             validate_artifact_lifecycle_transition(Draft, Exported).expect_err("must reject skip transition");
         assert!(error.contains("illegal artifact lifecycle transition"));
+    }
+
+    #[test]
+    fn g153_retention_class_policy_never_deletes_replay_critical_evidence() {
+        let replay_critical =
+            enforce_retention_class(RetentionClassV1::Ephemeral, 400, true);
+        assert!(!replay_critical.allow_delete);
+        assert!(replay_critical.reason.contains("replay-critical"));
+
+        let non_critical = enforce_retention_class(RetentionClassV1::Operational, 31, false);
+        assert!(non_critical.allow_delete);
     }
 }
