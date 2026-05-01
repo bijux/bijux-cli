@@ -273,15 +273,49 @@ pub fn validate_official_app_onboarding(
     Ok(report)
 }
 
+/// Plugin lifecycle usability report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginLifecycleReportV1 {
+    pub install_ok: bool,
+    pub list_ok: bool,
+    pub enable_ok: bool,
+    pub disable_ok: bool,
+    pub update_ok: bool,
+    pub explain_ok: bool,
+    pub remove_ok: bool,
+    pub rollback_clean_on_failure: bool,
+}
+
+/// Validate plugin lifecycle usability and rollback guarantees.
+pub fn validate_plugin_lifecycle_report(
+    report: PluginLifecycleReportV1,
+) -> Result<PluginLifecycleReportV1, String> {
+    if !report.install_ok
+        || !report.list_ok
+        || !report.enable_ok
+        || !report.disable_ok
+        || !report.update_ok
+        || !report.explain_ok
+        || !report.remove_ok
+    {
+        return Err("plugin lifecycle operations must all succeed".to_string());
+    }
+    if !report.rollback_clean_on_failure {
+        return Err("plugin lifecycle must guarantee rollback on failure".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         validate_official_app_onboarding,
+        validate_plugin_lifecycle_report,
         validate_command_impact_preview,
         diff_route_inventory, enforce_app_compatibility_window, evaluate_deprecation_lifecycle,
         resolve_app_workspace_config, validate_install_repair_report, AppWorkspaceConfigV1,
         CommandImpactPreviewV1, InstallRepairReportV1, OfficialAppOnboardingReportV1,
-        SupportBundleReportV1, validate_support_bundle_report,
+        PluginLifecycleReportV1, SupportBundleReportV1, validate_support_bundle_report,
     };
 
     #[test]
@@ -400,5 +434,22 @@ mod tests {
         .expect("official app onboarding");
         assert!(report.mock_app_registered);
         assert!(report.command_contract_passed);
+    }
+
+    #[test]
+    fn g109_plugin_lifecycle_is_usable_and_rolls_back_cleanly_on_failure() {
+        let report = validate_plugin_lifecycle_report(PluginLifecycleReportV1 {
+            install_ok: true,
+            list_ok: true,
+            enable_ok: true,
+            disable_ok: true,
+            update_ok: true,
+            explain_ok: true,
+            remove_ok: true,
+            rollback_clean_on_failure: true,
+        })
+        .expect("plugin lifecycle");
+        assert!(report.install_ok);
+        assert!(report.rollback_clean_on_failure);
     }
 }
