@@ -97,10 +97,55 @@ pub fn build_shell_adapter_execution_contract(
     })
 }
 
+/// Invocation mode for command execution.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CommandInvocationModeV1 {
+    ArgvLiteral,
+    ShellInterpretation,
+}
+
+/// Safe command invocation contract.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CommandInvocationSafetyContractV1 {
+    pub mode: CommandInvocationModeV1,
+    pub argv: Vec<String>,
+    pub shell_string: Option<String>,
+}
+
+/// Validate default-safe command invocation policy.
+pub fn build_command_invocation_safety_contract(
+    mode: CommandInvocationModeV1,
+    argv: Vec<String>,
+    shell_string: Option<String>,
+) -> Result<CommandInvocationSafetyContractV1, String> {
+    if argv.is_empty() {
+        return Err("argv must not be empty".to_string());
+    }
+    match mode {
+        CommandInvocationModeV1::ArgvLiteral => {
+            if shell_string.is_some() {
+                return Err("shell_string is forbidden in argv_literal mode".to_string());
+            }
+            if argv.iter().any(|arg| arg.contains(';') || arg.contains('|')) {
+                return Err("metacharacters must remain literal argv tokens".to_string());
+            }
+        }
+        CommandInvocationModeV1::ShellInterpretation => {
+            if shell_string.as_deref().unwrap_or_default().trim().is_empty() {
+                return Err("shell_string must be explicit in shell mode".to_string());
+            }
+        }
+    }
+    Ok(CommandInvocationSafetyContractV1 { mode, argv, shell_string })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_command_invocation_safety_contract,
         build_const_adapter_execution_contract, build_shell_adapter_execution_contract,
+        CommandInvocationModeV1,
         ConstAdapterOutputArtifactV1,
     };
 
@@ -135,5 +180,26 @@ mod tests {
         .expect("shell contract should build");
         assert_eq!(contract.argv[0], "python");
         assert_eq!(contract.exit_code, 0);
+    }
+
+    #[test]
+    fn g053_command_invocation_defaults_to_safe_argv_literal_mode() {
+        let safe = build_command_invocation_safety_contract(
+            CommandInvocationModeV1::ArgvLiteral,
+            vec!["echo".to_string(), "a|b".to_string()],
+            None,
+        );
+        assert!(safe.is_err(), "metacharacter tokens should be blocked by default");
+
+        let explicit_shell = build_command_invocation_safety_contract(
+            CommandInvocationModeV1::ShellInterpretation,
+            vec!["sh".to_string(), "-lc".to_string()],
+            Some("echo a|b".to_string()),
+        )
+        .expect("explicit shell mode should be allowed");
+        assert!(matches!(
+            explicit_shell.mode,
+            CommandInvocationModeV1::ShellInterpretation
+        ));
     }
 }
