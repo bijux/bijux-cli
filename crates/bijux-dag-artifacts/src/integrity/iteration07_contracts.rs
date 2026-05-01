@@ -406,14 +406,113 @@ pub fn validate_replay_ancestry_records(
     Ok(sorted)
 }
 
+/// Node snapshot for run diff.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NodeRunSnapshotV1 {
+    pub node_id: String,
+    pub state: String,
+    pub branch_decision: String,
+    pub attempt_id: String,
+    pub artifact_hash: String,
+    pub log_hash: String,
+    pub cache_decision: String,
+    pub integrity_proof_hash: String,
+}
+
+/// One run diff row describing what changed for a node.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunDiffEntryV1 {
+    pub node_id: String,
+    pub change_kind: String,
+    pub changed_fields: Vec<String>,
+}
+
+/// Diff two runs by operator-meaningful node fields.
+pub fn diff_run_snapshots(
+    base: Vec<NodeRunSnapshotV1>,
+    candidate: Vec<NodeRunSnapshotV1>,
+) -> Result<Vec<RunDiffEntryV1>, String> {
+    let base_map = base
+        .into_iter()
+        .map(|item| (item.node_id.clone(), item))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let candidate_map = candidate
+        .into_iter()
+        .map(|item| (item.node_id.clone(), item))
+        .collect::<std::collections::BTreeMap<_, _>>();
+
+    let mut all_nodes = std::collections::BTreeSet::new();
+    for node_id in base_map.keys() {
+        all_nodes.insert(node_id.clone());
+    }
+    for node_id in candidate_map.keys() {
+        all_nodes.insert(node_id.clone());
+    }
+
+    let mut changes = Vec::new();
+    for node_id in all_nodes {
+        match (base_map.get(&node_id), candidate_map.get(&node_id)) {
+            (None, Some(_)) => {
+                changes.push(RunDiffEntryV1 {
+                    node_id,
+                    change_kind: "added".to_string(),
+                    changed_fields: vec!["all".to_string()],
+                });
+            }
+            (Some(_), None) => {
+                changes.push(RunDiffEntryV1 {
+                    node_id,
+                    change_kind: "removed".to_string(),
+                    changed_fields: vec!["all".to_string()],
+                });
+            }
+            (Some(left), Some(right)) => {
+                let mut fields = Vec::new();
+                if left.state != right.state {
+                    fields.push("state".to_string());
+                }
+                if left.branch_decision != right.branch_decision {
+                    fields.push("branch_decision".to_string());
+                }
+                if left.attempt_id != right.attempt_id {
+                    fields.push("attempt_id".to_string());
+                }
+                if left.artifact_hash != right.artifact_hash {
+                    fields.push("artifact_hash".to_string());
+                }
+                if left.log_hash != right.log_hash {
+                    fields.push("log_hash".to_string());
+                }
+                if left.cache_decision != right.cache_decision {
+                    fields.push("cache_decision".to_string());
+                }
+                if left.integrity_proof_hash != right.integrity_proof_hash {
+                    fields.push("integrity_proof_hash".to_string());
+                }
+                if !fields.is_empty() {
+                    changes.push(RunDiffEntryV1 {
+                        node_id,
+                        change_kind: "changed".to_string(),
+                        changed_fields: fields,
+                    });
+                }
+            }
+            (None, None) => {}
+        }
+    }
+
+    Ok(changes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         assess_cache_reuse_compatibility, assess_cache_reuse_safety, build_complete_artifact_inventory, build_explainable_cache_key,
         build_replay_plan_readout,
+        diff_run_snapshots,
         build_run_directory_layout_contract, content_identity_for_directory, content_identity_for_file,
         ArtifactInventoryRecordV1, CacheKeyFactorsV1, CacheReuseContextV1, CacheReuseEvidenceV1,
-        ReplayAncestryRecordV1, ReplayNodePlanDecisionV1, validate_replay_ancestry_records,
+        NodeRunSnapshotV1, ReplayAncestryRecordV1, ReplayNodePlanDecisionV1, validate_replay_ancestry_records,
     };
 
     #[test]
@@ -601,5 +700,63 @@ mod tests {
         assert_eq!(validated.len(), 3);
         assert_eq!(validated[0].node_id, "align-reads");
         assert_eq!(validated[1].node_id, "call-variants");
+    }
+
+    #[test]
+    fn g069_run_diff_answers_what_changed() {
+        let changes = diff_run_snapshots(
+            vec![
+                NodeRunSnapshotV1 {
+                    node_id: "align-reads".to_string(),
+                    state: "completed".to_string(),
+                    branch_decision: "main".to_string(),
+                    attempt_id: "attempt-1".to_string(),
+                    artifact_hash: "a1".to_string(),
+                    log_hash: "l1".to_string(),
+                    cache_decision: "miss".to_string(),
+                    integrity_proof_hash: "p1".to_string(),
+                },
+                NodeRunSnapshotV1 {
+                    node_id: "call-variants".to_string(),
+                    state: "completed".to_string(),
+                    branch_decision: "main".to_string(),
+                    attempt_id: "attempt-1".to_string(),
+                    artifact_hash: "b1".to_string(),
+                    log_hash: "l2".to_string(),
+                    cache_decision: "miss".to_string(),
+                    integrity_proof_hash: "p2".to_string(),
+                },
+            ],
+            vec![
+                NodeRunSnapshotV1 {
+                    node_id: "align-reads".to_string(),
+                    state: "completed".to_string(),
+                    branch_decision: "main".to_string(),
+                    attempt_id: "attempt-1".to_string(),
+                    artifact_hash: "a1".to_string(),
+                    log_hash: "l1".to_string(),
+                    cache_decision: "hit".to_string(),
+                    integrity_proof_hash: "p1".to_string(),
+                },
+                NodeRunSnapshotV1 {
+                    node_id: "call-variants".to_string(),
+                    state: "completed".to_string(),
+                    branch_decision: "secondary".to_string(),
+                    attempt_id: "attempt-2".to_string(),
+                    artifact_hash: "b2".to_string(),
+                    log_hash: "l3".to_string(),
+                    cache_decision: "miss".to_string(),
+                    integrity_proof_hash: "p3".to_string(),
+                },
+            ],
+        )
+        .expect("run diff");
+        assert_eq!(changes.len(), 2);
+        let align = changes
+            .iter()
+            .find(|entry| entry.node_id == "align-reads")
+            .expect("align change");
+        assert_eq!(align.change_kind, "changed");
+        assert!(align.changed_fields.contains(&"cache_decision".to_string()));
     }
 }
