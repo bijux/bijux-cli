@@ -101,6 +101,22 @@ pub struct DataLocalityAdvisoryReportV1 {
     pub rows: Vec<DataLocalityAdvisoryRowV1>,
 }
 
+/// Advisory cost row.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CostPlanningAdvisoryRowV1 {
+    pub node_id: String,
+    pub cost_score: u64,
+    pub drivers: Vec<String>,
+    pub duration_claimed: bool,
+}
+
+/// Advisory cost report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CostPlanningAdvisoryReportV1 {
+    pub rows: Vec<CostPlanningAdvisoryRowV1>,
+    pub expensive_nodes: Vec<String>,
+}
+
 /// Build resource requirements from graph nodes with deterministic defaults.
 pub fn build_resource_requirements(graph: &Graph) -> Vec<ResourceRequirementV1> {
     graph
@@ -383,12 +399,50 @@ pub fn build_data_locality_advisory_report(graph: &Graph) -> DataLocalityAdvisor
     DataLocalityAdvisoryReportV1 { rows }
 }
 
+/// Build advisory cost report based on static graph signals.
+pub fn build_cost_planning_advisory_report(graph: &Graph) -> CostPlanningAdvisoryReportV1 {
+    let mut rows = Vec::new();
+    let mut expensive_nodes = Vec::new();
+    for node in &graph.nodes {
+        let mut score = (node.inputs.len() as u64) * 5 + (node.outputs.len() as u64) * 5;
+        let mut drivers = vec!["io_shape".to_string()];
+        if let Some(resources) = node.resources.as_ref() {
+            score += (resources.cpu as u64) * 2;
+            score += (resources.mem_mb as u64) / 512;
+            drivers.push("resource_hints".to_string());
+        }
+        for tag in &node.tags {
+            if let Some(value) = tag.strip_prefix("artifact_mb:") {
+                if let Ok(parsed) = value.parse::<u64>() {
+                    score += parsed / 128;
+                    drivers.push("artifact_volume".to_string());
+                }
+            }
+            if tag == "expansion:matrix" {
+                score += 50;
+                drivers.push("expansion".to_string());
+            }
+        }
+        if score >= 50 {
+            expensive_nodes.push(node.id.clone());
+        }
+        rows.push(CostPlanningAdvisoryRowV1 {
+            node_id: node.id.clone(),
+            cost_score: score,
+            drivers,
+            duration_claimed: false,
+        });
+    }
+    CostPlanningAdvisoryReportV1 { rows, expensive_nodes }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         adapter_capability_for_kind, build_data_locality_advisory_report,
-        build_resource_requirements, plan_pool_placement, planner_runnable_from_capabilities,
-        validate_resource_requirements, ExecutionPoolV1, ResourceAvailabilityV1,
+        build_resource_requirements, build_cost_planning_advisory_report, plan_pool_placement,
+        planner_runnable_from_capabilities, validate_resource_requirements, ExecutionPoolV1,
+        ResourceAvailabilityV1,
     };
     use crate::{
         Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef, Resources,
@@ -513,5 +567,17 @@ mod tests {
         assert_eq!(report.rows[0].preferred_execution_site, "gpu-cluster");
         assert!(report.rows[0].advisory_only);
         assert!(report.rows[0].reversible);
+    }
+
+    #[test]
+    fn g127_cost_planning_is_advisory_and_does_not_claim_runtime_duration() {
+        let mut graph = sample_graph();
+        graph.nodes[0].tags.push("artifact_mb:4096".to_string());
+        graph.nodes[0].tags.push("expansion:matrix".to_string());
+        let report = build_cost_planning_advisory_report(&graph);
+        assert_eq!(report.rows.len(), 1);
+        assert!(report.expensive_nodes.iter().any(|node_id| node_id == "align"));
+        assert!(!report.rows[0].duration_claimed);
+        assert!(report.rows[0].drivers.iter().any(|driver| driver == "artifact_volume"));
     }
 }
