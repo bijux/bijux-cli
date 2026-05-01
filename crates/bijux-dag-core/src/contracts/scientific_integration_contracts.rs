@@ -547,6 +547,65 @@ pub fn evaluate_scientific_uncertainty(
     })
 }
 
+/// Cross-app evidence lineage link.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CrossAppEvidenceLinkV1 {
+    pub source_app: String,
+    pub target_app: String,
+    pub run_id: String,
+    pub artifact_id: String,
+    pub evidence_id: String,
+}
+
+/// Cross-app evidence linkage report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CrossAppEvidenceLinkReportV1 {
+    pub link_count: usize,
+    pub participating_apps: Vec<String>,
+}
+
+/// Validate cross-app evidence linkage through shared lineage kernel fields.
+pub fn validate_cross_app_evidence_links(
+    links: &[CrossAppEvidenceLinkV1],
+) -> Result<CrossAppEvidenceLinkReportV1, String> {
+    if links.is_empty() {
+        return Err("cross-app evidence link validation requires at least one link".to_string());
+    }
+    let mut participating_apps = BTreeSet::<String>::new();
+    let mut seen_link_keys = BTreeSet::<String>::new();
+
+    for link in links {
+        for (field, value) in [
+            ("source_app", link.source_app.as_str()),
+            ("target_app", link.target_app.as_str()),
+            ("run_id", link.run_id.as_str()),
+            ("artifact_id", link.artifact_id.as_str()),
+            ("evidence_id", link.evidence_id.as_str()),
+        ] {
+            if value.trim().is_empty() {
+                return Err(format!("cross-app evidence link requires {field}"));
+            }
+        }
+        if link.source_app == link.target_app {
+            return Err("cross-app evidence link requires distinct source_app and target_app".to_string());
+        }
+        participating_apps.insert(link.source_app.clone());
+        participating_apps.insert(link.target_app.clone());
+        let key = format!(
+            "{}:{}:{}:{}:{}",
+            link.source_app, link.target_app, link.run_id, link.artifact_id, link.evidence_id
+        );
+        if !seen_link_keys.insert(key) {
+            return Err("duplicate cross-app evidence link is not allowed".to_string());
+        }
+    }
+
+    Ok(CrossAppEvidenceLinkReportV1 {
+        link_count: links.len(),
+        participating_apps: participating_apps.into_iter().collect::<Vec<_>>(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -555,12 +614,13 @@ mod tests {
         ScientificFindingClassV1, ScientificFindingModeV1, ScientificFindingV1,
         ReferenceAliasPolicyV1, ReferenceIdentityMetadataV1, SampleIdentityMismatchActionV1,
         ScientificRunTrustClassV1,
+        CrossAppEvidenceLinkV1,
         ScientificUncertaintyInputV1, ScientificUncertaintyStateV1,
         ScientificOverrideRecordV1, ScientificOverrideTypeV1,
         SampleIdentityPolicyV1, TruthSetComparisonV1, TruthSetEvidenceEnvelopeV1,
         attach_truth_set_comparison, evaluate_scientific_trust_promotion,
         normalize_scientific_findings, validate_reference_identity_metadata, audit_scientific_overrides,
-        evaluate_scientific_uncertainty,
+        evaluate_scientific_uncertainty, validate_cross_app_evidence_links,
     };
     use std::collections::BTreeMap;
 
@@ -772,6 +832,36 @@ mod tests {
         assert_eq!(
             report.advisory_fields,
             vec!["panel_version".to_string(), "reference_synonym".to_string()]
+        );
+    }
+
+    #[test]
+    fn g179_cross_app_evidence_links_share_core_lineage_kernel() {
+        let report = validate_cross_app_evidence_links(&[
+            CrossAppEvidenceLinkV1 {
+                source_app: "genomics".to_string(),
+                target_app: "proteomics".to_string(),
+                run_id: "run-18".to_string(),
+                artifact_id: "artifact-ref".to_string(),
+                evidence_id: "evidence-a".to_string(),
+            },
+            CrossAppEvidenceLinkV1 {
+                source_app: "proteomics".to_string(),
+                target_app: "pollenomics".to_string(),
+                run_id: "run-18".to_string(),
+                artifact_id: "artifact-report".to_string(),
+                evidence_id: "evidence-b".to_string(),
+            },
+        ])
+        .expect("cross-app evidence links should validate");
+        assert_eq!(report.link_count, 2);
+        assert_eq!(
+            report.participating_apps,
+            vec![
+                "genomics".to_string(),
+                "pollenomics".to_string(),
+                "proteomics".to_string(),
+            ]
         );
     }
 }
