@@ -566,13 +566,67 @@ pub fn expand_matrix_bounded(
     MatrixExpansionReportV1 { instances, cardinality, refusal: None }
 }
 
+/// Partition identity with stable key and lineage reference.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PartitionIdentityV1 {
+    /// Dataset identifier.
+    pub dataset_id: String,
+    /// Stable partition key.
+    pub partition_key: String,
+    /// Stable lineage identifier.
+    pub lineage_id: String,
+    /// Reducer node that consumes this partition.
+    pub reducer_node_id: String,
+}
+
+/// Stable partition identity report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PartitionIdentityReportV1 {
+    /// Sorted partition identities.
+    pub partitions: Vec<PartitionIdentityV1>,
+}
+
+/// Build deterministic partition identities from partition dimensions.
+pub fn build_partition_identity_report(
+    dataset_id: &str,
+    reducer_node_id: &str,
+    partitions: Vec<BTreeMap<String, String>>,
+) -> Result<PartitionIdentityReportV1, String> {
+    if dataset_id.trim().is_empty() {
+        return Err("dataset_id cannot be empty".to_string());
+    }
+    if reducer_node_id.trim().is_empty() {
+        return Err("reducer_node_id cannot be empty".to_string());
+    }
+    let mut rows = partitions
+        .into_iter()
+        .map(|partition| {
+            let key_material = partition
+                .iter()
+                .map(|(key, value)| format!("{key}={value}"))
+                .collect::<Vec<_>>()
+                .join("|");
+            let partition_key = format!("{dataset_id}:{key_material}");
+            let lineage_id = format!("{dataset_id}->{reducer_node_id}:{key_material}");
+            PartitionIdentityV1 {
+                dataset_id: dataset_id.to_string(),
+                partition_key,
+                lineage_id,
+                reducer_node_id: reducer_node_id.to_string(),
+            }
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| left.partition_key.cmp(&right.partition_key));
+    Ok(PartitionIdentityReportV1 { partitions: rows })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_branch_decision_artifact, build_edge_semantics_snapshot,
         build_optional_upstream_evidence_report,
         evaluate_trigger_readiness_from_states, evaluate_trigger_truth_table_row,
-        expand_matrix_bounded,
+        expand_matrix_bounded, build_partition_identity_report,
         validate_barrier_semantics, validate_reducer_semantics, ReducerOrderingPolicyV1,
         TriggerRuleProfileV1, UpstreamTerminalStateV1,
     };
@@ -784,5 +838,30 @@ mod tests {
             refused.refusal.as_ref().map(|value| value.code.as_str()),
             Some("M3803_EXPLOSIVE_CARDINALITY")
         );
+    }
+
+    #[test]
+    fn g039_partition_identities_are_stable_and_reducer_linked() {
+        let report = build_partition_identity_report(
+            "dataset.v1",
+            "reduce.partitions",
+            vec![
+                BTreeMap::from([
+                    ("chromosome".to_string(), "2".to_string()),
+                    ("sample".to_string(), "s2".to_string()),
+                ]),
+                BTreeMap::from([
+                    ("chromosome".to_string(), "1".to_string()),
+                    ("sample".to_string(), "s1".to_string()),
+                ]),
+            ],
+        )
+        .expect("partition report");
+        assert_eq!(report.partitions.len(), 2);
+        assert!(report.partitions[0].partition_key < report.partitions[1].partition_key);
+        assert!(report
+            .partitions
+            .iter()
+            .all(|row| row.lineage_id.contains("reduce.partitions")));
     }
 }
