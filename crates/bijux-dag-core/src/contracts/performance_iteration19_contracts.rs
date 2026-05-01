@@ -393,11 +393,57 @@ pub fn evaluate_evidence_verification_benchmark(
     })
 }
 
+/// Run history query benchmark input.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HistoryQueryBenchmarkInputV1 {
+    pub pagination_ms: f64,
+    pub filtering_ms: f64,
+    pub lineage_query_ms: f64,
+    pub timeline_query_ms: f64,
+}
+
+/// Run history query benchmark report.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HistoryQueryBenchmarkReportV1 {
+    pub max_query_ms: f64,
+    pub responsive: bool,
+    pub diagnostics: Vec<String>,
+}
+
+/// Evaluate long-lived run history query responsiveness.
+pub fn evaluate_history_query_benchmark(
+    input: &HistoryQueryBenchmarkInputV1,
+) -> Result<HistoryQueryBenchmarkReportV1, String> {
+    let checks = [
+        ("pagination_ms", input.pagination_ms, 70.0),
+        ("filtering_ms", input.filtering_ms, 90.0),
+        ("lineage_query_ms", input.lineage_query_ms, 140.0),
+        ("timeline_query_ms", input.timeline_query_ms, 160.0),
+    ];
+    let mut max_query_ms = 0.0f64;
+    let mut diagnostics = Vec::new();
+    for (name, value, budget) in checks {
+        if !value.is_finite() || value < 0.0 {
+            return Err(format!("history query benchmark requires finite non-negative {name}"));
+        }
+        max_query_ms = max_query_ms.max(value);
+        if value > budget {
+            diagnostics.push(format!("{name} exceeds {budget:.0}ms responsiveness budget"));
+        }
+    }
+    Ok(HistoryQueryBenchmarkReportV1 {
+        max_query_ms,
+        responsive: diagnostics.is_empty(),
+        diagnostics,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         evaluate_artifact_write_and_inventory_benchmark,
         evaluate_evidence_verification_benchmark,
+        evaluate_history_query_benchmark,
         evaluate_planner_lowering_and_explain,
         evaluate_scheduler_churn_benchmark,
         evaluate_runtime_startup_benchmark,
@@ -405,6 +451,7 @@ mod tests {
         evaluate_graph_parse_and_validation_budget, evaluate_route_dispatch_and_help_startup,
         ArtifactBenchmarkInputV1, CanonicalFingerprintBenchmarkInputV1,
         EvidenceVerificationBenchmarkInputV1, GraphValidationBenchmarkInputV1,
+        HistoryQueryBenchmarkInputV1,
         SchedulerChurnBenchmarkInputV1,
         RuntimeStartupBenchmarkInputV1,
         PlannerLoweringBenchmarkInputV1, RouteDispatchBenchmarkInputV1,
@@ -595,5 +642,27 @@ mod tests {
         .expect("slow evidence benchmark");
         assert!(!slow.release_track_ready);
         assert_eq!(slow.diagnostics.len(), 3);
+    }
+
+    #[test]
+    fn g189_history_query_benchmark_keeps_long_lived_usage_responsive() {
+        let healthy = evaluate_history_query_benchmark(&HistoryQueryBenchmarkInputV1 {
+            pagination_ms: 34.0,
+            filtering_ms: 48.0,
+            lineage_query_ms: 82.0,
+            timeline_query_ms: 96.0,
+        })
+        .expect("history benchmark");
+        assert!(healthy.responsive);
+
+        let slow = evaluate_history_query_benchmark(&HistoryQueryBenchmarkInputV1 {
+            pagination_ms: 95.0,
+            filtering_ms: 120.0,
+            lineage_query_ms: 190.0,
+            timeline_query_ms: 230.0,
+        })
+        .expect("slow history benchmark");
+        assert!(!slow.responsive);
+        assert_eq!(slow.diagnostics.len(), 4);
     }
 }
