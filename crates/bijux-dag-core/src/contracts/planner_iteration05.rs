@@ -170,10 +170,103 @@ pub fn build_plan_explain_report(
     Ok(PlanExplainReportV1 { nodes: rows })
 }
 
+/// Semantic plan diff report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SemanticPlanDiffReportV1 {
+    /// Whether execution semantics changed.
+    pub semantics_changed: bool,
+    /// Topology changed flag.
+    pub topology_changed: bool,
+    /// Parameter surface changed flag.
+    pub params_changed: bool,
+    /// Resource hint changed flag.
+    pub resources_changed: bool,
+    /// Changed node ids.
+    pub changed_nodes: Vec<String>,
+}
+
+/// Compare plans by execution semantics and ignore formatting/metadata noise.
+pub fn diff_plans_semantically(
+    before: &Graph,
+    after: &Graph,
+) -> Result<SemanticPlanDiffReportV1, GraphError> {
+    let before_plan = lower_graph_to_execution_plan(&compile_graph(before)?.normalized_graph, Default::default())
+        .map_err(|_| GraphError::ValidationFailed)?;
+    let after_plan = lower_graph_to_execution_plan(&compile_graph(after)?.normalized_graph, Default::default())
+        .map_err(|_| GraphError::ValidationFailed)?;
+
+    let semantics_changed = before_plan.execution_fingerprint != after_plan.execution_fingerprint;
+    let topology_changed = before_plan.ordering != after_plan.ordering || before_plan.edges != after_plan.edges;
+
+    let before_nodes = before_plan
+        .nodes
+        .iter()
+        .map(|node| {
+            (
+                node.id.clone(),
+                (
+                    node.io_contract.param_bindings.clone(),
+                    node.resources.as_ref().map(|value| (value.cpu, value.mem_mb)),
+                ),
+            )
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let after_nodes = after_plan
+        .nodes
+        .iter()
+        .map(|node| {
+            (
+                node.id.clone(),
+                (
+                    node.io_contract.param_bindings.clone(),
+                    node.resources.as_ref().map(|value| (value.cpu, value.mem_mb)),
+                ),
+            )
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+
+    let mut changed_nodes = before_nodes
+        .keys()
+        .chain(after_nodes.keys())
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .filter_map(|node_id| {
+            if before_nodes.get(node_id) != after_nodes.get(node_id) {
+                Some((*node_id).clone())
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+    changed_nodes.sort();
+    let params_changed = changed_nodes.iter().any(|node_id| {
+        before_nodes
+            .get(node_id)
+            .zip(after_nodes.get(node_id))
+            .map(|(before_node, after_node)| before_node.0 != after_node.0)
+            .unwrap_or(true)
+    });
+    let resources_changed = changed_nodes.iter().any(|node_id| {
+        before_nodes
+            .get(node_id)
+            .zip(after_nodes.get(node_id))
+            .map(|(before_node, after_node)| before_node.1 != after_node.1)
+            .unwrap_or(true)
+    });
+
+    Ok(SemanticPlanDiffReportV1 {
+        semantics_changed,
+        topology_changed,
+        params_changed,
+        resources_changed,
+        changed_nodes,
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{build_complete_dry_plan_output, build_plan_explain_report};
-    use crate::{DagBuilder, Effect, NodeBuilder, NodeKind};
+    use super::{build_complete_dry_plan_output, build_plan_explain_report, diff_plans_semantically};
+    use crate::{DagBuilder, Effect, GraphMeta, NodeBuilder, NodeKind};
     use std::collections::BTreeSet;
 
     #[test]
@@ -227,5 +320,33 @@ mod tests {
             .nodes
             .iter()
             .any(|node| node.node_id == "b" && node.state == "blocked"));
+    }
+
+    #[test]
+    fn g043_semantic_plan_diff_ignores_metadata_noise() {
+        let base = DagBuilder::new()
+            .node(
+                NodeBuilder::new("n1", NodeKind::Const)
+                    .output("out", "artifacts/n1.json")
+                    .build(),
+            )
+            .build();
+        let with_meta = DagBuilder::new()
+            .graph_meta(GraphMeta {
+                name: "renamed".to_string(),
+                description: Some("metadata-only change".to_string()),
+                owners: vec![],
+                tags: vec!["doc".to_string()],
+            })
+            .node(
+                NodeBuilder::new("n1", NodeKind::Const)
+                    .output("out", "artifacts/n1.json")
+                    .build(),
+            )
+            .build();
+
+        let diff = diff_plans_semantically(&base, &with_meta).expect("semantic diff");
+        assert!(!diff.semantics_changed);
+        assert!(diff.changed_nodes.is_empty());
     }
 }
