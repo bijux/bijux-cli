@@ -542,12 +542,63 @@ pub fn explain_plan_fingerprint_trust(
     })
 }
 
+/// Portable plan package for offline review.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlanPackageExportV1 {
+    /// Package format version.
+    pub package_version: String,
+    /// Canonical graph JSON.
+    pub graph_canonical_json: String,
+    /// Plan JSON.
+    pub plan_json: String,
+    /// Referenced schema versions.
+    pub schema_refs: Vec<String>,
+    /// Planned artifact expectations.
+    pub expected_artifacts: Vec<String>,
+    /// Capability decisions captured by planner.
+    pub capability_decisions: Vec<String>,
+}
+
+/// Export portable plan package with review-ready plan evidence.
+pub fn export_plan_package(
+    graph: &Graph,
+    schema_refs: Vec<String>,
+    capability_decisions: Vec<String>,
+) -> Result<PlanPackageExportV1, GraphError> {
+    let compile = compile_graph(graph)?;
+    let plan = lower_graph_to_execution_plan(&compile.normalized_graph, Default::default())
+        .map_err(|_| GraphError::ValidationFailed)?;
+    let graph_canonical_json = compile.normalized_graph.to_canonical_json()?;
+    let plan_json = serde_json::to_string_pretty(&plan)?;
+    let mut expected_artifacts = plan
+        .nodes
+        .iter()
+        .flat_map(|node| {
+            node.outputs
+                .iter()
+                .map(move |output| format!("{}:{}", node.id, output.path))
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    expected_artifacts.sort();
+    expected_artifacts.dedup();
+
+    Ok(PlanPackageExportV1 {
+        package_version: "bijux-plan-package/v1".to_string(),
+        graph_canonical_json,
+        plan_json,
+        schema_refs,
+        expected_artifacts,
+        capability_decisions,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_complete_dry_plan_output, build_parameter_explain_report, build_plan_explain_report,
-        diff_plans_semantically, explain_plan_fingerprint_trust, run_plan_preflight,
-        ParameterSourceKindV1, PlanPreflightCapabilitiesV1,
+        diff_plans_semantically, explain_plan_fingerprint_trust, export_plan_package,
+        run_plan_preflight, ParameterSourceKindV1, PlanPreflightCapabilitiesV1,
     };
     use crate::{DagBuilder, Effect, GraphMeta, NodeBuilder, NodeKind, Resources};
     use std::collections::BTreeSet;
@@ -731,5 +782,26 @@ mod tests {
             .mismatch_factors
             .iter()
             .any(|factor| factor.starts_with("artifacts:")));
+    }
+
+    #[test]
+    fn g047_plan_package_export_includes_portable_review_surfaces() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("n1", NodeKind::Const)
+                    .output("out", "artifacts/n1.json")
+                    .build(),
+            )
+            .build();
+        let package = export_plan_package(
+            &graph,
+            vec!["bijux-dag/v0.1".to_string()],
+            vec!["executor:const=available".to_string()],
+        )
+        .expect("plan package");
+        assert_eq!(package.package_version, "bijux-plan-package/v1");
+        assert!(package.graph_canonical_json.contains("\"nodes\""));
+        assert!(package.plan_json.contains("\"nodes\""));
+        assert!(package.expected_artifacts.iter().any(|entry| entry.contains("artifacts/n1.json")));
     }
 }
