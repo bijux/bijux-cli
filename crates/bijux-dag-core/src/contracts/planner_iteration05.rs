@@ -593,12 +593,95 @@ pub fn export_plan_package(
     })
 }
 
+/// Graph-level resource hint surface.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphResourceHintsV1 {
+    pub cpu: u32,
+    pub memory_mb: u32,
+    pub disk_mb: u32,
+    pub scratch_mb: u32,
+    pub network: String,
+    pub walltime_s: u64,
+    pub gpu: u32,
+    pub pool: Option<String>,
+}
+
+/// Node-level resource hint surface.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NodeResourceHintsV1 {
+    pub node_id: String,
+    pub cpu: u32,
+    pub memory_mb: u32,
+    pub disk_mb: u32,
+    pub scratch_mb: u32,
+    pub network: String,
+    pub walltime_s: u64,
+    pub gpu: u32,
+    pub pool: Option<String>,
+}
+
+/// Resource hint report for planning and admission.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResourceHintsReportV1 {
+    pub graph: GraphResourceHintsV1,
+    pub nodes: Vec<NodeResourceHintsV1>,
+}
+
+/// Build visible resource hints at graph and node levels.
+pub fn build_resource_hints_report(
+    graph: &Graph,
+    graph_hints: GraphResourceHintsV1,
+) -> ResourceHintsReportV1 {
+    let mut nodes = graph
+        .nodes
+        .iter()
+        .map(|node| {
+            let pool = node
+                .tags
+                .iter()
+                .find(|tag| tag.starts_with("pool:"))
+                .map(|tag| tag.trim_start_matches("pool:").to_string())
+                .or_else(|| graph_hints.pool.clone());
+            let gpu = node
+                .tags
+                .iter()
+                .find(|tag| tag.starts_with("gpu:"))
+                .and_then(|tag| tag.trim_start_matches("gpu:").parse::<u32>().ok())
+                .unwrap_or(graph_hints.gpu);
+
+            NodeResourceHintsV1 {
+                node_id: node.id.clone(),
+                cpu: node.resources.as_ref().map(|value| value.cpu).unwrap_or(graph_hints.cpu),
+                memory_mb: node
+                    .resources
+                    .as_ref()
+                    .map(|value| value.mem_mb)
+                    .unwrap_or(graph_hints.memory_mb),
+                disk_mb: graph_hints.disk_mb,
+                scratch_mb: graph_hints.scratch_mb,
+                network: if node.effects.contains(&crate::Effect::Network) {
+                    "required".to_string()
+                } else {
+                    graph_hints.network.clone()
+                },
+                walltime_s: graph_hints.walltime_s,
+                gpu,
+                pool,
+            }
+        })
+        .collect::<Vec<_>>();
+    nodes.sort_by(|left, right| left.node_id.cmp(&right.node_id));
+    ResourceHintsReportV1 { graph: graph_hints, nodes }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_complete_dry_plan_output, build_parameter_explain_report, build_plan_explain_report,
-        diff_plans_semantically, explain_plan_fingerprint_trust, export_plan_package,
+        build_resource_hints_report, diff_plans_semantically, explain_plan_fingerprint_trust,
+        export_plan_package,
         run_plan_preflight, ParameterSourceKindV1, PlanPreflightCapabilitiesV1,
+        GraphResourceHintsV1,
     };
     use crate::{DagBuilder, Effect, GraphMeta, NodeBuilder, NodeKind, Resources};
     use std::collections::BTreeSet;
@@ -803,5 +886,37 @@ mod tests {
         assert!(package.graph_canonical_json.contains("\"nodes\""));
         assert!(package.plan_json.contains("\"nodes\""));
         assert!(package.expected_artifacts.iter().any(|entry| entry.contains("artifacts/n1.json")));
+    }
+
+    #[test]
+    fn g048_resource_hints_are_visible_at_graph_and_node_levels() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("cpu_heavy", NodeKind::Const)
+                    .output("out", "artifacts/out.json")
+                    .tag("pool:hpc")
+                    .tag("gpu:2")
+                    .build(),
+            )
+            .build();
+        let mut graph = graph;
+        graph.nodes[0].resources = Some(crate::Resources { cpu: 16, mem_mb: 32768 });
+        let report = build_resource_hints_report(
+            &graph,
+            GraphResourceHintsV1 {
+                cpu: 4,
+                memory_mb: 8192,
+                disk_mb: 102400,
+                scratch_mb: 20480,
+                network: "advisory".to_string(),
+                walltime_s: 7200,
+                gpu: 0,
+                pool: Some("default".to_string()),
+            },
+        );
+        assert_eq!(report.graph.disk_mb, 102400);
+        assert_eq!(report.nodes[0].cpu, 16);
+        assert_eq!(report.nodes[0].gpu, 2);
+        assert_eq!(report.nodes[0].pool.as_deref(), Some("hpc"));
     }
 }
