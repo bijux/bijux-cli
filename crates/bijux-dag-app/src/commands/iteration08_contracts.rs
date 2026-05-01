@@ -235,12 +235,54 @@ pub fn build_inspect_command_report(
     })
 }
 
+/// Concise operator status view.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StatusCommandReportV1 {
+    pub run_id: String,
+    pub current_state: String,
+    pub critical_failure: Option<String>,
+    pub next_command: String,
+    pub evidence_path: String,
+}
+
+/// Build concise status payload prioritizing current state and next action.
+pub fn build_status_command_report(
+    run_id: &str,
+    current_state: &str,
+    critical_failure: Option<String>,
+    next_command: &str,
+    evidence_path: &str,
+) -> Result<StatusCommandReportV1, String> {
+    for (field_name, field_value) in [
+        ("run_id", run_id),
+        ("current_state", current_state),
+        ("next_command", next_command),
+        ("evidence_path", evidence_path),
+    ] {
+        if field_value.trim().is_empty() {
+            return Err(format!("{field_name} must not be empty"));
+        }
+    }
+    if current_state == "failed"
+        && critical_failure.as_deref().unwrap_or("").trim().is_empty()
+    {
+        return Err("failed state requires critical_failure detail".to_string());
+    }
+    Ok(StatusCommandReportV1 {
+        run_id: run_id.to_string(),
+        current_state: current_state.to_string(),
+        critical_failure,
+        next_command: next_command.to_string(),
+        evidence_path: evidence_path.to_string(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_inspect_command_report, build_plan_command_report, build_run_command_report,
-        build_validate_command_report, DryPlanNodeRowV1, InspectNodeStateV1, PreflightCheckV1,
-        ValidateIssueV1,
+        build_status_command_report, build_validate_command_report, DryPlanNodeRowV1,
+        InspectNodeStateV1, PreflightCheckV1, ValidateIssueV1,
     };
 
     #[test]
@@ -359,5 +401,24 @@ mod tests {
         assert_eq!(report.nodes.len(), 2);
         assert_eq!(report.failures.len(), 1);
         assert!(report.next_action.contains("replay"));
+    }
+
+    #[test]
+    fn g075_status_report_prioritizes_state_failure_next_command_and_evidence() {
+        let status = build_status_command_report(
+            "run-20260501-001",
+            "failed",
+            Some("call-variants exited with code 2".to_string()),
+            "dag inspect --run-id run-20260501-001",
+            "runs/run-20260501-001/verify/report.json",
+        )
+        .expect("status report");
+        assert_eq!(status.current_state, "failed");
+        assert_eq!(
+            status.critical_failure.as_deref(),
+            Some("call-variants exited with code 2")
+        );
+        assert!(status.next_command.starts_with("dag inspect"));
+        assert!(status.evidence_path.ends_with("/verify/report.json"));
     }
 }
