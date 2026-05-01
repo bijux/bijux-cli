@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 /// Artifact schema descriptor contract.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -220,9 +221,83 @@ pub fn validate_cache_import_bundle(
     Ok(())
 }
 
+/// Artifact lineage record for query index.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArtifactLineageRecordV1 {
+    pub artifact_id: String,
+    pub producer_node: String,
+    pub consumers: Vec<String>,
+    pub parent_artifacts: Vec<String>,
+    pub cache_source: Option<String>,
+    pub replay_source: Option<String>,
+}
+
+/// Queryable lineage index.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArtifactLineageQueryIndexV1 {
+    pub records: Vec<ArtifactLineageRecordV1>,
+    pub producer_by_artifact: BTreeMap<String, String>,
+}
+
+/// Build query index for producer/consumer/ancestor/descendant queries.
+pub fn build_artifact_lineage_query_index(
+    records: Vec<ArtifactLineageRecordV1>,
+) -> ArtifactLineageQueryIndexV1 {
+    let producer_by_artifact = records
+        .iter()
+        .map(|record| (record.artifact_id.clone(), record.producer_node.clone()))
+        .collect();
+    ArtifactLineageQueryIndexV1 { records, producer_by_artifact }
+}
+
+/// Find ancestor artifacts for an artifact id.
+pub fn lineage_ancestors(index: &ArtifactLineageQueryIndexV1, artifact_id: &str) -> Vec<String> {
+    let by_id = index
+        .records
+        .iter()
+        .map(|record| (record.artifact_id.as_str(), record))
+        .collect::<BTreeMap<_, _>>();
+    let mut visited = BTreeSet::new();
+    let mut queue = VecDeque::from([artifact_id.to_string()]);
+    while let Some(current) = queue.pop_front() {
+        if let Some(record) = by_id.get(current.as_str()) {
+            for parent in &record.parent_artifacts {
+                if visited.insert(parent.clone()) {
+                    queue.push_back(parent.clone());
+                }
+            }
+        }
+    }
+    visited.into_iter().collect()
+}
+
+/// Find descendant artifacts for an artifact id.
+pub fn lineage_descendants(index: &ArtifactLineageQueryIndexV1, artifact_id: &str) -> Vec<String> {
+    let mut children = BTreeMap::<String, Vec<String>>::new();
+    for record in &index.records {
+        for parent in &record.parent_artifacts {
+            children.entry(parent.clone()).or_default().push(record.artifact_id.clone());
+        }
+    }
+    let mut visited = BTreeSet::new();
+    let mut queue = VecDeque::from([artifact_id.to_string()]);
+    while let Some(current) = queue.pop_front() {
+        if let Some(next) = children.get(&current) {
+            for child in next {
+                if visited.insert(child.clone()) {
+                    queue.push_back(child.clone());
+                }
+            }
+        }
+    }
+    visited.into_iter().collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_artifact_lineage_query_index, lineage_ancestors, lineage_descendants,
+        ArtifactLineageRecordV1,
         build_cache_gc_dry_run, CacheGcCandidateV1,
         validate_cache_import_bundle, CachePortableBundleV1, CachePortableEntryV1,
         enforce_retention_class, RetentionClassV1,
@@ -319,5 +394,38 @@ mod tests {
         let error = validate_cache_import_bundle(&unsafe_bundle, "schema-v1", "policy-v1")
             .expect_err("must refuse unsafe cache entry");
         assert!(error.contains("integrity is not verified"));
+    }
+
+    #[test]
+    fn g156_artifact_lineage_query_answers_ancestors_descendants_and_producers() {
+        let index = build_artifact_lineage_query_index(vec![
+            ArtifactLineageRecordV1 {
+                artifact_id: "a1".to_string(),
+                producer_node: "n1".to_string(),
+                consumers: vec!["n2".to_string()],
+                parent_artifacts: vec![],
+                cache_source: None,
+                replay_source: None,
+            },
+            ArtifactLineageRecordV1 {
+                artifact_id: "a2".to_string(),
+                producer_node: "n2".to_string(),
+                consumers: vec!["n3".to_string()],
+                parent_artifacts: vec!["a1".to_string()],
+                cache_source: Some("cache://a2".to_string()),
+                replay_source: None,
+            },
+            ArtifactLineageRecordV1 {
+                artifact_id: "a3".to_string(),
+                producer_node: "n3".to_string(),
+                consumers: vec![],
+                parent_artifacts: vec!["a2".to_string()],
+                cache_source: None,
+                replay_source: Some("run-older/a3".to_string()),
+            },
+        ]);
+        assert_eq!(index.producer_by_artifact.get("a3"), Some(&"n3".to_string()));
+        assert_eq!(lineage_ancestors(&index, "a3"), vec!["a1".to_string(), "a2".to_string()]);
+        assert_eq!(lineage_descendants(&index, "a1"), vec!["a2".to_string(), "a3".to_string()]);
     }
 }
