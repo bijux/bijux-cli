@@ -28,7 +28,10 @@ pub fn validate_docker_smoke_execution(
         return Err("docker smoke execution must include image_reference".to_string());
     }
     if !engine_available {
-        return Err(format!("docker smoke execution unavailable: engine '{}' is not ready", record.engine));
+        return Err(format!(
+            "docker smoke execution unavailable: engine '{}' is not ready",
+            record.engine
+        ));
     }
     if record.mount_count == 0 {
         return Err("docker smoke execution requires at least one mount".to_string());
@@ -63,11 +66,7 @@ pub fn enforce_container_image_identity(
     advisory_mode: bool,
 ) -> ContainerImageIdentityDecisionV1 {
     let has_digest = image_reference.contains("@sha256:");
-    let accepted = if production_mode {
-        has_digest || advisory_mode
-    } else {
-        true
-    };
+    let accepted = if production_mode { has_digest || advisory_mode } else { true };
     let reason = if production_mode && !has_digest && !advisory_mode {
         "tag-only image reference is refused in production mode".to_string()
     } else if production_mode && !has_digest && advisory_mode {
@@ -120,14 +119,16 @@ pub fn evaluate_apptainer_boundary(
         ApptainerBoundaryReportV1 {
             state: ApptainerSupportStateV1::Advisory,
             engine: engine.to_string(),
-            reason: "apptainer backend remains advisory until full runtime parity is proven".to_string(),
+            reason: "apptainer backend remains advisory until full runtime parity is proven"
+                .to_string(),
             smoke_behavior: "advisory-smoke-only".to_string(),
         }
     } else {
         ApptainerBoundaryReportV1 {
             state: ApptainerSupportStateV1::Supported,
             engine: engine.to_string(),
-            reason: "apptainer descriptor is accepted for non-production smoke execution".to_string(),
+            reason: "apptainer descriptor is accepted for non-production smoke execution"
+                .to_string(),
             smoke_behavior: "smoke-enabled".to_string(),
         }
     }
@@ -172,7 +173,9 @@ pub fn render_batch_script_export(
         }
     }
     if descriptor.cpus == 0 || descriptor.memory_mb == 0 {
-        return Err("batch script export descriptor requires positive cpus and memory_mb".to_string());
+        return Err(
+            "batch script export descriptor requires positive cpus and memory_mb".to_string()
+        );
     }
     let script = format!(
         "#!/usr/bin/env bash\n# scheduler: {scheduler}\n# job_name: {job}\n# cpus: {cpus}\n# memory_mb: {memory}\n# walltime: {walltime}\n# logs: {logs}\n# scratch: {scratch}\n# artifacts: {artifacts}\nset -euo pipefail\nmkdir -p {scratch}\nmkdir -p {artifacts}\n# run workload command here\necho \"collecting artifacts\"\n{cleanup}\n",
@@ -278,14 +281,8 @@ pub struct RemoteWorkerProtocolEventV1 {
 pub fn validate_remote_worker_protocol_trace(
     events: &[RemoteWorkerProtocolEventV1],
 ) -> Result<(), String> {
-    let expected = [
-        "register",
-        "lease",
-        "heartbeat",
-        "artifact_upload",
-        "log_stream",
-        "result_submit",
-    ];
+    let expected =
+        ["register", "lease", "heartbeat", "artifact_upload", "log_stream", "result_submit"];
     if events.len() < expected.len() {
         return Err("remote worker protocol trace is incomplete".to_string());
     }
@@ -363,7 +360,9 @@ pub struct ExecutorFallbackDecisionV1 {
 }
 
 /// Evaluate safe fallback policy across execution backends.
-pub fn evaluate_executor_fallback(request: &ExecutorFallbackRequestV1) -> ExecutorFallbackDecisionV1 {
+pub fn evaluate_executor_fallback(
+    request: &ExecutorFallbackRequestV1,
+) -> ExecutorFallbackDecisionV1 {
     if !request.output_semantics_compatible {
         return ExecutorFallbackDecisionV1 {
             allowed: false,
@@ -438,16 +437,14 @@ pub fn build_backend_comparison_report(
 #[cfg(test)]
 mod tests {
     use super::{
-        build_backend_comparison_report, BackendExecutionFingerprintV1,
-        evaluate_executor_fallback, ExecutorFallbackRequestV1,
-        validate_external_adapter_sdk_descriptor, ExternalAdapterSdkDescriptorV1,
-        validate_remote_worker_protocol_trace, RemoteWorkerProtocolEventV1,
-        evaluate_batch_backend_promotion, BatchBackendPromotionEvidenceV1,
-        validate_mock_batch_lifecycle, MockBatchLifecycleEventV1,
-        render_batch_script_export, BatchScriptExportDescriptorV1,
-        evaluate_apptainer_boundary, ApptainerSupportStateV1,
-        enforce_container_image_identity, validate_docker_smoke_execution,
-        DockerSmokeExecutionRecordV1,
+        build_backend_comparison_report, enforce_container_image_identity,
+        evaluate_apptainer_boundary, evaluate_batch_backend_promotion, evaluate_executor_fallback,
+        render_batch_script_export, validate_docker_smoke_execution,
+        validate_external_adapter_sdk_descriptor, validate_mock_batch_lifecycle,
+        validate_remote_worker_protocol_trace, ApptainerSupportStateV1,
+        BackendExecutionFingerprintV1, BatchBackendPromotionEvidenceV1,
+        BatchScriptExportDescriptorV1, DockerSmokeExecutionRecordV1, ExecutorFallbackRequestV1,
+        ExternalAdapterSdkDescriptorV1, MockBatchLifecycleEventV1, RemoteWorkerProtocolEventV1,
     };
 
     #[test]
@@ -469,8 +466,8 @@ mod tests {
 
         let mut incomplete = record;
         incomplete.artifacts_recorded = false;
-        let error =
-            validate_docker_smoke_execution(&incomplete, true).expect_err("must reject incomplete evidence");
+        let error = validate_docker_smoke_execution(&incomplete, true)
+            .expect_err("must reject incomplete evidence");
         assert!(error.contains("evidence is incomplete"));
     }
 
@@ -484,7 +481,8 @@ mod tests {
         assert!(advisory.accepted);
         assert!(advisory.reason.contains("advisory mode"));
 
-        let strict = enforce_container_image_identity("ghcr.io/bijux/tool@sha256:abc123", true, false);
+        let strict =
+            enforce_container_image_identity("ghcr.io/bijux/tool@sha256:abc123", true, false);
         assert!(strict.accepted);
     }
 
@@ -527,11 +525,26 @@ mod tests {
     #[test]
     fn g145_mock_batch_lifecycle_covers_submit_poll_cancel_fail_complete_and_logs() {
         let events = vec![
-            MockBatchLifecycleEventV1 { action: "submit".to_string(), runtime_state: "queued".to_string() },
-            MockBatchLifecycleEventV1 { action: "poll".to_string(), runtime_state: "running".to_string() },
-            MockBatchLifecycleEventV1 { action: "cancel".to_string(), runtime_state: "cancelled".to_string() },
-            MockBatchLifecycleEventV1 { action: "fail".to_string(), runtime_state: "failed".to_string() },
-            MockBatchLifecycleEventV1 { action: "complete".to_string(), runtime_state: "succeeded".to_string() },
+            MockBatchLifecycleEventV1 {
+                action: "submit".to_string(),
+                runtime_state: "queued".to_string(),
+            },
+            MockBatchLifecycleEventV1 {
+                action: "poll".to_string(),
+                runtime_state: "running".to_string(),
+            },
+            MockBatchLifecycleEventV1 {
+                action: "cancel".to_string(),
+                runtime_state: "cancelled".to_string(),
+            },
+            MockBatchLifecycleEventV1 {
+                action: "fail".to_string(),
+                runtime_state: "failed".to_string(),
+            },
+            MockBatchLifecycleEventV1 {
+                action: "complete".to_string(),
+                runtime_state: "succeeded".to_string(),
+            },
             MockBatchLifecycleEventV1 {
                 action: "collect_logs".to_string(),
                 runtime_state: "succeeded".to_string(),
@@ -565,14 +578,23 @@ mod tests {
     #[test]
     fn g147_remote_worker_protocol_trace_requires_concrete_lifecycle_order() {
         let events = vec![
-            RemoteWorkerProtocolEventV1 { event: "register".to_string(), worker_id: "w1".to_string() },
+            RemoteWorkerProtocolEventV1 {
+                event: "register".to_string(),
+                worker_id: "w1".to_string(),
+            },
             RemoteWorkerProtocolEventV1 { event: "lease".to_string(), worker_id: "w1".to_string() },
-            RemoteWorkerProtocolEventV1 { event: "heartbeat".to_string(), worker_id: "w1".to_string() },
+            RemoteWorkerProtocolEventV1 {
+                event: "heartbeat".to_string(),
+                worker_id: "w1".to_string(),
+            },
             RemoteWorkerProtocolEventV1 {
                 event: "artifact_upload".to_string(),
                 worker_id: "w1".to_string(),
             },
-            RemoteWorkerProtocolEventV1 { event: "log_stream".to_string(), worker_id: "w1".to_string() },
+            RemoteWorkerProtocolEventV1 {
+                event: "log_stream".to_string(),
+                worker_id: "w1".to_string(),
+            },
             RemoteWorkerProtocolEventV1 {
                 event: "result_submit".to_string(),
                 worker_id: "w1".to_string(),

@@ -36,16 +36,8 @@ pub struct GraphExamplesExecutionReportV1 {
 pub fn build_graph_examples_execution_report(
     entries: Vec<GraphExampleExecutionEntryV1>,
 ) -> GraphExamplesExecutionReportV1 {
-    let required_kinds = [
-        "const",
-        "shell",
-        "branch",
-        "barrier",
-        "reducer",
-        "cacheable",
-        "non-cacheable",
-        "failure",
-    ];
+    let required_kinds =
+        ["const", "shell", "branch", "barrier", "reducer", "cacheable", "non-cacheable", "failure"];
     let mut ordered = entries;
     ordered.sort_by(|left, right| left.kind.cmp(&right.kind));
 
@@ -202,10 +194,12 @@ pub fn build_graph_builder_parity_report(
     let graph_fingerprint_equal =
         builder_compiled.graph_fingerprint == file_compiled.graph_fingerprint;
 
-    let builder_plan = lower_graph_to_execution_plan(&builder_compiled.normalized_graph, Default::default())
-        .map_err(|_| GraphError::ValidationFailed)?;
-    let file_plan = lower_graph_to_execution_plan(&file_compiled.normalized_graph, Default::default())
-        .map_err(|_| GraphError::ValidationFailed)?;
+    let builder_plan =
+        lower_graph_to_execution_plan(&builder_compiled.normalized_graph, Default::default())
+            .map_err(|_| GraphError::ValidationFailed)?;
+    let file_plan =
+        lower_graph_to_execution_plan(&file_compiled.normalized_graph, Default::default())
+            .map_err(|_| GraphError::ValidationFailed)?;
     let planner_fingerprint_equal =
         builder_plan.planner_fingerprint == file_plan.planner_fingerprint;
 
@@ -284,10 +278,7 @@ pub fn build_cycle_reachability_rejection_report(
 
     let mut outgoing = BTreeMap::<String, Vec<String>>::new();
     for edge in &graph.edges {
-        outgoing
-            .entry(edge.from.node_id.clone())
-            .or_default()
-            .push(edge.to.node_id.clone());
+        outgoing.entry(edge.from.node_id.clone()).or_default().push(edge.to.node_id.clone());
     }
     let mut visited = BTreeSet::new();
     let mut stack = graph
@@ -310,8 +301,9 @@ pub fn build_cycle_reachability_rejection_report(
             refusals.push(GraphRefusalV1 {
                 code: "R2103_UNREACHABLE_REQUIRED_NODE".to_string(),
                 subject: format!("node:{node_id}"),
-                remediation: "add an upstream path from graph inputs or remove required designation"
-                    .to_string(),
+                remediation:
+                    "add an upstream path from graph inputs or remove required designation"
+                        .to_string(),
             });
         }
     }
@@ -445,8 +437,9 @@ pub fn build_port_contract_enforcement_report(graph: &Graph) -> PortContractEnfo
             });
         }
 
-        let to_port_known =
-            to_node.map(|node| node.inputs.iter().any(|input| input == &edge.to.port)).unwrap_or(false);
+        let to_port_known = to_node
+            .map(|node| node.inputs.iter().any(|input| input == &edge.to.port))
+            .unwrap_or(false);
         if !to_port_known {
             violations.push(PortContractViolationV1 {
                 code: "P3002_UNKNOWN_INPUT_PORT".to_string(),
@@ -476,8 +469,10 @@ pub fn build_port_contract_enforcement_report(graph: &Graph) -> PortContractEnfo
         }
 
         for output in &node.outputs {
-            let used =
-                graph.edges.iter().any(|edge| edge.from.node_id == node.id && edge.from.port == output.name);
+            let used = graph
+                .edges
+                .iter()
+                .any(|edge| edge.from.node_id == node.id && edge.from.port == output.name);
             if !used {
                 violations.push(PortContractViolationV1 {
                     code: "P3005_UNUSED_DECLARED_OUTPUT".to_string(),
@@ -487,7 +482,9 @@ pub fn build_port_contract_enforcement_report(graph: &Graph) -> PortContractEnfo
         }
     }
 
-    violations.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.subject.cmp(&right.subject)));
+    violations.sort_by(|left, right| {
+        left.code.cmp(&right.code).then_with(|| left.subject.cmp(&right.subject))
+    });
     violations.dedup();
 
     PortContractEnforcementReportV1 { node_contracts, violations }
@@ -578,7 +575,8 @@ pub fn validate_graph_package_import(
             refusals.push(GraphPackageImportRefusalV1 {
                 code: "B4003_UNSAFE_PATH".to_string(),
                 subject: entry.path.clone(),
-                remediation: "use unique normalized relative paths inside package files".to_string(),
+                remediation: "use unique normalized relative paths inside package files"
+                    .to_string(),
             });
         }
         let digest_valid =
@@ -613,7 +611,9 @@ pub fn validate_graph_package_import(
         }
     }
 
-    refusals.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.subject.cmp(&right.subject)));
+    refusals.sort_by(|left, right| {
+        left.code.cmp(&right.code).then_with(|| left.subject.cmp(&right.subject))
+    });
     refusals.dedup();
     GraphPackageImportReportV1 { accepted: refusals.is_empty(), refusals }
 }
@@ -722,7 +722,10 @@ pub fn preview_graph_migration(graph: &Graph, target_spec: &str) -> GraphMigrati
 }
 
 /// Apply graph migration when preview indicates a safe transition.
-pub fn apply_graph_migration(graph: &Graph, target_spec: &str) -> Result<Graph, GraphMigrationRefusalV1> {
+pub fn apply_graph_migration(
+    graph: &Graph,
+    target_spec: &str,
+) -> Result<Graph, GraphMigrationRefusalV1> {
     let preview = preview_graph_migration(graph, target_spec);
     if preview.safe_to_apply {
         return Ok(preview.migrated_graph.expect("safe migration should include graph"));
@@ -763,8 +766,7 @@ pub fn evaluate_semantic_lint(
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect::<Vec<_>>();
-    let promotion_codes =
-        policy.map(|value| value.promoted_codes.clone()).unwrap_or_else(BTreeSet::new);
+    let promotion_codes = policy.map(|value| value.promoted_codes.clone()).unwrap_or_default();
 
     let mut advisory_lints = Vec::new();
     let mut blocking_lints = Vec::new();
@@ -831,8 +833,9 @@ pub fn build_graph_authoring_convergence_report(
         .into_iter()
         .collect::<Vec<_>>();
 
-    let json_plan = lower_graph_to_execution_plan(&json_compiled.normalized_graph, Default::default())
-        .map_err(|_| GraphError::ValidationFailed)?;
+    let json_plan =
+        lower_graph_to_execution_plan(&json_compiled.normalized_graph, Default::default())
+            .map_err(|_| GraphError::ValidationFailed)?;
     let builder_plan =
         lower_graph_to_execution_plan(&builder_compiled.normalized_graph, Default::default())
             .map_err(|_| GraphError::ValidationFailed)?;
@@ -863,12 +866,13 @@ pub fn build_graph_authoring_convergence_report(
 #[cfg(test)]
 mod tests {
     use super::{
-        build_graph_builder_parity_report, build_graph_canonicalization_visibility_report,
-        build_cycle_reachability_rejection_report, build_graph_examples_execution_report,
+        apply_graph_migration, build_cycle_reachability_rejection_report,
+        build_graph_authoring_convergence_report, build_graph_builder_parity_report,
+        build_graph_canonicalization_visibility_report, build_graph_examples_execution_report,
         build_port_contract_enforcement_report, build_surgical_validation_diagnostic,
-        validate_graph_package_import, GraphExampleExecutionEntryV1, GraphPackageBundleV1,
-        GraphPackageFileEntryV1, LintPromotionPolicyV1, apply_graph_migration,
-        build_graph_authoring_convergence_report, evaluate_semantic_lint, preview_graph_migration,
+        evaluate_semantic_lint, preview_graph_migration, validate_graph_package_import,
+        GraphExampleExecutionEntryV1, GraphPackageBundleV1, GraphPackageFileEntryV1,
+        LintPromotionPolicyV1,
     };
     use crate::{DagBuilder, Edge, EdgeKind, Effect, NodeBuilder, NodeKind, PortRef};
     use std::collections::BTreeSet;
@@ -993,10 +997,7 @@ mod tests {
         assert!(refusal_codes.contains("R2101_SELF_CYCLE"));
         assert!(refusal_codes.contains("R2103_UNREACHABLE_REQUIRED_NODE"));
         assert!(refusal_codes.contains("R2105_DEAD_END_REQUIRED_ARTIFACT"));
-        assert!(report
-            .refusals
-            .iter()
-            .all(|entry| !entry.remediation.trim().is_empty()));
+        assert!(report.refusals.iter().all(|entry| !entry.remediation.trim().is_empty()));
     }
 
     #[test]
@@ -1021,8 +1022,11 @@ mod tests {
             .build();
 
         let report = build_port_contract_enforcement_report(&graph);
-        let codes =
-            report.violations.iter().map(|violation| violation.code.clone()).collect::<BTreeSet<_>>();
+        let codes = report
+            .violations
+            .iter()
+            .map(|violation| violation.code.clone())
+            .collect::<BTreeSet<_>>();
         assert!(codes.contains("P3001_UNKNOWN_OUTPUT_PORT"));
         assert!(codes.contains("P3002_UNKNOWN_INPUT_PORT"));
         assert!(codes.contains("P3003_DUPLICATE_INPUT_BINDING"));
@@ -1052,8 +1056,7 @@ mod tests {
         };
 
         let report = validate_graph_package_import(&bundle, crate::SPEC_VERSION);
-        let codes =
-            report.refusals.iter().map(|entry| entry.code.clone()).collect::<BTreeSet<_>>();
+        let codes = report.refusals.iter().map(|entry| entry.code.clone()).collect::<BTreeSet<_>>();
         assert!(!report.accepted);
         assert!(codes.contains("B4001_CORRUPT_BUNDLE"));
         assert!(codes.contains("B4003_UNSAFE_PATH"));
@@ -1077,7 +1080,8 @@ mod tests {
           "edges": []
         }
         "#;
-        let legacy_graph = crate::parse_graph_strict(legacy_graph_json).expect("legacy graph parse");
+        let legacy_graph =
+            crate::parse_graph_strict(legacy_graph_json).expect("legacy graph parse");
         let preview = preview_graph_migration(&legacy_graph, crate::SPEC_VERSION);
         assert!(preview.safe_to_apply);
         assert!(!preview.changes.is_empty());
@@ -1088,9 +1092,8 @@ mod tests {
 
     #[test]
     fn g029_semantic_lint_is_advisory_unless_promoted_by_policy() {
-        let lint_only_graph = DagBuilder::new()
-            .node(NodeBuilder::new("n1", NodeKind::Const).build())
-            .build();
+        let lint_only_graph =
+            DagBuilder::new().node(NodeBuilder::new("n1", NodeKind::Const).build()).build();
 
         let advisory = evaluate_semantic_lint(&lint_only_graph, None);
         assert!(advisory.hard_validation_errors.is_empty());

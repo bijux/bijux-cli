@@ -33,7 +33,8 @@ pub fn build_const_adapter_execution_contract(
         return Err("const adapter must emit trace evidence".to_string());
     }
     let valid_hashes = artifacts.iter().all(|artifact| {
-        artifact.sha256.len() == 64 && artifact.sha256.chars().all(|value| value.is_ascii_hexdigit())
+        artifact.sha256.len() == 64
+            && artifact.sha256.chars().all(|value| value.is_ascii_hexdigit())
     });
     if !valid_hashes {
         return Err("all const adapter artifacts must include sha256".to_string());
@@ -197,7 +198,9 @@ pub fn enforce_required_outputs_strict(
             });
         }
     }
-    violations.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.output.cmp(&right.output)));
+    violations.sort_by(|left, right| {
+        left.code.cmp(&right.code).then_with(|| left.output.cmp(&right.output))
+    });
     RequiredOutputEnforcementReportV1 { success: violations.is_empty(), violations }
 }
 
@@ -320,11 +323,8 @@ pub fn apply_cancellation_idempotently(
     initial_state: CancellationStateV1,
     request_count: u32,
 ) -> CancellationIdempotencyReportV1 {
-    let final_state = if request_count == 0 {
-        initial_state.clone()
-    } else {
-        CancellationStateV1::Cancelled
-    };
+    let final_state =
+        if request_count == 0 { initial_state.clone() } else { CancellationStateV1::Cancelled };
     CancellationIdempotencyReportV1 {
         initial_state,
         request_count,
@@ -416,9 +416,7 @@ pub struct CrashRecoveryDecisionReportV1 {
 }
 
 /// Evaluate crash-recovery path using persisted write ledger.
-pub fn decide_crash_recovery(
-    records: Vec<RecoveryWriteRecordV1>,
-) -> CrashRecoveryDecisionReportV1 {
+pub fn decide_crash_recovery(records: Vec<RecoveryWriteRecordV1>) -> CrashRecoveryDecisionReportV1 {
     let mut seen = std::collections::BTreeSet::new();
     let mut duplicate = false;
     for record in &records {
@@ -439,11 +437,7 @@ pub fn decide_crash_recovery(
             "require operator intervention".to_string(),
         ]
     };
-    CrashRecoveryDecisionReportV1 {
-        resume_allowed,
-        duplicate_write_prevented: duplicate,
-        actions,
-    }
+    CrashRecoveryDecisionReportV1 { resume_allowed, duplicate_write_prevented: duplicate, actions }
 }
 
 /// Heartbeat liveness sample for one attempt.
@@ -485,17 +479,13 @@ pub fn evaluate_heartbeat_liveness(
 #[cfg(test)]
 mod tests {
     use super::{
-        build_command_invocation_safety_contract,
+        apply_cancellation_idempotently, build_command_invocation_safety_contract,
         build_const_adapter_execution_contract, build_shell_adapter_execution_contract,
-        enforce_required_outputs_strict,
-        record_optional_outputs_honestly, validate_runtime_state_transition,
-        apply_cancellation_idempotently, CancellationStateV1,
-        evaluate_heartbeat_liveness, AttemptHeartbeatSampleV1,
-        decide_crash_recovery, RecoveryWriteRecordV1,
-        decide_retry_from_policy, RetryFailureClassV1, RetryPolicyInputV1,
-        OptionalOutputStatusV1, RuntimeStateV1,
-        CommandInvocationModeV1,
-        ConstAdapterOutputArtifactV1,
+        decide_crash_recovery, decide_retry_from_policy, enforce_required_outputs_strict,
+        evaluate_heartbeat_liveness, record_optional_outputs_honestly,
+        validate_runtime_state_transition, AttemptHeartbeatSampleV1, CancellationStateV1,
+        CommandInvocationModeV1, ConstAdapterOutputArtifactV1, OptionalOutputStatusV1,
+        RecoveryWriteRecordV1, RetryFailureClassV1, RetryPolicyInputV1, RuntimeStateV1,
     };
 
     #[test]
@@ -546,10 +536,7 @@ mod tests {
             Some("echo a|b".to_string()),
         )
         .expect("explicit shell mode should be allowed");
-        assert!(matches!(
-            explicit_shell.mode,
-            CommandInvocationModeV1::ShellInterpretation
-        ));
+        assert!(matches!(explicit_shell.mode, CommandInvocationModeV1::ShellInterpretation));
     }
 
     #[test]
@@ -557,23 +544,15 @@ mod tests {
         let report = enforce_required_outputs_strict(
             "/run/42",
             vec!["metrics".to_string(), "summary".to_string()],
-            std::collections::BTreeMap::from([
-                ("metrics".to_string(), ("/tmp/metrics.bin".to_string(), false)),
-            ]),
+            std::collections::BTreeMap::from([(
+                "metrics".to_string(),
+                ("/tmp/metrics.bin".to_string(), false),
+            )]),
         );
         assert!(!report.success);
-        assert!(report
-            .violations
-            .iter()
-            .any(|item| item.code == "RO5401_MISSING_REQUIRED_OUTPUT"));
-        assert!(report
-            .violations
-            .iter()
-            .any(|item| item.code == "RO5402_OUTPUT_OUTSIDE_RUN_ROOT"));
-        assert!(report
-            .violations
-            .iter()
-            .any(|item| item.code == "RO5404_OUTPUT_CORRUPT"));
+        assert!(report.violations.iter().any(|item| item.code == "RO5401_MISSING_REQUIRED_OUTPUT"));
+        assert!(report.violations.iter().any(|item| item.code == "RO5402_OUTPUT_OUTSIDE_RUN_ROOT"));
+        assert!(report.violations.iter().any(|item| item.code == "RO5404_OUTPUT_CORRUPT"));
     }
 
     #[test]
@@ -585,22 +564,22 @@ mod tests {
                 "/run/42/summary.json".to_string(),
             )]),
         );
+        assert!(evidence.iter().any(
+            |entry| entry.name == "summary" && entry.status == OptionalOutputStatusV1::Present
+        ));
         assert!(evidence
             .iter()
-            .any(|entry| entry.name == "summary"
-                && entry.status == OptionalOutputStatusV1::Present));
-        assert!(evidence
-            .iter()
-            .any(|entry| entry.name == "plots"
-                && entry.status == OptionalOutputStatusV1::Absent));
+            .any(|entry| entry.name == "plots" && entry.status == OptionalOutputStatusV1::Absent));
     }
 
     #[test]
     fn g056_runtime_state_machine_is_closed_over_legal_transitions() {
-        let legal = validate_runtime_state_transition(RuntimeStateV1::Running, RuntimeStateV1::Completed);
+        let legal =
+            validate_runtime_state_transition(RuntimeStateV1::Running, RuntimeStateV1::Completed);
         assert!(legal.allowed);
 
-        let illegal = validate_runtime_state_transition(RuntimeStateV1::Completed, RuntimeStateV1::Running);
+        let illegal =
+            validate_runtime_state_transition(RuntimeStateV1::Completed, RuntimeStateV1::Running);
         assert!(!illegal.allowed);
         assert!(illegal.reason.contains("rejected"));
     }

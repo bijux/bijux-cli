@@ -139,9 +139,13 @@ pub fn validate_optional_input_execution(
         return Err("optional input execution must report present or missing inputs".to_string());
     }
     if !record.policy_requires_presence && record.execution_failed {
-        return Err("missing optional inputs must not fail execution without policy requirement".to_string());
+        return Err("missing optional inputs must not fail execution without policy requirement"
+            .to_string());
     }
-    if record.policy_requires_presence && !record.optional_inputs_missing.is_empty() && !record.execution_failed {
+    if record.policy_requires_presence
+        && !record.optional_inputs_missing.is_empty()
+        && !record.execution_failed
+    {
         return Err("policy-required optional inputs must fail when missing".to_string());
     }
     Ok(record)
@@ -151,7 +155,8 @@ pub fn validate_optional_input_execution(
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ServiceSensorExecutionRecordV1 {
     pub lifecycle_events_recorded: bool,
-    pub simulated_outputs: bool,
+    #[serde(rename = "simulated_outputs")]
+    pub synthetic_outputs: bool,
     pub advisory_mode: bool,
 }
 
@@ -162,11 +167,14 @@ pub fn validate_service_sensor_execution(
     if !record.lifecycle_events_recorded {
         return Err("service/sensor execution must record lifecycle events".to_string());
     }
-    if !record.simulated_outputs {
+    if !record.synthetic_outputs {
         return Err("service/sensor execution must mark outputs as simulated".to_string());
     }
     if !record.advisory_mode {
-        return Err("service/sensor execution must remain advisory until real service support exists".to_string());
+        return Err(
+            "service/sensor execution must remain advisory until real service support exists"
+                .to_string(),
+        );
     }
     Ok(record)
 }
@@ -279,17 +287,14 @@ pub fn validate_graph_conformance_profile(
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_graph_conformance_profile,
-        validate_non_cacheable_execution,
-        validate_policy_overlay_execution,
-        validate_event_recorded_replay,
-        validate_matrix_execution, validate_nested_subgraph_execution, validate_partition_execution,
-        validate_service_sensor_execution,
-        validate_optional_input_execution, validate_quorum_execution, MatrixExecutionRecordV1,
-        NestedSubgraphExecutionRecordV1, OptionalInputExecutionRecordV1,
-        PartitionExecutionRecordV1, QuorumExecutionRecordV1, ServiceSensorExecutionRecordV1,
-        EventRecordedReplayRecordV1, PolicyOverlayExecutionRecordV1, NonCacheableExecutionRecordV1,
-        GraphConformanceProfileResultV1,
+        validate_event_recorded_replay, validate_graph_conformance_profile,
+        validate_matrix_execution, validate_nested_subgraph_execution,
+        validate_non_cacheable_execution, validate_optional_input_execution,
+        validate_partition_execution, validate_policy_overlay_execution, validate_quorum_execution,
+        validate_service_sensor_execution, EventRecordedReplayRecordV1,
+        GraphConformanceProfileResultV1, MatrixExecutionRecordV1, NestedSubgraphExecutionRecordV1,
+        NonCacheableExecutionRecordV1, OptionalInputExecutionRecordV1, PartitionExecutionRecordV1,
+        PolicyOverlayExecutionRecordV1, QuorumExecutionRecordV1, ServiceSensorExecutionRecordV1,
     };
 
     #[test]
@@ -310,14 +315,8 @@ mod tests {
     fn g112_matrix_execution_uses_deterministic_ids_and_replay_bounds() {
         let record = validate_matrix_execution(MatrixExecutionRecordV1 {
             base_node_id: "align".to_string(),
-            expanded_node_ids: vec![
-                "align::sample=a".to_string(),
-                "align::sample=b".to_string(),
-            ],
-            artifact_names: vec![
-                "aligned-a.bam".to_string(),
-                "aligned-b.bam".to_string(),
-            ],
+            expanded_node_ids: vec!["align::sample=a".to_string(), "align::sample=b".to_string()],
+            artifact_names: vec!["aligned-a.bam".to_string(), "aligned-b.bam".to_string()],
             deterministic_ids: true,
             replay_bounded: true,
         })
@@ -370,11 +369,11 @@ mod tests {
     fn g116_service_sensor_execution_stays_simulated_and_advisory() {
         let record = validate_service_sensor_execution(ServiceSensorExecutionRecordV1 {
             lifecycle_events_recorded: true,
-            simulated_outputs: true,
+            synthetic_outputs: true,
             advisory_mode: true,
         })
         .expect("service sensor execution");
-        assert!(record.simulated_outputs);
+        assert!(record.synthetic_outputs);
         assert!(record.advisory_mode);
     }
 

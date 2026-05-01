@@ -303,16 +303,13 @@ pub fn build_cross_app_mock_evidence_scenario_report(
 #[cfg(test)]
 mod tests {
     use super::{
-        build_cross_app_mock_evidence_scenario_report,
-        build_bundle_portability_scenario_report,
-        build_branch_join_scenario_report, build_hello_dag_scenario_report,
-        build_cache_heavy_scenario_report, build_failure_retry_scenario_report,
-        build_mounted_app_parity_scenario_report,
-        build_python_bridge_parity_scenario_report,
-        build_reducer_scenario_report,
-        build_shell_etl_scenario_report, BranchJoinScenarioReportV1, FailureRetryScenarioReportV1,
+        build_branch_join_scenario_report, build_bundle_portability_scenario_report,
+        build_cache_heavy_scenario_report, build_cross_app_mock_evidence_scenario_report,
+        build_failure_retry_scenario_report, build_hello_dag_scenario_report,
+        build_mounted_app_parity_scenario_report, build_python_bridge_parity_scenario_report,
+        build_reducer_scenario_report, build_shell_etl_scenario_report, BranchJoinScenarioReportV1,
         BundlePortabilityScenarioReportV1, CacheHeavyScenarioReportV1,
-        CrossAppMockEvidenceScenarioReportV1,
+        CrossAppMockEvidenceScenarioReportV1, FailureRetryScenarioReportV1,
         HelloDagScenarioReportV1, MountedAppParityScenarioReportV1,
         PythonBridgeParityScenarioReportV1, ReducerScenarioReportV1, ShellEtlScenarioReportV1,
     };
@@ -430,12 +427,13 @@ mod tests {
 
     #[test]
     fn g099_python_bridge_returns_equivalent_machine_output() {
-        let report = build_python_bridge_parity_scenario_report(PythonBridgeParityScenarioReportV1 {
-            command_name: "dag run workflows/hello.json --json".to_string(),
-            root_machine_output_equal: true,
-            dag_machine_output_equal: true,
-        })
-        .expect("python bridge parity");
+        let report =
+            build_python_bridge_parity_scenario_report(PythonBridgeParityScenarioReportV1 {
+                command_name: "dag run workflows/hello.json --json".to_string(),
+                root_machine_output_equal: true,
+                dag_machine_output_equal: true,
+            })
+            .expect("python bridge parity");
         assert!(report.root_machine_output_equal);
         assert!(report.dag_machine_output_equal);
     }

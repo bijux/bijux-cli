@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::time::Instant;
 
-use crate::{compile_graph, lower_graph_to_execution_plan, Graph, GraphError, PlannerSeverity, Severity};
+use crate::{
+    compile_graph, lower_graph_to_execution_plan, Graph, GraphError, PlannerSeverity, Severity,
+};
 
 /// Node dry-plan row for operator-facing planning output.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,7 +37,9 @@ pub struct DryPlanCompleteOutputV1 {
 }
 
 /// Build complete dry-plan output with lowered details and refusal diagnostics.
-pub fn build_complete_dry_plan_output(graph: &Graph) -> Result<DryPlanCompleteOutputV1, GraphError> {
+pub fn build_complete_dry_plan_output(
+    graph: &Graph,
+) -> Result<DryPlanCompleteOutputV1, GraphError> {
     let compile = compile_graph(graph)?;
     let validation_refusals = compile
         .diagnostics
@@ -104,9 +108,9 @@ pub fn build_plan_explain_report(
     available_executor_kinds: &BTreeSet<String>,
 ) -> Result<PlanExplainReportV1, GraphError> {
     let compile = compile_graph(graph)?;
-    let selected = selected_nodes.cloned().unwrap_or_else(|| {
-        graph.nodes.iter().map(|node| node.id.clone()).collect()
-    });
+    let selected = selected_nodes
+        .cloned()
+        .unwrap_or_else(|| graph.nodes.iter().map(|node| node.id.clone()).collect());
     let plan = lower_graph_to_execution_plan(&compile.normalized_graph, Default::default())
         .map_err(|_| GraphError::ValidationFailed)?;
     let planned_ids = plan.nodes.iter().map(|node| node.id.clone()).collect::<BTreeSet<_>>();
@@ -191,13 +195,16 @@ pub fn diff_plans_semantically(
     before: &Graph,
     after: &Graph,
 ) -> Result<SemanticPlanDiffReportV1, GraphError> {
-    let before_plan = lower_graph_to_execution_plan(&compile_graph(before)?.normalized_graph, Default::default())
-        .map_err(|_| GraphError::ValidationFailed)?;
-    let after_plan = lower_graph_to_execution_plan(&compile_graph(after)?.normalized_graph, Default::default())
-        .map_err(|_| GraphError::ValidationFailed)?;
+    let before_plan =
+        lower_graph_to_execution_plan(&compile_graph(before)?.normalized_graph, Default::default())
+            .map_err(|_| GraphError::ValidationFailed)?;
+    let after_plan =
+        lower_graph_to_execution_plan(&compile_graph(after)?.normalized_graph, Default::default())
+            .map_err(|_| GraphError::ValidationFailed)?;
 
     let semantics_changed = before_plan.execution_fingerprint != after_plan.execution_fingerprint;
-    let topology_changed = before_plan.ordering != after_plan.ordering || before_plan.edges != after_plan.edges;
+    let topology_changed =
+        before_plan.ordering != after_plan.ordering || before_plan.edges != after_plan.edges;
 
     let before_nodes = before_plan
         .nodes
@@ -370,10 +377,8 @@ pub fn build_parameter_explain_report(
                     value: value.clone(),
                 });
             }
-            let effective_value = chain
-                .last()
-                .map(|event| event.value.clone())
-                .unwrap_or_else(|| "null".to_string());
+            let effective_value =
+                chain.last().map(|event| event.value.clone()).unwrap_or_else(|| "null".to_string());
             EffectiveParameterResolutionV1 { key, effective_value, sources: chain }
         })
         .collect::<Vec<_>>();
@@ -450,7 +455,10 @@ pub fn run_plan_preflight(
                 diagnostics.push(PlanPreflightDiagnosticV1 {
                     node_id: node.id.clone(),
                     code: "PF4505_CPU_EXCEEDS_CAP".to_string(),
-                    message: format!("cpu hint {} exceeds max {}", resources.cpu, capabilities.max_cpu),
+                    message: format!(
+                        "cpu hint {} exceeds max {}",
+                        resources.cpu, capabilities.max_cpu
+                    ),
                 });
             }
             if resources.mem_mb > capabilities.max_mem_mb {
@@ -465,7 +473,9 @@ pub fn run_plan_preflight(
             }
         }
     }
-    diagnostics.sort_by(|left, right| left.node_id.cmp(&right.node_id).then_with(|| left.code.cmp(&right.code)));
+    diagnostics.sort_by(|left, right| {
+        left.node_id.cmp(&right.node_id).then_with(|| left.code.cmp(&right.code))
+    });
     PlanPreflightReportV1 { runnable: diagnostics.is_empty(), diagnostics }
 }
 
@@ -487,10 +497,12 @@ pub fn explain_plan_fingerprint_trust(
     before: &Graph,
     after: &Graph,
 ) -> Result<PlanFingerprintTrustReportV1, GraphError> {
-    let before_plan = lower_graph_to_execution_plan(&compile_graph(before)?.normalized_graph, Default::default())
-        .map_err(|_| GraphError::ValidationFailed)?;
-    let after_plan = lower_graph_to_execution_plan(&compile_graph(after)?.normalized_graph, Default::default())
-        .map_err(|_| GraphError::ValidationFailed)?;
+    let before_plan =
+        lower_graph_to_execution_plan(&compile_graph(before)?.normalized_graph, Default::default())
+            .map_err(|_| GraphError::ValidationFailed)?;
+    let after_plan =
+        lower_graph_to_execution_plan(&compile_graph(after)?.normalized_graph, Default::default())
+            .map_err(|_| GraphError::ValidationFailed)?;
     let mut mismatch_factors = Vec::new();
 
     if before_plan.ordering != after_plan.ordering || before_plan.edges != after_plan.edges {
@@ -506,11 +518,8 @@ pub fn explain_plan_fingerprint_trust(
         .iter()
         .map(|node| (node.id.clone(), node))
         .collect::<std::collections::BTreeMap<_, _>>();
-    for node_id in before_node_map
-        .keys()
-        .chain(after_node_map.keys())
-        .cloned()
-        .collect::<BTreeSet<_>>()
+    for node_id in
+        before_node_map.keys().chain(after_node_map.keys()).cloned().collect::<BTreeSet<_>>()
     {
         match (before_node_map.get(&node_id), after_node_map.get(&node_id)) {
             (Some(before_node), Some(after_node)) => {
@@ -710,7 +719,10 @@ pub fn detect_planner_conflicts(
         conflicts.push(PlannerConflictDiagnosticV1 {
             code: "PC4901_RUNTIME_INCOMPATIBLE".to_string(),
             node_id: None,
-            reason: format!("runtime {} is unsupported by this planner profile", envelope.allowed_runtime),
+            reason: format!(
+                "runtime {} is unsupported by this planner profile",
+                envelope.allowed_runtime
+            ),
             remediation: "use runtime local or a profile with declared runtime compatibility"
                 .to_string(),
         });
@@ -741,7 +753,8 @@ pub fn detect_planner_conflicts(
                 code: "PC4904_EXPANSION_DISABLED".to_string(),
                 node_id: Some(node.id.clone()),
                 reason: "matrix/map expansion disabled for this planning profile".to_string(),
-                remediation: "enable matrix expansion policy or flatten mapped workloads".to_string(),
+                remediation: "enable matrix expansion policy or flatten mapped workloads"
+                    .to_string(),
             });
         }
         for output in &node.outputs {
@@ -769,7 +782,9 @@ pub fn detect_planner_conflicts(
         });
     }
 
-    conflicts.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.node_id.cmp(&right.node_id)));
+    conflicts.sort_by(|left, right| {
+        left.code.cmp(&right.code).then_with(|| left.node_id.cmp(&right.node_id))
+    });
     PlannerConflictReportV1 { conflicts }
 }
 
@@ -789,7 +804,11 @@ pub struct PlannerPerformanceReportV1 {
     pub samples: Vec<PlannerShapeBenchmarkV1>,
 }
 
-fn benchmark_plan_build(shape: &str, graph: &Graph, build_budget_ms: u128) -> Result<PlannerShapeBenchmarkV1, GraphError> {
+fn benchmark_plan_build(
+    shape: &str,
+    graph: &Graph,
+    build_budget_ms: u128,
+) -> Result<PlannerShapeBenchmarkV1, GraphError> {
     let start = Instant::now();
     let compile = compile_graph(graph)?;
     let _plan = lower_graph_to_execution_plan(&compile.normalized_graph, Default::default())
@@ -867,13 +886,15 @@ pub fn measure_planner_performance_real_shapes(
 mod tests {
     use super::{
         build_complete_dry_plan_output, build_parameter_explain_report, build_plan_explain_report,
-        build_resource_hints_report, diff_plans_semantically, explain_plan_fingerprint_trust,
-        export_plan_package, detect_planner_conflicts, PlannerConflictEnvelopeV1,
-        measure_planner_performance_real_shapes,
-        run_plan_preflight, ParameterSourceKindV1, PlanPreflightCapabilitiesV1,
-        GraphResourceHintsV1,
+        build_resource_hints_report, detect_planner_conflicts, diff_plans_semantically,
+        explain_plan_fingerprint_trust, export_plan_package,
+        measure_planner_performance_real_shapes, run_plan_preflight, GraphResourceHintsV1,
+        ParameterSourceKindV1, PlanPreflightCapabilitiesV1, PlannerConflictEnvelopeV1,
     };
-    use crate::{DagBuilder, EdgeKind, Effect, GraphMeta, NodeBuilder, NodeKind, Resources, SemanticNodeKind, TriggerRule};
+    use crate::{
+        DagBuilder, EdgeKind, Effect, GraphMeta, NodeBuilder, NodeKind, Resources,
+        SemanticNodeKind, TriggerRule,
+    };
     use std::collections::BTreeSet;
 
     #[test]
@@ -895,17 +916,16 @@ mod tests {
 
         let report = build_complete_dry_plan_output(&graph).expect("dry-plan should build");
         assert_eq!(report.nodes.len(), 2);
-        assert!(report.nodes.iter().any(|node| node.node_id == "load" && !node.dependencies.is_empty()));
+        assert!(report
+            .nodes
+            .iter()
+            .any(|node| node.node_id == "load" && !node.dependencies.is_empty()));
     }
 
     #[test]
     fn g042_plan_explain_reports_included_skipped_and_capability_blocked_nodes() {
         let graph = DagBuilder::new()
-            .node(
-                NodeBuilder::new("a", NodeKind::Const)
-                    .output("out", "artifacts/a.json")
-                    .build(),
-            )
+            .node(NodeBuilder::new("a", NodeKind::Const).output("out", "artifacts/a.json").build())
             .node(
                 NodeBuilder::new("b", NodeKind::Shell)
                     .input("in")
@@ -917,25 +937,17 @@ mod tests {
             .build();
         let selected = BTreeSet::from(["a".to_string(), "b".to_string()]);
         let available = BTreeSet::from(["const".to_string()]);
-        let report = build_plan_explain_report(&graph, Some(&selected), &available)
-            .expect("plan explain");
-        assert!(report
-            .nodes
-            .iter()
-            .any(|node| node.node_id == "a" && node.state == "included"));
-        assert!(report
-            .nodes
-            .iter()
-            .any(|node| node.node_id == "b" && node.state == "blocked"));
+        let report =
+            build_plan_explain_report(&graph, Some(&selected), &available).expect("plan explain");
+        assert!(report.nodes.iter().any(|node| node.node_id == "a" && node.state == "included"));
+        assert!(report.nodes.iter().any(|node| node.node_id == "b" && node.state == "blocked"));
     }
 
     #[test]
     fn g043_semantic_plan_diff_ignores_metadata_noise() {
         let base = DagBuilder::new()
             .node(
-                NodeBuilder::new("n1", NodeKind::Const)
-                    .output("out", "artifacts/n1.json")
-                    .build(),
+                NodeBuilder::new("n1", NodeKind::Const).output("out", "artifacts/n1.json").build(),
             )
             .build();
         let with_meta = DagBuilder::new()
@@ -946,9 +958,7 @@ mod tests {
                 tags: vec!["doc".to_string()],
             })
             .node(
-                NodeBuilder::new("n1", NodeKind::Const)
-                    .output("out", "artifacts/n1.json")
-                    .build(),
+                NodeBuilder::new("n1", NodeKind::Const).output("out", "artifacts/n1.json").build(),
             )
             .build();
 
@@ -1007,23 +1017,15 @@ mod tests {
         };
         let report = run_plan_preflight(&graph, &capabilities);
         assert!(!report.runnable);
-        assert!(report
-            .diagnostics
-            .iter()
-            .any(|diag| diag.code == "PF4501_SHELL_UNAVAILABLE"));
-        assert!(report
-            .diagnostics
-            .iter()
-            .any(|diag| diag.code == "PF4505_CPU_EXCEEDS_CAP"));
+        assert!(report.diagnostics.iter().any(|diag| diag.code == "PF4501_SHELL_UNAVAILABLE"));
+        assert!(report.diagnostics.iter().any(|diag| diag.code == "PF4505_CPU_EXCEEDS_CAP"));
     }
 
     #[test]
     fn g046_plan_fingerprint_tracks_execution_semantics_not_metadata_noise() {
         let base = DagBuilder::new()
             .node(
-                NodeBuilder::new("n1", NodeKind::Const)
-                    .output("out", "artifacts/n1.json")
-                    .build(),
+                NodeBuilder::new("n1", NodeKind::Const).output("out", "artifacts/n1.json").build(),
             )
             .build();
         let metadata_only = DagBuilder::new()
@@ -1034,9 +1036,7 @@ mod tests {
                 tags: vec!["meta".to_string()],
             })
             .node(
-                NodeBuilder::new("n1", NodeKind::Const)
-                    .output("out", "artifacts/n1.json")
-                    .build(),
+                NodeBuilder::new("n1", NodeKind::Const).output("out", "artifacts/n1.json").build(),
             )
             .build();
         let trust = explain_plan_fingerprint_trust(&base, &metadata_only).expect("trust");
@@ -1051,19 +1051,14 @@ mod tests {
             .build();
         let changed = explain_plan_fingerprint_trust(&base, &semantic_change).expect("changed");
         assert!(changed.fingerprint_changed);
-        assert!(changed
-            .mismatch_factors
-            .iter()
-            .any(|factor| factor.starts_with("artifacts:")));
+        assert!(changed.mismatch_factors.iter().any(|factor| factor.starts_with("artifacts:")));
     }
 
     #[test]
     fn g047_plan_package_export_includes_portable_review_surfaces() {
         let graph = DagBuilder::new()
             .node(
-                NodeBuilder::new("n1", NodeKind::Const)
-                    .output("out", "artifacts/n1.json")
-                    .build(),
+                NodeBuilder::new("n1", NodeKind::Const).output("out", "artifacts/n1.json").build(),
             )
             .build();
         let package = export_plan_package(
@@ -1141,15 +1136,25 @@ mod tests {
                 required_artifact_prefix: "artifacts/".to_string(),
             },
         );
-        assert!(report.conflicts.iter().any(|conflict| conflict.code == "PC4901_RUNTIME_INCOMPATIBLE"));
-        assert!(report.conflicts.iter().any(|conflict| conflict.code == "PC4902_ADAPTER_UNSUPPORTED"));
-        assert!(report.conflicts.iter().any(|conflict| conflict.code == "PC4906_CONDITIONAL_EDGES_DISABLED"));
+        assert!(report
+            .conflicts
+            .iter()
+            .any(|conflict| conflict.code == "PC4901_RUNTIME_INCOMPATIBLE"));
+        assert!(report
+            .conflicts
+            .iter()
+            .any(|conflict| conflict.code == "PC4902_ADAPTER_UNSUPPORTED"));
+        assert!(report
+            .conflicts
+            .iter()
+            .any(|conflict| conflict.code == "PC4906_CONDITIONAL_EDGES_DISABLED"));
     }
 
     #[test]
     fn g050_planner_performance_report_covers_real_graph_shapes_with_budgets() {
         let report = measure_planner_performance_real_shapes(2_000).expect("performance report");
-        let shapes = report.samples.iter().map(|sample| sample.shape.clone()).collect::<BTreeSet<_>>();
+        let shapes =
+            report.samples.iter().map(|sample| sample.shape.clone()).collect::<BTreeSet<_>>();
         for shape in ["chain", "wide", "branching", "matrix", "subgraph", "reducer"] {
             assert!(shapes.contains(shape), "missing benchmark shape: {shape}");
         }

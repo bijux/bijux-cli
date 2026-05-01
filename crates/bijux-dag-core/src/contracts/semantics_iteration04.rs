@@ -100,25 +100,18 @@ pub fn evaluate_trigger_readiness_from_states(
             reason: "no parents".to_string(),
         });
     }
-    let success = parent_states
-        .iter()
-        .filter(|state| **state == UpstreamTerminalStateV1::Success)
-        .count();
-    let failed = parent_states
-        .iter()
-        .filter(|state| **state == UpstreamTerminalStateV1::Failed)
-        .count();
-    let cancelled = parent_states
-        .iter()
-        .filter(|state| **state == UpstreamTerminalStateV1::Cancelled)
-        .count();
+    let success =
+        parent_states.iter().filter(|state| **state == UpstreamTerminalStateV1::Success).count();
+    let failed =
+        parent_states.iter().filter(|state| **state == UpstreamTerminalStateV1::Failed).count();
+    let cancelled =
+        parent_states.iter().filter(|state| **state == UpstreamTerminalStateV1::Cancelled).count();
     let total = parent_states.len();
 
     let result = match trigger_rule {
-        "all_success" => (
-            success == total,
-            "requires every parent in success and treats skipped as non-success",
-        ),
+        "all_success" => {
+            (success == total, "requires every parent in success and treats skipped as non-success")
+        }
         "all_done" => (success + failed + cancelled <= total, "all terminal states accepted"),
         "any_success" => (success > 0, "requires at least one successful parent"),
         "none_failed" => (failed == 0, "requires zero failed parents"),
@@ -163,7 +156,8 @@ pub fn validate_barrier_semantics(graph: &Graph) -> BarrierSemanticReportV1 {
             violations.push(BarrierSemanticViolationV1 {
                 code: "B3301_BARRIER_REQUIRES_INPUTS".to_string(),
                 node_id: node.id.clone(),
-                remediation: "connect barrier node to one or more upstream dependencies".to_string(),
+                remediation: "connect barrier node to one or more upstream dependencies"
+                    .to_string(),
             });
         }
         if !node.outputs.is_empty() {
@@ -183,7 +177,9 @@ pub fn validate_barrier_semantics(graph: &Graph) -> BarrierSemanticReportV1 {
             });
         }
     }
-    violations.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.node_id.cmp(&right.node_id)));
+    violations.sort_by(|left, right| {
+        left.code.cmp(&right.code).then_with(|| left.node_id.cmp(&right.node_id))
+    });
     BarrierSemanticReportV1 { valid: violations.is_empty(), violations }
 }
 
@@ -272,7 +268,9 @@ pub fn validate_reducer_semantics(
         upstream_order.push((node.id.clone(), upstreams));
     }
     upstream_order.sort_by(|left, right| left.0.cmp(&right.0));
-    violations.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.node_id.cmp(&right.node_id)));
+    violations.sort_by(|left, right| {
+        left.code.cmp(&right.code).then_with(|| left.node_id.cmp(&right.node_id))
+    });
     ReducerSemanticReportV1 { valid: violations.is_empty(), upstream_order, violations }
 }
 
@@ -303,10 +301,7 @@ pub fn build_edge_semantics_snapshot(graph: &Graph) -> Result<EdgeSemanticsSnaps
     let plan =
         lower_graph_to_execution_plan(graph, Default::default()).map_err(|err| err.to_string())?;
     let mut counts = vec![
-        (
-            "data".to_string(),
-            graph.edges.iter().filter(|edge| edge.kind == EdgeKind::Data).count(),
-        ),
+        ("data".to_string(), graph.edges.iter().filter(|edge| edge.kind == EdgeKind::Data).count()),
         (
             "control".to_string(),
             graph.edges.iter().filter(|edge| edge.kind == EdgeKind::Control).count(),
@@ -367,10 +362,8 @@ pub fn build_optional_upstream_evidence_report(
     for node in &graph.nodes {
         let optional_set = optional_inputs.get(&node.id).cloned().unwrap_or_default();
         for input in &node.inputs {
-            let bound = graph
-                .edges
-                .iter()
-                .any(|edge| edge.to.node_id == node.id && edge.to.port == *input);
+            let bound =
+                graph.edges.iter().any(|edge| edge.to.node_id == node.id && edge.to.port == *input);
             records.push(OptionalInputEvidenceV1 {
                 node_id: node.id.clone(),
                 input: input.clone(),
@@ -431,18 +424,12 @@ pub fn evaluate_trigger_truth_table_row(
     parent_states: Vec<UpstreamTerminalStateV1>,
     quorum_threshold: Option<usize>,
 ) -> Result<TriggerTruthTableRowV1, String> {
-    let success = parent_states
-        .iter()
-        .filter(|state| **state == UpstreamTerminalStateV1::Success)
-        .count();
-    let failed = parent_states
-        .iter()
-        .filter(|state| **state == UpstreamTerminalStateV1::Failed)
-        .count();
-    let skipped = parent_states
-        .iter()
-        .filter(|state| **state == UpstreamTerminalStateV1::Skipped)
-        .count();
+    let success =
+        parent_states.iter().filter(|state| **state == UpstreamTerminalStateV1::Success).count();
+    let failed =
+        parent_states.iter().filter(|state| **state == UpstreamTerminalStateV1::Failed).count();
+    let skipped =
+        parent_states.iter().filter(|state| **state == UpstreamTerminalStateV1::Skipped).count();
     let done = parent_states
         .iter()
         .filter(|state| {
@@ -466,7 +453,9 @@ pub fn evaluate_trigger_truth_table_row(
             let threshold = quorum_threshold.ok_or("quorum threshold is required")?;
             success >= threshold
         }
-        TriggerRuleProfileV1::SkippedAwareAnySuccess => success > 0 || (success == 0 && skipped == total),
+        TriggerRuleProfileV1::SkippedAwareAnySuccess => {
+            success > 0 || (success == 0 && skipped == total)
+        }
     };
 
     Ok(TriggerTruthTableRowV1 { profile, parent_states, quorum_threshold, runnable })
@@ -716,14 +705,15 @@ pub fn materialize_subgraph_scope(
 mod tests {
     use super::{
         build_branch_decision_artifact, build_edge_semantics_snapshot,
-        build_optional_upstream_evidence_report,
+        build_optional_upstream_evidence_report, build_partition_identity_report,
         evaluate_trigger_readiness_from_states, evaluate_trigger_truth_table_row,
-        expand_matrix_bounded, build_partition_identity_report,
-        materialize_subgraph_scope, SubgraphNodeDescriptorV1,
-        validate_barrier_semantics, validate_reducer_semantics, ReducerOrderingPolicyV1,
+        expand_matrix_bounded, materialize_subgraph_scope, validate_barrier_semantics,
+        validate_reducer_semantics, ReducerOrderingPolicyV1, SubgraphNodeDescriptorV1,
         TriggerRuleProfileV1, UpstreamTerminalStateV1,
     };
-    use crate::{BranchSpec, DagBuilder, EdgeKind, NodeBuilder, NodeKind, SemanticNodeKind, TriggerRule};
+    use crate::{
+        BranchSpec, DagBuilder, EdgeKind, NodeBuilder, NodeKind, SemanticNodeKind, TriggerRule,
+    };
     use std::collections::{BTreeMap, BTreeSet};
 
     #[test]
@@ -763,10 +753,7 @@ mod tests {
             .build();
         let report = validate_barrier_semantics(&graph);
         assert!(!report.valid);
-        assert!(report
-            .violations
-            .iter()
-            .any(|item| item.code == "B3301_BARRIER_REQUIRES_INPUTS"));
+        assert!(report.violations.iter().any(|item| item.code == "B3301_BARRIER_REQUIRES_INPUTS"));
         assert!(report
             .violations
             .iter()
@@ -776,16 +763,8 @@ mod tests {
     #[test]
     fn g034_reducer_semantics_define_ordering_and_refuse_ambiguous_fanin() {
         let graph = DagBuilder::new()
-            .node(
-                NodeBuilder::new("a", NodeKind::Const)
-                    .output("out", "artifacts/a.json")
-                    .build(),
-            )
-            .node(
-                NodeBuilder::new("b", NodeKind::Const)
-                    .output("out", "artifacts/b.json")
-                    .build(),
-            )
+            .node(NodeBuilder::new("a", NodeKind::Const).output("out", "artifacts/a.json").build())
+            .node(NodeBuilder::new("b", NodeKind::Const).output("out", "artifacts/b.json").build())
             .node(
                 NodeBuilder::new("reduce", NodeKind::Const)
                     .semantic_kind(SemanticNodeKind::Reduce)
@@ -796,16 +775,10 @@ mod tests {
             .edge("a", "out", "reduce", "in")
             .edge("b", "out", "reduce", "in")
             .build();
-        let report = validate_reducer_semantics(
-            &graph,
-            ReducerOrderingPolicyV1::LexicographicNodeId,
-            false,
-        );
+        let report =
+            validate_reducer_semantics(&graph, ReducerOrderingPolicyV1::LexicographicNodeId, false);
         assert!(!report.valid);
-        assert!(report
-            .violations
-            .iter()
-            .any(|item| item.code == "R3403_REDUCER_AMBIGUOUS_FANIN"));
+        assert!(report.violations.iter().any(|item| item.code == "R3403_REDUCER_AMBIGUOUS_FANIN"));
         assert_eq!(report.upstream_order[0].1, vec!["a".to_string(), "b".to_string()]);
     }
 
@@ -879,17 +852,12 @@ mod tests {
             )
             .edge("producer", "out", "consumer", "required_in")
             .build();
-        let optional_inputs = BTreeMap::from([(
-            "consumer".to_string(),
-            BTreeSet::from(["optional_in".to_string()]),
-        )]);
+        let optional_inputs =
+            BTreeMap::from([("consumer".to_string(), BTreeSet::from(["optional_in".to_string()]))]);
 
         let report = build_optional_upstream_evidence_report(&graph, &optional_inputs);
         assert_eq!(report.missing_required_inputs.len(), 0);
-        assert_eq!(
-            report.missing_optional_inputs,
-            vec!["consumer.optional_in".to_string()]
-        );
+        assert_eq!(report.missing_optional_inputs, vec!["consumer.optional_in".to_string()]);
     }
 
     #[test]
@@ -952,10 +920,7 @@ mod tests {
         .expect("partition report");
         assert_eq!(report.partitions.len(), 2);
         assert!(report.partitions[0].partition_key < report.partitions[1].partition_key);
-        assert!(report
-            .partitions
-            .iter()
-            .all(|row| row.lineage_id.contains("reduce.partitions")));
+        assert!(report.partitions.iter().all(|row| row.lineage_id.contains("reduce.partitions")));
     }
 
     #[test]
@@ -978,13 +943,11 @@ mod tests {
             ],
         );
         assert!(!report.valid);
-        assert!(report
-            .collisions
-            .iter()
-            .any(|entry| entry.contains("duplicate scoped node id")));
+        assert!(report.collisions.iter().any(|entry| entry.contains("duplicate scoped node id")));
         assert!(report
             .nodes
             .iter()
-            .all(|node| node.replay_ancestry == vec!["run.42".to_string(), "subgraph.align".to_string()]));
+            .all(|node| node.replay_ancestry
+                == vec!["run.42".to_string(), "subgraph.align".to_string()]));
     }
 }

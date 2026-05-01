@@ -49,9 +49,11 @@ pub fn validate_durable_run_queue_snapshot(
     let admitted = snapshot.admitted_nodes.iter().cloned().collect::<BTreeSet<_>>();
     let pending = snapshot.pending_nodes.iter().cloned().collect::<BTreeSet<_>>();
 
-    let overlap = completed.intersection(&admitted).next().cloned().or_else(|| {
-        completed.intersection(&pending).next().cloned()
-    });
+    let overlap = completed
+        .intersection(&admitted)
+        .next()
+        .cloned()
+        .or_else(|| completed.intersection(&pending).next().cloned());
     if let Some(node_id) = overlap {
         return Err(format!(
             "completed node {} must not be re-admitted or pending after restart",
@@ -83,7 +85,8 @@ pub fn validate_durable_run_queue_snapshot(
         attempts.entry(&attempt.node_id).or_default().insert(attempt.attempt);
     }
     for (node_id, attempts_for_node) in attempts {
-        if attempts_for_node.len() > 1 && !admitted.contains(node_id) && !pending.contains(node_id) {
+        if attempts_for_node.len() > 1 && !admitted.contains(node_id) && !pending.contains(node_id)
+        {
             return Err(format!(
                 "node {} has multiple attempts but is neither admitted nor pending",
                 node_id
@@ -95,7 +98,10 @@ pub fn validate_durable_run_queue_snapshot(
 }
 
 /// Validate lease semantics and reject double-dispatch risk.
-pub fn validate_node_leases(leases: &[QueueLeaseRecordV1], now_epoch_ms: u64) -> Result<(), String> {
+pub fn validate_node_leases(
+    leases: &[QueueLeaseRecordV1],
+    now_epoch_ms: u64,
+) -> Result<(), String> {
     let mut by_node = BTreeMap::<&str, &QueueLeaseRecordV1>::new();
     for lease in leases {
         if lease.node_id.trim().is_empty() || lease.lease_owner.trim().is_empty() {
@@ -176,7 +182,8 @@ pub fn plan_multi_run_fairness(
 
     let mut diagnostics = Vec::new();
     if starvation_detected {
-        diagnostics.push("one or more active runs were starved under current pool limits".to_string());
+        diagnostics
+            .push("one or more active runs were starved under current pool limits".to_string());
     }
     MultiRunSchedulingReportV1 { decisions, starvation_detected, diagnostics }
 }
@@ -255,7 +262,9 @@ pub fn build_partial_rerun_preview(
         PartialRerunSelectorKindV1::FailedOnly => request.failed_nodes.clone(),
         PartialRerunSelectorKindV1::Downstream => request.downstream_nodes.clone(),
         PartialRerunSelectorKindV1::SelectedNodes => request.selected_nodes.clone(),
-        PartialRerunSelectorKindV1::ChangedInputClosure => request.changed_input_closure_nodes.clone(),
+        PartialRerunSelectorKindV1::ChangedInputClosure => {
+            request.changed_input_closure_nodes.clone()
+        }
     };
     selected_nodes.sort();
     selected_nodes.dedup();
@@ -502,16 +511,16 @@ pub fn compact_runtime_history(
 #[cfg(test)]
 mod tests {
     use super::{
-        build_partial_rerun_preview, plan_multi_run_fairness,
-        validate_durable_run_queue_snapshot, validate_node_leases, validate_pause_resume_transitions,
-        evaluate_checkpoint_resume, AdapterCheckpointContractV1, AdapterCheckpointModeV1,
-        evaluate_backpressure, BackpressureActionV1, BackpressureSignalsV1,
-        dispatch_allowed_with_circuit_breaker, register_adapter_failure,
-        evaluate_runtime_upgrade_recovery, AdapterCircuitBreakerStateV1,
-        RuntimeHistoryEventV1, RuntimeUpgradeCompatibilityInputV1, compact_runtime_history,
+        build_partial_rerun_preview, compact_runtime_history,
+        dispatch_allowed_with_circuit_breaker, evaluate_backpressure, evaluate_checkpoint_resume,
+        evaluate_runtime_upgrade_recovery, plan_multi_run_fairness, register_adapter_failure,
+        validate_durable_run_queue_snapshot, validate_node_leases,
+        validate_pause_resume_transitions, AdapterCheckpointContractV1, AdapterCheckpointModeV1,
+        AdapterCircuitBreakerStateV1, BackpressureActionV1, BackpressureSignalsV1,
         DurableRunQueueSnapshotV1, MultiRunDemandV1, PartialRerunPreviewRequestV1,
         PartialRerunSelectorKindV1, PauseScopeV1, PauseTransitionEventV1, QueueAttemptRecordV1,
-        QueueLeaseRecordV1, SchedulerDecisionRecordV1,
+        QueueLeaseRecordV1, RuntimeHistoryEventV1, RuntimeUpgradeCompatibilityInputV1,
+        SchedulerDecisionRecordV1,
     };
     use std::collections::BTreeMap;
 
@@ -581,7 +590,8 @@ mod tests {
                 lease_expires_at_ms: 2_100,
             },
         ];
-        let duplicate_err = validate_node_leases(&duplicate, 1_500).expect_err("must reject duplicate lease");
+        let duplicate_err =
+            validate_node_leases(&duplicate, 1_500).expect_err("must reject duplicate lease");
         assert!(duplicate_err.contains("double-dispatch risk"));
 
         let expired_active = vec![QueueLeaseRecordV1 {
@@ -590,7 +600,8 @@ mod tests {
             lease_epoch_ms: 1_000,
             lease_expires_at_ms: 1_200,
         }];
-        let expired_err = validate_node_leases(&expired_active, 1_500).expect_err("must reject expired active owner");
+        let expired_err = validate_node_leases(&expired_active, 1_500)
+            .expect_err("must reject expired active owner");
         assert!(expired_err.contains("must recover before dispatch"));
     }
 
@@ -612,10 +623,17 @@ mod tests {
             &BTreeMap::from([("default".to_string(), 3)]),
         );
         assert!(!report.starvation_detected);
-        let assigned_total: u32 = report.decisions.iter().map(|decision| decision.assigned_slots).sum();
+        let assigned_total: u32 =
+            report.decisions.iter().map(|decision| decision.assigned_slots).sum();
         assert_eq!(assigned_total, 3);
-        assert!(report.decisions.iter().any(|decision| decision.run_id == "run-a" && decision.assigned_slots > 0));
-        assert!(report.decisions.iter().any(|decision| decision.run_id == "run-b" && decision.assigned_slots > 0));
+        assert!(report
+            .decisions
+            .iter()
+            .any(|decision| decision.run_id == "run-a" && decision.assigned_slots > 0));
+        assert!(report
+            .decisions
+            .iter()
+            .any(|decision| decision.run_id == "run-b" && decision.assigned_slots > 0));
     }
 
     #[test]
@@ -642,7 +660,8 @@ mod tests {
             from_state: "running".to_string(),
             to_state: "running".to_string(),
         }];
-        let error = validate_pause_resume_transitions(&illegal).expect_err("must reject illegal transition");
+        let error = validate_pause_resume_transitions(&illegal)
+            .expect_err("must reject illegal transition");
         assert!(error.contains("illegal pause transition"));
     }
 
@@ -725,12 +744,13 @@ mod tests {
 
     #[test]
     fn g139_runtime_upgrade_recovery_checks_schema_and_major_compatibility() {
-        let schema_failure = evaluate_runtime_upgrade_recovery(&RuntimeUpgradeCompatibilityInputV1 {
-            run_id: "run-upgrade-1".to_string(),
-            from_runtime_version: "1.4.0".to_string(),
-            to_runtime_version: "1.5.0".to_string(),
-            schema_compatible: false,
-        });
+        let schema_failure =
+            evaluate_runtime_upgrade_recovery(&RuntimeUpgradeCompatibilityInputV1 {
+                run_id: "run-upgrade-1".to_string(),
+                from_runtime_version: "1.4.0".to_string(),
+                to_runtime_version: "1.5.0".to_string(),
+                schema_compatible: false,
+            });
         assert!(!schema_failure.can_resume);
         assert!(schema_failure.reason.contains("schema compatibility failed"));
 

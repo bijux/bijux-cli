@@ -82,10 +82,7 @@ pub fn enforce_environment_allowlist(
     }
     allowed_variables.sort_by(|left, right| left.0.cmp(&right.0));
     dropped_variables.sort();
-    Ok(EnvAllowlistReportV1 {
-        allowed_variables,
-        dropped_variables,
-    })
+    Ok(EnvAllowlistReportV1 { allowed_variables, dropped_variables })
 }
 
 /// Redaction report for sensitive text surfaces.
@@ -114,10 +111,7 @@ pub fn redact_sensitive_values(
             redaction_count += 1;
         }
     }
-    Ok(RedactionReportV1 {
-        redacted_text,
-        redaction_count,
-    })
+    Ok(RedactionReportV1 { redacted_text, redaction_count })
 }
 
 /// Network policy labels for execution nodes.
@@ -207,10 +201,7 @@ pub fn validate_bundle_import_safety(
     if schema_confusion {
         rejection_reasons.push("schema_confusion".to_string());
     }
-    BundleImportSafetyReportV1 {
-        accepted: rejection_reasons.is_empty(),
-        rejection_reasons,
-    }
+    BundleImportSafetyReportV1 { accepted: rejection_reasons.is_empty(), rejection_reasons }
 }
 
 /// Plugin execution authorization result.
@@ -420,45 +411,50 @@ pub fn enforce_low_trust_profile(
             return Err("node_id must not be empty".to_string());
         }
         if node.uses_plugin {
-            refused_nodes.push((node.node_id.clone(), "plugins disabled in low-trust profile".to_string()));
+            refused_nodes
+                .push((node.node_id.clone(), "plugins disabled in low-trust profile".to_string()));
         }
         if node.uses_shell {
-            refused_nodes.push((node.node_id.clone(), "shell execution disabled in low-trust profile".to_string()));
+            refused_nodes.push((
+                node.node_id.clone(),
+                "shell execution disabled in low-trust profile".to_string(),
+            ));
         }
         if node.uses_network {
-            refused_nodes.push((node.node_id.clone(), "network access disabled in low-trust profile".to_string()));
+            refused_nodes.push((
+                node.node_id.clone(),
+                "network access disabled in low-trust profile".to_string(),
+            ));
         }
         if node.broad_path_access {
-            refused_nodes.push((node.node_id.clone(), "broad path access disabled in low-trust profile".to_string()));
+            refused_nodes.push((
+                node.node_id.clone(),
+                "broad path access disabled in low-trust profile".to_string(),
+            ));
         }
         if node.exposes_secrets {
-            refused_nodes.push((node.node_id.clone(), "secret exposure disabled in low-trust profile".to_string()));
+            refused_nodes.push((
+                node.node_id.clone(),
+                "secret exposure disabled in low-trust profile".to_string(),
+            ));
         }
     }
-    Ok(LowTrustAdmissionReportV1 {
-        admitted: refused_nodes.is_empty(),
-        refused_nodes,
-    })
+    Ok(LowTrustAdmissionReportV1 { admitted: refused_nodes.is_empty(), refused_nodes })
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        enforce_low_trust_profile,
-        build_supply_chain_inventory_report,
-        capture_shell_output_bounded,
-        authorize_plugin_execution,
-        classify_network_policy_trust, enforce_environment_allowlist, enforce_write_boundary,
-        redact_sensitive_values, validate_bundle_import_safety, validate_override_audit_events,
-        AdapterSoftwareIdentityV1, NetworkPolicyLabelV1, NodeRiskSurfaceV1, OverrideAuditEventV1,
+        authorize_plugin_execution, build_supply_chain_inventory_report,
+        capture_shell_output_bounded, classify_network_policy_trust, enforce_environment_allowlist,
+        enforce_low_trust_profile, enforce_write_boundary, redact_sensitive_values,
+        validate_bundle_import_safety, validate_override_audit_events, AdapterSoftwareIdentityV1,
+        NetworkPolicyLabelV1, NodeRiskSurfaceV1, OverrideAuditEventV1,
     };
 
     #[test]
     fn g081_write_boundary_refuses_traversal_and_symlink_escape() {
-        let allowed_roots = vec![
-            "/workspace/runs".to_string(),
-            "/workspace/cache".to_string(),
-        ];
+        let allowed_roots = vec!["/workspace/runs".to_string(), "/workspace/cache".to_string()];
         let traversal = enforce_write_boundary(
             "../etc/passwd",
             "/workspace/runs/../etc/passwd",
@@ -493,12 +489,8 @@ mod tests {
         )
         .expect("allowlist report");
         assert_eq!(report.allowed_variables.len(), 2);
-        assert!(report
-            .dropped_variables
-            .contains(&"API_TOKEN".to_string()));
-        assert!(report
-            .dropped_variables
-            .contains(&"SSH_PRIVATE_KEY".to_string()));
+        assert!(report.dropped_variables.contains(&"API_TOKEN".to_string()));
+        assert!(report.dropped_variables.contains(&"SSH_PRIVATE_KEY".to_string()));
     }
 
     #[test]
@@ -529,18 +521,10 @@ mod tests {
     fn g085_bundle_import_rejects_hostile_inputs() {
         let report = validate_bundle_import_safety(true, true, false, true, true);
         assert!(!report.accepted);
-        assert!(report
-            .rejection_reasons
-            .contains(&"path_traversal".to_string()));
-        assert!(report
-            .rejection_reasons
-            .contains(&"malicious_symlink".to_string()));
-        assert!(report
-            .rejection_reasons
-            .contains(&"corrupt_json".to_string()));
-        assert!(report
-            .rejection_reasons
-            .contains(&"schema_confusion".to_string()));
+        assert!(report.rejection_reasons.contains(&"path_traversal".to_string()));
+        assert!(report.rejection_reasons.contains(&"malicious_symlink".to_string()));
+        assert!(report.rejection_reasons.contains(&"corrupt_json".to_string()));
+        assert!(report.rejection_reasons.contains(&"schema_confusion".to_string()));
     }
 
     #[test]
@@ -623,15 +607,15 @@ mod tests {
                     adapter_id: "shell".to_string(),
                     executable_path: "/bin/sh".to_string(),
                     version: "5.2".to_string(),
-                    binary_hash:
-                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string(),
+                    binary_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                        .to_string(),
                 },
                 AdapterSoftwareIdentityV1 {
                     adapter_id: "const".to_string(),
                     executable_path: "/workspace/bin/const-adapter".to_string(),
                     version: "0.3.5".to_string(),
-                    binary_hash:
-                        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_string(),
+                    binary_hash: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                        .to_string(),
                 },
             ],
             vec!["plugin:official:quality-gate@1.2.0".to_string()],
@@ -665,9 +649,6 @@ mod tests {
         ])
         .expect("low trust report");
         assert!(!report.admitted);
-        assert!(report
-            .refused_nodes
-            .iter()
-            .any(|(node_id, _)| node_id == "shell-risky"));
+        assert!(report.refused_nodes.iter().any(|(node_id, _)| node_id == "shell-risky"));
     }
 }

@@ -49,10 +49,7 @@ pub fn validate_domain_neutral_artifact_roles(
             return Err("artifact role entry has empty artifact_id".to_string());
         }
         if entry.producer_app.trim().is_empty() {
-            return Err(format!(
-                "artifact '{}' has empty producer_app",
-                entry.artifact_id
-            ));
+            return Err(format!("artifact '{}' has empty producer_app", entry.artifact_id));
         }
         if !seen_artifacts.insert(entry.artifact_id.clone()) {
             return Err(format!(
@@ -294,10 +291,7 @@ pub fn normalize_scientific_findings(
     blocking_codes.sort();
     blocking_codes.dedup();
 
-    Ok(ScientificFindingReportV1 {
-        finding_count: findings.len(),
-        blocking_codes,
-    })
+    Ok(ScientificFindingReportV1 { finding_count: findings.len(), blocking_codes })
 }
 
 /// Truth-set comparison record attached by apps.
@@ -342,23 +336,14 @@ pub fn attach_truth_set_comparison(
         .iter()
         .any(|existing| existing.comparison_id == comparison.comparison_id)
     {
-        return Err(format!(
-            "duplicate truth-set comparison_id '{}'",
-            comparison.comparison_id
-        ));
+        return Err(format!("duplicate truth-set comparison_id '{}'", comparison.comparison_id));
     }
-    if comparison
-        .limitations
-        .iter()
-        .any(|limitation| limitation.trim().is_empty())
-    {
+    if comparison.limitations.iter().any(|limitation| limitation.trim().is_empty()) {
         return Err("truth-set comparison limitations must not contain empty entries".to_string());
     }
 
     envelope.comparisons.push(comparison);
-    envelope
-        .comparisons
-        .sort_by(|left, right| left.comparison_id.cmp(&right.comparison_id));
+    envelope.comparisons.sort_by(|left, right| left.comparison_id.cmp(&right.comparison_id));
     Ok(())
 }
 
@@ -392,17 +377,13 @@ pub fn evaluate_scientific_trust_promotion(
         ScientificRunTrustClassV1::Operational => app_policy_allows,
         ScientificRunTrustClassV1::Audit
         | ScientificRunTrustClassV1::Certification
-        | ScientificRunTrustClassV1::PublicationCandidate => {
-            evidence_complete && app_policy_allows
-        }
+        | ScientificRunTrustClassV1::PublicationCandidate => evidence_complete && app_policy_allows,
     };
     let reason = if promotable {
         "trust-class promotion requirements satisfied".to_string()
     } else {
         match class {
-            ScientificRunTrustClassV1::Exploratory => {
-                "unexpected exploratory refusal".to_string()
-            }
+            ScientificRunTrustClassV1::Exploratory => "unexpected exploratory refusal".to_string(),
             ScientificRunTrustClassV1::Operational => {
                 "operational promotion requires app policy approval".to_string()
             }
@@ -413,11 +394,7 @@ pub fn evaluate_scientific_trust_promotion(
             }
         }
     };
-    ScientificTrustPromotionDecisionV1 {
-        class,
-        promotable,
-        reason,
-    }
+    ScientificTrustPromotionDecisionV1 { class, promotable, reason }
 }
 
 /// Generic override category for scientific runs.
@@ -476,10 +453,7 @@ pub fn audit_scientific_overrides(
         }
     }
     high_risk_override_ids.sort();
-    Ok(ScientificOverrideAuditReportV1 {
-        override_count: overrides.len(),
-        high_risk_override_ids,
-    })
+    Ok(ScientificOverrideAuditReportV1 { override_count: overrides.len(), high_risk_override_ids })
 }
 
 /// Uncertainty state carried by scientific inputs.
@@ -587,7 +561,9 @@ pub fn validate_cross_app_evidence_links(
             }
         }
         if link.source_app == link.target_app {
-            return Err("cross-app evidence link requires distinct source_app and target_app".to_string());
+            return Err(
+                "cross-app evidence link requires distinct source_app and target_app".to_string()
+            );
         }
         participating_apps.insert(link.source_app.clone());
         participating_apps.insert(link.target_app.clone());
@@ -653,31 +629,24 @@ pub fn enforce_strict_scientific_promotion_refusal(
         "promotion refused: simulated evidence cannot be promoted".to_string()
     };
 
-    ScientificPromotionRefusalDecisionV1 {
-        class,
-        evidence_strength,
-        promoted,
-        reason,
-    }
+    ScientificPromotionRefusalDecisionV1 { class, evidence_strength, promoted, reason }
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_domain_neutral_artifact_roles, verify_sample_identity_propagation,
+        attach_truth_set_comparison, audit_scientific_overrides,
+        enforce_strict_scientific_promotion_refusal, evaluate_scientific_trust_promotion,
+        evaluate_scientific_uncertainty, normalize_scientific_findings,
+        validate_cross_app_evidence_links, validate_domain_neutral_artifact_roles,
+        validate_reference_identity_metadata, verify_sample_identity_propagation,
         ArtifactRoleKindV1, ArtifactRoleMetadataV1, ArtifactSampleIdentityV1,
+        CrossAppEvidenceLinkV1, ReferenceAliasPolicyV1, ReferenceIdentityMetadataV1,
+        SampleIdentityMismatchActionV1, SampleIdentityPolicyV1, ScientificEvidenceStrengthV1,
         ScientificFindingClassV1, ScientificFindingModeV1, ScientificFindingV1,
-        ReferenceAliasPolicyV1, ReferenceIdentityMetadataV1, SampleIdentityMismatchActionV1,
-        ScientificRunTrustClassV1,
-        CrossAppEvidenceLinkV1,
-        ScientificEvidenceStrengthV1,
-        ScientificUncertaintyInputV1, ScientificUncertaintyStateV1,
-        ScientificOverrideRecordV1, ScientificOverrideTypeV1,
-        SampleIdentityPolicyV1, TruthSetComparisonV1, TruthSetEvidenceEnvelopeV1,
-        attach_truth_set_comparison, evaluate_scientific_trust_promotion,
-        normalize_scientific_findings, validate_reference_identity_metadata, audit_scientific_overrides,
-        evaluate_scientific_uncertainty, validate_cross_app_evidence_links,
-        enforce_strict_scientific_promotion_refusal,
+        ScientificOverrideRecordV1, ScientificOverrideTypeV1, ScientificRunTrustClassV1,
+        ScientificUncertaintyInputV1, ScientificUncertaintyStateV1, TruthSetComparisonV1,
+        TruthSetEvidenceEnvelopeV1,
     };
     use std::collections::BTreeMap;
 
@@ -797,10 +766,8 @@ mod tests {
 
     #[test]
     fn g175_truth_set_comparisons_are_attachable_with_explicit_limitations() {
-        let mut envelope = TruthSetEvidenceEnvelopeV1 {
-            run_id: "run-18".to_string(),
-            comparisons: Vec::new(),
-        };
+        let mut envelope =
+            TruthSetEvidenceEnvelopeV1 { run_id: "run-18".to_string(), comparisons: Vec::new() };
         attach_truth_set_comparison(
             &mut envelope,
             TruthSetComparisonV1 {
@@ -914,11 +881,7 @@ mod tests {
         assert_eq!(report.link_count, 2);
         assert_eq!(
             report.participating_apps,
-            vec![
-                "genomics".to_string(),
-                "pollenomics".to_string(),
-                "proteomics".to_string(),
-            ]
+            vec!["genomics".to_string(), "pollenomics".to_string(), "proteomics".to_string(),]
         );
     }
 

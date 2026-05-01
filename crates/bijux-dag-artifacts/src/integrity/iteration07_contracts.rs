@@ -16,7 +16,9 @@ pub struct RunDirectoryLayoutContractV1 {
 }
 
 /// Build predictable canonical run directory layout.
-pub fn build_run_directory_layout_contract(run_id: &str) -> Result<RunDirectoryLayoutContractV1, String> {
+pub fn build_run_directory_layout_contract(
+    run_id: &str,
+) -> Result<RunDirectoryLayoutContractV1, String> {
     let normalized = run_id.trim();
     if normalized.is_empty() {
         return Err("run_id must not be empty".to_string());
@@ -47,7 +49,10 @@ pub struct ArtifactContentIdentityV1 {
 }
 
 /// Build content-based identity for a file artifact.
-pub fn content_identity_for_file(path: &str, bytes: &[u8]) -> Result<ArtifactContentIdentityV1, String> {
+pub fn content_identity_for_file(
+    path: &str,
+    bytes: &[u8],
+) -> Result<ArtifactContentIdentityV1, String> {
     if path.trim().is_empty() {
         return Err("artifact path must not be empty".to_string());
     }
@@ -159,7 +164,9 @@ pub struct CacheKeyExplainV1 {
 }
 
 /// Build an explainable cache key from direct factors.
-pub fn build_explainable_cache_key(factors: CacheKeyFactorsV1) -> Result<CacheKeyExplainV1, String> {
+pub fn build_explainable_cache_key(
+    factors: CacheKeyFactorsV1,
+) -> Result<CacheKeyExplainV1, String> {
     for (field_name, field_value) in [
         ("graph_fingerprint", factors.graph_fingerprint.as_str()),
         ("node_id", factors.node_id.as_str()),
@@ -197,11 +204,7 @@ pub fn build_explainable_cache_key(factors: CacheKeyFactorsV1) -> Result<CacheKe
     hasher.update(canonical_material.as_bytes());
     let cache_key = format!("{:x}", hasher.finalize());
 
-    Ok(CacheKeyExplainV1 {
-        cache_key,
-        canonical_material,
-        factors,
-    })
+    Ok(CacheKeyExplainV1 { cache_key, canonical_material, factors })
 }
 
 /// Evidence required for safe cache reuse.
@@ -261,7 +264,8 @@ pub fn assess_cache_reuse_safety(
     }
     CacheReuseDecisionV1 {
         decision: "hit".to_string(),
-        reason: "safe reuse with matching key, hash, schema, policy, and integrity proof".to_string(),
+        reason: "safe reuse with matching key, hash, schema, policy, and integrity proof"
+            .to_string(),
     }
 }
 
@@ -308,11 +312,7 @@ pub fn assess_cache_reuse_compatibility(
         reasons.push("runtime_fingerprint_changed".to_string());
     }
     CacheReuseCompatibilityV1 {
-        decision: if reasons.is_empty() {
-            "hit".to_string()
-        } else {
-            "miss".to_string()
-        },
+        decision: if reasons.is_empty() { "hit".to_string() } else { "miss".to_string() },
         reasons,
     }
 }
@@ -561,29 +561,25 @@ pub fn verify_bundle_proofs(
     let mut hasher = Sha256::new();
     hasher.update(canonical.as_bytes());
     let bundle_hash = format!("{:x}", hasher.finalize());
-    BundleVerificationReportV1 {
-        bundle_hash,
-        verified: failed_fields.is_empty(),
-        failed_fields,
-    }
+    BundleVerificationReportV1 { bundle_hash, verified: failed_fields.is_empty(), failed_fields }
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        assess_cache_reuse_compatibility, assess_cache_reuse_safety, build_complete_artifact_inventory, build_explainable_cache_key,
-        build_replay_plan_readout,
-        diff_run_snapshots,
-        build_run_directory_layout_contract, content_identity_for_directory, content_identity_for_file,
+        assess_cache_reuse_compatibility, assess_cache_reuse_safety,
+        build_complete_artifact_inventory, build_explainable_cache_key, build_replay_plan_readout,
+        build_run_directory_layout_contract, content_identity_for_directory,
+        content_identity_for_file, diff_run_snapshots, validate_replay_ancestry_records,
         verify_bundle_proofs, ArtifactInventoryRecordV1, BundleProofInputsV1, CacheKeyFactorsV1,
         CacheReuseContextV1, CacheReuseEvidenceV1, NodeRunSnapshotV1, ReplayAncestryRecordV1,
-        ReplayNodePlanDecisionV1, validate_replay_ancestry_records,
+        ReplayNodePlanDecisionV1,
     };
 
     #[test]
     fn g061_run_directory_layout_contract_is_predictable() {
-        let layout = build_run_directory_layout_contract("20260501-abc")
-            .expect("layout should build");
+        let layout =
+            build_run_directory_layout_contract("20260501-abc").expect("layout should build");
         assert_eq!(layout.manifest_path, "run-20260501-abc/manifest.json");
         assert_eq!(layout.outputs_index_path, "run-20260501-abc/outputs/index.json");
         assert_eq!(layout.replay_root, "run-20260501-abc/replay");
@@ -591,10 +587,10 @@ mod tests {
 
     #[test]
     fn g062_artifact_identity_is_content_based_for_files_and_directories() {
-        let file_a = content_identity_for_file("outputs/a.json", br#"{"a":1}"#)
-            .expect("file identity");
-        let file_b = content_identity_for_file("outputs/a.json", br#"{"a":2}"#)
-            .expect("file identity");
+        let file_a =
+            content_identity_for_file("outputs/a.json", br#"{"a":1}"#).expect("file identity");
+        let file_b =
+            content_identity_for_file("outputs/a.json", br#"{"a":2}"#).expect("file identity");
         assert_ne!(file_a.content_hash, file_b.content_hash);
 
         let dir_a = content_identity_for_directory(
@@ -641,10 +637,7 @@ mod tests {
             node_id: "align-reads".to_string(),
             adapter_id: "shell".to_string(),
             params_fingerprint: "params-001".to_string(),
-            input_hashes: vec![
-                "b2".to_string(),
-                "a1".to_string(),
-            ],
+            input_hashes: vec!["b2".to_string(), "a1".to_string()],
             policy_fingerprint: "policy-safe".to_string(),
             schema_fingerprint: "schema-v3".to_string(),
             environment_fingerprint: "env-linux-amd64".to_string(),
@@ -663,7 +656,8 @@ mod tests {
     fn g065_safe_cache_reuse_is_demonstrable_with_matching_evidence() {
         let evidence = CacheReuseEvidenceV1 {
             cache_key: "cache-key-123".to_string(),
-            artifact_hash: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_string(),
+            artifact_hash: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                .to_string(),
             schema_fingerprint: "schema-v1".to_string(),
             policy_fingerprint: "policy-safe".to_string(),
             integrity_verified: true,
@@ -817,10 +811,8 @@ mod tests {
         )
         .expect("run diff");
         assert_eq!(changes.len(), 2);
-        let align = changes
-            .iter()
-            .find(|entry| entry.node_id == "align-reads")
-            .expect("align change");
+        let align =
+            changes.iter().find(|entry| entry.node_id == "align-reads").expect("align change");
         assert_eq!(align.change_kind, "changed");
         assert!(align.changed_fields.contains(&"cache_decision".to_string()));
     }

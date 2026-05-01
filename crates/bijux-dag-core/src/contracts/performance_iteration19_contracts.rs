@@ -39,10 +39,12 @@ pub fn evaluate_route_dispatch_and_help_startup(
             return Err(format!("route dispatch benchmark requires finite non-negative {field}"));
         }
     }
-    let inventory_complexity_score =
-        input.route_count + input.app_count.saturating_mul(20) + input.plugin_count.saturating_mul(30);
-    let within_budget =
-        input.help_startup_ms <= 250.0 && input.median_dispatch_ms <= 20.0 && input.p95_dispatch_ms <= 60.0;
+    let inventory_complexity_score = input.route_count
+        + input.app_count.saturating_mul(20)
+        + input.plugin_count.saturating_mul(30);
+    let within_budget = input.help_startup_ms <= 250.0
+        && input.median_dispatch_ms <= 20.0
+        && input.p95_dispatch_ms <= 60.0;
     let mut diagnostics = Vec::new();
     if input.help_startup_ms > 250.0 {
         diagnostics.push("help startup exceeds 250ms budget".to_string());
@@ -135,10 +137,9 @@ pub fn evaluate_canonicalization_and_fingerprinting(
     if input.node_count == 0 {
         return Err("canonicalization benchmark requires node_count > 0".to_string());
     }
-    for (name, value) in [
-        ("canonical_json_ms", input.canonical_json_ms),
-        ("fingerprint_ms", input.fingerprint_ms),
-    ] {
+    for (name, value) in
+        [("canonical_json_ms", input.canonical_json_ms), ("fingerprint_ms", input.fingerprint_ms)]
+    {
         if !value.is_finite() || value < 0.0 {
             return Err(format!("canonicalization benchmark requires finite non-negative {name}"));
         }
@@ -292,8 +293,10 @@ pub fn evaluate_scheduler_churn_benchmark(
     if !input.elapsed_ms.is_finite() || input.elapsed_ms <= 0.0 {
         return Err("scheduler churn benchmark requires elapsed_ms > 0".to_string());
     }
-    let total_events =
-        input.retries_processed + input.branch_events_processed + input.ready_queue_ops + input.cancellation_events;
+    let total_events = input.retries_processed
+        + input.branch_events_processed
+        + input.ready_queue_ops
+        + input.cancellation_events;
     let events_per_second = (total_events as f64) / (input.elapsed_ms / 1000.0);
     let mut diagnostics = Vec::new();
     if events_per_second < 4_000.0 {
@@ -379,7 +382,9 @@ pub fn evaluate_evidence_verification_benchmark(
     let mut diagnostics = Vec::new();
     for (name, value, budget) in values {
         if !value.is_finite() || value < 0.0 {
-            return Err(format!("evidence verification benchmark requires finite non-negative {name}"));
+            return Err(format!(
+                "evidence verification benchmark requires finite non-negative {name}"
+            ));
         }
         max_bundle_ms = max_bundle_ms.max(value);
         if value > budget {
@@ -467,7 +472,9 @@ pub fn evaluate_cache_effectiveness_benchmark(
     if !input.elapsed_ms.is_finite() || input.elapsed_ms <= 0.0 {
         return Err("cache effectiveness benchmark requires elapsed_ms > 0".to_string());
     }
-    if input.cache_hit_count > input.rerun_count || input.safe_invalidation_count > input.rerun_count {
+    if input.cache_hit_count > input.rerun_count
+        || input.safe_invalidation_count > input.rerun_count
+    {
         return Err("cache benchmark counts cannot exceed rerun_count".to_string());
     }
     let cache_hit_ratio = (input.cache_hit_count as f64) / (input.rerun_count as f64);
@@ -495,22 +502,16 @@ pub fn evaluate_cache_effectiveness_benchmark(
 #[cfg(test)]
 mod tests {
     use super::{
-        evaluate_artifact_write_and_inventory_benchmark,
-        evaluate_cache_effectiveness_benchmark,
-        evaluate_evidence_verification_benchmark,
-        evaluate_history_query_benchmark,
-        evaluate_planner_lowering_and_explain,
-        evaluate_scheduler_churn_benchmark,
-        evaluate_runtime_startup_benchmark,
-        evaluate_canonicalization_and_fingerprinting,
-        evaluate_graph_parse_and_validation_budget, evaluate_route_dispatch_and_help_startup,
-        ArtifactBenchmarkInputV1, CanonicalFingerprintBenchmarkInputV1,
-        CacheEffectivenessBenchmarkInputV1,
-        EvidenceVerificationBenchmarkInputV1, GraphValidationBenchmarkInputV1,
-        HistoryQueryBenchmarkInputV1,
-        SchedulerChurnBenchmarkInputV1,
-        RuntimeStartupBenchmarkInputV1,
+        evaluate_artifact_write_and_inventory_benchmark, evaluate_cache_effectiveness_benchmark,
+        evaluate_canonicalization_and_fingerprinting, evaluate_evidence_verification_benchmark,
+        evaluate_graph_parse_and_validation_budget, evaluate_history_query_benchmark,
+        evaluate_planner_lowering_and_explain, evaluate_route_dispatch_and_help_startup,
+        evaluate_runtime_startup_benchmark, evaluate_scheduler_churn_benchmark,
+        ArtifactBenchmarkInputV1, CacheEffectivenessBenchmarkInputV1,
+        CanonicalFingerprintBenchmarkInputV1, EvidenceVerificationBenchmarkInputV1,
+        GraphValidationBenchmarkInputV1, HistoryQueryBenchmarkInputV1,
         PlannerLoweringBenchmarkInputV1, RouteDispatchBenchmarkInputV1,
+        RuntimeStartupBenchmarkInputV1, SchedulerChurnBenchmarkInputV1,
     };
 
     #[test]
@@ -542,24 +543,26 @@ mod tests {
 
     #[test]
     fn g182_graph_parse_and_validation_budget_catches_regressions() {
-        let healthy = evaluate_graph_parse_and_validation_budget(&GraphValidationBenchmarkInputV1 {
-            small_graph_ms: 12.0,
-            medium_graph_ms: 54.0,
-            large_graph_ms: 210.0,
-            invalid_graph_ms: 80.0,
-            fuzz_graph_ms: 330.0,
-        })
-        .expect("healthy graph benchmark");
+        let healthy =
+            evaluate_graph_parse_and_validation_budget(&GraphValidationBenchmarkInputV1 {
+                small_graph_ms: 12.0,
+                medium_graph_ms: 54.0,
+                large_graph_ms: 210.0,
+                invalid_graph_ms: 80.0,
+                fuzz_graph_ms: 330.0,
+            })
+            .expect("healthy graph benchmark");
         assert!(healthy.within_budget);
 
-        let regressed = evaluate_graph_parse_and_validation_budget(&GraphValidationBenchmarkInputV1 {
-            small_graph_ms: 60.0,
-            medium_graph_ms: 170.0,
-            large_graph_ms: 470.0,
-            invalid_graph_ms: 290.0,
-            fuzz_graph_ms: 640.0,
-        })
-        .expect("regressed benchmark report");
+        let regressed =
+            evaluate_graph_parse_and_validation_budget(&GraphValidationBenchmarkInputV1 {
+                small_graph_ms: 60.0,
+                medium_graph_ms: 170.0,
+                large_graph_ms: 470.0,
+                invalid_graph_ms: 290.0,
+                fuzz_graph_ms: 640.0,
+            })
+            .expect("regressed benchmark report");
         assert!(!regressed.within_budget);
         assert_eq!(regressed.diagnostics.len(), 5);
     }
@@ -576,12 +579,13 @@ mod tests {
         assert!(report.within_budget);
         assert!(report.throughput_nodes_per_second > 5_000.0);
 
-        let slow = evaluate_canonicalization_and_fingerprinting(&CanonicalFingerprintBenchmarkInputV1 {
-            node_count: 2_000,
-            canonical_json_ms: 190.0,
-            fingerprint_ms: 140.0,
-        })
-        .expect("slow benchmark should report");
+        let slow =
+            evaluate_canonicalization_and_fingerprinting(&CanonicalFingerprintBenchmarkInputV1 {
+                node_count: 2_000,
+                canonical_json_ms: 190.0,
+                fingerprint_ms: 140.0,
+            })
+            .expect("slow benchmark should report");
         assert!(!slow.within_budget);
         assert_eq!(slow.diagnostics.len(), 1);
     }
@@ -682,20 +686,22 @@ mod tests {
 
     #[test]
     fn g188_evidence_verification_performance_is_release_tracked() {
-        let healthy = evaluate_evidence_verification_benchmark(&EvidenceVerificationBenchmarkInputV1 {
-            small_bundle_ms: 60.0,
-            medium_bundle_ms: 180.0,
-            large_bundle_ms: 420.0,
-        })
-        .expect("evidence benchmark");
+        let healthy =
+            evaluate_evidence_verification_benchmark(&EvidenceVerificationBenchmarkInputV1 {
+                small_bundle_ms: 60.0,
+                medium_bundle_ms: 180.0,
+                large_bundle_ms: 420.0,
+            })
+            .expect("evidence benchmark");
         assert!(healthy.release_track_ready);
 
-        let slow = evaluate_evidence_verification_benchmark(&EvidenceVerificationBenchmarkInputV1 {
-            small_bundle_ms: 150.0,
-            medium_bundle_ms: 330.0,
-            large_bundle_ms: 880.0,
-        })
-        .expect("slow evidence benchmark");
+        let slow =
+            evaluate_evidence_verification_benchmark(&EvidenceVerificationBenchmarkInputV1 {
+                small_bundle_ms: 150.0,
+                medium_bundle_ms: 330.0,
+                large_bundle_ms: 880.0,
+            })
+            .expect("slow evidence benchmark");
         assert!(!slow.release_track_ready);
         assert_eq!(slow.diagnostics.len(), 3);
     }
@@ -735,14 +741,15 @@ mod tests {
         assert!(healthy.trust_preserved);
         assert!(healthy.cache_hit_ratio > 0.5);
 
-        let unsafe_case = evaluate_cache_effectiveness_benchmark(&CacheEffectivenessBenchmarkInputV1 {
-            rerun_count: 50,
-            cache_hit_count: 40,
-            safe_invalidation_count: 0,
-            unsafe_hit_detected: true,
-            elapsed_ms: 2_100.0,
-        })
-        .expect("unsafe cache benchmark");
+        let unsafe_case =
+            evaluate_cache_effectiveness_benchmark(&CacheEffectivenessBenchmarkInputV1 {
+                rerun_count: 50,
+                cache_hit_count: 40,
+                safe_invalidation_count: 0,
+                unsafe_hit_detected: true,
+                elapsed_ms: 2_100.0,
+            })
+            .expect("unsafe cache benchmark");
         assert!(!unsafe_case.trust_preserved);
         assert!(unsafe_case
             .diagnostics

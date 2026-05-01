@@ -82,8 +82,10 @@ pub fn evaluate_container_capability_negotiation(
         diagnostics.push(format!("container engine '{}' is unavailable", probe.engine));
     }
 
-    let production_ready =
-        probe.enabled && runtime_available && image_digest_verified && probe.image_reference.trim().len() > 0;
+    let production_ready = probe.enabled
+        && runtime_available
+        && image_digest_verified
+        && !probe.image_reference.trim().is_empty();
     let status = if production_ready {
         "implemented".to_string()
     } else if probe.enabled {
@@ -106,11 +108,8 @@ pub fn evaluate_container_capability_negotiation(
 pub fn preflight_container_capability(
     probe: &ContainerCapabilityProbeV1,
 ) -> ContainerCapabilityNegotiationReportV1 {
-    let runtime_available = if probe.enabled {
-        container_engine_discovery(&probe.engine).is_ok()
-    } else {
-        false
-    };
+    let runtime_available =
+        if probe.enabled { container_engine_discovery(&probe.engine).is_ok() } else { false };
     evaluate_container_capability_negotiation(probe, runtime_available)
 }
 
@@ -178,13 +177,13 @@ pub fn admit_run_from_planner_outputs(
 mod tests {
     use super::{
         admit_run_from_planner_outputs, build_remote_capability_honesty_report,
-        evaluate_container_capability_negotiation,
-        CapabilityMaturityV1, ContainerCapabilityNegotiationReportV1, ContainerCapabilityProbeV1,
+        evaluate_container_capability_negotiation, CapabilityMaturityV1,
+        ContainerCapabilityNegotiationReportV1, ContainerCapabilityProbeV1,
         RemoteCapabilityStatusV1, ResourceAdmissionDecisionV1,
     };
     use bijux_dag_core::resource_iteration13::{
-        ExecutionPoolV1, PoolPlacementDecisionV1, PoolPlacementReportV1, ResourcePreflightRefusalV1,
-        ResourcePreflightReportV1, ResourceRequirementV1,
+        ExecutionPoolV1, PoolPlacementDecisionV1, PoolPlacementReportV1,
+        ResourcePreflightRefusalV1, ResourcePreflightReportV1, ResourceRequirementV1,
     };
 
     fn require_advisory(report: &ContainerCapabilityNegotiationReportV1) {
@@ -240,14 +239,8 @@ mod tests {
             },
         ]);
         assert!(!report.production_profile_ready);
-        assert!(report
-            .diagnostics
-            .iter()
-            .any(|entry| entry.contains("capability 'remote'")));
-        assert!(report
-            .diagnostics
-            .iter()
-            .any(|entry| entry.contains("capability 'federated'")));
+        assert!(report.diagnostics.iter().any(|entry| entry.contains("capability 'remote'")));
+        assert!(report.diagnostics.iter().any(|entry| entry.contains("capability 'federated'")));
     }
 
     #[test]

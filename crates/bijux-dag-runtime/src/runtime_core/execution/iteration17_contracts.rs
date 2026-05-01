@@ -165,7 +165,8 @@ pub fn reconstruct_useful_timeline(
                 event.event_id
             ));
         }
-        let duration_ms_since_previous = previous_unix_ms.map(|prev| event.unix_ms.saturating_sub(prev));
+        let duration_ms_since_previous =
+            previous_unix_ms.map(|prev| event.unix_ms.saturating_sub(prev));
         let cause_event_id = previous_event_id.clone();
         human_timeline.push(format!(
             "{} {} {} +{}ms",
@@ -193,11 +194,7 @@ pub fn reconstruct_useful_timeline(
         .zip(entries.last())
         .map_or(0, |(first, last)| last.unix_ms.saturating_sub(first.unix_ms));
 
-    Ok(TimelineReconstructionReportV1 {
-        entries,
-        total_duration_ms,
-        human_timeline,
-    })
+    Ok(TimelineReconstructionReportV1 { entries, total_duration_ms, human_timeline })
 }
 
 /// Input metrics captured for a run.
@@ -229,7 +226,9 @@ pub struct ActionableRunMetricsV1 {
 }
 
 /// Build actionable run metrics diagnostics for performance and failure debugging.
-pub fn build_actionable_run_metrics(sample: &RunMetricsSampleV1) -> Result<ActionableRunMetricsV1, String> {
+pub fn build_actionable_run_metrics(
+    sample: &RunMetricsSampleV1,
+) -> Result<ActionableRunMetricsV1, String> {
     if sample.run_id.trim().is_empty() {
         return Err("run metrics require run_id".to_string());
     }
@@ -237,18 +236,16 @@ pub fn build_actionable_run_metrics(sample: &RunMetricsSampleV1) -> Result<Actio
         return Err("run metrics require verification_state".to_string());
     }
     let cache_total = sample.cache_hits + sample.cache_misses;
-    let cache_hit_ratio = if cache_total == 0 {
-        0.0
-    } else {
-        sample.cache_hits as f64 / cache_total as f64
-    };
+    let cache_hit_ratio =
+        if cache_total == 0 { 0.0 } else { sample.cache_hits as f64 / cache_total as f64 };
 
     let mut diagnostics = Vec::new();
     if sample.queue_time_ms > sample.run_time_ms {
         diagnostics.push("queue_time dominates run_time; inspect scheduler capacity".to_string());
     }
     if sample.retry_count > 0 {
-        diagnostics.push(format!("run observed {} retries; inspect unstable nodes", sample.retry_count));
+        diagnostics
+            .push(format!("run observed {} retries; inspect unstable nodes", sample.retry_count));
     }
     if sample.failure_count > 0 {
         diagnostics.push(format!(
@@ -257,7 +254,8 @@ pub fn build_actionable_run_metrics(sample: &RunMetricsSampleV1) -> Result<Actio
         ));
     }
     if cache_total > 0 && cache_hit_ratio < 0.2 {
-        diagnostics.push("low cache hit ratio; inspect cache keys and materialized outputs".to_string());
+        diagnostics
+            .push("low cache hit ratio; inspect cache keys and materialized outputs".to_string());
     }
     if sample.verification_state != "verified" {
         diagnostics.push(format!(
@@ -404,14 +402,8 @@ pub fn compare_runs_complete(
         ("candidate.output_fingerprint", candidate.output_fingerprint.as_str()),
         ("baseline.runtime_fingerprint", baseline.runtime_fingerprint.as_str()),
         ("candidate.runtime_fingerprint", candidate.runtime_fingerprint.as_str()),
-        (
-            "baseline.environment_fingerprint",
-            baseline.environment_fingerprint.as_str(),
-        ),
-        (
-            "candidate.environment_fingerprint",
-            candidate.environment_fingerprint.as_str(),
-        ),
+        ("baseline.environment_fingerprint", baseline.environment_fingerprint.as_str()),
+        ("candidate.environment_fingerprint", candidate.environment_fingerprint.as_str()),
         ("baseline.evidence_fingerprint", baseline.evidence_fingerprint.as_str()),
         ("candidate.evidence_fingerprint", candidate.evidence_fingerprint.as_str()),
     ] {
@@ -472,7 +464,9 @@ pub struct FlakeAnalysisReportV1 {
 }
 
 /// Analyze run history for transient failures, retry storms, and unstable adapters.
-pub fn analyze_flake_history(history: &[RunHistoryEntryV1]) -> Result<FlakeAnalysisReportV1, String> {
+pub fn analyze_flake_history(
+    history: &[RunHistoryEntryV1],
+) -> Result<FlakeAnalysisReportV1, String> {
     if history.is_empty() {
         return Err("flake analysis requires non-empty run history".to_string());
     }
@@ -559,20 +553,14 @@ pub fn attach_app_evidence(
     if !attachment.payload_sha256.starts_with("sha256:") {
         return Err("app evidence attachment payload_sha256 must use sha256: prefix".to_string());
     }
-    if envelope
-        .attachments
-        .iter()
-        .any(|existing| existing.evidence_id == attachment.evidence_id)
-    {
+    if envelope.attachments.iter().any(|existing| existing.evidence_id == attachment.evidence_id) {
         return Err(format!(
             "duplicate app evidence_id '{}' for run '{}'",
             attachment.evidence_id, envelope.run_id
         ));
     }
     envelope.attachments.push(attachment);
-    envelope
-        .attachments
-        .sort_by(|left, right| left.evidence_id.cmp(&right.evidence_id));
+    envelope.attachments.sort_by(|left, right| left.evidence_id.cmp(&right.evidence_id));
     Ok(())
 }
 
@@ -735,13 +723,14 @@ pub fn verify_evidence_completeness_profile(
 #[cfg(test)]
 mod tests {
     use super::{
-        analyze_flake_history, attach_app_evidence, build_actionable_run_metrics, compare_runs_complete,
-        query_evidence_graph, reconstruct_useful_timeline, summarize_large_run_compact,
-        validate_end_to_end_correlation_ids, verify_evidence_completeness_profile,
-        verify_event_taxonomy_complete, AppEvidenceAttachmentV1, CorrelationChainV1,
-        EvidenceCompletenessProfileV1, EvidenceGraphEdgeV1, EvidenceGraphV1,
-        ObservabilityEventDomainV1, ObservabilityEventRecordV1, RunComparisonInputV1,
-        RunEvidenceEnvelopeV1, RunHistoryEntryV1, RunMetricsSampleV1, RunNodeOutcomeV1,
+        analyze_flake_history, attach_app_evidence, build_actionable_run_metrics,
+        compare_runs_complete, query_evidence_graph, reconstruct_useful_timeline,
+        summarize_large_run_compact, validate_end_to_end_correlation_ids,
+        verify_event_taxonomy_complete, verify_evidence_completeness_profile,
+        AppEvidenceAttachmentV1, CorrelationChainV1, EvidenceCompletenessProfileV1,
+        EvidenceGraphEdgeV1, EvidenceGraphV1, ObservabilityEventDomainV1,
+        ObservabilityEventRecordV1, RunComparisonInputV1, RunEvidenceEnvelopeV1, RunHistoryEntryV1,
+        RunMetricsSampleV1, RunNodeOutcomeV1,
     };
 
     fn event(domain: ObservabilityEventDomainV1, name: &str) -> ObservabilityEventRecordV1 {
@@ -773,7 +762,8 @@ mod tests {
         assert!(report.missing_domains.is_empty());
 
         let incomplete = events[..8].to_vec();
-        let error = verify_event_taxonomy_complete(&incomplete).expect_err("taxonomy must refuse gaps");
+        let error =
+            verify_event_taxonomy_complete(&incomplete).expect_err("taxonomy must refuse gaps");
         assert!(error.contains("incomplete"));
         assert!(error.contains("Operator"));
     }
@@ -792,8 +782,8 @@ mod tests {
 
         let mut broken = chain;
         broken.support_bundle_id.clear();
-        let error =
-            validate_end_to_end_correlation_ids(&broken).expect_err("missing support bundle id must fail");
+        let error = validate_end_to_end_correlation_ids(&broken)
+            .expect_err("missing support bundle id must fail");
         assert!(error.contains("support_bundle_id"));
     }
 
@@ -826,7 +816,8 @@ mod tests {
             },
         ];
 
-        let report = reconstruct_useful_timeline(&events).expect("timeline reconstruction should work");
+        let report =
+            reconstruct_useful_timeline(&events).expect("timeline reconstruction should work");
         assert_eq!(report.entries.len(), 3);
         assert_eq!(report.entries[0].event_id, "evt-1");
         assert_eq!(report.entries[1].cause_event_id.as_deref(), Some("evt-1"));
@@ -924,7 +915,8 @@ mod tests {
             environment_fingerprint: "env-1".to_string(),
             evidence_fingerprint: "ev-2".to_string(),
         };
-        let report = compare_runs_complete(&baseline, &candidate).expect("comparison should succeed");
+        let report =
+            compare_runs_complete(&baseline, &candidate).expect("comparison should succeed");
         assert_eq!(
             report.drift_dimensions,
             vec![
@@ -971,10 +963,8 @@ mod tests {
 
     #[test]
     fn g168_app_evidence_api_supports_stable_attachment_contract() {
-        let mut envelope = RunEvidenceEnvelopeV1 {
-            run_id: "run-17".to_string(),
-            attachments: Vec::new(),
-        };
+        let mut envelope =
+            RunEvidenceEnvelopeV1 { run_id: "run-17".to_string(), attachments: Vec::new() };
         attach_app_evidence(
             &mut envelope,
             AppEvidenceAttachmentV1 {

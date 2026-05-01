@@ -29,7 +29,9 @@ pub fn validate_artifact_schema_descriptor(
         }
     }
     if !descriptor.media_type.contains('/') {
-        return Err("artifact schema descriptor media_type must be a valid type/subtype".to_string());
+        return Err(
+            "artifact schema descriptor media_type must be a valid type/subtype".to_string()
+        );
     }
     Ok(())
 }
@@ -67,10 +69,7 @@ pub fn validate_artifact_lifecycle_transition(
     if legal {
         Ok(())
     } else {
-        Err(format!(
-            "illegal artifact lifecycle transition {:?} -> {:?}",
-            from, to
-        ))
+        Err(format!("illegal artifact lifecycle transition {:?} -> {:?}", from, to))
     }
 }
 
@@ -157,11 +156,7 @@ pub fn build_cache_gc_dry_run(candidates: &[CacheGcCandidateV1]) -> CacheGcDryRu
             } else {
                 (true, "cache entry is unreferenced and policy-safe".to_string())
             };
-            CacheGcDryRunEntryV1 {
-                cache_key: candidate.cache_key.clone(),
-                would_remove,
-                reason,
-            }
+            CacheGcDryRunEntryV1 { cache_key: candidate.cache_key.clone(), would_remove, reason }
         })
         .collect();
     CacheGcDryRunReportV1 { entries }
@@ -393,19 +388,13 @@ pub fn deduplicate_artifacts_preserving_lineage(
 ) -> Vec<DeduplicatedArtifactLineageV1> {
     let mut by_hash = BTreeMap::<String, Vec<&DedupCandidateArtifactV1>>::new();
     for artifact in artifacts {
-        by_hash
-            .entry(artifact.content_hash.clone())
-            .or_default()
-            .push(artifact);
+        by_hash.entry(artifact.content_hash.clone()).or_default().push(artifact);
     }
     let mut deduped = Vec::new();
     for (_hash, group) in by_hash {
         let canonical = group[0];
-        let duplicate_artifact_ids = group
-            .iter()
-            .skip(1)
-            .map(|artifact| artifact.artifact_id.clone())
-            .collect::<Vec<_>>();
+        let duplicate_artifact_ids =
+            group.iter().skip(1).map(|artifact| artifact.artifact_id.clone()).collect::<Vec<_>>();
         let mut producers = BTreeSet::new();
         let mut consumers = BTreeSet::new();
         for artifact in &group {
@@ -460,17 +449,14 @@ pub fn verify_archive_bundle_profile(profile: &ArchiveBundleProfileV1) -> Result
 #[cfg(test)]
 mod tests {
     use super::{
-        verify_archive_bundle_profile, ArchiveBundleProfileV1,
-        deduplicate_artifacts_preserving_lineage, DedupCandidateArtifactV1,
-        evaluate_artifact_index_migration, ArtifactIndexMigrationRequestV1,
-        build_safe_artifact_preview,
-        build_artifact_lineage_query_index, lineage_ancestors, lineage_descendants,
-        ArtifactLineageRecordV1,
-        build_cache_gc_dry_run, CacheGcCandidateV1,
-        validate_cache_import_bundle, CachePortableBundleV1, CachePortableEntryV1,
-        enforce_retention_class, RetentionClassV1,
+        build_artifact_lineage_query_index, build_cache_gc_dry_run, build_safe_artifact_preview,
+        deduplicate_artifacts_preserving_lineage, enforce_retention_class,
+        evaluate_artifact_index_migration, lineage_ancestors, lineage_descendants,
         validate_artifact_lifecycle_transition, validate_artifact_schema_descriptor,
-        ArtifactLifecycleStateV1, ArtifactSchemaDescriptorV1,
+        validate_cache_import_bundle, verify_archive_bundle_profile, ArchiveBundleProfileV1,
+        ArtifactIndexMigrationRequestV1, ArtifactLifecycleStateV1, ArtifactLineageRecordV1,
+        ArtifactSchemaDescriptorV1, CacheGcCandidateV1, CachePortableBundleV1,
+        CachePortableEntryV1, DedupCandidateArtifactV1, RetentionClassV1,
     };
 
     #[test]
@@ -498,15 +484,14 @@ mod tests {
         validate_artifact_lifecycle_transition(Verified, Retained).expect("verified->retained");
         validate_artifact_lifecycle_transition(Retained, Archived).expect("retained->archived");
         validate_artifact_lifecycle_transition(Archived, Exported).expect("archived->exported");
-        let error =
-            validate_artifact_lifecycle_transition(Draft, Exported).expect_err("must reject skip transition");
+        let error = validate_artifact_lifecycle_transition(Draft, Exported)
+            .expect_err("must reject skip transition");
         assert!(error.contains("illegal artifact lifecycle transition"));
     }
 
     #[test]
     fn g153_retention_class_policy_never_deletes_replay_critical_evidence() {
-        let replay_critical =
-            enforce_retention_class(RetentionClassV1::Ephemeral, 400, true);
+        let replay_critical = enforce_retention_class(RetentionClassV1::Ephemeral, 400, true);
         assert!(!replay_critical.allow_delete);
         assert!(replay_critical.reason.contains("replay-critical"));
 
@@ -607,11 +592,7 @@ mod tests {
         assert_eq!(large_text.preview_kind, "summary");
         assert!(large_text.preview.contains("too large"));
 
-        let redacted = build_safe_artifact_preview(
-            "text/plain",
-            b"password=abc12345\nok",
-            1024,
-        );
+        let redacted = build_safe_artifact_preview("text/plain", b"password=abc12345\nok", 1024);
         assert_eq!(redacted.preview_kind, "inline");
         assert!(redacted.preview.contains("[REDACTED]"));
     }
@@ -671,7 +652,8 @@ mod tests {
 
         let mut invalid = profile;
         invalid.verifies_without_workspace = false;
-        let error = verify_archive_bundle_profile(&invalid).expect_err("must reject non-portable archive");
+        let error =
+            verify_archive_bundle_profile(&invalid).expect_err("must reject non-portable archive");
         assert!(error.contains("without original workspace"));
     }
 }

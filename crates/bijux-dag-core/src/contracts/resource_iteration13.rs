@@ -328,11 +328,9 @@ fn infer_requested_pool(node: &crate::Node) -> ExecutionPoolV1 {
     if node.tags.iter().any(|tag| tag == "offline") {
         return ExecutionPoolV1::Offline;
     }
-    if node
-        .tags
-        .iter()
-        .any(|tag| tag == "gpu" || tag.strip_prefix("accelerator:").is_some_and(|value| value == "gpu"))
-    {
+    if node.tags.iter().any(|tag| {
+        tag == "gpu" || tag.strip_prefix("accelerator:").is_some_and(|value| value == "gpu")
+    }) {
         return ExecutionPoolV1::Gpu;
     }
     if node.resources.as_ref().is_some_and(|resource| resource.mem_mb >= 65_536) {
@@ -486,9 +484,9 @@ pub fn build_capacity_what_if_report(
     input: &CapacityWhatIfInputV1,
 ) -> CapacityWhatIfReportV1 {
     let node_count = graph.nodes.len() as u64;
-    let estimated_storage_footprint_mb = node_count.saturating_mul(128).saturating_add(
-        (input.queued_runs as u64).saturating_mul(64),
-    );
+    let estimated_storage_footprint_mb = node_count
+        .saturating_mul(128)
+        .saturating_add((input.queued_runs as u64).saturating_mul(64));
     let estimated_queue_pressure = if input.queued_runs >= 100 {
         "high".to_string()
     } else if input.queued_runs >= 25 {
@@ -524,11 +522,7 @@ pub fn build_planner_confidence_report(graph: &Graph) -> PlannerConfidenceReport
                 .any(|tag| tag == "confidence:measured")
             {
                 (PlannerConfidenceLabelV1::Measured, "evidence-backed measurement".to_string())
-            } else if node
-                .tags
-                .iter()
-                .any(|tag| tag == "confidence:configured")
-            {
+            } else if node.tags.iter().any(|tag| tag == "confidence:configured") {
                 (PlannerConfidenceLabelV1::Configured, "operator-configured estimate".to_string())
             } else if node.resources.is_some() {
                 (PlannerConfidenceLabelV1::Static, "declared static resource hints".to_string())
@@ -549,11 +543,11 @@ pub fn build_planner_confidence_report(graph: &Graph) -> PlannerConfidenceReport
 #[cfg(test)]
 mod tests {
     use super::{
-        adapter_capability_for_kind, build_data_locality_advisory_report,
-        build_resource_requirements, build_cost_planning_advisory_report, plan_pool_placement,
-        planner_runnable_from_capabilities, validate_resource_requirements,
-        build_capacity_what_if_report, CapacityWhatIfInputV1, ExecutionPoolV1, ResourceAvailabilityV1,
-        build_planner_confidence_report, PlannerConfidenceLabelV1,
+        adapter_capability_for_kind, build_capacity_what_if_report,
+        build_cost_planning_advisory_report, build_data_locality_advisory_report,
+        build_planner_confidence_report, build_resource_requirements, plan_pool_placement,
+        planner_runnable_from_capabilities, validate_resource_requirements, CapacityWhatIfInputV1,
+        ExecutionPoolV1, PlannerConfidenceLabelV1, ResourceAvailabilityV1,
     };
     use crate::{
         Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef, Resources,
@@ -706,10 +700,7 @@ mod tests {
         );
         assert_eq!(report.estimated_queue_pressure, "moderate");
         assert!(report.estimated_storage_footprint_mb > 0);
-        assert_eq!(
-            report.tied_to_evidence_snapshot_id,
-            "evidence-2026-05-01T06:00:00Z"
-        );
+        assert_eq!(report.tied_to_evidence_snapshot_id, "evidence-2026-05-01T06:00:00Z");
         assert!(report.advisory_only);
     }
 
