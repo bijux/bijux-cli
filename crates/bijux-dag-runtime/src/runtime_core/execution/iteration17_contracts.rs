@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 /// Event domains required for runtime evidence taxonomy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -576,14 +576,83 @@ pub fn attach_app_evidence(
     Ok(())
 }
 
+/// Directed evidence relationship edge.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EvidenceGraphEdgeV1 {
+    pub from_id: String,
+    pub to_id: String,
+    pub relation: String,
+}
+
+/// Evidence relationship graph over runs, plans, nodes, artifacts, cache, replay, and events.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EvidenceGraphV1 {
+    pub nodes: Vec<String>,
+    pub edges: Vec<EvidenceGraphEdgeV1>,
+}
+
+/// Query result for graph traversal.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EvidenceGraphQueryResultV1 {
+    pub start_id: String,
+    pub visited_nodes: Vec<String>,
+    pub traversed_edges: Vec<EvidenceGraphEdgeV1>,
+}
+
+/// Query evidence graph relationships from a starting node with bounded traversal depth.
+pub fn query_evidence_graph(
+    graph: &EvidenceGraphV1,
+    start_id: &str,
+    max_depth: usize,
+) -> Result<EvidenceGraphQueryResultV1, String> {
+    if start_id.trim().is_empty() {
+        return Err("evidence graph query requires start_id".to_string());
+    }
+    if max_depth == 0 {
+        return Err("evidence graph query requires max_depth >= 1".to_string());
+    }
+    if !graph.nodes.iter().any(|node| node == start_id) {
+        return Err(format!("evidence graph query start_id '{}' does not exist", start_id));
+    }
+
+    let mut visited = BTreeSet::<String>::new();
+    let mut traversed_edges = Vec::<EvidenceGraphEdgeV1>::new();
+    let mut queue = VecDeque::<(String, usize)>::new();
+    visited.insert(start_id.to_string());
+    queue.push_back((start_id.to_string(), 0));
+
+    while let Some((current, depth)) = queue.pop_front() {
+        if depth >= max_depth {
+            continue;
+        }
+        for edge in graph.edges.iter().filter(|edge| edge.from_id == current) {
+            if edge.to_id.trim().is_empty() || edge.relation.trim().is_empty() {
+                return Err("evidence graph contains empty edge fields".to_string());
+            }
+            traversed_edges.push(edge.clone());
+            if visited.insert(edge.to_id.clone()) {
+                queue.push_back((edge.to_id.clone(), depth + 1));
+            }
+        }
+    }
+
+    let visited_nodes = visited.into_iter().collect::<Vec<_>>();
+    Ok(EvidenceGraphQueryResultV1 {
+        start_id: start_id.to_string(),
+        visited_nodes,
+        traversed_edges,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         analyze_flake_history, attach_app_evidence, build_actionable_run_metrics, compare_runs_complete,
-        reconstruct_useful_timeline, summarize_large_run_compact, validate_end_to_end_correlation_ids,
-        verify_event_taxonomy_complete, AppEvidenceAttachmentV1, CorrelationChainV1,
-        ObservabilityEventDomainV1, ObservabilityEventRecordV1, RunComparisonInputV1,
-        RunEvidenceEnvelopeV1, RunHistoryEntryV1, RunMetricsSampleV1, RunNodeOutcomeV1,
+        query_evidence_graph, reconstruct_useful_timeline, summarize_large_run_compact,
+        validate_end_to_end_correlation_ids, verify_event_taxonomy_complete, AppEvidenceAttachmentV1,
+        CorrelationChainV1, EvidenceGraphEdgeV1, EvidenceGraphV1, ObservabilityEventDomainV1,
+        ObservabilityEventRecordV1, RunComparisonInputV1, RunEvidenceEnvelopeV1, RunHistoryEntryV1,
+        RunMetricsSampleV1, RunNodeOutcomeV1,
     };
 
     fn event(domain: ObservabilityEventDomainV1, name: &str) -> ObservabilityEventRecordV1 {
@@ -844,5 +913,45 @@ mod tests {
         )
         .expect_err("duplicate evidence ids must fail");
         assert!(duplicate.contains("duplicate"));
+    }
+
+    #[test]
+    fn g169_evidence_graph_query_returns_related_entities_without_file_scans() {
+        let graph = EvidenceGraphV1 {
+            nodes: vec![
+                "run-17".to_string(),
+                "plan-17".to_string(),
+                "node-a".to_string(),
+                "artifact-1".to_string(),
+            ],
+            edges: vec![
+                EvidenceGraphEdgeV1 {
+                    from_id: "run-17".to_string(),
+                    to_id: "plan-17".to_string(),
+                    relation: "run_has_plan".to_string(),
+                },
+                EvidenceGraphEdgeV1 {
+                    from_id: "plan-17".to_string(),
+                    to_id: "node-a".to_string(),
+                    relation: "plan_contains_node".to_string(),
+                },
+                EvidenceGraphEdgeV1 {
+                    from_id: "node-a".to_string(),
+                    to_id: "artifact-1".to_string(),
+                    relation: "node_produces_artifact".to_string(),
+                },
+            ],
+        };
+        let result = query_evidence_graph(&graph, "run-17", 3).expect("graph query should work");
+        assert_eq!(
+            result.visited_nodes,
+            vec![
+                "artifact-1".to_string(),
+                "node-a".to_string(),
+                "plan-17".to_string(),
+                "run-17".to_string(),
+            ]
+        );
+        assert_eq!(result.traversed_edges.len(), 3);
     }
 }
