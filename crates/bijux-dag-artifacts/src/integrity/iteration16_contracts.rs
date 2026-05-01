@@ -329,9 +329,50 @@ pub fn build_safe_artifact_preview(
     ArtifactPreviewV1 { preview_kind: "inline".to_string(), preview: text }
 }
 
+/// Artifact index migration request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArtifactIndexMigrationRequestV1 {
+    pub from_schema: String,
+    pub to_schema: String,
+    pub semantic_loss_detected: bool,
+}
+
+/// Artifact index migration decision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArtifactIndexMigrationDecisionV1 {
+    pub migrated: bool,
+    pub reason: String,
+}
+
+/// Evaluate artifact index migration safety.
+pub fn evaluate_artifact_index_migration(
+    request: &ArtifactIndexMigrationRequestV1,
+) -> ArtifactIndexMigrationDecisionV1 {
+    if request.from_schema.trim().is_empty() || request.to_schema.trim().is_empty() {
+        return ArtifactIndexMigrationDecisionV1 {
+            migrated: false,
+            reason: "migration refused: schema identifiers must not be empty".to_string(),
+        };
+    }
+    if request.semantic_loss_detected {
+        return ArtifactIndexMigrationDecisionV1 {
+            migrated: false,
+            reason: "migration refused: semantic-loss migration is not allowed".to_string(),
+        };
+    }
+    ArtifactIndexMigrationDecisionV1 {
+        migrated: true,
+        reason: format!(
+            "migration accepted from '{}' to '{}'",
+            request.from_schema, request.to_schema
+        ),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        evaluate_artifact_index_migration, ArtifactIndexMigrationRequestV1,
         build_safe_artifact_preview,
         build_artifact_lineage_query_index, lineage_ancestors, lineage_descendants,
         ArtifactLineageRecordV1,
@@ -483,5 +524,23 @@ mod tests {
         );
         assert_eq!(redacted.preview_kind, "inline");
         assert!(redacted.preview.contains("[REDACTED]"));
+    }
+
+    #[test]
+    fn g158_artifact_index_migration_refuses_semantic_loss_paths() {
+        let refused = evaluate_artifact_index_migration(&ArtifactIndexMigrationRequestV1 {
+            from_schema: "artifact-index/v1".to_string(),
+            to_schema: "artifact-index/v2".to_string(),
+            semantic_loss_detected: true,
+        });
+        assert!(!refused.migrated);
+        assert!(refused.reason.contains("semantic-loss"));
+
+        let accepted = evaluate_artifact_index_migration(&ArtifactIndexMigrationRequestV1 {
+            from_schema: "artifact-index/v1".to_string(),
+            to_schema: "artifact-index/v2".to_string(),
+            semantic_loss_detected: false,
+        });
+        assert!(accepted.migrated);
     }
 }
