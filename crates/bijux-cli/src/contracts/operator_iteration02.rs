@@ -126,13 +126,69 @@ pub fn build_plugin_scaffold_conformance_report(
     Ok(PluginScaffoldConformanceReportV1 { entries: ordered, fully_conformant })
 }
 
+/// Official app descriptor compatibility input contract.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct OfficialAppDescriptorCompatibilityInputV1 {
+    /// Host runtime version.
+    pub host_version: String,
+    /// App descriptor version.
+    pub app_version: String,
+    /// Host compatibility requirement declared by app.
+    pub host_compatibility_window: String,
+    /// Lifecycle state (`active`, `deprecated`, `disabled`).
+    pub lifecycle_state: String,
+    /// Declared command surfaces.
+    pub command_surfaces: Vec<String>,
+}
+
+/// Official app descriptor compatibility evaluation output.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct OfficialAppDescriptorCompatibilityReportV1 {
+    /// Compatibility marker.
+    pub compatible: bool,
+    /// Refusal reason or migration hint.
+    pub message: String,
+}
+
+/// Evaluate official app descriptor compatibility against host runtime version.
+pub fn evaluate_official_app_descriptor_compatibility(
+    payload: &OfficialAppDescriptorCompatibilityInputV1,
+) -> Result<OfficialAppDescriptorCompatibilityReportV1, String> {
+    let host =
+        Version::parse(&payload.host_version).map_err(|error| format!("invalid host_version: {error}"))?;
+    Version::parse(&payload.app_version).map_err(|error| format!("invalid app_version: {error}"))?;
+    let requirement = VersionReq::parse(&payload.host_compatibility_window)
+        .map_err(|error| format!("invalid host_compatibility_window: {error}"))?;
+    if payload.command_surfaces.is_empty() {
+        return Err("command_surfaces cannot be empty".to_string());
+    }
+    if payload.lifecycle_state == "disabled" {
+        return Ok(OfficialAppDescriptorCompatibilityReportV1 {
+            compatible: false,
+            message: "app is disabled; use migration route".to_string(),
+        });
+    }
+    if requirement.matches(&host) {
+        Ok(OfficialAppDescriptorCompatibilityReportV1 {
+            compatible: true,
+            message: "descriptor compatible with host runtime".to_string(),
+        })
+    } else {
+        Ok(OfficialAppDescriptorCompatibilityReportV1 {
+            compatible: false,
+            message: "host version outside compatibility window; migrate app descriptor".to_string(),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_plugin_scaffold_conformance_report,
+        evaluate_official_app_descriptor_compatibility,
         validate_executable_plugin_manifest_contract, validate_plugin_subprocess_execution_policy,
         ExecutablePluginManifestContractV1, PluginScaffoldConformanceEntryV1,
-        PluginSubprocessExecutionPolicyV1,
+        PluginSubprocessExecutionPolicyV1, OfficialAppDescriptorCompatibilityInputV1,
     };
 
     #[test]
@@ -179,5 +235,20 @@ mod tests {
         ])
         .expect("conformance report should build");
         assert!(!report.fully_conformant);
+    }
+
+    #[test]
+    fn g014_descriptor_compatibility_reports_version_window_mismatch() {
+        let report = evaluate_official_app_descriptor_compatibility(
+            &OfficialAppDescriptorCompatibilityInputV1 {
+                host_version: "0.3.5".to_string(),
+                app_version: "1.4.0".to_string(),
+                host_compatibility_window: ">=0.4,<0.5".to_string(),
+                lifecycle_state: "active".to_string(),
+                command_surfaces: vec!["dag run".to_string()],
+            },
+        )
+        .expect("compatibility report should build");
+        assert!(!report.compatible);
     }
 }
