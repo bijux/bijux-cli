@@ -224,16 +224,46 @@ pub fn build_bundle_portability_scenario_report(
     Ok(report)
 }
 
+/// Mounted-app parity scenario report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MountedAppParityScenarioReportV1 {
+    pub root_command_path: String,
+    pub direct_command_path: String,
+    pub machine_output_equal: bool,
+    pub human_output_equal: bool,
+}
+
+/// Build mounted-app parity scenario proof.
+pub fn build_mounted_app_parity_scenario_report(
+    report: MountedAppParityScenarioReportV1,
+) -> Result<MountedAppParityScenarioReportV1, String> {
+    if report.root_command_path.trim().is_empty() {
+        return Err("root_command_path must not be empty".to_string());
+    }
+    if report.direct_command_path.trim().is_empty() {
+        return Err("direct_command_path must not be empty".to_string());
+    }
+    if !report.machine_output_equal {
+        return Err("machine output must be equal between mounted and direct paths".to_string());
+    }
+    if !report.human_output_equal {
+        return Err("human output must be equal between mounted and direct paths".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_bundle_portability_scenario_report,
         build_branch_join_scenario_report, build_hello_dag_scenario_report,
         build_cache_heavy_scenario_report, build_failure_retry_scenario_report,
+        build_mounted_app_parity_scenario_report,
         build_reducer_scenario_report,
         build_shell_etl_scenario_report, BranchJoinScenarioReportV1, FailureRetryScenarioReportV1,
-        BundlePortabilityScenarioReportV1, CacheHeavyScenarioReportV1, HelloDagScenarioReportV1,
-        ReducerScenarioReportV1, ShellEtlScenarioReportV1,
+        BundlePortabilityScenarioReportV1, CacheHeavyScenarioReportV1,
+        HelloDagScenarioReportV1, MountedAppParityScenarioReportV1, ReducerScenarioReportV1,
+        ShellEtlScenarioReportV1,
     };
 
     #[test]
@@ -332,5 +362,18 @@ mod tests {
         .expect("bundle portability scenario");
         assert!(report.imported_in_clean_workspace);
         assert!(report.verifies_after_import);
+    }
+
+    #[test]
+    fn g098_mounted_app_parity_prevents_route_and_output_drift() {
+        let report = build_mounted_app_parity_scenario_report(MountedAppParityScenarioReportV1 {
+            root_command_path: "bijux dag run workflows/hello.json".to_string(),
+            direct_command_path: "bijux-dag run workflows/hello.json".to_string(),
+            machine_output_equal: true,
+            human_output_equal: true,
+        })
+        .expect("mounted app parity scenario");
+        assert!(report.machine_output_equal);
+        assert!(report.human_output_equal);
     }
 }
