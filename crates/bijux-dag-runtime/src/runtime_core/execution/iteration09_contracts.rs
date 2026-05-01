@@ -56,9 +56,41 @@ pub fn enforce_write_boundary(
     })
 }
 
+/// Environment allowlist filtering report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EnvAllowlistReportV1 {
+    pub allowed_variables: Vec<(String, String)>,
+    pub dropped_variables: Vec<String>,
+}
+
+/// Filter runtime environment by declared allowlist.
+pub fn enforce_environment_allowlist(
+    environment: Vec<(String, String)>,
+    allowlist: &[String],
+) -> Result<EnvAllowlistReportV1, String> {
+    if allowlist.is_empty() {
+        return Err("allowlist must not be empty".to_string());
+    }
+    let mut allowed_variables = Vec::new();
+    let mut dropped_variables = Vec::new();
+    for (key, value) in environment {
+        if allowlist.iter().any(|allowed| allowed == &key) {
+            allowed_variables.push((key, value));
+        } else {
+            dropped_variables.push(key);
+        }
+    }
+    allowed_variables.sort_by(|left, right| left.0.cmp(&right.0));
+    dropped_variables.sort();
+    Ok(EnvAllowlistReportV1 {
+        allowed_variables,
+        dropped_variables,
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::enforce_write_boundary;
+    use super::{enforce_environment_allowlist, enforce_write_boundary};
 
     #[test]
     fn g081_write_boundary_refuses_traversal_and_symlink_escape() {
@@ -85,5 +117,26 @@ mod tests {
         .expect("symlink decision");
         assert!(!symlink_escape.allowed);
         assert_eq!(symlink_escape.reason, "symlink escape detected");
+    }
+
+    #[test]
+    fn g082_environment_allowlist_prevents_secret_leakage() {
+        let report = enforce_environment_allowlist(
+            vec![
+                ("PATH".to_string(), "/usr/bin".to_string()),
+                ("WORKFLOW_ID".to_string(), "run-100".to_string()),
+                ("API_TOKEN".to_string(), "secret-value".to_string()),
+                ("SSH_PRIVATE_KEY".to_string(), "sensitive".to_string()),
+            ],
+            &["PATH".to_string(), "WORKFLOW_ID".to_string()],
+        )
+        .expect("allowlist report");
+        assert_eq!(report.allowed_variables.len(), 2);
+        assert!(report
+            .dropped_variables
+            .contains(&"API_TOKEN".to_string()));
+        assert!(report
+            .dropped_variables
+            .contains(&"SSH_PRIVATE_KEY".to_string()));
     }
 }
