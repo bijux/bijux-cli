@@ -3715,6 +3715,13 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             serde_json::to_string(&executable_docs_report).unwrap_or_else(|_| "invalid report".to_string())
         ));
     }
+    let install_paths_report = evaluate_install_paths_predictable(&root)?;
+    if !install_paths_report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "install path predictability contract failed: {}",
+            serde_json::to_string(&install_paths_report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
 }
 
@@ -4816,6 +4823,57 @@ fn evaluate_executable_docs_recipes(root: &Path) -> Result<Value, String> {
         "contract": contract_rel,
         "recipe_count": recipes.len(),
         "command_count": total_commands,
+        "violations": violations,
+    }))
+}
+
+fn evaluate_install_paths_predictable(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/install_path_contract.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+
+    let paths_output = command_stdout(root, "cargo", &["run", "-q", "-p", "bijux-cli", "--", "--json", "cli", "paths"])?;
+    let paths_payload: Value =
+        serde_json::from_str(&paths_output).map_err(|err| format!("cli paths output is not JSON: {err}"))?;
+    let doctor_output = command_stdout(root, "cargo", &["run", "-q", "-p", "bijux-cli", "--", "--json", "doctor"])?;
+    let doctor_payload: Value =
+        serde_json::from_str(&doctor_output).map_err(|err| format!("doctor output is not JSON: {err}"))?;
+
+    let mut violations = Vec::new();
+    for key in contract["required_keys"].as_array().ok_or_else(|| "install path contract missing required_keys".to_string())? {
+        let Some(key) = key.as_str() else {
+            violations.push("required_keys must contain strings".to_string());
+            continue;
+        };
+        if paths_payload.get(key).is_none() {
+            violations.push(format!("cli paths output missing required key `{key}`"));
+            continue;
+        }
+        if matches!(paths_payload.get(key), Some(Value::String(value)) if value.trim().is_empty()) {
+            violations.push(format!("cli paths key `{key}` must not be empty"));
+        }
+    }
+    for section in contract["doctor_required_sections"]
+        .as_array()
+        .ok_or_else(|| "install path contract missing doctor_required_sections".to_string())?
+    {
+        let Some(section) = section.as_str() else {
+            violations.push("doctor_required_sections must contain strings".to_string());
+            continue;
+        };
+        if doctor_payload.get(section).is_none() {
+            violations.push(format!("doctor output missing required section `{section}`"));
+        }
+    }
+
+    Ok(json!({
+        "goal": "G196",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "paths_command": contract["command"],
+        "doctor_command": contract["doctor_command"],
         "violations": violations,
     }))
 }

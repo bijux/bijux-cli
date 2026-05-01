@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "command": "bijux --json cli paths",
+  "required_keys": [
+    "active_binary",
+    "config",
+    "history",
+    "plugins",
+    "path_binaries",
+    "post_install_hint"
+  ],
+  "doctor_command": "bijux --json doctor",
+  "doctor_required_sections": [
+    "paths",
+    "install"
+  ]
+}
