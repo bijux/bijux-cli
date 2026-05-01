@@ -204,12 +204,73 @@ pub fn build_explainable_cache_key(factors: CacheKeyFactorsV1) -> Result<CacheKe
     })
 }
 
+/// Evidence required for safe cache reuse.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheReuseEvidenceV1 {
+    pub cache_key: String,
+    pub artifact_hash: String,
+    pub schema_fingerprint: String,
+    pub policy_fingerprint: String,
+    pub integrity_verified: bool,
+}
+
+/// Cache reuse decision for operators and replay.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheReuseDecisionV1 {
+    pub decision: String,
+    pub reason: String,
+}
+
+/// Assess whether cache reuse is safe for a node attempt.
+pub fn assess_cache_reuse_safety(
+    expected_cache_key: &str,
+    expected_artifact_hash: &str,
+    expected_schema_fingerprint: &str,
+    expected_policy_fingerprint: &str,
+    evidence: &CacheReuseEvidenceV1,
+) -> CacheReuseDecisionV1 {
+    if !evidence.integrity_verified {
+        return CacheReuseDecisionV1 {
+            decision: "miss".to_string(),
+            reason: "cache entry integrity was not verified".to_string(),
+        };
+    }
+    if evidence.cache_key != expected_cache_key {
+        return CacheReuseDecisionV1 {
+            decision: "miss".to_string(),
+            reason: "cache key mismatch".to_string(),
+        };
+    }
+    if evidence.artifact_hash != expected_artifact_hash {
+        return CacheReuseDecisionV1 {
+            decision: "miss".to_string(),
+            reason: "artifact hash mismatch".to_string(),
+        };
+    }
+    if evidence.schema_fingerprint != expected_schema_fingerprint {
+        return CacheReuseDecisionV1 {
+            decision: "miss".to_string(),
+            reason: "schema fingerprint mismatch".to_string(),
+        };
+    }
+    if evidence.policy_fingerprint != expected_policy_fingerprint {
+        return CacheReuseDecisionV1 {
+            decision: "miss".to_string(),
+            reason: "policy fingerprint mismatch".to_string(),
+        };
+    }
+    CacheReuseDecisionV1 {
+        decision: "hit".to_string(),
+        reason: "safe reuse with matching key, hash, schema, policy, and integrity proof".to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_complete_artifact_inventory, build_explainable_cache_key,
+        assess_cache_reuse_safety, build_complete_artifact_inventory, build_explainable_cache_key,
         build_run_directory_layout_contract, content_identity_for_directory, content_identity_for_file,
-        ArtifactInventoryRecordV1, CacheKeyFactorsV1,
+        ArtifactInventoryRecordV1, CacheKeyFactorsV1, CacheReuseEvidenceV1,
     };
 
     #[test]
@@ -289,5 +350,25 @@ mod tests {
 
         let explained_repeat = build_explainable_cache_key(factors).expect("cache explain");
         assert_eq!(explained.cache_key, explained_repeat.cache_key);
+    }
+
+    #[test]
+    fn g065_safe_cache_reuse_is_demonstrable_with_matching_evidence() {
+        let evidence = CacheReuseEvidenceV1 {
+            cache_key: "cache-key-123".to_string(),
+            artifact_hash: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_string(),
+            schema_fingerprint: "schema-v1".to_string(),
+            policy_fingerprint: "policy-safe".to_string(),
+            integrity_verified: true,
+        };
+        let decision = assess_cache_reuse_safety(
+            "cache-key-123",
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "schema-v1",
+            "policy-safe",
+            &evidence,
+        );
+        assert_eq!(decision.decision, "hit");
+        assert!(decision.reason.contains("safe reuse"));
     }
 }
