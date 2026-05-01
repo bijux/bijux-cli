@@ -620,6 +620,98 @@ pub fn build_partition_identity_report(
     Ok(PartitionIdentityReportV1 { partitions: rows })
 }
 
+/// Subgraph node descriptor for scoped materialization.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SubgraphNodeDescriptorV1 {
+    /// Local node identifier inside subgraph.
+    pub local_id: String,
+    /// Parameter names consumed by this node.
+    pub params: Vec<String>,
+    /// Artifact output names produced by this node.
+    pub artifacts: Vec<String>,
+}
+
+/// Materialized subgraph node with scoped identities.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScopedSubgraphNodeV1 {
+    /// Scoped node id.
+    pub scoped_node_id: String,
+    /// Scoped param keys.
+    pub scoped_params: Vec<String>,
+    /// Scoped artifact names.
+    pub scoped_artifacts: Vec<String>,
+    /// Replay ancestry chain.
+    pub replay_ancestry: Vec<String>,
+}
+
+/// Subgraph materialization report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SubgraphMaterializationReportV1 {
+    /// Whether scoped materialization succeeded.
+    pub valid: bool,
+    /// Materialized nodes.
+    pub nodes: Vec<ScopedSubgraphNodeV1>,
+    /// Collision errors.
+    pub collisions: Vec<String>,
+}
+
+/// Materialize reusable subgraph nodes into scoped identities with ancestry.
+pub fn materialize_subgraph_scope(
+    parent_graph_id: &str,
+    subgraph_id: &str,
+    parent_run_id: &str,
+    nodes: Vec<SubgraphNodeDescriptorV1>,
+) -> SubgraphMaterializationReportV1 {
+    let mut collisions = Vec::new();
+    let mut seen_nodes = BTreeSet::new();
+    let mut materialized = Vec::new();
+
+    for node in nodes {
+        let scoped_node_id = format!("{parent_graph_id}/{subgraph_id}/{}", node.local_id);
+        if !seen_nodes.insert(scoped_node_id.clone()) {
+            collisions.push(format!("duplicate scoped node id: {scoped_node_id}"));
+            continue;
+        }
+
+        let mut scoped_params = node
+            .params
+            .iter()
+            .map(|name| format!("{subgraph_id}.params.{name}"))
+            .collect::<Vec<_>>();
+        scoped_params.sort();
+        scoped_params.dedup();
+        if scoped_params.len() != node.params.len() {
+            collisions.push(format!("duplicate param names on node {}", node.local_id));
+        }
+
+        let mut scoped_artifacts = node
+            .artifacts
+            .iter()
+            .map(|name| format!("{subgraph_id}.artifacts.{name}"))
+            .collect::<Vec<_>>();
+        scoped_artifacts.sort();
+        scoped_artifacts.dedup();
+        if scoped_artifacts.len() != node.artifacts.len() {
+            collisions.push(format!("duplicate artifact names on node {}", node.local_id));
+        }
+
+        materialized.push(ScopedSubgraphNodeV1 {
+            scoped_node_id,
+            scoped_params,
+            scoped_artifacts,
+            replay_ancestry: vec![parent_run_id.to_string(), subgraph_id.to_string()],
+        });
+    }
+
+    materialized.sort_by(|left, right| left.scoped_node_id.cmp(&right.scoped_node_id));
+    collisions.sort();
+    SubgraphMaterializationReportV1 {
+        valid: collisions.is_empty(),
+        nodes: materialized,
+        collisions,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -627,6 +719,7 @@ mod tests {
         build_optional_upstream_evidence_report,
         evaluate_trigger_readiness_from_states, evaluate_trigger_truth_table_row,
         expand_matrix_bounded, build_partition_identity_report,
+        materialize_subgraph_scope, SubgraphNodeDescriptorV1,
         validate_barrier_semantics, validate_reducer_semantics, ReducerOrderingPolicyV1,
         TriggerRuleProfileV1, UpstreamTerminalStateV1,
     };
@@ -863,5 +956,35 @@ mod tests {
             .partitions
             .iter()
             .all(|row| row.lineage_id.contains("reduce.partitions")));
+    }
+
+    #[test]
+    fn g040_subgraph_materialization_scopes_ids_and_catches_collisions() {
+        let report = materialize_subgraph_scope(
+            "graph.main",
+            "subgraph.align",
+            "run.42",
+            vec![
+                SubgraphNodeDescriptorV1 {
+                    local_id: "step".to_string(),
+                    params: vec!["threads".to_string()],
+                    artifacts: vec!["bam".to_string()],
+                },
+                SubgraphNodeDescriptorV1 {
+                    local_id: "step".to_string(),
+                    params: vec!["threads".to_string()],
+                    artifacts: vec!["bam".to_string()],
+                },
+            ],
+        );
+        assert!(!report.valid);
+        assert!(report
+            .collisions
+            .iter()
+            .any(|entry| entry.contains("duplicate scoped node id")));
+        assert!(report
+            .nodes
+            .iter()
+            .all(|node| node.replay_ancestry == vec!["run.42".to_string(), "subgraph.align".to_string()]));
     }
 }
