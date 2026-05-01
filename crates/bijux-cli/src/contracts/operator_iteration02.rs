@@ -288,9 +288,48 @@ pub fn resolve_route_conflict_deterministically(
     }
 }
 
+/// Provenance record for dispatched app route handling.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct AppRouteProvenanceRecordV1 {
+    /// Command route path.
+    pub route_path: String,
+    /// App descriptor hash.
+    pub descriptor_hash: String,
+    /// Handler binary or module identity.
+    pub handler_identity: String,
+    /// Output schema identifier.
+    pub output_schema: String,
+}
+
+/// Build app route provenance record for support and evidence bundles.
+pub fn build_app_route_provenance_record(
+    route_path: &str,
+    descriptor_hash: &str,
+    handler_identity: &str,
+    output_schema: &str,
+) -> Result<AppRouteProvenanceRecordV1, String> {
+    for (field, value) in [
+        ("route_path", route_path),
+        ("descriptor_hash", descriptor_hash),
+        ("handler_identity", handler_identity),
+        ("output_schema", output_schema),
+    ] {
+        if value.trim().is_empty() {
+            return Err(format!("{field} cannot be empty"));
+        }
+    }
+    Ok(AppRouteProvenanceRecordV1 {
+        route_path: route_path.to_string(),
+        descriptor_hash: descriptor_hash.to_string(),
+        handler_identity: handler_identity.to_string(),
+        output_schema: output_schema.to_string(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_app_route_provenance_record,
         build_plugin_scaffold_conformance_report,
         resolve_route_conflict_deterministically,
         evaluate_legacy_shim_policy,
@@ -397,5 +436,18 @@ mod tests {
             "official.dag.run"
         );
         assert!(resolution.refusal_reason.is_none());
+    }
+
+    #[test]
+    fn g017_route_provenance_record_captures_handler_and_descriptor_hash() {
+        let record = build_app_route_provenance_record(
+            "dag run",
+            "sha256:abc123",
+            "bijux-dag-cli::dag::run",
+            "dag-run-envelope-v1",
+        )
+        .expect("provenance record should build");
+        assert_eq!(record.descriptor_hash, "sha256:abc123");
+        assert_eq!(record.handler_identity, "bijux-dag-cli::dag::run");
     }
 }
