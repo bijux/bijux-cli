@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
+use std::time::Instant;
 
 use crate::{compile_graph, lower_graph_to_execution_plan, Graph, GraphError, PlannerSeverity, Severity};
 
@@ -772,12 +773,103 @@ pub fn detect_planner_conflicts(
     PlannerConflictReportV1 { conflicts }
 }
 
+/// Planner benchmark sample for one graph shape.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlannerShapeBenchmarkV1 {
+    pub shape: String,
+    pub node_count: usize,
+    pub elapsed_ms: u128,
+    pub within_budget: bool,
+}
+
+/// Planner performance measurement report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlannerPerformanceReportV1 {
+    pub build_budget_ms: u128,
+    pub samples: Vec<PlannerShapeBenchmarkV1>,
+}
+
+fn benchmark_plan_build(shape: &str, graph: &Graph, build_budget_ms: u128) -> Result<PlannerShapeBenchmarkV1, GraphError> {
+    let start = Instant::now();
+    let compile = compile_graph(graph)?;
+    let _plan = lower_graph_to_execution_plan(&compile.normalized_graph, Default::default())
+        .map_err(|_| GraphError::ValidationFailed)?;
+    let elapsed = start.elapsed().as_millis();
+    Ok(PlannerShapeBenchmarkV1 {
+        shape: shape.to_string(),
+        node_count: graph.nodes.len(),
+        elapsed_ms: elapsed,
+        within_budget: elapsed <= build_budget_ms,
+    })
+}
+
+fn chain_graph(length: usize) -> Graph {
+    let mut builder = crate::DagBuilder::new();
+    for index in 0..length {
+        let id = format!("n{index}");
+        let mut node = crate::NodeBuilder::new(&id, crate::NodeKind::Const)
+            .output("out", &format!("artifacts/{id}.json"));
+        if index > 0 {
+            node = node.input("in");
+        }
+        builder = builder.node(node.build());
+        if index > 0 {
+            builder = builder.edge(&format!("n{}", index - 1), "out", &id, "in");
+        }
+    }
+    builder.build()
+}
+
+fn wide_graph(width: usize) -> Graph {
+    let mut builder = crate::DagBuilder::new().node(
+        crate::NodeBuilder::new("root", crate::NodeKind::Const)
+            .output("out", "artifacts/root.json")
+            .build(),
+    );
+    for index in 0..width {
+        let id = format!("leaf{index}");
+        builder = builder
+            .node(
+                crate::NodeBuilder::new(&id, crate::NodeKind::Const)
+                    .input("in")
+                    .output("out", &format!("artifacts/{id}.json"))
+                    .build(),
+            )
+            .edge("root", "out", &id, "in");
+    }
+    builder.build()
+}
+
+/// Measure planner performance on chain/wide/branching/matrix/subgraph/reducer shapes.
+pub fn measure_planner_performance_real_shapes(
+    build_budget_ms: u128,
+) -> Result<PlannerPerformanceReportV1, GraphError> {
+    let chain = chain_graph(12);
+    let wide = wide_graph(12);
+    let branching = wide_graph(6);
+    let matrix = wide_graph(8);
+    let subgraph = chain_graph(8);
+    let reducer = chain_graph(10);
+
+    let mut samples = vec![
+        benchmark_plan_build("chain", &chain, build_budget_ms)?,
+        benchmark_plan_build("wide", &wide, build_budget_ms)?,
+        benchmark_plan_build("branching", &branching, build_budget_ms)?,
+        benchmark_plan_build("matrix", &matrix, build_budget_ms)?,
+        benchmark_plan_build("subgraph", &subgraph, build_budget_ms)?,
+        benchmark_plan_build("reducer", &reducer, build_budget_ms)?,
+    ];
+    samples.sort_by(|left, right| left.shape.cmp(&right.shape));
+    Ok(PlannerPerformanceReportV1 { build_budget_ms, samples })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_complete_dry_plan_output, build_parameter_explain_report, build_plan_explain_report,
         build_resource_hints_report, diff_plans_semantically, explain_plan_fingerprint_trust,
         export_plan_package, detect_planner_conflicts, PlannerConflictEnvelopeV1,
+        measure_planner_performance_real_shapes,
         run_plan_preflight, ParameterSourceKindV1, PlanPreflightCapabilitiesV1,
         GraphResourceHintsV1,
     };
@@ -1052,5 +1144,15 @@ mod tests {
         assert!(report.conflicts.iter().any(|conflict| conflict.code == "PC4901_RUNTIME_INCOMPATIBLE"));
         assert!(report.conflicts.iter().any(|conflict| conflict.code == "PC4902_ADAPTER_UNSUPPORTED"));
         assert!(report.conflicts.iter().any(|conflict| conflict.code == "PC4906_CONDITIONAL_EDGES_DISABLED"));
+    }
+
+    #[test]
+    fn g050_planner_performance_report_covers_real_graph_shapes_with_budgets() {
+        let report = measure_planner_performance_real_shapes(2_000).expect("performance report");
+        let shapes = report.samples.iter().map(|sample| sample.shape.clone()).collect::<BTreeSet<_>>();
+        for shape in ["chain", "wide", "branching", "matrix", "subgraph", "reducer"] {
+            assert!(shapes.contains(shape), "missing benchmark shape: {shape}");
+        }
+        assert!(report.samples.iter().all(|sample| sample.within_budget));
     }
 }
