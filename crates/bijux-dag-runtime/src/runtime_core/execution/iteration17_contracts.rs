@@ -121,10 +121,90 @@ pub fn validate_end_to_end_correlation_ids(chain: &CorrelationChainV1) -> Result
     Ok(())
 }
 
+/// Deterministic timeline entry reconstructed from runtime events.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReconstructedTimelineEntryV1 {
+    pub event_id: String,
+    pub run_id: String,
+    pub node_attempt_id: Option<String>,
+    pub domain: ObservabilityEventDomainV1,
+    pub name: String,
+    pub unix_ms: u64,
+    pub duration_ms_since_previous: Option<u64>,
+    pub cause_event_id: Option<String>,
+}
+
+/// Timeline reconstruction report with machine and compact human representations.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TimelineReconstructionReportV1 {
+    pub entries: Vec<ReconstructedTimelineEntryV1>,
+    pub total_duration_ms: u64,
+    pub human_timeline: Vec<String>,
+}
+
+/// Reconstruct an ordered causal timeline and durations from runtime events.
+pub fn reconstruct_useful_timeline(
+    events: &[ObservabilityEventRecordV1],
+) -> Result<TimelineReconstructionReportV1, String> {
+    if events.is_empty() {
+        return Err("timeline reconstruction requires at least one event".to_string());
+    }
+    let mut sorted = events.to_vec();
+    sorted.sort_by_key(|event| (event.unix_ms, event.event_id.clone()));
+
+    let mut seen_ids = BTreeSet::new();
+    let mut entries = Vec::with_capacity(sorted.len());
+    let mut human_timeline = Vec::with_capacity(sorted.len());
+    let mut previous_unix_ms: Option<u64> = None;
+    let mut previous_event_id: Option<String> = None;
+
+    for event in sorted {
+        if !seen_ids.insert(event.event_id.clone()) {
+            return Err(format!(
+                "timeline reconstruction requires unique event_id, duplicate '{}'",
+                event.event_id
+            ));
+        }
+        let duration_ms_since_previous = previous_unix_ms.map(|prev| event.unix_ms.saturating_sub(prev));
+        let cause_event_id = previous_event_id.clone();
+        human_timeline.push(format!(
+            "{} {} {} +{}ms",
+            event.unix_ms,
+            serde_json::to_string(&event.domain).unwrap_or_else(|_| "\"unknown\"".to_string()),
+            event.name,
+            duration_ms_since_previous.unwrap_or(0)
+        ));
+        entries.push(ReconstructedTimelineEntryV1 {
+            event_id: event.event_id.clone(),
+            run_id: event.run_id.clone(),
+            node_attempt_id: event.node_attempt_id.clone(),
+            domain: event.domain,
+            name: event.name.clone(),
+            unix_ms: event.unix_ms,
+            duration_ms_since_previous,
+            cause_event_id,
+        });
+        previous_unix_ms = Some(event.unix_ms);
+        previous_event_id = Some(event.event_id);
+    }
+
+    let total_duration_ms = entries
+        .first()
+        .zip(entries.last())
+        .map_or(0, |(first, last)| last.unix_ms.saturating_sub(first.unix_ms));
+
+    Ok(TimelineReconstructionReportV1 {
+        entries,
+        total_duration_ms,
+        human_timeline,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_end_to_end_correlation_ids, verify_event_taxonomy_complete, CorrelationChainV1,
+        reconstruct_useful_timeline, validate_end_to_end_correlation_ids, verify_event_taxonomy_complete,
+        CorrelationChainV1,
         ObservabilityEventDomainV1, ObservabilityEventRecordV1,
     };
 
@@ -179,5 +259,43 @@ mod tests {
         let error =
             validate_end_to_end_correlation_ids(&broken).expect_err("missing support bundle id must fail");
         assert!(error.contains("support_bundle_id"));
+    }
+
+    #[test]
+    fn g163_timeline_reconstruction_is_deterministic_and_causal() {
+        let events = vec![
+            ObservabilityEventRecordV1 {
+                event_id: "evt-2".to_string(),
+                unix_ms: 1_025,
+                domain: ObservabilityEventDomainV1::Scheduler,
+                name: "node-scheduled".to_string(),
+                run_id: "run-17".to_string(),
+                node_attempt_id: Some("run-17/node-a/attempt-1".to_string()),
+            },
+            ObservabilityEventRecordV1 {
+                event_id: "evt-1".to_string(),
+                unix_ms: 1_000,
+                domain: ObservabilityEventDomainV1::Planner,
+                name: "plan-built".to_string(),
+                run_id: "run-17".to_string(),
+                node_attempt_id: None,
+            },
+            ObservabilityEventRecordV1 {
+                event_id: "evt-3".to_string(),
+                unix_ms: 1_055,
+                domain: ObservabilityEventDomainV1::Adapter,
+                name: "node-finished".to_string(),
+                run_id: "run-17".to_string(),
+                node_attempt_id: Some("run-17/node-a/attempt-1".to_string()),
+            },
+        ];
+
+        let report = reconstruct_useful_timeline(&events).expect("timeline reconstruction should work");
+        assert_eq!(report.entries.len(), 3);
+        assert_eq!(report.entries[0].event_id, "evt-1");
+        assert_eq!(report.entries[1].cause_event_id.as_deref(), Some("evt-1"));
+        assert_eq!(report.entries[1].duration_ms_since_previous, Some(25));
+        assert_eq!(report.entries[2].duration_ms_since_previous, Some(30));
+        assert_eq!(report.total_duration_ms, 55);
     }
 }
