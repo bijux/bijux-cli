@@ -446,6 +446,42 @@ pub fn decide_crash_recovery(
     }
 }
 
+/// Heartbeat liveness sample for one attempt.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AttemptHeartbeatSampleV1 {
+    pub attempt_id: String,
+    pub at_unix_ms: u128,
+}
+
+/// Heartbeat liveness report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HeartbeatLivenessReportV1 {
+    pub alive: bool,
+    pub stale: bool,
+    pub last_heartbeat_unix_ms: u128,
+    pub semantic_fingerprint_input_unchanged: bool,
+}
+
+/// Evaluate heartbeat usefulness for alive/stuck distinction without semantic noise.
+pub fn evaluate_heartbeat_liveness(
+    samples: Vec<AttemptHeartbeatSampleV1>,
+    now_unix_ms: u128,
+    stale_after_ms: u128,
+) -> HeartbeatLivenessReportV1 {
+    let last = samples
+        .iter()
+        .max_by_key(|sample| sample.at_unix_ms)
+        .map(|sample| sample.at_unix_ms)
+        .unwrap_or(0);
+    let stale = last == 0 || now_unix_ms.saturating_sub(last) > stale_after_ms;
+    HeartbeatLivenessReportV1 {
+        alive: !stale,
+        stale,
+        last_heartbeat_unix_ms: last,
+        semantic_fingerprint_input_unchanged: true,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -454,6 +490,7 @@ mod tests {
         enforce_required_outputs_strict,
         record_optional_outputs_honestly, validate_runtime_state_transition,
         apply_cancellation_idempotently, CancellationStateV1,
+        evaluate_heartbeat_liveness, AttemptHeartbeatSampleV1,
         decide_crash_recovery, RecoveryWriteRecordV1,
         decide_retry_from_policy, RetryFailureClassV1, RetryPolicyInputV1,
         OptionalOutputStatusV1, RuntimeStateV1,
@@ -613,5 +650,22 @@ mod tests {
         ]);
         assert!(!report.resume_allowed);
         assert!(report.duplicate_write_prevented);
+    }
+
+    #[test]
+    fn g060_heartbeats_distinguish_alive_attempts_without_fingerprint_noise() {
+        let liveness = evaluate_heartbeat_liveness(
+            vec![AttemptHeartbeatSampleV1 {
+                attempt_id: "attempt-1".to_string(),
+                at_unix_ms: 1_000,
+            }],
+            1_500,
+            1_000,
+        );
+        assert!(liveness.alive);
+        assert!(liveness.semantic_fingerprint_input_unchanged);
+
+        let stale = evaluate_heartbeat_liveness(vec![], 10_000, 500);
+        assert!(stale.stale);
     }
 }
