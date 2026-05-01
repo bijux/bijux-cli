@@ -34,6 +34,8 @@ pub mod error;
 pub mod authoring_iteration03;
 #[path = "contracts/semantics_iteration04.rs"]
 pub mod semantics_iteration04;
+#[path = "contracts/planner_iteration05.rs"]
+pub mod planner_iteration05;
 #[path = "analysis/fingerprint.rs"]
 pub mod fingerprint;
 #[path = "graph/graph.rs"]
