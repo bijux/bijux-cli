@@ -389,15 +389,68 @@ pub fn build_supply_chain_inventory_report(
     })
 }
 
+/// Runtime risk surface for one node under low-trust profile.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NodeRiskSurfaceV1 {
+    pub node_id: String,
+    pub uses_plugin: bool,
+    pub uses_shell: bool,
+    pub uses_network: bool,
+    pub broad_path_access: bool,
+    pub exposes_secrets: bool,
+}
+
+/// Low-trust profile admission result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LowTrustAdmissionReportV1 {
+    pub admitted: bool,
+    pub refused_nodes: Vec<(String, String)>,
+}
+
+/// Enforce low-trust runtime profile before execution starts.
+pub fn enforce_low_trust_profile(
+    nodes: Vec<NodeRiskSurfaceV1>,
+) -> Result<LowTrustAdmissionReportV1, String> {
+    if nodes.is_empty() {
+        return Err("nodes must not be empty".to_string());
+    }
+    let mut refused_nodes = Vec::new();
+    for node in nodes {
+        if node.node_id.trim().is_empty() {
+            return Err("node_id must not be empty".to_string());
+        }
+        if node.uses_plugin {
+            refused_nodes.push((node.node_id.clone(), "plugins disabled in low-trust profile".to_string()));
+        }
+        if node.uses_shell {
+            refused_nodes.push((node.node_id.clone(), "shell execution disabled in low-trust profile".to_string()));
+        }
+        if node.uses_network {
+            refused_nodes.push((node.node_id.clone(), "network access disabled in low-trust profile".to_string()));
+        }
+        if node.broad_path_access {
+            refused_nodes.push((node.node_id.clone(), "broad path access disabled in low-trust profile".to_string()));
+        }
+        if node.exposes_secrets {
+            refused_nodes.push((node.node_id.clone(), "secret exposure disabled in low-trust profile".to_string()));
+        }
+    }
+    Ok(LowTrustAdmissionReportV1 {
+        admitted: refused_nodes.is_empty(),
+        refused_nodes,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        enforce_low_trust_profile,
         build_supply_chain_inventory_report,
         capture_shell_output_bounded,
         authorize_plugin_execution,
         classify_network_policy_trust, enforce_environment_allowlist, enforce_write_boundary,
         redact_sensitive_values, validate_bundle_import_safety, validate_override_audit_events,
-        AdapterSoftwareIdentityV1, NetworkPolicyLabelV1, OverrideAuditEventV1,
+        AdapterSoftwareIdentityV1, NetworkPolicyLabelV1, NodeRiskSurfaceV1, OverrideAuditEventV1,
     };
 
     #[test]
@@ -588,5 +641,33 @@ mod tests {
         assert_eq!(report.adapters.len(), 2);
         assert_eq!(report.plugin_descriptor_ids.len(), 1);
         assert_eq!(report.app_descriptor_ids.len(), 1);
+    }
+
+    #[test]
+    fn g090_low_trust_profile_refuses_unsafe_nodes_before_execution() {
+        let report = enforce_low_trust_profile(vec![
+            NodeRiskSurfaceV1 {
+                node_id: "const-safe".to_string(),
+                uses_plugin: false,
+                uses_shell: false,
+                uses_network: false,
+                broad_path_access: false,
+                exposes_secrets: false,
+            },
+            NodeRiskSurfaceV1 {
+                node_id: "shell-risky".to_string(),
+                uses_plugin: false,
+                uses_shell: true,
+                uses_network: true,
+                broad_path_access: false,
+                exposes_secrets: true,
+            },
+        ])
+        .expect("low trust report");
+        assert!(!report.admitted);
+        assert!(report
+            .refused_nodes
+            .iter()
+            .any(|(node_id, _)| node_id == "shell-risky"));
     }
 }
