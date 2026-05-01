@@ -334,6 +334,70 @@ pub fn apply_cancellation_idempotently(
     }
 }
 
+/// Failure class used for retry policy decisions.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RetryFailureClassV1 {
+    ContractFailure,
+    TransientAdapterFailure,
+    PermanentAdapterFailure,
+}
+
+/// Retry policy input.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RetryPolicyInputV1 {
+    pub max_attempts: u32,
+    pub backoff_ms: u64,
+}
+
+/// Retry decision result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RetryDecisionV1 {
+    pub should_retry: bool,
+    pub next_attempt: u32,
+    pub backoff_ms: u64,
+    pub reason: String,
+}
+
+/// Decide retry behavior from policy and failure classification.
+pub fn decide_retry_from_policy(
+    policy: RetryPolicyInputV1,
+    failure_class: RetryFailureClassV1,
+    current_attempt: u32,
+) -> RetryDecisionV1 {
+    if matches!(failure_class, RetryFailureClassV1::ContractFailure) {
+        return RetryDecisionV1 {
+            should_retry: false,
+            next_attempt: current_attempt,
+            backoff_ms: 0,
+            reason: "contract failures are non-retriable".to_string(),
+        };
+    }
+    if matches!(failure_class, RetryFailureClassV1::PermanentAdapterFailure) {
+        return RetryDecisionV1 {
+            should_retry: false,
+            next_attempt: current_attempt,
+            backoff_ms: 0,
+            reason: "permanent adapter failures are non-retriable".to_string(),
+        };
+    }
+    let next_attempt = current_attempt.saturating_add(1);
+    if next_attempt > policy.max_attempts {
+        return RetryDecisionV1 {
+            should_retry: false,
+            next_attempt: current_attempt,
+            backoff_ms: 0,
+            reason: "max retry attempts exceeded".to_string(),
+        };
+    }
+    RetryDecisionV1 {
+        should_retry: true,
+        next_attempt,
+        backoff_ms: policy.backoff_ms.saturating_mul(next_attempt as u64),
+        reason: "transient adapter failure eligible for retry".to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -342,6 +406,7 @@ mod tests {
         enforce_required_outputs_strict,
         record_optional_outputs_honestly, validate_runtime_state_transition,
         apply_cancellation_idempotently, CancellationStateV1,
+        decide_retry_from_policy, RetryFailureClassV1, RetryPolicyInputV1,
         OptionalOutputStatusV1, RuntimeStateV1,
         CommandInvocationModeV1,
         ConstAdapterOutputArtifactV1,
@@ -460,5 +525,24 @@ mod tests {
         assert_eq!(report.final_state, CancellationStateV1::Cancelled);
         assert!(report.idempotent);
         assert!(!report.artifact_corruption);
+    }
+
+    #[test]
+    fn g058_retry_policy_retries_only_transient_failures_with_backoff() {
+        let no_retry = decide_retry_from_policy(
+            RetryPolicyInputV1 { max_attempts: 3, backoff_ms: 1000 },
+            RetryFailureClassV1::ContractFailure,
+            1,
+        );
+        assert!(!no_retry.should_retry);
+
+        let retry = decide_retry_from_policy(
+            RetryPolicyInputV1 { max_attempts: 3, backoff_ms: 1000 },
+            RetryFailureClassV1::TransientAdapterFailure,
+            1,
+        );
+        assert!(retry.should_retry);
+        assert_eq!(retry.next_attempt, 2);
+        assert_eq!(retry.backoff_ms, 2000);
     }
 }
