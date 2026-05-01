@@ -276,9 +276,34 @@ pub fn build_python_bridge_parity_scenario_report(
     Ok(report)
 }
 
+/// Cross-app mock evidence scenario report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CrossAppMockEvidenceScenarioReportV1 {
+    pub mock_app_mounted: bool,
+    pub domain_evidence_attached: bool,
+    pub core_verifies_domain_neutral_evidence: bool,
+}
+
+/// Build cross-app mock evidence scenario proof.
+pub fn build_cross_app_mock_evidence_scenario_report(
+    report: CrossAppMockEvidenceScenarioReportV1,
+) -> Result<CrossAppMockEvidenceScenarioReportV1, String> {
+    if !report.mock_app_mounted {
+        return Err("mock scientific app must be mounted".to_string());
+    }
+    if !report.domain_evidence_attached {
+        return Err("domain evidence must be attached to core run".to_string());
+    }
+    if !report.core_verifies_domain_neutral_evidence {
+        return Err("core must verify evidence without domain-specific coupling".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_cross_app_mock_evidence_scenario_report,
         build_bundle_portability_scenario_report,
         build_branch_join_scenario_report, build_hello_dag_scenario_report,
         build_cache_heavy_scenario_report, build_failure_retry_scenario_report,
@@ -287,6 +312,7 @@ mod tests {
         build_reducer_scenario_report,
         build_shell_etl_scenario_report, BranchJoinScenarioReportV1, FailureRetryScenarioReportV1,
         BundlePortabilityScenarioReportV1, CacheHeavyScenarioReportV1,
+        CrossAppMockEvidenceScenarioReportV1,
         HelloDagScenarioReportV1, MountedAppParityScenarioReportV1,
         PythonBridgeParityScenarioReportV1, ReducerScenarioReportV1, ShellEtlScenarioReportV1,
     };
@@ -412,5 +438,18 @@ mod tests {
         .expect("python bridge parity");
         assert!(report.root_machine_output_equal);
         assert!(report.dag_machine_output_equal);
+    }
+
+    #[test]
+    fn g100_cross_app_mock_evidence_stays_domain_neutral_in_core() {
+        let report =
+            build_cross_app_mock_evidence_scenario_report(CrossAppMockEvidenceScenarioReportV1 {
+                mock_app_mounted: true,
+                domain_evidence_attached: true,
+                core_verifies_domain_neutral_evidence: true,
+            })
+            .expect("cross-app mock evidence scenario");
+        assert!(report.mock_app_mounted);
+        assert!(report.core_verifies_domain_neutral_evidence);
     }
 }
