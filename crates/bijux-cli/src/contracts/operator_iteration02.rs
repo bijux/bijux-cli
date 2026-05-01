@@ -89,11 +89,50 @@ pub fn validate_plugin_subprocess_execution_policy(
     Ok(())
 }
 
+/// Generated plugin scaffold conformance entry.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct PluginScaffoldConformanceEntryV1 {
+    /// Scaffold language (`rust` or `python`).
+    pub language: String,
+    /// Whether scaffold compiles or imports successfully.
+    pub build_ok: bool,
+    /// Whether scaffold route is discovered by root CLI.
+    pub discovered_by_root_cli: bool,
+    /// Whether scaffold route executes with valid envelope.
+    pub executable_with_valid_envelope: bool,
+}
+
+/// Plugin scaffold conformance report for generated templates.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct PluginScaffoldConformanceReportV1 {
+    /// Per-language conformance entries.
+    pub entries: Vec<PluginScaffoldConformanceEntryV1>,
+    /// Overall pass marker.
+    pub fully_conformant: bool,
+}
+
+/// Build plugin scaffold conformance report from generated scaffold checks.
+pub fn build_plugin_scaffold_conformance_report(
+    entries: Vec<PluginScaffoldConformanceEntryV1>,
+) -> Result<PluginScaffoldConformanceReportV1, String> {
+    if entries.is_empty() {
+        return Err("entries cannot be empty".to_string());
+    }
+    let mut ordered = entries;
+    ordered.sort_by(|left, right| left.language.cmp(&right.language));
+    let fully_conformant = ordered.iter().all(|entry| {
+        entry.build_ok && entry.discovered_by_root_cli && entry.executable_with_valid_envelope
+    });
+    Ok(PluginScaffoldConformanceReportV1 { entries: ordered, fully_conformant })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_plugin_scaffold_conformance_report,
         validate_executable_plugin_manifest_contract, validate_plugin_subprocess_execution_policy,
-        ExecutablePluginManifestContractV1, PluginSubprocessExecutionPolicyV1,
+        ExecutablePluginManifestContractV1, PluginScaffoldConformanceEntryV1,
+        PluginSubprocessExecutionPolicyV1,
     };
 
     #[test]
@@ -120,5 +159,25 @@ mod tests {
             output_envelope_schema: "command-envelope-v1".to_string(),
         };
         assert!(validate_plugin_subprocess_execution_policy(&policy).is_err());
+    }
+
+    #[test]
+    fn g013_plugin_scaffold_conformance_requires_discovery_and_envelope_validity() {
+        let report = build_plugin_scaffold_conformance_report(vec![
+            PluginScaffoldConformanceEntryV1 {
+                language: "rust".to_string(),
+                build_ok: true,
+                discovered_by_root_cli: true,
+                executable_with_valid_envelope: true,
+            },
+            PluginScaffoldConformanceEntryV1 {
+                language: "python".to_string(),
+                build_ok: true,
+                discovered_by_root_cli: false,
+                executable_with_valid_envelope: true,
+            },
+        ])
+        .expect("conformance report should build");
+        assert!(!report.fully_conformant);
     }
 }
