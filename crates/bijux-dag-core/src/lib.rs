@@ -30,6 +30,8 @@ pub mod edge;
 pub mod effects;
 #[path = "contracts/error.rs"]
 pub mod error;
+#[path = "contracts/authoring_iteration03.rs"]
+pub mod authoring_iteration03;
 #[path = "analysis/fingerprint.rs"]
 pub mod fingerprint;
 #[path = "graph/graph.rs"]
