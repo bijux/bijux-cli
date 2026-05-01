@@ -163,13 +163,70 @@ pub fn evaluate_canonicalization_and_fingerprinting(
     })
 }
 
+/// Planner lowering/explain benchmark input by graph semantics family.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlannerLoweringBenchmarkInputV1 {
+    pub chain_lowering_ms: f64,
+    pub branch_lowering_ms: f64,
+    pub reducer_lowering_ms: f64,
+    pub matrix_lowering_ms: f64,
+    pub subgraph_lowering_ms: f64,
+    pub explain_ms: f64,
+}
+
+/// Planner lowering/explain benchmark report.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PlannerLoweringBenchmarkReportV1 {
+    pub max_lowering_ms: f64,
+    pub explain_ms: f64,
+    pub within_budget: bool,
+    pub diagnostics: Vec<String>,
+}
+
+/// Evaluate planner lowering/explain performance budgets for complex graph shapes.
+pub fn evaluate_planner_lowering_and_explain(
+    input: &PlannerLoweringBenchmarkInputV1,
+) -> Result<PlannerLoweringBenchmarkReportV1, String> {
+    let lowering = [
+        ("chain_lowering_ms", input.chain_lowering_ms),
+        ("branch_lowering_ms", input.branch_lowering_ms),
+        ("reducer_lowering_ms", input.reducer_lowering_ms),
+        ("matrix_lowering_ms", input.matrix_lowering_ms),
+        ("subgraph_lowering_ms", input.subgraph_lowering_ms),
+    ];
+    let mut max_lowering_ms = 0.0f64;
+    for (name, value) in lowering {
+        if !value.is_finite() || value < 0.0 {
+            return Err(format!("planner benchmark requires finite non-negative {name}"));
+        }
+        max_lowering_ms = max_lowering_ms.max(value);
+    }
+    if !input.explain_ms.is_finite() || input.explain_ms < 0.0 {
+        return Err("planner benchmark requires finite non-negative explain_ms".to_string());
+    }
+    let mut diagnostics = Vec::new();
+    if max_lowering_ms > 240.0 {
+        diagnostics.push("planner lowering exceeds 240ms max budget".to_string());
+    }
+    if input.explain_ms > 150.0 {
+        diagnostics.push("planner explain exceeds 150ms budget".to_string());
+    }
+    Ok(PlannerLoweringBenchmarkReportV1 {
+        max_lowering_ms,
+        explain_ms: input.explain_ms,
+        within_budget: diagnostics.is_empty(),
+        diagnostics,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        evaluate_planner_lowering_and_explain,
         evaluate_canonicalization_and_fingerprinting,
         evaluate_graph_parse_and_validation_budget, evaluate_route_dispatch_and_help_startup,
         CanonicalFingerprintBenchmarkInputV1, GraphValidationBenchmarkInputV1,
-        RouteDispatchBenchmarkInputV1,
+        PlannerLoweringBenchmarkInputV1, RouteDispatchBenchmarkInputV1,
     };
 
     #[test]
@@ -243,5 +300,31 @@ mod tests {
         .expect("slow benchmark should report");
         assert!(!slow.within_budget);
         assert_eq!(slow.diagnostics.len(), 1);
+    }
+
+    #[test]
+    fn g184_planner_lowering_and_explain_remain_bounded_for_complex_shapes() {
+        let report = evaluate_planner_lowering_and_explain(&PlannerLoweringBenchmarkInputV1 {
+            chain_lowering_ms: 40.0,
+            branch_lowering_ms: 70.0,
+            reducer_lowering_ms: 90.0,
+            matrix_lowering_ms: 110.0,
+            subgraph_lowering_ms: 125.0,
+            explain_ms: 85.0,
+        })
+        .expect("planner benchmark should work");
+        assert!(report.within_budget);
+
+        let slow = evaluate_planner_lowering_and_explain(&PlannerLoweringBenchmarkInputV1 {
+            chain_lowering_ms: 120.0,
+            branch_lowering_ms: 250.0,
+            reducer_lowering_ms: 210.0,
+            matrix_lowering_ms: 260.0,
+            subgraph_lowering_ms: 270.0,
+            explain_ms: 190.0,
+        })
+        .expect("slow planner benchmark");
+        assert!(!slow.within_budget);
+        assert_eq!(slow.diagnostics.len(), 2);
     }
 }
