@@ -1,5 +1,6 @@
 use crate::Graph;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 /// Runtime resource requirement envelope.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -40,6 +41,35 @@ pub struct ResourcePreflightReportV1 {
     pub requirements: Vec<ResourceRequirementV1>,
     pub refusals: Vec<ResourcePreflightRefusalV1>,
     pub admitted: bool,
+}
+
+/// Planner pool class.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ExecutionPoolV1 {
+    Local,
+    Shell,
+    Container,
+    Batch,
+    HighMemory,
+    Gpu,
+    Offline,
+}
+
+/// Pool placement decision per node.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PoolPlacementDecisionV1 {
+    pub node_id: String,
+    pub requested_pool: ExecutionPoolV1,
+    pub assigned_pool: Option<ExecutionPoolV1>,
+    pub diagnostic: Option<String>,
+}
+
+/// Pool placement planning report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PoolPlacementReportV1 {
+    pub placements: Vec<PoolPlacementDecisionV1>,
+    pub diagnostics: Vec<String>,
 }
 
 /// Build resource requirements from graph nodes with deterministic defaults.
@@ -174,15 +204,84 @@ pub fn validate_resource_requirements(
     ResourcePreflightReportV1 { requirements, admitted: refusals.is_empty(), refusals }
 }
 
+/// Plan node placement to execution pools with deterministic unavailable-pool diagnostics.
+pub fn plan_pool_placement(
+    graph: &Graph,
+    pool_availability: &BTreeMap<ExecutionPoolV1, bool>,
+) -> PoolPlacementReportV1 {
+    let mut placements = Vec::new();
+    let mut diagnostics = Vec::new();
+    for node in &graph.nodes {
+        let requested_pool = infer_requested_pool(node);
+        let available = pool_availability.get(&requested_pool).copied().unwrap_or(false);
+        let (assigned_pool, diagnostic) = if available {
+            (Some(requested_pool.clone()), None)
+        } else {
+            let message = format!(
+                "node '{}' requested unavailable pool '{}'",
+                node.id,
+                execution_pool_label(&requested_pool)
+            );
+            diagnostics.push(message.clone());
+            (None, Some(message))
+        };
+        placements.push(PoolPlacementDecisionV1 {
+            node_id: node.id.clone(),
+            requested_pool,
+            assigned_pool,
+            diagnostic,
+        });
+    }
+    PoolPlacementReportV1 { placements, diagnostics }
+}
+
+fn infer_requested_pool(node: &crate::Node) -> ExecutionPoolV1 {
+    if node.tags.iter().any(|tag| tag == "offline") {
+        return ExecutionPoolV1::Offline;
+    }
+    if node
+        .tags
+        .iter()
+        .any(|tag| tag == "gpu" || tag.strip_prefix("accelerator:").is_some_and(|value| value == "gpu"))
+    {
+        return ExecutionPoolV1::Gpu;
+    }
+    if node.resources.as_ref().is_some_and(|resource| resource.mem_mb >= 65_536) {
+        return ExecutionPoolV1::HighMemory;
+    }
+    if node.tags.iter().any(|tag| tag == "batch") {
+        return ExecutionPoolV1::Batch;
+    }
+    match node.kind {
+        crate::NodeKind::Container => ExecutionPoolV1::Container,
+        crate::NodeKind::Shell => ExecutionPoolV1::Shell,
+        _ => ExecutionPoolV1::Local,
+    }
+}
+
+fn execution_pool_label(pool: &ExecutionPoolV1) -> &'static str {
+    match pool {
+        ExecutionPoolV1::Local => "local",
+        ExecutionPoolV1::Shell => "shell",
+        ExecutionPoolV1::Container => "container",
+        ExecutionPoolV1::Batch => "batch",
+        ExecutionPoolV1::HighMemory => "high-memory",
+        ExecutionPoolV1::Gpu => "gpu",
+        ExecutionPoolV1::Offline => "offline",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_resource_requirements, validate_resource_requirements, ResourceAvailabilityV1,
+        build_resource_requirements, plan_pool_placement, validate_resource_requirements,
+        ExecutionPoolV1, ResourceAvailabilityV1,
     };
     use crate::{
         Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef, Resources,
         RetryPolicy, SemanticNodeKind, TriggerRule,
     };
+    use std::collections::BTreeMap;
 
     fn sample_graph() -> Graph {
         Graph {
@@ -257,5 +356,26 @@ mod tests {
             .refusals
             .iter()
             .any(|refusal| refusal.code == "R121_ACCELERATOR_UNAVAILABLE"));
+    }
+
+    #[test]
+    fn g122_pool_placement_reports_unavailable_pools_deterministically() {
+        let graph = sample_graph();
+        let report = plan_pool_placement(
+            &graph,
+            &BTreeMap::from([
+                (ExecutionPoolV1::Local, true),
+                (ExecutionPoolV1::Shell, true),
+                (ExecutionPoolV1::Container, true),
+                (ExecutionPoolV1::Batch, true),
+                (ExecutionPoolV1::HighMemory, true),
+                (ExecutionPoolV1::Gpu, false),
+                (ExecutionPoolV1::Offline, false),
+            ]),
+        );
+        assert_eq!(report.placements.len(), 1);
+        assert_eq!(report.placements[0].requested_pool, ExecutionPoolV1::Gpu);
+        assert!(report.placements[0].assigned_pool.is_none());
+        assert!(report.diagnostics[0].contains("requested unavailable pool 'gpu'"));
     }
 }
