@@ -317,12 +317,50 @@ pub fn assess_cache_reuse_compatibility(
     }
 }
 
+/// Replay decision for one node before execution.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReplayNodePlanDecisionV1 {
+    pub node_id: String,
+    pub action: String,
+    pub reason: String,
+}
+
+/// Build a readable replay plan with one decision line per node.
+pub fn build_replay_plan_readout(
+    decisions: Vec<ReplayNodePlanDecisionV1>,
+) -> Result<String, String> {
+    if decisions.is_empty() {
+        return Err("replay decisions must not be empty".to_string());
+    }
+    let mut normalized = decisions;
+    normalized.sort_by(|left, right| left.node_id.cmp(&right.node_id));
+    let mut lines = Vec::new();
+    for decision in normalized {
+        if decision.node_id.trim().is_empty() {
+            return Err("node_id must not be empty".to_string());
+        }
+        if decision.action.trim().is_empty() {
+            return Err("action must not be empty".to_string());
+        }
+        if decision.reason.trim().is_empty() {
+            return Err("reason must not be empty".to_string());
+        }
+        lines.push(format!(
+            "{}: action={} reason={}",
+            decision.node_id, decision.action, decision.reason
+        ));
+    }
+    Ok(lines.join("\n"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         assess_cache_reuse_compatibility, assess_cache_reuse_safety, build_complete_artifact_inventory, build_explainable_cache_key,
+        build_replay_plan_readout,
         build_run_directory_layout_contract, content_identity_for_directory, content_identity_for_file,
         ArtifactInventoryRecordV1, CacheKeyFactorsV1, CacheReuseContextV1, CacheReuseEvidenceV1,
+        ReplayNodePlanDecisionV1,
     };
 
     #[test]
@@ -448,5 +486,36 @@ mod tests {
         assert!(compatibility.reasons.contains(&"input_fingerprint_changed".to_string()));
         assert!(compatibility.reasons.contains(&"schema_fingerprint_changed".to_string()));
         assert!(compatibility.reasons.contains(&"adapter_fingerprint_changed".to_string()));
+    }
+
+    #[test]
+    fn g067_replay_plan_is_readable_before_execution() {
+        let plan = build_replay_plan_readout(vec![
+            ReplayNodePlanDecisionV1 {
+                node_id: "align-reads".to_string(),
+                action: "reuse".to_string(),
+                reason: "cache key and integrity proof match".to_string(),
+            },
+            ReplayNodePlanDecisionV1 {
+                node_id: "call-variants".to_string(),
+                action: "rerun".to_string(),
+                reason: "upstream input fingerprint changed".to_string(),
+            },
+            ReplayNodePlanDecisionV1 {
+                node_id: "publish-report".to_string(),
+                action: "skip".to_string(),
+                reason: "selected replay scope excludes downstream publish".to_string(),
+            },
+            ReplayNodePlanDecisionV1 {
+                node_id: "unsafe-node".to_string(),
+                action: "refuse".to_string(),
+                reason: "node declared non-replayable external side effect".to_string(),
+            },
+        ])
+        .expect("replay plan");
+        assert!(plan.contains("align-reads: action=reuse"));
+        assert!(plan.contains("call-variants: action=rerun"));
+        assert!(plan.contains("publish-report: action=skip"));
+        assert!(plan.contains("unsafe-node: action=refuse"));
     }
 }
