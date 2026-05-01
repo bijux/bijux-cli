@@ -94,11 +94,40 @@ pub fn validate_durable_run_queue_snapshot(
     Ok(())
 }
 
+/// Validate lease semantics and reject double-dispatch risk.
+pub fn validate_node_leases(leases: &[QueueLeaseRecordV1], now_epoch_ms: u64) -> Result<(), String> {
+    let mut by_node = BTreeMap::<&str, &QueueLeaseRecordV1>::new();
+    for lease in leases {
+        if lease.node_id.trim().is_empty() || lease.lease_owner.trim().is_empty() {
+            return Err("lease must include node_id and lease_owner".to_string());
+        }
+        if lease.lease_expires_at_ms <= lease.lease_epoch_ms {
+            return Err(format!("lease {} must expire after lease start", lease.node_id));
+        }
+        if let Some(existing) = by_node.insert(&lease.node_id, lease) {
+            return Err(format!(
+                "double-dispatch risk for node {} between owners {} and {}",
+                lease.node_id, existing.lease_owner, lease.lease_owner
+            ));
+        }
+    }
+    for lease in leases {
+        let expired = lease.lease_expires_at_ms <= now_epoch_ms;
+        if expired && lease.lease_owner == "active-worker" {
+            return Err(format!(
+                "active lease owner for node {} is expired and must recover before dispatch",
+                lease.node_id
+            ));
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_durable_run_queue_snapshot, DurableRunQueueSnapshotV1, QueueAttemptRecordV1,
-        QueueLeaseRecordV1, SchedulerDecisionRecordV1,
+        validate_durable_run_queue_snapshot, validate_node_leases, DurableRunQueueSnapshotV1,
+        QueueAttemptRecordV1, QueueLeaseRecordV1, SchedulerDecisionRecordV1,
     };
 
     #[test]
@@ -141,5 +170,42 @@ mod tests {
         };
         let error = validate_durable_run_queue_snapshot(&invalid).expect_err("must reject overlap");
         assert!(error.contains("must not be re-admitted or pending"));
+    }
+
+    #[test]
+    fn g132_node_lease_validation_rejects_double_dispatch_and_expired_active_owners() {
+        let leases = vec![QueueLeaseRecordV1 {
+            node_id: "node-lease".to_string(),
+            lease_owner: "worker-1".to_string(),
+            lease_epoch_ms: 1_000,
+            lease_expires_at_ms: 2_000,
+        }];
+        validate_node_leases(&leases, 1_500).expect("healthy lease");
+
+        let duplicate = vec![
+            QueueLeaseRecordV1 {
+                node_id: "node-lease".to_string(),
+                lease_owner: "worker-1".to_string(),
+                lease_epoch_ms: 1_000,
+                lease_expires_at_ms: 2_000,
+            },
+            QueueLeaseRecordV1 {
+                node_id: "node-lease".to_string(),
+                lease_owner: "worker-2".to_string(),
+                lease_epoch_ms: 1_100,
+                lease_expires_at_ms: 2_100,
+            },
+        ];
+        let duplicate_err = validate_node_leases(&duplicate, 1_500).expect_err("must reject duplicate lease");
+        assert!(duplicate_err.contains("double-dispatch risk"));
+
+        let expired_active = vec![QueueLeaseRecordV1 {
+            node_id: "node-expired".to_string(),
+            lease_owner: "active-worker".to_string(),
+            lease_epoch_ms: 1_000,
+            lease_expires_at_ms: 1_200,
+        }];
+        let expired_err = validate_node_leases(&expired_active, 1_500).expect_err("must reject expired active owner");
+        assert!(expired_err.contains("must recover before dispatch"));
     }
 }
