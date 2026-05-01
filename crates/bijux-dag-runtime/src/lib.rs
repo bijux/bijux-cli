@@ -58,6 +58,8 @@ mod engine;
 mod error;
 #[path = "runtime_core/execution/flow.rs"]
 pub mod execution;
+#[path = "runtime_core/execution/iteration06_contracts.rs"]
+pub mod iteration06_contracts;
 #[path = "backend/runtime/execution_backend.rs"]
 mod execution_backend;
 #[path = "runtime_core/execution/context.rs"]
