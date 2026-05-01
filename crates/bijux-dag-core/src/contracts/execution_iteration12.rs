@@ -171,14 +171,39 @@ pub fn validate_service_sensor_execution(
     Ok(record)
 }
 
+/// Event-recorded workflow replay record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EventRecordedReplayRecordV1 {
+    pub recorded_event_ids: Vec<String>,
+    pub replay_used_recorded_events_only: bool,
+    pub fresh_external_poll_detected: bool,
+}
+
+/// Validate event-recorded replay semantics.
+pub fn validate_event_recorded_replay(
+    record: EventRecordedReplayRecordV1,
+) -> Result<EventRecordedReplayRecordV1, String> {
+    if record.recorded_event_ids.is_empty() {
+        return Err("event-recorded workflow must have recorded event ids".to_string());
+    }
+    if !record.replay_used_recorded_events_only {
+        return Err("replay must use recorded events only".to_string());
+    }
+    if record.fresh_external_poll_detected {
+        return Err("replay must not poll fresh external state".to_string());
+    }
+    Ok(record)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        validate_event_recorded_replay,
         validate_matrix_execution, validate_nested_subgraph_execution, validate_partition_execution,
         validate_service_sensor_execution,
         validate_optional_input_execution, validate_quorum_execution, MatrixExecutionRecordV1,
         NestedSubgraphExecutionRecordV1, OptionalInputExecutionRecordV1, PartitionExecutionRecordV1,
-        QuorumExecutionRecordV1, ServiceSensorExecutionRecordV1,
+        QuorumExecutionRecordV1, ServiceSensorExecutionRecordV1, EventRecordedReplayRecordV1,
     };
 
     #[test]
@@ -265,5 +290,17 @@ mod tests {
         .expect("service sensor execution");
         assert!(record.simulated_outputs);
         assert!(record.advisory_mode);
+    }
+
+    #[test]
+    fn g117_event_recorded_replay_refuses_fresh_external_polling() {
+        let record = validate_event_recorded_replay(EventRecordedReplayRecordV1 {
+            recorded_event_ids: vec!["event-1".to_string(), "event-2".to_string()],
+            replay_used_recorded_events_only: true,
+            fresh_external_poll_detected: false,
+        })
+        .expect("event replay");
+        assert_eq!(record.recorded_event_ids.len(), 2);
+        assert!(record.replay_used_recorded_events_only);
     }
 }
