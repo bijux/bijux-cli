@@ -3701,6 +3701,13 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             serde_json::to_string(&release_artifact_report).unwrap_or_else(|_| "invalid report".to_string())
         ));
     }
+    let example_index_report = evaluate_example_task_index(&root)?;
+    if !example_index_report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "example task discoverability contract failed: {}",
+            serde_json::to_string(&example_index_report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
 }
 
@@ -4680,6 +4687,72 @@ fn evaluate_release_artifacts_runnable(root: &Path) -> Result<Value, String> {
         "spec": doc_rel,
         "scenario_contract": scenario_rel,
         "scenario_count": scenario_rows.len(),
+        "violations": violations,
+    }))
+}
+
+fn evaluate_example_task_index(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/example_task_index.json";
+    let index_rel = "docs/reports/foundation/EXAMPLE_TASK_INDEX.md";
+    let contract_payload =
+        fs::read_to_string(root.join(contract_rel)).map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let rows = contract["tasks"]
+        .as_array()
+        .ok_or_else(|| "example task contract must contain `tasks` array".to_string())?;
+
+    let required = [
+        "validate",
+        "plan",
+        "run",
+        "replay",
+        "diff",
+        "cache",
+        "artifact",
+        "app-mount",
+        "plugin",
+        "bundle",
+    ];
+    let mut present = BTreeSet::new();
+    let mut violations = Vec::new();
+    for row in rows {
+        let Some(task) = row.get("task").and_then(Value::as_str) else {
+            violations.push("example task entry missing `task`".to_string());
+            continue;
+        };
+        present.insert(task.to_string());
+        let graph = row
+            .get("graph")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("task `{task}` is missing graph"))?;
+        if !root.join(graph).exists() {
+            violations.push(format!("task `{task}` graph does not exist: {graph}"));
+        }
+        if row.get("command").and_then(Value::as_str).is_none_or(str::is_empty) {
+            violations.push(format!("task `{task}` command is required"));
+        }
+    }
+    for task in required {
+        if !present.contains(task) {
+            violations.push(format!("required task is missing from contract: {task}"));
+        }
+    }
+
+    let index_body =
+        fs::read_to_string(root.join(index_rel)).map_err(|err| format!("failed to read {index_rel}: {err}"))?;
+    for task in present {
+        if !index_body.contains(&format!("`{task}`")) {
+            violations.push(format!("example task index markdown is missing task `{task}`"));
+        }
+    }
+
+    Ok(json!({
+        "goal": "G194",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "index": index_rel,
+        "task_count": rows.len(),
         "violations": violations,
     }))
 }
