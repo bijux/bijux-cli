@@ -221,13 +221,93 @@ pub fn validate_reference_identity_metadata(
     Ok(())
 }
 
+/// Scientific finding class normalized across apps.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ScientificFindingClassV1 {
+    Caveat,
+    Uncertainty,
+    Warning,
+    Refusal,
+    PromotedCheck,
+}
+
+/// Scientific finding severity semantics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ScientificFindingModeV1 {
+    Advisory,
+    Enforced,
+}
+
+/// Standard scientific finding record emitted by mounted apps.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScientificFindingV1 {
+    pub finding_id: String,
+    pub code: String,
+    pub class: ScientificFindingClassV1,
+    pub mode: ScientificFindingModeV1,
+    pub message: String,
+}
+
+/// Normalized findings report with explicit blocking findings.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScientificFindingReportV1 {
+    pub finding_count: usize,
+    pub blocking_codes: Vec<String>,
+}
+
+/// Normalize and validate scientific findings into a standard structure.
+pub fn normalize_scientific_findings(
+    findings: &[ScientificFindingV1],
+) -> Result<ScientificFindingReportV1, String> {
+    let mut seen_ids = BTreeSet::new();
+    let mut blocking_codes = Vec::new();
+
+    for finding in findings {
+        for (field, value) in [
+            ("finding_id", finding.finding_id.as_str()),
+            ("code", finding.code.as_str()),
+            ("message", finding.message.as_str()),
+        ] {
+            if value.trim().is_empty() {
+                return Err(format!("scientific finding requires {field}"));
+            }
+        }
+        if !seen_ids.insert(finding.finding_id.clone()) {
+            return Err(format!(
+                "duplicate scientific finding_id '{}' is not allowed",
+                finding.finding_id
+            ));
+        }
+        if matches!(finding.mode, ScientificFindingModeV1::Enforced)
+            && matches!(
+                finding.class,
+                ScientificFindingClassV1::Refusal
+                    | ScientificFindingClassV1::Warning
+                    | ScientificFindingClassV1::Uncertainty
+            )
+        {
+            blocking_codes.push(finding.code.clone());
+        }
+    }
+    blocking_codes.sort();
+    blocking_codes.dedup();
+
+    Ok(ScientificFindingReportV1 {
+        finding_count: findings.len(),
+        blocking_codes,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         validate_domain_neutral_artifact_roles, verify_sample_identity_propagation,
         ArtifactRoleKindV1, ArtifactRoleMetadataV1, ArtifactSampleIdentityV1,
+        ScientificFindingClassV1, ScientificFindingModeV1, ScientificFindingV1,
         ReferenceAliasPolicyV1, ReferenceIdentityMetadataV1, SampleIdentityMismatchActionV1,
-        SampleIdentityPolicyV1, validate_reference_identity_metadata,
+        SampleIdentityPolicyV1, normalize_scientific_findings, validate_reference_identity_metadata,
     };
     use std::collections::BTreeMap;
 
@@ -320,5 +400,28 @@ mod tests {
         })
         .expect_err("non-sha256 checksum must be rejected");
         assert!(err.contains("sha256"));
+    }
+
+    #[test]
+    fn g174_scientific_findings_use_standard_advisory_and_enforced_shapes() {
+        let report = normalize_scientific_findings(&[
+            ScientificFindingV1 {
+                finding_id: "f-1".to_string(),
+                code: "SCI_WARN_COVERAGE".to_string(),
+                class: ScientificFindingClassV1::Warning,
+                mode: ScientificFindingModeV1::Advisory,
+                message: "coverage is below preferred threshold".to_string(),
+            },
+            ScientificFindingV1 {
+                finding_id: "f-2".to_string(),
+                code: "SCI_REFUSAL_REFERENCE".to_string(),
+                class: ScientificFindingClassV1::Refusal,
+                mode: ScientificFindingModeV1::Enforced,
+                message: "reference build mismatch".to_string(),
+            },
+        ])
+        .expect("findings should normalize");
+        assert_eq!(report.finding_count, 2);
+        assert_eq!(report.blocking_codes, vec!["SCI_REFUSAL_REFERENCE".to_string()]);
     }
 }
