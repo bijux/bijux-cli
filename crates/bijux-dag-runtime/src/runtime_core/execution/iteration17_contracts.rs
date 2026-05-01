@@ -521,14 +521,69 @@ pub fn analyze_flake_history(history: &[RunHistoryEntryV1]) -> Result<FlakeAnaly
     })
 }
 
+/// Stable evidence record that mounted apps can attach to a run.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AppEvidenceAttachmentV1 {
+    pub app_namespace: String,
+    pub evidence_id: String,
+    pub evidence_kind: String,
+    pub payload_sha256: String,
+    pub produced_at_unix_ms: u64,
+}
+
+/// Run-scoped evidence envelope consumable by runtime and mounted apps.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunEvidenceEnvelopeV1 {
+    pub run_id: String,
+    pub attachments: Vec<AppEvidenceAttachmentV1>,
+}
+
+/// Attach app evidence into a run envelope using stable validation rules.
+pub fn attach_app_evidence(
+    envelope: &mut RunEvidenceEnvelopeV1,
+    attachment: AppEvidenceAttachmentV1,
+) -> Result<(), String> {
+    if envelope.run_id.trim().is_empty() {
+        return Err("run evidence envelope requires run_id".to_string());
+    }
+    for (field, value) in [
+        ("app_namespace", attachment.app_namespace.as_str()),
+        ("evidence_id", attachment.evidence_id.as_str()),
+        ("evidence_kind", attachment.evidence_kind.as_str()),
+        ("payload_sha256", attachment.payload_sha256.as_str()),
+    ] {
+        if value.trim().is_empty() {
+            return Err(format!("app evidence attachment requires {field}"));
+        }
+    }
+    if !attachment.payload_sha256.starts_with("sha256:") {
+        return Err("app evidence attachment payload_sha256 must use sha256: prefix".to_string());
+    }
+    if envelope
+        .attachments
+        .iter()
+        .any(|existing| existing.evidence_id == attachment.evidence_id)
+    {
+        return Err(format!(
+            "duplicate app evidence_id '{}' for run '{}'",
+            attachment.evidence_id, envelope.run_id
+        ));
+    }
+    envelope.attachments.push(attachment);
+    envelope
+        .attachments
+        .sort_by(|left, right| left.evidence_id.cmp(&right.evidence_id));
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        analyze_flake_history, build_actionable_run_metrics, compare_runs_complete,
+        analyze_flake_history, attach_app_evidence, build_actionable_run_metrics, compare_runs_complete,
         reconstruct_useful_timeline, summarize_large_run_compact, validate_end_to_end_correlation_ids,
-        verify_event_taxonomy_complete, CorrelationChainV1, ObservabilityEventDomainV1,
-        ObservabilityEventRecordV1, RunComparisonInputV1, RunHistoryEntryV1, RunMetricsSampleV1,
-        RunNodeOutcomeV1,
+        verify_event_taxonomy_complete, AppEvidenceAttachmentV1, CorrelationChainV1,
+        ObservabilityEventDomainV1, ObservabilityEventRecordV1, RunComparisonInputV1,
+        RunEvidenceEnvelopeV1, RunHistoryEntryV1, RunMetricsSampleV1, RunNodeOutcomeV1,
     };
 
     fn event(domain: ObservabilityEventDomainV1, name: &str) -> ObservabilityEventRecordV1 {
@@ -754,5 +809,40 @@ mod tests {
         assert_eq!(report.flaky_nodes, vec!["align".to_string()]);
         assert_eq!(report.retry_storm_nodes, vec!["align".to_string()]);
         assert_eq!(report.unstable_adapters, vec!["shell".to_string()]);
+    }
+
+    #[test]
+    fn g168_app_evidence_api_supports_stable_attachment_contract() {
+        let mut envelope = RunEvidenceEnvelopeV1 {
+            run_id: "run-17".to_string(),
+            attachments: Vec::new(),
+        };
+        attach_app_evidence(
+            &mut envelope,
+            AppEvidenceAttachmentV1 {
+                app_namespace: "dag.app.quality".to_string(),
+                evidence_id: "evidence-qc-1".to_string(),
+                evidence_kind: "quality-report".to_string(),
+                payload_sha256: "sha256:abc123".to_string(),
+                produced_at_unix_ms: 42,
+            },
+        )
+        .expect("evidence attach should work");
+
+        assert_eq!(envelope.attachments.len(), 1);
+        assert_eq!(envelope.attachments[0].evidence_kind, "quality-report");
+
+        let duplicate = attach_app_evidence(
+            &mut envelope,
+            AppEvidenceAttachmentV1 {
+                app_namespace: "dag.app.quality".to_string(),
+                evidence_id: "evidence-qc-1".to_string(),
+                evidence_kind: "quality-report".to_string(),
+                payload_sha256: "sha256:def456".to_string(),
+                produced_at_unix_ms: 43,
+            },
+        )
+        .expect_err("duplicate evidence ids must fail");
+        assert!(duplicate.contains("duplicate"));
     }
 }
