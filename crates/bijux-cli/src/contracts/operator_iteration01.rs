@@ -261,14 +261,58 @@ pub fn evaluate_output_mode_parity(
     }
 }
 
+/// Install diagnostic component status entry.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct InstallDiagnosticComponentV1 {
+    /// Component key (`binary_path`, `path_resolution`, `python_bridge`, ...).
+    pub component: String,
+    /// Component health status.
+    pub healthy: bool,
+    /// Short detail for operator remediation.
+    pub detail: String,
+}
+
+/// Root install diagnosis bundle across runtime-critical components.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct InstallDiagnosisBundleV1 {
+    /// Evaluated components.
+    pub components: Vec<InstallDiagnosticComponentV1>,
+    /// Failed components list.
+    pub failing_components: Vec<String>,
+    /// Healthy summary marker.
+    pub healthy_install: bool,
+}
+
+/// Build one actionable install diagnosis bundle.
+pub fn build_install_diagnosis_bundle(
+    components: Vec<InstallDiagnosticComponentV1>,
+) -> Result<InstallDiagnosisBundleV1, String> {
+    if components.is_empty() {
+        return Err("components cannot be empty".to_string());
+    }
+    let mut ordered_components = components;
+    ordered_components.sort_by(|left, right| left.component.cmp(&right.component));
+    let failing_components: Vec<String> = ordered_components
+        .iter()
+        .filter(|entry| !entry.healthy)
+        .map(|entry| entry.component.clone())
+        .collect();
+    Ok(InstallDiagnosisBundleV1 {
+        components: ordered_components,
+        failing_components: failing_components.clone(),
+        healthy_install: failing_components.is_empty(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
 
     use super::{
         build_actionable_error_envelope, build_command_explain_record,
-        build_compact_operator_help_entrypoint, build_script_stable_command_envelope,
-        evaluate_output_mode_parity, ActionableFailureClassV1, OutputModeParityEntryV1,
+        build_compact_operator_help_entrypoint, build_install_diagnosis_bundle,
+        build_script_stable_command_envelope, evaluate_output_mode_parity,
+        ActionableFailureClassV1, InstallDiagnosticComponentV1, OutputModeParityEntryV1,
     };
 
     #[test]
@@ -354,5 +398,24 @@ mod tests {
         ]);
         assert!(!report.parity_complete);
         assert_eq!(report.missing_mode_commands, vec!["bijux doctor"]);
+    }
+
+    #[test]
+    fn g006_install_diagnostics_bundle_identifies_failing_component() {
+        let bundle = build_install_diagnosis_bundle(vec![
+            InstallDiagnosticComponentV1 {
+                component: "binary_path".to_string(),
+                healthy: true,
+                detail: "resolved /usr/local/bin/bijux".to_string(),
+            },
+            InstallDiagnosticComponentV1 {
+                component: "python_bridge".to_string(),
+                healthy: false,
+                detail: "missing importable bijux_cli_python package".to_string(),
+            },
+        ])
+        .expect("diagnosis bundle should build");
+        assert!(!bundle.healthy_install);
+        assert_eq!(bundle.failing_components, vec!["python_bridge"]);
     }
 }
