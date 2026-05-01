@@ -117,6 +117,25 @@ pub struct CostPlanningAdvisoryReportV1 {
     pub expensive_nodes: Vec<String>,
 }
 
+/// Inputs for advisory capacity what-if modeling.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CapacityWhatIfInputV1 {
+    pub queued_runs: u32,
+    pub average_node_runtime_ms: u64,
+    pub storage_free_mb: u64,
+    pub evidence_snapshot_id: String,
+}
+
+/// Advisory capacity what-if report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CapacityWhatIfReportV1 {
+    pub estimated_queue_pressure: String,
+    pub estimated_storage_footprint_mb: u64,
+    pub estimated_execution_class: String,
+    pub advisory_only: bool,
+    pub tied_to_evidence_snapshot_id: String,
+}
+
 /// Build resource requirements from graph nodes with deterministic defaults.
 pub fn build_resource_requirements(graph: &Graph) -> Vec<ResourceRequirementV1> {
     graph
@@ -436,13 +455,45 @@ pub fn build_cost_planning_advisory_report(graph: &Graph) -> CostPlanningAdvisor
     CostPlanningAdvisoryReportV1 { rows, expensive_nodes }
 }
 
+/// Build advisory capacity what-if report tied to evidence snapshot context.
+pub fn build_capacity_what_if_report(
+    graph: &Graph,
+    input: &CapacityWhatIfInputV1,
+) -> CapacityWhatIfReportV1 {
+    let node_count = graph.nodes.len() as u64;
+    let estimated_storage_footprint_mb = node_count.saturating_mul(128).saturating_add(
+        (input.queued_runs as u64).saturating_mul(64),
+    );
+    let estimated_queue_pressure = if input.queued_runs >= 100 {
+        "high".to_string()
+    } else if input.queued_runs >= 25 {
+        "moderate".to_string()
+    } else {
+        "low".to_string()
+    };
+    let estimated_execution_class = if input.average_node_runtime_ms > 120_000 {
+        "long-running".to_string()
+    } else if graph.nodes.iter().any(|node| node.tags.iter().any(|tag| tag == "gpu")) {
+        "accelerated".to_string()
+    } else {
+        "standard".to_string()
+    };
+    CapacityWhatIfReportV1 {
+        estimated_queue_pressure,
+        estimated_storage_footprint_mb,
+        estimated_execution_class,
+        advisory_only: true,
+        tied_to_evidence_snapshot_id: input.evidence_snapshot_id.clone(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         adapter_capability_for_kind, build_data_locality_advisory_report,
         build_resource_requirements, build_cost_planning_advisory_report, plan_pool_placement,
-        planner_runnable_from_capabilities, validate_resource_requirements, ExecutionPoolV1,
-        ResourceAvailabilityV1,
+        planner_runnable_from_capabilities, validate_resource_requirements,
+        build_capacity_what_if_report, CapacityWhatIfInputV1, ExecutionPoolV1, ResourceAvailabilityV1,
     };
     use crate::{
         Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef, Resources,
@@ -579,5 +630,26 @@ mod tests {
         assert!(report.expensive_nodes.iter().any(|node_id| node_id == "align"));
         assert!(!report.rows[0].duration_claimed);
         assert!(report.rows[0].drivers.iter().any(|driver| driver == "artifact_volume"));
+    }
+
+    #[test]
+    fn g128_capacity_what_if_is_advisory_and_evidence_tied() {
+        let graph = sample_graph();
+        let report = build_capacity_what_if_report(
+            &graph,
+            &CapacityWhatIfInputV1 {
+                queued_runs: 40,
+                average_node_runtime_ms: 10_000,
+                storage_free_mb: 32_000,
+                evidence_snapshot_id: "evidence-2026-05-01T06:00:00Z".to_string(),
+            },
+        );
+        assert_eq!(report.estimated_queue_pressure, "moderate");
+        assert!(report.estimated_storage_footprint_mb > 0);
+        assert_eq!(
+            report.tied_to_evidence_snapshot_id,
+            "evidence-2026-05-01T06:00:00Z"
+        );
+        assert!(report.advisory_only);
     }
 }
