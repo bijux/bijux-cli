@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Event domains required for runtime evidence taxonomy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -279,11 +279,97 @@ pub fn build_actionable_run_metrics(sample: &RunMetricsSampleV1) -> Result<Actio
     })
 }
 
+/// Node outcome row used for compact large-run summaries.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunNodeOutcomeV1 {
+    pub node_id: String,
+    pub state: String,
+    pub warning_count: u32,
+    pub changed_artifact_count: u32,
+    pub cache_reused: bool,
+}
+
+/// Compact summary for large runs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LargeRunSummaryV1 {
+    pub node_count: usize,
+    pub state_counts: BTreeMap<String, u64>,
+    pub warning_count: u64,
+    pub cache_reuse_count: u64,
+    pub changed_artifact_count: u64,
+    pub failure_nodes: Vec<String>,
+    pub verification_state: String,
+    pub compact_overview: String,
+}
+
+/// Summarize large run outcomes into a compact and operator-focused report.
+pub fn summarize_large_run_compact(
+    nodes: &[RunNodeOutcomeV1],
+    verification_state: &str,
+) -> Result<LargeRunSummaryV1, String> {
+    if nodes.is_empty() {
+        return Err("large run summary requires at least one node outcome".to_string());
+    }
+    if verification_state.trim().is_empty() {
+        return Err("large run summary requires verification_state".to_string());
+    }
+    let mut state_counts = BTreeMap::new();
+    let mut warning_count = 0u64;
+    let mut cache_reuse_count = 0u64;
+    let mut changed_artifact_count = 0u64;
+    let mut failure_nodes = Vec::new();
+
+    for node in nodes {
+        if node.node_id.trim().is_empty() {
+            return Err("large run summary contains empty node_id".to_string());
+        }
+        if node.state.trim().is_empty() {
+            return Err(format!("node '{}' has empty state", node.node_id));
+        }
+        *state_counts.entry(node.state.clone()).or_insert(0) += 1;
+        warning_count += u64::from(node.warning_count);
+        changed_artifact_count += u64::from(node.changed_artifact_count);
+        if node.cache_reused {
+            cache_reuse_count += 1;
+        }
+        if node.state == "failed" {
+            failure_nodes.push(node.node_id.clone());
+        }
+    }
+
+    failure_nodes.sort();
+    if failure_nodes.len() > 10 {
+        failure_nodes.truncate(10);
+    }
+
+    let compact_overview = format!(
+        "nodes={} failed={} warnings={} cache_reused={} changed_artifacts={} verification={}",
+        nodes.len(),
+        state_counts.get("failed").copied().unwrap_or(0),
+        warning_count,
+        cache_reuse_count,
+        changed_artifact_count,
+        verification_state
+    );
+
+    Ok(LargeRunSummaryV1 {
+        node_count: nodes.len(),
+        state_counts,
+        warning_count,
+        cache_reuse_count,
+        changed_artifact_count,
+        failure_nodes,
+        verification_state: verification_state.to_string(),
+        compact_overview,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_actionable_run_metrics, reconstruct_useful_timeline, validate_end_to_end_correlation_ids,
-        verify_event_taxonomy_complete, CorrelationChainV1, RunMetricsSampleV1,
+        build_actionable_run_metrics, reconstruct_useful_timeline, summarize_large_run_compact,
+        validate_end_to_end_correlation_ids, verify_event_taxonomy_complete, CorrelationChainV1,
+        RunMetricsSampleV1, RunNodeOutcomeV1,
         ObservabilityEventDomainV1, ObservabilityEventRecordV1,
     };
 
@@ -405,5 +491,43 @@ mod tests {
             .diagnostics
             .iter()
             .any(|line| line.contains("verification state is 'incomplete'")));
+    }
+
+    #[test]
+    fn g165_large_run_summary_is_compact_and_operator_focused() {
+        let summary = summarize_large_run_compact(
+            &[
+                RunNodeOutcomeV1 {
+                    node_id: "align-a".to_string(),
+                    state: "failed".to_string(),
+                    warning_count: 1,
+                    changed_artifact_count: 2,
+                    cache_reused: false,
+                },
+                RunNodeOutcomeV1 {
+                    node_id: "align-b".to_string(),
+                    state: "success".to_string(),
+                    warning_count: 0,
+                    changed_artifact_count: 1,
+                    cache_reused: true,
+                },
+                RunNodeOutcomeV1 {
+                    node_id: "qc".to_string(),
+                    state: "cached".to_string(),
+                    warning_count: 1,
+                    changed_artifact_count: 0,
+                    cache_reused: true,
+                },
+            ],
+            "verified",
+        )
+        .expect("large run summary should build");
+        assert_eq!(summary.node_count, 3);
+        assert_eq!(summary.state_counts.get("failed"), Some(&1));
+        assert_eq!(summary.warning_count, 2);
+        assert_eq!(summary.cache_reuse_count, 2);
+        assert_eq!(summary.changed_artifact_count, 3);
+        assert_eq!(summary.failure_nodes, vec!["align-a".to_string()]);
+        assert!(summary.compact_overview.contains("verification=verified"));
     }
 }
