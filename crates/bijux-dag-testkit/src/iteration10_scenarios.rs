@@ -84,10 +84,39 @@ pub fn build_shell_etl_scenario_report(
     Ok(report)
 }
 
+/// Branch-and-join scenario report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BranchJoinScenarioReportV1 {
+    pub branch_decision_recorded: bool,
+    pub skipped_node_count: usize,
+    pub converged_successfully: bool,
+    pub replay_proves_decision: bool,
+}
+
+/// Build branch-and-join scenario proof.
+pub fn build_branch_join_scenario_report(
+    report: BranchJoinScenarioReportV1,
+) -> Result<BranchJoinScenarioReportV1, String> {
+    if !report.branch_decision_recorded {
+        return Err("branch decision must be recorded".to_string());
+    }
+    if report.skipped_node_count == 0 {
+        return Err("branch scenario must include explicit skipped nodes".to_string());
+    }
+    if !report.converged_successfully {
+        return Err("branch join must converge successfully".to_string());
+    }
+    if !report.replay_proves_decision {
+        return Err("replay must prove branch decision".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_hello_dag_scenario_report, build_shell_etl_scenario_report, HelloDagScenarioReportV1,
+        build_branch_join_scenario_report, build_hello_dag_scenario_report,
+        build_shell_etl_scenario_report, BranchJoinScenarioReportV1, HelloDagScenarioReportV1,
         ShellEtlScenarioReportV1,
     };
 
@@ -122,5 +151,18 @@ mod tests {
         .expect("shell etl scenario");
         assert!(report.output_materialized);
         assert!(report.logs_captured);
+    }
+
+    #[test]
+    fn g093_branch_join_scenario_proves_decision_skip_and_convergence() {
+        let report = build_branch_join_scenario_report(BranchJoinScenarioReportV1 {
+            branch_decision_recorded: true,
+            skipped_node_count: 2,
+            converged_successfully: true,
+            replay_proves_decision: true,
+        })
+        .expect("branch join scenario");
+        assert_eq!(report.skipped_node_count, 2);
+        assert!(report.converged_successfully);
     }
 }
