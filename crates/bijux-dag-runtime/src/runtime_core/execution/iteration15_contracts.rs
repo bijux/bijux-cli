@@ -46,9 +46,50 @@ pub fn validate_docker_smoke_execution(
     Ok(())
 }
 
+/// Container image identity policy decision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContainerImageIdentityDecisionV1 {
+    pub image_reference: String,
+    pub production_mode: bool,
+    pub advisory_mode: bool,
+    pub accepted: bool,
+    pub reason: String,
+}
+
+/// Enforce strict image identity for production container runs.
+pub fn enforce_container_image_identity(
+    image_reference: &str,
+    production_mode: bool,
+    advisory_mode: bool,
+) -> ContainerImageIdentityDecisionV1 {
+    let has_digest = image_reference.contains("@sha256:");
+    let accepted = if production_mode {
+        has_digest || advisory_mode
+    } else {
+        true
+    };
+    let reason = if production_mode && !has_digest && !advisory_mode {
+        "tag-only image reference is refused in production mode".to_string()
+    } else if production_mode && !has_digest && advisory_mode {
+        "tag-only image reference accepted in explicit advisory mode".to_string()
+    } else {
+        "image identity satisfies active policy".to_string()
+    };
+    ContainerImageIdentityDecisionV1 {
+        image_reference: image_reference.to_string(),
+        production_mode,
+        advisory_mode,
+        accepted,
+        reason,
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{validate_docker_smoke_execution, DockerSmokeExecutionRecordV1};
+    use super::{
+        enforce_container_image_identity, validate_docker_smoke_execution,
+        DockerSmokeExecutionRecordV1,
+    };
 
     #[test]
     fn g141_docker_smoke_contract_requires_recorded_execution_evidence() {
@@ -72,5 +113,19 @@ mod tests {
         let error =
             validate_docker_smoke_execution(&incomplete, true).expect_err("must reject incomplete evidence");
         assert!(error.contains("evidence is incomplete"));
+    }
+
+    #[test]
+    fn g142_container_image_identity_refuses_tag_only_in_production() {
+        let refused = enforce_container_image_identity("ghcr.io/bijux/tool:latest", true, false);
+        assert!(!refused.accepted);
+        assert!(refused.reason.contains("tag-only image reference is refused"));
+
+        let advisory = enforce_container_image_identity("ghcr.io/bijux/tool:latest", true, true);
+        assert!(advisory.accepted);
+        assert!(advisory.reason.contains("advisory mode"));
+
+        let strict = enforce_container_image_identity("ghcr.io/bijux/tool@sha256:abc123", true, false);
+        assert!(strict.accepted);
     }
 }
