@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    compile_graph, lower_graph_to_execution_plan, parse_graph_strict, Graph, GraphError, Severity,
+    compile_graph, lower_graph_to_execution_plan, node_io_contract, parse_graph_strict, Graph,
+    GraphError, Severity,
 };
 
 /// Per-example execution evidence used to prove examples are executable.
@@ -357,12 +358,148 @@ pub fn build_cycle_reachability_rejection_report(
     CycleReachabilityRejectionReportV1 { refusals }
 }
 
+/// Node output contract hint for user-facing port contract reports.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NodePortOutputHintV1 {
+    /// Output name.
+    pub name: String,
+    /// Output path.
+    pub path: String,
+    /// Whether output is required.
+    pub required: bool,
+    /// MIME-like media hint.
+    pub media_type: String,
+}
+
+/// Node-level port contract snapshot with required inputs and outputs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NodePortContractSnapshotV1 {
+    /// Node identifier.
+    pub node_id: String,
+    /// Declared required input ports.
+    pub required_inputs: Vec<String>,
+    /// Declared outputs with requirement/type hints.
+    pub outputs: Vec<NodePortOutputHintV1>,
+}
+
+/// Port contract violation with deterministic code and subject.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PortContractViolationV1 {
+    /// Stable violation code.
+    pub code: String,
+    /// Subject key.
+    pub subject: String,
+}
+
+/// Deterministic port contract enforcement report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PortContractEnforcementReportV1 {
+    /// Node port contract snapshots.
+    pub node_contracts: Vec<NodePortContractSnapshotV1>,
+    /// Violations ordered by code/subject.
+    pub violations: Vec<PortContractViolationV1>,
+}
+
+/// Build deterministic port contract report for unknown, duplicate, missing, and unused ports.
+pub fn build_port_contract_enforcement_report(graph: &Graph) -> PortContractEnforcementReportV1 {
+    let mut node_contracts = graph
+        .nodes
+        .iter()
+        .map(|node| {
+            let outputs = node_io_contract(graph, &node.id)
+                .map(|io| {
+                    io.outputs
+                        .into_iter()
+                        .map(|output| NodePortOutputHintV1 {
+                            name: output.name,
+                            path: output.path,
+                            required: output.required,
+                            media_type: output.media_type,
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            NodePortContractSnapshotV1 {
+                node_id: node.id.clone(),
+                required_inputs: node.inputs.clone(),
+                outputs,
+            }
+        })
+        .collect::<Vec<_>>();
+    node_contracts.sort_by(|left, right| left.node_id.cmp(&right.node_id));
+
+    let mut violations = Vec::new();
+    let mut duplicate_bindings = BTreeSet::new();
+
+    for edge in &graph.edges {
+        let from_node = graph.nodes.iter().find(|node| node.id == edge.from.node_id);
+        let to_node = graph.nodes.iter().find(|node| node.id == edge.to.node_id);
+
+        let from_port_known = from_node
+            .map(|node| node.outputs.iter().any(|output| output.name == edge.from.port))
+            .unwrap_or(false);
+        if !from_port_known {
+            violations.push(PortContractViolationV1 {
+                code: "P3001_UNKNOWN_OUTPUT_PORT".to_string(),
+                subject: format!("{}.{}", edge.from.node_id, edge.from.port),
+            });
+        }
+
+        let to_port_known =
+            to_node.map(|node| node.inputs.iter().any(|input| input == &edge.to.port)).unwrap_or(false);
+        if !to_port_known {
+            violations.push(PortContractViolationV1 {
+                code: "P3002_UNKNOWN_INPUT_PORT".to_string(),
+                subject: format!("{}.{}", edge.to.node_id, edge.to.port),
+            });
+        }
+
+        let binding = format!("{}.{}", edge.to.node_id, edge.to.port);
+        if !duplicate_bindings.insert(binding.clone()) {
+            violations.push(PortContractViolationV1 {
+                code: "P3003_DUPLICATE_INPUT_BINDING".to_string(),
+                subject: binding,
+            });
+        }
+    }
+
+    for node in &graph.nodes {
+        for input in &node.inputs {
+            let has_binding =
+                graph.edges.iter().any(|edge| edge.to.node_id == node.id && edge.to.port == *input);
+            if !has_binding {
+                violations.push(PortContractViolationV1 {
+                    code: "P3004_MISSING_REQUIRED_INPUT".to_string(),
+                    subject: format!("{}.{}", node.id, input),
+                });
+            }
+        }
+
+        for output in &node.outputs {
+            let used =
+                graph.edges.iter().any(|edge| edge.from.node_id == node.id && edge.from.port == output.name);
+            if !used {
+                violations.push(PortContractViolationV1 {
+                    code: "P3005_UNUSED_DECLARED_OUTPUT".to_string(),
+                    subject: format!("{}.{}", node.id, output.name),
+                });
+            }
+        }
+    }
+
+    violations.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.subject.cmp(&right.subject)));
+    violations.dedup();
+
+    PortContractEnforcementReportV1 { node_contracts, violations }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_graph_builder_parity_report, build_graph_canonicalization_visibility_report,
         build_cycle_reachability_rejection_report, build_graph_examples_execution_report,
-        build_surgical_validation_diagnostic, GraphExampleExecutionEntryV1,
+        build_port_contract_enforcement_report, build_surgical_validation_diagnostic,
+        GraphExampleExecutionEntryV1,
     };
     use crate::{DagBuilder, Edge, EdgeKind, Effect, NodeBuilder, NodeKind, PortRef};
     use std::collections::BTreeSet;
@@ -491,5 +628,36 @@ mod tests {
             .refusals
             .iter()
             .all(|entry| !entry.remediation.trim().is_empty()));
+    }
+
+    #[test]
+    fn g026_port_contract_enforcement_is_deterministic_for_unknown_duplicate_and_missing_ports() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("source", NodeKind::Const)
+                    .output("out", "artifacts/source.json")
+                    .output("ghost", "artifacts/ghost.json")
+                    .build(),
+            )
+            .node(
+                NodeBuilder::new("sink", NodeKind::Const)
+                    .input("input_a")
+                    .input("input_b")
+                    .output("done", "artifacts/sink.json")
+                    .build(),
+            )
+            .edge("source", "out", "sink", "input_a")
+            .edge("source", "out", "sink", "input_a")
+            .edge("source", "missing_output", "sink", "input_c")
+            .build();
+
+        let report = build_port_contract_enforcement_report(&graph);
+        let codes =
+            report.violations.iter().map(|violation| violation.code.clone()).collect::<BTreeSet<_>>();
+        assert!(codes.contains("P3001_UNKNOWN_OUTPUT_PORT"));
+        assert!(codes.contains("P3002_UNKNOWN_INPUT_PORT"));
+        assert!(codes.contains("P3003_DUPLICATE_INPUT_BINDING"));
+        assert!(codes.contains("P3004_MISSING_REQUIRED_INPUT"));
+        assert!(codes.contains("P3005_UNUSED_DECLARED_OUTPUT"));
     }
 }
