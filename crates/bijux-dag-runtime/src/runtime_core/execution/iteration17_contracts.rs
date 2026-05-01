@@ -364,12 +364,100 @@ pub fn summarize_large_run_compact(
     })
 }
 
+/// Comparable run surface fingerprints.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunComparisonInputV1 {
+    pub run_id: String,
+    pub graph_fingerprint: String,
+    pub config_fingerprint: String,
+    pub input_fingerprint: String,
+    pub output_fingerprint: String,
+    pub runtime_fingerprint: String,
+    pub environment_fingerprint: String,
+    pub evidence_fingerprint: String,
+}
+
+/// Cross-run comparison report with explicit drift dimensions.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CrossRunComparisonReportV1 {
+    pub baseline_run_id: String,
+    pub candidate_run_id: String,
+    pub drift_dimensions: Vec<String>,
+    pub replay_safe: bool,
+}
+
+/// Compare two runs across graph, config, inputs, outputs, runtime, environment, and evidence.
+pub fn compare_runs_complete(
+    baseline: &RunComparisonInputV1,
+    candidate: &RunComparisonInputV1,
+) -> Result<CrossRunComparisonReportV1, String> {
+    for (field, value) in [
+        ("baseline.run_id", baseline.run_id.as_str()),
+        ("candidate.run_id", candidate.run_id.as_str()),
+        ("baseline.graph_fingerprint", baseline.graph_fingerprint.as_str()),
+        ("candidate.graph_fingerprint", candidate.graph_fingerprint.as_str()),
+        ("baseline.config_fingerprint", baseline.config_fingerprint.as_str()),
+        ("candidate.config_fingerprint", candidate.config_fingerprint.as_str()),
+        ("baseline.input_fingerprint", baseline.input_fingerprint.as_str()),
+        ("candidate.input_fingerprint", candidate.input_fingerprint.as_str()),
+        ("baseline.output_fingerprint", baseline.output_fingerprint.as_str()),
+        ("candidate.output_fingerprint", candidate.output_fingerprint.as_str()),
+        ("baseline.runtime_fingerprint", baseline.runtime_fingerprint.as_str()),
+        ("candidate.runtime_fingerprint", candidate.runtime_fingerprint.as_str()),
+        (
+            "baseline.environment_fingerprint",
+            baseline.environment_fingerprint.as_str(),
+        ),
+        (
+            "candidate.environment_fingerprint",
+            candidate.environment_fingerprint.as_str(),
+        ),
+        ("baseline.evidence_fingerprint", baseline.evidence_fingerprint.as_str()),
+        ("candidate.evidence_fingerprint", candidate.evidence_fingerprint.as_str()),
+    ] {
+        if value.trim().is_empty() {
+            return Err(format!("cross-run comparison requires non-empty {field}"));
+        }
+    }
+
+    let mut drift_dimensions = Vec::new();
+    if baseline.graph_fingerprint != candidate.graph_fingerprint {
+        drift_dimensions.push("graph".to_string());
+    }
+    if baseline.config_fingerprint != candidate.config_fingerprint {
+        drift_dimensions.push("config".to_string());
+    }
+    if baseline.input_fingerprint != candidate.input_fingerprint {
+        drift_dimensions.push("inputs".to_string());
+    }
+    if baseline.output_fingerprint != candidate.output_fingerprint {
+        drift_dimensions.push("outputs".to_string());
+    }
+    if baseline.runtime_fingerprint != candidate.runtime_fingerprint {
+        drift_dimensions.push("runtime".to_string());
+    }
+    if baseline.environment_fingerprint != candidate.environment_fingerprint {
+        drift_dimensions.push("environment".to_string());
+    }
+    if baseline.evidence_fingerprint != candidate.evidence_fingerprint {
+        drift_dimensions.push("evidence".to_string());
+    }
+
+    let replay_safe = drift_dimensions.is_empty();
+    Ok(CrossRunComparisonReportV1 {
+        baseline_run_id: baseline.run_id.clone(),
+        candidate_run_id: candidate.run_id.clone(),
+        drift_dimensions,
+        replay_safe,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_actionable_run_metrics, reconstruct_useful_timeline, summarize_large_run_compact,
-        validate_end_to_end_correlation_ids, verify_event_taxonomy_complete, CorrelationChainV1,
-        RunMetricsSampleV1, RunNodeOutcomeV1,
+        build_actionable_run_metrics, compare_runs_complete, reconstruct_useful_timeline,
+        summarize_large_run_compact, validate_end_to_end_correlation_ids, verify_event_taxonomy_complete,
+        CorrelationChainV1, RunComparisonInputV1, RunMetricsSampleV1, RunNodeOutcomeV1,
         ObservabilityEventDomainV1, ObservabilityEventRecordV1,
     };
 
@@ -529,5 +617,40 @@ mod tests {
         assert_eq!(summary.changed_artifact_count, 3);
         assert_eq!(summary.failure_nodes, vec!["align-a".to_string()]);
         assert!(summary.compact_overview.contains("verification=verified"));
+    }
+
+    #[test]
+    fn g166_cross_run_comparison_reports_all_drift_dimensions() {
+        let baseline = RunComparisonInputV1 {
+            run_id: "run-a".to_string(),
+            graph_fingerprint: "graph-1".to_string(),
+            config_fingerprint: "cfg-1".to_string(),
+            input_fingerprint: "in-1".to_string(),
+            output_fingerprint: "out-1".to_string(),
+            runtime_fingerprint: "rt-1".to_string(),
+            environment_fingerprint: "env-1".to_string(),
+            evidence_fingerprint: "ev-1".to_string(),
+        };
+        let candidate = RunComparisonInputV1 {
+            run_id: "run-b".to_string(),
+            graph_fingerprint: "graph-1".to_string(),
+            config_fingerprint: "cfg-2".to_string(),
+            input_fingerprint: "in-1".to_string(),
+            output_fingerprint: "out-2".to_string(),
+            runtime_fingerprint: "rt-2".to_string(),
+            environment_fingerprint: "env-1".to_string(),
+            evidence_fingerprint: "ev-2".to_string(),
+        };
+        let report = compare_runs_complete(&baseline, &candidate).expect("comparison should succeed");
+        assert_eq!(
+            report.drift_dimensions,
+            vec![
+                "config".to_string(),
+                "outputs".to_string(),
+                "runtime".to_string(),
+                "evidence".to_string(),
+            ]
+        );
+        assert!(!report.replay_safe);
     }
 }
