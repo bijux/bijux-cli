@@ -350,16 +350,61 @@ pub fn evaluate_artifact_write_and_inventory_benchmark(
     })
 }
 
+/// Evidence verification benchmark input.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EvidenceVerificationBenchmarkInputV1 {
+    pub small_bundle_ms: f64,
+    pub medium_bundle_ms: f64,
+    pub large_bundle_ms: f64,
+}
+
+/// Evidence verification benchmark report.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EvidenceVerificationBenchmarkReportV1 {
+    pub max_bundle_ms: f64,
+    pub release_track_ready: bool,
+    pub diagnostics: Vec<String>,
+}
+
+/// Evaluate evidence verification performance for release tracking.
+pub fn evaluate_evidence_verification_benchmark(
+    input: &EvidenceVerificationBenchmarkInputV1,
+) -> Result<EvidenceVerificationBenchmarkReportV1, String> {
+    let values = [
+        ("small_bundle_ms", input.small_bundle_ms, 120.0),
+        ("medium_bundle_ms", input.medium_bundle_ms, 280.0),
+        ("large_bundle_ms", input.large_bundle_ms, 700.0),
+    ];
+    let mut max_bundle_ms = 0.0f64;
+    let mut diagnostics = Vec::new();
+    for (name, value, budget) in values {
+        if !value.is_finite() || value < 0.0 {
+            return Err(format!("evidence verification benchmark requires finite non-negative {name}"));
+        }
+        max_bundle_ms = max_bundle_ms.max(value);
+        if value > budget {
+            diagnostics.push(format!("{name} exceeds {budget:.0}ms release budget"));
+        }
+    }
+    Ok(EvidenceVerificationBenchmarkReportV1 {
+        max_bundle_ms,
+        release_track_ready: diagnostics.is_empty(),
+        diagnostics,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         evaluate_artifact_write_and_inventory_benchmark,
+        evaluate_evidence_verification_benchmark,
         evaluate_planner_lowering_and_explain,
         evaluate_scheduler_churn_benchmark,
         evaluate_runtime_startup_benchmark,
         evaluate_canonicalization_and_fingerprinting,
         evaluate_graph_parse_and_validation_budget, evaluate_route_dispatch_and_help_startup,
-        ArtifactBenchmarkInputV1, CanonicalFingerprintBenchmarkInputV1, GraphValidationBenchmarkInputV1,
+        ArtifactBenchmarkInputV1, CanonicalFingerprintBenchmarkInputV1,
+        EvidenceVerificationBenchmarkInputV1, GraphValidationBenchmarkInputV1,
         SchedulerChurnBenchmarkInputV1,
         RuntimeStartupBenchmarkInputV1,
         PlannerLoweringBenchmarkInputV1, RouteDispatchBenchmarkInputV1,
@@ -530,5 +575,25 @@ mod tests {
         .expect("slow artifact benchmark should report");
         assert!(!slow.deterministic_budget_passed);
         assert_eq!(slow.diagnostics.len(), 4);
+    }
+
+    #[test]
+    fn g188_evidence_verification_performance_is_release_tracked() {
+        let healthy = evaluate_evidence_verification_benchmark(&EvidenceVerificationBenchmarkInputV1 {
+            small_bundle_ms: 60.0,
+            medium_bundle_ms: 180.0,
+            large_bundle_ms: 420.0,
+        })
+        .expect("evidence benchmark");
+        assert!(healthy.release_track_ready);
+
+        let slow = evaluate_evidence_verification_benchmark(&EvidenceVerificationBenchmarkInputV1 {
+            small_bundle_ms: 150.0,
+            medium_bundle_ms: 330.0,
+            large_bundle_ms: 880.0,
+        })
+        .expect("slow evidence benchmark");
+        assert!(!slow.release_track_ready);
+        assert_eq!(slow.diagnostics.len(), 3);
     }
 }
