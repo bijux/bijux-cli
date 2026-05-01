@@ -353,6 +353,59 @@ pub fn build_replay_plan_readout(
     Ok(lines.join("\n"))
 }
 
+/// Replay ancestry record preserving source lineage.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReplayAncestryRecordV1 {
+    pub replay_run_id: String,
+    pub node_id: String,
+    pub action: String,
+    pub source_run_id: Option<String>,
+    pub source_node_id: Option<String>,
+}
+
+/// Validate replay ancestry records for lineage preservation.
+pub fn validate_replay_ancestry_records(
+    records: Vec<ReplayAncestryRecordV1>,
+) -> Result<Vec<ReplayAncestryRecordV1>, String> {
+    if records.is_empty() {
+        return Err("replay ancestry records must not be empty".to_string());
+    }
+    let mut seen_nodes = std::collections::BTreeSet::new();
+    for record in &records {
+        if record.replay_run_id.trim().is_empty() {
+            return Err("replay_run_id must not be empty".to_string());
+        }
+        if record.node_id.trim().is_empty() {
+            return Err("node_id must not be empty".to_string());
+        }
+        if !seen_nodes.insert(record.node_id.clone()) {
+            return Err(format!("duplicate replay node ancestry: {}", record.node_id));
+        }
+        if record.action.trim().is_empty() {
+            return Err("action must not be empty".to_string());
+        }
+        if record.action == "reuse" || record.action == "rerun" {
+            let source_run = record.source_run_id.as_deref().unwrap_or("").trim();
+            let source_node = record.source_node_id.as_deref().unwrap_or("").trim();
+            if source_run.is_empty() || source_node.is_empty() {
+                return Err(format!(
+                    "action {} requires source_run_id and source_node_id for {}",
+                    record.action, record.node_id
+                ));
+            }
+            if source_run == record.replay_run_id && source_node == record.node_id {
+                return Err(format!(
+                    "replay ancestry self-cycle for node {} is not allowed",
+                    record.node_id
+                ));
+            }
+        }
+    }
+    let mut sorted = records;
+    sorted.sort_by(|left, right| left.node_id.cmp(&right.node_id));
+    Ok(sorted)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -360,7 +413,7 @@ mod tests {
         build_replay_plan_readout,
         build_run_directory_layout_contract, content_identity_for_directory, content_identity_for_file,
         ArtifactInventoryRecordV1, CacheKeyFactorsV1, CacheReuseContextV1, CacheReuseEvidenceV1,
-        ReplayNodePlanDecisionV1,
+        ReplayAncestryRecordV1, ReplayNodePlanDecisionV1, validate_replay_ancestry_records,
     };
 
     #[test]
@@ -517,5 +570,36 @@ mod tests {
         assert!(plan.contains("call-variants: action=rerun"));
         assert!(plan.contains("publish-report: action=skip"));
         assert!(plan.contains("unsafe-node: action=refuse"));
+    }
+
+    #[test]
+    fn g068_replay_ancestry_is_preserved_for_reused_and_rerun_nodes() {
+        let validated = validate_replay_ancestry_records(vec![
+            ReplayAncestryRecordV1 {
+                replay_run_id: "run-200".to_string(),
+                node_id: "align-reads".to_string(),
+                action: "reuse".to_string(),
+                source_run_id: Some("run-199".to_string()),
+                source_node_id: Some("align-reads".to_string()),
+            },
+            ReplayAncestryRecordV1 {
+                replay_run_id: "run-200".to_string(),
+                node_id: "call-variants".to_string(),
+                action: "rerun".to_string(),
+                source_run_id: Some("run-199".to_string()),
+                source_node_id: Some("call-variants".to_string()),
+            },
+            ReplayAncestryRecordV1 {
+                replay_run_id: "run-200".to_string(),
+                node_id: "publish-report".to_string(),
+                action: "skip".to_string(),
+                source_run_id: None,
+                source_node_id: None,
+            },
+        ])
+        .expect("ancestry");
+        assert_eq!(validated.len(), 3);
+        assert_eq!(validated[0].node_id, "align-reads");
+        assert_eq!(validated[1].node_id, "call-variants");
     }
 }
