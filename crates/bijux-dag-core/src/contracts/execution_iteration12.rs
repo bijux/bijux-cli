@@ -147,13 +147,38 @@ pub fn validate_optional_input_execution(
     Ok(record)
 }
 
+/// Service/sensor mock workflow execution record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ServiceSensorExecutionRecordV1 {
+    pub lifecycle_events_recorded: bool,
+    pub simulated_outputs: bool,
+    pub advisory_mode: bool,
+}
+
+/// Validate service/sensor mock execution contracts.
+pub fn validate_service_sensor_execution(
+    record: ServiceSensorExecutionRecordV1,
+) -> Result<ServiceSensorExecutionRecordV1, String> {
+    if !record.lifecycle_events_recorded {
+        return Err("service/sensor execution must record lifecycle events".to_string());
+    }
+    if !record.simulated_outputs {
+        return Err("service/sensor execution must mark outputs as simulated".to_string());
+    }
+    if !record.advisory_mode {
+        return Err("service/sensor execution must remain advisory until real service support exists".to_string());
+    }
+    Ok(record)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         validate_matrix_execution, validate_nested_subgraph_execution, validate_partition_execution,
+        validate_service_sensor_execution,
         validate_optional_input_execution, validate_quorum_execution, MatrixExecutionRecordV1,
         NestedSubgraphExecutionRecordV1, OptionalInputExecutionRecordV1, PartitionExecutionRecordV1,
-        QuorumExecutionRecordV1,
+        QuorumExecutionRecordV1, ServiceSensorExecutionRecordV1,
     };
 
     #[test]
@@ -228,5 +253,17 @@ mod tests {
         .expect("optional input execution");
         assert_eq!(record.optional_inputs_missing, vec!["annotation_db".to_string()]);
         assert!(!record.execution_failed);
+    }
+
+    #[test]
+    fn g116_service_sensor_execution_stays_simulated_and_advisory() {
+        let record = validate_service_sensor_execution(ServiceSensorExecutionRecordV1 {
+            lifecycle_events_recorded: true,
+            simulated_outputs: true,
+            advisory_mode: true,
+        })
+        .expect("service sensor execution");
+        assert!(record.simulated_outputs);
+        assert!(record.advisory_mode);
     }
 }
