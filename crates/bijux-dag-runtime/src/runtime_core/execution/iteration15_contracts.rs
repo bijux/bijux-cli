@@ -189,9 +189,48 @@ pub fn render_batch_script_export(
     Ok(BatchScriptExportOutputV1 { script, submitted: false })
 }
 
+/// Mocked batch lifecycle event.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MockBatchLifecycleEventV1 {
+    pub action: String,
+    pub runtime_state: String,
+}
+
+/// Validate mocked batch lifecycle completeness and state mapping.
+pub fn validate_mock_batch_lifecycle(events: &[MockBatchLifecycleEventV1]) -> Result<(), String> {
+    if events.is_empty() {
+        return Err("mock batch lifecycle requires at least one event".to_string());
+    }
+    let actions = events.iter().map(|event| event.action.as_str()).collect::<Vec<_>>();
+    for required in ["submit", "poll", "cancel", "fail", "complete", "collect_logs"] {
+        if !actions.iter().any(|action| action == &required) {
+            return Err(format!("mock batch lifecycle is missing required action '{}'", required));
+        }
+    }
+    for event in events {
+        let expected = match event.action.as_str() {
+            "submit" => "queued",
+            "poll" => "running",
+            "cancel" => "cancelled",
+            "fail" => "failed",
+            "complete" => "succeeded",
+            "collect_logs" => "succeeded",
+            _ => return Err(format!("unknown mock batch action '{}'", event.action)),
+        };
+        if event.runtime_state != expected {
+            return Err(format!(
+                "mock batch action '{}' must map to runtime state '{}', got '{}'",
+                event.action, expected, event.runtime_state
+            ));
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        validate_mock_batch_lifecycle, MockBatchLifecycleEventV1,
         render_batch_script_export, BatchScriptExportDescriptorV1,
         evaluate_apptainer_boundary, ApptainerSupportStateV1,
         enforce_container_image_identity, validate_docker_smoke_execution,
@@ -270,5 +309,21 @@ mod tests {
         assert!(output.script.contains("scratch: /tmp/run/scratch"));
         assert!(output.script.contains("artifacts: /tmp/run/artifacts"));
         assert!(output.script.contains("rm -rf /tmp/run/scratch"));
+    }
+
+    #[test]
+    fn g145_mock_batch_lifecycle_covers_submit_poll_cancel_fail_complete_and_logs() {
+        let events = vec![
+            MockBatchLifecycleEventV1 { action: "submit".to_string(), runtime_state: "queued".to_string() },
+            MockBatchLifecycleEventV1 { action: "poll".to_string(), runtime_state: "running".to_string() },
+            MockBatchLifecycleEventV1 { action: "cancel".to_string(), runtime_state: "cancelled".to_string() },
+            MockBatchLifecycleEventV1 { action: "fail".to_string(), runtime_state: "failed".to_string() },
+            MockBatchLifecycleEventV1 { action: "complete".to_string(), runtime_state: "succeeded".to_string() },
+            MockBatchLifecycleEventV1 {
+                action: "collect_logs".to_string(),
+                runtime_state: "succeeded".to_string(),
+            },
+        ];
+        validate_mock_batch_lifecycle(&events).expect("mock batch lifecycle should validate");
     }
 }
