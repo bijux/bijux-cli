@@ -304,15 +304,60 @@ pub fn build_install_diagnosis_bundle(
     })
 }
 
+/// Route registry entry used for completion generation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct CompletionRouteEntryV1 {
+    /// Command string.
+    pub command: String,
+    /// Whether command is hidden from normal listing.
+    pub hidden: bool,
+    /// Whether command is deprecated.
+    pub deprecated: bool,
+    /// Whether command is stale and no longer routed.
+    pub stale: bool,
+}
+
+/// Generated completion snapshot from registry routes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct CompletionSnapshotV1 {
+    /// Shell identifier (`bash`, `zsh`, `fish`).
+    pub shell: String,
+    /// Commands included in completion output.
+    pub commands: Vec<String>,
+}
+
+/// Build completion snapshot from route registry with stale/deprecated filtering.
+pub fn build_completion_snapshot_from_registry(
+    shell: &str,
+    entries: Vec<CompletionRouteEntryV1>,
+    include_deprecated: bool,
+) -> Result<CompletionSnapshotV1, String> {
+    if shell.trim().is_empty() {
+        return Err("shell cannot be empty".to_string());
+    }
+    let mut commands: Vec<String> = entries
+        .into_iter()
+        .filter(|entry| !entry.hidden)
+        .filter(|entry| !entry.stale)
+        .filter(|entry| include_deprecated || !entry.deprecated)
+        .map(|entry| entry.command)
+        .collect();
+    commands.sort();
+    commands.dedup();
+    Ok(CompletionSnapshotV1 { shell: shell.to_string(), commands })
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
 
     use super::{
         build_actionable_error_envelope, build_command_explain_record,
+        build_completion_snapshot_from_registry,
         build_compact_operator_help_entrypoint, build_install_diagnosis_bundle,
         build_script_stable_command_envelope, evaluate_output_mode_parity,
-        ActionableFailureClassV1, InstallDiagnosticComponentV1, OutputModeParityEntryV1,
+        ActionableFailureClassV1, CompletionRouteEntryV1, InstallDiagnosticComponentV1,
+        OutputModeParityEntryV1,
     };
 
     #[test]
@@ -417,5 +462,35 @@ mod tests {
         .expect("diagnosis bundle should build");
         assert!(!bundle.healthy_install);
         assert_eq!(bundle.failing_components, vec!["python_bridge"]);
+    }
+
+    #[test]
+    fn g007_completion_snapshot_excludes_hidden_stale_and_deprecated_routes() {
+        let snapshot = build_completion_snapshot_from_registry(
+            "zsh",
+            vec![
+                CompletionRouteEntryV1 {
+                    command: "bijux dag run".to_string(),
+                    hidden: false,
+                    deprecated: false,
+                    stale: false,
+                },
+                CompletionRouteEntryV1 {
+                    command: "bijux dag old-run".to_string(),
+                    hidden: false,
+                    deprecated: true,
+                    stale: false,
+                },
+                CompletionRouteEntryV1 {
+                    command: "bijux secret route".to_string(),
+                    hidden: true,
+                    deprecated: false,
+                    stale: false,
+                },
+            ],
+            false,
+        )
+        .expect("completion snapshot should build");
+        assert_eq!(snapshot.commands, vec!["bijux dag run"]);
     }
 }
