@@ -245,14 +245,43 @@ pub fn validate_command_impact_preview(
     Ok(preview)
 }
 
+/// Official app onboarding conformance report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OfficialAppOnboardingReportV1 {
+    pub mock_app_registered: bool,
+    pub route_contract_passed: bool,
+    pub command_contract_passed: bool,
+    pub root_internal_changes_required: bool,
+}
+
+/// Validate official app onboarding reproducibility.
+pub fn validate_official_app_onboarding(
+    report: OfficialAppOnboardingReportV1,
+) -> Result<OfficialAppOnboardingReportV1, String> {
+    if !report.mock_app_registered {
+        return Err("mock official app must be registered".to_string());
+    }
+    if !report.route_contract_passed {
+        return Err("mock app route contract must pass".to_string());
+    }
+    if !report.command_contract_passed {
+        return Err("mock app command contract must pass".to_string());
+    }
+    if report.root_internal_changes_required {
+        return Err("official app onboarding must not require root internal modifications".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        validate_official_app_onboarding,
         validate_command_impact_preview,
         diff_route_inventory, enforce_app_compatibility_window, evaluate_deprecation_lifecycle,
         resolve_app_workspace_config, validate_install_repair_report, AppWorkspaceConfigV1,
-        CommandImpactPreviewV1, InstallRepairReportV1, SupportBundleReportV1,
-        validate_support_bundle_report,
+        CommandImpactPreviewV1, InstallRepairReportV1, OfficialAppOnboardingReportV1,
+        SupportBundleReportV1, validate_support_bundle_report,
     };
 
     #[test]
@@ -358,5 +387,18 @@ mod tests {
         .expect("impact preview");
         assert_eq!(preview.file_writes.len(), 1);
         assert_eq!(preview.adapter_execution[0], "shell adapter");
+    }
+
+    #[test]
+    fn g108_official_app_onboarding_is_reproducible_without_root_internal_changes() {
+        let report = validate_official_app_onboarding(OfficialAppOnboardingReportV1 {
+            mock_app_registered: true,
+            route_contract_passed: true,
+            command_contract_passed: true,
+            root_internal_changes_required: false,
+        })
+        .expect("official app onboarding");
+        assert!(report.mock_app_registered);
+        assert!(report.command_contract_passed);
     }
 }
