@@ -177,12 +177,47 @@ pub fn validate_install_repair_report(
     Ok(report)
 }
 
+/// Support bundle scope report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SupportBundleReportV1 {
+    pub includes_config: bool,
+    pub includes_routes: bool,
+    pub includes_environment: bool,
+    pub includes_plugins: bool,
+    pub includes_run_data: bool,
+    pub includes_schema_info: bool,
+    pub redaction_applied: bool,
+    pub reproduction_ready: bool,
+}
+
+/// Validate support-bundle minimal useful scope.
+pub fn validate_support_bundle_report(
+    report: SupportBundleReportV1,
+) -> Result<SupportBundleReportV1, String> {
+    if !report.includes_config
+        || !report.includes_routes
+        || !report.includes_environment
+        || !report.includes_plugins
+        || !report.includes_run_data
+        || !report.includes_schema_info
+    {
+        return Err("support bundle missing required reproduction surface".to_string());
+    }
+    if !report.redaction_applied {
+        return Err("support bundle must apply redaction".to_string());
+    }
+    if !report.reproduction_ready {
+        return Err("support bundle must be reproduction-ready".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         diff_route_inventory, enforce_app_compatibility_window, evaluate_deprecation_lifecycle,
         resolve_app_workspace_config, validate_install_repair_report, AppWorkspaceConfigV1,
-        InstallRepairReportV1,
+        InstallRepairReportV1, SupportBundleReportV1, validate_support_bundle_report,
     };
 
     #[test]
@@ -256,5 +291,22 @@ mod tests {
         .expect("install repair");
         assert!(report.backup_created);
         assert_eq!(report.changed_paths.len(), 2);
+    }
+
+    #[test]
+    fn g106_support_bundle_is_minimal_redacted_and_reproduction_ready() {
+        let report = validate_support_bundle_report(SupportBundleReportV1 {
+            includes_config: true,
+            includes_routes: true,
+            includes_environment: true,
+            includes_plugins: true,
+            includes_run_data: true,
+            includes_schema_info: true,
+            redaction_applied: true,
+            reproduction_ready: true,
+        })
+        .expect("support bundle");
+        assert!(report.redaction_applied);
+        assert!(report.reproduction_ready);
     }
 }
