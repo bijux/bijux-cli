@@ -84,6 +84,23 @@ pub struct AdapterCapabilityDescriptorV1 {
     pub side_effect_class: String,
 }
 
+/// Data locality advisory row per node.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DataLocalityAdvisoryRowV1 {
+    pub node_id: String,
+    pub estimated_input_transfer_mb: u64,
+    pub estimated_output_transfer_mb: u64,
+    pub preferred_execution_site: String,
+    pub advisory_only: bool,
+    pub reversible: bool,
+}
+
+/// Data locality advisory report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DataLocalityAdvisoryReportV1 {
+    pub rows: Vec<DataLocalityAdvisoryRowV1>,
+}
+
 /// Build resource requirements from graph nodes with deterministic defaults.
 pub fn build_resource_requirements(graph: &Graph) -> Vec<ResourceRequirementV1> {
     graph
@@ -333,12 +350,45 @@ pub fn planner_runnable_from_capabilities(kind: &str, requires_network: bool) ->
     }
 }
 
+/// Build data-locality advisory without mutating graph semantics.
+pub fn build_data_locality_advisory_report(graph: &Graph) -> DataLocalityAdvisoryReportV1 {
+    let rows = graph
+        .nodes
+        .iter()
+        .map(|node| {
+            let mut estimated_output_transfer_mb = 100_u64;
+            let mut preferred_execution_site = "local".to_string();
+            for tag in &node.tags {
+                if let Some(value) = tag.strip_prefix("artifact_mb:") {
+                    if let Ok(parsed) = value.parse::<u64>() {
+                        estimated_output_transfer_mb = parsed;
+                    }
+                } else if let Some(value) = tag.strip_prefix("site:") {
+                    if !value.trim().is_empty() {
+                        preferred_execution_site = value.trim().to_string();
+                    }
+                }
+            }
+            let estimated_input_transfer_mb = (node.inputs.len() as u64) * 64;
+            DataLocalityAdvisoryRowV1 {
+                node_id: node.id.clone(),
+                estimated_input_transfer_mb,
+                estimated_output_transfer_mb,
+                preferred_execution_site,
+                advisory_only: true,
+                reversible: true,
+            }
+        })
+        .collect();
+    DataLocalityAdvisoryReportV1 { rows }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        adapter_capability_for_kind, build_resource_requirements, plan_pool_placement,
-        planner_runnable_from_capabilities, validate_resource_requirements, ExecutionPoolV1,
-        ResourceAvailabilityV1,
+        adapter_capability_for_kind, build_data_locality_advisory_report,
+        build_resource_requirements, plan_pool_placement, planner_runnable_from_capabilities,
+        validate_resource_requirements, ExecutionPoolV1, ResourceAvailabilityV1,
     };
     use crate::{
         Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef, Resources,
@@ -450,5 +500,18 @@ mod tests {
         assert!(!planner_runnable_from_capabilities("shell", true));
         assert!(planner_runnable_from_capabilities("container", true));
         assert!(!planner_runnable_from_capabilities("external-unregistered", false));
+    }
+
+    #[test]
+    fn g126_data_locality_advisory_is_visible_and_reversible() {
+        let mut graph = sample_graph();
+        graph.nodes[0].tags.push("artifact_mb:900".to_string());
+        graph.nodes[0].tags.push("site:gpu-cluster".to_string());
+        let report = build_data_locality_advisory_report(&graph);
+        assert_eq!(report.rows.len(), 1);
+        assert_eq!(report.rows[0].estimated_output_transfer_mb, 900);
+        assert_eq!(report.rows[0].preferred_execution_site, "gpu-cluster");
+        assert!(report.rows[0].advisory_only);
+        assert!(report.rows[0].reversible);
     }
 }
