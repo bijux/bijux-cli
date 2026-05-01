@@ -124,11 +124,56 @@ pub fn build_plan_command_report(
     })
 }
 
+/// Minimal run summary for operator-visible `dag run` results.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunCommandReportV1 {
+    pub dag_path: String,
+    pub run_id: String,
+    pub run_state: String,
+    pub logs_path: String,
+    pub artifacts_root: String,
+    pub verification_path: String,
+}
+
+/// Build `dag run` report proving logs, artifacts, state, and verification path are visible.
+pub fn build_run_command_report(
+    dag_path: &str,
+    run_id: &str,
+    run_state: &str,
+    logs_path: &str,
+    artifacts_root: &str,
+    verification_path: &str,
+) -> Result<RunCommandReportV1, String> {
+    for (field_name, field_value) in [
+        ("dag_path", dag_path),
+        ("run_id", run_id),
+        ("run_state", run_state),
+        ("logs_path", logs_path),
+        ("artifacts_root", artifacts_root),
+        ("verification_path", verification_path),
+    ] {
+        if field_value.trim().is_empty() {
+            return Err(format!("{field_name} must not be empty"));
+        }
+    }
+    if !matches!(run_state, "completed" | "failed" | "cancelled") {
+        return Err("run_state must be completed, failed, or cancelled".to_string());
+    }
+    Ok(RunCommandReportV1 {
+        dag_path: dag_path.to_string(),
+        run_id: run_id.to_string(),
+        run_state: run_state.to_string(),
+        logs_path: logs_path.to_string(),
+        artifacts_root: artifacts_root.to_string(),
+        verification_path: verification_path.to_string(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_plan_command_report, build_validate_command_report, DryPlanNodeRowV1, PreflightCheckV1,
-        ValidateIssueV1,
+        build_plan_command_report, build_run_command_report, build_validate_command_report,
+        DryPlanNodeRowV1, PreflightCheckV1, ValidateIssueV1,
     };
 
     #[test]
@@ -197,5 +242,22 @@ mod tests {
         assert_eq!(report.nodes.len(), 2);
         assert!(report.nodes.iter().any(|row| row.cache_eligible));
         assert_eq!(report.preflight_checks.len(), 2);
+    }
+
+    #[test]
+    fn g073_run_report_exposes_logs_artifacts_state_and_verification_path() {
+        let report = build_run_command_report(
+            "workflows/minimal.json",
+            "run-20260501-001",
+            "completed",
+            "runs/run-20260501-001/run.log.jsonl",
+            "runs/run-20260501-001/outputs",
+            "runs/run-20260501-001/verify/report.json",
+        )
+        .expect("run report");
+        assert_eq!(report.run_state, "completed");
+        assert!(report.logs_path.ends_with("run.log.jsonl"));
+        assert!(report.artifacts_root.ends_with("/outputs"));
+        assert!(report.verification_path.ends_with("/verify/report.json"));
     }
 }
