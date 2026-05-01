@@ -3722,6 +3722,13 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             serde_json::to_string(&install_paths_report).unwrap_or_else(|_| "invalid report".to_string())
         ));
     }
+    let dev_loop_report = evaluate_local_dev_loop_focus(&root)?;
+    if !dev_loop_report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "local development loop focus contract failed: {}",
+            serde_json::to_string(&dev_loop_report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
 }
 
@@ -4874,6 +4881,100 @@ fn evaluate_install_paths_predictable(root: &Path) -> Result<Value, String> {
         "contract": contract_rel,
         "paths_command": contract["command"],
         "doctor_command": contract["doctor_command"],
+        "violations": violations,
+    }))
+}
+
+fn evaluate_local_dev_loop_focus(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/change_impact_commands.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let lanes = contract["lanes"]
+        .as_array()
+        .ok_or_else(|| "change-impact contract must contain `lanes` array".to_string())?;
+
+    let mut violations = Vec::new();
+    let mut lane_map: Vec<(String, Vec<String>, Vec<String>)> = Vec::new();
+    for lane in lanes {
+        let id = lane
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "change-impact lane missing id".to_string())?;
+        let prefixes = lane["path_prefixes"]
+            .as_array()
+            .ok_or_else(|| format!("lane `{id}` missing path_prefixes"))?
+            .iter()
+            .filter_map(Value::as_str)
+            .map(ToOwned::to_owned)
+            .collect::<Vec<_>>();
+        let commands = lane["commands"]
+            .as_array()
+            .ok_or_else(|| format!("lane `{id}` missing commands"))?
+            .iter()
+            .filter_map(Value::as_str)
+            .map(ToOwned::to_owned)
+            .collect::<Vec<_>>();
+        if prefixes.is_empty() {
+            violations.push(format!("lane `{id}` requires at least one path prefix"));
+        }
+        if commands.is_empty() {
+            violations.push(format!("lane `{id}` requires at least one verification command"));
+        }
+        lane_map.push((id.to_string(), prefixes, commands));
+    }
+
+    let required = ["cli", "dag-core", "runtime", "artifacts", "app"];
+    for id in required {
+        if !lane_map.iter().any(|(lane_id, _, _)| lane_id == id) {
+            violations.push(format!("change-impact contract missing required lane `{id}`"));
+        }
+    }
+
+    let changed = command_stdout(root, "git", &["status", "--porcelain"])?;
+    let changed_files = changed
+        .lines()
+        .filter_map(|line| {
+            let path = line.get(3..)?.trim();
+            if path.is_empty() { None } else { Some(path.to_string()) }
+        })
+        .collect::<Vec<_>>();
+    let mut selected_lanes = BTreeSet::new();
+    let mut selected_commands = BTreeSet::new();
+    for file in &changed_files {
+        for (lane_id, prefixes, commands) in &lane_map {
+            if prefixes.iter().any(|prefix| file.starts_with(prefix)) {
+                selected_lanes.insert(lane_id.clone());
+                for command in commands {
+                    selected_commands.insert(command.clone());
+                }
+            }
+        }
+    }
+
+    let report_path = root.join("artifacts/release/change_impact_runner_report.json");
+    if let Some(parent) = report_path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    write_pretty_json(
+        &report_path,
+        &json!({
+            "contract": contract_rel,
+            "changed_files": changed_files,
+            "selected_lanes": selected_lanes,
+            "selected_commands": selected_commands,
+        }),
+    )?;
+
+    Ok(json!({
+        "goal": "G197",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "changed_file_count": changed_files.len(),
+        "selected_lane_count": selected_lanes.len(),
+        "selected_command_count": selected_commands.len(),
+        "report": report_path.strip_prefix(root).unwrap_or(&report_path).to_string_lossy(),
         "violations": violations,
     }))
 }
