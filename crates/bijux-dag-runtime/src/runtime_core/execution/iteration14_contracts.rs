@@ -461,6 +461,44 @@ fn major_version(version: &str) -> Option<&str> {
     version.split('.').next().filter(|value| !value.trim().is_empty())
 }
 
+/// Runtime history event row.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeHistoryEventV1 {
+    pub run_id: String,
+    pub node_id: String,
+    pub state: String,
+    pub ts_ms: u64,
+}
+
+/// Runtime history compaction report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeHistoryCompactionReportV1 {
+    pub compacted_events: Vec<RuntimeHistoryEventV1>,
+    pub run_index: BTreeMap<String, usize>,
+    pub startup_scan_count: usize,
+}
+
+/// Compact runtime history while preserving queryability per run.
+pub fn compact_runtime_history(
+    events: &[RuntimeHistoryEventV1],
+    max_events: usize,
+    startup_scan_limit: usize,
+) -> RuntimeHistoryCompactionReportV1 {
+    let mut sorted = events.to_vec();
+    sorted.sort_by_key(|event| event.ts_ms);
+    let compacted_events = if sorted.len() > max_events {
+        sorted.split_off(sorted.len() - max_events)
+    } else {
+        sorted
+    };
+    let mut run_index = BTreeMap::new();
+    for event in &compacted_events {
+        *run_index.entry(event.run_id.clone()).or_insert(0) += 1;
+    }
+    let startup_scan_count = compacted_events.len().min(startup_scan_limit);
+    RuntimeHistoryCompactionReportV1 { compacted_events, run_index, startup_scan_count }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -470,7 +508,7 @@ mod tests {
         evaluate_backpressure, BackpressureActionV1, BackpressureSignalsV1,
         dispatch_allowed_with_circuit_breaker, register_adapter_failure,
         evaluate_runtime_upgrade_recovery, AdapterCircuitBreakerStateV1,
-        RuntimeUpgradeCompatibilityInputV1,
+        RuntimeHistoryEventV1, RuntimeUpgradeCompatibilityInputV1, compact_runtime_history,
         DurableRunQueueSnapshotV1, MultiRunDemandV1, PartialRerunPreviewRequestV1,
         PartialRerunSelectorKindV1, PauseScopeV1, PauseTransitionEventV1, QueueAttemptRecordV1,
         QueueLeaseRecordV1, SchedulerDecisionRecordV1,
@@ -704,5 +742,23 @@ mod tests {
         });
         assert!(!major_change.can_resume);
         assert!(major_change.reason.contains("major version changed"));
+    }
+
+    #[test]
+    fn g140_runtime_history_compaction_keeps_large_histories_queryable() {
+        let mut events = Vec::new();
+        for idx in 0..500 {
+            events.push(RuntimeHistoryEventV1 {
+                run_id: if idx % 2 == 0 { "run-even" } else { "run-odd" }.to_string(),
+                node_id: format!("node-{idx}"),
+                state: "completed".to_string(),
+                ts_ms: idx,
+            });
+        }
+        let report = compact_runtime_history(&events, 120, 100);
+        assert_eq!(report.compacted_events.len(), 120);
+        assert!(report.run_index.contains_key("run-even"));
+        assert!(report.run_index.contains_key("run-odd"));
+        assert_eq!(report.startup_scan_count, 100);
     }
 }
