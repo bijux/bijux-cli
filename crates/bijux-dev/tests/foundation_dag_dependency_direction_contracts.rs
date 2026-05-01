@@ -230,10 +230,7 @@ fn dag_workspace_dependencies_follow_the_contract_direction() {
         .crates
         .into_iter()
         .map(|row| {
-            (
-                row.crate_name,
-                row.allowed_workspace_normal_deps.into_iter().collect::<BTreeSet<_>>(),
-            )
+            (row.crate_name, row.allowed_workspace_normal_deps.into_iter().collect::<BTreeSet<_>>())
         })
         .collect::<BTreeMap<_, _>>();
     let observed = workspace_normal_deps_by_crate();
@@ -249,12 +246,7 @@ fn dag_source_layers_do_not_import_higher_level_dag_crates() {
     let root = repo_root();
     assert_no_forbidden_import_tokens(
         &root.join("crates/bijux-dag-core/src"),
-        &[
-            "bijux_dag_runtime::",
-            "bijux_dag_app::",
-            "bijux_dag_cli::",
-            "bijux_dag_testkit::",
-        ],
+        &["bijux_dag_runtime::", "bijux_dag_app::", "bijux_dag_cli::", "bijux_dag_testkit::"],
     );
     assert_no_forbidden_import_tokens(
         &root.join("crates/bijux-dag-artifacts/src"),

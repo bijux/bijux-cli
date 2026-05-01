@@ -18,13 +18,14 @@ struct HardReleaseGateContract {
 }
 
 fn repo_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
 fn read_json<T: for<'de> Deserialize<'de>>(path: &Path) -> T {
     let raw = fs::read_to_string(path)
         .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
-    serde_json::from_str(&raw).unwrap_or_else(|err| panic!("invalid json {}: {err}", path.display()))
+    serde_json::from_str(&raw)
+        .unwrap_or_else(|err| panic!("invalid json {}: {err}", path.display()))
 }
 
 fn read_contract() -> HardReleaseGateContract {
@@ -48,7 +49,7 @@ fn run_dag_command(args: &[&str], cwd: &Path) -> (i32, String, String) {
 
 fn run_dag_json(args: &[&str], cwd: &Path) -> Value {
     let (code, stdout, stderr) = run_dag_command(args, cwd);
-    assert!(code == 0, "command failed: code={code} stderr={stderr}");
+    assert!(code == 0, "command failed: code={code} stdout={stdout} stderr={stderr}");
     serde_json::from_str(&stdout).expect("parse dag json envelope")
 }
 
@@ -123,7 +124,8 @@ fn hard_release_gate_exercises_root_routing_graph_lifecycle_and_evidence() {
     );
     let canonical = canonical_json(&graph).expect("canonical json");
     assert!(canonical.contains("\"nodes\""));
-    let plan = lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan lowering");
+    let plan =
+        lower_graph_to_execution_plan(&graph, PlanOptions::default()).expect("plan lowering");
     assert!(!plan.ordering.is_empty(), "plan ordering must not be empty");
 
     let tmp = tempdir().expect("tempdir");
@@ -160,24 +162,15 @@ fn hard_release_gate_exercises_root_routing_graph_lifecycle_and_evidence() {
         .expect("read cache dir")
         .flatten()
         .filter_map(|entry| {
-            entry
-                .file_type()
-                .ok()
-                .and_then(|kind| kind.is_dir().then(|| entry.file_name().to_string_lossy().into_owned()))
+            entry.file_type().ok().and_then(|kind| {
+                kind.is_dir().then(|| entry.file_name().to_string_lossy().into_owned())
+            })
         })
         .collect::<Vec<_>>();
     assert!(!cache_keys.is_empty(), "cache entries were not materialized");
 
     let cache_explain = run_dag_json(
-        &[
-            "cache",
-            "explain",
-            "--json",
-            "--cache-dir",
-            &cache,
-            "--key",
-            &cache_keys[0],
-        ],
+        &["cache", "explain", "--json", "--cache-dir", &cache, "--key", &cache_keys[0]],
         &root,
     );
     assert_eq!(cache_explain["ok"], true);

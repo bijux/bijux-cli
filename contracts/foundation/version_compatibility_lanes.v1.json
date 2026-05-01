@@ -2,6 +2,12 @@
   "schema_version": "foundation-version-compatibility-lanes/v1",
   "surfaces": [
     {
+      "surface": "cli-command-envelope",
+      "current_versions": ["command-envelope-v1"],
+      "accepted_previous_versions": [],
+      "refused_versions": ["command-envelope-v0", "command-envelope-v2"]
+    },
+    {
       "surface": "cli-output-envelope",
       "current_versions": ["output-envelope-v1"],
       "accepted_previous_versions": [],
@@ -12,6 +18,12 @@
       "current_versions": ["error-envelope-v1"],
       "accepted_previous_versions": [],
       "refused_versions": ["error-envelope-v0", "error-envelope-v2"]
+    },
+    {
+      "surface": "config-schema-registry",
+      "current_versions": ["config-schema-registry-v1"],
+      "accepted_previous_versions": [],
+      "refused_versions": ["config-schema-registry-v0", "config-schema-registry-v2"]
     },
     {
       "surface": "mount-descriptor",

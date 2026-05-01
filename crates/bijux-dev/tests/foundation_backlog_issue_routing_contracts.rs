@@ -45,17 +45,14 @@ fn repo_root() -> PathBuf {
 fn read_json<T: for<'de> Deserialize<'de>>(path: &Path) -> T {
     let raw = fs::read_to_string(path)
         .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
-    serde_json::from_str(&raw).unwrap_or_else(|err| panic!("invalid json {}: {err}", path.display()))
+    serde_json::from_str(&raw)
+        .unwrap_or_else(|err| panic!("invalid json {}: {err}", path.display()))
 }
 
 fn read_workspace_product_crates() -> BTreeSet<String> {
     let path = repo_root().join("contracts/foundation/workspace_product_map.v1.json");
     let contract: WorkspaceProductMapContract = read_json(&path);
-    contract
-        .products
-        .into_iter()
-        .map(|product| product.crate_name)
-        .collect()
+    contract.products.into_iter().map(|product| product.crate_name).collect()
 }
 
 fn read_backlog_issue_class_contract() -> BacklogIssueClassRoutingContract {
@@ -102,10 +99,7 @@ fn read_backlog_routing_ledger_rows() -> Vec<LedgerRow> {
 #[test]
 fn backlog_issue_class_contract_schema_is_current() {
     let contract = read_backlog_issue_class_contract();
-    assert_eq!(
-        contract.schema_version,
-        "foundation-backlog-issue-class-routing/v1"
-    );
+    assert_eq!(contract.schema_version, "foundation-backlog-issue-class-routing/v1");
 }
 
 #[test]
@@ -169,10 +163,7 @@ fn backlog_ledger_rows_are_categorized_and_never_uncategorized() {
         );
 
         let Some(expected_owner) = by_class.get(&row.issue_class) else {
-            panic!(
-                "goal {} references unknown issue class {}",
-                row.goal, row.issue_class
-            );
+            panic!("goal {} references unknown issue class {}", row.goal, row.issue_class);
         };
 
         assert_eq!(
@@ -197,10 +188,6 @@ fn backlog_ledger_rows_are_categorized_and_never_uncategorized() {
             row.status
         );
 
-        assert!(
-            !row.note.trim().is_empty(),
-            "goal {} must include a note",
-            row.goal
-        );
+        assert!(!row.note.trim().is_empty(), "goal {} must include a note", row.goal);
     }
 }

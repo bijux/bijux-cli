@@ -35,17 +35,14 @@ fn repo_root() -> PathBuf {
 fn read_json<T: for<'de> Deserialize<'de>>(path: &Path) -> T {
     let raw = fs::read_to_string(path)
         .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
-    serde_json::from_str(&raw).unwrap_or_else(|err| panic!("invalid json {}: {err}", path.display()))
+    serde_json::from_str(&raw)
+        .unwrap_or_else(|err| panic!("invalid json {}: {err}", path.display()))
 }
 
 fn read_workspace_product_crates() -> BTreeSet<String> {
     let path = repo_root().join("contracts/foundation/workspace_product_map.v1.json");
     let contract: WorkspaceProductMapContract = read_json(&path);
-    contract
-        .products
-        .into_iter()
-        .map(|product| product.crate_name)
-        .collect()
+    contract.products.into_iter().map(|product| product.crate_name).collect()
 }
 
 fn read_root_policy_surface_contract() -> RootPolicySurfaceContract {
@@ -67,9 +64,7 @@ fn collect_policy_files_under(root: &Path) -> BTreeSet<String> {
                 continue;
             }
 
-            let include = path
-                .extension()
-                .is_some_and(|ext| ext == "json")
+            let include = path.extension().is_some_and(|ext| ext == "json")
                 && (path.starts_with(repo_root().join("contracts"))
                     || path.starts_with(repo_root().join("configs/status")));
             if !include {
@@ -90,27 +85,19 @@ fn collect_policy_files_under(root: &Path) -> BTreeSet<String> {
 #[test]
 fn root_policy_surface_contract_schema_is_current() {
     let contract = read_root_policy_surface_contract();
-    assert_eq!(
-        contract.schema_version,
-        "foundation-root-policy-surface-inventory/v1"
-    );
+    assert_eq!(contract.schema_version, "foundation-root-policy-surface-inventory/v1");
 }
 
 #[test]
 fn root_policy_surface_inventory_covers_all_contract_and_status_policy_files() {
     let contract = read_root_policy_surface_contract();
-    let listed = contract
-        .policy_files
-        .iter()
-        .map(|entry| entry.path.clone())
-        .collect::<BTreeSet<_>>();
+    let listed =
+        contract.policy_files.iter().map(|entry| entry.path.clone()).collect::<BTreeSet<_>>();
 
     let observed_contract_files = collect_policy_files_under(&repo_root().join("contracts"));
     let observed_status_files = collect_policy_files_under(&repo_root().join("configs/status"));
-    let observed = observed_contract_files
-        .union(&observed_status_files)
-        .cloned()
-        .collect::<BTreeSet<_>>();
+    let observed =
+        observed_contract_files.union(&observed_status_files).cloned().collect::<BTreeSet<_>>();
 
     assert_eq!(
         listed, observed,
@@ -143,11 +130,7 @@ fn root_policy_surface_entries_have_known_owners_and_enforcement_paths() {
         );
 
         let policy_path = repo_root().join(&entry.path);
-        assert!(
-            policy_path.is_file(),
-            "policy file does not exist: {}",
-            policy_path.display()
-        );
+        assert!(policy_path.is_file(), "policy file does not exist: {}", policy_path.display());
 
         assert!(
             !entry.enforced_by.is_empty(),

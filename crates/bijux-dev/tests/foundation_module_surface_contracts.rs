@@ -47,10 +47,8 @@ fn parse_module_decl(line: &str) -> Option<ModuleDecl> {
         return None;
     };
 
-    let name = rest
-        .chars()
-        .take_while(|ch| ch.is_ascii_alphanumeric() || *ch == '_')
-        .collect::<String>();
+    let name =
+        rest.chars().take_while(|ch| ch.is_ascii_alphanumeric() || *ch == '_').collect::<String>();
     if name.is_empty() {
         return None;
     }
@@ -113,18 +111,11 @@ fn public_module_lanes_match_contract_and_internals_stay_private() {
             .map(|decl| decl.name.clone())
             .collect::<BTreeSet<_>>();
 
-        let stable = crate_contract
-            .stable_public_modules
-            .into_iter()
-            .collect::<BTreeSet<_>>();
-        let experimental = crate_contract
-            .experimental_public_modules
-            .into_iter()
-            .collect::<BTreeSet<_>>();
-        let simulated = crate_contract
-            .simulated_public_modules
-            .into_iter()
-            .collect::<BTreeSet<_>>();
+        let stable = crate_contract.stable_public_modules.into_iter().collect::<BTreeSet<_>>();
+        let experimental =
+            crate_contract.experimental_public_modules.into_iter().collect::<BTreeSet<_>>();
+        let simulated =
+            crate_contract.simulated_public_modules.into_iter().collect::<BTreeSet<_>>();
 
         assert!(
             stable.is_disjoint(&experimental),

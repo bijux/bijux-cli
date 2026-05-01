@@ -39,7 +39,8 @@ fn repo_root() -> PathBuf {
 fn read_json<T: for<'de> Deserialize<'de>>(path: &Path) -> T {
     let raw = fs::read_to_string(path)
         .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
-    serde_json::from_str(&raw).unwrap_or_else(|err| panic!("invalid json {}: {err}", path.display()))
+    serde_json::from_str(&raw)
+        .unwrap_or_else(|err| panic!("invalid json {}: {err}", path.display()))
 }
 
 fn read_contract() -> VersionCompatibilityLanesContract {
@@ -66,10 +67,7 @@ fn classify_lane(surface: &VersionCompatibilitySurface, version: &str) -> &'stat
 #[test]
 fn version_compatibility_lane_contract_schema_is_current() {
     let contract = read_contract();
-    assert_eq!(
-        contract.schema_version,
-        "foundation-version-compatibility-lanes/v1"
-    );
+    assert_eq!(contract.schema_version, "foundation-version-compatibility-lanes/v1");
 }
 
 #[test]
@@ -106,9 +104,9 @@ fn version_compatibility_fixtures_cover_current_previous_and_refused_lanes() {
     let mut saw_refused = false;
 
     for fixture in fixtures.fixtures {
-        let surface = by_surface.get(&fixture.surface).unwrap_or_else(|| {
-            panic!("unknown surface in fixture: {}", fixture.surface)
-        });
+        let surface = by_surface
+            .get(&fixture.surface)
+            .unwrap_or_else(|| panic!("unknown surface in fixture: {}", fixture.surface));
         let lane = classify_lane(surface, &fixture.version);
         assert_eq!(
             lane, fixture.expected_lane,
@@ -141,10 +139,8 @@ fn graph_spec_current_and_previous_versions_parse_while_refused_versions_fail() 
         .find(|surface| surface.surface == "graph-spec")
         .expect("graph-spec lane must exist");
 
-    for version in graph_surface
-        .current_versions
-        .iter()
-        .chain(graph_surface.accepted_previous_versions.iter())
+    for version in
+        graph_surface.current_versions.iter().chain(graph_surface.accepted_previous_versions.iter())
     {
         let payload = format!(r#"{{"spec":"{}","nodes":[],"edges":[]}}"#, version);
         let parsed = parse_graph_strict(&payload).unwrap_or_else(|err| {
@@ -173,10 +169,7 @@ fn artifact_index_current_version_matches_runtime_default() {
         .expect("artifact-index lane must exist");
     let index = RunDirSchemaIndex::default();
     assert!(
-        artifact_surface
-            .current_versions
-            .iter()
-            .any(|version| version == &index.schema_version),
+        artifact_surface.current_versions.iter().any(|version| version == &index.schema_version),
         "artifact index default schema version drifted from compatibility lanes"
     );
 }
