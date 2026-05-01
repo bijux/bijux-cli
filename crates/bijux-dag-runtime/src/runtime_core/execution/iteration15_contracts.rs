@@ -346,9 +346,52 @@ pub fn validate_external_adapter_sdk_descriptor(
     Ok(())
 }
 
+/// Executor fallback request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExecutorFallbackRequestV1 {
+    pub from_backend: String,
+    pub to_backend: String,
+    pub output_semantics_compatible: bool,
+    pub evidence_obligations_compatible: bool,
+}
+
+/// Executor fallback decision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExecutorFallbackDecisionV1 {
+    pub allowed: bool,
+    pub reason: String,
+}
+
+/// Evaluate safe fallback policy across execution backends.
+pub fn evaluate_executor_fallback(request: &ExecutorFallbackRequestV1) -> ExecutorFallbackDecisionV1 {
+    if !request.output_semantics_compatible {
+        return ExecutorFallbackDecisionV1 {
+            allowed: false,
+            reason: format!(
+                "unsafe fallback refused: output semantics differ between '{}' and '{}'",
+                request.from_backend, request.to_backend
+            ),
+        };
+    }
+    if !request.evidence_obligations_compatible {
+        return ExecutorFallbackDecisionV1 {
+            allowed: false,
+            reason: format!(
+                "unsafe fallback refused: evidence obligations differ between '{}' and '{}'",
+                request.from_backend, request.to_backend
+            ),
+        };
+    }
+    ExecutorFallbackDecisionV1 {
+        allowed: true,
+        reason: "fallback is safe under output and evidence compatibility policy".to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        evaluate_executor_fallback, ExecutorFallbackRequestV1,
         validate_external_adapter_sdk_descriptor, ExternalAdapterSdkDescriptorV1,
         validate_remote_worker_protocol_trace, RemoteWorkerProtocolEventV1,
         evaluate_batch_backend_promotion, BatchBackendPromotionEvidenceV1,
@@ -500,5 +543,26 @@ mod tests {
             error_codes: vec!["EXT_TIMEOUT".to_string(), "EXT_SCHEMA".to_string()],
         };
         validate_external_adapter_sdk_descriptor(&descriptor).expect("external adapter descriptor");
+    }
+
+    #[test]
+    fn g149_executor_fallback_refuses_incompatible_semantics_or_evidence() {
+        let semantics_fail = evaluate_executor_fallback(&ExecutorFallbackRequestV1 {
+            from_backend: "container".to_string(),
+            to_backend: "shell".to_string(),
+            output_semantics_compatible: false,
+            evidence_obligations_compatible: true,
+        });
+        assert!(!semantics_fail.allowed);
+        assert!(semantics_fail.reason.contains("output semantics differ"));
+
+        let evidence_fail = evaluate_executor_fallback(&ExecutorFallbackRequestV1 {
+            from_backend: "batch".to_string(),
+            to_backend: "local".to_string(),
+            output_semantics_compatible: true,
+            evidence_obligations_compatible: false,
+        });
+        assert!(!evidence_fail.allowed);
+        assert!(evidence_fail.reason.contains("evidence obligations differ"));
     }
 }
