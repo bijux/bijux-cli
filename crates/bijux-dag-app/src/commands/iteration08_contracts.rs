@@ -169,11 +169,78 @@ pub fn build_run_command_report(
     })
 }
 
+/// Per-node inspect snapshot.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InspectNodeStateV1 {
+    pub node_id: String,
+    pub state: String,
+    pub cache_decision: String,
+    pub trace_path: String,
+}
+
+/// Command contract for `dag inspect`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InspectCommandReportV1 {
+    pub run_id: String,
+    pub run_state: String,
+    pub nodes: Vec<InspectNodeStateV1>,
+    pub artifacts: Vec<String>,
+    pub failures: Vec<String>,
+    pub next_action: String,
+}
+
+/// Build a run inspect report with operationally useful fields.
+pub fn build_inspect_command_report(
+    run_id: &str,
+    run_state: &str,
+    nodes: Vec<InspectNodeStateV1>,
+    artifacts: Vec<String>,
+    failures: Vec<String>,
+    next_action: &str,
+) -> Result<InspectCommandReportV1, String> {
+    if run_id.trim().is_empty() {
+        return Err("run_id must not be empty".to_string());
+    }
+    if run_state.trim().is_empty() {
+        return Err("run_state must not be empty".to_string());
+    }
+    if nodes.is_empty() {
+        return Err("inspect report must include node states".to_string());
+    }
+    if artifacts.is_empty() {
+        return Err("inspect report must include artifacts".to_string());
+    }
+    if next_action.trim().is_empty() {
+        return Err("next_action must not be empty".to_string());
+    }
+    for node in &nodes {
+        for (field_name, field_value) in [
+            ("node_id", node.node_id.as_str()),
+            ("state", node.state.as_str()),
+            ("cache_decision", node.cache_decision.as_str()),
+            ("trace_path", node.trace_path.as_str()),
+        ] {
+            if field_value.trim().is_empty() {
+                return Err(format!("inspect node {field_name} must not be empty"));
+            }
+        }
+    }
+    Ok(InspectCommandReportV1 {
+        run_id: run_id.to_string(),
+        run_state: run_state.to_string(),
+        nodes,
+        artifacts,
+        failures,
+        next_action: next_action.to_string(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_plan_command_report, build_run_command_report, build_validate_command_report,
-        DryPlanNodeRowV1, PreflightCheckV1, ValidateIssueV1,
+        build_inspect_command_report, build_plan_command_report, build_run_command_report,
+        build_validate_command_report, DryPlanNodeRowV1, InspectNodeStateV1, PreflightCheckV1,
+        ValidateIssueV1,
     };
 
     #[test]
@@ -259,5 +326,38 @@ mod tests {
         assert!(report.logs_path.ends_with("run.log.jsonl"));
         assert!(report.artifacts_root.ends_with("/outputs"));
         assert!(report.verification_path.ends_with("/verify/report.json"));
+    }
+
+    #[test]
+    fn g074_inspect_report_includes_state_cache_trace_failures_and_next_action() {
+        let report = build_inspect_command_report(
+            "run-20260501-001",
+            "failed",
+            vec![
+                InspectNodeStateV1 {
+                    node_id: "align-reads".to_string(),
+                    state: "completed".to_string(),
+                    cache_decision: "hit".to_string(),
+                    trace_path: "runs/run-20260501-001/traces/align-reads.json".to_string(),
+                },
+                InspectNodeStateV1 {
+                    node_id: "call-variants".to_string(),
+                    state: "failed".to_string(),
+                    cache_decision: "miss".to_string(),
+                    trace_path: "runs/run-20260501-001/traces/call-variants.json".to_string(),
+                },
+            ],
+            vec![
+                "runs/run-20260501-001/outputs/aligned.bam".to_string(),
+                "runs/run-20260501-001/outputs/error.log".to_string(),
+            ],
+            vec!["node call-variants failed with exit code 2".to_string()],
+            "run dag replay --selector failed-only",
+        )
+        .expect("inspect report");
+        assert_eq!(report.run_state, "failed");
+        assert_eq!(report.nodes.len(), 2);
+        assert_eq!(report.failures.len(), 1);
+        assert!(report.next_action.contains("replay"));
     }
 }
