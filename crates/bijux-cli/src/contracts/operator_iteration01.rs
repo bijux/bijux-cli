@@ -347,12 +347,70 @@ pub fn build_completion_snapshot_from_registry(
     Ok(CompletionSnapshotV1 { shell: shell.to_string(), commands })
 }
 
+/// Command side-effect classes used for preview and explain surfaces.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum CommandSideEffectClassV1 {
+    ReadOnly,
+    WritesConfig,
+    WritesRun,
+    ExecutesAdapter,
+    Destructive,
+}
+
+/// Side-effect preview record for a command dispatch.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct CommandSideEffectPreviewV1 {
+    /// Command being evaluated.
+    pub command: String,
+    /// Classified side-effect class.
+    pub side_effect_class: CommandSideEffectClassV1,
+    /// Whether confirmation should be required before dispatch.
+    pub requires_confirmation: bool,
+}
+
+/// Classify command side-effects for dispatch safety previews.
+pub fn classify_command_side_effect(
+    command: &str,
+) -> Result<CommandSideEffectPreviewV1, String> {
+    if command.trim().is_empty() {
+        return Err("command cannot be empty".to_string());
+    }
+    let normalized = command.trim().to_ascii_lowercase();
+    let class = if normalized.contains("wipe") || normalized.contains("delete") {
+        CommandSideEffectClassV1::Destructive
+    } else if normalized.contains("plugins install")
+        || normalized.contains("plugins uninstall")
+        || normalized.contains("dag run")
+    {
+        CommandSideEffectClassV1::WritesRun
+    } else if normalized.contains("config set") || normalized.contains("config unset") {
+        CommandSideEffectClassV1::WritesConfig
+    } else if normalized.contains("adapter") || normalized.contains("exec") {
+        CommandSideEffectClassV1::ExecutesAdapter
+    } else {
+        CommandSideEffectClassV1::ReadOnly
+    };
+    let requires_confirmation = matches!(
+        class,
+        CommandSideEffectClassV1::WritesRun
+            | CommandSideEffectClassV1::ExecutesAdapter
+            | CommandSideEffectClassV1::Destructive
+    );
+    Ok(CommandSideEffectPreviewV1 {
+        command: command.to_string(),
+        side_effect_class: class,
+        requires_confirmation,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
 
     use super::{
         build_actionable_error_envelope, build_command_explain_record,
+        classify_command_side_effect,
         build_completion_snapshot_from_registry,
         build_compact_operator_help_entrypoint, build_install_diagnosis_bundle,
         build_script_stable_command_envelope, evaluate_output_mode_parity,
@@ -492,5 +550,13 @@ mod tests {
         )
         .expect("completion snapshot should build");
         assert_eq!(snapshot.commands, vec!["bijux dag run"]);
+    }
+
+    #[test]
+    fn g008_side_effect_classification_marks_risky_dispatches() {
+        let preview =
+            classify_command_side_effect("bijux dag run --graph sample.json").expect("classify");
+        assert!(preview.requires_confirmation);
+        assert_eq!(preview.command, "bijux dag run --graph sample.json");
     }
 }
