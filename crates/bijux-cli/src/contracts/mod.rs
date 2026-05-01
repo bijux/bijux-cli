@@ -12,6 +12,8 @@ pub mod envelope;
 pub mod execution;
 /// Shared marker contracts.
 pub mod marker;
+/// Root operator flow contracts for backlog iteration 01.
+pub mod operator_iteration01;
 /// Plugin manifest and compatibility contracts.
 pub mod plugin;
 /// Official product-mount reservation contracts.
@@ -35,6 +37,7 @@ pub use execution::{
     PrettyMode,
 };
 pub use marker::ContractMarker;
+pub use operator_iteration01::{build_compact_operator_help_entrypoint, CompactHelpEntryPointV1};
 pub use plugin::{
     CompatibilityRange, PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV2,
     PluginTrustClass,
