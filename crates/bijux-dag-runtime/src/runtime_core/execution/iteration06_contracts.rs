@@ -46,9 +46,63 @@ pub fn build_const_adapter_execution_contract(
     })
 }
 
+/// Shell adapter execution contract for argv-only and declared-output semantics.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ShellAdapterExecutionContractV1 {
+    pub argv: Vec<String>,
+    pub workdir: String,
+    pub exit_code: i32,
+    pub timeout_ms: u64,
+    pub stdout_captured: bool,
+    pub stderr_captured: bool,
+    pub declared_outputs: Vec<String>,
+}
+
+/// Validate shell adapter production execution surface.
+pub fn build_shell_adapter_execution_contract(
+    argv: Vec<String>,
+    workdir: &str,
+    exit_code: i32,
+    timeout_ms: u64,
+    stdout_captured: bool,
+    stderr_captured: bool,
+    declared_outputs: Vec<String>,
+) -> Result<ShellAdapterExecutionContractV1, String> {
+    if argv.is_empty() {
+        return Err("argv must not be empty".to_string());
+    }
+    if argv.iter().any(|arg| arg.contains('\n')) {
+        return Err("argv entries must be single tokens".to_string());
+    }
+    if workdir.trim().is_empty() {
+        return Err("workdir must not be empty".to_string());
+    }
+    if timeout_ms == 0 {
+        return Err("timeout_ms must be positive".to_string());
+    }
+    if declared_outputs.is_empty() {
+        return Err("declared_outputs must not be empty".to_string());
+    }
+    if !stdout_captured || !stderr_captured {
+        return Err("stdout and stderr capture are required".to_string());
+    }
+    Ok(ShellAdapterExecutionContractV1 {
+        argv,
+        workdir: workdir.to_string(),
+        exit_code,
+        timeout_ms,
+        stdout_captured,
+        stderr_captured,
+        declared_outputs,
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{build_const_adapter_execution_contract, ConstAdapterOutputArtifactV1};
+    use super::{
+        build_const_adapter_execution_contract, build_shell_adapter_execution_contract,
+        ConstAdapterOutputArtifactV1,
+    };
 
     #[test]
     fn g051_const_adapter_contract_proves_cache_replay_diff_and_inspect_readiness() {
@@ -65,5 +119,21 @@ mod tests {
         .expect("const adapter contract");
         assert!(contract.cache_replay_diff_inspect_ready);
         assert_eq!(contract.artifacts.len(), 1);
+    }
+
+    #[test]
+    fn g052_shell_adapter_contract_enforces_argv_timeout_and_output_capture() {
+        let contract = build_shell_adapter_execution_contract(
+            vec!["python".to_string(), "script.py".to_string()],
+            "/workspace/run",
+            0,
+            60_000,
+            true,
+            true,
+            vec!["artifacts/result.json".to_string()],
+        )
+        .expect("shell contract should build");
+        assert_eq!(contract.argv[0], "python");
+        assert_eq!(contract.exit_code, 0);
     }
 }
