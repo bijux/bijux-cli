@@ -293,9 +293,46 @@ pub fn lineage_descendants(index: &ArtifactLineageQueryIndexV1, artifact_id: &st
     visited.into_iter().collect()
 }
 
+/// Safe artifact preview output.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArtifactPreviewV1 {
+    pub preview_kind: String,
+    pub preview: String,
+}
+
+/// Build safe preview for JSON/text artifacts with size and redaction guards.
+pub fn build_safe_artifact_preview(
+    media_type: &str,
+    bytes: &[u8],
+    max_preview_bytes: usize,
+) -> ArtifactPreviewV1 {
+    if bytes.len() > max_preview_bytes {
+        return ArtifactPreviewV1 {
+            preview_kind: "summary".to_string(),
+            preview: format!("artifact too large for inline preview ({} bytes)", bytes.len()),
+        };
+    }
+    let is_textual = media_type.starts_with("text/") || media_type == "application/json";
+    if !is_textual {
+        return ArtifactPreviewV1 {
+            preview_kind: "summary".to_string(),
+            preview: format!("binary artifact preview suppressed for media type {}", media_type),
+        };
+    }
+    let mut text = String::from_utf8_lossy(bytes).to_string();
+    for marker in ["secret=", "token=", "password="] {
+        if let Some(pos) = text.to_lowercase().find(marker) {
+            let end = (pos + marker.len() + 8).min(text.len());
+            text.replace_range(pos..end, "[REDACTED]");
+        }
+    }
+    ArtifactPreviewV1 { preview_kind: "inline".to_string(), preview: text }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_safe_artifact_preview,
         build_artifact_lineage_query_index, lineage_ancestors, lineage_descendants,
         ArtifactLineageRecordV1,
         build_cache_gc_dry_run, CacheGcCandidateV1,
@@ -427,5 +464,24 @@ mod tests {
         assert_eq!(index.producer_by_artifact.get("a3"), Some(&"n3".to_string()));
         assert_eq!(lineage_ancestors(&index, "a3"), vec!["a1".to_string(), "a2".to_string()]);
         assert_eq!(lineage_descendants(&index, "a1"), vec!["a2".to_string(), "a3".to_string()]);
+    }
+
+    #[test]
+    fn g157_artifact_preview_is_safe_for_large_or_binary_content() {
+        let binary = build_safe_artifact_preview("application/octet-stream", &[0, 1, 2, 3], 1024);
+        assert_eq!(binary.preview_kind, "summary");
+        assert!(binary.preview.contains("binary artifact preview suppressed"));
+
+        let large_text = build_safe_artifact_preview("text/plain", &vec![b'a'; 2000], 256);
+        assert_eq!(large_text.preview_kind, "summary");
+        assert!(large_text.preview.contains("too large"));
+
+        let redacted = build_safe_artifact_preview(
+            "text/plain",
+            b"password=abc12345\nok",
+            1024,
+        );
+        assert_eq!(redacted.preview_kind, "inline");
+        assert!(redacted.preview.contains("[REDACTED]"));
     }
 }
