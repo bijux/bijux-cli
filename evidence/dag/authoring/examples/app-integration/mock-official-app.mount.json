@@ -1,0 +1,10 @@
+{
+  "version": "product-mount-descriptor-v1",
+  "namespace": "atlas",
+  "display_name": "Bijux Atlas",
+  "entrypoint_kind": "binary",
+  "entrypoint": "bijux-atlas",
+  "help_summary": "Atlas project workflows",
+  "official_status": "supported",
+  "capabilities": ["json_output", "doctor", "completion"]
+}

@@ -462,8 +462,11 @@ fn root_help_surfaces_official_apps_and_plugin_inventory_sections() {
     let stdout = String::from_utf8(out.stdout).expect("utf-8");
     assert!(stdout.contains("Official apps:"));
     assert!(stdout.contains("Installed plugins:"));
+    assert!(stdout.contains("Diagnostics:"));
     assert!(stdout.contains("bijux apps list"));
     assert!(stdout.contains("bijux dag --help"));
+    assert!(stdout.contains("bijux doctor"));
+    assert!(stdout.contains("bijux apps doctor"));
 }
 
 #[test]

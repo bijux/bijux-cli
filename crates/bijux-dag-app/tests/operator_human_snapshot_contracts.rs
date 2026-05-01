@@ -18,7 +18,7 @@ use tempfile as _;
 use thiserror as _;
 
 fn repo_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
 fn dag_command(root: &Path) -> Command {

@@ -86,6 +86,18 @@ pub mod invariants;
 mod invariants_tests;
 #[path = "internal/control/io.rs"]
 mod io;
+#[path = "runtime_core/execution/iteration06_contracts.rs"]
+pub mod iteration06_contracts;
+#[path = "runtime_core/execution/iteration09_contracts.rs"]
+pub mod iteration09_contracts;
+#[path = "runtime_core/planning/iteration13_contracts.rs"]
+pub mod iteration13_contracts;
+#[path = "runtime_core/execution/iteration14_contracts.rs"]
+pub mod iteration14_contracts;
+#[path = "runtime_core/execution/iteration15_contracts.rs"]
+pub mod iteration15_contracts;
+#[path = "runtime_core/execution/iteration17_contracts.rs"]
+pub mod iteration17_contracts;
 #[path = "backend/runtime/local_executor.rs"]
 mod local_executor;
 #[path = "runtime_core/execution/node_result.rs"]

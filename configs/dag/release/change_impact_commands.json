@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "lanes": [
+    {
+      "id": "cli",
+      "path_prefixes": ["crates/bijux-cli/"],
+      "commands": ["cargo test -p bijux-cli"]
+    },
+    {
+      "id": "dag-core",
+      "path_prefixes": ["crates/bijux-dag-core/"],
+      "commands": ["cargo test -p bijux-dag-core"]
+    },
+    {
+      "id": "runtime",
+      "path_prefixes": ["crates/bijux-dag-runtime/"],
+      "commands": ["cargo test -p bijux-dag-runtime"]
+    },
+    {
+      "id": "artifacts",
+      "path_prefixes": ["crates/bijux-dag-artifacts/"],
+      "commands": ["cargo test -p bijux-dag-artifacts"]
+    },
+    {
+      "id": "app",
+      "path_prefixes": ["crates/bijux-dag-app/", "crates/bijux-dag-cli/"],
+      "commands": ["cargo test -p bijux-dag-app", "cargo test -p bijux-dag-cli"]
+    }
+  ]
+}

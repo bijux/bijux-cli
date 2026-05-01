@@ -21,7 +21,7 @@ fn dag_bin(cwd: &Path) -> Command {
 }
 
 fn repo_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
 fn run_command(args: &[&str], cwd: &Path) -> (i32, String, String) {

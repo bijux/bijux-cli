@@ -1,7 +1,7 @@
 use crate::execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 use crate::{RuntimeConfig, Selector, SelectorSet};
 use bijux_dag_core::{
-    node_io_contract, Graph, Node, NodeIoContract, NodeKind, PlanOptions, PlannerSeverity,
+    node_io_contract, Effect, Graph, Node, NodeIoContract, NodeKind, PlanOptions, PlannerSeverity,
 };
 use std::collections::{BTreeSet, HashMap};
 
@@ -203,6 +203,13 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         if node.resources.is_some() && !runtime_resource_capability_supported(&node.kind) {
             diagnostics.push(format!("P4021:{}:unsupported-runtime-capability", node.id));
         }
+        let requires_network = node.effects.iter().any(|effect| matches!(effect, Effect::Network));
+        if !bijux_dag_core::resource_iteration13::planner_runnable_from_capabilities(
+            node.kind.as_str(),
+            requires_network,
+        ) {
+            diagnostics.push(format!("P4022:{}:capability-registry-refusal", node.id));
+        }
     }
     diagnostics.sort();
     diagnostics.dedup();
@@ -333,7 +340,7 @@ fn selector_matches(node: &Node, selector: &Selector) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bijux_dag_core::{FileOutput, Graph, Node, NodeKind, RetryPolicy};
+    use bijux_dag_core::{Effect, FileOutput, Graph, Node, NodeKind, RetryPolicy};
 
     fn sample_graph() -> Graph {
         Graph {
@@ -432,5 +439,16 @@ mod tests {
             plan.filter_reasons.get("b").map(String::as_str),
             Some("not_selected_by_include_selector")
         );
+    }
+
+    #[test]
+    fn planner_requires_capability_match_before_marking_runnable() {
+        let mut graph = sample_graph();
+        graph.nodes[1].effects = vec![Effect::Network];
+        let plan = build_plan(&graph, &RuntimeConfig::default());
+        assert!(plan
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.starts_with("P4022:b:capability-registry-refusal")));
     }
 }

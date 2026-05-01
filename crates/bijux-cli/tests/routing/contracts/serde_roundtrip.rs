@@ -12,7 +12,7 @@ use bijux_cli::contracts::{
     ColorMode, CommandMetadata, CommandPath, CompatibilityRange, ConfigSource, ErrorDetailsV1,
     ErrorEnvelopeV1, ErrorPayloadV1, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel, Namespace,
     NamespaceMetadata, OutputEnvelopeMetaV1, OutputEnvelopeV1, OutputFormat, PluginCapability,
-    PluginKind, PluginLifecycleState, PluginManifestV2, PrettyMode,
+    PluginKind, PluginLifecycleState, PluginManifestV2, PluginTrustClass, PrettyMode,
 };
 use clap as _;
 use proptest as _;
@@ -102,6 +102,7 @@ fn roundtrip_for_all_contract_types() {
         },
         namespace: Namespace("sample".to_string()),
         kind: PluginKind::Delegated,
+        trust_class: PluginTrustClass::Community,
         aliases: vec!["sample-status".to_string()],
         entrypoint: "sample_plugin:main".to_string(),
         capabilities: vec![PluginCapability {
@@ -208,6 +209,7 @@ fn contract_deserialization_rejects_invalid_payload_shapes() {
         },
         "namespace": "sample",
         "kind": "not-a-real-kind",
+        "trust_class": "community",
         "aliases": [],
         "entrypoint": "sample_plugin:main",
         "capabilities": []

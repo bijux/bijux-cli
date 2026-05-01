@@ -124,7 +124,8 @@ fn config_explain_redacts_sensitive_values_and_reports_candidates() {
 fn config_repair_writes_backup_and_sanitizes_file() {
     let root = temp_dir("repair");
     let global = root.join("global.env");
-    fs::write(&global, "BIJUXCLI_ALPHA=1\nBROKEN\nBIJUXCLI_ALPHA=2\n").expect("global");
+    fs::write(&global, "BIJUXCLI_ALPHA=1\nBROKEN\nBIJUXCLI_BÄD=2\nBIJUXCLI_ALPHA=2\n")
+        .expect("global");
 
     let repair = assert_success_json(&run_in(
         &root,
@@ -140,6 +141,16 @@ fn config_repair_writes_backup_and_sanitizes_file() {
         &[],
     ));
     assert_eq!(repair["changed"], true);
+    assert_eq!(repair["dropped_line_count"], 2);
+    assert!(repair["issues"]
+        .as_array()
+        .is_some_and(|items| items.iter().any(|entry| entry["issue"] == "malformed-line")));
+    assert!(repair["issues"]
+        .as_array()
+        .is_some_and(|items| items.iter().any(|entry| entry["issue"] == "invalid-key")));
+    assert!(repair["remediation"].as_array().is_some_and(|items| items
+        .iter()
+        .any(|entry| entry == "Use KEY=VALUE format for each non-comment config line.")));
     let repaired_text = fs::read_to_string(&global).expect("repaired file");
     assert_eq!(repaired_text, "BIJUXCLI_ALPHA=2\n");
     assert!(global.with_extension("bak").exists());
@@ -221,4 +232,43 @@ fn config_validate_reports_invalid_typed_value() {
     assert!(payload["errors"].as_array().is_some_and(|items| items.iter().any(|entry| entry
         .as_str()
         .is_some_and(|text| text.contains("expects an integer value")))));
+}
+
+#[test]
+fn config_validate_override_takes_highest_precedence() {
+    let root = temp_dir("validate-override");
+    let global = root.join("global.env");
+    let project = root.join("project");
+    fs::create_dir_all(project.join(".bijux")).expect("mkdir");
+    fs::write(&global, "BIJUXCLI_CLI_LOG_LEVEL=info\n").expect("global");
+    fs::write(project.join(".bijux/config.toml"), "[cli]\nlog_level = 'warn'\n").expect("project");
+
+    let payload = assert_success_json(&run_in(
+        &project,
+        &[
+            "config",
+            "validate",
+            "--override",
+            "cli.log_level=debug",
+            "--format",
+            "json",
+            "--no-pretty",
+            "--config-path",
+            global.to_str().expect("utf-8"),
+        ],
+        &[("BIJUXCLI_CLI_LOG_LEVEL", "error")],
+    ));
+    assert_eq!(payload["effective"]["cli.log_level"]["value"], "debug");
+    assert_eq!(
+        payload["precedence"],
+        serde_json::json!([
+            "defaults",
+            "global_file",
+            "global_profile",
+            "project_file",
+            "project_profile",
+            "environment",
+            "cli_overrides"
+        ])
+    );
 }

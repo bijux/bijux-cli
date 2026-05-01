@@ -53,6 +53,7 @@ pub enum ParseError {
 fn parse_output_format(raw: Option<&String>) -> Result<Option<OutputFormat>, ParseError> {
     raw.map(|v| match v.as_str() {
         "json" => Ok(OutputFormat::Json),
+        "jsonl" => Ok(OutputFormat::Jsonl),
         "yaml" => Ok(OutputFormat::Yaml),
         "text" => Ok(OutputFormat::Text),
         other => Err(ParseError::InvalidFormat(other.to_string())),
@@ -179,7 +180,7 @@ pub fn root_command() -> Command {
         .num_args(1)
         .global(true)
         .value_name("FORMAT")
-        .help("Output format: text, json, or yaml");
+        .help("Output format: text, json, jsonl, or yaml");
 
     let quiet_arg = Arg::new("quiet")
         .long("quiet")
@@ -247,6 +248,14 @@ pub fn root_command() -> Command {
             .action(ArgAction::SetTrue)
             .help("Include secret values in output")
     };
+    let override_arg = || {
+        Arg::new("override")
+            .long("override")
+            .num_args(1)
+            .action(ArgAction::Append)
+            .value_name("KEY=VALUE")
+            .help("Apply one highest-precedence config override (repeatable)")
+    };
 
     let config_group = Command::new("config")
         .subcommand_required(false)
@@ -256,13 +265,24 @@ pub fn root_command() -> Command {
         .subcommand(Command::new("unset").arg(Arg::new("key").num_args(1)))
         .subcommand(Command::new("clear"))
         .subcommand(Command::new("reload"))
-        .subcommand(Command::new("validate").arg(profile_arg()))
+        .subcommand(Command::new("validate").arg(profile_arg()).arg(override_arg()))
         .subcommand(Command::new("schema").arg(Arg::new("scope").num_args(1)))
         .subcommand(Command::new("docs").arg(Arg::new("scope").num_args(1)))
         .subcommand(
             Command::new("explain")
                 .arg(Arg::new("key").num_args(1))
                 .arg(profile_arg())
+                .arg(override_arg())
+                .arg(include_secrets_arg()),
+        )
+        .subcommand(
+            Command::new("diff")
+                .arg(Arg::new("key").num_args(1))
+                .arg(
+                    Arg::new("from-profile").long("from-profile").num_args(1).value_name("PROFILE"),
+                )
+                .arg(Arg::new("to-profile").long("to-profile").num_args(1).value_name("PROFILE"))
+                .arg(override_arg())
                 .arg(include_secrets_arg()),
         )
         .subcommand(Command::new("repair"))
@@ -329,6 +349,9 @@ pub fn root_command() -> Command {
     let cli_group = Command::new("cli")
         .subcommand(Command::new("status"))
         .subcommand(Command::new("paths"))
+        .subcommand(Command::new("routes"))
+        .subcommand(Command::new("shims"))
+        .subcommand(Command::new("script-contract"))
         .subcommand(
             Command::new("doctor").arg(Arg::new("subject").num_args(1)).arg(
                 Arg::new("bundle")
@@ -396,6 +419,10 @@ pub fn root_command() -> Command {
             Command::new("install")
                 .arg(Arg::new("target").num_args(1))
                 .arg(Arg::new("dry-run").long("dry-run").action(ArgAction::SetTrue)),
+        )
+        .subcommand(
+            Command::new("explain")
+                .arg(Arg::new("command").num_args(1..).required(true).trailing_var_arg(true)),
         )
         .subcommand(apps_group)
         .subcommand(config_group)
@@ -498,7 +525,8 @@ pub fn parse_intent(argv: &[String]) -> Result<ParsedIntent, ParseError> {
 
 #[cfg(test)]
 mod tests {
-    use super::root_command;
+    use super::{parse_intent, root_command};
+    use crate::contracts::OutputFormat;
 
     #[test]
     fn cli_help_lists_registered_subcommands() {
@@ -513,5 +541,17 @@ mod tests {
         assert!(help.contains("Commands:"));
         assert!(help.contains("status"));
         assert!(help.contains("plugins"));
+    }
+
+    #[test]
+    fn parse_intent_accepts_jsonl_output_format() {
+        let argv = vec![
+            "bijux".to_string(),
+            "--format".to_string(),
+            "jsonl".to_string(),
+            "status".to_string(),
+        ];
+        let intent = parse_intent(&argv).expect("intent");
+        assert_eq!(intent.global_flags.output_format, Some(OutputFormat::Jsonl));
     }
 }

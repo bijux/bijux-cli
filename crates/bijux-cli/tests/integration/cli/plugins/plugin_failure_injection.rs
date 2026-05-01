@@ -63,6 +63,7 @@ fn write_python_manifest(path: &Path, namespace: &str, entrypoint: &str) {
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "{namespace}",
   "kind": "python",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "{entrypoint}",
   "capabilities": []
@@ -182,6 +183,7 @@ fn plugin_check_fails_when_entrypoint_disappears_after_install() {
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "goneplug",
   "kind": "external-exec",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "{}",
   "capabilities": []
@@ -477,6 +479,7 @@ fn delegated_plugin_check_accepts_package_init_entrypoint() {
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": "{current_plugin_host_ceiling}"}},
   "namespace": "packageplug",
   "kind": "python",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "plugin:main",
   "capabilities": []
@@ -518,6 +521,7 @@ fn external_exec_plugin_install_resolves_relative_entrypoints_from_manifest_root
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive":"{current_plugin_host_ceiling}"}},
   "namespace": "runnerplug",
   "kind": "external-exec",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "bin/runner.sh",
   "capabilities": []
@@ -567,6 +571,7 @@ fn external_exec_install_keeps_manifest_anchor_when_source_label_is_overridden()
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive":"{current_plugin_host_ceiling}"}},
   "namespace": "runnerlabel",
   "kind": "external-exec",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "bin/runner.sh",
   "capabilities": []
@@ -624,6 +629,7 @@ fn explain_reports_non_executable_external_entrypoints() {
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive":"{current_plugin_host_ceiling}"}},
   "namespace": "noexecplug",
   "kind": "external-exec",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "{}",
   "capabilities": []

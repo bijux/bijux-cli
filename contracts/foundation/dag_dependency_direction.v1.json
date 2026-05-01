@@ -1,0 +1,29 @@
+{
+  "schema_version": "foundation-dag-dependency-direction/v1",
+  "crates": [
+    {
+      "crate": "bijux-dag-core",
+      "allowed_workspace_normal_deps": []
+    },
+    {
+      "crate": "bijux-dag-artifacts",
+      "allowed_workspace_normal_deps": []
+    },
+    {
+      "crate": "bijux-dag-runtime",
+      "allowed_workspace_normal_deps": ["bijux-dag-core", "bijux-dag-artifacts"]
+    },
+    {
+      "crate": "bijux-dag-app",
+      "allowed_workspace_normal_deps": ["bijux-dag-core", "bijux-dag-runtime", "bijux-dag-artifacts"]
+    },
+    {
+      "crate": "bijux-dag-cli",
+      "allowed_workspace_normal_deps": ["bijux-dag-app"]
+    },
+    {
+      "crate": "bijux-dag-testkit",
+      "allowed_workspace_normal_deps": ["bijux-dag-core", "bijux-dag-artifacts"]
+    }
+  ]
+}

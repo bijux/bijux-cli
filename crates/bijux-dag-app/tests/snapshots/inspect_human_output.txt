@@ -1,3 +1,4 @@
+note: human output is operator-facing; use --json for stable automation
 run_id: "run-fixed"
 status: "success"
 origin: native

@@ -1,11 +1,10 @@
 use crate::commands::{DagCli, ReleaseCommands};
+use crate::routes::simulation_io::load_json_file;
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::hash::sha256_hex;
 use bijux_dag_core::{Graph, Node};
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::BTreeMap;
-use std::fs;
 
 #[derive(Debug, Serialize)]
 struct WorkflowRevisionReport {
@@ -208,11 +207,6 @@ struct ReleaseHealthReport {
     score: i32,
     status: String,
     reasons: Vec<String>,
-}
-
-fn load_json_file<T: DeserializeOwned>(path: &std::path::Path) -> Result<T, ExitCode> {
-    let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
-    serde_json::from_str(&raw).map_err(|_| ExitCode::from(2))
 }
 
 fn version_payload(dag: &std::path::Path) -> Result<WorkflowRevisionReport, ExitCode> {

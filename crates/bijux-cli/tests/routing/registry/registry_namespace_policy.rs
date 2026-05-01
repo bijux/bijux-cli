@@ -42,6 +42,20 @@ fn official_reserved_namespaces_take_precedence() {
 }
 
 #[test]
+fn plugin_aliases_cannot_shadow_official_namespaces_or_aliases() {
+    let mut registry = RouteRegistry::default();
+    let err = registry
+        .register_plugin_namespace_with_aliases("community", &["dag".to_string()])
+        .expect_err("official namespace alias must be reserved");
+    assert!(matches!(err, RouteError::Reserved(_)));
+
+    let err = registry
+        .register_plugin_namespace_with_aliases("community", &["workflow".to_string()])
+        .expect_err("official alias must be reserved");
+    assert!(matches!(err, RouteError::Reserved(_)));
+}
+
+#[test]
 fn known_bijux_tool_registry_matches_expected_namespaces() {
     let expected = ["agent", "atlas", "dag", "dna", "gnss", "rag", "rar", "vex"];
     let official: Vec<&str> = official_product_namespaces().to_vec();

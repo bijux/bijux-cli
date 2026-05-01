@@ -12,6 +12,7 @@ control-plane
 dataset
 diff
 doctor
+durability
 enterprise
 equivalence-proof
 explain
@@ -32,6 +33,7 @@ lab
 lint
 migrate
 node
+performance
 plan
 policy
 proof-summary

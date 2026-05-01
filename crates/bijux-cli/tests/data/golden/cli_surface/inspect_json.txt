@@ -670,9 +670,11 @@
   "compatibility_warnings": [],
   "contracts": {
     "schemas": [
+      "command-envelope-v1",
       "output-envelope-v1",
       "error-envelope-v1",
-      "plugin-manifest-v2"
+      "plugin-manifest-v2",
+      "product-mount-descriptor-v1"
     ],
     "version": "v1"
   },

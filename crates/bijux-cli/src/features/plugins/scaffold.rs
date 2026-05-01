@@ -45,7 +45,7 @@ fn scaffold_compatibility_window() -> Result<(String, String)> {
 fn scaffold_manifest_json(plugin_kind: &str, entrypoint: &str, namespace: &str) -> Result<String> {
     let (min_inclusive, max_exclusive) = scaffold_compatibility_window()?;
     Ok(format!(
-        "{{\n  \"name\": \"{}\",\n  \"version\": \"{}\",\n  \"schema_version\": \"v2\",\n  \"manifest_version\": \"v2\",\n  \"compatibility\": {{ \"min_inclusive\": \"{}\", \"max_exclusive\": \"{}\" }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
+        "{{\n  \"name\": \"{}\",\n  \"version\": \"{}\",\n  \"schema_version\": \"v2\",\n  \"manifest_version\": \"v2\",\n  \"compatibility\": {{ \"min_inclusive\": \"{}\", \"max_exclusive\": \"{}\" }},\n  \"namespace\": \"{}\",\n  \"kind\": \"{}\",\n  \"trust_class\": \"community\",\n  \"aliases\": [],\n  \"entrypoint\": \"{}\",\n  \"capabilities\": []\n}}\n",
         namespace,
         SCAFFOLD_PLUGIN_VERSION,
         min_inclusive,

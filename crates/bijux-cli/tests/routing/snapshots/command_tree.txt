@@ -5,6 +5,7 @@ completion
 config
 docs
 doctor
+explain
 help
 history
 inspect

@@ -9,3 +9,4 @@ mod parser_fuzz;
 mod parser_fuzz_regressions;
 mod parser_fuzz_targets;
 mod parser_intent;
+mod root_grammar_contract;

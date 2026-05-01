@@ -154,6 +154,12 @@ fn capabilities_payload() -> serde_json::Value {
             "remote": "simulated",
             "batch_hpc": "simulated"
         },
+        "execution_lanes": {
+            "local_process": "ENFORCED",
+            "container": "SIMULATED",
+            "remote": "SIMULATED",
+            "batch_hpc": "SIMULATED"
+        },
         "backend_capability_matrix": [
             backend_capability_payload("kubernetes").unwrap(),
             backend_capability_payload("hpc").unwrap(),
@@ -342,6 +348,10 @@ mod tests {
         let code = handle_capabilities_command(&cli, &None).expect("capabilities");
         assert_eq!(code, ExitCode::SUCCESS);
         let payload = super::capabilities_payload();
+        assert_eq!(payload["execution_lanes"]["local_process"], "ENFORCED");
+        assert_eq!(payload["execution_lanes"]["container"], "SIMULATED");
+        assert_eq!(payload["execution_lanes"]["remote"], "SIMULATED");
+        assert_eq!(payload["execution_lanes"]["batch_hpc"], "SIMULATED");
         let operator_commands =
             payload["operator_commands"].as_array().expect("operator commands payload");
         for expected in [

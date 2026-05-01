@@ -1,3 +1,4 @@
+use crate::routes::selector_grammar::{parse_selector_expression, SelectorField};
 use crate::run_data::{env_cache_dir, load_snapshot};
 use crate::{
     check_engine, config_fingerprint, default_runtime_config, parse_graph, read_file, Graph,
@@ -24,16 +25,17 @@ pub(crate) fn parse_selectors(
 }
 
 pub(crate) fn parse_selector(raw: &str) -> Result<Selector, ExitCode> {
-    if let Some(rest) = raw.strip_prefix("id:") {
-        return Ok(Selector::IdPrefix(rest.to_string()));
+    let selector = parse_selector_expression(raw)?;
+    match selector.field {
+        SelectorField::Id | SelectorField::Node => Ok(Selector::IdPrefix(selector.value)),
+        SelectorField::Tag => Ok(Selector::Tag(selector.value)),
+        SelectorField::Kind => Ok(Selector::Kind(selector.value)),
+        SelectorField::Run
+        | SelectorField::State
+        | SelectorField::Artifact
+        | SelectorField::Branch
+        | SelectorField::Attempt => Err(ExitCode::from(2)),
     }
-    if let Some(rest) = raw.strip_prefix("tag:") {
-        return Ok(Selector::Tag(rest.to_string()));
-    }
-    if let Some(rest) = raw.strip_prefix("kind:") {
-        return Ok(Selector::Kind(rest.to_string()));
-    }
-    Err(ExitCode::from(2))
 }
 
 pub(crate) fn lint_graph(graph: &Graph) -> Vec<LintDiagnostic> {
@@ -230,6 +232,70 @@ pub(crate) fn migrate_run(path: &Path, from: &str, to: &str) -> Result<String, E
     Err(ExitCode::from(3))
 }
 
+pub(crate) fn inspect_migrate_dag(
+    path: &Path,
+    from: &str,
+    to: &str,
+) -> Result<serde_json::Value, ExitCode> {
+    let input = read_file(path)?;
+    let graph = parse_graph(&input)?;
+    let from_normalized =
+        if from == "0.1" || from == "v0.1" { SPEC_VERSION.to_string() } else { from.to_string() };
+    let to_normalized =
+        if to == "0.1" || to == "v0.1" { SPEC_VERSION.to_string() } else { to.to_string() };
+    let migration_required = from_normalized != to_normalized;
+    let apply_supported = from_normalized == to_normalized && graph.spec == from_normalized;
+    Ok(json!({
+        "target": "dag",
+        "path": path,
+        "current_spec": graph.spec,
+        "requested_from": from_normalized,
+        "requested_to": to_normalized,
+        "migration_required": migration_required,
+        "apply_supported": apply_supported,
+        "decision": if apply_supported { "no-op" } else { "refuse-unsupported" },
+        "reason": if apply_supported {
+            "migration is a no-op for this version lane"
+        } else if graph.spec != from_normalized {
+            "requested from-version does not match graph spec"
+        } else {
+            "cross-version migration is unavailable"
+        }
+    }))
+}
+
+pub(crate) fn inspect_migrate_run(
+    path: &Path,
+    from: &str,
+    to: &str,
+) -> Result<serde_json::Value, ExitCode> {
+    let snapshot = load_snapshot(path)?;
+    let from_normalized =
+        if from == "0.1" || from == "v0.1" { SPEC_VERSION.to_string() } else { from.to_string() };
+    let to_normalized =
+        if to == "0.1" || to == "v0.1" { SPEC_VERSION.to_string() } else { to.to_string() };
+    let migration_required = from_normalized != to_normalized;
+    let apply_supported =
+        from_normalized == to_normalized && snapshot.graph.spec == from_normalized;
+    Ok(json!({
+        "target": "run",
+        "path": path,
+        "current_spec": snapshot.graph.spec,
+        "requested_from": from_normalized,
+        "requested_to": to_normalized,
+        "migration_required": migration_required,
+        "apply_supported": apply_supported,
+        "decision": if apply_supported { "no-op" } else { "refuse-unsupported" },
+        "reason": if apply_supported {
+            "migration is a no-op for this version lane"
+        } else if snapshot.graph.spec != from_normalized {
+            "requested from-version does not match run snapshot graph spec"
+        } else {
+            "cross-version migration is unavailable"
+        }
+    }))
+}
+
 pub(crate) fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
     let base =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../bijux-dag-core/tests/compat/v0.1");
@@ -290,7 +356,10 @@ pub(crate) fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
 
 #[cfg(test)]
 mod tests {
-    use super::{doctor_report, parse_selector, parse_selectors};
+    use super::{
+        doctor_report, inspect_migrate_dag, inspect_migrate_run, parse_selector, parse_selectors,
+    };
+    use serde_json::json;
     use std::process::ExitCode;
 
     #[test]
@@ -313,10 +382,16 @@ mod tests {
 
     #[test]
     fn selector_parser_rejects_invalid_syntax() {
-        for raw in ["", "id", "tag", "kind", "name:node", "id=", "node:a"] {
+        for raw in ["", "id", "tag", "kind", "name:node", "id=", "attempt:latest"] {
             let err = parse_selector(raw).expect_err("invalid selector must fail");
             assert_eq!(err, ExitCode::from(2), "selector should reject: {raw}");
         }
+    }
+
+    #[test]
+    fn selector_parser_accepts_node_alias_for_execution_selectors() {
+        let by_node = parse_selector("node:train").expect("node selector");
+        assert_eq!(format!("{by_node:?}"), "IdPrefix(\"train\")");
     }
 
     #[test]
@@ -324,5 +399,37 @@ mod tests {
         let report = doctor_report().expect("doctor report");
         assert!(report["schema_files"]["count"].as_u64().is_some());
         assert!(report["runtime_config"]["defaults_fingerprint"].as_str().is_some());
+    }
+
+    #[test]
+    fn migrate_inspect_surfaces_decision_without_mutation() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let dag_path = temp.path().join("dag.json");
+        std::fs::write(
+            &dag_path,
+            serde_json::to_vec_pretty(&json!({
+                "spec":"bijux-dag/v0.1",
+                "meta":{"name":"x","owners":[],"tags":[]},
+                "nodes":[],
+                "edges":[]
+            }))
+            .expect("dag"),
+        )
+        .expect("write dag");
+        let run_dir = temp.path().join("run");
+        std::fs::create_dir_all(&run_dir).expect("mkdir");
+        std::fs::write(
+            run_dir.join("graph.snapshot.json"),
+            serde_json::to_vec_pretty(&json!({
+                "graph":{"spec":"bijux-dag/v0.1","meta":{"name":"x","owners":[],"tags":[]},"nodes":[],"edges":[]},
+                "graph_fingerprint":"g1"
+            }))
+            .expect("snapshot"),
+        )
+        .expect("write snapshot");
+        let dag_report = inspect_migrate_dag(&dag_path, "v0.1", "v0.1").expect("inspect dag");
+        let run_report = inspect_migrate_run(&run_dir, "v0.1", "v0.2").expect("inspect run");
+        assert_eq!(dag_report["decision"], "no-op");
+        assert_eq!(run_report["decision"], "refuse-unsupported");
     }
 }

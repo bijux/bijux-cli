@@ -458,6 +458,7 @@ fn rust_scaffold_broken_manifest_fails_install() {
   "compatibility": {"min_inclusive":"9.9.9", "max_exclusive": null},
   "namespace": "brokenrust",
   "kind": "delegated",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "plugin:main",
   "capabilities": []
@@ -491,6 +492,7 @@ fn install_rejects_stale_manifest_version_markers() {
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": "{current_plugin_host_ceiling}"}},
   "namespace": "staleplug",
   "kind": "python",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "plugin:main",
   "capabilities": []
@@ -564,6 +566,7 @@ fn install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases() {
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "broken",
   "kind": "python",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "",
   "capabilities": []
@@ -589,6 +592,7 @@ fn install_rejects_invalid_missing_reserved_and_duplicate_manifest_cases() {
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "cli",
   "kind": "python",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "plugin:main",
   "capabilities": []
@@ -818,6 +822,7 @@ fn external_exec_plugin_with_non_executable_entrypoint_fails_install() {
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}", "max_exclusive": null}},
   "namespace": "externalplug",
   "kind": "external-exec",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "{}",
   "capabilities": []

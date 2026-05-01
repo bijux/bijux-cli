@@ -35,6 +35,10 @@ mod inspect;
 mod inspect_service;
 #[path = "inspect/integrity_service.rs"]
 mod integrity_service;
+#[path = "commands/iteration08_contracts.rs"]
+pub mod iteration08_contracts;
+#[path = "commands/iteration11_contracts.rs"]
+pub mod iteration11_contracts;
 mod migrate;
 #[path = "commands/output_contract.rs"]
 mod output_contract;
@@ -388,12 +392,24 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             commands::LabCommands::Security { command } => {
                 routes::security_routes::handle_security_command(&cli, command)
             }
+            commands::LabCommands::Durability { command } => {
+                routes::durability_routes::handle_durability_command(&cli, command)
+            }
+            commands::LabCommands::Performance { command } => {
+                routes::performance_routes::handle_performance_command(&cli, command)
+            }
         },
         Commands::Federation { command } => {
             routes::federation_routes::handle_federation_command(&cli, command)
         }
         Commands::Security { command } => {
             routes::security_routes::handle_security_command(&cli, command)
+        }
+        Commands::Durability { command } => {
+            routes::durability_routes::handle_durability_command(&cli, command)
+        }
+        Commands::Performance { command } => {
+            routes::performance_routes::handle_performance_command(&cli, command)
         }
         Commands::Release { command } => {
             routes::release_routes::handle_release_command(&cli, command)
@@ -740,6 +756,25 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                     } else {
                         result
                     }
+                }
+                MigrateCommands::Inspect { dag, run_dir, from, to } => {
+                    let report = match (dag, run_dir) {
+                        (Some(path), None) => inspect_migrate_dag(path, from, to)?,
+                        (None, Some(path)) => inspect_migrate_run(path, from, to)?,
+                        _ => return Err(ExitCode::from(2)),
+                    };
+                    if cli.json {
+                        return emit_json(
+                            &cli,
+                            "dag.migrate.inspect",
+                            true,
+                            report,
+                            Vec::new(),
+                            ExitCode::SUCCESS,
+                        );
+                    }
+                    println!("{}", serde_json::to_string_pretty(&report).unwrap());
+                    return Ok(ExitCode::SUCCESS);
                 }
             };
             if cli.json {

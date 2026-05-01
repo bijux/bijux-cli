@@ -1586,9 +1586,11 @@ fn run_release_verify() -> Result<(), String> {
 fn run_release_readiness_report() -> Result<(), String> {
     let root = repo_root()?;
     let release_evidence = check_release_evidence_ready(&root)?;
+    let distribution_delivery = run_distribution_delivery_contract_report()?;
     let report = json!({
         "timestamp_unix_ms": now_millis(),
         "release_evidence": release_evidence,
+        "distribution_delivery": distribution_delivery,
         "contract_coverage": check_contract_coverage_ready(&root),
         "schema_coverage": check_schema_coverage_ready(&root),
         "docs_coverage": check_docs_coverage_ready(&root),

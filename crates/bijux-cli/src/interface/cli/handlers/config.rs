@@ -9,7 +9,9 @@ use serde_json::Value;
 
 use crate::features::config::layered::LayeredConfigOptions;
 use crate::features::config::operations as config_operations;
-use crate::shared::argv::{command_has_flag, command_option_value, command_positionals};
+use crate::shared::argv::{
+    command_has_flag, command_option_value, command_option_values, command_positionals,
+};
 
 pub(crate) fn execute_config_command(
     normalized_path: &[String],
@@ -25,6 +27,7 @@ pub(crate) fn execute_config_command(
     let schema_tokens = config_command_tokens(argv, &["schema"]);
     let docs_tokens = config_command_tokens(argv, &["docs"]);
     let explain_tokens = config_command_tokens(argv, &["explain"]);
+    let diff_tokens = config_command_tokens(argv, &["diff"]);
     let repair_tokens = config_command_tokens(argv, &["repair"]);
     let export_tokens = config_command_tokens(argv, &["export"]);
     let load_tokens = config_command_tokens(argv, &["load"]);
@@ -72,7 +75,13 @@ pub(crate) fn execute_config_command(
         [a, b, c] if a == "cli" && b == "config" && c == "validate" => {
             let _ = command_positionals(argv, validate_tokens);
             let profile = command_option_value(argv, validate_tokens, "--profile");
-            Some(config_operations::validate(config_file, &current_dir, profile.as_deref())?)
+            let overrides = command_option_values(argv, validate_tokens, "--override");
+            Some(config_operations::validate(
+                config_file,
+                &current_dir,
+                profile.as_deref(),
+                &overrides,
+            )?)
         }
         [a, b, c] if a == "cli" && b == "config" && c == "schema" => {
             let positional = command_positionals(argv, schema_tokens);
@@ -87,12 +96,31 @@ pub(crate) fn execute_config_command(
             let raw_key =
                 positional.first().ok_or_else(|| anyhow!("Missing argument: KEY required"))?;
             let profile = command_option_value(argv, explain_tokens, "--profile");
+            let overrides = command_option_values(argv, explain_tokens, "--override");
             let include_secrets = command_has_flag(argv, "--include-secrets");
             Some(config_operations::explain(
                 config_file,
                 &current_dir,
                 raw_key,
                 profile.as_deref(),
+                &overrides,
+                include_secrets,
+            )?)
+        }
+        [a, b, c] if a == "cli" && b == "config" && c == "diff" => {
+            let positional = command_positionals(argv, diff_tokens);
+            let raw_key = positional.first().map(String::as_str);
+            let from_profile = command_option_value(argv, diff_tokens, "--from-profile");
+            let to_profile = command_option_value(argv, diff_tokens, "--to-profile");
+            let overrides = command_option_values(argv, diff_tokens, "--override");
+            let include_secrets = command_has_flag(argv, "--include-secrets");
+            Some(config_operations::diff(
+                config_file,
+                &current_dir,
+                raw_key,
+                from_profile.as_deref(),
+                to_profile.as_deref(),
+                &overrides,
                 include_secrets,
             )?)
         }
@@ -112,7 +140,12 @@ pub(crate) fn execute_config_command(
                     config_file,
                     &current_dir,
                     &target_path,
-                    &LayeredConfigOptions { profile, include_secrets, portable },
+                    &LayeredConfigOptions {
+                        profile,
+                        include_secrets,
+                        portable,
+                        overrides: Vec::new(),
+                    },
                 )?)
             } else {
                 Some(config_operations::export_to(config_file, &target_path)?)
@@ -128,7 +161,12 @@ pub(crate) fn execute_config_command(
                 Some(config_operations::load_with_options(
                     config_file,
                     &source_path,
-                    &LayeredConfigOptions { profile, include_secrets: false, portable },
+                    &LayeredConfigOptions {
+                        profile,
+                        include_secrets: false,
+                        portable,
+                        overrides: Vec::new(),
+                    },
                 )?)
             } else {
                 Some(config_operations::load_from(config_file, &source_path)?)
@@ -153,6 +191,7 @@ fn config_command_tokens<'a>(argv: &[String], suffix: &'a [&'a str]) -> &'a [&'a
             ["schema"] => &["config", "schema"],
             ["docs"] => &["config", "docs"],
             ["explain"] => &["config", "explain"],
+            ["diff"] => &["config", "diff"],
             ["repair"] => &["config", "repair"],
             ["export"] => &["config", "export"],
             ["load"] => &["config", "load"],
@@ -170,6 +209,7 @@ fn config_command_tokens<'a>(argv: &[String], suffix: &'a [&'a str]) -> &'a [&'a
             ["schema"] => &["cli", "config", "schema"],
             ["docs"] => &["cli", "config", "docs"],
             ["explain"] => &["cli", "config", "explain"],
+            ["diff"] => &["cli", "config", "diff"],
             ["repair"] => &["cli", "config", "repair"],
             ["export"] => &["cli", "config", "export"],
             ["load"] => &["cli", "config", "load"],

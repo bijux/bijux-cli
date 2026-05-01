@@ -25,6 +25,7 @@ const RESERVED_ROOT_NAMESPACES: &[&str] = &[
     "status",
     "version",
 ];
+const OFFICIAL_STATUS_VALUES: &[&str] = &["declared", "supported", "deprecated", "unsupported"];
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct ProductRegistryDocument {
@@ -497,7 +498,6 @@ fn validate_registry_document(document: &ProductRegistryDocument) -> Result<(), 
             || entry.runtime_package.trim().is_empty()
             || entry.control_package.trim().is_empty()
             || entry.repository.trim().is_empty()
-            || entry.status.trim().is_empty()
             || entry.language.trim().is_empty()
             || entry.help_summary.trim().is_empty()
         {
@@ -506,6 +506,7 @@ fn validate_registry_document(document: &ProductRegistryDocument) -> Result<(), 
                 namespace.as_str()
             ));
         }
+        validate_registry_status(namespace.as_str(), &entry.status)?;
 
         let mut capability_set = std::collections::BTreeSet::new();
         for capability in &entry.capabilities {
@@ -565,6 +566,19 @@ fn validate_registry_document(document: &ProductRegistryDocument) -> Result<(), 
         }
     }
 
+    Ok(())
+}
+
+fn validate_registry_status(namespace: &str, status: &str) -> Result<(), String> {
+    if status.trim().is_empty() {
+        return Err(format!("official namespace `{namespace}` has empty status"));
+    }
+    let normalized = status.trim().to_ascii_lowercase();
+    if !OFFICIAL_STATUS_VALUES.contains(&normalized.as_str()) {
+        return Err(format!(
+            "official namespace `{namespace}` declares unsupported status `{status}`"
+        ));
+    }
     Ok(())
 }
 
@@ -649,13 +663,22 @@ pub fn canonical_bijux_tool_namespace(query: &str) -> Option<&'static str> {
     known_bijux_tool_by_query(query).map(|tool| tool.namespace)
 }
 
+/// Return whether runtime delegation is allowed for an official mount status.
+#[must_use]
+pub fn official_status_allows_runtime_dispatch(status: &str) -> bool {
+    !status.trim().eq_ignore_ascii_case("unsupported")
+}
+
 /// Smallest metadata contract required for reserved product mounts.
 pub type ProductMountMetadata = ProductMountDescriptor;
 
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_product_mount_descriptor, Namespace, ProductEntrypointKind, ProductMountDescriptor,
+        known_bijux_tool_by_query, official_product_namespaces,
+        official_status_allows_runtime_dispatch, validate_product_mount_descriptor,
+        validate_registry_document, Namespace, ProductEntrypointKind, ProductMountDescriptor,
+        ProductRegistryDocument, ProductRegistryEntry,
     };
 
     #[test]
@@ -702,5 +725,64 @@ mod tests {
 
         let error = validate_product_mount_descriptor(&descriptor).expect_err("must reject");
         assert!(error.contains("duplicate alias"));
+    }
+
+    fn sample_registry_entry(namespace: &str, status: &str) -> ProductRegistryEntry {
+        ProductRegistryEntry {
+            namespace: namespace.to_string(),
+            display_name: format!("{namespace} display"),
+            aliases: Vec::new(),
+            runtime_binary: format!("bijux-{namespace}"),
+            control_binary: format!("bijux-dev-{namespace}"),
+            runtime_package: format!("bijux-{namespace}"),
+            control_package: format!("bijux-dev-{namespace}"),
+            repository: format!("bijux-{namespace}"),
+            status: status.to_string(),
+            language: "rust".to_string(),
+            version: None,
+            help_summary: format!("{namespace} summary"),
+            capabilities: vec!["json_output".to_string()],
+        }
+    }
+
+    fn sample_registry(entries: Vec<ProductRegistryEntry>) -> ProductRegistryDocument {
+        ProductRegistryDocument {
+            schema_version: "v1".to_string(),
+            owner: "bijux-cli".to_string(),
+            policy: "policy".to_string(),
+            entries,
+        }
+    }
+
+    #[test]
+    fn registry_validation_rejects_duplicate_namespaces() {
+        let document = sample_registry(vec![
+            sample_registry_entry("dag", "declared"),
+            sample_registry_entry("dag", "declared"),
+        ]);
+        let error = validate_registry_document(&document).expect_err("duplicate namespace");
+        assert!(error.contains("duplicate official namespace"));
+    }
+
+    #[test]
+    fn registry_validation_rejects_unsupported_status_values() {
+        let document = sample_registry(vec![sample_registry_entry("dag", "preview")]);
+        let error = validate_registry_document(&document).expect_err("unsupported status");
+        assert!(error.contains("unsupported status"));
+    }
+
+    #[test]
+    fn runtime_dispatch_policy_blocks_unsupported_statuses() {
+        assert!(official_status_allows_runtime_dispatch("declared"));
+        assert!(official_status_allows_runtime_dispatch("supported"));
+        assert!(official_status_allows_runtime_dispatch("deprecated"));
+        assert!(!official_status_allows_runtime_dispatch("unsupported"));
+    }
+
+    #[test]
+    fn official_namespace_registry_exposes_known_namespaces() {
+        assert!(official_product_namespaces().contains(&"dag"));
+        let dag = known_bijux_tool_by_query("dag").expect("dag tool metadata");
+        assert_eq!(dag.namespace, "dag");
     }
 }

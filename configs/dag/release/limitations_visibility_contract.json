@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "commands": [
+    {
+      "id": "dag-capabilities",
+      "run": "cargo run -q -p bijux-dag-cli -- dag capabilities --json",
+      "required_tokens": ["simulated", "production_ready", "status"]
+    },
+    {
+      "id": "root-doctor",
+      "run": "cargo run -q -p bijux-cli -- --json doctor",
+      "required_tokens": ["status", "severity", "suggestions"]
+    }
+  ]
+}

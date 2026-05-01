@@ -1,5 +1,6 @@
 use crate::commands::DagCli;
 use crate::routes::path_resolution::{manifest_path, node_outputs_index_path, node_trace_path};
+use crate::routes::preconditions::require_run_directory;
 use crate::routes::run_lookup::read_manifest_json;
 use crate::run_data::{load_snapshot, read_node_traces};
 use crate::{emit_json, read_file, ExitCode};
@@ -23,6 +24,7 @@ pub(crate) fn handle_explain_command(
     run_dir: &Path,
     node: &Option<String>,
 ) -> Result<ExitCode, ExitCode> {
+    require_run_directory(run_dir)?;
     let manifest = read_file(&manifest_path(run_dir))?;
     if let Some(node_id) = node.as_ref() {
         let snapshot = load_snapshot(run_dir)?;
@@ -121,6 +123,7 @@ pub(crate) fn handle_node_command(
     run_dir: &Path,
     node: &str,
 ) -> Result<ExitCode, ExitCode> {
+    require_run_directory(run_dir)?;
     let trace = read_file(&node_trace_path(run_dir, node))?;
     let index = read_file(&node_outputs_index_path(run_dir, node))?;
     if cli.json {
@@ -139,10 +142,10 @@ pub(crate) fn handle_node_command(
 }
 
 pub(crate) fn handle_status_command(cli: &DagCli, run_dir: &Path) -> Result<ExitCode, ExitCode> {
+    require_run_directory(run_dir)?;
     let manifest = read_file(&manifest_path(run_dir))?;
     let nodes_dir = run_dir.join("nodes");
-    let manifest_json =
-        serde_json::from_str::<Value>(&manifest).unwrap_or(Value::String(manifest.clone()));
+    let manifest_json = serde_json::from_str::<Value>(&manifest).unwrap_or(Value::Null);
     let mut statuses = Vec::new();
     if nodes_dir.exists() {
         for entry in fs::read_dir(nodes_dir).map_err(|_| ExitCode::from(3))? {
@@ -150,29 +153,124 @@ pub(crate) fn handle_status_command(cli: &DagCli, run_dir: &Path) -> Result<Exit
             let trace_path = entry.path().join("trace.json");
             if trace_path.exists() {
                 let t = read_file(&trace_path)?;
-                statuses.push(serde_json::from_str::<Value>(&t).unwrap_or(Value::String(t)));
+                let mut trace = serde_json::from_str::<Value>(&t).unwrap_or(Value::Null);
+                if let Some(object) = trace.as_object_mut() {
+                    object.insert(
+                        "node_id".to_string(),
+                        Value::String(entry.file_name().to_string_lossy().to_string()),
+                    );
+                }
+                statuses.push(trace);
             }
         }
     }
+    let summary = operator_status_summary(run_dir, &manifest_json, &statuses);
     if cli.json {
         return emit_json(
             cli,
             "dag.status",
             true,
-            json!({"manifest": manifest_json, "traces": statuses}),
+            json!({
+                "current_state": summary["current_state"],
+                "next_action": summary["next_action"],
+                "critical_failure": summary["critical_failure"],
+                "evidence_path": summary["evidence_path"],
+                "verification_result": summary["verification_result"],
+                "manifest": manifest_json,
+                "traces": statuses
+            }),
             Vec::new(),
             ExitCode::SUCCESS,
         );
     }
-    println!("manifest:\n{}", manifest);
-    println!("traces: {}", statuses.len());
+    println!("{}", operator_status_human(&summary));
     Ok(ExitCode::SUCCESS)
+}
+
+fn operator_status_summary(run_dir: &Path, manifest: &Value, traces: &[Value]) -> Value {
+    let current_state =
+        manifest.get("status").and_then(Value::as_str).unwrap_or("unknown").to_string();
+    let first_failed = traces.iter().find(|trace| {
+        trace.get("status").and_then(Value::as_str) == Some("failed")
+            || trace.get("state").and_then(Value::as_str) == Some("failed")
+    });
+    let critical_failure = first_failed.map_or(Value::Null, |trace| {
+        json!({
+            "node_id": trace.get("node_id").cloned().unwrap_or(Value::Null),
+            "status": trace.get("status").cloned().unwrap_or(Value::Null),
+            "failure": trace.get("failure").cloned().unwrap_or(Value::Null)
+        })
+    });
+    let verification_result = status_verification_result(run_dir, manifest, traces);
+    let next_action =
+        status_next_action(&current_state, verification_result.as_str(), &critical_failure);
+    json!({
+        "current_state": current_state,
+        "next_action": next_action,
+        "critical_failure": critical_failure,
+        "evidence_path": run_dir.display().to_string(),
+        "verification_result": verification_result
+    })
+}
+
+fn status_verification_result(run_dir: &Path, manifest: &Value, traces: &[Value]) -> String {
+    if manifest.is_null() {
+        return "manifest-invalid".to_string();
+    }
+    if !run_dir.join("manifest.json").is_file() {
+        return "manifest-missing".to_string();
+    }
+    if !run_dir.join("nodes").exists() {
+        return "traces-missing".to_string();
+    }
+    if traces.is_empty() {
+        return "traces-empty".to_string();
+    }
+    if run_dir.join("outputs.index.json").exists()
+        || run_dir.join("outputs").join("index.json").exists()
+    {
+        return "evidence-present".to_string();
+    }
+    "artifact-index-missing".to_string()
+}
+
+fn status_next_action(
+    current_state: &str,
+    verification_result: &str,
+    critical_failure: &Value,
+) -> String {
+    if verification_result != "evidence-present" {
+        return "run `dag verify <run_dir> --strict` and repair missing evidence files".to_string();
+    }
+    if !critical_failure.is_null() {
+        return "run `dag runs explain-failure <run-id> --root <runs-root>` for root-cause details"
+            .to_string();
+    }
+    match current_state {
+        "failed" => "run `dag runs explain-failure <run-id> --root <runs-root>`".to_string(),
+        "cancelled" => "resume with replay or inspect scheduler cancellation reason".to_string(),
+        "running" => "inspect timeline and node traces for current bottlenecks".to_string(),
+        "success" | "completed" => "inspect artifacts and export evidence bundle".to_string(),
+        _ => "inspect manifest and traces to classify run state".to_string(),
+    }
+}
+
+fn operator_status_human(summary: &Value) -> String {
+    format!(
+        "current_state: {}\nnext_action: {}\ncritical_failure: {}\nevidence_path: {}\nverification_result: {}",
+        summary.get("current_state").unwrap_or(&Value::Null),
+        summary.get("next_action").unwrap_or(&Value::Null),
+        summary.get("critical_failure").unwrap_or(&Value::Null),
+        summary.get("evidence_path").unwrap_or(&Value::Null),
+        summary.get("verification_result").unwrap_or(&Value::Null)
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
         concise_explain_human, handle_explain_command, handle_node_command, handle_status_command,
+        operator_status_human, operator_status_summary, status_next_action,
     };
     use crate::commands::{Commands, DagCli};
     use crate::ExitCode;
@@ -317,5 +415,52 @@ graph_fingerprint: \"g1\"\n\
 node_counts: {\"cached\":0,\"failed\":0,\"skipped\":0,\"success\":1}\n\
 failed_nodes: [\"n1\"]";
         assert_eq!(rendered, expected);
+    }
+
+    #[test]
+    fn status_summary_prioritizes_operator_fields() {
+        let run = write_run_fixture(false, false);
+        let manifest = serde_json::from_str::<serde_json::Value>(
+            &std::fs::read_to_string(run.path().join("manifest.json")).expect("manifest"),
+        )
+        .expect("parse manifest");
+        let traces =
+            vec![json!({"node_id":"extract","status":"failed","failure":{"kind":"timeout"}})];
+        let summary = operator_status_summary(run.path(), &manifest, &traces);
+        assert_eq!(summary["current_state"], "success");
+        assert_eq!(summary["verification_result"], "artifact-index-missing");
+        assert!(summary["critical_failure"].is_object());
+        assert!(summary["next_action"].as_str().expect("next action").contains("dag verify"));
+    }
+
+    #[test]
+    fn status_human_output_keeps_operator_order() {
+        let summary = json!({
+            "current_state":"failed",
+            "next_action":"run explain",
+            "critical_failure":{"node_id":"n1"},
+            "evidence_path":"/tmp/run",
+            "verification_result":"evidence-present"
+        });
+        let rendered = operator_status_human(&summary);
+        let expected = [
+            "current_state:",
+            "next_action:",
+            "critical_failure:",
+            "evidence_path:",
+            "verification_result:",
+        ];
+        let mut cursor = 0usize;
+        for marker in expected {
+            let index = rendered[cursor..].find(marker).expect("marker order") + cursor;
+            cursor = index + marker.len();
+        }
+    }
+
+    #[test]
+    fn status_next_action_requests_verification_when_evidence_is_missing() {
+        let action =
+            status_next_action("success", "artifact-index-missing", &serde_json::Value::Null);
+        assert!(action.contains("dag verify"));
     }
 }

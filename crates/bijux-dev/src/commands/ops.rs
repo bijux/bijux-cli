@@ -3680,7 +3680,44 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             ));
         }
     }
+    let report = evaluate_distribution_delivery_goals(&root)?;
+    if !report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "distribution delivery contract failed: {}",
+            serde_json::to_string(&report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
+}
+
+pub(super) fn run_distribution_delivery_contract_report() -> Result<Value, String> {
+    let root = repo_root()?;
+    evaluate_distribution_delivery_goals(&root)
+}
+
+fn evaluate_distribution_delivery_goals(root: &Path) -> Result<Value, String> {
+    let reports = vec![
+        evaluate_publishable_crates(root)?,
+        evaluate_python_bridge_distribution(root)?,
+        evaluate_release_artifacts_runnable(root)?,
+        evaluate_example_task_index(root)?,
+        evaluate_executable_docs_recipes(root)?,
+        evaluate_install_paths_predictable(root)?,
+        evaluate_local_dev_loop_focus(root)?,
+        evaluate_app_integration_documentation(root)?,
+        evaluate_limitations_visibility(root)?,
+        evaluate_production_candidate_suite(root)?,
+    ];
+    let failed_goals: Vec<String> = reports
+        .iter()
+        .filter(|report| !report["ok"].as_bool().unwrap_or(false))
+        .map(|report| report["goal"].as_str().unwrap_or("unknown").to_string())
+        .collect();
+    Ok(json!({
+        "ok": failed_goals.is_empty(),
+        "goals": reports,
+        "failed_goals": failed_goals,
+    }))
 }
 
 pub(super) fn run_drift_dashboard() -> Result<(), String> {
@@ -4406,6 +4443,894 @@ pub(super) fn run_repo_hygiene_suite_guard() -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+fn evaluate_publishable_crates(root: &Path) -> Result<Value, String> {
+    let metadata_json =
+        command_stdout(root, "cargo", &["metadata", "--no-deps", "--format-version", "1"])?;
+    let metadata: Value = serde_json::from_str(&metadata_json).map_err(|err| err.to_string())?;
+    let packages = metadata["packages"]
+        .as_array()
+        .ok_or_else(|| "cargo metadata missing packages".to_string())?;
+
+    let mut crate_reports = Vec::new();
+    let mut violations = Vec::new();
+
+    for package in packages {
+        let publish = package.get("publish").cloned().unwrap_or(Value::Null);
+        if matches!(publish, Value::Array(ref values) if values.is_empty()) {
+            continue;
+        }
+        let Some(name) = package.get("name").and_then(Value::as_str) else {
+            continue;
+        };
+        if !name.starts_with("bijux-") {
+            continue;
+        }
+        let manifest_path = package
+            .get("manifest_path")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("manifest_path missing for package {name}"))?;
+        let manifest_path = PathBuf::from(manifest_path);
+        let crate_dir = manifest_path
+            .parent()
+            .ok_or_else(|| format!("manifest has no parent: {}", manifest_path.display()))?
+            .to_path_buf();
+
+        let description_ok = package
+            .get("description")
+            .and_then(Value::as_str)
+            .is_some_and(|value| !value.trim().is_empty());
+        if !description_ok {
+            violations.push(format!("{name}: package description is required"));
+        }
+        let readme_rel = package
+            .get("readme")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("{name}: package readme is required"))?;
+        let readme_path = crate_dir.join(readme_rel);
+        if !readme_path.exists() {
+            violations
+                .push(format!("{name}: readme path does not exist: {}", readme_path.display()));
+        }
+        for (field, key) in [
+            ("license", "license"),
+            ("repository", "repository"),
+            ("homepage", "homepage"),
+            ("documentation", "documentation"),
+        ] {
+            if package.get(key).and_then(Value::as_str).is_none_or(|value| value.trim().is_empty())
+            {
+                violations.push(format!("{name}: package {field} is required"));
+            }
+        }
+        if package.get("keywords").and_then(Value::as_array).is_none_or(|values| values.is_empty())
+        {
+            violations.push(format!("{name}: at least one keyword is required"));
+        }
+        if package
+            .get("categories")
+            .and_then(Value::as_array)
+            .is_none_or(|values| values.is_empty())
+        {
+            violations.push(format!("{name}: at least one category is required"));
+        }
+        let targets = package.get("targets").and_then(Value::as_array).cloned().unwrap_or_default();
+        let has_lib_or_bin = targets.iter().any(|target| {
+            target
+                .get("kind")
+                .and_then(Value::as_array)
+                .is_some_and(|kinds| kinds.iter().any(|kind| kind == "lib" || kind == "bin"))
+        });
+        if !has_lib_or_bin {
+            violations.push(format!("{name}: publishable package must expose a lib or bin target"));
+        }
+
+        let package_list_status = Command::new("cargo")
+            .args(["package", "-p", name, "--allow-dirty", "--list"])
+            .current_dir(root)
+            .status()
+            .map_err(|err| format!("{name}: cargo package --list failed to start: {err}"))?;
+        if !package_list_status.success() {
+            violations.push(format!("{name}: cargo package --list failed"));
+        }
+
+        crate_reports.push(json!({
+            "name": name,
+            "manifest": manifest_path.strip_prefix(root).unwrap_or(&manifest_path).to_string_lossy(),
+            "readme": readme_path.strip_prefix(root).unwrap_or(&readme_path).to_string_lossy(),
+        }));
+    }
+
+    Ok(json!({
+        "goal": "G191",
+        "ok": violations.is_empty(),
+        "publishable_crates": crate_reports,
+        "violations": violations,
+    }))
+}
+
+fn evaluate_python_bridge_distribution(root: &Path) -> Result<Value, String> {
+    let bridge_root = root.join("crates/bijux-cli-python");
+    let pyproject_path = bridge_root.join("pyproject.toml");
+    let mut violations = Vec::new();
+
+    let pyproject_text = fs::read_to_string(&pyproject_path)
+        .map_err(|err| format!("failed to read {}: {err}", pyproject_path.display()))?;
+    let pyproject: toml::Value = toml::from_str(&pyproject_text)
+        .map_err(|err| format!("failed to parse pyproject: {err}"))?;
+    let project = pyproject
+        .get("project")
+        .and_then(toml::Value::as_table)
+        .ok_or_else(|| "pyproject missing [project] table".to_string())?;
+    if project.get("name").and_then(toml::Value::as_str) != Some("bijux-cli") {
+        violations.push("pyproject [project].name must be `bijux-cli`".to_string());
+    }
+    if project
+        .get("requires-python")
+        .and_then(toml::Value::as_str)
+        .is_none_or(|value| !value.contains("3.11"))
+    {
+        violations
+            .push("pyproject [project].requires-python must advertise Python 3.11+".to_string());
+    }
+    let scripts = project
+        .get("scripts")
+        .and_then(toml::Value::as_table)
+        .ok_or_else(|| "pyproject missing [project.scripts] table".to_string())?;
+    if scripts.get("bijux").and_then(toml::Value::as_str).is_none_or(str::is_empty) {
+        violations.push("pyproject [project.scripts].bijux entry is required".to_string());
+    }
+
+    for rel in ["python/bijux_cli_py/__init__.py", "python/bijux_cli_py/cli.py", "README.md"] {
+        if !bridge_root.join(rel).exists() {
+            violations.push(format!("python bridge file missing: crates/bijux-cli-python/{rel}"));
+        }
+    }
+
+    let metadata_json =
+        command_stdout(root, "cargo", &["metadata", "--no-deps", "--format-version", "1"])?;
+    let metadata: Value = serde_json::from_str(&metadata_json).map_err(|err| err.to_string())?;
+    let packages = metadata["packages"]
+        .as_array()
+        .ok_or_else(|| "cargo metadata missing packages".to_string())?;
+    let mut runtime_version = None::<String>;
+    let mut bridge_version = None::<String>;
+    for package in packages {
+        let name = package.get("name").and_then(Value::as_str).unwrap_or_default();
+        let version = package.get("version").and_then(Value::as_str).unwrap_or_default();
+        if name == "bijux-cli" {
+            runtime_version = Some(version.to_string());
+        }
+        if name == "bijux-cli-python" {
+            bridge_version = Some(version.to_string());
+        }
+    }
+    if runtime_version.is_none() || bridge_version.is_none() || runtime_version != bridge_version {
+        violations.push(format!(
+            "python bridge cargo crate version must match runtime crate version (runtime={:?}, bridge={:?})",
+            runtime_version, bridge_version
+        ));
+    }
+
+    let python_bin = if Command::new("python3").arg("--version").status().is_ok() {
+        "python3"
+    } else {
+        "python"
+    };
+    let import_status = Command::new(python_bin)
+        .args([
+            "-c",
+            "import pathlib,sys; sys.path.insert(0, str(pathlib.Path('crates/bijux-cli-python/python').resolve())); import bijux_cli_py, bijux_cli_py.cli; print(bijux_cli_py.__name__)",
+        ])
+        .current_dir(root)
+        .status()
+        .map_err(|err| format!("python import smoke failed to start: {err}"))?;
+    if !import_status.success() {
+        violations.push("python bridge import smoke failed".to_string());
+    }
+
+    let build_out_dir = root.join("artifacts/release/python-dist-smoke");
+    fs::create_dir_all(&build_out_dir).map_err(|err| err.to_string())?;
+    let build_status = Command::new(python_bin)
+        .args([
+            "-m",
+            "build",
+            "--sdist",
+            "--wheel",
+            "--outdir",
+            build_out_dir.to_string_lossy().as_ref(),
+            "crates/bijux-cli-python",
+        ])
+        .current_dir(root)
+        .status()
+        .map_err(|err| format!("python build smoke failed to start: {err}"))?;
+    if !build_status.success() {
+        violations.push("python bridge wheel/sdist build smoke failed".to_string());
+    }
+
+    Ok(json!({
+        "goal": "G192",
+        "ok": violations.is_empty(),
+        "python_bin": python_bin,
+        "output_dir": build_out_dir.strip_prefix(root).unwrap_or(&build_out_dir).to_string_lossy(),
+        "violations": violations,
+    }))
+}
+
+fn evaluate_release_artifacts_runnable(root: &Path) -> Result<Value, String> {
+    let mut violations = Vec::new();
+    let doc_rel = "docs/spec/RELEASE_BINARY_VERIFICATION.md";
+    let scenario_rel = "configs/dag/release/release_smoke_scenarios.json";
+    let policy = fs::read_to_string(root.join(doc_rel))
+        .map_err(|err| format!("failed to read {doc_rel}: {err}"))?;
+    for required_cmd in [
+        "bijux --json doctor",
+        "bijux --json cli paths",
+        "bijux dag validate --json evidence/authoring/examples/hello.dag.json",
+        "bijux dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json",
+        "bijux dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}",
+        "bijux dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}",
+        "bijux dag status --json ${RUN_DIR}",
+    ] {
+        if !policy.contains(required_cmd) {
+            violations.push(format!("release binary verification doc missing `{required_cmd}`"));
+        }
+    }
+
+    let scenarios_payload = fs::read_to_string(root.join(scenario_rel))
+        .map_err(|err| format!("failed to read {scenario_rel}: {err}"))?;
+    let scenarios: Value = serde_json::from_str(&scenarios_payload)
+        .map_err(|err| format!("failed to parse {scenario_rel}: {err}"))?;
+    let scenario_rows = scenarios["scenarios"]
+        .as_array()
+        .ok_or_else(|| "release smoke scenarios must contain `scenarios` array".to_string())?;
+    if scenario_rows.len() < 2 {
+        violations.push(
+            "release smoke scenarios must include at least hello and shell ETL paths".to_string(),
+        );
+    }
+    for row in scenario_rows {
+        let id = row.get("id").and_then(Value::as_str).unwrap_or("<missing-id>");
+        let graph = row
+            .get("graph")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("scenario `{id}` is missing graph"))?;
+        if !root.join(graph).exists() {
+            violations.push(format!("scenario `{id}` graph does not exist: {graph}"));
+        }
+        let commands = row
+            .get("required_commands")
+            .and_then(Value::as_array)
+            .ok_or_else(|| format!("scenario `{id}` is missing required_commands"))?;
+        if commands.is_empty() {
+            violations.push(format!("scenario `{id}` must define at least one command"));
+        }
+    }
+
+    Ok(json!({
+        "goal": "G193",
+        "ok": violations.is_empty(),
+        "spec": doc_rel,
+        "scenario_contract": scenario_rel,
+        "scenario_count": scenario_rows.len(),
+        "violations": violations,
+    }))
+}
+
+fn evaluate_example_task_index(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/example_task_index.json";
+    let index_rel = "docs/reports/foundation/EXAMPLE_TASK_INDEX.md";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let rows = contract["tasks"]
+        .as_array()
+        .ok_or_else(|| "example task contract must contain `tasks` array".to_string())?;
+
+    let required = [
+        "validate",
+        "plan",
+        "run",
+        "replay",
+        "diff",
+        "cache",
+        "artifact",
+        "app-mount",
+        "plugin",
+        "bundle",
+    ];
+    let mut present = BTreeSet::new();
+    let mut violations = Vec::new();
+    for row in rows {
+        let Some(task) = row.get("task").and_then(Value::as_str) else {
+            violations.push("example task entry missing `task`".to_string());
+            continue;
+        };
+        present.insert(task.to_string());
+        let graph = row
+            .get("graph")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("task `{task}` is missing graph"))?;
+        if !root.join(graph).exists() {
+            violations.push(format!("task `{task}` graph does not exist: {graph}"));
+        }
+        if row.get("command").and_then(Value::as_str).is_none_or(str::is_empty) {
+            violations.push(format!("task `{task}` command is required"));
+        }
+    }
+    for task in required {
+        if !present.contains(task) {
+            violations.push(format!("required task is missing from contract: {task}"));
+        }
+    }
+
+    let index_body = fs::read_to_string(root.join(index_rel))
+        .map_err(|err| format!("failed to read {index_rel}: {err}"))?;
+    for task in present {
+        if !index_body.contains(&format!("`{task}`")) {
+            violations.push(format!("example task index markdown is missing task `{task}`"));
+        }
+    }
+
+    Ok(json!({
+        "goal": "G194",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "index": index_rel,
+        "task_count": rows.len(),
+        "violations": violations,
+    }))
+}
+
+fn evaluate_executable_docs_recipes(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/executable_docs_recipes.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let recipes = contract["recipes"]
+        .as_array()
+        .ok_or_else(|| "docs recipes contract must contain `recipes` array".to_string())?;
+
+    let mut violations = Vec::new();
+    let mut total_commands = 0usize;
+    for recipe in recipes {
+        let doc = recipe
+            .get("doc")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "recipe entry missing doc field".to_string())?;
+        let commands = recipe
+            .get("commands")
+            .and_then(Value::as_array)
+            .ok_or_else(|| format!("recipe for `{doc}` missing commands array"))?;
+        if commands.is_empty() {
+            violations.push(format!("recipe for `{doc}` must include at least one command"));
+            continue;
+        }
+        let body = fs::read_to_string(root.join(doc))
+            .map_err(|err| format!("failed to read {doc}: {err}"))?;
+        for command in commands {
+            let Some(command) = command.as_str() else {
+                violations.push(format!("recipe for `{doc}` contains non-string command entry"));
+                continue;
+            };
+            total_commands += 1;
+            if !(command.starts_with("bijux ") || command.starts_with("python -m ")) {
+                violations.push(format!(
+                    "recipe command must start with `bijux` or `python -m`: {command}"
+                ));
+            }
+            if !body.contains(command) {
+                violations
+                    .push(format!("documentation `{doc}` is missing recipe command `{command}`"));
+            }
+        }
+    }
+
+    if !root.join("crates/bijux-dag-app/tests/docs_executable_recipes_contract.rs").exists() {
+        violations.push("missing docs executable recipe contract test".to_string());
+    }
+
+    Ok(json!({
+        "goal": "G195",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "recipe_count": recipes.len(),
+        "command_count": total_commands,
+        "violations": violations,
+    }))
+}
+
+fn evaluate_install_paths_predictable(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/install_path_contract.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+
+    let paths_output = command_stdout(
+        root,
+        "cargo",
+        &["run", "-q", "-p", "bijux-cli", "--", "--json", "cli", "paths"],
+    )?;
+    let paths_payload: Value = serde_json::from_str(&paths_output)
+        .map_err(|err| format!("cli paths output is not JSON: {err}"))?;
+    let doctor_output =
+        command_stdout(root, "cargo", &["run", "-q", "-p", "bijux-cli", "--", "--json", "doctor"])?;
+    let doctor_payload: Value = serde_json::from_str(&doctor_output)
+        .map_err(|err| format!("doctor output is not JSON: {err}"))?;
+
+    let mut violations = Vec::new();
+    for key in contract["required_keys"]
+        .as_array()
+        .ok_or_else(|| "install path contract missing required_keys".to_string())?
+    {
+        let Some(key) = key.as_str() else {
+            violations.push("required_keys must contain strings".to_string());
+            continue;
+        };
+        if paths_payload.get(key).is_none() {
+            violations.push(format!("cli paths output missing required key `{key}`"));
+            continue;
+        }
+        if matches!(paths_payload.get(key), Some(Value::String(value)) if value.trim().is_empty()) {
+            violations.push(format!("cli paths key `{key}` must not be empty"));
+        }
+    }
+    for section in contract["doctor_required_sections"]
+        .as_array()
+        .ok_or_else(|| "install path contract missing doctor_required_sections".to_string())?
+    {
+        let Some(section) = section.as_str() else {
+            violations.push("doctor_required_sections must contain strings".to_string());
+            continue;
+        };
+        if doctor_payload.get(section).is_none() {
+            violations.push(format!("doctor output missing required section `{section}`"));
+        }
+    }
+
+    Ok(json!({
+        "goal": "G196",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "paths_command": contract["command"],
+        "doctor_command": contract["doctor_command"],
+        "violations": violations,
+    }))
+}
+
+fn evaluate_local_dev_loop_focus(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/change_impact_commands.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let lanes = contract["lanes"]
+        .as_array()
+        .ok_or_else(|| "change-impact contract must contain `lanes` array".to_string())?;
+
+    let mut violations = Vec::new();
+    let mut lane_map: Vec<(String, Vec<String>, Vec<String>)> = Vec::new();
+    for lane in lanes {
+        let id = lane
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "change-impact lane missing id".to_string())?;
+        let prefixes = lane["path_prefixes"]
+            .as_array()
+            .ok_or_else(|| format!("lane `{id}` missing path_prefixes"))?
+            .iter()
+            .filter_map(Value::as_str)
+            .map(ToOwned::to_owned)
+            .collect::<Vec<_>>();
+        let commands = lane["commands"]
+            .as_array()
+            .ok_or_else(|| format!("lane `{id}` missing commands"))?
+            .iter()
+            .filter_map(Value::as_str)
+            .map(ToOwned::to_owned)
+            .collect::<Vec<_>>();
+        if prefixes.is_empty() {
+            violations.push(format!("lane `{id}` requires at least one path prefix"));
+        }
+        if commands.is_empty() {
+            violations.push(format!("lane `{id}` requires at least one verification command"));
+        }
+        lane_map.push((id.to_string(), prefixes, commands));
+    }
+
+    let required = ["cli", "dag-core", "runtime", "artifacts", "app"];
+    for id in required {
+        if !lane_map.iter().any(|(lane_id, _, _)| lane_id == id) {
+            violations.push(format!("change-impact contract missing required lane `{id}`"));
+        }
+    }
+
+    let changed = command_stdout(root, "git", &["status", "--porcelain"])?;
+    let changed_files = changed
+        .lines()
+        .filter_map(|line| {
+            let path = line.get(3..)?.trim();
+            if path.is_empty() {
+                None
+            } else {
+                Some(path.to_string())
+            }
+        })
+        .collect::<Vec<_>>();
+    let mut selected_lanes = BTreeSet::new();
+    let mut selected_commands = BTreeSet::new();
+    for file in &changed_files {
+        for (lane_id, prefixes, commands) in &lane_map {
+            if prefixes.iter().any(|prefix| file.starts_with(prefix)) {
+                selected_lanes.insert(lane_id.clone());
+                for command in commands {
+                    selected_commands.insert(command.clone());
+                }
+            }
+        }
+    }
+
+    let report_path = root.join("artifacts/release/change_impact_runner_report.json");
+    if let Some(parent) = report_path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    write_pretty_json(
+        &report_path,
+        &json!({
+            "contract": contract_rel,
+            "changed_files": changed_files,
+            "selected_lanes": selected_lanes,
+            "selected_commands": selected_commands,
+        }),
+    )?;
+
+    Ok(json!({
+        "goal": "G197",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "changed_file_count": changed_files.len(),
+        "selected_lane_count": selected_lanes.len(),
+        "selected_command_count": selected_commands.len(),
+        "report": report_path.strip_prefix(root).unwrap_or(&report_path).to_string_lossy(),
+        "violations": violations,
+    }))
+}
+
+fn evaluate_app_integration_documentation(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/app_integration_scenario.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let doc_rel = contract
+        .get("doc")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "app integration contract missing doc".to_string())?;
+    let doc_body = fs::read_to_string(root.join(doc_rel))
+        .map_err(|err| format!("failed to read {doc_rel}: {err}"))?;
+
+    let mut violations = Vec::new();
+    let required_assets = contract["required_assets"]
+        .as_array()
+        .ok_or_else(|| "app integration contract missing required_assets".to_string())?;
+    for asset in required_assets {
+        let Some(asset) = asset.as_str() else {
+            violations.push("required_assets entries must be strings".to_string());
+            continue;
+        };
+        if !root.join(asset).exists() {
+            violations.push(format!("required app integration asset is missing: {asset}"));
+        }
+        if !doc_body.contains(asset) {
+            violations.push(format!("app integration doc is missing asset reference: {asset}"));
+        }
+    }
+
+    let required_commands = contract["required_commands"]
+        .as_array()
+        .ok_or_else(|| "app integration contract missing required_commands".to_string())?;
+    let mut saw_apps = false;
+    let mut saw_plugins = false;
+    for command in required_commands {
+        let Some(command) = command.as_str() else {
+            violations.push("required_commands entries must be strings".to_string());
+            continue;
+        };
+        saw_apps |= command.starts_with("bijux apps ");
+        saw_plugins |= command.starts_with("bijux plugins ");
+        if !doc_body.contains(command) {
+            violations.push(format!("app integration doc missing required command: {command}"));
+        }
+    }
+    if !saw_apps {
+        violations.push(
+            "app integration scenario must include at least one `bijux apps` command".to_string(),
+        );
+    }
+    if !saw_plugins {
+        violations.push(
+            "app integration scenario must include at least one `bijux plugins` command"
+                .to_string(),
+        );
+    }
+
+    Ok(json!({
+        "goal": "G198",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "doc": doc_rel,
+        "required_command_count": required_commands.len(),
+        "required_asset_count": required_assets.len(),
+        "violations": violations,
+    }))
+}
+
+fn evaluate_limitations_visibility(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/limitations_visibility_contract.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let commands = contract["commands"]
+        .as_array()
+        .ok_or_else(|| "limitations visibility contract must contain commands array".to_string())?;
+
+    let mut violations = Vec::new();
+    let mut command_reports = Vec::new();
+    for command in commands {
+        let id = command.get("id").and_then(Value::as_str).unwrap_or("<missing-id>");
+        let run = command.get("run").and_then(Value::as_str).unwrap_or("");
+        if run.trim().is_empty() {
+            violations.push(format!("command `{id}` is missing run field"));
+            continue;
+        }
+        let output = if id == "dag-capabilities" {
+            command_stdout(
+                root,
+                "cargo",
+                &["run", "-q", "-p", "bijux-dag-cli", "--", "dag", "capabilities", "--json"],
+            )?
+        } else if id == "root-doctor" {
+            command_stdout(
+                root,
+                "cargo",
+                &["run", "-q", "-p", "bijux-cli", "--", "--json", "doctor"],
+            )?
+        } else {
+            violations.push(format!("unknown limitations command id `{id}`"));
+            continue;
+        };
+        let payload: Value = serde_json::from_str(&output)
+            .map_err(|err| format!("command `{id}` did not emit JSON: {err}"))?;
+        let rendered = serde_json::to_string(&payload).map_err(|err| err.to_string())?;
+        for token in command["required_tokens"]
+            .as_array()
+            .ok_or_else(|| format!("command `{id}` missing required_tokens"))?
+        {
+            let Some(token) = token.as_str() else {
+                violations.push(format!("command `{id}` required_tokens must be strings"));
+                continue;
+            };
+            if !rendered.contains(token) {
+                violations.push(format!("command `{id}` output missing required token `{token}`"));
+            }
+        }
+
+        if id == "dag-capabilities" {
+            let matrix = payload["data"]["backend_capability_matrix"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default();
+            if matrix.is_empty() {
+                violations.push(
+                    "dag capabilities must return backend_capability_matrix entries".to_string(),
+                );
+            }
+            for row in matrix {
+                if row.get("status").is_none() || row.get("production_ready").is_none() {
+                    violations.push(
+                        "dag capabilities backend entries must include status and production_ready"
+                            .to_string(),
+                    );
+                    break;
+                }
+            }
+        }
+        command_reports.push(json!({"id": id, "ok": true}));
+    }
+
+    Ok(json!({
+        "goal": "G199",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "commands_checked": command_reports,
+        "violations": violations,
+    }))
+}
+
+fn evaluate_production_candidate_suite(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/production_candidate_suite.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let required_steps = contract["required_steps"]
+        .as_array()
+        .ok_or_else(|| "production candidate suite must define required_steps".to_string())?;
+    let required_set: BTreeSet<String> =
+        required_steps.iter().filter_map(Value::as_str).map(ToOwned::to_owned).collect();
+
+    let mut violations = Vec::new();
+    for required in [
+        "root.status",
+        "root.doctor",
+        "apps.list",
+        "plugins.list",
+        "dag.validate",
+        "dag.plan",
+        "dag.run",
+        "dag.replay",
+        "dag.diff",
+        "dag.export",
+        "dag.import",
+    ] {
+        if !required_set.contains(required) {
+            violations
+                .push(format!("production candidate suite missing required step `{required}`"));
+        }
+    }
+
+    let tmp = tempfile::tempdir().map_err(|err| err.to_string())?;
+    let run_root = tmp.path().join("runs");
+    fs::create_dir_all(&run_root).map_err(|err| err.to_string())?;
+    let graph = "evidence/authoring/examples/hello.dag.json";
+    let export_bundle = tmp.path().join("hello.export.json");
+
+    let mut executed = Vec::new();
+    let mut run_step = |id: &str, cmd: &str, args: &[&str]| -> Result<(), String> {
+        let status = Command::new(cmd)
+            .args(args)
+            .current_dir(root)
+            .status()
+            .map_err(|err| format!("step `{id}` failed to start: {err}"))?;
+        executed.push(json!({
+            "id": id,
+            "command": format!("{} {}", cmd, args.join(" ")),
+            "success": status.success(),
+            "code": status.code(),
+        }));
+        if !status.success() {
+            violations.push(format!("step `{id}` failed with status {status}"));
+        }
+        Ok(())
+    };
+
+    run_step("root.status", "cargo", &["run", "-q", "-p", "bijux-cli", "--", "--json", "status"])?;
+    run_step("root.doctor", "cargo", &["run", "-q", "-p", "bijux-cli", "--", "--json", "doctor"])?;
+    run_step(
+        "apps.list",
+        "cargo",
+        &["run", "-q", "-p", "bijux-cli", "--", "--json", "apps", "list"],
+    )?;
+    run_step(
+        "plugins.list",
+        "cargo",
+        &["run", "-q", "-p", "bijux-cli", "--", "--json", "plugins", "list"],
+    )?;
+    run_step(
+        "dag.validate",
+        "cargo",
+        &["run", "-q", "-p", "bijux-dag-cli", "--", "dag", "validate", "--json", graph],
+    )?;
+    run_step(
+        "dag.plan",
+        "cargo",
+        &["run", "-q", "-p", "bijux-dag-cli", "--", "dag", "plan", "explain", "--json", graph],
+    )?;
+    run_step(
+        "dag.run",
+        "cargo",
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "run",
+            "--json",
+            graph,
+            "--out",
+            run_root.to_string_lossy().as_ref(),
+        ],
+    )?;
+
+    let first_run = newest_run(&run_root)?;
+    run_step(
+        "dag.replay",
+        "cargo",
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "replay",
+            "--json",
+            first_run.to_string_lossy().as_ref(),
+            "--out",
+            run_root.to_string_lossy().as_ref(),
+        ],
+    )?;
+    let replay_run = newest_run(&run_root)?;
+    run_step(
+        "dag.diff",
+        "cargo",
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "diff",
+            "--json",
+            first_run.to_string_lossy().as_ref(),
+            replay_run.to_string_lossy().as_ref(),
+        ],
+    )?;
+    run_step(
+        "dag.export",
+        "cargo",
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "export",
+            "--json",
+            first_run.to_string_lossy().as_ref(),
+            "--out",
+            export_bundle.to_string_lossy().as_ref(),
+        ],
+    )?;
+    run_step(
+        "dag.import",
+        "cargo",
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "import",
+            "--json",
+            "--verify-only",
+            export_bundle.to_string_lossy().as_ref(),
+        ],
+    )?;
+
+    let report_path = root.join("artifacts/release/production_candidate_bundle.json");
+    if let Some(parent) = report_path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    let report = json!({
+        "goal": "G200",
+        "contract": contract_rel,
+        "ok": violations.is_empty(),
+        "executed_steps": executed,
+        "violations": violations,
+    });
+    write_pretty_json(&report_path, &report)?;
+    Ok(report)
 }
 
 pub(super) fn deep_merge_json(target: &mut Value, overlay: &Value) {

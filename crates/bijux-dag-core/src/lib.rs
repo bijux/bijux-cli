@@ -16,6 +16,8 @@ use serde_yaml as _;
 #[cfg(test)]
 use tempfile as _;
 
+#[path = "contracts/authoring_iteration03.rs"]
+pub mod authoring_iteration03;
 #[path = "build/builder.rs"]
 pub mod builder;
 #[path = "graph/canonical.rs"]
@@ -30,6 +32,8 @@ pub mod edge;
 pub mod effects;
 #[path = "contracts/error.rs"]
 pub mod error;
+#[path = "contracts/execution_iteration12.rs"]
+pub mod execution_iteration12;
 #[path = "analysis/fingerprint.rs"]
 pub mod fingerprint;
 #[path = "graph/graph.rs"]
@@ -42,14 +46,24 @@ pub mod model;
 pub mod node;
 #[path = "pipeline/parse.rs"]
 pub mod parse;
+#[path = "contracts/performance_iteration19_contracts.rs"]
+pub mod performance_iteration19_contracts;
 #[path = "planner/planner.rs"]
 pub mod planner;
+#[path = "contracts/planner_iteration05.rs"]
+pub mod planner_iteration05;
 #[path = "pipeline/resolve.rs"]
 pub mod resolve;
+#[path = "contracts/resource_iteration13.rs"]
+pub mod resource_iteration13;
 #[path = "graph/resources.rs"]
 pub mod resources;
+#[path = "contracts/scientific_integration_contracts.rs"]
+pub mod scientific_integration_contracts;
 #[path = "analysis/semantics.rs"]
 pub mod semantics;
+#[path = "contracts/semantics_iteration04.rs"]
+pub mod semantics_iteration04;
 #[path = "graph/topology.rs"]
 pub mod topology;
 #[path = "pipeline/validate.rs"]

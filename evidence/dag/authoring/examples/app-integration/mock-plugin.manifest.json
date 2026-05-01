@@ -1,0 +1,11 @@
+{
+  "schema_version": "plugin-manifest-v2",
+  "namespace": "example_plugin",
+  "display_name": "Example Plugin",
+  "version": "0.1.0",
+  "entrypoint": {
+    "kind": "binary",
+    "path": "plugins/example_plugin"
+  },
+  "description": "Example plugin descriptor used for root CLI integration documentation."
+}

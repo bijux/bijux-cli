@@ -1,0 +1,23 @@
+{
+  "schema_version": "command-envelope-v1",
+  "command": {
+    "segments": [
+      "dag",
+      "run"
+    ]
+  },
+  "success": false,
+  "code": "runtime.execution_failed",
+  "data": {},
+  "warnings": [],
+  "errors": [
+    {
+      "code": "runtime.execution_failed",
+      "failure_class": "runtime",
+      "message": "adapter exited with non-zero status",
+      "remediation_hint": "Inspect adapter stderr and retry with corrected inputs.",
+      "evidence_pointer": "artifacts/dag/runs/latest/stderr.txt"
+    }
+  ],
+  "timestamp": "2026-04-30T00:00:00Z"
+}

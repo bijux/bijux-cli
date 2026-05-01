@@ -40,6 +40,7 @@ fn parse_shell_tokens_strict(input: &str) -> Result<Vec<String>, ReplError> {
 fn output_format_from_name(name: &str) -> Option<OutputFormat> {
     match name {
         "json" => Some(OutputFormat::Json),
+        "jsonl" => Some(OutputFormat::Jsonl),
         "yaml" => Some(OutputFormat::Yaml),
         "text" => Some(OutputFormat::Text),
         _ => None,
@@ -49,6 +50,7 @@ fn output_format_from_name(name: &str) -> Option<OutputFormat> {
 fn output_format_name(format: OutputFormat) -> &'static str {
     match format {
         OutputFormat::Json => "json",
+        OutputFormat::Jsonl => "jsonl",
         OutputFormat::Yaml => "yaml",
         OutputFormat::Text => "text",
     }

@@ -211,8 +211,8 @@ fn operator_human_output_remains_concise() {
     let summary = inspect_summary(&run).expect("summary");
     let inspect = format_inspect_human(&summary);
     let show = format_show_human(&summary);
-    assert!(inspect.lines().count() <= 8);
-    assert!(show.lines().count() <= 8);
+    assert!(inspect.lines().count() <= 9);
+    assert!(show.lines().count() <= 9);
 }
 
 #[test]

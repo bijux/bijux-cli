@@ -6,7 +6,7 @@ use std::sync::OnceLock;
 
 pub const CLI_ROOT_ALIASES: &[&str] = &["doctor", "version", "completion", "repl", "inspect"];
 pub const ROOT_RUNTIME_COMMANDS: &[&str] =
-    &["status", "audit", "docs", "doctor", "version", "install", "apps"];
+    &["status", "audit", "docs", "doctor", "version", "install", "apps", "explain"];
 pub const ROOT_STATE_COMMANDS: &[&str] = &["history", "memory"];
 pub const ROOT_INTERACTION_COMMANDS: &[&str] = &["repl", "completion", "cli"];
 pub const ROOT_APPS_SUBCOMMANDS: &[&str] = &[
@@ -20,8 +20,8 @@ pub const ROOT_APPS_SUBCOMMANDS: &[&str] = &[
     "scaffold",
 ];
 pub const CLI_CONFIG_SUBCOMMANDS: &[&str] = &[
-    "get", "set", "unset", "clear", "reload", "validate", "schema", "docs", "explain", "repair",
-    "export", "load", "list",
+    "get", "set", "unset", "clear", "reload", "validate", "schema", "docs", "explain", "diff",
+    "repair", "export", "load", "list",
 ];
 pub const CLI_PLUGINS_SUBCOMMANDS: &[&str] = &[
     "list",
@@ -46,7 +46,7 @@ pub const REPL_REFERENCE_COMMANDS: &[&str] = &[
     ":help <command>",
     ":set trace on|off",
     ":set quiet on|off",
-    ":set format json|yaml|text",
+    ":set format json|jsonl|yaml|text",
     ":exit",
 ];
 
@@ -68,6 +68,7 @@ const ALIAS_REWRITES: &[(&str, &str)] = &[
     ("config schema", "cli config schema"),
     ("config docs", "cli config docs"),
     ("config explain", "cli config explain"),
+    ("config diff", "cli config diff"),
     ("config repair", "cli config repair"),
     ("config export", "cli config export"),
     ("config load", "cli config load"),
@@ -100,6 +101,7 @@ fn build_built_in_route_paths() -> Vec<String> {
         "docs".to_string(),
         "install".to_string(),
         "apps".to_string(),
+        "explain".to_string(),
         "apps list".to_string(),
         "apps doctor".to_string(),
         "apps which".to_string(),
@@ -131,6 +133,9 @@ fn build_built_in_route_paths() -> Vec<String> {
         "plugins doctor".to_string(),
         "cli status".to_string(),
         "cli paths".to_string(),
+        "cli routes".to_string(),
+        "cli shims".to_string(),
+        "cli script-contract".to_string(),
         "cli self-test".to_string(),
     ];
 

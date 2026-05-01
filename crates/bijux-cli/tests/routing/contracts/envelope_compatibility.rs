@@ -5,7 +5,8 @@
 use std::collections::BTreeMap;
 
 use bijux_cli::contracts::{
-    CommandPath, ErrorEnvelopeV1, ErrorPayloadV1, Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1,
+    CommandEnvelopeV1, CommandFailureClassV1, CommandFailureV1, CommandPath, CommandWarningV1,
+    ErrorEnvelopeV1, ErrorPayloadV1, Namespace, OutputEnvelopeMetaV1, OutputEnvelopeV1,
 };
 use clap as _;
 use proptest as _;
@@ -136,4 +137,152 @@ fn error_payload_constructor_enforces_required_fields() {
     assert!(ErrorPayloadV1::new("code", "", "usage").is_err());
     assert!(ErrorPayloadV1::new("code", "msg", "").is_err());
     assert!(ErrorPayloadV1::new("code", "msg", "usage").is_ok());
+}
+
+#[test]
+fn command_envelope_constructor_enforces_success_and_error_invariants() {
+    let command = CommandPath::new(&["cli", "status"]).expect("command path");
+    let warning = CommandWarningV1::new("degraded_path", "degraded runtime path").expect("warning");
+    let error = CommandFailureV1::new(
+        "usage.missing_arg",
+        CommandFailureClassV1::Usage,
+        "Missing argument: KEY",
+        "Provide the KEY positional argument and retry.",
+        None,
+    )
+    .expect("error");
+
+    let ok = CommandEnvelopeV1::new(
+        "command-envelope-v1",
+        command.clone(),
+        true,
+        "ok",
+        json!({"status":"ok"}),
+        vec![warning],
+        Vec::new(),
+        "2026-04-30T00:00:00Z",
+    );
+    assert!(ok.is_ok());
+
+    let invalid_success_with_error = CommandEnvelopeV1::new(
+        "command-envelope-v1",
+        command.clone(),
+        true,
+        "ok",
+        json!({}),
+        Vec::new(),
+        vec![error.clone()],
+        "2026-04-30T00:00:00Z",
+    );
+    assert!(invalid_success_with_error.is_err());
+
+    let invalid_failure_without_error = CommandEnvelopeV1::new(
+        "command-envelope-v1",
+        command,
+        false,
+        "usage.missing_arg",
+        json!({}),
+        Vec::new(),
+        Vec::new(),
+        "2026-04-30T00:00:00Z",
+    );
+    assert!(invalid_failure_without_error.is_err());
+
+    let failed = CommandEnvelopeV1::new(
+        "command-envelope-v1",
+        CommandPath::new(&["cli", "config", "get"]).expect("command"),
+        false,
+        "usage.missing_arg",
+        json!({}),
+        Vec::new(),
+        vec![error],
+        "2026-04-30T00:00:00Z",
+    );
+    assert!(failed.is_ok());
+}
+
+#[test]
+fn command_failure_builder_requires_failure_metadata_fields() {
+    assert!(CommandFailureV1::new(
+        "",
+        CommandFailureClassV1::Parse,
+        "bad token",
+        "fix token syntax",
+        None
+    )
+    .is_err());
+    assert!(CommandFailureV1::new(
+        "parse.unexpected_token",
+        CommandFailureClassV1::Parse,
+        "",
+        "fix token syntax",
+        None
+    )
+    .is_err());
+    assert!(CommandFailureV1::new(
+        "parse.unexpected_token",
+        CommandFailureClassV1::Parse,
+        "bad token",
+        "",
+        None
+    )
+    .is_err());
+    assert!(CommandFailureV1::new(
+        "io.read_failed",
+        CommandFailureClassV1::Io,
+        "failed to read file",
+        "verify permissions",
+        Some("")
+    )
+    .is_err());
+}
+
+#[test]
+fn command_envelope_fixtures_round_trip_as_stable_contract() {
+    for fixture in [
+        "tests/data/fixtures/routing/command_envelope_success_v1.json",
+        "tests/data/fixtures/routing/command_envelope_failure_v1.json",
+        "tests/data/fixtures/routing/command_envelope_failure_parse_v1.json",
+        "tests/data/fixtures/routing/command_envelope_failure_validation_v1.json",
+        "tests/data/fixtures/routing/command_envelope_failure_runtime_v1.json",
+        "tests/data/fixtures/routing/command_envelope_failure_io_v1.json",
+    ] {
+        let raw = std::fs::read_to_string(fixture).expect("read fixture");
+        let parsed: CommandEnvelopeV1 = serde_json::from_str(&raw).expect("fixture contract");
+        let rendered = serde_json::to_string_pretty(&parsed).expect("render fixture");
+        let expected: serde_json::Value = serde_json::from_str(&raw).expect("fixture json");
+        let actual: serde_json::Value = serde_json::from_str(&rendered).expect("roundtrip json");
+        assert_eq!(actual, expected, "fixture drift for {fixture}");
+    }
+}
+
+#[test]
+fn command_failure_fixtures_cover_parse_validation_runtime_and_io_classes() {
+    let fixtures = [
+        (
+            "tests/data/fixtures/routing/command_envelope_failure_parse_v1.json",
+            CommandFailureClassV1::Parse,
+        ),
+        (
+            "tests/data/fixtures/routing/command_envelope_failure_validation_v1.json",
+            CommandFailureClassV1::Validation,
+        ),
+        (
+            "tests/data/fixtures/routing/command_envelope_failure_runtime_v1.json",
+            CommandFailureClassV1::Runtime,
+        ),
+        (
+            "tests/data/fixtures/routing/command_envelope_failure_io_v1.json",
+            CommandFailureClassV1::Io,
+        ),
+    ];
+
+    for (fixture, class) in fixtures {
+        let raw = std::fs::read_to_string(fixture).expect("read fixture");
+        let parsed: CommandEnvelopeV1 = serde_json::from_str(&raw).expect("fixture contract");
+        assert!(!parsed.success, "failure fixture must be non-success: {fixture}");
+        let first = parsed.errors.first().expect("at least one error");
+        assert_eq!(first.failure_class, class, "failure class drift for {fixture}");
+        assert!(!first.remediation_hint.trim().is_empty(), "missing remediation for {fixture}");
+    }
 }

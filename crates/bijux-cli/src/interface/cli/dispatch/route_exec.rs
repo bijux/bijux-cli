@@ -30,6 +30,7 @@ fn populate_plugin_namespaces(
 fn should_preload_plugin_namespaces(normalized_path: &[String]) -> bool {
     matches!(normalized_path, [a] if a == "plugins")
         || matches!(normalized_path, [a, b] if a == "cli" && b == "inspect")
+        || matches!(normalized_path, [a] if a == "explain")
 }
 
 pub(super) fn route_response(
@@ -91,7 +92,7 @@ pub(super) fn route_response(
         return Ok(RouteResponse::Payload(payload));
     }
     if let Some(payload) =
-        root_handlers::try_handle(normalized_path, argv, &paths, &plugin_registry_path)
+        root_handlers::try_handle(normalized_path, argv, &paths, &registry, &plugin_registry_path)
     {
         return Ok(RouteResponse::Payload(payload));
     }

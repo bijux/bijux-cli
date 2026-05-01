@@ -151,7 +151,20 @@ fn dag_commands_groups_surface_is_stable_enough() {
     let output = dag_command().args(["dag", "commands", "--groups"]).output().expect("commands");
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in ["core", "runtime", "evidence", "cache", "diagnostics", "lab"] {
+    for token in [
+        "artifact",
+        "cache",
+        "config",
+        "doctor",
+        "export-import",
+        "graph",
+        "inspect",
+        "migrate",
+        "plan",
+        "prove",
+        "replay",
+        "run",
+    ] {
         assert!(text.contains(token), "missing group token: {token}");
     }
 }

@@ -51,6 +51,7 @@ fn write_manifest(path: &Path, namespace: &str, entrypoint: &str, min_version: &
   "compatibility": {{"min_inclusive":"{min_version}", "max_exclusive": null}},
   "namespace": "{namespace}",
   "kind": "python",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "{entrypoint}",
   "capabilities": []

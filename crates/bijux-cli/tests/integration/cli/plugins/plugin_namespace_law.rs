@@ -41,6 +41,7 @@ fn write_manifest(path: &Path, namespace: &str, alias: &str, entrypoint: &str) {
   "compatibility": {{"min_inclusive":"{current_plugin_host_floor}","max_exclusive":"{current_plugin_host_ceiling}"}},
   "namespace": "{namespace}",
   "kind": "delegated",
+  "trust_class": "community",
   "aliases": ["{alias}"],
   "entrypoint": "{entrypoint}",
   "capabilities": []

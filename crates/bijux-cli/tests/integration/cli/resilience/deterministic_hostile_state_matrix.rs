@@ -86,6 +86,7 @@ fn setup_external_plugin(root: &Path, plugins_dir: &Path, namespace: &str, entry
   "compatibility": {{"min_inclusive":"0.1.0", "max_exclusive": null}},
   "namespace": "{namespace}",
   "kind": "external-exec",
+  "trust_class": "community",
   "aliases": [],
   "entrypoint": "{}",
   "capabilities": []

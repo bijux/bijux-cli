@@ -99,6 +99,7 @@ fn append_help_sections(rendered: &mut String, path: &[&str]) {
     if path.is_empty() {
         sections.push(render_official_apps_section());
         sections.push(render_installed_plugins_section());
+        sections.push(render_diagnostics_section());
     }
     if let Some(subcommands) = help_subcommand_guide(path) {
         sections.push(subcommands);
@@ -139,6 +140,11 @@ fn render_official_apps_section() -> String {
 
 fn render_installed_plugins_section() -> String {
     "Installed plugins:\n  Use `bijux plugins list` to inspect the current plugin inventory."
+        .to_string()
+}
+
+fn render_diagnostics_section() -> String {
+    "Diagnostics:\n  Use `bijux doctor` for runtime health and `bijux apps doctor` for app mount health."
         .to_string()
 }
 
@@ -184,6 +190,7 @@ fn config_subcommand_help(command: &str) -> &'static str {
         "schema" => "Show the config schema registry",
         "docs" => "Generate markdown config reference from the schema",
         "explain" => "Explain the effective value and source of one key",
+        "diff" => "Compare effective config values between contexts",
         "repair" => "Recover a malformed config file and write a backup",
         "export" => "Write config to a target path",
         "load" => "Load config from a source path",
@@ -216,6 +223,9 @@ fn help_subcommand_guide(path: &[&str]) -> Option<String> {
         ["cli"] => Some(render_subcommand_guide(&[
             "status     Runtime status summary".to_string(),
             "paths      Runtime state and filesystem paths".to_string(),
+            "routes     Machine-readable route and alias inventory".to_string(),
+            "shims      Legacy shim lifecycle policy and findings".to_string(),
+            "script-contract Stable machine-readable automation contract".to_string(),
             "doctor     Runtime environment diagnostics".to_string(),
             "version    Runtime identity and provenance".to_string(),
             "repl       Interactive runtime shell".to_string(),
@@ -287,6 +297,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
     match path {
         [] => vec![
             "bijux status".to_string(),
+            "bijux explain status".to_string(),
             "bijux apps list".to_string(),
             "bijux dag --help".to_string(),
             "bijux install atlas --dry-run".to_string(),
@@ -294,9 +305,17 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux config set foo=bar".to_string(),
             "bijux plugins list".to_string(),
         ],
+        ["explain"] => vec![
+            "bijux explain status".to_string(),
+            "bijux explain dag run".to_string(),
+            "bijux explain plugins list --format json".to_string(),
+        ],
         ["cli"] => vec![
             "bijux cli status".to_string(),
             "bijux cli paths".to_string(),
+            "bijux cli routes --format json".to_string(),
+            "bijux cli shims --format json".to_string(),
+            "bijux cli script-contract --format json".to_string(),
             "bijux cli config list".to_string(),
             "bijux cli plugins list".to_string(),
         ],
@@ -331,6 +350,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux config list".to_string(),
             "bijux config get foo".to_string(),
             "bijux config set foo=bar".to_string(),
+            "bijux config diff --from-profile dev --to-profile prod".to_string(),
             "bijux config docs cli".to_string(),
             "bijux config export ./bijux.env".to_string(),
         ],
@@ -374,6 +394,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux cli config list".to_string(),
             "bijux cli config get foo".to_string(),
             "bijux cli config set foo=bar".to_string(),
+            "bijux cli config diff --from-profile dev --to-profile prod".to_string(),
         ],
         ["cli", "plugins"] => vec![
             "bijux cli plugins list".to_string(),

@@ -1,0 +1,23 @@
+{
+  "schema_version": "command-envelope-v1",
+  "command": {
+    "segments": [
+      "config",
+      "set"
+    ]
+  },
+  "success": false,
+  "code": "parse.invalid_pair",
+  "data": {},
+  "warnings": [],
+  "errors": [
+    {
+      "code": "parse.invalid_pair",
+      "failure_class": "parse",
+      "message": "Expected KEY=VALUE pair.",
+      "remediation_hint": "Use `bijux config set key=value`.",
+      "evidence_pointer": "artifacts/cli/errors/parse-invalid-pair.log"
+    }
+  ],
+  "timestamp": "2026-04-30T00:00:00Z"
+}

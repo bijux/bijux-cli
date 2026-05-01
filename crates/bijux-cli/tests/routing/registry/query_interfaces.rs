@@ -3,20 +3,40 @@
 
 use bijux_cli::api::diagnostics::{registry_inventory, route_inventory};
 use bijux_cli::api::routing::registry::RouteRegistry;
-use bijux_cli::contracts::contracts_schema_query;
+use bijux_cli::contracts::{contracts_schema_query, version_compatibility_lanes_query};
 
 #[test]
 fn contracts_schema_query_shape_is_stable() {
     let query = contracts_schema_query();
-    assert_eq!(query.schema_version, "v2");
+    assert_eq!(query.schema_version, "v4");
     assert_eq!(
         query.schema_ids,
         vec![
+            "command-envelope-v1".to_string(),
             "output-envelope-v1".to_string(),
             "error-envelope-v1".to_string(),
+            "config-schema-registry-v1".to_string(),
             "plugin-manifest-v2".to_string(),
             "product-mount-descriptor-v1".to_string(),
         ]
+    );
+}
+
+#[test]
+fn compatibility_lane_query_shape_is_stable() {
+    let query = version_compatibility_lanes_query();
+    assert_eq!(query.schema_version, "v1");
+    assert_eq!(query.surfaces.len(), 9);
+    assert_eq!(query.surfaces[0].surface, "cli-command-envelope");
+    assert_eq!(query.surfaces[0].current_versions, vec!["command-envelope-v1".to_string()]);
+    assert_eq!(query.surfaces[1].surface, "cli-output-envelope");
+    assert_eq!(query.surfaces[1].current_versions, vec!["output-envelope-v1".to_string()]);
+    assert_eq!(query.surfaces[3].surface, "config-schema-registry");
+    assert_eq!(query.surfaces[3].current_versions, vec!["config-schema-registry-v1".to_string()]);
+    assert_eq!(query.surfaces[8].surface, "replay-bundle");
+    assert_eq!(
+        query.surfaces[8].current_versions,
+        vec!["export-bundle/v0.1".to_string(), "proof-bundle/v0.1".to_string()]
     );
 }
 

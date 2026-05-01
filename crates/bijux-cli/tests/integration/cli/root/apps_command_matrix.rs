@@ -73,14 +73,27 @@ fn python_runtime() -> String {
     if let Ok(explicit) = env::var("BIJUX_TEST_PYTHON") {
         return explicit;
     }
-    for candidate in ["python3", "python"] {
+    for candidate in ["python3.12", "python3.11", "python3", "python"] {
         if let Ok(out) = Command::new(candidate).arg("--version").output() {
             if out.status.success() {
-                return candidate.to_string();
+                let text = if out.stdout.is_empty() {
+                    String::from_utf8_lossy(&out.stderr).to_string()
+                } else {
+                    String::from_utf8_lossy(&out.stdout).to_string()
+                };
+                let mut parts = text.trim().trim_start_matches("Python ").split('.');
+                let major = parts.next().and_then(|value| value.parse::<u32>().ok());
+                let minor = parts.next().and_then(|value| value.parse::<u32>().ok());
+                if major
+                    .zip(minor)
+                    .is_some_and(|(major, minor)| major > 3 || (major == 3 && minor >= 11))
+                {
+                    return candidate.to_string();
+                }
             }
         }
     }
-    panic!("python runtime is required for python app integration tests");
+    panic!("python 3.11+ runtime is required for python app integration tests");
 }
 
 #[test]
@@ -213,6 +226,22 @@ fn official_runtime_delegation_prefers_project_descriptor_entrypoint() {
 }
 
 #[test]
+fn official_runtime_delegation_reports_missing_runtime_binary() {
+    let root = temp_dir("apps-missing-runtime-binary");
+    let out = run_with(
+        &root,
+        &["dag", "status"],
+        &[("PATH", root.join("empty-bin").display().to_string())],
+    );
+
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty());
+    let stderr = String::from_utf8(out.stderr).expect("utf-8");
+    assert!(stderr.contains("failed to run `bijux dag`"));
+    assert!(stderr.contains("bijux-dag"));
+}
+
+#[test]
 fn apps_disabled_registry_marks_mount_as_disabled_without_descriptor_override() {
     let root = temp_dir("apps-disabled-registry");
     let app_dir = root.join(".bijux/apps");
@@ -250,6 +279,7 @@ fn apps_doctor_reports_shadowed_plugin_conflicts_for_official_namespace() {
         "compatibility": { "min_inclusive": "0.1.0", "max_exclusive": "1.0.0" },
         "namespace": "workflow",
         "kind": "external-exec",
+        "trust_class": "community",
         "aliases": [],
         "entrypoint": "workflow-plugin",
         "capabilities": []

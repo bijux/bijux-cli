@@ -106,6 +106,14 @@ pub(crate) enum Commands {
         #[command(subcommand)]
         command: SecurityCommands,
     },
+    Durability {
+        #[command(subcommand)]
+        command: DurabilityCommands,
+    },
+    Performance {
+        #[command(subcommand)]
+        command: PerformanceCommands,
+    },
     Release {
         #[command(subcommand)]
         command: ReleaseCommands,
@@ -832,10 +840,38 @@ pub(crate) enum LabCommands {
         #[command(subcommand)]
         command: SecurityCommands,
     },
+    Durability {
+        #[command(subcommand)]
+        command: DurabilityCommands,
+    },
+    Performance {
+        #[command(subcommand)]
+        command: PerformanceCommands,
+    },
 }
 
 #[derive(Subcommand)]
 pub(crate) enum SecurityCommands {
+    #[command(name = "filesystem-allowlist")]
+    FilesystemAllowlist {
+        simulation: PathBuf,
+    },
+    #[command(name = "env-allowlist")]
+    EnvAllowlist {
+        simulation: PathBuf,
+    },
+    #[command(name = "network-policy")]
+    NetworkPolicy {
+        dag: PathBuf,
+    },
+    #[command(name = "command-injection")]
+    CommandInjection {
+        simulation: PathBuf,
+    },
+    #[command(name = "artifact-secrets")]
+    ArtifactSecrets {
+        simulation: PathBuf,
+    },
     Auth {
         simulation: PathBuf,
     },
@@ -852,6 +888,22 @@ pub(crate) enum SecurityCommands {
     SupplyChain {
         simulation: PathBuf,
     },
+    #[command(name = "supply-inventory")]
+    SupplyInventory {
+        simulation: PathBuf,
+    },
+    #[command(name = "trust-classes")]
+    TrustClasses {
+        simulation: PathBuf,
+    },
+    #[command(name = "malformed-input-fuzz")]
+    MalformedInputFuzz {
+        simulation: PathBuf,
+    },
+    #[command(name = "dependency-risk")]
+    DependencyRisk {
+        simulation: PathBuf,
+    },
     #[command(name = "data-access")]
     DataAccess {
         simulation: PathBuf,
@@ -859,10 +911,60 @@ pub(crate) enum SecurityCommands {
     Override {
         simulation: PathBuf,
     },
+    #[command(name = "override-audit")]
+    OverrideAudit {
+        simulation: PathBuf,
+    },
     #[command(name = "safe-defaults")]
     SafeDefaults {
         dag: PathBuf,
     },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum PerformanceCommands {
+    #[command(name = "latency-budgets")]
+    LatencyBudgets { simulation: PathBuf },
+    #[command(name = "large-graph-corpus")]
+    LargeGraphCorpus { simulation: PathBuf },
+    #[command(name = "canonicalization-profile")]
+    CanonicalizationProfile { simulation: PathBuf },
+    #[command(name = "scheduler-churn")]
+    SchedulerChurn { simulation: PathBuf },
+    #[command(name = "artifact-write-profile")]
+    ArtifactWriteProfile { simulation: PathBuf },
+    #[command(name = "memory-ceilings")]
+    MemoryCeilings { simulation: PathBuf },
+    #[command(name = "streaming-output")]
+    StreamingOutput { simulation: PathBuf },
+    #[command(name = "run-history-compaction")]
+    RunHistoryCompaction { simulation: PathBuf },
+    #[command(name = "benchmark-report-governance")]
+    BenchmarkReportGovernance { simulation: PathBuf },
+    #[command(name = "performance-regression-gates")]
+    PerformanceRegressionGates { simulation: PathBuf },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum DurabilityCommands {
+    #[command(name = "module-surface-budgets")]
+    ModuleSurfaceBudgets { simulation: PathBuf },
+    #[command(name = "typed-contracts")]
+    TypedContracts { simulation: PathBuf },
+    #[command(name = "public-api-review")]
+    PublicApiReview { simulation: PathBuf },
+    #[command(name = "contract-alignment")]
+    ContractAlignment { simulation: PathBuf },
+    #[command(name = "compatibility-fixtures")]
+    CompatibilityFixtures { simulation: PathBuf },
+    #[command(name = "change-impact-labels")]
+    ChangeImpactLabels { simulation: PathBuf },
+    #[command(name = "release-notes-evidence")]
+    ReleaseNotesEvidence { simulation: PathBuf },
+    #[command(name = "medium-acceptance-gate")]
+    MediumAcceptanceGate { simulation: PathBuf },
+    #[command(name = "production-candidate")]
+    ProductionCandidate { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
@@ -898,6 +1000,16 @@ pub(crate) enum RunsCommands {
     History {
         #[arg(long)]
         root: PathBuf,
+        #[arg(long)]
+        status: Option<String>,
+        #[arg(long)]
+        source: Option<String>,
+        #[arg(long)]
+        offset: Option<usize>,
+        #[arg(long)]
+        limit: Option<usize>,
+        #[arg(long, action = clap::ArgAction::Append)]
+        select: Vec<String>,
     },
     IdExplain {
         run_id: String,
@@ -962,6 +1074,20 @@ pub(crate) enum RunsCommands {
         root: PathBuf,
     },
     Flakes {
+        #[arg(long)]
+        root: PathBuf,
+    },
+    #[command(name = "diagnostics-bundle")]
+    DiagnosticsBundle {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
+        #[arg(long)]
+        redact: bool,
+    },
+    Index {
         #[arg(long)]
         root: PathBuf,
     },
@@ -1061,6 +1187,16 @@ pub(crate) enum MigrateCommands {
         to: String,
         #[arg(long, default_value_t = false)]
         dry_run: bool,
+    },
+    Inspect {
+        #[arg(long)]
+        dag: Option<PathBuf>,
+        #[arg(long)]
+        run_dir: Option<PathBuf>,
+        #[arg(long)]
+        from: String,
+        #[arg(long)]
+        to: String,
     },
 }
 
