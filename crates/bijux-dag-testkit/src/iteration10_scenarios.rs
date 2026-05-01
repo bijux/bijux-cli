@@ -140,11 +140,40 @@ pub fn build_reducer_scenario_report(
     Ok(report)
 }
 
+/// Failure-and-retry scenario proof report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FailureRetryScenarioReportV1 {
+    pub retryable_failure_seen: bool,
+    pub non_retryable_failure_seen: bool,
+    pub root_cause_explained: bool,
+    pub downstream_impact_explained: bool,
+}
+
+/// Build failure-and-retry scenario proof.
+pub fn build_failure_retry_scenario_report(
+    report: FailureRetryScenarioReportV1,
+) -> Result<FailureRetryScenarioReportV1, String> {
+    if !report.retryable_failure_seen {
+        return Err("scenario must include retryable failure".to_string());
+    }
+    if !report.non_retryable_failure_seen {
+        return Err("scenario must include non-retryable failure".to_string());
+    }
+    if !report.root_cause_explained {
+        return Err("root cause explanation must be present".to_string());
+    }
+    if !report.downstream_impact_explained {
+        return Err("downstream impact explanation must be present".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_branch_join_scenario_report, build_hello_dag_scenario_report,
-        build_reducer_scenario_report, build_shell_etl_scenario_report, BranchJoinScenarioReportV1,
+        build_failure_retry_scenario_report, build_reducer_scenario_report,
+        build_shell_etl_scenario_report, BranchJoinScenarioReportV1, FailureRetryScenarioReportV1,
         HelloDagScenarioReportV1, ReducerScenarioReportV1, ShellEtlScenarioReportV1,
     };
 
@@ -205,5 +234,18 @@ mod tests {
         .expect("reducer scenario");
         assert_eq!(report.partition_count, 4);
         assert!(report.full_lineage_traced);
+    }
+
+    #[test]
+    fn g095_failure_retry_scenario_proves_root_cause_and_downstream_impact() {
+        let report = build_failure_retry_scenario_report(FailureRetryScenarioReportV1 {
+            retryable_failure_seen: true,
+            non_retryable_failure_seen: true,
+            root_cause_explained: true,
+            downstream_impact_explained: true,
+        })
+        .expect("failure retry scenario");
+        assert!(report.retryable_failure_seen);
+        assert!(report.non_retryable_failure_seen);
     }
 }
