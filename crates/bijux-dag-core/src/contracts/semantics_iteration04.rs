@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::{Graph, ParamValue, SemanticNodeKind};
+use crate::{lower_graph_to_execution_plan, EdgeKind, Graph, ParamValue, SemanticNodeKind};
 
 /// Branch decision evidence artifact with replay identity.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -275,14 +275,72 @@ pub fn validate_reducer_semantics(
     ReducerSemanticReportV1 { valid: violations.is_empty(), upstream_order, violations }
 }
 
+/// Edge semantics record from lowered execution plans.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EdgeSemanticRecordV1 {
+    /// Edge kind.
+    pub kind: String,
+    /// Source node.
+    pub from: String,
+    /// Destination node.
+    pub to: String,
+    /// Conditional decision label when present.
+    pub decision: Option<String>,
+}
+
+/// Edge semantics snapshot that proves lowering preserves edge kinds.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EdgeSemanticsSnapshotV1 {
+    /// Edge count by kind.
+    pub counts: Vec<(String, usize)>,
+    /// Lowered edge records.
+    pub lowered_edges: Vec<EdgeSemanticRecordV1>,
+}
+
+/// Build edge semantics snapshot from graph and lowered plan.
+pub fn build_edge_semantics_snapshot(graph: &Graph) -> Result<EdgeSemanticsSnapshotV1, String> {
+    let plan =
+        lower_graph_to_execution_plan(graph, Default::default()).map_err(|err| err.to_string())?;
+    let mut counts = vec![
+        (
+            "data".to_string(),
+            graph.edges.iter().filter(|edge| edge.kind == EdgeKind::Data).count(),
+        ),
+        (
+            "control".to_string(),
+            graph.edges.iter().filter(|edge| edge.kind == EdgeKind::Control).count(),
+        ),
+        (
+            "conditional".to_string(),
+            graph.edges.iter().filter(|edge| edge.kind == EdgeKind::Conditional).count(),
+        ),
+    ];
+    counts.sort_by(|left, right| left.0.cmp(&right.0));
+    let lowered_edges = plan
+        .edges
+        .into_iter()
+        .map(|edge| EdgeSemanticRecordV1 {
+            kind: match edge.kind {
+                EdgeKind::Data => "data".to_string(),
+                EdgeKind::Control => "control".to_string(),
+                EdgeKind::Conditional => "conditional".to_string(),
+            },
+            from: edge.from,
+            to: edge.to,
+            decision: edge.decision,
+        })
+        .collect::<Vec<_>>();
+    Ok(EdgeSemanticsSnapshotV1 { counts, lowered_edges })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_branch_decision_artifact, evaluate_trigger_readiness_from_states,
-        validate_barrier_semantics, validate_reducer_semantics, ReducerOrderingPolicyV1,
-        UpstreamTerminalStateV1,
+        build_branch_decision_artifact, build_edge_semantics_snapshot,
+        evaluate_trigger_readiness_from_states, validate_barrier_semantics,
+        validate_reducer_semantics, ReducerOrderingPolicyV1, UpstreamTerminalStateV1,
     };
-    use crate::{DagBuilder, NodeBuilder, NodeKind, SemanticNodeKind};
+    use crate::{BranchSpec, DagBuilder, EdgeKind, NodeBuilder, NodeKind, SemanticNodeKind, TriggerRule};
 
     #[test]
     fn g031_branch_decision_artifact_persists_chosen_and_skipped_branches() {
@@ -365,5 +423,58 @@ mod tests {
             .iter()
             .any(|item| item.code == "R3403_REDUCER_AMBIGUOUS_FANIN"));
         assert_eq!(report.upstream_order[0].1, vec!["a".to_string(), "b".to_string()]);
+    }
+
+    #[test]
+    fn g035_conditional_edges_are_preserved_in_lowered_plan_semantics() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("branch", NodeKind::Const)
+                    .semantic_kind(SemanticNodeKind::Branch)
+                    .output("decision", "artifacts/decision.json")
+                    .branch(BranchSpec {
+                        decisions: vec!["left".to_string(), "right".to_string()],
+                        default_decision: Some("right".to_string()),
+                        decision_output: "decision".to_string(),
+                    })
+                    .build(),
+            )
+            .node(
+                NodeBuilder::new("left_task", NodeKind::Const)
+                    .trigger_rule(TriggerRule::AnySuccess)
+                    .input("in")
+                    .output("out", "artifacts/left.json")
+                    .build(),
+            )
+            .node(
+                NodeBuilder::new("right_task", NodeKind::Const)
+                    .trigger_rule(TriggerRule::AnySuccess)
+                    .input("in")
+                    .output("out", "artifacts/right.json")
+                    .build(),
+            )
+            .edge("branch", "decision", "left_task", "in")
+            .edge("branch", "decision", "right_task", "in")
+            .build();
+        let mut graph = graph;
+        graph.edges[0].kind = EdgeKind::Conditional;
+        graph.edges[0].decision = Some("left".to_string());
+        graph.edges[1].kind = EdgeKind::Conditional;
+        graph.edges[1].decision = Some("right".to_string());
+
+        let snapshot = build_edge_semantics_snapshot(&graph).expect("snapshot");
+        assert_eq!(
+            snapshot
+                .counts
+                .iter()
+                .find(|entry| entry.0 == "conditional")
+                .map(|entry| entry.1)
+                .unwrap_or_default(),
+            2
+        );
+        assert!(snapshot
+            .lowered_edges
+            .iter()
+            .any(|edge| edge.kind == "conditional" && edge.decision.as_deref() == Some("left")));
     }
 }
