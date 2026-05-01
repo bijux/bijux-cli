@@ -504,6 +504,70 @@ pub fn diff_run_snapshots(
     Ok(changes)
 }
 
+/// Evidence bundle inputs that must verify together.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BundleProofInputsV1 {
+    pub manifest_hash: String,
+    pub plan_hash: String,
+    pub trace_hash: String,
+    pub inventory_hash: String,
+    pub cache_proof_hash: String,
+    pub replay_proof_hash: String,
+}
+
+/// Bundle verification result with tamper-sensitive details.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BundleVerificationReportV1 {
+    pub bundle_hash: String,
+    pub verified: bool,
+    pub failed_fields: Vec<String>,
+}
+
+/// Verify bundle evidence inputs together and detect tampering.
+pub fn verify_bundle_proofs(
+    expected: &BundleProofInputsV1,
+    observed: &BundleProofInputsV1,
+) -> BundleVerificationReportV1 {
+    let mut failed_fields = Vec::new();
+    for (field_name, left, right) in [
+        ("manifest_hash", expected.manifest_hash.as_str(), observed.manifest_hash.as_str()),
+        ("plan_hash", expected.plan_hash.as_str(), observed.plan_hash.as_str()),
+        ("trace_hash", expected.trace_hash.as_str(), observed.trace_hash.as_str()),
+        ("inventory_hash", expected.inventory_hash.as_str(), observed.inventory_hash.as_str()),
+        (
+            "cache_proof_hash",
+            expected.cache_proof_hash.as_str(),
+            observed.cache_proof_hash.as_str(),
+        ),
+        (
+            "replay_proof_hash",
+            expected.replay_proof_hash.as_str(),
+            observed.replay_proof_hash.as_str(),
+        ),
+    ] {
+        if left != right {
+            failed_fields.push(field_name.to_string());
+        }
+    }
+    let canonical = format!(
+        "{}|{}|{}|{}|{}|{}",
+        observed.manifest_hash,
+        observed.plan_hash,
+        observed.trace_hash,
+        observed.inventory_hash,
+        observed.cache_proof_hash,
+        observed.replay_proof_hash
+    );
+    let mut hasher = Sha256::new();
+    hasher.update(canonical.as_bytes());
+    let bundle_hash = format!("{:x}", hasher.finalize());
+    BundleVerificationReportV1 {
+        bundle_hash,
+        verified: failed_fields.is_empty(),
+        failed_fields,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -511,8 +575,9 @@ mod tests {
         build_replay_plan_readout,
         diff_run_snapshots,
         build_run_directory_layout_contract, content_identity_for_directory, content_identity_for_file,
-        ArtifactInventoryRecordV1, CacheKeyFactorsV1, CacheReuseContextV1, CacheReuseEvidenceV1,
-        NodeRunSnapshotV1, ReplayAncestryRecordV1, ReplayNodePlanDecisionV1, validate_replay_ancestry_records,
+        verify_bundle_proofs, ArtifactInventoryRecordV1, BundleProofInputsV1, CacheKeyFactorsV1,
+        CacheReuseContextV1, CacheReuseEvidenceV1, NodeRunSnapshotV1, ReplayAncestryRecordV1,
+        ReplayNodePlanDecisionV1, validate_replay_ancestry_records,
     };
 
     #[test]
@@ -758,5 +823,28 @@ mod tests {
             .expect("align change");
         assert_eq!(align.change_kind, "changed");
         assert!(align.changed_fields.contains(&"cache_decision".to_string()));
+    }
+
+    #[test]
+    fn g070_bundle_verification_detects_tampering() {
+        let expected = BundleProofInputsV1 {
+            manifest_hash: "m1".to_string(),
+            plan_hash: "p1".to_string(),
+            trace_hash: "t1".to_string(),
+            inventory_hash: "i1".to_string(),
+            cache_proof_hash: "c1".to_string(),
+            replay_proof_hash: "r1".to_string(),
+        };
+        let observed = BundleProofInputsV1 {
+            manifest_hash: "m1".to_string(),
+            plan_hash: "p1".to_string(),
+            trace_hash: "tampered-trace".to_string(),
+            inventory_hash: "i1".to_string(),
+            cache_proof_hash: "c1".to_string(),
+            replay_proof_hash: "r1".to_string(),
+        };
+        let report = verify_bundle_proofs(&expected, &observed);
+        assert!(!report.verified);
+        assert!(report.failed_fields.contains(&"trace_hash".to_string()));
     }
 }
