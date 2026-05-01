@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "doc": "docs/bijux-cli/interfaces/app-integration-scenario.md",
+  "required_assets": [
+    "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+    "evidence/authoring/examples/app-integration/mock-plugin.manifest.json"
+  ],
+  "required_commands": [
+    "bijux apps list --json",
+    "bijux apps which atlas --json",
+    "bijux apps doctor atlas --json",
+    "bijux plugins list --json",
+    "bijux plugins doctor --json"
+  ]
+}

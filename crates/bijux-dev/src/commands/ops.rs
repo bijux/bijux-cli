@@ -3729,6 +3729,13 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             serde_json::to_string(&dev_loop_report).unwrap_or_else(|_| "invalid report".to_string())
         ));
     }
+    let app_integration_report = evaluate_app_integration_documentation(&root)?;
+    if !app_integration_report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "app integration documentation contract failed: {}",
+            serde_json::to_string(&app_integration_report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
 }
 
@@ -4975,6 +4982,70 @@ fn evaluate_local_dev_loop_focus(root: &Path) -> Result<Value, String> {
         "selected_lane_count": selected_lanes.len(),
         "selected_command_count": selected_commands.len(),
         "report": report_path.strip_prefix(root).unwrap_or(&report_path).to_string_lossy(),
+        "violations": violations,
+    }))
+}
+
+fn evaluate_app_integration_documentation(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/app_integration_scenario.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let doc_rel = contract
+        .get("doc")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "app integration contract missing doc".to_string())?;
+    let doc_body =
+        fs::read_to_string(root.join(doc_rel)).map_err(|err| format!("failed to read {doc_rel}: {err}"))?;
+
+    let mut violations = Vec::new();
+    let required_assets = contract["required_assets"]
+        .as_array()
+        .ok_or_else(|| "app integration contract missing required_assets".to_string())?;
+    for asset in required_assets {
+        let Some(asset) = asset.as_str() else {
+            violations.push("required_assets entries must be strings".to_string());
+            continue;
+        };
+        if !root.join(asset).exists() {
+            violations.push(format!("required app integration asset is missing: {asset}"));
+        }
+        if !doc_body.contains(asset) {
+            violations.push(format!("app integration doc is missing asset reference: {asset}"));
+        }
+    }
+
+    let required_commands = contract["required_commands"]
+        .as_array()
+        .ok_or_else(|| "app integration contract missing required_commands".to_string())?;
+    let mut saw_apps = false;
+    let mut saw_plugins = false;
+    for command in required_commands {
+        let Some(command) = command.as_str() else {
+            violations.push("required_commands entries must be strings".to_string());
+            continue;
+        };
+        saw_apps |= command.starts_with("bijux apps ");
+        saw_plugins |= command.starts_with("bijux plugins ");
+        if !doc_body.contains(command) {
+            violations.push(format!("app integration doc missing required command: {command}"));
+        }
+    }
+    if !saw_apps {
+        violations.push("app integration scenario must include at least one `bijux apps` command".to_string());
+    }
+    if !saw_plugins {
+        violations.push("app integration scenario must include at least one `bijux plugins` command".to_string());
+    }
+
+    Ok(json!({
+        "goal": "G198",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "doc": doc_rel,
+        "required_command_count": required_commands.len(),
+        "required_asset_count": required_assets.len(),
         "violations": violations,
     }))
 }

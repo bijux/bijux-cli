@@ -45,6 +45,7 @@ flowchart LR
 - [CLI Surface](cli-surface.md)
 - [API Surface](api-surface.md)
 - [App Integration Guide](app-integration-guide.md)
+- [App Integration Scenario](app-integration-scenario.md)
 - [Configuration Surface](configuration-surface.md)
 - [Config Guide](config-guide.md)
 - [Generated Config Reference](generated-config-reference.md)
