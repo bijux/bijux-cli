@@ -64,9 +64,59 @@ pub fn evaluate_route_dispatch_and_help_startup(
     })
 }
 
+/// Parse/validation benchmark input across graph classes.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GraphValidationBenchmarkInputV1 {
+    pub small_graph_ms: f64,
+    pub medium_graph_ms: f64,
+    pub large_graph_ms: f64,
+    pub invalid_graph_ms: f64,
+    pub fuzz_graph_ms: f64,
+}
+
+/// Parse/validation benchmark budget report.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GraphValidationBenchmarkReportV1 {
+    pub max_ms: f64,
+    pub within_budget: bool,
+    pub diagnostics: Vec<String>,
+}
+
+/// Evaluate parse/validation benchmark budgets to prevent regression on varied graph classes.
+pub fn evaluate_graph_parse_and_validation_budget(
+    input: &GraphValidationBenchmarkInputV1,
+) -> Result<GraphValidationBenchmarkReportV1, String> {
+    let samples = [
+        ("small_graph_ms", input.small_graph_ms, 40.0),
+        ("medium_graph_ms", input.medium_graph_ms, 120.0),
+        ("large_graph_ms", input.large_graph_ms, 350.0),
+        ("invalid_graph_ms", input.invalid_graph_ms, 200.0),
+        ("fuzz_graph_ms", input.fuzz_graph_ms, 500.0),
+    ];
+    let mut max_ms = 0.0f64;
+    let mut diagnostics = Vec::new();
+    for (name, value, budget) in samples {
+        if !value.is_finite() || value < 0.0 {
+            return Err(format!("graph benchmark requires finite non-negative {name}"));
+        }
+        max_ms = max_ms.max(value);
+        if value > budget {
+            diagnostics.push(format!("{name} exceeds {budget:.0}ms budget"));
+        }
+    }
+    Ok(GraphValidationBenchmarkReportV1 {
+        max_ms,
+        within_budget: diagnostics.is_empty(),
+        diagnostics,
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{evaluate_route_dispatch_and_help_startup, RouteDispatchBenchmarkInputV1};
+    use super::{
+        evaluate_graph_parse_and_validation_budget, evaluate_route_dispatch_and_help_startup,
+        GraphValidationBenchmarkInputV1, RouteDispatchBenchmarkInputV1,
+    };
 
     #[test]
     fn g181_route_dispatch_and_help_startup_remain_responsive_under_inventory_growth() {
@@ -93,5 +143,29 @@ mod tests {
         .expect("slow benchmark should still report");
         assert!(!slow.within_budget);
         assert_eq!(slow.diagnostics.len(), 3);
+    }
+
+    #[test]
+    fn g182_graph_parse_and_validation_budget_catches_regressions() {
+        let healthy = evaluate_graph_parse_and_validation_budget(&GraphValidationBenchmarkInputV1 {
+            small_graph_ms: 12.0,
+            medium_graph_ms: 54.0,
+            large_graph_ms: 210.0,
+            invalid_graph_ms: 80.0,
+            fuzz_graph_ms: 330.0,
+        })
+        .expect("healthy graph benchmark");
+        assert!(healthy.within_budget);
+
+        let regressed = evaluate_graph_parse_and_validation_budget(&GraphValidationBenchmarkInputV1 {
+            small_graph_ms: 60.0,
+            medium_graph_ms: 170.0,
+            large_graph_ms: 470.0,
+            invalid_graph_ms: 290.0,
+            fuzz_graph_ms: 640.0,
+        })
+        .expect("regressed benchmark report");
+        assert!(!regressed.within_budget);
+        assert_eq!(regressed.diagnostics.len(), 5);
     }
 }
