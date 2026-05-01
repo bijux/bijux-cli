@@ -32,6 +32,8 @@ mod graph_helpers;
 mod import_cmd;
 #[path = "commands/iteration08_contracts.rs"]
 pub mod iteration08_contracts;
+#[path = "commands/iteration11_contracts.rs"]
+pub mod iteration11_contracts;
 mod inspect;
 #[path = "inspect/service.rs"]
 mod inspect_service;
