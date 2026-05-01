@@ -784,6 +784,82 @@ pub fn evaluate_semantic_lint(
     }
 }
 
+/// Authoring convergence report across JSON/file and builder styles.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphAuthoringConvergenceReportV1 {
+    /// Validation error codes from JSON/file authoring.
+    pub json_validation_error_codes: Vec<String>,
+    /// Validation error codes from builder authoring.
+    pub builder_validation_error_codes: Vec<String>,
+    /// JSON/file graph fingerprint.
+    pub json_graph_fingerprint: String,
+    /// Builder graph fingerprint.
+    pub builder_graph_fingerprint: String,
+    /// JSON/file planner fingerprint.
+    pub json_planner_fingerprint: String,
+    /// Builder planner fingerprint.
+    pub builder_planner_fingerprint: String,
+    /// Whether all surfaces converge.
+    pub converged: bool,
+    /// Divergence list when not converged.
+    pub divergences: Vec<String>,
+}
+
+/// Validate that JSON/file and builder authoring converge to one semantic model.
+pub fn build_graph_authoring_convergence_report(
+    json_graph: &str,
+    builder_graph: &Graph,
+) -> Result<GraphAuthoringConvergenceReportV1, GraphError> {
+    let parsed = parse_graph_strict(json_graph)?;
+    let json_compiled = compile_graph(&parsed)?;
+    let builder_compiled = compile_graph(builder_graph)?;
+
+    let json_validation_error_codes = json_compiled
+        .diagnostics
+        .iter()
+        .filter(|diag| diag.severity == Severity::Error)
+        .map(|diag| diag.code.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let builder_validation_error_codes = builder_compiled
+        .diagnostics
+        .iter()
+        .filter(|diag| diag.severity == Severity::Error)
+        .map(|diag| diag.code.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+
+    let json_plan = lower_graph_to_execution_plan(&json_compiled.normalized_graph, Default::default())
+        .map_err(|_| GraphError::ValidationFailed)?;
+    let builder_plan =
+        lower_graph_to_execution_plan(&builder_compiled.normalized_graph, Default::default())
+            .map_err(|_| GraphError::ValidationFailed)?;
+
+    let mut divergences = Vec::new();
+    if json_validation_error_codes != builder_validation_error_codes {
+        divergences.push("validation error code sets differ across authoring surfaces".to_string());
+    }
+    if json_compiled.graph_fingerprint != builder_compiled.graph_fingerprint {
+        divergences.push("graph fingerprints differ across authoring surfaces".to_string());
+    }
+    if json_plan.planner_fingerprint != builder_plan.planner_fingerprint {
+        divergences.push("planner fingerprints differ across authoring surfaces".to_string());
+    }
+
+    Ok(GraphAuthoringConvergenceReportV1 {
+        json_validation_error_codes,
+        builder_validation_error_codes,
+        json_graph_fingerprint: json_compiled.graph_fingerprint,
+        builder_graph_fingerprint: builder_compiled.graph_fingerprint,
+        json_planner_fingerprint: json_plan.planner_fingerprint,
+        builder_planner_fingerprint: builder_plan.planner_fingerprint,
+        converged: divergences.is_empty(),
+        divergences,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -792,7 +868,7 @@ mod tests {
         build_port_contract_enforcement_report, build_surgical_validation_diagnostic,
         validate_graph_package_import, GraphExampleExecutionEntryV1, GraphPackageBundleV1,
         GraphPackageFileEntryV1, LintPromotionPolicyV1, apply_graph_migration,
-        evaluate_semantic_lint, preview_graph_migration,
+        build_graph_authoring_convergence_report, evaluate_semantic_lint, preview_graph_migration,
     };
     use crate::{DagBuilder, Edge, EdgeKind, Effect, NodeBuilder, NodeKind, PortRef};
     use std::collections::BTreeSet;
@@ -1033,5 +1109,32 @@ mod tests {
             .blocking_lints
             .iter()
             .any(|finding| finding.code == "LINT_OUTPUT_MISSING"));
+    }
+
+    #[test]
+    fn g030_json_and_builder_authoring_converge_to_single_semantic_model() {
+        let builder_graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("extract", NodeKind::Const)
+                    .output("out", "artifacts/extract.json")
+                    .build(),
+            )
+            .node(
+                NodeBuilder::new("load", NodeKind::Shell)
+                    .input("in")
+                    .output("done", "artifacts/load.json")
+                    .effect(Effect::Filesystem)
+                    .build(),
+            )
+            .edge("extract", "out", "load", "in")
+            .build();
+        let json_graph = serde_json::to_string_pretty(&builder_graph).expect("serialize");
+
+        let report =
+            build_graph_authoring_convergence_report(&json_graph, &builder_graph).expect("report");
+        assert!(report.json_validation_error_codes.is_empty());
+        assert!(report.builder_validation_error_codes.is_empty());
+        assert!(report.converged);
+        assert!(report.divergences.is_empty());
     }
 }
