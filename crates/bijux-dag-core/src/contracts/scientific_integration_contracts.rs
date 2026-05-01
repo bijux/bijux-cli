@@ -420,6 +420,68 @@ pub fn evaluate_scientific_trust_promotion(
     }
 }
 
+/// Generic override category for scientific runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ScientificOverrideTypeV1 {
+    Reference,
+    Sample,
+    Qc,
+    Prerequisite,
+    EvidencePolicy,
+}
+
+/// Recorded scientific override action.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScientificOverrideRecordV1 {
+    pub override_id: String,
+    pub override_type: ScientificOverrideTypeV1,
+    pub actor: String,
+    pub reason: String,
+    pub risk_level: String,
+}
+
+/// Audit report for scientific overrides.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScientificOverrideAuditReportV1 {
+    pub override_count: usize,
+    pub high_risk_override_ids: Vec<String>,
+}
+
+/// Audit overrides and expose high-risk records for run-history visibility.
+pub fn audit_scientific_overrides(
+    overrides: &[ScientificOverrideRecordV1],
+) -> Result<ScientificOverrideAuditReportV1, String> {
+    let mut high_risk_override_ids = Vec::new();
+    let mut seen_ids = BTreeSet::new();
+    for entry in overrides {
+        for (field, value) in [
+            ("override_id", entry.override_id.as_str()),
+            ("actor", entry.actor.as_str()),
+            ("reason", entry.reason.as_str()),
+            ("risk_level", entry.risk_level.as_str()),
+        ] {
+            if value.trim().is_empty() {
+                return Err(format!("scientific override requires {field}"));
+            }
+        }
+        if !seen_ids.insert(entry.override_id.clone()) {
+            return Err(format!(
+                "duplicate scientific override_id '{}' is not allowed",
+                entry.override_id
+            ));
+        }
+        if entry.risk_level.eq_ignore_ascii_case("high") {
+            high_risk_override_ids.push(entry.override_id.clone());
+        }
+    }
+    high_risk_override_ids.sort();
+    Ok(ScientificOverrideAuditReportV1 {
+        override_count: overrides.len(),
+        high_risk_override_ids,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -428,9 +490,10 @@ mod tests {
         ScientificFindingClassV1, ScientificFindingModeV1, ScientificFindingV1,
         ReferenceAliasPolicyV1, ReferenceIdentityMetadataV1, SampleIdentityMismatchActionV1,
         ScientificRunTrustClassV1,
+        ScientificOverrideRecordV1, ScientificOverrideTypeV1,
         SampleIdentityPolicyV1, TruthSetComparisonV1, TruthSetEvidenceEnvelopeV1,
         attach_truth_set_comparison, evaluate_scientific_trust_promotion,
-        normalize_scientific_findings, validate_reference_identity_metadata,
+        normalize_scientific_findings, validate_reference_identity_metadata, audit_scientific_overrides,
     };
     use std::collections::BTreeMap;
 
@@ -592,5 +655,28 @@ mod tests {
             true,
         );
         assert!(publication_allowed.promotable);
+    }
+
+    #[test]
+    fn g177_scientific_overrides_are_audited_with_high_risk_visibility() {
+        let report = audit_scientific_overrides(&[
+            ScientificOverrideRecordV1 {
+                override_id: "ovr-1".to_string(),
+                override_type: ScientificOverrideTypeV1::Reference,
+                actor: "operator-a".to_string(),
+                reason: "patched reference alias mismatch".to_string(),
+                risk_level: "high".to_string(),
+            },
+            ScientificOverrideRecordV1 {
+                override_id: "ovr-2".to_string(),
+                override_type: ScientificOverrideTypeV1::Qc,
+                actor: "operator-b".to_string(),
+                reason: "accepted lower depth under outage".to_string(),
+                risk_level: "medium".to_string(),
+            },
+        ])
+        .expect("override audit should succeed");
+        assert_eq!(report.override_count, 2);
+        assert_eq!(report.high_risk_override_ids, vec!["ovr-1".to_string()]);
     }
 }
