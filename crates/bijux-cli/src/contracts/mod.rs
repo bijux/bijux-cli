@@ -14,6 +14,8 @@ pub mod execution;
 pub mod marker;
 /// Root operator flow contracts for backlog iteration 01.
 pub mod operator_iteration01;
+/// Official app, plugin, and SDK contracts for backlog iteration 02.
+pub mod operator_iteration02;
 /// Plugin manifest and compatibility contracts.
 pub mod plugin;
 /// Official product-mount reservation contracts.
