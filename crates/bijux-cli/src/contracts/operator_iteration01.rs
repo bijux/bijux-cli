@@ -444,6 +444,52 @@ pub fn build_python_bridge_command_parity_report(
     }
 }
 
+/// Official app route descriptor used during discovery and conflict resolution.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct OfficialAppRouteDescriptorV1 {
+    /// Route namespace key.
+    pub namespace: String,
+    /// Descriptor identifier/hash.
+    pub descriptor_id: String,
+    /// Priority (larger value wins).
+    pub priority: i32,
+}
+
+/// Official app discovery report with deterministic conflict outcomes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct OfficialAppDiscoveryReportV1 {
+    /// Winning descriptor per namespace.
+    pub winners: Vec<OfficialAppRouteDescriptorV1>,
+    /// Refused plugin namespace shadow attempts.
+    pub refused_plugin_shadows: Vec<String>,
+    /// Refused PATH shim shadow attempts.
+    pub refused_path_shims: Vec<String>,
+}
+
+/// Resolve official app discovery conflicts deterministically by namespace + priority.
+pub fn build_official_app_discovery_report(
+    descriptors: Vec<OfficialAppRouteDescriptorV1>,
+    plugin_shadow_attempts: Vec<String>,
+    path_shim_attempts: Vec<String>,
+) -> OfficialAppDiscoveryReportV1 {
+    use std::collections::BTreeMap;
+
+    let mut winners_by_namespace: BTreeMap<String, OfficialAppRouteDescriptorV1> = BTreeMap::new();
+    for descriptor in descriptors {
+        match winners_by_namespace.get(&descriptor.namespace) {
+            Some(existing) if existing.priority >= descriptor.priority => {}
+            _ => {
+                winners_by_namespace.insert(descriptor.namespace.clone(), descriptor);
+            }
+        }
+    }
+    OfficialAppDiscoveryReportV1 {
+        winners: winners_by_namespace.into_values().collect(),
+        refused_plugin_shadows: plugin_shadow_attempts,
+        refused_path_shims: path_shim_attempts,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -453,10 +499,11 @@ mod tests {
         classify_command_side_effect,
         build_completion_snapshot_from_registry,
         build_compact_operator_help_entrypoint, build_install_diagnosis_bundle,
+        build_official_app_discovery_report,
         build_python_bridge_command_parity_report,
         build_script_stable_command_envelope, evaluate_output_mode_parity,
         ActionableFailureClassV1, CompletionRouteEntryV1, InstallDiagnosticComponentV1,
-        OutputModeParityEntryV1, PythonBridgeParityEntryV1,
+        OfficialAppRouteDescriptorV1, OutputModeParityEntryV1, PythonBridgeParityEntryV1,
     };
 
     #[test]
@@ -617,5 +664,28 @@ mod tests {
         ]);
         assert!(!report.parity_exact);
         assert_eq!(report.mismatched_commands, vec!["bijux doctor --format json"]);
+    }
+
+    #[test]
+    fn g010_official_app_discovery_prefers_highest_priority_and_refuses_shadow_attempts() {
+        let report = build_official_app_discovery_report(
+            vec![
+                OfficialAppRouteDescriptorV1 {
+                    namespace: "dag".to_string(),
+                    descriptor_id: "dag-v1".to_string(),
+                    priority: 10,
+                },
+                OfficialAppRouteDescriptorV1 {
+                    namespace: "dag".to_string(),
+                    descriptor_id: "dag-v2".to_string(),
+                    priority: 20,
+                },
+            ],
+            vec!["plugin:community attempted dag".to_string()],
+            vec!["shim:bijux-dag attempted dag".to_string()],
+        );
+        assert_eq!(report.winners.len(), 1);
+        assert_eq!(report.winners[0].descriptor_id, "dag-v2");
+        assert_eq!(report.refused_plugin_shadows, vec!["plugin:community attempted dag"]);
     }
 }
