@@ -227,9 +227,50 @@ pub fn validate_mock_batch_lifecycle(events: &[MockBatchLifecycleEventV1]) -> Re
     Ok(())
 }
 
+/// Batch backend promotion evidence.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BatchBackendPromotionEvidenceV1 {
+    pub export_only: bool,
+    pub has_job_id: bool,
+    pub has_state_polling: bool,
+    pub has_exit_code: bool,
+    pub has_artifact_collection: bool,
+}
+
+/// Batch backend promotion decision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BatchBackendPromotionDecisionV1 {
+    pub production_ready: bool,
+    pub reason: String,
+}
+
+/// Evaluate whether batch backend can be promoted from export-only to real execution.
+pub fn evaluate_batch_backend_promotion(
+    evidence: &BatchBackendPromotionEvidenceV1,
+) -> BatchBackendPromotionDecisionV1 {
+    if evidence.export_only {
+        return BatchBackendPromotionDecisionV1 {
+            production_ready: false,
+            reason: "export-only mode cannot be promoted to real batch execution".to_string(),
+        };
+    }
+    let production_ready = evidence.has_job_id
+        && evidence.has_state_polling
+        && evidence.has_exit_code
+        && evidence.has_artifact_collection;
+    let reason = if production_ready {
+        "batch backend promotion requirements are satisfied".to_string()
+    } else {
+        "batch backend promotion requires job_id, state polling, exit code, and artifact collection"
+            .to_string()
+    };
+    BatchBackendPromotionDecisionV1 { production_ready, reason }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        evaluate_batch_backend_promotion, BatchBackendPromotionEvidenceV1,
         validate_mock_batch_lifecycle, MockBatchLifecycleEventV1,
         render_batch_script_export, BatchScriptExportDescriptorV1,
         evaluate_apptainer_boundary, ApptainerSupportStateV1,
@@ -325,5 +366,27 @@ mod tests {
             },
         ];
         validate_mock_batch_lifecycle(&events).expect("mock batch lifecycle should validate");
+    }
+
+    #[test]
+    fn g146_batch_backend_promotion_refuses_export_only_and_requires_execution_evidence() {
+        let export_only = evaluate_batch_backend_promotion(&BatchBackendPromotionEvidenceV1 {
+            export_only: true,
+            has_job_id: false,
+            has_state_polling: false,
+            has_exit_code: false,
+            has_artifact_collection: false,
+        });
+        assert!(!export_only.production_ready);
+        assert!(export_only.reason.contains("export-only"));
+
+        let promoted = evaluate_batch_backend_promotion(&BatchBackendPromotionEvidenceV1 {
+            export_only: false,
+            has_job_id: true,
+            has_state_polling: true,
+            has_exit_code: true,
+            has_artifact_collection: true,
+        });
+        assert!(promoted.production_ready);
     }
 }
