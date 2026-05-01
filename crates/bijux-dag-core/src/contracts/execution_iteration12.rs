@@ -30,9 +30,44 @@ pub fn validate_nested_subgraph_execution(
     Ok(record)
 }
 
+/// Matrix expansion execution record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MatrixExecutionRecordV1 {
+    pub base_node_id: String,
+    pub expanded_node_ids: Vec<String>,
+    pub artifact_names: Vec<String>,
+    pub deterministic_ids: bool,
+    pub replay_bounded: bool,
+}
+
+/// Validate matrix workflow execution contracts.
+pub fn validate_matrix_execution(
+    record: MatrixExecutionRecordV1,
+) -> Result<MatrixExecutionRecordV1, String> {
+    if record.base_node_id.trim().is_empty() {
+        return Err("base_node_id must not be empty".to_string());
+    }
+    if record.expanded_node_ids.is_empty() {
+        return Err("matrix execution must expand at least one node".to_string());
+    }
+    if record.artifact_names.len() != record.expanded_node_ids.len() {
+        return Err("artifact_names must match expanded node count".to_string());
+    }
+    if !record.deterministic_ids {
+        return Err("matrix expanded node ids must be deterministic".to_string());
+    }
+    if !record.replay_bounded {
+        return Err("matrix execution must remain replay-bounded".to_string());
+    }
+    Ok(record)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{validate_nested_subgraph_execution, NestedSubgraphExecutionRecordV1};
+    use super::{
+        validate_matrix_execution, validate_nested_subgraph_execution, MatrixExecutionRecordV1,
+        NestedSubgraphExecutionRecordV1,
+    };
 
     #[test]
     fn g111_nested_subgraph_execution_preserves_parent_child_lineage() {
@@ -46,5 +81,25 @@ mod tests {
         .expect("nested subgraph");
         assert!(record.subgraph_run_id.starts_with("run-100/"));
         assert_eq!(record.scoped_node_prefix, "call-subgraph::");
+    }
+
+    #[test]
+    fn g112_matrix_execution_uses_deterministic_ids_and_replay_bounds() {
+        let record = validate_matrix_execution(MatrixExecutionRecordV1 {
+            base_node_id: "align".to_string(),
+            expanded_node_ids: vec![
+                "align::sample=a".to_string(),
+                "align::sample=b".to_string(),
+            ],
+            artifact_names: vec![
+                "aligned-a.bam".to_string(),
+                "aligned-b.bam".to_string(),
+            ],
+            deterministic_ids: true,
+            replay_bounded: true,
+        })
+        .expect("matrix execution");
+        assert_eq!(record.expanded_node_ids.len(), 2);
+        assert!(record.deterministic_ids);
     }
 }
