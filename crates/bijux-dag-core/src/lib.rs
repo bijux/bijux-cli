@@ -36,6 +36,8 @@ pub mod authoring_iteration03;
 pub mod semantics_iteration04;
 #[path = "contracts/planner_iteration05.rs"]
 pub mod planner_iteration05;
+#[path = "contracts/execution_iteration12.rs"]
+pub mod execution_iteration12;
 #[path = "analysis/fingerprint.rs"]
 pub mod fingerprint;
 #[path = "graph/graph.rs"]
