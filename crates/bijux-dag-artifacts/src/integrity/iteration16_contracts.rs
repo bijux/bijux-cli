@@ -425,9 +425,42 @@ pub fn deduplicate_artifacts_preserving_lineage(
     deduped
 }
 
+/// Long-lived archive bundle profile.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArchiveBundleProfileV1 {
+    pub bundle_id: String,
+    pub schema_descriptors: Vec<String>,
+    pub indexes: Vec<String>,
+    pub descriptor_hashes: Vec<String>,
+    pub migration_metadata: Vec<String>,
+    pub verifies_without_workspace: bool,
+}
+
+/// Verify archive profile contains long-lived review material.
+pub fn verify_archive_bundle_profile(profile: &ArchiveBundleProfileV1) -> Result<(), String> {
+    if profile.bundle_id.trim().is_empty() {
+        return Err("archive bundle profile must include bundle_id".to_string());
+    }
+    if profile.schema_descriptors.is_empty()
+        || profile.indexes.is_empty()
+        || profile.descriptor_hashes.is_empty()
+        || profile.migration_metadata.is_empty()
+    {
+        return Err(
+            "archive bundle profile must include schemas, indexes, hashes, and migration metadata"
+                .to_string(),
+        );
+    }
+    if !profile.verifies_without_workspace {
+        return Err("archive bundle profile must verify without original workspace".to_string());
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        verify_archive_bundle_profile, ArchiveBundleProfileV1,
         deduplicate_artifacts_preserving_lineage, DedupCandidateArtifactV1,
         evaluate_artifact_index_migration, ArtifactIndexMigrationRequestV1,
         build_safe_artifact_preview,
@@ -622,5 +655,23 @@ mod tests {
         assert_eq!(deduped[0].duplicate_artifact_ids, vec!["a2".to_string()]);
         assert_eq!(deduped[0].producers, vec!["p1".to_string(), "p2".to_string()]);
         assert_eq!(deduped[0].consumers, vec!["c1".to_string(), "c2".to_string()]);
+    }
+
+    #[test]
+    fn g160_archive_bundle_profile_requires_long_lived_verification_material() {
+        let profile = ArchiveBundleProfileV1 {
+            bundle_id: "archive-160".to_string(),
+            schema_descriptors: vec!["schema/artifact-index-v2.json".to_string()],
+            indexes: vec!["indexes/outputs-index.json".to_string()],
+            descriptor_hashes: vec!["sha256:abc".to_string()],
+            migration_metadata: vec!["migrations/v1-to-v2.json".to_string()],
+            verifies_without_workspace: true,
+        };
+        verify_archive_bundle_profile(&profile).expect("archive profile");
+
+        let mut invalid = profile;
+        invalid.verifies_without_workspace = false;
+        let error = verify_archive_bundle_profile(&invalid).expect_err("must reject non-portable archive");
+        assert!(error.contains("without original workspace"));
     }
 }
