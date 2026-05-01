@@ -212,12 +212,47 @@ pub fn validate_support_bundle_report(
     Ok(report)
 }
 
+/// Command impact preview report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CommandImpactPreviewV1 {
+    pub file_writes: Vec<String>,
+    pub run_roots_touched: Vec<String>,
+    pub cache_effects: Vec<String>,
+    pub adapter_execution: Vec<String>,
+    pub plugin_execution: Vec<String>,
+    pub destructive_actions: Vec<String>,
+}
+
+/// Validate command impact preview completeness.
+pub fn validate_command_impact_preview(
+    preview: CommandImpactPreviewV1,
+) -> Result<CommandImpactPreviewV1, String> {
+    if preview.file_writes.is_empty() {
+        return Err("impact preview must list file writes".to_string());
+    }
+    if preview.run_roots_touched.is_empty() {
+        return Err("impact preview must list run roots touched".to_string());
+    }
+    if preview.cache_effects.is_empty() {
+        return Err("impact preview must list cache effects".to_string());
+    }
+    if preview.adapter_execution.is_empty() {
+        return Err("impact preview must list adapter execution".to_string());
+    }
+    if preview.plugin_execution.is_empty() {
+        return Err("impact preview must list plugin execution".to_string());
+    }
+    Ok(preview)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        validate_command_impact_preview,
         diff_route_inventory, enforce_app_compatibility_window, evaluate_deprecation_lifecycle,
         resolve_app_workspace_config, validate_install_repair_report, AppWorkspaceConfigV1,
-        InstallRepairReportV1, SupportBundleReportV1, validate_support_bundle_report,
+        CommandImpactPreviewV1, InstallRepairReportV1, SupportBundleReportV1,
+        validate_support_bundle_report,
     };
 
     #[test]
@@ -308,5 +343,20 @@ mod tests {
         .expect("support bundle");
         assert!(report.redaction_applied);
         assert!(report.reproduction_ready);
+    }
+
+    #[test]
+    fn g107_command_impact_preview_surfaces_risky_side_effects_before_execution() {
+        let preview = validate_command_impact_preview(CommandImpactPreviewV1 {
+            file_writes: vec!["runs/run-123/manifest.json".to_string()],
+            run_roots_touched: vec!["runs/".to_string()],
+            cache_effects: vec!["cache lookup and possible write".to_string()],
+            adapter_execution: vec!["shell adapter".to_string()],
+            plugin_execution: vec!["quality-gate plugin".to_string()],
+            destructive_actions: vec!["none".to_string()],
+        })
+        .expect("impact preview");
+        assert_eq!(preview.file_writes.len(), 1);
+        assert_eq!(preview.adapter_execution[0], "shell adapter");
     }
 }
