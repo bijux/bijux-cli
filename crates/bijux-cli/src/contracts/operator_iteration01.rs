@@ -404,6 +404,46 @@ pub fn classify_command_side_effect(
     })
 }
 
+/// Rust/Python bridge parity entry for one command.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct PythonBridgeParityEntryV1 {
+    /// Command under comparison.
+    pub command: String,
+    /// Rust machine envelope payload.
+    pub rust_machine_output: String,
+    /// Python bridge machine envelope payload.
+    pub python_machine_output: String,
+}
+
+/// Parity report for Rust runtime versus Python bridge command envelopes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct PythonBridgeParityReportV1 {
+    /// Compared command entries.
+    pub entries: Vec<PythonBridgeParityEntryV1>,
+    /// Commands with output mismatches.
+    pub mismatched_commands: Vec<String>,
+    /// Whether parity is exact across all compared commands.
+    pub parity_exact: bool,
+}
+
+/// Build Python bridge parity report from command matrix outputs.
+pub fn build_python_bridge_command_parity_report(
+    entries: Vec<PythonBridgeParityEntryV1>,
+) -> PythonBridgeParityReportV1 {
+    let mut ordered_entries = entries;
+    ordered_entries.sort_by(|left, right| left.command.cmp(&right.command));
+    let mismatched_commands: Vec<String> = ordered_entries
+        .iter()
+        .filter(|entry| entry.rust_machine_output != entry.python_machine_output)
+        .map(|entry| entry.command.clone())
+        .collect();
+    PythonBridgeParityReportV1 {
+        entries: ordered_entries,
+        mismatched_commands: mismatched_commands.clone(),
+        parity_exact: mismatched_commands.is_empty(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -413,9 +453,10 @@ mod tests {
         classify_command_side_effect,
         build_completion_snapshot_from_registry,
         build_compact_operator_help_entrypoint, build_install_diagnosis_bundle,
+        build_python_bridge_command_parity_report,
         build_script_stable_command_envelope, evaluate_output_mode_parity,
         ActionableFailureClassV1, CompletionRouteEntryV1, InstallDiagnosticComponentV1,
-        OutputModeParityEntryV1,
+        OutputModeParityEntryV1, PythonBridgeParityEntryV1,
     };
 
     #[test]
@@ -558,5 +599,23 @@ mod tests {
             classify_command_side_effect("bijux dag run --graph sample.json").expect("classify");
         assert!(preview.requires_confirmation);
         assert_eq!(preview.command, "bijux dag run --graph sample.json");
+    }
+
+    #[test]
+    fn g009_python_bridge_parity_report_detects_machine_output_drift() {
+        let report = build_python_bridge_command_parity_report(vec![
+            PythonBridgeParityEntryV1 {
+                command: "bijux status --format json".to_string(),
+                rust_machine_output: "{\"ok\":true}".to_string(),
+                python_machine_output: "{\"ok\":true}".to_string(),
+            },
+            PythonBridgeParityEntryV1 {
+                command: "bijux doctor --format json".to_string(),
+                rust_machine_output: "{\"ok\":false,\"code\":\"doctor_warn\"}".to_string(),
+                python_machine_output: "{\"ok\":false,\"code\":\"doctor_warning\"}".to_string(),
+            },
+        ]);
+        assert!(!report.parity_exact);
+        assert_eq!(report.mismatched_commands, vec!["bijux doctor --format json"]);
     }
 }
