@@ -306,16 +306,46 @@ pub fn validate_plugin_lifecycle_report(
     Ok(report)
 }
 
+/// Root CLI growth-budget report under app ecosystem expansion.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RootCliGrowthBudgetReportV1 {
+    pub app_count: usize,
+    pub startup_latency_ms: u64,
+    pub help_lines: usize,
+    pub dispatch_coupling_score: u32,
+}
+
+/// Validate root CLI remains small and stable as app count grows.
+pub fn validate_root_cli_growth_budget(
+    report: RootCliGrowthBudgetReportV1,
+    startup_latency_budget_ms: u64,
+    help_lines_budget: usize,
+    dispatch_coupling_budget: u32,
+) -> Result<RootCliGrowthBudgetReportV1, String> {
+    if report.startup_latency_ms > startup_latency_budget_ms {
+        return Err("root cli startup latency exceeded budget".to_string());
+    }
+    if report.help_lines > help_lines_budget {
+        return Err("root cli help surface exceeded budget".to_string());
+    }
+    if report.dispatch_coupling_score > dispatch_coupling_budget {
+        return Err("root cli dispatch coupling exceeded budget".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         validate_official_app_onboarding,
         validate_plugin_lifecycle_report,
+        validate_root_cli_growth_budget,
         validate_command_impact_preview,
         diff_route_inventory, enforce_app_compatibility_window, evaluate_deprecation_lifecycle,
         resolve_app_workspace_config, validate_install_repair_report, AppWorkspaceConfigV1,
         CommandImpactPreviewV1, InstallRepairReportV1, OfficialAppOnboardingReportV1,
-        PluginLifecycleReportV1, SupportBundleReportV1, validate_support_bundle_report,
+        PluginLifecycleReportV1, RootCliGrowthBudgetReportV1, SupportBundleReportV1,
+        validate_support_bundle_report,
     };
 
     #[test]
@@ -451,5 +481,23 @@ mod tests {
         .expect("plugin lifecycle");
         assert!(report.install_ok);
         assert!(report.rollback_clean_on_failure);
+    }
+
+    #[test]
+    fn g110_root_cli_growth_budget_stays_stable_as_apps_increase() {
+        let report = validate_root_cli_growth_budget(
+            RootCliGrowthBudgetReportV1 {
+                app_count: 14,
+                startup_latency_ms: 95,
+                help_lines: 180,
+                dispatch_coupling_score: 12,
+            },
+            150,
+            220,
+            20,
+        )
+        .expect("growth budget");
+        assert_eq!(report.app_count, 14);
+        assert!(report.startup_latency_ms <= 150);
     }
 }
