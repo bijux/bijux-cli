@@ -89,11 +89,59 @@ pub fn content_identity_for_directory(
     })
 }
 
+/// Complete artifact inventory record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArtifactInventoryRecordV1 {
+    pub role: String,
+    pub path: String,
+    pub hash: String,
+    pub producer_node_id: String,
+    pub attempt_id: String,
+    pub adapter_id: String,
+    pub schema_ref: String,
+    pub lineage_id: String,
+}
+
+/// Build complete artifact inventory with one producer trace per output path.
+pub fn build_complete_artifact_inventory(
+    records: Vec<ArtifactInventoryRecordV1>,
+) -> Result<Vec<ArtifactInventoryRecordV1>, String> {
+    if records.is_empty() {
+        return Err("inventory records must not be empty".to_string());
+    }
+    let mut seen_paths = std::collections::BTreeSet::new();
+    for record in &records {
+        if record.path.trim().is_empty() {
+            return Err("inventory path must not be empty".to_string());
+        }
+        if record.hash.len() != 64 || !record.hash.chars().all(|value| value.is_ascii_hexdigit()) {
+            return Err(format!("invalid content hash for {}", record.path));
+        }
+        if !seen_paths.insert(record.path.clone()) {
+            return Err(format!("duplicate output path in inventory: {}", record.path));
+        }
+        for (field_name, field_value) in [
+            ("producer_node_id", record.producer_node_id.as_str()),
+            ("attempt_id", record.attempt_id.as_str()),
+            ("adapter_id", record.adapter_id.as_str()),
+            ("schema_ref", record.schema_ref.as_str()),
+            ("lineage_id", record.lineage_id.as_str()),
+        ] {
+            if field_value.trim().is_empty() {
+                return Err(format!("{field_name} must not be empty"));
+            }
+        }
+    }
+    let mut sorted = records;
+    sorted.sort_by(|left, right| left.path.cmp(&right.path));
+    Ok(sorted)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_run_directory_layout_contract, content_identity_for_directory,
-        content_identity_for_file,
+        content_identity_for_file, build_complete_artifact_inventory, ArtifactInventoryRecordV1,
     };
 
     #[test]
@@ -130,5 +178,23 @@ mod tests {
         )
         .expect("dir identity");
         assert_eq!(dir_a.content_hash, dir_b.content_hash);
+    }
+
+    #[test]
+    fn g063_artifact_inventory_records_producer_attempt_adapter_schema_and_lineage() {
+        let records = build_complete_artifact_inventory(vec![ArtifactInventoryRecordV1 {
+            role: "primary".to_string(),
+            path: "outputs/sample.vcf".to_string(),
+            hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string(),
+            producer_node_id: "call-variants".to_string(),
+            attempt_id: "attempt-1".to_string(),
+            adapter_id: "shell".to_string(),
+            schema_ref: "vcf/v4.3".to_string(),
+            lineage_id: "run-1:call-variants:sample.vcf".to_string(),
+        }])
+        .expect("inventory");
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].producer_node_id, "call-variants");
+        assert_eq!(records[0].adapter_id, "shell");
     }
 }
