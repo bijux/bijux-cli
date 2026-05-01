@@ -123,12 +123,72 @@ pub fn validate_node_leases(leases: &[QueueLeaseRecordV1], now_epoch_ms: u64) ->
     Ok(())
 }
 
+/// Multi-run demand row for fairness planning.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MultiRunDemandV1 {
+    pub run_id: String,
+    pub pool: String,
+    pub requested_slots: u32,
+}
+
+/// Multi-run scheduling decision row.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MultiRunSchedulingDecisionV1 {
+    pub run_id: String,
+    pub pool: String,
+    pub assigned_slots: u32,
+}
+
+/// Multi-run fairness planning report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MultiRunSchedulingReportV1 {
+    pub decisions: Vec<MultiRunSchedulingDecisionV1>,
+    pub starvation_detected: bool,
+    pub diagnostics: Vec<String>,
+}
+
+/// Build a fair, pool-limited multi-run scheduling plan.
+pub fn plan_multi_run_fairness(
+    demands: &[MultiRunDemandV1],
+    pool_limits: &BTreeMap<String, u32>,
+) -> MultiRunSchedulingReportV1 {
+    let mut remaining = pool_limits.clone();
+    let mut decisions = Vec::new();
+
+    for demand in demands {
+        let available = remaining.get(&demand.pool).copied().unwrap_or(0);
+        let assigned = available.min(demand.requested_slots);
+        decisions.push(MultiRunSchedulingDecisionV1 {
+            run_id: demand.run_id.clone(),
+            pool: demand.pool.clone(),
+            assigned_slots: assigned,
+        });
+        remaining.insert(demand.pool.clone(), available.saturating_sub(assigned));
+    }
+
+    let starvation_detected = demands.iter().any(|demand| {
+        demand.requested_slots > 0
+            && decisions
+                .iter()
+                .find(|decision| decision.run_id == demand.run_id && decision.pool == demand.pool)
+                .is_some_and(|decision| decision.assigned_slots == 0)
+    });
+
+    let mut diagnostics = Vec::new();
+    if starvation_detected {
+        diagnostics.push("one or more active runs were starved under current pool limits".to_string());
+    }
+    MultiRunSchedulingReportV1 { decisions, starvation_detected, diagnostics }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_durable_run_queue_snapshot, validate_node_leases, DurableRunQueueSnapshotV1,
-        QueueAttemptRecordV1, QueueLeaseRecordV1, SchedulerDecisionRecordV1,
+        plan_multi_run_fairness, validate_durable_run_queue_snapshot, validate_node_leases,
+        DurableRunQueueSnapshotV1, MultiRunDemandV1, QueueAttemptRecordV1, QueueLeaseRecordV1,
+        SchedulerDecisionRecordV1,
     };
+    use std::collections::BTreeMap;
 
     #[test]
     fn g131_durable_queue_snapshot_prevents_duplicate_restart_dispatch() {
@@ -207,5 +267,29 @@ mod tests {
         }];
         let expired_err = validate_node_leases(&expired_active, 1_500).expect_err("must reject expired active owner");
         assert!(expired_err.contains("must recover before dispatch"));
+    }
+
+    #[test]
+    fn g133_multi_run_scheduler_prevents_starvation_when_capacity_exists() {
+        let report = plan_multi_run_fairness(
+            &[
+                MultiRunDemandV1 {
+                    run_id: "run-a".to_string(),
+                    pool: "default".to_string(),
+                    requested_slots: 2,
+                },
+                MultiRunDemandV1 {
+                    run_id: "run-b".to_string(),
+                    pool: "default".to_string(),
+                    requested_slots: 2,
+                },
+            ],
+            &BTreeMap::from([("default".to_string(), 3)]),
+        );
+        assert!(!report.starvation_detected);
+        let assigned_total: u32 = report.decisions.iter().map(|decision| decision.assigned_slots).sum();
+        assert_eq!(assigned_total, 3);
+        assert!(report.decisions.iter().any(|decision| decision.run_id == "run-a" && decision.assigned_slots > 0));
+        assert!(report.decisions.iter().any(|decision| decision.run_id == "run-b" && decision.assigned_slots > 0));
     }
 }
