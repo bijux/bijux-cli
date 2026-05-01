@@ -407,10 +407,56 @@ pub fn enforce_plugin_trust_class_behavior(
     })
 }
 
+/// Side-effect-free app capability discovery report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct AppCapabilityDiscoveryReportV1 {
+    /// App namespace.
+    pub app_namespace: String,
+    /// Command groups exposed by descriptor metadata.
+    pub command_groups: Vec<String>,
+    /// Feature flags declared by app descriptor.
+    pub feature_flags: Vec<String>,
+    /// Required config keys.
+    pub required_config_keys: Vec<String>,
+    /// Output schema versions.
+    pub schema_versions: Vec<String>,
+    /// Optional runtime prerequisites missing at discovery time.
+    pub missing_prerequisites: Vec<String>,
+}
+
+/// Build side-effect-free app capability discovery report.
+pub fn build_app_capability_discovery_report(
+    app_namespace: &str,
+    command_groups: Vec<String>,
+    feature_flags: Vec<String>,
+    required_config_keys: Vec<String>,
+    schema_versions: Vec<String>,
+    missing_prerequisites: Vec<String>,
+) -> Result<AppCapabilityDiscoveryReportV1, String> {
+    if app_namespace.trim().is_empty() {
+        return Err("app_namespace cannot be empty".to_string());
+    }
+    if command_groups.is_empty() {
+        return Err("command_groups cannot be empty".to_string());
+    }
+    if schema_versions.is_empty() {
+        return Err("schema_versions cannot be empty".to_string());
+    }
+    Ok(AppCapabilityDiscoveryReportV1 {
+        app_namespace: app_namespace.to_string(),
+        command_groups,
+        feature_flags,
+        required_config_keys,
+        schema_versions,
+        missing_prerequisites,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_app_route_provenance_record,
+        build_app_capability_discovery_report,
         build_plugin_scaffold_conformance_report,
         build_sdk_example_conformance_report,
         enforce_plugin_trust_class_behavior,
@@ -564,5 +610,20 @@ mod tests {
                 .expect("trust decision should build");
         assert!(!decision.allowed);
         assert!(decision.rationale.contains("requires explicit enable flag"));
+    }
+
+    #[test]
+    fn g020_app_capability_discovery_reports_missing_optional_prerequisites() {
+        let report = build_app_capability_discovery_report(
+            "dag",
+            vec!["run".to_string(), "plan".to_string()],
+            vec!["cache".to_string()],
+            vec!["dag.run_root".to_string()],
+            vec!["dag-run-envelope-v1".to_string()],
+            vec!["apptainer-not-installed".to_string()],
+        )
+        .expect("capability report should build");
+        assert_eq!(report.app_namespace, "dag");
+        assert_eq!(report.missing_prerequisites, vec!["apptainer-not-installed"]);
     }
 }
