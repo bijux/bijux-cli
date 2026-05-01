@@ -480,16 +480,60 @@ pub fn build_export_import_portability_report(
     })
 }
 
+/// Doctor finding with one explicit remediation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DoctorFindingV1 {
+    pub finding_id: String,
+    pub severity: String,
+    pub message: String,
+    pub remediation: String,
+}
+
+/// Command contract for `dag doctor`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DoctorCommandReportV1 {
+    pub status: String,
+    pub findings: Vec<DoctorFindingV1>,
+}
+
+/// Build doctor report with exactly one remediation per finding.
+pub fn build_doctor_command_report(
+    status: &str,
+    findings: Vec<DoctorFindingV1>,
+) -> Result<DoctorCommandReportV1, String> {
+    if status.trim().is_empty() {
+        return Err("status must not be empty".to_string());
+    }
+    for finding in &findings {
+        for (field_name, field_value) in [
+            ("finding_id", finding.finding_id.as_str()),
+            ("severity", finding.severity.as_str()),
+            ("message", finding.message.as_str()),
+            ("remediation", finding.remediation.as_str()),
+        ] {
+            if field_value.trim().is_empty() {
+                return Err(format!("doctor finding {field_name} must not be empty"));
+            }
+        }
+    }
+    Ok(DoctorCommandReportV1 {
+        status: status.to_string(),
+        findings,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_cache_explain_report,
         classify_diff_observations,
+        build_doctor_command_report,
         build_export_import_portability_report,
         build_inspect_command_report, build_plan_command_report, build_run_command_report,
         build_replay_command_report, build_status_command_report, build_validate_command_report,
-        CacheExplainOutcomeV1, DiffObservationV1, DryPlanNodeRowV1, InspectNodeStateV1,
-        PreflightCheckV1, ReplayNodeDecisionV1, ReplaySelectorV1, ValidateIssueV1,
+        CacheExplainOutcomeV1, DiffObservationV1, DoctorFindingV1, DryPlanNodeRowV1,
+        InspectNodeStateV1, PreflightCheckV1, ReplayNodeDecisionV1, ReplaySelectorV1,
+        ValidateIssueV1,
     };
 
     #[test]
@@ -731,5 +775,34 @@ mod tests {
         assert_eq!(report.rewrites[0].rewritten_path, "manifest.json");
         assert_eq!(report.rewrites[1].rewritten_path, "outputs/variants.vcf");
         assert_eq!(report.rewrites[2].rewritten_path, "relative/proof.json");
+    }
+
+    #[test]
+    fn g080_doctor_report_provides_one_remediation_per_finding() {
+        let report = build_doctor_command_report(
+            "degraded",
+            vec![
+                DoctorFindingV1 {
+                    finding_id: "doctor.run_root_unwritable".to_string(),
+                    severity: "error".to_string(),
+                    message: "run root is not writable".to_string(),
+                    remediation: "grant write permission or choose --root under writable path"
+                        .to_string(),
+                },
+                DoctorFindingV1 {
+                    finding_id: "doctor.adapter_shell_missing".to_string(),
+                    severity: "warn".to_string(),
+                    message: "/bin/sh not found in configured execution image".to_string(),
+                    remediation: "install shell adapter runtime or switch workflow to const adapter"
+                        .to_string(),
+                },
+            ],
+        )
+        .expect("doctor report");
+        assert_eq!(report.status, "degraded");
+        assert_eq!(report.findings.len(), 2);
+        for finding in &report.findings {
+            assert!(!finding.remediation.trim().is_empty());
+        }
     }
 }
