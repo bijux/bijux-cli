@@ -42,6 +42,8 @@ pub mod execution_iteration12;
 pub mod resource_iteration13;
 #[path = "contracts/scientific_integration_contracts.rs"]
 pub mod scientific_integration_contracts;
+#[path = "contracts/performance_iteration19_contracts.rs"]
+pub mod performance_iteration19_contracts;
 #[path = "analysis/fingerprint.rs"]
 pub mod fingerprint;
 #[path = "graph/graph.rs"]
