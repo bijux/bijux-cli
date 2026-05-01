@@ -252,6 +252,30 @@ pub fn build_mounted_app_parity_scenario_report(
     Ok(report)
 }
 
+/// Python bridge parity scenario report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PythonBridgeParityScenarioReportV1 {
+    pub command_name: String,
+    pub root_machine_output_equal: bool,
+    pub dag_machine_output_equal: bool,
+}
+
+/// Build Python bridge parity scenario proof.
+pub fn build_python_bridge_parity_scenario_report(
+    report: PythonBridgeParityScenarioReportV1,
+) -> Result<PythonBridgeParityScenarioReportV1, String> {
+    if report.command_name.trim().is_empty() {
+        return Err("command_name must not be empty".to_string());
+    }
+    if !report.root_machine_output_equal {
+        return Err("python bridge root output must match rust root output".to_string());
+    }
+    if !report.dag_machine_output_equal {
+        return Err("python bridge dag output must match rust dag output".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -259,11 +283,12 @@ mod tests {
         build_branch_join_scenario_report, build_hello_dag_scenario_report,
         build_cache_heavy_scenario_report, build_failure_retry_scenario_report,
         build_mounted_app_parity_scenario_report,
+        build_python_bridge_parity_scenario_report,
         build_reducer_scenario_report,
         build_shell_etl_scenario_report, BranchJoinScenarioReportV1, FailureRetryScenarioReportV1,
         BundlePortabilityScenarioReportV1, CacheHeavyScenarioReportV1,
-        HelloDagScenarioReportV1, MountedAppParityScenarioReportV1, ReducerScenarioReportV1,
-        ShellEtlScenarioReportV1,
+        HelloDagScenarioReportV1, MountedAppParityScenarioReportV1,
+        PythonBridgeParityScenarioReportV1, ReducerScenarioReportV1, ShellEtlScenarioReportV1,
     };
 
     #[test]
@@ -375,5 +400,17 @@ mod tests {
         .expect("mounted app parity scenario");
         assert!(report.machine_output_equal);
         assert!(report.human_output_equal);
+    }
+
+    #[test]
+    fn g099_python_bridge_returns_equivalent_machine_output() {
+        let report = build_python_bridge_parity_scenario_report(PythonBridgeParityScenarioReportV1 {
+            command_name: "dag run workflows/hello.json --json".to_string(),
+            root_machine_output_equal: true,
+            dag_machine_output_equal: true,
+        })
+        .expect("python bridge parity");
+        assert!(report.root_machine_output_equal);
+        assert!(report.dag_machine_output_equal);
     }
 }
