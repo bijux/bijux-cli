@@ -369,9 +369,66 @@ pub fn evaluate_artifact_index_migration(
     }
 }
 
+/// Dedup candidate artifact.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DedupCandidateArtifactV1 {
+    pub artifact_id: String,
+    pub content_hash: String,
+    pub producer_node: String,
+    pub consumers: Vec<String>,
+}
+
+/// Deduplicated artifact lineage entry.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeduplicatedArtifactLineageV1 {
+    pub canonical_artifact_id: String,
+    pub duplicate_artifact_ids: Vec<String>,
+    pub producers: Vec<String>,
+    pub consumers: Vec<String>,
+}
+
+/// Deduplicate by content while preserving producer and consumer identity.
+pub fn deduplicate_artifacts_preserving_lineage(
+    artifacts: &[DedupCandidateArtifactV1],
+) -> Vec<DeduplicatedArtifactLineageV1> {
+    let mut by_hash = BTreeMap::<String, Vec<&DedupCandidateArtifactV1>>::new();
+    for artifact in artifacts {
+        by_hash
+            .entry(artifact.content_hash.clone())
+            .or_default()
+            .push(artifact);
+    }
+    let mut deduped = Vec::new();
+    for (_hash, group) in by_hash {
+        let canonical = group[0];
+        let duplicate_artifact_ids = group
+            .iter()
+            .skip(1)
+            .map(|artifact| artifact.artifact_id.clone())
+            .collect::<Vec<_>>();
+        let mut producers = BTreeSet::new();
+        let mut consumers = BTreeSet::new();
+        for artifact in &group {
+            producers.insert(artifact.producer_node.clone());
+            for consumer in &artifact.consumers {
+                consumers.insert(consumer.clone());
+            }
+        }
+        deduped.push(DeduplicatedArtifactLineageV1 {
+            canonical_artifact_id: canonical.artifact_id.clone(),
+            duplicate_artifact_ids,
+            producers: producers.into_iter().collect(),
+            consumers: consumers.into_iter().collect(),
+        });
+    }
+    deduped.sort_by(|left, right| left.canonical_artifact_id.cmp(&right.canonical_artifact_id));
+    deduped
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        deduplicate_artifacts_preserving_lineage, DedupCandidateArtifactV1,
         evaluate_artifact_index_migration, ArtifactIndexMigrationRequestV1,
         build_safe_artifact_preview,
         build_artifact_lineage_query_index, lineage_ancestors, lineage_descendants,
@@ -542,5 +599,28 @@ mod tests {
             semantic_loss_detected: false,
         });
         assert!(accepted.migrated);
+    }
+
+    #[test]
+    fn g159_artifact_deduplication_preserves_producer_and_consumer_identity() {
+        let deduped = deduplicate_artifacts_preserving_lineage(&[
+            DedupCandidateArtifactV1 {
+                artifact_id: "a1".to_string(),
+                content_hash: "h1".to_string(),
+                producer_node: "p1".to_string(),
+                consumers: vec!["c1".to_string()],
+            },
+            DedupCandidateArtifactV1 {
+                artifact_id: "a2".to_string(),
+                content_hash: "h1".to_string(),
+                producer_node: "p2".to_string(),
+                consumers: vec!["c2".to_string()],
+            },
+        ]);
+        assert_eq!(deduped.len(), 1);
+        assert_eq!(deduped[0].canonical_artifact_id, "a1");
+        assert_eq!(deduped[0].duplicate_artifact_ids, vec!["a2".to_string()]);
+        assert_eq!(deduped[0].producers, vec!["p1".to_string(), "p2".to_string()]);
+        assert_eq!(deduped[0].consumers, vec!["c1".to_string(), "c2".to_string()]);
     }
 }
