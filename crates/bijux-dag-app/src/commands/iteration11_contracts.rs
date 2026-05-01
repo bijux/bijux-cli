@@ -68,9 +68,43 @@ pub fn diff_route_inventory(
     }
 }
 
+/// Compatibility check result for app dispatch.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AppCompatibilityDecisionV1 {
+    pub compatible: bool,
+    pub reason: String,
+}
+
+/// Enforce host/app compatibility windows before dispatch.
+pub fn enforce_app_compatibility_window(
+    host_version: u32,
+    app_min_supported: u32,
+    app_max_supported: u32,
+) -> AppCompatibilityDecisionV1 {
+    if host_version < app_min_supported {
+        return AppCompatibilityDecisionV1 {
+            compatible: false,
+            reason: "host version is below app minimum supported version".to_string(),
+        };
+    }
+    if host_version > app_max_supported {
+        return AppCompatibilityDecisionV1 {
+            compatible: false,
+            reason: "host version is above app maximum supported version".to_string(),
+        };
+    }
+    AppCompatibilityDecisionV1 {
+        compatible: true,
+        reason: "host version is within app compatibility window".to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{diff_route_inventory, resolve_app_workspace_config, AppWorkspaceConfigV1};
+    use super::{
+        diff_route_inventory, enforce_app_compatibility_window, resolve_app_workspace_config,
+        AppWorkspaceConfigV1,
+    };
 
     #[test]
     fn g101_workspace_config_changes_behavior_only_through_visible_fields() {
@@ -106,5 +140,15 @@ mod tests {
         assert_eq!(diff.removed_routes, vec!["dag old".to_string()]);
         assert_eq!(diff.deprecated_routes, vec!["dag plan".to_string()]);
         assert_eq!(diff.conflicted_routes, vec!["dag inspect".to_string()]);
+    }
+
+    #[test]
+    fn g103_compatibility_window_blocks_incompatible_apps_before_dispatch() {
+        let below = enforce_app_compatibility_window(2, 3, 6);
+        assert!(!below.compatible);
+        let above = enforce_app_compatibility_window(7, 3, 6);
+        assert!(!above.compatible);
+        let ok = enforce_app_compatibility_window(4, 3, 6);
+        assert!(ok.compatible);
     }
 }
