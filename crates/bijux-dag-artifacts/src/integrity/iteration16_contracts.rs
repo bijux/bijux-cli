@@ -166,10 +166,65 @@ pub fn build_cache_gc_dry_run(candidates: &[CacheGcCandidateV1]) -> CacheGcDryRu
     CacheGcDryRunReportV1 { entries }
 }
 
+/// Portable cache entry descriptor.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CachePortableEntryV1 {
+    pub cache_key: String,
+    pub schema_fingerprint: String,
+    pub policy_fingerprint: String,
+    pub integrity_verified: bool,
+}
+
+/// Portable cache bundle descriptor.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CachePortableBundleV1 {
+    pub bundle_id: String,
+    pub entries: Vec<CachePortableEntryV1>,
+}
+
+/// Validate imported portable cache bundle for safe reuse.
+pub fn validate_cache_import_bundle(
+    bundle: &CachePortableBundleV1,
+    expected_schema_fingerprint: &str,
+    expected_policy_fingerprint: &str,
+) -> Result<(), String> {
+    if bundle.bundle_id.trim().is_empty() {
+        return Err("cache portable bundle must include bundle_id".to_string());
+    }
+    if bundle.entries.is_empty() {
+        return Err("cache portable bundle must include entries".to_string());
+    }
+    for entry in &bundle.entries {
+        if entry.cache_key.trim().is_empty() {
+            return Err("cache portable entry must include cache_key".to_string());
+        }
+        if !entry.integrity_verified {
+            return Err(format!(
+                "cache entry '{}' import refused: integrity is not verified",
+                entry.cache_key
+            ));
+        }
+        if entry.schema_fingerprint != expected_schema_fingerprint {
+            return Err(format!(
+                "cache entry '{}' import refused: schema fingerprint mismatch",
+                entry.cache_key
+            ));
+        }
+        if entry.policy_fingerprint != expected_policy_fingerprint {
+            return Err(format!(
+                "cache entry '{}' import refused: policy fingerprint mismatch",
+                entry.cache_key
+            ));
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_cache_gc_dry_run, CacheGcCandidateV1,
+        validate_cache_import_bundle, CachePortableBundleV1, CachePortableEntryV1,
         enforce_retention_class, RetentionClassV1,
         validate_artifact_lifecycle_transition, validate_artifact_schema_descriptor,
         ArtifactLifecycleStateV1, ArtifactSchemaDescriptorV1,
@@ -244,5 +299,25 @@ mod tests {
             .expect("remove entry");
         assert!(remove.would_remove);
         assert!(remove.reason.contains("unreferenced"));
+    }
+
+    #[test]
+    fn g155_cache_import_bundle_refuses_unsafe_entries() {
+        let bundle = CachePortableBundleV1 {
+            bundle_id: "cache-bundle-155".to_string(),
+            entries: vec![CachePortableEntryV1 {
+                cache_key: "key-a".to_string(),
+                schema_fingerprint: "schema-v1".to_string(),
+                policy_fingerprint: "policy-v1".to_string(),
+                integrity_verified: true,
+            }],
+        };
+        validate_cache_import_bundle(&bundle, "schema-v1", "policy-v1").expect("safe import");
+
+        let mut unsafe_bundle = bundle;
+        unsafe_bundle.entries[0].integrity_verified = false;
+        let error = validate_cache_import_bundle(&unsafe_bundle, "schema-v1", "policy-v1")
+            .expect_err("must refuse unsafe cache entry");
+        assert!(error.contains("integrity is not verified"));
     }
 }
