@@ -300,6 +300,68 @@ pub fn normalize_scientific_findings(
     })
 }
 
+/// Truth-set comparison record attached by apps.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TruthSetComparisonV1 {
+    pub comparison_id: String,
+    pub truth_set_id: String,
+    pub metric_name: String,
+    pub metric_value: f64,
+    pub limitations: Vec<String>,
+}
+
+/// Evidence container for truth-set comparisons.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TruthSetEvidenceEnvelopeV1 {
+    pub run_id: String,
+    pub comparisons: Vec<TruthSetComparisonV1>,
+}
+
+/// Attach one truth-set comparison into run evidence with stable validation.
+pub fn attach_truth_set_comparison(
+    envelope: &mut TruthSetEvidenceEnvelopeV1,
+    comparison: TruthSetComparisonV1,
+) -> Result<(), String> {
+    if envelope.run_id.trim().is_empty() {
+        return Err("truth-set evidence envelope requires run_id".to_string());
+    }
+    for (field, value) in [
+        ("comparison_id", comparison.comparison_id.as_str()),
+        ("truth_set_id", comparison.truth_set_id.as_str()),
+        ("metric_name", comparison.metric_name.as_str()),
+    ] {
+        if value.trim().is_empty() {
+            return Err(format!("truth-set comparison requires {field}"));
+        }
+    }
+    if !comparison.metric_value.is_finite() {
+        return Err("truth-set comparison metric_value must be finite".to_string());
+    }
+    if envelope
+        .comparisons
+        .iter()
+        .any(|existing| existing.comparison_id == comparison.comparison_id)
+    {
+        return Err(format!(
+            "duplicate truth-set comparison_id '{}'",
+            comparison.comparison_id
+        ));
+    }
+    if comparison
+        .limitations
+        .iter()
+        .any(|limitation| limitation.trim().is_empty())
+    {
+        return Err("truth-set comparison limitations must not contain empty entries".to_string());
+    }
+
+    envelope.comparisons.push(comparison);
+    envelope
+        .comparisons
+        .sort_by(|left, right| left.comparison_id.cmp(&right.comparison_id));
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -307,7 +369,8 @@ mod tests {
         ArtifactRoleKindV1, ArtifactRoleMetadataV1, ArtifactSampleIdentityV1,
         ScientificFindingClassV1, ScientificFindingModeV1, ScientificFindingV1,
         ReferenceAliasPolicyV1, ReferenceIdentityMetadataV1, SampleIdentityMismatchActionV1,
-        SampleIdentityPolicyV1, normalize_scientific_findings, validate_reference_identity_metadata,
+        SampleIdentityPolicyV1, TruthSetComparisonV1, TruthSetEvidenceEnvelopeV1,
+        attach_truth_set_comparison, normalize_scientific_findings, validate_reference_identity_metadata,
     };
     use std::collections::BTreeMap;
 
@@ -423,5 +486,26 @@ mod tests {
         .expect("findings should normalize");
         assert_eq!(report.finding_count, 2);
         assert_eq!(report.blocking_codes, vec!["SCI_REFUSAL_REFERENCE".to_string()]);
+    }
+
+    #[test]
+    fn g175_truth_set_comparisons_are_attachable_with_explicit_limitations() {
+        let mut envelope = TruthSetEvidenceEnvelopeV1 {
+            run_id: "run-18".to_string(),
+            comparisons: Vec::new(),
+        };
+        attach_truth_set_comparison(
+            &mut envelope,
+            TruthSetComparisonV1 {
+                comparison_id: "cmp-1".to_string(),
+                truth_set_id: "truth-small".to_string(),
+                metric_name: "f1_score".to_string(),
+                metric_value: 0.97,
+                limitations: vec!["small cohort".to_string()],
+            },
+        )
+        .expect("truth-set comparison should attach");
+        assert_eq!(envelope.comparisons.len(), 1);
+        assert_eq!(envelope.comparisons[0].metric_name, "f1_score");
     }
 }
