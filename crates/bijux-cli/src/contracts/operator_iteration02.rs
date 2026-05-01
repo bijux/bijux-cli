@@ -368,18 +368,59 @@ pub fn build_sdk_example_conformance_report(
     Ok(SdkExampleConformanceReportV1 { entries: ordered, fully_conformant })
 }
 
+/// Plugin trust-class enforcement decision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct PluginTrustEnforcementDecisionV1 {
+    /// Trust class (`official`, `local`, `experimental`, `disabled`).
+    pub trust_class: String,
+    /// Command classification (`read-only`, `destructive`).
+    pub command_risk: String,
+    /// Whether execution is allowed.
+    pub allowed: bool,
+    /// Decision rationale.
+    pub rationale: String,
+}
+
+/// Enforce plugin trust classes for command execution behavior.
+pub fn enforce_plugin_trust_class_behavior(
+    trust_class: &str,
+    command_risk: &str,
+    experimental_destructive_enabled: bool,
+) -> Result<PluginTrustEnforcementDecisionV1, String> {
+    if trust_class.trim().is_empty() || command_risk.trim().is_empty() {
+        return Err("trust_class and command_risk cannot be empty".to_string());
+    }
+    let decision = match (trust_class, command_risk) {
+        ("disabled", _) => (false, "plugin trust class is disabled"),
+        ("experimental", "destructive") if !experimental_destructive_enabled => (
+            false,
+            "experimental destructive command requires explicit enable flag",
+        ),
+        ("experimental", "destructive") => (true, "experimental destructive override enabled"),
+        (_, _) => (true, "trust policy allows command"),
+    };
+    Ok(PluginTrustEnforcementDecisionV1 {
+        trust_class: trust_class.to_string(),
+        command_risk: command_risk.to_string(),
+        allowed: decision.0,
+        rationale: decision.1.to_string(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_app_route_provenance_record,
         build_plugin_scaffold_conformance_report,
         build_sdk_example_conformance_report,
+        enforce_plugin_trust_class_behavior,
         resolve_route_conflict_deterministically,
         evaluate_legacy_shim_policy,
         evaluate_official_app_descriptor_compatibility,
         validate_executable_plugin_manifest_contract, validate_plugin_subprocess_execution_policy, RouteConflictContenderV1,
         ExecutablePluginManifestContractV1, LegacyShimPolicyDecisionV1,
-        PluginScaffoldConformanceEntryV1, SdkExampleConformanceEntryV1,
+        PluginScaffoldConformanceEntryV1, PluginTrustEnforcementDecisionV1,
+        SdkExampleConformanceEntryV1,
         PluginSubprocessExecutionPolicyV1, OfficialAppDescriptorCompatibilityInputV1,
     };
 
@@ -514,5 +555,14 @@ mod tests {
         ])
         .expect("sdk conformance should build");
         assert!(!report.fully_conformant);
+    }
+
+    #[test]
+    fn g019_experimental_destructive_plugin_command_is_blocked_without_override() {
+        let decision: PluginTrustEnforcementDecisionV1 =
+            enforce_plugin_trust_class_behavior("experimental", "destructive", false)
+                .expect("trust decision should build");
+        assert!(!decision.allowed);
+        assert!(decision.rationale.contains("requires explicit enable flag"));
     }
 }
