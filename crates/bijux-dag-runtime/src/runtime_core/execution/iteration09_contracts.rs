@@ -332,14 +332,72 @@ pub fn validate_override_audit_events(
     Ok(events)
 }
 
+/// Adapter software identity captured for one run.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdapterSoftwareIdentityV1 {
+    pub adapter_id: String,
+    pub executable_path: String,
+    pub version: String,
+    pub binary_hash: String,
+}
+
+/// Supply-chain inventory report for one run.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SupplyChainInventoryReportV1 {
+    pub run_id: String,
+    pub adapters: Vec<AdapterSoftwareIdentityV1>,
+    pub plugin_descriptor_ids: Vec<String>,
+    pub app_descriptor_ids: Vec<String>,
+}
+
+/// Build per-run supply-chain inventory.
+pub fn build_supply_chain_inventory_report(
+    run_id: &str,
+    adapters: Vec<AdapterSoftwareIdentityV1>,
+    plugin_descriptor_ids: Vec<String>,
+    app_descriptor_ids: Vec<String>,
+) -> Result<SupplyChainInventoryReportV1, String> {
+    if run_id.trim().is_empty() {
+        return Err("run_id must not be empty".to_string());
+    }
+    if adapters.is_empty() {
+        return Err("adapters must not be empty".to_string());
+    }
+    if plugin_descriptor_ids.is_empty() {
+        return Err("plugin_descriptor_ids must not be empty".to_string());
+    }
+    if app_descriptor_ids.is_empty() {
+        return Err("app_descriptor_ids must not be empty".to_string());
+    }
+    for adapter in &adapters {
+        for (field_name, field_value) in [
+            ("adapter_id", adapter.adapter_id.as_str()),
+            ("executable_path", adapter.executable_path.as_str()),
+            ("version", adapter.version.as_str()),
+            ("binary_hash", adapter.binary_hash.as_str()),
+        ] {
+            if field_value.trim().is_empty() {
+                return Err(format!("adapter identity field {field_name} must not be empty"));
+            }
+        }
+    }
+    Ok(SupplyChainInventoryReportV1 {
+        run_id: run_id.to_string(),
+        adapters,
+        plugin_descriptor_ids,
+        app_descriptor_ids,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_supply_chain_inventory_report,
         capture_shell_output_bounded,
         authorize_plugin_execution,
         classify_network_policy_trust, enforce_environment_allowlist, enforce_write_boundary,
         redact_sensitive_values, validate_bundle_import_safety, validate_override_audit_events,
-        NetworkPolicyLabelV1, OverrideAuditEventV1,
+        AdapterSoftwareIdentityV1, NetworkPolicyLabelV1, OverrideAuditEventV1,
     };
 
     #[test]
@@ -501,5 +559,34 @@ mod tests {
         .expect("override audit");
         assert_eq!(events.len(), 5);
         assert!(events.iter().any(|event| event.override_type == "cache_bypass"));
+    }
+
+    #[test]
+    fn g089_supply_chain_inventory_captures_adapter_plugin_and_app_surfaces() {
+        let report = build_supply_chain_inventory_report(
+            "run-20260501-001",
+            vec![
+                AdapterSoftwareIdentityV1 {
+                    adapter_id: "shell".to_string(),
+                    executable_path: "/bin/sh".to_string(),
+                    version: "5.2".to_string(),
+                    binary_hash:
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string(),
+                },
+                AdapterSoftwareIdentityV1 {
+                    adapter_id: "const".to_string(),
+                    executable_path: "/workspace/bin/const-adapter".to_string(),
+                    version: "0.3.5".to_string(),
+                    binary_hash:
+                        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_string(),
+                },
+            ],
+            vec!["plugin:official:quality-gate@1.2.0".to_string()],
+            vec!["app:dag@0.3.5".to_string()],
+        )
+        .expect("supply chain inventory");
+        assert_eq!(report.adapters.len(), 2);
+        assert_eq!(report.plugin_descriptor_ids.len(), 1);
+        assert_eq!(report.app_descriptor_ids.len(), 1);
     }
 }
