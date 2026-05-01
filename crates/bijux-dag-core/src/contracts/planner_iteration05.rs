@@ -263,9 +263,129 @@ pub fn diff_plans_semantically(
     })
 }
 
+/// Parameter source kind in effective resolution chains.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ParameterSourceKindV1 {
+    Default,
+    Graph,
+    Config,
+    Env,
+    CliOverride,
+    AdapterConstraint,
+}
+
+/// One source event in parameter resolution chain.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ParameterSourceEventV1 {
+    /// Source kind.
+    pub source: ParameterSourceKindV1,
+    /// Source key/path.
+    pub key: String,
+    /// Source value representation.
+    pub value: String,
+}
+
+/// Effective parameter resolution item.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EffectiveParameterResolutionV1 {
+    /// Effective parameter key.
+    pub key: String,
+    /// Effective parameter value.
+    pub effective_value: String,
+    /// Ordered source chain from low to high precedence.
+    pub sources: Vec<ParameterSourceEventV1>,
+}
+
+/// Parameter explain report for operator-facing visibility.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ParameterExplainReportV1 {
+    /// Effective parameter entries.
+    pub parameters: Vec<EffectiveParameterResolutionV1>,
+}
+
+/// Resolve parameters with source-chain visibility across all planning surfaces.
+pub fn build_parameter_explain_report(
+    defaults: &std::collections::BTreeMap<String, String>,
+    graph_params: &std::collections::BTreeMap<String, String>,
+    config_params: &std::collections::BTreeMap<String, String>,
+    env_params: &std::collections::BTreeMap<String, String>,
+    cli_overrides: &std::collections::BTreeMap<String, String>,
+    adapter_constraints: &std::collections::BTreeMap<String, String>,
+) -> ParameterExplainReportV1 {
+    let keys = defaults
+        .keys()
+        .chain(graph_params.keys())
+        .chain(config_params.keys())
+        .chain(env_params.keys())
+        .chain(cli_overrides.keys())
+        .chain(adapter_constraints.keys())
+        .cloned()
+        .collect::<BTreeSet<_>>();
+
+    let mut parameters = keys
+        .into_iter()
+        .map(|key| {
+            let mut chain = Vec::new();
+            if let Some(value) = defaults.get(&key) {
+                chain.push(ParameterSourceEventV1 {
+                    source: ParameterSourceKindV1::Default,
+                    key: key.clone(),
+                    value: value.clone(),
+                });
+            }
+            if let Some(value) = graph_params.get(&key) {
+                chain.push(ParameterSourceEventV1 {
+                    source: ParameterSourceKindV1::Graph,
+                    key: key.clone(),
+                    value: value.clone(),
+                });
+            }
+            if let Some(value) = config_params.get(&key) {
+                chain.push(ParameterSourceEventV1 {
+                    source: ParameterSourceKindV1::Config,
+                    key: key.clone(),
+                    value: value.clone(),
+                });
+            }
+            if let Some(value) = env_params.get(&key) {
+                chain.push(ParameterSourceEventV1 {
+                    source: ParameterSourceKindV1::Env,
+                    key: key.clone(),
+                    value: value.clone(),
+                });
+            }
+            if let Some(value) = cli_overrides.get(&key) {
+                chain.push(ParameterSourceEventV1 {
+                    source: ParameterSourceKindV1::CliOverride,
+                    key: key.clone(),
+                    value: value.clone(),
+                });
+            }
+            if let Some(value) = adapter_constraints.get(&key) {
+                chain.push(ParameterSourceEventV1 {
+                    source: ParameterSourceKindV1::AdapterConstraint,
+                    key: key.clone(),
+                    value: value.clone(),
+                });
+            }
+            let effective_value = chain
+                .last()
+                .map(|event| event.value.clone())
+                .unwrap_or_else(|| "null".to_string());
+            EffectiveParameterResolutionV1 { key, effective_value, sources: chain }
+        })
+        .collect::<Vec<_>>();
+    parameters.sort_by(|left, right| left.key.cmp(&right.key));
+    ParameterExplainReportV1 { parameters }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{build_complete_dry_plan_output, build_plan_explain_report, diff_plans_semantically};
+    use super::{
+        build_complete_dry_plan_output, build_parameter_explain_report, build_plan_explain_report,
+        diff_plans_semantically, ParameterSourceKindV1,
+    };
     use crate::{DagBuilder, Effect, GraphMeta, NodeBuilder, NodeKind};
     use std::collections::BTreeSet;
 
@@ -348,5 +468,27 @@ mod tests {
         let diff = diff_plans_semantically(&base, &with_meta).expect("semantic diff");
         assert!(!diff.semantics_changed);
         assert!(diff.changed_nodes.is_empty());
+    }
+
+    #[test]
+    fn g044_parameter_resolution_report_exposes_full_source_chain() {
+        let report = build_parameter_explain_report(
+            &std::collections::BTreeMap::from([("threads".to_string(), "4".to_string())]),
+            &std::collections::BTreeMap::from([("threads".to_string(), "8".to_string())]),
+            &std::collections::BTreeMap::new(),
+            &std::collections::BTreeMap::from([("threads".to_string(), "12".to_string())]),
+            &std::collections::BTreeMap::from([("threads".to_string(), "16".to_string())]),
+            &std::collections::BTreeMap::from([("threads".to_string(), "max=14".to_string())]),
+        );
+        let threads = report
+            .parameters
+            .iter()
+            .find(|entry| entry.key == "threads")
+            .expect("threads parameter should resolve");
+        assert_eq!(threads.effective_value, "max=14");
+        assert_eq!(
+            threads.sources.last().map(|entry| entry.source.clone()),
+            Some(ParameterSourceKindV1::AdapterConstraint)
+        );
     }
 }
