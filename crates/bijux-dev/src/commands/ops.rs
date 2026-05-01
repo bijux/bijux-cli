@@ -3680,6 +3680,13 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             ));
         }
     }
+    let publishable_report = evaluate_publishable_crates(&root)?;
+    if !publishable_report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "publishable crate contract failed: {}",
+            serde_json::to_string(&publishable_report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
 }
 
@@ -4406,6 +4413,98 @@ pub(super) fn run_repo_hygiene_suite_guard() -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+fn evaluate_publishable_crates(root: &Path) -> Result<Value, String> {
+    let metadata_json = command_stdout(root, "cargo", &["metadata", "--no-deps", "--format-version", "1"])?;
+    let metadata: Value = serde_json::from_str(&metadata_json).map_err(|err| err.to_string())?;
+    let packages =
+        metadata["packages"].as_array().ok_or_else(|| "cargo metadata missing packages".to_string())?;
+
+    let mut crate_reports = Vec::new();
+    let mut violations = Vec::new();
+
+    for package in packages {
+        let publish = package.get("publish").cloned().unwrap_or(Value::Null);
+        if matches!(publish, Value::Array(ref values) if values.is_empty()) {
+            continue;
+        }
+        let Some(name) = package.get("name").and_then(Value::as_str) else {
+            continue;
+        };
+        if !name.starts_with("bijux-") {
+            continue;
+        }
+        let manifest_path = package
+            .get("manifest_path")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("manifest_path missing for package {name}"))?;
+        let manifest_path = PathBuf::from(manifest_path);
+        let crate_dir = manifest_path
+            .parent()
+            .ok_or_else(|| format!("manifest has no parent: {}", manifest_path.display()))?
+            .to_path_buf();
+
+        let description_ok =
+            package.get("description").and_then(Value::as_str).is_some_and(|value| !value.trim().is_empty());
+        if !description_ok {
+            violations.push(format!("{name}: package description is required"));
+        }
+        let readme_rel =
+            package.get("readme").and_then(Value::as_str).ok_or_else(|| format!("{name}: package readme is required"))?;
+        let readme_path = crate_dir.join(readme_rel);
+        if !readme_path.exists() {
+            violations.push(format!("{name}: readme path does not exist: {}", readme_path.display()));
+        }
+        for (field, key) in [
+            ("license", "license"),
+            ("repository", "repository"),
+            ("homepage", "homepage"),
+            ("documentation", "documentation"),
+        ] {
+            if !package.get(key).and_then(Value::as_str).is_some_and(|value| !value.trim().is_empty()) {
+                violations.push(format!("{name}: package {field} is required"));
+            }
+        }
+        if package.get("keywords").and_then(Value::as_array).is_none_or(|values| values.is_empty()) {
+            violations.push(format!("{name}: at least one keyword is required"));
+        }
+        if package.get("categories").and_then(Value::as_array).is_none_or(|values| values.is_empty()) {
+            violations.push(format!("{name}: at least one category is required"));
+        }
+        let targets = package.get("targets").and_then(Value::as_array).cloned().unwrap_or_default();
+        let has_lib_or_bin = targets.iter().any(|target| {
+            target
+                .get("kind")
+                .and_then(Value::as_array)
+                .is_some_and(|kinds| kinds.iter().any(|kind| kind == "lib" || kind == "bin"))
+        });
+        if !has_lib_or_bin {
+            violations.push(format!("{name}: publishable package must expose a lib or bin target"));
+        }
+
+        let package_list_status = Command::new("cargo")
+            .args(["package", "-p", name, "--allow-dirty", "--list"])
+            .current_dir(root)
+            .status()
+            .map_err(|err| format!("{name}: cargo package --list failed to start: {err}"))?;
+        if !package_list_status.success() {
+            violations.push(format!("{name}: cargo package --list failed"));
+        }
+
+        crate_reports.push(json!({
+            "name": name,
+            "manifest": manifest_path.strip_prefix(root).unwrap_or(&manifest_path).to_string_lossy(),
+            "readme": readme_path.strip_prefix(root).unwrap_or(&readme_path).to_string_lossy(),
+        }));
+    }
+
+    Ok(json!({
+        "goal": "G191",
+        "ok": violations.is_empty(),
+        "publishable_crates": crate_reports,
+        "violations": violations,
+    }))
 }
 
 pub(super) fn deep_merge_json(target: &mut Value, overlay: &Value) {
