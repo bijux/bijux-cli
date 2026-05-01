@@ -120,9 +120,68 @@ pub fn redact_sensitive_values(
     })
 }
 
+/// Network policy labels for execution nodes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum NetworkPolicyLabelV1 {
+    Forbidden,
+    Allowed,
+    Required,
+}
+
+/// Trust class for cache/replay decisions.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NetworkTrustDecisionV1 {
+    pub label: NetworkPolicyLabelV1,
+    pub cache_trust: String,
+    pub replay_trust: String,
+    pub reason: String,
+}
+
+/// Classify cache/replay trust based on network policy and observation.
+pub fn classify_network_policy_trust(
+    label: NetworkPolicyLabelV1,
+    network_observed: bool,
+) -> NetworkTrustDecisionV1 {
+    match (label.clone(), network_observed) {
+        (NetworkPolicyLabelV1::Forbidden, true) => NetworkTrustDecisionV1 {
+            label,
+            cache_trust: "unsafe".to_string(),
+            replay_trust: "unsafe".to_string(),
+            reason: "network was observed despite forbidden policy".to_string(),
+        },
+        (NetworkPolicyLabelV1::Forbidden, false) => NetworkTrustDecisionV1 {
+            label,
+            cache_trust: "exact".to_string(),
+            replay_trust: "exact".to_string(),
+            reason: "network usage correctly absent".to_string(),
+        },
+        (NetworkPolicyLabelV1::Allowed, _) => NetworkTrustDecisionV1 {
+            label,
+            cache_trust: "compatible".to_string(),
+            replay_trust: "compatible".to_string(),
+            reason: "network optional under allowed policy".to_string(),
+        },
+        (NetworkPolicyLabelV1::Required, false) => NetworkTrustDecisionV1 {
+            label,
+            cache_trust: "unsafe".to_string(),
+            replay_trust: "unsafe".to_string(),
+            reason: "required network interaction was missing".to_string(),
+        },
+        (NetworkPolicyLabelV1::Required, true) => NetworkTrustDecisionV1 {
+            label,
+            cache_trust: "advisory".to_string(),
+            replay_trust: "advisory".to_string(),
+            reason: "required network interaction makes reproducibility conditional".to_string(),
+        },
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{enforce_environment_allowlist, enforce_write_boundary, redact_sensitive_values};
+    use super::{
+        classify_network_policy_trust, enforce_environment_allowlist, enforce_write_boundary,
+        redact_sensitive_values, NetworkPolicyLabelV1,
+    };
 
     #[test]
     fn g081_write_boundary_refuses_traversal_and_symlink_escape() {
@@ -183,5 +242,16 @@ mod tests {
         assert!(!report.redacted_text.contains("abc123"));
         assert!(!report.redacted_text.contains("topsecret"));
         assert!(report.redacted_text.contains("path=/workspace/run"));
+    }
+
+    #[test]
+    fn g084_network_policy_labels_drive_cache_and_replay_trust() {
+        let forbidden = classify_network_policy_trust(NetworkPolicyLabelV1::Forbidden, true);
+        assert_eq!(forbidden.cache_trust, "unsafe");
+        assert_eq!(forbidden.replay_trust, "unsafe");
+
+        let required = classify_network_policy_trust(NetworkPolicyLabelV1::Required, true);
+        assert_eq!(required.cache_trust, "advisory");
+        assert_eq!(required.replay_trust, "advisory");
     }
 }
