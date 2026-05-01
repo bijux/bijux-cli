@@ -62,11 +62,39 @@ pub fn validate_matrix_execution(
     Ok(record)
 }
 
+/// Dataset-partition workflow execution record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PartitionExecutionRecordV1 {
+    pub partition_keys: Vec<String>,
+    pub producer_node_id: String,
+    pub reducer_node_id: String,
+    pub lineage_complete: bool,
+}
+
+/// Validate dataset partition workflow semantics.
+pub fn validate_partition_execution(
+    record: PartitionExecutionRecordV1,
+) -> Result<PartitionExecutionRecordV1, String> {
+    if record.partition_keys.is_empty() {
+        return Err("partition workflow must include partition keys".to_string());
+    }
+    if record.partition_keys.iter().any(|key| key.trim().is_empty()) {
+        return Err("partition keys must not be empty".to_string());
+    }
+    if record.producer_node_id.trim().is_empty() || record.reducer_node_id.trim().is_empty() {
+        return Err("producer and reducer node ids must not be empty".to_string());
+    }
+    if !record.lineage_complete {
+        return Err("partition lineage must be complete".to_string());
+    }
+    Ok(record)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_matrix_execution, validate_nested_subgraph_execution, MatrixExecutionRecordV1,
-        NestedSubgraphExecutionRecordV1,
+        validate_matrix_execution, validate_nested_subgraph_execution, validate_partition_execution,
+        MatrixExecutionRecordV1, NestedSubgraphExecutionRecordV1, PartitionExecutionRecordV1,
     };
 
     #[test]
@@ -101,5 +129,18 @@ mod tests {
         .expect("matrix execution");
         assert_eq!(record.expanded_node_ids.len(), 2);
         assert!(record.deterministic_ids);
+    }
+
+    #[test]
+    fn g113_partition_execution_exposes_stable_keys_and_reducer_lineage() {
+        let record = validate_partition_execution(PartitionExecutionRecordV1 {
+            partition_keys: vec!["sample-a".to_string(), "sample-b".to_string()],
+            producer_node_id: "split-samples".to_string(),
+            reducer_node_id: "merge-results".to_string(),
+            lineage_complete: true,
+        })
+        .expect("partition execution");
+        assert_eq!(record.partition_keys.len(), 2);
+        assert_eq!(record.reducer_node_id, "merge-results");
     }
 }
