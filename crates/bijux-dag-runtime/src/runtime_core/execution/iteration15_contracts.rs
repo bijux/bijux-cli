@@ -133,9 +133,66 @@ pub fn evaluate_apptainer_boundary(
     }
 }
 
+/// Batch script export descriptor.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BatchScriptExportDescriptorV1 {
+    pub scheduler: String,
+    pub job_name: String,
+    pub cpus: u32,
+    pub memory_mb: u32,
+    pub walltime: String,
+    pub log_path: String,
+    pub scratch_path: String,
+    pub artifacts_path: String,
+    pub cleanup_command: String,
+}
+
+/// Batch script export output.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BatchScriptExportOutputV1 {
+    pub script: String,
+    pub submitted: bool,
+}
+
+/// Render scheduler export script without claiming execution submission.
+pub fn render_batch_script_export(
+    descriptor: &BatchScriptExportDescriptorV1,
+) -> Result<BatchScriptExportOutputV1, String> {
+    for required in [
+        descriptor.scheduler.as_str(),
+        descriptor.job_name.as_str(),
+        descriptor.walltime.as_str(),
+        descriptor.log_path.as_str(),
+        descriptor.scratch_path.as_str(),
+        descriptor.artifacts_path.as_str(),
+        descriptor.cleanup_command.as_str(),
+    ] {
+        if required.trim().is_empty() {
+            return Err("batch script export descriptor contains empty required fields".to_string());
+        }
+    }
+    if descriptor.cpus == 0 || descriptor.memory_mb == 0 {
+        return Err("batch script export descriptor requires positive cpus and memory_mb".to_string());
+    }
+    let script = format!(
+        "#!/usr/bin/env bash\n# scheduler: {scheduler}\n# job_name: {job}\n# cpus: {cpus}\n# memory_mb: {memory}\n# walltime: {walltime}\n# logs: {logs}\n# scratch: {scratch}\n# artifacts: {artifacts}\nset -euo pipefail\nmkdir -p {scratch}\nmkdir -p {artifacts}\n# run workload command here\necho \"collecting artifacts\"\n{cleanup}\n",
+        scheduler = descriptor.scheduler,
+        job = descriptor.job_name,
+        cpus = descriptor.cpus,
+        memory = descriptor.memory_mb,
+        walltime = descriptor.walltime,
+        logs = descriptor.log_path,
+        scratch = descriptor.scratch_path,
+        artifacts = descriptor.artifacts_path,
+        cleanup = descriptor.cleanup_command,
+    );
+    Ok(BatchScriptExportOutputV1 { script, submitted: false })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        render_batch_script_export, BatchScriptExportDescriptorV1,
         evaluate_apptainer_boundary, ApptainerSupportStateV1,
         enforce_container_image_identity, validate_docker_smoke_execution,
         DockerSmokeExecutionRecordV1,
@@ -191,5 +248,27 @@ mod tests {
 
         let supported = evaluate_apptainer_boundary("apptainer", true, false);
         assert_eq!(supported.state, ApptainerSupportStateV1::Supported);
+    }
+
+    #[test]
+    fn g144_batch_script_export_includes_resources_logs_scratch_artifacts_and_cleanup() {
+        let output = render_batch_script_export(&BatchScriptExportDescriptorV1 {
+            scheduler: "slurm".to_string(),
+            job_name: "align-smoke".to_string(),
+            cpus: 8,
+            memory_mb: 16384,
+            walltime: "02:00:00".to_string(),
+            log_path: "/tmp/run/logs".to_string(),
+            scratch_path: "/tmp/run/scratch".to_string(),
+            artifacts_path: "/tmp/run/artifacts".to_string(),
+            cleanup_command: "rm -rf /tmp/run/scratch".to_string(),
+        })
+        .expect("batch script export");
+        assert!(!output.submitted);
+        assert!(output.script.contains("cpus: 8"));
+        assert!(output.script.contains("memory_mb: 16384"));
+        assert!(output.script.contains("scratch: /tmp/run/scratch"));
+        assert!(output.script.contains("artifacts: /tmp/run/artifacts"));
+        assert!(output.script.contains("rm -rf /tmp/run/scratch"));
     }
 }
