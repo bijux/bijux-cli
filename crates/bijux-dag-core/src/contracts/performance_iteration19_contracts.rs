@@ -267,14 +267,58 @@ pub fn evaluate_runtime_startup_benchmark(
     })
 }
 
+/// Scheduler churn benchmark input.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SchedulerChurnBenchmarkInputV1 {
+    pub retries_processed: usize,
+    pub branch_events_processed: usize,
+    pub ready_queue_ops: usize,
+    pub cancellation_events: usize,
+    pub elapsed_ms: f64,
+}
+
+/// Scheduler churn benchmark report.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SchedulerChurnBenchmarkReportV1 {
+    pub events_per_second: f64,
+    pub within_budget: bool,
+    pub diagnostics: Vec<String>,
+}
+
+/// Evaluate scheduler churn throughput and regression budget.
+pub fn evaluate_scheduler_churn_benchmark(
+    input: &SchedulerChurnBenchmarkInputV1,
+) -> Result<SchedulerChurnBenchmarkReportV1, String> {
+    if !input.elapsed_ms.is_finite() || input.elapsed_ms <= 0.0 {
+        return Err("scheduler churn benchmark requires elapsed_ms > 0".to_string());
+    }
+    let total_events =
+        input.retries_processed + input.branch_events_processed + input.ready_queue_ops + input.cancellation_events;
+    let events_per_second = (total_events as f64) / (input.elapsed_ms / 1000.0);
+    let mut diagnostics = Vec::new();
+    if events_per_second < 4_000.0 {
+        diagnostics.push("scheduler churn throughput below 4000 events/s budget".to_string());
+    }
+    if input.cancellation_events > 0 && input.cancellation_events.saturating_mul(2) > total_events {
+        diagnostics.push("cancellation storm dominates scheduler churn workload".to_string());
+    }
+    Ok(SchedulerChurnBenchmarkReportV1 {
+        events_per_second,
+        within_budget: diagnostics.is_empty(),
+        diagnostics,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         evaluate_planner_lowering_and_explain,
+        evaluate_scheduler_churn_benchmark,
         evaluate_runtime_startup_benchmark,
         evaluate_canonicalization_and_fingerprinting,
         evaluate_graph_parse_and_validation_budget, evaluate_route_dispatch_and_help_startup,
         CanonicalFingerprintBenchmarkInputV1, GraphValidationBenchmarkInputV1,
+        SchedulerChurnBenchmarkInputV1,
         RuntimeStartupBenchmarkInputV1,
         PlannerLoweringBenchmarkInputV1, RouteDispatchBenchmarkInputV1,
     };
@@ -398,5 +442,29 @@ mod tests {
         })
         .expect("slow startup benchmark");
         assert!(!slow.diagnostics.is_empty());
+    }
+
+    #[test]
+    fn g186_scheduler_churn_benchmark_catches_retry_and_cancellation_regressions() {
+        let healthy = evaluate_scheduler_churn_benchmark(&SchedulerChurnBenchmarkInputV1 {
+            retries_processed: 3_000,
+            branch_events_processed: 4_000,
+            ready_queue_ops: 6_000,
+            cancellation_events: 800,
+            elapsed_ms: 2_000.0,
+        })
+        .expect("healthy scheduler benchmark");
+        assert!(healthy.within_budget);
+
+        let churn = evaluate_scheduler_churn_benchmark(&SchedulerChurnBenchmarkInputV1 {
+            retries_processed: 500,
+            branch_events_processed: 300,
+            ready_queue_ops: 600,
+            cancellation_events: 3_000,
+            elapsed_ms: 2_500.0,
+        })
+        .expect("churn report");
+        assert!(!churn.within_budget);
+        assert_eq!(churn.diagnostics.len(), 2);
     }
 }
