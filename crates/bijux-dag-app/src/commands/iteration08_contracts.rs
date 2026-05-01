@@ -383,14 +383,54 @@ pub fn classify_diff_observations(
     }
 }
 
+/// Cache explain outcome class.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CacheExplainOutcomeV1 {
+    Hit,
+    Miss,
+    NonCacheable,
+    UnsafeReuseRefused,
+}
+
+/// Direct cache explain report for one node decision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheExplainReportV1 {
+    pub node_id: String,
+    pub outcome: CacheExplainOutcomeV1,
+    pub reasons: Vec<String>,
+}
+
+/// Build direct cache explain output.
+pub fn build_cache_explain_report(
+    node_id: &str,
+    outcome: CacheExplainOutcomeV1,
+    reasons: Vec<String>,
+) -> Result<CacheExplainReportV1, String> {
+    if node_id.trim().is_empty() {
+        return Err("node_id must not be empty".to_string());
+    }
+    if reasons.is_empty() {
+        return Err("cache explain reasons must not be empty".to_string());
+    }
+    if reasons.iter().any(|reason| reason.trim().is_empty()) {
+        return Err("cache explain reasons must not contain empty values".to_string());
+    }
+    Ok(CacheExplainReportV1 {
+        node_id: node_id.to_string(),
+        outcome,
+        reasons,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_cache_explain_report,
         classify_diff_observations,
         build_inspect_command_report, build_plan_command_report, build_run_command_report,
         build_replay_command_report, build_status_command_report, build_validate_command_report,
-        DiffObservationV1, DryPlanNodeRowV1, InspectNodeStateV1, PreflightCheckV1,
-        ReplayNodeDecisionV1, ReplaySelectorV1, ValidateIssueV1,
+        CacheExplainOutcomeV1, DiffObservationV1, DryPlanNodeRowV1, InspectNodeStateV1,
+        PreflightCheckV1, ReplayNodeDecisionV1, ReplaySelectorV1, ValidateIssueV1,
     };
 
     #[test]
@@ -581,5 +621,38 @@ mod tests {
         assert_eq!(classified.semantic_changes.len(), 2);
         assert_eq!(classified.noise_changes.len(), 1);
         assert_eq!(classified.noise_changes[0].field, "started_at");
+    }
+
+    #[test]
+    fn g078_cache_explain_is_direct_for_hit_miss_noncacheable_and_refusal() {
+        let hit = build_cache_explain_report(
+            "align-reads",
+            CacheExplainOutcomeV1::Hit,
+            vec!["cache key matched all compatibility factors".to_string()],
+        )
+        .expect("cache hit explain");
+        let miss = build_cache_explain_report(
+            "call-variants",
+            CacheExplainOutcomeV1::Miss,
+            vec!["input fingerprint changed".to_string()],
+        )
+        .expect("cache miss explain");
+        let non_cacheable = build_cache_explain_report(
+            "collect-clock",
+            CacheExplainOutcomeV1::NonCacheable,
+            vec!["node declared nondeterministic side effects".to_string()],
+        )
+        .expect("non-cacheable explain");
+        let refusal = build_cache_explain_report(
+            "publish",
+            CacheExplainOutcomeV1::UnsafeReuseRefused,
+            vec!["integrity verification failed for cached artifact".to_string()],
+        )
+        .expect("unsafe refusal explain");
+
+        assert!(matches!(hit.outcome, CacheExplainOutcomeV1::Hit));
+        assert!(matches!(miss.outcome, CacheExplainOutcomeV1::Miss));
+        assert!(matches!(non_cacheable.outcome, CacheExplainOutcomeV1::NonCacheable));
+        assert!(matches!(refusal.outcome, CacheExplainOutcomeV1::UnsafeReuseRefused));
     }
 }
