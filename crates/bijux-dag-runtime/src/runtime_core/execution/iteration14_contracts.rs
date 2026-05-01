@@ -321,12 +321,74 @@ pub fn evaluate_checkpoint_resume(
     }
 }
 
+/// Backpressure input signals.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BackpressureSignalsV1 {
+    pub artifact_store_degraded: bool,
+    pub cache_degraded: bool,
+    pub worker_pool_degraded: bool,
+    pub io_degraded: bool,
+    pub adapter_health_degraded: bool,
+}
+
+/// Backpressure action.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BackpressureActionV1 {
+    Normal,
+    Throttle,
+    Refuse,
+}
+
+/// Backpressure status report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BackpressureStatusReportV1 {
+    pub action: BackpressureActionV1,
+    pub visible_status: String,
+    pub reasons: Vec<String>,
+}
+
+/// Evaluate actionable backpressure from runtime degradation signals.
+pub fn evaluate_backpressure(signals: &BackpressureSignalsV1) -> BackpressureStatusReportV1 {
+    let mut reasons = Vec::new();
+    if signals.artifact_store_degraded {
+        reasons.push("artifact_store_degraded".to_string());
+    }
+    if signals.cache_degraded {
+        reasons.push("cache_degraded".to_string());
+    }
+    if signals.worker_pool_degraded {
+        reasons.push("worker_pool_degraded".to_string());
+    }
+    if signals.io_degraded {
+        reasons.push("io_degraded".to_string());
+    }
+    if signals.adapter_health_degraded {
+        reasons.push("adapter_health_degraded".to_string());
+    }
+
+    let action = if signals.io_degraded || signals.artifact_store_degraded {
+        BackpressureActionV1::Refuse
+    } else if !reasons.is_empty() {
+        BackpressureActionV1::Throttle
+    } else {
+        BackpressureActionV1::Normal
+    };
+    let visible_status = match action {
+        BackpressureActionV1::Normal => "normal".to_string(),
+        BackpressureActionV1::Throttle => "throttle".to_string(),
+        BackpressureActionV1::Refuse => "refuse".to_string(),
+    };
+    BackpressureStatusReportV1 { action, visible_status, reasons }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_partial_rerun_preview, plan_multi_run_fairness,
         validate_durable_run_queue_snapshot, validate_node_leases, validate_pause_resume_transitions,
         evaluate_checkpoint_resume, AdapterCheckpointContractV1, AdapterCheckpointModeV1,
+        evaluate_backpressure, BackpressureActionV1, BackpressureSignalsV1,
         DurableRunQueueSnapshotV1, MultiRunDemandV1, PartialRerunPreviewRequestV1,
         PartialRerunSelectorKindV1, PauseScopeV1, PauseTransitionEventV1, QueueAttemptRecordV1,
         QueueLeaseRecordV1, SchedulerDecisionRecordV1,
@@ -500,5 +562,29 @@ mod tests {
         assert!(!fresh_only.resume_allowed);
         assert!(fresh_only.cleanup_required);
         assert!(fresh_only.reason.contains("refuses checkpoint resume"));
+    }
+
+    #[test]
+    fn g137_backpressure_status_reports_throttle_or_refuse_actions() {
+        let throttle = evaluate_backpressure(&BackpressureSignalsV1 {
+            artifact_store_degraded: false,
+            cache_degraded: true,
+            worker_pool_degraded: false,
+            io_degraded: false,
+            adapter_health_degraded: true,
+        });
+        assert_eq!(throttle.action, BackpressureActionV1::Throttle);
+        assert_eq!(throttle.visible_status, "throttle");
+
+        let refuse = evaluate_backpressure(&BackpressureSignalsV1 {
+            artifact_store_degraded: true,
+            cache_degraded: false,
+            worker_pool_degraded: false,
+            io_degraded: false,
+            adapter_health_degraded: false,
+        });
+        assert_eq!(refuse.action, BackpressureActionV1::Refuse);
+        assert_eq!(refuse.visible_status, "refuse");
+        assert!(refuse.reasons.iter().any(|reason| reason == "artifact_store_degraded"));
     }
 }
