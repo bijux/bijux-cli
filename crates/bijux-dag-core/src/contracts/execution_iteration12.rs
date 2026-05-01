@@ -122,12 +122,38 @@ pub fn validate_quorum_execution(
     Ok(record)
 }
 
+/// Optional-input execution visibility record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OptionalInputExecutionRecordV1 {
+    pub optional_inputs_present: Vec<String>,
+    pub optional_inputs_missing: Vec<String>,
+    pub policy_requires_presence: bool,
+    pub execution_failed: bool,
+}
+
+/// Validate optional-input execution semantics.
+pub fn validate_optional_input_execution(
+    record: OptionalInputExecutionRecordV1,
+) -> Result<OptionalInputExecutionRecordV1, String> {
+    if record.optional_inputs_present.is_empty() && record.optional_inputs_missing.is_empty() {
+        return Err("optional input execution must report present or missing inputs".to_string());
+    }
+    if !record.policy_requires_presence && record.execution_failed {
+        return Err("missing optional inputs must not fail execution without policy requirement".to_string());
+    }
+    if record.policy_requires_presence && !record.optional_inputs_missing.is_empty() && !record.execution_failed {
+        return Err("policy-required optional inputs must fail when missing".to_string());
+    }
+    Ok(record)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         validate_matrix_execution, validate_nested_subgraph_execution, validate_partition_execution,
-        validate_quorum_execution, MatrixExecutionRecordV1, NestedSubgraphExecutionRecordV1,
-        PartitionExecutionRecordV1, QuorumExecutionRecordV1,
+        validate_optional_input_execution, validate_quorum_execution, MatrixExecutionRecordV1,
+        NestedSubgraphExecutionRecordV1, OptionalInputExecutionRecordV1, PartitionExecutionRecordV1,
+        QuorumExecutionRecordV1,
     };
 
     #[test]
@@ -189,5 +215,18 @@ mod tests {
         .expect("quorum execution");
         assert_eq!(record.required_successes, 2);
         assert_eq!(record.achieved_successes, 2);
+    }
+
+    #[test]
+    fn g115_optional_input_execution_keeps_missing_inputs_visible_without_forced_failure() {
+        let record = validate_optional_input_execution(OptionalInputExecutionRecordV1 {
+            optional_inputs_present: vec!["sample_sheet".to_string()],
+            optional_inputs_missing: vec!["annotation_db".to_string()],
+            policy_requires_presence: false,
+            execution_failed: false,
+        })
+        .expect("optional input execution");
+        assert_eq!(record.optional_inputs_missing, vec!["annotation_db".to_string()]);
+        assert!(!record.execution_failed);
     }
 }
