@@ -644,15 +644,104 @@ pub fn query_evidence_graph(
     })
 }
 
+/// Completeness profile for evidence promotion gates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EvidenceCompletenessProfileV1 {
+    Draft,
+    Operational,
+    Audit,
+    Release,
+    Scientific,
+}
+
+/// Profile verification result for evidence completeness.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EvidenceCompletenessReportV1 {
+    pub profile: EvidenceCompletenessProfileV1,
+    pub required_fields: Vec<String>,
+    pub missing_fields: Vec<String>,
+    pub promotable: bool,
+}
+
+fn required_fields_for_profile(profile: EvidenceCompletenessProfileV1) -> Vec<String> {
+    let mut required = vec!["run_manifest".to_string(), "event_log".to_string()];
+    if matches!(
+        profile,
+        EvidenceCompletenessProfileV1::Operational
+            | EvidenceCompletenessProfileV1::Audit
+            | EvidenceCompletenessProfileV1::Release
+            | EvidenceCompletenessProfileV1::Scientific
+    ) {
+        required.extend([
+            "timeline".to_string(),
+            "node_traces".to_string(),
+            "outputs_index".to_string(),
+        ]);
+    }
+    if matches!(
+        profile,
+        EvidenceCompletenessProfileV1::Audit
+            | EvidenceCompletenessProfileV1::Release
+            | EvidenceCompletenessProfileV1::Scientific
+    ) {
+        required.extend([
+            "policy_trace".to_string(),
+            "security_audit".to_string(),
+            "correlation_chain".to_string(),
+        ]);
+    }
+    if matches!(
+        profile,
+        EvidenceCompletenessProfileV1::Release | EvidenceCompletenessProfileV1::Scientific
+    ) {
+        required.extend(["verification_report".to_string(), "signature_bundle".to_string()]);
+    }
+    if matches!(profile, EvidenceCompletenessProfileV1::Scientific) {
+        required.extend([
+            "sample_identity".to_string(),
+            "reference_identity".to_string(),
+            "provenance_bundle".to_string(),
+        ]);
+    }
+    required
+}
+
+/// Verify run evidence against a completeness profile and return missing gates.
+pub fn verify_evidence_completeness_profile(
+    profile: EvidenceCompletenessProfileV1,
+    present_fields: &[String],
+) -> EvidenceCompletenessReportV1 {
+    let required_fields = required_fields_for_profile(profile);
+    let present = present_fields
+        .iter()
+        .map(|field| field.trim())
+        .filter(|field| !field.is_empty())
+        .map(ToString::to_string)
+        .collect::<BTreeSet<_>>();
+    let missing_fields = required_fields
+        .iter()
+        .filter(|field| !present.contains(*field))
+        .cloned()
+        .collect::<Vec<_>>();
+    EvidenceCompletenessReportV1 {
+        profile,
+        required_fields,
+        promotable: missing_fields.is_empty(),
+        missing_fields,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         analyze_flake_history, attach_app_evidence, build_actionable_run_metrics, compare_runs_complete,
         query_evidence_graph, reconstruct_useful_timeline, summarize_large_run_compact,
-        validate_end_to_end_correlation_ids, verify_event_taxonomy_complete, AppEvidenceAttachmentV1,
-        CorrelationChainV1, EvidenceGraphEdgeV1, EvidenceGraphV1, ObservabilityEventDomainV1,
-        ObservabilityEventRecordV1, RunComparisonInputV1, RunEvidenceEnvelopeV1, RunHistoryEntryV1,
-        RunMetricsSampleV1, RunNodeOutcomeV1,
+        validate_end_to_end_correlation_ids, verify_evidence_completeness_profile,
+        verify_event_taxonomy_complete, AppEvidenceAttachmentV1, CorrelationChainV1,
+        EvidenceCompletenessProfileV1, EvidenceGraphEdgeV1, EvidenceGraphV1,
+        ObservabilityEventDomainV1, ObservabilityEventRecordV1, RunComparisonInputV1,
+        RunEvidenceEnvelopeV1, RunHistoryEntryV1, RunMetricsSampleV1, RunNodeOutcomeV1,
     };
 
     fn event(domain: ObservabilityEventDomainV1, name: &str) -> ObservabilityEventRecordV1 {
@@ -953,5 +1042,44 @@ mod tests {
             ]
         );
         assert_eq!(result.traversed_edges.len(), 3);
+    }
+
+    #[test]
+    fn g170_evidence_completeness_is_profile_driven_for_promotion_gates() {
+        let audit = verify_evidence_completeness_profile(
+            EvidenceCompletenessProfileV1::Audit,
+            &[
+                "run_manifest".to_string(),
+                "event_log".to_string(),
+                "timeline".to_string(),
+                "node_traces".to_string(),
+                "outputs_index".to_string(),
+                "policy_trace".to_string(),
+                "correlation_chain".to_string(),
+            ],
+        );
+        assert!(!audit.promotable);
+        assert_eq!(audit.missing_fields, vec!["security_audit".to_string()]);
+
+        let scientific = verify_evidence_completeness_profile(
+            EvidenceCompletenessProfileV1::Scientific,
+            &[
+                "run_manifest".to_string(),
+                "event_log".to_string(),
+                "timeline".to_string(),
+                "node_traces".to_string(),
+                "outputs_index".to_string(),
+                "policy_trace".to_string(),
+                "security_audit".to_string(),
+                "correlation_chain".to_string(),
+                "verification_report".to_string(),
+                "signature_bundle".to_string(),
+                "sample_identity".to_string(),
+                "reference_identity".to_string(),
+                "provenance_bundle".to_string(),
+            ],
+        );
+        assert!(scientific.promotable);
+        assert!(scientific.missing_fields.is_empty());
     }
 }
