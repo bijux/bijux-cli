@@ -88,9 +88,41 @@ pub fn enforce_environment_allowlist(
     })
 }
 
+/// Redaction report for sensitive text surfaces.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RedactionReportV1 {
+    pub redacted_text: String,
+    pub redaction_count: usize,
+}
+
+/// Redact known secret values from logs/errors/support text.
+pub fn redact_sensitive_values(
+    input: &str,
+    sensitive_values: &[String],
+) -> Result<RedactionReportV1, String> {
+    if input.is_empty() {
+        return Err("input must not be empty".to_string());
+    }
+    let mut redacted_text = input.to_string();
+    let mut redaction_count = 0usize;
+    for secret in sensitive_values {
+        if secret.trim().is_empty() {
+            continue;
+        }
+        if redacted_text.contains(secret) {
+            redacted_text = redacted_text.replace(secret, "[REDACTED]");
+            redaction_count += 1;
+        }
+    }
+    Ok(RedactionReportV1 {
+        redacted_text,
+        redaction_count,
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{enforce_environment_allowlist, enforce_write_boundary};
+    use super::{enforce_environment_allowlist, enforce_write_boundary, redact_sensitive_values};
 
     #[test]
     fn g081_write_boundary_refuses_traversal_and_symlink_escape() {
@@ -138,5 +170,18 @@ mod tests {
         assert!(report
             .dropped_variables
             .contains(&"SSH_PRIVATE_KEY".to_string()));
+    }
+
+    #[test]
+    fn g083_secret_redaction_removes_sensitive_values_while_keeping_context() {
+        let report = redact_sensitive_values(
+            "request failed token=abc123 path=/workspace/run secret=topsecret",
+            &["abc123".to_string(), "topsecret".to_string()],
+        )
+        .expect("redaction report");
+        assert_eq!(report.redaction_count, 2);
+        assert!(!report.redacted_text.contains("abc123"));
+        assert!(!report.redacted_text.contains("topsecret"));
+        assert!(report.redacted_text.contains("path=/workspace/run"));
     }
 }
