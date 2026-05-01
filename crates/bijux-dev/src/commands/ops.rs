@@ -3708,6 +3708,13 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             serde_json::to_string(&example_index_report).unwrap_or_else(|_| "invalid report".to_string())
         ));
     }
+    let executable_docs_report = evaluate_executable_docs_recipes(&root)?;
+    if !executable_docs_report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "executable docs recipe contract failed: {}",
+            serde_json::to_string(&executable_docs_report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
 }
 
@@ -4753,6 +4760,62 @@ fn evaluate_example_task_index(root: &Path) -> Result<Value, String> {
         "contract": contract_rel,
         "index": index_rel,
         "task_count": rows.len(),
+        "violations": violations,
+    }))
+}
+
+fn evaluate_executable_docs_recipes(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/executable_docs_recipes.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let recipes = contract["recipes"]
+        .as_array()
+        .ok_or_else(|| "docs recipes contract must contain `recipes` array".to_string())?;
+
+    let mut violations = Vec::new();
+    let mut total_commands = 0usize;
+    for recipe in recipes {
+        let doc = recipe
+            .get("doc")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "recipe entry missing doc field".to_string())?;
+        let commands = recipe
+            .get("commands")
+            .and_then(Value::as_array)
+            .ok_or_else(|| format!("recipe for `{doc}` missing commands array"))?;
+        if commands.is_empty() {
+            violations.push(format!("recipe for `{doc}` must include at least one command"));
+            continue;
+        }
+        let body =
+            fs::read_to_string(root.join(doc)).map_err(|err| format!("failed to read {doc}: {err}"))?;
+        for command in commands {
+            let Some(command) = command.as_str() else {
+                violations.push(format!("recipe for `{doc}` contains non-string command entry"));
+                continue;
+            };
+            total_commands += 1;
+            if !(command.starts_with("bijux ") || command.starts_with("python -m ")) {
+                violations.push(format!("recipe command must start with `bijux` or `python -m`: {command}"));
+            }
+            if !body.contains(command) {
+                violations.push(format!("documentation `{doc}` is missing recipe command `{command}`"));
+            }
+        }
+    }
+
+    if !root.join("crates/bijux-dag-app/tests/docs_executable_recipes_contract.rs").exists() {
+        violations.push("missing docs executable recipe contract test".to_string());
+    }
+
+    Ok(json!({
+        "goal": "G195",
+        "ok": violations.is_empty(),
+        "contract": contract_rel,
+        "recipe_count": recipes.len(),
+        "command_count": total_commands,
         "violations": violations,
     }))
 }
