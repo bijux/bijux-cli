@@ -223,9 +223,35 @@ pub fn validate_policy_overlay_execution(
     Ok(record)
 }
 
+/// Non-cacheable workflow execution record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NonCacheableExecutionRecordV1 {
+    pub node_id: String,
+    pub non_cacheable_reason: String,
+    pub cache_reuse_attempted: bool,
+    pub cache_reuse_refused: bool,
+}
+
+/// Validate non-cacheable workflow semantics.
+pub fn validate_non_cacheable_execution(
+    record: NonCacheableExecutionRecordV1,
+) -> Result<NonCacheableExecutionRecordV1, String> {
+    if record.node_id.trim().is_empty() {
+        return Err("node_id must not be empty".to_string());
+    }
+    if record.non_cacheable_reason.trim().is_empty() {
+        return Err("non_cacheable_reason must not be empty".to_string());
+    }
+    if record.cache_reuse_attempted && !record.cache_reuse_refused {
+        return Err("cache reuse must be refused for non-cacheable nodes".to_string());
+    }
+    Ok(record)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        validate_non_cacheable_execution,
         validate_policy_overlay_execution,
         validate_event_recorded_replay,
         validate_matrix_execution, validate_nested_subgraph_execution, validate_partition_execution,
@@ -233,7 +259,7 @@ mod tests {
         validate_optional_input_execution, validate_quorum_execution, MatrixExecutionRecordV1,
         NestedSubgraphExecutionRecordV1, OptionalInputExecutionRecordV1, PartitionExecutionRecordV1,
         QuorumExecutionRecordV1, ServiceSensorExecutionRecordV1, EventRecordedReplayRecordV1,
-        PolicyOverlayExecutionRecordV1,
+        PolicyOverlayExecutionRecordV1, NonCacheableExecutionRecordV1,
     };
 
     #[test]
@@ -345,5 +371,17 @@ mod tests {
         .expect("overlay execution");
         assert_eq!(record.overlay_profile, "security");
         assert!(!record.base_identity_mutated);
+    }
+
+    #[test]
+    fn g119_non_cacheable_nodes_refuse_unsafe_cache_reuse() {
+        let record = validate_non_cacheable_execution(NonCacheableExecutionRecordV1 {
+            node_id: "fetch-clock".to_string(),
+            non_cacheable_reason: "external time dependency".to_string(),
+            cache_reuse_attempted: true,
+            cache_reuse_refused: true,
+        })
+        .expect("non-cacheable execution");
+        assert!(record.cache_reuse_refused);
     }
 }
