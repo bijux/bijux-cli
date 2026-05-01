@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+use crate::{Graph, ParamValue, SemanticNodeKind};
 
 /// Branch decision evidence artifact with replay identity.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -128,12 +131,68 @@ pub fn evaluate_trigger_readiness_from_states(
     })
 }
 
+/// Barrier semantics violation detected during graph authoring validation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BarrierSemanticViolationV1 {
+    /// Stable rule code.
+    pub code: String,
+    /// Node identifier.
+    pub node_id: String,
+    /// Remediation guidance.
+    pub remediation: String,
+}
+
+/// Barrier semantic validation report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BarrierSemanticReportV1 {
+    /// Whether all barrier nodes are semantically valid.
+    pub valid: bool,
+    /// Violations found.
+    pub violations: Vec<BarrierSemanticViolationV1>,
+}
+
+/// Validate barrier semantics before runtime execution.
+pub fn validate_barrier_semantics(graph: &Graph) -> BarrierSemanticReportV1 {
+    let mut violations = Vec::new();
+    for node in &graph.nodes {
+        if node.semantic_kind != SemanticNodeKind::Barrier {
+            continue;
+        }
+        if node.inputs.is_empty() {
+            violations.push(BarrierSemanticViolationV1 {
+                code: "B3301_BARRIER_REQUIRES_INPUTS".to_string(),
+                node_id: node.id.clone(),
+                remediation: "connect barrier node to one or more upstream dependencies".to_string(),
+            });
+        }
+        if !node.outputs.is_empty() {
+            violations.push(BarrierSemanticViolationV1 {
+                code: "B3302_BARRIER_MUST_NOT_DECLARE_OUTPUTS".to_string(),
+                node_id: node.id.clone(),
+                remediation: "remove data outputs from barrier nodes; barriers synchronize only"
+                    .to_string(),
+            });
+        }
+        if !matches!(node.params, ParamValue::Literal(Value::Null)) {
+            violations.push(BarrierSemanticViolationV1 {
+                code: "B3303_BARRIER_MUST_NOT_MUTATE_PARAMS".to_string(),
+                node_id: node.id.clone(),
+                remediation: "drop params from barrier node; do not model transforms on barriers"
+                    .to_string(),
+            });
+        }
+    }
+    violations.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.node_id.cmp(&right.node_id)));
+    BarrierSemanticReportV1 { valid: violations.is_empty(), violations }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_branch_decision_artifact, evaluate_trigger_readiness_from_states,
-        UpstreamTerminalStateV1,
+        validate_barrier_semantics, UpstreamTerminalStateV1,
     };
+    use crate::{DagBuilder, NodeBuilder, NodeKind, SemanticNodeKind};
 
     #[test]
     fn g031_branch_decision_artifact_persists_chosen_and_skipped_branches() {
@@ -158,5 +217,27 @@ mod tests {
         .expect("trigger readiness should evaluate");
         assert!(!readiness.runnable);
         assert!(readiness.reason.contains("skipped"));
+    }
+
+    #[test]
+    fn g033_barrier_semantics_refuse_invalid_usage_pre_runtime() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("barrier", NodeKind::Const)
+                    .semantic_kind(SemanticNodeKind::Barrier)
+                    .output("out", "artifacts/not-allowed.json")
+                    .build(),
+            )
+            .build();
+        let report = validate_barrier_semantics(&graph);
+        assert!(!report.valid);
+        assert!(report
+            .violations
+            .iter()
+            .any(|item| item.code == "B3301_BARRIER_REQUIRES_INPUTS"));
+        assert!(report
+            .violations
+            .iter()
+            .any(|item| item.code == "B3302_BARRIER_MUST_NOT_DECLARE_OUTPUTS"));
     }
 }
