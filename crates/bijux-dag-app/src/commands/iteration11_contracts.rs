@@ -149,11 +149,40 @@ pub fn evaluate_deprecation_lifecycle(
     })
 }
 
+/// Safe install-repair outcome with explicit backup and changes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InstallRepairReportV1 {
+    pub backup_created: bool,
+    pub changed_paths: Vec<String>,
+    pub summary: String,
+    pub destroyed_user_data: bool,
+}
+
+/// Validate install-repair safety guarantees.
+pub fn validate_install_repair_report(
+    report: InstallRepairReportV1,
+) -> Result<InstallRepairReportV1, String> {
+    if !report.backup_created {
+        return Err("repair must create backup before mutating state".to_string());
+    }
+    if report.changed_paths.is_empty() {
+        return Err("repair must report changed paths".to_string());
+    }
+    if report.summary.trim().is_empty() {
+        return Err("repair summary must not be empty".to_string());
+    }
+    if report.destroyed_user_data {
+        return Err("repair must not destroy user data".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         diff_route_inventory, enforce_app_compatibility_window, evaluate_deprecation_lifecycle,
-        resolve_app_workspace_config, AppWorkspaceConfigV1,
+        resolve_app_workspace_config, validate_install_repair_report, AppWorkspaceConfigV1,
+        InstallRepairReportV1,
     };
 
     #[test]
@@ -211,5 +240,21 @@ mod tests {
         let refuse = evaluate_deprecation_lifecycle(10, 4, 7, 10, "dag run").expect("refuse");
         assert_eq!(refuse.action, "refuse");
         assert!(refuse.migration_hint.contains("dag run"));
+    }
+
+    #[test]
+    fn g105_install_repair_requires_backup_and_explicit_change_summary() {
+        let report = validate_install_repair_report(InstallRepairReportV1 {
+            backup_created: true,
+            changed_paths: vec![
+                ".bijux/config.json".to_string(),
+                ".bijux/plugins/state.json".to_string(),
+            ],
+            summary: "repaired malformed plugin state and restored config defaults".to_string(),
+            destroyed_user_data: false,
+        })
+        .expect("install repair");
+        assert!(report.backup_created);
+        assert_eq!(report.changed_paths.len(), 2);
     }
 }
