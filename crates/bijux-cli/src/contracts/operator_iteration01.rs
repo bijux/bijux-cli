@@ -106,11 +106,70 @@ pub fn build_script_stable_command_envelope(
     })
 }
 
+/// Stable actionable failure classes for CLI/runtime failures.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ActionableFailureClassV1 {
+    Parse,
+    Config,
+    Plugin,
+    Dag,
+    Io,
+    Runtime,
+}
+
+/// Useful error envelope with explicit remediation and evidence pointers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ActionableErrorEnvelopeV1 {
+    /// Failure class for coarse machine triage.
+    pub failure_class: ActionableFailureClassV1,
+    /// Stable error code.
+    pub code: String,
+    /// Human-readable failure message.
+    pub message: String,
+    /// Concrete remediation action for operators.
+    pub remediation: String,
+    /// Optional evidence pointer for logs or run artifacts.
+    pub evidence_pointer: Option<String>,
+}
+
+/// Build actionable error envelope with required diagnostic fields.
+pub fn build_actionable_error_envelope(
+    failure_class: ActionableFailureClassV1,
+    code: &str,
+    message: &str,
+    remediation: &str,
+    evidence_pointer: Option<&str>,
+) -> Result<ActionableErrorEnvelopeV1, String> {
+    if code.trim().is_empty() {
+        return Err("code cannot be empty".to_string());
+    }
+    if message.trim().is_empty() {
+        return Err("message cannot be empty".to_string());
+    }
+    if remediation.trim().is_empty() {
+        return Err("remediation cannot be empty".to_string());
+    }
+    if evidence_pointer.is_some_and(|value| value.trim().is_empty()) {
+        return Err("evidence_pointer cannot be blank when present".to_string());
+    }
+    Ok(ActionableErrorEnvelopeV1 {
+        failure_class,
+        code: code.to_string(),
+        message: message.to_string(),
+        remediation: remediation.to_string(),
+        evidence_pointer: evidence_pointer.map(ToString::to_string),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
 
-    use super::{build_compact_operator_help_entrypoint, build_script_stable_command_envelope};
+    use super::{
+        build_actionable_error_envelope, build_compact_operator_help_entrypoint,
+        build_script_stable_command_envelope, ActionableFailureClassV1,
+    };
 
     #[test]
     fn g001_compact_help_entrypoint_requires_core_operator_routes() {
@@ -141,5 +200,22 @@ mod tests {
         assert!(envelope.ok);
         assert_eq!(envelope.errors.len(), 0);
         assert_eq!(envelope.warnings.len(), 1);
+    }
+
+    #[test]
+    fn g003_actionable_error_envelope_includes_remediation_and_evidence_pointer() {
+        let error = build_actionable_error_envelope(
+            ActionableFailureClassV1::Plugin,
+            "plugin_manifest_invalid",
+            "plugin manifest rejected",
+            "run `bijux plugins inspect <name>` and correct manifest fields",
+            Some("artifacts/cli/errors/plugin-manifest-invalid.log"),
+        )
+        .expect("actionable error should build");
+        assert_eq!(error.code, "plugin_manifest_invalid");
+        assert_eq!(
+            error.evidence_pointer.as_deref(),
+            Some("artifacts/cli/errors/plugin-manifest-invalid.log")
+        );
     }
 }
