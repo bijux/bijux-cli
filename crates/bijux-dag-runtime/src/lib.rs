@@ -60,6 +60,8 @@ mod error;
 pub mod execution;
 #[path = "runtime_core/execution/iteration06_contracts.rs"]
 pub mod iteration06_contracts;
+#[path = "runtime_core/execution/iteration09_contracts.rs"]
+pub mod iteration09_contracts;
 #[path = "backend/runtime/execution_backend.rs"]
 mod execution_backend;
 #[path = "runtime_core/execution/context.rs"]
