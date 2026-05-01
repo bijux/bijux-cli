@@ -38,6 +38,8 @@ pub mod semantics_iteration04;
 pub mod planner_iteration05;
 #[path = "contracts/execution_iteration12.rs"]
 pub mod execution_iteration12;
+#[path = "contracts/resource_iteration13.rs"]
+pub mod resource_iteration13;
 #[path = "analysis/fingerprint.rs"]
 pub mod fingerprint;
 #[path = "graph/graph.rs"]
