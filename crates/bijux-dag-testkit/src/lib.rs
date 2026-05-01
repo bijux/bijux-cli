@@ -1,6 +1,7 @@
 //! Shared test helpers for workspace crates.
 
 pub mod fake_adapter;
+pub mod iteration10_scenarios;
 pub mod workflows;
 
 use bijux_dag_artifacts::{Manifest, NodeTrace};
