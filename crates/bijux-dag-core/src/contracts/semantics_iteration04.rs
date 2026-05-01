@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{lower_graph_to_execution_plan, EdgeKind, Graph, ParamValue, SemanticNodeKind};
 
@@ -333,14 +334,82 @@ pub fn build_edge_semantics_snapshot(graph: &Graph) -> Result<EdgeSemanticsSnaps
     Ok(EdgeSemanticsSnapshotV1 { counts, lowered_edges })
 }
 
+/// Optional upstream presence evidence for one node input.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OptionalInputEvidenceV1 {
+    /// Node identifier.
+    pub node_id: String,
+    /// Input port name.
+    pub input: String,
+    /// Whether this input is optional.
+    pub optional: bool,
+    /// Whether an upstream binding exists.
+    pub bound: bool,
+}
+
+/// Optional upstream evidence report across graph nodes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OptionalUpstreamEvidenceReportV1 {
+    /// Input evidence records.
+    pub records: Vec<OptionalInputEvidenceV1>,
+    /// Missing optional inputs.
+    pub missing_optional_inputs: Vec<String>,
+    /// Missing required inputs.
+    pub missing_required_inputs: Vec<String>,
+}
+
+/// Build optional-upstream evidence from graph plus optional-input declarations.
+pub fn build_optional_upstream_evidence_report(
+    graph: &Graph,
+    optional_inputs: &BTreeMap<String, BTreeSet<String>>,
+) -> OptionalUpstreamEvidenceReportV1 {
+    let mut records = Vec::new();
+    for node in &graph.nodes {
+        let optional_set = optional_inputs.get(&node.id).cloned().unwrap_or_default();
+        for input in &node.inputs {
+            let bound = graph
+                .edges
+                .iter()
+                .any(|edge| edge.to.node_id == node.id && edge.to.port == *input);
+            records.push(OptionalInputEvidenceV1 {
+                node_id: node.id.clone(),
+                input: input.clone(),
+                optional: optional_set.contains(input),
+                bound,
+            });
+        }
+    }
+    records.sort_by(|left, right| {
+        left.node_id
+            .cmp(&right.node_id)
+            .then_with(|| left.input.cmp(&right.input))
+            .then_with(|| left.optional.cmp(&right.optional))
+    });
+
+    let missing_optional_inputs = records
+        .iter()
+        .filter(|record| record.optional && !record.bound)
+        .map(|record| format!("{}.{}", record.node_id, record.input))
+        .collect::<Vec<_>>();
+    let missing_required_inputs = records
+        .iter()
+        .filter(|record| !record.optional && !record.bound)
+        .map(|record| format!("{}.{}", record.node_id, record.input))
+        .collect::<Vec<_>>();
+
+    OptionalUpstreamEvidenceReportV1 { records, missing_optional_inputs, missing_required_inputs }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_branch_decision_artifact, build_edge_semantics_snapshot,
+        build_optional_upstream_evidence_report,
         evaluate_trigger_readiness_from_states, validate_barrier_semantics,
         validate_reducer_semantics, ReducerOrderingPolicyV1, UpstreamTerminalStateV1,
     };
     use crate::{BranchSpec, DagBuilder, EdgeKind, NodeBuilder, NodeKind, SemanticNodeKind, TriggerRule};
+    use std::collections::{BTreeMap, BTreeSet};
 
     #[test]
     fn g031_branch_decision_artifact_persists_chosen_and_skipped_branches() {
@@ -476,5 +545,35 @@ mod tests {
             .lowered_edges
             .iter()
             .any(|edge| edge.kind == "conditional" && edge.decision.as_deref() == Some("left")));
+    }
+
+    #[test]
+    fn g036_optional_upstreams_are_reported_separately_from_required_missing_inputs() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("producer", NodeKind::Const)
+                    .output("out", "artifacts/out.json")
+                    .build(),
+            )
+            .node(
+                NodeBuilder::new("consumer", NodeKind::Const)
+                    .input("required_in")
+                    .input("optional_in")
+                    .output("done", "artifacts/done.json")
+                    .build(),
+            )
+            .edge("producer", "out", "consumer", "required_in")
+            .build();
+        let optional_inputs = BTreeMap::from([(
+            "consumer".to_string(),
+            BTreeSet::from(["optional_in".to_string()]),
+        )]);
+
+        let report = build_optional_upstream_evidence_report(&graph, &optional_inputs);
+        assert_eq!(report.missing_required_inputs.len(), 0);
+        assert_eq!(
+            report.missing_optional_inputs,
+            vec!["consumer.optional_in".to_string()]
+        );
     }
 }
