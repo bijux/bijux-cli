@@ -306,9 +306,50 @@ pub fn validate_remote_worker_protocol_trace(
     Ok(())
 }
 
+/// External adapter SDK descriptor.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExternalAdapterSdkDescriptorV1 {
+    pub adapter_id: String,
+    pub capabilities: Vec<String>,
+    pub effects: Vec<String>,
+    pub outputs: Vec<String>,
+    pub error_codes: Vec<String>,
+}
+
+/// Validate external adapter SDK descriptor for runtime conformance.
+pub fn validate_external_adapter_sdk_descriptor(
+    descriptor: &ExternalAdapterSdkDescriptorV1,
+) -> Result<(), String> {
+    if descriptor.adapter_id.trim().is_empty() {
+        return Err("external adapter descriptor must include adapter_id".to_string());
+    }
+    if descriptor.capabilities.is_empty()
+        || descriptor.effects.is_empty()
+        || descriptor.outputs.is_empty()
+        || descriptor.error_codes.is_empty()
+    {
+        return Err(
+            "external adapter descriptor must declare capabilities, effects, outputs, and error codes"
+                .to_string(),
+        );
+    }
+    for collection in [
+        &descriptor.capabilities,
+        &descriptor.effects,
+        &descriptor.outputs,
+        &descriptor.error_codes,
+    ] {
+        if collection.iter().any(|value| value.trim().is_empty()) {
+            return Err("external adapter descriptor contains empty contract fields".to_string());
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        validate_external_adapter_sdk_descriptor, ExternalAdapterSdkDescriptorV1,
         validate_remote_worker_protocol_trace, RemoteWorkerProtocolEventV1,
         evaluate_batch_backend_promotion, BatchBackendPromotionEvidenceV1,
         validate_mock_batch_lifecycle, MockBatchLifecycleEventV1,
@@ -447,5 +488,17 @@ mod tests {
             },
         ];
         validate_remote_worker_protocol_trace(&events).expect("remote worker protocol trace");
+    }
+
+    #[test]
+    fn g148_external_adapter_sdk_descriptor_requires_capabilities_effects_outputs_and_errors() {
+        let descriptor = ExternalAdapterSdkDescriptorV1 {
+            adapter_id: "ext.aligner".to_string(),
+            capabilities: vec!["streaming".to_string(), "typed-output".to_string()],
+            effects: vec!["filesystem".to_string()],
+            outputs: vec!["bam".to_string()],
+            error_codes: vec!["EXT_TIMEOUT".to_string(), "EXT_SCHEMA".to_string()],
+        };
+        validate_external_adapter_sdk_descriptor(&descriptor).expect("external adapter descriptor");
     }
 }
