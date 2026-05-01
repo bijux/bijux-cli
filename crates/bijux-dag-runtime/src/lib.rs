@@ -108,6 +108,8 @@ mod performance_capacity;
 mod planner;
 #[path = "runtime_core/planning/planner_analysis.rs"]
 mod planner_analysis;
+#[path = "runtime_core/planning/iteration13_contracts.rs"]
+pub mod iteration13_contracts;
 pub mod policy;
 #[path = "artifacts/storage/recovery.rs"]
 mod recovery;
