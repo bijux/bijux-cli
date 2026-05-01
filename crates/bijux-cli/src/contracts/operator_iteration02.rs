@@ -326,17 +326,60 @@ pub fn build_app_route_provenance_record(
     })
 }
 
+/// SDK example conformance entry for one language implementation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct SdkExampleConformanceEntryV1 {
+    /// Example language (`rust` or `python`).
+    pub language: String,
+    /// Whether example exposes inspectable commands.
+    pub exposes_inspectable_commands: bool,
+    /// Whether example includes config handling.
+    pub supports_config_contract: bool,
+    /// Whether example includes explicit error pathway.
+    pub supports_error_contract: bool,
+    /// Whether machine output follows envelope contract.
+    pub emits_machine_output_envelope: bool,
+}
+
+/// SDK example conformance report for mounted example apps.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct SdkExampleConformanceReportV1 {
+    /// Per-language entries.
+    pub entries: Vec<SdkExampleConformanceEntryV1>,
+    /// Whether all required conformance checks pass.
+    pub fully_conformant: bool,
+}
+
+/// Build SDK example conformance report.
+pub fn build_sdk_example_conformance_report(
+    entries: Vec<SdkExampleConformanceEntryV1>,
+) -> Result<SdkExampleConformanceReportV1, String> {
+    if entries.is_empty() {
+        return Err("entries cannot be empty".to_string());
+    }
+    let mut ordered = entries;
+    ordered.sort_by(|left, right| left.language.cmp(&right.language));
+    let fully_conformant = ordered.iter().all(|entry| {
+        entry.exposes_inspectable_commands
+            && entry.supports_config_contract
+            && entry.supports_error_contract
+            && entry.emits_machine_output_envelope
+    });
+    Ok(SdkExampleConformanceReportV1 { entries: ordered, fully_conformant })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_app_route_provenance_record,
         build_plugin_scaffold_conformance_report,
+        build_sdk_example_conformance_report,
         resolve_route_conflict_deterministically,
         evaluate_legacy_shim_policy,
         evaluate_official_app_descriptor_compatibility,
         validate_executable_plugin_manifest_contract, validate_plugin_subprocess_execution_policy, RouteConflictContenderV1,
         ExecutablePluginManifestContractV1, LegacyShimPolicyDecisionV1,
-        PluginScaffoldConformanceEntryV1,
+        PluginScaffoldConformanceEntryV1, SdkExampleConformanceEntryV1,
         PluginSubprocessExecutionPolicyV1, OfficialAppDescriptorCompatibilityInputV1,
     };
 
@@ -449,5 +492,27 @@ mod tests {
         .expect("provenance record should build");
         assert_eq!(record.descriptor_hash, "sha256:abc123");
         assert_eq!(record.handler_identity, "bijux-dag-cli::dag::run");
+    }
+
+    #[test]
+    fn g018_sdk_example_conformance_requires_config_and_error_contracts() {
+        let report = build_sdk_example_conformance_report(vec![
+            SdkExampleConformanceEntryV1 {
+                language: "rust".to_string(),
+                exposes_inspectable_commands: true,
+                supports_config_contract: true,
+                supports_error_contract: true,
+                emits_machine_output_envelope: true,
+            },
+            SdkExampleConformanceEntryV1 {
+                language: "python".to_string(),
+                exposes_inspectable_commands: true,
+                supports_config_contract: false,
+                supports_error_contract: true,
+                emits_machine_output_envelope: true,
+            },
+        ])
+        .expect("sdk conformance should build");
+        assert!(!report.fully_conformant);
     }
 }
