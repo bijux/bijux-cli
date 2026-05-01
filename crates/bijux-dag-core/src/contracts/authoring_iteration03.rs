@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    compile_graph, lower_graph_to_execution_plan, node_io_contract, parse_graph_strict, Graph,
-    GraphError, Severity,
+    compile_graph, lint_graph, lower_graph_to_execution_plan, node_io_contract, parse_graph_strict,
+    DagLintFinding, Graph, GraphError, Severity,
 };
 
 /// Per-example execution evidence used to prove examples are executable.
@@ -730,6 +730,60 @@ pub fn apply_graph_migration(graph: &Graph, target_spec: &str) -> Result<Graph, 
     Err(preview.refusal.expect("unsafe migration should include refusal"))
 }
 
+/// Policy that promotes selected lint codes to blocking errors.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LintPromotionPolicyV1 {
+    /// Lint codes to promote to blocking status.
+    pub promoted_codes: BTreeSet<String>,
+}
+
+/// Semantic lint evaluation report that separates advisory and blocking surfaces.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SemanticLintEvaluationReportV1 {
+    /// Hard validation error codes.
+    pub hard_validation_errors: Vec<String>,
+    /// Advisory lint findings that remain non-blocking.
+    pub advisory_lints: Vec<DagLintFinding>,
+    /// Lints promoted to blocking by policy.
+    pub blocking_lints: Vec<DagLintFinding>,
+    /// Whether the graph is eligible for execution.
+    pub can_execute: bool,
+}
+
+/// Evaluate semantic lint in non-blocking mode unless policy promotion is requested.
+pub fn evaluate_semantic_lint(
+    graph: &Graph,
+    policy: Option<&LintPromotionPolicyV1>,
+) -> SemanticLintEvaluationReportV1 {
+    let hard_validation_errors = graph
+        .validate_with_warnings()
+        .into_iter()
+        .filter(|diag| diag.severity == Severity::Error)
+        .map(|diag| diag.code)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let promotion_codes =
+        policy.map(|value| value.promoted_codes.clone()).unwrap_or_else(BTreeSet::new);
+
+    let mut advisory_lints = Vec::new();
+    let mut blocking_lints = Vec::new();
+    for lint in lint_graph(graph) {
+        if promotion_codes.contains(&lint.code) {
+            blocking_lints.push(lint);
+        } else {
+            advisory_lints.push(lint);
+        }
+    }
+
+    SemanticLintEvaluationReportV1 {
+        can_execute: hard_validation_errors.is_empty() && blocking_lints.is_empty(),
+        hard_validation_errors,
+        advisory_lints,
+        blocking_lints,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -737,7 +791,8 @@ mod tests {
         build_cycle_reachability_rejection_report, build_graph_examples_execution_report,
         build_port_contract_enforcement_report, build_surgical_validation_diagnostic,
         validate_graph_package_import, GraphExampleExecutionEntryV1, GraphPackageBundleV1,
-        GraphPackageFileEntryV1, apply_graph_migration, preview_graph_migration,
+        GraphPackageFileEntryV1, LintPromotionPolicyV1, apply_graph_migration,
+        evaluate_semantic_lint, preview_graph_migration,
     };
     use crate::{DagBuilder, Edge, EdgeKind, Effect, NodeBuilder, NodeKind, PortRef};
     use std::collections::BTreeSet;
@@ -953,5 +1008,30 @@ mod tests {
 
         let migrated = apply_graph_migration(&legacy_graph, crate::SPEC_VERSION).expect("migrate");
         assert_eq!(migrated.spec, crate::SPEC_VERSION);
+    }
+
+    #[test]
+    fn g029_semantic_lint_is_advisory_unless_promoted_by_policy() {
+        let lint_only_graph = DagBuilder::new()
+            .node(NodeBuilder::new("n1", NodeKind::Const).build())
+            .build();
+
+        let advisory = evaluate_semantic_lint(&lint_only_graph, None);
+        assert!(advisory.hard_validation_errors.is_empty());
+        assert!(advisory.can_execute);
+        assert!(advisory
+            .advisory_lints
+            .iter()
+            .any(|finding| finding.code == "LINT_OUTPUT_MISSING"));
+
+        let policy = LintPromotionPolicyV1 {
+            promoted_codes: BTreeSet::from(["LINT_OUTPUT_MISSING".to_string()]),
+        };
+        let promoted = evaluate_semantic_lint(&lint_only_graph, Some(&policy));
+        assert!(!promoted.can_execute);
+        assert!(promoted
+            .blocking_lints
+            .iter()
+            .any(|finding| finding.code == "LINT_OUTPUT_MISSING"));
     }
 }
