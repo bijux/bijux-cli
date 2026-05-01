@@ -3694,6 +3694,13 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             serde_json::to_string(&python_bridge_report).unwrap_or_else(|_| "invalid report".to_string())
         ));
     }
+    let release_artifact_report = evaluate_release_artifacts_runnable(&root)?;
+    if !release_artifact_report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "release artifact runnable contract failed: {}",
+            serde_json::to_string(&release_artifact_report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
 }
 
@@ -4615,6 +4622,64 @@ fn evaluate_python_bridge_distribution(root: &Path) -> Result<Value, String> {
         "ok": violations.is_empty(),
         "python_bin": python_bin,
         "output_dir": build_out_dir.strip_prefix(root).unwrap_or(&build_out_dir).to_string_lossy(),
+        "violations": violations,
+    }))
+}
+
+fn evaluate_release_artifacts_runnable(root: &Path) -> Result<Value, String> {
+    let mut violations = Vec::new();
+    let doc_rel = "docs/spec/RELEASE_BINARY_VERIFICATION.md";
+    let scenario_rel = "configs/dag/release/release_smoke_scenarios.json";
+    let policy =
+        fs::read_to_string(root.join(doc_rel)).map_err(|err| format!("failed to read {doc_rel}: {err}"))?;
+    for required_cmd in [
+        "bijux --json doctor",
+        "bijux --json cli paths",
+        "bijux dag validate --json evidence/authoring/examples/hello.dag.json",
+        "bijux dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json",
+        "bijux dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}",
+        "bijux dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}",
+        "bijux dag status --json ${RUN_DIR}",
+    ] {
+        if !policy.contains(required_cmd) {
+            violations.push(format!("release binary verification doc missing `{required_cmd}`"));
+        }
+    }
+
+    let scenarios_payload =
+        fs::read_to_string(root.join(scenario_rel)).map_err(|err| format!("failed to read {scenario_rel}: {err}"))?;
+    let scenarios: Value = serde_json::from_str(&scenarios_payload)
+        .map_err(|err| format!("failed to parse {scenario_rel}: {err}"))?;
+    let scenario_rows = scenarios["scenarios"]
+        .as_array()
+        .ok_or_else(|| "release smoke scenarios must contain `scenarios` array".to_string())?;
+    if scenario_rows.len() < 2 {
+        violations.push("release smoke scenarios must include at least hello and shell ETL paths".to_string());
+    }
+    for row in scenario_rows {
+        let id = row.get("id").and_then(Value::as_str).unwrap_or("<missing-id>");
+        let graph = row
+            .get("graph")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("scenario `{id}` is missing graph"))?;
+        if !root.join(graph).exists() {
+            violations.push(format!("scenario `{id}` graph does not exist: {graph}"));
+        }
+        let commands = row
+            .get("required_commands")
+            .and_then(Value::as_array)
+            .ok_or_else(|| format!("scenario `{id}` is missing required_commands"))?;
+        if commands.is_empty() {
+            violations.push(format!("scenario `{id}` must define at least one command"));
+        }
+    }
+
+    Ok(json!({
+        "goal": "G193",
+        "ok": violations.is_empty(),
+        "spec": doc_rel,
+        "scenario_contract": scenario_rel,
+        "scenario_count": scenario_rows.len(),
         "violations": violations,
     }))
 }
