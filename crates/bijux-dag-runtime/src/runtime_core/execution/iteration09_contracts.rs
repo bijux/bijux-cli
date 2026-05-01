@@ -176,11 +176,48 @@ pub fn classify_network_policy_trust(
     }
 }
 
+/// Bundle import safety report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BundleImportSafetyReportV1 {
+    pub accepted: bool,
+    pub rejection_reasons: Vec<String>,
+}
+
+/// Validate untrusted bundle import constraints.
+pub fn validate_bundle_import_safety(
+    has_path_traversal: bool,
+    has_malicious_symlink: bool,
+    file_too_large: bool,
+    corrupt_json: bool,
+    schema_confusion: bool,
+) -> BundleImportSafetyReportV1 {
+    let mut rejection_reasons = Vec::new();
+    if has_path_traversal {
+        rejection_reasons.push("path_traversal".to_string());
+    }
+    if has_malicious_symlink {
+        rejection_reasons.push("malicious_symlink".to_string());
+    }
+    if file_too_large {
+        rejection_reasons.push("oversized_file".to_string());
+    }
+    if corrupt_json {
+        rejection_reasons.push("corrupt_json".to_string());
+    }
+    if schema_confusion {
+        rejection_reasons.push("schema_confusion".to_string());
+    }
+    BundleImportSafetyReportV1 {
+        accepted: rejection_reasons.is_empty(),
+        rejection_reasons,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         classify_network_policy_trust, enforce_environment_allowlist, enforce_write_boundary,
-        redact_sensitive_values, NetworkPolicyLabelV1,
+        redact_sensitive_values, validate_bundle_import_safety, NetworkPolicyLabelV1,
     };
 
     #[test]
@@ -253,5 +290,23 @@ mod tests {
         let required = classify_network_policy_trust(NetworkPolicyLabelV1::Required, true);
         assert_eq!(required.cache_trust, "advisory");
         assert_eq!(required.replay_trust, "advisory");
+    }
+
+    #[test]
+    fn g085_bundle_import_rejects_hostile_inputs() {
+        let report = validate_bundle_import_safety(true, true, false, true, true);
+        assert!(!report.accepted);
+        assert!(report
+            .rejection_reasons
+            .contains(&"path_traversal".to_string()));
+        assert!(report
+            .rejection_reasons
+            .contains(&"malicious_symlink".to_string()));
+        assert!(report
+            .rejection_reasons
+            .contains(&"corrupt_json".to_string()));
+        assert!(report
+            .rejection_reasons
+            .contains(&"schema_confusion".to_string()));
     }
 }
