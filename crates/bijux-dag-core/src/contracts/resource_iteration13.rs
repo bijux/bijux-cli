@@ -136,6 +136,31 @@ pub struct CapacityWhatIfReportV1 {
     pub tied_to_evidence_snapshot_id: String,
 }
 
+/// Confidence label for planner estimates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PlannerConfidenceLabelV1 {
+    Measured,
+    Static,
+    Configured,
+    Heuristic,
+}
+
+/// Confidence row describing estimate provenance.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlannerConfidenceEntryV1 {
+    pub node_id: String,
+    pub estimate: String,
+    pub confidence: PlannerConfidenceLabelV1,
+    pub rationale: String,
+}
+
+/// Planner confidence report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlannerConfidenceReportV1 {
+    pub entries: Vec<PlannerConfidenceEntryV1>,
+}
+
 /// Build resource requirements from graph nodes with deterministic defaults.
 pub fn build_resource_requirements(graph: &Graph) -> Vec<ResourceRequirementV1> {
     graph
@@ -487,6 +512,40 @@ pub fn build_capacity_what_if_report(
     }
 }
 
+/// Build confidence labels for planner estimates.
+pub fn build_planner_confidence_report(graph: &Graph) -> PlannerConfidenceReportV1 {
+    let entries = graph
+        .nodes
+        .iter()
+        .map(|node| {
+            let (confidence, rationale) = if node
+                .tags
+                .iter()
+                .any(|tag| tag == "confidence:measured")
+            {
+                (PlannerConfidenceLabelV1::Measured, "evidence-backed measurement".to_string())
+            } else if node
+                .tags
+                .iter()
+                .any(|tag| tag == "confidence:configured")
+            {
+                (PlannerConfidenceLabelV1::Configured, "operator-configured estimate".to_string())
+            } else if node.resources.is_some() {
+                (PlannerConfidenceLabelV1::Static, "declared static resource hints".to_string())
+            } else {
+                (PlannerConfidenceLabelV1::Heuristic, "default heuristic estimate".to_string())
+            };
+            PlannerConfidenceEntryV1 {
+                node_id: node.id.clone(),
+                estimate: "resource_and_cost".to_string(),
+                confidence,
+                rationale,
+            }
+        })
+        .collect();
+    PlannerConfidenceReportV1 { entries }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -494,6 +553,7 @@ mod tests {
         build_resource_requirements, build_cost_planning_advisory_report, plan_pool_placement,
         planner_runnable_from_capabilities, validate_resource_requirements,
         build_capacity_what_if_report, CapacityWhatIfInputV1, ExecutionPoolV1, ResourceAvailabilityV1,
+        build_planner_confidence_report, PlannerConfidenceLabelV1,
     };
     use crate::{
         Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef, Resources,
@@ -651,5 +711,15 @@ mod tests {
             "evidence-2026-05-01T06:00:00Z"
         );
         assert!(report.advisory_only);
+    }
+
+    #[test]
+    fn g129_planner_confidence_labels_are_explicit() {
+        let mut graph = sample_graph();
+        graph.nodes[0].tags.push("confidence:configured".to_string());
+        let report = build_planner_confidence_report(&graph);
+        assert_eq!(report.entries.len(), 1);
+        assert_eq!(report.entries[0].confidence, PlannerConfidenceLabelV1::Configured);
+        assert!(report.entries[0].rationale.contains("operator-configured"));
     }
 }
