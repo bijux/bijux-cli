@@ -46,10 +46,54 @@ pub fn validate_executable_plugin_manifest_contract(
     Ok(())
 }
 
+/// Hardened plugin subprocess execution policy contract.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct PluginSubprocessExecutionPolicyV1 {
+    /// Normalized argv list used for subprocess launch.
+    pub argv: Vec<String>,
+    /// Timeout in milliseconds.
+    pub timeout_ms: u64,
+    /// Allowed environment variable keys.
+    pub env_allowlist: Vec<String>,
+    /// Working directory policy (`workspace-root`, `plugin-root`, `isolated-temp`).
+    pub working_directory_policy: String,
+    /// Required output envelope schema id.
+    pub output_envelope_schema: String,
+}
+
+/// Validate hardened subprocess policy before plugin execution.
+pub fn validate_plugin_subprocess_execution_policy(
+    payload: &PluginSubprocessExecutionPolicyV1,
+) -> Result<(), String> {
+    if payload.argv.is_empty() {
+        return Err("argv cannot be empty".to_string());
+    }
+    if payload.argv.iter().any(|arg| arg.contains('\n') || arg.contains('\0')) {
+        return Err("argv contains invalid control characters".to_string());
+    }
+    if payload.timeout_ms == 0 {
+        return Err("timeout_ms must be greater than zero".to_string());
+    }
+    if payload.env_allowlist.iter().any(|key| key.trim().is_empty()) {
+        return Err("env_allowlist cannot include blank keys".to_string());
+    }
+    if !matches!(
+        payload.working_directory_policy.as_str(),
+        "workspace-root" | "plugin-root" | "isolated-temp"
+    ) {
+        return Err("working_directory_policy is invalid".to_string());
+    }
+    if payload.output_envelope_schema.trim().is_empty() {
+        return Err("output_envelope_schema cannot be empty".to_string());
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_executable_plugin_manifest_contract, ExecutablePluginManifestContractV1,
+        validate_executable_plugin_manifest_contract, validate_plugin_subprocess_execution_policy,
+        ExecutablePluginManifestContractV1, PluginSubprocessExecutionPolicyV1,
     };
 
     #[test]
@@ -64,5 +108,17 @@ mod tests {
             compatibility_window: "not-semver".to_string(),
         };
         assert!(validate_executable_plugin_manifest_contract(&manifest).is_err());
+    }
+
+    #[test]
+    fn g012_plugin_subprocess_policy_refuses_invalid_working_directory_policy() {
+        let policy = PluginSubprocessExecutionPolicyV1 {
+            argv: vec!["plugin-bin".to_string(), "run".to_string()],
+            timeout_ms: 30_000,
+            env_allowlist: vec!["BIJUX_CONFIG_ROOT".to_string()],
+            working_directory_policy: "home-directory".to_string(),
+            output_envelope_schema: "command-envelope-v1".to_string(),
+        };
+        assert!(validate_plugin_subprocess_execution_policy(&policy).is_err());
     }
 }
