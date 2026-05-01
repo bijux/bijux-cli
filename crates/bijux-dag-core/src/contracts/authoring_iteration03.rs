@@ -114,11 +114,44 @@ pub fn build_surgical_validation_diagnostic(
     })
 }
 
+/// Canonicalization visibility report for authored graph surfaces.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphCanonicalizationVisibilityReportV1 {
+    /// Canonical JSON representation.
+    pub canonical_json: String,
+    /// Deterministic graph fingerprint.
+    pub graph_fingerprint: String,
+    /// Per-node fingerprints for explainability.
+    pub node_fingerprints: Vec<(String, String)>,
+}
+
+/// Build canonicalization visibility report for user-facing diagnostics.
+pub fn build_graph_canonicalization_visibility_report(
+    canonical_json: &str,
+    graph_fingerprint: &str,
+    node_fingerprints: Vec<(String, String)>,
+) -> Result<GraphCanonicalizationVisibilityReportV1, String> {
+    if canonical_json.trim().is_empty() {
+        return Err("canonical_json cannot be empty".to_string());
+    }
+    if graph_fingerprint.trim().is_empty() {
+        return Err("graph_fingerprint cannot be empty".to_string());
+    }
+    if node_fingerprints.is_empty() {
+        return Err("node_fingerprints cannot be empty".to_string());
+    }
+    Ok(GraphCanonicalizationVisibilityReportV1 {
+        canonical_json: canonical_json.to_string(),
+        graph_fingerprint: graph_fingerprint.to_string(),
+        node_fingerprints,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_graph_examples_execution_report, build_surgical_validation_diagnostic,
-        GraphExampleExecutionEntryV1,
+        build_graph_canonicalization_visibility_report, build_graph_examples_execution_report,
+        build_surgical_validation_diagnostic, GraphExampleExecutionEntryV1,
     };
 
     #[test]
@@ -157,5 +190,17 @@ mod tests {
         .expect("diagnostic should build");
         assert_eq!(diagnostic.node_id, "node.validate");
         assert_eq!(diagnostic.edge_id.as_deref(), Some("edge.12"));
+    }
+
+    #[test]
+    fn g023_canonicalization_visibility_report_exposes_graph_and_node_fingerprints() {
+        let report = build_graph_canonicalization_visibility_report(
+            "{\"graph_id\":\"demo\"}",
+            "sha256:graph-demo",
+            vec![("node.a".to_string(), "sha256:node-a".to_string())],
+        )
+        .expect("canonicalization visibility report should build");
+        assert_eq!(report.graph_fingerprint, "sha256:graph-demo");
+        assert_eq!(report.node_fingerprints.len(), 1);
     }
 }
