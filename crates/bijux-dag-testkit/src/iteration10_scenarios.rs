@@ -196,15 +196,44 @@ pub fn build_cache_heavy_scenario_report(
     Ok(report)
 }
 
+/// Bundle portability scenario proof report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BundlePortabilityScenarioReportV1 {
+    pub exported_bundle: bool,
+    pub imported_in_clean_workspace: bool,
+    pub verifies_after_import: bool,
+    pub absolute_path_dependency_found: bool,
+}
+
+/// Build bundle portability scenario proof.
+pub fn build_bundle_portability_scenario_report(
+    report: BundlePortabilityScenarioReportV1,
+) -> Result<BundlePortabilityScenarioReportV1, String> {
+    if !report.exported_bundle {
+        return Err("scenario must export a run bundle".to_string());
+    }
+    if !report.imported_in_clean_workspace {
+        return Err("bundle must import in a clean workspace".to_string());
+    }
+    if !report.verifies_after_import {
+        return Err("imported bundle must verify".to_string());
+    }
+    if report.absolute_path_dependency_found {
+        return Err("bundle portability cannot depend on absolute paths".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_bundle_portability_scenario_report,
         build_branch_join_scenario_report, build_hello_dag_scenario_report,
         build_cache_heavy_scenario_report, build_failure_retry_scenario_report,
         build_reducer_scenario_report,
         build_shell_etl_scenario_report, BranchJoinScenarioReportV1, FailureRetryScenarioReportV1,
-        CacheHeavyScenarioReportV1, HelloDagScenarioReportV1, ReducerScenarioReportV1,
-        ShellEtlScenarioReportV1,
+        BundlePortabilityScenarioReportV1, CacheHeavyScenarioReportV1, HelloDagScenarioReportV1,
+        ReducerScenarioReportV1, ShellEtlScenarioReportV1,
     };
 
     #[test]
@@ -290,5 +319,18 @@ mod tests {
         .expect("cache heavy scenario");
         assert_eq!(report.cache_hit_nodes, 3);
         assert_eq!(report.non_cacheable_nodes, 1);
+    }
+
+    #[test]
+    fn g097_bundle_portability_scenario_proves_clean_workspace_import() {
+        let report = build_bundle_portability_scenario_report(BundlePortabilityScenarioReportV1 {
+            exported_bundle: true,
+            imported_in_clean_workspace: true,
+            verifies_after_import: true,
+            absolute_path_dependency_found: false,
+        })
+        .expect("bundle portability scenario");
+        assert!(report.imported_in_clean_workspace);
+        assert!(report.verifies_after_import);
     }
 }
