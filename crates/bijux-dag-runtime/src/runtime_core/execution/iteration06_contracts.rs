@@ -241,13 +241,68 @@ pub fn record_optional_outputs_honestly(
     entries
 }
 
+/// Runtime lifecycle states with closed transition graph.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimeStateV1 {
+    Planned,
+    Admitted,
+    Running,
+    Blocked,
+    Skipped,
+    Failed,
+    Cancelled,
+    Completed,
+    Resumed,
+    Replayed,
+}
+
+/// Runtime state transition check result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeStateTransitionCheckV1 {
+    pub allowed: bool,
+    pub from: RuntimeStateV1,
+    pub to: RuntimeStateV1,
+    pub reason: String,
+}
+
+/// Validate state transitions against closed runtime transition graph.
+pub fn validate_runtime_state_transition(
+    from: RuntimeStateV1,
+    to: RuntimeStateV1,
+) -> RuntimeStateTransitionCheckV1 {
+    let allowed = matches!(
+        (&from, &to),
+        (RuntimeStateV1::Planned, RuntimeStateV1::Admitted)
+            | (RuntimeStateV1::Planned, RuntimeStateV1::Cancelled)
+            | (RuntimeStateV1::Admitted, RuntimeStateV1::Running)
+            | (RuntimeStateV1::Admitted, RuntimeStateV1::Blocked)
+            | (RuntimeStateV1::Running, RuntimeStateV1::Completed)
+            | (RuntimeStateV1::Running, RuntimeStateV1::Failed)
+            | (RuntimeStateV1::Running, RuntimeStateV1::Cancelled)
+            | (RuntimeStateV1::Blocked, RuntimeStateV1::Running)
+            | (RuntimeStateV1::Blocked, RuntimeStateV1::Skipped)
+            | (RuntimeStateV1::Failed, RuntimeStateV1::Resumed)
+            | (RuntimeStateV1::Cancelled, RuntimeStateV1::Resumed)
+            | (RuntimeStateV1::Resumed, RuntimeStateV1::Running)
+            | (RuntimeStateV1::Completed, RuntimeStateV1::Replayed)
+    );
+    let reason = if allowed {
+        "transition accepted by runtime state machine".to_string()
+    } else {
+        "transition rejected by closed state machine".to_string()
+    };
+    RuntimeStateTransitionCheckV1 { allowed, from, to, reason }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_command_invocation_safety_contract,
         build_const_adapter_execution_contract, build_shell_adapter_execution_contract,
         enforce_required_outputs_strict,
-        record_optional_outputs_honestly, OptionalOutputStatusV1,
+        record_optional_outputs_honestly, validate_runtime_state_transition,
+        OptionalOutputStatusV1, RuntimeStateV1,
         CommandInvocationModeV1,
         ConstAdapterOutputArtifactV1,
     };
@@ -347,5 +402,15 @@ mod tests {
             .iter()
             .any(|entry| entry.name == "plots"
                 && entry.status == OptionalOutputStatusV1::Absent));
+    }
+
+    #[test]
+    fn g056_runtime_state_machine_is_closed_over_legal_transitions() {
+        let legal = validate_runtime_state_transition(RuntimeStateV1::Running, RuntimeStateV1::Completed);
+        assert!(legal.allowed);
+
+        let illegal = validate_runtime_state_transition(RuntimeStateV1::Completed, RuntimeStateV1::Running);
+        assert!(!illegal.allowed);
+        assert!(illegal.reason.contains("rejected"));
     }
 }
