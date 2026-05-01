@@ -345,13 +345,52 @@ pub fn build_replay_command_report(
     })
 }
 
+/// One observed difference between two runs or bundles.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DiffObservationV1 {
+    pub surface: String,
+    pub field: String,
+    pub before: String,
+    pub after: String,
+}
+
+/// Classification of diff meaning.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DiffClassificationV1 {
+    pub semantic_changes: Vec<DiffObservationV1>,
+    pub noise_changes: Vec<DiffObservationV1>,
+}
+
+/// Classify diff observations into semantic versus noise.
+pub fn classify_diff_observations(
+    observations: Vec<DiffObservationV1>,
+) -> DiffClassificationV1 {
+    let mut semantic_changes = Vec::new();
+    let mut noise_changes = Vec::new();
+    for observation in observations {
+        let is_noise = (observation.surface == "run" && observation.field == "started_at")
+            || (observation.surface == "run" && observation.field == "finished_at")
+            || (observation.surface == "trace" && observation.field == "heartbeat_count");
+        if is_noise {
+            noise_changes.push(observation);
+        } else {
+            semantic_changes.push(observation);
+        }
+    }
+    DiffClassificationV1 {
+        semantic_changes,
+        noise_changes,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        classify_diff_observations,
         build_inspect_command_report, build_plan_command_report, build_run_command_report,
         build_replay_command_report, build_status_command_report, build_validate_command_report,
-        DryPlanNodeRowV1, InspectNodeStateV1, PreflightCheckV1, ReplayNodeDecisionV1,
-        ReplaySelectorV1, ValidateIssueV1,
+        DiffObservationV1, DryPlanNodeRowV1, InspectNodeStateV1, PreflightCheckV1,
+        ReplayNodeDecisionV1, ReplaySelectorV1, ValidateIssueV1,
     };
 
     #[test]
@@ -515,5 +554,32 @@ mod tests {
         assert_eq!(report.replay_run_id, "run-20260501-002");
         assert!(report.preserves_prior_evidence);
         assert_eq!(report.decisions.len(), 2);
+    }
+
+    #[test]
+    fn g077_diff_classification_separates_semantic_change_from_noise() {
+        let classified = classify_diff_observations(vec![
+            DiffObservationV1 {
+                surface: "graph".to_string(),
+                field: "node_count".to_string(),
+                before: "12".to_string(),
+                after: "13".to_string(),
+            },
+            DiffObservationV1 {
+                surface: "run".to_string(),
+                field: "started_at".to_string(),
+                before: "2026-05-01T09:00:00Z".to_string(),
+                after: "2026-05-01T09:01:00Z".to_string(),
+            },
+            DiffObservationV1 {
+                surface: "artifact".to_string(),
+                field: "content_hash".to_string(),
+                before: "a1".to_string(),
+                after: "a2".to_string(),
+            },
+        ]);
+        assert_eq!(classified.semantic_changes.len(), 2);
+        assert_eq!(classified.noise_changes.len(), 1);
+        assert_eq!(classified.noise_changes[0].field, "started_at");
     }
 }
