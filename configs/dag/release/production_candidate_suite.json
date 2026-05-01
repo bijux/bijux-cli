@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "required_steps": [
+    "root.status",
+    "root.doctor",
+    "apps.list",
+    "plugins.list",
+    "dag.validate",
+    "dag.plan",
+    "dag.run",
+    "dag.replay",
+    "dag.diff",
+    "dag.export",
+    "dag.import"
+  ]
+}

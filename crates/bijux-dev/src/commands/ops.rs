@@ -3743,6 +3743,13 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             serde_json::to_string(&limitations_report).unwrap_or_else(|_| "invalid report".to_string())
         ));
     }
+    let production_candidate_report = evaluate_production_candidate_suite(&root)?;
+    if !production_candidate_report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "production candidate suite failed: {}",
+            serde_json::to_string(&production_candidate_report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
 }
 
@@ -5122,6 +5129,170 @@ fn evaluate_limitations_visibility(root: &Path) -> Result<Value, String> {
         "commands_checked": command_reports,
         "violations": violations,
     }))
+}
+
+fn evaluate_production_candidate_suite(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/production_candidate_suite.json";
+    let contract_payload = fs::read_to_string(root.join(contract_rel))
+        .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
+    let contract: Value = serde_json::from_str(&contract_payload)
+        .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
+    let required_steps = contract["required_steps"]
+        .as_array()
+        .ok_or_else(|| "production candidate suite must define required_steps".to_string())?;
+    let required_set: BTreeSet<String> =
+        required_steps.iter().filter_map(Value::as_str).map(ToOwned::to_owned).collect();
+
+    let mut violations = Vec::new();
+    for required in [
+        "root.status",
+        "root.doctor",
+        "apps.list",
+        "plugins.list",
+        "dag.validate",
+        "dag.plan",
+        "dag.run",
+        "dag.replay",
+        "dag.diff",
+        "dag.export",
+        "dag.import",
+    ] {
+        if !required_set.contains(required) {
+            violations.push(format!("production candidate suite missing required step `{required}`"));
+        }
+    }
+
+    let tmp = tempfile::tempdir().map_err(|err| err.to_string())?;
+    let run_root = tmp.path().join("runs");
+    fs::create_dir_all(&run_root).map_err(|err| err.to_string())?;
+    let graph = "evidence/authoring/examples/hello.dag.json";
+    let export_bundle = tmp.path().join("hello.export.json");
+
+    let mut executed = Vec::new();
+    let mut run_step = |id: &str, cmd: &str, args: &[&str]| -> Result<(), String> {
+        let status = Command::new(cmd)
+            .args(args)
+            .current_dir(root)
+            .status()
+            .map_err(|err| format!("step `{id}` failed to start: {err}"))?;
+        executed.push(json!({
+            "id": id,
+            "command": format!("{} {}", cmd, args.join(" ")),
+            "success": status.success(),
+            "code": status.code(),
+        }));
+        if !status.success() {
+            violations.push(format!("step `{id}` failed with status {status}"));
+        }
+        Ok(())
+    };
+
+    run_step("root.status", "cargo", &["run", "-q", "-p", "bijux-cli", "--", "--json", "status"])?;
+    run_step("root.doctor", "cargo", &["run", "-q", "-p", "bijux-cli", "--", "--json", "doctor"])?;
+    run_step("apps.list", "cargo", &["run", "-q", "-p", "bijux-cli", "--", "--json", "apps", "list"])?;
+    run_step("plugins.list", "cargo", &["run", "-q", "-p", "bijux-cli", "--", "--json", "plugins", "list"])?;
+    run_step("dag.validate", "cargo", &["run", "-q", "-p", "bijux-dag-cli", "--", "dag", "validate", "--json", graph])?;
+    run_step("dag.plan", "cargo", &["run", "-q", "-p", "bijux-dag-cli", "--", "dag", "plan", "explain", "--json", graph])?;
+    run_step(
+        "dag.run",
+        "cargo",
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "run",
+            "--json",
+            graph,
+            "--out",
+            run_root.to_string_lossy().as_ref(),
+        ],
+    )?;
+
+    let first_run = newest_run(&run_root)?;
+    run_step(
+        "dag.replay",
+        "cargo",
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "replay",
+            "--json",
+            first_run.to_string_lossy().as_ref(),
+            "--out",
+            run_root.to_string_lossy().as_ref(),
+        ],
+    )?;
+    let replay_run = newest_run(&run_root)?;
+    run_step(
+        "dag.diff",
+        "cargo",
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "diff",
+            "--json",
+            first_run.to_string_lossy().as_ref(),
+            replay_run.to_string_lossy().as_ref(),
+        ],
+    )?;
+    run_step(
+        "dag.export",
+        "cargo",
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "export",
+            "--json",
+            first_run.to_string_lossy().as_ref(),
+            "--out",
+            export_bundle.to_string_lossy().as_ref(),
+        ],
+    )?;
+    run_step(
+        "dag.import",
+        "cargo",
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--",
+            "dag",
+            "import",
+            "--json",
+            "--verify-only",
+            export_bundle.to_string_lossy().as_ref(),
+        ],
+    )?;
+
+    let report_path = root.join("artifacts/release/production_candidate_bundle.json");
+    if let Some(parent) = report_path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    let report = json!({
+        "goal": "G200",
+        "contract": contract_rel,
+        "ok": violations.is_empty(),
+        "executed_steps": executed,
+        "violations": violations,
+    });
+    write_pretty_json(&report_path, &report)?;
+    Ok(report)
 }
 
 pub(super) fn deep_merge_json(target: &mut Value, overlay: &Value) {
