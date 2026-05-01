@@ -309,15 +309,57 @@ pub fn evaluate_scheduler_churn_benchmark(
     })
 }
 
+/// Artifact write/inventory benchmark input.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ArtifactBenchmarkInputV1 {
+    pub small_output_write_ms: f64,
+    pub large_output_write_ms: f64,
+    pub directory_inventory_ms: f64,
+    pub bundle_export_ms: f64,
+}
+
+/// Artifact benchmark report.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ArtifactBenchmarkReportV1 {
+    pub deterministic_budget_passed: bool,
+    pub diagnostics: Vec<String>,
+}
+
+/// Evaluate artifact write/inventory/export budget with deterministic-operation emphasis.
+pub fn evaluate_artifact_write_and_inventory_benchmark(
+    input: &ArtifactBenchmarkInputV1,
+) -> Result<ArtifactBenchmarkReportV1, String> {
+    let checks = [
+        ("small_output_write_ms", input.small_output_write_ms, 90.0),
+        ("large_output_write_ms", input.large_output_write_ms, 320.0),
+        ("directory_inventory_ms", input.directory_inventory_ms, 140.0),
+        ("bundle_export_ms", input.bundle_export_ms, 500.0),
+    ];
+    let mut diagnostics = Vec::new();
+    for (name, value, budget) in checks {
+        if !value.is_finite() || value < 0.0 {
+            return Err(format!("artifact benchmark requires finite non-negative {name}"));
+        }
+        if value > budget {
+            diagnostics.push(format!("{name} exceeds {budget:.0}ms deterministic budget"));
+        }
+    }
+    Ok(ArtifactBenchmarkReportV1 {
+        deterministic_budget_passed: diagnostics.is_empty(),
+        diagnostics,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        evaluate_artifact_write_and_inventory_benchmark,
         evaluate_planner_lowering_and_explain,
         evaluate_scheduler_churn_benchmark,
         evaluate_runtime_startup_benchmark,
         evaluate_canonicalization_and_fingerprinting,
         evaluate_graph_parse_and_validation_budget, evaluate_route_dispatch_and_help_startup,
-        CanonicalFingerprintBenchmarkInputV1, GraphValidationBenchmarkInputV1,
+        ArtifactBenchmarkInputV1, CanonicalFingerprintBenchmarkInputV1, GraphValidationBenchmarkInputV1,
         SchedulerChurnBenchmarkInputV1,
         RuntimeStartupBenchmarkInputV1,
         PlannerLoweringBenchmarkInputV1, RouteDispatchBenchmarkInputV1,
@@ -466,5 +508,27 @@ mod tests {
         .expect("churn report");
         assert!(!churn.within_budget);
         assert_eq!(churn.diagnostics.len(), 2);
+    }
+
+    #[test]
+    fn g187_artifact_write_inventory_and_export_stay_within_deterministic_budgets() {
+        let healthy = evaluate_artifact_write_and_inventory_benchmark(&ArtifactBenchmarkInputV1 {
+            small_output_write_ms: 35.0,
+            large_output_write_ms: 180.0,
+            directory_inventory_ms: 70.0,
+            bundle_export_ms: 230.0,
+        })
+        .expect("artifact benchmark should work");
+        assert!(healthy.deterministic_budget_passed);
+
+        let slow = evaluate_artifact_write_and_inventory_benchmark(&ArtifactBenchmarkInputV1 {
+            small_output_write_ms: 120.0,
+            large_output_write_ms: 380.0,
+            directory_inventory_ms: 210.0,
+            bundle_export_ms: 580.0,
+        })
+        .expect("slow artifact benchmark should report");
+        assert!(!slow.deterministic_budget_passed);
+        assert_eq!(slow.diagnostics.len(), 4);
     }
 }
