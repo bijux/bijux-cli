@@ -40,6 +40,8 @@ pub mod planner_iteration05;
 pub mod execution_iteration12;
 #[path = "contracts/resource_iteration13.rs"]
 pub mod resource_iteration13;
+#[path = "contracts/scientific_integration_contracts.rs"]
+pub mod scientific_integration_contracts;
 #[path = "analysis/fingerprint.rs"]
 pub mod fingerprint;
 #[path = "graph/graph.rs"]
