@@ -398,6 +398,54 @@ pub fn decide_retry_from_policy(
     }
 }
 
+/// Recovery snapshot entry for one node output write.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecoveryWriteRecordV1 {
+    pub node_id: String,
+    pub output_path: String,
+    pub write_id: String,
+    pub committed: bool,
+}
+
+/// Crash recovery decision report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CrashRecoveryDecisionReportV1 {
+    pub resume_allowed: bool,
+    pub duplicate_write_prevented: bool,
+    pub actions: Vec<String>,
+}
+
+/// Evaluate crash-recovery path using persisted write ledger.
+pub fn decide_crash_recovery(
+    records: Vec<RecoveryWriteRecordV1>,
+) -> CrashRecoveryDecisionReportV1 {
+    let mut seen = std::collections::BTreeSet::new();
+    let mut duplicate = false;
+    for record in &records {
+        let key = format!("{}:{}", record.node_id, record.output_path);
+        if !seen.insert(key) && record.committed {
+            duplicate = true;
+        }
+    }
+    let resume_allowed = !duplicate;
+    let actions = if resume_allowed {
+        vec![
+            "replay uncommitted writes".to_string(),
+            "resume scheduler from persisted queue".to_string(),
+        ]
+    } else {
+        vec![
+            "refuse resume due to duplicate committed writes".to_string(),
+            "require operator intervention".to_string(),
+        ]
+    };
+    CrashRecoveryDecisionReportV1 {
+        resume_allowed,
+        duplicate_write_prevented: duplicate,
+        actions,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -406,6 +454,7 @@ mod tests {
         enforce_required_outputs_strict,
         record_optional_outputs_honestly, validate_runtime_state_transition,
         apply_cancellation_idempotently, CancellationStateV1,
+        decide_crash_recovery, RecoveryWriteRecordV1,
         decide_retry_from_policy, RetryFailureClassV1, RetryPolicyInputV1,
         OptionalOutputStatusV1, RuntimeStateV1,
         CommandInvocationModeV1,
@@ -544,5 +593,25 @@ mod tests {
         assert!(retry.should_retry);
         assert_eq!(retry.next_attempt, 2);
         assert_eq!(retry.backoff_ms, 2000);
+    }
+
+    #[test]
+    fn g059_crash_recovery_detects_duplicate_writes_before_resume() {
+        let report = decide_crash_recovery(vec![
+            RecoveryWriteRecordV1 {
+                node_id: "n1".to_string(),
+                output_path: "artifacts/out.json".to_string(),
+                write_id: "w1".to_string(),
+                committed: true,
+            },
+            RecoveryWriteRecordV1 {
+                node_id: "n1".to_string(),
+                output_path: "artifacts/out.json".to_string(),
+                write_id: "w2".to_string(),
+                committed: true,
+            },
+        ]);
+        assert!(!report.resume_allowed);
+        assert!(report.duplicate_write_prevented);
     }
 }
