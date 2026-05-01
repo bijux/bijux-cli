@@ -438,10 +438,65 @@ pub fn evaluate_history_query_benchmark(
     })
 }
 
+/// Cache effectiveness benchmark input with trust safety flags.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CacheEffectivenessBenchmarkInputV1 {
+    pub rerun_count: usize,
+    pub cache_hit_count: usize,
+    pub safe_invalidation_count: usize,
+    pub unsafe_hit_detected: bool,
+    pub elapsed_ms: f64,
+}
+
+/// Cache effectiveness benchmark report.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CacheEffectivenessBenchmarkReportV1 {
+    pub cache_hit_ratio: f64,
+    pub reruns_per_second: f64,
+    pub trust_preserved: bool,
+    pub diagnostics: Vec<String>,
+}
+
+/// Evaluate cache effectiveness while enforcing trust-safe reuse/invalidation constraints.
+pub fn evaluate_cache_effectiveness_benchmark(
+    input: &CacheEffectivenessBenchmarkInputV1,
+) -> Result<CacheEffectivenessBenchmarkReportV1, String> {
+    if input.rerun_count == 0 {
+        return Err("cache effectiveness benchmark requires rerun_count > 0".to_string());
+    }
+    if !input.elapsed_ms.is_finite() || input.elapsed_ms <= 0.0 {
+        return Err("cache effectiveness benchmark requires elapsed_ms > 0".to_string());
+    }
+    if input.cache_hit_count > input.rerun_count || input.safe_invalidation_count > input.rerun_count {
+        return Err("cache benchmark counts cannot exceed rerun_count".to_string());
+    }
+    let cache_hit_ratio = (input.cache_hit_count as f64) / (input.rerun_count as f64);
+    let reruns_per_second = (input.rerun_count as f64) / (input.elapsed_ms / 1000.0);
+    let trust_preserved = !input.unsafe_hit_detected;
+    let mut diagnostics = Vec::new();
+    if cache_hit_ratio < 0.2 {
+        diagnostics.push("cache hit ratio below 20%; inspect key granularity".to_string());
+    }
+    if !trust_preserved {
+        diagnostics.push("unsafe cache hit detected; trust invariants violated".to_string());
+    }
+    if input.safe_invalidation_count == 0 {
+        diagnostics.push("no safe invalidations observed; invalidation path untested".to_string());
+    }
+
+    Ok(CacheEffectivenessBenchmarkReportV1 {
+        cache_hit_ratio,
+        reruns_per_second,
+        trust_preserved,
+        diagnostics,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         evaluate_artifact_write_and_inventory_benchmark,
+        evaluate_cache_effectiveness_benchmark,
         evaluate_evidence_verification_benchmark,
         evaluate_history_query_benchmark,
         evaluate_planner_lowering_and_explain,
@@ -450,6 +505,7 @@ mod tests {
         evaluate_canonicalization_and_fingerprinting,
         evaluate_graph_parse_and_validation_budget, evaluate_route_dispatch_and_help_startup,
         ArtifactBenchmarkInputV1, CanonicalFingerprintBenchmarkInputV1,
+        CacheEffectivenessBenchmarkInputV1,
         EvidenceVerificationBenchmarkInputV1, GraphValidationBenchmarkInputV1,
         HistoryQueryBenchmarkInputV1,
         SchedulerChurnBenchmarkInputV1,
@@ -664,5 +720,33 @@ mod tests {
         .expect("slow history benchmark");
         assert!(!slow.responsive);
         assert_eq!(slow.diagnostics.len(), 4);
+    }
+
+    #[test]
+    fn g190_cache_effectiveness_never_trades_speed_for_trust() {
+        let healthy = evaluate_cache_effectiveness_benchmark(&CacheEffectivenessBenchmarkInputV1 {
+            rerun_count: 50,
+            cache_hit_count: 28,
+            safe_invalidation_count: 12,
+            unsafe_hit_detected: false,
+            elapsed_ms: 2_500.0,
+        })
+        .expect("cache benchmark");
+        assert!(healthy.trust_preserved);
+        assert!(healthy.cache_hit_ratio > 0.5);
+
+        let unsafe_case = evaluate_cache_effectiveness_benchmark(&CacheEffectivenessBenchmarkInputV1 {
+            rerun_count: 50,
+            cache_hit_count: 40,
+            safe_invalidation_count: 0,
+            unsafe_hit_detected: true,
+            elapsed_ms: 2_100.0,
+        })
+        .expect("unsafe cache benchmark");
+        assert!(!unsafe_case.trust_preserved);
+        assert!(unsafe_case
+            .diagnostics
+            .iter()
+            .any(|line| line.contains("unsafe cache hit detected")));
     }
 }
