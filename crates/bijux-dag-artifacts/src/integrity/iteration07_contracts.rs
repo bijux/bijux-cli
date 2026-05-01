@@ -265,12 +265,64 @@ pub fn assess_cache_reuse_safety(
     }
 }
 
+/// Cache reuse compatibility context for explicit miss explanation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheReuseContextV1 {
+    pub input_fingerprint: String,
+    pub policy_fingerprint: String,
+    pub schema_fingerprint: String,
+    pub adapter_fingerprint: String,
+    pub runtime_fingerprint: String,
+    pub integrity_verified: bool,
+}
+
+/// Cache compatibility assessment with concrete miss reasons.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheReuseCompatibilityV1 {
+    pub decision: String,
+    pub reasons: Vec<String>,
+}
+
+/// Assess safe/unsafe reuse from compatibility factors.
+pub fn assess_cache_reuse_compatibility(
+    expected: &CacheReuseContextV1,
+    candidate: &CacheReuseContextV1,
+) -> CacheReuseCompatibilityV1 {
+    let mut reasons = Vec::new();
+    if !candidate.integrity_verified {
+        reasons.push("integrity_unverified".to_string());
+    }
+    if expected.input_fingerprint != candidate.input_fingerprint {
+        reasons.push("input_fingerprint_changed".to_string());
+    }
+    if expected.policy_fingerprint != candidate.policy_fingerprint {
+        reasons.push("policy_fingerprint_changed".to_string());
+    }
+    if expected.schema_fingerprint != candidate.schema_fingerprint {
+        reasons.push("schema_fingerprint_changed".to_string());
+    }
+    if expected.adapter_fingerprint != candidate.adapter_fingerprint {
+        reasons.push("adapter_fingerprint_changed".to_string());
+    }
+    if expected.runtime_fingerprint != candidate.runtime_fingerprint {
+        reasons.push("runtime_fingerprint_changed".to_string());
+    }
+    CacheReuseCompatibilityV1 {
+        decision: if reasons.is_empty() {
+            "hit".to_string()
+        } else {
+            "miss".to_string()
+        },
+        reasons,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        assess_cache_reuse_safety, build_complete_artifact_inventory, build_explainable_cache_key,
+        assess_cache_reuse_compatibility, assess_cache_reuse_safety, build_complete_artifact_inventory, build_explainable_cache_key,
         build_run_directory_layout_contract, content_identity_for_directory, content_identity_for_file,
-        ArtifactInventoryRecordV1, CacheKeyFactorsV1, CacheReuseEvidenceV1,
+        ArtifactInventoryRecordV1, CacheKeyFactorsV1, CacheReuseContextV1, CacheReuseEvidenceV1,
     };
 
     #[test]
@@ -370,5 +422,31 @@ mod tests {
         );
         assert_eq!(decision.decision, "hit");
         assert!(decision.reason.contains("safe reuse"));
+    }
+
+    #[test]
+    fn g066_unsafe_cache_reuse_reports_changed_factors() {
+        let expected = CacheReuseContextV1 {
+            input_fingerprint: "input-a".to_string(),
+            policy_fingerprint: "policy-a".to_string(),
+            schema_fingerprint: "schema-v1".to_string(),
+            adapter_fingerprint: "shell-v1".to_string(),
+            runtime_fingerprint: "runtime-1.0".to_string(),
+            integrity_verified: true,
+        };
+        let candidate = CacheReuseContextV1 {
+            input_fingerprint: "input-b".to_string(),
+            policy_fingerprint: "policy-a".to_string(),
+            schema_fingerprint: "schema-v2".to_string(),
+            adapter_fingerprint: "shell-v2".to_string(),
+            runtime_fingerprint: "runtime-1.0".to_string(),
+            integrity_verified: false,
+        };
+        let compatibility = assess_cache_reuse_compatibility(&expected, &candidate);
+        assert_eq!(compatibility.decision, "miss");
+        assert!(compatibility.reasons.contains(&"integrity_unverified".to_string()));
+        assert!(compatibility.reasons.contains(&"input_fingerprint_changed".to_string()));
+        assert!(compatibility.reasons.contains(&"schema_fingerprint_changed".to_string()));
+        assert!(compatibility.reasons.contains(&"adapter_fingerprint_changed".to_string()));
     }
 }
