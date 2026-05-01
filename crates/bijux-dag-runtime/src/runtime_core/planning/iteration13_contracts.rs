@@ -22,6 +22,31 @@ pub struct ContainerCapabilityNegotiationReportV1 {
     pub diagnostics: Vec<String>,
 }
 
+/// Capability maturity class for remote execution surfaces.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CapabilityMaturityV1 {
+    Real,
+    Simulated,
+    Advisory,
+}
+
+/// Capability status row for remote execution planning.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RemoteCapabilityStatusV1 {
+    pub capability: String,
+    pub maturity: CapabilityMaturityV1,
+    pub backend: String,
+}
+
+/// Remote capability honesty report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RemoteCapabilityHonestyReportV1 {
+    pub statuses: Vec<RemoteCapabilityStatusV1>,
+    pub production_profile_ready: bool,
+    pub diagnostics: Vec<String>,
+}
+
 /// Evaluate container capability negotiation from a probe and discovered engine availability.
 pub fn evaluate_container_capability_negotiation(
     probe: &ContainerCapabilityProbeV1,
@@ -80,11 +105,29 @@ pub fn preflight_container_capability(
     evaluate_container_capability_negotiation(probe, runtime_available)
 }
 
+/// Build remote capability status report with production-profile honesty rules.
+pub fn build_remote_capability_honesty_report(
+    statuses: Vec<RemoteCapabilityStatusV1>,
+) -> RemoteCapabilityHonestyReportV1 {
+    let mut diagnostics = Vec::new();
+    for status in &statuses {
+        if status.maturity != CapabilityMaturityV1::Real {
+            diagnostics.push(format!(
+                "capability '{}' on backend '{}' is {:?}",
+                status.capability, status.backend, status.maturity
+            ));
+        }
+    }
+    let production_profile_ready = diagnostics.is_empty();
+    RemoteCapabilityHonestyReportV1 { statuses, production_profile_ready, diagnostics }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        evaluate_container_capability_negotiation, ContainerCapabilityNegotiationReportV1,
-        ContainerCapabilityProbeV1,
+        build_remote_capability_honesty_report, evaluate_container_capability_negotiation,
+        CapabilityMaturityV1, ContainerCapabilityNegotiationReportV1, ContainerCapabilityProbeV1,
+        RemoteCapabilityStatusV1,
     };
 
     fn require_advisory(report: &ContainerCapabilityNegotiationReportV1) {
@@ -108,5 +151,45 @@ mod tests {
             .diagnostics
             .iter()
             .any(|entry| entry == "container engine 'docker' is unavailable"));
+    }
+
+    #[test]
+    fn g125_remote_capability_status_blocks_production_when_not_real() {
+        let report = build_remote_capability_honesty_report(vec![
+            RemoteCapabilityStatusV1 {
+                capability: "remote".to_string(),
+                maturity: CapabilityMaturityV1::Simulated,
+                backend: "distributed".to_string(),
+            },
+            RemoteCapabilityStatusV1 {
+                capability: "batch".to_string(),
+                maturity: CapabilityMaturityV1::Advisory,
+                backend: "slurm".to_string(),
+            },
+            RemoteCapabilityStatusV1 {
+                capability: "high_availability".to_string(),
+                maturity: CapabilityMaturityV1::Real,
+                backend: "local-ha".to_string(),
+            },
+            RemoteCapabilityStatusV1 {
+                capability: "federated".to_string(),
+                maturity: CapabilityMaturityV1::Simulated,
+                backend: "federated".to_string(),
+            },
+            RemoteCapabilityStatusV1 {
+                capability: "distributed".to_string(),
+                maturity: CapabilityMaturityV1::Advisory,
+                backend: "distributed".to_string(),
+            },
+        ]);
+        assert!(!report.production_profile_ready);
+        assert!(report
+            .diagnostics
+            .iter()
+            .any(|entry| entry.contains("capability 'remote'")));
+        assert!(report
+            .diagnostics
+            .iter()
+            .any(|entry| entry.contains("capability 'federated'")));
     }
 }
