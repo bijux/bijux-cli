@@ -1,4 +1,9 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
+
+use crate::{
+    compile_graph, lower_graph_to_execution_plan, parse_graph_strict, Graph, GraphError, Severity,
+};
 
 /// Per-example execution evidence used to prove examples are executable.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -147,12 +152,94 @@ pub fn build_graph_canonicalization_visibility_report(
     })
 }
 
+/// Strict parity report between programmatic builder and file-authored graphs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphBuilderParityReportV1 {
+    /// Whether canonical JSON bytes are identical.
+    pub canonical_json_equal: bool,
+    /// Whether graph fingerprints are identical.
+    pub graph_fingerprint_equal: bool,
+    /// Whether planner fingerprints are identical.
+    pub planner_fingerprint_equal: bool,
+    /// Validation error codes emitted by builder-authored graph.
+    pub builder_validation_error_codes: Vec<String>,
+    /// Validation error codes emitted by file-authored graph.
+    pub file_validation_error_codes: Vec<String>,
+    /// Human-readable mismatch descriptions.
+    pub mismatches: Vec<String>,
+}
+
+/// Ensure builder and file-authored graphs share strict canonical and planning parity.
+pub fn build_graph_builder_parity_report(
+    builder_graph: &Graph,
+    file_graph_json: &str,
+) -> Result<GraphBuilderParityReportV1, GraphError> {
+    let file_graph = parse_graph_strict(file_graph_json)?;
+    let builder_compiled = compile_graph(builder_graph)?;
+    let file_compiled = compile_graph(&file_graph)?;
+
+    let builder_validation_error_codes = builder_compiled
+        .diagnostics
+        .iter()
+        .filter(|diag| diag.severity == Severity::Error)
+        .map(|diag| diag.code.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let file_validation_error_codes = file_compiled
+        .diagnostics
+        .iter()
+        .filter(|diag| diag.severity == Severity::Error)
+        .map(|diag| diag.code.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+
+    let builder_canonical_json = builder_compiled.normalized_graph.to_canonical_json()?;
+    let file_canonical_json = file_compiled.normalized_graph.to_canonical_json()?;
+    let canonical_json_equal = builder_canonical_json == file_canonical_json;
+    let graph_fingerprint_equal =
+        builder_compiled.graph_fingerprint == file_compiled.graph_fingerprint;
+
+    let builder_plan = lower_graph_to_execution_plan(&builder_compiled.normalized_graph, Default::default())
+        .map_err(|_| GraphError::ValidationFailed)?;
+    let file_plan = lower_graph_to_execution_plan(&file_compiled.normalized_graph, Default::default())
+        .map_err(|_| GraphError::ValidationFailed)?;
+    let planner_fingerprint_equal =
+        builder_plan.planner_fingerprint == file_plan.planner_fingerprint;
+
+    let mut mismatches = Vec::new();
+    if !builder_validation_error_codes.is_empty() || !file_validation_error_codes.is_empty() {
+        mismatches.push("builder and file graphs must both pass semantic validation".to_string());
+    }
+    if !canonical_json_equal {
+        mismatches.push("canonical JSON bytes diverged between authoring surfaces".to_string());
+    }
+    if !graph_fingerprint_equal {
+        mismatches.push("graph fingerprints diverged between authoring surfaces".to_string());
+    }
+    if !planner_fingerprint_equal {
+        mismatches.push("planner fingerprints diverged between authoring surfaces".to_string());
+    }
+
+    Ok(GraphBuilderParityReportV1 {
+        canonical_json_equal,
+        graph_fingerprint_equal,
+        planner_fingerprint_equal,
+        builder_validation_error_codes,
+        file_validation_error_codes,
+        mismatches,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_graph_canonicalization_visibility_report, build_graph_examples_execution_report,
-        build_surgical_validation_diagnostic, GraphExampleExecutionEntryV1,
+        build_graph_builder_parity_report, build_graph_canonicalization_visibility_report,
+        build_graph_examples_execution_report, build_surgical_validation_diagnostic,
+        GraphExampleExecutionEntryV1,
     };
+    use crate::{DagBuilder, Effect, NodeBuilder, NodeKind};
 
     #[test]
     fn g021_graph_examples_execution_report_requires_all_example_kinds() {
@@ -202,5 +289,37 @@ mod tests {
         .expect("canonicalization visibility report should build");
         assert_eq!(report.graph_fingerprint, "sha256:graph-demo");
         assert_eq!(report.node_fingerprints.len(), 1);
+    }
+
+    #[test]
+    fn g024_builder_and_file_authoring_surfaces_match_canonical_and_plan_identity() {
+        let builder_graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("produce", NodeKind::Shell)
+                    .input("seed")
+                    .output("out", "artifacts/produce.json")
+                    .effect(Effect::Filesystem)
+                    .build(),
+            )
+            .node(
+                NodeBuilder::new("consume", NodeKind::Const)
+                    .input("in")
+                    .output("done", "artifacts/consume.json")
+                    .build(),
+            )
+            .edge("produce", "out", "consume", "in")
+            .build();
+
+        let file_graph_json = serde_json::to_string_pretty(&builder_graph)
+            .expect("graph should serialize to file-authored JSON");
+        let report =
+            build_graph_builder_parity_report(&builder_graph, &file_graph_json).expect("parity");
+
+        assert!(report.builder_validation_error_codes.is_empty());
+        assert!(report.file_validation_error_codes.is_empty());
+        assert!(report.canonical_json_equal);
+        assert!(report.graph_fingerprint_equal);
+        assert!(report.planner_fingerprint_equal);
+        assert!(report.mismatches.is_empty());
     }
 }
