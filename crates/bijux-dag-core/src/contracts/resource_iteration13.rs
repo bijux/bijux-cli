@@ -72,6 +72,18 @@ pub struct PoolPlacementReportV1 {
     pub diagnostics: Vec<String>,
 }
 
+/// Machine-readable adapter capability descriptor.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdapterCapabilityDescriptorV1 {
+    pub adapter_kind: String,
+    pub input_contract: String,
+    pub output_contract: String,
+    pub effects: Vec<String>,
+    pub cacheable: bool,
+    pub sandbox_profile: String,
+    pub side_effect_class: String,
+}
+
 /// Build resource requirements from graph nodes with deterministic defaults.
 pub fn build_resource_requirements(graph: &Graph) -> Vec<ResourceRequirementV1> {
     graph
@@ -271,11 +283,62 @@ fn execution_pool_label(pool: &ExecutionPoolV1) -> &'static str {
     }
 }
 
+/// Built-in adapter capability registry used by planning admission.
+pub fn builtin_adapter_capability_registry() -> Vec<AdapterCapabilityDescriptorV1> {
+    vec![
+        AdapterCapabilityDescriptorV1 {
+            adapter_kind: "const".to_string(),
+            input_contract: "literal-or-ref".to_string(),
+            output_contract: "declared-artifact".to_string(),
+            effects: vec!["filesystem".to_string()],
+            cacheable: true,
+            sandbox_profile: "restricted".to_string(),
+            side_effect_class: "read_only".to_string(),
+        },
+        AdapterCapabilityDescriptorV1 {
+            adapter_kind: "shell".to_string(),
+            input_contract: "argv-only".to_string(),
+            output_contract: "declared-artifact".to_string(),
+            effects: vec!["filesystem".to_string(), "env".to_string()],
+            cacheable: true,
+            sandbox_profile: "process".to_string(),
+            side_effect_class: "writes_run".to_string(),
+        },
+        AdapterCapabilityDescriptorV1 {
+            adapter_kind: "container".to_string(),
+            input_contract: "container-contract".to_string(),
+            output_contract: "declared-artifact".to_string(),
+            effects: vec!["filesystem".to_string(), "env".to_string(), "network".to_string()],
+            cacheable: true,
+            sandbox_profile: "container".to_string(),
+            side_effect_class: "executes_adapter".to_string(),
+        },
+    ]
+}
+
+/// Return capability descriptor for a node kind.
+pub fn adapter_capability_for_kind(kind: &str) -> Option<AdapterCapabilityDescriptorV1> {
+    builtin_adapter_capability_registry().into_iter().find(|entry| entry.adapter_kind == kind)
+}
+
+/// Decide if planner can mark a node runnable from capability declarations.
+pub fn planner_runnable_from_capabilities(kind: &str, requires_network: bool) -> bool {
+    let Some(capability) = adapter_capability_for_kind(kind) else {
+        return false;
+    };
+    if requires_network {
+        capability.effects.iter().any(|effect| effect == "network")
+    } else {
+        true
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_resource_requirements, plan_pool_placement, validate_resource_requirements,
-        ExecutionPoolV1, ResourceAvailabilityV1,
+        adapter_capability_for_kind, build_resource_requirements, plan_pool_placement,
+        planner_runnable_from_capabilities, validate_resource_requirements, ExecutionPoolV1,
+        ResourceAvailabilityV1,
     };
     use crate::{
         Edge, FileOutput, Graph, GraphMeta, Node, NodeKind, ParamValue, PortRef, Resources,
@@ -377,5 +440,15 @@ mod tests {
         assert_eq!(report.placements[0].requested_pool, ExecutionPoolV1::Gpu);
         assert!(report.placements[0].assigned_pool.is_none());
         assert!(report.diagnostics[0].contains("requested unavailable pool 'gpu'"));
+    }
+
+    #[test]
+    fn g123_adapter_capabilities_are_machine_readable_for_planner_runnability() {
+        let shell = adapter_capability_for_kind("shell").expect("shell capability");
+        assert_eq!(shell.sandbox_profile, "process");
+        assert!(planner_runnable_from_capabilities("shell", false));
+        assert!(!planner_runnable_from_capabilities("shell", true));
+        assert!(planner_runnable_from_capabilities("container", true));
+        assert!(!planner_runnable_from_capabilities("external-unregistered", false));
     }
 }
