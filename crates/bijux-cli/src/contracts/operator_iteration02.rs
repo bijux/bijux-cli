@@ -223,13 +223,79 @@ pub fn evaluate_legacy_shim_policy(
     })
 }
 
+/// Route conflict contender metadata.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct RouteConflictContenderV1 {
+    /// Contender route source (`built-in`, `official-app`, `plugin`, `alias`, `shim`).
+    pub source: String,
+    /// Resolved command target key.
+    pub target: String,
+    /// Priority where larger values win.
+    pub priority: i32,
+}
+
+/// Deterministic route conflict resolution output.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct RouteConflictResolutionV1 {
+    /// Canonical route key.
+    pub route_key: String,
+    /// Winning contender if resolution succeeded.
+    pub winner: Option<RouteConflictContenderV1>,
+    /// Refusal reason when contenders tie irreconcilably.
+    pub refusal_reason: Option<String>,
+}
+
+/// Resolve route conflicts deterministically by priority then stable source ordering.
+pub fn resolve_route_conflict_deterministically(
+    route_key: &str,
+    contenders: Vec<RouteConflictContenderV1>,
+) -> Result<RouteConflictResolutionV1, String> {
+    if route_key.trim().is_empty() {
+        return Err("route_key cannot be empty".to_string());
+    }
+    if contenders.is_empty() {
+        return Ok(RouteConflictResolutionV1 {
+            route_key: route_key.to_string(),
+            winner: None,
+            refusal_reason: Some("no contenders registered".to_string()),
+        });
+    }
+    let mut ordered = contenders;
+    ordered.sort_by(|left, right| {
+        right
+            .priority
+            .cmp(&left.priority)
+            .then_with(|| left.source.cmp(&right.source))
+            .then_with(|| left.target.cmp(&right.target))
+    });
+    let winner = ordered.first().cloned().expect("contenders not empty");
+    let same_rank: Vec<&RouteConflictContenderV1> = ordered
+        .iter()
+        .filter(|candidate| candidate.priority == winner.priority && candidate.target != winner.target)
+        .collect();
+    if same_rank.is_empty() {
+        Ok(RouteConflictResolutionV1 {
+            route_key: route_key.to_string(),
+            winner: Some(winner),
+            refusal_reason: None,
+        })
+    } else {
+        Ok(RouteConflictResolutionV1 {
+            route_key: route_key.to_string(),
+            winner: None,
+            refusal_reason: Some("priority tie with conflicting targets".to_string()),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_plugin_scaffold_conformance_report,
+        resolve_route_conflict_deterministically,
         evaluate_legacy_shim_policy,
         evaluate_official_app_descriptor_compatibility,
-        validate_executable_plugin_manifest_contract, validate_plugin_subprocess_execution_policy,
+        validate_executable_plugin_manifest_contract, validate_plugin_subprocess_execution_policy, RouteConflictContenderV1,
         ExecutablePluginManifestContractV1, LegacyShimPolicyDecisionV1,
         PluginScaffoldConformanceEntryV1,
         PluginSubprocessExecutionPolicyV1, OfficialAppDescriptorCompatibilityInputV1,
@@ -303,5 +369,33 @@ mod tests {
                 .expect("shim decision should build");
         assert_eq!(decision.decision, "warned");
         assert_eq!(decision.canonical_command, "bijux dag");
+    }
+
+    #[test]
+    fn g016_route_conflict_resolution_is_deterministic_by_priority() {
+        let resolution = resolve_route_conflict_deterministically(
+            "dag run",
+            vec![
+                RouteConflictContenderV1 {
+                    source: "plugin".to_string(),
+                    target: "plugin.dag.run".to_string(),
+                    priority: 10,
+                },
+                RouteConflictContenderV1 {
+                    source: "official-app".to_string(),
+                    target: "official.dag.run".to_string(),
+                    priority: 100,
+                },
+            ],
+        )
+        .expect("conflict resolution should succeed");
+        assert_eq!(
+            resolution
+                .winner
+                .expect("winner")
+                .target,
+            "official.dag.run"
+        );
+        assert!(resolution.refusal_reason.is_none());
     }
 }
