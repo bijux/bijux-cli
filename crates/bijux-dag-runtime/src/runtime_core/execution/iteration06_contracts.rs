@@ -140,11 +140,73 @@ pub fn build_command_invocation_safety_contract(
     Ok(CommandInvocationSafetyContractV1 { mode, argv, shell_string })
 }
 
+/// Required output validation issue.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RequiredOutputViolationV1 {
+    pub code: String,
+    pub output: String,
+    pub reason: String,
+}
+
+/// Strict required-output enforcement report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RequiredOutputEnforcementReportV1 {
+    pub success: bool,
+    pub violations: Vec<RequiredOutputViolationV1>,
+}
+
+/// Enforce required outputs against missing/type/corrupt/outside-root failures.
+pub fn enforce_required_outputs_strict(
+    run_root: &str,
+    required_outputs: Vec<String>,
+    produced_outputs: std::collections::BTreeMap<String, (String, bool)>,
+) -> RequiredOutputEnforcementReportV1 {
+    let mut violations = Vec::new();
+    for required in required_outputs {
+        let Some((path, hash_valid)) = produced_outputs.get(&required) else {
+            violations.push(RequiredOutputViolationV1 {
+                code: "RO5401_MISSING_REQUIRED_OUTPUT".to_string(),
+                output: required.clone(),
+                reason: "required output missing".to_string(),
+            });
+            continue;
+        };
+        if !path.starts_with(run_root) {
+            violations.push(RequiredOutputViolationV1 {
+                code: "RO5402_OUTPUT_OUTSIDE_RUN_ROOT".to_string(),
+                output: required.clone(),
+                reason: format!("output path {} escapes run root {}", path, run_root),
+            });
+        }
+        let type_ok = path.ends_with(".json")
+            || path.ends_with(".txt")
+            || path.ends_with(".tsv")
+            || path.ends_with(".csv");
+        if !type_ok {
+            violations.push(RequiredOutputViolationV1 {
+                code: "RO5403_OUTPUT_TYPE_MISMATCH".to_string(),
+                output: required.clone(),
+                reason: format!("unsupported output extension in {}", path),
+            });
+        }
+        if !hash_valid {
+            violations.push(RequiredOutputViolationV1 {
+                code: "RO5404_OUTPUT_CORRUPT".to_string(),
+                output: required,
+                reason: "content hash check failed".to_string(),
+            });
+        }
+    }
+    violations.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.output.cmp(&right.output)));
+    RequiredOutputEnforcementReportV1 { success: violations.is_empty(), violations }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_command_invocation_safety_contract,
         build_const_adapter_execution_contract, build_shell_adapter_execution_contract,
+        enforce_required_outputs_strict,
         CommandInvocationModeV1,
         ConstAdapterOutputArtifactV1,
     };
@@ -201,5 +263,29 @@ mod tests {
             explicit_shell.mode,
             CommandInvocationModeV1::ShellInterpretation
         ));
+    }
+
+    #[test]
+    fn g054_required_outputs_fail_on_missing_corrupt_or_outside_root_paths() {
+        let report = enforce_required_outputs_strict(
+            "/run/42",
+            vec!["metrics".to_string(), "summary".to_string()],
+            std::collections::BTreeMap::from([
+                ("metrics".to_string(), ("/tmp/metrics.bin".to_string(), false)),
+            ]),
+        );
+        assert!(!report.success);
+        assert!(report
+            .violations
+            .iter()
+            .any(|item| item.code == "RO5401_MISSING_REQUIRED_OUTPUT"));
+        assert!(report
+            .violations
+            .iter()
+            .any(|item| item.code == "RO5402_OUTPUT_OUTSIDE_RUN_ROOT"));
+        assert!(report
+            .violations
+            .iter()
+            .any(|item| item.code == "RO5404_OUTPUT_CORRUPT"));
     }
 }
