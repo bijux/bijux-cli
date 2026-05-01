@@ -186,11 +186,101 @@ pub fn validate_barrier_semantics(graph: &Graph) -> BarrierSemanticReportV1 {
     BarrierSemanticReportV1 { valid: violations.is_empty(), violations }
 }
 
+/// Reducer input ordering policy.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReducerOrderingPolicyV1 {
+    Topological,
+    LexicographicNodeId,
+}
+
+/// Reducer semantic violation detected during validation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReducerSemanticViolationV1 {
+    /// Stable violation code.
+    pub code: String,
+    /// Reducer node id.
+    pub node_id: String,
+    /// Remediation guidance.
+    pub remediation: String,
+}
+
+/// Reducer semantic report including deterministic upstream ordering.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReducerSemanticReportV1 {
+    /// Whether report passed reducer checks.
+    pub valid: bool,
+    /// Upstream order by reducer node.
+    pub upstream_order: Vec<(String, Vec<String>)>,
+    /// Violations found.
+    pub violations: Vec<ReducerSemanticViolationV1>,
+}
+
+/// Validate reducer semantics and produce deterministic upstream ordering.
+pub fn validate_reducer_semantics(
+    graph: &Graph,
+    ordering_policy: ReducerOrderingPolicyV1,
+    allow_empty_collection: bool,
+) -> ReducerSemanticReportV1 {
+    let mut upstream_order = Vec::new();
+    let mut violations = Vec::new();
+    for node in &graph.nodes {
+        if node.semantic_kind != SemanticNodeKind::Reduce {
+            continue;
+        }
+        if node.outputs.len() != 1 {
+            violations.push(ReducerSemanticViolationV1 {
+                code: "R3401_REDUCER_REQUIRES_SINGLE_OUTPUT".to_string(),
+                node_id: node.id.clone(),
+                remediation: "declare exactly one reducer output artifact".to_string(),
+            });
+        }
+        let mut upstreams = graph
+            .edges
+            .iter()
+            .filter(|edge| edge.to.node_id == node.id)
+            .map(|edge| edge.from.node_id.clone())
+            .collect::<Vec<_>>();
+        if upstreams.is_empty() && !allow_empty_collection {
+            violations.push(ReducerSemanticViolationV1 {
+                code: "R3402_REDUCER_EMPTY_COLLECTION_FORBIDDEN".to_string(),
+                node_id: node.id.clone(),
+                remediation: "connect at least one upstream producer or enable empty policy"
+                    .to_string(),
+            });
+        }
+
+        let mut target_ports = std::collections::BTreeSet::new();
+        for edge in graph.edges.iter().filter(|edge| edge.to.node_id == node.id) {
+            let port_key = edge.to.port.clone();
+            if !target_ports.insert(port_key) {
+                violations.push(ReducerSemanticViolationV1 {
+                    code: "R3403_REDUCER_AMBIGUOUS_FANIN".to_string(),
+                    node_id: node.id.clone(),
+                    remediation: "bind each reducer input port from exactly one upstream edge"
+                        .to_string(),
+                });
+                break;
+            }
+        }
+
+        match ordering_policy {
+            ReducerOrderingPolicyV1::Topological => {}
+            ReducerOrderingPolicyV1::LexicographicNodeId => upstreams.sort(),
+        }
+        upstream_order.push((node.id.clone(), upstreams));
+    }
+    upstream_order.sort_by(|left, right| left.0.cmp(&right.0));
+    violations.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.node_id.cmp(&right.node_id)));
+    ReducerSemanticReportV1 { valid: violations.is_empty(), upstream_order, violations }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_branch_decision_artifact, evaluate_trigger_readiness_from_states,
-        validate_barrier_semantics, UpstreamTerminalStateV1,
+        validate_barrier_semantics, validate_reducer_semantics, ReducerOrderingPolicyV1,
+        UpstreamTerminalStateV1,
     };
     use crate::{DagBuilder, NodeBuilder, NodeKind, SemanticNodeKind};
 
@@ -239,5 +329,41 @@ mod tests {
             .violations
             .iter()
             .any(|item| item.code == "B3302_BARRIER_MUST_NOT_DECLARE_OUTPUTS"));
+    }
+
+    #[test]
+    fn g034_reducer_semantics_define_ordering_and_refuse_ambiguous_fanin() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("a", NodeKind::Const)
+                    .output("out", "artifacts/a.json")
+                    .build(),
+            )
+            .node(
+                NodeBuilder::new("b", NodeKind::Const)
+                    .output("out", "artifacts/b.json")
+                    .build(),
+            )
+            .node(
+                NodeBuilder::new("reduce", NodeKind::Const)
+                    .semantic_kind(SemanticNodeKind::Reduce)
+                    .input("in")
+                    .output("result", "artifacts/reduce.json")
+                    .build(),
+            )
+            .edge("a", "out", "reduce", "in")
+            .edge("b", "out", "reduce", "in")
+            .build();
+        let report = validate_reducer_semantics(
+            &graph,
+            ReducerOrderingPolicyV1::LexicographicNodeId,
+            false,
+        );
+        assert!(!report.valid);
+        assert!(report
+            .violations
+            .iter()
+            .any(|item| item.code == "R3403_REDUCER_AMBIGUOUS_FANIN"));
+        assert_eq!(report.upstream_order[0].1, vec!["a".to_string(), "b".to_string()]);
     }
 }
