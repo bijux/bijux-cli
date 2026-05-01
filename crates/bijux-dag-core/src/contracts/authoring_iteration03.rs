@@ -493,13 +493,139 @@ pub fn build_port_contract_enforcement_report(graph: &Graph) -> PortContractEnfo
     PortContractEnforcementReportV1 { node_contracts, violations }
 }
 
+/// Graph package file entry used in import validation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphPackageFileEntryV1 {
+    /// Normalized relative package path.
+    pub path: String,
+    /// SHA-256 digest in lowercase hex.
+    pub sha256: String,
+}
+
+/// Graph package bundle import payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphPackageBundleV1 {
+    /// Bundle format version.
+    pub format_version: String,
+    /// Graph payload.
+    pub graph: Graph,
+    /// Config/schema descriptors.
+    pub schema_versions: Vec<String>,
+    /// Required produced artifacts as `node.output`.
+    pub expected_artifacts: Vec<String>,
+    /// Example identifiers included with the package.
+    pub examples: Vec<String>,
+    /// File integrity manifest.
+    pub files: Vec<GraphPackageFileEntryV1>,
+}
+
+/// Import refusal for graph package bundles.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphPackageImportRefusalV1 {
+    /// Stable refusal code.
+    pub code: String,
+    /// Refusal subject.
+    pub subject: String,
+    /// Remediation guidance.
+    pub remediation: String,
+}
+
+/// Graph package import validation report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphPackageImportReportV1 {
+    /// Whether bundle is safe and current for import.
+    pub accepted: bool,
+    /// Refusal list.
+    pub refusals: Vec<GraphPackageImportRefusalV1>,
+}
+
+/// Validate graph package import constraints and return deterministic refusal detail.
+pub fn validate_graph_package_import(
+    bundle: &GraphPackageBundleV1,
+    expected_graph_spec: &str,
+) -> GraphPackageImportReportV1 {
+    let mut refusals = Vec::new();
+    if bundle.format_version != "bijux-graph-package/v1" {
+        refusals.push(GraphPackageImportRefusalV1 {
+            code: "B4001_CORRUPT_BUNDLE".to_string(),
+            subject: "format_version".to_string(),
+            remediation: "export package again using bijux-graph-package/v1".to_string(),
+        });
+    }
+    if bundle.graph.spec != expected_graph_spec {
+        refusals.push(GraphPackageImportRefusalV1 {
+            code: "B4002_STALE_SPEC".to_string(),
+            subject: format!("graph.spec={}", bundle.graph.spec),
+            remediation: format!("migrate graph spec to {expected_graph_spec} before import"),
+        });
+    }
+    if compile_graph(&bundle.graph).is_err() {
+        refusals.push(GraphPackageImportRefusalV1 {
+            code: "B4001_CORRUPT_BUNDLE".to_string(),
+            subject: "graph".to_string(),
+            remediation: "fix graph validation errors before packaging".to_string(),
+        });
+    }
+
+    let mut seen_paths = BTreeSet::new();
+    for entry in &bundle.files {
+        let normalized = entry.path.replace('\\', "/");
+        let unsafe_path = normalized.starts_with('/')
+            || normalized.contains("..")
+            || normalized.is_empty()
+            || normalized.contains("//");
+        if unsafe_path || !seen_paths.insert(normalized.clone()) {
+            refusals.push(GraphPackageImportRefusalV1 {
+                code: "B4003_UNSAFE_PATH".to_string(),
+                subject: entry.path.clone(),
+                remediation: "use unique normalized relative paths inside package files".to_string(),
+            });
+        }
+        let digest_valid =
+            entry.sha256.len() == 64 && entry.sha256.chars().all(|char| char.is_ascii_hexdigit());
+        if !digest_valid {
+            refusals.push(GraphPackageImportRefusalV1 {
+                code: "B4004_INVALID_FILE_DIGEST".to_string(),
+                subject: entry.path.clone(),
+                remediation: "recompute file sha256 digests and repack bundle".to_string(),
+            });
+        }
+    }
+
+    let produced = bundle
+        .graph
+        .nodes
+        .iter()
+        .flat_map(|node| {
+            node.outputs
+                .iter()
+                .map(move |output| format!("{}.{}", node.id, output.name))
+                .collect::<Vec<_>>()
+        })
+        .collect::<BTreeSet<_>>();
+    for artifact in &bundle.expected_artifacts {
+        if !produced.contains(artifact) {
+            refusals.push(GraphPackageImportRefusalV1 {
+                code: "B4005_MISSING_EXPECTED_ARTIFACT".to_string(),
+                subject: artifact.clone(),
+                remediation: "align expected_artifacts with declared node outputs".to_string(),
+            });
+        }
+    }
+
+    refusals.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.subject.cmp(&right.subject)));
+    refusals.dedup();
+    GraphPackageImportReportV1 { accepted: refusals.is_empty(), refusals }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_graph_builder_parity_report, build_graph_canonicalization_visibility_report,
         build_cycle_reachability_rejection_report, build_graph_examples_execution_report,
         build_port_contract_enforcement_report, build_surgical_validation_diagnostic,
-        GraphExampleExecutionEntryV1,
+        validate_graph_package_import, GraphExampleExecutionEntryV1, GraphPackageBundleV1,
+        GraphPackageFileEntryV1,
     };
     use crate::{DagBuilder, Edge, EdgeKind, Effect, NodeBuilder, NodeKind, PortRef};
     use std::collections::BTreeSet;
@@ -659,5 +785,36 @@ mod tests {
         assert!(codes.contains("P3003_DUPLICATE_INPUT_BINDING"));
         assert!(codes.contains("P3004_MISSING_REQUIRED_INPUT"));
         assert!(codes.contains("P3005_UNUSED_DECLARED_OUTPUT"));
+    }
+
+    #[test]
+    fn g027_graph_package_import_refuses_corrupt_stale_and_unsafe_bundles() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("producer", NodeKind::Const)
+                    .output("out", "artifacts/out.json")
+                    .build(),
+            )
+            .build();
+        let bundle = GraphPackageBundleV1 {
+            format_version: "bijux-graph-package/v0".to_string(),
+            graph: graph.clone(),
+            schema_versions: vec!["schema/v1".to_string()],
+            expected_artifacts: vec!["producer.missing".to_string()],
+            examples: vec!["minimal".to_string()],
+            files: vec![GraphPackageFileEntryV1 {
+                path: "../escape.json".to_string(),
+                sha256: "abc".to_string(),
+            }],
+        };
+
+        let report = validate_graph_package_import(&bundle, crate::SPEC_VERSION);
+        let codes =
+            report.refusals.iter().map(|entry| entry.code.clone()).collect::<BTreeSet<_>>();
+        assert!(!report.accepted);
+        assert!(codes.contains("B4001_CORRUPT_BUNDLE"));
+        assert!(codes.contains("B4003_UNSAFE_PATH"));
+        assert!(codes.contains("B4004_INVALID_FILE_DIGEST"));
+        assert!(codes.contains("B4005_MISSING_EXPECTED_ARTIFACT"));
     }
 }
