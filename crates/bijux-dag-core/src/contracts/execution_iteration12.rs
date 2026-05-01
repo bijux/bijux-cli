@@ -90,11 +90,44 @@ pub fn validate_partition_execution(
     Ok(record)
 }
 
+/// Quorum trigger execution record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct QuorumExecutionRecordV1 {
+    pub required_successes: usize,
+    pub total_candidates: usize,
+    pub achieved_successes: usize,
+    pub deterministic_outcome: bool,
+    pub partial_success_visible: bool,
+}
+
+/// Validate quorum trigger workflow semantics.
+pub fn validate_quorum_execution(
+    record: QuorumExecutionRecordV1,
+) -> Result<QuorumExecutionRecordV1, String> {
+    if record.required_successes == 0 || record.total_candidates == 0 {
+        return Err("quorum counts must be positive".to_string());
+    }
+    if record.required_successes > record.total_candidates {
+        return Err("required successes cannot exceed total candidates".to_string());
+    }
+    if record.achieved_successes > record.total_candidates {
+        return Err("achieved successes cannot exceed total candidates".to_string());
+    }
+    if !record.deterministic_outcome {
+        return Err("quorum outcome must be deterministic".to_string());
+    }
+    if !record.partial_success_visible {
+        return Err("partial success must be explicitly visible".to_string());
+    }
+    Ok(record)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         validate_matrix_execution, validate_nested_subgraph_execution, validate_partition_execution,
-        MatrixExecutionRecordV1, NestedSubgraphExecutionRecordV1, PartitionExecutionRecordV1,
+        validate_quorum_execution, MatrixExecutionRecordV1, NestedSubgraphExecutionRecordV1,
+        PartitionExecutionRecordV1, QuorumExecutionRecordV1,
     };
 
     #[test]
@@ -142,5 +175,19 @@ mod tests {
         .expect("partition execution");
         assert_eq!(record.partition_keys.len(), 2);
         assert_eq!(record.reducer_node_id, "merge-results");
+    }
+
+    #[test]
+    fn g114_quorum_execution_reports_deterministic_partial_success() {
+        let record = validate_quorum_execution(QuorumExecutionRecordV1 {
+            required_successes: 2,
+            total_candidates: 3,
+            achieved_successes: 2,
+            deterministic_outcome: true,
+            partial_success_visible: true,
+        })
+        .expect("quorum execution");
+        assert_eq!(record.required_successes, 2);
+        assert_eq!(record.achieved_successes, 2);
     }
 }
