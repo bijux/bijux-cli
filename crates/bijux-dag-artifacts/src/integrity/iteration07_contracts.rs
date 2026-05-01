@@ -137,11 +137,79 @@ pub fn build_complete_artifact_inventory(
     Ok(sorted)
 }
 
+/// Cache key factors that must be visible to operators.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheKeyFactorsV1 {
+    pub graph_fingerprint: String,
+    pub node_id: String,
+    pub adapter_id: String,
+    pub params_fingerprint: String,
+    pub input_hashes: Vec<String>,
+    pub policy_fingerprint: String,
+    pub schema_fingerprint: String,
+    pub environment_fingerprint: String,
+}
+
+/// Explainable cache key with canonical material.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheKeyExplainV1 {
+    pub cache_key: String,
+    pub canonical_material: String,
+    pub factors: CacheKeyFactorsV1,
+}
+
+/// Build an explainable cache key from direct factors.
+pub fn build_explainable_cache_key(factors: CacheKeyFactorsV1) -> Result<CacheKeyExplainV1, String> {
+    for (field_name, field_value) in [
+        ("graph_fingerprint", factors.graph_fingerprint.as_str()),
+        ("node_id", factors.node_id.as_str()),
+        ("adapter_id", factors.adapter_id.as_str()),
+        ("params_fingerprint", factors.params_fingerprint.as_str()),
+        ("policy_fingerprint", factors.policy_fingerprint.as_str()),
+        ("schema_fingerprint", factors.schema_fingerprint.as_str()),
+        ("environment_fingerprint", factors.environment_fingerprint.as_str()),
+    ] {
+        if field_value.trim().is_empty() {
+            return Err(format!("{field_name} must not be empty"));
+        }
+    }
+
+    let mut sorted_input_hashes = factors.input_hashes.clone();
+    sorted_input_hashes.sort();
+    let input_hash_material = if sorted_input_hashes.is_empty() {
+        "none".to_string()
+    } else {
+        sorted_input_hashes.join(",")
+    };
+    let canonical_material = format!(
+        "graph={}|node={}|adapter={}|params={}|inputs={}|policy={}|schema={}|environment={}",
+        factors.graph_fingerprint,
+        factors.node_id,
+        factors.adapter_id,
+        factors.params_fingerprint,
+        input_hash_material,
+        factors.policy_fingerprint,
+        factors.schema_fingerprint,
+        factors.environment_fingerprint
+    );
+
+    let mut hasher = Sha256::new();
+    hasher.update(canonical_material.as_bytes());
+    let cache_key = format!("{:x}", hasher.finalize());
+
+    Ok(CacheKeyExplainV1 {
+        cache_key,
+        canonical_material,
+        factors,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_run_directory_layout_contract, content_identity_for_directory,
-        content_identity_for_file, build_complete_artifact_inventory, ArtifactInventoryRecordV1,
+        build_complete_artifact_inventory, build_explainable_cache_key,
+        build_run_directory_layout_contract, content_identity_for_directory, content_identity_for_file,
+        ArtifactInventoryRecordV1, CacheKeyFactorsV1,
     };
 
     #[test]
@@ -196,5 +264,30 @@ mod tests {
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].producer_node_id, "call-variants");
         assert_eq!(records[0].adapter_id, "shell");
+    }
+
+    #[test]
+    fn g064_cache_key_explain_includes_direct_factors() {
+        let factors = CacheKeyFactorsV1 {
+            graph_fingerprint: "graph-abc".to_string(),
+            node_id: "align-reads".to_string(),
+            adapter_id: "shell".to_string(),
+            params_fingerprint: "params-001".to_string(),
+            input_hashes: vec![
+                "b2".to_string(),
+                "a1".to_string(),
+            ],
+            policy_fingerprint: "policy-safe".to_string(),
+            schema_fingerprint: "schema-v3".to_string(),
+            environment_fingerprint: "env-linux-amd64".to_string(),
+        };
+        let explained = build_explainable_cache_key(factors.clone()).expect("cache explain");
+        assert!(explained.canonical_material.contains("graph=graph-abc"));
+        assert!(explained.canonical_material.contains("node=align-reads"));
+        assert!(explained.canonical_material.contains("adapter=shell"));
+        assert!(explained.canonical_material.contains("inputs=a1,b2"));
+
+        let explained_repeat = build_explainable_cache_key(factors).expect("cache explain");
+        assert_eq!(explained.cache_key, explained_repeat.cache_key);
     }
 }
