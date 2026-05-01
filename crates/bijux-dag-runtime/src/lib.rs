@@ -66,6 +66,8 @@ pub mod iteration09_contracts;
 pub mod iteration14_contracts;
 #[path = "runtime_core/execution/iteration15_contracts.rs"]
 pub mod iteration15_contracts;
+#[path = "runtime_core/execution/iteration17_contracts.rs"]
+pub mod iteration17_contracts;
 #[path = "backend/runtime/execution_backend.rs"]
 mod execution_backend;
 #[path = "runtime_core/execution/context.rs"]
