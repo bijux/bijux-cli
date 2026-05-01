@@ -195,15 +195,45 @@ pub fn validate_event_recorded_replay(
     Ok(record)
 }
 
+/// Policy overlay execution record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolicyOverlayExecutionRecordV1 {
+    pub base_graph_fingerprint: String,
+    pub overlay_profile: String,
+    pub overlay_diff_visible: bool,
+    pub base_identity_mutated: bool,
+}
+
+/// Validate policy overlay workflow semantics.
+pub fn validate_policy_overlay_execution(
+    record: PolicyOverlayExecutionRecordV1,
+) -> Result<PolicyOverlayExecutionRecordV1, String> {
+    if record.base_graph_fingerprint.trim().is_empty() {
+        return Err("base_graph_fingerprint must not be empty".to_string());
+    }
+    if record.overlay_profile.trim().is_empty() {
+        return Err("overlay_profile must not be empty".to_string());
+    }
+    if !record.overlay_diff_visible {
+        return Err("overlay diff must be visible".to_string());
+    }
+    if record.base_identity_mutated {
+        return Err("overlay must not mutate base graph identity".to_string());
+    }
+    Ok(record)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        validate_policy_overlay_execution,
         validate_event_recorded_replay,
         validate_matrix_execution, validate_nested_subgraph_execution, validate_partition_execution,
         validate_service_sensor_execution,
         validate_optional_input_execution, validate_quorum_execution, MatrixExecutionRecordV1,
         NestedSubgraphExecutionRecordV1, OptionalInputExecutionRecordV1, PartitionExecutionRecordV1,
         QuorumExecutionRecordV1, ServiceSensorExecutionRecordV1, EventRecordedReplayRecordV1,
+        PolicyOverlayExecutionRecordV1,
     };
 
     #[test]
@@ -302,5 +332,18 @@ mod tests {
         .expect("event replay");
         assert_eq!(record.recorded_event_ids.len(), 2);
         assert!(record.replay_used_recorded_events_only);
+    }
+
+    #[test]
+    fn g118_policy_overlay_diff_is_visible_without_mutating_graph_identity() {
+        let record = validate_policy_overlay_execution(PolicyOverlayExecutionRecordV1 {
+            base_graph_fingerprint: "graph-sha256-123".to_string(),
+            overlay_profile: "security".to_string(),
+            overlay_diff_visible: true,
+            base_identity_mutated: false,
+        })
+        .expect("overlay execution");
+        assert_eq!(record.overlay_profile, "security");
+        assert!(!record.base_identity_mutated);
     }
 }
