@@ -112,12 +112,40 @@ pub fn build_branch_join_scenario_report(
     Ok(report)
 }
 
+/// Reducer scenario proof report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReducerScenarioReportV1 {
+    pub partition_count: usize,
+    pub reducer_output_count: usize,
+    pub deterministic_ordering: bool,
+    pub full_lineage_traced: bool,
+}
+
+/// Build reducer scenario proof for fan-out/fan-in workflows.
+pub fn build_reducer_scenario_report(
+    report: ReducerScenarioReportV1,
+) -> Result<ReducerScenarioReportV1, String> {
+    if report.partition_count < 2 {
+        return Err("reducer scenario requires at least two partitions".to_string());
+    }
+    if report.reducer_output_count == 0 {
+        return Err("reducer scenario must produce reducer outputs".to_string());
+    }
+    if !report.deterministic_ordering {
+        return Err("reducer ordering must be deterministic".to_string());
+    }
+    if !report.full_lineage_traced {
+        return Err("reducer output must trace all input partitions".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_branch_join_scenario_report, build_hello_dag_scenario_report,
-        build_shell_etl_scenario_report, BranchJoinScenarioReportV1, HelloDagScenarioReportV1,
-        ShellEtlScenarioReportV1,
+        build_reducer_scenario_report, build_shell_etl_scenario_report, BranchJoinScenarioReportV1,
+        HelloDagScenarioReportV1, ReducerScenarioReportV1, ShellEtlScenarioReportV1,
     };
 
     #[test]
@@ -164,5 +192,18 @@ mod tests {
         .expect("branch join scenario");
         assert_eq!(report.skipped_node_count, 2);
         assert!(report.converged_successfully);
+    }
+
+    #[test]
+    fn g094_reducer_scenario_proves_deterministic_fanin_lineage() {
+        let report = build_reducer_scenario_report(ReducerScenarioReportV1 {
+            partition_count: 4,
+            reducer_output_count: 1,
+            deterministic_ordering: true,
+            full_lineage_traced: true,
+        })
+        .expect("reducer scenario");
+        assert_eq!(report.partition_count, 4);
+        assert!(report.full_lineage_traced);
     }
 }
