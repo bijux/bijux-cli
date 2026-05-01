@@ -388,9 +388,57 @@ pub fn evaluate_executor_fallback(request: &ExecutorFallbackRequestV1) -> Execut
     }
 }
 
+/// Backend execution fingerprint used for comparison.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BackendExecutionFingerprintV1 {
+    pub backend: String,
+    pub env_fingerprint: String,
+    pub artifact_fingerprint: String,
+    pub runtime_fingerprint: String,
+}
+
+/// Backend comparison report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BackendComparisonReportV1 {
+    pub differing_env_backends: Vec<String>,
+    pub differing_artifact_backends: Vec<String>,
+    pub differing_runtime_backends: Vec<String>,
+}
+
+/// Compare execution behavior across backends and expose differences.
+pub fn build_backend_comparison_report(
+    fingerprints: &[BackendExecutionFingerprintV1],
+) -> BackendComparisonReportV1 {
+    let baseline = fingerprints.first();
+    let mut differing_env_backends = Vec::new();
+    let mut differing_artifact_backends = Vec::new();
+    let mut differing_runtime_backends = Vec::new();
+
+    if let Some(base) = baseline {
+        for entry in fingerprints.iter().skip(1) {
+            if entry.env_fingerprint != base.env_fingerprint {
+                differing_env_backends.push(entry.backend.clone());
+            }
+            if entry.artifact_fingerprint != base.artifact_fingerprint {
+                differing_artifact_backends.push(entry.backend.clone());
+            }
+            if entry.runtime_fingerprint != base.runtime_fingerprint {
+                differing_runtime_backends.push(entry.backend.clone());
+            }
+        }
+    }
+
+    BackendComparisonReportV1 {
+        differing_env_backends,
+        differing_artifact_backends,
+        differing_runtime_backends,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_backend_comparison_report, BackendExecutionFingerprintV1,
         evaluate_executor_fallback, ExecutorFallbackRequestV1,
         validate_external_adapter_sdk_descriptor, ExternalAdapterSdkDescriptorV1,
         validate_remote_worker_protocol_trace, RemoteWorkerProtocolEventV1,
@@ -564,5 +612,32 @@ mod tests {
         });
         assert!(!evidence_fail.allowed);
         assert!(evidence_fail.reason.contains("evidence obligations differ"));
+    }
+
+    #[test]
+    fn g150_backend_comparison_report_makes_env_artifact_runtime_differences_visible() {
+        let report = build_backend_comparison_report(&[
+            BackendExecutionFingerprintV1 {
+                backend: "local".to_string(),
+                env_fingerprint: "env-a".to_string(),
+                artifact_fingerprint: "artifact-a".to_string(),
+                runtime_fingerprint: "rt-a".to_string(),
+            },
+            BackendExecutionFingerprintV1 {
+                backend: "shell".to_string(),
+                env_fingerprint: "env-b".to_string(),
+                artifact_fingerprint: "artifact-a".to_string(),
+                runtime_fingerprint: "rt-a".to_string(),
+            },
+            BackendExecutionFingerprintV1 {
+                backend: "container".to_string(),
+                env_fingerprint: "env-a".to_string(),
+                artifact_fingerprint: "artifact-b".to_string(),
+                runtime_fingerprint: "rt-b".to_string(),
+            },
+        ]);
+        assert_eq!(report.differing_env_backends, vec!["shell".to_string()]);
+        assert_eq!(report.differing_artifact_backends, vec!["container".to_string()]);
+        assert_eq!(report.differing_runtime_backends, vec!["container".to_string()]);
     }
 }
