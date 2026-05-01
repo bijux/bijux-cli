@@ -277,12 +277,81 @@ pub fn build_status_command_report(
     })
 }
 
+/// Replay selector types exposed by `dag replay`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ReplaySelectorV1 {
+    FailedOnly,
+    DownstreamOf(Vec<String>),
+    ChangedInputOnly,
+    ForceRerun(Vec<String>),
+}
+
+/// Replay decision row for one node.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReplayNodeDecisionV1 {
+    pub node_id: String,
+    pub action: String,
+    pub reason: String,
+}
+
+/// Command contract for replay planning and execution.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReplayCommandReportV1 {
+    pub source_run_id: String,
+    pub replay_run_id: String,
+    pub selector: ReplaySelectorV1,
+    pub decisions: Vec<ReplayNodeDecisionV1>,
+    pub preserves_prior_evidence: bool,
+}
+
+/// Build replay command report with selector-driven node actions.
+pub fn build_replay_command_report(
+    source_run_id: &str,
+    replay_run_id: &str,
+    selector: ReplaySelectorV1,
+    decisions: Vec<ReplayNodeDecisionV1>,
+) -> Result<ReplayCommandReportV1, String> {
+    for (field_name, field_value) in [
+        ("source_run_id", source_run_id),
+        ("replay_run_id", replay_run_id),
+    ] {
+        if field_value.trim().is_empty() {
+            return Err(format!("{field_name} must not be empty"));
+        }
+    }
+    if decisions.is_empty() {
+        return Err("replay decisions must not be empty".to_string());
+    }
+    for decision in &decisions {
+        for (field_name, field_value) in [
+            ("node_id", decision.node_id.as_str()),
+            ("action", decision.action.as_str()),
+            ("reason", decision.reason.as_str()),
+        ] {
+            if field_value.trim().is_empty() {
+                return Err(format!("replay decision {field_name} must not be empty"));
+            }
+        }
+        if !matches!(decision.action.as_str(), "reuse" | "rerun" | "skip" | "refuse") {
+            return Err(format!("invalid replay action: {}", decision.action));
+        }
+    }
+    Ok(ReplayCommandReportV1 {
+        source_run_id: source_run_id.to_string(),
+        replay_run_id: replay_run_id.to_string(),
+        selector,
+        decisions,
+        preserves_prior_evidence: true,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_inspect_command_report, build_plan_command_report, build_run_command_report,
-        build_status_command_report, build_validate_command_report, DryPlanNodeRowV1,
-        InspectNodeStateV1, PreflightCheckV1, ValidateIssueV1,
+        build_replay_command_report, build_status_command_report, build_validate_command_report,
+        DryPlanNodeRowV1, InspectNodeStateV1, PreflightCheckV1, ReplayNodeDecisionV1,
+        ReplaySelectorV1, ValidateIssueV1,
     };
 
     #[test]
@@ -420,5 +489,31 @@ mod tests {
         );
         assert!(status.next_command.starts_with("dag inspect"));
         assert!(status.evidence_path.ends_with("/verify/report.json"));
+    }
+
+    #[test]
+    fn g076_replay_report_supports_selectors_and_preserves_prior_evidence() {
+        let report = build_replay_command_report(
+            "run-20260501-001",
+            "run-20260501-002",
+            ReplaySelectorV1::FailedOnly,
+            vec![
+                ReplayNodeDecisionV1 {
+                    node_id: "align-reads".to_string(),
+                    action: "reuse".to_string(),
+                    reason: "upstream outputs unchanged".to_string(),
+                },
+                ReplayNodeDecisionV1 {
+                    node_id: "call-variants".to_string(),
+                    action: "rerun".to_string(),
+                    reason: "node failed in source run".to_string(),
+                },
+            ],
+        )
+        .expect("replay report");
+        assert_eq!(report.source_run_id, "run-20260501-001");
+        assert_eq!(report.replay_run_id, "run-20260501-002");
+        assert!(report.preserves_prior_evidence);
+        assert_eq!(report.decisions.len(), 2);
     }
 }
