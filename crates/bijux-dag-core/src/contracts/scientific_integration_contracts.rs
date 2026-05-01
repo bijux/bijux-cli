@@ -606,6 +606,61 @@ pub fn validate_cross_app_evidence_links(
     })
 }
 
+/// Evidence strength class for scientific promotion.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ScientificEvidenceStrengthV1 {
+    Simulated,
+    Advisory,
+    Operational,
+    AuditVerified,
+    CertificationGrade,
+}
+
+/// Strict promotion refusal decision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScientificPromotionRefusalDecisionV1 {
+    pub class: ScientificRunTrustClassV1,
+    pub evidence_strength: ScientificEvidenceStrengthV1,
+    pub promoted: bool,
+    pub reason: String,
+}
+
+/// Enforce strict scientific promotion policy for high-trust classes.
+pub fn enforce_strict_scientific_promotion_refusal(
+    class: ScientificRunTrustClassV1,
+    evidence_strength: ScientificEvidenceStrengthV1,
+) -> ScientificPromotionRefusalDecisionV1 {
+    let high_trust = matches!(
+        class,
+        ScientificRunTrustClassV1::Certification | ScientificRunTrustClassV1::PublicationCandidate
+    );
+    let promoted = if high_trust {
+        matches!(
+            evidence_strength,
+            ScientificEvidenceStrengthV1::CertificationGrade
+                | ScientificEvidenceStrengthV1::AuditVerified
+        )
+    } else {
+        !matches!(evidence_strength, ScientificEvidenceStrengthV1::Simulated)
+    };
+
+    let reason = if promoted {
+        "promotion allowed under strict scientific evidence policy".to_string()
+    } else if high_trust {
+        "certification/publication promotion refused: evidence is simulated or advisory".to_string()
+    } else {
+        "promotion refused: simulated evidence cannot be promoted".to_string()
+    };
+
+    ScientificPromotionRefusalDecisionV1 {
+        class,
+        evidence_strength,
+        promoted,
+        reason,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -615,12 +670,14 @@ mod tests {
         ReferenceAliasPolicyV1, ReferenceIdentityMetadataV1, SampleIdentityMismatchActionV1,
         ScientificRunTrustClassV1,
         CrossAppEvidenceLinkV1,
+        ScientificEvidenceStrengthV1,
         ScientificUncertaintyInputV1, ScientificUncertaintyStateV1,
         ScientificOverrideRecordV1, ScientificOverrideTypeV1,
         SampleIdentityPolicyV1, TruthSetComparisonV1, TruthSetEvidenceEnvelopeV1,
         attach_truth_set_comparison, evaluate_scientific_trust_promotion,
         normalize_scientific_findings, validate_reference_identity_metadata, audit_scientific_overrides,
         evaluate_scientific_uncertainty, validate_cross_app_evidence_links,
+        enforce_strict_scientific_promotion_refusal,
     };
     use std::collections::BTreeMap;
 
@@ -863,5 +920,21 @@ mod tests {
                 "proteomics".to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn g180_strict_promotion_refuses_simulated_or_advisory_for_certification_grade() {
+        let refused = enforce_strict_scientific_promotion_refusal(
+            ScientificRunTrustClassV1::Certification,
+            ScientificEvidenceStrengthV1::Advisory,
+        );
+        assert!(!refused.promoted);
+        assert!(refused.reason.contains("refused"));
+
+        let allowed = enforce_strict_scientific_promotion_refusal(
+            ScientificRunTrustClassV1::PublicationCandidate,
+            ScientificEvidenceStrengthV1::CertificationGrade,
+        );
+        assert!(allowed.promoted);
     }
 }
