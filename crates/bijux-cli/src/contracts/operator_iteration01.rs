@@ -217,6 +217,50 @@ pub fn build_command_explain_record(
     })
 }
 
+/// Output mode matrix row for one command.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct OutputModeParityEntryV1 {
+    /// Command path key.
+    pub command: String,
+    /// Supported output modes.
+    pub supported_modes: Vec<String>,
+}
+
+/// Output mode parity report across built-in and mounted routes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct OutputModeParityReportV1 {
+    /// Per-command mode support entries.
+    pub entries: Vec<OutputModeParityEntryV1>,
+    /// Commands missing one or more required modes.
+    pub missing_mode_commands: Vec<String>,
+    /// Whether parity is complete.
+    pub parity_complete: bool,
+}
+
+/// Evaluate output mode parity across commands.
+pub fn evaluate_output_mode_parity(
+    entries: Vec<OutputModeParityEntryV1>,
+) -> OutputModeParityReportV1 {
+    let required_modes = ["human", "json", "jsonl", "artifact-output"];
+    let mut ordered_entries = entries;
+    ordered_entries.sort_by(|left, right| left.command.cmp(&right.command));
+    let mut missing = Vec::new();
+    for entry in &ordered_entries {
+        let mut modes = entry.supported_modes.clone();
+        modes.sort();
+        modes.dedup();
+        let has_all_required = required_modes.iter().all(|mode| modes.iter().any(|value| value == mode));
+        if !has_all_required {
+            missing.push(entry.command.clone());
+        }
+    }
+    OutputModeParityReportV1 {
+        entries: ordered_entries,
+        missing_mode_commands: missing.clone(),
+        parity_complete: missing.is_empty(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -224,7 +268,7 @@ mod tests {
     use super::{
         build_actionable_error_envelope, build_command_explain_record,
         build_compact_operator_help_entrypoint, build_script_stable_command_envelope,
-        ActionableFailureClassV1,
+        evaluate_output_mode_parity, ActionableFailureClassV1, OutputModeParityEntryV1,
     };
 
     #[test]
@@ -289,5 +333,26 @@ mod tests {
         assert_eq!(record.route_target, "dag.runtime.run");
         assert_eq!(record.handler_source, "official-app");
         assert_eq!(record.required_config_keys, vec!["dag.cache_root", "dag.run_root"]);
+    }
+
+    #[test]
+    fn g005_output_mode_parity_reports_commands_missing_required_modes() {
+        let report = evaluate_output_mode_parity(vec![
+            OutputModeParityEntryV1 {
+                command: "bijux dag run".to_string(),
+                supported_modes: vec![
+                    "human".to_string(),
+                    "json".to_string(),
+                    "jsonl".to_string(),
+                    "artifact-output".to_string(),
+                ],
+            },
+            OutputModeParityEntryV1 {
+                command: "bijux doctor".to_string(),
+                supported_modes: vec!["human".to_string(), "json".to_string()],
+            },
+        ]);
+        assert!(!report.parity_complete);
+        assert_eq!(report.missing_mode_commands, vec!["bijux doctor"]);
     }
 }
