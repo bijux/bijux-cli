@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
     compile_graph, lower_graph_to_execution_plan, parse_graph_strict, Graph, GraphError, Severity,
@@ -232,14 +232,140 @@ pub fn build_graph_builder_parity_report(
     })
 }
 
+/// Refusal item for cycle/reachability safety checks.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphRefusalV1 {
+    /// Stable refusal code.
+    pub code: String,
+    /// Violating subject (`node:<id>`, `edge:<from>:<to>`, `artifact:<name>`).
+    pub subject: String,
+    /// Human-readable remediation.
+    pub remediation: String,
+}
+
+/// Complete cycle and reachability refusal report for required graph surfaces.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CycleReachabilityRejectionReportV1 {
+    /// Ordered refusal list.
+    pub refusals: Vec<GraphRefusalV1>,
+}
+
+/// Build cycle/reachability refusal report with explicit codes and remediations.
+pub fn build_cycle_reachability_rejection_report(
+    graph: &Graph,
+    required_nodes: &BTreeSet<String>,
+    required_artifacts: &BTreeSet<String>,
+) -> CycleReachabilityRejectionReportV1 {
+    let mut refusals = Vec::new();
+
+    for edge in &graph.edges {
+        if edge.from.node_id == edge.to.node_id {
+            refusals.push(GraphRefusalV1 {
+                code: "R2101_SELF_CYCLE".to_string(),
+                subject: format!(
+                    "edge:{}:{}->{}:{}",
+                    edge.from.node_id, edge.from.port, edge.to.node_id, edge.to.port
+                ),
+                remediation: "remove self-loop or insert an intermediate synchronization node"
+                    .to_string(),
+            });
+        }
+    }
+
+    if graph.has_cycle() && !refusals.iter().any(|entry| entry.code == "R2101_SELF_CYCLE") {
+        refusals.push(GraphRefusalV1 {
+            code: "R2102_INDIRECT_CYCLE".to_string(),
+            subject: "graph".to_string(),
+            remediation: "break indirect dependency loops so a full topological order exists"
+                .to_string(),
+        });
+    }
+
+    let mut outgoing = BTreeMap::<String, Vec<String>>::new();
+    for edge in &graph.edges {
+        outgoing
+            .entry(edge.from.node_id.clone())
+            .or_default()
+            .push(edge.to.node_id.clone());
+    }
+    let mut visited = BTreeSet::new();
+    let mut stack = graph
+        .nodes
+        .iter()
+        .filter(|node| node.inputs.is_empty())
+        .map(|node| node.id.clone())
+        .collect::<Vec<_>>();
+    while let Some(node_id) = stack.pop() {
+        if !visited.insert(node_id.clone()) {
+            continue;
+        }
+        if let Some(next_nodes) = outgoing.get(&node_id) {
+            stack.extend(next_nodes.iter().cloned());
+        }
+    }
+
+    for node_id in required_nodes {
+        if !visited.contains(node_id) {
+            refusals.push(GraphRefusalV1 {
+                code: "R2103_UNREACHABLE_REQUIRED_NODE".to_string(),
+                subject: format!("node:{node_id}"),
+                remediation: "add an upstream path from graph inputs or remove required designation"
+                    .to_string(),
+            });
+        }
+    }
+
+    let mut produced_artifacts = BTreeSet::new();
+    let mut consumed_artifacts = BTreeSet::new();
+    for node in &graph.nodes {
+        for output in &node.outputs {
+            produced_artifacts.insert(format!("{}.{}", node.id, output.name));
+        }
+    }
+    for edge in &graph.edges {
+        consumed_artifacts.insert(format!("{}.{}", edge.from.node_id, edge.from.port));
+    }
+
+    for artifact in produced_artifacts.difference(&consumed_artifacts) {
+        if !required_artifacts.contains(artifact) {
+            refusals.push(GraphRefusalV1 {
+                code: "R2104_ORPHAN_OUTPUT".to_string(),
+                subject: format!("artifact:{artifact}"),
+                remediation: "connect the output to downstream inputs or declare it required"
+                    .to_string(),
+            });
+        }
+    }
+
+    for artifact in required_artifacts {
+        if !produced_artifacts.contains(artifact) {
+            refusals.push(GraphRefusalV1 {
+                code: "R2105_DEAD_END_REQUIRED_ARTIFACT".to_string(),
+                subject: format!("artifact:{artifact}"),
+                remediation:
+                    "add a producing node output for the required artifact or remove requirement"
+                        .to_string(),
+            });
+        }
+    }
+
+    refusals.sort_by(|left, right| {
+        left.code.cmp(&right.code).then_with(|| left.subject.cmp(&right.subject))
+    });
+    refusals.dedup();
+
+    CycleReachabilityRejectionReportV1 { refusals }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_graph_builder_parity_report, build_graph_canonicalization_visibility_report,
-        build_graph_examples_execution_report, build_surgical_validation_diagnostic,
-        GraphExampleExecutionEntryV1,
+        build_cycle_reachability_rejection_report, build_graph_examples_execution_report,
+        build_surgical_validation_diagnostic, GraphExampleExecutionEntryV1,
     };
-    use crate::{DagBuilder, Effect, NodeBuilder, NodeKind};
+    use crate::{DagBuilder, Edge, EdgeKind, Effect, NodeBuilder, NodeKind, PortRef};
+    use std::collections::BTreeSet;
 
     #[test]
     fn g021_graph_examples_execution_report_requires_all_example_kinds() {
@@ -321,5 +447,49 @@ mod tests {
         assert!(report.graph_fingerprint_equal);
         assert!(report.planner_fingerprint_equal);
         assert!(report.mismatches.is_empty());
+    }
+
+    #[test]
+    fn g025_cycle_and_reachability_rejections_have_exact_codes_and_remediation() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("start", NodeKind::Const)
+                    .output("out", "artifacts/start.json")
+                    .build(),
+            )
+            .node(
+                NodeBuilder::new("self_loop", NodeKind::Const)
+                    .input("in")
+                    .output("out", "artifacts/self_loop.json")
+                    .build(),
+            )
+            .edge("start", "out", "self_loop", "in")
+            .build();
+
+        let mut graph_with_cycle = graph;
+        graph_with_cycle.edges.push(Edge {
+            id: Some("self".to_string()),
+            kind: EdgeKind::Data,
+            decision: None,
+            from: PortRef { node_id: "self_loop".to_string(), port: "out".to_string() },
+            to: PortRef { node_id: "self_loop".to_string(), port: "in".to_string() },
+        });
+
+        let required_nodes = BTreeSet::from(["must_run".to_string()]);
+        let required_artifacts = BTreeSet::from(["must_run.out".to_string()]);
+        let report = build_cycle_reachability_rejection_report(
+            &graph_with_cycle,
+            &required_nodes,
+            &required_artifacts,
+        );
+        let refusal_codes =
+            report.refusals.iter().map(|entry| entry.code.clone()).collect::<BTreeSet<_>>();
+        assert!(refusal_codes.contains("R2101_SELF_CYCLE"));
+        assert!(refusal_codes.contains("R2103_UNREACHABLE_REQUIRED_NODE"));
+        assert!(refusal_codes.contains("R2105_DEAD_END_REQUIRED_ARTIFACT"));
+        assert!(report
+            .refusals
+            .iter()
+            .all(|entry| !entry.remediation.trim().is_empty()));
     }
 }
