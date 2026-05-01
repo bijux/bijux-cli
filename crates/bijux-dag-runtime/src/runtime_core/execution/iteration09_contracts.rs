@@ -213,9 +213,63 @@ pub fn validate_bundle_import_safety(
     }
 }
 
+/// Plugin execution authorization result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginExecutionAuthorizationV1 {
+    pub plugin_path: String,
+    pub allowed: bool,
+    pub trust_class: String,
+    pub reason: String,
+}
+
+/// Authorize plugin execution root and descriptor identity.
+pub fn authorize_plugin_execution(
+    plugin_path: &str,
+    allowed_roots: &[String],
+    descriptor_hash_expected: &str,
+    descriptor_hash_observed: &str,
+) -> Result<PluginExecutionAuthorizationV1, String> {
+    if plugin_path.trim().is_empty() {
+        return Err("plugin_path must not be empty".to_string());
+    }
+    if allowed_roots.is_empty() {
+        return Err("allowed_roots must not be empty".to_string());
+    }
+    if descriptor_hash_expected.trim().is_empty() || descriptor_hash_observed.trim().is_empty() {
+        return Err("descriptor hashes must not be empty".to_string());
+    }
+
+    let under_allowed_root = allowed_roots
+        .iter()
+        .any(|root| plugin_path == root || plugin_path.starts_with(&format!("{root}/")));
+    if !under_allowed_root {
+        return Ok(PluginExecutionAuthorizationV1 {
+            plugin_path: plugin_path.to_string(),
+            allowed: false,
+            trust_class: "refused".to_string(),
+            reason: "plugin path is outside allowed executable roots".to_string(),
+        });
+    }
+    if descriptor_hash_expected != descriptor_hash_observed {
+        return Ok(PluginExecutionAuthorizationV1 {
+            plugin_path: plugin_path.to_string(),
+            allowed: false,
+            trust_class: "degraded".to_string(),
+            reason: "plugin descriptor identity mismatch".to_string(),
+        });
+    }
+    Ok(PluginExecutionAuthorizationV1 {
+        plugin_path: plugin_path.to_string(),
+        allowed: true,
+        trust_class: "exact".to_string(),
+        reason: "plugin execution authorized".to_string(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        authorize_plugin_execution,
         classify_network_policy_trust, enforce_environment_allowlist, enforce_write_boundary,
         redact_sensitive_values, validate_bundle_import_safety, NetworkPolicyLabelV1,
     };
@@ -308,5 +362,28 @@ mod tests {
         assert!(report
             .rejection_reasons
             .contains(&"schema_confusion".to_string()));
+    }
+
+    #[test]
+    fn g086_plugin_execution_refuses_unknown_or_mutated_binaries() {
+        let outside = authorize_plugin_execution(
+            "/tmp/rogue/plugin",
+            &["/workspace/plugins".to_string()],
+            "hash-a",
+            "hash-a",
+        )
+        .expect("outside root decision");
+        assert!(!outside.allowed);
+        assert_eq!(outside.trust_class, "refused");
+
+        let mutated = authorize_plugin_execution(
+            "/workspace/plugins/official/plugin",
+            &["/workspace/plugins".to_string()],
+            "hash-a",
+            "hash-b",
+        )
+        .expect("mutated decision");
+        assert!(!mutated.allowed);
+        assert_eq!(mutated.trust_class, "degraded");
     }
 }
