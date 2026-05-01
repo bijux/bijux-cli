@@ -267,9 +267,49 @@ pub fn evaluate_batch_backend_promotion(
     BatchBackendPromotionDecisionV1 { production_ready, reason }
 }
 
+/// Remote worker protocol event.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RemoteWorkerProtocolEventV1 {
+    pub event: String,
+    pub worker_id: String,
+}
+
+/// Validate remote worker protocol conformance sequence.
+pub fn validate_remote_worker_protocol_trace(
+    events: &[RemoteWorkerProtocolEventV1],
+) -> Result<(), String> {
+    let expected = [
+        "register",
+        "lease",
+        "heartbeat",
+        "artifact_upload",
+        "log_stream",
+        "result_submit",
+    ];
+    if events.len() < expected.len() {
+        return Err("remote worker protocol trace is incomplete".to_string());
+    }
+    for (idx, step) in expected.iter().enumerate() {
+        let event = events
+            .get(idx)
+            .ok_or_else(|| "remote worker protocol trace is incomplete".to_string())?;
+        if event.worker_id.trim().is_empty() {
+            return Err("remote worker protocol event must include worker_id".to_string());
+        }
+        if event.event != *step {
+            return Err(format!(
+                "remote worker protocol step {} must be '{}', got '{}'",
+                idx, step, event.event
+            ));
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        validate_remote_worker_protocol_trace, RemoteWorkerProtocolEventV1,
         evaluate_batch_backend_promotion, BatchBackendPromotionEvidenceV1,
         validate_mock_batch_lifecycle, MockBatchLifecycleEventV1,
         render_batch_script_export, BatchScriptExportDescriptorV1,
@@ -388,5 +428,24 @@ mod tests {
             has_artifact_collection: true,
         });
         assert!(promoted.production_ready);
+    }
+
+    #[test]
+    fn g147_remote_worker_protocol_trace_requires_concrete_lifecycle_order() {
+        let events = vec![
+            RemoteWorkerProtocolEventV1 { event: "register".to_string(), worker_id: "w1".to_string() },
+            RemoteWorkerProtocolEventV1 { event: "lease".to_string(), worker_id: "w1".to_string() },
+            RemoteWorkerProtocolEventV1 { event: "heartbeat".to_string(), worker_id: "w1".to_string() },
+            RemoteWorkerProtocolEventV1 {
+                event: "artifact_upload".to_string(),
+                worker_id: "w1".to_string(),
+            },
+            RemoteWorkerProtocolEventV1 { event: "log_stream".to_string(), worker_id: "w1".to_string() },
+            RemoteWorkerProtocolEventV1 {
+                event: "result_submit".to_string(),
+                worker_id: "w1".to_string(),
+            },
+        ];
+        validate_remote_worker_protocol_trace(&events).expect("remote worker protocol trace");
     }
 }
