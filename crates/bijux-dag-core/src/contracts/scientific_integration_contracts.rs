@@ -181,12 +181,53 @@ pub fn verify_sample_identity_propagation(
     })
 }
 
+/// Alias resolution policy for reference identity metadata.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReferenceAliasPolicyV1 {
+    ExactOnly,
+    AliasAllowed,
+}
+
+/// Reference identity metadata attached to evidence for reference-sensitive workloads.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReferenceIdentityMetadataV1 {
+    pub reference_id: String,
+    pub build: String,
+    pub checksum_sha256: String,
+    pub alias_policy: ReferenceAliasPolicyV1,
+    pub compatible_with: Vec<String>,
+}
+
+/// Validate reference identity metadata for attachment into core evidence.
+pub fn validate_reference_identity_metadata(
+    metadata: &ReferenceIdentityMetadataV1,
+) -> Result<(), String> {
+    for (field, value) in [
+        ("reference_id", metadata.reference_id.as_str()),
+        ("build", metadata.build.as_str()),
+        ("checksum_sha256", metadata.checksum_sha256.as_str()),
+    ] {
+        if value.trim().is_empty() {
+            return Err(format!("reference identity metadata requires {field}"));
+        }
+    }
+    if !metadata.checksum_sha256.starts_with("sha256:") {
+        return Err("reference identity checksum_sha256 must use sha256: prefix".to_string());
+    }
+    if metadata.compatible_with.iter().any(|value| value.trim().is_empty()) {
+        return Err("reference identity compatible_with must not contain empty values".to_string());
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         validate_domain_neutral_artifact_roles, verify_sample_identity_propagation,
         ArtifactRoleKindV1, ArtifactRoleMetadataV1, ArtifactSampleIdentityV1,
-        SampleIdentityMismatchActionV1, SampleIdentityPolicyV1,
+        ReferenceAliasPolicyV1, ReferenceIdentityMetadataV1, SampleIdentityMismatchActionV1,
+        SampleIdentityPolicyV1, validate_reference_identity_metadata,
     };
     use std::collections::BTreeMap;
 
@@ -257,5 +298,27 @@ mod tests {
         .expect("refuse policy report");
         assert!(!refuse_report.admitted);
         assert!(!refuse_report.refusals.is_empty());
+    }
+
+    #[test]
+    fn g173_reference_identity_metadata_is_typed_and_checksum_guarded() {
+        validate_reference_identity_metadata(&ReferenceIdentityMetadataV1 {
+            reference_id: "grch38".to_string(),
+            build: "grch38.p14".to_string(),
+            checksum_sha256: "sha256:referenceabc".to_string(),
+            alias_policy: ReferenceAliasPolicyV1::AliasAllowed,
+            compatible_with: vec!["grch38".to_string(), "hg38".to_string()],
+        })
+        .expect("reference identity metadata should validate");
+
+        let err = validate_reference_identity_metadata(&ReferenceIdentityMetadataV1 {
+            reference_id: "grch38".to_string(),
+            build: "grch38.p14".to_string(),
+            checksum_sha256: "bad-checksum".to_string(),
+            alias_policy: ReferenceAliasPolicyV1::ExactOnly,
+            compatible_with: vec!["grch38".to_string()],
+        })
+        .expect_err("non-sha256 checksum must be rejected");
+        assert!(err.contains("sha256"));
     }
 }
