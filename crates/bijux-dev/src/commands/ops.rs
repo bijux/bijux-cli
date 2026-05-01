@@ -3687,6 +3687,13 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             serde_json::to_string(&publishable_report).unwrap_or_else(|_| "invalid report".to_string())
         ));
     }
+    let python_bridge_report = evaluate_python_bridge_distribution(&root)?;
+    if !python_bridge_report["ok"].as_bool().unwrap_or(false) {
+        return Err(format!(
+            "python bridge distribution contract failed: {}",
+            serde_json::to_string(&python_bridge_report).unwrap_or_else(|_| "invalid report".to_string())
+        ));
+    }
     Ok(())
 }
 
@@ -4503,6 +4510,111 @@ fn evaluate_publishable_crates(root: &Path) -> Result<Value, String> {
         "goal": "G191",
         "ok": violations.is_empty(),
         "publishable_crates": crate_reports,
+        "violations": violations,
+    }))
+}
+
+fn evaluate_python_bridge_distribution(root: &Path) -> Result<Value, String> {
+    let bridge_root = root.join("crates/bijux-cli-python");
+    let pyproject_path = bridge_root.join("pyproject.toml");
+    let mut violations = Vec::new();
+
+    let pyproject_text = fs::read_to_string(&pyproject_path)
+        .map_err(|err| format!("failed to read {}: {err}", pyproject_path.display()))?;
+    let pyproject: toml::Value =
+        toml::from_str(&pyproject_text).map_err(|err| format!("failed to parse pyproject: {err}"))?;
+    let project = pyproject
+        .get("project")
+        .and_then(toml::Value::as_table)
+        .ok_or_else(|| "pyproject missing [project] table".to_string())?;
+    if project.get("name").and_then(toml::Value::as_str) != Some("bijux-cli") {
+        violations.push("pyproject [project].name must be `bijux-cli`".to_string());
+    }
+    if project
+        .get("requires-python")
+        .and_then(toml::Value::as_str)
+        .is_none_or(|value| !value.contains("3.11"))
+    {
+        violations.push("pyproject [project].requires-python must advertise Python 3.11+".to_string());
+    }
+    let scripts = project
+        .get("scripts")
+        .and_then(toml::Value::as_table)
+        .ok_or_else(|| "pyproject missing [project.scripts] table".to_string())?;
+    if scripts.get("bijux").and_then(toml::Value::as_str).is_none_or(str::is_empty) {
+        violations.push("pyproject [project.scripts].bijux entry is required".to_string());
+    }
+
+    for rel in ["python/bijux_cli_py/__init__.py", "python/bijux_cli_py/cli.py", "README.md"] {
+        if !bridge_root.join(rel).exists() {
+            violations.push(format!("python bridge file missing: crates/bijux-cli-python/{rel}"));
+        }
+    }
+
+    let metadata_json = command_stdout(root, "cargo", &["metadata", "--no-deps", "--format-version", "1"])?;
+    let metadata: Value = serde_json::from_str(&metadata_json).map_err(|err| err.to_string())?;
+    let packages =
+        metadata["packages"].as_array().ok_or_else(|| "cargo metadata missing packages".to_string())?;
+    let mut runtime_version = None::<String>;
+    let mut bridge_version = None::<String>;
+    for package in packages {
+        let name = package.get("name").and_then(Value::as_str).unwrap_or_default();
+        let version = package.get("version").and_then(Value::as_str).unwrap_or_default();
+        if name == "bijux-cli" {
+            runtime_version = Some(version.to_string());
+        }
+        if name == "bijux-cli-python" {
+            bridge_version = Some(version.to_string());
+        }
+    }
+    if runtime_version.is_none() || bridge_version.is_none() || runtime_version != bridge_version {
+        violations.push(format!(
+            "python bridge cargo crate version must match runtime crate version (runtime={:?}, bridge={:?})",
+            runtime_version, bridge_version
+        ));
+    }
+
+    let python_bin = if Command::new("python3").arg("--version").status().is_ok() {
+        "python3"
+    } else {
+        "python"
+    };
+    let import_status = Command::new(python_bin)
+        .args([
+            "-c",
+            "import pathlib,sys; sys.path.insert(0, str(pathlib.Path('crates/bijux-cli-python/python').resolve())); import bijux_cli_py, bijux_cli_py.cli; print(bijux_cli_py.__name__)",
+        ])
+        .current_dir(root)
+        .status()
+        .map_err(|err| format!("python import smoke failed to start: {err}"))?;
+    if !import_status.success() {
+        violations.push("python bridge import smoke failed".to_string());
+    }
+
+    let build_out_dir = root.join("artifacts/release/python-dist-smoke");
+    fs::create_dir_all(&build_out_dir).map_err(|err| err.to_string())?;
+    let build_status = Command::new(python_bin)
+        .args([
+            "-m",
+            "build",
+            "--sdist",
+            "--wheel",
+            "--outdir",
+            build_out_dir.to_string_lossy().as_ref(),
+            "crates/bijux-cli-python",
+        ])
+        .current_dir(root)
+        .status()
+        .map_err(|err| format!("python build smoke failed to start: {err}"))?;
+    if !build_status.success() {
+        violations.push("python bridge wheel/sdist build smoke failed".to_string());
+    }
+
+    Ok(json!({
+        "goal": "G192",
+        "ok": violations.is_empty(),
+        "python_bin": python_bin,
+        "output_dir": build_out_dir.strip_prefix(root).unwrap_or(&build_out_dir).to_string_lossy(),
         "violations": violations,
     }))
 }
