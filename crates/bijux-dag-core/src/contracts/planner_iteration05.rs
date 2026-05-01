@@ -674,16 +674,114 @@ pub fn build_resource_hints_report(
     ResourceHintsReportV1 { graph: graph_hints, nodes }
 }
 
+/// Planner conflict policy/capability envelope.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlannerConflictEnvelopeV1 {
+    pub allowed_runtime: String,
+    pub allowed_adapters: BTreeSet<String>,
+    pub allow_conditional_edges: bool,
+    pub allow_matrix_expansion: bool,
+    pub required_artifact_prefix: String,
+}
+
+/// Readable planner conflict diagnostic.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlannerConflictDiagnosticV1 {
+    pub code: String,
+    pub node_id: Option<String>,
+    pub reason: String,
+    pub remediation: String,
+}
+
+/// Readable planner conflict report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlannerConflictReportV1 {
+    pub conflicts: Vec<PlannerConflictDiagnosticV1>,
+}
+
+/// Detect planner conflicts before runtime with exact, readable reasons.
+pub fn detect_planner_conflicts(
+    graph: &Graph,
+    envelope: &PlannerConflictEnvelopeV1,
+) -> PlannerConflictReportV1 {
+    let mut conflicts = Vec::new();
+    if envelope.allowed_runtime != "local" {
+        conflicts.push(PlannerConflictDiagnosticV1 {
+            code: "PC4901_RUNTIME_INCOMPATIBLE".to_string(),
+            node_id: None,
+            reason: format!("runtime {} is unsupported by this planner profile", envelope.allowed_runtime),
+            remediation: "use runtime local or a profile with declared runtime compatibility"
+                .to_string(),
+        });
+    }
+
+    for node in &graph.nodes {
+        let adapter = node.kind.as_str().to_string();
+        if !envelope.allowed_adapters.contains(&adapter) {
+            conflicts.push(PlannerConflictDiagnosticV1 {
+                code: "PC4902_ADAPTER_UNSUPPORTED".to_string(),
+                node_id: Some(node.id.clone()),
+                reason: format!("adapter {} is not in allowed set", adapter),
+                remediation: "enable adapter in policy or replace node kind".to_string(),
+            });
+        }
+        if node.trigger_rule == crate::TriggerRule::AllDone
+            && node.effects.contains(&crate::Effect::Network)
+        {
+            conflicts.push(PlannerConflictDiagnosticV1 {
+                code: "PC4903_POLICY_TRIGGER_CONFLICT".to_string(),
+                node_id: Some(node.id.clone()),
+                reason: "all_done with network side effects violates strict policy".to_string(),
+                remediation: "use all_success/none_failed or remove network effect".to_string(),
+            });
+        }
+        if node.semantic_kind == crate::SemanticNodeKind::Map && !envelope.allow_matrix_expansion {
+            conflicts.push(PlannerConflictDiagnosticV1 {
+                code: "PC4904_EXPANSION_DISABLED".to_string(),
+                node_id: Some(node.id.clone()),
+                reason: "matrix/map expansion disabled for this planning profile".to_string(),
+                remediation: "enable matrix expansion policy or flatten mapped workloads".to_string(),
+            });
+        }
+        for output in &node.outputs {
+            if !output.path.starts_with(&envelope.required_artifact_prefix) {
+                conflicts.push(PlannerConflictDiagnosticV1 {
+                    code: "PC4905_ARTIFACT_POLICY_MISMATCH".to_string(),
+                    node_id: Some(node.id.clone()),
+                    reason: format!(
+                        "artifact {} is outside required prefix {}",
+                        output.path, envelope.required_artifact_prefix
+                    ),
+                    remediation: "rewrite artifact path into required policy prefix".to_string(),
+                });
+            }
+        }
+    }
+    if !envelope.allow_conditional_edges
+        && graph.edges.iter().any(|edge| edge.kind == crate::EdgeKind::Conditional)
+    {
+        conflicts.push(PlannerConflictDiagnosticV1 {
+            code: "PC4906_CONDITIONAL_EDGES_DISABLED".to_string(),
+            node_id: None,
+            reason: "graph contains conditional edges but policy disables them".to_string(),
+            remediation: "enable conditional edges in policy or replace edge kinds".to_string(),
+        });
+    }
+
+    conflicts.sort_by(|left, right| left.code.cmp(&right.code).then_with(|| left.node_id.cmp(&right.node_id)));
+    PlannerConflictReportV1 { conflicts }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_complete_dry_plan_output, build_parameter_explain_report, build_plan_explain_report,
         build_resource_hints_report, diff_plans_semantically, explain_plan_fingerprint_trust,
-        export_plan_package,
+        export_plan_package, detect_planner_conflicts, PlannerConflictEnvelopeV1,
         run_plan_preflight, ParameterSourceKindV1, PlanPreflightCapabilitiesV1,
         GraphResourceHintsV1,
     };
-    use crate::{DagBuilder, Effect, GraphMeta, NodeBuilder, NodeKind, Resources};
+    use crate::{DagBuilder, EdgeKind, Effect, GraphMeta, NodeBuilder, NodeKind, Resources, SemanticNodeKind, TriggerRule};
     use std::collections::BTreeSet;
 
     #[test]
@@ -918,5 +1016,41 @@ mod tests {
         assert_eq!(report.nodes[0].cpu, 16);
         assert_eq!(report.nodes[0].gpu, 2);
         assert_eq!(report.nodes[0].pool.as_deref(), Some("hpc"));
+    }
+
+    #[test]
+    fn g049_planner_conflicts_are_emitted_with_readable_reasons() {
+        let graph = DagBuilder::new()
+            .node(
+                NodeBuilder::new("mapped", NodeKind::Shell)
+                    .semantic_kind(SemanticNodeKind::Map)
+                    .trigger_rule(TriggerRule::AllDone)
+                    .output("out", "tmp/out.json")
+                    .effect(Effect::Network)
+                    .build(),
+            )
+            .build();
+        let mut graph = graph;
+        graph.edges.push(crate::Edge {
+            id: None,
+            kind: EdgeKind::Conditional,
+            decision: Some("x".to_string()),
+            from: crate::PortRef { node_id: "mapped".to_string(), port: "out".to_string() },
+            to: crate::PortRef { node_id: "mapped".to_string(), port: "in".to_string() },
+        });
+
+        let report = detect_planner_conflicts(
+            &graph,
+            &PlannerConflictEnvelopeV1 {
+                allowed_runtime: "remote".to_string(),
+                allowed_adapters: BTreeSet::from(["const".to_string()]),
+                allow_conditional_edges: false,
+                allow_matrix_expansion: false,
+                required_artifact_prefix: "artifacts/".to_string(),
+            },
+        );
+        assert!(report.conflicts.iter().any(|conflict| conflict.code == "PC4901_RUNTIME_INCOMPATIBLE"));
+        assert!(report.conflicts.iter().any(|conflict| conflict.code == "PC4902_ADAPTER_UNSUPPORTED"));
+        assert!(report.conflicts.iter().any(|conflict| conflict.code == "PC4906_CONDITIONAL_EDGES_DISABLED"));
     }
 }
