@@ -111,11 +111,65 @@ pub fn evaluate_graph_parse_and_validation_budget(
     })
 }
 
+/// Canonicalization/fingerprinting benchmark input.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CanonicalFingerprintBenchmarkInputV1 {
+    pub node_count: usize,
+    pub canonical_json_ms: f64,
+    pub fingerprint_ms: f64,
+}
+
+/// Canonicalization/fingerprinting benchmark report.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CanonicalFingerprintBenchmarkReportV1 {
+    pub total_ms: f64,
+    pub throughput_nodes_per_second: f64,
+    pub within_budget: bool,
+    pub diagnostics: Vec<String>,
+}
+
+/// Evaluate canonicalization/fingerprinting hot-path budget for large graph workloads.
+pub fn evaluate_canonicalization_and_fingerprinting(
+    input: &CanonicalFingerprintBenchmarkInputV1,
+) -> Result<CanonicalFingerprintBenchmarkReportV1, String> {
+    if input.node_count == 0 {
+        return Err("canonicalization benchmark requires node_count > 0".to_string());
+    }
+    for (name, value) in [
+        ("canonical_json_ms", input.canonical_json_ms),
+        ("fingerprint_ms", input.fingerprint_ms),
+    ] {
+        if !value.is_finite() || value < 0.0 {
+            return Err(format!("canonicalization benchmark requires finite non-negative {name}"));
+        }
+    }
+    let total_ms = input.canonical_json_ms + input.fingerprint_ms;
+    let throughput_nodes_per_second = if total_ms == 0.0 {
+        f64::INFINITY
+    } else {
+        (input.node_count as f64) / (total_ms / 1000.0)
+    };
+    let within_budget = total_ms <= 280.0;
+    let diagnostics = if within_budget {
+        Vec::new()
+    } else {
+        vec!["canonicalization+fingerprint exceeds 280ms budget".to_string()]
+    };
+    Ok(CanonicalFingerprintBenchmarkReportV1 {
+        total_ms,
+        throughput_nodes_per_second,
+        within_budget,
+        diagnostics,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        evaluate_canonicalization_and_fingerprinting,
         evaluate_graph_parse_and_validation_budget, evaluate_route_dispatch_and_help_startup,
-        GraphValidationBenchmarkInputV1, RouteDispatchBenchmarkInputV1,
+        CanonicalFingerprintBenchmarkInputV1, GraphValidationBenchmarkInputV1,
+        RouteDispatchBenchmarkInputV1,
     };
 
     #[test]
@@ -167,5 +221,27 @@ mod tests {
         .expect("regressed benchmark report");
         assert!(!regressed.within_budget);
         assert_eq!(regressed.diagnostics.len(), 5);
+    }
+
+    #[test]
+    fn g183_canonicalization_and_fingerprinting_budget_is_measured_for_large_graphs() {
+        let report =
+            evaluate_canonicalization_and_fingerprinting(&CanonicalFingerprintBenchmarkInputV1 {
+                node_count: 2_000,
+                canonical_json_ms: 120.0,
+                fingerprint_ms: 90.0,
+            })
+            .expect("benchmark should succeed");
+        assert!(report.within_budget);
+        assert!(report.throughput_nodes_per_second > 5_000.0);
+
+        let slow = evaluate_canonicalization_and_fingerprinting(&CanonicalFingerprintBenchmarkInputV1 {
+            node_count: 2_000,
+            canonical_json_ms: 190.0,
+            fingerprint_ms: 140.0,
+        })
+        .expect("slow benchmark should report");
+        assert!(!slow.within_budget);
+        assert_eq!(slow.diagnostics.len(), 1);
     }
 }
