@@ -219,13 +219,63 @@ pub fn evaluate_planner_lowering_and_explain(
     })
 }
 
+/// Runtime startup benchmark input.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RuntimeStartupBenchmarkInputV1 {
+    pub run_root_creation_ms: f64,
+    pub manifest_write_ms: f64,
+    pub queue_admission_ms: f64,
+    pub first_node_dispatch_ms: f64,
+}
+
+/// Runtime startup benchmark report.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RuntimeStartupBenchmarkReportV1 {
+    pub startup_total_ms: f64,
+    pub startup_overhead_tracked: bool,
+    pub diagnostics: Vec<String>,
+}
+
+/// Evaluate startup overhead budget for runtime run initialization and first dispatch.
+pub fn evaluate_runtime_startup_benchmark(
+    input: &RuntimeStartupBenchmarkInputV1,
+) -> Result<RuntimeStartupBenchmarkReportV1, String> {
+    let slices = [
+        ("run_root_creation_ms", input.run_root_creation_ms, 120.0),
+        ("manifest_write_ms", input.manifest_write_ms, 80.0),
+        ("queue_admission_ms", input.queue_admission_ms, 80.0),
+        ("first_node_dispatch_ms", input.first_node_dispatch_ms, 180.0),
+    ];
+    let mut diagnostics = Vec::new();
+    let mut startup_total_ms = 0.0f64;
+    for (name, value, budget) in slices {
+        if !value.is_finite() || value < 0.0 {
+            return Err(format!("runtime startup benchmark requires finite non-negative {name}"));
+        }
+        startup_total_ms += value;
+        if value > budget {
+            diagnostics.push(format!("{name} exceeds {budget:.0}ms budget"));
+        }
+    }
+    if startup_total_ms > 350.0 {
+        diagnostics.push("runtime startup total exceeds 350ms budget".to_string());
+    }
+    Ok(RuntimeStartupBenchmarkReportV1 {
+        startup_total_ms,
+        startup_overhead_tracked: true,
+        diagnostics,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         evaluate_planner_lowering_and_explain,
+        evaluate_runtime_startup_benchmark,
         evaluate_canonicalization_and_fingerprinting,
         evaluate_graph_parse_and_validation_budget, evaluate_route_dispatch_and_help_startup,
         CanonicalFingerprintBenchmarkInputV1, GraphValidationBenchmarkInputV1,
+        RuntimeStartupBenchmarkInputV1,
         PlannerLoweringBenchmarkInputV1, RouteDispatchBenchmarkInputV1,
     };
 
@@ -326,5 +376,27 @@ mod tests {
         .expect("slow planner benchmark");
         assert!(!slow.within_budget);
         assert_eq!(slow.diagnostics.len(), 2);
+    }
+
+    #[test]
+    fn g185_runtime_startup_overhead_is_tracked_and_budgeted() {
+        let report = evaluate_runtime_startup_benchmark(&RuntimeStartupBenchmarkInputV1 {
+            run_root_creation_ms: 60.0,
+            manifest_write_ms: 24.0,
+            queue_admission_ms: 30.0,
+            first_node_dispatch_ms: 70.0,
+        })
+        .expect("runtime startup benchmark should work");
+        assert!(report.startup_overhead_tracked);
+        assert!(report.diagnostics.is_empty());
+
+        let slow = evaluate_runtime_startup_benchmark(&RuntimeStartupBenchmarkInputV1 {
+            run_root_creation_ms: 180.0,
+            manifest_write_ms: 95.0,
+            queue_admission_ms: 85.0,
+            first_node_dispatch_ms: 220.0,
+        })
+        .expect("slow startup benchmark");
+        assert!(!slow.diagnostics.is_empty());
     }
 }
