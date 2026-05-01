@@ -28,9 +28,49 @@ pub fn resolve_app_workspace_config(
     Ok(config)
 }
 
+/// Route inventory diff report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RouteInventoryDiffV1 {
+    pub added_routes: Vec<String>,
+    pub removed_routes: Vec<String>,
+    pub deprecated_routes: Vec<String>,
+    pub conflicted_routes: Vec<String>,
+}
+
+/// Diff route inventories between two app versions.
+pub fn diff_route_inventory(
+    current_routes: Vec<String>,
+    next_routes: Vec<String>,
+    next_deprecated_routes: Vec<String>,
+    conflicts: Vec<String>,
+) -> RouteInventoryDiffV1 {
+    let mut added_routes = next_routes
+        .iter()
+        .filter(|route| !current_routes.contains(route))
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut removed_routes = current_routes
+        .iter()
+        .filter(|route| !next_routes.contains(route))
+        .cloned()
+        .collect::<Vec<_>>();
+    added_routes.sort();
+    removed_routes.sort();
+    let mut deprecated_routes = next_deprecated_routes;
+    deprecated_routes.sort();
+    let mut conflicted_routes = conflicts;
+    conflicted_routes.sort();
+    RouteInventoryDiffV1 {
+        added_routes,
+        removed_routes,
+        deprecated_routes,
+        conflicted_routes,
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{resolve_app_workspace_config, AppWorkspaceConfigV1};
+    use super::{diff_route_inventory, resolve_app_workspace_config, AppWorkspaceConfigV1};
 
     #[test]
     fn g101_workspace_config_changes_behavior_only_through_visible_fields() {
@@ -52,5 +92,19 @@ mod tests {
         .expect("workspace b");
         assert_ne!(first.run_root, second.run_root);
         assert_ne!(first.cache_root, second.cache_root);
+    }
+
+    #[test]
+    fn g102_route_inventory_diff_exposes_added_removed_deprecated_and_conflicts() {
+        let diff = diff_route_inventory(
+            vec!["dag run".to_string(), "dag plan".to_string(), "dag old".to_string()],
+            vec!["dag run".to_string(), "dag plan".to_string(), "dag inspect".to_string()],
+            vec!["dag plan".to_string()],
+            vec!["dag inspect".to_string()],
+        );
+        assert_eq!(diff.added_routes, vec!["dag inspect".to_string()]);
+        assert_eq!(diff.removed_routes, vec!["dag old".to_string()]);
+        assert_eq!(diff.deprecated_routes, vec!["dag plan".to_string()]);
+        assert_eq!(diff.conflicted_routes, vec!["dag inspect".to_string()]);
     }
 }
