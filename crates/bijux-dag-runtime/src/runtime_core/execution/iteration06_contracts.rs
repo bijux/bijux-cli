@@ -201,12 +201,53 @@ pub fn enforce_required_outputs_strict(
     RequiredOutputEnforcementReportV1 { success: violations.is_empty(), violations }
 }
 
+/// Optional output status surface.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OptionalOutputStatusV1 {
+    Present,
+    Absent,
+}
+
+/// Optional output evidence record.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OptionalOutputEvidenceV1 {
+    pub name: String,
+    pub status: OptionalOutputStatusV1,
+    pub path: Option<String>,
+}
+
+/// Build explicit optional output evidence entries, including absent values.
+pub fn record_optional_outputs_honestly(
+    declared_optional_outputs: Vec<String>,
+    produced_output_paths: std::collections::BTreeMap<String, String>,
+) -> Vec<OptionalOutputEvidenceV1> {
+    let mut entries = declared_optional_outputs
+        .into_iter()
+        .map(|name| match produced_output_paths.get(&name) {
+            Some(path) => OptionalOutputEvidenceV1 {
+                name,
+                status: OptionalOutputStatusV1::Present,
+                path: Some(path.clone()),
+            },
+            None => OptionalOutputEvidenceV1 {
+                name,
+                status: OptionalOutputStatusV1::Absent,
+                path: None,
+            },
+        })
+        .collect::<Vec<_>>();
+    entries.sort_by(|left, right| left.name.cmp(&right.name));
+    entries
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_command_invocation_safety_contract,
         build_const_adapter_execution_contract, build_shell_adapter_execution_contract,
         enforce_required_outputs_strict,
+        record_optional_outputs_honestly, OptionalOutputStatusV1,
         CommandInvocationModeV1,
         ConstAdapterOutputArtifactV1,
     };
@@ -287,5 +328,24 @@ mod tests {
             .violations
             .iter()
             .any(|item| item.code == "RO5404_OUTPUT_CORRUPT"));
+    }
+
+    #[test]
+    fn g055_optional_outputs_are_recorded_as_explicit_absent_values() {
+        let evidence = record_optional_outputs_honestly(
+            vec!["summary".to_string(), "plots".to_string()],
+            std::collections::BTreeMap::from([(
+                "summary".to_string(),
+                "/run/42/summary.json".to_string(),
+            )]),
+        );
+        assert!(evidence
+            .iter()
+            .any(|entry| entry.name == "summary"
+                && entry.status == OptionalOutputStatusV1::Present));
+        assert!(evidence
+            .iter()
+            .any(|entry| entry.name == "plots"
+                && entry.status == OptionalOutputStatusV1::Absent));
     }
 }
