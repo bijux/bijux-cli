@@ -11,5 +11,6 @@
   "kind": "python",
   "aliases": [],
   "entrypoint": "plugin:main",
-  "capabilities": []
+  "capabilities": [],
+  "trust_class": "community"
 }

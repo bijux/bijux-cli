@@ -47,9 +47,7 @@ fn command_group(path: &str) -> CommandGroup {
         | "canonical-diff" | "fingerprint" | "graph" => CommandGroup::Graph,
         "plan" | "explain-plan" | "show-effective-graph" => CommandGroup::Plan,
         "run" | "runtime" | "schedule" => CommandGroup::Run,
-        "runs" | "status" | "node" | "trace-node" | "diff" | "why-rerun" => {
-            CommandGroup::Inspect
-        }
+        "runs" | "status" | "node" | "trace-node" | "diff" | "why-rerun" => CommandGroup::Inspect,
         "replay" => CommandGroup::Replay,
         "cache" => CommandGroup::Cache,
         "artifact" | "artifact-inspect" | "trace-artifact" => CommandGroup::Artifact,

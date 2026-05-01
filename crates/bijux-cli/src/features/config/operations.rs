@@ -94,8 +94,16 @@ pub(crate) fn diff(
     overrides: &[String],
     include_secrets: bool,
 ) -> Result<Value> {
-    layered::diff_report(config_file, cwd, key, from_profile, to_profile, overrides, include_secrets)
-        .map_err(|err| anyhow!(err.to_string()))
+    layered::diff_report(
+        config_file,
+        cwd,
+        key,
+        from_profile,
+        to_profile,
+        overrides,
+        include_secrets,
+    )
+    .map_err(|err| anyhow!(err.to_string()))
 }
 
 pub(crate) fn repair(config_file: &Path) -> Result<Value> {

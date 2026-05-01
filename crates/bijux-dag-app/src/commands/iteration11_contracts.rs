@@ -60,12 +60,7 @@ pub fn diff_route_inventory(
     deprecated_routes.sort();
     let mut conflicted_routes = conflicts;
     conflicted_routes.sort();
-    RouteInventoryDiffV1 {
-        added_routes,
-        removed_routes,
-        deprecated_routes,
-        conflicted_routes,
-    }
+    RouteInventoryDiffV1 { added_routes, removed_routes, deprecated_routes, conflicted_routes }
 }
 
 /// Compatibility check result for app dispatch.
@@ -268,7 +263,9 @@ pub fn validate_official_app_onboarding(
         return Err("mock app command contract must pass".to_string());
     }
     if report.root_internal_changes_required {
-        return Err("official app onboarding must not require root internal modifications".to_string());
+        return Err(
+            "official app onboarding must not require root internal modifications".to_string()
+        );
     }
     Ok(report)
 }
@@ -337,15 +334,13 @@ pub fn validate_root_cli_growth_budget(
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_official_app_onboarding,
-        validate_plugin_lifecycle_report,
-        validate_root_cli_growth_budget,
-        validate_command_impact_preview,
         diff_route_inventory, enforce_app_compatibility_window, evaluate_deprecation_lifecycle,
-        resolve_app_workspace_config, validate_install_repair_report, AppWorkspaceConfigV1,
-        CommandImpactPreviewV1, InstallRepairReportV1, OfficialAppOnboardingReportV1,
-        PluginLifecycleReportV1, RootCliGrowthBudgetReportV1, SupportBundleReportV1,
-        validate_support_bundle_report,
+        resolve_app_workspace_config, validate_command_impact_preview,
+        validate_install_repair_report, validate_official_app_onboarding,
+        validate_plugin_lifecycle_report, validate_root_cli_growth_budget,
+        validate_support_bundle_report, AppWorkspaceConfigV1, CommandImpactPreviewV1,
+        InstallRepairReportV1, OfficialAppOnboardingReportV1, PluginLifecycleReportV1,
+        RootCliGrowthBudgetReportV1, SupportBundleReportV1,
     };
 
     #[test]

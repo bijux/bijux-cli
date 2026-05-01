@@ -259,7 +259,7 @@ pub(crate) fn inspect_migrate_dag(
         } else if graph.spec != from_normalized {
             "requested from-version does not match graph spec"
         } else {
-            "cross-version migration is not implemented"
+            "cross-version migration is unavailable"
         }
     }))
 }
@@ -291,7 +291,7 @@ pub(crate) fn inspect_migrate_run(
         } else if snapshot.graph.spec != from_normalized {
             "requested from-version does not match run snapshot graph spec"
         } else {
-            "cross-version migration is not implemented"
+            "cross-version migration is unavailable"
         }
     }))
 }

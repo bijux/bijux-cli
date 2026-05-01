@@ -924,85 +924,47 @@ pub(crate) enum SecurityCommands {
 #[derive(Subcommand)]
 pub(crate) enum PerformanceCommands {
     #[command(name = "latency-budgets")]
-    LatencyBudgets {
-        simulation: PathBuf,
-    },
+    LatencyBudgets { simulation: PathBuf },
     #[command(name = "large-graph-corpus")]
-    LargeGraphCorpus {
-        simulation: PathBuf,
-    },
+    LargeGraphCorpus { simulation: PathBuf },
     #[command(name = "canonicalization-profile")]
-    CanonicalizationProfile {
-        simulation: PathBuf,
-    },
+    CanonicalizationProfile { simulation: PathBuf },
     #[command(name = "scheduler-churn")]
-    SchedulerChurn {
-        simulation: PathBuf,
-    },
+    SchedulerChurn { simulation: PathBuf },
     #[command(name = "artifact-write-profile")]
-    ArtifactWriteProfile {
-        simulation: PathBuf,
-    },
+    ArtifactWriteProfile { simulation: PathBuf },
     #[command(name = "memory-ceilings")]
-    MemoryCeilings {
-        simulation: PathBuf,
-    },
+    MemoryCeilings { simulation: PathBuf },
     #[command(name = "streaming-output")]
-    StreamingOutput {
-        simulation: PathBuf,
-    },
+    StreamingOutput { simulation: PathBuf },
     #[command(name = "run-history-compaction")]
-    RunHistoryCompaction {
-        simulation: PathBuf,
-    },
+    RunHistoryCompaction { simulation: PathBuf },
     #[command(name = "benchmark-report-governance")]
-    BenchmarkReportGovernance {
-        simulation: PathBuf,
-    },
+    BenchmarkReportGovernance { simulation: PathBuf },
     #[command(name = "performance-regression-gates")]
-    PerformanceRegressionGates {
-        simulation: PathBuf,
-    },
+    PerformanceRegressionGates { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]
 pub(crate) enum DurabilityCommands {
     #[command(name = "module-surface-budgets")]
-    ModuleSurfaceBudgets {
-        simulation: PathBuf,
-    },
+    ModuleSurfaceBudgets { simulation: PathBuf },
     #[command(name = "typed-contracts")]
-    TypedContracts {
-        simulation: PathBuf,
-    },
+    TypedContracts { simulation: PathBuf },
     #[command(name = "public-api-review")]
-    PublicApiReview {
-        simulation: PathBuf,
-    },
+    PublicApiReview { simulation: PathBuf },
     #[command(name = "contract-alignment")]
-    ContractAlignment {
-        simulation: PathBuf,
-    },
+    ContractAlignment { simulation: PathBuf },
     #[command(name = "compatibility-fixtures")]
-    CompatibilityFixtures {
-        simulation: PathBuf,
-    },
+    CompatibilityFixtures { simulation: PathBuf },
     #[command(name = "change-impact-labels")]
-    ChangeImpactLabels {
-        simulation: PathBuf,
-    },
+    ChangeImpactLabels { simulation: PathBuf },
     #[command(name = "release-notes-evidence")]
-    ReleaseNotesEvidence {
-        simulation: PathBuf,
-    },
+    ReleaseNotesEvidence { simulation: PathBuf },
     #[command(name = "medium-acceptance-gate")]
-    MediumAcceptanceGate {
-        simulation: PathBuf,
-    },
+    MediumAcceptanceGate { simulation: PathBuf },
     #[command(name = "production-candidate")]
-    ProductionCandidate {
-        simulation: PathBuf,
-    },
+    ProductionCandidate { simulation: PathBuf },
 }
 
 #[derive(Subcommand)]

@@ -142,8 +142,7 @@ fn error_payload_constructor_enforces_required_fields() {
 #[test]
 fn command_envelope_constructor_enforces_success_and_error_invariants() {
     let command = CommandPath::new(&["cli", "status"]).expect("command path");
-    let warning = CommandWarningV1::new("degraded_path", "degraded runtime path")
-        .expect("warning");
+    let warning = CommandWarningV1::new("degraded_path", "degraded runtime path").expect("warning");
     let error = CommandFailureV1::new(
         "usage.missing_arg",
         CommandFailureClassV1::Usage,
@@ -151,7 +150,7 @@ fn command_envelope_constructor_enforces_success_and_error_invariants() {
         "Provide the KEY positional argument and retry.",
         None,
     )
-        .expect("error");
+    .expect("error");
 
     let ok = CommandEnvelopeV1::new(
         "command-envelope-v1",

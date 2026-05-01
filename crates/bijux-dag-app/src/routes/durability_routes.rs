@@ -286,7 +286,8 @@ fn contract_alignment_payload(simulation: &Path) -> Result<ContractAlignmentRepo
             missing_sections.push(format!("{} missing non-goals section", contract.crate_name));
         }
         if !contract.has_stable_outputs {
-            missing_sections.push(format!("{} missing stable outputs section", contract.crate_name));
+            missing_sections
+                .push(format!("{} missing stable outputs section", contract.crate_name));
         }
         if !contract.has_forbidden_dependencies {
             missing_sections
@@ -384,7 +385,9 @@ fn release_notes_evidence_payload(
         .entries
         .iter()
         .filter(|entry| {
-            entry.contracts.is_empty() || entry.fixtures.is_empty() || entry.verifications.is_empty()
+            entry.contracts.is_empty()
+                || entry.fixtures.is_empty()
+                || entry.verifications.is_empty()
         })
         .map(|entry| entry.title.clone())
         .collect::<Vec<_>>();
@@ -422,11 +425,7 @@ fn medium_acceptance_gate_payload(
         failed_checks.push("root-cli-mount-parity".to_string());
     }
     let gate_passed = failed_checks.is_empty();
-    Ok(MediumAcceptanceGateReport {
-        policy_lane: "ENFORCED",
-        gate_passed,
-        failed_checks,
-    })
+    Ok(MediumAcceptanceGateReport { policy_lane: "ENFORCED", gate_passed, failed_checks })
 }
 
 fn production_candidate_payload(simulation: &Path) -> Result<ProductionCandidateReport, ExitCode> {
@@ -460,8 +459,8 @@ pub(crate) fn handle_durability_command(
 ) -> Result<ExitCode, ExitCode> {
     match command {
         DurabilityCommands::ModuleSurfaceBudgets { simulation } => {
-            let payload =
-                serde_json::to_value(module_surface_budgets_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(module_surface_budgets_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.durability.module-surface-budgets",
@@ -472,8 +471,8 @@ pub(crate) fn handle_durability_command(
             )
         }
         DurabilityCommands::TypedContracts { simulation } => {
-            let payload =
-                serde_json::to_value(typed_contracts_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(typed_contracts_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.durability.typed-contracts",
@@ -484,8 +483,8 @@ pub(crate) fn handle_durability_command(
             )
         }
         DurabilityCommands::PublicApiReview { simulation } => {
-            let payload =
-                serde_json::to_value(public_api_review_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(public_api_review_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.durability.public-api-review",
@@ -496,8 +495,8 @@ pub(crate) fn handle_durability_command(
             )
         }
         DurabilityCommands::ContractAlignment { simulation } => {
-            let payload =
-                serde_json::to_value(contract_alignment_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(contract_alignment_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.durability.contract-alignment",
@@ -520,8 +519,8 @@ pub(crate) fn handle_durability_command(
             )
         }
         DurabilityCommands::ChangeImpactLabels { simulation } => {
-            let payload =
-                serde_json::to_value(change_impact_labels_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(change_impact_labels_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.durability.change-impact-labels",
@@ -544,8 +543,8 @@ pub(crate) fn handle_durability_command(
             )
         }
         DurabilityCommands::MediumAcceptanceGate { simulation } => {
-            let payload =
-                serde_json::to_value(medium_acceptance_gate_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(medium_acceptance_gate_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.durability.medium-acceptance-gate",
@@ -556,8 +555,8 @@ pub(crate) fn handle_durability_command(
             )
         }
         DurabilityCommands::ProductionCandidate { simulation } => {
-            let payload =
-                serde_json::to_value(production_candidate_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(production_candidate_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.durability.production-candidate",
@@ -595,8 +594,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli =
-            quiet_json_cli(DurabilityCommands::ModuleSurfaceBudgets { simulation: simulation.clone() });
+        let cli = quiet_json_cli(DurabilityCommands::ModuleSurfaceBudgets {
+            simulation: simulation.clone(),
+        });
         let code = handle_durability_command(
             &cli,
             &DurabilityCommands::ModuleSurfaceBudgets { simulation: simulation.clone() },
@@ -647,7 +647,8 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli = quiet_json_cli(DurabilityCommands::TypedContracts { simulation: simulation.clone() });
+        let cli =
+            quiet_json_cli(DurabilityCommands::TypedContracts { simulation: simulation.clone() });
         let code = handle_durability_command(
             &cli,
             &DurabilityCommands::TypedContracts { simulation: simulation.clone() },
@@ -784,8 +785,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli =
-            quiet_json_cli(DurabilityCommands::ContractAlignment { simulation: simulation.clone() });
+        let cli = quiet_json_cli(DurabilityCommands::ContractAlignment {
+            simulation: simulation.clone(),
+        });
         let code = handle_durability_command(
             &cli,
             &DurabilityCommands::ContractAlignment { simulation: simulation.clone() },
@@ -855,8 +857,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli =
-            quiet_json_cli(DurabilityCommands::CompatibilityFixtures { simulation: simulation.clone() });
+        let cli = quiet_json_cli(DurabilityCommands::CompatibilityFixtures {
+            simulation: simulation.clone(),
+        });
         let code = handle_durability_command(
             &cli,
             &DurabilityCommands::CompatibilityFixtures { simulation: simulation.clone() },
@@ -910,8 +913,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli =
-            quiet_json_cli(DurabilityCommands::ChangeImpactLabels { simulation: simulation.clone() });
+        let cli = quiet_json_cli(DurabilityCommands::ChangeImpactLabels {
+            simulation: simulation.clone(),
+        });
         let code = handle_durability_command(
             &cli,
             &DurabilityCommands::ChangeImpactLabels { simulation: simulation.clone() },
@@ -963,8 +967,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli =
-            quiet_json_cli(DurabilityCommands::ReleaseNotesEvidence { simulation: simulation.clone() });
+        let cli = quiet_json_cli(DurabilityCommands::ReleaseNotesEvidence {
+            simulation: simulation.clone(),
+        });
         let code = handle_durability_command(
             &cli,
             &DurabilityCommands::ReleaseNotesEvidence { simulation: simulation.clone() },
@@ -1015,8 +1020,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli =
-            quiet_json_cli(DurabilityCommands::MediumAcceptanceGate { simulation: simulation.clone() });
+        let cli = quiet_json_cli(DurabilityCommands::MediumAcceptanceGate {
+            simulation: simulation.clone(),
+        });
         let code = handle_durability_command(
             &cli,
             &DurabilityCommands::MediumAcceptanceGate { simulation: simulation.clone() },
@@ -1084,7 +1090,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli = quiet_json_cli(DurabilityCommands::ProductionCandidate { simulation: simulation.clone() });
+        let cli = quiet_json_cli(DurabilityCommands::ProductionCandidate {
+            simulation: simulation.clone(),
+        });
         let code = handle_durability_command(
             &cli,
             &DurabilityCommands::ProductionCandidate { simulation: simulation.clone() },

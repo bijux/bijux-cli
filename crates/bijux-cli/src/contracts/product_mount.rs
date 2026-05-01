@@ -675,10 +675,10 @@ pub type ProductMountMetadata = ProductMountDescriptor;
 #[cfg(test)]
 mod tests {
     use super::{
+        known_bijux_tool_by_query, official_product_namespaces,
         official_status_allows_runtime_dispatch, validate_product_mount_descriptor,
-        validate_registry_document, known_bijux_tool_by_query, official_product_namespaces,
-        Namespace, ProductEntrypointKind, ProductMountDescriptor, ProductRegistryDocument,
-        ProductRegistryEntry,
+        validate_registry_document, Namespace, ProductEntrypointKind, ProductMountDescriptor,
+        ProductRegistryDocument, ProductRegistryEntry,
     };
 
     #[test]

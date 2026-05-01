@@ -30,15 +30,15 @@ mod graph_cmd;
 mod graph_helpers;
 #[path = "commands/import_cmd.rs"]
 mod import_cmd;
-#[path = "commands/iteration08_contracts.rs"]
-pub mod iteration08_contracts;
-#[path = "commands/iteration11_contracts.rs"]
-pub mod iteration11_contracts;
 mod inspect;
 #[path = "inspect/service.rs"]
 mod inspect_service;
 #[path = "inspect/integrity_service.rs"]
 mod integrity_service;
+#[path = "commands/iteration08_contracts.rs"]
+pub mod iteration08_contracts;
+#[path = "commands/iteration11_contracts.rs"]
+pub mod iteration11_contracts;
 mod migrate;
 #[path = "commands/output_contract.rs"]
 mod output_contract;

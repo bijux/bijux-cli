@@ -18,7 +18,7 @@ use bijux_dag_app::{dag_command, dag_run};
 use std::path::PathBuf;
 
 fn repo_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
 #[test]

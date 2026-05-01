@@ -20,13 +20,11 @@ use bijux_dag_runtime::simulated_platform::{
 };
 use bijux_dag_runtime::{
     authorize_input_path, authorize_output_path, is_allowed_env_key, is_denied_env_key,
-    leak_conformance_check, secret_readiness,
-    secret_scope_allows, secure_cleanup_required, secure_mode_effective, select_secret_version,
-    shape_environment, summarize_sensitive_classes, validate_secret_delivery_mode,
-    SecretDeliveryPolicy,
-    SecretInjectionMode, SecretMaskingPolicy, SecretRotationRule, SecretScopeRule, SecretSource,
-    SecretUsageAuditEvent, SecureExecutionMode, SecureTeardownPolicy, SecureWorkspaceRule,
-    SensitiveArtifactRestriction,
+    leak_conformance_check, secret_readiness, secret_scope_allows, secure_cleanup_required,
+    secure_mode_effective, select_secret_version, shape_environment, summarize_sensitive_classes,
+    validate_secret_delivery_mode, SecretDeliveryPolicy, SecretInjectionMode, SecretMaskingPolicy,
+    SecretRotationRule, SecretScopeRule, SecretSource, SecretUsageAuditEvent, SecureExecutionMode,
+    SecureTeardownPolicy, SecureWorkspaceRule, SensitiveArtifactRestriction,
 };
 use serde::Serialize;
 use std::path::Path;
@@ -617,22 +615,22 @@ fn env_allowlist_payload(simulation: &Path) -> Result<EnvAllowlistReport, ExitCo
     let mut passed_keys = shaped.keys().cloned().collect::<Vec<_>>();
     passed_keys.sort();
 
-    let all_input_keys =
-        simulation.ambient_env.keys().chain(simulation.explicit_env.keys()).cloned().collect::<
-            std::collections::BTreeSet<_>,
-        >();
-    let mut blocked_keys = all_input_keys
-        .iter()
-        .filter(|key| !shaped.contains_key(*key))
+    let all_input_keys = simulation
+        .ambient_env
+        .keys()
+        .chain(simulation.explicit_env.keys())
         .cloned()
-        .collect::<Vec<_>>();
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut blocked_keys =
+        all_input_keys.iter().filter(|key| !shaped.contains_key(*key)).cloned().collect::<Vec<_>>();
     blocked_keys.sort();
 
     let mut leaked_keys = shaped
         .keys()
         .filter(|key| {
             is_secret_like_env_key(key)
-                || (!simulation.allowlist.is_empty() && !is_allowed_env_key(key, &simulation.allowlist))
+                || (!simulation.allowlist.is_empty()
+                    && !is_allowed_env_key(key, &simulation.allowlist))
                 || is_denied_env_key(key, &simulation.denylist)
         })
         .cloned()
@@ -642,7 +640,9 @@ fn env_allowlist_payload(simulation: &Path) -> Result<EnvAllowlistReport, ExitCo
     let secret_like_keys_blocked = shaped.keys().all(|key| !is_secret_like_env_key(key));
     let mut gaps = Vec::new();
     if !leaked_keys.is_empty() {
-        gaps.push("effective environment still exposes sensitive or non-compliant keys".to_string());
+        gaps.push(
+            "effective environment still exposes sensitive or non-compliant keys".to_string(),
+        );
     }
     if !secret_like_keys_blocked {
         gaps.push("secret-like environment keys are not fully blocked".to_string());
@@ -721,17 +721,24 @@ fn command_injection_payload(simulation: &Path) -> Result<CommandInjectionReport
         && (argv[0].ends_with("sh") || argv[0].ends_with("bash") || argv[0].ends_with("zsh"))
         && argv[1] == "-c";
     let shell_interpretation_requested = simulation.explicit_shell || implicit_shell_detected;
-    let mut risky_tokens =
-        argv.iter().filter(|token| token_looks_shell_interpreted(token)).cloned().collect::<Vec<_>>();
+    let mut risky_tokens = argv
+        .iter()
+        .filter(|token| token_looks_shell_interpreted(token))
+        .cloned()
+        .collect::<Vec<_>>();
     risky_tokens.sort();
     risky_tokens.dedup();
 
     let mut gaps = Vec::new();
     if implicit_shell_detected && !simulation.explicit_shell {
-        gaps.push("implicit shell interpretation is forbidden; require explicit_shell=true".to_string());
+        gaps.push(
+            "implicit shell interpretation is forbidden; require explicit_shell=true".to_string(),
+        );
     }
     if !risky_tokens.is_empty() && !simulation.allow_metacharacters {
-        gaps.push("metacharacter-bearing argv tokens require explicit allow_metacharacters".to_string());
+        gaps.push(
+            "metacharacter-bearing argv tokens require explicit allow_metacharacters".to_string(),
+        );
     }
     if let Some(cwd) = simulation.working_directory.as_deref() {
         if cwd.contains("..") {
@@ -784,8 +791,8 @@ fn artifact_secrets_payload(simulation: &Path) -> Result<ArtifactSecretsReport, 
         }
     }
 
-    let durable_write_allowed = flagged_fields.is_empty()
-        || (simulation.redaction_enabled && !simulation.refuse_on_secret);
+    let durable_write_allowed =
+        flagged_fields.is_empty() || (simulation.redaction_enabled && !simulation.refuse_on_secret);
     let action = if flagged_fields.is_empty() {
         "clean"
     } else if simulation.refuse_on_secret {
@@ -1143,10 +1150,8 @@ fn map_inventory_components(
     components
         .iter()
         .map(|component| {
-            let checksum_present = component
-                .checksum
-                .as_ref()
-                .is_some_and(|value| !value.trim().is_empty());
+            let checksum_present =
+                component.checksum.as_ref().is_some_and(|value| !value.trim().is_empty());
             if !checksum_present {
                 gaps.push(format!(
                     "{kind} component {}@{} is missing a checksum",
@@ -1195,10 +1200,8 @@ fn trust_classes_payload(simulation: &Path) -> Result<TrustClassesReport, ExitCo
         classification_reasons.push("simulated backend execution".to_string());
         ("simulated", "simulated")
     } else if simulation.policy_violations > 0 {
-        classification_reasons.push(format!(
-            "policy violations present: {}",
-            simulation.policy_violations
-        ));
+        classification_reasons
+            .push(format!("policy violations present: {}", simulation.policy_violations));
         ("draft", "draft")
     } else if !simulation.evidence_complete {
         classification_reasons.push("required evidence is incomplete".to_string());
@@ -1245,8 +1248,9 @@ fn malformed_input_fuzz_payload(simulation: &Path) -> Result<MalformedInputFuzzR
         }
     }
     for payload in &simulation.config_payloads {
-        let outcome =
-            std::panic::catch_unwind(|| serde_json::from_str::<crate::PartialRuntimeSurfaceConfig>(payload));
+        let outcome = std::panic::catch_unwind(|| {
+            serde_json::from_str::<crate::PartialRuntimeSurfaceConfig>(payload)
+        });
         match outcome {
             Ok(Ok(_)) => {}
             Ok(Err(_)) => config_rejections += 1,
@@ -1267,7 +1271,8 @@ fn malformed_input_fuzz_payload(simulation: &Path) -> Result<MalformedInputFuzzR
         }
     }
     for payload in &simulation.plugin_manifest_payloads {
-        let outcome = std::panic::catch_unwind(|| serde_json::from_str::<PluginManifestProbe>(payload));
+        let outcome =
+            std::panic::catch_unwind(|| serde_json::from_str::<PluginManifestProbe>(payload));
         match outcome {
             Ok(Ok(manifest)) => {
                 if manifest.namespace.trim().is_empty()
@@ -1284,7 +1289,8 @@ fn malformed_input_fuzz_payload(simulation: &Path) -> Result<MalformedInputFuzzR
         }
     }
     for payload in &simulation.bundle_payloads {
-        let outcome = std::panic::catch_unwind(|| serde_json::from_str::<serde_json::Value>(payload));
+        let outcome =
+            std::panic::catch_unwind(|| serde_json::from_str::<serde_json::Value>(payload));
         match outcome {
             Ok(Ok(bundle)) => {
                 if !crate::verify_bundle_invariants(&bundle).is_empty() {
@@ -1296,7 +1302,8 @@ fn malformed_input_fuzz_payload(simulation: &Path) -> Result<MalformedInputFuzzR
         }
     }
     for payload in &simulation.run_manifest_payloads {
-        let outcome = std::panic::catch_unwind(|| serde_json::from_str::<RunManifestProbe>(payload));
+        let outcome =
+            std::panic::catch_unwind(|| serde_json::from_str::<RunManifestProbe>(payload));
         match outcome {
             Ok(Ok(manifest)) => {
                 if manifest.manifest_version.trim().is_empty()
@@ -1350,7 +1357,8 @@ fn dependency_risk_payload(simulation: &Path) -> Result<DependencyRiskReport, Ex
     let mut gaps = Vec::new();
 
     for dependency in &simulation.dependencies {
-        let weighted_score = dependency.risk_score + (dependency.known_vulnerabilities as f64 * 0.5);
+        let weighted_score =
+            dependency.risk_score + (dependency.known_vulnerabilities as f64 * 0.5);
         match dependency.surface {
             DependencySurface::CoreRuntime => {
                 core_runtime_risk_score += weighted_score;
@@ -1544,14 +1552,10 @@ fn override_audit_payload(simulation: &Path) -> Result<OverrideAuditReport, Exit
     }
 
     let reason_recorded = !simulation.reason.trim().is_empty();
-    let evidence_recorded = simulation
-        .evidence_pointer
-        .as_ref()
-        .is_some_and(|pointer| !pointer.trim().is_empty());
-    let event_recorded = simulation
-        .audit_event_id
-        .as_ref()
-        .is_some_and(|event_id| !event_id.trim().is_empty());
+    let evidence_recorded =
+        simulation.evidence_pointer.as_ref().is_some_and(|pointer| !pointer.trim().is_empty());
+    let event_recorded =
+        simulation.audit_event_id.as_ref().is_some_and(|event_id| !event_id.trim().is_empty());
     let timestamp_recorded = simulation.timestamp_unix_ms > 0;
 
     let mut missing_records = Vec::new();
@@ -1649,8 +1653,8 @@ pub(crate) fn handle_security_command(
             )
         }
         SecurityCommands::EnvAllowlist { simulation } => {
-            let payload =
-                serde_json::to_value(env_allowlist_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(env_allowlist_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.security.env-allowlist",
@@ -1661,8 +1665,8 @@ pub(crate) fn handle_security_command(
             )
         }
         SecurityCommands::NetworkPolicy { dag } => {
-            let payload =
-                serde_json::to_value(network_policy_payload(dag)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(network_policy_payload(dag)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.security.network-policy",
@@ -1685,8 +1689,8 @@ pub(crate) fn handle_security_command(
             )
         }
         SecurityCommands::ArtifactSecrets { simulation } => {
-            let payload =
-                serde_json::to_value(artifact_secrets_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(artifact_secrets_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.security.artifact-secrets",
@@ -1741,8 +1745,8 @@ pub(crate) fn handle_security_command(
             )
         }
         SecurityCommands::TrustClasses { simulation } => {
-            let payload =
-                serde_json::to_value(trust_classes_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(trust_classes_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.security.trust-classes",
@@ -1787,8 +1791,8 @@ pub(crate) fn handle_security_command(
             emit_json(cli, "dag.security.override", true, payload, Vec::new(), ExitCode::SUCCESS)
         }
         SecurityCommands::OverrideAudit { simulation } => {
-            let payload =
-                serde_json::to_value(override_audit_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(override_audit_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.security.override-audit",
@@ -1855,8 +1859,9 @@ mod tests {
         )
         .expect("write simulation");
 
-        let cli =
-            quiet_json_cli(SecurityCommands::FilesystemAllowlist { simulation: simulation.clone() });
+        let cli = quiet_json_cli(SecurityCommands::FilesystemAllowlist {
+            simulation: simulation.clone(),
+        });
         let code = handle_security_command(
             &cli,
             &SecurityCommands::FilesystemAllowlist { simulation: simulation.clone() },
@@ -1968,7 +1973,10 @@ mod tests {
         assert!(!report.secret_like_keys_blocked);
         assert!(report.leaked_keys.iter().any(|key| key == "SECRET_TOKEN"));
         assert!(report.leaked_keys.iter().any(|key| key == "PASSWORD"));
-        assert!(report.gaps.iter().any(|gap| gap == "secret-like environment keys are not fully blocked"));
+        assert!(report
+            .gaps
+            .iter()
+            .any(|gap| gap == "secret-like environment keys are not fully blocked"));
     }
 
     #[test]
@@ -1986,8 +1994,9 @@ mod tests {
         )
         .expect("write dag");
         let cli = quiet_json_cli(SecurityCommands::NetworkPolicy { dag: dag.clone() });
-        let code = handle_security_command(&cli, &SecurityCommands::NetworkPolicy { dag: dag.clone() })
-            .expect("network policy");
+        let code =
+            handle_security_command(&cli, &SecurityCommands::NetworkPolicy { dag: dag.clone() })
+                .expect("network policy");
         assert_eq!(code, ExitCode::SUCCESS);
         let report = super::network_policy_payload(&dag).expect("report");
         assert_eq!(report.policy_lane, "ENFORCED");
@@ -2138,7 +2147,10 @@ mod tests {
         assert!(report.flagged_fields.iter().any(|field| field == "outputs.api_key"));
         assert!(!report.durable_write_allowed);
         assert_eq!(report.action, "refused");
-        assert!(report.gaps.iter().any(|gap| gap == "durable artifact write refused due to secret-bearing fields"));
+        assert!(report
+            .gaps
+            .iter()
+            .any(|gap| gap == "durable artifact write refused due to secret-bearing fields"));
     }
 
     #[test]
@@ -2675,9 +2687,10 @@ mod tests {
         let report = super::trust_classes_payload(&simulation).expect("report");
         assert_eq!(report.run_trust_class, "release");
         assert_eq!(report.artifact_trust_class, "release");
-        assert!(report.classification_reasons.iter().any(|reason| {
-            reason == "release controls and evidence are complete"
-        }));
+        assert!(report
+            .classification_reasons
+            .iter()
+            .any(|reason| { reason == "release controls and evidence are complete" }));
     }
 
     #[test]
@@ -2700,7 +2713,10 @@ mod tests {
         let report = super::trust_classes_payload(&simulation).expect("report");
         assert_eq!(report.run_trust_class, "simulated");
         assert_eq!(report.artifact_trust_class, "simulated");
-        assert!(report.classification_reasons.iter().any(|reason| reason == "simulated backend execution"));
+        assert!(report
+            .classification_reasons
+            .iter()
+            .any(|reason| reason == "simulated backend execution"));
     }
 
     #[test]
@@ -2797,11 +2813,7 @@ mod tests {
         );
         assert_eq!(
             report.tooling_dependencies,
-            vec![
-                "cargo-audit".to_string(),
-                "mkdocs".to_string(),
-                "release-please".to_string()
-            ]
+            vec!["cargo-audit".to_string(), "mkdocs".to_string(), "release-please".to_string()]
         );
     }
 
@@ -3034,7 +3046,8 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli = quiet_json_cli(SecurityCommands::OverrideAudit { simulation: simulation.clone() });
+        let cli =
+            quiet_json_cli(SecurityCommands::OverrideAudit { simulation: simulation.clone() });
         let code = handle_security_command(
             &cli,
             &SecurityCommands::OverrideAudit { simulation: simulation.clone() },

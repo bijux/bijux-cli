@@ -3,7 +3,7 @@ use std::process::Command;
 use std::sync::OnceLock;
 
 pub fn repo_root_from_manifest_dir(manifest_dir: &str) -> PathBuf {
-    PathBuf::from(manifest_dir).join("../..")
+    PathBuf::from(manifest_dir).join("../..").canonicalize().expect("workspace root")
 }
 
 pub fn run_dag_command(args: &[&str], cwd: &Path) -> (i32, String, String) {

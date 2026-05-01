@@ -249,7 +249,8 @@ pub fn evaluate_output_mode_parity(
         let mut modes = entry.supported_modes.clone();
         modes.sort();
         modes.dedup();
-        let has_all_required = required_modes.iter().all(|mode| modes.iter().any(|value| value == mode));
+        let has_all_required =
+            required_modes.iter().all(|mode| modes.iter().any(|value| value == mode));
         if !has_all_required {
             missing.push(entry.command.clone());
         }
@@ -370,9 +371,7 @@ pub struct CommandSideEffectPreviewV1 {
 }
 
 /// Classify command side-effects for dispatch safety previews.
-pub fn classify_command_side_effect(
-    command: &str,
-) -> Result<CommandSideEffectPreviewV1, String> {
+pub fn classify_command_side_effect(command: &str) -> Result<CommandSideEffectPreviewV1, String> {
     if command.trim().is_empty() {
         return Err("command cannot be empty".to_string());
     }
@@ -496,14 +495,12 @@ mod tests {
 
     use super::{
         build_actionable_error_envelope, build_command_explain_record,
-        classify_command_side_effect,
-        build_completion_snapshot_from_registry,
-        build_compact_operator_help_entrypoint, build_install_diagnosis_bundle,
-        build_official_app_discovery_report,
-        build_python_bridge_command_parity_report,
-        build_script_stable_command_envelope, evaluate_output_mode_parity,
-        ActionableFailureClassV1, CompletionRouteEntryV1, InstallDiagnosticComponentV1,
-        OfficialAppRouteDescriptorV1, OutputModeParityEntryV1, PythonBridgeParityEntryV1,
+        build_compact_operator_help_entrypoint, build_completion_snapshot_from_registry,
+        build_install_diagnosis_bundle, build_official_app_discovery_report,
+        build_python_bridge_command_parity_report, build_script_stable_command_envelope,
+        classify_command_side_effect, evaluate_output_mode_parity, ActionableFailureClassV1,
+        CompletionRouteEntryV1, InstallDiagnosticComponentV1, OfficialAppRouteDescriptorV1,
+        OutputModeParityEntryV1, PythonBridgeParityEntryV1,
     };
 
     #[test]
@@ -602,7 +599,7 @@ mod tests {
             InstallDiagnosticComponentV1 {
                 component: "python_bridge".to_string(),
                 healthy: false,
-                detail: "missing importable bijux_cli_python package".to_string(),
+                detail: "missing importable python bridge package".to_string(),
             },
         ])
         .expect("diagnosis bundle should build");

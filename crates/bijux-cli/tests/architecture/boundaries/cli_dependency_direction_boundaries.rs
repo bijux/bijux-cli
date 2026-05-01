@@ -221,11 +221,7 @@ fn cli_workspace_dependencies_follow_contract_direction() {
             .get(&rule.crate_name)
             .unwrap_or_else(|| panic!("missing crate in workspace metadata: {}", rule.crate_name));
         let allowed = rule.allowed_workspace_normal_deps.into_iter().collect::<BTreeSet<_>>();
-        assert_eq!(
-            deps, &allowed,
-            "workspace dependency set drifted for {}",
-            rule.crate_name
-        );
+        assert_eq!(deps, &allowed, "workspace dependency set drifted for {}", rule.crate_name);
         for forbidden in rule.forbidden_workspace_normal_deps {
             assert!(
                 !deps.contains(&forbidden),
@@ -257,10 +253,7 @@ fn cli_runtime_source_does_not_import_dag_or_maintainer_internals() {
             offenders.push(file.display().to_string());
         }
     }
-    assert!(
-        offenders.is_empty(),
-        "cli runtime imported dag/maintainer internals: {offenders:?}"
-    );
+    assert!(offenders.is_empty(), "cli runtime imported dag/maintainer internals: {offenders:?}");
 }
 
 #[test]

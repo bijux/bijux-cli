@@ -11,5 +11,6 @@
   "kind": "external-exec",
   "aliases": [],
   "entrypoint": "plugin-entrypoint",
-  "capabilities": []
+  "capabilities": [],
+  "trust_class": "community"
 }

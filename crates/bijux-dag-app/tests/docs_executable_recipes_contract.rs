@@ -99,10 +99,7 @@ fn docs_major_dag_recipe_is_ci_executable() {
     vars.insert("RUN_DIR", run_dir.to_string_lossy().into_owned());
     vars.insert("REPLAY_ROOT", replay_root.to_string_lossy().into_owned());
     vars.insert("EXPORT_BUNDLE", export_bundle.to_string_lossy().into_owned());
-    vars.insert(
-        "DIAG_BUNDLE",
-        diagnostics_bundle.to_string_lossy().into_owned(),
-    );
+    vars.insert("DIAG_BUNDLE", diagnostics_bundle.to_string_lossy().into_owned());
 
     let docs_path = root.join("docs/bijux-dag/interfaces/executable-recipes.md");
     let commands = load_recipe_commands(&docs_path, "ci-major-dag-commands");

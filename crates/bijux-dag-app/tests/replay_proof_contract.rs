@@ -28,7 +28,7 @@ fn run_dag(args: &[&str], cwd: &Path) -> (i32, String, String) {
 
 fn run_json(args: &[&str], cwd: &Path) -> Value {
     let (code, stdout, stderr) = run_dag(args, cwd);
-    assert!(code == 0, "command failed: code={code} stderr={stderr}");
+    assert!(code == 0, "command failed: args={args:?} code={code} stdout={stdout} stderr={stderr}");
     serde_json::from_str(&stdout).expect("parse json envelope")
 }
 

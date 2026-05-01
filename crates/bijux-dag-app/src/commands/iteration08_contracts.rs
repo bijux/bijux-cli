@@ -263,9 +263,7 @@ pub fn build_status_command_report(
             return Err(format!("{field_name} must not be empty"));
         }
     }
-    if current_state == "failed"
-        && critical_failure.as_deref().unwrap_or("").trim().is_empty()
-    {
+    if current_state == "failed" && critical_failure.as_deref().unwrap_or("").trim().is_empty() {
         return Err("failed state requires critical_failure detail".to_string());
     }
     Ok(StatusCommandReportV1 {
@@ -311,10 +309,9 @@ pub fn build_replay_command_report(
     selector: ReplaySelectorV1,
     decisions: Vec<ReplayNodeDecisionV1>,
 ) -> Result<ReplayCommandReportV1, String> {
-    for (field_name, field_value) in [
-        ("source_run_id", source_run_id),
-        ("replay_run_id", replay_run_id),
-    ] {
+    for (field_name, field_value) in
+        [("source_run_id", source_run_id), ("replay_run_id", replay_run_id)]
+    {
         if field_value.trim().is_empty() {
             return Err(format!("{field_name} must not be empty"));
         }
@@ -362,14 +359,12 @@ pub struct DiffClassificationV1 {
 }
 
 /// Classify diff observations into semantic versus noise.
-pub fn classify_diff_observations(
-    observations: Vec<DiffObservationV1>,
-) -> DiffClassificationV1 {
+pub fn classify_diff_observations(observations: Vec<DiffObservationV1>) -> DiffClassificationV1 {
     let mut semantic_changes = Vec::new();
     let mut noise_changes = Vec::new();
     for observation in observations {
-        let is_noise = (observation.surface == "run" && observation.field == "started_at")
-            || (observation.surface == "run" && observation.field == "finished_at")
+        let is_noise = (observation.surface == "run"
+            && (observation.field == "started_at" || observation.field == "finished_at"))
             || (observation.surface == "trace" && observation.field == "heartbeat_count");
         if is_noise {
             noise_changes.push(observation);
@@ -377,10 +372,7 @@ pub fn classify_diff_observations(
             semantic_changes.push(observation);
         }
     }
-    DiffClassificationV1 {
-        semantic_changes,
-        noise_changes,
-    }
+    DiffClassificationV1 { semantic_changes, noise_changes }
 }
 
 /// Cache explain outcome class.
@@ -415,11 +407,7 @@ pub fn build_cache_explain_report(
     if reasons.iter().any(|reason| reason.trim().is_empty()) {
         return Err("cache explain reasons must not contain empty values".to_string());
     }
-    Ok(CacheExplainReportV1 {
-        node_id: node_id.to_string(),
-        outcome,
-        reasons,
-    })
+    Ok(CacheExplainReportV1 { node_id: node_id.to_string(), outcome, reasons })
 }
 
 /// Path rewrite evidence for export/import portability.
@@ -463,15 +451,12 @@ pub fn build_export_import_portability_report(
             } else {
                 path.clone()
             };
-            BundlePathRewriteV1 {
-                original_path: path,
-                rewritten_path: rewritten,
-            }
+            BundlePathRewriteV1 { original_path: path, rewritten_path: rewritten }
         })
         .collect::<Vec<_>>();
-    let portable = rewrites
-        .iter()
-        .all(|entry| !entry.rewritten_path.starts_with(source_root) && !entry.rewritten_path.starts_with('/'));
+    let portable = rewrites.iter().all(|entry| {
+        !entry.rewritten_path.starts_with(source_root) && !entry.rewritten_path.starts_with('/')
+    });
     Ok(ExportImportPortabilityReportV1 {
         source_root: source_root.to_string(),
         target_root: target_root.to_string(),
@@ -516,21 +501,16 @@ pub fn build_doctor_command_report(
             }
         }
     }
-    Ok(DoctorCommandReportV1 {
-        status: status.to_string(),
-        findings,
-    })
+    Ok(DoctorCommandReportV1 { status: status.to_string(), findings })
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        build_cache_explain_report,
-        classify_diff_observations,
-        build_doctor_command_report,
-        build_export_import_portability_report,
-        build_inspect_command_report, build_plan_command_report, build_run_command_report,
-        build_replay_command_report, build_status_command_report, build_validate_command_report,
+        build_cache_explain_report, build_doctor_command_report,
+        build_export_import_portability_report, build_inspect_command_report,
+        build_plan_command_report, build_replay_command_report, build_run_command_report,
+        build_status_command_report, build_validate_command_report, classify_diff_observations,
         CacheExplainOutcomeV1, DiffObservationV1, DoctorFindingV1, DryPlanNodeRowV1,
         InspectNodeStateV1, PreflightCheckV1, ReplayNodeDecisionV1, ReplaySelectorV1,
         ValidateIssueV1,
@@ -560,10 +540,7 @@ mod tests {
 
         assert!(!report.ok);
         assert_eq!(report.hard_failures.len(), 1);
-        assert_eq!(
-            report.hard_failures[0].remediation,
-            "set output path under declared run root"
-        );
+        assert_eq!(report.hard_failures[0].remediation, "set output path under declared run root");
         assert_eq!(report.lint_findings[0].severity, "warn");
     }
 
@@ -665,10 +642,7 @@ mod tests {
         )
         .expect("status report");
         assert_eq!(status.current_state, "failed");
-        assert_eq!(
-            status.critical_failure.as_deref(),
-            Some("call-variants exited with code 2")
-        );
+        assert_eq!(status.critical_failure.as_deref(), Some("call-variants exited with code 2"));
         assert!(status.next_command.starts_with("dag inspect"));
         assert!(status.evidence_path.ends_with("/verify/report.json"));
     }
@@ -793,8 +767,9 @@ mod tests {
                     finding_id: "doctor.adapter_shell_missing".to_string(),
                     severity: "warn".to_string(),
                     message: "/bin/sh not found in configured execution image".to_string(),
-                    remediation: "install shell adapter runtime or switch workflow to const adapter"
-                        .to_string(),
+                    remediation:
+                        "install shell adapter runtime or switch workflow to const adapter"
+                            .to_string(),
                 },
             ],
         )

@@ -1,5 +1,5 @@
-use semver::{Version, VersionReq};
 use schemars::JsonSchema;
+use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 
 /// Plugin manifest executable contract for pre-execution validation.
@@ -154,9 +154,10 @@ pub struct OfficialAppDescriptorCompatibilityReportV1 {
 pub fn evaluate_official_app_descriptor_compatibility(
     payload: &OfficialAppDescriptorCompatibilityInputV1,
 ) -> Result<OfficialAppDescriptorCompatibilityReportV1, String> {
-    let host =
-        Version::parse(&payload.host_version).map_err(|error| format!("invalid host_version: {error}"))?;
-    Version::parse(&payload.app_version).map_err(|error| format!("invalid app_version: {error}"))?;
+    let host = Version::parse(&payload.host_version)
+        .map_err(|error| format!("invalid host_version: {error}"))?;
+    Version::parse(&payload.app_version)
+        .map_err(|error| format!("invalid app_version: {error}"))?;
     let requirement = VersionReq::parse(&payload.host_compatibility_window)
         .map_err(|error| format!("invalid host_compatibility_window: {error}"))?;
     if payload.command_surfaces.is_empty() {
@@ -176,7 +177,8 @@ pub fn evaluate_official_app_descriptor_compatibility(
     } else {
         Ok(OfficialAppDescriptorCompatibilityReportV1 {
             compatible: false,
-            message: "host version outside compatibility window; migrate app descriptor".to_string(),
+            message: "host version outside compatibility window; migrate app descriptor"
+                .to_string(),
         })
     }
 }
@@ -204,14 +206,10 @@ pub fn evaluate_legacy_shim_policy(
         return Err("shim_command and canonical_command cannot be empty".to_string());
     }
     let (decision, message) = match shim_mode {
-        "supported" => (
-            "supported",
-            "legacy shim is temporarily supported; prefer canonical command",
-        ),
-        "warned" => (
-            "warned",
-            "legacy shim is deprecated; migrate to canonical command",
-        ),
+        "supported" => {
+            ("supported", "legacy shim is temporarily supported; prefer canonical command")
+        }
+        "warned" => ("warned", "legacy shim is deprecated; migrate to canonical command"),
         "refused" => ("refused", "legacy shim refused; use canonical command"),
         _ => return Err("shim_mode must be supported, warned, or refused".to_string()),
     };
@@ -271,7 +269,9 @@ pub fn resolve_route_conflict_deterministically(
     let winner = ordered.first().cloned().expect("contenders not empty");
     let same_rank: Vec<&RouteConflictContenderV1> = ordered
         .iter()
-        .filter(|candidate| candidate.priority == winner.priority && candidate.target != winner.target)
+        .filter(|candidate| {
+            candidate.priority == winner.priority && candidate.target != winner.target
+        })
         .collect();
     if same_rank.is_empty() {
         Ok(RouteConflictResolutionV1 {
@@ -392,10 +392,9 @@ pub fn enforce_plugin_trust_class_behavior(
     }
     let decision = match (trust_class, command_risk) {
         ("disabled", _) => (false, "plugin trust class is disabled"),
-        ("experimental", "destructive") if !experimental_destructive_enabled => (
-            false,
-            "experimental destructive command requires explicit enable flag",
-        ),
+        ("experimental", "destructive") if !experimental_destructive_enabled => {
+            (false, "experimental destructive command requires explicit enable flag")
+        }
         ("experimental", "destructive") => (true, "experimental destructive override enabled"),
         (_, _) => (true, "trust policy allows command"),
     };
@@ -455,19 +454,15 @@ pub fn build_app_capability_discovery_report(
 #[cfg(test)]
 mod tests {
     use super::{
-        build_app_route_provenance_record,
-        build_app_capability_discovery_report,
-        build_plugin_scaffold_conformance_report,
-        build_sdk_example_conformance_report,
-        enforce_plugin_trust_class_behavior,
-        resolve_route_conflict_deterministically,
-        evaluate_legacy_shim_policy,
-        evaluate_official_app_descriptor_compatibility,
-        validate_executable_plugin_manifest_contract, validate_plugin_subprocess_execution_policy, RouteConflictContenderV1,
+        build_app_capability_discovery_report, build_app_route_provenance_record,
+        build_plugin_scaffold_conformance_report, build_sdk_example_conformance_report,
+        enforce_plugin_trust_class_behavior, evaluate_legacy_shim_policy,
+        evaluate_official_app_descriptor_compatibility, resolve_route_conflict_deterministically,
+        validate_executable_plugin_manifest_contract, validate_plugin_subprocess_execution_policy,
         ExecutablePluginManifestContractV1, LegacyShimPolicyDecisionV1,
-        PluginScaffoldConformanceEntryV1, PluginTrustEnforcementDecisionV1,
-        SdkExampleConformanceEntryV1,
-        PluginSubprocessExecutionPolicyV1, OfficialAppDescriptorCompatibilityInputV1,
+        OfficialAppDescriptorCompatibilityInputV1, PluginScaffoldConformanceEntryV1,
+        PluginSubprocessExecutionPolicyV1, PluginTrustEnforcementDecisionV1,
+        RouteConflictContenderV1, SdkExampleConformanceEntryV1,
     };
 
     #[test]
@@ -558,13 +553,7 @@ mod tests {
             ],
         )
         .expect("conflict resolution should succeed");
-        assert_eq!(
-            resolution
-                .winner
-                .expect("winner")
-                .target,
-            "official.dag.run"
-        );
+        assert_eq!(resolution.winner.expect("winner").target, "official.dag.run");
         assert!(resolution.refusal_reason.is_none());
     }
 

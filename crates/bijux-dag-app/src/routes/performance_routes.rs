@@ -267,7 +267,12 @@ fn large_graph_corpus_payload(simulation: &Path) -> Result<LargeGraphCorpusRepor
             let generated_nodes = *target;
             let generated_edges = generated_nodes.saturating_mul(simulation.avg_fanout);
             let expanded_nodes = generated_nodes.saturating_mul(simulation.expansion_multiplier);
-            LargeGraphCorpusEntry { target_nodes: *target, generated_nodes, generated_edges, expanded_nodes }
+            LargeGraphCorpusEntry {
+                target_nodes: *target,
+                generated_nodes,
+                generated_edges,
+                expanded_nodes,
+            }
         })
         .collect::<Vec<_>>();
     corpus_entries.sort_by_key(|entry| entry.target_nodes);
@@ -275,9 +280,8 @@ fn large_graph_corpus_payload(simulation: &Path) -> Result<LargeGraphCorpusRepor
     let includes_100_nodes = corpus_entries.iter().any(|entry| entry.target_nodes == 100);
     let includes_1k_nodes = corpus_entries.iter().any(|entry| entry.target_nodes == 1_000);
     let includes_10k_nodes = corpus_entries.iter().any(|entry| entry.target_nodes == 10_000);
-    let within_generation_bound = corpus_entries
-        .iter()
-        .all(|entry| entry.expanded_nodes <= simulation.max_generated_nodes);
+    let within_generation_bound =
+        corpus_entries.iter().all(|entry| entry.expanded_nodes <= simulation.max_generated_nodes);
     let mut gaps = Vec::new();
     if !includes_100_nodes {
         gaps.push("corpus does not include 100-node fixture".to_string());
@@ -324,7 +328,8 @@ fn canonicalization_profile_payload(
             let regression_pct = if sample.before_ms == 0 {
                 0.0
             } else {
-                ((sample.after_ms as f64 - sample.before_ms as f64) / sample.before_ms as f64) * 100.0
+                ((sample.after_ms as f64 - sample.before_ms as f64) / sample.before_ms as f64)
+                    * 100.0
             };
             regression_pct > simulation.max_allowed_regression_pct
         })
@@ -379,9 +384,7 @@ fn artifact_write_profile_payload(
     simulation: &Path,
 ) -> Result<ArtifactWriteProfileReport, ExitCode> {
     let simulation: ArtifactWriteProfileSimulation = load_json_file(simulation)?;
-    let write_ops_total = simulation
-        .small_write_count
-        .saturating_add(simulation.large_write_count);
+    let write_ops_total = simulation.small_write_count.saturating_add(simulation.large_write_count);
     let throughput_bytes_per_sec = if simulation.elapsed_ms == 0 {
         0.0
     } else {
@@ -548,7 +551,8 @@ fn performance_regression_gates_payload(
             if sample.baseline_ms == 0 {
                 false
             } else {
-                ((sample.current_ms as f64 - sample.baseline_ms as f64) / sample.baseline_ms as f64) * 100.0
+                ((sample.current_ms as f64 - sample.baseline_ms as f64) / sample.baseline_ms as f64)
+                    * 100.0
                     > simulation.max_regression_pct
             }
         })
@@ -557,18 +561,13 @@ fn performance_regression_gates_payload(
     failing_metrics.sort();
 
     let override_valid = if simulation.override_applied {
-        simulation
-            .override_reason
-            .as_ref()
-            .is_some_and(|reason| !reason.trim().is_empty())
-            && simulation
-                .override_ticket
-                .as_ref()
-                .is_some_and(|ticket| !ticket.trim().is_empty())
+        simulation.override_reason.as_ref().is_some_and(|reason| !reason.trim().is_empty())
+            && simulation.override_ticket.as_ref().is_some_and(|ticket| !ticket.trim().is_empty())
     } else {
         true
     };
-    let gates_passed = failing_metrics.is_empty() || (simulation.override_applied && override_valid);
+    let gates_passed =
+        failing_metrics.is_empty() || (simulation.override_applied && override_valid);
     let mut gaps = Vec::new();
     if !failing_metrics.is_empty() && !simulation.override_applied {
         gaps.push("performance regression gate failure requires override or fix".to_string());
@@ -594,8 +593,8 @@ pub(crate) fn handle_performance_command(
 ) -> Result<ExitCode, ExitCode> {
     match command {
         PerformanceCommands::LatencyBudgets { simulation } => {
-            let payload =
-                serde_json::to_value(latency_budgets_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(latency_budgets_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.performance.latency-budgets",
@@ -630,8 +629,8 @@ pub(crate) fn handle_performance_command(
             )
         }
         PerformanceCommands::SchedulerChurn { simulation } => {
-            let payload =
-                serde_json::to_value(scheduler_churn_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(scheduler_churn_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.performance.scheduler-churn",
@@ -654,8 +653,8 @@ pub(crate) fn handle_performance_command(
             )
         }
         PerformanceCommands::MemoryCeilings { simulation } => {
-            let payload =
-                serde_json::to_value(memory_ceilings_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(memory_ceilings_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.performance.memory-ceilings",
@@ -666,8 +665,8 @@ pub(crate) fn handle_performance_command(
             )
         }
         PerformanceCommands::StreamingOutput { simulation } => {
-            let payload =
-                serde_json::to_value(streaming_output_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(streaming_output_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.performance.streaming-output",
@@ -678,8 +677,8 @@ pub(crate) fn handle_performance_command(
             )
         }
         PerformanceCommands::RunHistoryCompaction { simulation } => {
-            let payload =
-                serde_json::to_value(run_history_compaction_payload(simulation)?).map_err(|_| ExitCode::from(3))?;
+            let payload = serde_json::to_value(run_history_compaction_payload(simulation)?)
+                .map_err(|_| ExitCode::from(3))?;
             emit_json(
                 cli,
                 "dag.performance.run-history-compaction",
@@ -794,7 +793,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli = quiet_json_cli(PerformanceCommands::LargeGraphCorpus { simulation: simulation.clone() });
+        let cli = quiet_json_cli(PerformanceCommands::LargeGraphCorpus {
+            simulation: simulation.clone(),
+        });
         let code = handle_performance_command(
             &cli,
             &PerformanceCommands::LargeGraphCorpus { simulation: simulation.clone() },
@@ -854,8 +855,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli =
-            quiet_json_cli(PerformanceCommands::CanonicalizationProfile { simulation: simulation.clone() });
+        let cli = quiet_json_cli(PerformanceCommands::CanonicalizationProfile {
+            simulation: simulation.clone(),
+        });
         let code = handle_performance_command(
             &cli,
             &PerformanceCommands::CanonicalizationProfile { simulation: simulation.clone() },
@@ -903,7 +905,8 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli = quiet_json_cli(PerformanceCommands::SchedulerChurn { simulation: simulation.clone() });
+        let cli =
+            quiet_json_cli(PerformanceCommands::SchedulerChurn { simulation: simulation.clone() });
         let code = handle_performance_command(
             &cli,
             &PerformanceCommands::SchedulerChurn { simulation: simulation.clone() },
@@ -958,8 +961,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli =
-            quiet_json_cli(PerformanceCommands::ArtifactWriteProfile { simulation: simulation.clone() });
+        let cli = quiet_json_cli(PerformanceCommands::ArtifactWriteProfile {
+            simulation: simulation.clone(),
+        });
         let code = handle_performance_command(
             &cli,
             &PerformanceCommands::ArtifactWriteProfile { simulation: simulation.clone() },
@@ -1025,7 +1029,8 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli = quiet_json_cli(PerformanceCommands::MemoryCeilings { simulation: simulation.clone() });
+        let cli =
+            quiet_json_cli(PerformanceCommands::MemoryCeilings { simulation: simulation.clone() });
         let code = handle_performance_command(
             &cli,
             &PerformanceCommands::MemoryCeilings { simulation: simulation.clone() },
@@ -1136,8 +1141,9 @@ mod tests {
             }"#,
         )
         .expect("write simulation");
-        let cli =
-            quiet_json_cli(PerformanceCommands::RunHistoryCompaction { simulation: simulation.clone() });
+        let cli = quiet_json_cli(PerformanceCommands::RunHistoryCompaction {
+            simulation: simulation.clone(),
+        });
         let code = handle_performance_command(
             &cli,
             &PerformanceCommands::RunHistoryCompaction { simulation: simulation.clone() },
