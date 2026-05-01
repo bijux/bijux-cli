@@ -266,9 +266,47 @@ pub fn authorize_plugin_execution(
     })
 }
 
+/// Bounded shell output capture report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ShellOutputCaptureReportV1 {
+    pub stdout_bytes_captured: usize,
+    pub stderr_bytes_captured: usize,
+    pub stdout_truncated: bool,
+    pub stderr_truncated: bool,
+    pub overflow_artifact_pointer: Option<String>,
+}
+
+/// Capture shell output under bounded byte limits.
+pub fn capture_shell_output_bounded(
+    stdout_bytes_produced: usize,
+    stderr_bytes_produced: usize,
+    max_capture_bytes: usize,
+) -> Result<ShellOutputCaptureReportV1, String> {
+    if max_capture_bytes == 0 {
+        return Err("max_capture_bytes must be positive".to_string());
+    }
+    let stdout_bytes_captured = stdout_bytes_produced.min(max_capture_bytes);
+    let stderr_bytes_captured = stderr_bytes_produced.min(max_capture_bytes);
+    let stdout_truncated = stdout_bytes_produced > max_capture_bytes;
+    let stderr_truncated = stderr_bytes_produced > max_capture_bytes;
+    let overflow_artifact_pointer = if stdout_truncated || stderr_truncated {
+        Some("artifacts/runtime/shell-output-overflow.log".to_string())
+    } else {
+        None
+    };
+    Ok(ShellOutputCaptureReportV1 {
+        stdout_bytes_captured,
+        stderr_bytes_captured,
+        stdout_truncated,
+        stderr_truncated,
+        overflow_artifact_pointer,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        capture_shell_output_bounded,
         authorize_plugin_execution,
         classify_network_policy_trust, enforce_environment_allowlist, enforce_write_boundary,
         redact_sensitive_values, validate_bundle_import_safety, NetworkPolicyLabelV1,
@@ -385,5 +423,19 @@ mod tests {
         .expect("mutated decision");
         assert!(!mutated.allowed);
         assert_eq!(mutated.trust_class, "degraded");
+    }
+
+    #[test]
+    fn g087_shell_output_capture_is_bounded_and_points_to_overflow_artifact() {
+        let report = capture_shell_output_bounded(8192, 256, 1024).expect("capture report");
+        assert_eq!(report.stdout_bytes_captured, 1024);
+        assert_eq!(report.stderr_bytes_captured, 256);
+        assert!(report.stdout_truncated);
+        assert!(!report.stderr_truncated);
+        assert!(report
+            .overflow_artifact_pointer
+            .as_deref()
+            .unwrap_or_default()
+            .contains("shell-output-overflow.log"));
     }
 }
