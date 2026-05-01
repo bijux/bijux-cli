@@ -99,11 +99,61 @@ pub fn enforce_app_compatibility_window(
     }
 }
 
+/// Deprecation lifecycle action.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DeprecationActionV1 {
+    pub action: String,
+    pub message: String,
+    pub migration_hint: String,
+}
+
+/// Evaluate command/config deprecation lifecycle by version phase.
+pub fn evaluate_deprecation_lifecycle(
+    current_version: u32,
+    warn_after: u32,
+    migrate_after: u32,
+    refuse_after: u32,
+    replacement: &str,
+) -> Result<DeprecationActionV1, String> {
+    if replacement.trim().is_empty() {
+        return Err("replacement must not be empty".to_string());
+    }
+    if !(warn_after <= migrate_after && migrate_after <= refuse_after) {
+        return Err("deprecation thresholds must be monotonic".to_string());
+    }
+    if current_version >= refuse_after {
+        return Ok(DeprecationActionV1 {
+            action: "refuse".to_string(),
+            message: "deprecated command is no longer accepted".to_string(),
+            migration_hint: format!("use {replacement}"),
+        });
+    }
+    if current_version >= migrate_after {
+        return Ok(DeprecationActionV1 {
+            action: "migrate".to_string(),
+            message: "automatic migration path should be applied".to_string(),
+            migration_hint: format!("migrate to {replacement}"),
+        });
+    }
+    if current_version >= warn_after {
+        return Ok(DeprecationActionV1 {
+            action: "warn".to_string(),
+            message: "deprecated command remains available with warning".to_string(),
+            migration_hint: format!("plan migration to {replacement}"),
+        });
+    }
+    Ok(DeprecationActionV1 {
+        action: "none".to_string(),
+        message: "deprecation not active yet".to_string(),
+        migration_hint: format!("future replacement: {replacement}"),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        diff_route_inventory, enforce_app_compatibility_window, resolve_app_workspace_config,
-        AppWorkspaceConfigV1,
+        diff_route_inventory, enforce_app_compatibility_window, evaluate_deprecation_lifecycle,
+        resolve_app_workspace_config, AppWorkspaceConfigV1,
     };
 
     #[test]
@@ -150,5 +200,16 @@ mod tests {
         assert!(!above.compatible);
         let ok = enforce_app_compatibility_window(4, 3, 6);
         assert!(ok.compatible);
+    }
+
+    #[test]
+    fn g104_deprecation_lifecycle_produces_warn_migrate_and_refuse_with_hints() {
+        let warn = evaluate_deprecation_lifecycle(5, 4, 7, 10, "dag run").expect("warn");
+        assert_eq!(warn.action, "warn");
+        let migrate = evaluate_deprecation_lifecycle(8, 4, 7, 10, "dag run").expect("migrate");
+        assert_eq!(migrate.action, "migrate");
+        let refuse = evaluate_deprecation_lifecycle(10, 4, 7, 10, "dag run").expect("refuse");
+        assert_eq!(refuse.action, "refuse");
+        assert!(refuse.migration_hint.contains("dag run"));
     }
 }
