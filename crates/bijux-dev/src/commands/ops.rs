@@ -3680,77 +3680,44 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
             ));
         }
     }
-    let publishable_report = evaluate_publishable_crates(&root)?;
-    if !publishable_report["ok"].as_bool().unwrap_or(false) {
+    let report = evaluate_distribution_delivery_goals(&root)?;
+    if !report["ok"].as_bool().unwrap_or(false) {
         return Err(format!(
-            "publishable crate contract failed: {}",
-            serde_json::to_string(&publishable_report).unwrap_or_else(|_| "invalid report".to_string())
-        ));
-    }
-    let python_bridge_report = evaluate_python_bridge_distribution(&root)?;
-    if !python_bridge_report["ok"].as_bool().unwrap_or(false) {
-        return Err(format!(
-            "python bridge distribution contract failed: {}",
-            serde_json::to_string(&python_bridge_report).unwrap_or_else(|_| "invalid report".to_string())
-        ));
-    }
-    let release_artifact_report = evaluate_release_artifacts_runnable(&root)?;
-    if !release_artifact_report["ok"].as_bool().unwrap_or(false) {
-        return Err(format!(
-            "release artifact runnable contract failed: {}",
-            serde_json::to_string(&release_artifact_report).unwrap_or_else(|_| "invalid report".to_string())
-        ));
-    }
-    let example_index_report = evaluate_example_task_index(&root)?;
-    if !example_index_report["ok"].as_bool().unwrap_or(false) {
-        return Err(format!(
-            "example task discoverability contract failed: {}",
-            serde_json::to_string(&example_index_report).unwrap_or_else(|_| "invalid report".to_string())
-        ));
-    }
-    let executable_docs_report = evaluate_executable_docs_recipes(&root)?;
-    if !executable_docs_report["ok"].as_bool().unwrap_or(false) {
-        return Err(format!(
-            "executable docs recipe contract failed: {}",
-            serde_json::to_string(&executable_docs_report).unwrap_or_else(|_| "invalid report".to_string())
-        ));
-    }
-    let install_paths_report = evaluate_install_paths_predictable(&root)?;
-    if !install_paths_report["ok"].as_bool().unwrap_or(false) {
-        return Err(format!(
-            "install path predictability contract failed: {}",
-            serde_json::to_string(&install_paths_report).unwrap_or_else(|_| "invalid report".to_string())
-        ));
-    }
-    let dev_loop_report = evaluate_local_dev_loop_focus(&root)?;
-    if !dev_loop_report["ok"].as_bool().unwrap_or(false) {
-        return Err(format!(
-            "local development loop focus contract failed: {}",
-            serde_json::to_string(&dev_loop_report).unwrap_or_else(|_| "invalid report".to_string())
-        ));
-    }
-    let app_integration_report = evaluate_app_integration_documentation(&root)?;
-    if !app_integration_report["ok"].as_bool().unwrap_or(false) {
-        return Err(format!(
-            "app integration documentation contract failed: {}",
-            serde_json::to_string(&app_integration_report).unwrap_or_else(|_| "invalid report".to_string())
-        ));
-    }
-    let limitations_report = evaluate_limitations_visibility(&root)?;
-    if !limitations_report["ok"].as_bool().unwrap_or(false) {
-        return Err(format!(
-            "user-facing limitations visibility contract failed: {}",
-            serde_json::to_string(&limitations_report).unwrap_or_else(|_| "invalid report".to_string())
-        ));
-    }
-    let production_candidate_report = evaluate_production_candidate_suite(&root)?;
-    if !production_candidate_report["ok"].as_bool().unwrap_or(false) {
-        return Err(format!(
-            "production candidate suite failed: {}",
-            serde_json::to_string(&production_candidate_report).unwrap_or_else(|_| "invalid report".to_string())
+            "distribution delivery contract failed: {}",
+            serde_json::to_string(&report).unwrap_or_else(|_| "invalid report".to_string())
         ));
     }
     Ok(())
+}
+
+pub(super) fn run_distribution_delivery_contract_report() -> Result<Value, String> {
+    let root = repo_root()?;
+    evaluate_distribution_delivery_goals(&root)
+}
+
+fn evaluate_distribution_delivery_goals(root: &Path) -> Result<Value, String> {
+    let reports = vec![
+        evaluate_publishable_crates(root)?,
+        evaluate_python_bridge_distribution(root)?,
+        evaluate_release_artifacts_runnable(root)?,
+        evaluate_example_task_index(root)?,
+        evaluate_executable_docs_recipes(root)?,
+        evaluate_install_paths_predictable(root)?,
+        evaluate_local_dev_loop_focus(root)?,
+        evaluate_app_integration_documentation(root)?,
+        evaluate_limitations_visibility(root)?,
+        evaluate_production_candidate_suite(root)?,
+    ];
+    let failed_goals: Vec<String> = reports
+        .iter()
+        .filter(|report| !report["ok"].as_bool().unwrap_or(false))
+        .map(|report| report["goal"].as_str().unwrap_or("unknown").to_string())
+        .collect();
+    Ok(json!({
+        "ok": failed_goals.is_empty(),
+        "goals": reports,
+        "failed_goals": failed_goals,
+    }))
 }
 
 pub(super) fn run_drift_dashboard() -> Result<(), String> {

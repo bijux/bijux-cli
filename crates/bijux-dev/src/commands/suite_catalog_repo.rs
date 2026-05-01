@@ -561,6 +561,15 @@ pub(super) const REPO_SUITES: &[SuiteDef] = &[
         run: || run_adoption_surfaces_guard(),
     },
     SuiteDef {
+        id: "distribution-delivery",
+        description: "distribution delivery goals for packages docs paths examples and release candidate",
+        domain: "release",
+        slow: true,
+        internal: false,
+        effect: CommandEffect::Validation,
+        run: || run_release_artifact_verification_suite(),
+    },
+    SuiteDef {
         id: "anti-drift-governance",
         description: "anti-drift policy docs checks dashboard and trust evidence alignment",
         domain: "governance",
