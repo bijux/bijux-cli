@@ -168,13 +168,43 @@ pub fn build_failure_retry_scenario_report(
     Ok(report)
 }
 
+/// Cache-heavy scenario proof report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheHeavyScenarioReportV1 {
+    pub cache_hit_nodes: usize,
+    pub cache_miss_nodes: usize,
+    pub non_cacheable_nodes: usize,
+    pub cache_explain_covered_all_nodes: bool,
+}
+
+/// Build cache-heavy scenario proof.
+pub fn build_cache_heavy_scenario_report(
+    report: CacheHeavyScenarioReportV1,
+) -> Result<CacheHeavyScenarioReportV1, String> {
+    if report.cache_hit_nodes == 0 {
+        return Err("scenario must include at least one cache hit".to_string());
+    }
+    if report.cache_miss_nodes == 0 {
+        return Err("scenario must include at least one cache miss".to_string());
+    }
+    if report.non_cacheable_nodes == 0 {
+        return Err("scenario must include at least one non-cacheable node".to_string());
+    }
+    if !report.cache_explain_covered_all_nodes {
+        return Err("cache explain must cover every node".to_string());
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_branch_join_scenario_report, build_hello_dag_scenario_report,
-        build_failure_retry_scenario_report, build_reducer_scenario_report,
+        build_cache_heavy_scenario_report, build_failure_retry_scenario_report,
+        build_reducer_scenario_report,
         build_shell_etl_scenario_report, BranchJoinScenarioReportV1, FailureRetryScenarioReportV1,
-        HelloDagScenarioReportV1, ReducerScenarioReportV1, ShellEtlScenarioReportV1,
+        CacheHeavyScenarioReportV1, HelloDagScenarioReportV1, ReducerScenarioReportV1,
+        ShellEtlScenarioReportV1,
     };
 
     #[test]
@@ -247,5 +277,18 @@ mod tests {
         .expect("failure retry scenario");
         assert!(report.retryable_failure_seen);
         assert!(report.non_retryable_failure_seen);
+    }
+
+    #[test]
+    fn g096_cache_heavy_scenario_proves_hit_miss_noncacheable_with_explain() {
+        let report = build_cache_heavy_scenario_report(CacheHeavyScenarioReportV1 {
+            cache_hit_nodes: 3,
+            cache_miss_nodes: 2,
+            non_cacheable_nodes: 1,
+            cache_explain_covered_all_nodes: true,
+        })
+        .expect("cache heavy scenario");
+        assert_eq!(report.cache_hit_nodes, 3);
+        assert_eq!(report.non_cacheable_nodes, 1);
     }
 }
