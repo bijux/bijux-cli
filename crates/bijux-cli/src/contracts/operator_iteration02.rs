@@ -181,13 +181,57 @@ pub fn evaluate_official_app_descriptor_compatibility(
     }
 }
 
+/// Legacy shim support policy decision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct LegacyShimPolicyDecisionV1 {
+    /// Invoked legacy shim command (e.g. `bijux-dag`).
+    pub shim_command: String,
+    /// Canonical command replacement (e.g. `bijux dag`).
+    pub canonical_command: String,
+    /// Decision (`supported`, `warned`, `refused`).
+    pub decision: String,
+    /// Human actionable message.
+    pub message: String,
+}
+
+/// Evaluate legacy shim policy and provide canonical route mapping.
+pub fn evaluate_legacy_shim_policy(
+    shim_command: &str,
+    canonical_command: &str,
+    shim_mode: &str,
+) -> Result<LegacyShimPolicyDecisionV1, String> {
+    if shim_command.trim().is_empty() || canonical_command.trim().is_empty() {
+        return Err("shim_command and canonical_command cannot be empty".to_string());
+    }
+    let (decision, message) = match shim_mode {
+        "supported" => (
+            "supported",
+            "legacy shim is temporarily supported; prefer canonical command",
+        ),
+        "warned" => (
+            "warned",
+            "legacy shim is deprecated; migrate to canonical command",
+        ),
+        "refused" => ("refused", "legacy shim refused; use canonical command"),
+        _ => return Err("shim_mode must be supported, warned, or refused".to_string()),
+    };
+    Ok(LegacyShimPolicyDecisionV1 {
+        shim_command: shim_command.to_string(),
+        canonical_command: canonical_command.to_string(),
+        decision: decision.to_string(),
+        message: message.to_string(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_plugin_scaffold_conformance_report,
+        evaluate_legacy_shim_policy,
         evaluate_official_app_descriptor_compatibility,
         validate_executable_plugin_manifest_contract, validate_plugin_subprocess_execution_policy,
-        ExecutablePluginManifestContractV1, PluginScaffoldConformanceEntryV1,
+        ExecutablePluginManifestContractV1, LegacyShimPolicyDecisionV1,
+        PluginScaffoldConformanceEntryV1,
         PluginSubprocessExecutionPolicyV1, OfficialAppDescriptorCompatibilityInputV1,
     };
 
@@ -250,5 +294,14 @@ mod tests {
         )
         .expect("compatibility report should build");
         assert!(!report.compatible);
+    }
+
+    #[test]
+    fn g015_legacy_shim_policy_warns_with_canonical_route() {
+        let decision: LegacyShimPolicyDecisionV1 =
+            evaluate_legacy_shim_policy("bijux-dag", "bijux dag", "warned")
+                .expect("shim decision should build");
+        assert_eq!(decision.decision, "warned");
+        assert_eq!(decision.canonical_command, "bijux dag");
     }
 }
