@@ -162,13 +162,69 @@ pub fn build_actionable_error_envelope(
     })
 }
 
+/// Explain contract with route target and runtime requirements.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct CommandExplainV1 {
+    /// Command path being explained.
+    pub command: String,
+    /// Route target key used by dispatch.
+    pub route_target: String,
+    /// Handler source (`builtin`, `official-app`, `plugin`).
+    pub handler_source: String,
+    /// Output schema version identifier.
+    pub output_schema: String,
+    /// Side-effect class (`read-only`, `writes-config`, `writes-run`, `executes-adapter`, `destructive`).
+    pub side_effect_class: String,
+    /// Required config keys for successful execution.
+    pub required_config_keys: Vec<String>,
+}
+
+/// Build command explain record for built-ins, official app routes, and plugins.
+pub fn build_command_explain_record(
+    command: &str,
+    route_target: &str,
+    handler_source: &str,
+    output_schema: &str,
+    side_effect_class: &str,
+    required_config_keys: &[&str],
+) -> Result<CommandExplainV1, String> {
+    for (field, value) in [
+        ("command", command),
+        ("route_target", route_target),
+        ("handler_source", handler_source),
+        ("output_schema", output_schema),
+        ("side_effect_class", side_effect_class),
+    ] {
+        if value.trim().is_empty() {
+            return Err(format!("{field} cannot be empty"));
+        }
+    }
+    let mut required: Vec<String> = required_config_keys
+        .iter()
+        .map(|value| value.trim())
+        .filter(|value| !value.is_empty())
+        .map(ToString::to_string)
+        .collect();
+    required.sort();
+    required.dedup();
+    Ok(CommandExplainV1 {
+        command: command.to_string(),
+        route_target: route_target.to_string(),
+        handler_source: handler_source.to_string(),
+        output_schema: output_schema.to_string(),
+        side_effect_class: side_effect_class.to_string(),
+        required_config_keys: required,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
 
     use super::{
-        build_actionable_error_envelope, build_compact_operator_help_entrypoint,
-        build_script_stable_command_envelope, ActionableFailureClassV1,
+        build_actionable_error_envelope, build_command_explain_record,
+        build_compact_operator_help_entrypoint, build_script_stable_command_envelope,
+        ActionableFailureClassV1,
     };
 
     #[test]
@@ -217,5 +273,21 @@ mod tests {
             error.evidence_pointer.as_deref(),
             Some("artifacts/cli/errors/plugin-manifest-invalid.log")
         );
+    }
+
+    #[test]
+    fn g004_command_explain_includes_route_and_side_effect_contract() {
+        let record = build_command_explain_record(
+            "bijux dag run",
+            "dag.runtime.run",
+            "official-app",
+            "dag-run-envelope-v1",
+            "writes-run",
+            &["dag.run_root", "dag.cache_root"],
+        )
+        .expect("explain contract should build");
+        assert_eq!(record.route_target, "dag.runtime.run");
+        assert_eq!(record.handler_source, "official-app");
+        assert_eq!(record.required_config_keys, vec!["dag.cache_root", "dag.run_root"]);
     }
 }
