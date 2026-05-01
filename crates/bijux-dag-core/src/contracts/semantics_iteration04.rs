@@ -472,12 +472,107 @@ pub fn evaluate_trigger_truth_table_row(
     Ok(TriggerTruthTableRowV1 { profile, parent_states, quorum_threshold, runnable })
 }
 
+/// Matrix expansion refusal details.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MatrixExpansionRefusalV1 {
+    /// Stable refusal code.
+    pub code: String,
+    /// Reason details.
+    pub reason: String,
+}
+
+/// Deterministic matrix expansion output.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MatrixExpansionReportV1 {
+    /// Expanded instance identifiers.
+    pub instances: Vec<String>,
+    /// Expansion cardinality.
+    pub cardinality: usize,
+    /// Refusal when expansion is unsafe.
+    pub refusal: Option<MatrixExpansionRefusalV1>,
+}
+
+/// Expand matrix dimensions with deterministic naming and hard cardinality cap.
+pub fn expand_matrix_bounded(
+    node_id: &str,
+    dimensions: &BTreeMap<String, Vec<String>>,
+    max_cardinality: usize,
+) -> MatrixExpansionReportV1 {
+    if dimensions.is_empty() {
+        return MatrixExpansionReportV1 {
+            instances: Vec::new(),
+            cardinality: 0,
+            refusal: Some(MatrixExpansionRefusalV1 {
+                code: "M3801_EMPTY_DIMENSIONS".to_string(),
+                reason: "matrix dimensions must be declared explicitly".to_string(),
+            }),
+        };
+    }
+    let mut cardinality = 1usize;
+    for values in dimensions.values() {
+        if values.is_empty() {
+            return MatrixExpansionReportV1 {
+                instances: Vec::new(),
+                cardinality: 0,
+                refusal: Some(MatrixExpansionRefusalV1 {
+                    code: "M3802_UNBOUNDED_DIMENSION".to_string(),
+                    reason: "dimension cannot be empty".to_string(),
+                }),
+            };
+        }
+        cardinality = cardinality.saturating_mul(values.len());
+        if cardinality > max_cardinality {
+            return MatrixExpansionReportV1 {
+                instances: Vec::new(),
+                cardinality,
+                refusal: Some(MatrixExpansionRefusalV1 {
+                    code: "M3803_EXPLOSIVE_CARDINALITY".to_string(),
+                    reason: format!(
+                        "matrix cardinality {cardinality} exceeds max {max_cardinality}"
+                    ),
+                }),
+            };
+        }
+    }
+
+    let mut keys = dimensions.keys().cloned().collect::<Vec<_>>();
+    keys.sort();
+    let mut products = vec![BTreeMap::<String, String>::new()];
+    for key in keys {
+        let values = dimensions.get(&key).cloned().unwrap_or_default();
+        let mut next = Vec::new();
+        for partial in &products {
+            for value in &values {
+                let mut row = partial.clone();
+                row.insert(key.clone(), value.clone());
+                next.push(row);
+            }
+        }
+        products = next;
+    }
+    let mut instances = products
+        .into_iter()
+        .map(|row| {
+            let labels = row
+                .into_iter()
+                .map(|(key, value)| format!("{key}={value}"))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!("{node_id}[{labels}]")
+        })
+        .collect::<Vec<_>>();
+    instances.sort();
+
+    MatrixExpansionReportV1 { instances, cardinality, refusal: None }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_branch_decision_artifact, build_edge_semantics_snapshot,
         build_optional_upstream_evidence_report,
         evaluate_trigger_readiness_from_states, evaluate_trigger_truth_table_row,
+        expand_matrix_bounded,
         validate_barrier_semantics, validate_reducer_semantics, ReducerOrderingPolicyV1,
         TriggerRuleProfileV1, UpstreamTerminalStateV1,
     };
@@ -671,5 +766,23 @@ mod tests {
         )
         .expect("skipped-aware row");
         assert!(skipped_aware.runnable);
+    }
+
+    #[test]
+    fn g038_matrix_expansion_is_bounded_and_refuses_explosive_cardinality() {
+        let dimensions = BTreeMap::from([
+            ("chromosome".to_string(), vec!["1".to_string(), "2".to_string()]),
+            ("sample".to_string(), vec!["s1".to_string(), "s2".to_string()]),
+        ]);
+        let ok = expand_matrix_bounded("align", &dimensions, 8);
+        assert!(ok.refusal.is_none());
+        assert_eq!(ok.cardinality, 4);
+        assert!(ok.instances[0].starts_with("align[chromosome="));
+
+        let refused = expand_matrix_bounded("align", &dimensions, 3);
+        assert_eq!(
+            refused.refusal.as_ref().map(|value| value.code.as_str()),
+            Some("M3803_EXPLOSIVE_CARDINALITY")
+        );
     }
 }
