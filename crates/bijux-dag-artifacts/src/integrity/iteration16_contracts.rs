@@ -122,9 +122,54 @@ pub fn enforce_retention_class(
     RetentionDecisionV1 { class, replay_critical, allow_delete, reason }
 }
 
+/// Cache GC candidate row.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheGcCandidateV1 {
+    pub cache_key: String,
+    pub referenced_by_run_evidence: bool,
+    pub safe_by_policy: bool,
+}
+
+/// Cache GC dry-run entry.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheGcDryRunEntryV1 {
+    pub cache_key: String,
+    pub would_remove: bool,
+    pub reason: String,
+}
+
+/// Cache GC dry-run report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheGcDryRunReportV1 {
+    pub entries: Vec<CacheGcDryRunEntryV1>,
+}
+
+/// Build evidence-safe cache garbage collection dry-run report.
+pub fn build_cache_gc_dry_run(candidates: &[CacheGcCandidateV1]) -> CacheGcDryRunReportV1 {
+    let entries = candidates
+        .iter()
+        .map(|candidate| {
+            let (would_remove, reason) = if candidate.referenced_by_run_evidence {
+                (false, "cache entry is referenced by run evidence".to_string())
+            } else if !candidate.safe_by_policy {
+                (false, "cache entry is blocked by policy".to_string())
+            } else {
+                (true, "cache entry is unreferenced and policy-safe".to_string())
+            };
+            CacheGcDryRunEntryV1 {
+                cache_key: candidate.cache_key.clone(),
+                would_remove,
+                reason,
+            }
+        })
+        .collect();
+    CacheGcDryRunReportV1 { entries }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        build_cache_gc_dry_run, CacheGcCandidateV1,
         enforce_retention_class, RetentionClassV1,
         validate_artifact_lifecycle_transition, validate_artifact_schema_descriptor,
         ArtifactLifecycleStateV1, ArtifactSchemaDescriptorV1,
@@ -169,5 +214,35 @@ mod tests {
 
         let non_critical = enforce_retention_class(RetentionClassV1::Operational, 31, false);
         assert!(non_critical.allow_delete);
+    }
+
+    #[test]
+    fn g154_cache_gc_dry_run_explains_evidence_safe_removals() {
+        let report = build_cache_gc_dry_run(&[
+            CacheGcCandidateV1 {
+                cache_key: "keep-evidence".to_string(),
+                referenced_by_run_evidence: true,
+                safe_by_policy: true,
+            },
+            CacheGcCandidateV1 {
+                cache_key: "remove-safe".to_string(),
+                referenced_by_run_evidence: false,
+                safe_by_policy: true,
+            },
+        ]);
+        assert_eq!(report.entries.len(), 2);
+        let keep = report
+            .entries
+            .iter()
+            .find(|entry| entry.cache_key == "keep-evidence")
+            .expect("keep entry");
+        assert!(!keep.would_remove);
+        let remove = report
+            .entries
+            .iter()
+            .find(|entry| entry.cache_key == "remove-safe")
+            .expect("remove entry");
+        assert!(remove.would_remove);
+        assert!(remove.reason.contains("unreferenced"));
     }
 }
