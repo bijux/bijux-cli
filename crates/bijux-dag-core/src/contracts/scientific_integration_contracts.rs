@@ -362,6 +362,64 @@ pub fn attach_truth_set_comparison(
     Ok(())
 }
 
+/// Scientific run trust class attached by mounted apps.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ScientificRunTrustClassV1 {
+    Exploratory,
+    Operational,
+    Audit,
+    Certification,
+    PublicationCandidate,
+}
+
+/// Promotion decision for scientific run trust classes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScientificTrustPromotionDecisionV1 {
+    pub class: ScientificRunTrustClassV1,
+    pub promotable: bool,
+    pub reason: String,
+}
+
+/// Evaluate whether a scientific run class can be promoted under evidence and policy gates.
+pub fn evaluate_scientific_trust_promotion(
+    class: ScientificRunTrustClassV1,
+    evidence_complete: bool,
+    app_policy_allows: bool,
+) -> ScientificTrustPromotionDecisionV1 {
+    let promotable = match class {
+        ScientificRunTrustClassV1::Exploratory => true,
+        ScientificRunTrustClassV1::Operational => app_policy_allows,
+        ScientificRunTrustClassV1::Audit
+        | ScientificRunTrustClassV1::Certification
+        | ScientificRunTrustClassV1::PublicationCandidate => {
+            evidence_complete && app_policy_allows
+        }
+    };
+    let reason = if promotable {
+        "trust-class promotion requirements satisfied".to_string()
+    } else {
+        match class {
+            ScientificRunTrustClassV1::Exploratory => {
+                "unexpected exploratory refusal".to_string()
+            }
+            ScientificRunTrustClassV1::Operational => {
+                "operational promotion requires app policy approval".to_string()
+            }
+            ScientificRunTrustClassV1::Audit
+            | ScientificRunTrustClassV1::Certification
+            | ScientificRunTrustClassV1::PublicationCandidate => {
+                "promotion requires complete evidence and app policy approval".to_string()
+            }
+        }
+    };
+    ScientificTrustPromotionDecisionV1 {
+        class,
+        promotable,
+        reason,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -369,8 +427,10 @@ mod tests {
         ArtifactRoleKindV1, ArtifactRoleMetadataV1, ArtifactSampleIdentityV1,
         ScientificFindingClassV1, ScientificFindingModeV1, ScientificFindingV1,
         ReferenceAliasPolicyV1, ReferenceIdentityMetadataV1, SampleIdentityMismatchActionV1,
+        ScientificRunTrustClassV1,
         SampleIdentityPolicyV1, TruthSetComparisonV1, TruthSetEvidenceEnvelopeV1,
-        attach_truth_set_comparison, normalize_scientific_findings, validate_reference_identity_metadata,
+        attach_truth_set_comparison, evaluate_scientific_trust_promotion,
+        normalize_scientific_findings, validate_reference_identity_metadata,
     };
     use std::collections::BTreeMap;
 
@@ -507,5 +567,30 @@ mod tests {
         .expect("truth-set comparison should attach");
         assert_eq!(envelope.comparisons.len(), 1);
         assert_eq!(envelope.comparisons[0].metric_name, "f1_score");
+    }
+
+    #[test]
+    fn g176_scientific_trust_class_promotion_is_evidence_and_policy_gated() {
+        let exploratory = evaluate_scientific_trust_promotion(
+            ScientificRunTrustClassV1::Exploratory,
+            false,
+            false,
+        );
+        assert!(exploratory.promotable);
+
+        let certification_refused = evaluate_scientific_trust_promotion(
+            ScientificRunTrustClassV1::Certification,
+            false,
+            true,
+        );
+        assert!(!certification_refused.promotable);
+        assert!(certification_refused.reason.contains("complete evidence"));
+
+        let publication_allowed = evaluate_scientific_trust_promotion(
+            ScientificRunTrustClassV1::PublicationCandidate,
+            true,
+            true,
+        );
+        assert!(publication_allowed.promotable);
     }
 }
