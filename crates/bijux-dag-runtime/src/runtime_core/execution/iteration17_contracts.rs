@@ -452,13 +452,83 @@ pub fn compare_runs_complete(
     })
 }
 
+/// Historical node execution row used for flake analysis.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunHistoryEntryV1 {
+    pub run_id: String,
+    pub node_id: String,
+    pub adapter_id: String,
+    pub retries: u32,
+    pub transient_failure: bool,
+}
+
+/// Flake analysis report with unstable surfaces.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FlakeAnalysisReportV1 {
+    pub transient_failure_count: u64,
+    pub flaky_nodes: Vec<String>,
+    pub retry_storm_nodes: Vec<String>,
+    pub unstable_adapters: Vec<String>,
+}
+
+/// Analyze run history for transient failures, retry storms, and unstable adapters.
+pub fn analyze_flake_history(history: &[RunHistoryEntryV1]) -> Result<FlakeAnalysisReportV1, String> {
+    if history.is_empty() {
+        return Err("flake analysis requires non-empty run history".to_string());
+    }
+    let mut transient_failure_count = 0u64;
+    let mut node_transient_counts = BTreeMap::<String, u64>::new();
+    let mut adapter_transient_counts = BTreeMap::<String, u64>::new();
+    let mut retry_storm_nodes = BTreeSet::<String>::new();
+
+    for entry in history {
+        for (field, value) in [
+            ("run_id", entry.run_id.as_str()),
+            ("node_id", entry.node_id.as_str()),
+            ("adapter_id", entry.adapter_id.as_str()),
+        ] {
+            if value.trim().is_empty() {
+                return Err(format!("flake analysis history entry has empty {field}"));
+            }
+        }
+        if entry.transient_failure {
+            transient_failure_count += 1;
+            *node_transient_counts.entry(entry.node_id.clone()).or_insert(0) += 1;
+            *adapter_transient_counts.entry(entry.adapter_id.clone()).or_insert(0) += 1;
+        }
+        if entry.retries >= 3 {
+            retry_storm_nodes.insert(entry.node_id.clone());
+        }
+    }
+
+    let flaky_nodes = node_transient_counts
+        .into_iter()
+        .filter(|(_, count)| *count >= 2)
+        .map(|(node_id, _)| node_id)
+        .collect::<Vec<_>>();
+    let unstable_adapters = adapter_transient_counts
+        .into_iter()
+        .filter(|(_, count)| *count >= 2)
+        .map(|(adapter_id, _)| adapter_id)
+        .collect::<Vec<_>>();
+    let retry_storm_nodes = retry_storm_nodes.into_iter().collect::<Vec<_>>();
+
+    Ok(FlakeAnalysisReportV1 {
+        transient_failure_count,
+        flaky_nodes,
+        retry_storm_nodes,
+        unstable_adapters,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_actionable_run_metrics, compare_runs_complete, reconstruct_useful_timeline,
-        summarize_large_run_compact, validate_end_to_end_correlation_ids, verify_event_taxonomy_complete,
-        CorrelationChainV1, RunComparisonInputV1, RunMetricsSampleV1, RunNodeOutcomeV1,
-        ObservabilityEventDomainV1, ObservabilityEventRecordV1,
+        analyze_flake_history, build_actionable_run_metrics, compare_runs_complete,
+        reconstruct_useful_timeline, summarize_large_run_compact, validate_end_to_end_correlation_ids,
+        verify_event_taxonomy_complete, CorrelationChainV1, ObservabilityEventDomainV1,
+        ObservabilityEventRecordV1, RunComparisonInputV1, RunHistoryEntryV1, RunMetricsSampleV1,
+        RunNodeOutcomeV1,
     };
 
     fn event(domain: ObservabilityEventDomainV1, name: &str) -> ObservabilityEventRecordV1 {
@@ -652,5 +722,37 @@ mod tests {
             ]
         );
         assert!(!report.replay_safe);
+    }
+
+    #[test]
+    fn g167_flake_analysis_identifies_transient_failures_retry_storms_and_unstable_adapters() {
+        let report = analyze_flake_history(&[
+            RunHistoryEntryV1 {
+                run_id: "run-1".to_string(),
+                node_id: "align".to_string(),
+                adapter_id: "shell".to_string(),
+                retries: 4,
+                transient_failure: true,
+            },
+            RunHistoryEntryV1 {
+                run_id: "run-2".to_string(),
+                node_id: "align".to_string(),
+                adapter_id: "shell".to_string(),
+                retries: 1,
+                transient_failure: true,
+            },
+            RunHistoryEntryV1 {
+                run_id: "run-3".to_string(),
+                node_id: "qc".to_string(),
+                adapter_id: "python".to_string(),
+                retries: 0,
+                transient_failure: false,
+            },
+        ])
+        .expect("flake analysis should build");
+        assert_eq!(report.transient_failure_count, 2);
+        assert_eq!(report.flaky_nodes, vec!["align".to_string()]);
+        assert_eq!(report.retry_storm_nodes, vec!["align".to_string()]);
+        assert_eq!(report.unstable_adapters, vec!["shell".to_string()]);
     }
 }
