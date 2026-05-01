@@ -422,11 +422,70 @@ pub fn build_cache_explain_report(
     })
 }
 
+/// Path rewrite evidence for export/import portability.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BundlePathRewriteV1 {
+    pub original_path: String,
+    pub rewritten_path: String,
+}
+
+/// Command contract for export/import portability.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExportImportPortabilityReportV1 {
+    pub source_root: String,
+    pub target_root: String,
+    pub rewrites: Vec<BundlePathRewriteV1>,
+    pub portable: bool,
+}
+
+/// Build portability report by rewriting source-root absolute paths to relative bundle paths.
+pub fn build_export_import_portability_report(
+    source_root: &str,
+    target_root: &str,
+    bundle_paths: Vec<String>,
+) -> Result<ExportImportPortabilityReportV1, String> {
+    if source_root.trim().is_empty() {
+        return Err("source_root must not be empty".to_string());
+    }
+    if target_root.trim().is_empty() {
+        return Err("target_root must not be empty".to_string());
+    }
+    if bundle_paths.is_empty() {
+        return Err("bundle_paths must not be empty".to_string());
+    }
+
+    let source_root = source_root.trim_end_matches('/');
+    let rewrites = bundle_paths
+        .into_iter()
+        .map(|path| {
+            let rewritten = if let Some(stripped) = path.strip_prefix(source_root) {
+                stripped.trim_start_matches('/').to_string()
+            } else {
+                path.clone()
+            };
+            BundlePathRewriteV1 {
+                original_path: path,
+                rewritten_path: rewritten,
+            }
+        })
+        .collect::<Vec<_>>();
+    let portable = rewrites
+        .iter()
+        .all(|entry| !entry.rewritten_path.starts_with(source_root) && !entry.rewritten_path.starts_with('/'));
+    Ok(ExportImportPortabilityReportV1 {
+        source_root: source_root.to_string(),
+        target_root: target_root.to_string(),
+        rewrites,
+        portable,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_cache_explain_report,
         classify_diff_observations,
+        build_export_import_portability_report,
         build_inspect_command_report, build_plan_command_report, build_run_command_report,
         build_replay_command_report, build_status_command_report, build_validate_command_report,
         CacheExplainOutcomeV1, DiffObservationV1, DryPlanNodeRowV1, InspectNodeStateV1,
@@ -654,5 +713,23 @@ mod tests {
         assert!(matches!(miss.outcome, CacheExplainOutcomeV1::Miss));
         assert!(matches!(non_cacheable.outcome, CacheExplainOutcomeV1::NonCacheable));
         assert!(matches!(refusal.outcome, CacheExplainOutcomeV1::UnsafeReuseRefused));
+    }
+
+    #[test]
+    fn g079_export_import_report_rewrites_paths_for_portability() {
+        let report = build_export_import_portability_report(
+            "/workspace/runs/run-1",
+            "/clean-room/imported",
+            vec![
+                "/workspace/runs/run-1/manifest.json".to_string(),
+                "/workspace/runs/run-1/outputs/variants.vcf".to_string(),
+                "relative/proof.json".to_string(),
+            ],
+        )
+        .expect("portability report");
+        assert!(report.portable);
+        assert_eq!(report.rewrites[0].rewritten_path, "manifest.json");
+        assert_eq!(report.rewrites[1].rewritten_path, "outputs/variants.vcf");
+        assert_eq!(report.rewrites[2].rewritten_path, "relative/proof.json");
     }
 }
