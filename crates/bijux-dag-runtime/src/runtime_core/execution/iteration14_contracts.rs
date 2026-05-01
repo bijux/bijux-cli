@@ -382,6 +382,36 @@ pub fn evaluate_backpressure(signals: &BackpressureSignalsV1) -> BackpressureSta
     BackpressureStatusReportV1 { action, visible_status, reasons }
 }
 
+/// Circuit breaker state per adapter/backend surface.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdapterCircuitBreakerStateV1 {
+    pub adapter_id: String,
+    pub failure_count: u32,
+    pub threshold: u32,
+    pub open_until_epoch_ms: u64,
+}
+
+/// Register failure and update circuit breaker state.
+pub fn register_adapter_failure(
+    mut state: AdapterCircuitBreakerStateV1,
+    now_epoch_ms: u64,
+    quarantine_ms: u64,
+) -> AdapterCircuitBreakerStateV1 {
+    state.failure_count = state.failure_count.saturating_add(1);
+    if state.failure_count >= state.threshold.max(1) {
+        state.open_until_epoch_ms = now_epoch_ms.saturating_add(quarantine_ms);
+    }
+    state
+}
+
+/// Decide whether dispatch is allowed for an adapter under circuit breaker policy.
+pub fn dispatch_allowed_with_circuit_breaker(
+    state: &AdapterCircuitBreakerStateV1,
+    now_epoch_ms: u64,
+) -> bool {
+    now_epoch_ms >= state.open_until_epoch_ms
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -389,6 +419,8 @@ mod tests {
         validate_durable_run_queue_snapshot, validate_node_leases, validate_pause_resume_transitions,
         evaluate_checkpoint_resume, AdapterCheckpointContractV1, AdapterCheckpointModeV1,
         evaluate_backpressure, BackpressureActionV1, BackpressureSignalsV1,
+        dispatch_allowed_with_circuit_breaker, register_adapter_failure,
+        AdapterCircuitBreakerStateV1,
         DurableRunQueueSnapshotV1, MultiRunDemandV1, PartialRerunPreviewRequestV1,
         PartialRerunSelectorKindV1, PauseScopeV1, PauseTransitionEventV1, QueueAttemptRecordV1,
         QueueLeaseRecordV1, SchedulerDecisionRecordV1,
@@ -586,5 +618,20 @@ mod tests {
         assert_eq!(refuse.action, BackpressureActionV1::Refuse);
         assert_eq!(refuse.visible_status, "refuse");
         assert!(refuse.reasons.iter().any(|reason| reason == "artifact_store_degraded"));
+    }
+
+    #[test]
+    fn g138_adapter_circuit_breaker_quarantines_repeated_failures() {
+        let initial = AdapterCircuitBreakerStateV1 {
+            adapter_id: "shell".to_string(),
+            failure_count: 1,
+            threshold: 3,
+            open_until_epoch_ms: 0,
+        };
+        let after_second = register_adapter_failure(initial.clone(), 10_000, 5_000);
+        assert!(dispatch_allowed_with_circuit_breaker(&after_second, 10_500));
+        let after_third = register_adapter_failure(after_second, 11_000, 5_000);
+        assert!(!dispatch_allowed_with_circuit_breaker(&after_third, 12_000));
+        assert!(dispatch_allowed_with_circuit_breaker(&after_third, 16_001));
     }
 }
