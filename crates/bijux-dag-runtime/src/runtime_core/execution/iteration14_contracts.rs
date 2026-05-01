@@ -220,13 +220,56 @@ pub fn validate_pause_resume_transitions(events: &[PauseTransitionEventV1]) -> R
     Ok(())
 }
 
+/// Partial rerun selector kind.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PartialRerunSelectorKindV1 {
+    FailedOnly,
+    Downstream,
+    SelectedNodes,
+    ChangedInputClosure,
+}
+
+/// Partial rerun preview request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PartialRerunPreviewRequestV1 {
+    pub selector: PartialRerunSelectorKindV1,
+    pub failed_nodes: Vec<String>,
+    pub selected_nodes: Vec<String>,
+    pub changed_input_closure_nodes: Vec<String>,
+    pub downstream_nodes: Vec<String>,
+}
+
+/// Partial rerun preview report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PartialRerunPreviewReportV1 {
+    pub selected_nodes: Vec<String>,
+    pub previewable: bool,
+}
+
+/// Build preview for partial rerun selector semantics.
+pub fn build_partial_rerun_preview(
+    request: &PartialRerunPreviewRequestV1,
+) -> PartialRerunPreviewReportV1 {
+    let mut selected_nodes = match request.selector {
+        PartialRerunSelectorKindV1::FailedOnly => request.failed_nodes.clone(),
+        PartialRerunSelectorKindV1::Downstream => request.downstream_nodes.clone(),
+        PartialRerunSelectorKindV1::SelectedNodes => request.selected_nodes.clone(),
+        PartialRerunSelectorKindV1::ChangedInputClosure => request.changed_input_closure_nodes.clone(),
+    };
+    selected_nodes.sort();
+    selected_nodes.dedup();
+    PartialRerunPreviewReportV1 { previewable: !selected_nodes.is_empty(), selected_nodes }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        plan_multi_run_fairness, validate_durable_run_queue_snapshot, validate_node_leases,
-        validate_pause_resume_transitions, DurableRunQueueSnapshotV1, MultiRunDemandV1,
-        PauseScopeV1, PauseTransitionEventV1, QueueAttemptRecordV1, QueueLeaseRecordV1,
-        SchedulerDecisionRecordV1,
+        build_partial_rerun_preview, plan_multi_run_fairness,
+        validate_durable_run_queue_snapshot, validate_node_leases, validate_pause_resume_transitions,
+        DurableRunQueueSnapshotV1, MultiRunDemandV1, PartialRerunPreviewRequestV1,
+        PartialRerunSelectorKindV1, PauseScopeV1, PauseTransitionEventV1, QueueAttemptRecordV1,
+        QueueLeaseRecordV1, SchedulerDecisionRecordV1,
     };
     use std::collections::BTreeMap;
 
@@ -359,5 +402,23 @@ mod tests {
         }];
         let error = validate_pause_resume_transitions(&illegal).expect_err("must reject illegal transition");
         assert!(error.contains("illegal pause transition"));
+    }
+
+    #[test]
+    fn g135_partial_rerun_selector_preview_is_deterministic() {
+        let request = PartialRerunPreviewRequestV1 {
+            selector: PartialRerunSelectorKindV1::ChangedInputClosure,
+            failed_nodes: vec!["node-failed".to_string()],
+            selected_nodes: vec!["node-b".to_string(), "node-a".to_string()],
+            changed_input_closure_nodes: vec![
+                "node-c".to_string(),
+                "node-a".to_string(),
+                "node-c".to_string(),
+            ],
+            downstream_nodes: vec!["node-d".to_string()],
+        };
+        let report = build_partial_rerun_preview(&request);
+        assert!(report.previewable);
+        assert_eq!(report.selected_nodes, vec!["node-a".to_string(), "node-c".to_string()]);
     }
 }
