@@ -303,13 +303,43 @@ pub fn capture_shell_output_bounded(
     })
 }
 
+/// Risky override event recorded by runtime.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OverrideAuditEventV1 {
+    pub override_type: String,
+    pub actor: String,
+    pub reason: String,
+}
+
+/// Validate override audit stream for risky runtime choices.
+pub fn validate_override_audit_events(
+    events: Vec<OverrideAuditEventV1>,
+) -> Result<Vec<OverrideAuditEventV1>, String> {
+    if events.is_empty() {
+        return Err("override audit events must not be empty".to_string());
+    }
+    for event in &events {
+        for (field_name, field_value) in [
+            ("override_type", event.override_type.as_str()),
+            ("actor", event.actor.as_str()),
+            ("reason", event.reason.as_str()),
+        ] {
+            if field_value.trim().is_empty() {
+                return Err(format!("override audit field {field_name} must not be empty"));
+            }
+        }
+    }
+    Ok(events)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         capture_shell_output_bounded,
         authorize_plugin_execution,
         classify_network_policy_trust, enforce_environment_allowlist, enforce_write_boundary,
-        redact_sensitive_values, validate_bundle_import_safety, NetworkPolicyLabelV1,
+        redact_sensitive_values, validate_bundle_import_safety, validate_override_audit_events,
+        NetworkPolicyLabelV1, OverrideAuditEventV1,
     };
 
     #[test]
@@ -437,5 +467,39 @@ mod tests {
             .as_deref()
             .unwrap_or_default()
             .contains("shell-output-overflow.log"));
+    }
+
+    #[test]
+    fn g088_override_audit_records_risky_runtime_choices() {
+        let events = validate_override_audit_events(vec![
+            OverrideAuditEventV1 {
+                override_type: "forced_rerun".to_string(),
+                actor: "operator@lab".to_string(),
+                reason: "invalidated stale upstream artifact manually".to_string(),
+            },
+            OverrideAuditEventV1 {
+                override_type: "cache_bypass".to_string(),
+                actor: "operator@lab".to_string(),
+                reason: "cache trust downgraded after backend incident".to_string(),
+            },
+            OverrideAuditEventV1 {
+                override_type: "disabled_redaction".to_string(),
+                actor: "security@lab".to_string(),
+                reason: "temporary forensic exception with case ticket".to_string(),
+            },
+            OverrideAuditEventV1 {
+                override_type: "unsafe_plugin_enablement".to_string(),
+                actor: "operator@lab".to_string(),
+                reason: "plugin not yet signed but needed for emergency pipeline".to_string(),
+            },
+            OverrideAuditEventV1 {
+                override_type: "policy_weakening".to_string(),
+                actor: "admin@lab".to_string(),
+                reason: "temporary local-profile downgrade for incident triage".to_string(),
+            },
+        ])
+        .expect("override audit");
+        assert_eq!(events.len(), 5);
+        assert!(events.iter().any(|event| event.override_type == "cache_bypass"));
     }
 }
