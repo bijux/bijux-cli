@@ -248,18 +248,48 @@ pub fn validate_non_cacheable_execution(
     Ok(record)
 }
 
+/// Graph conformance profile result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphConformanceProfileResultV1 {
+    pub profile: String,
+    pub behavior_checks_passed: bool,
+    pub evidence_checks_passed: bool,
+}
+
+/// Validate graph conformance profile execution.
+pub fn validate_graph_conformance_profile(
+    result: GraphConformanceProfileResultV1,
+) -> Result<GraphConformanceProfileResultV1, String> {
+    if result.profile.trim().is_empty() {
+        return Err("profile must not be empty".to_string());
+    }
+    match result.profile.as_str() {
+        "minimal" | "local-production" | "container-advisory" | "audit" => {}
+        _ => return Err("unknown conformance profile".to_string()),
+    }
+    if !result.behavior_checks_passed {
+        return Err("conformance profile failed behavior checks".to_string());
+    }
+    if !result.evidence_checks_passed {
+        return Err("conformance profile failed evidence checks".to_string());
+    }
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
+        validate_graph_conformance_profile,
         validate_non_cacheable_execution,
         validate_policy_overlay_execution,
         validate_event_recorded_replay,
         validate_matrix_execution, validate_nested_subgraph_execution, validate_partition_execution,
         validate_service_sensor_execution,
         validate_optional_input_execution, validate_quorum_execution, MatrixExecutionRecordV1,
-        NestedSubgraphExecutionRecordV1, OptionalInputExecutionRecordV1, PartitionExecutionRecordV1,
-        QuorumExecutionRecordV1, ServiceSensorExecutionRecordV1, EventRecordedReplayRecordV1,
-        PolicyOverlayExecutionRecordV1, NonCacheableExecutionRecordV1,
+        NestedSubgraphExecutionRecordV1, OptionalInputExecutionRecordV1,
+        PartitionExecutionRecordV1, QuorumExecutionRecordV1, ServiceSensorExecutionRecordV1,
+        EventRecordedReplayRecordV1, PolicyOverlayExecutionRecordV1, NonCacheableExecutionRecordV1,
+        GraphConformanceProfileResultV1,
     };
 
     #[test]
@@ -383,5 +413,23 @@ mod tests {
         })
         .expect("non-cacheable execution");
         assert!(record.cache_reuse_refused);
+    }
+
+    #[test]
+    fn g120_graph_conformance_profiles_are_behavior_based_not_docs_based() {
+        let minimal = validate_graph_conformance_profile(GraphConformanceProfileResultV1 {
+            profile: "minimal".to_string(),
+            behavior_checks_passed: true,
+            evidence_checks_passed: true,
+        })
+        .expect("minimal profile");
+        let audit = validate_graph_conformance_profile(GraphConformanceProfileResultV1 {
+            profile: "audit".to_string(),
+            behavior_checks_passed: true,
+            evidence_checks_passed: true,
+        })
+        .expect("audit profile");
+        assert_eq!(minimal.profile, "minimal");
+        assert_eq!(audit.profile, "audit");
     }
 }
