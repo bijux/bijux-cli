@@ -468,12 +468,86 @@ pub fn run_plan_preflight(
     PlanPreflightReportV1 { runnable: diagnostics.is_empty(), diagnostics }
 }
 
+/// Plan fingerprint trust/explain report.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlanFingerprintTrustReportV1 {
+    /// Execution fingerprint before mutation.
+    pub before_execution_fingerprint: String,
+    /// Execution fingerprint after mutation.
+    pub after_execution_fingerprint: String,
+    /// Whether execution fingerprint changed.
+    pub fingerprint_changed: bool,
+    /// Explain factors for mismatch.
+    pub mismatch_factors: Vec<String>,
+}
+
+/// Compare plan fingerprints and report execution-relevant mismatch factors only.
+pub fn explain_plan_fingerprint_trust(
+    before: &Graph,
+    after: &Graph,
+) -> Result<PlanFingerprintTrustReportV1, GraphError> {
+    let before_plan = lower_graph_to_execution_plan(&compile_graph(before)?.normalized_graph, Default::default())
+        .map_err(|_| GraphError::ValidationFailed)?;
+    let after_plan = lower_graph_to_execution_plan(&compile_graph(after)?.normalized_graph, Default::default())
+        .map_err(|_| GraphError::ValidationFailed)?;
+    let mut mismatch_factors = Vec::new();
+
+    if before_plan.ordering != after_plan.ordering || before_plan.edges != after_plan.edges {
+        mismatch_factors.push("topology".to_string());
+    }
+    let before_node_map = before_plan
+        .nodes
+        .iter()
+        .map(|node| (node.id.clone(), node))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let after_node_map = after_plan
+        .nodes
+        .iter()
+        .map(|node| (node.id.clone(), node))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    for node_id in before_node_map
+        .keys()
+        .chain(after_node_map.keys())
+        .cloned()
+        .collect::<BTreeSet<_>>()
+    {
+        match (before_node_map.get(&node_id), after_node_map.get(&node_id)) {
+            (Some(before_node), Some(after_node)) => {
+                if before_node.io_contract.param_bindings != after_node.io_contract.param_bindings {
+                    mismatch_factors.push(format!("params:{node_id}"));
+                }
+                if before_node.retry.max_attempts != after_node.retry.max_attempts
+                    || before_node.retry.backoff_ms != after_node.retry.backoff_ms
+                {
+                    mismatch_factors.push(format!("retry:{node_id}"));
+                }
+                if before_node.side_effects != after_node.side_effects {
+                    mismatch_factors.push(format!("effects:{node_id}"));
+                }
+                if before_node.outputs != after_node.outputs {
+                    mismatch_factors.push(format!("artifacts:{node_id}"));
+                }
+            }
+            _ => mismatch_factors.push(format!("node_set:{node_id}")),
+        }
+    }
+    mismatch_factors.sort();
+    mismatch_factors.dedup();
+
+    Ok(PlanFingerprintTrustReportV1 {
+        before_execution_fingerprint: before_plan.execution_fingerprint.clone(),
+        after_execution_fingerprint: after_plan.execution_fingerprint.clone(),
+        fingerprint_changed: before_plan.execution_fingerprint != after_plan.execution_fingerprint,
+        mismatch_factors,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         build_complete_dry_plan_output, build_parameter_explain_report, build_plan_explain_report,
-        diff_plans_semantically, run_plan_preflight, ParameterSourceKindV1,
-        PlanPreflightCapabilitiesV1,
+        diff_plans_semantically, explain_plan_fingerprint_trust, run_plan_preflight,
+        ParameterSourceKindV1, PlanPreflightCapabilitiesV1,
     };
     use crate::{DagBuilder, Effect, GraphMeta, NodeBuilder, NodeKind, Resources};
     use std::collections::BTreeSet;
@@ -617,5 +691,45 @@ mod tests {
             .diagnostics
             .iter()
             .any(|diag| diag.code == "PF4505_CPU_EXCEEDS_CAP"));
+    }
+
+    #[test]
+    fn g046_plan_fingerprint_tracks_execution_semantics_not_metadata_noise() {
+        let base = DagBuilder::new()
+            .node(
+                NodeBuilder::new("n1", NodeKind::Const)
+                    .output("out", "artifacts/n1.json")
+                    .build(),
+            )
+            .build();
+        let metadata_only = DagBuilder::new()
+            .graph_meta(GraphMeta {
+                name: "renamed".to_string(),
+                description: Some("noise".to_string()),
+                owners: vec![],
+                tags: vec!["meta".to_string()],
+            })
+            .node(
+                NodeBuilder::new("n1", NodeKind::Const)
+                    .output("out", "artifacts/n1.json")
+                    .build(),
+            )
+            .build();
+        let trust = explain_plan_fingerprint_trust(&base, &metadata_only).expect("trust");
+        assert!(!trust.fingerprint_changed);
+
+        let semantic_change = DagBuilder::new()
+            .node(
+                NodeBuilder::new("n1", NodeKind::Const)
+                    .output("out", "artifacts/renamed.json")
+                    .build(),
+            )
+            .build();
+        let changed = explain_plan_fingerprint_trust(&base, &semantic_change).expect("changed");
+        assert!(changed.fingerprint_changed);
+        assert!(changed
+            .mismatch_factors
+            .iter()
+            .any(|factor| factor.starts_with("artifacts:")));
     }
 }
