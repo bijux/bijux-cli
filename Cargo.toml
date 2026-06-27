@@ -26,17 +26,17 @@ rust-version = "1.86"
 anyhow = "1.0.100"
 bijux-cli = { version = "0.3.5", path = "crates/bijux-cli" }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = { version = "1.0.145", default-features = false, features = ["std"] }
+serde_json = { version = "1.0.150", default-features = false, features = ["std"] }
 serde_yaml = "0.9.34"
 toml = "1.1.2"
 thiserror = "2.0.17"
 tempfile = "3.23.0"
 clap = { version = "4.5.51", features = ["derive"] }
-clap_complete = "4.6.3"
+clap_complete = "4.6.5"
 sha2 = "0.10.9"
 ctrlc = "3.5.1"
 hex = "0.4.3"
-tar = "0.4.44"
+tar = "0.4.46"
 flate2 = "1.1.4"
 base64 = "0.22.1"
 
