@@ -78,6 +78,16 @@ install: $(VENV) ## Install the project into the repo-managed virtualenv under a
 	fi
 	@echo "→ Syncing editable Python package"
 	@set -euo pipefail; \
+	recreate_venv() { \
+	  stale_venv="$(VENV).stale.$$"; \
+	  if [ -d "$(VENV)" ]; then \
+	    mv "$(VENV)" "$${stale_venv}" 2>/dev/null || true; \
+	  fi; \
+	  $(PYTHON) -m venv "$(VENV)"; \
+	  if [ -n "$${stale_venv:-}" ] && [ -d "$${stale_venv}" ]; then \
+	    $(RM) "$${stale_venv}" || true; \
+	  fi; \
+	}; \
 	install_editable_package() { \
 	  $(VENV_PYTHON) -m pip install --disable-pip-version-check --quiet -e "$(PYTHON_EDITABLE_SPEC)" >"$(PIP_EDITABLE_LOG)" 2>&1; \
 	}; \

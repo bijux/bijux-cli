@@ -46,6 +46,8 @@ endif
 
 .PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-cli-structure-check docs-dag-structure-check docs-root-structure-check docs-maintainer-structure-check docs-package-surface-check docs-navigation-check
 
+docs docs-serve docs-deploy docs-check docs-install docs-require: | bootstrap
+
 ##@ Documentation
 docs-require: ## Verify the documentation toolchain and configuration
 	@$(call require_tool,$(MKDOCS_BIN))

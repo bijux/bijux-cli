@@ -132,7 +132,7 @@ def test_native_extension_uses_abi3_for_supported_python_range() -> None:
     pyo3 = manifest["dependencies"]["pyo3"]
     features = set(pyo3["features"])
     assert "abi3-py311" in features
-    assert "extension-module" in features
+    assert "extension-module" not in features
 
 
 def test_source_distribution_supports_metadata_generation_from_the_published_layout() -> None:
@@ -201,7 +201,7 @@ def test_optional_dependency_groups_match_current_repo_workflows() -> None:
     assert optional["docs"] == [
         "mkdocs>=1.6.1,<2.0",
         "mkdocs-autorefs>=1.4.4,<2.0",
-        "mkdocs-git-revision-date-localized-plugin>=1.2,<2.0",
+        "mkdocs-git-revision-date-localized-plugin>=1.5.3,<2.0",
         "mkdocs-glightbox>=0.3,<1.0",
         "mkdocs-include-markdown-plugin>=7.2.1,<8.0",
         "mkdocs-material[imaging]>=9.7.5,<10.0",
@@ -211,7 +211,7 @@ def test_optional_dependency_groups_match_current_repo_workflows() -> None:
     assert optional["build"] == [
         "build>=1.4.0,<2.0",
         "twine>=6.1.0,<7.0",
-        "maturin>=1.7,<2.0",
+        "maturin>=1.9.4,<2.0",
     ]
 
 
