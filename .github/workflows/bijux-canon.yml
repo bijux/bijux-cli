@@ -102,7 +102,7 @@ jobs:
             timeout_minutes: 30
             soft_fail: false
             rust_components: ""
-            pre_run: cargo install cargo-audit --locked
+            pre_run: cargo install cargo-audit --locked --version 0.22.1
             run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- security
             artifact_name: dependency-audit-report
             artifact_path: artifacts/reports
