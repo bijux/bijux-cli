@@ -955,6 +955,7 @@
         "github-policy",
         "pr-approval-policy",
         "release-artifacts",
+        "release-crates",
         "release-ghcr",
         "release-github",
         "release-pypi"
@@ -1046,7 +1047,7 @@
         {
           "key": "BIJUX_CRATES_RELEASE_PACKAGES",
           "type": "string",
-          "value": "bijux-cli"
+          "value": "bijux-cli bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-testkit bijux-dag-app bijux-dag-cli"
         },
         {
           "key": "BIJUX_GHCR_RELEASE_ENABLED",

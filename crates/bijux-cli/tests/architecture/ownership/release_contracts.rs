@@ -78,6 +78,72 @@ fn crate_manifests_declare_clear_publish_metadata() {
             ],
         ),
         (
+            "crates/bijux-dag-core/Cargo.toml",
+            vec![
+                "description = ",
+                "documentation = ",
+                "readme = ",
+                "keywords = [",
+                "categories = [",
+                "Deterministic DAG kernel",
+            ],
+        ),
+        (
+            "crates/bijux-dag-artifacts/Cargo.toml",
+            vec![
+                "description = ",
+                "documentation = ",
+                "readme = ",
+                "keywords = [",
+                "categories = [",
+                "Artifact identity",
+            ],
+        ),
+        (
+            "crates/bijux-dag-runtime/Cargo.toml",
+            vec![
+                "description = ",
+                "documentation = ",
+                "readme = ",
+                "keywords = [",
+                "categories = [",
+                "Execution engine",
+            ],
+        ),
+        (
+            "crates/bijux-dag-app/Cargo.toml",
+            vec![
+                "description = ",
+                "documentation = ",
+                "readme = ",
+                "keywords = [",
+                "categories = [",
+                "Application orchestration",
+            ],
+        ),
+        (
+            "crates/bijux-dag-cli/Cargo.toml",
+            vec![
+                "description = ",
+                "documentation = ",
+                "readme = ",
+                "keywords = [",
+                "categories = [",
+                "Installable command-line package",
+            ],
+        ),
+        (
+            "crates/bijux-dag-testkit/Cargo.toml",
+            vec![
+                "description = ",
+                "documentation = ",
+                "readme = ",
+                "keywords = [",
+                "categories = [",
+                "Deterministic fixtures",
+            ],
+        ),
+        (
             "crates/bijux-cli-python/Cargo.toml",
             vec![
                 "publish = false",
@@ -176,21 +242,23 @@ fn pypi_release_workflow_builds_pypi_compatible_distributions() {
 }
 
 #[test]
-fn crates_release_automation_only_targets_public_rust_runtime_crate() {
+fn crates_release_automation_targets_public_cli_and_dag_crates() {
     let workflow_support = read_repo_file("makes/gh.mk");
     let publish_support = read_repo_file("makes/rust.mk");
+    let expected_packages =
+        "bijux-cli bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-testkit bijux-dag-app bijux-dag-cli";
 
     assert!(
-        workflow_support.contains("GH_CRATES_RELEASE_PACKAGES ?= bijux-cli"),
-        "release planning should only consider the public Rust runtime crate for crates.io publication"
+        workflow_support.contains(&format!("GH_CRATES_RELEASE_PACKAGES ?= {expected_packages}")),
+        "release planning should target the public CLI crate and public DAG crate family for crates.io publication"
     );
     assert!(
         workflow_support.contains("gh-release-plan-github"),
         "release planning support should include a dedicated GitHub Release lane"
     );
     assert!(
-        publish_support.contains("RUST_PUBLISH_PACKAGES ?= bijux-cli"),
-        "cargo publish automation should only target the public Rust runtime crate by default"
+        publish_support.contains(&format!("RUST_PUBLISH_PACKAGES ?= {expected_packages}")),
+        "cargo publish automation should target the public CLI crate and public DAG crate family by default"
     );
     assert!(
         !workflow_support.contains("GH_CRATES_RELEASE_PACKAGES ?= bijux-cli bijux-cli-python"),
