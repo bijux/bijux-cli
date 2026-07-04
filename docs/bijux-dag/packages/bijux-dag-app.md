@@ -16,6 +16,10 @@ writes, and shapes user-facing responses.
 Use this page when the issue is about command behavior or output shape rather
 than graph truth or execution internals.
 
+The intended Rust import lanes are the crate root, `stable`, and `prelude`.
+Hidden compatibility helpers remain repository-owned, and the `experimental`
+lane is opt-in behind `experimental-public-api`.
+
 This crate also houses hidden experimental operator routes plus hidden
 simulation and maintainer routes that stay in the repository for coverage and
 evidence work. Those paths are intentionally kept outside the visible

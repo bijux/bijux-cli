@@ -16,6 +16,10 @@ runtime diagnostics.
 Use this page when the question is about what happens after a graph has already
 been accepted as valid.
 
+The intended Rust import lanes are the crate root, `stable`, and `prelude`.
+Hidden compatibility modules remain available for repository-owned coverage, and
+the `experimental` lane is opt-in behind `experimental-public-api`.
+
 ## Responsibility Map
 
 | Surface | Ownership |
