@@ -4,6 +4,7 @@ use crate::routes::preconditions::require_run_directory;
 use crate::routes::run_lookup::read_manifest_json;
 use crate::run_data::{load_snapshot, read_node_traces};
 use crate::{emit_json, read_file, ExitCode};
+use bijux_dag_core::{node_io_contract, CacheBehavior, Graph, Node};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
@@ -17,6 +18,52 @@ fn concise_explain_human(
     format!(
         "status: {status}\ngraph_fingerprint: {graph_fp}\nnode_counts: {counts}\nfailed_nodes: {failed:?}"
     )
+}
+
+fn parse_optional_json(content: &str) -> Option<Value> {
+    serde_json::from_str::<Value>(content).ok()
+}
+
+fn render_cache_policy(cache: &CacheBehavior) -> String {
+    if cache.enabled {
+        "enabled".to_string()
+    } else {
+        format!(
+            "disabled (reason: {})",
+            cache.reason.as_deref().unwrap_or("unspecified")
+        )
+    }
+}
+
+fn explain_node_payload(
+    manifest: &str,
+    graph: &Graph,
+    node: &Node,
+    node_id: &str,
+    deps: Vec<String>,
+    trace: &str,
+    outputs_index: Option<&str>,
+    resolved_params: Option<&str>,
+) -> Value {
+    let io_contract = node_io_contract(graph, node_id);
+    json!({
+        "manifest": parse_optional_json(manifest),
+        "node": node_id,
+        "deps": deps,
+        "graph_inputs": graph.inputs.clone(),
+        "inputs": node.inputs.clone(),
+        "input_bindings": io_contract.as_ref().map(|contract| contract.inputs.clone()),
+        "outputs": node.outputs.clone(),
+        "output_contracts": io_contract.as_ref().map(|contract| contract.outputs.clone()),
+        "param_bindings": io_contract.as_ref().map(|contract| contract.param_bindings.clone()),
+        "effects": node.effects.clone(),
+        "cache": node.cache.clone(),
+        "env_allowlist": node.env_allowlist.clone(),
+        "outputs_index": outputs_index.and_then(parse_optional_json),
+        "resolved_params": resolved_params.and_then(parse_optional_json),
+        "trace": parse_optional_json(trace),
+        "fingerprint": graph.node_fingerprint(node).ok(),
+    })
 }
 
 pub(crate) fn handle_explain_command(
@@ -41,29 +88,31 @@ pub(crate) fn handle_explain_command(
         let outputs_index = read_file(&node_outputs_index_path(run_dir, node_id)).ok();
         let resolved_params =
             read_file(&run_dir.join("nodes").join(node_id).join("resolved_params.json")).ok();
-        let outputs = node_info.outputs.clone();
-        let inputs = node_info.inputs.clone();
         if cli.json {
-            let data = json!({
-                "manifest": serde_json::from_str::<serde_json::Value>(&manifest).ok(),
-                "node": node_id,
-                "deps": deps,
-                "inputs": inputs,
-                "outputs": outputs,
-                "effects": node_info.effects,
-                "env_allowlist": node_info.env_allowlist,
-                "outputs_index": outputs_index.and_then(|v| serde_json::from_str::<serde_json::Value>(&v).ok()),
-                "resolved_params": resolved_params.and_then(|v| serde_json::from_str::<serde_json::Value>(&v).ok()),
-                "trace": serde_json::from_str::<serde_json::Value>(&trace).ok(),
-                "fingerprint": snapshot.graph.node_fingerprint(node_info).ok(),
-            });
+            let data = explain_node_payload(
+                &manifest,
+                &snapshot.graph,
+                node_info,
+                node_id,
+                deps,
+                &trace,
+                outputs_index.as_deref(),
+                resolved_params.as_deref(),
+            );
             return emit_json(cli, "dag.explain", true, data, Vec::new(), ExitCode::SUCCESS);
         } else {
             println!("node: {}", node_id);
             println!("deps: {:?}", deps);
-            println!("inputs: {:?}", inputs);
-            println!("outputs: {:?}", outputs);
+            println!("graph_inputs: {:?}", snapshot.graph.inputs);
+            println!("inputs: {:?}", node_info.inputs);
+            if let Some(io_contract) = node_io_contract(&snapshot.graph, node_id) {
+                println!("input_bindings: {:?}", io_contract.inputs);
+                println!("param_bindings: {:?}", io_contract.param_bindings);
+                println!("output_contracts: {:?}", io_contract.outputs);
+            }
+            println!("outputs: {:?}", node_info.outputs);
             println!("effects: {:?}", node_info.effects);
+            println!("cache: {}", render_cache_policy(&node_info.cache));
             println!("env_allowlist: {:?}", node_info.env_allowlist);
             if let Some(r) = resolved_params {
                 println!("resolved_params:\n{}", r);
@@ -269,10 +318,13 @@ fn operator_status_human(summary: &Value) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        concise_explain_human, handle_explain_command, handle_node_command, handle_status_command,
-        operator_status_human, operator_status_summary, status_next_action,
+        concise_explain_human, explain_node_payload, handle_explain_command, handle_node_command,
+        handle_status_command, operator_status_human, operator_status_summary, render_cache_policy,
+        status_next_action,
     };
     use crate::commands::{Commands, DagCli};
+    use crate::run_data::load_snapshot;
+    use crate::read_file;
     use crate::ExitCode;
     use serde_json::json;
     use std::fs;
@@ -322,7 +374,27 @@ mod tests {
         fs::write(
             run.join("graph.snapshot.json"),
             serde_json::to_vec_pretty(&json!({
-                "graph":{"spec":"bijux-dag/v0.1","meta":{"name":"x","owners":[],"tags":[]},"nodes":[{"id":"extract","kind":"const","inputs":[],"outputs":[{"name":"out","path":"extract/out"}],"params":{"value":"x"}}],"edges":[]},
+                "graph":{
+                    "spec":"bijux-dag/v0.1",
+                    "meta":{"name":"x","owners":[],"tags":[]},
+                    "inputs":{"dataset_uri":"s3://warehouse/catalog","region":"eu-west-1"},
+                    "nodes":[{
+                        "id":"extract",
+                        "kind":"const",
+                        "inputs":[],
+                        "outputs":[{"name":"out","path":"extract/out"}],
+                        "params":{
+                            "request":{
+                                "dataset_uri":{"graph_input":"dataset_uri"},
+                                "region":{"graph_input":"region"}
+                            }
+                        },
+                        "cache":{"enabled":false,"reason":"fixture keeps node explain cache behavior explicit"},
+                        "effects":["env"],
+                        "env_allowlist":["REGION_TOKEN"]
+                    }],
+                    "edges":[]
+                },
                 "graph_fingerprint":"g1"
             }))
             .expect("snapshot"),
@@ -400,6 +472,58 @@ mod tests {
         assert!(explain.is_ok());
         assert!(node.is_ok());
         assert!(status.is_ok());
+    }
+
+    #[test]
+    fn inspect_node_payload_surfaces_graph_contract_details() {
+        let run = write_run_fixture(false, false);
+        let manifest = read_file(&run.path().join("manifest.json")).expect("manifest");
+        let trace = read_file(&run.path().join("nodes/extract/trace.json")).expect("trace");
+        let outputs_index =
+            read_file(&run.path().join("nodes/extract/outputs/index.json")).expect("index");
+        let snapshot = load_snapshot(run.path()).expect("snapshot");
+        let node = snapshot
+            .graph
+            .nodes
+            .iter()
+            .find(|node| node.id == "extract")
+            .expect("extract node");
+
+        let payload = explain_node_payload(
+            &manifest,
+            &snapshot.graph,
+            node,
+            "extract",
+            Vec::new(),
+            &trace,
+            Some(&outputs_index),
+            None,
+        );
+
+        assert_eq!(payload["graph_inputs"]["region"], "eu-west-1");
+        assert_eq!(payload["cache"]["enabled"], false);
+        assert_eq!(
+            payload["cache"]["reason"],
+            "fixture keeps node explain cache behavior explicit"
+        );
+        assert_eq!(
+            payload["param_bindings"][0]["source"]["GraphInput"]["input_name"],
+            "dataset_uri"
+        );
+        assert_eq!(payload["output_contracts"][0]["path"], "extract/out");
+        assert_eq!(payload["env_allowlist"][0], "REGION_TOKEN");
+    }
+
+    #[test]
+    fn cache_policy_rendering_is_explicit() {
+        let rendered = render_cache_policy(&bijux_dag_core::CacheBehavior {
+            enabled: false,
+            reason: Some("publishes externally visible state".to_string()),
+        });
+        assert_eq!(
+            rendered,
+            "disabled (reason: publishes externally visible state)"
+        );
     }
 
     #[test]
