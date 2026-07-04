@@ -2290,6 +2290,38 @@ mod cache_read_contract_tests {
         assert_eq!(hit_proof.key, "k");
     }
 
+    #[test]
+    fn compose_tool_version_uses_build_git_sha_when_available() {
+        assert_eq!(compose_tool_version("0.4.0", Some("abc1234")), "0.4.0+abc1234");
+        assert_eq!(compose_tool_version("0.4.0", None), "0.4.0");
+    }
+
+    #[test]
+    fn runtime_fingerprint_stays_stable_across_working_directories() {
+        use std::sync::{Mutex, OnceLock};
+
+        static WORKING_DIRECTORY_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+        let _guard = WORKING_DIRECTORY_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .expect("working directory lock");
+        let original_dir = std::env::current_dir().expect("current directory");
+        let temp_dir = tempfile::tempdir().expect("temporary directory");
+        let adapters = vec![AdapterInfo {
+            adapter_id: "shell".to_string(),
+            adapter_version: "1.0.0".to_string(),
+            effects: vec!["local".to_string()],
+        }];
+
+        let original_fingerprint = runtime_fingerprint(&adapters);
+        std::env::set_current_dir(temp_dir.path()).expect("switch to temp directory");
+        let moved_fingerprint = runtime_fingerprint(&adapters);
+        std::env::set_current_dir(&original_dir).expect("restore original directory");
+
+        assert_eq!(original_fingerprint, moved_fingerprint);
+    }
+
 }
 
 #[cfg(test)]
