@@ -26,6 +26,19 @@ const NON_PUBLIC_ROOT_COMMANDS: &[&str] = &[
     "version-inspect",
 ];
 
+const DENY_NETWORK_HELP: &str =
+    "deny declared network effects; shell execution does not firewall sockets, and container execution only enforces this when the runtime can honor a no-network mode";
+const DENY_ENV_HELP: &str =
+    "deny declared environment effects; this is a policy gate over declared DAG effects, not a syscall sandbox over arbitrary process reads";
+const DENY_CLOCK_HELP: &str =
+    "deny declared clock effects; this does not virtualize wall clock access inside spawned processes";
+const CLEAN_ENV_HELP: &str =
+    "run with the curated bijux environment instead of inheriting the full parent environment; this shapes environment variables only";
+const HERMETIC_HELP: &str =
+    "enable the best-effort local policy profile by forcing --deny-network, --deny-clock, and --clean-env; this does not claim syscall sandboxing or host filesystem isolation";
+const REPLAY_SANDBOX_HELP: &str =
+    "forbid replay outputs from being written inside the source run directory; this is a write-boundary check, not a process sandbox";
+
 pub(crate) fn non_public_root_commands() -> &'static [&'static str] {
     NON_PUBLIC_ROOT_COMMANDS
 }
@@ -197,15 +210,15 @@ pub(crate) enum Commands {
         node_timeout_ms: Option<u64>,
         #[arg(long)]
         run_timeout_ms: Option<u64>,
-        #[arg(long)]
+        #[arg(long, help = DENY_NETWORK_HELP)]
         deny_network: bool,
-        #[arg(long)]
+        #[arg(long, help = DENY_ENV_HELP)]
         deny_env: bool,
-        #[arg(long)]
+        #[arg(long, help = DENY_CLOCK_HELP)]
         deny_clock: bool,
-        #[arg(long)]
+        #[arg(long, help = CLEAN_ENV_HELP)]
         clean_env: bool,
-        #[arg(long)]
+        #[arg(long, help = HERMETIC_HELP)]
         hermetic: bool,
         #[arg(long, action = clap::ArgAction::Append)]
         select: Vec<String>,
@@ -238,7 +251,7 @@ pub(crate) enum Commands {
         out: PathBuf,
         #[arg(long)]
         dry_run: bool,
-        #[arg(long)]
+        #[arg(long, help = REPLAY_SANDBOX_HELP)]
         sandbox: bool,
         #[arg(long)]
         prove: bool,
@@ -252,15 +265,15 @@ pub(crate) enum Commands {
         run_id: Option<String>,
         #[arg(long)]
         cpu_budget: Option<u32>,
-        #[arg(long)]
+        #[arg(long, help = DENY_NETWORK_HELP)]
         deny_network: bool,
-        #[arg(long)]
+        #[arg(long, help = DENY_ENV_HELP)]
         deny_env: bool,
-        #[arg(long)]
+        #[arg(long, help = DENY_CLOCK_HELP)]
         deny_clock: bool,
-        #[arg(long)]
+        #[arg(long, help = CLEAN_ENV_HELP)]
         clean_env: bool,
-        #[arg(long)]
+        #[arg(long, help = HERMETIC_HELP)]
         hermetic: bool,
         #[arg(long, action = clap::ArgAction::Append)]
         select: Vec<String>,

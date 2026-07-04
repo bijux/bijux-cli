@@ -166,6 +166,17 @@ fn dag_run_help_surface_contract() {
     ] {
         assert!(text.contains(token));
     }
+    for detail in [
+        "deny declared network effects",
+        "does not firewall sockets",
+        "deny declared clock effects",
+        "does not virtualize wall clock access",
+        "curated bijux environment",
+        "best-effort local policy profile",
+        "does not claim syscall sandboxing or host filesystem isolation",
+    ] {
+        assert!(text.contains(detail), "missing run help detail: {detail}");
+    }
 }
 
 #[test]
@@ -342,8 +353,16 @@ fn dag_replay_help_surface_contract() {
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in ["--out", "--run-id", "--reuse-cache", "replay"] {
+    for token in ["--out", "--run-id", "--reuse-cache", "--sandbox", "--hermetic", "replay"] {
         assert!(text.contains(token));
+    }
+    for detail in [
+        "write-boundary check, not a process sandbox",
+        "deny declared network effects",
+        "deny declared clock effects",
+        "best-effort local policy profile",
+    ] {
+        assert!(text.contains(detail), "missing replay help detail: {detail}");
     }
 }
 
