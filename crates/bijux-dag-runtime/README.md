@@ -22,6 +22,18 @@ This crate does not own:
 - top-level command parsing or output presentation,
 - release-governance and maintainer report composition.
 
+## Runtime identity rules
+
+- runtime manifests and provenance records stamp the crate package version
+  directly from build metadata
+- an optional Git short SHA may be appended at build time when the crate is
+  compiled from a repository checkout
+- runtime execution does not shell out to `git` to discover version identity
+- replay and cache identity therefore do not depend on the operator's current
+  working directory or any unrelated Git repository around the binary
+
+Use these rules when reviewing runtime fingerprint drift or provenance output.
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

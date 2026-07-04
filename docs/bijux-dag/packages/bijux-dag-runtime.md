@@ -23,7 +23,18 @@ been accepted as valid.
 | execution engine | planning, scheduler behavior, backend invocation, replay semantics |
 | runtime policy | policy evaluation, trace emission, error classification, capability checks |
 | runtime artifacts | manifests, verification, cache lineage, and proof material |
+| runtime identity | build-stamped version identity and deterministic runtime fingerprints |
 | boundary | does not own authoritative DAG schema or user-facing CLI routing |
+
+## Identity Guarantees
+
+- runtime manifests and provenance records derive `tool_version` from the crate
+  build, not from the operator's current shell environment
+- a Git short SHA may appear only when it was captured during the build itself
+- runtime fingerprints stay stable when the same binary is executed from a
+  different working directory
+- unrelated ambient Git repositories are not allowed to rewrite replay or cache
+  identity
 
 ## Source Layout
 
