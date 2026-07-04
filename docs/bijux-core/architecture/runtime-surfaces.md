@@ -4,7 +4,7 @@ audience: mixed
 type: architecture
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Runtime Surfaces
@@ -53,7 +53,7 @@ belongs to before drilling into CLI or DAG specifics.
 
 ## Code Anchors
 
-- `crates/bijux-cli/src/main.rs`
+- `crates/bijux-cli/src/bin/bijux.rs`
 - `crates/bijux-dag-cli/src/main.rs`
 - `crates/bijux-dag-app/src/routes/mod.rs`
 - `crates/bijux-dag-runtime/src/lib.rs`

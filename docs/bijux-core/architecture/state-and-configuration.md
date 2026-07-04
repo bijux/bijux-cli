@@ -4,7 +4,7 @@ audience: mixed
 type: architecture
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # State and Configuration
@@ -46,8 +46,8 @@ and the first question is precedence or state ownership.
 
 ## Code Anchors
 
-- `crates/bijux-cli/src/config/`
-- `crates/bijux-dag-runtime/src/config.rs`
+- `crates/bijux-cli/src/features/config/`
+- `crates/bijux-dag-runtime/src/internal/control/config.rs`
 - `crates/bijux-dag-artifacts/src/storage/`
 - `crates/bijux-dev/src/commands/shared_io.rs`
 
