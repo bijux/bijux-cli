@@ -1,7 +1,7 @@
 //! DAG resolve entrypoints.
 
 use crate::canonical::sort_value_maps;
-use crate::{Graph, GraphError, ParamValue, RefSpec, ResolvedGraph};
+use crate::{materialize_graph_input_value, Graph, GraphError, ParamValue, RefSpec, ResolvedGraph};
 use serde_json::Value;
 use std::collections::BTreeMap;
 
@@ -45,8 +45,15 @@ pub(crate) fn resolve_param_value(value: &ParamValue, graph: &Graph) -> Result<V
 
 fn resolve_ref(reference: &RefSpec, graph: &Graph) -> Result<Value, GraphError> {
     if let Some(input_name) = &reference.graph_input {
-        if let Some(value) = graph.inputs.get(input_name).and_then(|spec| spec.effective_value()) {
-            return Ok(value.clone());
+        if let Some(spec) = graph.inputs.get(input_name) {
+            if let Some(value) = spec.effective_value() {
+                return materialize_graph_input_value(
+                    spec,
+                    value,
+                    &format!("/inputs/{input_name}"),
+                )
+                .map_err(|_| GraphError::ValidationFailed);
+            }
         }
         return Err(GraphError::ValidationFailed);
     }

@@ -1,6 +1,7 @@
 use crate::canonical::{error, is_valid_canonical_name, is_valid_output_path, severity_rank, warn};
 use crate::{
-    EdgeKind, Effect, Graph, GraphError, Node, ParamValue, SemanticNodeKind, Severity, TriggerRule,
+    materialize_graph_input_value, EdgeKind, Effect, Graph, GraphError, GraphInputKind,
+    GraphInputSpec, Node, ParamValue, SemanticNodeKind, Severity, TriggerRule,
     ValidationDiagnostic,
 };
 use std::collections::{BTreeSet, HashMap};
@@ -45,6 +46,8 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1030", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1031", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1032", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1033", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1034", severity: Severity::Error, domain: ValidationDomain::Schema },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -89,6 +92,8 @@ fn trigger_rule_supports_conditional_incoming(rule: &TriggerRule) -> bool {
 impl Graph {
     pub fn validate_with_warnings(&self) -> Vec<ValidationDiagnostic> {
         let mut diagnostics = Vec::new();
+
+        validate_graph_inputs(self, &mut diagnostics);
 
         let mut ids = BTreeSet::new();
         let mut node_map: HashMap<&str, &Node> = HashMap::new();
@@ -742,6 +747,119 @@ impl Graph {
             }
         }
         diagnostics
+    }
+}
+
+fn validate_graph_inputs(graph: &Graph, diagnostics: &mut Vec<ValidationDiagnostic>) {
+    for (input_name, spec) in &graph.inputs {
+        validate_graph_input_spec(spec, &format!("/inputs/{input_name}"), diagnostics);
+    }
+}
+
+fn validate_graph_input_spec(
+    spec: &GraphInputSpec,
+    path: &str,
+    diagnostics: &mut Vec<ValidationDiagnostic>,
+) {
+    match &spec.kind {
+        GraphInputKind::Enum { values } => {
+            if values.is_empty() {
+                emit_rule(
+                    diagnostics,
+                    "E1034",
+                    "enum input must declare at least one allowed value".to_string(),
+                    format!("{path}/values"),
+                    Some("Provide one or more enum values".to_string()),
+                );
+            }
+            let mut seen = BTreeSet::new();
+            for value in values {
+                if !seen.insert(value) {
+                    emit_rule(
+                        diagnostics,
+                        "E1034",
+                        format!("duplicate enum value: {value}"),
+                        format!("{path}/values"),
+                        Some("Make enum values unique".to_string()),
+                    );
+                }
+            }
+        }
+        GraphInputKind::Array { items } => {
+            if let Some(item_kind) = items.as_deref() {
+                validate_graph_input_kind(item_kind, &format!("{path}/items"), diagnostics);
+            }
+        }
+        GraphInputKind::Object { properties } => {
+            if let Some(properties) = properties {
+                for (property_name, property_spec) in properties {
+                    validate_graph_input_spec(
+                        property_spec,
+                        &format!("{path}/properties/{property_name}"),
+                        diagnostics,
+                    );
+                }
+            }
+        }
+        GraphInputKind::String
+        | GraphInputKind::Integer
+        | GraphInputKind::Float
+        | GraphInputKind::Boolean
+        | GraphInputKind::Path => {}
+    }
+
+    if let Some(default) = &spec.default {
+        if let Err(error) = materialize_graph_input_value(spec, default, &format!("{path}/default"))
+        {
+            emit_rule(
+                diagnostics,
+                "E1033",
+                error.message,
+                error.path,
+                Some("Adjust the default value to match the declared input type".to_string()),
+            );
+        }
+    }
+}
+
+fn validate_graph_input_kind(
+    kind: &GraphInputKind,
+    path: &str,
+    diagnostics: &mut Vec<ValidationDiagnostic>,
+) {
+    match kind {
+        GraphInputKind::Enum { values } => {
+            if values.is_empty() {
+                emit_rule(
+                    diagnostics,
+                    "E1034",
+                    "enum input must declare at least one allowed value".to_string(),
+                    format!("{path}/values"),
+                    Some("Provide one or more enum values".to_string()),
+                );
+            }
+        }
+        GraphInputKind::Array { items } => {
+            if let Some(item_kind) = items.as_deref() {
+                validate_graph_input_kind(item_kind, &format!("{path}/items"), diagnostics);
+            }
+        }
+        GraphInputKind::Object { properties } => {
+            if let Some(properties) = properties {
+                for (property_name, property_spec) in properties {
+                    validate_graph_input_spec(
+                        property_spec,
+                        &format!("{path}/properties/{property_name}"),
+                        diagnostics,
+                    );
+                }
+            }
+        }
+        GraphInputKind::String
+        | GraphInputKind::Integer
+        | GraphInputKind::Float
+        | GraphInputKind::Boolean
+        | GraphInputKind::Path => {}
     }
 }
 

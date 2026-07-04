@@ -231,22 +231,43 @@ pub fn validate_graph_input_value(
     value: &Value,
     path: &str,
 ) -> Result<(), GraphInputViolation> {
-    validate_value_against_kind(&spec.kind, value, path)
+    materialize_graph_input_value(spec, value, path).map(|_| ())
 }
 
-fn validate_value_against_kind(
+pub fn materialize_graph_input_value(
+    spec: &GraphInputSpec,
+    value: &Value,
+    path: &str,
+) -> Result<Value, GraphInputViolation> {
+    materialize_value_against_kind(&spec.kind, value, path)
+}
+
+fn materialize_value_against_kind(
     kind: &GraphInputKind,
     value: &Value,
     path: &str,
-) -> Result<(), GraphInputViolation> {
+) -> Result<Value, GraphInputViolation> {
     match kind {
-        GraphInputKind::String => expect_value_type(value, path, "string", Value::is_string),
+        GraphInputKind::String => {
+            expect_value_type(value, path, "string", Value::is_string)?;
+            Ok(value.clone())
+        }
         GraphInputKind::Integer => expect_value_type(value, path, "integer", |candidate| {
             candidate.as_i64().is_some() || candidate.as_u64().is_some()
-        }),
-        GraphInputKind::Float => expect_value_type(value, path, "float", Value::is_number),
-        GraphInputKind::Boolean => expect_value_type(value, path, "boolean", Value::is_boolean),
-        GraphInputKind::Path => expect_value_type(value, path, "path string", Value::is_string),
+        })
+        .map(|_| value.clone()),
+        GraphInputKind::Float => {
+            expect_value_type(value, path, "float", Value::is_number)?;
+            Ok(value.clone())
+        }
+        GraphInputKind::Boolean => {
+            expect_value_type(value, path, "boolean", Value::is_boolean)?;
+            Ok(value.clone())
+        }
+        GraphInputKind::Path => {
+            expect_value_type(value, path, "path string", Value::is_string)?;
+            Ok(value.clone())
+        }
         GraphInputKind::Enum { values } => {
             let Some(candidate) = value.as_str() else {
                 return Err(GraphInputViolation {
@@ -255,7 +276,7 @@ fn validate_value_against_kind(
                 });
             };
             if values.iter().any(|allowed| allowed == candidate) {
-                Ok(())
+                Ok(value.clone())
             } else {
                 Err(GraphInputViolation {
                     path: path.to_string(),
@@ -274,12 +295,19 @@ fn validate_value_against_kind(
                     message: "expected array".to_string(),
                 });
             };
+            let mut normalized = Vec::with_capacity(entries.len());
             if let Some(item_kind) = items {
                 for (index, entry) in entries.iter().enumerate() {
-                    validate_value_against_kind(item_kind, entry, &format!("{path}/{index}"))?;
+                    normalized.push(materialize_value_against_kind(
+                        item_kind,
+                        entry,
+                        &format!("{path}/{index}"),
+                    )?);
                 }
+            } else {
+                normalized.extend(entries.iter().cloned());
             }
-            Ok(())
+            Ok(Value::Array(normalized))
         }
         GraphInputKind::Object { properties } => {
             let Value::Object(entries) = value else {
@@ -289,15 +317,19 @@ fn validate_value_against_kind(
                 });
             };
             if let Some(properties) = properties {
+                let mut normalized = serde_json::Map::new();
                 for (key, property_spec) in properties {
                     let property_path = format!("{path}/{key}");
                     match entries.get(key) {
                         Some(candidate) => {
-                            validate_value_against_kind(
-                                &property_spec.kind,
-                                candidate,
-                                &property_path,
-                            )?;
+                            normalized.insert(
+                                key.clone(),
+                                materialize_value_against_kind(
+                                    &property_spec.kind,
+                                    candidate,
+                                    &property_path,
+                                )?,
+                            );
                         }
                         None if property_spec.required && property_spec.default.is_none() => {
                             return Err(GraphInputViolation {
@@ -305,7 +337,18 @@ fn validate_value_against_kind(
                                 message: "missing required object property".to_string(),
                             });
                         }
-                        None => {}
+                        None => {
+                            if let Some(default) = &property_spec.default {
+                                normalized.insert(
+                                    key.clone(),
+                                    materialize_graph_input_value(
+                                        property_spec,
+                                        default,
+                                        &format!("{property_path}/default"),
+                                    )?,
+                                );
+                            }
+                        }
                     }
                 }
                 for key in entries.keys() {
@@ -316,8 +359,10 @@ fn validate_value_against_kind(
                         });
                     }
                 }
+                Ok(Value::Object(normalized))
+            } else {
+                Ok(value.clone())
             }
-            Ok(())
         }
     }
 }
