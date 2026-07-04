@@ -33,6 +33,11 @@ fn read_suite() -> ReleaseValidationSuite {
     serde_json::from_str(&raw).unwrap_or_else(|err| panic!("parse suite failed: {err}"))
 }
 
+fn read_public_dag_manifest(crate_name: &str) -> String {
+    let path = repo_root().join("crates").join(crate_name).join("Cargo.toml");
+    fs::read_to_string(&path).unwrap_or_else(|err| panic!("read {} failed: {err}", path.display()))
+}
+
 #[test]
 fn release_validation_suite_is_current() {
     let suite = read_suite();
@@ -110,4 +115,20 @@ fn release_validation_suite_commands_cover_required_release_checks() {
     assert!(clippy_index < test_index);
     assert!(test_index < doc_index);
     assert!(doc_index < smoke_index);
+}
+
+#[test]
+fn public_dag_publish_validation_does_not_require_registry_testkit_release() {
+    let suite = read_suite();
+
+    for crate_name in suite.public_dag_crates {
+        let manifest = read_public_dag_manifest(&crate_name);
+        if !manifest.contains("package = \"bijux-dag-testkit\"") {
+            continue;
+        }
+        assert!(
+            !manifest.contains("package = \"bijux-dag-testkit\", path = \"../bijux-dag-testkit\", version = "),
+            "{crate_name} must keep bijux-dag-testkit as a local-only dev dependency so cargo publish --dry-run validates the public crate"
+        );
+    }
 }

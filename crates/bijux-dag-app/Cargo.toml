@@ -36,4 +36,4 @@ flate2 = { workspace = true }
 tempfile = { workspace = true }
 
 [dev-dependencies]
-bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit", version = "0.4.0" }
+bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit" }
