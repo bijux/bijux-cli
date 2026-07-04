@@ -1,3 +1,10 @@
+//! Artifact identity, persistence, integrity, and lifecycle helpers for Bijux DAG.
+//!
+//! Prefer the crate root for focused imports, [`stable`] for the explicit
+//! artifact lane, and [`prelude`] for the common read/write workflow. The
+//! `experimental-public-api` feature exposes opt-in contract helpers that are
+//! excluded from the default docs surface.
+//!
 #![allow(
     clippy::if_not_else,
     clippy::missing_errors_doc,
@@ -7,36 +14,52 @@
 #[cfg(test)]
 use bijux_dag_testkit as _;
 
+#[doc(hidden)]
 #[path = "io/fs.rs"]
 pub mod fs;
+#[doc(hidden)]
 #[path = "storage/hardening.rs"]
 pub mod hardening;
+#[doc(hidden)]
 #[path = "integrity/hash.rs"]
 pub mod hash;
+#[doc(hidden)]
 #[path = "integrity/index.rs"]
 pub mod index;
+#[cfg(feature = "experimental-public-api")]
 #[path = "integrity/iteration07_contracts.rs"]
-pub mod iteration07_contracts;
+mod iteration07_contracts;
+#[cfg(feature = "experimental-public-api")]
 #[path = "integrity/iteration16_contracts.rs"]
-pub mod iteration16_contracts;
+mod iteration16_contracts;
+#[doc(hidden)]
 #[path = "lifecycle/lineage.rs"]
 pub mod lineage;
+#[doc(hidden)]
 #[path = "storage/models.rs"]
 pub mod models;
+#[doc(hidden)]
 #[path = "layout/paths.rs"]
 pub mod paths;
+#[doc(hidden)]
 #[path = "layout/platform.rs"]
 pub mod platform;
+#[doc(hidden)]
 #[path = "lifecycle/promotion.rs"]
 pub mod promotion;
+#[doc(hidden)]
 #[path = "integrity/proof.rs"]
 pub mod proof;
+#[doc(hidden)]
 #[path = "lifecycle/retention.rs"]
 pub mod retention;
+#[doc(hidden)]
 #[path = "integrity/schema.rs"]
 pub mod schema;
+#[doc(hidden)]
 #[path = "storage/services.rs"]
 pub mod services;
+#[doc(hidden)]
 #[path = "io/store.rs"]
 pub mod store;
 
@@ -44,7 +67,22 @@ pub use hardening::{
     build_cleanup_plan, finalize_run_manifest, verify_run_dir, write_incomplete_run_marker,
     write_json_atomic_durable, ArtifactCleanupPlan, RunDirAuditReport, VerificationMode,
 };
+pub use hash::sha256_hex;
+pub use index::{
+    dedup_metrics_for_hashes, normalize_metadata_pairs, ArtifactId, ArtifactPackManifest,
+};
+pub use lineage::{write_lineage_snapshot, ArtifactLineageEdge, ArtifactLineageSnapshot};
 pub use models::*;
+pub use paths::is_normalized_relative_path;
+pub use platform::{
+    compact_lineage, explain_lineage_safe_gc, lineage_dependencies, lineage_dependents,
+};
+pub use proof::{ArtifactIntegrityProof, CorruptionDetectionResult, CorruptionRepairPolicy};
+pub use retention::RetentionPolicy;
+pub use schema::{
+    validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
+};
+pub use services::{RunArtifactStore, RunArtifactVerifier};
 
 use serde::Serialize;
 use std::fs as std_fs;
@@ -52,6 +90,38 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+/// Explicit long-lived artifact storage, integrity, and lifecycle surface.
+pub mod stable {
+    pub use crate::{
+        compact_lineage, dedup_metrics_for_hashes, explain_lineage_safe_gc, lineage_dependencies,
+        lineage_dependents, normalize_metadata_pairs, sha256_hex,
+        validate_output_schema_descriptor, verify_run_dir, write_lineage_snapshot,
+        write_outputs_index, ArtifactError, ArtifactId, ArtifactIntegrityProof,
+        ArtifactLineageEdge, ArtifactLineageSnapshot, ArtifactPackManifest,
+        ArtifactSchemaDescriptor, CorruptionDetectionResult, CorruptionRepairPolicy,
+        RetentionPolicy, RunArtifactStore, RunArtifactVerifier, RunDir, SchemaValidationMode,
+    };
+}
+
+/// Common imports for reading, writing, and validating run artifacts.
+pub mod prelude {
+    pub use crate::stable::{
+        sha256_hex, validate_output_schema_descriptor, verify_run_dir, write_outputs_index,
+        ArtifactError, ArtifactSchemaDescriptor, RunDir, SchemaValidationMode,
+    };
+}
+
+/// Opt-in artifact contracts and advisory helpers that are outside the stable lane.
+#[cfg(feature = "experimental-public-api")]
+pub mod experimental {
+    pub mod run_layout {
+        pub use crate::iteration07_contracts::*;
+    }
+    pub mod lifecycle_and_cache {
+        pub use crate::iteration16_contracts::*;
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ArtifactError {
