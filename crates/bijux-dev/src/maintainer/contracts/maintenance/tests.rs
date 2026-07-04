@@ -18,6 +18,7 @@ fn contract_reports_are_shaped() {
     assert!(audit.get("status_contracts").is_some());
     assert!(audit.get("requirement_catalog").is_some());
     assert!(audit.get("flaky_tests").is_some());
+    assert!(audit.get("ignored_dag_tests").is_some());
 }
 
 #[test]

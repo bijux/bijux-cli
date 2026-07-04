@@ -44,6 +44,9 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
         [group, command] if group == "maintenance" && command == "flaky-tests" => {
             dev_maintenance::build_flaky_tests_report(&workspace_root())
         }
+        [group, command] if group == "maintenance" && command == "ignored-dag-tests" => {
+            dev_maintenance::build_ignored_dag_tests_report(&workspace_root())
+        }
         [group, section, command]
             if group == "maintenance" && section == "status" && command == "inventory" =>
         {

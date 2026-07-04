@@ -2,17 +2,26 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 
-use super::compliance::build_flaky_tests_report;
+use super::compliance::{build_flaky_tests_report, build_ignored_dag_tests_report};
 use super::inventory::{generated_at_utc, write_json};
 
 fn status_generator_rows() -> Vec<Value> {
-    vec![json!({
-        "generator_id": "GEN-STATUS-FLAKY-TEST-LABELS",
-        "source_ref": Value::Null,
-        "implementation": "rust",
-        "outputs": ["artifacts/status/flaky_tests.json"],
-        "command": "bijux-dev-cli maintenance generate --id GEN-STATUS-FLAKY-TEST-LABELS",
-    })]
+    vec![
+        json!({
+            "generator_id": "GEN-STATUS-FLAKY-TEST-LABELS",
+            "source_ref": Value::Null,
+            "implementation": "rust",
+            "outputs": ["artifacts/status/flaky_tests.json"],
+            "command": "bijux-dev-cli maintenance generate --id GEN-STATUS-FLAKY-TEST-LABELS",
+        }),
+        json!({
+            "generator_id": "GEN-STATUS-IGNORED-DAG-TESTS",
+            "source_ref": Value::Null,
+            "implementation": "rust",
+            "outputs": ["artifacts/status/ignored_dag_tests.json"],
+            "command": "bijux-dev-cli maintenance generate --id GEN-STATUS-IGNORED-DAG-TESTS",
+        }),
+    ]
 }
 
 fn build_status_generators_report() -> Value {
@@ -47,12 +56,37 @@ fn run_flaky_tests_generator(workspace_root: &Path) -> Value {
     }
 }
 
+fn run_ignored_dag_tests_generator(workspace_root: &Path) -> Value {
+    let report = build_ignored_dag_tests_report(workspace_root);
+    let output_path = workspace_root.join("artifacts/status/ignored_dag_tests.json");
+    match write_json(&output_path, &report) {
+        Ok(()) => json!({
+            "status": "ok",
+            "generator_id": "GEN-STATUS-IGNORED-DAG-TESTS",
+            "source_ref": Value::Null,
+            "implementation": "rust",
+            "outputs": ["artifacts/status/ignored_dag_tests.json"],
+        }),
+        Err(err) => json!({
+            "status": "failed",
+            "generator_id": "GEN-STATUS-IGNORED-DAG-TESTS",
+            "source_ref": Value::Null,
+            "implementation": "rust",
+            "outputs": ["artifacts/status/ignored_dag_tests.json"],
+            "error": err,
+        }),
+    }
+}
+
 fn run_status_generator_entry(workspace_root: &Path, row: &Value) -> Value {
     let Some(generator_id) = row.get("generator_id").and_then(Value::as_str) else {
         return json!({"status": "failed", "error": "missing generator_id"});
     };
     if generator_id == "GEN-STATUS-FLAKY-TEST-LABELS" {
         return run_flaky_tests_generator(workspace_root);
+    }
+    if generator_id == "GEN-STATUS-IGNORED-DAG-TESTS" {
+        return run_ignored_dag_tests_generator(workspace_root);
     }
     json!({
         "status": "failed",
