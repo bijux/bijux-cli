@@ -27,12 +27,16 @@ flowchart TD
 - behavior-changing command semantics require explicit compatibility note
 - schema and artifact shape changes require migration guidance
 - replay/diff classification vocabulary changes require contract review
+- runtime build identity must be captured at compile time; release flows must
+  not depend on ambient runtime Git discovery
 
 ## Release Validation Matrix
 
 - Rust `1.86.0` toolchain alignment across local runs, CI, and release automation
 - cargo test suites for dag core/runtime/app crates
 - replay and diff contract tests for schema lockstep
+- runtime identity checks confirming working-directory changes do not rewrite
+  provenance or cache fingerprints
 - docs checks ensuring references align with released behavior
 
 ## Code Anchors

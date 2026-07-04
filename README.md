@@ -38,6 +38,8 @@ Current release line: **`v0.4.0`**.
 - `bijux-cli-python` remains the packaging and bridge layer for the same CLI runtime.
 - `bijux-dag` now ships as a public Rust crate family: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-testkit`, `bijux-dag-app`, and `bijux-dag-cli`.
 - the supported DAG operator contract is the visible `bijux-dag --help` surface; hidden simulation and maintainer namespaces are intentionally excluded from the public release boundary.
+- DAG runtime manifests, provenance, replay, and cache fingerprints stamp build
+  identity from the compiled binary instead of discovering Git state at runtime.
 - GitHub Releases and GHCR now stage both public release families, including a stamped `bijux-dag` binary bundle.
 - `bijux-dev` remains repository-internal maintainer tooling and is not a publication target.
 

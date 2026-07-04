@@ -14,6 +14,10 @@ owns deterministic DAG semantics, run and artifact identity, replay
 classification, and diff classification. The `v0.4.0` release makes the DAG
 Rust crate family public for the first time.
 
+Runtime identity in manifests, provenance, replay, and cache fingerprints is
+resolved from build metadata. Changing the shell directory around the compiled
+binary is not supposed to rewrite DAG evidence identity.
+
 The public operator contract is the visible `bijux-dag --help` surface. Hidden
 simulation and maintainer namespaces remain in the repository for internal
 coverage and evidence work, but they are not presented as stable `v0.4.0`
