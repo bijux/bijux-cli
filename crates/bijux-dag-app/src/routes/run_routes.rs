@@ -3,7 +3,7 @@ use crate::routes::plan_routes::{concise_plan_lines, plan_explain_payload};
 use crate::routes::policy_surface::policy_surface_payload;
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::run_data::map_materialize_mode;
-use crate::runtime_inputs::bind_runtime_inputs;
+use crate::runtime_inputs::{bind_runtime_inputs, missing_required_graph_inputs};
 use crate::{emit_json, parse_graph, parse_selectors, read_file, ExitCode};
 use bijux_dag_runtime::{
     build_planner_analysis, registered_adapters, CacheMode, PlannerGuardrails, Runtime,
@@ -63,9 +63,26 @@ pub(crate) fn handle_run_command(
     require_safe_path(req.out)?;
     let input = read_file(req.dag)?;
     let mut graph = parse_graph(&input)?;
-    let runtime_inputs = bind_runtime_inputs(&graph.inputs, req.inputs_file.as_deref(), req.input)
-        .map_err(|_| ExitCode::from(2))?;
+    let runtime_inputs = match bind_runtime_inputs(&graph.inputs, req.inputs_file.as_deref(), req.input)
+    {
+        Ok(binding) => binding,
+        Err(message) => {
+            return emit_run_input_error(cli, &message, json!({ "error": message }));
+        }
+    };
     graph.inputs = runtime_inputs.effective_inputs.clone();
+    let missing_inputs = missing_required_graph_inputs(&graph);
+    if !missing_inputs.is_empty() {
+        let message = format!("missing required runtime inputs: {}", missing_inputs.join(", "));
+        return emit_run_input_error(
+            cli,
+            &message,
+            json!({
+                "error": message,
+                "missing_inputs": missing_inputs,
+            }),
+        );
+    }
     let runtime = Runtime::new();
     let (deny_network, deny_clock, clean_env) =
         effective_policy_flags(req.deny_network, req.deny_clock, req.clean_env, req.hermetic);
@@ -164,6 +181,18 @@ pub(crate) fn handle_run_command(
     Ok(ExitCode::SUCCESS)
 }
 
+fn emit_run_input_error(
+    cli: &DagCli,
+    message: &str,
+    payload: serde_json::Value,
+) -> Result<ExitCode, ExitCode> {
+    if cli.json {
+        return emit_json(cli, "dag.run", false, payload, Vec::new(), ExitCode::from(2));
+    }
+    eprintln!("{message}");
+    Err(ExitCode::from(2))
+}
+
 fn effective_policy_flags(
     deny_network: bool,
     deny_clock: bool,
@@ -180,8 +209,11 @@ fn effective_policy_flags(
 
 #[cfg(test)]
 mod tests {
-    use super::{cache_preflight, effective_policy_flags};
+    use super::{cache_preflight, effective_policy_flags, emit_run_input_error};
     use crate::commands::CacheModeArg;
+    use crate::commands::{Commands, DagCli};
+    use crate::ExitCode;
+    use serde_json::json;
 
     #[test]
     fn hermetic_forces_isolation_flags() {
@@ -196,5 +228,13 @@ mod tests {
     #[test]
     fn cache_preflight_reports_disabled_when_cache_is_off() {
         assert_eq!(cache_preflight(CacheModeArg::Off, &None)["status"], "disabled");
+    }
+
+    #[test]
+    fn run_input_error_returns_cli_error_code() {
+        let cli = DagCli { json: false, quiet: true, command: Commands::Version };
+        let code = emit_run_input_error(&cli, "missing required runtime inputs: region", json!({}))
+            .expect_err("error code");
+        assert_eq!(code, ExitCode::from(2));
     }
 }

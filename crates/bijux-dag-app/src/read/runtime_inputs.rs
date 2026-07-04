@@ -1,5 +1,7 @@
 use crate::fs_input::read_utf8_file;
+use bijux_dag_core::{Graph, ParamValue};
 use serde_json::{Map, Value};
+use std::collections::BTreeSet;
 use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -31,6 +33,18 @@ pub(crate) fn bind_runtime_inputs(
 
     let (human_summary, redacted_keys) = redact_input_summary(&effective_inputs);
     Ok(RuntimeInputBinding { effective_inputs, human_summary, redacted_keys })
+}
+
+pub(crate) fn missing_required_graph_inputs(graph: &Graph) -> Vec<String> {
+    let mut required = BTreeSet::new();
+    for node in &graph.nodes {
+        collect_required_graph_inputs(&node.params, &mut required);
+    }
+
+    required
+        .into_iter()
+        .filter(|key| graph.inputs.get(key).is_none_or(Value::is_null))
+        .collect()
 }
 
 fn parse_inputs_file(path: &Path) -> Result<Map<String, Value>, String> {
@@ -94,9 +108,31 @@ fn redact_input_summary(inputs: &Map<String, Value>) -> (Map<String, Value>, Vec
     (summary, redacted_keys)
 }
 
+fn collect_required_graph_inputs(value: &ParamValue, required: &mut BTreeSet<String>) {
+    match value {
+        ParamValue::Ref(reference) => {
+            if let Some(input_name) = &reference.graph_input {
+                required.insert(input_name.clone());
+            }
+        }
+        ParamValue::Array(items) => {
+            for item in items {
+                collect_required_graph_inputs(item, required);
+            }
+        }
+        ParamValue::Object(map) => {
+            for item in map.values() {
+                collect_required_graph_inputs(item, required);
+            }
+        }
+        ParamValue::Literal(_) => {}
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{bind_runtime_inputs, is_secret_like_input_key};
+    use super::{bind_runtime_inputs, is_secret_like_input_key, missing_required_graph_inputs};
+    use bijux_dag_core::parse_graph_strict;
     use serde_json::{json, Map, Value};
 
     fn declared_inputs() -> Map<String, Value> {
@@ -153,5 +189,37 @@ mod tests {
         assert_eq!(binding.human_summary["api_token"], "[REDACTED]");
         assert_eq!(binding.redacted_keys, vec!["api_token".to_string()]);
         assert!(is_secret_like_input_key("DB_PASSWORD"));
+    }
+
+    #[test]
+    fn missing_required_graph_inputs_only_flags_referenced_null_values() {
+        let graph = parse_graph_strict(
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"wf","owners":[],"tags":[]},
+              "inputs":{"region":null,"api_token":null,"unused":null},
+              "nodes":[
+                {
+                  "id":"n1",
+                  "kind":"const",
+                  "inputs":[],
+                  "outputs":[{"name":"value","path":"out.json"}],
+                  "params":{
+                    "value":{
+                      "region":{"graph_input":"region"},
+                      "token":{"graph_input":"api_token"}
+                    }
+                  }
+                }
+              ],
+              "edges":[]
+            }"#,
+        )
+        .expect("graph");
+
+        assert_eq!(
+            missing_required_graph_inputs(&graph),
+            vec!["api_token".to_string(), "region".to_string()]
+        );
     }
 }
