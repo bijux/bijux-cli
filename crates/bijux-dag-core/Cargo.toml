@@ -16,6 +16,10 @@ categories = ["data-structures", "development-tools", "parser-implementations"]
 [lints]
 workspace = true
 
+[features]
+default = []
+experimental-public-api = []
+
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }

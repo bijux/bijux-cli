@@ -1,3 +1,5 @@
+#![cfg(feature = "experimental-public-api")]
+
 use criterion as _;
 use hex as _;
 use serde as _;

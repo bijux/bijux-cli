@@ -1,14 +1,10 @@
-use bijux_dag_core::canonical::{canonical_json, canonicalize_graph};
-use bijux_dag_core::compile::{compile_graph, compile_graph_with_defaults};
-use bijux_dag_core::edge::{EdgeDependencyKind, TypedEdge};
-use bijux_dag_core::resolve::resolve_graph;
-use bijux_dag_core::resources::GraphDefaults;
-use bijux_dag_core::topology::deterministic_topology_order;
-use bijux_dag_core::validate::{
-    validate_graph, validate_schema, validate_semantics, validate_topology,
-    validation_rule_registry, ValidationDomain,
+use bijux_dag_core::{
+    canonical_json, canonicalize_graph, compile_graph, compile_graph_with_defaults,
+    deterministic_topology_order, lower_graph_to_execution_plan, resolve_graph, validate_graph,
+    validate_schema, validate_semantics, validate_topology, validation_rule_registry,
+    EdgeDependencyKind, Graph, GraphDefaults, GraphError, PlanOptions, Severity, TypedEdge,
+    ValidationDomain,
 };
-use bijux_dag_core::{lower_graph_to_execution_plan, Graph, GraphError, PlanOptions, Severity};
 use criterion as _;
 use hex as _;
 use serde as _;

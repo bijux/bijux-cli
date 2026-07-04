@@ -1,7 +1,7 @@
 use crate::commands::{DagCli, GovernanceCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::hash::sha256_hex;
-use bijux_dag_core::node::derive_interface;
+use bijux_dag_core::derive_interface;
 use bijux_dag_core::{compile_graph, node_io_contract, NodeInputSource, Severity};
 use serde::Serialize;
 use serde_json::json;

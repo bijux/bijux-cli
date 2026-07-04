@@ -1,7 +1,8 @@
 use bijux_cli::api::runtime::run_app;
-use bijux_dag_core::canonical::canonical_json;
-use bijux_dag_core::validate::validate_graph;
-use bijux_dag_core::{lower_graph_to_execution_plan, parse_graph_strict, PlanOptions, Severity};
+use bijux_dag_core::{
+    canonical_json, lower_graph_to_execution_plan, parse_graph_strict, validate_graph, PlanOptions,
+    Severity,
+};
 use serde::Deserialize;
 use serde_json::Value;
 use std::fs;
