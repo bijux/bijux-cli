@@ -4,7 +4,7 @@ audience: maintainers
 type: section-index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # DAG Quality
@@ -27,7 +27,7 @@ flowchart LR
 
 - keep replay and diff semantics stable across change
 - require evidence-backed validation before release
-- maintain explicit risk and limitation documentation
+- maintain explicit risk and limitation records
 - align docs with real command and code behavior
 
 ## Core Quality Pages

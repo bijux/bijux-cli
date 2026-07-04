@@ -4,7 +4,7 @@ audience: maintainers
 type: quality
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Review Checklist
@@ -36,6 +36,8 @@ flowchart TD
 - replay/diff semantics and reason-code meanings remain explicit
 - artifact evidence expectations remain intact and verifiable
 - docs links, examples, and code anchors match current repository state
+- touched limitation records keep stable ids and include affected surface,
+  impact, workaround, planned fix, and release target fields
 
 ## Structural Checks
 
