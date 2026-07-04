@@ -153,6 +153,20 @@ pub(super) fn run_docs_link_check() -> Result<(), String> {
                 }
             }
         }
+
+        for (line_number, span) in extract_inline_code_spans(&content) {
+            let Some(anchor) = repo_code_anchor_candidate(&span) else {
+                continue;
+            };
+            if !root.join(anchor).exists() {
+                let rel = file
+                    .strip_prefix(&root)
+                    .map_err(|err| err.to_string())?
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                violations.push(format!("{rel}:{line_number}: broken code anchor {anchor}"));
+            }
+        }
     }
 
     if violations.is_empty() {
@@ -160,6 +174,64 @@ pub(super) fn run_docs_link_check() -> Result<(), String> {
     } else {
         Err(violations.join(", "))
     }
+}
+
+fn extract_inline_code_spans(content: &str) -> Vec<(usize, String)> {
+    let mut spans = Vec::new();
+    let mut fence_open = false;
+
+    for (line_index, line) in content.lines().enumerate() {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("```") {
+            fence_open = !fence_open;
+            continue;
+        }
+        if fence_open {
+            continue;
+        }
+
+        let mut cursor = 0usize;
+        while let Some(start_rel) = line[cursor..].find('`') {
+            let start = cursor + start_rel + 1;
+            let Some(end_rel) = line[start..].find('`') else {
+                break;
+            };
+            let end = start + end_rel;
+            let span = line[start..end].trim();
+            if !span.is_empty() {
+                spans.push((line_index + 1, span.to_string()));
+            }
+            cursor = end + 1;
+        }
+    }
+
+    spans
+}
+
+fn repo_code_anchor_candidate(span: &str) -> Option<&str> {
+    let anchor = span.trim();
+    if anchor.is_empty() || anchor.contains("://") || anchor.contains(' ') {
+        return None;
+    }
+
+    let starts_with_repo_root = [
+        "crates/",
+        "docs/",
+        "configs/",
+        ".github/",
+        "makes/",
+        "templates/",
+        "evidence/",
+    ]
+    .iter()
+    .any(|prefix| anchor.starts_with(prefix));
+    if !starts_with_repo_root {
+        return None;
+    }
+
+    let looks_like_path = anchor.ends_with('/')
+        || Path::new(anchor).extension().and_then(|ext| ext.to_str()).is_some();
+    looks_like_path.then_some(anchor)
 }
 
 pub(super) fn run_naming_governance_guard() -> Result<(), String> {

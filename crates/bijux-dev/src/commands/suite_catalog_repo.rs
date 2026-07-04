@@ -190,7 +190,7 @@ pub(super) const REPO_SUITES: &[SuiteDef] = &[
     },
     SuiteDef {
         id: "docs-links",
-        description: "markdown local link checker",
+        description: "markdown local link and code anchor checker",
         domain: "governance",
         slow: false,
         internal: false,
