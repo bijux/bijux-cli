@@ -5,6 +5,58 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["spec", "nodes", "edges"],
+  "$defs": {
+    "graphInputSpec": {
+      "anyOf": [
+        { "type": "string" },
+        { "type": "integer" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "array" },
+        {
+          "type": "object",
+          "not": { "required": ["type"] }
+        },
+        { "$ref": "#/$defs/graphInputSchema" }
+      ]
+    },
+    "graphInputKind": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "integer", "float", "boolean", "path", "enum", "array", "object"]
+        },
+        "values": { "type": "array", "items": { "type": "string" } },
+        "items": { "$ref": "#/$defs/graphInputKind" },
+        "properties": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/graphInputSpec" }
+        }
+      }
+    },
+    "graphInputSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "integer", "float", "boolean", "path", "enum", "array", "object"]
+        },
+        "required": { "type": "boolean" },
+        "default": {},
+        "values": { "type": "array", "items": { "type": "string" } },
+        "items": { "$ref": "#/$defs/graphInputKind" },
+        "properties": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/graphInputSpec" }
+        }
+      }
+    }
+  },
   "properties": {
     "spec": {"type": "string", "const": "bijux-dag/v0.1"},
     "meta": {
@@ -18,7 +70,10 @@
         "tags": {"type": "array", "items": {"type": "string"}}
       }
     },
-    "inputs": {"type": "object"},
+    "inputs": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/graphInputSpec" }
+    },
     "nondeterminism_allowed": {"type": "boolean"},
     "nodes": {
       "type": "array",

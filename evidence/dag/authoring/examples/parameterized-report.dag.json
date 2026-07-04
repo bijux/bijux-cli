@@ -7,9 +7,19 @@
     "tags": ["authoring", "reporting"]
   },
   "inputs": {
-    "dataset_uri": "s3://warehouse/catalog",
-    "publish_channel": "daily-summary",
-    "region": "eu-west-1"
+    "dataset_uri": {
+      "type": "string",
+      "default": "s3://warehouse/catalog"
+    },
+    "publish_channel": {
+      "type": "enum",
+      "values": ["daily-summary", "weekly-summary"],
+      "default": "daily-summary"
+    },
+    "region": {
+      "type": "string",
+      "default": "eu-west-1"
+    }
   },
   "nodes": [
     {

@@ -39,33 +39,25 @@ fn parameterized_report_example_uses_graph_inputs_and_output_references() {
     let graph = parse_graph_strict(&text)
         .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
 
-    assert_eq!(graph.inputs.get("region"), Some(&serde_json::json!("eu-west-1")));
+    let effective_inputs = graph.effective_inputs().expect("effective inputs");
+    assert_eq!(effective_inputs.get("region"), Some(&serde_json::json!("eu-west-1")));
+    assert_eq!(graph.input_schema()["publish_channel"]["type"], "enum");
 
     let publish_contract =
         node_io_contract(&graph, "publish_summary").expect("publish_summary contract");
-    assert!(
-        publish_contract.param_bindings.iter().any(|binding| matches!(
-            &binding.source,
-            ParamBindingSource::GraphInput { input_name } if input_name == "publish_channel"
-        ))
-    );
-    assert!(
-        publish_contract.param_bindings.iter().any(|binding| matches!(
-            &binding.source,
-            ParamBindingSource::NodeOutput { node_id, output_name }
-                if node_id == "build_report" && output_name == "report"
-        ))
-    );
+    assert!(publish_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "publish_channel"
+    )));
+    assert!(publish_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::NodeOutput { node_id, output_name }
+            if node_id == "build_report" && output_name == "report"
+    )));
 
-    let publish_node = graph
-        .nodes
-        .iter()
-        .find(|node| node.id == "publish_summary")
-        .expect("publish_summary node");
+    let publish_node =
+        graph.nodes.iter().find(|node| node.id == "publish_summary").expect("publish_summary node");
     assert!(!publish_node.cache.enabled);
-    assert_eq!(
-        publish_node.cache.reason.as_deref(),
-        Some("publishes externally visible summary")
-    );
+    assert_eq!(publish_node.cache.reason.as_deref(), Some("publishes externally visible summary"));
     assert_eq!(publish_node.env_allowlist, vec!["REPORT_CHANNEL".to_string()]);
 }

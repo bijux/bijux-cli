@@ -99,6 +99,10 @@ When a workflow is launched with runtime input overrides, the run artifact
 contract records the effective inputs in `manifest.json` under
 `run_metadata.graph_inputs`.
 
+Graph inputs may use shorthand defaults such as `"region": "eu-west-1"` or an
+explicit typed schema such as
+`"region": { "type": "string", "default": "eu-west-1" }`.
+
 - the recorded values reflect the merged runtime view that executed
 - `--inputs-file` values can be overridden by later `--input key=value` flags
 - operator-facing human output redacts secret-like keys, but the manifest
@@ -114,9 +118,19 @@ timeout policy, environment allowlisting, and a justified cache opt-out:
 ```json
 {
   "inputs": {
-    "dataset_uri": "s3://warehouse/catalog",
-    "publish_channel": "daily-summary",
-    "region": "eu-west-1"
+    "dataset_uri": {
+      "type": "string",
+      "default": "s3://warehouse/catalog"
+    },
+    "publish_channel": {
+      "type": "enum",
+      "values": ["daily-summary", "weekly-summary"],
+      "default": "daily-summary"
+    },
+    "region": {
+      "type": "string",
+      "default": "eu-west-1"
+    }
   },
   "nodes": [
     {
