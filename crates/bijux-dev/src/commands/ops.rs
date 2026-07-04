@@ -3638,7 +3638,7 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
     let install = fs::read_to_string(root.join("docs/user/INSTALLATION.md"))
         .map_err(|err| err.to_string())?;
     for required_cmd in
-        ["cargo build -p bijux-dag-cli --release", "cargo run -p bijux-dag-cli -- dag version"]
+        ["cargo build -p bijux-dag-cli --release", "cargo run -p bijux-dag-cli --bin bijux-dag -- version"]
     {
         if !install.contains(required_cmd) {
             return Err(format!(
@@ -4667,11 +4667,11 @@ fn evaluate_release_artifacts_runnable(root: &Path) -> Result<Value, String> {
     for required_cmd in [
         "bijux --json doctor",
         "bijux --json cli paths",
-        "bijux dag validate --json evidence/authoring/examples/hello.dag.json",
-        "bijux dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json",
-        "bijux dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}",
-        "bijux dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}",
-        "bijux dag status --json ${RUN_DIR}",
+        "bijux-dag validate --json evidence/authoring/examples/hello.dag.json",
+        "bijux-dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json",
+        "bijux-dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}",
+        "bijux-dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}",
+        "bijux-dag status --json ${RUN_DIR}",
     ] {
         if !policy.contains(required_cmd) {
             violations.push(format!("release binary verification doc missing `{required_cmd}`"));

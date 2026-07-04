@@ -2465,7 +2465,7 @@ fn run_benchmark_baseline() -> Result<(), String> {
     let report = json!({
         "benchmark_format": "benchmark-report/v1",
         "profile": "deterministic-regression-baseline",
-        "runner": "cargo run -p bijux-dag-cli -- dag run",
+        "runner": "cargo run -p bijux-dag-cli --bin bijux-dag -- run",
         "commit_sha": commit_sha,
         "rust_version": rust_version,
         "machine": machine,

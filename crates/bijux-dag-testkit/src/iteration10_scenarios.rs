@@ -415,7 +415,7 @@ mod tests {
     #[test]
     fn g098_mounted_app_parity_prevents_route_and_output_drift() {
         let report = build_mounted_app_parity_scenario_report(MountedAppParityScenarioReportV1 {
-            root_command_path: "bijux dag run workflows/hello.json".to_string(),
+            root_command_path: "bijux-dag run workflows/hello.json".to_string(),
             direct_command_path: "bijux-dag run workflows/hello.json".to_string(),
             machine_output_equal: true,
             human_output_equal: true,
