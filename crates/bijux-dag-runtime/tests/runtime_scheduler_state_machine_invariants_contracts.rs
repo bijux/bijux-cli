@@ -11,13 +11,12 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
-use bijux_dag_runtime::invariants::trace_time_order_ok;
 use bijux_dag_runtime::{
     build_plan, build_scheduler, deterministic_schedule_order, recovery_action_required,
-    scheduler_contract_profile, validate_node_transition, validate_run_transition,
-    verify_post_run_state_consistency, DependencyCounter, NodeState, NodeTransition, ReadyNode,
-    ReadyQueue, RecoveryInput, RunState, RunTransition, RuntimeConfig, SchedulerPolicy, Selector,
-    SelectorSet, TransitionCause,
+    scheduler_contract_profile, trace_time_order_ok, validate_node_transition,
+    validate_run_transition, verify_post_run_state_consistency, DependencyCounter, NodeState,
+    NodeTransition, ReadyNode, ReadyQueue, RecoveryInput, RunState, RunTransition, RuntimeConfig,
+    SchedulerPolicy, Selector, SelectorSet, TransitionCause,
 };
 use std::collections::BTreeMap;
 use std::time::Instant;

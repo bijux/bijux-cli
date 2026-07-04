@@ -11,11 +11,9 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
-use bijux_dag_runtime::state_machine::{run_transition_allowed, RunLifecycleState};
 use bijux_dag_runtime::{
-    execution_context::{ExecutionContext, NodeExecutionContext},
-    node_result::NodeResult,
-    scheduler_contract_profile, Runtime, RuntimeConfig,
+    run_transition_allowed, scheduler_contract_profile, ExecutionContext, NodeExecutionContext,
+    NodeResult, RunLifecycleState, Runtime, RuntimeConfig,
 };
 
 #[test]

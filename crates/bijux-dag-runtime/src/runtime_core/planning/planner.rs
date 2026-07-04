@@ -206,10 +206,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
             diagnostics.push(format!("P4021:{}:unsupported-runtime-capability", node.id));
         }
         let requires_network = node.effects.iter().any(|effect| matches!(effect, Effect::Network));
-        if !bijux_dag_core::resource_iteration13::planner_runnable_from_capabilities(
-            node.kind.as_str(),
-            requires_network,
-        ) {
+        if !planner_runnable_from_runtime_capabilities(node.kind.as_str(), requires_network) {
             diagnostics.push(format!("P4022:{}:capability-registry-refusal", node.id));
         }
     }
@@ -245,6 +242,15 @@ fn node_kind_supported(kind: &str) -> bool {
 
 fn runtime_resource_capability_supported(kind: &NodeKind) -> bool {
     matches!(kind, NodeKind::Shell | NodeKind::Container)
+}
+
+fn planner_runnable_from_runtime_capabilities(kind: &str, requires_network: bool) -> bool {
+    match kind {
+        "const" => !requires_network,
+        "shell" => !requires_network,
+        "container" => true,
+        _ => false,
+    }
 }
 
 fn build_dep_map(graph: &Graph) -> HashMap<String, BTreeSet<String>> {

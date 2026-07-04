@@ -1,5 +1,7 @@
 use crate::container_engine_discovery;
-use bijux_dag_core::resource_iteration13::{PoolPlacementReportV1, ResourcePreflightReportV1};
+use bijux_dag_core::experimental::resource_capabilities::{
+    PoolPlacementReportV1, ResourcePreflightReportV1,
+};
 use serde::{Deserialize, Serialize};
 
 /// Runtime probe used for container capability negotiation.
@@ -181,7 +183,7 @@ mod tests {
         ContainerCapabilityNegotiationReportV1, ContainerCapabilityProbeV1,
         RemoteCapabilityStatusV1, ResourceAdmissionDecisionV1,
     };
-    use bijux_dag_core::resource_iteration13::{
+    use bijux_dag_core::experimental::resource_capabilities::{
         ExecutionPoolV1, PoolPlacementDecisionV1, PoolPlacementReportV1,
         ResourcePreflightRefusalV1, ResourcePreflightReportV1, ResourceRequirementV1,
     };

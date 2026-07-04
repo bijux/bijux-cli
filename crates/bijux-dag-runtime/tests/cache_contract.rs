@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::cache::CacheKeyInput;
+use bijux_dag_runtime::CacheKeyInput;
 
 #[test]
 fn cache_contract_surface_is_linkable() {

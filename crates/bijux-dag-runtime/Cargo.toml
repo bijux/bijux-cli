@@ -16,6 +16,10 @@ categories = ["command-line-interface", "development-tools", "filesystem"]
 [lints]
 workspace = true
 
+[features]
+default = []
+experimental-public-api = ["bijux_dag_core/experimental-public-api"]
+
 [dependencies]
 bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core", version = "0.4.0" }
 bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts", version = "0.4.0" }

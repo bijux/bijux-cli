@@ -1,9 +1,18 @@
+//! Execution, replay, scheduling, and policy surfaces for Bijux DAG runs.
+//!
+//! Prefer the crate root for focused imports, [`stable`] for the explicit
+//! long-lived runtime surface, and [`prelude`] for the common execution
+//! workflow. The `experimental-public-api` feature enables opt-in runtime
+//! contract material that is intentionally excluded from the default docs lane.
+//!
 #![allow(dead_code)]
 
 #[path = "adapters/adapter.rs"]
 mod adapter;
+#[doc(hidden)]
 #[path = "adapters/api.rs"]
 pub mod adapter_api;
+#[doc(hidden)]
 #[path = "adapters/conformance.rs"]
 pub mod adapter_conformance;
 #[cfg(test)]
@@ -11,11 +20,13 @@ pub mod adapter_conformance;
 mod adapter_contract_tests;
 #[path = "adapters/sdk.rs"]
 mod adapter_sdk;
+#[doc(hidden)]
 pub mod adapters;
 #[path = "internal/analysis/adaptive_scheduler.rs"]
 mod adaptive_scheduler;
 #[path = "internal/workflow/ai_operator_assist.rs"]
 mod ai_operator_assist;
+#[doc(hidden)]
 #[path = "internal/control/api.rs"]
 pub mod api;
 mod artifacts;
@@ -30,10 +41,13 @@ mod backend;
 mod backend_cluster;
 #[path = "backend/runtime/batch_execution.rs"]
 mod batch_execution;
+#[doc(hidden)]
 pub mod builtins;
+#[doc(hidden)]
 pub mod cache;
 #[path = "internal/control/clock.rs"]
 mod clock;
+#[doc(hidden)]
 #[path = "internal/control/config.rs"]
 pub mod config;
 #[path = "backend/runtime/container_execution.rs"]
@@ -56,10 +70,12 @@ mod distribution_readiness;
 #[path = "runtime_core/execution/engine.rs"]
 mod engine;
 mod error;
+#[doc(hidden)]
 #[path = "runtime_core/execution/flow.rs"]
 pub mod execution;
 #[path = "backend/runtime/execution_backend.rs"]
 mod execution_backend;
+#[doc(hidden)]
 #[path = "runtime_core/execution/context.rs"]
 pub mod execution_context;
 #[path = "runtime_core/planning/execution_plan.rs"]
@@ -79,6 +95,7 @@ mod ha_scheduler;
 #[path = "backend/distributed/infrastructure.rs"]
 mod infrastructure;
 mod internal;
+#[doc(hidden)]
 #[path = "runtime_core/governance/invariants.rs"]
 pub mod invariants;
 #[cfg(test)]
@@ -86,20 +103,27 @@ pub mod invariants;
 mod invariants_tests;
 #[path = "internal/control/io.rs"]
 mod io;
+#[cfg(feature = "experimental-public-api")]
 #[path = "runtime_core/execution/iteration06_contracts.rs"]
-pub mod iteration06_contracts;
+mod iteration06_contracts;
+#[cfg(feature = "experimental-public-api")]
 #[path = "runtime_core/execution/iteration09_contracts.rs"]
-pub mod iteration09_contracts;
+mod iteration09_contracts;
+#[cfg(feature = "experimental-public-api")]
 #[path = "runtime_core/planning/iteration13_contracts.rs"]
-pub mod iteration13_contracts;
+mod iteration13_contracts;
+#[cfg(feature = "experimental-public-api")]
 #[path = "runtime_core/execution/iteration14_contracts.rs"]
-pub mod iteration14_contracts;
+mod iteration14_contracts;
+#[cfg(feature = "experimental-public-api")]
 #[path = "runtime_core/execution/iteration15_contracts.rs"]
-pub mod iteration15_contracts;
+mod iteration15_contracts;
+#[cfg(feature = "experimental-public-api")]
 #[path = "runtime_core/execution/iteration17_contracts.rs"]
-pub mod iteration17_contracts;
+mod iteration17_contracts;
 #[path = "backend/runtime/local_executor.rs"]
 mod local_executor;
+#[doc(hidden)]
 #[path = "runtime_core/execution/node_result.rs"]
 pub mod node_result;
 #[path = "diagnostics/runtime/observability.rs"]
@@ -116,6 +140,7 @@ mod performance_capacity;
 mod planner;
 #[path = "runtime_core/planning/planner_analysis.rs"]
 mod planner_analysis;
+#[doc(hidden)]
 pub mod policy;
 #[path = "artifacts/storage/recovery.rs"]
 mod recovery;
@@ -126,6 +151,7 @@ mod remote_execution_model;
 #[path = "backend/runtime/remote_executor.rs"]
 mod remote_executor;
 mod replay;
+#[doc(hidden)]
 #[path = "runtime_core/execution/run_context.rs"]
 pub mod run_context;
 #[path = "runtime_core/execution/run_state.rs"]
@@ -137,6 +163,7 @@ mod runtime;
 mod runtime_boundary_tests;
 #[path = "internal/control/runtime_controls.rs"]
 mod runtime_controls;
+#[doc(hidden)]
 pub mod runtime_core;
 #[cfg(test)]
 #[path = "internal/testing/runtime_policy_trace_tests.rs"]
@@ -153,13 +180,16 @@ mod scheduler_workload;
 mod secrets_security;
 #[path = "internal/identity/security_env.rs"]
 mod security_env;
+#[doc(hidden)]
 #[path = "internal/control/selectors.rs"]
 pub mod selectors;
 #[path = "artifacts/storage/semantic_lineage.rs"]
 mod semantic_lineage;
+#[doc(hidden)]
 #[path = "internal/control/services.rs"]
 pub mod services;
 pub mod simulated_platform;
+#[doc(hidden)]
 #[path = "runtime_core/execution/state_machine.rs"]
 pub mod state_machine;
 #[cfg(test)]
@@ -167,6 +197,7 @@ pub mod state_machine;
 mod state_machine_tests;
 #[path = "artifacts/storage/store.rs"]
 mod store;
+#[doc(hidden)]
 #[path = "backend/runtime/subprocess.rs"]
 pub mod subprocess;
 #[path = "internal/identity/supply_chain_trust.rs"]
@@ -180,6 +211,7 @@ mod tenancy;
 #[cfg(test)]
 #[path = "internal/testing/test_support.rs"]
 mod test_support;
+#[doc(hidden)]
 #[path = "artifacts/storage/trace.rs"]
 pub mod trace;
 #[path = "artifacts/storage/upgrade_compatibility.rs"]
@@ -269,6 +301,7 @@ pub use execution_backend::{
     EngineOutcome, ExecutionAttemptRecord, ExecutionBackend, ExecutionBackendCapabilityDescriptor,
     FakeBackend, ProcessLikeBackend,
 };
+pub use execution_context::{ExecutionContext, NodeExecutionContext};
 pub use execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 pub use extension_catalog::{
     compute_platform_maturity, detect_extension_compatibility_issues,
@@ -298,6 +331,10 @@ pub use infrastructure::{
     negotiate_backend_capabilities, BackendCapabilities as InfrastructureBackendCapabilities,
     BackendCapabilityRequirement, BackendExecutionCompletion, BackendExecutionRequest,
     CapabilityDecision, ExecutorBackend,
+};
+pub use invariants::{
+    run_summary_invariant_ok, terminal_run_has_terminal_node, trace_time_order_ok, RunNodeCounts,
+    INVARIANT_REGISTRY,
 };
 use io::{Fs, StdFs};
 pub use local_executor::LocalExecutor;
@@ -367,11 +404,11 @@ pub use runtime_controls::{
     build_execution_isolation_report, build_heartbeat_audit_report,
     build_manual_intervention_audit_report, build_pause_resume_audit_report,
     build_policy_enforcement_report, build_retry_decision_report, build_timeout_audit_report,
-    build_transition_audit_report, CancellationAuditReport, DispatchAuditReport,
-    DispatchKeyRecord, EventLogAuditReport, ExecutionIsolationNodeReport,
-    ExecutionIsolationReport, HeartbeatAuditReport, ManualInterventionAuditReport,
-    PauseResumeAuditReport, PolicyEnforcementReport, PolicyEnforcementSurfaceReport,
-    PolicyGuardSemanticsReport, RetryDecisionReport, TimeoutAuditReport, TransitionAuditReport,
+    build_transition_audit_report, CancellationAuditReport, DispatchAuditReport, DispatchKeyRecord,
+    EventLogAuditReport, ExecutionIsolationNodeReport, ExecutionIsolationReport,
+    HeartbeatAuditReport, ManualInterventionAuditReport, PauseResumeAuditReport,
+    PolicyEnforcementReport, PolicyEnforcementSurfaceReport, PolicyGuardSemanticsReport,
+    RetryDecisionReport, TimeoutAuditReport, TransitionAuditReport,
 };
 pub use runtime_semantics::*;
 pub use scheduler::{
@@ -421,6 +458,10 @@ pub use semantic_lineage::{
 };
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+pub use state_machine::{
+    failure_propagation_is_deterministic, node_transition_allowed, run_transition_allowed,
+    NodeLifecycleState, RunLifecycleState,
+};
 use std::collections::{BTreeMap, HashMap};
 use std::io::{self as std_io, Write};
 use std::path::{Path, PathBuf};
@@ -456,6 +497,51 @@ pub use upgrade_compatibility::{
     ManifestMigrationPlan, MigrationImpactEstimate, PluginVersionWindow, ReleaseGateOutcome,
     SchedulerStateCompatibilityCheck, UpgradePathPolicy, UpgradeRolloutPlan,
 };
+
+/// Explicit long-lived execution, scheduling, and replay surface.
+pub mod stable {
+    pub use crate::{
+        adapter_conformance_suite, build_plan, build_planner_analysis, build_scheduler,
+        cache_key_explanation, registered_adapter_descriptors,
+        registered_adapter_reference_document, registered_adapters, trace_time_order_ok,
+        validate_node_transition, validate_run_transition, verify_post_run_state_consistency,
+        CacheKeyInput, CacheMode, ExecutionContext, NodeExecutionContext, NodeLifecycleState,
+        PlannerGuardrails, RunLifecycleState, Runtime, RuntimeConfig, RuntimeError,
+        SchedulerPolicy, SelectorSet,
+    };
+}
+
+/// Common imports for planning, scheduling, and executing local DAG runs.
+pub mod prelude {
+    pub use crate::stable::{
+        build_plan, build_planner_analysis, build_scheduler, CacheMode, ExecutionContext,
+        NodeExecutionContext, PlannerGuardrails, Runtime, RuntimeConfig, RuntimeError,
+        SchedulerPolicy, SelectorSet,
+    };
+}
+
+/// Opt-in contract and evidence helpers that are outside the stable runtime lane.
+#[cfg(feature = "experimental-public-api")]
+pub mod experimental {
+    pub mod adapter_execution {
+        pub use crate::iteration06_contracts::*;
+    }
+    pub mod write_boundaries {
+        pub use crate::iteration09_contracts::*;
+    }
+    pub mod planner_admission {
+        pub use crate::iteration13_contracts::*;
+    }
+    pub mod durable_queue {
+        pub use crate::iteration14_contracts::*;
+    }
+    pub mod container_evidence {
+        pub use crate::iteration15_contracts::*;
+    }
+    pub mod observability_taxonomy {
+        pub use crate::iteration17_contracts::*;
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum RuntimeError {
@@ -2328,7 +2414,6 @@ mod cache_read_contract_tests {
 
         assert_eq!(original_fingerprint, moved_fingerprint);
     }
-
 }
 
 #[cfg(test)]

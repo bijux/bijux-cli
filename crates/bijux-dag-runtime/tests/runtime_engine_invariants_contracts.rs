@@ -10,15 +10,14 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::invariants::trace_time_order_ok;
 use bijux_dag_runtime::{
     append_audit_event, artifact_lineage_complete, cancellation_is_terminal, classify_failure,
     dependency_resolution_is_complete, event_names_emitted_once, recovery_action_required,
     required_event_fields_present, retry_allowed, timeout_triggered, trace_event_count_by_category,
-    validate_node_transition, validate_required_event_names, validate_run_transition,
-    verify_post_run_state_consistency, EventCategory, EventRecord, EventSink, FileEventSink,
-    NodeState, NodeTransition, RecoveryInput, RetryPolicySemantics, RunState, RunTransition,
-    RuntimeAuditEvent, RuntimeFailureClass, TransitionCause,
+    trace_time_order_ok, validate_node_transition, validate_required_event_names,
+    validate_run_transition, verify_post_run_state_consistency, EventCategory, EventRecord,
+    EventSink, FileEventSink, NodeState, NodeTransition, RecoveryInput, RetryPolicySemantics,
+    RunState, RunTransition, RuntimeAuditEvent, RuntimeFailureClass, TransitionCause,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
