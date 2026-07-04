@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Extensibility Model
@@ -42,6 +42,9 @@ flowchart LR
 - extensions must not bypass core semantic contracts
 - capability downgrade must remain explicit and observable
 - unstable platform simulations must stay out of stable root behavior
+
+The modeled platform surfaces called out here stay under `LIM-006` until they
+gain real release-grade runtime semantics.
 
 ## Next Reads
 

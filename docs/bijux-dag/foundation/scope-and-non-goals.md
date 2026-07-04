@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Scope and Non-Goals
@@ -38,6 +38,9 @@ flowchart TB
 - collapsing graph/run/artifact scopes into one generic change signal
 - shipping simulated platform-control namespaces as stable operator APIs
 - replacing organization security/compliance policy systems
+
+The current hidden experimental and simulation surfaces remain constrained by
+`LIM-005` and `LIM-006` in [Known Limitations](../quality/known-limitations.md).
 
 ## Code Anchors
 

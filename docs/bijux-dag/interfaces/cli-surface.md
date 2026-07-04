@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-05
 ---
 
 # CLI Surface
@@ -69,7 +69,8 @@ surface in `v0.4.0`:
 
 These routes still exist for explicit maintainer workflows and contract tests.
 They can be inventoried with `bijux-dag commands --all`, but they are not
-presented as stable operator APIs.
+presented as stable operator APIs. See `LIM-005` and `LIM-006` in
+[Known Limitations](../quality/known-limitations.md).
 
 ## Global Flags
 
