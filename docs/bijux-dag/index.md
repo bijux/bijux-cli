@@ -20,8 +20,9 @@ Runtime identity in manifests, provenance, replay, and cache fingerprints is
 resolved from build metadata. Changing the shell directory around the compiled
 binary is not supposed to rewrite DAG evidence identity.
 
-The public operator contract is the visible `bijux-dag --help` surface. Hidden
-simulation and maintainer namespaces remain in the repository for internal
+The public operator contract is the visible `bijux-dag --help` surface. That
+root help stays intentionally concise for `v0.4.0`. Hidden experimental,
+simulation, and maintainer namespaces remain in the repository for internal
 coverage and evidence work, but they are not presented as stable `v0.4.0`
 operator APIs.
 

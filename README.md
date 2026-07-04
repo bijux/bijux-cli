@@ -39,6 +39,7 @@ Current release line: **`v0.4.0`**.
 - `bijux-dag` now ships as five public Rust crates: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and `bijux-dag-cli`.
 - `bijux-dag-testkit` remains repository-internal test support and is not a crates.io publication target.
 - the supported DAG operator contract is the visible `bijux-dag --help` surface; hidden simulation and maintainer namespaces are intentionally excluded from the public release boundary.
+- the default `bijux-dag --help` surface is intentionally concise for `v0.4.0`; hidden experimental routes remain callable by explicit path but are not advertised as stable operator APIs.
 - DAG runtime manifests, provenance, replay, and cache fingerprints stamp build
   identity from the compiled binary instead of discovering Git state at runtime.
 - GitHub Releases and GHCR now stage both public release families, including a stamped `bijux-dag` binary bundle.

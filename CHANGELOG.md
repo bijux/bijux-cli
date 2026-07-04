@@ -23,6 +23,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 - Advanced the repository release line to `v0.4.0` across workspace metadata, release automation, and maintained compatibility defaults.
 - Reworked the root README, package map, and handbook release notes so the public surface now describes both the `bijux` command runtime and the published `bijux-dag` crates accurately.
 - Updated release operations guidance to document the combined CLI and DAG publication path and the repository-internal status of `bijux-dev`.
+- Reduced the visible `bijux-dag --help` surface to the stable operator roots for `v0.4.0`, while keeping experimental and maintainer routes callable by explicit path.
 
 ### Fixed
 - Removed stale documentation that still described the DAG crates as internal-only, public test-support crates, or deferred beyond the current release line.
