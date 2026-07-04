@@ -607,6 +607,7 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
             labels: run_snapshot.labels,
             parent_run_id: run_snapshot.parent_run_id.map(|id| id.to_string()),
             source_run_id: run_snapshot.replay_source_run_id.map(|id| id.to_string()),
+            graph_inputs: std::collections::BTreeMap::new(),
         }),
         run_summary: None,
     })

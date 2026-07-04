@@ -176,6 +176,15 @@ pub(crate) fn handle_run_command(
         }
     }
     if !cli.quiet {
+        if !runtime_inputs.human_summary.is_empty() {
+            println!(
+                "inputs: {}",
+                serde_json::to_string(&runtime_inputs.human_summary).unwrap()
+            );
+        }
+        if !runtime_inputs.redacted_keys.is_empty() {
+            println!("redacted_inputs: {:?}", runtime_inputs.redacted_keys);
+        }
         println!("run dir: {}", run_path.display());
     }
     Ok(ExitCode::SUCCESS)
