@@ -39,6 +39,28 @@ pub struct ExecutionIsolationReport {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolicyGuardSemanticsReport {
+    pub guard: String,
+    pub enforcement_mode: String,
+    pub guarantee: String,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolicyEnforcementSurfaceReport {
+    pub executor_surface: String,
+    pub isolation_mode: TaskIsolationMode,
+    pub isolation_claim: String,
+    pub guards: Vec<PolicyGuardSemanticsReport>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolicyEnforcementReport {
+    pub surfaces: Vec<PolicyEnforcementSurfaceReport>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DispatchKeyRecord {
     pub run_id: String,
     pub node_id: String,
@@ -223,6 +245,123 @@ pub fn build_execution_isolation_report(
         executor_surfaces,
         nodes,
     })
+}
+
+pub fn build_policy_enforcement_report(
+    graph: &Graph,
+    options: &RuntimeConfig,
+) -> Result<PolicyEnforcementReport, RuntimeError> {
+    let mut surfaces = validate_task_contracts(graph, options)?
+        .into_iter()
+        .map(|contract| policy_enforcement_surface(&contract.isolation_mode))
+        .collect::<Vec<_>>();
+    surfaces.sort_by(|left, right| left.executor_surface.cmp(&right.executor_surface));
+    surfaces.dedup_by(|left, right| {
+        left.executor_surface == right.executor_surface && left.isolation_mode == right.isolation_mode
+    });
+    Ok(PolicyEnforcementReport { surfaces })
+}
+
+fn policy_enforcement_surface(
+    isolation_mode: &TaskIsolationMode,
+) -> PolicyEnforcementSurfaceReport {
+    match isolation_mode {
+        TaskIsolationMode::InProcess => PolicyEnforcementSurfaceReport {
+            executor_surface: "inline-kernel".to_string(),
+            isolation_mode: TaskIsolationMode::InProcess,
+            isolation_claim: "no_process_boundary".to_string(),
+            guards: vec![
+                effect_gate_guard("deny-network", "network"),
+                effect_gate_guard("deny-env", "environment"),
+                effect_gate_guard("deny-clock", "clock"),
+            ],
+            limitations: vec![
+                "inline execution does not create a subprocess boundary".to_string(),
+                "host side effects remain visible inside the current process".to_string(),
+            ],
+        },
+        TaskIsolationMode::Subprocess => PolicyEnforcementSurfaceReport {
+            executor_surface: "local-subprocess".to_string(),
+            isolation_mode: TaskIsolationMode::Subprocess,
+            isolation_claim: "best_effort_process_boundary".to_string(),
+            guards: vec![
+                effect_gate_guard("deny-network", "network"),
+                effect_gate_guard("deny-env", "environment"),
+                effect_gate_guard("deny-clock", "clock"),
+                clean_env_guard(),
+            ],
+            limitations: vec![
+                "subprocess mode does not firewall network access".to_string(),
+                "subprocess mode does not virtualize clocks or time syscalls".to_string(),
+                "subprocess mode does not sandbox arbitrary filesystem reads".to_string(),
+                "subprocess mode cannot prevent host-visible side effects after spawn".to_string(),
+            ],
+        },
+        TaskIsolationMode::Container => PolicyEnforcementSurfaceReport {
+            executor_surface: "container-engine".to_string(),
+            isolation_mode: TaskIsolationMode::Container,
+            isolation_claim: "container_runtime_boundary".to_string(),
+            guards: vec![
+                PolicyGuardSemanticsReport {
+                    guard: "deny-network".to_string(),
+                    enforcement_mode: "container_runtime_flag".to_string(),
+                    guarantee: "passes network isolation flags to the container engine and fails closed when the engine cannot honor them".to_string(),
+                    limitations: vec![
+                        "network isolation semantics depend on the selected container engine".to_string(),
+                        "container networking controls do not claim full host sandboxing".to_string(),
+                    ],
+                },
+                effect_gate_guard("deny-env", "environment"),
+                effect_gate_guard("deny-clock", "clock"),
+                clean_env_guard(),
+            ],
+            limitations: vec![
+                "container mode constrains declared mounts and environment but is not a virtual machine".to_string(),
+                "clock denial remains declaration-based unless a stronger backend is added".to_string(),
+            ],
+        },
+        TaskIsolationMode::ExternalAdapter => PolicyEnforcementSurfaceReport {
+            executor_surface: "remote-adapter".to_string(),
+            isolation_mode: TaskIsolationMode::ExternalAdapter,
+            isolation_claim: "adapter_defined_boundary".to_string(),
+            guards: vec![
+                effect_gate_guard("deny-network", "network"),
+                effect_gate_guard("deny-env", "environment"),
+                effect_gate_guard("deny-clock", "clock"),
+                clean_env_guard(),
+            ],
+            limitations: vec![
+                "runtime policy is enforced before adapter handoff, then adapter behavior owns the remaining boundary".to_string(),
+                "remote adapters may provide stronger isolation, but this runtime does not claim it without adapter-specific evidence".to_string(),
+            ],
+        },
+    }
+}
+
+fn effect_gate_guard(guard: &str, effect: &str) -> PolicyGuardSemanticsReport {
+    PolicyGuardSemanticsReport {
+        guard: guard.to_string(),
+        enforcement_mode: "declared_effect_gate".to_string(),
+        guarantee: format!(
+            "refuses nodes that declare {effect} effects before execution starts"
+        ),
+        limitations: vec![
+            "depends on accurate effect declarations in the DAG".to_string(),
+            "does not interpose on syscalls after the executor has started".to_string(),
+        ],
+    }
+}
+
+fn clean_env_guard() -> PolicyGuardSemanticsReport {
+    PolicyGuardSemanticsReport {
+        guard: "clean-env".to_string(),
+        enforcement_mode: "environment_shaping".to_string(),
+        guarantee: "starts executors with a stripped environment and optional allowlist".to_string(),
+        limitations: vec![
+            "does not sandbox filesystem access".to_string(),
+            "does not prevent subprocess side effects outside environment variables".to_string(),
+        ],
+    }
 }
 
 pub fn audit_dispatch_discipline(
@@ -664,7 +803,10 @@ fn recommend_resume_action(
 
 #[cfg(test)]
 mod tests {
-    use super::{audit_dispatch_discipline, build_execution_isolation_report, DispatchKeyRecord};
+    use super::{
+        audit_dispatch_discipline, build_execution_isolation_report, build_policy_enforcement_report,
+        DispatchKeyRecord,
+    };
     use crate::simulated_platform::{
         HeartbeatClass, HeartbeatSemantics, LivenessPolicy, TaskLeaseSemantics, WorkLease,
         WorkerHeartbeat,
@@ -760,6 +902,7 @@ mod tests {
         assert!(report.isolation_counts.contains_key("in_process"));
         assert!(report.isolation_counts.contains_key("subprocess"));
     }
+
 
     #[test]
     fn dispatch_audit_flags_duplicate_dispatch_keys() {

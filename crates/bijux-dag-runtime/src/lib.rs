@@ -366,11 +366,12 @@ pub use runtime_controls::{
     audit_dispatch_discipline, audit_run_event_log, build_cancellation_audit_report,
     build_execution_isolation_report, build_heartbeat_audit_report,
     build_manual_intervention_audit_report, build_pause_resume_audit_report,
-    build_retry_decision_report, build_timeout_audit_report, build_transition_audit_report,
-    CancellationAuditReport, DispatchAuditReport, DispatchKeyRecord, EventLogAuditReport,
-    ExecutionIsolationNodeReport, ExecutionIsolationReport, HeartbeatAuditReport,
-    ManualInterventionAuditReport, PauseResumeAuditReport, RetryDecisionReport, TimeoutAuditReport,
-    TransitionAuditReport,
+    build_policy_enforcement_report, build_retry_decision_report, build_timeout_audit_report,
+    build_transition_audit_report, CancellationAuditReport, DispatchAuditReport,
+    DispatchKeyRecord, EventLogAuditReport, ExecutionIsolationNodeReport,
+    ExecutionIsolationReport, HeartbeatAuditReport, ManualInterventionAuditReport,
+    PauseResumeAuditReport, PolicyEnforcementReport, PolicyEnforcementSurfaceReport,
+    PolicyGuardSemanticsReport, RetryDecisionReport, TimeoutAuditReport, TransitionAuditReport,
 };
 pub use runtime_semantics::*;
 pub use scheduler::{
