@@ -25,9 +25,11 @@ repository.
 - `Security` installs pinned Rust security tools and runs `make gh-security`
 - `Tests` runs the Python-version matrix through `make gh-test`
 - `make gh-test` routes Rust through `make test-release-rs`, which uses the `ci` nextest profile and excludes governed slow-lane DAG coverage from the required release lane
+- release-candidate package, publish, doc, and smoke validation run in `release-validation.yml` through `make gh-release-validate`
 
 ## Next Reads
 
 - [deploy-docs](deploy-docs.md)
+- [release-validation](release-validation.md)
 - [release-crates](release-crates.md)
 - [CI Targets](../makes/ci-targets.md)

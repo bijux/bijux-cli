@@ -45,6 +45,7 @@ flowchart LR
 ## Preflight Checklist
 
 - required release-lane tests and maintainer verification commands are green
+- `make release-validate-rs` is green before any release recommendation
 - `make test-release-rs` is green before any release recommendation
 - `make test-all-rs` is green whenever DAG release-sensitive slow-lane coverage changed or ignored-test governance changed
 - compatibility notes are prepared for changed public behavior
@@ -60,10 +61,11 @@ flowchart LR
 ## Standard Commands
 
 ```bash
+make release-validate-rs
 make test-release-rs
 make test-all-rs
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
-cargo run -q -p bijux-dev --bin bijux-dev-cli -- release
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- release verify
 make docs-check
 ```
 
@@ -85,3 +87,4 @@ by unresolved behavior.
 - [Core Release and Versioning](../../bijux-core/governance/release-and-versioning.md)
 - [Contract Governance](../governance/contract-governance.md)
 - [Known Limitations](../governance/known-limitations.md)
+- [Release Validation Suite](release-validation-suite.md)

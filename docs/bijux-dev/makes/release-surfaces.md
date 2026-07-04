@@ -14,6 +14,8 @@ and publication commands.
 
 ## Important Targets
 
+- `make release-validate-rs`
+- `make gh-release-validate`
 - `make gh-release-plan-github`
 - `make gh-release-plan-pypi`
 - `make gh-release-plan-crates`
@@ -35,8 +37,13 @@ Release planning and release execution should stay separate. The repo should be
 able to explain why a publish job ran before it describes how the publish job
 executed.
 
+The release validation suite is the required gate between candidate selection
+and publication. It must run against a clean tree prepared from committed
+`HEAD`, not against ambient local worktree state.
+
 ## Next Reads
 
 - [CI Targets](ci-targets.md)
 - [gh-workflows](../gh-workflows/index.md)
 - [Release Operations](../operations/release-operations.md)
+- [Release Validation Suite](../operations/release-validation-suite.md)

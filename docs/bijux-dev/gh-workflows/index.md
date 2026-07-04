@@ -16,6 +16,7 @@ debugging jobs directly in CI logs.
 ## Pages In This Section
 
 - [ci](ci.md)
+- [release-validation](release-validation.md)
 - [deploy-docs](deploy-docs.md)
 - [release-crates](release-crates.md)
 - [release-pypi](release-pypi.md)
@@ -27,6 +28,7 @@ debugging jobs directly in CI logs.
 | Workflow | Owns | Enter Here When |
 | --- | --- | --- |
 | [ci](ci.md) | Repository validation gates and baseline verification | pull request checks fail or mandatory CI signals regress |
+| [release-validation](release-validation.md) | Release-candidate verification from committed `HEAD` | release checks fail on formatting, packaging, publish dry runs, or smoke coverage |
 | [deploy-docs](deploy-docs.md) | Documentation publishing and site deployment flow | docs site output, publish triggers, or deploy permissions fail |
 | [release-crates](release-crates.md) | Rust crate release orchestration | crates release process, publish ordering, or registry upload issues appear |
 | [release-pypi](release-pypi.md) | Python release orchestration | PyPI publication, packaging metadata, or python release gates fail |

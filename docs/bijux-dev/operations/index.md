@@ -39,6 +39,7 @@ flowchart LR
 - [CI and Automation](ci-and-automation.md)
 - [Incident Response](incident-response.md)
 - [Release Operations](release-operations.md)
+- [Release Validation Suite](release-validation-suite.md)
 
 ## Related Maintainer Sections
 

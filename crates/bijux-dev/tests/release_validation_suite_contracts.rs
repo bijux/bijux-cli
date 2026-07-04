@@ -143,6 +143,8 @@ fn public_dag_publish_validation_does_not_require_registry_testkit_release() {
 fn release_validation_suite_entrypoints_are_wired_into_make_and_ci() {
     let gh_makefile = read_repo_file("makes/gh.mk");
     let workflow = read_repo_file(".github/workflows/release-validation.yml");
+    let operations_doc = read_repo_file("docs/bijux-dev/operations/release-validation-suite.md");
+    let workflow_doc = read_repo_file("docs/bijux-dev/gh-workflows/release-validation.md");
 
     assert!(
         gh_makefile.contains("gh-release-validate: install release-validate-rs"),
@@ -163,5 +165,13 @@ fn release_validation_suite_entrypoints_are_wired_into_make_and_ci() {
     assert!(
         workflow.contains("pull_request:"),
         "release validation workflow must validate pull requests"
+    );
+    assert!(
+        operations_doc.contains("make release-validate-rs"),
+        "release validation operations doc must name the canonical local entrypoint"
+    );
+    assert!(
+        workflow_doc.contains("make gh-release-validate"),
+        "release validation workflow doc must name the canonical CI entrypoint"
     );
 }

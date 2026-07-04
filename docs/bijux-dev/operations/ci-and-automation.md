@@ -34,6 +34,7 @@ flowchart TD
 ## Alignment Rules
 
 - local make targets must mirror CI gate composition
+- release-candidate verification must use the same committed-`HEAD` suite locally and in CI
 - path filters must reflect real ownership boundaries
 - failure messages must name owning surface and remediation path
 
@@ -63,4 +64,5 @@ the mismatch is narrowed to one workflow or gate family.
 - [makes](../makes/ci-targets.md)
 - [Repository Gates](repository-gates.md)
 - [Release Operations](release-operations.md)
+- [Release Validation Suite](release-validation-suite.md)
 - [Change Control](../governance/change-control.md)
