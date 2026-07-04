@@ -66,6 +66,9 @@ The public package families in this repository are:
 
 ## Quick Start
 
+Local builds, CI, and release jobs all use the pinned Rust `1.86.0` toolchain
+declared in `rust-toolchain.toml`.
+
 Install the public command surfaces:
 
 ```bash

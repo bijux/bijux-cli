@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-04
 ---
 
 # Local Development
@@ -32,6 +32,9 @@ make install
 cargo check --workspace --all-targets
 make docs-check
 ```
+
+Local runs should use the pinned Rust `1.86.0` toolchain from
+`rust-toolchain.toml` so the root commands agree with CI and release jobs.
 
 ## Local Rule
 
