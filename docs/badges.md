@@ -4,7 +4,7 @@ audience: maintainer
 type: reference
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-04
 ---
 
 # Badge Catalog
@@ -36,9 +36,8 @@ GHCR badge links are fixed here as part of the contract:
 
 - the repository-wide GHCR summary badge links to
   `https://github.com/bijux?tab=packages&repo_name=bijux-core`
-- per-package GHCR badges link to the package-specific
-  `https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli`
-  page
+- per-package GHCR badges link to the package-specific package pages for
+  `bijux-cli` and `bijux-dag`
 
 ## Repository Summary
 
@@ -49,7 +48,7 @@ GHCR badge links are fixed here as part of the contract:
 [![Crates Publish](https://github.com/bijux/bijux-core/workflows/release-crates/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml)
 [![PyPI Publish](https://github.com/bijux/bijux-core/workflows/release-pypi/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml)
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
-[![GHCR packages](https://img.shields.io/badge/ghcr-{{ ghcr_package_count }}%20package-181717?logo=github)](https://github.com/bijux?tab=packages&repo_name=bijux-core)
+[![GHCR packages](https://img.shields.io/badge/ghcr-{{ ghcr_package_count }}%20packages-181717?logo=github)](https://github.com/bijux?tab=packages&repo_name=bijux-core)
 [![Published packages](https://img.shields.io/badge/published%20packages-{{ public_package_count }}-2563EB)](https://github.com/bijux/bijux-core/tree/main/crates)
 <!-- bijux-core-badges:repository-summary:end -->
 
