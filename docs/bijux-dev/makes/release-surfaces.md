@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-04
 ---
 
 # Release Surfaces
@@ -18,8 +18,16 @@ and publication commands.
 - `make gh-release-plan-pypi`
 - `make gh-release-plan-crates`
 - `make gh-release-require-cargo-token`
+- `make build-dag-release-bundle`
 - `make publish-rs`
 - `make publish-py`
+
+## Release Families
+
+- `bijux-cli` builds the Python release artifacts used by PyPI, GitHub
+  Releases, and GHCR.
+- `bijux-dag` builds a stamped Rust binary bundle under
+  `artifacts/rust/build/` for GitHub Releases and GHCR.
 
 ## Release Rule
 

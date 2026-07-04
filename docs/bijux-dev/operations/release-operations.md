@@ -36,8 +36,9 @@ flowchart LR
 
 ## Current Publication Policy
 
-- `v0.4.0` publishes `bijux-cli` to crates.io, `bijux-cli` to PyPI, and the public DAG Rust crate family to crates.io.
-- The public DAG release set is `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-testkit`, `bijux-dag-app`, and `bijux-dag-cli`.
+- `v0.4.0` publishes `bijux-cli` to crates.io and PyPI.
+- `v0.4.0` publishes the DAG Rust crate family to crates.io in dependency order: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, `bijux-dag-cli`, and `bijux-dag-testkit`.
+- GitHub Releases and GHCR publish two stamped release families: the `bijux-cli` distribution bundle and the `bijux-dag` binary tarball.
 - `bijux-dev` remains repository-internal maintainer tooling and is not published.
 - The canonical repository for both products is `https://github.com/bijux/bijux-core`.
 

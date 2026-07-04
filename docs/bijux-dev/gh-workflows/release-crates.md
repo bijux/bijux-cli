@@ -25,6 +25,21 @@ present and CI on the tagged commit is healthy.
 - verify crates.io credentials
 - publish through `make publish-rs`
 
+## Publication Order
+
+The default publish order is dependency-first:
+
+- `bijux-dag-core`
+- `bijux-dag-artifacts`
+- `bijux-dag-runtime`
+- `bijux-dag-app`
+- `bijux-dag-cli`
+- `bijux-dag-testkit`
+- `bijux-cli`
+
+That order keeps the DAG crate family coherent on crates.io before the separate
+`bijux` runtime crate is published.
+
 ## Next Reads
 
 - [release-pypi](release-pypi.md)
