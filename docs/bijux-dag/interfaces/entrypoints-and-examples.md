@@ -19,7 +19,7 @@ flowchart LR
     examples --> rust_example[Rust API example]
     examples --> config_example[Config-driven example]
 
-    cli_example --> cli_entry[bijux dag entrypoints]
+    cli_example --> cli_entry[bijux-dag entrypoints]
     rust_example --> api_entry[dag-core and dag-runtime crate exports]
     config_example --> runtime_path[configured runtime path]
 ```
@@ -27,11 +27,11 @@ flowchart LR
 ## CLI Entrypoints
 
 ```bash
-bijux dag validate ./examples/simple.dag.json
-bijux dag run ./examples/simple.dag.json --out ./runs
-bijux dag replay ./runs/run-123 --out ./runs/replay-123
-bijux dag diff ./runs/run-122 ./runs/run-123 --mode semantic --explain
-bijux dag status ./runs/run-123
+bijux-dag validate ./examples/simple.dag.json
+bijux-dag run ./examples/simple.dag.json --out ./runs
+bijux-dag replay ./runs/run-123 --out ./runs/replay-123
+bijux-dag diff ./runs/run-122 ./runs/run-123 --mode semantic --explain
+bijux-dag status ./runs/run-123
 ```
 
 ## Rust Entrypoint Example

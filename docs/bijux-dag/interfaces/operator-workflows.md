@@ -36,11 +36,11 @@ flowchart LR
 ## Example Sequence
 
 ```bash
-bijux dag validate ./pipelines/main.dag.json
-bijux dag run ./pipelines/main.dag.json --out ./runs
-bijux dag inspect ./runs/run-20260406-01
-bijux dag replay ./runs/run-20260406-01 --out ./runs/replay
-bijux dag diff ./runs/run-20260405-77 ./runs/run-20260406-01 --mode semantic --explain
+bijux-dag validate ./pipelines/main.dag.json
+bijux-dag run ./pipelines/main.dag.json --out ./runs
+bijux-dag inspect ./runs/run-20260406-01
+bijux-dag replay ./runs/run-20260406-01 --out ./runs/replay
+bijux-dag diff ./runs/run-20260405-77 ./runs/run-20260406-01 --mode semantic --explain
 ```
 
 ## Code Anchors

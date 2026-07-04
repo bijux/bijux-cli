@@ -20,7 +20,7 @@ the environment around it.
 
 ```mermaid
 flowchart LR
-    dag["bijux dag"] --> define["define and validate"]
+    dag["bijux-dag"] --> define["define and validate"]
     dag --> execute["execute and replay"]
     dag --> inspect["inspect runs and artifacts"]
     dag --> compare["compare outcomes"]

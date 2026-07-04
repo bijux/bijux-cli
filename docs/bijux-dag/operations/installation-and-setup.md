@@ -26,7 +26,7 @@ flowchart TD
 
 - Rust `1.86.0`, pinned by repository `rust-toolchain.toml`
 - workspace build succeeds with `cargo build --workspace`
-- DAG command surface reachable via `bijux dag --help`
+- DAG command surface reachable via `bijux-dag --help`
 - sample graph validates and runs without undocumented flags
 
 ## Recommended Validation Sequence
@@ -34,9 +34,9 @@ flowchart TD
 ```bash
 cargo build --workspace
 cargo test -p bijux-dag-core
-bijux dag validate ./examples/simple.dag.json
-bijux dag run ./examples/simple.dag.json --out ./runs/bootstrap
-bijux dag inspect ./runs/bootstrap/latest
+bijux-dag validate ./examples/simple.dag.json
+bijux-dag run ./examples/simple.dag.json --out ./runs/bootstrap
+bijux-dag inspect ./runs/bootstrap/latest
 ```
 
 ## Code Anchors
@@ -47,7 +47,7 @@ bijux dag inspect ./runs/bootstrap/latest
 
 ## Setup Failure Signals
 
-- command not found for `bijux dag`
+- command not found for `bijux-dag`
 - schema rejection on known-good example graphs
 - run directories missing outputs index or manifest evidence
 

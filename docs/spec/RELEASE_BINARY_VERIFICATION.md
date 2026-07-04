@@ -22,13 +22,13 @@ The command surfaces below are the minimum release proof contract.
 ```bash
 bijux --json doctor
 bijux --json cli paths
-bijux dag version --json
-bijux dag capabilities --json
-bijux dag validate --json evidence/authoring/examples/hello.dag.json
-bijux dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}
-bijux dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json
-bijux dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}
-bijux dag status --json ${RUN_DIR}
+bijux-dag version --json
+bijux-dag capabilities --json
+bijux-dag validate --json evidence/authoring/examples/hello.dag.json
+bijux-dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}
+bijux-dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json
+bijux-dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}
+bijux-dag status --json ${RUN_DIR}
 ```
 
 ## Scenario Source of Truth

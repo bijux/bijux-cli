@@ -33,10 +33,10 @@ flowchart TD
 ## Diagnostic Commands
 
 ```bash
-bijux dag status ./runs/failed-20260406-01
-bijux dag inspect ./runs/failed-20260406-01
-bijux dag replay ./runs/failed-20260406-01 --out ./runs/replay-failed
-bijux dag diff ./runs/good-20260405-77 ./runs/recovered-20260406-02 --mode semantic --explain
+bijux-dag status ./runs/failed-20260406-01
+bijux-dag inspect ./runs/failed-20260406-01
+bijux-dag replay ./runs/failed-20260406-01 --out ./runs/replay-failed
+bijux-dag diff ./runs/good-20260405-77 ./runs/recovered-20260406-02 --mode semantic --explain
 ```
 
 ## Code Anchors

@@ -28,7 +28,7 @@ The goal of this repository is simple: ship both products from one audited sourc
 | Product | What it does | Primary users | Runtime entrypoint |
 |---|---|---|---|
 | `bijux-cli` | Runs automation and interactive workflows with structured output, plugin routing, and stable command semantics. | Operators, developers, automation systems | `bijux` |
-| `bijux-dag` | Defines, validates, executes, replays, and diffs computation graphs with deterministic artifact and evidence behavior. | DAG authors, platform teams, governance workflows | `bijux-dag dag ...` |
+| `bijux-dag` | Defines, validates, executes, replays, and diffs computation graphs with deterministic artifact and evidence behavior. | DAG authors, platform teams, governance workflows | `bijux-dag ...` |
 
 ## Release State
 
@@ -90,7 +90,7 @@ Inspect product command surfaces:
 ```bash
 cargo run -p bijux-cli --bin bijux -- --help
 cargo run -p bijux-dag-cli --bin bijux-dag -- --help
-cargo run -p bijux-dag-cli --bin bijux-dag -- dag --help
+cargo run -p bijux-dag-cli --bin bijux-dag -- validate --help
 ```
 
 ## Maintainer Workflows

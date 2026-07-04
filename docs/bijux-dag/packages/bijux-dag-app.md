@@ -9,7 +9,7 @@ last_reviewed: 2026-04-12
 
 # bijux-dag-app
 
-`bijux-dag-app` is the application orchestration layer for `bijux dag`
+`bijux-dag-app` is the application orchestration layer for `bijux-dag`
 surfaces. It translates command inputs into services, coordinates reads and
 writes, and shapes user-facing responses.
 

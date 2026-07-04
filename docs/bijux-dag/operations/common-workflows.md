@@ -35,11 +35,11 @@ flowchart TD
 ## Canonical Command Path
 
 ```bash
-bijux dag validate ./pipelines/main.dag.json
-bijux dag run ./pipelines/main.dag.json --out ./runs/proposed
-bijux dag status ./runs/proposed/latest
-bijux dag replay ./runs/proposed/latest --out ./runs/replay
-bijux dag diff ./runs/reference/latest ./runs/proposed/latest --mode semantic --explain
+bijux-dag validate ./pipelines/main.dag.json
+bijux-dag run ./pipelines/main.dag.json --out ./runs/proposed
+bijux-dag status ./runs/proposed/latest
+bijux-dag replay ./runs/proposed/latest --out ./runs/replay
+bijux-dag diff ./runs/reference/latest ./runs/proposed/latest --mode semantic --explain
 ```
 
 ## Code Anchors

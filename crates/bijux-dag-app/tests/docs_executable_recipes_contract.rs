@@ -39,7 +39,7 @@ fn load_recipe_commands(docs_path: &Path, recipe_id: &str) -> Vec<String> {
     block
         .lines()
         .map(str::trim)
-        .filter(|line| line.starts_with("bijux dag "))
+        .filter(|line| line.starts_with("bijux-dag "))
         .map(str::to_string)
         .collect()
 }
@@ -54,7 +54,7 @@ fn substitute_vars(line: &str, vars: &BTreeMap<&str, String>) -> String {
 
 fn run_recipe_command(root: &Path, command: &str) -> Value {
     let args = command
-        .strip_prefix("bijux dag ")
+        .strip_prefix("bijux-dag ")
         .expect("command prefix")
         .split_whitespace()
         .map(str::to_string)
@@ -115,7 +115,7 @@ fn docs_major_dag_recipe_is_ci_executable() {
         if !payload.is_null() {
             assert!(payload.is_object(), "json mode must return a top-level object");
         }
-        if rendered.starts_with("bijux dag run ") {
+        if rendered.starts_with("bijux-dag run ") {
             let run_dir = payload
                 .get("data")
                 .and_then(|data| data.get("run_dir"))
