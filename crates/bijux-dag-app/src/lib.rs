@@ -91,7 +91,7 @@ use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
 use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
-    non_public_root_commands, CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg,
+    hide_non_public_help, CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg,
     HashCommands, MigrateCommands, PolicyCommands,
 };
 use config_resolution::{
@@ -109,11 +109,8 @@ use std::process::ExitCode;
 use thiserror as _;
 
 pub fn dag_command() -> clap::Command {
-    let mut command = DagCli::command().name(dag_command_name()).subcommand_required(false);
-    for hidden in non_public_root_commands() {
-        command = command.mut_subcommand(hidden, |subcommand| subcommand.hide(true));
-    }
-    command
+    let command = DagCli::command().name(dag_command_name()).subcommand_required(false);
+    hide_non_public_help(command, "")
 }
 
 pub fn dag_run(matches: &ArgMatches) -> Result<ExitCode, ExitCode> {

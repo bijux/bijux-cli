@@ -1,29 +1,27 @@
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Command, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
-const NON_PUBLIC_ROOT_COMMANDS: &[&str] = &[
-    "capabilities",
-    "control-plane",
-    "dataset",
-    "durability",
-    "enterprise",
-    "equivalence-proof",
-    "federation",
-    "fleet",
-    "governance",
-    "incident",
-    "lab",
-    "performance",
-    "release",
+const PUBLIC_ROOT_COMMANDS: &[&str] = &[
+    "artifact",
+    "artifact-inspect",
+    "cache",
+    "commands",
+    "diff",
+    "doctor",
+    "explain",
+    "plan",
+    "replay",
+    "run",
+    "runs",
+    "validate",
+    "verify",
+    "version",
+];
+
+const HIDDEN_DEFAULT_COMMAND_PATHS: &[&str] = &[
+    "artifact fetch",
+    "explain-plan",
     "run-bundle",
-    "runtime",
-    "schedule",
-    "security",
-    "semantic-portability",
-    "show-effective-graph",
-    "state-store",
-    "trace-node",
-    "version-inspect",
 ];
 
 const DENY_NETWORK_HELP: &str =
@@ -39,12 +37,37 @@ const HERMETIC_HELP: &str =
 const REPLAY_SANDBOX_HELP: &str =
     "forbid replay outputs from being written inside the source run directory; this is a write-boundary check, not a process sandbox";
 
-pub(crate) fn non_public_root_commands() -> &'static [&'static str] {
-    NON_PUBLIC_ROOT_COMMANDS
+pub(crate) fn root_command_hidden_from_public_help(name: &str) -> bool {
+    !PUBLIC_ROOT_COMMANDS.contains(&name)
 }
 
-pub(crate) fn root_command_hidden_from_public_help(name: &str) -> bool {
-    NON_PUBLIC_ROOT_COMMANDS.contains(&name)
+pub(crate) fn command_path_hidden_from_public_help(path: &str) -> bool {
+    let head = path.split(' ').next().unwrap_or(path);
+    if root_command_hidden_from_public_help(head) {
+        return true;
+    }
+    HIDDEN_DEFAULT_COMMAND_PATHS.contains(&path)
+}
+
+pub(crate) fn hide_non_public_help(mut command: Command, prefix: &str) -> Command {
+    let subcommand_names =
+        command.get_subcommands().map(|subcommand| subcommand.get_name().to_string()).collect::<Vec<_>>();
+    for name in subcommand_names {
+        let path = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix} {name}")
+        };
+        command = command.mut_subcommand(&name, |subcommand| {
+            let subcommand = hide_non_public_help(subcommand, &path);
+            if command_path_hidden_from_public_help(&path) {
+                subcommand.hide(true)
+            } else {
+                subcommand
+            }
+        });
+    }
+    command
 }
 
 #[derive(Parser)]
