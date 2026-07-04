@@ -40,6 +40,7 @@ flowchart TB
 - canonical graph parsing and validation failure modes
 - execution plan and runtime fidelity classification
 - artifact index/proof generation and verification paths
+- runtime build identity and fingerprint stability across working directories
 - replay and diff mismatch grouping and reason-code stability
 
 ## Code Anchors
