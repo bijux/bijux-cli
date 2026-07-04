@@ -8,7 +8,7 @@ use tempfile as _;
 use thiserror as _;
 use unicode_normalization as _;
 
-use bijux_dag_core::parse_graph_strict;
+use bijux_dag_core::{node_io_contract, parse_graph_strict, ParamBindingSource};
 
 #[test]
 fn tutorial_examples_parse_as_stable_contracts() {
@@ -19,6 +19,7 @@ fn tutorial_examples_parse_as_stable_contracts() {
         "../../evidence/authoring/examples/multi-output-artifact.dag.json",
         "../../evidence/authoring/examples/replay-heavy-branching.dag.json",
         "../../evidence/authoring/examples/failure-heavy-retry.dag.json",
+        "../../evidence/authoring/examples/parameterized-report.dag.json",
     ];
     for relative in examples {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(relative);
@@ -27,4 +28,44 @@ fn tutorial_examples_parse_as_stable_contracts() {
         let _graph = parse_graph_strict(&text)
             .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
     }
+}
+
+#[test]
+fn parameterized_report_example_uses_graph_inputs_and_output_references() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../evidence/authoring/examples/parameterized-report.dag.json");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+    let graph = parse_graph_strict(&text)
+        .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
+
+    assert_eq!(graph.inputs.get("region"), Some(&serde_json::json!("eu-west-1")));
+
+    let publish_contract =
+        node_io_contract(&graph, "publish_summary").expect("publish_summary contract");
+    assert!(
+        publish_contract.param_bindings.iter().any(|binding| matches!(
+            &binding.source,
+            ParamBindingSource::GraphInput { input_name } if input_name == "publish_channel"
+        ))
+    );
+    assert!(
+        publish_contract.param_bindings.iter().any(|binding| matches!(
+            &binding.source,
+            ParamBindingSource::NodeOutput { node_id, output_name }
+                if node_id == "build_report" && output_name == "report"
+        ))
+    );
+
+    let publish_node = graph
+        .nodes
+        .iter()
+        .find(|node| node.id == "publish_summary")
+        .expect("publish_summary node");
+    assert!(!publish_node.cache.enabled);
+    assert_eq!(
+        publish_node.cache.reason.as_deref(),
+        Some("publishes externally visible summary")
+    );
+    assert_eq!(publish_node.env_allowlist, vec!["REPORT_CHANNEL".to_string()]);
 }
