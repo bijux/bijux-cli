@@ -34,10 +34,16 @@ fn run_metadata_supports_parent_and_source_run_identity_links() {
         labels: vec!["x".to_string()],
         parent_run_id: Some("run-parent".to_string()),
         source_run_id: Some("run-source".to_string()),
+        graph_inputs: std::collections::BTreeMap::from([
+            ("region".to_string(), serde_json::json!("eu-west-1")),
+            ("attempts".to_string(), serde_json::json!(2)),
+        ]),
     };
     let value = serde_json::to_value(metadata).expect("serialize metadata");
     assert_eq!(value["parent_run_id"], "run-parent");
     assert_eq!(value["source_run_id"], "run-source");
+    assert_eq!(value["graph_inputs"]["region"], "eu-west-1");
+    assert_eq!(value["graph_inputs"]["attempts"], 2);
 }
 
 #[test]

@@ -365,6 +365,11 @@ pub fn execute(
         labels: options.labels.clone(),
         parent_run_id: options.parent_run_id.clone(),
         source_run_id: options.parent_run_id.clone(),
+        graph_inputs: graph
+            .inputs
+            .iter()
+            .map(|(key, value)| (key.clone(), value.clone()))
+            .collect::<BTreeMap<_, _>>(),
     });
     run_dir.write_manifest(&manifest)?;
 
