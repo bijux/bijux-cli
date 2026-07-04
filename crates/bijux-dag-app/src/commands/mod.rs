@@ -1,6 +1,39 @@
 use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
+const NON_PUBLIC_ROOT_COMMANDS: &[&str] = &[
+    "capabilities",
+    "control-plane",
+    "dataset",
+    "durability",
+    "enterprise",
+    "equivalence-proof",
+    "federation",
+    "fleet",
+    "governance",
+    "incident",
+    "lab",
+    "performance",
+    "release",
+    "run-bundle",
+    "runtime",
+    "schedule",
+    "security",
+    "semantic-portability",
+    "show-effective-graph",
+    "state-store",
+    "trace-node",
+    "version-inspect",
+];
+
+pub(crate) fn non_public_root_commands() -> &'static [&'static str] {
+    NON_PUBLIC_ROOT_COMMANDS
+}
+
+pub(crate) fn root_command_hidden_from_public_help(name: &str) -> bool {
+    NON_PUBLIC_ROOT_COMMANDS.contains(&name)
+}
+
 #[derive(Parser)]
 #[command(
     about = "Validate, run, replay, and inspect reproducible computation graphs",
@@ -66,6 +99,8 @@ pub(crate) enum Commands {
     CommandCatalog {
         #[arg(long)]
         groups: bool,
+        #[arg(long)]
+        all: bool,
     },
     #[command(name = "control-plane")]
     ControlPlane {

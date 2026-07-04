@@ -1,4 +1,4 @@
-use crate::commands::DagCli;
+use crate::commands::{root_command_hidden_from_public_help, DagCli};
 use crate::{dag_command, emit_json, ExitCode};
 use clap::Command;
 use serde::Serialize;
@@ -202,9 +202,13 @@ fn flatten(entry: &CommandCatalogEntry, out: &mut Vec<CommandCatalogEntry>) {
     }
 }
 
-fn command_catalog() -> Vec<CommandCatalogEntry> {
+fn command_catalog(include_hidden: bool) -> Vec<CommandCatalogEntry> {
     let mut entries =
-        dag_command().get_subcommands().map(|sub| build_entry("", sub)).collect::<Vec<_>>();
+        dag_command()
+            .get_subcommands()
+            .filter(|sub| include_hidden || !root_command_hidden_from_public_help(sub.get_name()))
+            .map(|sub| build_entry("", sub))
+            .collect::<Vec<_>>();
     entries.sort_by(|left, right| left.path.cmp(&right.path));
     entries
 }
@@ -238,8 +242,9 @@ fn maturity_label(maturity: CommandMaturity) -> &'static str {
 pub(crate) fn handle_command_catalog_command(
     cli: &DagCli,
     groups_only: bool,
+    include_hidden: bool,
 ) -> Result<ExitCode, ExitCode> {
-    let entries = command_catalog();
+    let entries = command_catalog(include_hidden);
     let groups = command_groups(&entries);
     if cli.json {
         let mut flattened = Vec::new();
@@ -283,27 +288,38 @@ mod tests {
     use super::{command_catalog, command_groups, CommandMaturity};
 
     #[test]
-    fn command_catalog_contains_new_operator_surfaces() {
-        let entries = command_catalog();
+    fn command_catalog_exposes_public_surface_by_default() {
+        let entries = command_catalog(false);
         let mut flattened = Vec::new();
         for entry in &entries {
             super::flatten(entry, &mut flattened);
         }
         assert!(flattened.iter().any(|entry| entry.path == "commands"));
-        assert!(flattened.iter().any(|entry| entry.path == "lab federation schedule"));
         assert!(flattened.iter().any(|entry| entry.path == "artifact fetch"));
-        assert!(flattened.iter().any(|entry| entry.path == "trace-node"));
         assert!(
             flattened
                 .iter()
                 .any(|entry| entry.path == "doctor"
                     && entry.maturity == CommandMaturity::Experimental)
         );
+        assert!(!flattened.iter().any(|entry| entry.path.starts_with("lab ")));
+        assert!(!flattened.iter().any(|entry| entry.path == "trace-node"));
+    }
+
+    #[test]
+    fn command_catalog_includes_hidden_namespaces_when_requested() {
+        let entries = command_catalog(true);
+        let mut flattened = Vec::new();
+        for entry in &entries {
+            super::flatten(entry, &mut flattened);
+        }
+        assert!(flattened.iter().any(|entry| entry.path == "lab federation schedule"));
+        assert!(flattened.iter().any(|entry| entry.path == "trace-node"));
     }
 
     #[test]
     fn command_groups_cover_public_taxonomy() {
-        let groups = command_groups(&command_catalog());
+        let groups = command_groups(&command_catalog(false));
         assert!(groups.contains(&"graph".to_string()));
         assert!(groups.contains(&"plan".to_string()));
         assert!(groups.contains(&"run".to_string()));

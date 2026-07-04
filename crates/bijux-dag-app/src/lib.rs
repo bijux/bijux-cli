@@ -89,8 +89,8 @@ use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
 use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
-    CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg, HashCommands, MigrateCommands,
-    PolicyCommands,
+    non_public_root_commands, CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg,
+    HashCommands, MigrateCommands, PolicyCommands,
 };
 use config_resolution::{
     show_effective_config, show_effective_policy, ShowEffectiveConfigRequest,
@@ -107,7 +107,11 @@ use std::process::ExitCode;
 use thiserror as _;
 
 pub fn dag_command() -> clap::Command {
-    DagCli::command().name(dag_command_name()).subcommand_required(false)
+    let mut command = DagCli::command().name(dag_command_name()).subcommand_required(false);
+    for hidden in non_public_root_commands() {
+        command = command.mut_subcommand(hidden, |subcommand| subcommand.hide(true));
+    }
+    command
 }
 
 pub fn dag_run(matches: &ArgMatches) -> Result<ExitCode, ExitCode> {
@@ -736,8 +740,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::CommandCatalog { groups } => {
-            routes::command_routes::handle_command_catalog_command(&cli, *groups)
+        Commands::CommandCatalog { groups, all } => {
+            routes::command_routes::handle_command_catalog_command(&cli, *groups, *all)
         }
         Commands::Migrate { command } => {
             let msg = match command {
