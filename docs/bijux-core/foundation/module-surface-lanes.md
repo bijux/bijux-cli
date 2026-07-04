@@ -14,5 +14,6 @@ This document defines how top-level `lib.rs` modules are classified in the works
 - `bijux-dag-cli` is `binary-only` and must not expose `src/lib.rs`.
 - For all library crates in the contract, internal modules default to `private`.
 - Public module lanes are owned by the contract and enforced by `foundation_module_surface_contracts`.
-- `bijux-dag-core::experimental` is the only `experimental` lane in the current Level-1 foundation set.
+- `stable` and `prelude` modules define the intentional import lanes for the DAG crates.
+- `experimental` modules are opt-in compatibility lanes behind crate features and must not expose transitional module names directly.
 - `bijux-dag-runtime::simulated_platform` is the only `simulated` lane in the current Level-1 foundation set.
