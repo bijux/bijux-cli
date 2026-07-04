@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-04
 ---
 
 # Installation And Setup
@@ -24,7 +24,7 @@ flowchart TD
 
 ## Required Setup Contract
 
-- Rust toolchain pinned by repository `rust-toolchain.toml`
+- Rust `1.86.0`, pinned by repository `rust-toolchain.toml`
 - workspace build succeeds with `cargo build --workspace`
 - DAG command surface reachable via `bijux dag --help`
 - sample graph validates and runs without undocumented flags

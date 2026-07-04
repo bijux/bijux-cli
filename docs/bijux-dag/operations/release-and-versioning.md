@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-04
 ---
 
 # Release And Versioning
@@ -30,6 +30,7 @@ flowchart TD
 
 ## Release Validation Matrix
 
+- Rust `1.86.0` toolchain alignment across local runs, CI, and release automation
 - cargo test suites for dag core/runtime/app crates
 - replay and diff contract tests for schema lockstep
 - docs checks ensuring references align with released behavior
