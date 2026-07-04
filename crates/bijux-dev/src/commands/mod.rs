@@ -1580,7 +1580,10 @@ fn run_schedule_validate(file: &Path) -> Result<(), String> {
 fn run_release_verify() -> Result<(), String> {
     let flow = crate::suites::release_verify_suite_ids();
     println!("release verify flow: {}", flow.join(" -> "));
-    run_ci()
+    let root = repo_root()?;
+    run_with_root(&root, "make", &["release-validate-rs"])?;
+    run_release_readiness_report()?;
+    run_release_compatibility_matrix()
 }
 
 fn run_release_readiness_report() -> Result<(), String> {

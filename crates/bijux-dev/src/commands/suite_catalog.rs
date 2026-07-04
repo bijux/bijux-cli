@@ -215,12 +215,12 @@ pub(super) const DOC_SUITES: &[SuiteDef] = &[
 pub(super) const RELEASE_SUITES: &[SuiteDef] = &[
     SuiteDef {
         id: "verify",
-        description: "full release verification",
+        description: "canonical release validation plus readiness evidence",
         domain: "release",
         slow: true,
         internal: false,
         effect: CommandEffect::ReadWrite,
-        run: || run_ci(),
+        run: || run_release_verify(),
     },
     SuiteDef {
         id: "readiness",

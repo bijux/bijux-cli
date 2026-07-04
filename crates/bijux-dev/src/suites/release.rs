@@ -8,11 +8,7 @@ pub const IDS: &[&str] = &[
 ];
 
 pub const VERIFY_FLOW: &[&str] = &[
-    "checks.run",
-    "tests.run",
-    "contracts.run",
-    "docs.run",
-    "repo.run",
+    "release.validation-suite",
     "release.readiness",
     "release.compatibility-matrix",
 ];
