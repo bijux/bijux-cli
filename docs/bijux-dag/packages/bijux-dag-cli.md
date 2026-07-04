@@ -4,7 +4,7 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-04
 ---
 
 # bijux-dag-cli
@@ -17,8 +17,10 @@ Use this page when the issue is about executable startup, process behavior, or
 binary-level integration rather than DAG semantics themselves.
 
 The supported operator contract is the visible `bijux-dag --help` surface.
-Hidden simulation and maintainer namespaces remain executable by explicit path,
-but `bijux-dag-cli` does not advertise them as stable public behavior.
+That visible root surface stays intentionally concise for `v0.4.0`. Hidden
+experimental routes, simulation namespaces, and maintainer namespaces remain
+executable by explicit path, but `bijux-dag-cli` does not advertise them as
+stable public behavior.
 
 ## Responsibility Map
 
@@ -48,5 +50,6 @@ but `bijux-dag-cli` does not advertise them as stable public behavior.
 
 - the binary should stay thin enough that DAG behavior remains owned elsewhere
 - user-facing startup and exit behavior should still be explicit and testable
+- hidden experimental routes must stay intentionally outside the default root help surface until they are promoted
 - hidden maintainer namespaces must stay intentionally outside the public root help surface
 - process-level concerns should not pull runtime or artifact logic into the entrypoint

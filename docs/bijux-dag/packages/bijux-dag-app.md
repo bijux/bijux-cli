@@ -4,7 +4,7 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-04
 ---
 
 # bijux-dag-app
@@ -16,9 +16,10 @@ writes, and shapes user-facing responses.
 Use this page when the issue is about command behavior or output shape rather
 than graph truth or execution internals.
 
-This crate also houses hidden simulation and maintainer routes that stay in the
-repository for coverage and evidence work. Those paths are intentionally kept
-outside the visible `bijux-dag --help` release contract.
+This crate also houses hidden experimental operator routes plus hidden
+simulation and maintainer routes that stay in the repository for coverage and
+evidence work. Those paths are intentionally kept outside the visible
+`bijux-dag --help` release contract.
 
 ## Responsibility Map
 
@@ -58,5 +59,6 @@ outside the visible `bijux-dag --help` release contract.
 
 - command routing should stay thin enough to explain and thick enough to keep user-facing contracts coherent
 - orchestration should delegate kernel and runtime work instead of re-implementing it
+- hidden experimental routes must not quietly expand the visible operator contract
 - hidden maintainer routes must not blur the public operator-facing contract
 - output contracts should remain explicit and test-backed
