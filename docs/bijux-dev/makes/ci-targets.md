@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-05
 ---
 
 # CI Targets
@@ -20,6 +20,12 @@ hosted verification stay aligned.
 - `make gh-test`
 - `make gh-docs-install`
 - `make gh-release-wait-for-ci`
+
+## Test Lane Mapping
+
+- `make gh-test` runs the required Rust release lane through `make test-release-rs`
+- `make test-release-rs` uses the `ci` nextest profile and is the required release-candidate Rust lane
+- `make test-all-rs` is the full Rust verification lane and includes governed ignored DAG tests
 
 ## CI Rule
 

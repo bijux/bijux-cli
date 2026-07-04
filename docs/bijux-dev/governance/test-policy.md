@@ -4,7 +4,7 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Test Policy
@@ -31,9 +31,11 @@ flowchart LR
 
 ## Policy Rules
 
-- no release recommendation without passing required layers
-- flaky tests are tracked as explicit quality debt
-- slow tests are labeled and intentionally scheduled
+- no release recommendation without passing the required release lane
+- the required Rust release lane is `make test-release-rs`, and `make test` delegates to it before Python tests
+- `make test-all-rs` is the full Rust verification lane and includes the governed ignored DAG portfolios
+- flaky ignored tests are forbidden in DAG release-facing coverage
+- slow ignored tests must stay explicitly governed and outside the required release lane
 
 ## Code Anchors
 

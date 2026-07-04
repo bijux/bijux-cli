@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-05
 ---
 
 # Release Operations
@@ -44,7 +44,9 @@ flowchart LR
 
 ## Preflight Checklist
 
-- required tests and maintainer verification commands are green
+- required release-lane tests and maintainer verification commands are green
+- `make test-release-rs` is green before any release recommendation
+- `make test-all-rs` is green whenever DAG release-sensitive slow-lane coverage changed or ignored-test governance changed
 - compatibility notes are prepared for changed public behavior
 - documentation tree and MkDocs navigation are synchronized
 - release owner and rollback owner are explicitly assigned
@@ -58,6 +60,8 @@ flowchart LR
 ## Standard Commands
 
 ```bash
+make test-release-rs
+make test-all-rs
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- release
 make docs-check
