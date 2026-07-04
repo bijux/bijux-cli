@@ -21,6 +21,7 @@ RS_COVERAGE_TEST_REPORT ?= $(RS_COVERAGE_DIR)/nextest.log
 RS_COVERAGE_SUMMARY_REPORT ?= $(RS_COVERAGE_DIR)/summary.txt
 RS_RELEASE_VALIDATION_DIR ?= $(RS_ARTIFACT_ROOT)/release-validation/$(RS_RUN_ID)
 RS_RELEASE_TREE_DIR ?= $(abspath $(RS_RELEASE_VALIDATION_DIR)/workspace)
+RS_RELEASE_CARGO_CONFIG ?= $(RS_RELEASE_TREE_DIR)/.cargo/config.toml
 RS_RELEASE_VALIDATION_TARGET_DIR ?= $(abspath $(RS_RELEASE_VALIDATION_DIR)/target)
 RS_RELEASE_TREE_VERSION_FILE ?= $(RS_RELEASE_VALIDATION_DIR)/workspace-version.txt
 RS_RELEASE_FMT_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/fmt.txt
@@ -190,6 +191,8 @@ prepare-release-tree-rs: ## Prepare a clean release-candidate tree from committe
 	printf '%s\n' "$$release_version" > "$(RS_RELEASE_TREE_VERSION_FILE)"; \
 	printf '%s\n' "prepare: release tree version $$release_version"; \
 	python3 "$(RELEASE_TREE_SCRIPT)" --workspace-root . --output-dir "$(RS_RELEASE_TREE_DIR)" --version "$$release_version" >/dev/null
+	@mkdir -p "$(dir $(RS_RELEASE_CARGO_CONFIG))"
+	@printf '\n[patch.crates-io]\nbijux-dag-core = { path = "crates/bijux-dag-core" }\nbijux-dag-artifacts = { path = "crates/bijux-dag-artifacts" }\nbijux-dag-runtime = { path = "crates/bijux-dag-runtime" }\nbijux-dag-app = { path = "crates/bijux-dag-app" }\nbijux-dag-cli = { path = "crates/bijux-dag-cli" }\n' >> "$(RS_RELEASE_CARGO_CONFIG)"
 
 fmt-release-rs: prepare-release-tree-rs ## Run release-candidate formatting validation in a clean tree
 	@mkdir -p "$(dir $(RS_RELEASE_FMT_REPORT))"

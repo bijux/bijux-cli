@@ -142,6 +142,7 @@ fn public_dag_publish_validation_does_not_require_registry_testkit_release() {
 #[test]
 fn release_validation_suite_entrypoints_are_wired_into_make_and_ci() {
     let gh_makefile = read_repo_file("makes/gh.mk");
+    let rust_makefile = read_repo_file("makes/rust.mk");
     let workflow = read_repo_file(".github/workflows/release-validation.yml");
     let operations_doc = read_repo_file("docs/bijux-dev/operations/release-validation-suite.md");
     let workflow_doc = read_repo_file("docs/bijux-dev/gh-workflows/release-validation.md");
@@ -149,6 +150,10 @@ fn release_validation_suite_entrypoints_are_wired_into_make_and_ci() {
     assert!(
         gh_makefile.contains("gh-release-validate: install release-validate-rs"),
         "makes/gh.mk must expose the CI entrypoint declared by the release validation suite"
+    );
+    assert!(
+        rust_makefile.contains("[patch.crates-io]"),
+        "release validation make support must patch crates-io inside the clean release tree for staged DAG publish verification"
     );
     assert!(
         workflow.contains("name: release-validation"),

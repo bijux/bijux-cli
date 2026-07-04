@@ -37,6 +37,10 @@ The suite runs these commands from a clean tree prepared from committed `HEAD`:
 - `cargo publish --dry-run --locked` for `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and `bijux-dag-cli`
 - `cargo test -p bijux-dag-cli --test smoke_pipeline --locked -- --nocapture`
 
+The release tree adds temporary `crates-io` patches for the public DAG crate
+family so downstream `cargo publish --dry-run` verification resolves the same
+candidate artifacts that will be published in dependency order.
+
 ## Output Surface
 
 - clean release tree: `artifacts/rust/release-validation/<run-id>/workspace/`
