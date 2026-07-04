@@ -111,10 +111,10 @@ flowchart LR
 
 - severity: `high`
 - affected component: DAG CLI and app contract tests, release validation lanes, and maintainer quality reporting
-- current status: `open`; at least one mixed-backend CLI contract remains ignored, and flaky-test reporting exists because the repository still carries quality debt here
+- current status: `mitigating`; the mixed-backend CLI ignore has been removed, the required Rust release lane is explicit, and the remaining slow DAG app ignores are quarantined in governed full-lane records
 - risk: release confidence can look stronger than it is if ignored or flaky tests are the only evidence for a stable surface or if unstable tests silently age without remediation
-- mitigation: keep ignored or flaky tests out of the evidence chain for stable behavior, preserve explicit flaky-test reporting, and either fix, quarantine, or demote unstable coverage before it becomes the only support for a release claim
-- release decision: no ignored or flaky test may be the sole proof for stable `v0.4.0` behavior; if that happens, the affected surface is not release-ready
+- mitigation: keep `make test-release-rs` as the required CI and release lane, preserve explicit `maintenance ignored-dag-tests` and flaky-test reporting, and keep every remaining slow ignore declared in `configs/dag/policy/release_test_lane_governance.json` until it is either fixed or removed from the stable release evidence chain
+- release decision: ship only while the required release lane stays green without ignored tests and every slow ignored DAG test remains explicitly governed in the full verification lane
 
 ## Record Rules
 
