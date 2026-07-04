@@ -16,6 +16,10 @@ The useful split is not the full command count. It is whether the operator is
 defining work, running it, inspecting evidence, comparing outcomes, or managing
 the environment around it.
 
+For `v0.4.0`, the public CLI contract is the visible root help surface from
+`bijux-dag --help`. Hidden maintainer namespaces remain callable by explicit
+path, but they are not part of the supported operator-facing release boundary.
+
 ## Route Map
 
 ```mermaid
@@ -35,6 +39,19 @@ flowchart LR
 - comparison: `diff`, `why-rerun`, `why-cache-missed`, `trace-artifact`
 - operations: `cache ...`, `adapters ...`, `export`, `import`, `config ...`, `policy ...`
 
+## Hidden Namespaces
+
+The following root namespaces are intentionally hidden from the public help
+surface in `v0.4.0`:
+
+- simulation and platform modeling: `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `federation`, `incident`, `lab`
+- maintainer quality and release modeling: `security`, `durability`, `performance`, `release`, `runtime`, `schedule`
+- internal capability probes: `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof`
+
+These routes still exist for explicit maintainer workflows and contract tests.
+They can be inventoried with `bijux-dag commands --all`, but they are not
+presented as stable operator APIs.
+
 ## Global Flags
 
 - `--json`: machine-readable output mode
@@ -51,6 +68,7 @@ flowchart LR
 
 - command additions require docs and contract test updates
 - classification commands must preserve explicit outcome vocabulary
+- hidden maintainer namespaces must stay off the default root help and default command catalog
 - hidden or deprecated paths should remain tested until removal is intentional
 
 ## Reading Rule

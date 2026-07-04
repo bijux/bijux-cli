@@ -26,10 +26,11 @@ flowchart LR
 
 ## Interface Scope
 
-- DAG command and subcommand behavior
+- DAG command and subcommand behavior for the public `bijux-dag --help` surface
 - stable crate-root API exports by DAG crate
 - runtime and policy configuration behavior
 - run/artifact/replay/diff contract payloads
+- hidden maintainer namespaces only when the question is about internal or simulation coverage
 
 ## Code Anchors
 
@@ -56,4 +57,6 @@ flowchart LR
 
 Use this section when the question is about what operators, tools, or other
 crates can depend on. Move back to Architecture when the next question is about
-engine structure instead of public contracts.
+engine structure instead of public contracts. For the full internal command
+inventory, use `bijux-dag commands --all` rather than treating hidden
+maintainer routes as public API.
