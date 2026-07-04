@@ -1099,7 +1099,8 @@ fn collect_source_files_with_extension(
 mod tests {
     use super::{
         broken_inline_code_anchors, extract_inline_code_spans, repo_code_anchor_candidate,
-        validate_known_limitations_content, KNOWN_LIMITATIONS_REL_PATH,
+        validate_known_limitations_content, validate_risk_register_content,
+        KNOWN_LIMITATIONS_REL_PATH, REQUIRED_RISK_IDS, RISK_REGISTER_REL_PATH,
     };
     use std::fs;
     use std::path::Path;
@@ -1242,5 +1243,67 @@ also good `docs/index.md`\n";
             .expect("read known limitations handbook");
 
         assert!(validate_known_limitations_content(&content).is_ok());
+    }
+
+    fn complete_risk_record(id: &str, component: &str) -> String {
+        format!(
+            "### {id} Example risk\n\n\
+- severity: `high`\n\
+- affected component: {component}\n\
+- current status: `mitigating`\n\
+- risk: this risk remains active until release review closes it.\n\
+- mitigation: keep docs, tests, and release checks aligned.\n\
+- release decision: keep the affected surface gated until the evidence stays green.\n"
+        )
+    }
+
+    fn complete_risk_register_fixture() -> String {
+        REQUIRED_RISK_IDS
+            .iter()
+            .enumerate()
+            .map(|(index, id)| complete_risk_record(id, &format!("component-{index}")))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    #[test]
+    fn risk_register_validation_accepts_complete_records() {
+        let content = complete_risk_register_fixture();
+        assert!(validate_risk_register_content(&content).is_ok());
+    }
+
+    #[test]
+    fn risk_register_validation_reports_missing_fields_and_required_ids() {
+        let content = "\
+### RISK-001 Example risk\n\n\
+- severity: `high`\n\
+- affected component: local shell execution\n\
+- current status: `mitigating`\n\
+- risk: this risk remains active until release review closes it.\n\
+- release decision: keep the affected surface gated until the evidence stays green.\n";
+
+        let error = validate_risk_register_content(content).expect_err("validation should fail");
+        assert!(error.contains("RISK-001:1: missing risk field `- mitigation:`"));
+        assert!(error.contains("missing required risk record `RISK-002`"));
+    }
+
+    #[test]
+    fn risk_register_validation_rejects_duplicate_identifiers() {
+        let content = complete_risk_register_fixture().replace("### RISK-010", "### RISK-001");
+        let error = validate_risk_register_content(&content).expect_err("validation should fail");
+        assert!(error.contains("RISK-001:"));
+        assert!(error.contains("duplicate risk identifier"));
+        assert!(error.contains("missing required risk record `RISK-010`"));
+    }
+
+    #[test]
+    fn risk_register_handbook_matches_record_contract() {
+        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..");
+        let content = fs::read_to_string(repo_root.join(RISK_REGISTER_REL_PATH))
+            .expect("read risk register handbook");
+
+        assert!(validate_risk_register_content(&content).is_ok());
     }
 }
