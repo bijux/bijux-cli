@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-05
 ---
 
 # Release and Versioning
@@ -43,4 +43,5 @@ that actually carries it.
 
 - [Automation Surfaces](automation-surfaces.md)
 - [Artifact Governance](artifact-governance.md)
+- [Release Notes Template](release-notes-template.md)
 - [Core Release and Versioning](../governance/release-and-versioning.md)

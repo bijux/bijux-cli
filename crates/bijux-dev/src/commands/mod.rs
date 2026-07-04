@@ -1723,8 +1723,8 @@ fn run_release_evidence_bundle(out: Option<&Path>) -> Result<(), String> {
         "artifacts": {
             "readiness_report": readiness,
             "compatibility_matrix": matrix,
-            "known_limitations_path": "docs/tracking/KNOWN_LIMITATIONS.md",
-            "release_note_template_path": "docs/reference/RELEASE_NOTE_TEMPLATE.md"
+            "known_limitations_path": "docs/bijux-dag/quality/known-limitations.md",
+            "release_note_template_path": "docs/bijux-core/operations/release-notes-template.md"
         }
     });
 
