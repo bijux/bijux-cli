@@ -191,6 +191,7 @@ fn crate_manifests_declare_clear_publish_metadata() {
         (
             "crates/bijux-dag-testkit/Cargo.toml",
             vec![
+                "publish = false",
                 "description = ",
                 "documentation = ",
                 "readme = ",
@@ -214,13 +215,49 @@ fn crate_manifests_declare_clear_publish_metadata() {
         ),
         (
             "crates/bijux-dev/Cargo.toml",
-            vec!["description = ", "homepage", "readme = ", "Unified maintainer control plane"],
+            vec![
+                "publish = false",
+                "description = ",
+                "homepage",
+                "readme = ",
+                "Unified maintainer control plane",
+            ],
         ),
     ] {
         let manifest = read_repo_file(path);
         for field in required {
             assert!(manifest.contains(field), "{path} is missing crate metadata field: {field}");
         }
+    }
+}
+
+#[test]
+fn dag_release_boundary_keeps_test_support_private() {
+    let private_support_crates = [
+        "crates/bijux-dag-testkit/Cargo.toml",
+        "crates/bijux-dev/Cargo.toml",
+        "crates/bijux-cli-python/Cargo.toml",
+    ];
+    for path in private_support_crates {
+        let manifest = read_repo_file(path);
+        assert!(
+            manifest.contains("publish = false"),
+            "{path} must stay private to protect the public release boundary"
+        );
+    }
+
+    for path in [
+        "crates/bijux-dag-core/Cargo.toml",
+        "crates/bijux-dag-artifacts/Cargo.toml",
+        "crates/bijux-dag-runtime/Cargo.toml",
+        "crates/bijux-dag-app/Cargo.toml",
+        "crates/bijux-dag-cli/Cargo.toml",
+    ] {
+        let manifest = read_repo_file(path);
+        assert!(
+            !manifest.contains("publish = false"),
+            "{path} must remain publishable as part of the public DAG release boundary"
+        );
     }
 }
 #[test]
@@ -432,7 +469,7 @@ fn crates_release_automation_targets_public_cli_and_dag_crates() {
     let publish_support = read_repo_file("makes/rust.mk");
     let release_env = read_repo_file(".github/release.env");
     let expected_packages =
-        "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-dag-testkit bijux-cli";
+        "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-cli";
 
     assert!(
         workflow_support.contains(&format!("GH_CRATES_RELEASE_PACKAGES ?= {expected_packages}")),
@@ -451,6 +488,14 @@ fn crates_release_automation_targets_public_cli_and_dag_crates() {
         "release planning must not treat the Python bridge crate as a crates.io package"
     );
     assert!(
+        !workflow_support.contains("bijux-dag-testkit"),
+        "release planning must keep the DAG test support crate out of the crates.io publish order"
+    );
+    assert!(
+        !publish_support.contains("bijux-dag-testkit"),
+        "cargo publish automation must keep the DAG test support crate out of the crates.io publish order"
+    );
+    assert!(
         publish_support.contains("build-dag-release-bundle"),
         "Rust release automation should expose a dedicated DAG binary bundle target for release workflows"
     );
@@ -461,6 +506,10 @@ fn crates_release_automation_targets_public_cli_and_dag_crates() {
     assert!(
         release_env.contains(&format!("BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES={expected_packages}")),
         ".github/release.env must explicitly allow only the intended public crates release set"
+    );
+    assert!(
+        !release_env.contains("bijux-dag-testkit"),
+        ".github/release.env must not reintroduce the DAG test support crate into the public release set"
     );
     assert!(
         publish_support.contains("RUST_PUBLISH_SKIP_EXISTING ?= 1"),
