@@ -5,6 +5,17 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+const KNOWN_LIMITATIONS_REL_PATH: &str = "docs/bijux-dag/quality/known-limitations.md";
+const LIMITATION_REQUIRED_FIELDS: [&str; 7] = [
+    "- stability class:",
+    "- affected command or API:",
+    "- limitation:",
+    "- impact:",
+    "- workaround:",
+    "- planned fix:",
+    "- release target:",
+];
+
 #[derive(Debug, Deserialize, Default)]
 struct DocsLintPolicy {
     #[serde(default)]
@@ -120,7 +131,17 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
         }
     }
 
+    run_known_limitations_guard()?;
+
     Ok(())
+}
+
+pub(super) fn run_known_limitations_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(KNOWN_LIMITATIONS_REL_PATH);
+    let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    validate_known_limitations_content(&content)
+        .map_err(|err| format!("{KNOWN_LIMITATIONS_REL_PATH}: {err}"))
 }
 
 pub(super) fn run_docs_link_check() -> Result<(), String> {
@@ -244,6 +265,109 @@ fn broken_inline_code_anchors(
     }
 
     Ok(violations)
+}
+
+#[derive(Debug, Clone)]
+struct LimitationRecord {
+    id: String,
+    heading_line: usize,
+    body: Vec<String>,
+}
+
+fn parse_limitation_records(content: &str) -> Vec<LimitationRecord> {
+    let mut records = Vec::new();
+    let mut current: Option<LimitationRecord> = None;
+
+    for (line_index, line) in content.lines().enumerate() {
+        let trimmed = line.trim_start();
+        if let Some(heading) = trimmed.strip_prefix("### ") {
+            if heading.starts_with("LIM-") {
+                if let Some(record) = current.take() {
+                    records.push(record);
+                }
+                let id = heading.split_whitespace().next().unwrap_or_default().to_string();
+                current = Some(LimitationRecord {
+                    id,
+                    heading_line: line_index + 1,
+                    body: Vec::new(),
+                });
+                continue;
+            }
+            if let Some(record) = current.take() {
+                records.push(record);
+            }
+        }
+
+        if let Some(record) = current.as_mut() {
+            record.body.push(line.to_string());
+        }
+    }
+
+    if let Some(record) = current {
+        records.push(record);
+    }
+
+    records
+}
+
+fn limitation_field_value<'a>(record: &'a LimitationRecord, field: &str) -> Option<&'a str> {
+    record.body.iter().find_map(|line| {
+        line.trim_start()
+            .strip_prefix(field)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+    })
+}
+
+fn validate_known_limitations_content(content: &str) -> Result<(), String> {
+    let records = parse_limitation_records(content);
+    if records.is_empty() {
+        return Err("missing `### LIM-...` limitation records".to_string());
+    }
+
+    let mut violations = Vec::new();
+    let mut seen_ids = BTreeSet::new();
+    let mut has_experimental = false;
+    let mut has_simulation = false;
+
+    for record in &records {
+        if !seen_ids.insert(record.id.clone()) {
+            violations.push(format!(
+                "{}:{}: duplicate limitation identifier",
+                record.id, record.heading_line
+            ));
+        }
+
+        for field in LIMITATION_REQUIRED_FIELDS {
+            if limitation_field_value(record, field).is_none() {
+                violations.push(format!(
+                    "{}:{}: missing limitation field `{field}`",
+                    record.id, record.heading_line
+                ));
+            }
+        }
+
+        if let Some(stability_class) = limitation_field_value(record, "- stability class:") {
+            match stability_class.trim_matches('`') {
+                "experimental-surface" => has_experimental = true,
+                "simulation-surface" => has_simulation = true,
+                _ => {}
+            }
+        }
+    }
+
+    if !has_experimental {
+        violations.push("missing `experimental-surface` limitation record".to_string());
+    }
+    if !has_simulation {
+        violations.push("missing `simulation-surface` limitation record".to_string());
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
 }
 
 pub(super) fn run_naming_governance_guard() -> Result<(), String> {
@@ -851,8 +975,12 @@ fn collect_source_files_with_extension(
 
 #[cfg(test)]
 mod tests {
-    use super::{broken_inline_code_anchors, extract_inline_code_spans, repo_code_anchor_candidate};
+    use super::{
+        broken_inline_code_anchors, extract_inline_code_spans, repo_code_anchor_candidate,
+        validate_known_limitations_content, KNOWN_LIMITATIONS_REL_PATH,
+    };
     use std::fs;
+    use std::path::Path;
     use tempfile::tempdir;
 
     #[test]
@@ -908,5 +1036,89 @@ also good `docs/index.md`\n";
             violations,
             vec!["docs/guide.md:2: broken code anchor crates/demo/src/missing.rs".to_string()]
         );
+    }
+
+    #[test]
+    fn known_limitations_validation_accepts_complete_records() {
+        let content = "\
+### LIM-100 Experimental route example\n\
+\n\
+- stability class: `experimental-surface`\n\
+- affected command or API: `bijux-dag hidden`\n\
+- limitation: hidden commands do not carry a public compatibility guarantee.\n\
+- impact: downstream automation may break.\n\
+- workaround: use the visible operator contract only.\n\
+- planned fix: promote only fully documented commands.\n\
+- release target: no guarantee in `v0.4.x`.\n\
+\n\
+### LIM-101 Simulation namespace example\n\
+\n\
+- stability class: `simulation-surface`\n\
+- affected command or API: `bijux-dag simulated`\n\
+- limitation: simulation namespaces model behavior rather than shipping it.\n\
+- impact: operators cannot treat them as production capabilities.\n\
+- workaround: use stable commands for real workflows.\n\
+- planned fix: add real backend semantics before promotion.\n\
+- release target: remain non-public in `v0.4.x`.\n";
+
+        assert!(validate_known_limitations_content(content).is_ok());
+    }
+
+    #[test]
+    fn known_limitations_validation_reports_missing_fields_and_surface_classes() {
+        let content = "\
+### LIM-100 Experimental route example\n\
+\n\
+- stability class: `experimental-surface`\n\
+- affected command or API: `bijux-dag hidden`\n\
+- limitation: hidden commands do not carry a public compatibility guarantee.\n\
+- impact: downstream automation may break.\n\
+- workaround: use the visible operator contract only.\n\
+- release target: no guarantee in `v0.4.x`.\n";
+
+        let error =
+            validate_known_limitations_content(content).expect_err("validation should fail");
+        assert!(error.contains("LIM-100:1: missing limitation field `- planned fix:`"));
+        assert!(error.contains("missing `simulation-surface` limitation record"));
+    }
+
+    #[test]
+    fn known_limitations_validation_rejects_duplicate_identifiers() {
+        let content = "\
+### LIM-100 Experimental route example\n\
+\n\
+- stability class: `experimental-surface`\n\
+- affected command or API: `bijux-dag hidden`\n\
+- limitation: hidden commands do not carry a public compatibility guarantee.\n\
+- impact: downstream automation may break.\n\
+- workaround: use the visible operator contract only.\n\
+- planned fix: promote only fully documented commands.\n\
+- release target: no guarantee in `v0.4.x`.\n\
+\n\
+### LIM-100 Simulation namespace example\n\
+\n\
+- stability class: `simulation-surface`\n\
+- affected command or API: `bijux-dag simulated`\n\
+- limitation: simulation namespaces model behavior rather than shipping it.\n\
+- impact: operators cannot treat them as production capabilities.\n\
+- workaround: use stable commands for real workflows.\n\
+- planned fix: add real backend semantics before promotion.\n\
+- release target: remain non-public in `v0.4.x`.\n";
+
+        let error =
+            validate_known_limitations_content(content).expect_err("validation should fail");
+        assert!(error.contains("LIM-100:"));
+        assert!(error.contains("duplicate limitation identifier"));
+    }
+
+    #[test]
+    fn known_limitations_handbook_matches_record_contract() {
+        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..");
+        let content = fs::read_to_string(repo_root.join(KNOWN_LIMITATIONS_REL_PATH))
+            .expect("read known limitations handbook");
+
+        assert!(validate_known_limitations_content(&content).is_ok());
     }
 }
