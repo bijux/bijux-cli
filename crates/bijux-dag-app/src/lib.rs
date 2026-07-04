@@ -1,3 +1,10 @@
+//! Application orchestration and response shaping for the `bijux-dag` command surface.
+//!
+//! Prefer the crate root for focused imports, [`stable`] for the explicit app
+//! lane, and [`prelude`] for command embedding helpers. The
+//! `experimental-public-api` feature enables repository-owned contract helpers
+//! that are intentionally excluded from the default docs lane.
+//!
 #![allow(dead_code)]
 
 mod cache;
@@ -23,8 +30,6 @@ mod export_cmd;
 mod format;
 #[path = "read/fs_input.rs"]
 mod fs_input;
-#[path = "read/runtime_inputs.rs"]
-mod runtime_inputs;
 mod graph;
 #[path = "graph/cmd.rs"]
 mod graph_cmd;
@@ -37,10 +42,12 @@ mod inspect;
 mod inspect_service;
 #[path = "inspect/integrity_service.rs"]
 mod integrity_service;
+#[cfg(feature = "experimental-public-api")]
 #[path = "commands/iteration08_contracts.rs"]
-pub mod iteration08_contracts;
+mod iteration08_contracts;
+#[cfg(feature = "experimental-public-api")]
 #[path = "commands/iteration11_contracts.rs"]
-pub mod iteration11_contracts;
+mod iteration11_contracts;
 mod migrate;
 #[path = "commands/output_contract.rs"]
 mod output_contract;
@@ -59,6 +66,8 @@ mod run_cmd;
 mod run_data;
 #[path = "inspect/run_views.rs"]
 mod run_views;
+#[path = "read/runtime_inputs.rs"]
+mod runtime_inputs;
 #[path = "inspect/status_cmd.rs"]
 mod status_cmd;
 #[path = "graph/validate_cmd.rs"]
@@ -76,6 +85,35 @@ pub use run_views::{
     inspect_summary, list_runs, resolve_run_dir, run_timeline, run_tree, runs_compare,
     runs_failures, runs_flakes, runs_history, runs_history_query, runs_summary, runs_trend,
 };
+
+/// Explicit long-lived command embedding and response-shaping surface.
+pub mod stable {
+    pub use crate::{
+        dag_command, dag_run, default_runtime_config, inspect_artifact, list_runs,
+        normalize_runtime_config, policy_evaluation_trace, resolve_effective_config,
+        resolve_run_dir, runs_summary, CacheModeSurface, MaterializeInputsSurface,
+        PartialRuntimeSurfaceConfig, PolicySurfaceConfig, RuntimeSurfaceConfig,
+    };
+}
+
+/// Common imports for embedding `bijux-dag` command orchestration.
+pub mod prelude {
+    pub use crate::stable::{
+        dag_command, dag_run, default_runtime_config, inspect_artifact, normalize_runtime_config,
+        resolve_effective_config, RuntimeSurfaceConfig,
+    };
+}
+
+/// Opt-in app contract helpers that are outside the stable command lane.
+#[cfg(feature = "experimental-public-api")]
+pub mod experimental {
+    pub mod command_reports {
+        pub use crate::iteration08_contracts::*;
+    }
+    pub mod workspace_compatibility {
+        pub use crate::iteration11_contracts::*;
+    }
+}
 
 use crate::cache::{
     cache_diff, cache_prune_simulate, cache_stats, explain_cache_key, pack_cache_entry,
