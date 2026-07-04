@@ -34,9 +34,15 @@ fn write_runtime_input_graph(path: &Path) {
             "spec":"bijux-dag/v0.1",
             "meta":{"name":"runtime-inputs","owners":[],"tags":[]},
             "inputs":{
-                "region":"default-region",
-                "payload":null,
-                "api_token":null
+                "region":{"type":"string","default":"default-region"},
+                "payload":{
+                    "type":"object",
+                    "properties":{
+                        "tenant":{"type":"string","required":true}
+                    },
+                    "required":true
+                },
+                "api_token":{"type":"string","required":true}
             },
             "nodes":[
                 {
@@ -108,10 +114,7 @@ fn cli_inputs_override_defaults_and_land_in_manifest() {
         serde_json::from_str(&fs::read_to_string(run_dir.join("manifest.json")).expect("manifest"))
             .expect("manifest json");
     assert_eq!(manifest["run_metadata"]["graph_inputs"]["region"], "us-east-1");
-    assert_eq!(
-        manifest["run_metadata"]["graph_inputs"]["payload"]["tenant"],
-        "atlas"
-    );
+    assert_eq!(manifest["run_metadata"]["graph_inputs"]["payload"]["tenant"], "atlas");
     assert_eq!(manifest["run_metadata"]["graph_inputs"]["api_token"], "secret-123");
 
     let emitted_region: Value = serde_json::from_str(
@@ -161,10 +164,7 @@ fn inputs_file_supports_json_and_cli_overrides_file_values() {
         serde_json::from_str(&fs::read_to_string(run_dir.join("manifest.json")).expect("manifest"))
             .expect("manifest json");
     assert_eq!(manifest["run_metadata"]["graph_inputs"]["region"], "cli-region");
-    assert_eq!(
-        manifest["run_metadata"]["graph_inputs"]["payload"]["tenant"],
-        "from-file"
-    );
+    assert_eq!(manifest["run_metadata"]["graph_inputs"]["payload"]["tenant"], "from-file");
 }
 
 #[test]
@@ -225,4 +225,34 @@ fn run_human_output_redacts_secret_like_input_values() {
     assert!(stdout.contains("\"api_token\":\"[REDACTED]\""));
     assert!(stdout.contains("redacted_inputs: [\"api_token\"]"));
     assert!(!stdout.contains("top-secret-token"));
+}
+
+#[test]
+fn run_reports_exact_path_for_invalid_typed_runtime_input() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let graph = temp.path().join("graph.json");
+    write_runtime_input_graph(&graph);
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("runs dir");
+
+    let (code, stdout, stderr) = support::run_dag_command(
+        &[
+            "run",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--input",
+            "region=human-region",
+            "--input",
+            "payload={\"tenant\":7}",
+            "--input",
+            "api_token=top-secret-token",
+        ],
+        &root,
+    );
+    assert_eq!(code, 2);
+    assert!(stdout.is_empty());
+    assert!(stderr.contains("/inputs/payload/tenant"));
+    assert!(stderr.contains("expected string"));
 }

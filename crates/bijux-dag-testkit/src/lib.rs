@@ -326,7 +326,7 @@ fn graph_from_nodes(nodes: Vec<Node>, edges: Vec<(&str, &str, &str, &str)>) -> G
     Graph {
         spec: SPEC_VERSION.to_string(),
         meta: None,
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
         nodes,
         edges: edges

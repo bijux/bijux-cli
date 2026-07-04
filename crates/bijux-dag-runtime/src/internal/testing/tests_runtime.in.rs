@@ -270,7 +270,7 @@ mod tests {
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![
                 Node {
@@ -383,7 +383,7 @@ mod tests {
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![
                 Node {
@@ -649,7 +649,7 @@ mod tests {
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![
                 Node {
@@ -738,7 +738,7 @@ mod tests {
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![
                 Node {
@@ -866,7 +866,7 @@ inputs: vec!["in".to_string()],
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![
                 Node {
@@ -963,7 +963,7 @@ inputs: vec!["in".to_string()],
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "c1".to_string(),
@@ -1013,7 +1013,7 @@ inputs: vec!["in".to_string()],
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "c1".to_string(),
@@ -1064,7 +1064,7 @@ inputs: vec!["in".to_string()],
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "env".to_string(),
@@ -1134,7 +1134,7 @@ inputs: vec!["in".to_string()],
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "n1".to_string(),
@@ -1209,7 +1209,7 @@ exit 1
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "n1".to_string(),
@@ -1264,7 +1264,7 @@ exit 1
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "n1".to_string(),
@@ -1347,7 +1347,7 @@ exit 1
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "n1".to_string(),
@@ -1397,7 +1397,7 @@ exit 1
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "c".to_string(),
@@ -1443,7 +1443,7 @@ exit 1
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "n1".to_string(),

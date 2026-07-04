@@ -16,7 +16,7 @@ fn base_graph() -> Graph {
     Graph {
         spec: SPEC_VERSION.to_string(),
         meta: None,
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
         nodes: vec![
             Node {
@@ -131,7 +131,10 @@ fn canonicalization_stable_under_random_ordering() {
 #[test]
 fn resolver_determinism() {
     let mut graph = base_graph();
-    graph.inputs.insert("x".to_string(), serde_json::json!(1));
+    graph.inputs.insert(
+        "x".to_string(),
+        bijux_dag_core::GraphInputSpec::from_default_value(serde_json::json!(1)).expect("spec"),
+    );
     graph.nodes[0].params =
         ParamValue::Ref(RefSpec { graph_input: Some("x".to_string()), node_output: None });
     let left = serde_json::to_string(&graph.resolve_graph().unwrap().resolved_params).unwrap();

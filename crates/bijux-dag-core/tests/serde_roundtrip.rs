@@ -244,7 +244,7 @@ fn sample_graph() -> Graph {
             owners: vec!["core-team".to_string()],
             tags: vec!["test".to_string()],
         }),
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
         nodes: vec![sample_node("source")],
         edges: vec![],

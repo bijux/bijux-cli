@@ -96,7 +96,7 @@ fn topo_order_is_dependency_sensitive() {
     let graph = Graph {
         spec: SPEC_VERSION.to_string(),
         meta: None,
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
         nodes: vec![
             build_node("a", vec![], "out"),
@@ -199,7 +199,7 @@ fn base_graph() -> Graph {
             owners: vec!["ops".to_string()],
             tags: vec!["ci".to_string()],
         }),
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
         nodes,
         edges: vec![Edge {
@@ -246,7 +246,7 @@ fn graph_for_code(code: &str) -> Graph {
             let g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
-                inputs: serde_json::Map::new(),
+                inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
                 nodes: vec![
                     build_node("a", vec![], "out"),
@@ -353,7 +353,7 @@ fn graph_for_code(code: &str) -> Graph {
             let mut g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
-                inputs: serde_json::Map::new(),
+                inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
                 nodes: vec![
                     build_node("source", vec!["in".to_string()], "out"),
@@ -421,7 +421,7 @@ fn graph_for_code(code: &str) -> Graph {
             let mut g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
-                inputs: serde_json::Map::new(),
+                inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
                 nodes: vec![
                     Node {
@@ -467,7 +467,7 @@ fn graph_for_code(code: &str) -> Graph {
             let mut g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
-                inputs: serde_json::Map::new(),
+                inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
                 nodes: vec![
                     Node {
@@ -511,7 +511,11 @@ fn graph_for_code(code: &str) -> Graph {
         }
         "E1031" => {
             let mut g = base_graph();
-            g.inputs.insert("seed".to_string(), serde_json::json!(7));
+            g.inputs.insert(
+                "seed".to_string(),
+                bijux_dag_core::GraphInputSpec::from_default_value(serde_json::json!(7))
+                    .expect("seed spec"),
+            );
             g.nodes[1].params = bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
                 graph_input: Some("seed".to_string()),
                 node_output: Some(bijux_dag_core::NodeOutputRef {
@@ -535,7 +539,7 @@ fn graph_for_code(code: &str) -> Graph {
             let g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
-                inputs: serde_json::Map::new(),
+                inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
                 nodes: vec![
                     build_node("source", vec![], "out"),
@@ -600,7 +604,7 @@ fn chain_graph(len: usize) -> Graph {
     Graph {
         spec: SPEC_VERSION.to_string(),
         meta: None,
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
         nodes,
         edges,

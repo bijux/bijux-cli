@@ -564,7 +564,7 @@ mod tests {
                 owners: Vec::new(),
                 tags: Vec::new(),
             }),
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "align".to_string(),

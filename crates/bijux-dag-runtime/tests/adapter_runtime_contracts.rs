@@ -60,7 +60,7 @@ fn external_graph(kind: &str, timeout_ms: Option<u64>) -> Graph {
     Graph {
         spec: "bijux-dag/v0.1".to_string(),
         meta: None,
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
         nodes: vec![Node {
             id: "n1".to_string(),
