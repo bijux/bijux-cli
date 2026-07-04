@@ -38,6 +38,12 @@ fn read_public_dag_manifest(crate_name: &str) -> String {
     fs::read_to_string(&path).unwrap_or_else(|err| panic!("read {} failed: {err}", path.display()))
 }
 
+fn read_repo_file(path: &str) -> String {
+    let absolute = repo_root().join(path);
+    fs::read_to_string(&absolute)
+        .unwrap_or_else(|err| panic!("read {} failed: {err}", absolute.display()))
+}
+
 #[test]
 fn release_validation_suite_is_current() {
     let suite = read_suite();
@@ -131,4 +137,31 @@ fn public_dag_publish_validation_does_not_require_registry_testkit_release() {
             "{crate_name} must keep bijux-dag-testkit as a local-only dev dependency so cargo publish --dry-run validates the public crate"
         );
     }
+}
+
+#[test]
+fn release_validation_suite_entrypoints_are_wired_into_make_and_ci() {
+    let gh_makefile = read_repo_file("makes/gh.mk");
+    let workflow = read_repo_file(".github/workflows/release-validation.yml");
+
+    assert!(
+        gh_makefile.contains("gh-release-validate: install release-validate-rs"),
+        "makes/gh.mk must expose the CI entrypoint declared by the release validation suite"
+    );
+    assert!(
+        workflow.contains("name: release-validation"),
+        "release validation workflow must declare the canonical workflow name"
+    );
+    assert!(
+        workflow.contains("make gh-release-validate"),
+        "release validation workflow must execute the CI make entrypoint"
+    );
+    assert!(
+        workflow.contains("branches:\n      - main"),
+        "release validation workflow must validate pushes to main"
+    );
+    assert!(
+        workflow.contains("pull_request:"),
+        "release validation workflow must validate pull requests"
+    );
 }
