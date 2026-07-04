@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Common Workflows
@@ -45,8 +45,8 @@ bijux-dag diff ./runs/reference/latest ./runs/proposed/latest --mode semantic --
 ## Code Anchors
 
 - `crates/bijux-dag-app/src/routes/run_routes.rs`
-- `crates/bijux-dag-app/src/routes/status_routes.rs`
 - `crates/bijux-dag-app/src/routes/inspect_routes.rs`
+- `crates/bijux-dag-app/src/routes/replay_routes.rs`
 
 ## Promotion Criteria
 

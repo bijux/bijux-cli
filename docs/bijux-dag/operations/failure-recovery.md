@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Failure Recovery
@@ -41,8 +41,8 @@ bijux-dag diff ./runs/good-20260405-77 ./runs/recovered-20260406-02 --mode seman
 
 ## Code Anchors
 
-- `crates/bijux-dag-app/src/routes/status_routes.rs`
 - `crates/bijux-dag-app/src/routes/inspect_routes.rs`
+- `crates/bijux-dag-app/src/routes/replay_routes.rs`
 - `crates/bijux-dag-runtime/src/replay/`
 
 ## Recovery Boundaries

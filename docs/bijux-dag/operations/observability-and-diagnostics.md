@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Observability And Diagnostics
@@ -39,8 +39,8 @@ flowchart LR
 
 ## Code Anchors
 
-- `crates/bijux-dag-app/src/routes/status_routes.rs`
 - `crates/bijux-dag-app/src/routes/inspect_routes.rs`
+- `crates/bijux-dag-app/src/routes/replay_routes.rs`
 - `crates/bijux-dag-runtime/src/replay/`
 - `crates/bijux-dag-artifacts/src/integrity/`
 
