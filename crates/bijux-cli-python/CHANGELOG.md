@@ -7,16 +7,21 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="unreleased"></a>
 
+---
+
+<!-- towncrier start -->
+
+<a id="v0-4-0"></a>
+
+## 0.4.0 – 2026-07-04
+
 ### Added
 - Added `bijux_cli_py.app_sdk` with mounted-app manifest builders, compatibility-window helpers, JSON success/failure envelopes, and a callable runner that preserves clean stdout contracts.
 
 ### Changed
+- Advanced the Python distribution to the `v0.4.0` release line alongside the public DAG Rust crate family.
 - Relaxed facade fallback behavior so packaging and helper tests can keep working when the native bridge is unavailable but explicit Python fallback is allowed.
 - Documented the mounted-app packaging flow and shared it with the Rust root runtime contract.
-
----
-
-<!-- towncrier start -->
 
 <a id="v0-3-6"></a>
 
@@ -313,7 +318,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * None
 
 
-[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.3.6...HEAD
+[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/bijux/bijux-core/compare/v0.3.6...v0.4.0
 [0.3.6]: https://github.com/bijux/bijux-core/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/bijux/bijux-core/compare/v0.3.4...v0.3.5
 [0.3.0]: https://github.com/bijux/bijux-core/compare/v0.2.0...v0.3.0

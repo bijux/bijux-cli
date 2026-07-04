@@ -1,14 +1,29 @@
 # bijux-dag-app
 
-Application orchestration crate for DAG commands and response formatting.
-Responsibility: Application orchestration services, command response modeling, and user-facing render flows.
+`bijux-dag-app` is the application layer behind the `bijux-dag` command
+surface. It translates user intent into calls across the DAG core, runtime, and
+artifact crates, then shapes the resulting typed responses.
 
-## Why this crate exists
-This crate owns command routing, argument-to-service translation, and response shaping for `bijux dag` surfaces.
+## What this crate provides
 
-## What must never enter this crate
-- Runtime execution engine internals.
-- Artifact storage backend internals.
-- Governance-only release policy logic.
+- Command orchestration and request validation at the app boundary.
+- Typed response models and render helpers.
+- User-facing flows for inspect, replay, cache, migration, and diagnostics.
 
-See [CONTRACT.md](./CONTRACT.md).
+Depend on this crate when you need to embed or test the `bijux-dag` command
+application logic without taking on the thin binary wrapper.
+
+## Deliberate boundaries
+
+This crate does not own:
+
+- graph semantics or canonical validation rules,
+- scheduler and runtime execution internals,
+- artifact storage implementations or maintainer-only governance workflows.
+
+## Related links
+
+- [Crate contract](./CONTRACT.md)
+- [Crate changelog](./CHANGELOG.md)
+- [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
+- [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/)

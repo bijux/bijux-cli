@@ -1,14 +1,29 @@
 # bijux-dag-artifacts
 
-Run artifact models and artifact persistence helpers.
-Responsibility: Run artifact models, persistence services, integrity proofs, and lifecycle policy helpers.
+`bijux-dag-artifacts` owns artifact identity, persistence, integrity, and
+lifecycle helpers for DAG runs.
 
-## Why this crate exists
-This crate is the authoritative implementation for artifact identity, lineage material, and artifact persistence/verification helpers.
+## What this crate provides
 
-## What must never enter this crate
-- CLI command routing.
-- Runtime scheduler and execution policy logic.
-- Dev governance command orchestration.
+- Run-manifest, node-trace, and outputs-index models.
+- Artifact hashing, proof, and schema validation helpers.
+- Filesystem-backed storage and layout helpers.
+- Retention, promotion, and lineage policy primitives.
 
-See [CONTRACT.md](./CONTRACT.md).
+Depend on this crate when you need to read, write, validate, or transport DAG
+run artifacts without taking on the runtime or command orchestration layers.
+
+## Deliberate boundaries
+
+This crate does not own:
+
+- graph semantics or planner logic,
+- scheduler and execution policy behavior,
+- CLI command routing or maintainer governance flows.
+
+## Related links
+
+- [Crate contract](./CONTRACT.md)
+- [Crate changelog](./CHANGELOG.md)
+- [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
+- [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-artifacts/)

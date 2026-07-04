@@ -4,14 +4,15 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-04
 ---
 
 # DAG Handbook
 
 `bijux-dag` is the graph execution and evidence subsystem in `bijux-core`. It
 owns deterministic DAG semantics, run and artifact identity, replay
-classification, and diff classification.
+classification, and diff classification. The `v0.4.0` release makes the DAG
+Rust crate family public for the first time.
 
 Use this handbook when the question is about graph truth, execution policy,
 replay outcomes, artifact behavior, or how the DAG crates divide ownership.

@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-04
 ---
 
 # Release and Versioning
@@ -45,10 +45,10 @@ flowchart LR
 
 ## Current Release Line
 
-- release target: `v0.3.5`
+- release target: `v0.4.0`
 - published Rust crate: `bijux-cli`
 - published Python package: `bijux-cli`
-- DAG crates remain internal until the coordinated `v0.4.0` release line.
+- DAG companion product now publishes its Rust crate family on the same release line from the shared repository.
 
 ## Next Reads
 

@@ -1,18 +1,30 @@
 # bijux-dag-runtime
 
-Runtime planning, execution, adapter invocation boundaries, policy checks, and trace emission.
-Responsibility: Execution engine, scheduler behavior, policy enforcement, replay semantics, and runtime diagnostics.
+`bijux-dag-runtime` is the execution engine for `bijux-dag`. It owns runtime
+planning, scheduling, adapter invocation boundaries, policy checks, replay
+classification, cache behavior, and trace emission.
 
-## Why this crate exists
-This crate owns execution-time behavior for DAG runs, including planning, scheduling, and runtime policy application.
+## What this crate provides
 
-## What must never enter this crate
-- Authoritative DAG schema ownership.
-- CLI command parsing and presentation routing.
-- Governance release report orchestration.
+- Execution planning and node orchestration.
+- Policy evaluation and runtime diagnostics.
+- Replay, diff, cache, and artifact integration behavior.
+- Adapter boundaries for local and external execution backends.
 
-## Public surface shape
-- Stable runtime execution APIs are exported from the crate root.
-- Modeled platform, distributed-future, and product-story APIs are quarantined under `bijux_dag_runtime::simulated_platform`.
+Choose this crate when you need to execute validated DAG graphs or integrate
+with Bijux runtime policies from Rust.
 
-See [CONTRACT.md](./CONTRACT.md).
+## Deliberate boundaries
+
+This crate does not own:
+
+- authoritative graph schema and validation rules,
+- top-level command parsing or output presentation,
+- release-governance and maintainer report composition.
+
+## Related links
+
+- [Crate contract](./CONTRACT.md)
+- [Crate changelog](./CHANGELOG.md)
+- [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
+- [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-runtime/)

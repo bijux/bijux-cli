@@ -1,28 +1,31 @@
 # bijux-dag-core
 
-`bijux-dag-core` owns the deterministic DAG kernel: graph types, parsing, validation, canonicalization, topology, identity, resolution, and planner lowering primitives.
+`bijux-dag-core` is the deterministic kernel behind the `bijux-dag` product.
+It owns graph truth: parsing, validation, canonicalization, topology,
+identity, reference resolution, and planner lowering.
 
-## Design intent
-The crate is organized around a thin root module and focused service modules:
+## What this crate provides
 
-- `graph/model.rs`: core graph data types
-- `graph/canonical.rs`: canonicalization and normalization
-- `graph/topology.rs`: deterministic topological ordering
-- `pipeline/parse.rs`: strict parse entrypoints
-- `pipeline/validate.rs`: validation rules and diagnostics
-- `pipeline/resolve.rs`: parameter reference resolution
-- `analysis/fingerprint.rs`: graph and node identity
-- `build/contract.rs`: optional packaging and default-application wrappers
-- `planner/planner.rs`: execution-plan lowering
+- Strict graph parsing and validation with stable diagnostics.
+- Deterministic graph canonicalization and topology ordering.
+- Graph and node fingerprinting primitives.
+- Planner-lowering helpers used by runtime and app layers.
 
-The default compile path is graph-first. Packaging metadata is available, but not required, for core compilation.
+Choose this crate when you need a pure Rust dependency for DAG authoring,
+inspection, validation, or identity work without pulling in runtime execution or
+command-layer concerns.
 
-## Boundaries
-This crate should stay pure and deterministic. It must not absorb:
+## Deliberate boundaries
 
-- backend adapter implementations
-- runtime scheduler or executor orchestration
-- CLI routing or formatting concerns
-- filesystem or process side effects
+This crate stays pure and deterministic. It does not own:
 
-See [CONTRACT.md](./CONTRACT.md) for the crate boundary and ownership rules.
+- adapter implementations or runtime scheduling,
+- command parsing, rendering, or CLI routing,
+- filesystem, process, or wall-clock side effects.
+
+## Related links
+
+- [Crate contract](./CONTRACT.md)
+- [Crate changelog](./CHANGELOG.md)
+- [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
+- [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/)

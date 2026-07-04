@@ -82,8 +82,10 @@ def _shield_text(value: str) -> str:
 
 def package_records() -> dict[str, PackageRecord]:
     rust_manifest_path = REPO_ROOT / "crates" / "bijux-cli" / "Cargo.toml"
+    dag_manifest_path = REPO_ROOT / "crates" / "bijux-dag-cli" / "Cargo.toml"
     python_manifest_path = REPO_ROOT / "crates" / "bijux-cli-python" / "pyproject.toml"
     rust_crate_name = _read_section_value(rust_manifest_path, "package", "name")
+    dag_crate_name = _read_section_value(dag_manifest_path, "package", "name")
     python_package_name = _read_section_value(python_manifest_path, "project", "name")
 
     return {
@@ -100,6 +102,19 @@ def package_records() -> dict[str, PackageRecord]:
             crates_url=f"https://crates.io/crates/{rust_crate_name}",
             docsrs_url=f"https://docs.rs/{rust_crate_name}",
             ghcr_url="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli",
+        ),
+        "bijux-dag": PackageRecord(
+            key="bijux-dag",
+            family_key="bijux-dag",
+            kind="rust",
+            published=True,
+            display_name="bijux-dag",
+            purpose="Public Rust crate family for deterministic DAG authoring, artifact identity, execution, testing, and the `bijux-dag` command surface.",
+            docs_url="https://bijux.io/bijux-core/bijux-dag/",
+            source_url="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli",
+            crate_name=dag_crate_name,
+            crates_url=f"https://crates.io/crates/{dag_crate_name}",
+            docsrs_url=f"https://docs.rs/{dag_crate_name}",
         ),
         "bijux-cli-python": PackageRecord(
             key="bijux-cli-python",
@@ -197,7 +212,7 @@ def _render_group(
         _render_template(template, _record_context(record))
         for record in _records_for_group(records, group_name)
     ]
-    return "\n".join(rendered)
+    return " ".join(rendered)
 
 
 def _render_badge_line(

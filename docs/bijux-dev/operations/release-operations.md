@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-04
 ---
 
 # Release Operations
@@ -35,10 +35,10 @@ flowchart LR
 
 ## Current Publication Policy
 
-- `v0.3.5` publishes `bijux-cli` to crates.io and `bijux-cli` to PyPI.
-- `bijux-dag-*` crates remain internal and are intentionally not published in `v0.3.5`.
-- DAG publication is deferred to `v0.4.0`, when CLI and DAG are released together.
-- canonical repository for both programs is `https://github.com/bijux/bijux-core`.
+- `v0.4.0` publishes `bijux-cli` to crates.io, `bijux-cli` to PyPI, and the public DAG Rust crate family to crates.io.
+- The public DAG release set is `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-testkit`, `bijux-dag-app`, and `bijux-dag-cli`.
+- `bijux-dev` remains repository-internal maintainer tooling and is not published.
+- The canonical repository for both products is `https://github.com/bijux/bijux-core`.
 
 ## Preflight Checklist
 
