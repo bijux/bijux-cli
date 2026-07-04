@@ -1,0 +1,196 @@
+{
+  "format": "release-test-lane-governance/v1",
+  "required_release_lane": {
+    "make_target": "test-release-rs",
+    "ci_entrypoint": "make gh-test",
+    "nextest_profile": "ci",
+    "purpose": "Required Rust release-candidate lane for stable DAG behavior that must stay green in CI.",
+    "ignored_tests_allowed": false
+  },
+  "full_verification_lane": {
+    "make_target": "test-all-rs",
+    "purpose": "Full workspace Rust verification, including governed ignored DAG test portfolios."
+  },
+  "rules": {
+    "forbid_flaky_ignored_tests": true,
+    "release_lane_may_not_depend_on_ignored_tests": true,
+    "ignored_tests_require_quarantine_record": true
+  },
+  "portfolios": [
+    {
+      "portfolio_id": "dag-app-adapter-contracts",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/adapter_command_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "Adapter contracts cover broader scenario-matrix and handshake behavior that is still required evidence, but they are too slow for the required release lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test adapter_command_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "adapters_describe_json_contains_descriptor_fields",
+        "adapters_admit_json_reports_unsupported_nodes",
+        "adapters_doctor_reports_external_handshake_rejections_with_reasons",
+        "adapters_conformance_json_reports_scenario_matrix",
+        "adapters_cache_compat_json_rejects_schema_drift",
+        "adapters_reference_prints_generated_markdown_contract"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-artifact-hash-parity",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/artifact_hash_parity_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "Artifact hash parity uses end-to-end CLI execution and remains governed full-lane evidence until the runtime cost is reduced.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test artifact_hash_parity_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "hash_artifact_cli_output_matches_internal_sha256"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-e2e-workflows",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/e2e_integration_scenarios.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "The slow end-to-end workflow scenarios remain part of full verification because they exercise critical multi-command operator paths that exceed the required release-lane budget.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test e2e_integration_scenarios --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "e2e_minimal_parse_validate_run_inspect_replay",
+        "e2e_diamond_outputs_and_manifest_totals",
+        "e2e_failure_downstream_behavior",
+        "e2e_retry_accounting_present",
+        "e2e_timeout_error_classification",
+        "e2e_missing_outputs_failure_handling",
+        "e2e_cache_hit_second_run_and_invalidation",
+        "e2e_replay_semantic_comparison_and_import_export",
+        "e2e_selection_policy_compat_validation_and_no_partial_run_dir",
+        "e2e_container_and_real_world_orchestration"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-json-error-output",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/error_output_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "Structured error output still needs release-facing coverage, but the current command path remains slow enough to stay outside the required release lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test error_output_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "json_error_output_contains_structured_fields"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-json-error-snapshots",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/error_snapshot_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "Representative JSON error snapshots remain governed full-lane evidence while the fixture path stays slower than the required release lane permits.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test error_snapshot_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "representative_json_error_snapshot_is_stable"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-graph-hash-parity",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/hash_graph_parity_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "Graph hash parity still matters for release trust, but its end-to-end CLI path remains in the governed full lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test hash_graph_parity_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "hash_graph_cli_output_matches_core_graph_id"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-human-output-snapshots",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/operator_human_snapshot_contracts.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "Human snapshot contracts lock stable operator phrasing, but the snapshot corpus is intentionally scheduled in the full lane because it is slower and broader than the required release lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test operator_human_snapshot_contracts --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "validate_human_output_snapshot_is_stable",
+        "plan_human_output_snapshot_is_stable",
+        "run_human_output_snapshot_is_stable",
+        "history_human_output_snapshot_is_stable",
+        "replay_human_output_snapshot_is_stable",
+        "diff_human_output_snapshot_is_stable",
+        "prove_human_output_snapshot_is_stable",
+        "verify_human_output_snapshot_is_stable",
+        "artifact_inspect_human_output_snapshot_is_stable"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-operator-schema-lockstep",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/operator_schema_lockstep_contracts.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "Operator schema lockstep checks remain release-sensitive, but they still run in the governed full lane because each assertion exercises slower command and schema materialization paths.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test operator_schema_lockstep_contracts --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "capability_query_output_schema_lockstep",
+        "verify_output_schema_lockstep",
+        "prove_output_schema_lockstep",
+        "export_summary_schema_lockstep",
+        "import_summary_schema_lockstep"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-validate-output-contracts",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/output_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "Validate output contracts remain full-lane evidence because the text and JSON paths still cost more than the required release lane budget allows.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test output_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "app_text_validate_output_contract",
+        "app_json_validate_output_contract"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-prove-contracts",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/prove_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "Proof-surface backend-origin coverage remains governed full-lane evidence until its end-to-end path can fit inside the required release lane budget.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test prove_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "prove_reports_backend_origin_and_unsigned_trust_boundary"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-replay-diff-hardening",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/replay_diff_hardening_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "slow",
+      "outside_required_release_lane": true,
+      "rationale": "Replay and diff hardening remains release-critical full-lane evidence because the current semantic and snapshot matrix is too slow for required CI while still too important to drop.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test replay_diff_hardening_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "replay_proof_schema_lockstep_and_mismatch_grouping",
+        "replay_exactness_covers_minimal_diamond_and_cache_oriented_graphs",
+        "replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported",
+        "replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity",
+        "replay_diff_and_explain_schemas_are_lockstep_and_semantic",
+        "explain_failure_schema_lockstep_and_human_readable_snapshots_are_stable"
+      ]
+    }
+  ]
+}
