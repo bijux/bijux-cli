@@ -66,6 +66,18 @@ fn release_env_value_for_repo(repo_name: &str, key: &str) -> String {
         .to_string()
 }
 
+fn release_env_json_value_for_repo(repo_name: &str, key: &str) -> Value {
+    let repo = repository_config(repo_name);
+    repo.get("release_env")
+        .and_then(Value::as_array)
+        .expect("repository should define release_env")
+        .iter()
+        .find(|entry| entry.get("key").and_then(Value::as_str) == Some(key))
+        .and_then(|entry| entry.get("value"))
+        .cloned()
+        .expect("release_env entry should exist")
+}
+
 fn workflow_env_value_for_repo(repo_name: &str, workflow_name: &str, key: &str) -> String {
     let repo = repository_config(repo_name);
     repo.get("workflow_wrappers")
@@ -85,6 +97,11 @@ fn shell_assignment_value(text: &str, key: &str) -> Option<String> {
             .strip_prefix(&prefix)
             .map(|value| value.trim().trim_matches('"').trim_matches('\'').to_string())
     })
+}
+
+fn json_shell_assignment_value(text: &str, key: &str) -> Value {
+    let raw = shell_assignment_value(text, key).expect("shell assignment should exist");
+    serde_json::from_str(&raw).expect("shell assignment JSON should parse")
 }
 
 #[test]
@@ -313,6 +330,90 @@ fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tre
 }
 
 #[test]
+fn release_build_matrices_cover_cli_and_dag_release_families() {
+    let manifest_build_matrix =
+        release_env_json_value_for_repo("bijux-core", "BIJUX_RELEASE_BUILD_MATRIX_JSON");
+    let manifest_build_entries = manifest_build_matrix
+        .as_array()
+        .expect("release build matrix should be an array");
+    let manifest_build_slugs: Vec<&str> = manifest_build_entries
+        .iter()
+        .map(|entry| entry["package_slug"].as_str().expect("package_slug"))
+        .collect();
+    assert_eq!(
+        manifest_build_slugs,
+        vec!["bijux-cli", "bijux-dag"],
+        "release build matrix must stage both CLI and DAG release families"
+    );
+    let dag_build_entry = manifest_build_entries
+        .iter()
+        .find(|entry| entry["package_slug"].as_str() == Some("bijux-dag"))
+        .expect("DAG release family entry");
+    assert_eq!(
+        dag_build_entry["artifacts_dir"].as_str(),
+        Some("artifacts/rust"),
+        "DAG release family should stage Rust release artifacts under artifacts/rust"
+    );
+    assert_eq!(
+        dag_build_entry["build_targets"].as_str(),
+        Some("build-dag-release-bundle"),
+        "DAG release family should build the dedicated binary release bundle target"
+    );
+
+    let manifest_ghcr_matrix =
+        release_env_json_value_for_repo("bijux-core", "BIJUX_GHCR_RELEASE_PACKAGE_MATRIX_JSON");
+    let manifest_ghcr_slugs: Vec<&str> = manifest_ghcr_matrix
+        .as_array()
+        .expect("GHCR package matrix should be an array")
+        .iter()
+        .map(|entry| entry["package_slug"].as_str().expect("package_slug"))
+        .collect();
+    assert_eq!(
+        manifest_ghcr_slugs,
+        vec!["bijux-cli", "bijux-dag"],
+        "GHCR package matrix must publish both CLI and DAG release families"
+    );
+    assert_eq!(
+        release_env_value_for_repo("bijux-core", "BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES"),
+        "bijux-cli bijux-dag",
+        "GHCR release configuration must explicitly allow the two public release families"
+    );
+
+    let release_env = read_repo_file(".github/release.env");
+    let release_build_matrix =
+        json_shell_assignment_value(&release_env, "BIJUX_RELEASE_BUILD_MATRIX_JSON");
+    let release_build_slugs: Vec<&str> = release_build_matrix
+        .as_array()
+        .expect("release build matrix assignment should be an array")
+        .iter()
+        .map(|entry| entry["package_slug"].as_str().expect("package_slug"))
+        .collect();
+    assert_eq!(
+        release_build_slugs,
+        vec!["bijux-cli", "bijux-dag"],
+        ".github/release.env must stage both CLI and DAG release families"
+    );
+
+    let release_ghcr_matrix =
+        json_shell_assignment_value(&release_env, "BIJUX_GHCR_RELEASE_PACKAGE_MATRIX_JSON");
+    let release_ghcr_slugs: Vec<&str> = release_ghcr_matrix
+        .as_array()
+        .expect("GHCR release assignment should be an array")
+        .iter()
+        .map(|entry| entry["package_slug"].as_str().expect("package_slug"))
+        .collect();
+    assert_eq!(
+        release_ghcr_slugs,
+        vec!["bijux-cli", "bijux-dag"],
+        ".github/release.env must publish both CLI and DAG release families to GHCR"
+    );
+    assert!(
+        release_env.contains("BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES=bijux-cli bijux-dag"),
+        ".github/release.env must explicitly allow the CLI and DAG GHCR release families"
+    );
+}
+
+#[test]
 fn pypi_release_workflow_builds_pypi_compatible_distributions() {
     let workflow_allowlist = workflow_allowlist_for_repo("bijux-core");
     assert!(
@@ -329,12 +430,13 @@ fn pypi_release_workflow_builds_pypi_compatible_distributions() {
 fn crates_release_automation_targets_public_cli_and_dag_crates() {
     let workflow_support = read_repo_file("makes/gh.mk");
     let publish_support = read_repo_file("makes/rust.mk");
+    let release_env = read_repo_file(".github/release.env");
     let expected_packages =
-        "bijux-cli bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-testkit bijux-dag-app bijux-dag-cli";
+        "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-dag-testkit bijux-cli";
 
     assert!(
         workflow_support.contains(&format!("GH_CRATES_RELEASE_PACKAGES ?= {expected_packages}")),
-        "release planning should target the public CLI crate and public DAG crate family for crates.io publication"
+        "release planning should publish the DAG crate family in dependency order before the CLI runtime crate"
     );
     assert!(
         workflow_support.contains("gh-release-plan-github"),
@@ -342,11 +444,23 @@ fn crates_release_automation_targets_public_cli_and_dag_crates() {
     );
     assert!(
         publish_support.contains(&format!("RUST_PUBLISH_PACKAGES ?= {expected_packages}")),
-        "cargo publish automation should target the public CLI crate and public DAG crate family by default"
+        "cargo publish automation should publish the DAG crate family in dependency order before the CLI runtime crate"
     );
     assert!(
         !workflow_support.contains("GH_CRATES_RELEASE_PACKAGES ?= bijux-cli bijux-cli-python"),
         "release planning must not treat the Python bridge crate as a crates.io package"
+    );
+    assert!(
+        publish_support.contains("build-dag-release-bundle"),
+        "Rust release automation should expose a dedicated DAG binary bundle target for release workflows"
+    );
+    assert!(
+        release_env.contains(&format!("BIJUX_CRATES_RELEASE_PACKAGES={expected_packages}")),
+        ".github/release.env must export the DAG-first crates publish order"
+    );
+    assert!(
+        release_env.contains(&format!("BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES={expected_packages}")),
+        ".github/release.env must explicitly allow only the intended public crates release set"
     );
     assert!(
         publish_support.contains("RUST_PUBLISH_SKIP_EXISTING ?= 1"),
