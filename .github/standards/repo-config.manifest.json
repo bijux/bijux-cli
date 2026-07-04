@@ -1055,12 +1055,12 @@
         {
           "key": "BIJUX_CRATES_RELEASE_PACKAGES",
           "type": "string",
-          "value": "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-dag-testkit bijux-cli"
+          "value": "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-cli"
         },
         {
           "key": "BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES",
           "type": "string",
-          "value": "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-dag-testkit bijux-cli"
+          "value": "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-cli"
         },
         {
           "key": "BIJUX_GHCR_RELEASE_ENABLED",

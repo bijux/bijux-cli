@@ -3,7 +3,7 @@
 
 GH_DOCS_PAGES_DIR ?= artifacts/docs/docs/artifacts
 GH_RELEASE_TAG_PATTERN ?= ^v[0-9]+\.[0-9]+\.[0-9]+$$
-GH_CRATES_RELEASE_PACKAGES ?= bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-dag-testkit bijux-cli
+GH_CRATES_RELEASE_PACKAGES ?= bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-cli
 GH_RELEASE_CI_WORKFLOW_FILE ?= ci.yml
 GH_RELEASE_CI_WAIT_TIMEOUT_SECONDS ?= 1800
 GH_RELEASE_CI_POLL_INTERVAL_SECONDS ?= 15
