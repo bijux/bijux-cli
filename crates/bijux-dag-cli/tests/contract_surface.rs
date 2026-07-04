@@ -111,19 +111,36 @@ fn dag_root_help_surface_contract() {
     let text = String::from_utf8_lossy(&output.stdout);
     for token in [
         "validate",
+        "artifact-inspect",
+        "artifact",
+        "commands",
+        "plan",
         "run",
         "replay",
+        "runs",
         "diff",
         "explain",
-        "status",
-        "cache",
-        "adapters",
-        "commands",
+        "verify",
         "doctor",
+        "cache",
+        "version",
     ] {
         assert!(text.contains(token));
     }
     for hidden in [
+        "adapters",
+        "canonicalize",
+        "export",
+        "fsck",
+        "hash",
+        "import",
+        "init",
+        "lint",
+        "policy",
+        "prove",
+        "status",
+        "trace-artifact",
+        "why-rerun",
         "control-plane",
         "state-store",
         "enterprise",
@@ -145,8 +162,12 @@ fn dag_root_help_surface_contract() {
         "semantic-portability",
         "equivalence-proof",
     ] {
-        assert!(!text.contains(hidden), "hidden namespace leaked into root help: {hidden}");
+        assert!(
+            !text.contains(&format!("\n  {hidden}")),
+            "hidden namespace leaked into root help: {hidden}"
+        );
     }
+    assert!(!text.contains("\n  graph"), "hidden namespace leaked into root help: graph");
 }
 
 #[test]
@@ -189,10 +210,8 @@ fn dag_commands_groups_surface_is_stable_enough() {
         "cache",
         "config",
         "doctor",
-        "export-import",
         "graph",
         "inspect",
-        "migrate",
         "plan",
         "prove",
         "replay",
@@ -209,6 +228,10 @@ fn dag_commands_json_exposes_group_and_maturity_metadata() {
     let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("commands json");
     let commands = payload["data"]["commands"].as_array().expect("commands array");
     assert!(commands.iter().any(|entry| entry["path"] == "doctor"));
+    assert!(commands.iter().all(|entry| entry["maturity"] == "stable"));
+    assert!(!commands.iter().any(|entry| entry["path"] == "artifact fetch"));
+    assert!(!commands.iter().any(|entry| entry["path"] == "status"));
+    assert!(!commands.iter().any(|entry| entry["path"] == "init"));
     assert!(!commands.iter().any(|entry| entry["path"] == "lab federation schedule"));
     assert!(commands.iter().all(|entry| entry.get("maturity").is_some()));
     assert!(commands.iter().all(|entry| entry.get("group").is_some()));
@@ -221,8 +244,20 @@ fn dag_commands_json_can_include_hidden_namespaces_when_requested() {
     let payload: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("commands json all");
     let commands = payload["data"]["commands"].as_array().expect("commands array");
+    assert!(commands.iter().any(|entry| entry["path"] == "artifact fetch"));
     assert!(commands.iter().any(|entry| entry["path"] == "lab federation schedule"));
     assert!(commands.iter().any(|entry| entry["path"] == "trace-node"));
+}
+
+#[test]
+fn dag_artifact_help_hides_experimental_fetch_route() {
+    let output = dag_command().args(["artifact", "--help"]).output().expect("artifact help");
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("registry"));
+    assert!(text.contains("lineage"));
+    assert!(text.contains("retention"));
+    assert!(!text.contains("fetch"));
 }
 
 #[test]
@@ -256,9 +291,13 @@ fn dag_hidden_lab_namespace_remains_addressable_by_explicit_path() {
     let output = dag_command().args(["lab", "--help"]).output().expect("lab help");
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in ["federation", "incident", "enterprise", "release", "security"] {
-        assert!(text.contains(token));
-    }
+    assert!(!text.contains("federation"));
+
+    let nested =
+        dag_command().args(["lab", "federation", "schedule", "--help"]).output().expect("nested lab help");
+    assert!(nested.status.success());
+    let nested_text = String::from_utf8_lossy(&nested.stdout);
+    assert!(nested_text.contains("bijux-dag lab federation schedule"));
 }
 
 #[test]
@@ -404,8 +443,14 @@ fn dag_adapters_help_surface_contract() {
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(text.contains("adapters"));
-    assert!(text.contains("ls"));
-    assert!(text.contains("doctor"));
+    assert!(!text.contains("ls"));
+    assert!(!text.contains("doctor"));
+
+    let nested =
+        dag_command().args(["adapters", "ls", "--help"]).output().expect("adapters ls help");
+    assert!(nested.status.success());
+    let nested_text = String::from_utf8_lossy(&nested.stdout);
+    assert!(nested_text.contains("bijux-dag adapters ls"));
 }
 
 #[test]
