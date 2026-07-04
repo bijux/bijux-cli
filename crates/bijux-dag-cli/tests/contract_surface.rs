@@ -120,11 +120,32 @@ fn dag_root_help_surface_contract() {
         "adapters",
         "commands",
         "doctor",
-        "trace-node",
-        "run-bundle",
-        "lab",
     ] {
         assert!(text.contains(token));
+    }
+    for hidden in [
+        "control-plane",
+        "state-store",
+        "enterprise",
+        "fleet",
+        "governance",
+        "incident",
+        "lab",
+        "federation",
+        "security",
+        "durability",
+        "performance",
+        "release",
+        "runtime",
+        "schedule",
+        "run-bundle",
+        "trace-node",
+        "version-inspect",
+        "capabilities",
+        "semantic-portability",
+        "equivalence-proof",
+    ] {
+        assert!(!text.contains(hidden), "hidden namespace leaked into root help: {hidden}");
     }
 }
 
@@ -177,9 +198,20 @@ fn dag_commands_json_exposes_group_and_maturity_metadata() {
     let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("commands json");
     let commands = payload["data"]["commands"].as_array().expect("commands array");
     assert!(commands.iter().any(|entry| entry["path"] == "doctor"));
-    assert!(commands.iter().any(|entry| entry["path"] == "lab federation schedule"));
+    assert!(!commands.iter().any(|entry| entry["path"] == "lab federation schedule"));
     assert!(commands.iter().all(|entry| entry.get("maturity").is_some()));
     assert!(commands.iter().all(|entry| entry.get("group").is_some()));
+}
+
+#[test]
+fn dag_commands_json_can_include_hidden_namespaces_when_requested() {
+    let output = dag_command().args(["--json", "commands", "--all"]).output().expect("commands json all");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("commands json all");
+    let commands = payload["data"]["commands"].as_array().expect("commands array");
+    assert!(commands.iter().any(|entry| entry["path"] == "lab federation schedule"));
+    assert!(commands.iter().any(|entry| entry["path"] == "trace-node"));
 }
 
 #[test]
@@ -209,7 +241,7 @@ fn dag_explain_plan_alias_and_legacy_alias_both_work() {
 }
 
 #[test]
-fn dag_lab_namespace_help_exposes_simulation_families() {
+fn dag_hidden_lab_namespace_remains_addressable_by_explicit_path() {
     let output = dag_command().args(["lab", "--help"]).output().expect("lab help");
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
