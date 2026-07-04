@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-04
 ---
 
 # CLI Surface
@@ -17,8 +17,10 @@ defining work, running it, inspecting evidence, comparing outcomes, or managing
 the environment around it.
 
 For `v0.4.0`, the public CLI contract is the visible root help surface from
-`bijux-dag --help`. Hidden maintainer namespaces remain callable by explicit
-path, but they are not part of the supported operator-facing release boundary.
+`bijux-dag --help`. That surface is intentionally smaller than the full routed
+command tree. Hidden experimental, simulation, and maintainer routes remain
+callable by explicit path, but they are not part of the supported
+operator-facing release boundary.
 
 ## Route Map
 
@@ -31,7 +33,24 @@ flowchart LR
     dag --> operate["manage cache and policy"]
 ```
 
-## Command Families
+## Visible Root Surface
+
+- author and validate: `validate`, `plan`
+- execute and replay: `run`, `replay`, `verify`
+- inspect evidence: `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`
+- operate locally: `cache ...`, `doctor`, `version`, `commands`, `completions`
+
+## Hidden Experimental Routes
+
+The following operator-oriented routes stay callable by explicit path, but they
+are hidden from the default root help and default command catalog because they
+either widen the contract too far or still need stricter release posture:
+
+- authoring helpers and raw graph internals: `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `canonical-bytes`, `canonical-diff`
+- advanced inspection and comparison helpers: `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`
+- bundle, migration, and environment control helpers: `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary`
+
+## Full Command Families
 
 - definition: `init`, `validate`, `canonicalize`, `lint`, `graph-lint`, `fingerprint`
 - execution and replay: `run`, `replay`, `prove`, `proof-summary`, `verify`, `fsck`
@@ -39,7 +58,7 @@ flowchart LR
 - comparison: `diff`, `why-rerun`, `why-cache-missed`, `trace-artifact`
 - operations: `cache ...`, `adapters ...`, `export`, `import`, `config ...`, `policy ...`
 
-## Hidden Namespaces
+## Hidden Simulation And Maintainer Namespaces
 
 The following root namespaces are intentionally hidden from the public help
 surface in `v0.4.0`:
@@ -68,6 +87,7 @@ presented as stable operator APIs.
 
 - command additions require docs and contract test updates
 - classification commands must preserve explicit outcome vocabulary
+- hidden experimental routes must stay off the default root help and default command catalog unless they are intentionally promoted
 - hidden maintainer namespaces must stay off the default root help and default command catalog
 - hidden or deprecated paths should remain tested until removal is intentional
 
