@@ -63,14 +63,14 @@ pub(crate) fn handle_run_command(
     require_safe_path(req.out)?;
     let input = read_file(req.dag)?;
     let mut graph = parse_graph(&input)?;
-    let runtime_inputs = match bind_runtime_inputs(&graph.inputs, req.inputs_file.as_deref(), req.input)
-    {
-        Ok(binding) => binding,
-        Err(message) => {
-            return emit_run_input_error(cli, &message, json!({ "error": message }));
-        }
-    };
-    graph.inputs = runtime_inputs.effective_inputs.clone();
+    let runtime_inputs =
+        match bind_runtime_inputs(&graph.inputs, req.inputs_file.as_deref(), req.input) {
+            Ok(binding) => binding,
+            Err(message) => {
+                return emit_run_input_error(cli, &message, json!({ "error": message }));
+            }
+        };
+    graph.inputs = runtime_inputs.bound_inputs.clone();
     let missing_inputs = missing_required_graph_inputs(&graph);
     if !missing_inputs.is_empty() {
         let message = format!("missing required runtime inputs: {}", missing_inputs.join(", "));
@@ -177,10 +177,7 @@ pub(crate) fn handle_run_command(
     }
     if !cli.quiet {
         if !runtime_inputs.human_summary.is_empty() {
-            println!(
-                "inputs: {}",
-                serde_json::to_string(&runtime_inputs.human_summary).unwrap()
-            );
+            println!("inputs: {}", serde_json::to_string(&runtime_inputs.human_summary).unwrap());
         }
         if !runtime_inputs.redacted_keys.is_empty() {
             println!("redacted_inputs: {:?}", runtime_inputs.redacted_keys);

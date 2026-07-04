@@ -366,9 +366,9 @@ pub fn execute(
         parent_run_id: options.parent_run_id.clone(),
         source_run_id: options.parent_run_id.clone(),
         graph_inputs: graph
-            .inputs
-            .iter()
-            .map(|(key, value)| (key.clone(), value.clone()))
+            .effective_inputs()
+            .map_err(|_| RuntimeError::Graph(bijux_dag_core::GraphError::ValidationFailed))?
+            .into_iter()
             .collect::<BTreeMap<_, _>>(),
     });
     run_dir.write_manifest(&manifest)?;

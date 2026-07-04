@@ -1,6 +1,6 @@
 //! Core DAG model surface.
 
-use crate::input::GraphInputSpec;
+use crate::input::{materialize_graph_input_value, GraphInputSpec, GraphInputViolation};
 use serde::{de::Error as DeError, Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -36,6 +36,28 @@ pub struct Graph {
     pub nondeterminism_allowed: bool,
     pub nodes: Vec<Node>,
     pub edges: Vec<Edge>,
+}
+
+impl Graph {
+    pub fn effective_inputs(&self) -> Result<BTreeMap<String, Value>, GraphInputViolation> {
+        let mut effective = BTreeMap::new();
+        for (input_name, spec) in &self.inputs {
+            if let Some(value) = spec.effective_value() {
+                effective.insert(
+                    input_name.clone(),
+                    materialize_graph_input_value(spec, value, &format!("/inputs/{input_name}"))?,
+                );
+            }
+        }
+        Ok(effective)
+    }
+
+    pub fn input_schema(&self) -> BTreeMap<String, Value> {
+        self.inputs
+            .iter()
+            .map(|(input_name, spec)| (input_name.clone(), spec.schema_json()))
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,38 +1,38 @@
 use crate::fs_input::read_utf8_file;
-use bijux_dag_core::{Graph, ParamValue};
+use bijux_dag_core::{materialize_graph_input_value, Graph, GraphInputSpec, ParamValue};
 use serde_json::{Map, Value};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct RuntimeInputBinding {
-    pub(crate) effective_inputs: Map<String, Value>,
+    pub(crate) bound_inputs: BTreeMap<String, GraphInputSpec>,
+    pub(crate) effective_inputs: BTreeMap<String, Value>,
     pub(crate) human_summary: Map<String, Value>,
     pub(crate) redacted_keys: Vec<String>,
 }
 
 pub(crate) fn bind_runtime_inputs(
-    declared_inputs: &Map<String, Value>,
+    declared_inputs: &BTreeMap<String, GraphInputSpec>,
     inputs_file: Option<&Path>,
     cli_inputs: &[String],
 ) -> Result<RuntimeInputBinding, String> {
-    let mut effective_inputs = declared_inputs.clone();
+    let mut bound_inputs = declared_inputs.clone();
 
     if let Some(path) = inputs_file {
         for (key, value) in parse_inputs_file(path)? {
-            ensure_declared_input(&key, declared_inputs)?;
-            effective_inputs.insert(key, value);
+            bind_runtime_input_value(&key, value, declared_inputs, &mut bound_inputs)?;
         }
     }
 
     for assignment in cli_inputs {
         let (key, value) = parse_cli_input_assignment(assignment)?;
-        ensure_declared_input(&key, declared_inputs)?;
-        effective_inputs.insert(key, value);
+        bind_runtime_input_value(&key, value, declared_inputs, &mut bound_inputs)?;
     }
 
+    let effective_inputs = effective_inputs_from_specs(&bound_inputs)?;
     let (human_summary, redacted_keys) = redact_input_summary(&effective_inputs);
-    Ok(RuntimeInputBinding { effective_inputs, human_summary, redacted_keys })
+    Ok(RuntimeInputBinding { bound_inputs, effective_inputs, human_summary, redacted_keys })
 }
 
 pub(crate) fn missing_required_graph_inputs(graph: &Graph) -> Vec<String> {
@@ -43,7 +43,7 @@ pub(crate) fn missing_required_graph_inputs(graph: &Graph) -> Vec<String> {
 
     required
         .into_iter()
-        .filter(|key| graph.inputs.get(key).is_none_or(Value::is_null))
+        .filter(|key| graph.inputs.get(key).and_then(GraphInputSpec::effective_value).is_none())
         .collect()
 }
 
@@ -72,11 +72,19 @@ fn parse_cli_input_assignment(raw: &str) -> Result<(String, Value), String> {
     Ok((key.to_string(), parse_runtime_input_value(value)))
 }
 
-fn ensure_declared_input(key: &str, declared_inputs: &Map<String, Value>) -> Result<(), String> {
-    if declared_inputs.contains_key(key) {
-        return Ok(());
-    }
-    Err(format!("runtime input is not declared in graph.inputs: {key}"))
+fn bind_runtime_input_value(
+    key: &str,
+    value: Value,
+    declared_inputs: &BTreeMap<String, GraphInputSpec>,
+    bound_inputs: &mut BTreeMap<String, GraphInputSpec>,
+) -> Result<(), String> {
+    let Some(spec) = declared_inputs.get(key) else {
+        return Err(format!("runtime input is not declared in graph.inputs: {key}"));
+    };
+    let normalized = materialize_graph_input_value(spec, &value, &format!("/inputs/{key}"))
+        .map_err(|error| format!("runtime input at {}: {}", error.path, error.message))?;
+    bound_inputs.insert(key.to_string(), spec.with_effective_value(normalized));
+    Ok(())
 }
 
 fn parse_runtime_input_value(raw: &str) -> Value {
@@ -93,7 +101,7 @@ pub(crate) fn is_secret_like_input_key(key: &str) -> bool {
         || key.contains("credential")
 }
 
-fn redact_input_summary(inputs: &Map<String, Value>) -> (Map<String, Value>, Vec<String>) {
+fn redact_input_summary(inputs: &BTreeMap<String, Value>) -> (Map<String, Value>, Vec<String>) {
     let mut summary = Map::new();
     let mut redacted_keys = Vec::new();
     for (key, value) in inputs {
@@ -106,6 +114,22 @@ fn redact_input_summary(inputs: &Map<String, Value>) -> (Map<String, Value>, Vec
     }
     redacted_keys.sort();
     (summary, redacted_keys)
+}
+
+fn effective_inputs_from_specs(
+    inputs: &BTreeMap<String, GraphInputSpec>,
+) -> Result<BTreeMap<String, Value>, String> {
+    let mut effective = BTreeMap::new();
+    for (key, spec) in inputs {
+        if let Some(value) = spec.effective_value() {
+            let materialized =
+                materialize_graph_input_value(spec, value, &format!("/inputs/{key}")).map_err(
+                    |error| format!("runtime input at {}: {}", error.path, error.message),
+                )?;
+            effective.insert(key.clone(), materialized);
+        }
+    }
+    Ok(effective)
 }
 
 fn collect_required_graph_inputs(value: &ParamValue, required: &mut BTreeSet<String>) {
@@ -132,18 +156,17 @@ fn collect_required_graph_inputs(value: &ParamValue, required: &mut BTreeSet<Str
 #[cfg(test)]
 mod tests {
     use super::{bind_runtime_inputs, is_secret_like_input_key, missing_required_graph_inputs};
-    use bijux_dag_core::parse_graph_strict;
-    use serde_json::{json, Map, Value};
+    use bijux_dag_core::{parse_graph_strict, GraphInputSpec};
+    use serde_json::{json, Value};
+    use std::collections::BTreeMap;
 
-    fn declared_inputs() -> Map<String, Value> {
-        let Value::Object(map) = json!({
-            "region": "eu-west-1",
-            "attempts": 1,
-            "api_token": null
-        }) else {
-            unreachable!("declared inputs object")
-        };
-        map
+    fn declared_inputs() -> BTreeMap<String, GraphInputSpec> {
+        serde_json::from_value(json!({
+            "region": {"type":"string","default":"eu-west-1"},
+            "attempts": {"type":"integer","default":1},
+            "api_token": {"type":"string","required":true}
+        }))
+        .expect("declared inputs")
     }
 
     #[test]
@@ -179,12 +202,9 @@ mod tests {
 
     #[test]
     fn secret_like_keys_are_redacted_in_human_summary() {
-        let binding = bind_runtime_inputs(
-            &declared_inputs(),
-            None,
-            &["api_token=s3cr3t".to_string()],
-        )
-        .expect("binding");
+        let binding =
+            bind_runtime_inputs(&declared_inputs(), None, &["api_token=s3cr3t".to_string()])
+                .expect("binding");
         assert_eq!(binding.effective_inputs["api_token"], "s3cr3t");
         assert_eq!(binding.human_summary["api_token"], "[REDACTED]");
         assert_eq!(binding.redacted_keys, vec!["api_token".to_string()]);
@@ -197,7 +217,11 @@ mod tests {
             r#"{
               "spec":"bijux-dag/v0.1",
               "meta":{"name":"wf","owners":[],"tags":[]},
-              "inputs":{"region":null,"api_token":null,"unused":null},
+              "inputs":{
+                "region":{"type":"string","required":true},
+                "api_token":{"type":"string","required":true},
+                "unused":{"type":"string","required":true}
+              },
               "nodes":[
                 {
                   "id":"n1",
