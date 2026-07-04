@@ -3,6 +3,10 @@
 `bijux-dag-testkit` centralizes deterministic test fixtures, builders, and
 assertion helpers shared across the DAG workspace.
 
+This crate is repository-internal test support. It is maintained for workspace
+crates and top-level suites, but it is not part of the public `v0.4.0` crates.io
+release boundary.
+
 ## What this crate provides
 
 - Canonical DAG fixture builders.
@@ -18,6 +22,7 @@ This crate is test-only support. It does not own:
 
 - production command routing,
 - runtime state machines,
+- crates.io publication policy,
 - release-governance decisions.
 
 ## Related links

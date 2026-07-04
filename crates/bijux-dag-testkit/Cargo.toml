@@ -1,6 +1,7 @@
 [package]
 name = "bijux-dag-testkit"
 version.workspace = true
+publish = false
 description = "Deterministic fixtures and assertion helpers for consumers and maintainers of Bijux DAG crates."
 edition.workspace = true
 license.workspace = true

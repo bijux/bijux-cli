@@ -7,6 +7,6 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## 0.4.0 – 2026-07-04
 
 ### Added
-- First public crates.io release of `bijux-dag-testkit` as the shared deterministic test support crate for the DAG workspace.
-- Stable package metadata, release-grade README coverage, and package documentation links for external consumers.
+- Repository-internal release declaration for `bijux-dag-testkit` as the shared deterministic test support crate for the DAG workspace.
+- Stable package metadata, README coverage, and package documentation links for workspace maintainers and contributors.
 - Reusable fixtures, builders, and assertion helpers for DAG contract, integration, and regression suites.

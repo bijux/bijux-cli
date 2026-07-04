@@ -4,12 +4,15 @@ Responsibility: Shared deterministic test fixtures, builders, and assertion help
 
 ## Scope
 `bijux-dag-testkit` provides reusable test-only fixtures, builders, matchers, and harness utilities shared across crates and top-level suites.
+It is maintained as a repository-internal support crate rather than a public
+release surface.
 
 ## Authority
 This crate is the single source of truth for shared DAG fixture builders and run-artifact test assertions.
 
 ## Invariants
 - Production crates must not depend on this crate at runtime.
+- Public crates must not require this crate to package or run.
 - Utilities remain deterministic and side-effect-bounded for tests.
 - Shared fixtures are canonicalized and reusable across test families.
 
