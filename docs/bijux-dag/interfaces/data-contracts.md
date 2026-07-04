@@ -93,6 +93,17 @@ guessing:
 - cache disablement without a reason is rejected
 - references to undeclared graph inputs or missing node outputs are rejected
 
+## Run Manifest Input Contract
+
+When a workflow is launched with runtime input overrides, the run artifact
+contract records the effective inputs in `manifest.json` under
+`run_metadata.graph_inputs`.
+
+- the recorded values reflect the merged runtime view that executed
+- `--inputs-file` values can be overridden by later `--input key=value` flags
+- operator-facing human output redacts secret-like keys, but the manifest
+  preserves the effective input values for replay and audit context
+
 ### Example
 
 `evidence/dag/authoring/examples/parameterized-report.dag.json` is the

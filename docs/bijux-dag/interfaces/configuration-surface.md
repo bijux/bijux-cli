@@ -28,8 +28,37 @@ flowchart LR
 ## Configuration Inputs
 
 - command flags (`jobs`, `cache`, `cache-dir`, `materialize-inputs`, policy toggles)
+- workflow input flags (`run --input key=value`, `run --inputs-file`)
 - config command surfaces (`config ...`, `policy ...`)
 - environment and path resolution inputs where applicable
+
+## Workflow Input Binding
+
+Runtime workflow inputs are bound at `run` time so the same DAG file can be
+reused with different input values without editing `graph.inputs` in place.
+
+The effective merge order is:
+
+1. `graph.inputs` defaults from the DAG file
+2. `run --inputs-file <json-object>`
+3. repeated `run --input key=value` flags
+
+Binding rules:
+
+- `--inputs-file` must be a top-level JSON object
+- `--input key=value` accepts JSON literals when the right-hand side parses as
+  JSON, otherwise it is treated as a plain string
+- runtime input keys must already be declared in `graph.inputs`
+- if a node references a graph input and the effective value is still `null`,
+  the run fails before execution starts
+
+Operator-facing surfaces:
+
+- `run --preflight-only` reports the effective input summary
+- `run` human output redacts secret-like keys such as `token`, `password`,
+  `secret`, and `api_key`
+- `manifest.json` records the effective `run_metadata.graph_inputs` map for the
+  run that actually executed
 
 ## Policy Controls
 
