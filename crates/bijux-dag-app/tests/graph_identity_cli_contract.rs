@@ -33,7 +33,7 @@ fn fingerprint_explain_json_matches_contract_shape() {
 
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "fingerprint",
             dag_path.to_string_lossy().as_ref(),

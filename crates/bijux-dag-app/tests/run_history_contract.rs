@@ -54,7 +54,7 @@ fn runs_history_and_id_explain_are_json_capable() {
 
     let history = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "runs",
             "history",
@@ -66,7 +66,7 @@ fn runs_history_and_id_explain_are_json_capable() {
 
     let explain = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "runs",
             "id-explain",

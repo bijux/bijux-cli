@@ -25,19 +25,19 @@ mod tests {
 
     #[test]
     fn prefers_quiet_over_json() {
-        let cli = DagCli::parse_from(["dag", "--json", "--quiet", "doctor"]);
+        let cli = DagCli::parse_from(["bijux-dag", "--json", "--quiet", "doctor"]);
         assert_eq!(output_selection(&cli), OutputSelection::Quiet);
     }
 
     #[test]
     fn selects_json_when_enabled() {
-        let cli = DagCli::parse_from(["dag", "--json", "doctor"]);
+        let cli = DagCli::parse_from(["bijux-dag", "--json", "doctor"]);
         assert_eq!(output_selection(&cli), OutputSelection::Json);
     }
 
     #[test]
     fn selects_human_by_default() {
-        let cli = DagCli::parse_from(["dag", "doctor"]);
+        let cli = DagCli::parse_from(["bijux-dag", "doctor"]);
         assert_eq!(output_selection(&cli), OutputSelection::Human);
     }
 }

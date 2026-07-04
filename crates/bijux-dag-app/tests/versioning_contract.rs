@@ -30,7 +30,7 @@ fn version_inspect_reports_supported_graph_versions() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "version-inspect",
             "--dag",
@@ -54,7 +54,7 @@ fn version_inspect_rejects_unsupported_graph_versions() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "version-inspect",
             "--dag",
@@ -79,7 +79,7 @@ fn migrate_noop_supported_and_cross_version_rejected() {
     let noop = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "migrate",
             "dag",
             dag.to_string_lossy().as_ref(),
@@ -93,7 +93,7 @@ fn migrate_noop_supported_and_cross_version_rejected() {
 
     let reject = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "migrate",
             "dag",
             dag.to_string_lossy().as_ref(),

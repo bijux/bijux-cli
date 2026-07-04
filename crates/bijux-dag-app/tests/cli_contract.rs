@@ -31,7 +31,7 @@ fn invalid_input_path_does_not_panic() {
     let result = std::panic::catch_unwind(|| {
         let cmd = dag_command();
         let matches = cmd
-            .try_get_matches_from(["dag", "validate", "/definitely/missing/file.json"])
+            .try_get_matches_from(["bijux-dag", "validate", "/definitely/missing/file.json"])
             .expect("clap parse");
         let _ = dag_run(&matches);
     });
@@ -48,7 +48,7 @@ fn corrupted_run_dir_does_not_panic() {
     let result = std::panic::catch_unwind(|| {
         let cmd = dag_command();
         let matches = cmd
-            .try_get_matches_from(["dag", "status", run.to_string_lossy().as_ref()])
+            .try_get_matches_from(["bijux-dag", "status", run.to_string_lossy().as_ref()])
             .expect("clap parse");
         let _ = dag_run(&matches);
     });

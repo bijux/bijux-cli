@@ -54,7 +54,7 @@ fn why_rerun_and_trace_artifact_commands_are_json_capable() {
 
     let why = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "why-rerun",
             run_a.to_string_lossy().as_ref(),
@@ -65,7 +65,7 @@ fn why_rerun_and_trace_artifact_commands_are_json_capable() {
 
     let trace = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "trace-artifact",
             run_a.to_string_lossy().as_ref(),
@@ -82,7 +82,7 @@ fn why_cache_missed_command_is_json_capable() {
     fs::create_dir_all(&cache_dir).expect("mkdir cache");
     let cmd = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "why-cache-missed",
             "missing-key",
@@ -121,7 +121,7 @@ fn why_rerun_reports_equivalence_for_identical_runs() {
     }
     let cmd = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "diff",
             "--mode",
@@ -136,7 +136,7 @@ fn why_rerun_reports_equivalence_for_identical_runs() {
 
     let why = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "why-rerun",
             "--node",

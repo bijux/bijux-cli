@@ -75,7 +75,7 @@ fn semantic_diff_equivalence_surface_reports_equivalent_for_cosmetic_plan_change
 
     let cmd = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "why-rerun",
             run_a.to_string_lossy().as_ref(),
@@ -122,7 +122,7 @@ fn explain_why_rerun_supports_imported_run_ancestry_context() {
 
     let cmd = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "why-rerun",
             run_a.to_string_lossy().as_ref(),
@@ -162,7 +162,7 @@ fn explain_why_cache_missed_reports_corrupt_entry_verification_failure() {
 
     let cmd = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "why-cache-missed",
             key,
@@ -200,7 +200,7 @@ fn trace_artifact_supports_replayed_run_provenance_surface() {
 
     let cmd = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "trace-artifact",
             replayed.to_string_lossy().as_ref(),

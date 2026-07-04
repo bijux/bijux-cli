@@ -122,7 +122,7 @@ fn replay_creates_new_run_linked_to_source_ancestry() {
 
     let run_matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "run",
             dag.to_string_lossy().as_ref(),
             "--out",
@@ -135,7 +135,7 @@ fn replay_creates_new_run_linked_to_source_ancestry() {
 
     let replay_matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "replay",
             out.join("run-source-run").to_string_lossy().as_ref(),
             "--out",

@@ -34,7 +34,7 @@ fn import_verify_reports_corrupt_bundle_without_panicking() {
     .expect("write");
 
     let matches = dag_command()
-        .try_get_matches_from(["dag", "import", bundle.to_string_lossy().as_ref(), "--verify-only"])
+        .try_get_matches_from(["bijux-dag", "import", bundle.to_string_lossy().as_ref(), "--verify-only"])
         .expect("parse import");
     let code = dag_run(&matches);
     assert!(code.is_err(), "corrupt bundle should not import successfully");

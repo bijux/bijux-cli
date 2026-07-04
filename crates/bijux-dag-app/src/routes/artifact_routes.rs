@@ -391,7 +391,7 @@ mod tests {
 
     #[test]
     fn artifact_inspect_route_rejects_missing_run_without_panic() {
-        let cli = DagCli::parse_from(["dag", "artifact-inspect", "/missing/run", "n1:out"]);
+        let cli = DagCli::parse_from(["bijux-dag", "artifact-inspect", "/missing/run", "n1:out"]);
         let result = handle_artifact_inspect_command(&cli, Path::new("/missing/run"), "n1:out");
         assert!(result.is_err());
     }

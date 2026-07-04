@@ -39,7 +39,7 @@ fn cli_validate_smoke_accepts_valid_graph() {
         .expect("write graph");
 
     let matches = dag_command()
-        .try_get_matches_from(["dag", "validate", graph_path.to_string_lossy().as_ref()])
+        .try_get_matches_from(["bijux-dag", "validate", graph_path.to_string_lossy().as_ref()])
         .expect("cli parse");
     let code = dag_run(&matches).expect("validate command");
     assert_eq!(code, std::process::ExitCode::SUCCESS);
@@ -52,7 +52,7 @@ fn cli_validate_smoke_reports_invalid_graph() {
     std::fs::write(&graph_path, b"{ not-valid-json").expect("write graph");
 
     let matches = dag_command()
-        .try_get_matches_from(["dag", "validate", graph_path.to_string_lossy().as_ref()])
+        .try_get_matches_from(["bijux-dag", "validate", graph_path.to_string_lossy().as_ref()])
         .expect("cli parse");
     let err = dag_run(&matches).expect_err("invalid graph should fail validation");
     assert_eq!(err, std::process::ExitCode::from(2));

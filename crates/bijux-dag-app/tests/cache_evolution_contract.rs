@@ -58,7 +58,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let explain = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "cache",
             "explain",
@@ -73,7 +73,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let stats = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "cache",
             "stats",
@@ -86,7 +86,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let prune = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "cache",
             "prune-simulate",
@@ -99,7 +99,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let diff = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "cache",
             "diff",
@@ -116,7 +116,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let verify = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "cache",
             "verify",

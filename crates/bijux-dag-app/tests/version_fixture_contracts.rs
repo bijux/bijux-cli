@@ -32,7 +32,7 @@ fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
     let ok_matches = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "version-inspect",
             "--dag",
@@ -43,7 +43,7 @@ fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
 
     let bad_matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "version-inspect",
             "--dag",
@@ -63,7 +63,7 @@ fn supported_and_unsupported_run_dir_formats_are_classified() {
     let ok_matches = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "version-inspect",
             "--run-dir",
@@ -74,7 +74,7 @@ fn supported_and_unsupported_run_dir_formats_are_classified() {
 
     let bad_matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "version-inspect",
             "--run-dir",
@@ -93,12 +93,12 @@ fn supported_and_unsupported_export_bundle_versions_are_classified() {
     let cmd = dag_command();
     let ok_matches = cmd
         .clone()
-        .try_get_matches_from(["dag", "--json", "import", supported.to_string_lossy().as_ref()])
+        .try_get_matches_from(["bijux-dag", "--json", "import", supported.to_string_lossy().as_ref()])
         .expect("parse args supported bundle");
     assert!(dag_run(&ok_matches).is_ok());
 
     let bad_matches = cmd
-        .try_get_matches_from(["dag", "--json", "import", unsupported.to_string_lossy().as_ref()])
+        .try_get_matches_from(["bijux-dag", "--json", "import", unsupported.to_string_lossy().as_ref()])
         .expect("parse args unsupported bundle");
     assert!(dag_run(&bad_matches).is_err());
 }

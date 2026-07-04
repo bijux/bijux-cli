@@ -33,7 +33,7 @@ fn hash_artifact_cli_output_matches_internal_sha256() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "hash",
             "artifact",
             "--json",

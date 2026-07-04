@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn validate_route_rejects_missing_file_without_panic() {
-        let cli = DagCli::parse_from(["dag", "validate", "/missing.json"]);
+        let cli = DagCli::parse_from(["bijux-dag", "validate", "/missing.json"]);
         let code = handle_validate_command(
             &cli,
             std::path::Path::new("/missing.json"),

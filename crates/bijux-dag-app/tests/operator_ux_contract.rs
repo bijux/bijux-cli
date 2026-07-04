@@ -222,7 +222,7 @@ fn operator_cli_inspect_works_without_ambient_repo_state() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "runs",
             "inspect",

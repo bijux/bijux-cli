@@ -21,7 +21,7 @@ fn config_show_effective_accepts_cli_overrides() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "config",
             "show-effective",
             "--jobs",
@@ -41,7 +41,7 @@ fn policy_show_effective_emits_trace_surface() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "policy",
             "show-effective",
@@ -64,7 +64,7 @@ fn config_show_effective_rejects_malformed_file_before_execution() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "config",
             "show-effective",
             "--config",

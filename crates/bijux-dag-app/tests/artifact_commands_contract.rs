@@ -60,7 +60,7 @@ fn hash_artifact_and_artifact_inspect_are_json_capable() {
 
     let hash = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "hash",
             "artifact",
@@ -71,7 +71,7 @@ fn hash_artifact_and_artifact_inspect_are_json_capable() {
 
     let inspect = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "artifact-inspect",
             run.to_string_lossy().as_ref(),

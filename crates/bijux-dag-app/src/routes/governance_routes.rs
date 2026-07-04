@@ -1119,7 +1119,7 @@ mod tests {
     #[test]
     fn governance_contracts_missing_file_does_not_panic() {
         let cli =
-            DagCli::parse_from(["dag", "--json", "governance", "contracts", "/missing/file.json"]);
+            DagCli::parse_from(["bijux-dag", "--json", "governance", "contracts", "/missing/file.json"]);
         let result = std::panic::catch_unwind(|| {
             let _ = handle_governance_command(
                 &cli,

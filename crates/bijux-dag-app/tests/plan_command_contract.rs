@@ -39,7 +39,7 @@ fn write_graph_fixture() -> (tempfile::TempDir, std::path::PathBuf) {
 fn plan_explain_supports_json_output_with_node_reasons() {
     let (_dir, dag) = write_graph_fixture();
     let matches = dag_command()
-        .try_get_matches_from(["dag", "--json", "plan", "explain", dag.to_string_lossy().as_ref()])
+        .try_get_matches_from(["bijux-dag", "--json", "plan", "explain", dag.to_string_lossy().as_ref()])
         .expect("parse");
 
     let code = dag_run(&matches).expect("run");
@@ -51,7 +51,7 @@ fn plan_diagnostics_supports_json_payload() {
     let (_dir, dag) = write_graph_fixture();
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "plan",
             "diagnostics",
@@ -87,7 +87,7 @@ fn plan_diff_supports_json_output() {
 
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "plan",
             "diff",
@@ -105,7 +105,7 @@ fn show_effective_plan_supports_json_output() {
     let (_dir, dag) = write_graph_fixture();
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "show-effective-plan",
             dag.to_string_lossy().as_ref(),
@@ -151,7 +151,7 @@ fn schedule_validate_supports_json_output() {
 
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "schedule",
             "validate",
@@ -198,7 +198,7 @@ fn schedule_compile_supports_json_output() {
 
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "schedule",
             "compile",
@@ -219,7 +219,7 @@ fn plan_closure_supports_json_output() {
     let (_dir, dag) = write_graph_fixture();
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "plan",
             "closure",
@@ -237,7 +237,7 @@ fn plan_closure_supports_json_output() {
 fn plan_backfill_supports_json_output() {
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "plan",
             "backfill",
@@ -291,7 +291,7 @@ fn schedule_audit_supports_json_output() {
 
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "schedule",
             "audit",
@@ -315,7 +315,7 @@ fn schedule_dedup_supports_json_output() {
 
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "schedule",
             "dedup",
