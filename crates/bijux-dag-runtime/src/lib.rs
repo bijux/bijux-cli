@@ -1640,6 +1640,9 @@ fn try_cache_read(
     if options.cache_mode == CacheMode::Off {
         return Ok(CacheRead { hit: false, proof: None });
     }
+    if !node.cache.enabled {
+        return Ok(CacheRead { hit: false, proof: None });
+    }
     let cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
     let cache_store = match cache_dir {
         Some(d) => Some(RuntimeCacheStore::new(d, Arc::clone(&fs))),
@@ -1749,6 +1752,9 @@ fn try_cache_write(
     adapter_outputs_schema_version: &str,
 ) -> Result<(), RuntimeError> {
     if options.cache_mode != CacheMode::ReadWrite {
+        return Ok(());
+    }
+    if !node.cache.enabled {
         return Ok(());
     }
     let cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);

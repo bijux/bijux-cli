@@ -1,6 +1,6 @@
 use bijux_dag_core::{
-    BranchPathAnalysis, BranchSpec, EdgeKind, Effect, FileOutput, Node, NodeIoContract, Resources,
-    RetryPolicy, SemanticNodeKind, TriggerRule,
+    BranchPathAnalysis, BranchSpec, CacheBehavior, EdgeKind, Effect, FileOutput, Node,
+    NodeIoContract, Resources, RetryPolicy, SemanticNodeKind, TriggerRule,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
@@ -16,6 +16,7 @@ pub struct PlannedNode {
     pub outputs: Vec<FileOutput>,
     pub side_effects: Vec<Effect>,
     pub retry: RetryPolicy,
+    pub cache: CacheBehavior,
     pub trigger_rule: TriggerRule,
     pub timeout_ms: Option<u64>,
     pub resources: Option<Resources>,

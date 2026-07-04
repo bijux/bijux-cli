@@ -63,6 +63,22 @@ mod tests {
             .unwrap_or_else(|| panic!("cache entry missing for node {node_id}"))
     }
 
+    fn cache_entry_exists_for_node(cache_root: &Path, node_id: &str) -> bool {
+        fs::read_dir(cache_root)
+            .expect("read cache root")
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .any(|entry| {
+                let meta_path = entry.join("meta.json");
+                let raw = fs::read_to_string(&meta_path).ok();
+                raw.and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+                    .and_then(|meta| {
+                        meta.get("node_id").and_then(|value| value.as_str()).map(str::to_string)
+                    })
+                    .as_deref()
+                    == Some(node_id)
+            })
+    }
+
     #[derive(Clone)]
     struct InterceptFs {
         inner: StdFs,
@@ -269,6 +285,7 @@ mod tests {
                     resources: None,
                     tags: vec![],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
@@ -290,6 +307,7 @@ mod tests {
                     resources: None,
                     tags: vec![],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
@@ -390,6 +408,7 @@ mod tests {
                     resources: None,
                     tags: vec!["timeout".to_string()],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
                     group: None,
@@ -414,6 +433,7 @@ mod tests {
                     resources: None,
                     tags: vec!["timeout".to_string()],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
                     group: None,
@@ -569,6 +589,47 @@ mod tests {
     }
 
     #[test]
+    fn graph_cache_policy_disables_node_cache_reads_and_writes() {
+        let dir = tempfile::tempdir().unwrap();
+        let cache_dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let mut graph = sample_graph();
+        graph.nodes[0].cache = bijux_dag_core::CacheBehavior {
+            enabled: false,
+            reason: Some("external clock dependency".to_string()),
+        };
+
+        let first = RuntimeConfig {
+            cache_mode: CacheMode::ReadWrite,
+            cache_dir: Some(cache_dir.path().to_path_buf()),
+            remote_cache_dir: None,
+            ..RuntimeConfig::default()
+        };
+        let _ = runtime.run(&graph, dir.path(), first).unwrap();
+        assert!(!cache_entry_exists_for_node(cache_dir.path(), "a"));
+        assert!(cache_entry_exists_for_node(cache_dir.path(), "b"));
+
+        let second = RuntimeConfig {
+            cache_mode: CacheMode::Read,
+            cache_dir: Some(cache_dir.path().to_path_buf()),
+            remote_cache_dir: None,
+            ..RuntimeConfig::default()
+        };
+        let rerun = runtime.run(&graph, dir.path(), second).unwrap();
+        let trace_a: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(rerun.join("nodes").join("a").join("trace.json")).unwrap(),
+        )
+        .unwrap();
+        let trace_b: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(rerun.join("nodes").join("b").join("trace.json")).unwrap(),
+        )
+        .unwrap();
+
+        assert_ne!(trace_a.get("status").and_then(|value| value.as_str()), Some("cached"));
+        assert_eq!(trace_b.get("status").and_then(|value| value.as_str()), Some("cached"));
+    }
+
+    #[test]
     fn fixed_clock_produces_stable_event_ts() {
         let dir = tempfile::tempdir().unwrap();
         let clock = Arc::new(FixedClock::new(123));
@@ -606,6 +667,7 @@ mod tests {
                     resources: None,
                     tags: vec![],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
@@ -634,6 +696,7 @@ mod tests {
                     resources: None,
                     tags: vec![],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
                     group: None,
@@ -706,6 +769,7 @@ inputs: vec![],
                     resources: None,
                     tags: vec![],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
                     group: None,
@@ -734,6 +798,7 @@ inputs: vec!["in".to_string()],
                     resources: None,
                     tags: vec![],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![Effect::Filesystem],
                     env_allowlist: vec![],
                     group: None,
@@ -819,6 +884,7 @@ inputs: vec!["in".to_string()],
                     resources: Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 0 }),
                     tags: vec![],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
@@ -840,6 +906,7 @@ inputs: vec!["in".to_string()],
                     resources: Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 0 }),
                     tags: vec![],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
@@ -861,6 +928,7 @@ inputs: vec!["in".to_string()],
                     resources: Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 0 }),
                     tags: vec![],
                     retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
@@ -919,6 +987,7 @@ inputs: vec!["in".to_string()],
                 resources: None,
                 tags: vec![],
                 retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
@@ -968,6 +1037,7 @@ inputs: vec!["in".to_string()],
                 resources: None,
                 tags: vec![],
                 retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
@@ -1015,6 +1085,7 @@ inputs: vec!["in".to_string()],
                 resources: None,
                 tags: vec![],
                 retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![Effect::Filesystem, Effect::Env],
                 env_allowlist: vec!["BIJUX_TEST_FOO".to_string()],
                 group: None,
@@ -1077,6 +1148,7 @@ inputs: vec!["in".to_string()],
                 resources: None,
                 tags: vec![],
                 retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
@@ -1151,6 +1223,7 @@ exit 1
                 resources: None,
                 tags: vec![],
                 retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![Effect::Filesystem, Effect::Env],
                 env_allowlist: vec!["BIJUX_TEST_FOO".to_string()],
                 group: None,
@@ -1205,6 +1278,7 @@ exit 1
                 resources: None,
                 tags: vec![],
                 retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
@@ -1294,6 +1368,7 @@ exit 1
                 resources: None,
                 tags: vec![],
                 retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
@@ -1346,6 +1421,7 @@ exit 1
                 resources: None,
                 tags: vec![],
                 retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
@@ -1393,6 +1469,7 @@ exit 1
                 resources: None,
                 tags: vec![],
                 retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,
@@ -1478,6 +1555,7 @@ exit 1
                 resources: None,
                 tags: vec![],
                 retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![Effect::Filesystem],
                 env_allowlist: vec![],
                 group: None,

@@ -74,6 +74,7 @@ fn external_graph(kind: &str, timeout_ms: Option<u64>) -> Graph {
             resources: None,
             tags: vec![],
             retry: RetryPolicy::default(),
+            cache: Default::default(),
             effects: vec![Effect::Filesystem],
             env_allowlist: vec![],
             group: None,
