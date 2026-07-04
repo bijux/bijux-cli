@@ -1,4 +1,4 @@
-use crate::commands::{root_command_hidden_from_public_help, DagCli};
+use crate::commands::{command_path_hidden_from_public_help, DagCli};
 use crate::{dag_command, emit_json, ExitCode};
 use clap::Command;
 use serde::Serialize;
@@ -159,10 +159,39 @@ fn command_maturity(path: &str) -> CommandMaturity {
     ) {
         return CommandMaturity::Simulation;
     }
-    if matches!(path, "commands" | "doctor" | "explain-plan" | "run-bundle" | "trace-node")
+    if matches!(
+        head,
+        "adapters"
+            | "canonical-bytes"
+            | "canonical-diff"
+            | "canonicalize"
+            | "dataset"
+            | "export"
+            | "fingerprint"
+            | "fsck"
+            | "graph"
+            | "graph-lint"
+            | "hash"
+            | "import"
+            | "init"
+            | "lint"
+            | "migrate"
+            | "node"
+            | "policy"
+            | "proof-summary"
+            | "prove"
+            | "show-effective-graph"
+            | "status"
+            | "trace-artifact"
+            | "why-cache-missed"
+            | "why-rerun"
+    ) || matches!(path, "explain-plan" | "run-bundle" | "trace-node")
         || path.starts_with("artifact fetch")
     {
         return CommandMaturity::Experimental;
+    }
+    if head == "doctor" {
+        return CommandMaturity::Stable;
     }
     if matches!(
         head,
@@ -173,26 +202,31 @@ fn command_maturity(path: &str) -> CommandMaturity {
     CommandMaturity::Stable
 }
 
-fn build_entry(prefix: &str, command: &Command) -> CommandCatalogEntry {
+fn build_entry(prefix: &str, command: &Command, include_hidden: bool) -> Option<CommandCatalogEntry> {
     let path = if prefix.is_empty() {
         command.get_name().to_string()
     } else {
         format!("{prefix} {}", command.get_name())
     };
-    let mut subcommands =
-        command.get_subcommands().map(|sub| build_entry(&path, sub)).collect::<Vec<_>>();
+    if !include_hidden && command_path_hidden_from_public_help(&path) {
+        return None;
+    }
+    let mut subcommands = command
+        .get_subcommands()
+        .filter_map(|sub| build_entry(&path, sub, include_hidden))
+        .collect::<Vec<_>>();
     subcommands.sort_by(|left, right| left.path.cmp(&right.path));
     let mut aliases =
         command.get_all_aliases().map(std::string::ToString::to_string).collect::<Vec<_>>();
     aliases.sort();
-    CommandCatalogEntry {
+    Some(CommandCatalogEntry {
         path: path.clone(),
         group: command_group(&path),
         maturity: command_maturity(&path),
         about: command.get_about().map(|value| value.to_string()),
         aliases,
         subcommands,
-    }
+    })
 }
 
 fn flatten(entry: &CommandCatalogEntry, out: &mut Vec<CommandCatalogEntry>) {
@@ -203,12 +237,10 @@ fn flatten(entry: &CommandCatalogEntry, out: &mut Vec<CommandCatalogEntry>) {
 }
 
 fn command_catalog(include_hidden: bool) -> Vec<CommandCatalogEntry> {
-    let mut entries =
-        dag_command()
-            .get_subcommands()
-            .filter(|sub| include_hidden || !root_command_hidden_from_public_help(sub.get_name()))
-            .map(|sub| build_entry("", sub))
-            .collect::<Vec<_>>();
+    let mut entries = dag_command()
+        .get_subcommands()
+        .filter_map(|sub| build_entry("", sub, include_hidden))
+        .collect::<Vec<_>>();
     entries.sort_by(|left, right| left.path.cmp(&right.path));
     entries
 }
@@ -295,13 +327,15 @@ mod tests {
             super::flatten(entry, &mut flattened);
         }
         assert!(flattened.iter().any(|entry| entry.path == "commands"));
-        assert!(flattened.iter().any(|entry| entry.path == "artifact fetch"));
+        assert!(flattened.iter().any(|entry| entry.path == "doctor"));
         assert!(
             flattened
                 .iter()
-                .any(|entry| entry.path == "doctor"
-                    && entry.maturity == CommandMaturity::Experimental)
+                .all(|entry| entry.maturity == CommandMaturity::Stable)
         );
+        assert!(!flattened.iter().any(|entry| entry.path == "artifact fetch"));
+        assert!(!flattened.iter().any(|entry| entry.path == "status"));
+        assert!(!flattened.iter().any(|entry| entry.path == "init"));
         assert!(!flattened.iter().any(|entry| entry.path.starts_with("lab ")));
         assert!(!flattened.iter().any(|entry| entry.path == "trace-node"));
     }
