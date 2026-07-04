@@ -1325,17 +1325,19 @@ fn cache_mode_string(mode: &CacheMode) -> Option<String> {
     }
 }
 
-fn tool_version() -> String {
-    let base = env!("CARGO_PKG_VERSION");
-    if let Ok(out) = subprocess::output("git", &["rev-parse", "--short", "HEAD"]) {
-        if out.status.success() {
-            let commit = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            if !commit.is_empty() {
-                return format!("{}+{}", base, commit);
-            }
-        }
+fn build_git_sha() -> Option<&'static str> {
+    option_env!("BIJUX_DAG_BUILD_GIT_SHA").filter(|value| !value.trim().is_empty())
+}
+
+fn compose_tool_version(package_version: &str, build_git_sha: Option<&str>) -> String {
+    match build_git_sha {
+        Some(commit) => format!("{package_version}+{commit}"),
+        None => package_version.to_string(),
     }
-    base.to_string()
+}
+
+fn tool_version() -> String {
+    compose_tool_version(env!("CARGO_PKG_VERSION"), build_git_sha())
 }
 
 pub(crate) fn runtime_fingerprint(adapters: &[AdapterInfo]) -> String {
@@ -2287,6 +2289,7 @@ mod cache_read_contract_tests {
         assert!(hit_proof.hit);
         assert_eq!(hit_proof.key, "k");
     }
+
 }
 
 #[cfg(test)]
