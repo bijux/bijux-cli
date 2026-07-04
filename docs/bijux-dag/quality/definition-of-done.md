@@ -4,7 +4,7 @@ audience: maintainers
 type: quality
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Definition Of Done
@@ -34,7 +34,8 @@ flowchart LR
 - affected tests pass, including contract coverage when applicable
 - replay/diff compatibility impact is documented clearly
 - docs include updated operator and maintainer guidance
-- known limitations and risk posture are updated when needed
+- known limitations and risk posture are updated when needed, using concrete
+  limitation and risk records rather than generic caution prose
 
 ## Non-Done Conditions
 

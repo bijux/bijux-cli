@@ -51,6 +51,23 @@ Use this record shape for `known-limitations.md` so operators can tell what they
 must not rely on and maintainers can verify whether a limitation has really
 changed.
 
+## Risk Records
+
+The DAG risk register must also be operational rather than thematic. Each live
+risk record in `risk-register.md` must include:
+
+- a stable risk id
+- severity
+- the affected component, release surface, or command area
+- the current status
+- the actual risk
+- the mitigation or monitoring action
+- the release decision attached to that risk
+
+Use this record shape when a DAG release concern could block, narrow, or
+condition operator trust. The point is to make release posture reviewable
+without asking maintainers to infer the real decision from vague prose.
+
 ## Legacy Mapping Policy
 
 Legacy nested DAG chapters are intentionally consolidated into the five canonical

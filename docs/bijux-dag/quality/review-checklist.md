@@ -38,6 +38,8 @@ flowchart TD
 - docs links, examples, and code anchors match current repository state
 - touched limitation records keep stable ids and include affected surface,
   impact, workaround, planned fix, and release target fields
+- touched risk records keep stable ids and include severity, affected
+  component, current status, mitigation, and release decision fields
 
 ## Structural Checks
 
