@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Architecture Risks
@@ -42,6 +42,10 @@ flowchart LR
 - keep identity and replay contracts under dedicated tests
 - preserve explicit unknown/incomplete states in outputs
 - verify artifact integrity before accepting replay/diff conclusions
+
+The operational release decisions for these architecture risks are tracked in
+`RISK-003`, `RISK-004`, and `RISK-005` in
+[Risk Register](../quality/risk-register.md).
 
 ## Next Reads
 

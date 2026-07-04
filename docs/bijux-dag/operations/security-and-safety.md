@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-05
 ---
 
 # Security And Safety
@@ -51,6 +51,10 @@ enforcement surface so operators can see whether a requested control is:
 - a declared-effect gate
 - environment shaping
 - a runtime-enforced container flag
+
+The release posture for these execution-boundary risks is tracked directly in
+`RISK-001` and `RISK-006` in
+[Risk Register](../quality/risk-register.md).
 
 ## Security Control Areas
 

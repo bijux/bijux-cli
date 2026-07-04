@@ -4,7 +4,7 @@ audience: maintainers
 type: quality
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Test Strategy
@@ -42,6 +42,9 @@ flowchart TB
 - artifact index/proof generation and verification paths
 - runtime build identity and fingerprint stability across working directories
 - replay and diff mismatch grouping and reason-code stability
+
+The release-facing quality debt behind these coverage areas is tracked in
+`RISK-005` and `RISK-010` in [Risk Register](risk-register.md).
 
 ## Code Anchors
 

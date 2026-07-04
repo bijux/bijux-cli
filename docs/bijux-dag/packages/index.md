@@ -12,6 +12,10 @@ For `v0.4.0`, five DAG crates are public release targets:
 `bijux-dag-app`, and `bijux-dag-cli`. `bijux-dag-testkit` remains
 repository-internal support for tests.
 
+Public release status is not enough by itself. `RISK-008` in
+[Risk Register](../quality/risk-register.md) tracks whether the published crate
+surfaces remain understandable on crates.io and docs.rs.
+
 ## Section Map
 
 ```mermaid

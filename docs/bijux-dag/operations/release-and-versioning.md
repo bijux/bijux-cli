@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-05
 ---
 
 # Release And Versioning
@@ -38,6 +38,10 @@ flowchart TD
 - runtime identity checks confirming working-directory changes do not rewrite
   provenance or cache fingerprints
 - docs checks ensuring references align with released behavior
+
+The release gate risks behind this matrix are tracked directly in `RISK-003`,
+`RISK-007`, `RISK-008`, `RISK-009`, and `RISK-010` in
+[Risk Register](../quality/risk-register.md).
 
 ## Code Anchors
 
