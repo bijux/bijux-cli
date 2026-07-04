@@ -28,10 +28,7 @@ fn render_cache_policy(cache: &CacheBehavior) -> String {
     if cache.enabled {
         "enabled".to_string()
     } else {
-        format!(
-            "disabled (reason: {})",
-            cache.reason.as_deref().unwrap_or("unspecified")
-        )
+        format!("disabled (reason: {})", cache.reason.as_deref().unwrap_or("unspecified"))
     }
 }
 
@@ -46,11 +43,13 @@ fn explain_node_payload(
     resolved_params: Option<&str>,
 ) -> Value {
     let io_contract = node_io_contract(graph, node_id);
+    let effective_inputs = graph.effective_inputs().unwrap_or_default();
     json!({
         "manifest": parse_optional_json(manifest),
         "node": node_id,
         "deps": deps,
-        "graph_inputs": graph.inputs.clone(),
+        "graph_inputs": effective_inputs,
+        "graph_input_schema": graph.input_schema(),
         "inputs": node.inputs.clone(),
         "input_bindings": io_contract.as_ref().map(|contract| contract.inputs.clone()),
         "outputs": node.outputs.clone(),
@@ -103,7 +102,8 @@ pub(crate) fn handle_explain_command(
         } else {
             println!("node: {}", node_id);
             println!("deps: {:?}", deps);
-            println!("graph_inputs: {:?}", snapshot.graph.inputs);
+            println!("graph_inputs: {:?}", snapshot.graph.effective_inputs().unwrap_or_default());
+            println!("graph_input_schema: {:?}", snapshot.graph.input_schema());
             println!("inputs: {:?}", node_info.inputs);
             if let Some(io_contract) = node_io_contract(&snapshot.graph, node_id) {
                 println!("input_bindings: {:?}", io_contract.inputs);
@@ -323,8 +323,8 @@ mod tests {
         status_next_action,
     };
     use crate::commands::{Commands, DagCli};
-    use crate::run_data::load_snapshot;
     use crate::read_file;
+    use crate::run_data::load_snapshot;
     use crate::ExitCode;
     use serde_json::json;
     use std::fs;
@@ -482,12 +482,8 @@ mod tests {
         let outputs_index =
             read_file(&run.path().join("nodes/extract/outputs/index.json")).expect("index");
         let snapshot = load_snapshot(run.path()).expect("snapshot");
-        let node = snapshot
-            .graph
-            .nodes
-            .iter()
-            .find(|node| node.id == "extract")
-            .expect("extract node");
+        let node =
+            snapshot.graph.nodes.iter().find(|node| node.id == "extract").expect("extract node");
 
         let payload = explain_node_payload(
             &manifest,
@@ -501,6 +497,7 @@ mod tests {
         );
 
         assert_eq!(payload["graph_inputs"]["region"], "eu-west-1");
+        assert_eq!(payload["graph_input_schema"]["region"], "eu-west-1");
         assert_eq!(payload["cache"]["enabled"], false);
         assert_eq!(
             payload["cache"]["reason"],
@@ -520,10 +517,7 @@ mod tests {
             enabled: false,
             reason: Some("publishes externally visible state".to_string()),
         });
-        assert_eq!(
-            rendered,
-            "disabled (reason: publishes externally visible state)"
-        );
+        assert_eq!(rendered, "disabled (reason: publishes externally visible state)");
     }
 
     #[test]
