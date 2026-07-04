@@ -35,6 +35,8 @@ CARGO_TERM_VERBOSE ?= false
 CARGO_TERM_COLOR ?= always
 
 NEXTEST_PROFILE ?= default
+NEXTEST_RELEASE_PROFILE ?= ci
+NEXTEST_FULL_PROFILE ?= ci
 NEXTEST_STATUS_LEVEL ?= all
 NEXTEST_FINAL_STATUS_LEVEL ?= all
 # Default fast-lane exclusions for tests that consistently exceed 10 seconds.
@@ -60,7 +62,7 @@ define rs_nextest_summary
 	printf '\033[1;36m%s\033[0m %s\n' "nextest-summary:" "$${summary_line:-unavailable}"
 endef
 
-.PHONY: fmt-rs lint-rs test-rs test-all-rs coverage coverage-rs audit-rs publish-rs build-dag-release-bundle
+.PHONY: fmt-rs lint-rs test-rs test-release-rs test-all-rs coverage coverage-rs audit-rs publish-rs build-dag-release-bundle
 
 ##@ Rust
 fmt-rs: ## Run Rust formatting checks
@@ -113,6 +115,33 @@ test-rs: ## Run the Rust fast suite and skip known tests over 10 seconds
 	$(call rs_nextest_summary,$(RS_TEST_REPORT)); \
 	test $$status -eq 0
 
+test-release-rs: ## Run the required Rust release-candidate lane
+	$(call rs_require_tool,cargo-nextest)
+	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
+	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli"
+	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
+	@status=0; \
+	filter_expr="$${NEXTEST_FILTER_EXPR:-$(NEXTEST_SLOW_EXCLUDE_EXPR)}"; \
+	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
+	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
+	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
+	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
+	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
+	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
+	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
+	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
+	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
+	cargo nextest run \
+		--workspace \
+		--config-file configs/rust/nextest.toml \
+		--profile "$(NEXTEST_RELEASE_PROFILE)" \
+		--status-level "$(NEXTEST_STATUS_LEVEL)" \
+		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
+		$${filter_expr:+-E "$${filter_expr}"} \
+		2>&1 | tee "$(RS_TEST_REPORT)" || status=$$?; \
+	$(call rs_nextest_summary,$(RS_TEST_REPORT)); \
+	test $$status -eq 0
+
 test-all-rs: ## Run the full Rust suite, including ignored tests
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_ALL_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
@@ -133,7 +162,7 @@ test-all-rs: ## Run the full Rust suite, including ignored tests
 		--run-ignored all \
 		--retries 0 \
 		--config-file configs/rust/nextest.toml \
-		--profile "$(NEXTEST_PROFILE)" \
+		--profile "$(NEXTEST_FULL_PROFILE)" \
 		--status-level "$(NEXTEST_STATUS_LEVEL)" \
 		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
 		$${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} \

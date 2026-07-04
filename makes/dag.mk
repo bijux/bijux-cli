@@ -26,7 +26,7 @@ dag-help: ## Show DAG-oriented make targets
 dag-check: ## Run shared workspace check gate
 	@CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" cargo check --workspace --all-targets
 
-dag-test: test-rs ## Run shared fast Rust tests
+dag-test: test-release-rs ## Run the required shared Rust release lane
 
 dag-test-all: test-all-rs ## Run shared full Rust test suite
 
