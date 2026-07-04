@@ -1,8 +1,9 @@
 use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
-use crate::routes::policy_surface::policy_surface_payload;
 use crate::routes::plan_routes::{concise_plan_lines, plan_explain_payload};
+use crate::routes::policy_surface::policy_surface_payload;
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::run_data::map_materialize_mode;
+use crate::runtime_inputs::bind_runtime_inputs;
 use crate::{emit_json, parse_graph, parse_selectors, read_file, ExitCode};
 use bijux_dag_runtime::{
     build_planner_analysis, registered_adapters, CacheMode, PlannerGuardrails, Runtime,
@@ -15,6 +16,8 @@ use std::path::{Path, PathBuf};
 pub(crate) struct RunRouteRequest<'a> {
     pub dag: &'a Path,
     pub out: &'a Path,
+    pub input: &'a Vec<String>,
+    pub inputs_file: Option<PathBuf>,
     pub run_id: Option<String>,
     pub latest: Option<PathBuf>,
     pub jobs: usize,
@@ -59,7 +62,10 @@ pub(crate) fn handle_run_command(
     require_file(req.dag)?;
     require_safe_path(req.out)?;
     let input = read_file(req.dag)?;
-    let graph = parse_graph(&input)?;
+    let mut graph = parse_graph(&input)?;
+    let runtime_inputs = bind_runtime_inputs(&graph.inputs, req.inputs_file.as_deref(), req.input)
+        .map_err(|_| ExitCode::from(2))?;
+    graph.inputs = runtime_inputs.effective_inputs.clone();
     let runtime = Runtime::new();
     let (deny_network, deny_clock, clean_env) =
         effective_policy_flags(req.deny_network, req.deny_clock, req.clean_env, req.hermetic);
@@ -111,6 +117,8 @@ pub(crate) fn handle_run_command(
                 "clean_env": options.policy.clean_env,
             },
             "policy_surface": policy_surface_payload(&graph, &options, req.hermetic)?,
+            "input_summary": runtime_inputs.human_summary,
+            "redacted_input_keys": runtime_inputs.redacted_keys,
             "selectors": {
                 "include": req.select,
                 "exclude": req.exclude,

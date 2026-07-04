@@ -23,6 +23,8 @@ mod export_cmd;
 mod format;
 #[path = "read/fs_input.rs"]
 mod fs_input;
+#[path = "read/runtime_inputs.rs"]
+mod runtime_inputs;
 mod graph;
 #[path = "graph/cmd.rs"]
 mod graph_cmd;
@@ -645,6 +647,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Run {
             dag,
             out,
+            input,
+            inputs_file,
             run_id,
             latest,
             jobs,
@@ -669,6 +673,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             routes::run_routes::RunRouteRequest {
                 dag,
                 out,
+                input,
+                inputs_file: inputs_file.clone(),
                 run_id: run_id.clone(),
                 latest: latest.clone(),
                 jobs: *jobs,

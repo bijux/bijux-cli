@@ -198,6 +198,10 @@ pub(crate) enum Commands {
         dag: PathBuf,
         #[arg(long)]
         out: PathBuf,
+        #[arg(long = "input", action = clap::ArgAction::Append)]
+        input: Vec<String>,
+        #[arg(long)]
+        inputs_file: Option<PathBuf>,
         #[arg(long)]
         run_id: Option<String>,
         #[arg(long)]
