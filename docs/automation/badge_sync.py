@@ -109,7 +109,7 @@ def package_records() -> dict[str, PackageRecord]:
             kind="rust",
             published=True,
             display_name="bijux-dag",
-            purpose="Public DAG release family for deterministic graph authoring, artifact identity, execution, testing, and the stamped `bijux-dag` command bundle.",
+            purpose="Public DAG release family for deterministic graph authoring, artifact identity, execution, and the stamped `bijux-dag` command bundle.",
             docs_url="https://bijux.io/bijux-core/bijux-dag/",
             source_url="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli",
             crate_name=dag_crate_name,

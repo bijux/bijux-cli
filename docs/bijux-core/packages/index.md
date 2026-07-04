@@ -4,7 +4,7 @@ audience: mixed
 type: inventory
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-04
 ---
 
 # Core Packages
@@ -15,6 +15,11 @@ this behavior?
 The workspace stays readable because the split is deliberate. Command and
 runtime surfaces live in CLI, graph and execution truth live in DAG, and
 repository proof lives in Maintainer.
+
+For `v0.4.0`, the public release crates are `bijux-cli`, `bijux-dag-core`,
+`bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and
+`bijux-dag-cli`. `bijux-cli-python`, `bijux-dag-testkit`, and `bijux-dev`
+remain repository-internal support crates.
 
 ## Package Map
 
@@ -37,17 +42,17 @@ flowchart TB
 
 ## Workspace Table
 
-| Package | Area | Owns | Open Next |
-| --- | --- | --- | --- |
-| `bijux-cli` | CLI | command parsing, runtime execution, plugins, REPL, structured output | [CLI](../../bijux-cli/index.md) |
-| `bijux-cli-python` | CLI | Python packaging, launcher bridge, native module distribution | [CLI](../../bijux-cli/index.md) |
-| `bijux-dag-core` | DAG | graph model, parsing, validation, canonicalization, planner lowering | [DAG](../../bijux-dag/index.md) |
-| `bijux-dag-runtime` | DAG | run planning, scheduler behavior, replay rules, runtime diagnostics | [DAG](../../bijux-dag/index.md) |
-| `bijux-dag-app` | DAG | command orchestration and user-facing response shaping | [DAG](../../bijux-dag/index.md) |
-| `bijux-dag-cli` | DAG | thin executable wiring and process-level error mapping | [DAG](../../bijux-dag/index.md) |
-| `bijux-dag-artifacts` | DAG | artifact identity, persistence helpers, verification, lifecycle policy | [DAG](../../bijux-dag/index.md) |
-| `bijux-dag-testkit` | DAG | deterministic fixtures, builders, shared assertion helpers | [DAG](../../bijux-dag/index.md) |
-| `bijux-dev` | Maintainer | release governance, repository evidence, diagnostics, control-plane commands | [Maintainer](../../bijux-dev/index.md) |
+| Package | Release status | Area | Owns | Open Next |
+| --- | --- | --- | --- | --- |
+| `bijux-cli` | public | CLI | command parsing, runtime execution, plugins, REPL, structured output | [CLI](../../bijux-cli/index.md) |
+| `bijux-cli-python` | private | CLI | Python packaging, launcher bridge, native module distribution | [CLI](../../bijux-cli/index.md) |
+| `bijux-dag-core` | public | DAG | graph model, parsing, validation, canonicalization, planner lowering | [DAG](../../bijux-dag/index.md) |
+| `bijux-dag-runtime` | public | DAG | run planning, scheduler behavior, replay rules, runtime diagnostics | [DAG](../../bijux-dag/index.md) |
+| `bijux-dag-app` | public | DAG | command orchestration and user-facing response shaping | [DAG](../../bijux-dag/index.md) |
+| `bijux-dag-cli` | public | DAG | thin executable wiring and process-level error mapping | [DAG](../../bijux-dag/index.md) |
+| `bijux-dag-artifacts` | public | DAG | artifact identity, persistence helpers, verification, lifecycle policy | [DAG](../../bijux-dag/index.md) |
+| `bijux-dag-testkit` | private | DAG | deterministic fixtures, builders, shared assertion helpers | [DAG](../../bijux-dag/index.md) |
+| `bijux-dev` | private | Maintainer | release governance, repository evidence, diagnostics, control-plane commands | [Maintainer](../../bijux-dev/index.md) |
 
 ## Reading Rule
 
@@ -81,6 +86,6 @@ flowchart TB
 
 ## Why This Split Holds
 
-- every published package in the workspace appears here once
+- every package in the workspace appears here once with an explicit publication status
 - each package routes to one handbook branch without ambiguity
 - the table explains ownership without duplicating package-local detail

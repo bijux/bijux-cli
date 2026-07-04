@@ -16,16 +16,16 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## 0.4.0 – 2026-07-04
 
 ### Added
-- Published the `bijux-dag` Rust crate family for the first public DAG release: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-testkit`, `bijux-dag-app`, and `bijux-dag-cli`.
+- Published the public `bijux-dag` Rust crates for the first DAG release: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and `bijux-dag-cli`.
 - Added first-release changelog coverage for the DAG crates and refreshed crate READMEs so each public or maintained crate now explains its responsibility, boundaries, and release status.
 
 ### Changed
 - Advanced the repository release line to `v0.4.0` across workspace metadata, release automation, and maintained compatibility defaults.
-- Reworked the root README, package map, and handbook release notes so the public surface now describes both the `bijux` command runtime and the published `bijux-dag` crate family accurately.
+- Reworked the root README, package map, and handbook release notes so the public surface now describes both the `bijux` command runtime and the published `bijux-dag` crates accurately.
 - Updated release operations guidance to document the combined CLI and DAG publication path and the repository-internal status of `bijux-dev`.
 
 ### Fixed
-- Removed stale documentation that still described the DAG crates as internal-only or deferred beyond the current release line.
+- Removed stale documentation that still described the DAG crates as internal-only, public test-support crates, or deferred beyond the current release line.
 - Aligned mounted-app and release-facing fixtures with the `v0.4.0` compatibility floor so release evidence and examples report the same version line as published artifacts.
 
 <a id="v0-3-6"></a>
