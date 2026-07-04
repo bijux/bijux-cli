@@ -132,7 +132,7 @@ fn cache_corruption_fixtures_are_classified_by_verify_and_explain() {
         let key = apply_corruption(&cache_dir, fixture);
 
         let (verify_code, verify_stdout, verify_stderr) = run_command(
-            &["dag", "--json", "cache", "verify", "--cache-dir", cache_dir.to_str().unwrap()],
+            &["--json", "cache", "verify", "--cache-dir", cache_dir.to_str().unwrap()],
             &root,
         );
         let verify_payload = parse_json(&verify_stdout, verify_code, &verify_stderr);
@@ -147,7 +147,6 @@ fn cache_corruption_fixtures_are_classified_by_verify_and_explain() {
 
         let (explain_code, explain_stdout, explain_stderr) = run_command(
             &[
-                "dag",
                 "--json",
                 "cache",
                 "explain",

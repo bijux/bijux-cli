@@ -33,7 +33,6 @@ fn dag_command(root: &Path) -> Command {
         "-p",
         "bijux-dag-cli",
         "--",
-        "dag",
     ]);
     command
 }

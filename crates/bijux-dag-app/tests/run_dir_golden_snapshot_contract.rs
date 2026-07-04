@@ -44,7 +44,6 @@ fn hello_workflow_run_dir_snapshot_is_stable() {
     let graph = root.join("evidence/dag/authoring/examples/hello.dag.json");
     let payload = run_json(
         &[
-            "dag",
             "--json",
             "run",
             &fixture_path_string(&graph),
@@ -70,7 +69,6 @@ fn cached_branch_workflow_run_dir_snapshot_is_stable() {
     let graph = root.join("evidence/dag/authoring/examples/cached-branched-report.dag.json");
     let payload = run_json(
         &[
-            "dag",
             "--json",
             "run",
             &fixture_path_string(&graph),
@@ -100,7 +98,6 @@ fn map_reduce_workflow_run_dir_snapshot_is_stable() {
     let out_dir = temp.path().join("runs");
     let payload = run_json(
         &[
-            "dag",
             "--json",
             "run",
             &fixture_path_string(&graph_path),

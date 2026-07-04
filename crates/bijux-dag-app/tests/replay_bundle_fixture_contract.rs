@@ -42,7 +42,7 @@ fn checked_in_replay_bundle_fixtures_import_with_expected_fidelity() {
         [("historic_manifest_only.json", "graded"), ("historic_with_files.json", "exact")]
     {
         let (code, payload) = run_json(
-            &["dag", "--json", "import", "--verify-only", fixture_path(fixture).to_str().unwrap()],
+            &["--json", "import", "--verify-only", fixture_path(fixture).to_str().unwrap()],
             &root,
         );
         assert_eq!(code, 0, "fixture import failed for {fixture}");
@@ -71,7 +71,6 @@ fn unsupported_historical_bundle_fixture_is_rejected() {
     let root = repo_root();
     let (code, payload) = run_json(
         &[
-            "dag",
             "--json",
             "import",
             "--verify-only",

@@ -9,7 +9,6 @@ pub fn repo_root_from_manifest_dir(manifest_dir: &str) -> PathBuf {
 pub fn run_dag_command(args: &[&str], cwd: &Path) -> (i32, String, String) {
     let output = Command::new(resolve_bijux_dag_binary(cwd))
         .current_dir(cwd)
-        .arg("dag")
         .args(args)
         .output()
         .expect("run dag command");
