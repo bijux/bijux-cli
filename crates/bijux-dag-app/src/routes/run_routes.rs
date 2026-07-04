@@ -1,4 +1,5 @@
 use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
+use crate::routes::policy_surface::policy_surface_payload;
 use crate::routes::plan_routes::{concise_plan_lines, plan_explain_payload};
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::run_data::map_materialize_mode;
@@ -109,6 +110,7 @@ pub(crate) fn handle_run_command(
                 "deny_clock": options.policy.deny_clock,
                 "clean_env": options.policy.clean_env,
             },
+            "policy_surface": policy_surface_payload(&graph, &options, req.hermetic)?,
             "selectors": {
                 "include": req.select,
                 "exclude": req.exclude,

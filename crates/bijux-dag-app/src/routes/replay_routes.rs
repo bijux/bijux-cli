@@ -1,6 +1,7 @@
 use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
 use crate::graph_helpers::parse_selectors;
 use crate::replay_cmd::ReplayCommandResponse;
+use crate::routes::policy_surface::{policy_surface_payload, replay_sandbox_scope_payload};
 use crate::routes::preconditions::{require_run_directory, require_safe_path};
 use crate::run_data::{load_snapshot, map_materialize_mode};
 use crate::{
@@ -63,6 +64,27 @@ pub(crate) fn handle_replay_command(
         clean_env_effective = true;
     }
     let selectors = parse_selectors(select, exclude)?;
+    let options = RuntimeConfig {
+        jobs,
+        cpu_budget,
+        run_timeout_ms: None,
+        node_timeout_ms: None,
+        materialize_inputs: map_materialize_mode(materialize_inputs),
+        cache_mode: cache_mode.clone(),
+        cache_dir: None,
+        remote_cache_dir,
+        run_id,
+        parent_run_id: source_run_id.clone(),
+        latest_symlink: None,
+        policy: bijux_dag_runtime::PolicyConfig {
+            deny_network: deny_network_effective,
+            deny_env: deny_env_effective,
+            deny_clock: deny_clock_effective,
+            clean_env: clean_env_effective,
+        },
+        selectors: selectors.clone(),
+        ..RuntimeConfig::default()
+    };
     if dry_run {
         let dry_select = selectors.include.iter().map(selector_cli_string).collect::<Vec<_>>();
         let dry_exclude = selectors.exclude.iter().map(selector_cli_string).collect::<Vec<_>>();
@@ -82,6 +104,8 @@ pub(crate) fn handle_replay_command(
             run_dir: None,
             dry_run_plan: Some(plan.clone()),
             replay_proof: None,
+            policy_surface: Some(policy_surface_payload(&snapshot.graph, &options, hermetic)?),
+            sandbox_scope: Some(replay_sandbox_scope_payload(sandbox)),
         };
         if cli.json {
             return emit_json(
@@ -99,28 +123,8 @@ pub(crate) fn handle_replay_command(
     if sandbox && out.starts_with(run_dir) {
         return Err(ExitCode::from(3));
     }
-    let options = RuntimeConfig {
-        jobs,
-        cpu_budget,
-        run_timeout_ms: None,
-        node_timeout_ms: None,
-        materialize_inputs: map_materialize_mode(materialize_inputs),
-        cache_mode,
-        cache_dir: None,
-        remote_cache_dir,
-        run_id,
-        parent_run_id: source_run_id,
-        latest_symlink: None,
-        policy: bijux_dag_runtime::PolicyConfig {
-            deny_network: deny_network_effective,
-            deny_env: deny_env_effective,
-            deny_clock: deny_clock_effective,
-            clean_env: clean_env_effective,
-        },
-        selectors,
-        ..RuntimeConfig::default()
-    };
-    let run_path = runtime.run(&snapshot.graph, out, options).map_err(|_| ExitCode::from(3))?;
+    let run_path =
+        runtime.run(&snapshot.graph, out, options.clone()).map_err(|_| ExitCode::from(3))?;
     let replay_proof = if prove {
         let diff = crate::replay_service::run_diff_from_dirs(run_dir, &run_path)?;
         let source_evidence_gaps = crate::replay_service::replay_evidence_gaps(run_dir);
@@ -151,7 +155,13 @@ pub(crate) fn handle_replay_command(
         None
     };
     let response =
-        ReplayCommandResponse { run_dir: Some(run_path.clone()), dry_run_plan: None, replay_proof };
+        ReplayCommandResponse {
+            run_dir: Some(run_path.clone()),
+            dry_run_plan: None,
+            replay_proof,
+            policy_surface: Some(policy_surface_payload(&snapshot.graph, &options, hermetic)?),
+            sandbox_scope: Some(replay_sandbox_scope_payload(sandbox)),
+        };
     if cli.json {
         return emit_json(
             cli,

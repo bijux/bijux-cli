@@ -17,6 +17,7 @@ pub(crate) mod output_selection;
 pub(crate) mod path_resolution;
 pub(crate) mod performance_routes;
 pub(crate) mod plan_routes;
+pub(crate) mod policy_surface;
 pub(crate) mod preconditions;
 pub(crate) mod prove_verify_routes;
 pub(crate) mod release_routes;

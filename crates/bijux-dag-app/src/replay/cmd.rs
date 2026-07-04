@@ -8,4 +8,8 @@ pub struct ReplayCommandResponse {
     pub dry_run_plan: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub replay_proof: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub policy_surface: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sandbox_scope: Option<serde_json::Value>,
 }

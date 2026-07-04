@@ -1,4 +1,5 @@
 use crate::commands::{DagCli, RuntimeCommands};
+use crate::routes::policy_surface::policy_surface_payload;
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::{
     AdapterInfo, Manifest, NodeCounts, NodeTrace, OutputSummary, PolicyInfo, RunMetadata,
@@ -685,17 +686,29 @@ pub(crate) fn handle_runtime_command(
             let graph = parse_graph(&read_file(dag)?)?;
             let report = build_execution_isolation_report(&graph, &RuntimeConfig::default())
                 .map_err(|_| ExitCode::from(3))?;
+            let policy_surface =
+                policy_surface_payload(&graph, &RuntimeConfig::default(), false)?;
             if cli.json {
                 return emit_json(
                     cli,
                     "dag.runtime.isolation",
                     true,
-                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    json!({
+                        "execution_isolation": report,
+                        "policy_surface": policy_surface,
+                    }),
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
             }
-            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&json!({
+                    "execution_isolation": report,
+                    "policy_surface": policy_surface,
+                }))
+                .unwrap()
+            );
             Ok(ExitCode::SUCCESS)
         }
         RuntimeCommands::Dispatch { simulation } => {
