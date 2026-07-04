@@ -15,6 +15,27 @@ const LIMITATION_REQUIRED_FIELDS: [&str; 7] = [
     "- planned fix:",
     "- release target:",
 ];
+const RISK_REGISTER_REL_PATH: &str = "docs/bijux-dag/quality/risk-register.md";
+const RISK_REQUIRED_FIELDS: [&str; 6] = [
+    "- severity:",
+    "- affected component:",
+    "- current status:",
+    "- risk:",
+    "- mitigation:",
+    "- release decision:",
+];
+const REQUIRED_RISK_IDS: [&str; 10] = [
+    "RISK-001",
+    "RISK-002",
+    "RISK-003",
+    "RISK-004",
+    "RISK-005",
+    "RISK-006",
+    "RISK-007",
+    "RISK-008",
+    "RISK-009",
+    "RISK-010",
+];
 
 #[derive(Debug, Deserialize, Default)]
 struct DocsLintPolicy {
@@ -132,6 +153,7 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
     }
 
     run_known_limitations_guard()?;
+    run_risk_register_guard()?;
 
     Ok(())
 }
@@ -142,6 +164,14 @@ pub(super) fn run_known_limitations_guard() -> Result<(), String> {
     let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
     validate_known_limitations_content(&content)
         .map_err(|err| format!("{KNOWN_LIMITATIONS_REL_PATH}: {err}"))
+}
+
+pub(super) fn run_risk_register_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(RISK_REGISTER_REL_PATH);
+    let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    validate_risk_register_content(&content)
+        .map_err(|err| format!("{RISK_REGISTER_REL_PATH}: {err}"))
 }
 
 pub(super) fn run_docs_link_check() -> Result<(), String> {
@@ -361,6 +391,98 @@ fn validate_known_limitations_content(content: &str) -> Result<(), String> {
     }
     if !has_simulation {
         violations.push("missing `simulation-surface` limitation record".to_string());
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+#[derive(Debug, Clone)]
+struct RiskRecord {
+    id: String,
+    heading_line: usize,
+    body: Vec<String>,
+}
+
+fn parse_risk_records(content: &str) -> Vec<RiskRecord> {
+    let mut records = Vec::new();
+    let mut current: Option<RiskRecord> = None;
+
+    for (line_index, line) in content.lines().enumerate() {
+        let trimmed = line.trim_start();
+        if let Some(heading) = trimmed.strip_prefix("### ") {
+            if heading.starts_with("RISK-") {
+                if let Some(record) = current.take() {
+                    records.push(record);
+                }
+                let id = heading.split_whitespace().next().unwrap_or_default().to_string();
+                current = Some(RiskRecord {
+                    id,
+                    heading_line: line_index + 1,
+                    body: Vec::new(),
+                });
+                continue;
+            }
+            if let Some(record) = current.take() {
+                records.push(record);
+            }
+        }
+
+        if let Some(record) = current.as_mut() {
+            record.body.push(line.to_string());
+        }
+    }
+
+    if let Some(record) = current {
+        records.push(record);
+    }
+
+    records
+}
+
+fn risk_field_value<'a>(record: &'a RiskRecord, field: &str) -> Option<&'a str> {
+    record.body.iter().find_map(|line| {
+        line.trim_start()
+            .strip_prefix(field)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+    })
+}
+
+fn validate_risk_register_content(content: &str) -> Result<(), String> {
+    let records = parse_risk_records(content);
+    if records.is_empty() {
+        return Err("missing `### RISK-...` risk records".to_string());
+    }
+
+    let mut violations = Vec::new();
+    let mut seen_ids = BTreeSet::new();
+
+    for record in &records {
+        if !seen_ids.insert(record.id.clone()) {
+            violations.push(format!(
+                "{}:{}: duplicate risk identifier",
+                record.id, record.heading_line
+            ));
+        }
+
+        for field in RISK_REQUIRED_FIELDS {
+            if risk_field_value(record, field).is_none() {
+                violations.push(format!(
+                    "{}:{}: missing risk field `{field}`",
+                    record.id, record.heading_line
+                ));
+            }
+        }
+    }
+
+    for required_id in REQUIRED_RISK_IDS {
+        if !seen_ids.contains(required_id) {
+            violations.push(format!("missing required risk record `{required_id}`"));
+        }
     }
 
     if violations.is_empty() {
