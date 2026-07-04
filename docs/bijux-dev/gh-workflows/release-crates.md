@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-04
 ---
 
 # release-crates
@@ -20,6 +20,7 @@ present and CI on the tagged commit is healthy.
 ## Job Shape
 
 - wait for `ci.yml` to pass on the tagged commit
+- provision Rust `1.86.0` so crates publication uses the same toolchain as the workspace and CI
 - decide whether crates publication is needed with `make gh-release-plan-crates`
 - verify crates.io credentials
 - publish through `make publish-rs`

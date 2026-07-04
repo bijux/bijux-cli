@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-04
 ---
 
 # Toolchain Setup
@@ -26,7 +26,7 @@ flowchart TD
 
 ## Setup Requirements
 
-- Rust toolchain defined by repository toolchain files
+- Rust `1.86.0`, pinned by `rust-toolchain.toml` and reused by CI and release automation
 - Python environment and MkDocs dependencies available for docs gates
 - `make` targets available for shared workflows
 

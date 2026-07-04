@@ -29,6 +29,7 @@ flowchart LR
 ## Release Workflow Rules
 
 - only tag commits with green required gates
+- keep release lanes on Rust `1.86.0`, matching `Cargo.toml`, `rust-toolchain.toml`, and `ci.yml`
 - include compatibility notes for CLI and DAG changes
 - ensure docs navigation and links are valid before publishing
 - verify post-release health and rollback readiness

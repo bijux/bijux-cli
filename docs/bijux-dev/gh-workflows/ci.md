@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-04
 ---
 
 # ci
@@ -19,6 +19,7 @@ repository.
 
 ## Job Shape
 
+- provisions Rust `1.86.0` through the shared `RUST_TOOLCHAIN_VERSION` workflow environment
 - `Formatting` runs `make gh-fmt`
 - `Lint` runs `make gh-lint`
 - `Security` installs pinned Rust security tools and runs `make gh-security`
