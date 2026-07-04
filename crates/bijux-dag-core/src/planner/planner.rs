@@ -1,8 +1,9 @@
 //! Planner lowering and execution-plan contract.
 
 use crate::{
-    node_io_contract, BranchSpec, Edge, EdgeKind, Effect, FileOutput, Graph, GraphError, Node,
-    NodeIoContract, NodeKind, ParamValue, Resources, RetryPolicy, SemanticNodeKind, TriggerRule,
+    node_io_contract, BranchSpec, CacheBehavior, Edge, EdgeKind, Effect, FileOutput, Graph,
+    GraphError, Node, NodeIoContract, NodeKind, ParamValue, Resources, RetryPolicy,
+    SemanticNodeKind, TriggerRule,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -37,6 +38,7 @@ pub struct PlannedNode {
     pub outputs: Vec<FileOutput>,
     pub side_effects: Vec<Effect>,
     pub retry: RetryPolicy,
+    pub cache: CacheBehavior,
     pub trigger_rule: TriggerRule,
     #[serde(default)]
     pub timeout_ms: Option<u64>,
@@ -101,6 +103,7 @@ struct ExecutionIdentityNode {
     params: ParamValue,
     trigger_rule: TriggerRule,
     retry: RetryPolicy,
+    cache: CacheBehavior,
     timeout_ms: Option<u64>,
     resources: Option<Resources>,
     effects: Vec<Effect>,
@@ -265,6 +268,7 @@ fn to_planned_nodes(nodes: &[Node], edges: &[Edge]) -> Vec<PlannedNode> {
             outputs: n.outputs.clone(),
             side_effects: n.effects.clone(),
             retry: n.retry.clone(),
+            cache: n.cache.clone(),
             trigger_rule: n.trigger_rule.clone(),
             timeout_ms: n.timeout_ms,
             resources: n.resources.clone(),
@@ -422,6 +426,7 @@ fn execution_identity_nodes(
                 params: node.params.clone(),
                 trigger_rule: node.trigger_rule.clone(),
                 retry: node.retry.clone(),
+                cache: node.cache.clone(),
                 timeout_ms: node.timeout_ms,
                 resources: node.resources.clone(),
                 effects: node.effects.clone(),

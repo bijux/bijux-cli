@@ -43,6 +43,8 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1028", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1029", severity: Severity::Error, domain: ValidationDomain::Topology },
     ValidationRule { id: "E1030", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1031", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1032", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -177,6 +179,30 @@ impl Graph {
                         ),
                     );
                 }
+            }
+            if node.cache.enabled {
+                if let Some(reason) = &node.cache.reason {
+                    if !reason.trim().is_empty() {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1032",
+                            format!(
+                                "cache reason only applies when cache is disabled: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/cache/reason", node.id),
+                            Some("Remove cache.reason or set cache.enabled to false".to_string()),
+                        );
+                    }
+                }
+            } else if node.cache.reason.as_deref().is_none_or(|reason| reason.trim().is_empty()) {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1032",
+                    format!("cache-disabled node requires a reason: {}", node.id),
+                    format!("/nodes/{}/cache", node.id),
+                    Some("Provide cache.reason when cache.enabled is false".to_string()),
+                );
             }
             if !node.env_allowlist.is_empty() && !node.effects.contains(&Effect::Env) {
                 emit_rule(
@@ -760,6 +786,18 @@ fn validate_param_value(
 ) {
     match value {
         ParamValue::Ref(spec) => {
+            if spec.graph_input.is_some() == spec.node_output.is_some() {
+                emit_rule(
+                    diagnostics,
+                    "E1031",
+                    "reference must declare exactly one source".to_string(),
+                    path.to_string(),
+                    Some(
+                        "Use either graph_input or node_output, and do not provide both"
+                            .to_string(),
+                    ),
+                );
+            }
             if let Some(input) = &spec.graph_input {
                 if !graph.inputs.contains_key(input) {
                     emit_rule(
@@ -779,14 +817,14 @@ fn validate_param_value(
                         .expect("checked above")
                         .outputs
                         .iter()
-                        .any(|output| output.name == node_output.path)
+                        .any(|output| output.name == node_output.output_name)
                 {
                     emit_rule(
                         diagnostics,
                         "E1021",
                         format!(
                             "unknown node output ref: {}.{}",
-                            node_output.node_id, node_output.path
+                            node_output.node_id, node_output.output_name
                         ),
                         path.to_string(),
                         None,
@@ -801,7 +839,7 @@ fn validate_param_value(
                             "E1022",
                             format!(
                                 "forward node output ref: {}.{}",
-                                node_output.node_id, node_output.path
+                                node_output.node_id, node_output.output_name
                             ),
                             path.to_string(),
                             None,

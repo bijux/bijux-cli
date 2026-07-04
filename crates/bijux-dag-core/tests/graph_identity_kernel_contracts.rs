@@ -165,6 +165,7 @@ fn make_random_graph(mut seed: u64, nodes: usize) -> Graph {
             resources: None,
             tags: Vec::new(),
             retry: bijux_dag_core::RetryPolicy::default(),
+            cache: Default::default(),
             effects: Vec::new(),
             env_allowlist: Vec::new(),
             group: None,

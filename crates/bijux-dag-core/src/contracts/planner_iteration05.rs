@@ -19,7 +19,7 @@ pub struct DryPlanNodeRowV1 {
     pub resolved_param_count: usize,
     /// Expected output artifacts.
     pub expected_artifacts: Vec<String>,
-    /// Cache eligibility inferred from side effects.
+    /// Cache eligibility declared by the graph contract.
     pub cache_eligible: bool,
     /// CPU resource hint.
     pub cpu_hint: u32,
@@ -69,7 +69,7 @@ pub fn build_complete_dry_plan_output(
             trigger_rule: format!("{:?}", node.trigger_rule),
             resolved_param_count: node.io_contract.param_bindings.len(),
             expected_artifacts: node.outputs.iter().map(|output| output.path.clone()).collect(),
-            cache_eligible: node.side_effects.is_empty(),
+            cache_eligible: node.cache.enabled,
             cpu_hint: node.resources.as_ref().map(|value| value.cpu).unwrap_or_default(),
             mem_mb_hint: node.resources.as_ref().map(|value| value.mem_mb).unwrap_or_default(),
         })

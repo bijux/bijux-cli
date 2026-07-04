@@ -198,7 +198,7 @@ fn param_binding_from_ref(key_path: &str, reference: &RefSpec) -> Option<NodePar
         key_path: key_path.to_string(),
         source: ParamBindingSource::NodeOutput {
             node_id: node_output.node_id.clone(),
-            output_name: node_output.path.clone(),
+            output_name: node_output.output_name.clone(),
         },
     })
 }

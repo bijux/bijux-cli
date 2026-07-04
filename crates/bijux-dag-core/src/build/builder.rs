@@ -188,6 +188,7 @@ impl NodeBuilder {
             resources: self.resources,
             tags: self.tags,
             retry: self.retry,
+            cache: Default::default(),
             effects: self.effects,
             env_allowlist: self.env_allowlist,
             group: self.group,

@@ -586,6 +586,7 @@ mod tests {
                     "network".to_string(),
                 ],
                 retry: RetryPolicy::default(),
+                cache: Default::default(),
                 effects: Vec::new(),
                 env_allowlist: Vec::new(),
                 group: None,

@@ -17,8 +17,8 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::{
-    ContainerSpec, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind, NodeOutputRef,
-    ParamValue, PortRef, RefSpec, Resources, RetryPolicy,
+    CacheBehavior, ContainerSpec, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind,
+    NodeOutputRef, ParamValue, PortRef, RefSpec, Resources, RetryPolicy,
 };
 
 #[test]
@@ -112,13 +112,32 @@ fn serde_roundtrip_container_spec_model() {
 fn serde_roundtrip_ref_models() {
     let ref_spec = RefSpec {
         graph_input: None,
-        node_output: Some(NodeOutputRef { node_id: "src".to_string(), path: "out".to_string() }),
+        node_output: Some(NodeOutputRef {
+            node_id: "src".to_string(),
+            output_name: "out".to_string(),
+        }),
     };
     let encoded = serde_json::to_string(&ref_spec).unwrap();
     let decoded: RefSpec = serde_json::from_str(&encoded).unwrap();
     let left = serde_json::to_value(&ref_spec).unwrap();
     let right = serde_json::to_value(&decoded).unwrap();
     assert_eq!(left, right);
+}
+
+#[test]
+fn serde_accepts_legacy_node_output_ref_field_name() {
+    let decoded: RefSpec =
+        serde_json::from_str(r#"{"node_output":{"node_id":"src","path":"out"}}"#).unwrap();
+    assert_eq!(decoded.node_output.as_ref().map(|output| output.output_name.as_str()), Some("out"));
+}
+
+#[test]
+fn serde_roundtrip_cache_behavior_model() {
+    let behavior =
+        CacheBehavior { enabled: false, reason: Some("external time dependency".to_string()) };
+    let encoded = serde_json::to_string(&behavior).unwrap();
+    let decoded: CacheBehavior = serde_json::from_str(&encoded).unwrap();
+    assert_eq!(decoded, behavior);
 }
 
 #[test]
@@ -248,6 +267,7 @@ fn sample_node(id: &str) -> Node {
         resources: None,
         tags: vec!["roundtrip".to_string()],
         retry: RetryPolicy::default(),
+        cache: Default::default(),
         effects: vec![Effect::Filesystem],
         env_allowlist: vec![],
         group: None,

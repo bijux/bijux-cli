@@ -80,10 +80,11 @@ pub use compile::{
 pub use contract::{DagSnapshot, GraphContract, GraphExecutionPolicy};
 pub use error::GraphError;
 pub use model::{
-    edge_kind_is_default, semantic_kind_is_default, trigger_rule_is_default, BranchSpec,
-    ContainerSpec, Edge, EdgeKind, Effect, FileOutput, Graph, GraphFingerprintExplain, GraphId,
-    GraphMeta, Node, NodeKind, NodeOutputRef, ParamValue, PortRef, RefSpec, ResolvedGraph,
-    Resources, RetryPolicy, SemanticNodeKind, Severity, TriggerRule, ValidationDiagnostic,
+    cache_behavior_enabled, cache_behavior_is_default, edge_kind_is_default,
+    semantic_kind_is_default, trigger_rule_is_default, BranchSpec, CacheBehavior, ContainerSpec,
+    Edge, EdgeKind, Effect, FileOutput, Graph, GraphFingerprintExplain, GraphId, GraphMeta, Node,
+    NodeKind, NodeOutputRef, ParamValue, PortRef, RefSpec, ResolvedGraph, Resources, RetryPolicy,
+    SemanticNodeKind, Severity, TriggerRule, ValidationDiagnostic,
 };
 pub use node::{
     node_input_bindings, node_io_contract, NodeEnvBinding, NodeInputBinding, NodeInputSource,

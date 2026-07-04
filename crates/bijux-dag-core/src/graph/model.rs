@@ -1,6 +1,6 @@
 //! Core DAG model surface.
 
-use serde::{Deserialize, Serialize};
+use serde::{de::Error as DeError, Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 
@@ -60,6 +60,8 @@ pub struct Node {
     pub tags: Vec<String>,
     #[serde(default)]
     pub retry: RetryPolicy,
+    #[serde(default, skip_serializing_if = "cache_behavior_is_default")]
+    pub cache: CacheBehavior,
     #[serde(default)]
     pub effects: Vec<Effect>,
     #[serde(default)]
@@ -91,7 +93,22 @@ pub struct FileOutput {
     pub path: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct CacheBehavior {
+    #[serde(default = "cache_behavior_enabled")]
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+impl Default for CacheBehavior {
+    fn default() -> Self {
+        Self { enabled: true, reason: None }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum ParamValue {
     Ref(RefSpec),
@@ -103,6 +120,16 @@ pub enum ParamValue {
 impl Default for ParamValue {
     fn default() -> Self {
         Self::Literal(Value::Null)
+    }
+}
+
+impl<'de> Deserialize<'de> for ParamValue {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = Value::deserialize(deserializer)?;
+        param_value_from_json(value).map_err(D::Error::custom)
     }
 }
 
@@ -119,7 +146,8 @@ pub struct RefSpec {
 #[serde(deny_unknown_fields)]
 pub struct NodeOutputRef {
     pub node_id: String,
-    pub path: String,
+    #[serde(alias = "path")]
+    pub output_name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -295,4 +323,40 @@ pub fn semantic_kind_is_default(kind: &SemanticNodeKind) -> bool {
 
 pub fn edge_kind_is_default(kind: &EdgeKind) -> bool {
     matches!(kind, EdgeKind::Data)
+}
+
+pub fn cache_behavior_is_default(cache: &CacheBehavior) -> bool {
+    cache.enabled && cache.reason.is_none()
+}
+
+pub fn cache_behavior_enabled() -> bool {
+    true
+}
+
+fn param_value_from_json(value: Value) -> Result<ParamValue, String> {
+    match value {
+        Value::Array(items) => {
+            let mut out = Vec::with_capacity(items.len());
+            for item in items {
+                out.push(param_value_from_json(item)?);
+            }
+            Ok(ParamValue::Array(out))
+        }
+        Value::Object(map) => {
+            let ref_like = !map.is_empty()
+                && map.keys().all(|key| matches!(key.as_str(), "graph_input" | "node_output"));
+            if ref_like {
+                let reference = serde_json::from_value(Value::Object(map))
+                    .map_err(|error| error.to_string())?;
+                Ok(ParamValue::Ref(reference))
+            } else {
+                let mut out = BTreeMap::new();
+                for (key, item) in map {
+                    out.insert(key, param_value_from_json(item)?);
+                }
+                Ok(ParamValue::Object(out))
+            }
+        }
+        literal => Ok(ParamValue::Literal(literal)),
+    }
 }

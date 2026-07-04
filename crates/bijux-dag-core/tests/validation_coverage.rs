@@ -9,15 +9,16 @@ use thiserror as _;
 use unicode_normalization as _;
 
 use bijux_dag_core::{
-    parse_graph_strict, BranchSpec, Edge, EdgeKind, FileOutput, Graph, GraphMeta, Node, NodeKind,
-    PortRef, SemanticNodeKind, Severity, TriggerRule, SPEC_VERSION,
+    parse_graph_strict, BranchSpec, CacheBehavior, Edge, EdgeKind, FileOutput, Graph, GraphMeta,
+    Node, NodeKind, PortRef, SemanticNodeKind, Severity, TriggerRule, SPEC_VERSION,
 };
 
 #[test]
 fn validation_error_and_warning_coverage() {
     let expected_error_codes = [
         "E1001", "E1002", "E1003", "E1004", "E1007", "E1008", "E1009", "E1010", "E1011", "E1020",
-        "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030",
+        "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030", "E1031",
+        "E1032",
     ];
 
     for code in expected_error_codes {
@@ -331,7 +332,7 @@ fn graph_for_code(code: &str) -> Graph {
                     graph_input: None,
                     node_output: Some(bijux_dag_core::NodeOutputRef {
                         node_id: "ghost".to_string(),
-                        path: "out".to_string(),
+                        output_name: "out".to_string(),
                     }),
                 }),
                 container: None,
@@ -339,6 +340,7 @@ fn graph_for_code(code: &str) -> Graph {
                 resources: None,
                 tags: vec![],
                 retry: Default::default(),
+                cache: Default::default(),
                 effects: vec![],
                 env_allowlist: vec![],
                 group: None,
@@ -369,7 +371,7 @@ fn graph_for_code(code: &str) -> Graph {
                 graph_input: None,
                 node_output: Some(bijux_dag_core::NodeOutputRef {
                     node_id: "sink".to_string(),
-                    path: "out".to_string(),
+                    output_name: "out".to_string(),
                 }),
             });
             g
@@ -437,6 +439,7 @@ fn graph_for_code(code: &str) -> Graph {
                         resources: None,
                         tags: vec![],
                         retry: Default::default(),
+                        cache: Default::default(),
                         effects: vec![bijux_dag_core::Effect::Filesystem],
                         env_allowlist: vec![],
                         group: None,
@@ -482,6 +485,7 @@ fn graph_for_code(code: &str) -> Graph {
                         resources: None,
                         tags: vec![],
                         retry: Default::default(),
+                        cache: Default::default(),
                         effects: vec![bijux_dag_core::Effect::Filesystem],
                         env_allowlist: vec![],
                         group: None,
@@ -503,6 +507,23 @@ fn graph_for_code(code: &str) -> Graph {
                 }],
             };
             g.nodes[1].trigger_rule = TriggerRule::AllSuccess;
+            g
+        }
+        "E1031" => {
+            let mut g = base_graph();
+            g.inputs.insert("seed".to_string(), serde_json::json!(7));
+            g.nodes[1].params = bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
+                graph_input: Some("seed".to_string()),
+                node_output: Some(bijux_dag_core::NodeOutputRef {
+                    node_id: "source".to_string(),
+                    output_name: "out".to_string(),
+                }),
+            });
+            g
+        }
+        "E1032" => {
+            let mut g = base_graph();
+            g.nodes[0].cache = CacheBehavior { enabled: false, reason: None };
             g
         }
         "W2001" => {
@@ -541,6 +562,7 @@ fn build_node(id: &str, mut inputs: Vec<String>, name: &str) -> Node {
         resources: None,
         tags: vec![],
         retry: Default::default(),
+        cache: Default::default(),
         effects: vec![bijux_dag_core::Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
