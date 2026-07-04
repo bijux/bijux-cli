@@ -154,19 +154,7 @@ pub(super) fn run_docs_link_check() -> Result<(), String> {
             }
         }
 
-        for (line_number, span) in extract_inline_code_spans(&content) {
-            let Some(anchor) = repo_code_anchor_candidate(&span) else {
-                continue;
-            };
-            if !root.join(anchor).exists() {
-                let rel = file
-                    .strip_prefix(&root)
-                    .map_err(|err| err.to_string())?
-                    .to_string_lossy()
-                    .replace('\\', "/");
-                violations.push(format!("{rel}:{line_number}: broken code anchor {anchor}"));
-            }
-        }
+        violations.extend(broken_inline_code_anchors(&root, &file, &content)?);
     }
 
     if violations.is_empty() {
@@ -232,6 +220,30 @@ fn repo_code_anchor_candidate(span: &str) -> Option<&str> {
     let looks_like_path = anchor.ends_with('/')
         || Path::new(anchor).extension().and_then(|ext| ext.to_str()).is_some();
     looks_like_path.then_some(anchor)
+}
+
+fn broken_inline_code_anchors(
+    root: &Path,
+    file: &Path,
+    content: &str,
+) -> Result<Vec<String>, String> {
+    let rel = file
+        .strip_prefix(root)
+        .map_err(|err| err.to_string())?
+        .to_string_lossy()
+        .replace('\\', "/");
+    let mut violations = Vec::new();
+
+    for (line_number, span) in extract_inline_code_spans(content) {
+        let Some(anchor) = repo_code_anchor_candidate(&span) else {
+            continue;
+        };
+        if !root.join(anchor).exists() {
+            violations.push(format!("{rel}:{line_number}: broken code anchor {anchor}"));
+        }
+    }
+
+    Ok(violations)
 }
 
 pub(super) fn run_naming_governance_guard() -> Result<(), String> {
@@ -835,4 +847,66 @@ fn collect_source_files_with_extension(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{broken_inline_code_anchors, extract_inline_code_spans, repo_code_anchor_candidate};
+    use std::fs;
+    use tempfile::tempdir;
+
+    #[test]
+    fn inline_code_span_extraction_skips_fenced_blocks_and_keeps_line_numbers() {
+        let content = "\
+before `crates/demo/src/lib.rs`\n\
+```text\n\
+`crates/ignored/src/lib.rs`\n\
+```\n\
+after `docs/index.md`\n";
+
+        let spans = extract_inline_code_spans(content);
+        assert_eq!(
+            spans,
+            vec![
+                (1, "crates/demo/src/lib.rs".to_string()),
+                (5, "docs/index.md".to_string())
+            ]
+        );
+    }
+
+    #[test]
+    fn repo_code_anchor_candidate_filters_to_repository_paths() {
+        assert_eq!(
+            repo_code_anchor_candidate("crates/demo/src/lib.rs"),
+            Some("crates/demo/src/lib.rs")
+        );
+        assert_eq!(repo_code_anchor_candidate("docs/guide/"), Some("docs/guide/"));
+        assert_eq!(repo_code_anchor_candidate("https://crates.io/crates/demo"), None);
+        assert_eq!(repo_code_anchor_candidate("cargo run demo"), None);
+        assert_eq!(repo_code_anchor_candidate("demo"), None);
+    }
+
+    #[test]
+    fn broken_inline_code_anchors_report_missing_repo_paths_with_line_numbers() {
+        let root = tempdir().expect("tempdir");
+        let docs_dir = root.path().join("docs");
+        let crates_dir = root.path().join("crates/demo/src");
+        fs::create_dir_all(&docs_dir).expect("docs dir");
+        fs::create_dir_all(&crates_dir).expect("crate dir");
+        fs::write(crates_dir.join("lib.rs"), "// ok").expect("write crate");
+        fs::write(docs_dir.join("index.md"), "# ok").expect("write docs");
+
+        let source_file = docs_dir.join("guide.md");
+        let content = "\
+good `crates/demo/src/lib.rs`\n\
+bad `crates/demo/src/missing.rs`\n\
+also good `docs/index.md`\n";
+
+        let violations =
+            broken_inline_code_anchors(root.path(), &source_file, content).expect("violations");
+        assert_eq!(
+            violations,
+            vec!["docs/guide.md:2: broken code anchor crates/demo/src/missing.rs".to_string()]
+        );
+    }
 }
