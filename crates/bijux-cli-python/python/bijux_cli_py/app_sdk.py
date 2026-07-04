@@ -147,7 +147,7 @@ def compatibility_report(
     min_cli_version: str,
     max_cli_version_exclusive: str | None = None,
     *,
-    host_cli_version: str = "0.3.5",
+    host_cli_version: str = "0.4.0",
 ) -> dict[str, Any]:
     return CompatibilityWindow(
         min_cli_version=min_cli_version,

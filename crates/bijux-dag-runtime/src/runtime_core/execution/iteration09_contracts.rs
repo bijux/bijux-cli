@@ -613,13 +613,13 @@ mod tests {
                 AdapterSoftwareIdentityV1 {
                     adapter_id: "const".to_string(),
                     executable_path: "/workspace/bin/const-adapter".to_string(),
-                    version: "0.3.5".to_string(),
+                    version: "0.4.0".to_string(),
                     binary_hash: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
                         .to_string(),
                 },
             ],
             vec!["plugin:official:quality-gate@1.2.0".to_string()],
-            vec!["app:dag@0.3.5".to_string()],
+            vec!["app:dag@0.4.0".to_string()],
         )
         .expect("supply chain inventory");
         assert_eq!(report.adapters.len(), 2);

@@ -515,9 +515,9 @@ mod tests {
     fn g014_descriptor_compatibility_reports_version_window_mismatch() {
         let report = evaluate_official_app_descriptor_compatibility(
             &OfficialAppDescriptorCompatibilityInputV1 {
-                host_version: "0.3.5".to_string(),
+                host_version: "0.4.0".to_string(),
                 app_version: "1.4.0".to_string(),
-                host_compatibility_window: ">=0.4,<0.5".to_string(),
+                host_compatibility_window: ">=0.5,<0.6".to_string(),
                 lifecycle_state: "active".to_string(),
                 command_surfaces: vec!["dag run".to_string()],
             },

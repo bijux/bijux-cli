@@ -51,7 +51,7 @@ manifest = build_python_mount_manifest(
     module="sample_app.cli",
     function="main",
     summary="Sample mounted Python app",
-    compatibility=CompatibilityWindow(min_cli_version="0.3.6"),
+    compatibility=CompatibilityWindow(min_cli_version="0.4.0"),
 )
 ```
 
