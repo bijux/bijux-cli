@@ -4,30 +4,11 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import shutil
 import subprocess
 import sys
+import tarfile
+import tempfile
 from pathlib import Path
-
-
-IGNORE_NAMES = {
-    ".git",
-    ".DS_Store",
-    ".direnv",
-    "artifacts",
-    "build",
-    "dist",
-    "htmlcov",
-    ".idea",
-    ".pytest_cache",
-    ".ruff_cache",
-    "__pycache__",
-    "target",
-    "venv",
-    ".venv",
-}
-IGNORE_PREFIXES = (".coverage",)
-IGNORE_SUFFIXES = (".egg-info", ".dSYM")
 
 
 def parse_args() -> argparse.Namespace:
@@ -46,27 +27,40 @@ def ensure_clean_output_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-def should_ignore(name: str) -> bool:
-    return (
-        name in IGNORE_NAMES
-        or name.startswith(IGNORE_PREFIXES)
-        or name.endswith(IGNORE_SUFFIXES)
-    )
+def resolve_git_root(workspace_root: Path) -> Path:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(workspace_root), "rev-parse", "--show-toplevel"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as err:
+        raise SystemExit(f"failed to resolve git repository root under {workspace_root}: {err}") from err
+
+    git_root = Path(result.stdout.strip()).resolve()
+    if git_root != workspace_root:
+        raise SystemExit(
+            f"workspace root must be the git repository root: requested {workspace_root}, git root {git_root}"
+        )
+    return git_root
 
 
-def ignore_entries(_dir: str, names: list[str]) -> set[str]:
-    return {name for name in names if should_ignore(name)}
-
-
-def copy_workspace(workspace_root: Path, output_dir: Path) -> None:
-    for entry in workspace_root.iterdir():
-        if should_ignore(entry.name):
-            continue
-        destination = output_dir / entry.name
-        if entry.is_dir():
-            shutil.copytree(entry, destination, ignore=ignore_entries)
-        else:
-            shutil.copy2(entry, destination)
+def export_head_snapshot(workspace_root: Path, output_dir: Path) -> None:
+    resolve_git_root(workspace_root)
+    with tempfile.NamedTemporaryFile(suffix=".tar") as archive_file:
+        try:
+            subprocess.run(
+                ["git", "-C", str(workspace_root), "archive", "--format=tar", "HEAD"],
+                check=True,
+                stdout=archive_file,
+            )
+        except subprocess.CalledProcessError as err:
+            raise SystemExit(f"failed to export committed HEAD from {workspace_root}: {err}") from err
+        archive_file.flush()
+        archive_file.seek(0)
+        with tarfile.open(fileobj=archive_file, mode="r:") as archive:
+            archive.extractall(output_dir, filter="data")
 
 
 def rewrite_workspace_version(path: Path, release_version: str) -> None:
@@ -226,7 +220,7 @@ def main() -> int:
         raise SystemExit("release version must not be empty")
 
     ensure_clean_output_dir(output_dir)
-    copy_workspace(workspace_root, output_dir)
+    export_head_snapshot(workspace_root, output_dir)
     rewrite_workspace_version(output_dir / "Cargo.toml", release_version)
     rewrite_bijux_dependency_versions(output_dir / "Cargo.toml", release_version)
     workspace_packages = rewrite_workspace_crates(output_dir, release_version)
