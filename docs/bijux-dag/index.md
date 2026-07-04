@@ -11,8 +11,10 @@ last_reviewed: 2026-07-04
 
 `bijux-dag` is the graph execution and evidence subsystem in `bijux-core`. It
 owns deterministic DAG semantics, run and artifact identity, replay
-classification, and diff classification. The `v0.4.0` release makes the DAG
-Rust crate family public for the first time.
+classification, and diff classification. The `v0.4.0` release makes five DAG
+Rust crates public for the first time: `bijux-dag-core`,
+`bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and
+`bijux-dag-cli`. `bijux-dag-testkit` remains repository-internal test support.
 
 Runtime identity in manifests, provenance, replay, and cache fingerprints is
 resolved from build metadata. Changing the shell directory around the compiled
@@ -49,7 +51,7 @@ flowchart LR
 - [`bijux-dag-app`](packages/bijux-dag-app.md) owns command orchestration and response shaping
 - [`bijux-dag-cli`](packages/bijux-dag-cli.md) owns the thin executable wrapper
 - [`bijux-dag-artifacts`](packages/bijux-dag-artifacts.md) owns artifact identity, integrity, and lifecycle helpers
-- [`bijux-dag-testkit`](packages/bijux-dag-testkit.md) owns shared deterministic fixtures
+- [`bijux-dag-testkit`](packages/bijux-dag-testkit.md) owns shared deterministic fixtures for repository tests and maintainer suites
 
 ## Code Anchors
 

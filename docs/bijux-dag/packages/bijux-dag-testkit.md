@@ -4,13 +4,17 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-04
 ---
 
 # bijux-dag-testkit
 
 `bijux-dag-testkit` centralizes deterministic test fixtures, builders, and
 assertion helpers shared across DAG crates and top-level suites.
+
+This package is repository-internal test support. It is documented so
+contributors can find fixture ownership quickly, but it is not part of the
+public `v0.4.0` crates.io release boundary.
 
 Use this page when the work is about DAG test support, reproducible fixtures,
 or shared assertions rather than production runtime behavior.
@@ -21,7 +25,8 @@ or shared assertions rather than production runtime behavior.
 | --- | --- |
 | shared fixtures | reusable graph and runtime test material |
 | helpers | builders and assertions used across DAG suites |
-| boundary | does not own production command routing, runtime policy, or release governance |
+| release status | private workspace support crate |
+| boundary | does not own production command routing, runtime policy, crates.io publication policy, or release governance |
 
 ## Source Layout
 
@@ -43,4 +48,5 @@ or shared assertions rather than production runtime behavior.
 
 - shared test helpers should improve determinism without hiding the behavior under test
 - production semantics should stay in product crates, not in fixture glue
+- public DAG crates must not require this package for runtime behavior or packaging
 - repository-level test policy should still live in maintainer docs rather than this package page
