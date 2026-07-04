@@ -1541,7 +1541,7 @@ exit 1
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
             nodes: vec![Node {
                 id: "n1".to_string(),
