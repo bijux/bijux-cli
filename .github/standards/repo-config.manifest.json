@@ -1001,6 +1001,14 @@
               "makefile_path": "makes/root.mk",
               "build_targets": "build-py",
               "dist_subdir": "build"
+            },
+            {
+              "package_slug": "bijux-dag",
+              "package_dir": ".",
+              "artifacts_dir": "artifacts/rust",
+              "makefile_path": "makes/root.mk",
+              "build_targets": "build-dag-release-bundle",
+              "dist_subdir": "build"
             }
           ]
         },
@@ -1047,7 +1055,12 @@
         {
           "key": "BIJUX_CRATES_RELEASE_PACKAGES",
           "type": "string",
-          "value": "bijux-cli bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-testkit bijux-dag-app bijux-dag-cli"
+          "value": "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-dag-testkit bijux-cli"
+        },
+        {
+          "key": "BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES",
+          "type": "string",
+          "value": "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-dag-testkit bijux-cli"
         },
         {
           "key": "BIJUX_GHCR_RELEASE_ENABLED",
@@ -1055,11 +1068,19 @@
           "value": true
         },
         {
+          "key": "BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES",
+          "type": "string",
+          "value": "bijux-cli bijux-dag"
+        },
+        {
           "key": "BIJUX_GHCR_RELEASE_PACKAGE_MATRIX_JSON",
           "type": "json",
           "value": [
             {
               "package_slug": "bijux-cli"
+            },
+            {
+              "package_slug": "bijux-dag"
             }
           ]
         },
