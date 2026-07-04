@@ -16,6 +16,11 @@ cargo install bijux-dag-cli
 bijux-dag --help
 ```
 
+The supported release boundary is the visible `bijux-dag --help` surface.
+Hidden simulation and maintainer namespaces remain available by explicit path
+for repository-owned workflows, but they are not part of the stable public
+operator contract.
+
 ## Deliberate boundaries
 
 This crate stays thin. It does not own:

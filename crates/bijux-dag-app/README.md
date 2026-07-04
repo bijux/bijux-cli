@@ -13,6 +13,10 @@ artifact crates, then shapes the resulting typed responses.
 Depend on this crate when you need to embed or test the `bijux-dag` command
 application logic without taking on the thin binary wrapper.
 
+The visible `bijux-dag --help` surface is the public operator contract. Hidden
+simulation and maintainer namespaces are still routed here for repository-owned
+coverage, but they are not release-grade public API.
+
 ## Deliberate boundaries
 
 This crate does not own:

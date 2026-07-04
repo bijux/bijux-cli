@@ -16,6 +16,10 @@ to the application layer.
 Use this page when the issue is about executable startup, process behavior, or
 binary-level integration rather than DAG semantics themselves.
 
+The supported operator contract is the visible `bijux-dag --help` surface.
+Hidden simulation and maintainer namespaces remain executable by explicit path,
+but `bijux-dag-cli` does not advertise them as stable public behavior.
+
 ## Responsibility Map
 
 | Surface | Ownership |
@@ -44,4 +48,5 @@ binary-level integration rather than DAG semantics themselves.
 
 - the binary should stay thin enough that DAG behavior remains owned elsewhere
 - user-facing startup and exit behavior should still be explicit and testable
+- hidden maintainer namespaces must stay intentionally outside the public root help surface
 - process-level concerns should not pull runtime or artifact logic into the entrypoint
