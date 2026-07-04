@@ -19,10 +19,22 @@ RS_COVERAGE_DIR ?= $(RS_ARTIFACT_ROOT)/coverage/$(RS_RUN_ID)
 RS_LCOV_FILE ?= $(RS_COVERAGE_DIR)/lcov.info
 RS_COVERAGE_TEST_REPORT ?= $(RS_COVERAGE_DIR)/nextest.log
 RS_COVERAGE_SUMMARY_REPORT ?= $(RS_COVERAGE_DIR)/summary.txt
+RS_RELEASE_VALIDATION_DIR ?= $(RS_ARTIFACT_ROOT)/release-validation/$(RS_RUN_ID)
+RS_RELEASE_TREE_DIR ?= $(abspath $(RS_RELEASE_VALIDATION_DIR)/workspace)
+RS_RELEASE_VALIDATION_TARGET_DIR ?= $(abspath $(RS_RELEASE_VALIDATION_DIR)/target)
+RS_RELEASE_TREE_VERSION_FILE ?= $(RS_RELEASE_VALIDATION_DIR)/workspace-version.txt
+RS_RELEASE_FMT_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/fmt.txt
+RS_RELEASE_CLIPPY_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/clippy.txt
+RS_RELEASE_TEST_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/test.txt
+RS_RELEASE_DOC_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/doc.txt
+RS_RELEASE_PACKAGE_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/package.txt
+RS_RELEASE_PUBLISH_DRY_RUN_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/publish-dry-run.txt
+RS_RELEASE_SMOKE_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/smoke.txt
 RS_DEV_CLI_BIN ?= $(RS_TARGET_DIR)/debug/bijux-dev-cli
 RS_RELEASE_BUNDLE_DIR ?= $(RS_ARTIFACT_ROOT)/build
 DAG_RELEASE_PACKAGE ?= bijux-dag-cli
 DAG_RELEASE_BIN ?= bijux-dag
+RUST_PUBLIC_DAG_PACKAGES ?= bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli
 RUST_PUBLISH_PACKAGES ?= bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-cli
 RUST_PUBLISH_DRY_RUN ?= 1
 RUST_PUBLISH_SKIP_EXISTING ?= 1
@@ -62,7 +74,8 @@ define rs_nextest_summary
 	printf '\033[1;36m%s\033[0m %s\n' "nextest-summary:" "$${summary_line:-unavailable}"
 endef
 
-.PHONY: fmt-rs lint-rs test-rs test-release-rs test-all-rs coverage coverage-rs audit-rs publish-rs build-dag-release-bundle
+.PHONY: fmt-rs lint-rs test-rs test-release-rs test-all-rs prepare-release-tree-rs fmt-release-rs clippy-release-rs test-release-workspace-rs doc-release-rs package-release-rs publish-dry-run-release-rs smoke-release-rs release-validate-rs coverage coverage-rs audit-rs publish-rs build-dag-release-bundle
+.NOTPARALLEL: prepare-release-tree-rs fmt-release-rs clippy-release-rs test-release-workspace-rs doc-release-rs package-release-rs publish-dry-run-release-rs smoke-release-rs release-validate-rs
 
 ##@ Rust
 fmt-rs: ## Run Rust formatting checks
@@ -169,6 +182,111 @@ test-all-rs: ## Run the full Rust suite, including ignored tests
 		2>&1 | tee "$(RS_TEST_ALL_REPORT)" || status=$$?; \
 	$(call rs_nextest_summary,$(RS_TEST_ALL_REPORT)); \
 	test $$status -eq 0
+
+prepare-release-tree-rs: ## Prepare a clean release-candidate tree from committed HEAD
+	@mkdir -p "$(RS_RELEASE_VALIDATION_DIR)"
+	@rm -rf "$(RS_RELEASE_TREE_DIR)"
+	@release_version="$$(python3 -c "import tomllib; from pathlib import Path; print(tomllib.load(Path('Cargo.toml').open('rb'))['workspace']['package']['version'])")"; \
+	printf '%s\n' "$$release_version" > "$(RS_RELEASE_TREE_VERSION_FILE)"; \
+	printf '%s\n' "prepare: release tree version $$release_version"; \
+	python3 "$(RELEASE_TREE_SCRIPT)" --workspace-root . --output-dir "$(RS_RELEASE_TREE_DIR)" --version "$$release_version" >/dev/null
+
+fmt-release-rs: prepare-release-tree-rs ## Run release-candidate formatting validation in a clean tree
+	@mkdir -p "$(dir $(RS_RELEASE_FMT_REPORT))"
+	@printf '%s\n' "run: cargo fmt --all -- --check"
+	@set -o pipefail; \
+	cd "$(RS_RELEASE_TREE_DIR)"; \
+	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
+	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
+	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
+	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
+	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
+	cargo fmt --all -- --check 2>&1 | tee "$(abspath $(RS_RELEASE_FMT_REPORT))"
+
+clippy-release-rs: prepare-release-tree-rs ## Run release-candidate clippy validation in a clean tree
+	@mkdir -p "$(dir $(RS_RELEASE_CLIPPY_REPORT))"
+	@printf '%s\n' "run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings"
+	@set -o pipefail; \
+	cd "$(RS_RELEASE_TREE_DIR)"; \
+	CLIPPY_CONF_DIR="configs/rust" \
+	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
+	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
+	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
+	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
+	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
+	cargo clippy --workspace --all-targets --all-features --locked -- -D warnings 2>&1 | tee "$(abspath $(RS_RELEASE_CLIPPY_REPORT))"
+
+test-release-workspace-rs: prepare-release-tree-rs ## Run release-candidate workspace tests in a clean tree
+	@mkdir -p "$(dir $(RS_RELEASE_TEST_REPORT))"
+	@printf '%s\n' "run: cargo test --workspace --all-targets --all-features --locked"
+	@set -o pipefail; \
+	cd "$(RS_RELEASE_TREE_DIR)"; \
+	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
+	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
+	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
+	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
+	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
+	cargo test --workspace --all-targets --all-features --locked 2>&1 | tee "$(abspath $(RS_RELEASE_TEST_REPORT))"
+
+doc-release-rs: prepare-release-tree-rs ## Run release-candidate docs build in a clean tree
+	@mkdir -p "$(dir $(RS_RELEASE_DOC_REPORT))"
+	@printf '%s\n' "run: cargo doc --workspace --all-features --no-deps"
+	@set -o pipefail; \
+	cd "$(RS_RELEASE_TREE_DIR)"; \
+	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
+	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
+	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
+	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
+	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
+	cargo doc --workspace --all-features --no-deps 2>&1 | tee "$(abspath $(RS_RELEASE_DOC_REPORT))"
+
+package-release-rs: prepare-release-tree-rs ## Run release-candidate cargo package listings for public DAG crates
+	@mkdir -p "$(dir $(RS_RELEASE_PACKAGE_REPORT))"
+	@rm -f "$(RS_RELEASE_PACKAGE_REPORT)"
+	@set -euo pipefail; \
+	for package in $(RUST_PUBLIC_DAG_PACKAGES); do \
+		printf '%s\n' "run: cargo package -p $${package} --list" | tee -a "$(RS_RELEASE_PACKAGE_REPORT)"; \
+		( \
+			cd "$(RS_RELEASE_TREE_DIR)"; \
+			CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
+			CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
+			CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
+			CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
+			CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
+			cargo package -p "$${package}" --list \
+		) 2>&1 | tee -a "$(RS_RELEASE_PACKAGE_REPORT)"; \
+	done
+
+publish-dry-run-release-rs: prepare-release-tree-rs ## Run release-candidate cargo publish dry-runs for public DAG crates
+	@mkdir -p "$(dir $(RS_RELEASE_PUBLISH_DRY_RUN_REPORT))"
+	@rm -f "$(RS_RELEASE_PUBLISH_DRY_RUN_REPORT)"
+	@set -euo pipefail; \
+	for package in $(RUST_PUBLIC_DAG_PACKAGES); do \
+		printf '%s\n' "run: cargo publish -p $${package} --dry-run --locked" | tee -a "$(RS_RELEASE_PUBLISH_DRY_RUN_REPORT)"; \
+		( \
+			cd "$(RS_RELEASE_TREE_DIR)"; \
+			CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
+			CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
+			CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
+			CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
+			CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
+			cargo publish -p "$${package}" --dry-run --locked \
+		) 2>&1 | tee -a "$(RS_RELEASE_PUBLISH_DRY_RUN_REPORT)"; \
+	done
+
+smoke-release-rs: prepare-release-tree-rs ## Run release-candidate DAG CLI smoke tests in a clean tree
+	@mkdir -p "$(dir $(RS_RELEASE_SMOKE_REPORT))"
+	@printf '%s\n' "run: cargo test -p bijux-dag-cli --test smoke_pipeline --locked -- --nocapture"
+	@set -o pipefail; \
+	cd "$(RS_RELEASE_TREE_DIR)"; \
+	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
+	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
+	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
+	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
+	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
+	cargo test -p bijux-dag-cli --test smoke_pipeline --locked -- --nocapture 2>&1 | tee "$(abspath $(RS_RELEASE_SMOKE_REPORT))"
+
+release-validate-rs: fmt-release-rs clippy-release-rs test-release-workspace-rs doc-release-rs package-release-rs publish-dry-run-release-rs smoke-release-rs ## Run the canonical Rust release validation suite
 
 coverage: coverage-rs ## Run coverage and refresh tracked coverage reports
 	@mkdir -p artifacts/coverage
