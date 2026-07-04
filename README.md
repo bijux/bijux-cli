@@ -28,7 +28,7 @@ The goal of this repository is simple: ship both products from one audited sourc
 | Product | What it does | Primary users | Runtime entrypoint |
 |---|---|---|---|
 | `bijux-cli` | Runs automation and interactive workflows with structured output, plugin routing, and stable command semantics. | Operators, developers, automation systems | `bijux` |
-| `bijux-dag` | Defines, validates, executes, replays, and diffs computation graphs with deterministic artifact and evidence behavior. | DAG authors, platform teams, governance workflows | `bijux-dag ...` |
+| `bijux-dag` | Defines, validates, executes, replays, and diffs computation graphs with deterministic artifact and evidence behavior. | DAG authors, local workflow operators, evidence-focused platform teams | `bijux-dag ...` |
 
 ## Release State
 
@@ -37,6 +37,7 @@ Current release line: **`v0.4.0`**.
 - `bijux-cli` ships as the Rust crate, Python distribution, and container-backed command runtime for `bijux`.
 - `bijux-cli-python` remains the packaging and bridge layer for the same CLI runtime.
 - `bijux-dag` now ships as a public Rust crate family: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-testkit`, `bijux-dag-app`, and `bijux-dag-cli`.
+- the supported DAG operator contract is the visible `bijux-dag --help` surface; hidden simulation and maintainer namespaces are intentionally excluded from the public release boundary.
 - GitHub Releases and GHCR now stage both public release families, including a stamped `bijux-dag` binary bundle.
 - `bijux-dev` remains repository-internal maintainer tooling and is not a publication target.
 

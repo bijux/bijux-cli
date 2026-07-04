@@ -36,6 +36,7 @@ flowchart TB
 - claiming equal behavior across all backends and environments
 - masking missing evidence as successful equivalence
 - collapsing graph/run/artifact scopes into one generic change signal
+- shipping simulated platform-control namespaces as stable operator APIs
 - replacing organization security/compliance policy systems
 
 ## Code Anchors
