@@ -20,7 +20,10 @@ RS_LCOV_FILE ?= $(RS_COVERAGE_DIR)/lcov.info
 RS_COVERAGE_TEST_REPORT ?= $(RS_COVERAGE_DIR)/nextest.log
 RS_COVERAGE_SUMMARY_REPORT ?= $(RS_COVERAGE_DIR)/summary.txt
 RS_DEV_CLI_BIN ?= $(RS_TARGET_DIR)/debug/bijux-dev-cli
-RUST_PUBLISH_PACKAGES ?= bijux-cli bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-testkit bijux-dag-app bijux-dag-cli
+RS_RELEASE_BUNDLE_DIR ?= $(RS_ARTIFACT_ROOT)/build
+DAG_RELEASE_PACKAGE ?= bijux-dag-cli
+DAG_RELEASE_BIN ?= bijux-dag
+RUST_PUBLISH_PACKAGES ?= bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-dag-testkit bijux-cli
 RUST_PUBLISH_DRY_RUN ?= 1
 RUST_PUBLISH_SKIP_EXISTING ?= 1
 RUST_PUBLISH_ALLOW_DIRTY ?= 0
@@ -57,7 +60,7 @@ define rs_nextest_summary
 	printf '\033[1;36m%s\033[0m %s\n' "nextest-summary:" "$${summary_line:-unavailable}"
 endef
 
-.PHONY: fmt-rs lint-rs test-rs test-all-rs coverage coverage-rs audit-rs publish-rs
+.PHONY: fmt-rs lint-rs test-rs test-all-rs coverage coverage-rs audit-rs publish-rs build-dag-release-bundle
 
 ##@ Rust
 fmt-rs: ## Run Rust formatting checks
@@ -272,3 +275,46 @@ publish-rs: ## Publish Rust crates and dry-run by default
 			exit 1; \
 		fi; \
 	done
+
+build-dag-release-bundle: ## Build a stamped bijux-dag binary release bundle under artifacts/rust/build
+	@mkdir -p "$(RS_RELEASE_BUNDLE_DIR)"
+	@set -euo pipefail; \
+	workspace_root="."; \
+	temp_root=""; \
+	if [ -n "$(RELEASE_VERSION)" ]; then \
+		temp_root="$$(mktemp -d "$${TMPDIR:-/tmp}/bijux-release-tree.XXXXXX")"; \
+		trap 'test -n "$${temp_root}" && rm -rf "$${temp_root}"' EXIT; \
+		python3 "$(RELEASE_TREE_SCRIPT)" --workspace-root . --output-dir "$${temp_root}" --version "$(RELEASE_VERSION)" >/dev/null; \
+		workspace_root="$${temp_root}"; \
+		echo "→ Building DAG release bundle from release tree stamped to $(RELEASE_VERSION)"; \
+	fi; \
+	host_triple="$$(rustc -vV | awk '/^host:/ {print $$2}')"; \
+	bundle_version="$$(cargo metadata --manifest-path "$${workspace_root}/Cargo.toml" --no-deps --format-version 1 | python3 -c 'import json,sys; data=json.load(sys.stdin); pkgs={p["name"]: p["version"] for p in data["packages"]}; print(pkgs.get(sys.argv[1], ""))' "$(DAG_RELEASE_PACKAGE)" 2>/dev/null)"; \
+	if [ -z "$${bundle_version}" ]; then \
+		echo "Could not resolve version for package $(DAG_RELEASE_PACKAGE) from cargo metadata"; \
+		exit 1; \
+	fi; \
+	stage_dir="$(RS_RELEASE_BUNDLE_DIR)/$(DAG_RELEASE_BIN)-bundle"; \
+	archive_name="$(DAG_RELEASE_BIN)-v$${bundle_version}-$${host_triple}.tar.gz"; \
+	archive_path="$(RS_RELEASE_BUNDLE_DIR)/$${archive_name}"; \
+	rm -rf "$${stage_dir}"; \
+	rm -f "$${archive_path}" "$${archive_path}.sha256"; \
+	mkdir -p "$${stage_dir}/bin"; \
+	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build --release --locked --manifest-path "$${workspace_root}/Cargo.toml" -p "$(DAG_RELEASE_PACKAGE)" --bin "$(DAG_RELEASE_BIN)"; \
+	cp "$(RS_TARGET_DIR)/release/$(DAG_RELEASE_BIN)" "$${stage_dir}/bin/$(DAG_RELEASE_BIN)"; \
+	cp "$${workspace_root}/LICENSE" "$${stage_dir}/LICENSE"; \
+	cp "$${workspace_root}/crates/$(DAG_RELEASE_PACKAGE)/README.md" "$${stage_dir}/README.md"; \
+	printf 'version=%s\ncrate=%s\nbinary=%s\nhost_triple=%s\n' "$${bundle_version}" "$(DAG_RELEASE_PACKAGE)" "$(DAG_RELEASE_BIN)" "$${host_triple}" > "$${stage_dir}/release-metadata.txt"; \
+	printf '%s\n' \
+		'Install by extracting this archive and placing `bin/$(DAG_RELEASE_BIN)` on your PATH.' \
+		'For source publication and API documentation, use the published `$(DAG_RELEASE_PACKAGE)` crate.' \
+		> "$${stage_dir}/INSTALL.txt"; \
+	( \
+		cd "$${stage_dir}"; \
+		find . -type f ! -name 'checksums.txt' -print | LC_ALL=C sort | while IFS= read -r file_path; do \
+			shasum -a 256 "$${file_path}"; \
+		done > checksums.txt; \
+	); \
+	tar -C "$${stage_dir}" -czf "$${archive_path}" .; \
+	shasum -a 256 "$${archive_path}" > "$${archive_path}.sha256"; \
+	echo "→ Built DAG release bundle: $${archive_path}"
