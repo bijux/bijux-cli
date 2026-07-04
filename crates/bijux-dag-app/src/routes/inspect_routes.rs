@@ -497,7 +497,8 @@ mod tests {
         );
 
         assert_eq!(payload["graph_inputs"]["region"], "eu-west-1");
-        assert_eq!(payload["graph_input_schema"]["region"], "eu-west-1");
+        assert_eq!(payload["graph_input_schema"]["region"]["type"], "string");
+        assert_eq!(payload["graph_input_schema"]["region"]["default"], "eu-west-1");
         assert_eq!(payload["cache"]["enabled"], false);
         assert_eq!(
             payload["cache"]["reason"],

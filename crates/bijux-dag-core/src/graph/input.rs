@@ -35,7 +35,16 @@ impl GraphInputSpec {
     }
 
     pub fn schema_json(&self) -> Value {
-        serde_json::to_value(self).expect("graph input schema should serialize")
+        let mut payload = serde_json::Map::new();
+        payload.insert("type".to_string(), Value::String(self.kind.kind_name().to_string()));
+        self.kind.append_schema_fields(&mut payload);
+        if self.required {
+            payload.insert("required".to_string(), Value::Bool(true));
+        }
+        if let Some(default) = &self.default {
+            payload.insert("default".to_string(), default.clone());
+        }
+        Value::Object(payload)
     }
 
     fn serialize_as_shorthand(&self) -> bool {
@@ -115,6 +124,36 @@ impl GraphInputKind {
             Self::Enum { .. } => "enum",
             Self::Array { .. } => "array",
             Self::Object { .. } => "object",
+        }
+    }
+
+    fn append_schema_fields(&self, payload: &mut serde_json::Map<String, Value>) {
+        match self {
+            Self::Enum { values } => {
+                payload.insert(
+                    "values".to_string(),
+                    Value::Array(values.iter().cloned().map(Value::String).collect()),
+                );
+            }
+            Self::Array { items } => {
+                if let Some(items) = items.as_deref() {
+                    payload.insert(
+                        "items".to_string(),
+                        GraphInputSpec { kind: items.clone(), required: false, default: None }
+                            .schema_json(),
+                    );
+                }
+            }
+            Self::Object { properties } => {
+                if let Some(properties) = properties {
+                    let mut property_map = serde_json::Map::new();
+                    for (property_name, property_spec) in properties {
+                        property_map.insert(property_name.clone(), property_spec.schema_json());
+                    }
+                    payload.insert("properties".to_string(), Value::Object(property_map));
+                }
+            }
+            Self::String | Self::Integer | Self::Float | Self::Boolean | Self::Path => {}
         }
     }
 
