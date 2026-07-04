@@ -903,6 +903,71 @@ mod tests {
         assert!(report.isolation_counts.contains_key("subprocess"));
     }
 
+    #[test]
+    fn policy_enforcement_report_marks_subprocess_as_best_effort() {
+        let report =
+            build_policy_enforcement_report(&graph_fixture(), &RuntimeConfig::default())
+                .expect("policy report");
+        let subprocess = report
+            .surfaces
+            .iter()
+            .find(|surface| surface.executor_surface == "local-subprocess")
+            .expect("subprocess surface");
+        assert_eq!(subprocess.isolation_claim, "best_effort_process_boundary");
+        assert!(subprocess
+            .limitations
+            .iter()
+            .any(|entry| entry.contains("does not firewall network access")));
+        assert!(subprocess
+            .guards
+            .iter()
+            .any(|guard| guard.guard == "deny-network"
+                && guard.enforcement_mode == "declared_effect_gate"));
+    }
+
+    #[test]
+    fn policy_enforcement_report_marks_container_network_as_runtime_enforced() {
+        let mut graph = graph_fixture();
+        graph.nodes.push(Node {
+            id: "container1".to_string(),
+            kind: NodeKind::Container,
+            semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+            inputs: Vec::new(),
+            outputs: vec![FileOutput {
+                name: "out".to_string(),
+                path: "c/out".to_string(),
+            }],
+            params: ParamValue::default(),
+            container: Some(bijux_dag_core::ContainerSpec {
+                image: "alpine:3.19".to_string(),
+                argv: vec!["echo".to_string(), "ok".to_string()],
+                env_allowlist: Vec::new(),
+                workdir: None,
+                engine: "docker".to_string(),
+            }),
+            timeout_ms: None,
+            resources: None,
+            tags: Vec::new(),
+            retry: Default::default(),
+            effects: vec![bijux_dag_core::Effect::Filesystem],
+            env_allowlist: Vec::new(),
+            group: None,
+            trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+            branch: None,
+        });
+        let report =
+            build_policy_enforcement_report(&graph, &RuntimeConfig::default()).expect("policy report");
+        let container = report
+            .surfaces
+            .iter()
+            .find(|surface| surface.executor_surface == "container-engine")
+            .expect("container surface");
+        assert_eq!(container.isolation_claim, "container_runtime_boundary");
+        assert!(container.guards.iter().any(|guard| {
+            guard.guard == "deny-network" && guard.enforcement_mode == "container_runtime_flag"
+        }));
+    }
+
 
     #[test]
     fn dispatch_audit_flags_duplicate_dispatch_keys() {
