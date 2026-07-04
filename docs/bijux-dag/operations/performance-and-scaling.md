@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Performance And Scaling
@@ -36,7 +36,7 @@ flowchart LR
 
 ## Code Anchors
 
-- `crates/bijux-dag-runtime/src/engine/`
+- `crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs`
 - `crates/bijux-dag-runtime/src/replay/`
 - `crates/bijux-dag-app/tests/replay_diff_hardening_contract.rs`
 
