@@ -28,7 +28,7 @@ fn is_hex_sha(value: &str) -> bool {
     value.len() == 40 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
-fn workflow_allowlist_for_repo(repo_name: &str) -> Vec<String> {
+fn repository_config(repo_name: &str) -> Value {
     let manifest = read_repo_file(".github/standards/repo-config.manifest.json");
     let parsed: Value =
         serde_json::from_str(&manifest).expect("standards manifest should be valid JSON");
@@ -36,16 +36,55 @@ fn workflow_allowlist_for_repo(repo_name: &str) -> Vec<String> {
         .get("repositories")
         .and_then(Value::as_array)
         .expect("standards manifest should define repositories array");
-    let repo = repositories
+    repositories
         .iter()
         .find(|entry| entry.get("name").and_then(Value::as_str) == Some(repo_name))
-        .expect("repository should exist in standards manifest");
+        .cloned()
+        .expect("repository should exist in standards manifest")
+}
+
+fn workflow_allowlist_for_repo(repo_name: &str) -> Vec<String> {
+    let repo = repository_config(repo_name);
     repo.get("workflow_allowlist")
         .and_then(Value::as_array)
         .expect("repository should define workflow allowlist")
         .iter()
         .map(|value| value.as_str().expect("allowlist entry should be string").to_string())
         .collect()
+}
+
+fn release_env_value_for_repo(repo_name: &str, key: &str) -> String {
+    let repo = repository_config(repo_name);
+    repo.get("release_env")
+        .and_then(Value::as_array)
+        .expect("repository should define release_env")
+        .iter()
+        .find(|entry| entry.get("key").and_then(Value::as_str) == Some(key))
+        .and_then(|entry| entry.get("value"))
+        .and_then(Value::as_str)
+        .expect("release_env entry should exist and be a string")
+        .to_string()
+}
+
+fn workflow_env_value_for_repo(repo_name: &str, workflow_name: &str, key: &str) -> String {
+    let repo = repository_config(repo_name);
+    repo.get("workflow_wrappers")
+        .and_then(|wrappers| wrappers.get(workflow_name))
+        .and_then(|workflow| workflow.get("env"))
+        .and_then(|env| env.get(key))
+        .and_then(Value::as_str)
+        .expect("workflow env entry should exist and be a string")
+        .to_string()
+}
+
+fn shell_assignment_value(text: &str, key: &str) -> Option<String> {
+    let prefix = format!("{key}=");
+    text.lines().find_map(|line| {
+        let trimmed = line.trim();
+        trimmed
+            .strip_prefix(&prefix)
+            .map(|value| value.trim().trim_matches('"').trim_matches('\'').to_string())
+    })
 }
 
 #[test]
@@ -178,6 +217,51 @@ fn pinned_rust_toolchain_matches_workspace_rust_version() {
         channel,
         format!("{workspace_rust_version}.0"),
         "rust-toolchain.toml must pin the exact patch release derived from workspace rust-version"
+    );
+}
+
+#[test]
+fn managed_release_toolchains_match_workspace_rust_version() {
+    let workspace_manifest = read_repo_file("Cargo.toml");
+    let workspace_rust_version =
+        quoted_value_after(&workspace_manifest, "rust-version = ").expect("workspace rust-version");
+    let exact_toolchain = format!("{workspace_rust_version}.0");
+
+    for key in [
+        "BIJUX_RELEASE_RUST_TOOLCHAIN",
+        "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN",
+    ] {
+        assert_eq!(
+            release_env_value_for_repo("bijux-core", key),
+            exact_toolchain,
+            "standards manifest release toolchain {key} must match workspace rust-version"
+        );
+    }
+
+    assert_eq!(
+        workflow_env_value_for_repo("bijux-core", "ci", "RUST_TOOLCHAIN_VERSION"),
+        exact_toolchain,
+        "ci workflow wrapper must provision the exact patch release derived from workspace rust-version"
+    );
+
+    let release_env = read_repo_file(".github/release.env");
+    for key in [
+        "BIJUX_RELEASE_RUST_TOOLCHAIN",
+        "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN",
+    ] {
+        assert_eq!(
+            shell_assignment_value(&release_env, key).as_deref(),
+            Some(exact_toolchain.as_str()),
+            ".github/release.env must keep {key} aligned with the workspace rust-version"
+        );
+    }
+
+    let ci_workflow = read_repo_file(".github/workflows/ci.yml");
+    let unquoted = format!("RUST_TOOLCHAIN_VERSION: {exact_toolchain}");
+    let quoted = format!("RUST_TOOLCHAIN_VERSION: \"{exact_toolchain}\"");
+    assert!(
+        ci_workflow.contains(&unquoted) || ci_workflow.contains(&quoted),
+        ".github/workflows/ci.yml must keep RUST_TOOLCHAIN_VERSION aligned with the workspace rust-version"
     );
 }
 
