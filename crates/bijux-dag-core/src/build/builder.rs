@@ -1,7 +1,8 @@
 use crate::compile::{compile_graph, DagCompileResult};
 use crate::{
-    parse_graph_strict, BranchSpec, Edge, EdgeKind, Effect, FileOutput, Graph, GraphMeta, Node,
-    NodeKind, ParamValue, PortRef, Resources, RetryPolicy, SemanticNodeKind, TriggerRule,
+    parse_graph_strict, BranchSpec, Edge, EdgeKind, Effect, FileOutput, Graph, GraphInputSpec,
+    GraphMeta, Node, NodeKind, ParamValue, PortRef, Resources, RetryPolicy, SemanticNodeKind,
+    TriggerRule,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -26,7 +27,7 @@ pub struct DagDryRunPreview {
 pub struct DagBuilder {
     spec: String,
     meta: Option<GraphMeta>,
-    inputs: serde_json::Map<String, Value>,
+    inputs: BTreeMap<String, GraphInputSpec>,
     nondeterminism_allowed: bool,
     nodes: Vec<Node>,
     edges: Vec<Edge>,
@@ -43,7 +44,9 @@ impl DagBuilder {
     }
 
     pub fn graph_input(mut self, key: &str, value: Value) -> Self {
-        self.inputs.insert(key.to_string(), value);
+        let spec = GraphInputSpec::from_default_value(value)
+            .unwrap_or_else(|error| panic!("invalid graph input shorthand for {key}: {error}"));
+        self.inputs.insert(key.to_string(), spec);
         self
     }
 

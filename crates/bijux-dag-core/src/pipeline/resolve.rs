@@ -45,7 +45,7 @@ pub(crate) fn resolve_param_value(value: &ParamValue, graph: &Graph) -> Result<V
 
 fn resolve_ref(reference: &RefSpec, graph: &Graph) -> Result<Value, GraphError> {
     if let Some(input_name) = &reference.graph_input {
-        if let Some(value) = graph.inputs.get(input_name) {
+        if let Some(value) = graph.inputs.get(input_name).and_then(|spec| spec.effective_value()) {
             return Ok(value.clone());
         }
         return Err(GraphError::ValidationFailed);

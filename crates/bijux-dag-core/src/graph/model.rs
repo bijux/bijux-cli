@@ -1,5 +1,6 @@
 //! Core DAG model surface.
 
+use crate::input::GraphInputSpec;
 use serde::{de::Error as DeError, Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -30,7 +31,7 @@ pub struct Graph {
     #[serde(default)]
     pub meta: Option<GraphMeta>,
     #[serde(default)]
-    pub inputs: serde_json::Map<String, Value>,
+    pub inputs: BTreeMap<String, GraphInputSpec>,
     #[serde(default)]
     pub nondeterminism_allowed: bool,
     pub nodes: Vec<Node>,

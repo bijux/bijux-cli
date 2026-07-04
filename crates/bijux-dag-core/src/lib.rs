@@ -38,6 +38,8 @@ pub mod execution_iteration12;
 pub mod fingerprint;
 #[path = "graph/graph.rs"]
 pub mod graph;
+#[path = "graph/input.rs"]
+pub mod input;
 #[path = "graph/meta.rs"]
 pub mod meta;
 #[path = "graph/model.rs"]
@@ -79,6 +81,7 @@ pub use compile::{
 };
 pub use contract::{DagSnapshot, GraphContract, GraphExecutionPolicy};
 pub use error::GraphError;
+pub use input::{validate_graph_input_value, GraphInputKind, GraphInputSpec, GraphInputViolation};
 pub use model::{
     cache_behavior_enabled, cache_behavior_is_default, edge_kind_is_default,
     semantic_kind_is_default, trigger_rule_is_default, BranchSpec, CacheBehavior, ContainerSpec,

@@ -94,11 +94,11 @@ impl Graph {
         });
 
         let mut inputs = self.inputs.clone();
-        let mut inputs_value = Value::Object(inputs.clone());
+        let mut inputs_value = serde_json::to_value(&inputs)
+            .expect("graph inputs should serialize for canonicalization");
         sort_value_maps(&mut inputs_value);
-        if let Value::Object(map) = inputs_value {
-            inputs = map;
-        }
+        inputs = serde_json::from_value(inputs_value)
+            .expect("graph inputs should deserialize canonically");
 
         Graph {
             spec: self.spec.clone(),
