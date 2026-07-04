@@ -2,7 +2,10 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(about = "Git for computation graphs", long_about = None)]
+#[command(
+    about = "Validate, run, replay, and inspect reproducible computation graphs",
+    long_about = None
+)]
 pub(crate) struct DagCli {
     #[arg(long, global = true)]
     pub(crate) json: bool,

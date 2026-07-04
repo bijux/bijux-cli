@@ -1,4 +1,4 @@
-pub(crate) const DAG_COMMAND_NAME: &str = "dag";
+pub(crate) const DAG_COMMAND_NAME: &str = "bijux-dag";
 
 pub(crate) fn command_name() -> &'static str {
     DAG_COMMAND_NAME
@@ -10,7 +10,7 @@ mod tests {
 
     #[test]
     fn command_name_is_stable() {
-        assert_eq!(command_name(), "dag");
+        assert_eq!(command_name(), "bijux-dag");
     }
 
     #[test]
