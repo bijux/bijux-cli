@@ -34,11 +34,13 @@ The default publish order is dependency-first:
 - `bijux-dag-runtime`
 - `bijux-dag-app`
 - `bijux-dag-cli`
-- `bijux-dag-testkit`
 - `bijux-cli`
 
 That order keeps the DAG crate family coherent on crates.io before the separate
 `bijux` runtime crate is published.
+
+`bijux-dag-testkit`, `bijux-dev`, and `bijux-cli-python` stay outside this
+publication order because they remain repository-internal support crates.
 
 ## Next Reads
 
