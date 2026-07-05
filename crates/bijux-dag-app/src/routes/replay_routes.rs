@@ -3,7 +3,9 @@ use crate::graph_helpers::{
     parse_selectors, resolve_downstream_run_selection, validate_downstream_selection_surface,
 };
 use crate::replay_cmd::ReplayCommandResponse;
-use crate::routes::policy_surface::{policy_surface_payload, replay_sandbox_scope_payload};
+use crate::routes::policy_surface::{
+    cache_surface_payload, policy_surface_payload, replay_sandbox_scope_payload,
+};
 use crate::routes::preconditions::{require_run_directory, require_safe_path};
 use crate::run_data::{load_snapshot, map_materialize_mode};
 use crate::{
@@ -147,6 +149,7 @@ pub(crate) fn handle_replay_command(
             run_dir: None,
             dry_run_plan: Some(plan.clone()),
             replay_proof: None,
+            cache_surface: Some(cache_surface_payload(&options)),
             policy_surface: Some(policy_surface_payload(&snapshot.graph, &options, hermetic)?),
             sandbox_scope: Some(replay_sandbox_scope_payload(sandbox)),
         };
@@ -201,6 +204,7 @@ pub(crate) fn handle_replay_command(
         run_dir: Some(run_path.clone()),
         dry_run_plan: None,
         replay_proof,
+        cache_surface: Some(cache_surface_payload(&options)),
         policy_surface: Some(policy_surface_payload(&snapshot.graph, &options, hermetic)?),
         sandbox_scope: Some(replay_sandbox_scope_payload(sandbox)),
     };

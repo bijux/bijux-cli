@@ -1,6 +1,6 @@
 use crate::ExitCode;
 use bijux_dag_core::Graph;
-use bijux_dag_runtime::{build_policy_enforcement_report, RuntimeConfig};
+use bijux_dag_runtime::{build_policy_enforcement_report, CacheMode, RuntimeConfig};
 use serde_json::{json, Value};
 
 pub(crate) fn policy_surface_payload(
@@ -55,5 +55,41 @@ pub(crate) fn replay_sandbox_scope_payload(sandbox: bool) -> Value {
         "mode": "standard",
         "summary": "replay uses the requested output directory without the source-run write boundary",
         "limitations": []
+    })
+}
+
+pub(crate) fn cache_surface_payload(options: &RuntimeConfig) -> Value {
+    let read_order = if options.remote_cache_dir.is_some() && options.cache_dir.is_some() {
+        vec!["local", "shared"]
+    } else if options.remote_cache_dir.is_some() {
+        vec!["shared"]
+    } else if options.cache_dir.is_some() {
+        vec!["local"]
+    } else {
+        Vec::new()
+    };
+    let write_targets = if matches!(options.cache_mode, CacheMode::ReadWrite) {
+        if options.remote_cache_dir.is_some() && options.cache_dir.is_some() {
+            vec!["local", "shared"]
+        } else if options.remote_cache_dir.is_some() {
+            vec!["shared"]
+        } else if options.cache_dir.is_some() {
+            vec!["local"]
+        } else {
+            Vec::new()
+        }
+    } else {
+        Vec::new()
+    };
+    json!({
+        "mode": match options.cache_mode {
+            CacheMode::Off => "off",
+            CacheMode::Read => "read",
+            CacheMode::ReadWrite => "readwrite",
+        },
+        "local_dir": options.cache_dir.as_ref().map(|path| path.display().to_string()),
+        "shared_dir": options.remote_cache_dir.as_ref().map(|path| path.display().to_string()),
+        "read_order": read_order,
+        "write_targets": write_targets,
     })
 }

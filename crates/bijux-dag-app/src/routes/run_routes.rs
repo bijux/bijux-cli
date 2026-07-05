@@ -9,7 +9,7 @@ use crate::graph_helpers::{
 use crate::routes::plan_routes::{
     concise_plan_lines, plan_explain_payload, resolve_plan_preview_layout,
 };
-use crate::routes::policy_surface::policy_surface_payload;
+use crate::routes::policy_surface::{cache_surface_payload, policy_surface_payload};
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::run_data::map_materialize_mode;
 use crate::runtime_inputs::{bind_runtime_inputs, missing_required_graph_inputs};
@@ -206,6 +206,7 @@ pub(crate) fn handle_run_command(
         upstream_selection_targets.clone(),
         downstream_selection_roots.clone(),
     );
+    let cache_surface = cache_surface_payload(&options);
     let scheduling = if req.preflight_only || req.explain_scheduling {
         Some(
             build_planner_analysis(
@@ -223,7 +224,10 @@ pub(crate) fn handle_run_command(
         let payload = json!({
             "dags": req.dags,
             "adapters": registered_adapters(),
-            "cache": cache_preflight(req.cache, &cache_dir),
+            "cache": {
+                "local_preflight": cache_preflight(req.cache, &cache_dir),
+                "surface": cache_surface.clone(),
+            },
             "run_layout": preview_layout,
             "resume": req.resume_run.as_ref().map(|run_id| {
                 json!({
@@ -300,6 +304,7 @@ pub(crate) fn handle_run_command(
             true,
             json!({
                 "run_dir": run_path,
+                "cache": cache_surface,
                 "run_layout": preview_layout,
                 "resume_summary": resume_summary,
                 "scheduling": scheduling
