@@ -551,6 +551,10 @@ pub(crate) enum PlanCommands {
         before: PathBuf,
         after: PathBuf,
     },
+    Equivalence {
+        before: PathBuf,
+        after: PathBuf,
+    },
     Closure {
         #[arg(required = true)]
         dags: Vec<PathBuf>,

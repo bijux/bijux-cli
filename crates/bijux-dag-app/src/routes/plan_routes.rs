@@ -7,9 +7,9 @@ use crate::routes::preconditions::require_safe_path;
 use crate::{emit_json, load_graphs_or_emit, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::RunDirLayout;
 use bijux_dag_runtime::{
-    build_backfill_plan, build_planner_analysis, compute_partial_run_closure, diff_plans,
-    explain_plan, AbsolutePathPolicy, PlannerBuildResult, PlannerGuardrails, PlannerPlanDiff,
-    RuntimeConfig, SelectorSet,
+    build_backfill_plan, build_planner_analysis, compare_plan_equivalence,
+    compute_partial_run_closure, diff_plans, explain_plan, AbsolutePathPolicy, PlannerBuildResult,
+    PlannerEquivalenceReport, PlannerGuardrails, PlannerPlanDiff, RuntimeConfig, SelectorSet,
 };
 use serde_json::json;
 use std::path::{Path, PathBuf};
@@ -192,6 +192,31 @@ pub(crate) fn plan_diff_payload(
     })
 }
 
+pub(crate) fn plan_equivalence_payload(
+    before_result: &PlannerBuildResult,
+    after_result: &PlannerBuildResult,
+    report: &PlannerEquivalenceReport,
+) -> serde_json::Value {
+    json!({
+        "equivalent": report.equivalent,
+        "report": report,
+        "before_plan_fingerprint": before_result.plan_fingerprint,
+        "after_plan_fingerprint": after_result.plan_fingerprint,
+        "before_execution_cost_estimate": before_result.execution_cost_estimate,
+        "after_execution_cost_estimate": after_result.execution_cost_estimate,
+    })
+}
+
+fn equivalence_class_label(report: &PlannerEquivalenceReport) -> &'static str {
+    match report.equivalence_class {
+        bijux_dag_runtime::PlannerEquivalenceClass::StrictEquivalent => "strict_equivalent",
+        bijux_dag_runtime::PlannerEquivalenceClass::MetadataDriftEquivalent => {
+            "metadata_drift_equivalent"
+        }
+        bijux_dag_runtime::PlannerEquivalenceClass::NotEquivalent => "not_equivalent",
+    }
+}
+
 pub(crate) fn handle_plan_command(
     cli: &DagCli,
     command: &PlanCommands,
@@ -371,6 +396,44 @@ pub(crate) fn handle_plan_command(
                 if !diff.changed_metadata.is_empty() {
                     println!("changed_metadata: {}", diff.changed_metadata.join(", "));
                 }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        PlanCommands::Equivalence { before, after } => {
+            let before_input = read_file(before)?;
+            let before_graph = parse_graph(&before_input)?;
+            let before_result =
+                build_default_planner_analysis(&before_graph, &PlanPreviewConfig::default())
+                    .map_err(|_| ExitCode::from(3))?;
+
+            let after_input = read_file(after)?;
+            let after_graph = parse_graph(&after_input)?;
+            let after_result =
+                build_default_planner_analysis(&after_graph, &PlanPreviewConfig::default())
+                    .map_err(|_| ExitCode::from(3))?;
+
+            let report = compare_plan_equivalence(&before_result, &after_result);
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.plan.equivalence",
+                    true,
+                    plan_equivalence_payload(&before_result, &after_result, &report),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("equivalent: {}", report.equivalent);
+            println!("equivalence_class: {}", equivalence_class_label(&report));
+            println!("summary: {}", report.summary);
+            if !report.ignored_non_execution_drift.is_empty() {
+                println!(
+                    "ignored_non_execution_drift: {}",
+                    report.ignored_non_execution_drift.join(", ")
+                );
+            }
+            if !report.non_equivalence_causes.is_empty() {
+                println!("non_equivalence_causes: {}", report.non_equivalence_causes.join(", "));
             }
             Ok(ExitCode::SUCCESS)
         }
