@@ -70,6 +70,12 @@ fn node_start_to_cancellation_transition_is_allowed() {
 
 #[test]
 fn node_start_to_timeout_transition_is_classified_as_timeout_failure() {
+    assert!(validate_node_transition(&NodeTransition {
+        from: NodeState::Running,
+        to: NodeState::TimedOut,
+        cause: TransitionCause::TimeoutExceeded,
+    })
+    .is_ok());
     assert!(timeout_triggered(1_000, 1_101, Some(100)));
     assert_eq!(
         classify_failure(true, false, false, false, false, false),

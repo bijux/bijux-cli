@@ -48,6 +48,13 @@ fn cached_and_skipped_states_are_terminal_and_unambiguous() {
         cause: TransitionCause::SelectionFiltered,
     };
     assert!(validate_node_transition(&skipped_ok).is_ok());
+
+    let timed_out_ok = NodeTransition {
+        from: NodeState::Running,
+        to: NodeState::TimedOut,
+        cause: TransitionCause::TimeoutExceeded,
+    };
+    assert!(validate_node_transition(&timed_out_ok).is_ok());
 }
 
 #[test]
@@ -62,6 +69,13 @@ fn cancelled_and_failed_runs_must_be_coherent() {
     let failed_without_cause =
         verify_post_run_state_consistency(RunState::Failed, &[NodeState::Failed], 0);
     assert!(!failed_without_cause.valid);
+
+    let timed_out = verify_post_run_state_consistency(
+        RunState::Failed,
+        &[NodeState::TimedOut, NodeState::Success],
+        1,
+    );
+    assert!(timed_out.valid);
 }
 
 #[test]
