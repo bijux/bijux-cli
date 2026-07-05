@@ -64,8 +64,10 @@ fn adversarial_inline_cases_reject_path_escapes_and_weird_selector_shapes() {
 fn negative_fixtures_cover_expected_authoring_failure_classes() {
     for relative in [
         "evidence/dag/authoring/negative/cycle.json",
+        "evidence/dag/authoring/negative/invalid_container_workdir.json",
         "evidence/dag/authoring/negative/invalid_refs.json",
         "evidence/dag/authoring/negative/invalid_selectors.json",
+        "evidence/dag/authoring/negative/missing_required_input_binding.json",
         "evidence/dag/authoring/negative/undeclared_outputs.json",
         "evidence/dag/authoring/negative/unsupported_adapter_payload.json",
     ] {

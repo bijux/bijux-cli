@@ -1,0 +1,53 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "negative-missing-required-input-binding",
+    "owners": [
+      "workflow"
+    ],
+    "tags": [
+      "negative"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "emit_manifest",
+      "kind": "const",
+      "outputs": [
+        {
+          "name": "manifest",
+          "path": "emit/manifest.json"
+        }
+      ],
+      "params": {
+        "value": {
+          "ok": true
+        }
+      }
+    },
+    {
+      "id": "publish_bundle",
+      "kind": "shell",
+      "inputs": [
+        "manifest"
+      ],
+      "outputs": [
+        {
+          "name": "bundle",
+          "path": "publish/bundle.txt"
+        }
+      ],
+      "effects": [
+        "filesystem"
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "cat ../inputs/manifest > ../outputs/publish/bundle.txt"
+        ]
+      }
+    }
+  ],
+  "edges": []
+}

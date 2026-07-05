@@ -1,0 +1,40 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "missing-required-input-binding",
+    "owners": [],
+    "tags": []
+  },
+  "nodes": [
+    {
+      "id": "prepare",
+      "kind": "const",
+      "outputs": [
+        {
+          "name": "value",
+          "path": "prepare/value.json"
+        }
+      ],
+      "params": {
+        "value": "seed"
+      }
+    },
+    {
+      "id": "consume",
+      "kind": "const",
+      "inputs": [
+        "payload"
+      ],
+      "outputs": [
+        {
+          "name": "result",
+          "path": "consume/result.json"
+        }
+      ],
+      "params": {
+        "value": 1
+      }
+    }
+  ],
+  "edges": []
+}

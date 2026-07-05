@@ -196,10 +196,26 @@ fn fixture_duplicate_outputs_per_node() {
 }
 
 #[test]
+fn fixture_missing_required_input_binding() {
+    let input = fixture("missing_required_input_binding.json");
+    let graph = parse_graph_strict(&input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(has_code(&diags, "E1005"));
+}
+
+#[test]
 fn fixture_illegal_output_path_traversal() {
     let input = fixture("illegal_output_path_traversal.json");
     let error = parse_graph_strict(&input).expect_err("path traversal must be rejected");
     assert_eq!(error.to_string(), "validation failed");
+}
+
+#[test]
+fn fixture_invalid_container_workdir() {
+    let input = fixture("invalid_container_workdir.json");
+    let graph = parse_graph_strict(&input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(has_code(&diags, "E1025"));
 }
 
 #[test]
