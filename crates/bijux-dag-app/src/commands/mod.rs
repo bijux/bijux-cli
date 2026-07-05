@@ -224,6 +224,8 @@ pub(crate) enum Commands {
         cache_dir: Option<PathBuf>,
         #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
         absolute_path_policy: AbsolutePathPolicyArg,
+        #[arg(long = "from-node", action = clap::ArgAction::Append)]
+        from_node: Vec<String>,
     },
     Plan {
         #[command(subcommand)]
@@ -327,6 +329,8 @@ pub(crate) enum Commands {
         clean_env: bool,
         #[arg(long, help = HERMETIC_HELP)]
         hermetic: bool,
+        #[arg(long = "from-node", action = clap::ArgAction::Append)]
+        from_node: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
         select: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
@@ -524,6 +528,8 @@ pub(crate) enum PlanCommands {
         cache_dir: Option<PathBuf>,
         #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
         absolute_path_policy: AbsolutePathPolicyArg,
+        #[arg(long = "from-node", action = clap::ArgAction::Append)]
+        from_node: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
         select: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]

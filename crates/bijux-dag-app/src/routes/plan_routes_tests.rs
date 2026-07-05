@@ -15,6 +15,7 @@ fn explain_command(dag: PathBuf) -> PlanCommands {
         run_id: None,
         cache_dir: None,
         absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
+        from_node: Vec::new(),
         select: Vec::new(),
         exclude: Vec::new(),
         dependency_closure: false,
@@ -314,6 +315,7 @@ fn plan_explain_payload_reports_previewed_path_bindings() {
         run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
         cache_dir: Some(cache_dir),
         absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+        downstream_selection_roots: Vec::new(),
         selectors: bijux_dag_runtime::SelectorSet::default(),
         dependency_closure: false,
     };
@@ -357,6 +359,7 @@ fn plan_explain_rejects_literal_container_workdir_when_policy_denies_it() {
             run_id: Some("container-preview".to_string()),
             cache_dir: None,
             absolute_path_policy: AbsolutePathPolicyArg::DenyLiteral,
+            from_node: Vec::new(),
             select: Vec::new(),
             exclude: Vec::new(),
             dependency_closure: false,
@@ -398,6 +401,7 @@ fn plan_explain_payload_surfaces_selector_and_omission_summary() {
         run_id: None,
         cache_dir: None,
         absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+        downstream_selection_roots: Vec::new(),
         selectors: bijux_dag_runtime::SelectorSet {
             include: vec![bijux_dag_runtime::Selector::Id("b".to_string())],
             exclude: Vec::new(),
@@ -415,6 +419,34 @@ fn plan_explain_payload_surfaces_selector_and_omission_summary() {
     assert_eq!(
         payload["selection"]["omitted_nodes"],
         serde_json::json!([{ "node_id": "c", "reason": "not_selected_by_include_selector" }])
+    );
+}
+
+#[test]
+fn plan_explain_payload_surfaces_downstream_roots_and_closure_reasons() {
+    let (_tmp, dag) = write_selection_graph_fixture();
+    let raw = fs::read_to_string(dag).expect("read graph");
+    let graph = crate::parse_graph(&raw).expect("graph");
+    let preview = super::PlanPreviewConfig {
+        run_root: None,
+        run_id: None,
+        cache_dir: None,
+        absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+        downstream_selection_roots: vec!["a".to_string()],
+        selectors: bijux_dag_runtime::SelectorSet::default(),
+        dependency_closure: false,
+    };
+    let result = super::build_default_planner_analysis(&graph, &preview).expect("plan");
+    let payload = super::plan_explain_payload(&result, None, preview.absolute_path_policy);
+
+    assert_eq!(payload["selection"]["downstream_roots"], serde_json::json!(["a"]));
+    assert_eq!(payload["selection"]["requested_selectors"], serde_json::json!(["from-node:a"]));
+    assert_eq!(payload["selection"]["selected_nodes"], serde_json::json!(["a", "b"]));
+    assert_eq!(payload["nodes"][0]["reason"], "selected_by_from_node");
+    assert_eq!(payload["nodes"][1]["reason"], "selected_by_downstream_closure");
+    assert_eq!(
+        payload["selection"]["omitted_nodes"],
+        serde_json::json!([{ "node_id": "c", "reason": "not_selected_by_from_node" }])
     );
 }
 
@@ -451,6 +483,7 @@ fn plan_explain_accepts_composed_graph_fragments() {
             run_id: None,
             cache_dir: None,
             absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
+            from_node: Vec::new(),
             select: Vec::new(),
             exclude: Vec::new(),
             dependency_closure: false,

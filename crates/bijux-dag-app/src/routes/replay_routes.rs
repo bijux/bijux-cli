@@ -1,5 +1,7 @@
 use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
-use crate::graph_helpers::parse_selectors;
+use crate::graph_helpers::{
+    parse_selectors, resolve_downstream_run_selection, validate_downstream_selection_surface,
+};
 use crate::replay_cmd::ReplayCommandResponse;
 use crate::routes::policy_surface::{policy_surface_payload, replay_sandbox_scope_payload};
 use crate::routes::preconditions::{require_run_directory, require_safe_path};
@@ -19,6 +21,7 @@ fn build_replay_runtime_options(
     source_run_id: Option<String>,
     cache_mode: CacheMode,
     remote_cache_dir: Option<PathBuf>,
+    downstream_selection_roots: Vec<String>,
     selectors: bijux_dag_runtime::SelectorSet,
     dependency_closure: bool,
     materialize_inputs: MaterializeModeArg,
@@ -37,6 +40,7 @@ fn build_replay_runtime_options(
         parent_run_id: source_run_id,
         latest_symlink: None,
         policy,
+        downstream_selection_roots,
         selectors,
         partial_rerun_dependency_closure: dependency_closure,
         ..RuntimeConfig::default()
@@ -61,6 +65,7 @@ pub(crate) fn handle_replay_command(
     deny_clock: bool,
     clean_env: bool,
     hermetic: bool,
+    from_node: &[String],
     select: &[String],
     exclude: &[String],
     dependency_closure: bool,
@@ -95,7 +100,14 @@ pub(crate) fn handle_replay_command(
         deny_clock_effective = true;
         clean_env_effective = true;
     }
-    let selectors = parse_selectors(select, exclude)?;
+    validate_downstream_selection_surface(from_node, select, exclude, dependency_closure)?;
+    let (downstream_selection_roots, downstream_selected_nodes) =
+        resolve_downstream_run_selection(&snapshot.graph, from_node)?;
+    let selectors = if downstream_selection_roots.is_empty() {
+        parse_selectors(select, exclude)?
+    } else {
+        bijux_dag_runtime::SelectorSet::default()
+    };
     let options = build_replay_runtime_options(
         jobs,
         cpu_budget,
@@ -103,6 +115,7 @@ pub(crate) fn handle_replay_command(
         source_run_id.clone(),
         cache_mode.clone(),
         remote_cache_dir,
+        downstream_selection_roots.clone(),
         selectors.clone(),
         dependency_closure,
         materialize_inputs,
@@ -121,6 +134,8 @@ pub(crate) fn handle_replay_command(
             out,
             &snapshot,
             source_run_id.as_deref(),
+            &downstream_selection_roots,
+            &downstream_selected_nodes,
             &dry_select,
             &dry_exclude,
             &format!("{cache_mode:?}"),
@@ -238,6 +253,7 @@ mod tests {
             Some("source-run".to_string()),
             crate::CacheMode::ReadWrite,
             Some(PathBuf::from("/tmp/remote-cache")),
+            vec!["transform".to_string()],
             selectors.clone(),
             true,
             MaterializeModeArg::Symlink,
@@ -254,6 +270,7 @@ mod tests {
         assert_eq!(options.run_id.as_deref(), Some("replay-run"));
         assert_eq!(options.parent_run_id.as_deref(), Some("source-run"));
         assert!(options.partial_rerun_dependency_closure);
+        assert_eq!(options.downstream_selection_roots, vec!["transform".to_string()]);
         assert_eq!(options.selectors.include.len(), selectors.include.len());
         assert_eq!(options.selectors.exclude.len(), selectors.exclude.len());
         assert!(matches!(options.materialize_inputs, bijux_dag_runtime::MaterializeMode::Symlink));

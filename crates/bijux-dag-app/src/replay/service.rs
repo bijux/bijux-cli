@@ -136,6 +136,8 @@ pub(crate) fn replay_dry_run_plan(
     out: &Path,
     snapshot: &crate::run_data::GraphSnapshot,
     source_run_id: Option<&str>,
+    downstream_selection_roots: &[String],
+    selected_node_ids: &[String],
     selectors_include: &[String],
     selectors_exclude: &[String],
     cache_mode: &str,
@@ -154,7 +156,9 @@ pub(crate) fn replay_dry_run_plan(
     }
     let mut planned_actions = Vec::new();
     for node_id in node_ids {
-        let selected = if selectors_include.is_empty() {
+        let selected = if !downstream_selection_roots.is_empty() {
+            selected_node_ids.iter().any(|selected| selected == &node_id)
+        } else if selectors_include.is_empty() {
             true
         } else {
             selectors_include.iter().any(|selector| selector == &node_id)
@@ -170,8 +174,14 @@ pub(crate) fn replay_dry_run_plan(
             && material.node_outputs.contains_key(&node_id);
         let (action, reason) = if sandbox && target_inside_source {
             ("forbid", "sandbox forbids writing inside the source run directory")
-        } else if excluded || !selected {
+        } else if excluded {
             ("skip", "node excluded from replay selector set")
+        } else if !selected && !downstream_selection_roots.is_empty() {
+            ("skip", "node lies outside the requested downstream rerun closure")
+        } else if !selected {
+            ("skip", "node excluded from replay selector set")
+        } else if !downstream_selection_roots.is_empty() {
+            ("reexecute", "node lies inside the requested downstream rerun closure")
         } else if cache_mode != "Off" && matches!(status, Some("cached")) {
             ("cache", "node was cached in the source run and cache reuse is enabled")
         } else if sandbox && evidence_complete && matches!(status, Some("success" | "cached")) {
@@ -203,6 +213,8 @@ pub(crate) fn replay_dry_run_plan(
             None
         },
         "selectors": {
+            "downstream_roots": downstream_selection_roots,
+            "selected_node_ids": selected_node_ids,
             "select": selectors_include,
             "exclude": selectors_exclude,
         },
@@ -1158,6 +1170,8 @@ mod tests {
             Some("source-run"),
             &Vec::new(),
             &Vec::new(),
+            &Vec::new(),
+            &Vec::new(),
             "Read",
             1,
             false,
@@ -1166,5 +1180,91 @@ mod tests {
         .expect("dry run plan");
         assert_eq!(plan["sandbox_mode"], "isolated");
         assert_eq!(plan["planned_actions"][0]["action"], "forbid");
+    }
+
+    #[test]
+    fn replay_dry_run_plan_reexecutes_requested_downstream_closure() {
+        let tmp = tempfile::tempdir().expect("temp dir");
+        let run_dir = tmp.path().join("source");
+        fs::create_dir_all(run_dir.join("nodes/source/outputs")).expect("source outputs");
+        fs::create_dir_all(run_dir.join("nodes/branch/outputs")).expect("branch outputs");
+        fs::create_dir_all(run_dir.join("nodes/sink/outputs")).expect("sink outputs");
+        fs::create_dir_all(run_dir.join("outputs")).expect("run outputs");
+        write(&run_dir.join("manifest.json"), r#"{"status":"completed","policy":{}}"#);
+        write(&run_dir.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
+        write(&run_dir.join("outputs/index.json"), r#"{"files":[]}"#);
+        write(
+            &run_dir.join("nodes/source/trace.json"),
+            r#"{"status":"success","adapter_id":"const","evidence_fingerprint":"e-source"}"#,
+        );
+        write(
+            &run_dir.join("nodes/source/outputs/index.json"),
+            r#"{"files":[{"node_id":"source","node_fingerprint":"fp-source","name":"out","kind":"file","media_type":"application/octet-stream","sha256":"1","path":"nodes/source/outputs/out"}]}"#,
+        );
+        write(
+            &run_dir.join("nodes/branch/trace.json"),
+            r#"{"status":"cached","adapter_id":"const","evidence_fingerprint":"e-branch"}"#,
+        );
+        write(
+            &run_dir.join("nodes/branch/outputs/index.json"),
+            r#"{"files":[{"node_id":"branch","node_fingerprint":"fp-branch","name":"out","kind":"file","media_type":"application/octet-stream","sha256":"2","path":"nodes/branch/outputs/out"}]}"#,
+        );
+        write(
+            &run_dir.join("nodes/sink/trace.json"),
+            r#"{"status":"success","adapter_id":"const","evidence_fingerprint":"e-sink"}"#,
+        );
+        write(
+            &run_dir.join("nodes/sink/outputs/index.json"),
+            r#"{"files":[{"node_id":"sink","node_fingerprint":"fp-sink","name":"out","kind":"file","media_type":"application/octet-stream","sha256":"3","path":"nodes/sink/outputs/out"}]}"#,
+        );
+        let snapshot = GraphSnapshot {
+            graph: serde_json::from_value::<Graph>(json!({
+                "spec":"bijux-dag/v0.1",
+                "meta":{"name":"g","owners":[],"tags":[]},
+                "nodes":[
+                    {"id":"source","kind":"const","outputs":[{"name":"out","path":"source/out"}],"params":{}},
+                    {"id":"branch","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"branch/out"}],"params":{}},
+                    {"id":"sink","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"sink/out"}],"params":{}}
+                ],
+                "edges":[
+                    {"from":{"node_id":"source","port":"out"},"to":{"node_id":"branch","port":"in"}},
+                    {"from":{"node_id":"branch","port":"out"},"to":{"node_id":"sink","port":"in"}}
+                ]
+            }))
+            .expect("graph"),
+            graph_fingerprint: "fp-1".to_string(),
+        };
+        let plan = replay_dry_run_plan(
+            &run_dir,
+            &tmp.path().join("replay"),
+            &snapshot,
+            Some("source-run"),
+            &["branch".to_string()],
+            &["branch".to_string(), "sink".to_string()],
+            &Vec::new(),
+            &Vec::new(),
+            "Read",
+            1,
+            false,
+            false,
+        )
+        .expect("dry run plan");
+        assert_eq!(plan["selectors"]["downstream_roots"], serde_json::json!(["branch"]));
+        assert_eq!(plan["selectors"]["selected_node_ids"], serde_json::json!(["branch", "sink"]));
+        let actions = plan["planned_actions"].as_array().expect("planned actions");
+        assert_eq!(
+            actions.iter().find(|entry| entry["node_id"] == "source").expect("source action")
+                ["action"],
+            "skip"
+        );
+        assert_eq!(
+            actions.iter().find(|entry| entry["node_id"] == "branch").expect("branch action")
+                ["action"],
+            "reexecute"
+        );
+        assert_eq!(
+            actions.iter().find(|entry| entry["node_id"] == "sink").expect("sink action")["action"],
+            "reexecute"
+        );
     }
 }

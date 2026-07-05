@@ -1,5 +1,7 @@
 use crate::commands::{AbsolutePathPolicyArg, DagCli, PlanCommands};
-use crate::graph_helpers::parse_selectors;
+use crate::graph_helpers::{
+    parse_selectors, resolve_downstream_run_selection, validate_downstream_selection_surface,
+};
 use crate::routes::preconditions::require_safe_path;
 use crate::{emit_json, load_graphs_or_emit, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::RunDirLayout;
@@ -17,6 +19,7 @@ pub(crate) struct PlanPreviewConfig {
     pub run_id: Option<String>,
     pub cache_dir: Option<PathBuf>,
     pub absolute_path_policy: AbsolutePathPolicy,
+    pub downstream_selection_roots: Vec<String>,
     pub selectors: SelectorSet,
     pub dependency_closure: bool,
 }
@@ -28,6 +31,7 @@ impl Default for PlanPreviewConfig {
             run_id: None,
             cache_dir: None,
             absolute_path_policy: AbsolutePathPolicy::AllowLiteral,
+            downstream_selection_roots: Vec::new(),
             selectors: SelectorSet::default(),
             dependency_closure: false,
         }
@@ -49,6 +53,7 @@ pub(crate) fn default_analysis_runtime_config(preview: &PlanPreviewConfig) -> Ru
         run_id: preview.run_id.clone(),
         cache_dir: preview.cache_dir.clone(),
         absolute_path_policy: preview.absolute_path_policy,
+        downstream_selection_roots: preview.downstream_selection_roots.clone(),
         selectors: preview.selectors.clone(),
         partial_rerun_dependency_closure: preview.dependency_closure,
         ..RuntimeConfig::default()
@@ -113,10 +118,12 @@ pub(crate) fn plan_explain_payload(
         .annotations
         .iter()
         .filter(|annotation| !annotation.selected)
-        .map(|annotation| json!({
-            "node_id": annotation.node_id,
-            "reason": annotation.reason,
-        }))
+        .map(|annotation| {
+            json!({
+                "node_id": annotation.node_id,
+                "reason": annotation.reason,
+            })
+        })
         .collect::<Vec<_>>();
     selected_nodes.sort();
     omitted_nodes.sort_by(|left, right| {
@@ -132,6 +139,12 @@ pub(crate) fn plan_explain_payload(
         "absolute_path_policy": absolute_path_policy,
         "selection": {
             "requested_selectors": result.plan.requested_selectors,
+            "downstream_roots": result
+                .plan
+                .requested_selectors
+                .iter()
+                .filter_map(|value| value.strip_prefix("from-node:"))
+                .collect::<Vec<_>>(),
             "dependency_closure_enabled": result.plan.dependency_closure_enabled,
             "selected_nodes": selected_nodes,
             "omitted_nodes": omitted_nodes,
@@ -161,18 +174,27 @@ pub(crate) fn handle_plan_command(
             run_id,
             cache_dir,
             absolute_path_policy,
+            from_node,
             select,
             exclude,
             dependency_closure,
         } => {
             let graph = load_graphs_or_emit(cli, "dag.plan.explain", dags)?;
-            let selectors = parse_selectors(select, exclude)?;
+            validate_downstream_selection_surface(from_node, select, exclude, *dependency_closure)?;
+            let (downstream_selection_roots, _) =
+                resolve_downstream_run_selection(&graph, from_node)?;
+            let selectors = if downstream_selection_roots.is_empty() {
+                parse_selectors(select, exclude)?
+            } else {
+                SelectorSet::default()
+            };
             let preview_layout = resolve_plan_preview_layout(out.as_deref(), run_id.as_deref())?;
             let preview = PlanPreviewConfig {
                 run_root: out.clone(),
                 run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
                 cache_dir: cache_dir.clone(),
                 absolute_path_policy: (*absolute_path_policy).into(),
+                downstream_selection_roots,
                 selectors,
                 dependency_closure: *dependency_closure,
             };
