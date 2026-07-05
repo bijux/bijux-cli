@@ -230,9 +230,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 *explain,
             )
         }
-        Commands::Canonicalize { dag } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::Canonicalize { dags } => {
+            let graph = load_graphs_or_emit(&cli, "dag.canonicalize", dags)?;
             let json = graph.to_canonical_json().map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
@@ -247,10 +246,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", json);
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Lint { dag, strict } => {
+        Commands::Lint { dags, strict } => {
             let strict = *strict;
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+            let graph = load_graphs_or_emit(&cli, "dag.lint", dags)?;
             let lint = lint_graph(&graph);
             let has_warnings = !lint.is_empty();
             if cli.json {
@@ -276,9 +274,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::GraphLint { dag, strict } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::GraphLint { dags, strict } => {
+            let graph = load_graphs_or_emit(&cli, "dag.graph-lint", dags)?;
             let lint = lint_graph(&graph);
             let has_warnings = !lint.is_empty();
             if cli.json {
@@ -303,9 +300,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Fingerprint { dag, explain } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::Fingerprint { dags, explain } => {
+            let graph = load_graphs_or_emit(&cli, "dag.fingerprint", dags)?;
             let explained = graph.graph_fingerprint_explain().map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
@@ -332,9 +328,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Commands::Hash { command } => match command {
-            HashCommands::Graph { dag, explain } => {
-                let input = read_file(dag)?;
-                let graph = parse_graph(&input)?;
+            HashCommands::Graph { dags, explain } => {
+                let graph = load_graphs_or_emit(&cli, "dag.hash.graph", dags)?;
                 let explained = graph.graph_fingerprint_explain().map_err(|_| ExitCode::from(3))?;
                 if cli.json {
                     return emit_json(
@@ -455,9 +450,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Release { command } => {
             routes::release_routes::handle_release_command(&cli, command)
         }
-        Commands::CanonicalBytes { dag } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::CanonicalBytes { dags } => {
+            let graph = load_graphs_or_emit(&cli, "dag.canonical-bytes", dags)?;
             let bytes = graph.canonical_json_bytes().map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
@@ -503,9 +497,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::ShowEffectiveGraph { dag } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::ShowEffectiveGraph { dags } => {
+            let graph = load_graphs_or_emit(&cli, "dag.show-effective-graph", dags)?;
             let canonical = graph.canonicalize();
             let payload = serde_json::to_value(&canonical).map_err(|_| ExitCode::from(3))?;
             if cli.json {
@@ -562,9 +555,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Runtime { command } => {
             routes::runtime_routes::handle_runtime_command(&cli, command)
         }
-        Commands::Graph { dag, format } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::Graph { dags, format } => {
+            let graph = load_graphs_or_emit(&cli, "dag.graph", dags)?;
             match format {
                 GraphFormatArg::Dot => {
                     let dot = graph_to_dot(&graph);

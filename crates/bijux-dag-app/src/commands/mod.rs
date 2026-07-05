@@ -98,21 +98,25 @@ pub(crate) enum Commands {
         explain: bool,
     },
     Canonicalize {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
     },
     Lint {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         strict: bool,
     },
     #[command(name = "graph-lint")]
     GraphLint {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         strict: bool,
     },
     Fingerprint {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         explain: bool,
     },
@@ -191,13 +195,15 @@ pub(crate) enum Commands {
         command: ReleaseCommands,
     },
     CanonicalBytes {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
     },
     CanonicalDiff {
         dag: PathBuf,
     },
     ShowEffectiveGraph {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
     },
     #[command(name = "explain-plan", alias = "show-effective-plan")]
     ExplainPlan {
@@ -329,7 +335,8 @@ pub(crate) enum Commands {
         run_dir: PathBuf,
     },
     Graph {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long, value_enum, default_value_t = GraphFormatArg::Dot)]
         format: GraphFormatArg,
     },
@@ -480,7 +487,8 @@ pub(crate) enum Commands {
 #[derive(Subcommand)]
 pub(crate) enum HashCommands {
     Graph {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         explain: bool,
     },
