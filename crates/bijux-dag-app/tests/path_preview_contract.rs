@@ -82,6 +82,7 @@ fn plan_explain_json_reports_previewed_run_layout_and_paths() {
         resolved_paths[0]["resolved_path"],
         output_path_string(&out_dir.join("run.tmp-preview-shell/nodes/const/outputs/result.txt"))
     );
+    assert!(payload["data"]["path_previews"][0]["resolved_argv"].is_null());
 }
 
 #[test]
@@ -116,4 +117,5 @@ fn run_json_reuses_previewed_run_layout_for_execution_and_scheduling() {
         payload["data"]["scheduling"]["path_previews"][0]["resolved_paths"][0]["resolved_path"],
         output_path_string(&out_dir.join("run.tmp-executed-shell/nodes/const/outputs/result.txt"))
     );
+    assert!(payload["data"]["scheduling"]["path_previews"][0]["resolved_argv"].is_null());
 }

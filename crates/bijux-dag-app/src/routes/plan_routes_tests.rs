@@ -306,11 +306,21 @@ fn plan_explain_payload_reports_previewed_path_bindings() {
     let resolved_paths = payload["path_previews"][0]["resolved_paths"]
         .as_array()
         .expect("resolved paths");
+    let resolved_argv = payload["path_previews"][0]["resolved_argv"]
+        .as_array()
+        .expect("resolved argv");
     assert_eq!(resolved_paths.len(), 2);
+    assert_eq!(resolved_argv.len(), 3);
     assert_eq!(resolved_paths[0]["expression"], "{inputs_dir}/seed.txt");
     assert!(resolved_paths[0]["resolved_path"]
         .as_str()
         .is_some_and(|value| value.contains("/run.tmp-previewed/nodes/shell-copy/inputs/seed.txt")));
+    assert!(resolved_argv[1]
+        .as_str()
+        .is_some_and(|value| value.contains("/run.tmp-previewed/nodes/shell-copy/inputs/seed.txt")));
+    assert!(resolved_argv[2]
+        .as_str()
+        .is_some_and(|value| value.contains("/run.tmp-previewed/nodes/shell-copy/outputs/result.txt")));
 }
 
 #[test]
