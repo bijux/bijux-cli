@@ -81,9 +81,10 @@ pub use config_surface::{
 };
 pub use integrity_service::inspect_artifact;
 pub use run_views::{
-    doctor_run, explain_failure, explain_run_id, format_inspect_human, format_show_human,
-    inspect_summary, list_runs, resolve_run_dir, run_timeline, run_tree, runs_compare,
-    runs_failures, runs_flakes, runs_history, runs_history_query, runs_summary, runs_trend,
+    doctor_run, explain_failure, explain_run_id, format_inspect_human, format_run_completion_human,
+    format_show_human, inspect_summary, list_runs, resolve_run_dir, run_completion_summary,
+    run_timeline, run_tree, runs_compare, runs_failures, runs_flakes, runs_history,
+    runs_history_query, runs_summary, runs_trend,
 };
 
 /// Explicit long-lived command embedding and response-shaping surface.

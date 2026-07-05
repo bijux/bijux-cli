@@ -13,7 +13,9 @@ use crate::routes::policy_surface::{cache_surface_payload, policy_surface_payloa
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::run_data::map_materialize_mode;
 use crate::runtime_inputs::{bind_runtime_inputs, missing_required_graph_inputs};
-use crate::{emit_json, load_graphs_or_emit, ExitCode};
+use crate::{
+    emit_json, format_run_completion_human, load_graphs_or_emit, run_completion_summary, ExitCode,
+};
 use bijux_dag_runtime::{
     build_planner_analysis, registered_adapters, CacheMode, PlannerGuardrails, RunTimeoutBehavior,
     Runtime, RuntimeConfig,
@@ -130,12 +132,20 @@ fn load_resume_summary(run_dir: &Path) -> Option<bijux_dag_runtime::ResumeSummar
 fn emit_run_execution_error(
     cli: &DagCli,
     message: &str,
+    completion_summary: Option<&serde_json::Value>,
+    run_dir: Option<&Path>,
     payload: serde_json::Value,
 ) -> Result<ExitCode, ExitCode> {
     if cli.json {
         return emit_json(cli, "dag.run", false, payload, Vec::new(), ExitCode::from(3));
     }
     eprintln!("{message}");
+    if let Some(summary) = completion_summary {
+        eprintln!("{}", format_run_completion_human(summary));
+    }
+    if let Some(path) = run_dir {
+        eprintln!("run dir: {}", path.display());
+    }
     Err(ExitCode::from(3))
 }
 
@@ -287,19 +297,30 @@ pub(crate) fn handle_run_command(
             let resume_summary = preview_layout
                 .as_ref()
                 .and_then(|layout| load_resume_summary(&layout.staging_path));
+            let completion_summary = preview_layout.as_ref().and_then(|layout| {
+                if layout.staging_path.exists() {
+                    run_completion_summary(&layout.staging_path).ok()
+                } else {
+                    None
+                }
+            });
             return emit_run_execution_error(
                 cli,
                 &error.to_string(),
+                completion_summary.as_ref(),
+                preview_layout.as_ref().map(|layout| layout.staging_path.as_path()),
                 json!({
                     "error": error.to_string(),
                     "error_class": "runtime",
                     "run_layout": preview_layout,
                     "resume_summary": resume_summary,
+                    "summary": completion_summary,
                 }),
             );
         }
     };
     let resume_summary = load_resume_summary(&run_path);
+    let completion_summary = run_completion_summary(&run_path).map_err(|_| ExitCode::from(3))?;
 
     if cli.json {
         return emit_json(
@@ -311,6 +332,7 @@ pub(crate) fn handle_run_command(
                 "cache": cache_surface,
                 "run_layout": preview_layout,
                 "resume_summary": resume_summary,
+                "summary": completion_summary,
                 "scheduling": scheduling
                     .as_ref()
                     .map(|result| {
@@ -345,6 +367,7 @@ pub(crate) fn handle_run_command(
                 summary.rejected_nodes.len(),
             );
         }
+        println!("{}", format_run_completion_human(&completion_summary));
         println!("run dir: {}", run_path.display());
     }
     Ok(ExitCode::SUCCESS)
