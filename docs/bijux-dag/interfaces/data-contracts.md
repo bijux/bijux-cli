@@ -98,6 +98,28 @@ Optional outputs stay declared and observable instead of silently disappearing:
 Run traces record whether each declared output was present, along with the
 resolved media type and sha256 digest for materialized outputs.
 
+## Input Materialization Contract
+
+Downstream node inputs are materialized into a stable per-node directory:
+
+- `nodes/<node_id>/inputs/<source_node_id>/<input_port>`
+- `nodes/<node_id>/inputs/index.json`
+
+The index is execution evidence, not an incidental helper file. Each entry
+records:
+
+- `local_path`: the materialized path relative to the node input root
+- `source_node_id`: the upstream node that produced the input
+- `source_node_fingerprint`: the resolved upstream node fingerprint
+- `source_output_name`: the upstream output contract name
+- `source_sha256`: the upstream artifact digest
+- `materialization_mode`: `copy`, `hardlink`, or `symlink`
+
+The runtime verifies that the materialized input matches the recorded upstream
+digest before execution proceeds. That keeps the input index honest across all
+supported materialization modes and makes downstream cache identity depend on
+the actual upstream content that was wired into the node.
+
 ### Reference Shapes
 
 Graph params can bind to graph inputs:

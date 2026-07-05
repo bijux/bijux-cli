@@ -32,6 +32,18 @@ flowchart LR
 - config command surfaces (`config ...`, `policy ...`)
 - environment and path resolution inputs where applicable
 
+### Input Materialization Modes
+
+`run --materialize-inputs` and `replay --materialize-inputs` currently support:
+
+- `copy`: duplicate the upstream file or directory into the downstream input tree
+- `hardlink`: reuse the upstream file inode when the filesystem supports it, with copy fallback
+- `symlink`: create a symbolic link when supported, with copy fallback
+
+All three modes still record the same upstream source digest in
+`nodes/<node_id>/inputs/index.json`, so downstream cache identity follows the
+materialized content rather than relying on ambient filesystem assumptions.
+
 ## Workflow Input Binding
 
 Runtime workflow inputs are bound at `run` time so the same DAG file can be
