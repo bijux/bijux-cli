@@ -45,6 +45,10 @@ pub struct Graph {
     pub inputs: BTreeMap<String, GraphInputSpec>,
     #[serde(default)]
     pub nondeterminism_allowed: bool,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub subgraphs: BTreeMap<String, SubgraphDefinition>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub subgraph_instances: Vec<SubgraphInstance>,
     pub nodes: Vec<Node>,
     pub edges: Vec<Edge>,
 }
@@ -69,6 +73,23 @@ impl Graph {
             .map(|(input_name, spec)| (input_name.clone(), spec.schema_json()))
             .collect()
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SubgraphDefinition {
+    pub graph: Graph,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub outputs: BTreeMap<String, NodeOutputRef>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SubgraphInstance {
+    pub id: String,
+    pub subgraph: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub input_bindings: BTreeMap<String, ParamValue>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

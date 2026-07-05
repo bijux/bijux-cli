@@ -105,6 +105,8 @@ impl Graph {
             meta: self.meta.clone(),
             inputs,
             nondeterminism_allowed: self.nondeterminism_allowed,
+            subgraphs: self.subgraphs.clone(),
+            subgraph_instances: self.subgraph_instances.clone(),
             nodes,
             edges,
         }

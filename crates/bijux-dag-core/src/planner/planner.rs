@@ -242,6 +242,8 @@ fn to_planned_nodes(nodes: &[Node], edges: &[Edge]) -> Vec<PlannedNode> {
         meta: None,
         inputs: Default::default(),
         nondeterminism_allowed: false,
+        subgraphs: Default::default(),
+        subgraph_instances: Vec::new(),
         nodes: nodes.to_vec(),
         edges: edges.to_vec(),
     };

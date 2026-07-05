@@ -98,6 +98,8 @@ fn topo_order_is_dependency_sensitive() {
         meta: None,
         inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
+        subgraphs: std::collections::BTreeMap::new(),
+        subgraph_instances: Vec::new(),
         nodes: vec![
             build_node("a", vec![], "out"),
             build_node("b", vec!["in".to_string()], "out"),
@@ -245,6 +247,8 @@ fn base_graph() -> Graph {
         }),
         inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
+        subgraphs: std::collections::BTreeMap::new(),
+        subgraph_instances: Vec::new(),
         nodes,
         edges: vec![Edge {
             id: None,
@@ -292,6 +296,8 @@ fn graph_for_code(code: &str) -> Graph {
                 meta: None,
                 inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
+                subgraphs: std::collections::BTreeMap::new(),
+                subgraph_instances: Vec::new(),
                 nodes: vec![
                     build_node("a", vec![], "out"),
                     build_node("b", vec!["in".to_string()], "out"),
@@ -396,6 +402,8 @@ fn graph_for_code(code: &str) -> Graph {
                 meta: None,
                 inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
+                subgraphs: std::collections::BTreeMap::new(),
+                subgraph_instances: Vec::new(),
                 nodes: vec![
                     build_node("source", vec!["in".to_string()], "out"),
                     build_node("sink", vec!["in".to_string()], "out"),
@@ -464,6 +472,8 @@ fn graph_for_code(code: &str) -> Graph {
                 meta: None,
                 inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
+                subgraphs: std::collections::BTreeMap::new(),
+                subgraph_instances: Vec::new(),
                 nodes: vec![
                     Node {
                         id: "branch".to_string(),
@@ -510,6 +520,8 @@ fn graph_for_code(code: &str) -> Graph {
                 meta: None,
                 inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
+                subgraphs: std::collections::BTreeMap::new(),
+                subgraph_instances: Vec::new(),
                 nodes: vec![
                     Node {
                         id: "branch".to_string(),
@@ -589,6 +601,8 @@ fn graph_for_code(code: &str) -> Graph {
                 meta: None,
                 inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
+                subgraphs: std::collections::BTreeMap::new(),
+                subgraph_instances: Vec::new(),
                 nodes: vec![
                     build_node("source", vec![], "out"),
                     build_node("orphan", vec!["in".to_string()], "out"),
@@ -654,6 +668,8 @@ fn chain_graph(len: usize) -> Graph {
         meta: None,
         inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
+        subgraphs: std::collections::BTreeMap::new(),
+        subgraph_instances: Vec::new(),
         nodes,
         edges,
     }

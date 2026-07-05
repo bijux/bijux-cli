@@ -129,7 +129,7 @@ pub use model::{
     Edge, EdgeKind, Effect, FileOutput, Graph, GraphFingerprintExplain, GraphId, GraphMeta, Node,
     NodeKind, NodeOutputRef, OutputKind, OutputSpec, ParamValue, PathVarBinding, PathVarRef,
     PortRef, RefSpec, ResolvedGraph, Resources, RetryPolicy, SemanticNodeKind, Severity,
-    TriggerRule, ValidationDiagnostic, PATH_VARIABLE_NAMES,
+    SubgraphDefinition, SubgraphInstance, TriggerRule, ValidationDiagnostic, PATH_VARIABLE_NAMES,
 };
 pub use node::{
     derive_interface, node_input_bindings, node_io_contract, NodeEnvBinding, NodeInputBinding,

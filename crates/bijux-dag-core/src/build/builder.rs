@@ -2,7 +2,7 @@ use crate::compile::{compile_graph, DagCompileResult};
 use crate::{
     parse_graph_strict, BranchSpec, Edge, EdgeKind, Effect, FileOutput, Graph, GraphInputSpec,
     GraphMeta, Node, NodeKind, ParamValue, PortRef, Resources, RetryPolicy, SemanticNodeKind,
-    TriggerRule,
+    SubgraphDefinition, SubgraphInstance, TriggerRule,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -29,6 +29,8 @@ pub struct DagBuilder {
     meta: Option<GraphMeta>,
     inputs: BTreeMap<String, GraphInputSpec>,
     nondeterminism_allowed: bool,
+    subgraphs: BTreeMap<String, SubgraphDefinition>,
+    subgraph_instances: Vec<SubgraphInstance>,
     nodes: Vec<Node>,
     edges: Vec<Edge>,
 }
@@ -55,6 +57,20 @@ impl DagBuilder {
         self
     }
 
+    pub fn subgraph_definition(
+        mut self,
+        name: &str,
+        definition: SubgraphDefinition,
+    ) -> Self {
+        self.subgraphs.insert(name.to_string(), definition);
+        self
+    }
+
+    pub fn subgraph_instance(mut self, instance: SubgraphInstance) -> Self {
+        self.subgraph_instances.push(instance);
+        self
+    }
+
     pub fn node(mut self, node: Node) -> Self {
         self.nodes.push(node);
         self
@@ -77,6 +93,8 @@ impl DagBuilder {
             meta: self.meta,
             inputs: self.inputs,
             nondeterminism_allowed: self.nondeterminism_allowed,
+            subgraphs: self.subgraphs,
+            subgraph_instances: self.subgraph_instances,
             nodes: self.nodes,
             edges: self.edges,
         }
