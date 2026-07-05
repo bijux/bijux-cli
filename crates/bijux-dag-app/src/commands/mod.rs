@@ -36,6 +36,8 @@ const HERMETIC_HELP: &str =
     "enable the best-effort local policy profile by forcing --deny-network, --deny-clock, and --clean-env; this does not claim syscall sandboxing or host filesystem isolation";
 const REPLAY_SANDBOX_HELP: &str =
     "forbid replay outputs from being written inside the source run directory; this is a write-boundary check, not a process sandbox";
+const ROOT_HELP_BOUNDARY_HELP: &str =
+    "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: explicit-path routes such as init, status, export, import, policy, prove, and migrate\n  simulated: control-plane, state-store, dataset, enterprise, fleet, federation, incident, and lab\n  internal: security, durability, performance, release, runtime, schedule, capabilities, and version-inspect\n  future: kubernetes, slurm or hpc, remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands --all` to inventory repository-owned non-stable routes.";
 
 pub(crate) fn root_command_hidden_from_public_help(name: &str) -> bool {
     !PUBLIC_ROOT_COMMANDS.contains(&name)
@@ -72,8 +74,9 @@ pub(crate) fn hide_non_public_help(mut command: Command, prefix: &str) -> Comman
 
 #[derive(Parser)]
 #[command(
-    about = "Validate, run, replay, and inspect reproducible computation graphs",
-    long_about = None
+    about = "Validate, run, replay, explain, and compare reproducible computation graphs",
+    long_about = None,
+    after_help = ROOT_HELP_BOUNDARY_HELP
 )]
 pub(crate) struct DagCli {
     #[arg(long, global = true)]
