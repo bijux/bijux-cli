@@ -102,6 +102,9 @@ fn dag_release_truth_table_contract_is_current() {
     assert!(!truth_table.internal_surface.summary.trim().is_empty());
     assert!(!truth_table.future_surface.summary.trim().is_empty());
     assert!(!truth_table.future_surface.capabilities.is_empty());
+    assert!(truth_table.simulated_surface.summary.contains("BIJUX_DAG_ENABLE_SIMULATED=1"));
+    assert!(truth_table.internal_surface.summary.contains("BIJUX_DAG_ENABLE_INTERNAL=1"));
+    assert!(truth_table.simulated_surface.root_commands.contains(&"governance".to_string()));
 }
 
 #[test]
@@ -126,6 +129,8 @@ fn dag_root_help_matches_stable_release_boundary() {
         &[
             "v0.4.0 surface truth table:",
             "stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands",
+            "BIJUX_DAG_ENABLE_SIMULATED=1",
+            "BIJUX_DAG_ENABLE_INTERNAL=1",
             "Use `bijux-dag commands --all` to inventory repository-owned non-stable routes.",
         ],
         "bijux-dag --help",
@@ -144,6 +149,8 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         &[
             "### `bijux-dag` v0.4.0 Surface Truth Table",
             "contracts/foundation/dag_release_truth_table.v1.json",
+            "BIJUX_DAG_ENABLE_SIMULATED=1",
+            "BIJUX_DAG_ENABLE_INTERNAL=1",
         ],
         "README.md",
     );
@@ -154,12 +161,25 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
     );
     assert_contains_all(
         &cli_surface,
-        &["## v0.4.0 Surface Truth Table", "../foundation/release-boundary.md"],
+        &[
+            "## v0.4.0 Surface Truth Table",
+            "../foundation/release-boundary.md",
+            "BIJUX_DAG_ENABLE_SIMULATED=1",
+            "BIJUX_DAG_ENABLE_INTERNAL=1",
+        ],
         "docs/bijux-dag/interfaces/cli-surface.md",
     );
     assert_contains_all(
         &release_boundary,
-        &["| stable |", "| experimental |", "| simulated |", "| internal |", "| future |"],
+        &[
+            "| stable |",
+            "| experimental |",
+            "| simulated |",
+            "| internal |",
+            "| future |",
+            "BIJUX_DAG_ENABLE_SIMULATED=1",
+            "BIJUX_DAG_ENABLE_INTERNAL=1",
+        ],
         "docs/bijux-dag/foundation/release-boundary.md",
     );
 
@@ -191,7 +211,11 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
     let release_binary = read_repo_file("docs/spec/RELEASE_BINARY_VERIFICATION.md");
     assert_contains_all(
         &release_binary,
-        &["internal probe (`capabilities`)", "bijux-dag explain --json ${RUN_DIR}"],
+        &[
+            "internal probe (`capabilities`)",
+            "BIJUX_DAG_ENABLE_INTERNAL=1 bijux-dag capabilities --json",
+            "bijux-dag explain --json ${RUN_DIR}",
+        ],
         "docs/spec/RELEASE_BINARY_VERIFICATION.md",
     );
 }
