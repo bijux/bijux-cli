@@ -88,6 +88,11 @@ mod tests {
         .expect("parse inputs index")
     }
 
+    fn read_run_attempts(run_dir: &Path) -> Vec<RunAttempt> {
+        serde_json::from_str(&fs::read_to_string(run_dir.join("run.attempts.json")).expect("read attempts"))
+            .expect("parse attempts")
+    }
+
     #[derive(Clone)]
     struct InterceptFs {
         inner: StdFs,
@@ -2009,6 +2014,135 @@ exit 1
         let second_manifest = fs::read_to_string(second.join("manifest.json")).unwrap();
         assert_eq!(first_manifest, first_manifest_after);
         assert_ne!(first_manifest_after, second_manifest);
+    }
+
+    #[test]
+    fn resume_reuses_completed_nodes_and_records_attempt_summary() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let initial = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    run_id: Some("resume-ready".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
+
+        let resumed = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    resume_run_id: Some("resume-ready".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
+
+        assert_eq!(resumed, initial);
+        let attempts = read_run_attempts(&resumed);
+        assert_eq!(attempts.len(), 2);
+        let latest = attempts.last().expect("latest attempt");
+        assert_eq!(latest.reason, "resume");
+        let summary = latest.resume_summary.as_ref().expect("resume summary");
+        assert_eq!(summary.reused_nodes, vec!["a", "b", "c", "d"]);
+        assert!(summary.rerun_nodes.is_empty());
+        assert!(summary.rejected_nodes.is_empty());
+
+        let run_log = fs::read_to_string(resumed.join("run.log.jsonl")).unwrap();
+        assert!(run_log.contains("\"event\":\"run_resumed\""));
+        assert!(run_log.contains("\"event\":\"node_resume_reused\""));
+    }
+
+    #[test]
+    fn resume_reruns_corrupt_nodes_and_clears_stale_outputs() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let initial = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    run_id: Some("resume-corrupt".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
+
+        fs::write(initial.join("nodes").join("b").join("outputs").join("out_b"), "tampered\n")
+            .unwrap();
+        fs::create_dir_all(initial.join("nodes").join("d").join("outputs")).unwrap();
+        fs::write(initial.join("nodes").join("d").join("outputs").join("stale.txt"), "stale")
+            .unwrap();
+
+        let resumed = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    resume_run_id: Some("resume-corrupt".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
+
+        let attempts = read_run_attempts(&resumed);
+        let summary = attempts
+            .last()
+            .and_then(|attempt| attempt.resume_summary.as_ref())
+            .expect("resume summary");
+        assert_eq!(summary.reused_nodes, vec!["a", "c"]);
+        assert_eq!(summary.rerun_nodes, vec!["b", "d"]);
+        assert!(summary.rejected_nodes.is_empty());
+        assert!(!resumed.join("nodes").join("d").join("outputs").join("stale.txt").exists());
+        let rerun_output =
+            fs::read_to_string(resumed.join("nodes").join("b").join("outputs").join("out_b"))
+                .unwrap();
+        assert_eq!(rerun_output, "ok\n");
+    }
+
+    #[test]
+    fn resume_reject_mode_records_blocked_nodes_without_execution() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let initial = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    run_id: Some("resume-reject".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
+        fs::write(initial.join("nodes").join("b").join("outputs").join("out_b"), "tampered\n")
+            .unwrap();
+
+        let err = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    resume_run_id: Some("resume-reject".to_string()),
+                    resume_failure_mode: ResumeFailureMode::RejectIncomplete,
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap_err();
+        assert!(format!("{err}").contains("resume rejected incomplete nodes"));
+
+        let staging_path = dir.path().join("run.tmp-resume-reject");
+        let attempts = read_run_attempts(&staging_path);
+        let summary = attempts
+            .last()
+            .and_then(|attempt| attempt.resume_summary.as_ref())
+            .expect("resume summary");
+        assert_eq!(summary.reused_nodes, vec!["a", "c"]);
+        assert!(summary.rerun_nodes.is_empty());
+        assert_eq!(summary.rejected_nodes, vec!["b", "d"]);
     }
 
     #[test]
