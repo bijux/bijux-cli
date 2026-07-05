@@ -995,19 +995,19 @@ mod tests {
         write(&run_b.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
         write(
             &run_a.join("outputs/index.json"),
-            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","sha256":"a","path":"nodes/n1/outputs/report.json"}]}"#,
+            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","name":"report","kind":"file","media_type":"application/json","sha256":"a","path":"nodes/n1/outputs/report.json"}]}"#,
         );
         write(
             &run_b.join("outputs/index.json"),
-            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","sha256":"b","path":"nodes/n1/outputs/report.json"}]}"#,
+            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","name":"report","kind":"file","media_type":"application/json","sha256":"b","path":"nodes/n1/outputs/report.json"}]}"#,
         );
         write(
             &run_a.join("nodes/n1/outputs/index.json"),
-            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","sha256":"a","path":"nodes/n1/outputs/report.json"}]}"#,
+            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","name":"report","kind":"file","media_type":"application/json","sha256":"a","path":"nodes/n1/outputs/report.json"}]}"#,
         );
         write(
             &run_b.join("nodes/n1/outputs/index.json"),
-            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","sha256":"b","path":"nodes/n1/outputs/report.json"}]}"#,
+            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","name":"report","kind":"file","media_type":"application/json","sha256":"b","path":"nodes/n1/outputs/report.json"}]}"#,
         );
         write(&run_a.join("nodes/n1/outputs/report.json"), r#"{"a":1,"b":2}"#);
         write(&run_b.join("nodes/n1/outputs/report.json"), r#"{"a":1,"b":3}"#);
@@ -1139,7 +1139,7 @@ mod tests {
         );
         write(
             &run_dir.join("nodes/a/outputs/index.json"),
-            r#"{"files":[{"node_id":"a","node_fingerprint":"fp-a","sha256":"a","path":"nodes/a/outputs/out"}]}"#,
+            r#"{"files":[{"node_id":"a","node_fingerprint":"fp-a","name":"out","kind":"file","media_type":"application/octet-stream","sha256":"a","path":"nodes/a/outputs/out"}]}"#,
         );
         let snapshot = GraphSnapshot {
             graph: serde_json::from_value::<Graph>(json!({

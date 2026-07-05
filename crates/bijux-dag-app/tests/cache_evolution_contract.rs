@@ -32,7 +32,10 @@ fn write_cache_entry(base: &std::path::Path, key: &str, valid: bool) {
     fs::write(entry.join("outputs/out.txt"), &content).expect("write output");
     let index = json!({
         "files": [{
+            "name": "out",
             "path": "out.txt",
+            "kind": "file",
+            "media_type": "text/plain",
             "sha256": if valid { sha256_hex(b"ok") } else { sha256_hex(b"other") },
             "node_id": "n",
             "node_fingerprint": key

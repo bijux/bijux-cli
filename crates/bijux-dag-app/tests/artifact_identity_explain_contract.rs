@@ -80,6 +80,9 @@ fn setup_run_with_lineage() -> (tempfile::TempDir, PathBuf) {
             "files":[{
                 "node_id":"extract",
                 "node_fingerprint":"fp-extract",
+                "name":"data",
+                "kind":"file",
+                "media_type":"text/csv",
                 "sha256":sha,
                 "path":"nodes/extract/outputs/data.csv"
             }]
@@ -222,6 +225,9 @@ fn provenance_query_latency_contract_on_large_lineage_snapshot() {
             "files":[{
                 "node_id":"extract",
                 "node_fingerprint":"fp-extract",
+                "name":"data",
+                "kind":"file",
+                "media_type":"text/csv",
                 "sha256":sha,
                 "path":"nodes/extract/outputs/data.csv"
             }]

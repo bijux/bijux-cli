@@ -543,7 +543,7 @@ mod tests {
         fs::write(
             entry.join("outputs/index.json"),
             serde_json::to_vec_pretty(&json!({
-                "files":[{"path":"report.txt","sha256":"deadbeef","node_id":"n1","node_fingerprint":"node-a"}]
+                "files":[{"name":"report","path":"report.txt","kind":"file","media_type":"text/plain","sha256":"deadbeef","node_id":"n1","node_fingerprint":"node-a"}]
             }))
             .expect("index"),
         )
@@ -582,7 +582,10 @@ mod tests {
             entry.join("outputs/index.json"),
             serde_json::to_vec_pretty(&json!({
                 "files":[{
+                    "name":"data",
                     "path":"data.txt",
+                    "kind":"file",
+                    "media_type":"text/plain",
                     "sha256": bijux_dag_artifacts::hash::sha256_hex(b"payload"),
                     "node_id":"n1",
                     "node_fingerprint":"node-key"

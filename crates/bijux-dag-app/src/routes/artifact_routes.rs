@@ -292,7 +292,7 @@ mod tests {
         .expect("manifest");
         std::fs::write(
             run.join("outputs").join("index.json"),
-            r#"{"files":[{"node_id":"extract","node_fingerprint":"fp-node","sha256":"abc","path":"nodes/extract/outputs/report.json"}]}"#,
+            r#"{"files":[{"node_id":"extract","node_fingerprint":"fp-node","name":"report","kind":"file","media_type":"application/json","sha256":"abc","path":"nodes/extract/outputs/report.json"}]}"#,
         )
         .expect("outputs index");
         std::fs::create_dir_all(run.join("nodes").join("extract").join("outputs"))

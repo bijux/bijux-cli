@@ -53,6 +53,9 @@ fn artifact_inspect_reports_missing_payload_when_metadata_entry_exists() {
             "files":[{
                 "node_id":"extract",
                 "node_fingerprint":"fp",
+                "name":"data",
+                "kind":"file",
+                "media_type":"text/csv",
                 "sha256":"abc",
                 "path":"nodes/extract/outputs/data.csv"
             }]

@@ -49,7 +49,7 @@ fn write_basic_run(run: &Path, run_id: &str, extras: Value) {
     fs::write(
         run.join("outputs/index.json"),
         serde_json::to_vec_pretty(&json!({
-            "files":[{"node_id":"a","node_fingerprint":"fp-a","sha256":"239f59ed55e737c77147cf55ad0c1b03f9c6a27ddc8e2ba69ec4b8b4b09e4e7d","path":"nodes/a/outputs/out"}]
+            "files":[{"node_id":"a","node_fingerprint":"fp-a","name":"out","kind":"file","media_type":"application/octet-stream","sha256":"239f59ed55e737c77147cf55ad0c1b03f9c6a27ddc8e2ba69ec4b8b4b09e4e7d","path":"nodes/a/outputs/out"}]
         }))
         .expect("index"),
     )
@@ -154,7 +154,7 @@ fn explain_why_cache_missed_reports_corrupt_entry_verification_failure() {
     fs::write(
         entry.join("outputs/index.json"),
         serde_json::to_vec_pretty(&json!({
-            "files":[{"path":"x.txt","sha256":"deadbeef","node_id":"a","node_fingerprint": key}]
+            "files":[{"name":"out","path":"x.txt","kind":"file","media_type":"text/plain","sha256":"deadbeef","node_id":"a","node_fingerprint": key}]
         }))
         .expect("index"),
     )

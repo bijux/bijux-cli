@@ -1361,7 +1361,7 @@ mod tests {
             .expect("manifest");
         std::fs::write(
             run_dir.join("outputs").join("index.json"),
-            r#"{"files":[{"node_id":"extract","node_fingerprint":"fp","sha256":"abc","path":"nodes/extract/report.json"}]}"#,
+            r#"{"files":[{"node_id":"extract","node_fingerprint":"fp","name":"report","kind":"file","media_type":"application/json","sha256":"abc","path":"nodes/extract/report.json"}]}"#,
         )
         .expect("index");
         let cli = quiet_json_cli(GovernanceCommands::CatalogExport {
