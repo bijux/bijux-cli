@@ -1,7 +1,8 @@
 //! DAG canonicalization entrypoints and helpers.
 
 use crate::{
-    BranchSpec, EdgeKind, Effect, Graph, GraphError, ParamValue, Severity, ValidationDiagnostic,
+    BranchSpec, EdgeKind, Effect, Graph, GraphError, NodeOutputRef, ParamValue, Severity,
+    ValidationDiagnostic,
 };
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -100,13 +101,67 @@ impl Graph {
         inputs = serde_json::from_value(inputs_value)
             .expect("graph inputs should deserialize canonically");
 
+        let subgraphs = self
+            .subgraphs
+            .iter()
+            .map(|(name, definition)| {
+                let mut outputs = definition
+                    .outputs
+                    .iter()
+                    .map(|(export_name, reference)| {
+                        (
+                            normalize_identity_text(export_name),
+                            NodeOutputRef {
+                                node_id: normalize_identity_text(&reference.node_id),
+                                output_name: normalize_identity_text(&reference.output_name),
+                            },
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                outputs.sort_by(|left, right| left.0.cmp(&right.0));
+                (
+                    normalize_identity_text(name),
+                    crate::SubgraphDefinition {
+                        graph: definition.graph.canonicalize(),
+                        outputs: outputs.into_iter().collect(),
+                    },
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+
+        let mut subgraph_instances = self
+            .subgraph_instances
+            .iter()
+            .cloned()
+            .map(|mut instance| {
+                instance.id = normalize_identity_text(&instance.id);
+                instance.subgraph = normalize_identity_text(&instance.subgraph);
+                instance.input_bindings = instance
+                    .input_bindings
+                    .into_iter()
+                    .map(|(name, mut value)| {
+                        sort_param_value(&mut value);
+                        (normalize_identity_text(&name), value)
+                    })
+                    .collect();
+                instance
+            })
+            .collect::<Vec<_>>();
+        subgraph_instances.sort_by(|left, right| {
+            (&left.id, &left.subgraph, left.input_bindings.len()).cmp(&(
+                &right.id,
+                &right.subgraph,
+                right.input_bindings.len(),
+            ))
+        });
+
         Graph {
             spec: self.spec.clone(),
             meta: self.meta.clone(),
             inputs,
             nondeterminism_allowed: self.nondeterminism_allowed,
-            subgraphs: self.subgraphs.clone(),
-            subgraph_instances: self.subgraph_instances.clone(),
+            subgraphs,
+            subgraph_instances,
             nodes,
             edges,
         }

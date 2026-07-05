@@ -106,11 +106,7 @@ fn compile_expands_reusable_subgraph_instances_into_plain_graphs() {
             && edge.to.port == "bam"
     }));
 
-    let consume = normalized
-        .nodes
-        .iter()
-        .find(|node| node.id == "consume")
-        .expect("consumer node");
+    let consume = normalized.nodes.iter().find(|node| node.id == "consume").expect("consumer node");
     assert!(matches!(
         &consume.params,
         ParamValue::Object(fields)
@@ -169,6 +165,47 @@ fn reusable_subgraph_identity_is_stable_under_instance_reorder() {
     ));
 
     assert_eq!(a.graph_id().expect("graph id"), b.graph_id().expect("graph id"));
+}
+
+#[test]
+fn reusable_subgraph_canonical_json_is_stable_under_instance_reorder() {
+    let a = parse_graph(&reusable_alignment_graph(
+        r#"{
+            "id":"tumor_align",
+            "subgraph":"align_block",
+            "input_bindings":{"sample_name":{"graph_input":"sample"}}
+        },{
+            "id":"normal_align",
+            "subgraph":"align_block",
+            "input_bindings":{"sample_name":{"graph_input":"sample"}}
+        }"#,
+        r#"{
+            "from":{"node_id":"tumor_align","port":"aligned"},
+            "to":{"node_id":"consume","port":"bam"}
+        }"#,
+        r#"{"node_output":{"node_id":"normal_align","output_name":"aligned"}}"#,
+    ));
+    let b = parse_graph(&reusable_alignment_graph(
+        r#"{
+            "id":"normal_align",
+            "subgraph":"align_block",
+            "input_bindings":{"sample_name":{"graph_input":"sample"}}
+        },{
+            "id":"tumor_align",
+            "subgraph":"align_block",
+            "input_bindings":{"sample_name":{"graph_input":"sample"}}
+        }"#,
+        r#"{
+            "from":{"node_id":"tumor_align","port":"aligned"},
+            "to":{"node_id":"consume","port":"bam"}
+        }"#,
+        r#"{"node_output":{"node_id":"normal_align","output_name":"aligned"}}"#,
+    ));
+
+    assert_eq!(
+        a.to_canonical_json().expect("canonical json"),
+        b.to_canonical_json().expect("canonical json")
+    );
 }
 
 #[test]
