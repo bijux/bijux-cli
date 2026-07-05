@@ -646,7 +646,7 @@ pub(crate) enum ScheduleCommands {
     Submit {
         registry: PathBuf,
         #[arg(
-            help = "json file containing now_unix_ms and any manual, event, dependency, or signal trigger inputs"
+            help = "json file containing now_unix_ms plus manual_requests[].arguments, events[].payload, dependency completions, and signals[].payload"
         )]
         inputs: PathBuf,
         #[arg(
@@ -668,7 +668,7 @@ pub(crate) enum ScheduleCommands {
         registry: PathBuf,
         #[arg(long)]
         schedule_id: String,
-        #[arg(long)]
+        #[arg(long, help = "requested timestamp used for schedule-derived graph input bindings")]
         requested_unix_ms: u128,
     },
     Audit {

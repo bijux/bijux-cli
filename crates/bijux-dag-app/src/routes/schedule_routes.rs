@@ -180,7 +180,27 @@ pub(crate) fn handle_schedule_command(
                 .iter()
                 .find(|definition| definition.id == *schedule_id)
                 .ok_or_else(|| ExitCode::from(3))?;
-            let request = compile_submission_request(definition, *requested_unix_ms);
+            let request = match compile_submission_request(definition, *requested_unix_ms) {
+                Ok(request) => request,
+                Err(error) => {
+                    if cli.json {
+                        return emit_json(
+                            cli,
+                            "dag.schedule.compile",
+                            false,
+                            json!({}),
+                            vec![json!({
+                                "id": "schedule_compile_invalid",
+                                "severity": "error",
+                                "message": error,
+                            })],
+                            ExitCode::from(3),
+                        );
+                    }
+                    println!("{error}");
+                    return Err(ExitCode::from(3));
+                }
+            };
             if cli.json {
                 return emit_json(
                     cli,
