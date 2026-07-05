@@ -1,5 +1,5 @@
 use super::handle_schedule_command;
-use crate::commands::{Commands, DagCli, ScheduleCommands};
+use crate::commands::{Commands, DagCli, ScheduleBackfillCommands, ScheduleCommands};
 use crate::ExitCode;
 use std::fs;
 use std::path::PathBuf;
@@ -88,6 +88,44 @@ fn write_submission_registry_fixture() -> (tempfile::TempDir, PathBuf) {
         }"#,
     )
     .expect("write submit registry");
+    (dir, registry)
+}
+
+fn write_backfill_registry_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-backfill-registry.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "historical-catalog",
+              "dag_name": "atlas.catalog",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Backfill": {
+                  "window_start_unix_ms": 1000,
+                  "window_end_unix_ms": 121000,
+                  "partition_by": "dataset",
+                  "partition_keys": ["sample-a", "sample-b"],
+                  "max_parallelism": 2,
+                  "failure_policy": "pause"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            }
+          ]
+        }"#,
+    )
+    .expect("write backfill registry");
     (dir, registry)
 }
 
@@ -300,6 +338,25 @@ fn write_submission_ledger_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, ledger)
 }
 
+fn write_backfill_advance_request_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let request = dir.path().join("backfill-advance-request.json");
+    fs::write(
+        &request,
+        r#"{
+          "now_unix_ms": 2500,
+          "pending_live_runs": 1,
+          "throttling_policy": {
+            "max_backfill_submissions_per_tick": 4,
+            "reserve_live_capacity_percent": 0
+          },
+          "status_updates": []
+        }"#,
+    )
+    .expect("write advance request");
+    (dir, request)
+}
+
 #[test]
 fn schedule_validate_returns_success_for_valid_registry() {
     let (_tmp, registry) = write_registry_fixture();
@@ -427,4 +484,139 @@ fn schedule_sla_returns_success_for_metric_simulation() {
     let code =
         handle_schedule_command(&cli, &ScheduleCommands::Sla { simulation }).expect("schedule sla");
     assert_eq!(code, ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_backfill_plan_writes_operation_state() {
+    let (_tmp, registry) = write_backfill_registry_fixture();
+    let out_dir = tempfile::tempdir().expect("tmp");
+    let out = out_dir.path().join("backfill-state.json");
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Plan {
+                registry,
+                schedule_id: "historical-catalog".to_string(),
+                planned_unix_ms: 500,
+                backfill_id: Some("catalog-history".to_string()),
+                out: Some(out.clone()),
+            },
+        },
+    )
+    .expect("backfill plan");
+    assert_eq!(code, ExitCode::SUCCESS);
+
+    let payload: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&out).expect("read state")).expect("parse state");
+    assert_eq!(payload["backfill_id"], "catalog-history");
+    assert_eq!(payload["lifecycle"], "active");
+    assert_eq!(payload["runs"].as_array().expect("runs").len(), 6);
+}
+
+#[test]
+fn schedule_backfill_lifecycle_commands_update_state_and_dispatches() {
+    let (_tmp_registry, registry) = write_backfill_registry_fixture();
+    let state_dir = tempfile::tempdir().expect("tmp");
+    let state = state_dir.path().join("backfill-state.json");
+    let paused = state_dir.path().join("backfill-paused.json");
+    let resumed = state_dir.path().join("backfill-resumed.json");
+    let advanced = state_dir.path().join("backfill-advanced.json");
+    let cancelled = state_dir.path().join("backfill-cancelled.json");
+    let (_tmp_request, request) = write_backfill_advance_request_fixture();
+    let cli = quiet_json_cli();
+
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Plan {
+                registry,
+                schedule_id: "historical-catalog".to_string(),
+                planned_unix_ms: 500,
+                backfill_id: None,
+                out: Some(state.clone()),
+            },
+        },
+    )
+    .expect("plan state");
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Pause {
+                state: state.clone(),
+                at_unix_ms: 1_000,
+                reason: Some("operator hold".to_string()),
+                out: Some(paused.clone()),
+            },
+        },
+    )
+    .expect("pause state");
+    let paused_payload: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(&paused).expect("read paused"),
+    )
+    .expect("parse paused");
+    assert_eq!(paused_payload["lifecycle"], "paused");
+
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Resume {
+                state: paused.clone(),
+                at_unix_ms: 1_500,
+                out: Some(resumed.clone()),
+            },
+        },
+    )
+    .expect("resume state");
+    let resumed_payload: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(&resumed).expect("read resumed"),
+    )
+    .expect("parse resumed");
+    assert_eq!(resumed_payload["lifecycle"], "active");
+
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Advance {
+                state: resumed.clone(),
+                request,
+                out: Some(advanced.clone()),
+            },
+        },
+    )
+    .expect("advance state");
+    let advanced_payload: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(&advanced).expect("read advanced"),
+    )
+    .expect("parse advanced");
+    let submitted = advanced_payload["runs"]
+        .as_array()
+        .expect("runs")
+        .iter()
+        .filter(|run| run["status"] == "submitted")
+        .count();
+    assert_eq!(submitted, 2);
+
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Cancel {
+                state: advanced.clone(),
+                at_unix_ms: 2_000,
+                reason: Some("operator stop".to_string()),
+                out: Some(cancelled.clone()),
+            },
+        },
+    )
+    .expect("cancel state");
+    let cancelled_payload: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(&cancelled).expect("read cancelled"),
+    )
+    .expect("parse cancelled");
+    assert_eq!(cancelled_payload["lifecycle"], "cancelled");
+    assert!(cancelled_payload["runs"]
+        .as_array()
+        .expect("runs")
+        .iter()
+        .any(|run| run["status"] == "cancelled"));
 }
