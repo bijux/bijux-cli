@@ -48,12 +48,20 @@ fn run_metadata_supports_parent_and_source_run_identity_links() {
 
 #[test]
 fn run_summary_shape_is_stable() {
-    let summary =
-        RunSummary { total_nodes: 4, success: 2, failed: 1, skipped: 0, cached: 0, cancelled: 1 };
+    let summary = RunSummary {
+        total_nodes: 4,
+        success: 2,
+        failed: 1,
+        skipped: 0,
+        cached: 0,
+        cancelled: 1,
+        promoted_outputs: Vec::new(),
+    };
     let value = serde_json::to_value(summary).expect("serialize summary");
     for key in ["total_nodes", "success", "failed", "skipped", "cached", "cancelled"] {
         assert!(value.get(key).is_some(), "run_summary missing required key: {key}");
     }
+    assert!(value.get("promoted_outputs").is_none());
 }
 
 #[test]

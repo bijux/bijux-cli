@@ -1981,7 +1981,7 @@ exit 1
         assert_eq!(
             input.source_sha256,
             sha256_artifact_path(
-                &final_path.join("nodes").join("source").join("outputs").join("value.txt"),
+                final_path.join("nodes").join("source").join("outputs").join("value.txt"),
             )
             .expect("source hash"),
         );

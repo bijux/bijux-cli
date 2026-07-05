@@ -598,16 +598,16 @@ fn selected_rerun_targets(graph: &Graph, options: &RuntimeConfig) -> Vec<String>
         .map(|node| node.id.clone())
         .collect::<Vec<_>>();
     if !options.upstream_selection_targets.is_empty() {
-        selected.extend(
-            crate::compute_upstream_run_closure(graph, &options.upstream_selection_targets)
-                .into_iter(),
-        );
+        selected.extend(crate::compute_upstream_run_closure(
+            graph,
+            &options.upstream_selection_targets,
+        ));
     }
     if !options.downstream_selection_roots.is_empty() {
-        selected.extend(
-            crate::compute_downstream_run_closure(graph, &options.downstream_selection_roots)
-                .into_iter(),
-        );
+        selected.extend(crate::compute_downstream_run_closure(
+            graph,
+            &options.downstream_selection_roots,
+        ));
     }
     selected.sort();
     selected.dedup();

@@ -155,7 +155,8 @@ where
     paths
         .iter()
         .zip(graphs)
-        .filter_map(|(path, graph)| predicate(graph).then(|| path.display().to_string()))
+        .filter(|(_, graph)| predicate(graph))
+        .map(|(path, _)| path.display().to_string())
         .collect()
 }
 

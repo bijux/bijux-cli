@@ -1351,7 +1351,7 @@ fn deterministic_schedule_run_id(schedule_id: &str, dedupe_key: &str) -> String 
 }
 
 fn normalize_schedule_status(status: &str) -> String {
-    status.trim().to_ascii_lowercase().replace('-', "_").replace(' ', "_")
+    status.trim().to_ascii_lowercase().replace(['-', ' '], "_")
 }
 
 fn submission_trigger_kind_name(kind: &SubmissionTriggerKind) -> &'static str {

@@ -65,6 +65,7 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
             skipped: 0,
             cached: 0,
             cancelled: 0,
+            promoted_outputs: Vec::new(),
         }),
     };
 
