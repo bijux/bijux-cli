@@ -49,6 +49,44 @@ fn write_temp_dag() -> String {
     path.to_string_lossy().into_owned()
 }
 
+fn write_temp_owned_dag() -> String {
+    let path = std::env::temp_dir().join(format!(
+        "bijux-dag-cli-governance-{}.json",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("time")
+            .as_nanos()
+    ));
+    let content = r#"{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "owned-workflow",
+    "owners": ["ops@example.com"],
+    "tags": ["release"]
+  },
+  "nodes": [
+    {
+      "id": "const1",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "value",
+          "path": "value.txt"
+        }
+      ],
+      "params": {
+        "value": "hello"
+      }
+    }
+  ],
+  "edges": []
+}
+"#;
+    std::fs::write(&path, content).expect("write owned dag");
+    path.to_string_lossy().into_owned()
+}
+
 fn write_temp_dag_fragments() -> (tempfile::TempDir, String, String) {
     let dir = tempfile::tempdir().expect("tmp");
     let foundation = dir.path().join("foundation.json");
@@ -514,7 +552,7 @@ fn dag_explain_plan_aliases_accept_composed_graph_fragments() {
 }
 
 #[test]
-fn dag_hidden_lab_namespace_remains_addressable_by_explicit_path() {
+fn dag_hidden_simulation_help_remains_discoverable_by_explicit_path() {
     let output = dag_command().args(["lab", "--help"]).output().expect("lab help");
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
@@ -527,6 +565,78 @@ fn dag_hidden_lab_namespace_remains_addressable_by_explicit_path() {
     assert!(nested.status.success());
     let nested_text = String::from_utf8_lossy(&nested.stdout);
     assert!(nested_text.contains("bijux-dag lab federation schedule"));
+}
+
+#[test]
+fn dag_simulated_routes_require_opt_in_before_execution() {
+    let dag = write_temp_owned_dag();
+
+    let denied = dag_command()
+        .args(["--json", "governance", "ownership", &dag])
+        .output()
+        .expect("governance ownership denied");
+    assert!(!denied.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&denied.stdout).expect("governance denial payload");
+    assert_eq!(payload["command"], "dag.governance");
+    assert_eq!(payload["data"]["command_family"], "governance");
+    assert_eq!(payload["data"]["lane"], "simulation");
+    assert_eq!(payload["data"]["access"], "opt-in");
+    assert_eq!(payload["data"]["opt_in_env"], "BIJUX_DAG_ENABLE_SIMULATED");
+    assert!(payload["diagnostics"].as_array().unwrap().iter().any(|diagnostic| {
+        diagnostic["code"] == "release-boundary-opt-in"
+            && diagnostic["message"]
+                .as_str()
+                .unwrap()
+                .contains("`governance` belongs to the simulated command lane")
+    }));
+
+    let allowed = dag_command()
+        .env("BIJUX_DAG_ENABLE_SIMULATED", "1")
+        .args(["--json", "governance", "ownership", &dag])
+        .output()
+        .expect("governance ownership allowed");
+    assert!(allowed.status.success(), "allowed stderr: {}", String::from_utf8_lossy(&allowed.stderr));
+    let payload: serde_json::Value =
+        serde_json::from_slice(&allowed.stdout).expect("governance payload");
+    assert_eq!(payload["command"], "dag.governance.ownership");
+    assert_eq!(payload["ok"], true);
+}
+
+#[test]
+fn dag_internal_routes_require_opt_in_before_execution() {
+    let dag = write_temp_dag();
+
+    let denied = dag_command()
+        .args(["--json", "version-inspect", "--dag", &dag])
+        .output()
+        .expect("version inspect denied");
+    assert!(!denied.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&denied.stdout).expect("version inspect denial payload");
+    assert_eq!(payload["command"], "dag.version-inspect");
+    assert_eq!(payload["data"]["command_family"], "version-inspect");
+    assert_eq!(payload["data"]["lane"], "internal");
+    assert_eq!(payload["data"]["access"], "opt-in");
+    assert_eq!(payload["data"]["opt_in_env"], "BIJUX_DAG_ENABLE_INTERNAL");
+    assert!(payload["diagnostics"].as_array().unwrap().iter().any(|diagnostic| {
+        diagnostic["code"] == "release-boundary-opt-in"
+            && diagnostic["message"]
+                .as_str()
+                .unwrap()
+                .contains("`version-inspect` belongs to the internal command lane")
+    }));
+
+    let allowed = dag_command()
+        .env("BIJUX_DAG_ENABLE_INTERNAL", "1")
+        .args(["--json", "version-inspect", "--dag", &dag])
+        .output()
+        .expect("version inspect allowed");
+    assert!(allowed.status.success(), "allowed stderr: {}", String::from_utf8_lossy(&allowed.stderr));
+    let payload: serde_json::Value =
+        serde_json::from_slice(&allowed.stdout).expect("version inspect payload");
+    assert_eq!(payload["command"], "dag.version-inspect");
+    assert_eq!(payload["ok"], true);
 }
 
 #[test]

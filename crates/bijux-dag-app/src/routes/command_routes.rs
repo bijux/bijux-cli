@@ -274,7 +274,9 @@ pub(crate) fn handle_command_catalog_command(
 #[cfg(test)]
 mod tests {
     use super::{command_catalog, command_groups};
-    use crate::commands::{CommandAvailability, CommandLane, ENABLE_SIMULATED_ENV};
+    use crate::commands::{CommandAvailability, CommandLane};
+
+    const SIMULATED_OPT_IN_ENV: &str = "BIJUX_DAG_ENABLE_SIMULATED";
 
     #[test]
     fn command_catalog_exposes_public_surface_by_default() {
@@ -312,7 +314,7 @@ mod tests {
             entry.path == "governance ownership"
                 && entry.lane == CommandLane::Simulation
                 && entry.availability == CommandAvailability::OptIn
-                && entry.opt_in_env == Some(ENABLE_SIMULATED_ENV)
+                && entry.opt_in_env == Some(SIMULATED_OPT_IN_ENV)
         }));
     }
 
