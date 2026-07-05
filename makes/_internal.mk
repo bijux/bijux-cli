@@ -150,6 +150,12 @@ fmt: fmt-rs ## Run Rust formatting checks
 lint: lint-rs ## Run Rust lint checks
 test: test-release-rs test-py ## Run the required Rust release lane and Python test suites
 test-all: test-all-rs ## Run full Rust tests including ignored tests
+test-all-frozen: ## Start a detached background full-suite run for a frozen commit and write artifacts plus frozen source under artifacts/<sha>/
+	@PINNED_REF_GATE_TARGET="test-all" "$(PINNED_REF_GATE_BIN)"
+lint-frozen: ## Start a detached background lint run for a frozen commit and write artifacts plus frozen source under artifacts/<sha>/
+	@PINNED_REF_GATE_TARGET="lint" "$(PINNED_REF_GATE_BIN)"
+audit-frozen: ## Start a detached background audit run for a frozen commit and write artifacts plus frozen source under artifacts/<sha>/
+	@PINNED_REF_GATE_TARGET="audit" "$(PINNED_REF_GATE_BIN)"
 audit: audit-rs ## Run Rust dependency and advisory audits
 security: audit-rs security-py ## Run Rust and Python security checks
 build: build-py ## Build Python distribution packages
