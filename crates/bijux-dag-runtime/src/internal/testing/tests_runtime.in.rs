@@ -597,6 +597,81 @@ mod tests {
     }
 
     #[test]
+    fn remote_cache_hit_primes_local_cache_without_staging_residue() {
+        let dir = tempfile::tempdir().unwrap();
+        let local_cache = tempfile::tempdir().unwrap();
+        let remote_cache = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+
+        let seed = RuntimeConfig {
+            cache_mode: CacheMode::ReadWrite,
+            cache_dir: Some(remote_cache.path().to_path_buf()),
+            remote_cache_dir: None,
+            ..RuntimeConfig::default()
+        };
+        let _ = runtime.run(&sample_graph(), dir.path(), seed).unwrap();
+
+        let fetch = RuntimeConfig {
+            cache_mode: CacheMode::Read,
+            cache_dir: Some(local_cache.path().to_path_buf()),
+            remote_cache_dir: Some(remote_cache.path().to_path_buf()),
+            ..RuntimeConfig::default()
+        };
+        let _ = runtime.run(&sample_graph(), dir.path(), fetch).unwrap();
+
+        let local_entry = cache_entry_for_node(local_cache.path(), "a");
+        assert!(local_entry.join("manifest.json").exists());
+        assert!(local_entry.join("outputs").join("index.json").exists());
+        let has_staging_residue = fs::read_dir(local_cache.path())
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .any(|entry| entry.file_name().to_string_lossy().starts_with(".cache-"));
+        assert!(!has_staging_residue);
+    }
+
+    #[test]
+    fn local_cache_corruption_falls_back_to_remote_and_repairs_local_entry() {
+        let dir = tempfile::tempdir().unwrap();
+        let local_cache = tempfile::tempdir().unwrap();
+        let remote_cache = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+
+        let seed = RuntimeConfig {
+            cache_mode: CacheMode::ReadWrite,
+            cache_dir: Some(remote_cache.path().to_path_buf()),
+            remote_cache_dir: None,
+            ..RuntimeConfig::default()
+        };
+        let _ = runtime.run(&sample_graph(), dir.path(), seed).unwrap();
+
+        let fetch = RuntimeConfig {
+            cache_mode: CacheMode::Read,
+            cache_dir: Some(local_cache.path().to_path_buf()),
+            remote_cache_dir: Some(remote_cache.path().to_path_buf()),
+            ..RuntimeConfig::default()
+        };
+        let _ = runtime.run(&sample_graph(), dir.path(), fetch.clone()).unwrap();
+
+        let local_entry = cache_entry_for_node(local_cache.path(), "a");
+        let index_path = local_entry.join("outputs").join("index.json");
+        let index: OutputsIndex =
+            serde_json::from_str(&fs::read_to_string(&index_path).unwrap()).unwrap();
+        let output_path = local_entry.join("outputs").join(&index.files[0].path);
+        fs::remove_file(&output_path).unwrap();
+
+        let rerun = runtime.run(&sample_graph(), dir.path(), fetch).unwrap();
+        let trace_a: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(rerun.join("nodes").join("a").join("trace.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            trace_a["cache_proof"]["source"].as_str(),
+            Some("remote")
+        );
+        assert!(output_path.exists());
+    }
+
+    #[test]
     fn remote_cache_corruption_reexecutes() {
         let dir = tempfile::tempdir().unwrap();
         let local_cache = tempfile::tempdir().unwrap();
