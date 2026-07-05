@@ -88,7 +88,8 @@ pub(crate) enum Commands {
         dir: Option<PathBuf>,
     },
     Validate {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         strict: bool,
         #[arg(long)]
@@ -200,7 +201,8 @@ pub(crate) enum Commands {
     },
     #[command(name = "explain-plan", alias = "show-effective-plan")]
     ExplainPlan {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         out: Option<PathBuf>,
         #[arg(long)]
@@ -223,7 +225,8 @@ pub(crate) enum Commands {
         command: RuntimeCommands,
     },
     Run {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         out: PathBuf,
         #[arg(long = "input", action = clap::ArgAction::Append)]
@@ -492,7 +495,8 @@ pub(crate) enum HashCommands {
 #[derive(Subcommand)]
 pub(crate) enum PlanCommands {
     Explain {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         out: Option<PathBuf>,
         #[arg(long)]
@@ -503,14 +507,16 @@ pub(crate) enum PlanCommands {
         absolute_path_policy: AbsolutePathPolicyArg,
     },
     Diagnostics {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
     },
     Diff {
         before: PathBuf,
         after: PathBuf,
     },
     Closure {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long, action = clap::ArgAction::Append)]
         select: Vec<String>,
     },

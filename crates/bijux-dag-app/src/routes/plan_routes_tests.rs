@@ -10,7 +10,7 @@ fn quiet_json_cli() -> DagCli {
 
 fn explain_command(dag: PathBuf) -> PlanCommands {
     PlanCommands::Explain {
-        dag,
+        dags: vec![dag],
         out: None,
         run_id: None,
         cache_dir: None,
@@ -150,8 +150,8 @@ fn plan_explain_success_path_returns_success() {
 fn plan_diagnostics_success_path_returns_success() {
     let (_tmp, dag) = write_graph_fixture();
     let cli = quiet_json_cli();
-    let code =
-        handle_plan_command(&cli, &PlanCommands::Diagnostics { dag }).expect("plan diagnostics");
+    let code = handle_plan_command(&cli, &PlanCommands::Diagnostics { dags: vec![dag] })
+        .expect("plan diagnostics");
     assert_eq!(code, ExitCode::SUCCESS);
 }
 
@@ -159,10 +159,7 @@ fn plan_diagnostics_success_path_returns_success() {
 fn plan_command_rejects_malformed_input_without_panic() {
     let cli = quiet_json_cli();
     let result = std::panic::catch_unwind(|| {
-        handle_plan_command(
-            &cli,
-            &explain_command(PathBuf::from("/no/such/graph.json")),
-        )
+        handle_plan_command(&cli, &explain_command(PathBuf::from("/no/such/graph.json")))
     });
     assert!(result.is_ok(), "plan route should not panic on malformed input");
     assert!(result.expect("result").is_err());
@@ -174,7 +171,7 @@ fn plan_diagnostics_rejects_malformed_input_without_panic() {
     let result = std::panic::catch_unwind(|| {
         handle_plan_command(
             &cli,
-            &PlanCommands::Diagnostics { dag: PathBuf::from("/no/such/graph.json") },
+            &PlanCommands::Diagnostics { dags: vec![PathBuf::from("/no/such/graph.json")] },
         )
     });
     assert!(result.is_ok(), "plan diagnostics should not panic on malformed input");
@@ -222,7 +219,8 @@ fn plan_routes_support_replay_and_imported_bundle_shaped_graphs() {
 fn plan_diagnostics_error_flow_is_stable_for_invalid_graph() {
     let (_tmp, dag) = write_invalid_graph_fixture();
     let cli = quiet_json_cli();
-    let code = handle_plan_command(&cli, &PlanCommands::Diagnostics { dag }).unwrap_err();
+    let code =
+        handle_plan_command(&cli, &PlanCommands::Diagnostics { dags: vec![dag] }).unwrap_err();
     assert_eq!(code, ExitCode::from(3));
 }
 
@@ -295,32 +293,31 @@ fn plan_explain_payload_reports_previewed_path_bindings() {
         absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
     };
     let result = super::build_default_planner_analysis(&graph, &preview).expect("plan");
-    let payload = super::plan_explain_payload(
-        &result,
-        preview_layout.as_ref(),
-        preview.absolute_path_policy,
-    );
+    let payload =
+        super::plan_explain_payload(&result, preview_layout.as_ref(), preview.absolute_path_policy);
 
     assert_eq!(payload["run_layout"]["run_id"], "previewed");
     assert_eq!(payload["absolute_path_policy"], "allow_literal");
-    let resolved_paths = payload["path_previews"][0]["resolved_paths"]
-        .as_array()
-        .expect("resolved paths");
-    let resolved_argv = payload["path_previews"][0]["resolved_argv"]
-        .as_array()
-        .expect("resolved argv");
+    let resolved_paths =
+        payload["path_previews"][0]["resolved_paths"].as_array().expect("resolved paths");
+    let resolved_argv =
+        payload["path_previews"][0]["resolved_argv"].as_array().expect("resolved argv");
     assert_eq!(resolved_paths.len(), 2);
     assert_eq!(resolved_argv.len(), 3);
     assert_eq!(resolved_paths[0]["expression"], "{inputs_dir}/seed.txt");
-    assert!(resolved_paths[0]["resolved_path"]
-        .as_str()
-        .is_some_and(|value| value.contains("/run.tmp-previewed/nodes/shell-copy/inputs/seed.txt")));
-    assert!(resolved_argv[1]
-        .as_str()
-        .is_some_and(|value| value.contains("/run.tmp-previewed/nodes/shell-copy/inputs/seed.txt")));
-    assert!(resolved_argv[2]
-        .as_str()
-        .is_some_and(|value| value.contains("/run.tmp-previewed/nodes/shell-copy/outputs/result.txt")));
+    assert!(
+        resolved_paths[0]["resolved_path"].as_str().is_some_and(
+            |value| value.contains("/run.tmp-previewed/nodes/shell-copy/inputs/seed.txt")
+        )
+    );
+    assert!(
+        resolved_argv[1].as_str().is_some_and(
+            |value| value.contains("/run.tmp-previewed/nodes/shell-copy/inputs/seed.txt")
+        )
+    );
+    assert!(resolved_argv[2].as_str().is_some_and(
+        |value| value.contains("/run.tmp-previewed/nodes/shell-copy/outputs/result.txt")
+    ));
 }
 
 #[test]
@@ -330,7 +327,7 @@ fn plan_explain_rejects_literal_container_workdir_when_policy_denies_it() {
     let error = handle_plan_command(
         &cli,
         &PlanCommands::Explain {
-            dag,
+            dags: vec![dag],
             out: Some(out),
             run_id: Some("container-preview".to_string()),
             cache_dir: None,
@@ -355,9 +352,50 @@ fn plan_diff_success_path_returns_success() {
 fn plan_closure_returns_success_for_selected_leaf() {
     let (_tmp, dag) = write_graph_fixture();
     let cli = quiet_json_cli();
-    let code =
-        handle_plan_command(&cli, &PlanCommands::Closure { dag, select: vec!["b".to_string()] })
-            .expect("plan closure");
+    let code = handle_plan_command(
+        &cli,
+        &PlanCommands::Closure { dags: vec![dag], select: vec!["b".to_string()] },
+    )
+    .expect("plan closure");
+    assert_eq!(code, ExitCode::SUCCESS);
+}
+
+#[test]
+fn plan_explain_accepts_composed_graph_fragments() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let foundation = dir.path().join("foundation.json");
+    let publication = dir.path().join("publication.json");
+    fs::write(
+        &foundation,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[{"id":"extract","kind":"const","outputs":[{"name":"report","path":"extract/report.json"}],"params":{"value":"seed"}}],
+          "edges":[]
+        }"#,
+    )
+    .expect("write foundation");
+    fs::write(
+        &publication,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[{"id":"publish","kind":"const","inputs":["report"],"outputs":[{"name":"out","path":"publish/out.json"}],"params":{"seed":{"node_output":{"node_id":"extract","output_name":"report"}}}}],
+          "edges":[{"from":{"node_id":"extract","port":"report"},"to":{"node_id":"publish","port":"report"}}]
+        }"#,
+    )
+    .expect("write publication");
+
+    let cli = quiet_json_cli();
+    let code = handle_plan_command(
+        &cli,
+        &PlanCommands::Explain {
+            dags: vec![foundation, publication],
+            out: None,
+            run_id: None,
+            cache_dir: None,
+            absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
+        },
+    )
+    .expect("plan explain");
     assert_eq!(code, ExitCode::SUCCESS);
 }
 

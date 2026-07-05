@@ -221,10 +221,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Validate { dag, strict, print_fingerprints, explain } => {
+        Commands::Validate { dags, strict, print_fingerprints, explain } => {
             routes::validate_routes::handle_validate_command(
                 &cli,
-                dag,
+                dags,
                 *strict,
                 *print_fingerprints,
                 *explain,
@@ -521,9 +521,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::ExplainPlan { dag, out, run_id, cache_dir, absolute_path_policy } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::ExplainPlan { dags, out, run_id, cache_dir, absolute_path_policy } => {
+            let graph = load_graphs_or_emit(&cli, "dag.explain-plan", dags)?;
             let preview_layout = routes::plan_routes::resolve_plan_preview_layout(
                 out.as_deref(),
                 run_id.as_deref(),
@@ -694,7 +693,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             routes::diagnostics_routes::handle_trace_node_command(&cli, run_dir, id)
         }
         Commands::Run {
-            dag,
+            dags,
             out,
             input,
             inputs_file,
@@ -721,7 +720,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         } => routes::run_routes::handle_run_command(
             &cli,
             routes::run_routes::RunRouteRequest {
-                dag,
+                dags,
                 out,
                 input,
                 inputs_file: inputs_file.clone(),

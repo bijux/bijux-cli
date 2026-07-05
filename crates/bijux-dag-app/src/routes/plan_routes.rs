@@ -1,6 +1,6 @@
 use crate::commands::{AbsolutePathPolicyArg, DagCli, PlanCommands};
 use crate::routes::preconditions::require_safe_path;
-use crate::{emit_json, parse_graph, read_file, ExitCode};
+use crate::{emit_json, load_graphs_or_emit, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::RunDirLayout;
 use bijux_dag_runtime::{
     build_backfill_plan, build_planner_analysis, compute_partial_run_closure, diff_plans,
@@ -44,9 +44,7 @@ pub(crate) fn resolve_plan_preview_layout(
         return Ok(None);
     };
     require_safe_path(run_root)?;
-    RunDirLayout::preview(run_root, run_id)
-        .map(Some)
-        .map_err(|_| ExitCode::from(2))
+    RunDirLayout::preview(run_root, run_id).map(Some).map_err(|_| ExitCode::from(2))
 }
 
 pub(crate) fn build_default_planner_analysis(
@@ -110,9 +108,8 @@ pub(crate) fn handle_plan_command(
     command: &PlanCommands,
 ) -> Result<ExitCode, ExitCode> {
     match command {
-        PlanCommands::Explain { dag, out, run_id, cache_dir, absolute_path_policy } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        PlanCommands::Explain { dags, out, run_id, cache_dir, absolute_path_policy } => {
+            let graph = load_graphs_or_emit(cli, "dag.plan.explain", dags)?;
             let preview_layout = resolve_plan_preview_layout(out.as_deref(), run_id.as_deref())?;
             let preview = PlanPreviewConfig {
                 run_root: out.clone(),
@@ -142,9 +139,8 @@ pub(crate) fn handle_plan_command(
             }
             Ok(ExitCode::SUCCESS)
         }
-        PlanCommands::Diagnostics { dag } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        PlanCommands::Diagnostics { dags } => {
+            let graph = load_graphs_or_emit(cli, "dag.plan.diagnostics", dags)?;
             match build_default_planner_analysis(&graph, &PlanPreviewConfig::default()) {
                 Ok(result) => {
                     let payload = serde_json::to_value(&result.plan.diagnostics)
@@ -198,11 +194,9 @@ pub(crate) fn handle_plan_command(
         PlanCommands::Diff { before, after } => {
             let before_input = read_file(before)?;
             let before_graph = parse_graph(&before_input)?;
-            let before_result = build_default_planner_analysis(
-                &before_graph,
-                &PlanPreviewConfig::default(),
-            )
-            .map_err(|_| ExitCode::from(3))?;
+            let before_result =
+                build_default_planner_analysis(&before_graph, &PlanPreviewConfig::default())
+                    .map_err(|_| ExitCode::from(3))?;
 
             let after_input = read_file(after)?;
             let after_graph = parse_graph(&after_input)?;
@@ -246,12 +240,11 @@ pub(crate) fn handle_plan_command(
             }
             Ok(ExitCode::SUCCESS)
         }
-        PlanCommands::Closure { dag, select } => {
+        PlanCommands::Closure { dags, select } => {
             if select.is_empty() {
                 return Err(ExitCode::from(2));
             }
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+            let graph = load_graphs_or_emit(cli, "dag.plan.closure", dags)?;
             let result = build_default_planner_analysis(&graph, &PlanPreviewConfig::default())
                 .map_err(|_| ExitCode::from(3))?;
             let closure =

@@ -6,7 +6,7 @@ use crate::routes::policy_surface::policy_surface_payload;
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::run_data::map_materialize_mode;
 use crate::runtime_inputs::{bind_runtime_inputs, missing_required_graph_inputs};
-use crate::{emit_json, parse_graph, parse_selectors, read_file, ExitCode};
+use crate::{emit_json, load_graphs_or_emit, parse_selectors, ExitCode};
 use bijux_dag_runtime::{
     build_planner_analysis, registered_adapters, CacheMode, PlannerGuardrails, Runtime,
     RuntimeConfig,
@@ -16,7 +16,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub(crate) struct RunRouteRequest<'a> {
-    pub dag: &'a Path,
+    pub dags: &'a [PathBuf],
     pub out: &'a Path,
     pub input: &'a Vec<String>,
     pub inputs_file: Option<PathBuf>,
@@ -62,10 +62,11 @@ pub(crate) fn handle_run_command(
     cli: &DagCli,
     req: RunRouteRequest<'_>,
 ) -> Result<ExitCode, ExitCode> {
-    require_file(req.dag)?;
+    for dag in req.dags {
+        require_file(dag)?;
+    }
     require_safe_path(req.out)?;
-    let input = read_file(req.dag)?;
-    let mut graph = parse_graph(&input)?;
+    let mut graph = load_graphs_or_emit(cli, "dag.run", req.dags)?;
     let runtime_inputs =
         match bind_runtime_inputs(&graph.inputs, req.inputs_file.as_deref(), req.input) {
             Ok(binding) => binding,
@@ -131,7 +132,7 @@ pub(crate) fn handle_run_command(
     };
     if req.preflight_only {
         let payload = json!({
-            "dag": req.dag,
+            "dags": req.dags,
             "adapters": registered_adapters(),
             "cache": cache_preflight(req.cache, &cache_dir),
             "run_layout": preview_layout,
@@ -240,11 +241,16 @@ fn effective_policy_flags(
 
 #[cfg(test)]
 mod tests {
-    use super::{cache_preflight, effective_policy_flags, emit_run_input_error};
-    use crate::commands::CacheModeArg;
-    use crate::commands::{Commands, DagCli};
+    use super::{
+        cache_preflight, effective_policy_flags, emit_run_input_error, handle_run_command,
+        RunRouteRequest,
+    };
+    use crate::commands::{
+        AbsolutePathPolicyArg, CacheModeArg, Commands, DagCli, MaterializeModeArg,
+    };
     use crate::ExitCode;
     use serde_json::json;
+    use std::fs;
 
     #[test]
     fn hermetic_forces_isolation_flags() {
@@ -267,5 +273,65 @@ mod tests {
         let code = emit_run_input_error(&cli, "missing required runtime inputs: region", json!({}))
             .expect_err("error code");
         assert_eq!(code, ExitCode::from(2));
+    }
+
+    #[test]
+    fn run_preflight_accepts_composed_graph_fragments() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let foundation = dir.path().join("foundation.json");
+        let publication = dir.path().join("publication.json");
+        let out = dir.path().join("runs");
+        fs::write(
+            &foundation,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "nodes":[{"id":"extract","kind":"const","outputs":[{"name":"report","path":"extract/report.json"}],"params":{"value":"seed"}}],
+              "edges":[]
+            }"#,
+        )
+        .expect("write foundation");
+        fs::write(
+            &publication,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "nodes":[{"id":"publish","kind":"const","inputs":["report"],"outputs":[{"name":"out","path":"publish/out.json"}],"params":{"seed":{"node_output":{"node_id":"extract","output_name":"report"}}}}],
+              "edges":[{"from":{"node_id":"extract","port":"report"},"to":{"node_id":"publish","port":"report"}}]
+            }"#,
+        )
+        .expect("write publication");
+
+        let cli = DagCli { json: true, quiet: true, command: Commands::Version };
+        let code = handle_run_command(
+            &cli,
+            RunRouteRequest {
+                dags: &[foundation, publication],
+                out: &out,
+                input: &Vec::new(),
+                inputs_file: None,
+                run_id: Some("previewed".to_string()),
+                latest: None,
+                jobs: 1,
+                cpu_budget: None,
+                node_timeout_ms: None,
+                run_timeout_ms: None,
+                deny_network: false,
+                deny_env: false,
+                deny_clock: false,
+                clean_env: false,
+                hermetic: false,
+                select: &Vec::new(),
+                exclude: &Vec::new(),
+                materialize_inputs: MaterializeModeArg::Copy,
+                cache: CacheModeArg::Off,
+                cache_dir: None,
+                remote_cache_dir: None,
+                absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
+                preflight_only: true,
+                explain_scheduling: false,
+            },
+        )
+        .expect("run preflight");
+
+        assert_eq!(code, ExitCode::SUCCESS);
     }
 }
