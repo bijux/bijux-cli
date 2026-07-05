@@ -224,6 +224,206 @@ fn seed_replayed_branch_pruning(
     Ok(decisions)
 }
 
+#[derive(Debug, Clone)]
+struct ResumeBootstrap {
+    attempt_index: u32,
+    reusable_nodes: HashMap<String, NodeStatus>,
+    branch_decisions: Vec<(String, String)>,
+    reset_nodes: Vec<String>,
+    summary: crate::ResumeSummary,
+}
+
+fn parse_trace_status(status: &str) -> Option<NodeStatus> {
+    match status {
+        "success" => Some(NodeStatus::Success),
+        "failed" => Some(NodeStatus::Failed),
+        "skipped" => Some(NodeStatus::Skipped),
+        "cached" => Some(NodeStatus::Cached),
+        "cancelled" => Some(NodeStatus::Cancelled),
+        _ => None,
+    }
+}
+
+fn read_resume_attempts(ctx: &RunContext) -> Result<Vec<RunAttempt>, RuntimeError> {
+    let attempts_path = ctx.run_dir.staging_path().join("run.attempts.json");
+    let raw = ctx.fs.read_to_string(&attempts_path).map_err(|error| {
+        RuntimeError::Executor(format!(
+            "resume metadata missing at {}: {}",
+            attempts_path.display(),
+            error
+        ))
+    })?;
+    let attempts: Vec<RunAttempt> = serde_json::from_str(&raw).map_err(|error| {
+        RuntimeError::Executor(format!(
+            "resume metadata is invalid at {}: {}",
+            attempts_path.display(),
+            error
+        ))
+    })?;
+    if attempts.is_empty() {
+        return Err(RuntimeError::Executor(format!(
+            "resume metadata is empty at {}",
+            attempts_path.display()
+        )));
+    }
+    Ok(attempts)
+}
+
+fn read_node_trace(
+    ctx: &RunContext,
+    node_id: &str,
+) -> Result<Option<bijux_dag_artifacts::NodeTrace>, RuntimeError> {
+    let trace_path = ctx.run_dir.node_trace_path(node_id);
+    match ctx.fs.metadata(&trace_path) {
+        Ok(_) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => {
+            return Err(RuntimeError::Executor(format!(
+                "failed to inspect resume trace for {}: {}",
+                node_id, error
+            )));
+        }
+    }
+    let raw = ctx.fs.read_to_string(&trace_path).map_err(|error| {
+        RuntimeError::Executor(format!(
+            "failed to read resume trace for {}: {}",
+            node_id, error
+        ))
+    })?;
+    let trace = serde_json::from_str(&raw).map_err(|error| {
+        RuntimeError::Executor(format!(
+            "failed to parse resume trace for {}: {}",
+            node_id, error
+        ))
+    })?;
+    Ok(Some(trace))
+}
+
+fn trace_outputs_match(
+    ctx: &RunContext,
+    graph: &Graph,
+    node_id: &str,
+    trace: &bijux_dag_artifacts::NodeTrace,
+) -> bool {
+    let Some(node) = graph.nodes.iter().find(|node| node.id == node_id) else {
+        return false;
+    };
+    let inspection =
+        crate::inspect_declared_outputs(ctx.run_dir.node_outputs_dir(node_id).as_path(), &node.outputs);
+    inspection.failure.is_none() && inspection.output_evidence == trace.outputs
+}
+
+fn clear_resumed_node_dir(ctx: &RunContext, node_id: &str) -> Result<(), RuntimeError> {
+    let node_dir = ctx.run_dir.node_dir(node_id);
+    match ctx.fs.metadata(&node_dir) {
+        Ok(_) => ctx.fs.remove_dir_all(&node_dir)?,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => {
+            return Err(RuntimeError::Executor(format!(
+                "failed to inspect node directory for {} during resume cleanup: {}",
+                node_id, error
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn prepare_resume_bootstrap(
+    ctx: &RunContext,
+    graph: &Graph,
+    plan: &crate::ExecutionPlan,
+    options: &RuntimeConfig,
+) -> Result<ResumeBootstrap, RuntimeError> {
+    let previous_attempts = read_resume_attempts(ctx)?;
+    let attempt_index =
+        previous_attempts.iter().map(|attempt| attempt.attempt_index).max().unwrap_or(0) + 1;
+    let mut reused_nodes = BTreeSet::new();
+    let mut reusable_nodes = HashMap::new();
+    let mut branch_decisions = Vec::new();
+
+    for node_id in &plan.order {
+        let Some(trace) = read_node_trace(ctx, node_id)? else {
+            continue;
+        };
+        if plan
+            .dep_map
+            .get(node_id)
+            .is_some_and(|deps| deps.iter().any(|dependency| !reused_nodes.contains(dependency)))
+        {
+            continue;
+        }
+        let Some(status) = parse_trace_status(&trace.status) else {
+            continue;
+        };
+        if !matches!(status, NodeStatus::Success | NodeStatus::Cached) {
+            continue;
+        }
+        if trace.fingerprint != node_fingerprint_from_ctx(ctx, node_id) {
+            continue;
+        }
+        if !trace_outputs_match(ctx, graph, node_id, &trace) {
+            continue;
+        }
+        reused_nodes.insert(node_id.clone());
+        reusable_nodes.insert(node_id.clone(), status);
+        if let Some(decision) = trace.branch_decision {
+            branch_decisions.push((node_id.clone(), decision));
+        }
+    }
+
+    branch_decisions.sort();
+    let mut pruned_nodes = BTreeSet::new();
+    for (branch_node_id, decision) in &branch_decisions {
+        for pruned in branch_nodes_to_skip(graph, branch_node_id, decision) {
+            pruned_nodes.insert(pruned);
+        }
+    }
+
+    let mut reset_nodes = plan
+        .order
+        .iter()
+        .filter(|node_id| !reused_nodes.contains(*node_id))
+        .cloned()
+        .collect::<Vec<_>>();
+    reset_nodes.sort();
+
+    let mut unresolved_nodes = plan
+        .order
+        .iter()
+        .filter(|node_id| {
+            !reused_nodes.contains(*node_id)
+                && !plan.filter_reasons.contains_key(*node_id)
+                && !pruned_nodes.contains(*node_id)
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    unresolved_nodes.sort();
+
+    let (rerun_nodes, rejected_nodes) = match options.resume_failure_mode {
+        crate::ResumeFailureMode::RerunIncomplete => (unresolved_nodes, Vec::new()),
+        crate::ResumeFailureMode::RejectIncomplete => {
+            if unresolved_nodes.is_empty() {
+                (Vec::new(), Vec::new())
+            } else {
+                (Vec::new(), unresolved_nodes)
+            }
+        }
+    };
+
+    Ok(ResumeBootstrap {
+        attempt_index,
+        reusable_nodes,
+        branch_decisions,
+        reset_nodes,
+        summary: crate::ResumeSummary {
+            failure_mode: options.resume_failure_mode,
+            reused_nodes: reused_nodes.into_iter().collect(),
+            rerun_nodes,
+            rejected_nodes,
+        },
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{replayed_branch_decisions, seed_replayed_branch_pruning};
@@ -743,7 +943,23 @@ pub fn execute(
     options: RuntimeConfig,
 ) -> Result<PathBuf, RuntimeError> {
     let out_dir = out_dir.as_ref().to_path_buf();
-    let run_dir = if let Some(ref run_id) = options.run_id {
+    if let (Some(run_id), Some(resume_run_id)) = (&options.run_id, &options.resume_run_id) {
+        if run_id != resume_run_id {
+            return Err(RuntimeError::Executor(format!(
+                "resume run id {} does not match requested run id {}",
+                resume_run_id, run_id
+            )));
+        }
+    }
+    if options.resume_run_id.is_some() && options.parent_run_id.is_some() {
+        return Err(RuntimeError::Executor(
+            "resume mode cannot be combined with parent run replay".to_string(),
+        ));
+    }
+    let requested_run_id = options.resume_run_id.clone().or_else(|| options.run_id.clone());
+    let run_dir = if let Some(ref run_id) = options.resume_run_id {
+        RunDir::resume_with_id(&out_dir, run_id)?
+    } else if let Some(ref run_id) = requested_run_id {
         RunDir::create_with_id(&out_dir, run_id)?
     } else {
         RunDir::create(&out_dir)?
@@ -755,7 +971,7 @@ pub fn execute(
     });
     run_dir.write_graph_snapshot(&serde_json::to_string_pretty(&graph_json)?)?;
 
-    let run_id = options.run_id.clone().unwrap_or_else(|| {
+    let run_id = requested_run_id.clone().unwrap_or_else(|| {
         let dir_name = run_dir
             .final_path()
             .file_name()
@@ -963,6 +1179,11 @@ pub fn execute(
             ),
             stale_downstream_reuse_forbidden: true,
         });
+    let resume_bootstrap = options
+        .resume_run_id
+        .as_ref()
+        .map(|_| prepare_resume_bootstrap(&ctx, graph, &plan, &options))
+        .transpose()?;
     let run_snapshot = RunSnapshot {
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
         graph_snapshot_path: "graph.snapshot.json".to_string(),
@@ -988,19 +1209,27 @@ pub fn execute(
         "run not finalized; recover or repair before treating artifacts as complete",
     )
     .map_err(|err| RuntimeError::Executor(format!("incomplete run marker write failed: {err}")))?;
+    let mut run_attempts = resume_bootstrap
+        .as_ref()
+        .map(|_| read_resume_attempts(&ctx))
+        .transpose()?
+        .unwrap_or_default();
     let run_attempt = RunAttempt {
-        attempt_index: 1,
+        attempt_index: resume_bootstrap.as_ref().map(|bootstrap| bootstrap.attempt_index).unwrap_or(1),
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
         parent_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
-        reason: if options.parent_run_id.is_some() {
+        reason: if options.resume_run_id.is_some() {
+            "resume".to_string()
+        } else if options.parent_run_id.is_some() {
             "replay_or_retry".to_string()
         } else {
             "initial_submission".to_string()
         },
-        resume_summary: None,
+        resume_summary: resume_bootstrap.as_ref().map(|bootstrap| bootstrap.summary.clone()),
     };
+    run_attempts.push(run_attempt);
     let run_attempts_path = ctx.run_dir.staging_path().join("run.attempts.json");
-    ctx.fs.write(&run_attempts_path, &serde_json::to_vec_pretty(&vec![run_attempt])?)?;
+    ctx.fs.write(&run_attempts_path, &serde_json::to_vec_pretty(&run_attempts)?)?;
     let start = Instant::now();
     let mut status_map: HashMap<String, NodeStatus> = HashMap::new();
     let mut cache_proofs: HashMap<String, CacheProof> = HashMap::new();
@@ -1009,7 +1238,6 @@ pub fn execute(
     let dep_map = plan.dep_map.clone();
     let mut dependency_counter = sacred_execution::resolve_dependencies(&plan);
     let mut ready_queue = sacred_execution::ready_queue_from_dependencies(&dependency_counter);
-    let initial_ready = ready_queue.snapshot_sorted();
     let mut scheduler = crate::build_scheduler(&options.scheduler_policy);
     let scheduler_hook = crate::NoopSchedulerEventHook;
     let mut loop_index: u64 = 0;
@@ -1050,6 +1278,65 @@ pub fn execute(
             )?;
         }
     }
+    if let Some(resume) = &resume_bootstrap {
+        for node_id in &resume.reset_nodes {
+            clear_resumed_node_dir(&ctx, node_id)?;
+        }
+        for (branch_node_id, decision) in &resume.branch_decisions {
+            for pruned in branch_nodes_to_skip(graph, branch_node_id, decision) {
+                branch_pruned_nodes.insert(pruned);
+            }
+        }
+        engine_record::append_indexed_event(
+            &mut run_log,
+            &mut run_log_index,
+            serde_json::json!({
+                "event": "run_resumed",
+                "ts": ctx.clock.now_unix_ms(),
+                "run_id": manifest.run_id.clone(),
+                "reused_nodes": resume.summary.reused_nodes.clone(),
+                "rerun_nodes": resume.summary.rerun_nodes.clone(),
+                "rejected_nodes": resume.summary.rejected_nodes.clone(),
+                "failure_mode": match resume.summary.failure_mode {
+                    crate::ResumeFailureMode::RerunIncomplete => "rerun_incomplete",
+                    crate::ResumeFailureMode::RejectIncomplete => "reject_incomplete",
+                },
+            }),
+        )?;
+        run_audit_events.push(serde_json::json!({
+            "action": "resume",
+            "ts": ctx.clock.now_unix_ms(),
+            "run_id": manifest.run_id.clone(),
+            "reused_nodes": resume.summary.reused_nodes.clone(),
+            "rerun_nodes": resume.summary.rerun_nodes.clone(),
+            "rejected_nodes": resume.summary.rejected_nodes.clone(),
+        }));
+        if !resume.summary.rejected_nodes.is_empty() {
+            return Err(RuntimeError::Executor(format!(
+                "resume rejected incomplete nodes: {}",
+                resume.summary.rejected_nodes.join(", ")
+            )));
+        }
+        for (node_id, status) in &resume.reusable_nodes {
+            ready_queue.take(node_id);
+            sacred_execution::guard_terminal_node_status(status)?;
+            status_map.insert(node_id.clone(), status.clone());
+            for newly_ready in dependency_counter.mark_completed(node_id) {
+                ready_queue.insert(newly_ready);
+            }
+            engine_record::append_indexed_event(
+                &mut run_log,
+                &mut run_log_index,
+                serde_json::json!({
+                    "event": "node_resume_reused",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                    "status": crate::status_string(status),
+                }),
+            )?;
+        }
+    }
+    let initial_ready = ready_queue.snapshot_sorted();
     for node_id in &initial_ready {
         scheduler_hook.on_node_eligible(node_id);
         if let Some(timestamps) = lifecycle_timestamps.get_mut(node_id) {
