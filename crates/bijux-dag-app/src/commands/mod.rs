@@ -226,6 +226,8 @@ pub(crate) enum Commands {
         absolute_path_policy: AbsolutePathPolicyArg,
         #[arg(long = "from-node", action = clap::ArgAction::Append)]
         from_node: Vec<String>,
+        #[arg(long = "to-node", action = clap::ArgAction::Append)]
+        to_node: Vec<String>,
     },
     Plan {
         #[command(subcommand)]
@@ -530,6 +532,8 @@ pub(crate) enum PlanCommands {
         absolute_path_policy: AbsolutePathPolicyArg,
         #[arg(long = "from-node", action = clap::ArgAction::Append)]
         from_node: Vec<String>,
+        #[arg(long = "to-node", action = clap::ArgAction::Append)]
+        to_node: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
         select: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]

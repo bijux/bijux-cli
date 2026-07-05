@@ -518,9 +518,25 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::ExplainPlan { dags, out, run_id, cache_dir, absolute_path_policy, from_node } => {
+        Commands::ExplainPlan {
+            dags,
+            out,
+            run_id,
+            cache_dir,
+            absolute_path_policy,
+            from_node,
+            to_node,
+        } => {
             let graph = load_graphs_or_emit(&cli, "dag.explain-plan", dags)?;
-            graph_helpers::validate_downstream_selection_surface(from_node, &[], &[], false)?;
+            graph_helpers::validate_partial_selection_surface(
+                from_node,
+                to_node,
+                &[],
+                &[],
+                false,
+            )?;
+            let (upstream_selection_targets, _) =
+                graph_helpers::resolve_upstream_run_selection(&graph, to_node)?;
             let (downstream_selection_roots, _) =
                 graph_helpers::resolve_downstream_run_selection(&graph, from_node)?;
             let preview_layout = routes::plan_routes::resolve_plan_preview_layout(
@@ -532,6 +548,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
                 cache_dir: cache_dir.clone(),
                 absolute_path_policy: (*absolute_path_policy).into(),
+                upstream_selection_targets,
                 downstream_selection_roots,
                 selectors: bijux_dag_runtime::SelectorSet::default(),
                 dependency_closure: false,
