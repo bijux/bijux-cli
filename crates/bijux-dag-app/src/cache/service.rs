@@ -1,8 +1,9 @@
 use crate::ExitCode;
 use bijux_dag_artifacts::OutputsIndex;
 use bijux_dag_runtime::{
-    cache_entry_has_required_proof, cache_key_explanation, cache_key_input_from_meta,
-    cache_metadata_version_supported,
+    cache_entry_has_required_proof, cache_entry_manifest_version_supported,
+    cache_key_explanation, cache_key_input_from_meta, cache_metadata_version_supported,
+    CacheEntryManifest, CacheManifestOutput,
 };
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
@@ -30,30 +31,9 @@ fn verify_cache_dir(dir: &Path) -> Result<Value, ExitCode> {
             if path.is_dir() {
                 checked += 1;
                 let key = entry.file_name().to_string_lossy().to_string();
-                let index_path = path.join("outputs").join("index.json");
-                let meta_path = path.join("meta.json");
-                if !index_path.exists() || !meta_path.exists() {
+                if !verify_cache_entry_cli(&path, &key, "", "")? {
                     corrupt += 1;
                     corrupt_keys.push(key);
-                    continue;
-                }
-                let data = fs::read_to_string(&index_path).map_err(|_| ExitCode::from(3))?;
-                let index: OutputsIndex =
-                    serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
-                for file in index.files {
-                    let fpath = path.join("outputs").join(&file.path);
-                    if !fpath.exists() {
-                        corrupt += 1;
-                        corrupt_keys.push(key.clone());
-                        break;
-                    }
-                    let bytes = fs::read(&fpath).map_err(|_| ExitCode::from(3))?;
-                    let sha = hash_bytes(&bytes);
-                    if sha != file.sha256 {
-                        corrupt += 1;
-                        corrupt_keys.push(key.clone());
-                        break;
-                    }
                 }
             }
         }
@@ -193,6 +173,16 @@ pub(crate) fn unpack_cache_archive_bounded<R: std::io::Read>(
     Ok(())
 }
 
+fn cache_manifest_output_matches(
+    manifest_output: &CacheManifestOutput,
+    file: &bijux_dag_artifacts::OutputFile,
+) -> bool {
+    manifest_output.path == file.path
+        && manifest_output.name == file.name
+        && manifest_output.kind == file.kind
+        && manifest_output.media_type == file.media_type
+}
+
 pub(crate) fn verify_cache_entry_cli(
     entry: &Path,
     expected_key: &str,
@@ -201,7 +191,8 @@ pub(crate) fn verify_cache_entry_cli(
 ) -> Result<bool, ExitCode> {
     let index_path = entry.join("outputs").join("index.json");
     let meta_path = entry.join("meta.json");
-    if !index_path.exists() || !meta_path.exists() {
+    let manifest_path = entry.join("manifest.json");
+    if !index_path.exists() || !meta_path.exists() || !manifest_path.exists() {
         return Ok(false);
     }
     let meta_raw = fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?;
@@ -218,6 +209,15 @@ pub(crate) fn verify_cache_entry_cli(
     if cache_key_explanation(&key_input).key != expected_key {
         return Ok(false);
     }
+    let manifest_raw = fs::read_to_string(&manifest_path).map_err(|_| ExitCode::from(3))?;
+    let manifest: CacheEntryManifest =
+        serde_json::from_str(&manifest_raw).map_err(|_| ExitCode::from(3))?;
+    if !cache_entry_manifest_version_supported(&manifest) {
+        return Ok(false);
+    }
+    if manifest.cache_key != expected_key {
+        return Ok(false);
+    }
     if !adapter_id.is_empty() && meta.get("adapter_id").and_then(|v| v.as_str()) != Some(adapter_id)
     {
         return Ok(false);
@@ -229,7 +229,26 @@ pub(crate) fn verify_cache_entry_cli(
     }
     let data = fs::read_to_string(&index_path).map_err(|_| ExitCode::from(3))?;
     let index: OutputsIndex = serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
+    let node_fingerprint = meta.get("node_fingerprint").and_then(|v| v.as_str()).unwrap_or_default();
+    for expected_output in &manifest.outputs {
+        let indexed = index.files.iter().find(|file| file.path == expected_output.path);
+        if expected_output.required && indexed.is_none() {
+            return Ok(false);
+        }
+        let Some(file) = indexed else {
+            continue;
+        };
+        if !cache_manifest_output_matches(expected_output, file)
+            || file.node_id != manifest.node_id
+            || file.node_fingerprint != node_fingerprint
+        {
+            return Ok(false);
+        }
+    }
     for file in index.files {
+        if !manifest.outputs.iter().any(|output| cache_manifest_output_matches(output, &file)) {
+            return Ok(false);
+        }
         let fpath = entry.join("outputs").join(&file.path);
         if !fpath.exists() {
             return Ok(false);
@@ -264,6 +283,7 @@ pub(crate) fn explain_cache_key(
     }
     let meta_path = entry.join("meta.json");
     let index_path = entry.join("outputs").join("index.json");
+    let manifest_path = entry.join("manifest.json");
     if !meta_path.exists() {
         reasons.push("missing meta.json".to_string());
         taxonomy.push("artifact_missing".to_string());
@@ -272,8 +292,13 @@ pub(crate) fn explain_cache_key(
         reasons.push("missing outputs/index.json".to_string());
         taxonomy.push("artifact_missing".to_string());
     }
+    if !manifest_path.exists() {
+        reasons.push("missing manifest.json".to_string());
+        taxonomy.push("artifact_missing".to_string());
+    }
     let mut meta = Value::Null;
     let mut key_components = Value::Null;
+    let mut manifest = Value::Null;
     if meta_path.exists() {
         meta = serde_json::from_str::<Value>(
             &fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?,
@@ -334,6 +359,22 @@ pub(crate) fn explain_cache_key(
             taxonomy.push("policy_mismatch".to_string());
         }
     }
+    if manifest_path.exists() {
+        manifest = serde_json::from_str::<Value>(
+            &fs::read_to_string(&manifest_path).map_err(|_| ExitCode::from(3))?,
+        )
+        .map_err(|_| ExitCode::from(3))?;
+        let parsed: CacheEntryManifest =
+            serde_json::from_value(manifest.clone()).map_err(|_| ExitCode::from(3))?;
+        if !cache_entry_manifest_version_supported(&parsed) {
+            reasons.push("cache manifest version is unsupported".to_string());
+            taxonomy.push("schema_mismatch".to_string());
+        }
+        if parsed.cache_key != key {
+            reasons.push("cache manifest key does not match requested key".to_string());
+            taxonomy.push("hash_mismatch".to_string());
+        }
+    }
     let proof_valid = verify_cache_entry_cli(
         entry.as_path(),
         key,
@@ -354,6 +395,7 @@ pub(crate) fn explain_cache_key(
         "eligible": eligible,
         "entry_dir": entry,
         "meta": meta,
+        "manifest": manifest,
         "reasons": reasons,
         "taxonomy": taxonomy,
         "key_components": key_components,
@@ -439,6 +481,17 @@ pub(crate) fn cache_diff(cache_dir: &Path, key_a: &str, key_b: &str) -> Result<V
         .map_err(|_| ExitCode::from(3))
     }
 
+    fn load_manifest(entry: &Path) -> Result<Value, ExitCode> {
+        let manifest_path = entry.join("manifest.json");
+        if !manifest_path.exists() {
+            return Ok(json!({}));
+        }
+        serde_json::from_str::<Value>(
+            &fs::read_to_string(&manifest_path).map_err(|_| ExitCode::from(3))?,
+        )
+        .map_err(|_| ExitCode::from(3))
+    }
+
     let a_path = cache_dir.join(key_a);
     let b_path = cache_dir.join(key_b);
     let a_exists = a_path.exists();
@@ -481,6 +534,15 @@ pub(crate) fn cache_diff(cache_dir: &Path, key_a: &str, key_b: &str) -> Result<V
                 "b": b_meta.get(field).cloned().unwrap_or(Value::Null),
             }));
         }
+    }
+    let a_manifest = load_manifest(&a_path)?;
+    let b_manifest = load_manifest(&b_path)?;
+    if a_manifest != b_manifest {
+        differences.push(json!({
+            "field": "manifest",
+            "a": a_manifest,
+            "b": b_manifest,
+        }));
     }
     let a_valid = verify_cache_entry_cli(&a_path, key_a, "", "")?;
     let b_valid = verify_cache_entry_cli(&b_path, key_b, "", "")?;
@@ -531,10 +593,19 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::{explain_cache_key, pack_cache_entry, unpack_cache_entry};
-    use bijux_dag_runtime::{cache_key_explanation, CacheKeyInput};
+    use bijux_dag_runtime::{cache_key_explanation, CacheEntryManifest, CacheKeyInput};
     use serde_json::json;
     use std::fs;
     use std::process::ExitCode;
+
+    fn manifest_json(cache_key: &str, node_id: &str, outputs: serde_json::Value) -> serde_json::Value {
+        json!({
+            "manifest_version": bijux_dag_runtime::CACHE_ENTRY_MANIFEST_VERSION,
+            "cache_key": cache_key,
+            "node_id": node_id,
+            "outputs": outputs
+        })
+    }
 
     #[test]
     fn explain_cache_key_reports_taxonomy_and_components() {
@@ -574,6 +645,22 @@ mod tests {
             .expect("meta"),
         )
         .expect("write meta");
+        fs::write(
+            entry.join("manifest.json"),
+            serde_json::to_vec_pretty(&manifest_json(
+                &cache_key,
+                "n1",
+                json!([{
+                    "name":"report",
+                    "path":"report.txt",
+                    "kind":"file",
+                    "media_type":"text/plain",
+                    "required": true
+                }]),
+            ))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
         fs::write(
             entry.join("outputs/index.json"),
             serde_json::to_vec_pretty(&json!({
@@ -628,6 +715,22 @@ mod tests {
             .expect("meta"),
         )
         .expect("write meta");
+        fs::write(
+            entry.join("manifest.json"),
+            serde_json::to_vec_pretty(&manifest_json(
+                &cache_key,
+                "n1",
+                json!([{
+                    "name":"data",
+                    "path":"data.txt",
+                    "kind":"file",
+                    "media_type":"text/plain",
+                    "required": true
+                }]),
+            ))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
         fs::write(entry.join("outputs/data.txt"), b"payload").expect("payload");
         fs::write(
             entry.join("outputs/index.json"),
@@ -656,8 +759,14 @@ mod tests {
             &fs::read(unpack_dir.join(&cache_key).join("meta.json")).expect("read unpacked meta"),
         )
         .expect("parse unpacked meta");
+        let unpacked_manifest: CacheEntryManifest = serde_json::from_slice(
+            &fs::read(unpack_dir.join(&cache_key).join("manifest.json"))
+                .expect("read unpacked manifest"),
+        )
+        .expect("parse unpacked manifest");
         assert_eq!(unpacked_meta["adapter_id"], "shell");
         assert_eq!(unpacked_meta["cache_source"], "pack");
+        assert_eq!(unpacked_manifest.cache_key, cache_key);
 
         fs::write(&pack, b"corrupt-pack").expect("corrupt pack");
         let corrupt = unpack_cache_entry(&pack, &unpack_dir);
