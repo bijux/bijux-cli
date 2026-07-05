@@ -62,6 +62,9 @@ The JSON payload reports:
 
 - `run_layout`: the previewed staging and final run directories
 - `path_previews`: the resolved path expressions per node
+- `execution_cost_estimate`: the selected node count, root set, critical path
+  length, topology-limited parallelism, resource demand, cache exposure, and
+  timeout/retry exposure
 - `absolute_path_policy`: the policy used for literal absolute container
   workdirs
 
@@ -76,6 +79,14 @@ bijux-dag run ./pipelines/main.dag.json \
   --preflight-only \
   --explain-scheduling
 ```
+
+Use the execution-cost estimate before a long run when you need to answer three
+operator questions up front:
+
+- how much of the graph is actually going to execute
+- where the dependency bottleneck is
+- whether resource demand, non-cacheable nodes, or aggressive timeout/retry
+  settings make the run more expensive than it first looks
 
 ## Rerun Everything Downstream Of A Node
 
