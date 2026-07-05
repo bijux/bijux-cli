@@ -125,6 +125,40 @@ fn write_invalid_registry_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, registry)
 }
 
+fn write_invalid_timezone_registry_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-registry-invalid-timezone.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "broken-timezone",
+              "dag_name": "atlas.catalog",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Cron": {
+                  "expression": "0 2 * * *",
+                  "timezone": "Mars/Olympus"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": true, "max_catch_up_runs": 3}
+            }
+          ]
+        }"#,
+    )
+    .expect("write invalid timezone registry");
+    (dir, registry)
+}
+
 fn write_ordering_simulation_fixture() -> (tempfile::TempDir, PathBuf) {
     let dir = tempfile::tempdir().expect("tmp");
     let simulation = dir.path().join("schedule-order.json");
@@ -306,6 +340,14 @@ fn schedule_submit_returns_success_and_can_write_updated_ledger() {
 #[test]
 fn schedule_validate_rejects_invalid_registry() {
     let (_tmp, registry) = write_invalid_registry_fixture();
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(&cli, &ScheduleCommands::Validate { registry }).unwrap_err();
+    assert_eq!(code, ExitCode::from(3));
+}
+
+#[test]
+fn schedule_validate_rejects_invalid_timezone_registry() {
+    let (_tmp, registry) = write_invalid_timezone_registry_fixture();
     let cli = quiet_json_cli();
     let code = handle_schedule_command(&cli, &ScheduleCommands::Validate { registry }).unwrap_err();
     assert_eq!(code, ExitCode::from(3));

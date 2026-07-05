@@ -68,6 +68,42 @@ fn write_schedule_submit_fixtures() -> (tempfile::TempDir, String, String, Strin
     )
 }
 
+fn write_invalid_timezone_registry_fixture() -> (tempfile::TempDir, String) {
+    let dir = tempdir().expect("tempdir");
+    let registry = dir.path().join("schedule-registry-invalid-timezone.json");
+
+    std::fs::write(
+        &registry,
+        r#"{
+  "definitions": [
+    {
+      "id": "broken-timezone",
+      "dag_name": "atlas.catalog",
+      "dag_version_policy": "run-latest",
+      "trigger": {
+        "Cron": {
+          "expression": "0 2 * * *",
+          "timezone": "Mars/Olympus"
+        }
+      },
+      "queue": {"queue_name": "catalog", "tenant": "atlas"},
+      "priority": "High",
+      "concurrency": {
+        "per_dag": 2,
+        "per_queue": 4,
+        "per_tenant": 4,
+        "per_node_group": null
+      },
+      "catch_up": {"enabled": true, "max_catch_up_runs": 3}
+    }
+  ]
+}"#,
+    )
+    .expect("write invalid timezone registry");
+
+    (dir, registry.to_string_lossy().into_owned())
+}
+
 #[test]
 fn schedule_submit_help_explains_inputs_and_ledger_flags() {
     let output = dag_command()
@@ -110,4 +146,26 @@ fn schedule_submit_writes_updated_ledger_through_binary() {
             .expect("parse updated ledger");
     assert_eq!(written["entries"].as_array().map(Vec::len), Some(1));
     assert_eq!(written["entries"][0]["schedule_id"], "manual-ops");
+}
+
+#[test]
+fn schedule_validate_reports_invalid_timezones_through_binary() {
+    let (_dir, registry) = write_invalid_timezone_registry_fixture();
+    let output = dag_command()
+        .env("BIJUX_DAG_ENABLE_INTERNAL", "1")
+        .args(["--json", "schedule", "validate", &registry])
+        .output()
+        .expect("schedule validate");
+    assert!(!output.status.success());
+
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("schedule validate json");
+    assert_eq!(payload["command"], "dag.schedule.validate");
+    assert_eq!(payload["ok"], false);
+    assert!(
+        payload["diagnostics"][0]["message"]
+            .as_str()
+            .expect("diagnostic message")
+            .contains("unsupported cron timezone")
+    );
 }
