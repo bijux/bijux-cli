@@ -308,7 +308,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "value",
-        "node_fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
+        "node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
         "node_id": "seed_a",
         "path": "seed_a.txt",
         "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
@@ -317,7 +317,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "value",
-        "node_fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
+        "node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
         "node_id": "seed_b",
         "path": "seed_b.txt",
         "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
@@ -357,7 +357,7 @@
           {
             "local_path": "seed_a/seed",
             "materialization_mode": "copy",
-            "source_node_fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
+            "source_node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
             "source_node_id": "seed_a",
             "source_output_name": "value",
             "source_sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
@@ -371,7 +371,7 @@
           {
             "local_path": "seed_b/seed",
             "materialization_mode": "copy",
-            "source_node_fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
+            "source_node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
             "source_node_id": "seed_b",
             "source_output_name": "value",
             "source_sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
@@ -389,7 +389,7 @@
             "kind": "file",
             "media_type": "application/octet-stream",
             "name": "value",
-            "node_fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
+            "node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
             "node_id": "seed_a",
             "path": "seed_a.txt",
             "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
@@ -407,7 +407,7 @@
             "kind": "file",
             "media_type": "application/octet-stream",
             "name": "value",
-            "node_fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
+            "node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
             "node_id": "seed_b",
             "path": "seed_b.txt",
             "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
@@ -440,7 +440,7 @@
         "kind": "Execution",
         "message": "missing required output: branch_a.txt"
       },
-      "fingerprint": "cb77afa2bf7550b4c20787fabaa46cdd63fa33bafb53e118bb4138208a1da25e",
+      "fingerprint": "b9bb38554789f15cde013cd23e5248e1d4b3b84113e9264915c7df6c00feecfd",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "branch_a_transform",
@@ -468,7 +468,18 @@
       },
       "started_unix_ms": 0,
       "status": "failed",
-      "transition_cause": "MissingRequiredOutput"
+      "transition_cause": "MissingRequiredOutput",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "seed_a",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
     },
     "branch_b_transform": {
       "adapter_id": "shell",
@@ -485,7 +496,7 @@
         "kind": "Execution",
         "message": "missing required output: branch_b.txt"
       },
-      "fingerprint": "8652d09af5056da77b5af03322cfdfb09a17d322dde46ee6860546ebbb0788e0",
+      "fingerprint": "1c8290a7509895a0a2b4eee475031614fe787e16b51869c80474fdd847102b7d",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "branch_b_transform",
@@ -513,7 +524,18 @@
       },
       "started_unix_ms": 0,
       "status": "failed",
-      "transition_cause": "MissingRequiredOutput"
+      "transition_cause": "MissingRequiredOutput",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "seed_b",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
     },
     "join_report": {
       "adapter_id": "shell",
@@ -525,15 +547,23 @@
       "failure": {
         "code": "UPSTREAM_FAILED",
         "details": {
-          "dependencies": [
-            "branch_a_transform",
-            "branch_b_transform"
-          ]
+          "parent_statuses": [
+            {
+              "node_id": "branch_a_transform",
+              "status": "failed"
+            },
+            {
+              "node_id": "branch_b_transform",
+              "status": "failed"
+            }
+          ],
+          "reason": "requires every upstream to complete in success or cached status",
+          "trigger_rule": "all_success"
         },
         "kind": "Dependency",
-        "message": "upstream dependency did not complete successfully"
+        "message": "upstream dependencies did not satisfy trigger rule AllSuccess"
       },
-      "fingerprint": "55cd4d2e90f0c98e7e9f142fabbd8349a2b8686221a5cf248a89c06f0f0c8fb4",
+      "fingerprint": "e63beade789fba56dd03c7f83370b8efdcd38ee8708a78f48aad21643e59b413",
       "finished_unix_ms": 0,
       "node_id": "join_report",
       "outputs": [
@@ -560,7 +590,22 @@
       },
       "started_unix_ms": 0,
       "status": "failed",
-      "transition_cause": "DependencyFailed"
+      "transition_cause": "DependencyFailed",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "branch_a_transform",
+            "status": "failed"
+          },
+          {
+            "node_id": "branch_b_transform",
+            "status": "failed"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": false,
+        "trigger_rule": "all_success"
+      }
     },
     "seed_a": {
       "adapter_id": "const",
@@ -569,7 +614,7 @@
       "attempt": 1,
       "evidence_fingerprint": "a2999ccf3a3fa0184e138828043f66470ac80e04d979a0abe14ffa0b052db0b0",
       "execution_fingerprint": "1cdfa0a7a8082fa9bd38d5325bb952489af5b6f07a46525e2b1d2c4ddee78cff",
-      "fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
+      "fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "seed_a",
@@ -603,7 +648,7 @@
       "attempt": 1,
       "evidence_fingerprint": "a2999ccf3a3fa0184e138828043f66470ac80e04d979a0abe14ffa0b052db0b0",
       "execution_fingerprint": "1cdfa0a7a8082fa9bd38d5325bb952489af5b6f07a46525e2b1d2c4ddee78cff",
-      "fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
+      "fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "seed_b",
@@ -637,7 +682,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "value",
-        "node_fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
+        "node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
         "node_id": "seed_a",
         "path": "nodes/seed_a/outputs/seed_a.txt",
         "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
@@ -646,7 +691,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "value",
-        "node_fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
+        "node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
         "node_id": "seed_b",
         "path": "nodes/seed_b/outputs/seed_b.txt",
         "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
@@ -973,7 +1018,8 @@
       ],
       "event": "node_blocked",
       "node_id": "join_report",
-      "reason": "blocked_by_dependency",
+      "reason": "blocked_by_trigger_rule",
+      "trigger_rule": "all_success",
       "ts": 0
     },
     {
