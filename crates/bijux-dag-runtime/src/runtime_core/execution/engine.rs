@@ -762,6 +762,7 @@ pub fn execute(
         ));
     }
     let explicit_rerun_targets = selected_rerun_targets(graph, &options);
+    let explicit_rerun_target_set = explicit_rerun_targets.iter().cloned().collect::<BTreeSet<_>>();
     let partial_rerun_contract =
         partial_rerun_selected(&options).then(|| crate::PartialRerunContract {
             selected_nodes: explicit_rerun_targets.clone(),
@@ -1129,56 +1130,58 @@ pub fn execute(
             let base_fp = base_fps.get(&node.id).cloned().unwrap_or_default();
             let node_fp = node_fingerprint_with_inputs(&base_fp, &inputs_index)?;
             set_node_fingerprint(&ctx, &node.id, node_fp.clone());
-            let cache_read = sacred_execution::run_cache_lookup(
-                &options,
-                &node,
-                &node_fp,
-                &ctx,
-                Arc::clone(&ctx.fs),
-                &adapter_id.id,
-                &adapter_id.version,
-                &adapter_schema,
-            )?;
-            let hit = cache_read.hit;
-            let cache_proof = crate::cache_hit_proof(cache_read)?;
-            if let Some(proof) = cache_proof.clone() {
-                if !hit {
-                    cache_proofs.insert(node_id.clone(), proof);
+            if !explicit_rerun_target_set.contains(node_id) {
+                let cache_read = sacred_execution::run_cache_lookup(
+                    &options,
+                    &node,
+                    &node_fp,
+                    &ctx,
+                    Arc::clone(&ctx.fs),
+                    &adapter_id.id,
+                    &adapter_id.version,
+                    &adapter_schema,
+                )?;
+                let hit = cache_read.hit;
+                let cache_proof = crate::cache_hit_proof(cache_read)?;
+                if let Some(proof) = cache_proof.clone() {
+                    if !hit {
+                        cache_proofs.insert(node_id.clone(), proof);
+                    }
                 }
-            }
-            if hit {
+                if hit {
+                    crate::append_event(
+                        &mut run_log,
+                        serde_json::json!({
+                            "event": "cache_hit",
+                            "ts": ctx.clock.now_unix_ms(),
+                            "node_id": node_id,
+                        }),
+                    )?;
+                    run_log_index.push(serde_json::json!({
+                        "event": "cache_hit",
+                        "ts": ctx.clock.now_unix_ms(),
+                        "node_id": node_id,
+                    }));
+                    let proof = cache_proof.ok_or_else(|| {
+                        RuntimeError::Executor("cache hit missing verification proof".to_string())
+                    })?;
+                    cached.push((node_id.clone(), node, proof));
+                    continue;
+                }
                 crate::append_event(
                     &mut run_log,
                     serde_json::json!({
-                        "event": "cache_hit",
+                        "event": "cache_miss",
                         "ts": ctx.clock.now_unix_ms(),
                         "node_id": node_id,
                     }),
                 )?;
                 run_log_index.push(serde_json::json!({
-                    "event": "cache_hit",
-                    "ts": ctx.clock.now_unix_ms(),
-                    "node_id": node_id,
-                }));
-                let proof = cache_proof.ok_or_else(|| {
-                    RuntimeError::Executor("cache hit missing verification proof".to_string())
-                })?;
-                cached.push((node_id.clone(), node, proof));
-                continue;
-            }
-            crate::append_event(
-                &mut run_log,
-                serde_json::json!({
                     "event": "cache_miss",
                     "ts": ctx.clock.now_unix_ms(),
                     "node_id": node_id,
-                }),
-            )?;
-            run_log_index.push(serde_json::json!({
-                "event": "cache_miss",
-                "ts": ctx.clock.now_unix_ms(),
-                "node_id": node_id,
-            }));
+                }));
+            }
 
             to_start.push((node_id.clone(), node, resolved_params));
         }

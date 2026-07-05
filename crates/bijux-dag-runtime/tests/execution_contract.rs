@@ -342,3 +342,77 @@ fn partial_rerun_requires_dependency_closure_and_records_invalidation_contract()
     );
     assert_eq!(snapshot["partial_rerun_contract"]["stale_downstream_reuse_forbidden"], true);
 }
+
+#[test]
+fn downstream_rerun_reexecutes_selected_nodes_instead_of_reusing_cache() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"extract","kind":"const","outputs":[{"name":"out","path":"extract/out"}],"params":{"value":1}},
+            {"id":"transform","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"transform/out"}],"params":{"value":2}},
+            {"id":"publish","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"publish/out"}],"params":{"value":3}}
+          ],
+          "edges":[
+            {"from":{"node_id":"extract","port":"out"},"to":{"node_id":"transform","port":"in"}},
+            {"from":{"node_id":"transform","port":"out"},"to":{"node_id":"publish","port":"in"}}
+          ]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let original = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig { cache_mode: CacheMode::ReadWrite, ..RuntimeConfig::default() },
+        )
+        .expect("original run");
+    let manifest: Value = serde_json::from_str(
+        &fs::read_to_string(original.join("manifest.json")).expect("manifest"),
+    )
+    .expect("manifest parse");
+    let parent_run_id = manifest["run_id"].as_str().expect("run id").to_string();
+
+    let replay = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                parent_run_id: Some(parent_run_id.clone()),
+                downstream_selection_roots: vec!["transform".to_string()],
+                partial_rerun_dependency_closure: false,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("downstream replay");
+
+    let transform_trace: Value = serde_json::from_str(
+        &fs::read_to_string(replay.join("nodes/transform/trace.json")).expect("transform trace"),
+    )
+    .expect("transform trace parse");
+    let publish_trace: Value = serde_json::from_str(
+        &fs::read_to_string(replay.join("nodes/publish/trace.json")).expect("publish trace"),
+    )
+    .expect("publish trace parse");
+    assert_eq!(transform_trace["status"], "success");
+    assert_eq!(publish_trace["status"], "success");
+    assert_eq!(transform_trace["replay_provenance"]["node_action"], "reexecuted");
+    assert_eq!(publish_trace["replay_provenance"]["node_action"], "reexecuted");
+
+    let snapshot: Value = serde_json::from_str(
+        &fs::read_to_string(replay.join("run.snapshot.json")).expect("run snapshot"),
+    )
+    .expect("snapshot parse");
+    assert_eq!(
+        snapshot["partial_rerun_contract"]["selected_nodes"],
+        serde_json::json!(["publish", "transform"])
+    );
+    assert_eq!(
+        snapshot["partial_rerun_contract"]["invalidated_downstream_nodes"],
+        serde_json::json!([])
+    );
+}
