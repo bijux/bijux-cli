@@ -75,3 +75,31 @@ fn corrupted_run_dir_does_not_panic() {
     });
     assert!(result.is_ok());
 }
+
+#[test]
+fn upstream_target_flags_parse_on_plan_and_run_surfaces() {
+    let plan_matches = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "plan",
+            "explain",
+            "./graph.json",
+            "--to-node",
+            "publish",
+        ])
+        .expect("plan parse");
+    assert_eq!(dag_run(&plan_matches).expect_err("missing graph"), std::process::ExitCode::from(3));
+
+    let run_matches = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "run",
+            "./graph.json",
+            "--out",
+            "./runs",
+            "--to-node",
+            "publish",
+        ])
+        .expect("run parse");
+    assert_eq!(dag_run(&run_matches).expect_err("missing graph"), std::process::ExitCode::from(3));
+}
