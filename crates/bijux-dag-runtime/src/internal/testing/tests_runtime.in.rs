@@ -11,7 +11,7 @@ mod tests {
     use std::fs;
     use std::io;
     use std::path::{Path, PathBuf};
-    use std::sync::{Arc, Mutex, OnceLock};
+    use std::sync::{Arc, Barrier, Mutex, OnceLock};
 
     fn process_env_lock() -> std::sync::MutexGuard<'static, ()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -170,6 +170,84 @@ mod tests {
             {
                 return Err(io::Error::new(io::ErrorKind::PermissionDenied, "intercepted symlink"));
             }
+            self.inner.symlink(from, to)
+        }
+
+        fn set_permissions(&self, path: &Path, perms: fs::Permissions) -> io::Result<()> {
+            self.inner.set_permissions(path, perms)
+        }
+
+        fn canonicalize(&self, path: &Path) -> io::Result<PathBuf> {
+            self.inner.canonicalize(path)
+        }
+    }
+
+    #[derive(Clone)]
+    struct ConcurrentRenameFs {
+        inner: StdFs,
+        barrier: Arc<Barrier>,
+        watched_parent: PathBuf,
+    }
+
+    impl ConcurrentRenameFs {
+        fn new(watched_parent: PathBuf, barrier: Arc<Barrier>) -> Self {
+            Self { inner: StdFs, barrier, watched_parent }
+        }
+    }
+
+    impl Fs for ConcurrentRenameFs {
+        fn create_dir_all(&self, path: &Path) -> io::Result<()> {
+            self.inner.create_dir_all(path)
+        }
+
+        fn read_to_string(&self, path: &Path) -> io::Result<String> {
+            self.inner.read_to_string(path)
+        }
+
+        fn read(&self, path: &Path) -> io::Result<Vec<u8>> {
+            self.inner.read(path)
+        }
+
+        fn write(&self, path: &Path, data: &[u8]) -> io::Result<()> {
+            self.inner.write(path, data)
+        }
+
+        fn open_append(&self, path: &Path) -> io::Result<fs::File> {
+            self.inner.open_append(path)
+        }
+
+        fn read_dir(&self, path: &Path) -> io::Result<Vec<fs::DirEntry>> {
+            self.inner.read_dir(path)
+        }
+
+        fn metadata(&self, path: &Path) -> io::Result<fs::Metadata> {
+            self.inner.metadata(path)
+        }
+
+        fn rename(&self, from: &Path, to: &Path) -> io::Result<()> {
+            if to.parent() == Some(self.watched_parent.as_path()) {
+                self.barrier.wait();
+            }
+            self.inner.rename(from, to)
+        }
+
+        fn remove_file(&self, path: &Path) -> io::Result<()> {
+            self.inner.remove_file(path)
+        }
+
+        fn remove_dir_all(&self, path: &Path) -> io::Result<()> {
+            self.inner.remove_dir_all(path)
+        }
+
+        fn copy(&self, from: &Path, to: &Path) -> io::Result<u64> {
+            self.inner.copy(from, to)
+        }
+
+        fn hard_link(&self, from: &Path, to: &Path) -> io::Result<()> {
+            self.inner.hard_link(from, to)
+        }
+
+        fn symlink(&self, from: &Path, to: &Path) -> io::Result<()> {
             self.inner.symlink(from, to)
         }
 
@@ -669,6 +747,63 @@ mod tests {
             Some("remote")
         );
         assert!(output_path.exists());
+    }
+
+    #[test]
+    fn concurrent_remote_cache_publication_keeps_shared_entries_valid() {
+        let dir = tempfile::tempdir().unwrap();
+        let remote_cache = tempfile::tempdir().unwrap();
+        let barrier = Arc::new(Barrier::new(2));
+        let shared_fs: Arc<dyn Fs> =
+            Arc::new(ConcurrentRenameFs::new(remote_cache.path().to_path_buf(), barrier));
+        let clock: Arc<dyn Clock> = Arc::new(FixedClock::new(123));
+
+        let first_runtime = Runtime::with_io(Arc::clone(&shared_fs), Arc::clone(&clock));
+        let second_runtime = Runtime::with_io(Arc::clone(&shared_fs), clock);
+        let first_graph = sample_graph();
+        let second_graph = sample_graph();
+        let first_out = dir.path().join("runs-a");
+        let second_out = dir.path().join("runs-b");
+        let first_remote_root = remote_cache.path().to_path_buf();
+        let second_remote_root = remote_cache.path().to_path_buf();
+
+        let first = std::thread::spawn(move || {
+            first_runtime.run(
+                &first_graph,
+                &first_out,
+                RuntimeConfig {
+                    cache_mode: CacheMode::ReadWrite,
+                    cache_dir: None,
+                    remote_cache_dir: Some(first_remote_root),
+                    ..RuntimeConfig::default()
+                },
+            )
+        });
+        let second = std::thread::spawn(move || {
+            second_runtime.run(
+                &second_graph,
+                &second_out,
+                RuntimeConfig {
+                    cache_mode: CacheMode::ReadWrite,
+                    cache_dir: None,
+                    remote_cache_dir: Some(second_remote_root),
+                    ..RuntimeConfig::default()
+                },
+            )
+        });
+
+        assert!(first.join().unwrap().is_ok());
+        assert!(second.join().unwrap().is_ok());
+
+        let remote_entry = cache_entry_for_node(remote_cache.path(), "a");
+        assert!(remote_entry.join("manifest.json").exists());
+        assert!(remote_entry.join("meta.json").exists());
+        assert!(remote_entry.join("outputs").join("index.json").exists());
+        let has_staging_residue = fs::read_dir(remote_cache.path())
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .any(|entry| entry.file_name().to_string_lossy().starts_with(".cache-"));
+        assert!(!has_staging_residue);
     }
 
     #[test]
