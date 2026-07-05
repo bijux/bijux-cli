@@ -15,7 +15,7 @@ fn main() {
     emit_git_rerun_hints(&workspace_root);
     println!("cargo:rerun-if-env-changed={BUILD_GIT_SHA_ENV}");
 
-    if let Some(git_sha) = git_commit_abbrev(&workspace_root) {
+    if let Some(git_sha) = resolved_build_git_sha(&workspace_root) {
         println!("cargo:rustc-env=BIJUX_DAG_BUILD_GIT_SHA={git_sha}");
     }
 }
@@ -46,4 +46,18 @@ fn git_commit_abbrev(workspace_root: &std::path::Path) -> Option<String> {
     }
 
     normalize_git_sha(&String::from_utf8_lossy(&output.stdout))
+}
+
+fn resolved_build_git_sha(workspace_root: &std::path::Path) -> Option<String> {
+    if let Ok(explicit_sha) = env::var(BUILD_GIT_SHA_ENV) {
+        return Some(
+            normalize_git_sha(&explicit_sha).unwrap_or_else(|| {
+                panic!(
+                    "{BUILD_GIT_SHA_ENV} must be a 7-40 character hexadecimal Git revision, got `{}`",
+                    explicit_sha.trim()
+                )
+            }),
+        );
+    }
+    git_commit_abbrev(workspace_root)
 }
