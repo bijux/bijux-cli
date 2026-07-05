@@ -13,8 +13,8 @@ use thiserror as _;
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
     build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
-    compute_partial_run_closure, diff_plans, explain_plan, PlannerGuardrails, RuntimeConfig,
-    Selector, SelectorSet,
+    compare_plan_equivalence, compute_partial_run_closure, diff_plans, explain_plan,
+    PlannerEquivalenceClass, PlannerGuardrails, RuntimeConfig, Selector, SelectorSet,
 };
 
 fn sample_graph() -> &'static str {
@@ -353,6 +353,215 @@ fn planner_diff_classifies_graph_meta_drift_as_metadata_only() {
     assert_eq!(diff.changed_metadata, vec!["graph_meta".to_string()]);
     assert!(diff.added_nodes.is_empty());
     assert!(diff.changed_params.is_empty());
+}
+
+#[test]
+fn plan_equivalence_ignores_non_execution_metadata_drift() {
+    let before = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"baseline","description":"before","owners":["ops"],"tags":["stable"]},
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1},"tags":["alpha"],"group":"ops"}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("before graph should parse");
+    let after = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"baseline","description":"after","owners":["platform"],"tags":["reviewed"]},
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1},"tags":["beta"],"group":"platform"}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("after graph should parse");
+
+    let before_result = build_planner_analysis(
+        &before,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("before analysis should succeed");
+    let after_result = build_planner_analysis(
+        &after,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("after analysis should succeed");
+
+    let report = compare_plan_equivalence(&before_result, &after_result);
+    assert!(report.equivalent);
+    assert_eq!(report.equivalence_class, PlannerEquivalenceClass::MetadataDriftEquivalent);
+    assert!(!report.graph_identity_equal);
+    assert!(report.execution_fingerprint_equal);
+    assert_eq!(
+        report.ignored_non_execution_drift,
+        vec!["graph_meta".to_string(), "node_group:a".to_string(), "node_tags:a".to_string()]
+    );
+    assert!(report.non_equivalence_causes.is_empty());
+}
+
+#[test]
+fn plan_equivalence_reports_exact_non_equivalence_causes() {
+    let before = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {
+              "id":"b",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"out","path":"b/out"}],
+              "params":{"argv":["echo","before"]},
+              "resources":{"cpu":1,"mem_mb":64},
+              "timeout_ms":1000,
+              "retry":{"max_attempts":1,"backoff_ms":10},
+              "effects":["filesystem"]
+            }
+          ],
+          "edges":[{"from":{"node_id":"a","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("before graph should parse");
+    let after = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"c","kind":"const","outputs":[{"name":"out","path":"c/out"}],"params":{"value":2}},
+            {
+              "id":"b",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"result","path":"b/result.json"}],
+              "params":{"argv":["echo","after"]},
+              "resources":{"cpu":4,"mem_mb":256},
+              "timeout_ms":5000,
+              "retry":{"max_attempts":3,"backoff_ms":50},
+              "effects":["network"]
+            }
+          ],
+          "edges":[{"from":{"node_id":"c","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("after graph should parse");
+
+    let before_result = build_planner_analysis(
+        &before,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("before analysis should succeed");
+    let after_result = build_planner_analysis(
+        &after,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("after analysis should succeed");
+
+    let report = compare_plan_equivalence(&before_result, &after_result);
+    assert!(!report.equivalent);
+    assert_eq!(report.equivalence_class, PlannerEquivalenceClass::NotEquivalent);
+    assert!(!report.execution_fingerprint_equal);
+    assert_eq!(
+        report.non_equivalence_causes,
+        vec![
+            "added_dependency:data:-:-:c:out->b:in".to_string(),
+            "added_node:c".to_string(),
+            "changed_effects:b".to_string(),
+            "changed_outputs:b".to_string(),
+            "changed_params:b".to_string(),
+            "changed_resources:b".to_string(),
+            "changed_retry_timeout:b".to_string(),
+            "removed_dependency:data:-:-:a:out->b:in".to_string(),
+            "removed_node:a".to_string()
+        ]
+    );
+}
+
+#[test]
+fn plan_equivalence_reports_semantic_drift_even_when_execution_fingerprint_matches() {
+    let before = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {
+              "id":"b",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"out","path":"b/out"}],
+              "params":{"argv":["echo","before"]},
+              "resources":{"cpu":1,"mem_mb":64},
+              "timeout_ms":1000,
+              "retry":{"max_attempts":1,"backoff_ms":10}
+            }
+          ],
+          "edges":[{"from":{"node_id":"a","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("before graph should parse");
+    let after = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"c","kind":"const","outputs":[{"name":"out","path":"c/out"}],"params":{"value":2}},
+            {
+              "id":"b",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"result","path":"b/result.json"}],
+              "params":{"argv":["echo","after"]},
+              "resources":{"cpu":4,"mem_mb":256},
+              "timeout_ms":5000,
+              "retry":{"max_attempts":3,"backoff_ms":50}
+            }
+          ],
+          "edges":[{"from":{"node_id":"c","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("after graph should parse");
+
+    let before_result = build_planner_analysis(
+        &before,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("before analysis should succeed");
+    let after_result = build_planner_analysis(
+        &after,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("after analysis should succeed");
+
+    let report = compare_plan_equivalence(&before_result, &after_result);
+    assert!(!report.equivalent);
+    assert_eq!(report.equivalence_class, PlannerEquivalenceClass::NotEquivalent);
+    assert!(report.execution_fingerprint_equal);
+    assert_eq!(
+        report.non_equivalence_causes,
+        vec![
+            "added_dependency:data:-:-:c:out->b:in".to_string(),
+            "added_node:c".to_string(),
+            "changed_outputs:b".to_string(),
+            "changed_params:b".to_string(),
+            "changed_resources:b".to_string(),
+            "changed_retry_timeout:b".to_string(),
+            "removed_dependency:data:-:-:a:out->b:in".to_string(),
+            "removed_node:a".to_string()
+        ]
+    );
 }
 
 #[test]

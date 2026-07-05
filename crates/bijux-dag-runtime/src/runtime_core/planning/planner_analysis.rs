@@ -153,9 +153,38 @@ pub struct PlannerPlanDiff {
     pub changed_outputs: Vec<String>,
     pub changed_resources: Vec<String>,
     pub changed_retry_timeout: Vec<String>,
+    pub changed_effects: Vec<String>,
+    pub changed_cache: Vec<String>,
+    pub changed_env_allowlist: Vec<String>,
+    pub changed_trigger_rule: Vec<String>,
+    pub changed_branching: Vec<String>,
+    pub changed_node_kind: Vec<String>,
     pub added_dependencies: Vec<String>,
     pub removed_dependencies: Vec<String>,
     pub changed_metadata: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PlannerEquivalenceClass {
+    StrictEquivalent,
+    MetadataDriftEquivalent,
+    NotEquivalent,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerEquivalenceReport {
+    pub equivalent: bool,
+    pub equivalence_class: PlannerEquivalenceClass,
+    pub before_graph_identity: String,
+    pub after_graph_identity: String,
+    pub graph_identity_equal: bool,
+    pub before_execution_fingerprint: String,
+    pub after_execution_fingerprint: String,
+    pub execution_fingerprint_equal: bool,
+    pub ignored_non_execution_drift: Vec<String>,
+    pub non_equivalence_causes: Vec<String>,
+    pub summary: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -298,6 +327,13 @@ pub fn diff_plans(before: &PlannerBuildResult, after: &PlannerBuildResult) -> Pl
     let mut changed_outputs = Vec::new();
     let mut changed_resources = Vec::new();
     let mut changed_retry_timeout = Vec::new();
+    let mut changed_effects = Vec::new();
+    let mut changed_cache = Vec::new();
+    let mut changed_env_allowlist = Vec::new();
+    let mut changed_trigger_rule = Vec::new();
+    let mut changed_branching = Vec::new();
+    let mut changed_node_kind = Vec::new();
+    let mut changed_metadata = Vec::new();
 
     for node_id in before_nodes.keys().filter(|node_id| after_nodes.contains_key(*node_id)) {
         let before_node =
@@ -319,6 +355,32 @@ pub fn diff_plans(before: &PlannerBuildResult, after: &PlannerBuildResult) -> Pl
         {
             changed_retry_timeout.push(node_id.clone());
         }
+        if !serialized_value_eq(&before_node.effects, &after_node.effects) {
+            changed_effects.push(node_id.clone());
+        }
+        if !serialized_value_eq(&before_node.cache, &after_node.cache) {
+            changed_cache.push(node_id.clone());
+        }
+        if !serialized_value_eq(&before_node.env_allowlist, &after_node.env_allowlist) {
+            changed_env_allowlist.push(node_id.clone());
+        }
+        if !serialized_value_eq(&before_node.trigger_rule, &after_node.trigger_rule) {
+            changed_trigger_rule.push(node_id.clone());
+        }
+        if !serialized_value_eq(&before_node.branch, &after_node.branch) {
+            changed_branching.push(node_id.clone());
+        }
+        if before_node.kind.as_str() != after_node.kind.as_str()
+            || !serialized_value_eq(&before_node.semantic_kind, &after_node.semantic_kind)
+        {
+            changed_node_kind.push(node_id.clone());
+        }
+        if !serialized_value_eq(&before_node.tags, &after_node.tags) {
+            changed_metadata.push(format!("node_tags:{node_id}"));
+        }
+        if !serialized_value_eq(&before_node.group, &after_node.group) {
+            changed_metadata.push(format!("node_group:{node_id}"));
+        }
     }
 
     let before_dependencies =
@@ -333,7 +395,6 @@ pub fn diff_plans(before: &PlannerBuildResult, after: &PlannerBuildResult) -> Pl
     let graph_fingerprint_changed = before.plan.graph_fingerprint != after.plan.graph_fingerprint;
     let execution_fingerprint_changed =
         before.plan.execution_fingerprint != after.plan.execution_fingerprint;
-    let mut changed_metadata = Vec::new();
     if !serialized_value_eq(&before.analysis_graph.meta, &after.analysis_graph.meta) {
         changed_metadata.push("graph_meta".to_string());
     }
@@ -344,9 +405,16 @@ pub fn diff_plans(before: &PlannerBuildResult, after: &PlannerBuildResult) -> Pl
     changed_outputs.sort();
     changed_resources.sort();
     changed_retry_timeout.sort();
+    changed_effects.sort();
+    changed_cache.sort();
+    changed_env_allowlist.sort();
+    changed_trigger_rule.sort();
+    changed_branching.sort();
+    changed_node_kind.sort();
     added_dependencies.sort();
     removed_dependencies.sort();
     changed_metadata.sort();
+    changed_metadata.dedup();
 
     let execution_affecting_changed = execution_fingerprint_changed
         || !added_nodes.is_empty()
@@ -355,6 +423,12 @@ pub fn diff_plans(before: &PlannerBuildResult, after: &PlannerBuildResult) -> Pl
         || !changed_outputs.is_empty()
         || !changed_resources.is_empty()
         || !changed_retry_timeout.is_empty()
+        || !changed_effects.is_empty()
+        || !changed_cache.is_empty()
+        || !changed_env_allowlist.is_empty()
+        || !changed_trigger_rule.is_empty()
+        || !changed_branching.is_empty()
+        || !changed_node_kind.is_empty()
         || !added_dependencies.is_empty()
         || !removed_dependencies.is_empty();
     let metadata_only_changed = graph_fingerprint_changed && !execution_affecting_changed;
@@ -370,9 +444,70 @@ pub fn diff_plans(before: &PlannerBuildResult, after: &PlannerBuildResult) -> Pl
         changed_outputs,
         changed_resources,
         changed_retry_timeout,
+        changed_effects,
+        changed_cache,
+        changed_env_allowlist,
+        changed_trigger_rule,
+        changed_branching,
+        changed_node_kind,
         added_dependencies,
         removed_dependencies,
         changed_metadata,
+    }
+}
+
+pub fn compare_plan_equivalence(
+    before: &PlannerBuildResult,
+    after: &PlannerBuildResult,
+) -> PlannerEquivalenceReport {
+    let diff = diff_plans(before, after);
+    let graph_identity_equal = before.plan.graph_fingerprint == after.plan.graph_fingerprint;
+    let execution_fingerprint_equal =
+        before.plan.execution_fingerprint == after.plan.execution_fingerprint;
+    let execution_equivalent = !diff.execution_affecting_changed;
+
+    let (equivalent, equivalence_class, summary) = if execution_equivalent {
+        if graph_identity_equal && execution_fingerprint_equal {
+            (
+                true,
+                PlannerEquivalenceClass::StrictEquivalent,
+                "graphs are equivalent under canonical graph identity and execution fingerprint"
+                    .to_string(),
+            )
+        } else {
+            (
+                true,
+                PlannerEquivalenceClass::MetadataDriftEquivalent,
+                "graphs remain execution-equivalent after ignoring non-execution metadata drift"
+                    .to_string(),
+            )
+        }
+    } else {
+        (
+            false,
+            PlannerEquivalenceClass::NotEquivalent,
+            "graphs are not execution-equivalent because execution-affecting planner state changed"
+                .to_string(),
+        )
+    };
+
+    let ignored_non_execution_drift =
+        if execution_equivalent { diff.changed_metadata.clone() } else { Vec::new() };
+    let non_equivalence_causes =
+        if execution_equivalent { Vec::new() } else { equivalence_causes_from_diff(&diff) };
+
+    PlannerEquivalenceReport {
+        equivalent,
+        equivalence_class,
+        before_graph_identity: before.plan.graph_fingerprint.clone(),
+        after_graph_identity: after.plan.graph_fingerprint.clone(),
+        graph_identity_equal,
+        before_execution_fingerprint: before.plan.execution_fingerprint.clone(),
+        after_execution_fingerprint: after.plan.execution_fingerprint.clone(),
+        execution_fingerprint_equal,
+        ignored_non_execution_drift,
+        non_equivalence_causes,
+        summary,
     }
 }
 
@@ -394,6 +529,45 @@ fn serialized_value_eq<T: Serialize>(left: &T, right: &T) -> bool {
     serde_json::to_value(left).expect("planner diff comparison should serialize left operand")
         == serde_json::to_value(right)
             .expect("planner diff comparison should serialize right operand")
+}
+
+fn equivalence_causes_from_diff(diff: &PlannerPlanDiff) -> Vec<String> {
+    let mut causes = Vec::new();
+    causes.extend(diff.added_nodes.iter().map(|node_id| format!("added_node:{node_id}")));
+    causes.extend(diff.removed_nodes.iter().map(|node_id| format!("removed_node:{node_id}")));
+    causes.extend(diff.changed_params.iter().map(|node_id| format!("changed_params:{node_id}")));
+    causes.extend(diff.changed_outputs.iter().map(|node_id| format!("changed_outputs:{node_id}")));
+    causes.extend(
+        diff.changed_resources.iter().map(|node_id| format!("changed_resources:{node_id}")),
+    );
+    causes.extend(
+        diff.changed_retry_timeout.iter().map(|node_id| format!("changed_retry_timeout:{node_id}")),
+    );
+    causes.extend(diff.changed_effects.iter().map(|node_id| format!("changed_effects:{node_id}")));
+    causes.extend(diff.changed_cache.iter().map(|node_id| format!("changed_cache:{node_id}")));
+    causes.extend(
+        diff.changed_env_allowlist.iter().map(|node_id| format!("changed_env_allowlist:{node_id}")),
+    );
+    causes.extend(
+        diff.changed_trigger_rule.iter().map(|node_id| format!("changed_trigger_rule:{node_id}")),
+    );
+    causes.extend(
+        diff.changed_branching.iter().map(|node_id| format!("changed_branching:{node_id}")),
+    );
+    causes.extend(
+        diff.changed_node_kind.iter().map(|node_id| format!("changed_node_kind:{node_id}")),
+    );
+    causes.extend(
+        diff.added_dependencies.iter().map(|dependency| format!("added_dependency:{dependency}")),
+    );
+    causes.extend(
+        diff.removed_dependencies
+            .iter()
+            .map(|dependency| format!("removed_dependency:{dependency}")),
+    );
+    causes.sort();
+    causes.dedup();
+    causes
 }
 
 pub fn explain_plan(result: &PlannerBuildResult) -> PlannerExplainReport {
