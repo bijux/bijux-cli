@@ -12,6 +12,7 @@ pub trait Fs: Send + Sync {
     fn metadata(&self, path: &Path) -> io::Result<fs::Metadata>;
     fn rename(&self, from: &Path, to: &Path) -> io::Result<()>;
     fn remove_file(&self, path: &Path) -> io::Result<()>;
+    fn remove_dir_all(&self, path: &Path) -> io::Result<()>;
     fn copy(&self, from: &Path, to: &Path) -> io::Result<u64>;
     fn hard_link(&self, from: &Path, to: &Path) -> io::Result<()>;
     fn symlink(&self, from: &Path, to: &Path) -> io::Result<()>;
@@ -59,6 +60,10 @@ impl Fs for StdFs {
 
     fn remove_file(&self, path: &Path) -> io::Result<()> {
         fs::remove_file(path)
+    }
+
+    fn remove_dir_all(&self, path: &Path) -> io::Result<()> {
+        fs::remove_dir_all(path)
     }
 
     fn copy(&self, from: &Path, to: &Path) -> io::Result<u64> {

@@ -748,6 +748,7 @@ impl Adapter for ShellAdapter {
         cmd.args(&args[1..]);
         cmd.current_dir(&work_dir);
         apply_shaped_env(&mut cmd, exec.policy.clean_env, &env_allowlist, &[]);
+        apply_temp_env(&mut cmd, &exec.run_dir.node_temp_dir(&node.id));
 
         let output = command_output_with_controls(
             &mut cmd,
@@ -969,6 +970,10 @@ impl Adapter for ContainerAdapter {
         for (key, val) in shaped_environment(exec.policy.clean_env, &env_allowlist, &[]) {
             cmd.arg("-e").arg(format!("{}={}", key, val));
         }
+        let temp_dir = container_temp_dir(&workdir);
+        cmd.arg("-e").arg(format!("TMPDIR={temp_dir}"));
+        cmd.arg("-e").arg(format!("TMP={temp_dir}"));
+        cmd.arg("-e").arg(format!("TEMP={temp_dir}"));
 
         cmd.arg(&spec.image);
         let stable_argv = bijux_dag_core::resolve::resolve_command_argv_templates(
@@ -1558,6 +1563,7 @@ fn execute_with_retries(
     let mut attempt_events = Vec::new();
     loop {
         attempt += 1;
+        prepare_node_execution_dirs(ctx, &node.id)?;
         let started = ctx.clock.now_unix_ms();
         let node_ctx = NodeCtx { graph, node, exec: ctx, params };
         let mut result = match adapter.execute(&node_ctx) {
@@ -1947,7 +1953,7 @@ fn materialize_inputs(
     mode: MaterializeMode,
 ) -> Result<InputsIndex, RuntimeError> {
     let inputs_dir = ctx.run_dir.node_inputs_dir(node_id);
-    ctx.fs.create_dir_all(&inputs_dir)?;
+    recreate_dir(ctx.fs.as_ref(), &inputs_dir)?;
     let mut files = Vec::new();
     for edge in &graph.edges {
         if edge.to.node_id != node_id {
@@ -2293,8 +2299,8 @@ fn try_cache_read(
             }
             let source =
                 cache_source_from_meta(store.fs(), &entry).unwrap_or_else(|| "local".to_string());
+            prepare_node_execution_dirs(ctx, &node.id)?;
             let node_dir = ctx.run_dir.node_dir(&node.id);
-            store.fs().create_dir_all(&node_dir)?;
             copy_dir_all(
                 store.fs(),
                 entry.join("outputs"),
@@ -2329,8 +2335,8 @@ fn try_cache_read(
                         }),
                     });
                 }
+                prepare_node_execution_dirs(ctx, &node.id)?;
                 let node_dir = ctx.run_dir.node_dir(&node.id);
-                store.fs().create_dir_all(&node_dir)?;
                 copy_dir_all(
                     store.fs(),
                     remote_entry.join("outputs"),
@@ -2356,6 +2362,41 @@ fn try_cache_read(
         }
     }
     Ok(CacheRead { hit: false, proof: None })
+}
+
+fn prepare_node_execution_dirs(ctx: &RunContext, node_id: &str) -> Result<(), RuntimeError> {
+    let node_dir = ctx.run_dir.node_dir(node_id);
+    ctx.fs.create_dir_all(&node_dir)?;
+    recreate_dir(ctx.fs.as_ref(), &ctx.run_dir.node_outputs_dir(node_id))?;
+    recreate_dir(ctx.fs.as_ref(), &ctx.run_dir.node_work_dir(node_id))?;
+    ctx.fs.create_dir_all(&ctx.run_dir.node_temp_dir(node_id))?;
+    Ok(())
+}
+
+fn recreate_dir(fs: &dyn Fs, path: &Path) -> std_io::Result<()> {
+    match fs.metadata(path) {
+        Ok(metadata) => {
+            if metadata.is_dir() {
+                fs.remove_dir_all(path)?;
+            } else {
+                fs.remove_file(path)?;
+            }
+        }
+        Err(err) if err.kind() == std_io::ErrorKind::NotFound => {}
+        Err(err) => return Err(err),
+    }
+    fs.create_dir_all(path)
+}
+
+fn apply_temp_env(cmd: &mut std::process::Command, temp_dir: &Path) {
+    let temp_dir = temp_dir.display().to_string();
+    cmd.env("TMPDIR", &temp_dir);
+    cmd.env("TMP", &temp_dir);
+    cmd.env("TEMP", &temp_dir);
+}
+
+fn container_temp_dir(workdir: &str) -> String {
+    format!("{workdir}/temp")
 }
 
 #[allow(clippy::too_many_arguments)]
