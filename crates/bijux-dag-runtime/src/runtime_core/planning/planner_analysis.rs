@@ -42,10 +42,49 @@ pub struct PlannerNodeAnnotation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerExecutionDemand {
+    pub cpu_cores_total: u64,
+    pub memory_mb_total: u64,
+    pub gpu_devices_total: u64,
+    pub cpu_cores_peak_parallel: u64,
+    pub memory_mb_peak_parallel: u64,
+    pub gpu_devices_peak_parallel: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerCacheExposure {
+    pub cacheable_nodes: usize,
+    pub non_cacheable_nodes: usize,
+    pub non_cacheable_node_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerTimeoutExposure {
+    pub timed_nodes: usize,
+    pub timed_node_ids: Vec<String>,
+    pub max_timeout_ms: Option<u64>,
+    pub total_timeout_ms: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerRetryExposure {
+    pub retrying_nodes: usize,
+    pub retrying_node_ids: Vec<String>,
+    pub max_attempts: u32,
+    pub max_backoff_ms: u64,
+    pub total_retry_attempts: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PlannerExecutionCostEstimate {
-    pub total_cpu: u64,
-    pub total_mem_mb: u64,
-    pub max_parallelism_hint: usize,
+    pub node_count: usize,
+    pub root_nodes: Vec<String>,
+    pub critical_path_length: usize,
+    pub max_parallelism: usize,
+    pub demand: PlannerExecutionDemand,
+    pub cache_exposure: PlannerCacheExposure,
+    pub timeout_exposure: PlannerTimeoutExposure,
+    pub retry_exposure: PlannerRetryExposure,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -128,7 +167,7 @@ pub fn build_planner_analysis(
     validate_command_templates(&normalized_graph, &resolved_graph.resolved_params)?;
     let mut annotations = annotate_plan(&normalized_graph, &plan, selector_set);
     plan = apply_optimizer_rules(normalized_graph.clone(), plan, &mut annotations, guardrails);
-    let execution_cost_estimate = estimate_execution_cost(&plan.nodes);
+    let execution_cost_estimate = estimate_execution_cost(&plan);
     let priority_inheritance = inherit_priority(&plan.nodes);
     let plan_fingerprint = fingerprint_plan(&plan, &annotations)?;
     let path_previews =
@@ -496,16 +535,242 @@ fn selector_matches(node: &Node, selector: &Selector) -> bool {
     }
 }
 
-fn estimate_execution_cost(nodes: &[Node]) -> PlannerExecutionCostEstimate {
-    let total_cpu =
-        nodes.iter().map(|n| n.resources.as_ref().map(|r| r.cpu as u64).unwrap_or(1)).sum();
-    let total_mem_mb =
-        nodes.iter().map(|n| n.resources.as_ref().map(|r| r.mem_mb as u64).unwrap_or(256)).sum();
-    PlannerExecutionCostEstimate {
-        total_cpu,
-        total_mem_mb,
-        max_parallelism_hint: nodes.len().max(1),
+fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate {
+    let selected_nodes = plan
+        .nodes
+        .iter()
+        .filter(|node| !plan.filter_reasons.contains_key(&node.id))
+        .collect::<Vec<_>>();
+    let selected_node_ids = selected_nodes
+        .iter()
+        .map(|node| node.id.clone())
+        .collect::<BTreeSet<_>>();
+    let selected_dependencies = plan
+        .planned_dependencies
+        .iter()
+        .filter(|edge| {
+            selected_node_ids.contains(&edge.from) && selected_node_ids.contains(&edge.to)
+        })
+        .collect::<Vec<_>>();
+    let order = plan
+        .order
+        .iter()
+        .filter(|node_id| selected_node_ids.contains(*node_id))
+        .cloned()
+        .collect::<Vec<_>>();
+
+    let mut indegree = selected_nodes
+        .iter()
+        .map(|node| (node.id.clone(), 0usize))
+        .collect::<HashMap<_, _>>();
+    let mut adjacency = selected_nodes
+        .iter()
+        .map(|node| (node.id.clone(), Vec::<String>::new()))
+        .collect::<HashMap<_, _>>();
+    for edge in &selected_dependencies {
+        adjacency.entry(edge.from.clone()).or_default().push(edge.to.clone());
+        *indegree.entry(edge.to.clone()).or_default() += 1;
     }
+    for children in adjacency.values_mut() {
+        children.sort();
+    }
+
+    let mut root_nodes = indegree
+        .iter()
+        .filter_map(|(node_id, count)| (*count == 0).then_some(node_id.clone()))
+        .collect::<Vec<_>>();
+    root_nodes.sort();
+
+    let mut cpu_cores_total = 0u64;
+    let mut memory_mb_total = 0u64;
+    let mut gpu_devices_total = 0u64;
+    let mut cacheable_nodes = 0usize;
+    let mut non_cacheable_node_ids = Vec::new();
+    let mut timed_node_ids = Vec::new();
+    let mut max_timeout_ms = None::<u64>;
+    let mut total_timeout_ms = 0u64;
+    let mut retrying_node_ids = Vec::new();
+    let mut max_attempts = 0u32;
+    let mut max_backoff_ms = 0u64;
+    let mut total_retry_attempts = 0u64;
+
+    for node in &selected_nodes {
+        let (cpu, memory, gpu) = node_resource_demand(node);
+        cpu_cores_total += cpu;
+        memory_mb_total += memory;
+        gpu_devices_total += gpu;
+        if node.cache.enabled {
+            cacheable_nodes += 1;
+        } else {
+            non_cacheable_node_ids.push(node.id.clone());
+        }
+        if let Some(timeout_ms) = node.timeout_ms {
+            timed_node_ids.push(node.id.clone());
+            total_timeout_ms += timeout_ms;
+            max_timeout_ms = Some(max_timeout_ms.map_or(timeout_ms, |current| current.max(timeout_ms)));
+        }
+        if node.retry.max_attempts > 0 {
+            retrying_node_ids.push(node.id.clone());
+            max_attempts = max_attempts.max(node.retry.max_attempts);
+            max_backoff_ms = max_backoff_ms.max(node.retry.backoff_ms);
+            total_retry_attempts += u64::from(node.retry.max_attempts);
+        }
+    }
+
+    non_cacheable_node_ids.sort();
+    timed_node_ids.sort();
+    retrying_node_ids.sort();
+
+    let critical_path_length = critical_path_length(&order, &selected_dependencies);
+    let (max_parallelism, cpu_cores_peak_parallel, memory_mb_peak_parallel, gpu_devices_peak_parallel) =
+        parallelism_profile(&selected_nodes, &indegree, &adjacency);
+
+    PlannerExecutionCostEstimate {
+        node_count: selected_nodes.len(),
+        root_nodes,
+        critical_path_length,
+        max_parallelism,
+        demand: PlannerExecutionDemand {
+            cpu_cores_total,
+            memory_mb_total,
+            gpu_devices_total,
+            cpu_cores_peak_parallel,
+            memory_mb_peak_parallel,
+            gpu_devices_peak_parallel,
+        },
+        cache_exposure: PlannerCacheExposure {
+            cacheable_nodes,
+            non_cacheable_nodes: non_cacheable_node_ids.len(),
+            non_cacheable_node_ids,
+        },
+        timeout_exposure: PlannerTimeoutExposure {
+            timed_nodes: timed_node_ids.len(),
+            timed_node_ids,
+            max_timeout_ms,
+            total_timeout_ms,
+        },
+        retry_exposure: PlannerRetryExposure {
+            retrying_nodes: retrying_node_ids.len(),
+            retrying_node_ids,
+            max_attempts,
+            max_backoff_ms,
+            total_retry_attempts,
+        },
+    }
+}
+
+fn node_resource_demand(node: &Node) -> (u64, u64, u64) {
+    let cpu = node.resources.as_ref().map(|resources| resources.cpu as u64).unwrap_or(1);
+    let memory = node.resources.as_ref().map(|resources| resources.mem_mb as u64).unwrap_or(256);
+    let gpu = node
+        .tags
+        .iter()
+        .filter_map(|tag| {
+            if tag == "gpu" || tag == "accelerator:gpu" {
+                Some(1)
+            } else {
+                tag.strip_prefix("gpu:").and_then(|value| value.parse::<u64>().ok())
+            }
+        })
+        .max()
+        .unwrap_or(0);
+    (cpu, memory, gpu)
+}
+
+fn critical_path_length(
+    order: &[String],
+    dependencies: &[&crate::PlannedDependency],
+) -> usize {
+    let mut parent_map = HashMap::<String, Vec<String>>::new();
+    for edge in dependencies {
+        parent_map.entry(edge.to.clone()).or_default().push(edge.from.clone());
+    }
+    let mut distances = HashMap::<String, usize>::new();
+    let mut longest = 0usize;
+    for node_id in order {
+        let depth = parent_map
+            .get(node_id)
+            .map(|parents| {
+                parents
+                    .iter()
+                    .filter_map(|parent| distances.get(parent).copied())
+                    .max()
+                    .unwrap_or(0)
+                    + 1
+            })
+            .unwrap_or(1);
+        distances.insert(node_id.clone(), depth);
+        longest = longest.max(depth);
+    }
+    longest
+}
+
+fn parallelism_profile(
+    nodes: &[&Node],
+    indegree: &HashMap<String, usize>,
+    adjacency: &HashMap<String, Vec<String>>,
+) -> (usize, u64, u64, u64) {
+    if nodes.is_empty() {
+        return (0, 0, 0, 0);
+    }
+
+    let node_lookup =
+        nodes.iter().map(|node| (node.id.clone(), *node)).collect::<HashMap<String, &Node>>();
+    let mut remaining_indegree = indegree.clone();
+    let mut ready = remaining_indegree
+        .iter()
+        .filter_map(|(node_id, count)| (*count == 0).then_some(node_id.clone()))
+        .collect::<Vec<_>>();
+    ready.sort();
+
+    let mut max_parallelism = 0usize;
+    let mut cpu_cores_peak_parallel = 0u64;
+    let mut memory_mb_peak_parallel = 0u64;
+    let mut gpu_devices_peak_parallel = 0u64;
+
+    while !ready.is_empty() {
+        max_parallelism = max_parallelism.max(ready.len());
+        let mut batch_cpu = 0u64;
+        let mut batch_memory = 0u64;
+        let mut batch_gpu = 0u64;
+        let batch = ready.clone();
+        let mut next_ready = Vec::new();
+
+        for node_id in &batch {
+            let node = node_lookup
+                .get(node_id)
+                .expect("selected node must be present in execution cost lookup");
+            let (cpu, memory, gpu) = node_resource_demand(node);
+            batch_cpu += cpu;
+            batch_memory += memory;
+            batch_gpu += gpu;
+            if let Some(children) = adjacency.get(node_id) {
+                for child in children {
+                    let count = remaining_indegree
+                        .get_mut(child)
+                        .expect("child indegree must exist in execution cost profile");
+                    *count -= 1;
+                    if *count == 0 {
+                        next_ready.push(child.clone());
+                    }
+                }
+            }
+        }
+
+        cpu_cores_peak_parallel = cpu_cores_peak_parallel.max(batch_cpu);
+        memory_mb_peak_parallel = memory_mb_peak_parallel.max(batch_memory);
+        gpu_devices_peak_parallel = gpu_devices_peak_parallel.max(batch_gpu);
+        next_ready.sort();
+        next_ready.dedup();
+        ready = next_ready;
+    }
+
+    (
+        max_parallelism,
+        cpu_cores_peak_parallel,
+        memory_mb_peak_parallel,
+        gpu_devices_peak_parallel,
+    )
 }
 
 fn inherit_priority(nodes: &[Node]) -> Vec<PlannerPriorityInheritance> {
