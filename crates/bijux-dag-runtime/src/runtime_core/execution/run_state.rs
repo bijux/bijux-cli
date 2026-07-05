@@ -46,6 +46,7 @@ pub enum RunState {
     Interrupted,
     Cancelling,
     Cancelled,
+    TimedOut,
     Failed,
     Succeeded,
 }
@@ -219,8 +220,9 @@ pub const INV_RUN_TRANSITION_INTERRUPTED_RUNNING: &str = "INV-RUN-TRANSITION-006
 pub const INV_RUN_TRANSITION_INTERRUPTED_CANCELLING: &str = "INV-RUN-TRANSITION-007";
 pub const INV_RUN_TRANSITION_RUNNING_CANCELLING: &str = "INV-RUN-TRANSITION-008";
 pub const INV_RUN_TRANSITION_CANCELLING_CANCELLED: &str = "INV-RUN-TERMINAL-001";
-pub const INV_RUN_TRANSITION_RUNNING_FAILED: &str = "INV-RUN-TERMINAL-002";
-pub const INV_RUN_TRANSITION_RUNNING_SUCCEEDED: &str = "INV-RUN-TERMINAL-003";
+pub const INV_RUN_TRANSITION_RUNNING_TIMED_OUT: &str = "INV-RUN-TERMINAL-002";
+pub const INV_RUN_TRANSITION_RUNNING_FAILED: &str = "INV-RUN-TERMINAL-003";
+pub const INV_RUN_TRANSITION_RUNNING_SUCCEEDED: &str = "INV-RUN-TERMINAL-004";
 pub const INV_RUN_FAILED_CAUSAL_FAILURE: &str = "INV-RUN-FAILED-CAUSAL-001";
 
 pub fn node_transition_invariant_id(from: NodeState, to: NodeState) -> Option<&'static str> {
@@ -260,6 +262,7 @@ pub fn run_transition_invariant_id(from: RunState, to: RunState) -> Option<&'sta
         (S::Interrupted, S::Cancelling) => Some(INV_RUN_TRANSITION_INTERRUPTED_CANCELLING),
         (S::Running, S::Cancelling) => Some(INV_RUN_TRANSITION_RUNNING_CANCELLING),
         (S::Cancelling, S::Cancelled) => Some(INV_RUN_TRANSITION_CANCELLING_CANCELLED),
+        (S::Running, S::TimedOut) => Some(INV_RUN_TRANSITION_RUNNING_TIMED_OUT),
         (S::Running, S::Failed) => Some(INV_RUN_TRANSITION_RUNNING_FAILED),
         (S::Running, S::Succeeded) => Some(INV_RUN_TRANSITION_RUNNING_SUCCEEDED),
         _ => None,
@@ -329,6 +332,7 @@ pub fn validate_run_transition(transition: &RunTransition) -> Result<(), String>
             | (S::Interrupted, S::Cancelling)
             | (S::Running, S::Cancelling)
             | (S::Cancelling, S::Cancelled)
+            | (S::Running, S::TimedOut)
             | (S::Running, S::Failed)
             | (S::Running, S::Succeeded)
     );
@@ -354,7 +358,10 @@ pub fn verify_post_run_state_consistency(
         violations
             .push(format!("{} failed run has no causal failure", INV_RUN_FAILED_CAUSAL_FAILURE));
     }
-    if matches!(run_state, RunState::Succeeded | RunState::Failed | RunState::Cancelled) {
+    if matches!(
+        run_state,
+        RunState::Succeeded | RunState::Failed | RunState::Cancelled | RunState::TimedOut
+    ) {
         let non_terminal = node_states.iter().any(|s| {
             !matches!(
                 s,
@@ -398,7 +405,10 @@ pub fn terminal_transition_audit_events(
         }
     }
     for transition in run_transitions {
-        if matches!(transition.to, RunState::Succeeded | RunState::Failed | RunState::Cancelled) {
+        if matches!(
+            transition.to,
+            RunState::Succeeded | RunState::Failed | RunState::Cancelled | RunState::TimedOut
+        ) {
             out.push(TransitionAuditEvent {
                 invariant_id: run_transition_invariant_id(
                     transition.from.clone(),

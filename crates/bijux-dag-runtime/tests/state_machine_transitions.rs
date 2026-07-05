@@ -61,6 +61,7 @@ fn accepts_legal_run_transitions() {
         (RunState::Interrupted, RunState::Cancelling),
         (RunState::Running, RunState::Cancelling),
         (RunState::Cancelling, RunState::Cancelled),
+        (RunState::Running, RunState::TimedOut),
         (RunState::Running, RunState::Failed),
         (RunState::Running, RunState::Succeeded),
     ];

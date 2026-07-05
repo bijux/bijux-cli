@@ -71,9 +71,9 @@ fn cancelled_and_failed_runs_must_be_coherent() {
     assert!(!failed_without_cause.valid);
 
     let timed_out = verify_post_run_state_consistency(
-        RunState::Failed,
+        RunState::TimedOut,
         &[NodeState::TimedOut, NodeState::Success],
-        1,
+        0,
     );
     assert!(timed_out.valid);
 }
@@ -128,8 +128,8 @@ fn terminal_transition_audit_events_emit_for_terminal_paths() {
     }];
     let run_transitions = vec![RunTransition {
         from: RunState::Running,
-        to: RunState::Failed,
-        cause: TransitionCause::ExecutionFailed,
+        to: RunState::TimedOut,
+        cause: TransitionCause::TimeoutExceeded,
     }];
     let events = terminal_transition_audit_events(&node_transitions, &run_transitions);
     assert_eq!(events.len(), 2);
