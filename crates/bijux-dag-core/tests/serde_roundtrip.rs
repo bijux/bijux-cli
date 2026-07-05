@@ -56,7 +56,7 @@ fn serde_roundtrip_edge_and_port_models() {
 
 #[test]
 fn serde_roundtrip_file_output_model() {
-    let output = FileOutput { name: "result".to_string(), path: "out/result.txt".to_string() };
+    let output = FileOutput::new("result".to_string(), "out/result.txt".to_string());
     let encoded = serde_json::to_string(&output).unwrap();
     let decoded: FileOutput = serde_json::from_str(&encoded).unwrap();
     assert_eq!(decoded, output);
@@ -226,9 +226,7 @@ fn core_public_api_contract_snapshot_stable() {
 #[test]
 fn strict_parse_then_validation_diagnostics_separation() {
     let mut graph = sample_graph();
-    graph.nodes[0]
-        .outputs
-        .push(FileOutput { name: "dup".to_string(), path: "out/result.txt".to_string() });
+    graph.nodes[0].outputs.push(FileOutput::new("dup".to_string(), "out/result.txt".to_string()));
     let text = serde_json::to_string(&graph).unwrap();
     let parsed = bijux_dag_core::parse_graph_strict(&text).unwrap();
     let diags = parsed.validate_with_warnings();
@@ -257,10 +255,7 @@ fn sample_node(id: &str) -> Node {
         kind: NodeKind::Const,
         semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
         inputs: vec![],
-        outputs: vec![FileOutput {
-            name: "result".to_string(),
-            path: "out/result.txt".to_string(),
-        }],
+        outputs: vec![FileOutput::new("result".to_string(), "out/result.txt".to_string())],
         params: ParamValue::default(),
         container: None,
         timeout_ms: None,

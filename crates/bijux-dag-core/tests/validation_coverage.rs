@@ -278,10 +278,8 @@ fn graph_for_code(code: &str) -> Graph {
         }
         "E1008" => {
             let mut g = base_graph();
-            g.nodes[0].outputs =
-                vec![FileOutput { name: "same".to_string(), path: "out.txt".to_string() }];
-            g.nodes[1].outputs =
-                vec![FileOutput { name: "same".to_string(), path: "out.txt".to_string() }];
+            g.nodes[0].outputs = vec![FileOutput::new("same".to_string(), "out.txt".to_string())];
+            g.nodes[1].outputs = vec![FileOutput::new("same".to_string(), "out.txt".to_string())];
             g
         }
         "E1009" => {
@@ -324,10 +322,7 @@ fn graph_for_code(code: &str) -> Graph {
                 kind: NodeKind::Const,
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec!["in".to_string()],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "dep/out.txt".to_string(),
-                }],
+                outputs: vec![FileOutput::new("out".to_string(), "dep/out.txt".to_string())],
                 params: bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
                     graph_input: None,
                     node_output: Some(bijux_dag_core::NodeOutputRef {
@@ -396,8 +391,7 @@ fn graph_for_code(code: &str) -> Graph {
         }
         "E1025" => {
             let mut g = base_graph();
-            g.nodes[0].outputs =
-                vec![FileOutput { name: "out".to_string(), path: "../bad.out".to_string() }];
+            g.nodes[0].outputs = vec![FileOutput::new("out".to_string(), "../bad.out".to_string())];
             g
         }
         "E1027" => {
@@ -429,10 +423,10 @@ fn graph_for_code(code: &str) -> Graph {
                         kind: NodeKind::Shell,
                         semantic_kind: SemanticNodeKind::Branch,
                         inputs: vec!["in".to_string()],
-                        outputs: vec![FileOutput {
-                            name: "decision".to_string(),
-                            path: "branch/decision.txt".to_string(),
-                        }],
+                        outputs: vec![FileOutput::new(
+                            "decision".to_string(),
+                            "branch/decision.txt".to_string(),
+                        )],
                         params: bijux_dag_core::ParamValue::default(),
                         container: None,
                         timeout_ms: None,
@@ -475,10 +469,10 @@ fn graph_for_code(code: &str) -> Graph {
                         kind: NodeKind::Shell,
                         semantic_kind: SemanticNodeKind::Branch,
                         inputs: vec!["in".to_string()],
-                        outputs: vec![FileOutput {
-                            name: "decision".to_string(),
-                            path: "branch/decision.txt".to_string(),
-                        }],
+                        outputs: vec![FileOutput::new(
+                            "decision".to_string(),
+                            "branch/decision.txt".to_string(),
+                        )],
                         params: bijux_dag_core::ParamValue::default(),
                         container: None,
                         timeout_ms: None,
@@ -559,7 +553,7 @@ fn build_node(id: &str, mut inputs: Vec<String>, name: &str) -> Node {
         kind: NodeKind::Const,
         semantic_kind: SemanticNodeKind::Task,
         inputs: std::mem::take(&mut inputs),
-        outputs: vec![FileOutput { name: name.to_string(), path: format!("{id}/{name}.txt") }],
+        outputs: vec![FileOutput::new(name.to_string(), format!("{id}/{name}.txt"))],
         params: bijux_dag_core::ParamValue::default(),
         container: None,
         timeout_ms: None,

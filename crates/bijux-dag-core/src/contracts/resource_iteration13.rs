@@ -571,10 +571,7 @@ mod tests {
                 kind: NodeKind::Shell,
                 semantic_kind: SemanticNodeKind::Task,
                 inputs: vec!["reads".to_string()],
-                outputs: vec![FileOutput {
-                    name: "bam".to_string(),
-                    path: "align.bam".to_string(),
-                }],
+                outputs: vec![FileOutput::new("bam".to_string(), "align.bam".to_string())],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: Some(6_000),
