@@ -361,6 +361,8 @@ pub struct OutputSummary {
     pub media_type: String,
     pub size_bytes: u64,
     pub sha256: String,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub promotable: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -369,6 +371,8 @@ pub struct DeclaredOutputArtifact {
     pub path: String,
     pub kind: String,
     pub media_type: String,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub promotable: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -382,6 +386,8 @@ pub struct TraceOutputArtifact {
     pub size_bytes: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub promotable: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -419,6 +425,8 @@ pub struct RunOutputFile {
     pub size_bytes: u64,
     pub sha256: String,
     pub path: String,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub promotable: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -461,6 +469,12 @@ pub struct OutputFile {
     pub sha256: String,
     pub node_id: String,
     pub node_fingerprint: String,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub promotable: bool,
+}
+
+fn is_false(value: &bool) -> bool {
+    !value
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

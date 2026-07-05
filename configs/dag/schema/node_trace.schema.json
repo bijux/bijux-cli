@@ -36,7 +36,8 @@
           "present": {"type": "boolean"},
           "media_type": {"type": "string"},
           "size_bytes": {"type": ["integer", "null"]},
-          "sha256": {"type": ["string", "null"]}
+          "sha256": {"type": ["string", "null"]},
+          "promotable": {"type": "boolean"}
         }
       }
     },

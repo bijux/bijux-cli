@@ -34,6 +34,7 @@ fn fs_accepts_normalized_relative_paths_for_indexing() {
             path: "nested/ok/payload.bin".to_string(),
             kind: "file".to_string(),
             media_type: "application/octet-stream".to_string(),
+            promotable: false,
         }],
     )
     .expect("index");
@@ -60,12 +61,14 @@ fn fs_rejects_escaping_paths() {
                 path: "../escape.txt".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
             DeclaredOutputArtifact {
                 name: "safe".to_string(),
                 path: "safe.txt".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
         ],
     )

@@ -33,12 +33,14 @@ fn outputs_index_is_stable_under_repeated_writes() {
             path: "b.txt".to_string(),
             kind: "file".to_string(),
             media_type: "application/octet-stream".to_string(),
+            promotable: false,
         },
         DeclaredOutputArtifact {
             name: "a".to_string(),
             path: "a.txt".to_string(),
             kind: "file".to_string(),
             media_type: "application/octet-stream".to_string(),
+            promotable: false,
         },
     ];
     write_outputs_index(dir.path(), "node", "fp", &paths).unwrap();
@@ -152,12 +154,14 @@ fn write_outputs_index_rejects_escaping_paths() {
                 path: "ok.txt".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
             DeclaredOutputArtifact {
                 name: "escape".to_string(),
                 path: "../escape.txt".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
         ],
     )
@@ -181,12 +185,14 @@ fn write_outputs_index_rejects_missing_declared_outputs() {
                 path: "ok.txt".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
             DeclaredOutputArtifact {
                 name: "missing".to_string(),
                 path: "missing.txt".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
         ],
     )

@@ -36,6 +36,7 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
                 media_type: "application/octet-stream".to_string(),
                 size_bytes: idx as u64,
                 sha256: "hash".to_string(),
+                promotable: false,
             })
             .collect(),
         node_counts: bijux_dag_artifacts::NodeCounts {

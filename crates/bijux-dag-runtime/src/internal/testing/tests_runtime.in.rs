@@ -1703,6 +1703,83 @@ exit 1
     }
 
     #[test]
+    fn promotable_outputs_are_recorded_in_trace_manifest_and_indexes() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut deliverable = FileOutput::new("report".to_string(), "report.json".to_string());
+        deliverable.promotable = true;
+
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: std::collections::BTreeMap::new(),
+            nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
+            nodes: vec![Node {
+                id: "publish".to_string(),
+                kind: NodeKind::Shell,
+                semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+                inputs: vec![],
+                outputs: vec![deliverable],
+                params: param_object(vec![(
+                    "argv",
+                    Value::Array(vec![
+                        Value::from("/bin/sh"),
+                        Value::from("-c"),
+                        Value::from("printf '{\"ok\":true}' > ../outputs/report.json"),
+                    ]),
+                )]),
+                container: None,
+                timeout_ms: None,
+                resources: None,
+                tags: vec![],
+                retry: bijux_dag_core::RetryPolicy::default(),
+                cache: Default::default(),
+                effects: vec![Effect::Filesystem],
+                env_allowlist: vec![],
+                group: None,
+                trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                branch: None,
+            }],
+            edges: vec![],
+        };
+
+        let runtime = Runtime::new();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+
+        let trace: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(final_path.join("nodes").join("publish").join("trace.json"))
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(trace["outputs"][0]["promotable"], true);
+
+        let manifest: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(final_path.join("manifest.json")).unwrap())
+                .unwrap();
+        assert_eq!(manifest["outputs"][0]["promotable"], true);
+
+        let run_index: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(final_path.join("outputs").join("index.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(run_index["files"][0]["promotable"], true);
+
+        let node_index: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(
+                final_path
+                    .join("nodes")
+                    .join("publish")
+                    .join("outputs")
+                    .join("index.json"),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(node_index["files"][0]["promotable"], true);
+    }
+
+    #[test]
     fn output_validation_ignores_managed_output_index_metadata() {
         let dir = tempfile::tempdir().unwrap();
         let outdir = dir.path().join("outputs");

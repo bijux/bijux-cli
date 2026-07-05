@@ -108,12 +108,14 @@ fn outputs_index_preserves_nested_paths_and_empty_file_identity() {
                 path: "nested/deeper/data.txt".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
             DeclaredOutputArtifact {
                 name: "empty".to_string(),
                 path: "nested/deeper/empty.txt".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
         ],
     )
@@ -138,6 +140,7 @@ fn metadata_only_indexes_scale_without_payload_materialization() {
             size_bytes: i as u64,
             sha256: format!("{:064x}", i),
             path: format!("node-bulk/output-{i:05}.bin"),
+            promotable: false,
         })
         .collect::<Vec<_>>();
     let index = RunOutputsIndex { files };

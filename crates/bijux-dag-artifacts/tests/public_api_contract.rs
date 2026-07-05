@@ -45,6 +45,7 @@ fn prelude_covers_artifact_write_and_validation_flow() {
             path: "out.txt".to_string(),
             kind: "file".to_string(),
             media_type: "application/octet-stream".to_string(),
+            promotable: false,
         }],
     )
     .expect("index");

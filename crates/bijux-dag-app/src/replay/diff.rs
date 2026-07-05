@@ -346,6 +346,7 @@ mod tests {
                     sha256: h.to_string(),
                     node_id: "n".to_string(),
                     node_fingerprint: "fp".to_string(),
+                    promotable: false,
                 })
                 .collect(),
         }

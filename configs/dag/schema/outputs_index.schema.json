@@ -29,7 +29,8 @@
           "size_bytes": {"type": "integer", "minimum": 0},
           "sha256": {"type": "string"},
           "node_id": {"type": "string"},
-          "node_fingerprint": {"type": "string"}
+          "node_fingerprint": {"type": "string"},
+          "promotable": {"type": "boolean"}
         }
       }
     }

@@ -2062,6 +2062,7 @@ pub(crate) fn declared_output_artifacts(node: &Node) -> Vec<DeclaredOutputArtifa
             path: output.path.clone(),
             kind: output_kind_label(&output.kind).to_string(),
             media_type: output.effective_media_type(),
+            promotable: output.promotable,
         })
         .collect()
 }
@@ -2139,6 +2140,7 @@ pub(crate) fn inspect_declared_outputs(
                 media_type: output.effective_media_type(),
                 size_bytes: None,
                 sha256: None,
+                promotable: output.promotable,
             });
             if output.required {
                 return OutputInspectionReport {
@@ -2236,12 +2238,14 @@ pub(crate) fn inspect_declared_outputs(
             media_type: media_type.clone(),
             size_bytes: Some(size_bytes),
             sha256: Some(sha256.clone()),
+            promotable: output.promotable,
         });
         present_outputs.push(DeclaredOutputArtifact {
             name: output.name.clone(),
             path: output.path.clone(),
             kind: output_kind_label(&output.kind).to_string(),
             media_type,
+            promotable: output.promotable,
         });
     }
 
@@ -3119,6 +3123,7 @@ fn collect_outputs_summary(
                         media_type: f.media_type,
                         size_bytes: f.size_bytes,
                         sha256: f.sha256,
+                        promotable: f.promotable,
                     });
                 }
             }
@@ -3146,6 +3151,7 @@ fn build_run_outputs_index(
             size_bytes: out.size_bytes,
             sha256: out.sha256.clone(),
             path: rel,
+            promotable: out.promotable,
         });
     }
     files.sort_by(|a, b| a.path.cmp(&b.path));

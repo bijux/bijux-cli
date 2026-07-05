@@ -419,6 +419,7 @@ pub fn write_outputs_index(
             sha256: sha,
             node_id: node_id.to_string(),
             node_fingerprint: node_fingerprint.to_string(),
+            promotable: output.promotable,
         });
     }
     files.sort_by(|a, b| a.path.cmp(&b.path));

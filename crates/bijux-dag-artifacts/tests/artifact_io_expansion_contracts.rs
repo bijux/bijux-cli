@@ -46,12 +46,14 @@ fn fs_materialization_rejects_traversal_and_non_normalized_paths() {
                 path: "../escape.txt".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
             DeclaredOutputArtifact {
                 name: "ok".to_string(),
                 path: "ok.txt".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
         ],
     )
@@ -90,12 +92,14 @@ fn nested_tree_export_style_index_and_empty_payload_identity_are_stable() {
                 path: "nested/deeper/data.bin".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
             DeclaredOutputArtifact {
                 name: "empty".to_string(),
                 path: "nested/deeper/empty.bin".to_string(),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                promotable: false,
             },
         ],
     )

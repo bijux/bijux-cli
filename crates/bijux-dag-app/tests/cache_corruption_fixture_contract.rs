@@ -107,6 +107,7 @@ fn write_cache_entry(base: &Path, key: &str, meta: &Value, payload: &[u8]) {
                 .and_then(|value| value.as_str())
                 .unwrap_or_default()
                 .to_string(),
+            promotable: false,
         }],
     };
     fs::write(

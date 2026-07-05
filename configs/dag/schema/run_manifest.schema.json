@@ -45,7 +45,8 @@
           "kind": {"type": "string"},
           "media_type": {"type": "string"},
           "size_bytes": {"type": "integer", "minimum": 0},
-          "sha256": {"type": "string"}
+          "sha256": {"type": "string"},
+          "promotable": {"type": "boolean"}
         }
       }
     },
