@@ -112,6 +112,7 @@ pub struct MaterializedRunPreview {
 pub struct CronConflict {
     pub schedule_ids: Vec<String>,
     pub expression: String,
+    pub timezone: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -248,9 +249,14 @@ pub fn materialize_next_runs(
 ) -> MaterializedRunPreview {
     let mut next = Vec::new();
     match definition.trigger {
-        TriggerSpec::Cron { .. } => {
-            for i in 1..=n.max(1) {
-                next.push(now_unix_ms + (i as u128 * 60_000));
+        TriggerSpec::Cron { ref expression, ref timezone } => {
+            if let Ok(runs) = crate::cron_calendar::materialize_next_cron_runs(
+                expression,
+                timezone,
+                now_unix_ms,
+                n,
+            ) {
+                next = runs;
             }
         }
         TriggerSpec::Backfill(ref b) => {
@@ -267,18 +273,21 @@ pub fn materialize_next_runs(
 }
 
 pub fn detect_cron_conflicts(definitions: &[ScheduleDefinition]) -> Vec<CronConflict> {
-    let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut grouped: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
     for d in definitions {
-        if let TriggerSpec::Cron { expression, .. } = &d.trigger {
-            grouped.entry(expression.clone()).or_default().push(d.id.clone());
+        if let TriggerSpec::Cron { expression, timezone } = &d.trigger {
+            grouped
+                .entry((expression.clone(), timezone.clone()))
+                .or_default()
+                .push(d.id.clone());
         }
     }
     grouped
         .into_iter()
         .filter(|(_, ids)| ids.len() > 1)
-        .map(|(expression, mut ids)| {
+        .map(|((expression, timezone), mut ids)| {
             ids.sort();
-            CronConflict { schedule_ids: ids, expression }
+            CronConflict { schedule_ids: ids, expression, timezone }
         })
         .collect()
 }

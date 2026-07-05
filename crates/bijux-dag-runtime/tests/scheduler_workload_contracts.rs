@@ -48,6 +48,8 @@ fn cron_conflict_detection_groups_equal_expressions() {
     let conflicts = detect_cron_conflicts(&defs);
     assert_eq!(conflicts.len(), 1);
     assert_eq!(conflicts[0].schedule_ids, vec!["s1".to_string(), "s2".to_string()]);
+    assert_eq!(conflicts[0].expression, "0 * * * *");
+    assert_eq!(conflicts[0].timezone, "UTC");
 }
 
 #[test]
@@ -87,7 +89,7 @@ fn materialized_preview_yields_n_cron_runs() {
     let schedule = cron_schedule("s1", "0 * * * *");
     let preview = materialize_next_runs(&schedule, 1_000, 3);
     assert_eq!(preview.next_run_unix_ms.len(), 3);
-    assert_eq!(preview.next_run_unix_ms[0], 61_000);
+    assert_eq!(preview.next_run_unix_ms[0], 3_600_000);
 }
 
 #[test]
