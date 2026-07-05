@@ -97,7 +97,13 @@
               "required": ["name", "path"],
               "properties": {
                 "name": {"type": "string"},
-                "path": {"type": "string"}
+                "path": {"type": "string"},
+                "kind": {
+                  "type": "string",
+                  "enum": ["file", "directory", "value", "table", "log", "binary", "bundle"]
+                },
+                "required": {"type": "boolean"},
+                "media_type": {"type": ["string", "null"]}
               }
             }
           },

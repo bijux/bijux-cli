@@ -144,7 +144,7 @@ impl NodeBuilder {
     }
 
     pub fn output(mut self, name: &str, path: &str) -> Self {
-        self.outputs.push(FileOutput { name: name.to_string(), path: path.to_string() });
+        self.outputs.push(FileOutput::new(name.to_string(), path.to_string()));
         self
     }
 

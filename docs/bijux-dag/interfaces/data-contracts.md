@@ -45,10 +45,58 @@ undocumented adapter behavior.
   planning and execution.
 - `node.inputs` declares named input ports. Edges bind those ports to upstream
   output names.
-- `node.outputs` declares output contracts as `{ "name": ..., "path": ... }`.
+- `node.outputs` declares typed output contracts with a stable `name`, relative
+  `path`, optional `kind`, optional `required`, and optional `media_type`.
 - `node.params` accepts literal JSON, arrays, objects, and reference objects.
 - `timeout_ms`, `resources`, `retry`, `effects`, `env_allowlist`, and `cache`
   are part of the stable graph shape.
+
+### Output Contract Shape
+
+Output kinds are explicit rather than inferred from file names:
+
+- `file`
+- `directory`
+- `value`
+- `table`
+- `log`
+- `binary`
+- `bundle`
+
+The minimal output declaration is still:
+
+```json
+{ "name": "report", "path": "report.json" }
+```
+
+That defaults to a required `file` output with media type
+`application/octet-stream`.
+
+A richer declaration can tighten the contract:
+
+```json
+{
+  "name": "primary",
+  "path": "primary.json",
+  "kind": "value",
+  "media_type": "application/json"
+}
+```
+
+Optional outputs stay declared and observable instead of silently disappearing:
+
+```json
+{
+  "name": "secondary",
+  "path": "secondary.txt",
+  "kind": "log",
+  "required": false,
+  "media_type": "text/plain"
+}
+```
+
+Run traces record whether each declared output was present, along with the
+resolved media type and sha256 digest for materialized outputs.
 
 ### Reference Shapes
 

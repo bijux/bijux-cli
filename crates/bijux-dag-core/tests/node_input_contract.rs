@@ -1,5 +1,6 @@
 use bijux_dag_core::{
-    node_input_bindings, node_io_contract, parse_graph_strict, NodeInputSource, ParamBindingSource,
+    node_input_bindings, node_io_contract, parse_graph_strict, NodeInputSource, OutputKind,
+    ParamBindingSource,
 };
 
 #[test]
@@ -55,7 +56,7 @@ fn node_io_contract_exposes_param_env_and_output_bindings() {
               "id":"run",
               "kind":"shell",
               "inputs":["reads"],
-              "outputs":[{"name":"bam","path":"align/out.bam"}],
+              "outputs":[{"name":"bam","path":"align/out.bam","kind":"binary","required":false,"media_type":"application/bam"}],
               "params":{
                 "argv":["aligner","--threads",{"graph_input":"threads"}],
                 "seed":{"node_output":{"node_id":"seed","path":"out"}}
@@ -74,8 +75,9 @@ fn node_io_contract_exposes_param_env_and_output_bindings() {
     let contract = node_io_contract(&graph, "run").expect("io contract");
     assert_eq!(contract.inputs.len(), 1);
     assert_eq!(contract.env_bindings[0].name, "REFGENOME");
-    assert!(contract.outputs[0].required);
-    assert_eq!(contract.outputs[0].media_type, "application/octet-stream");
+    assert!(!contract.outputs[0].required);
+    assert_eq!(contract.outputs[0].kind, OutputKind::Binary);
+    assert_eq!(contract.outputs[0].media_type, "application/bam");
     assert!(contract.param_bindings.iter().any(|binding| {
         matches!(
             binding.source,

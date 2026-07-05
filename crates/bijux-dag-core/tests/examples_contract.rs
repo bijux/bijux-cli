@@ -61,3 +61,21 @@ fn parameterized_report_example_uses_graph_inputs_and_output_references() {
     assert_eq!(publish_node.cache.reason.as_deref(), Some("publishes externally visible summary"));
     assert_eq!(publish_node.env_allowlist, vec!["REPORT_CHANNEL".to_string()]);
 }
+
+#[test]
+fn multi_output_example_declares_typed_and_optional_outputs() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../evidence/authoring/examples/multi-output-artifact.dag.json");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+    let graph = parse_graph_strict(&text)
+        .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
+
+    let contract = node_io_contract(&graph, "produce_outputs").expect("produce_outputs contract");
+    assert_eq!(contract.outputs.len(), 2);
+    assert_eq!(contract.outputs[0].kind, bijux_dag_core::OutputKind::Value);
+    assert_eq!(contract.outputs[0].media_type, "application/json");
+    assert_eq!(contract.outputs[1].kind, bijux_dag_core::OutputKind::Log);
+    assert!(!contract.outputs[1].required);
+    assert_eq!(contract.outputs[1].media_type, "text/plain");
+}

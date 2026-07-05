@@ -70,7 +70,7 @@ pub struct Node {
     #[serde(default)]
     pub inputs: Vec<String>,
     #[serde(default)]
-    pub outputs: Vec<FileOutput>,
+    pub outputs: Vec<OutputSpec>,
     #[serde(default)]
     pub params: ParamValue,
     #[serde(default)]
@@ -109,12 +109,62 @@ pub struct GraphMeta {
     pub tags: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum OutputKind {
+    #[default]
+    File,
+    Directory,
+    Value,
+    Table,
+    Log,
+    Binary,
+    Bundle,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub struct FileOutput {
+pub struct OutputSpec {
     pub name: String,
     pub path: String,
+    #[serde(default, skip_serializing_if = "output_kind_is_default")]
+    pub kind: OutputKind,
+    #[serde(
+        default = "output_required_default",
+        skip_serializing_if = "output_required_is_default"
+    )]
+    pub required: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media_type: Option<String>,
 }
+
+impl OutputSpec {
+    pub fn new(name: impl Into<String>, path: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            path: path.into(),
+            kind: OutputKind::File,
+            required: true,
+            media_type: None,
+        }
+    }
+
+    pub fn effective_media_type(&self) -> String {
+        self.media_type
+            .clone()
+            .unwrap_or_else(|| default_media_type_for_kind(&self.kind).to_string())
+    }
+
+    pub fn expects_directory(&self) -> bool {
+        matches!(self.kind, OutputKind::Directory)
+    }
+
+    pub fn expects_file(&self) -> bool {
+        !self.expects_directory()
+    }
+}
+
+pub type FileOutput = OutputSpec;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -354,6 +404,30 @@ pub fn cache_behavior_is_default(cache: &CacheBehavior) -> bool {
 
 pub fn cache_behavior_enabled() -> bool {
     true
+}
+
+pub fn output_kind_is_default(kind: &OutputKind) -> bool {
+    matches!(kind, OutputKind::File)
+}
+
+pub fn output_required_default() -> bool {
+    true
+}
+
+pub fn output_required_is_default(required: &bool) -> bool {
+    *required
+}
+
+pub fn default_media_type_for_kind(kind: &OutputKind) -> &'static str {
+    match kind {
+        OutputKind::File => "application/octet-stream",
+        OutputKind::Directory => "application/vnd.bijux.directory",
+        OutputKind::Value => "application/json",
+        OutputKind::Table => "application/vnd.bijux.table",
+        OutputKind::Log => "text/plain",
+        OutputKind::Binary => "application/octet-stream",
+        OutputKind::Bundle => "application/vnd.bijux.bundle",
+    }
 }
 
 fn param_value_from_json(value: Value) -> Result<ParamValue, String> {

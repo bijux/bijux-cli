@@ -1,11 +1,11 @@
-use crate::{Effect, FileOutput, Graph, Node, ParamValue, RefSpec};
+use crate::{Effect, Graph, Node, OutputKind, OutputSpec, ParamValue, RefSpec};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeInterfaceContract {
     pub declared_inputs: Vec<String>,
-    pub declared_outputs: Vec<FileOutput>,
+    pub declared_outputs: Vec<OutputSpec>,
     pub declared_params: Vec<String>,
     pub declared_effects: Vec<Effect>,
 }
@@ -56,6 +56,7 @@ pub struct NodeEnvBinding {
 pub struct NodeOutputContract {
     pub name: String,
     pub path: String,
+    pub kind: OutputKind,
     pub required: bool,
     pub media_type: String,
 }
@@ -149,8 +150,9 @@ pub fn node_io_contract(graph: &Graph, node_id: &str) -> Option<NodeIoContract> 
             .map(|output| NodeOutputContract {
                 name: output.name.clone(),
                 path: output.path.clone(),
-                required: true,
-                media_type: "application/octet-stream".to_string(),
+                kind: output.kind.clone(),
+                required: output.required,
+                media_type: output.effective_media_type(),
             })
             .collect(),
     })

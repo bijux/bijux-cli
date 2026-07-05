@@ -122,10 +122,12 @@ pub use input::{
     GraphInputViolation,
 };
 pub use model::{
-    cache_behavior_enabled, cache_behavior_is_default, edge_kind_is_default,
-    semantic_kind_is_default, trigger_rule_is_default, BranchSpec, CacheBehavior, ContainerSpec,
-    Edge, EdgeKind, Effect, FileOutput, Graph, GraphFingerprintExplain, GraphId, GraphMeta, Node,
-    NodeKind, NodeOutputRef, ParamValue, PortRef, RefSpec, ResolvedGraph, Resources, RetryPolicy,
+    cache_behavior_enabled, cache_behavior_is_default, default_media_type_for_kind,
+    edge_kind_is_default, output_kind_is_default, output_required_default,
+    output_required_is_default, semantic_kind_is_default, trigger_rule_is_default, BranchSpec,
+    CacheBehavior, ContainerSpec, Edge, EdgeKind, Effect, FileOutput, Graph,
+    GraphFingerprintExplain, GraphId, GraphMeta, Node, NodeKind, NodeOutputRef, OutputKind,
+    OutputSpec, ParamValue, PortRef, RefSpec, ResolvedGraph, Resources, RetryPolicy,
     SemanticNodeKind, Severity, TriggerRule, ValidationDiagnostic,
 };
 pub use node::{
