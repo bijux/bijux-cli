@@ -2,6 +2,7 @@ use crate::execution_plan::ExecutionPlan;
 use crate::RuntimeConfig;
 use bijux_dag_core::Graph;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
 use std::time::{Duration, Instant};
 
@@ -115,6 +116,94 @@ pub struct ExecutionSubmissionRequest {
     pub dag_name: String,
     pub dag_version_policy: String,
     pub requested_unix_ms: u128,
+    pub run_id: String,
+    pub trigger_kind: SubmissionTriggerKind,
+    pub dedupe_key: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub enum SubmissionTriggerKind {
+    Manual,
+    Cron,
+    Event,
+    Dependency,
+    Signal,
+    Backfill,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ManualSubmissionRequest {
+    pub request_id: String,
+    pub schedule_id: String,
+    pub requested_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleEventRecord {
+    pub event_id: String,
+    pub event_type: String,
+    pub source: String,
+    pub occurred_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DependencyCompletionRecord {
+    pub upstream_run_id: String,
+    pub dag_name: String,
+    pub status: String,
+    pub finished_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SignalRecord {
+    pub signal_id: String,
+    pub signal_name: String,
+    pub occurred_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct ScheduleEvaluationInputs {
+    pub now_unix_ms: u128,
+    #[serde(default)]
+    pub manual_requests: Vec<ManualSubmissionRequest>,
+    #[serde(default)]
+    pub events: Vec<ScheduleEventRecord>,
+    #[serde(default)]
+    pub dependencies: Vec<DependencyCompletionRecord>,
+    #[serde(default)]
+    pub signals: Vec<SignalRecord>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleSubmissionLedgerEntry {
+    pub schedule_id: String,
+    pub dag_name: String,
+    pub dag_version_policy: String,
+    pub requested_unix_ms: u128,
+    pub created_unix_ms: u128,
+    pub run_id: String,
+    pub trigger_kind: SubmissionTriggerKind,
+    pub dedupe_key: String,
+    pub status: ScheduleSubmissionStatus,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct ScheduleSubmissionLedger {
+    #[serde(default)]
+    pub entries: Vec<ScheduleSubmissionLedgerEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct ScheduleEvaluationReport {
+    #[serde(default)]
+    pub generated_requests: Vec<ExecutionSubmissionRequest>,
+    #[serde(default)]
+    pub recorded_submissions: Vec<ScheduleSubmissionLedgerEntry>,
+    #[serde(default)]
+    pub duplicate_suppressions: Vec<ScheduleAuditRecord>,
+    #[serde(default)]
+    pub audits: Vec<ScheduleAuditRecord>,
 }
 
 impl Default for SchedulerPolicy {
@@ -911,11 +1000,373 @@ pub fn compile_submission_request(
     definition: &ScheduleDefinition,
     requested_unix_ms: u128,
 ) -> ExecutionSubmissionRequest {
+    build_submission_request(
+        definition,
+        requested_unix_ms,
+        SubmissionTriggerKind::Manual,
+        format!("manual:{}:{}", definition.id, requested_unix_ms),
+    )
+}
+
+pub fn evaluate_schedule_submissions(
+    registry: &ScheduleRegistry,
+    inputs: &ScheduleEvaluationInputs,
+    existing: &ScheduleSubmissionLedger,
+) -> ScheduleEvaluationReport {
+    let mut definitions = registry.definitions.iter().collect::<Vec<_>>();
+    definitions.sort_by(|left, right| left.id.cmp(&right.id));
+
+    let mut candidates = Vec::<ExecutionSubmissionRequest>::new();
+    for definition in definitions {
+        candidates.extend(candidate_submissions_for_definition(definition, inputs, existing));
+    }
+    candidates.sort_by(|left, right| {
+        left.requested_unix_ms
+            .cmp(&right.requested_unix_ms)
+            .then_with(|| left.schedule_id.cmp(&right.schedule_id))
+            .then_with(|| left.dedupe_key.cmp(&right.dedupe_key))
+            .then_with(|| left.run_id.cmp(&right.run_id))
+    });
+
+    let mut seen_keys =
+        existing.entries.iter().map(|entry| entry.dedupe_key.clone()).collect::<BTreeSet<_>>();
+    let mut generated_requests = Vec::new();
+    let mut recorded_submissions = existing.entries.clone();
+    let mut duplicate_suppressions = Vec::new();
+    let mut audits = Vec::new();
+
+    for request in candidates {
+        if !seen_keys.insert(request.dedupe_key.clone()) {
+            let audit = ScheduleAuditRecord {
+                schedule_id: request.schedule_id.clone(),
+                evaluated_unix_ms: inputs.now_unix_ms,
+                decision: "duplicate_suppressed".to_string(),
+                reason: Some(format!("dedupe_key={}", request.dedupe_key)),
+            };
+            duplicate_suppressions.push(audit.clone());
+            audits.push(audit);
+            continue;
+        }
+
+        audits.push(ScheduleAuditRecord {
+            schedule_id: request.schedule_id.clone(),
+            evaluated_unix_ms: inputs.now_unix_ms,
+            decision: "submitted".to_string(),
+            reason: Some(format!(
+                "trigger={} dedupe_key={}",
+                submission_trigger_kind_name(&request.trigger_kind),
+                request.dedupe_key
+            )),
+        });
+        recorded_submissions
+            .push(ScheduleSubmissionLedgerEntry::from_request(&request, inputs.now_unix_ms));
+        generated_requests.push(request);
+    }
+
+    recorded_submissions.sort_by(|left, right| {
+        left.created_unix_ms
+            .cmp(&right.created_unix_ms)
+            .then_with(|| left.schedule_id.cmp(&right.schedule_id))
+            .then_with(|| left.run_id.cmp(&right.run_id))
+            .then_with(|| left.dedupe_key.cmp(&right.dedupe_key))
+    });
+
+    ScheduleEvaluationReport {
+        generated_requests,
+        recorded_submissions,
+        duplicate_suppressions,
+        audits,
+    }
+}
+
+impl ScheduleSubmissionLedgerEntry {
+    fn from_request(request: &ExecutionSubmissionRequest, created_unix_ms: u128) -> Self {
+        Self {
+            schedule_id: request.schedule_id.clone(),
+            dag_name: request.dag_name.clone(),
+            dag_version_policy: request.dag_version_policy.clone(),
+            requested_unix_ms: request.requested_unix_ms,
+            created_unix_ms,
+            run_id: request.run_id.clone(),
+            trigger_kind: request.trigger_kind.clone(),
+            dedupe_key: request.dedupe_key.clone(),
+            status: ScheduleSubmissionStatus::Pending,
+        }
+    }
+}
+
+fn candidate_submissions_for_definition(
+    definition: &ScheduleDefinition,
+    inputs: &ScheduleEvaluationInputs,
+    existing: &ScheduleSubmissionLedger,
+) -> Vec<ExecutionSubmissionRequest> {
+    match &definition.trigger {
+        TriggerSpec::Manual => manual_submission_candidates(definition, inputs),
+        TriggerSpec::Cron { expression, .. } => {
+            cron_submission_candidates(definition, inputs, existing, expression)
+        }
+        TriggerSpec::Event { event_type, source } => {
+            event_submission_candidates(definition, inputs, event_type, source)
+        }
+        TriggerSpec::Dependency { dag_name, on_status } => {
+            dependency_submission_candidates(definition, inputs, dag_name, on_status)
+        }
+        TriggerSpec::Signal { signal_name, .. } => {
+            signal_submission_candidates(definition, inputs, signal_name)
+        }
+        TriggerSpec::Backfill(backfill) => {
+            backfill_submission_candidates(definition, inputs, backfill)
+        }
+    }
+}
+
+fn manual_submission_candidates(
+    definition: &ScheduleDefinition,
+    inputs: &ScheduleEvaluationInputs,
+) -> Vec<ExecutionSubmissionRequest> {
+    let mut requests = inputs
+        .manual_requests
+        .iter()
+        .filter(|request| request.schedule_id == definition.id)
+        .cloned()
+        .collect::<Vec<_>>();
+    requests.sort_by(|left, right| {
+        left.requested_unix_ms
+            .cmp(&right.requested_unix_ms)
+            .then_with(|| left.request_id.cmp(&right.request_id))
+    });
+    requests
+        .into_iter()
+        .map(|request| {
+            build_submission_request(
+                definition,
+                request.requested_unix_ms,
+                SubmissionTriggerKind::Manual,
+                format!("manual:{}:{}", definition.id, request.request_id),
+            )
+        })
+        .collect()
+}
+
+fn cron_submission_candidates(
+    definition: &ScheduleDefinition,
+    inputs: &ScheduleEvaluationInputs,
+    existing: &ScheduleSubmissionLedger,
+    expression: &str,
+) -> Vec<ExecutionSubmissionRequest> {
+    if validate_cron_expression(expression).is_err() {
+        return Vec::new();
+    }
+    let current_slot = floor_to_minute(inputs.now_unix_ms);
+    let last_requested = existing
+        .entries
+        .iter()
+        .filter(|entry| {
+            entry.schedule_id == definition.id && entry.trigger_kind == SubmissionTriggerKind::Cron
+        })
+        .map(|entry| entry.requested_unix_ms)
+        .max();
+
+    let slots = if definition.catch_up.enabled {
+        let mut next_slot = last_requested.map(|value| value + 60_000).unwrap_or(current_slot);
+        let mut slots = Vec::new();
+        let max_runs = definition.catch_up.max_catch_up_runs.max(1) as usize;
+        while next_slot <= current_slot && slots.len() < max_runs {
+            slots.push(next_slot);
+            next_slot += 60_000;
+        }
+        slots
+    } else if last_requested == Some(current_slot) {
+        Vec::new()
+    } else {
+        vec![current_slot]
+    };
+
+    slots
+        .into_iter()
+        .map(|requested_unix_ms| {
+            build_submission_request(
+                definition,
+                requested_unix_ms,
+                SubmissionTriggerKind::Cron,
+                format!("cron:{}:{}", definition.id, requested_unix_ms),
+            )
+        })
+        .collect()
+}
+
+fn event_submission_candidates(
+    definition: &ScheduleDefinition,
+    inputs: &ScheduleEvaluationInputs,
+    expected_type: &str,
+    expected_source: &str,
+) -> Vec<ExecutionSubmissionRequest> {
+    let mut events = inputs
+        .events
+        .iter()
+        .filter(|event| event.event_type == expected_type && event.source == expected_source)
+        .cloned()
+        .collect::<Vec<_>>();
+    events.sort_by(|left, right| {
+        left.occurred_unix_ms
+            .cmp(&right.occurred_unix_ms)
+            .then_with(|| left.event_id.cmp(&right.event_id))
+    });
+    events
+        .into_iter()
+        .map(|event| {
+            build_submission_request(
+                definition,
+                event.occurred_unix_ms,
+                SubmissionTriggerKind::Event,
+                format!("event:{}:{}", definition.id, event.event_id),
+            )
+        })
+        .collect()
+}
+
+fn dependency_submission_candidates(
+    definition: &ScheduleDefinition,
+    inputs: &ScheduleEvaluationInputs,
+    expected_dag_name: &str,
+    expected_status: &str,
+) -> Vec<ExecutionSubmissionRequest> {
+    let expected_status = normalize_schedule_status(expected_status);
+    let mut completions = inputs
+        .dependencies
+        .iter()
+        .filter(|completion| {
+            completion.dag_name == expected_dag_name
+                && normalize_schedule_status(&completion.status) == expected_status
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    completions.sort_by(|left, right| {
+        left.finished_unix_ms
+            .cmp(&right.finished_unix_ms)
+            .then_with(|| left.upstream_run_id.cmp(&right.upstream_run_id))
+            .then_with(|| left.status.cmp(&right.status))
+    });
+    completions
+        .into_iter()
+        .map(|completion| {
+            build_submission_request(
+                definition,
+                completion.finished_unix_ms,
+                SubmissionTriggerKind::Dependency,
+                format!(
+                    "dependency:{}:{}:{}",
+                    definition.id,
+                    completion.upstream_run_id,
+                    normalize_schedule_status(&completion.status)
+                ),
+            )
+        })
+        .collect()
+}
+
+fn signal_submission_candidates(
+    definition: &ScheduleDefinition,
+    inputs: &ScheduleEvaluationInputs,
+    expected_signal_name: &str,
+) -> Vec<ExecutionSubmissionRequest> {
+    let mut signals = inputs
+        .signals
+        .iter()
+        .filter(|signal| signal.signal_name == expected_signal_name)
+        .cloned()
+        .collect::<Vec<_>>();
+    signals.sort_by(|left, right| {
+        left.occurred_unix_ms
+            .cmp(&right.occurred_unix_ms)
+            .then_with(|| left.signal_id.cmp(&right.signal_id))
+    });
+    signals
+        .into_iter()
+        .map(|signal| {
+            build_submission_request(
+                definition,
+                signal.occurred_unix_ms,
+                SubmissionTriggerKind::Signal,
+                format!("signal:{}:{}", definition.id, signal.signal_id),
+            )
+        })
+        .collect()
+}
+
+fn backfill_submission_candidates(
+    definition: &ScheduleDefinition,
+    _inputs: &ScheduleEvaluationInputs,
+    backfill: &BackfillRequest,
+) -> Vec<ExecutionSubmissionRequest> {
+    let mut requested_unix_ms = backfill.window_start_unix_ms;
+    let mut requests = Vec::new();
+    let max_runs = backfill.max_parallelism.max(1) as usize;
+    while requested_unix_ms <= backfill.window_end_unix_ms && requests.len() < max_runs {
+        requests.push(build_submission_request(
+            definition,
+            requested_unix_ms,
+            SubmissionTriggerKind::Backfill,
+            format!("backfill:{}:{}", definition.id, requested_unix_ms),
+        ));
+        requested_unix_ms = requested_unix_ms.saturating_add(60_000);
+    }
+    requests
+}
+
+fn build_submission_request(
+    definition: &ScheduleDefinition,
+    requested_unix_ms: u128,
+    trigger_kind: SubmissionTriggerKind,
+    dedupe_key: String,
+) -> ExecutionSubmissionRequest {
     ExecutionSubmissionRequest {
         schedule_id: definition.id.clone(),
         dag_name: definition.dag_name.clone(),
         dag_version_policy: definition.dag_version_policy.clone(),
         requested_unix_ms,
+        run_id: deterministic_schedule_run_id(&definition.id, &dedupe_key),
+        trigger_kind,
+        dedupe_key,
+    }
+}
+
+fn deterministic_schedule_run_id(schedule_id: &str, dedupe_key: &str) -> String {
+    let slug =
+        schedule_id
+            .chars()
+            .map(|character| {
+                if character.is_ascii_alphanumeric() {
+                    character.to_ascii_lowercase()
+                } else {
+                    '-'
+                }
+            })
+            .collect::<String>()
+            .trim_matches('-')
+            .to_string();
+    let slug = if slug.is_empty() { "schedule".to_string() } else { slug };
+    let digest = Sha256::digest(dedupe_key.as_bytes());
+    let checksum = format!("{:x}", digest);
+    format!("sched-{slug}-{}", &checksum[..12])
+}
+
+fn floor_to_minute(unix_ms: u128) -> u128 {
+    unix_ms - (unix_ms % 60_000)
+}
+
+fn normalize_schedule_status(status: &str) -> String {
+    status.trim().to_ascii_lowercase().replace('-', "_").replace(' ', "_")
+}
+
+fn submission_trigger_kind_name(kind: &SubmissionTriggerKind) -> &'static str {
+    match kind {
+        SubmissionTriggerKind::Manual => "manual",
+        SubmissionTriggerKind::Cron => "cron",
+        SubmissionTriggerKind::Event => "event",
+        SubmissionTriggerKind::Dependency => "dependency",
+        SubmissionTriggerKind::Signal => "signal",
+        SubmissionTriggerKind::Backfill => "backfill",
     }
 }
 

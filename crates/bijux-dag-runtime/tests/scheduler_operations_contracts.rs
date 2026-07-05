@@ -13,12 +13,15 @@ use thiserror as _;
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
     apply_backfill_throttling, build_plan, build_scheduler, deduplicate_trigger_events,
-    deterministic_tick_order, evaluate_sla_metrics, materialize_next_runs, run_batches,
-    scheduler_debug_event_log, scheduler_invariants_hold, trace_event_count_by_category,
-    BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCounter,
-    PriorityClass, QueueIdentity, ReadyNode, ReadyQueue, RunBatchPolicy, RuntimeAuditEvent,
-    RuntimeConfig, ScheduleDefinition, ScheduleSubmissionStatus, ScheduledSubmission, Selector,
-    SelectorSet, TriggerSpec,
+    deterministic_tick_order, evaluate_schedule_submissions, evaluate_sla_metrics,
+    materialize_next_runs, run_batches, scheduler_debug_event_log, scheduler_invariants_hold,
+    trace_event_count_by_category, BackfillThrottlingPolicy, CatchUpPolicy,
+    ConcurrencyPolicyLayers, DependencyCompletionRecord, DependencyCounter,
+    ManualSubmissionRequest, PriorityClass, QueueIdentity, ReadyNode, ReadyQueue, RunBatchPolicy,
+    RuntimeAuditEvent, RuntimeConfig, ScheduleDefinition, ScheduleEvaluationInputs,
+    ScheduleEventRecord, ScheduleRegistry, ScheduleSubmissionLedger, ScheduleSubmissionLedgerEntry,
+    ScheduleSubmissionStatus, ScheduledSubmission, Selector, SelectorSet, SignalRecord,
+    SubmissionTriggerKind, TriggerSpec,
 };
 use std::collections::{BTreeMap, VecDeque};
 use std::fs;
@@ -279,4 +282,224 @@ fn scheduler_materialization_and_trigger_dedup_helpers_are_consistent() {
     });
     let grouped = trace_event_count_by_category(&audits);
     assert_eq!(grouped.get("schedule"), Some(&2));
+}
+
+#[test]
+fn schedule_submit_evaluates_manual_cron_event_dependency_and_signal_triggers() {
+    let registry = ScheduleRegistry {
+        definitions: vec![
+            schedule_definition("manual-ops", TriggerSpec::Manual),
+            schedule_definition(
+                "cron-minute",
+                TriggerSpec::Cron {
+                    expression: "* * * * *".to_string(),
+                    timezone: "UTC".to_string(),
+                },
+            ),
+            schedule_definition(
+                "event-ingest",
+                TriggerSpec::Event {
+                    event_type: "dataset.ready".to_string(),
+                    source: "catalog".to_string(),
+                },
+            ),
+            schedule_definition(
+                "dependency-publish",
+                TriggerSpec::Dependency {
+                    dag_name: "atlas.ingest".to_string(),
+                    on_status: "success".to_string(),
+                },
+            ),
+            schedule_definition(
+                "signal-refresh",
+                TriggerSpec::Signal {
+                    signal_name: "refresh-cache".to_string(),
+                    payload_schema: None,
+                },
+            ),
+        ],
+    };
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: 180_000,
+        manual_requests: vec![ManualSubmissionRequest {
+            request_id: "manual-001".to_string(),
+            schedule_id: "manual-ops".to_string(),
+            requested_unix_ms: 175_000,
+        }],
+        events: vec![ScheduleEventRecord {
+            event_id: "evt-001".to_string(),
+            event_type: "dataset.ready".to_string(),
+            source: "catalog".to_string(),
+            occurred_unix_ms: 176_000,
+        }],
+        dependencies: vec![DependencyCompletionRecord {
+            upstream_run_id: "atlas-run-7".to_string(),
+            dag_name: "atlas.ingest".to_string(),
+            status: "SUCCESS".to_string(),
+            finished_unix_ms: 177_000,
+        }],
+        signals: vec![SignalRecord {
+            signal_id: "sig-001".to_string(),
+            signal_name: "refresh-cache".to_string(),
+            occurred_unix_ms: 178_000,
+        }],
+    };
+    let existing = ScheduleSubmissionLedger::default();
+
+    let report = evaluate_schedule_submissions(&registry, &inputs, &existing);
+    let generated = report
+        .generated_requests
+        .iter()
+        .map(|request| {
+            (request.schedule_id.clone(), request.requested_unix_ms, request.trigger_kind.clone())
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        generated,
+        vec![
+            ("manual-ops".to_string(), 175_000, SubmissionTriggerKind::Manual),
+            ("event-ingest".to_string(), 176_000, SubmissionTriggerKind::Event),
+            ("dependency-publish".to_string(), 177_000, SubmissionTriggerKind::Dependency),
+            ("signal-refresh".to_string(), 178_000, SubmissionTriggerKind::Signal),
+            ("cron-minute".to_string(), 180_000, SubmissionTriggerKind::Cron),
+        ]
+    );
+    assert!(report.duplicate_suppressions.is_empty());
+    assert_eq!(report.recorded_submissions.len(), 5);
+    assert!(report.generated_requests.iter().all(|request| request.run_id.starts_with("sched-")));
+}
+
+#[test]
+fn schedule_submit_prevents_duplicates_from_existing_ledger_and_current_tick() {
+    let registry = ScheduleRegistry {
+        definitions: vec![
+            schedule_definition("manual-ops", TriggerSpec::Manual),
+            schedule_definition(
+                "event-ingest",
+                TriggerSpec::Event {
+                    event_type: "dataset.ready".to_string(),
+                    source: "catalog".to_string(),
+                },
+            ),
+        ],
+    };
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: 200_000,
+        manual_requests: vec![
+            ManualSubmissionRequest {
+                request_id: "manual-001".to_string(),
+                schedule_id: "manual-ops".to_string(),
+                requested_unix_ms: 175_000,
+            },
+            ManualSubmissionRequest {
+                request_id: "manual-001".to_string(),
+                schedule_id: "manual-ops".to_string(),
+                requested_unix_ms: 175_000,
+            },
+        ],
+        events: vec![
+            ScheduleEventRecord {
+                event_id: "evt-001".to_string(),
+                event_type: "dataset.ready".to_string(),
+                source: "catalog".to_string(),
+                occurred_unix_ms: 176_000,
+            },
+            ScheduleEventRecord {
+                event_id: "evt-001".to_string(),
+                event_type: "dataset.ready".to_string(),
+                source: "catalog".to_string(),
+                occurred_unix_ms: 176_000,
+            },
+        ],
+        dependencies: Vec::new(),
+        signals: Vec::new(),
+    };
+    let existing = ScheduleSubmissionLedger {
+        entries: vec![ScheduleSubmissionLedgerEntry {
+            schedule_id: "manual-ops".to_string(),
+            dag_name: "atlas.manual-ops".to_string(),
+            dag_version_policy: "run-latest".to_string(),
+            requested_unix_ms: 175_000,
+            created_unix_ms: 170_000,
+            run_id: "sched-manual-ops-existing".to_string(),
+            trigger_kind: SubmissionTriggerKind::Manual,
+            dedupe_key: "manual:manual-ops:manual-001".to_string(),
+            status: ScheduleSubmissionStatus::Pending,
+        }],
+    };
+
+    let report = evaluate_schedule_submissions(&registry, &inputs, &existing);
+
+    assert_eq!(report.generated_requests.len(), 1);
+    assert_eq!(report.generated_requests[0].schedule_id, "event-ingest");
+    assert_eq!(report.generated_requests[0].dedupe_key, "event:event-ingest:evt-001");
+    assert_eq!(report.duplicate_suppressions.len(), 3);
+    assert_eq!(report.recorded_submissions.len(), 2);
+}
+
+#[test]
+fn schedule_submit_cron_catch_up_respects_existing_submissions_and_cap() {
+    let registry = ScheduleRegistry {
+        definitions: vec![ScheduleDefinition {
+            id: "cron-minute".to_string(),
+            dag_name: "atlas.cron-minute".to_string(),
+            dag_version_policy: "run-latest".to_string(),
+            trigger: TriggerSpec::Cron {
+                expression: "* * * * *".to_string(),
+                timezone: "UTC".to_string(),
+            },
+            queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+            priority: PriorityClass::Standard,
+            concurrency: ConcurrencyPolicyLayers {
+                per_dag: Some(1),
+                per_queue: Some(2),
+                per_tenant: None,
+                per_node_group: None,
+            },
+            catch_up: CatchUpPolicy { enabled: true, max_catch_up_runs: 2 },
+        }],
+    };
+    let inputs =
+        ScheduleEvaluationInputs { now_unix_ms: 5 * 60_000, ..ScheduleEvaluationInputs::default() };
+    let existing = ScheduleSubmissionLedger {
+        entries: vec![ScheduleSubmissionLedgerEntry {
+            schedule_id: "cron-minute".to_string(),
+            dag_name: "atlas.cron-minute".to_string(),
+            dag_version_policy: "run-latest".to_string(),
+            requested_unix_ms: 2 * 60_000,
+            created_unix_ms: 2 * 60_000,
+            run_id: "sched-cron-minute-existing".to_string(),
+            trigger_kind: SubmissionTriggerKind::Cron,
+            dedupe_key: "cron:cron-minute:120000".to_string(),
+            status: ScheduleSubmissionStatus::Pending,
+        }],
+    };
+
+    let report = evaluate_schedule_submissions(&registry, &inputs, &existing);
+    let scheduled_slots = report
+        .generated_requests
+        .iter()
+        .map(|request| request.requested_unix_ms)
+        .collect::<Vec<_>>();
+
+    assert_eq!(scheduled_slots, vec![3 * 60_000, 4 * 60_000]);
+}
+
+fn schedule_definition(id: &str, trigger: TriggerSpec) -> ScheduleDefinition {
+    ScheduleDefinition {
+        id: id.to_string(),
+        dag_name: format!("atlas.{id}"),
+        dag_version_policy: "run-latest".to_string(),
+        trigger,
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+        priority: PriorityClass::Standard,
+        concurrency: ConcurrencyPolicyLayers {
+            per_dag: Some(1),
+            per_queue: Some(2),
+            per_tenant: None,
+            per_node_group: None,
+        },
+        catch_up: CatchUpPolicy { enabled: false, max_catch_up_runs: 0 },
+    }
 }

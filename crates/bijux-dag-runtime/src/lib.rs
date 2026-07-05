@@ -274,11 +274,10 @@ use bijux_dag_artifacts::schema::{
 };
 use bijux_dag_artifacts::{
     artifact_size_bytes, sha256_artifact_path, write_inputs_index, write_outputs_index,
-    AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace,
-    DeclaredOutputArtifact, FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts,
-    NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
-    Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex, TraceOutputArtifact,
-    TriggerEvaluation,
+    AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace, DeclaredOutputArtifact,
+    FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeLifecycleTransition,
+    NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir,
+    RunOutputFile, RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
@@ -430,17 +429,20 @@ pub use runtime_controls::{
 pub use runtime_semantics::*;
 pub use scheduler::{
     build_scheduler, compile_submission_request, deterministic_tick_order, dry_run_schedule,
-    failure_allows_downstream_readiness, failure_mode_name, replay_scheduler_checkpoint,
-    scheduler_contract_profile, scheduler_debug_event_log, scheduler_invariant_violations,
-    scheduler_invariants_hold, validate_cron_expression, validate_schedule_policy_combination,
-    validate_schedule_registry, BackfillRequest, CatchUpPolicy, ConcurrencyPolicyLayers,
-    DependencyCounter, DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest,
-    FailurePropagationMode, NoopSchedulerEventHook, PriorityClass, QueueIdentity,
-    QueueIsolationPolicy, ReadyQueue, ReadyTieBreak, ScheduleAuditRecord, ScheduleDefinition,
-    ScheduleDryRunPreview, ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission,
-    Scheduler, SchedulerContractProfile, SchedulerEvent, SchedulerEventHook, SchedulerEventKind,
-    SchedulerFairness, SchedulerModel, SchedulerPolicy, SchedulerPriorityModel, SchedulerState,
-    SchedulerUnit, ThroughputScheduler, TriggerSpec,
+    evaluate_schedule_submissions, failure_allows_downstream_readiness, failure_mode_name,
+    replay_scheduler_checkpoint, scheduler_contract_profile, scheduler_debug_event_log,
+    scheduler_invariant_violations, scheduler_invariants_hold, validate_cron_expression,
+    validate_schedule_policy_combination, validate_schedule_registry, BackfillRequest,
+    CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCompletionRecord, DependencyCounter,
+    DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest,
+    FailurePropagationMode, ManualSubmissionRequest, NoopSchedulerEventHook, PriorityClass,
+    QueueIdentity, QueueIsolationPolicy, ReadyQueue, ReadyTieBreak, ScheduleAuditRecord,
+    ScheduleDefinition, ScheduleDryRunPreview, ScheduleEvaluationInputs, ScheduleEvaluationReport,
+    ScheduleEventRecord, ScheduleRegistry, ScheduleSubmissionLedger, ScheduleSubmissionLedgerEntry,
+    ScheduleSubmissionStatus, ScheduledSubmission, Scheduler, SchedulerContractProfile,
+    SchedulerEvent, SchedulerEventHook, SchedulerEventKind, SchedulerFairness, SchedulerModel,
+    SchedulerPolicy, SchedulerPriorityModel, SchedulerState, SchedulerUnit, SignalRecord,
+    SubmissionTriggerKind, ThroughputScheduler, TriggerSpec,
 };
 pub use scheduler_workload::{
     apply_backfill_throttling, compute_partition_backfill_batches, deduplicate_trigger_events,
@@ -1778,7 +1780,11 @@ fn params_fingerprint(params: &Value) -> Result<String, RuntimeError> {
     Ok(sha256_bytes(&serde_json::to_vec(&normalized)?))
 }
 
-fn command_fingerprint(graph: &Graph, node: &Node, params: &Value) -> Result<Option<String>, RuntimeError> {
+fn command_fingerprint(
+    graph: &Graph,
+    node: &Node,
+    params: &Value,
+) -> Result<Option<String>, RuntimeError> {
     let command_surface = if matches!(node.kind, NodeKind::Shell) {
         Some(serde_json::json!({
             "kind": "shell",
@@ -2327,8 +2333,8 @@ fn try_cache_read(
                     corrupt_detected: true,
                 });
             } else {
-                let source =
-                    cache_source_from_meta(store.fs(), &entry).unwrap_or_else(|| "local".to_string());
+                let source = cache_source_from_meta(store.fs(), &entry)
+                    .unwrap_or_else(|| "local".to_string());
                 prepare_node_execution_dirs(ctx, &node.id)?;
                 let node_dir = ctx.run_dir.node_dir(&node.id);
                 copy_dir_all(
@@ -2379,9 +2385,12 @@ fn try_cache_read(
                 }
                 if let Some(local_dir) = options.cache_dir.as_ref() {
                     let local_entry = local_dir.join(&key);
-                    if let Ok(outcome) =
-                        copy_cache_entry_atomically(store.fs(), &remote_entry, &local_entry, "hydrate")
-                    {
+                    if let Ok(outcome) = copy_cache_entry_atomically(
+                        store.fs(),
+                        &remote_entry,
+                        &local_entry,
+                        "hydrate",
+                    ) {
                         if matches!(outcome, CachePublishOutcome::Published)
                             && !verify_cache_entry(store.fs(), &local_entry, node, &key_input)?
                         {
@@ -2502,7 +2511,9 @@ fn try_cache_write(
             canonical_entry = Some(remote_entry);
         }
     }
-    if let (Some(source_entry), Some(remote_dir)) = (canonical_entry.as_ref(), remote_cache_dir.as_ref()) {
+    if let (Some(source_entry), Some(remote_dir)) =
+        (canonical_entry.as_ref(), remote_cache_dir.as_ref())
+    {
         let remote_entry = remote_dir.join(&key);
         if &remote_entry != source_entry {
             let _ =
@@ -2549,10 +2560,7 @@ fn populate_cache_entry_dir(
         "cache_source": "local",
         "schema_version": "v0.1",
     });
-    fs.write(
-        entry.join("manifest.json").as_path(),
-        &serde_json::to_vec_pretty(&manifest)?,
-    )?;
+    fs.write(entry.join("manifest.json").as_path(), &serde_json::to_vec_pretty(&manifest)?)?;
     fs.write(entry.join("meta.json").as_path(), &serde_json::to_vec_pretty(&meta)?)?;
     copy_dir_all(fs, ctx.run_dir.node_outputs_dir(&node.id), entry.join("outputs"))?;
     let node_dir = ctx.run_dir.node_dir(&node.id);
