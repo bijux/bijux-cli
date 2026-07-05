@@ -42,7 +42,7 @@ pub struct PlannerNodeAnnotation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct PlannerResourceEstimate {
+pub struct PlannerExecutionCostEstimate {
     pub total_cpu: u64,
     pub total_mem_mb: u64,
     pub max_parallelism_hint: usize,
@@ -95,7 +95,7 @@ pub struct PlannerBuildResult {
     pub plan: ExecutionPlan,
     pub phases: Vec<PlannerPhase>,
     pub annotations: Vec<PlannerNodeAnnotation>,
-    pub resource_estimate: PlannerResourceEstimate,
+    pub execution_cost_estimate: PlannerExecutionCostEstimate,
     pub priority_inheritance: Vec<PlannerPriorityInheritance>,
     pub plan_fingerprint: String,
     pub path_previews: Option<Vec<PlannerNodePathPreview>>,
@@ -128,7 +128,7 @@ pub fn build_planner_analysis(
     validate_command_templates(&normalized_graph, &resolved_graph.resolved_params)?;
     let mut annotations = annotate_plan(&normalized_graph, &plan, selector_set);
     plan = apply_optimizer_rules(normalized_graph.clone(), plan, &mut annotations, guardrails);
-    let resource_estimate = estimate_resources(&plan.nodes);
+    let execution_cost_estimate = estimate_execution_cost(&plan.nodes);
     let priority_inheritance = inherit_priority(&plan.nodes);
     let plan_fingerprint = fingerprint_plan(&plan, &annotations)?;
     let path_previews =
@@ -138,7 +138,7 @@ pub fn build_planner_analysis(
         plan,
         phases,
         annotations,
-        resource_estimate,
+        execution_cost_estimate,
         priority_inheritance,
         plan_fingerprint,
         path_previews,
@@ -496,12 +496,16 @@ fn selector_matches(node: &Node, selector: &Selector) -> bool {
     }
 }
 
-fn estimate_resources(nodes: &[Node]) -> PlannerResourceEstimate {
+fn estimate_execution_cost(nodes: &[Node]) -> PlannerExecutionCostEstimate {
     let total_cpu =
         nodes.iter().map(|n| n.resources.as_ref().map(|r| r.cpu as u64).unwrap_or(1)).sum();
     let total_mem_mb =
         nodes.iter().map(|n| n.resources.as_ref().map(|r| r.mem_mb as u64).unwrap_or(256)).sum();
-    PlannerResourceEstimate { total_cpu, total_mem_mb, max_parallelism_hint: nodes.len().max(1) }
+    PlannerExecutionCostEstimate {
+        total_cpu,
+        total_mem_mb,
+        max_parallelism_hint: nodes.len().max(1),
+    }
 }
 
 fn inherit_priority(nodes: &[Node]) -> Vec<PlannerPriorityInheritance> {
