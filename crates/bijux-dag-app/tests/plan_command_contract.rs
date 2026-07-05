@@ -39,7 +39,13 @@ fn write_graph_fixture() -> (tempfile::TempDir, std::path::PathBuf) {
 fn plan_explain_supports_json_output_with_node_reasons() {
     let (_dir, dag) = write_graph_fixture();
     let matches = dag_command()
-        .try_get_matches_from(["bijux-dag", "--json", "plan", "explain", dag.to_string_lossy().as_ref()])
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "plan",
+            "explain",
+            dag.to_string_lossy().as_ref(),
+        ])
         .expect("parse");
 
     let code = dag_run(&matches).expect("run");

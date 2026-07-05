@@ -26,7 +26,15 @@ fn operator_commands_do_not_panic_on_corrupt_run_dirs() {
     let commands = vec![
         vec!["bijux-dag", "--json", "runs", "inspect", "run-bad", "--root", root.to_str().unwrap()],
         vec!["bijux-dag", "--json", "runs", "show", "run-bad", "--root", root.to_str().unwrap()],
-        vec!["bijux-dag", "--json", "runs", "timeline", "run-bad", "--root", root.to_str().unwrap()],
+        vec![
+            "bijux-dag",
+            "--json",
+            "runs",
+            "timeline",
+            "run-bad",
+            "--root",
+            root.to_str().unwrap(),
+        ],
         vec!["bijux-dag", "--json", "runs", "tree", "run-bad", "--root", root.to_str().unwrap()],
         vec![
             "bijux-dag",

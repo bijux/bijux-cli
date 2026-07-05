@@ -107,25 +107,26 @@ fn run_preflight_reports_best_effort_subprocess_policy_surface() {
         &root,
     );
 
-    assert_eq!(payload["data"]["policy_surface"]["profile"]["mode"], "best_effort_local_policy_profile");
-    let surfaces = payload["data"]["policy_surface"]["enforcement"]["surfaces"]
-        .as_array()
-        .expect("surfaces");
+    assert_eq!(
+        payload["data"]["policy_surface"]["profile"]["mode"],
+        "best_effort_local_policy_profile"
+    );
+    let surfaces =
+        payload["data"]["policy_surface"]["enforcement"]["surfaces"].as_array().expect("surfaces");
     let subprocess = surfaces
         .iter()
         .find(|surface| surface["executor_surface"] == "local-subprocess")
         .expect("subprocess surface");
     assert_eq!(subprocess["isolation_claim"], "best_effort_process_boundary");
-    assert!(subprocess["limitations"]
-        .as_array()
-        .expect("limitations")
-        .iter()
-        .any(|entry| entry.as_str().is_some_and(|value| value.contains("does not firewall network access"))));
+    assert!(subprocess["limitations"].as_array().expect("limitations").iter().any(|entry| entry
+        .as_str()
+        .is_some_and(|value| value.contains("does not firewall network access"))));
     assert!(subprocess["guards"]
         .as_array()
         .expect("guards")
         .iter()
-        .any(|guard| guard["guard"] == "deny-network" && guard["enforcement_mode"] == "declared_effect_gate"));
+        .any(|guard| guard["guard"] == "deny-network"
+            && guard["enforcement_mode"] == "declared_effect_gate"));
 }
 
 #[test]
@@ -170,8 +171,13 @@ fn replay_dry_run_reports_source_write_boundary_without_process_sandbox_claim() 
         .as_array()
         .expect("sandbox limitations")
         .iter()
-        .any(|entry| entry.as_str().is_some_and(|value| value.contains("does not create a process sandbox"))));
-    assert_eq!(replay["data"]["policy_surface"]["profile"]["mode"], "best_effort_local_policy_profile");
+        .any(|entry| entry
+            .as_str()
+            .is_some_and(|value| value.contains("does not create a process sandbox"))));
+    assert_eq!(
+        replay["data"]["policy_surface"]["profile"]["mode"],
+        "best_effort_local_policy_profile"
+    );
 }
 
 #[test]
@@ -180,19 +186,10 @@ fn runtime_isolation_reports_container_network_runtime_enforcement() {
     let tmp = tempfile::tempdir().expect("tmp");
     let graph = write_container_graph(tmp.path());
 
-    let payload = run_json(
-        &[
-            "runtime",
-            "isolation",
-            "--json",
-            &output_path_string(&graph),
-        ],
-        &root,
-    );
+    let payload = run_json(&["runtime", "isolation", "--json", &output_path_string(&graph)], &root);
 
-    let surfaces = payload["data"]["policy_surface"]["enforcement"]["surfaces"]
-        .as_array()
-        .expect("surfaces");
+    let surfaces =
+        payload["data"]["policy_surface"]["enforcement"]["surfaces"].as_array().expect("surfaces");
     let container = surfaces
         .iter()
         .find(|surface| surface["executor_surface"] == "container-engine")
@@ -202,5 +199,6 @@ fn runtime_isolation_reports_container_network_runtime_enforcement() {
         .as_array()
         .expect("guards")
         .iter()
-        .any(|guard| guard["guard"] == "deny-network" && guard["enforcement_mode"] == "container_runtime_flag"));
+        .any(|guard| guard["guard"] == "deny-network"
+            && guard["enforcement_mode"] == "container_runtime_flag"));
 }

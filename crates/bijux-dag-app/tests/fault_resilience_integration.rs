@@ -251,8 +251,13 @@ fn fault_stale_cache_metadata_mismatch() {
     let cache = temp.path().join("cache");
     fs::create_dir_all(cache.join("abc")).expect("mkdir");
     fs::write(cache.join("abc").join("meta.json"), "{\"fingerprint\":\"old\"}").expect("write");
-    let result =
-        run_matches(&["bijux-dag", "cache", "verify", "--cache-dir", cache.to_string_lossy().as_ref()]);
+    let result = run_matches(&[
+        "bijux-dag",
+        "cache",
+        "verify",
+        "--cache-dir",
+        cache.to_string_lossy().as_ref(),
+    ]);
     assert!(result.is_err() || result.is_ok());
 }
 
