@@ -25,7 +25,7 @@ bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core", versi
 bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts", version = "0.4.0" }
 chrono = { workspace = true }
 chrono-tz = { workspace = true }
-cron = { workspace = true }
+croner = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -37,4 +37,4 @@ hex = { workspace = true }
 tempfile = { workspace = true }
 chrono = { workspace = true }
 chrono-tz = { workspace = true }
-bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit" }
+bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit", version = "0.4.0" }
