@@ -11,7 +11,7 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
-use bijux_dag_runtime::{Runtime, RuntimeConfig};
+use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
 use serde_json::{json, Value};
 use std::fs;
 
@@ -157,6 +157,69 @@ fn failure_join_graph(trigger_rule: &str) -> String {
     .to_string()
 }
 
+fn cached_trigger_graph() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "seed",
+                "kind": "const",
+                "outputs": [{"name": "out", "path": "seed/out.txt"}],
+                "params": {"value": "seed"}
+            },
+            {
+                "id": "consume",
+                "kind": "const",
+                "inputs": ["seed_gate"],
+                "outputs": [{"name": "out", "path": "consume/out.txt"}],
+                "params": {"value": "consume"},
+                "trigger_rule": "all_success"
+            }
+        ],
+        "edges": [
+            {"kind": "control", "from": {"node_id": "seed", "port": "out"}, "to": {"node_id": "consume", "port": "seed_gate"}}
+        ]
+    })
+    .to_string()
+}
+
+fn retry_trigger_graph() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "worker",
+                "kind": "shell",
+                "outputs": [{"name": "out", "path": "out.txt"}],
+                "params": {
+                    "argv": [
+                        "/bin/sh",
+                        "-c",
+                        "if [ ! -f marker ]; then touch marker; exit 1; fi; printf 'ok' > ../outputs/out.txt"
+                    ]
+                },
+                "retry": {
+                    "max_attempts": 1,
+                    "backoff_ms": 0
+                },
+                "effects": ["filesystem"]
+            },
+            {
+                "id": "consume",
+                "kind": "const",
+                "inputs": ["worker_gate"],
+                "outputs": [{"name": "out", "path": "consume/out.txt"}],
+                "params": {"value": "consume"},
+                "trigger_rule": "all_success"
+            }
+        ],
+        "edges": [
+            {"kind": "control", "from": {"node_id": "worker", "port": "out"}, "to": {"node_id": "consume", "port": "worker_gate"}}
+        ]
+    })
+    .to_string()
+}
+
 #[test]
 fn runtime_records_none_failed_trace_for_branch_skip() {
     let graph =
@@ -213,5 +276,71 @@ fn runtime_records_all_done_trace_when_failed_upstream_is_allowed() {
         true,
         "accepts any terminal upstream status",
         &[("fragile", "failed"), ("steady", "success")],
+    );
+}
+
+#[test]
+fn runtime_records_cached_upstream_as_all_success_input() {
+    let graph = parse_graph_strict(&cached_trigger_graph()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out_dir = tempfile::tempdir().expect("tempdir");
+    let cache_dir = tempfile::tempdir().expect("cache");
+
+    let _ = runtime
+        .run(
+            &graph,
+            out_dir.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache_dir.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+
+    let run_dir = runtime
+        .run(
+            &graph,
+            out_dir.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache_dir.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("cache hit");
+
+    let seed = read_trace(&run_dir, "seed");
+    let consume = read_trace(&run_dir, "consume");
+    assert_eq!(seed["status"], "cached");
+    assert_eq!(consume["status"], "cached");
+    assert_trigger_evaluation(
+        &consume,
+        "all_success",
+        true,
+        "requires every upstream to complete in success or cached status",
+        &[("seed", "cached")],
+    );
+}
+
+#[test]
+fn runtime_records_retry_success_before_all_success_downstream() {
+    let graph = parse_graph_strict(&retry_trigger_graph()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out_dir = tempfile::tempdir().expect("tempdir");
+    let run_dir =
+        runtime.run(&graph, out_dir.path(), RuntimeConfig::default()).expect("run retry dag");
+
+    let worker = read_trace(&run_dir, "worker");
+    let consume = read_trace(&run_dir, "consume");
+    assert_eq!(worker["status"], "success");
+    assert_eq!(worker["attempt"], 2);
+    assert_eq!(consume["status"], "success");
+    assert_trigger_evaluation(
+        &consume,
+        "all_success",
+        true,
+        "requires every upstream to complete in success or cached status",
+        &[("worker", "success")],
     );
 }
