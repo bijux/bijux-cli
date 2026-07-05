@@ -67,7 +67,7 @@ fn external_graph(kind: &str, timeout_ms: Option<u64>) -> Graph {
             kind: NodeKind::External(kind.to_string()),
             semantic_kind: SemanticNodeKind::Task,
             inputs: vec![],
-            outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+            outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
             params: ParamValue::default(),
             container: None,
             timeout_ms,

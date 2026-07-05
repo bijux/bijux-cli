@@ -136,6 +136,7 @@ impl Adapter for ExternalAdapter {
                     stdout_path: stdout_path.display().to_string(),
                     stderr_path: stderr_path.display().to_string(),
                     outputs_dir: outputs_dir.display().to_string(),
+                    output_evidence: Vec::new(),
                     failure: Some(crate::FailureInfo {
                         kind: "Execution".to_string(),
                         code: "EXEC_TIMEOUT".to_string(),
@@ -157,13 +158,14 @@ impl Adapter for ExternalAdapter {
         exec.fs.write(&stdout_path, &output.stdout)?;
         exec.fs.write(&stderr_path, &output.stderr)?;
 
-        let output_paths = crate::declared_output_paths(node);
-        if let Some(failure) = crate::validate_outputs_dir(&outputs_dir, &node.outputs) {
+        let output_report = crate::inspect_declared_outputs(&outputs_dir, &node.outputs);
+        if let Some(failure) = output_report.failure {
             return Ok(NodeResult {
                 status: crate::NodeStatus::Failed,
                 stdout_path: stdout_path.display().to_string(),
                 stderr_path: stderr_path.display().to_string(),
                 outputs_dir: outputs_dir.display().to_string(),
+                output_evidence: output_report.output_evidence,
                 failure: Some(failure),
                 attempts: 1,
                 attempt_events: Vec::new(),
@@ -172,7 +174,7 @@ impl Adapter for ExternalAdapter {
             });
         }
         let fp = crate::node_fingerprint_from_ctx(exec, &node.id);
-        write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
+        write_outputs_index(&outputs_dir, &node.id, &fp, &output_report.present_outputs)?;
 
         let success = output.status.success();
         let failure = if success {
@@ -191,6 +193,7 @@ impl Adapter for ExternalAdapter {
             stdout_path: stdout_path.display().to_string(),
             stderr_path: stderr_path.display().to_string(),
             outputs_dir: outputs_dir.display().to_string(),
+            output_evidence: output_report.output_evidence,
             failure,
             attempts: 1,
             attempt_events: Vec::new(),

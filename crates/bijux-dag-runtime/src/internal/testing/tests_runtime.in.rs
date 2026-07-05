@@ -4,7 +4,7 @@ mod tests {
     use crate::test_support::{docker_available, param_object, sample_graph};
     use crate::{Fs, StdFs};
     use bijux_dag_core::{
-        ContainerSpec, Edge, Effect, ParamValue, PortRef, Severity, SPEC_VERSION,
+        ContainerSpec, Edge, Effect, OutputKind, ParamValue, PortRef, Severity, SPEC_VERSION,
     };
     use std::ffi::OsString;
     use std::fs;
@@ -278,7 +278,7 @@ mod tests {
                     kind: NodeKind::Const,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                    outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                     params: param_object(vec![("value", Value::from(1))]),
                     container: None,
                     timeout_ms: None,
@@ -297,10 +297,7 @@ mod tests {
                     kind: NodeKind::Const,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput {
-                        name: "out_a".to_string(),
-                        path: "out_a".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out_a".to_string(), "out_a".to_string(),)],
                     params: param_object(vec![("value", Value::from(2))]),
                     container: None,
                     timeout_ms: None,
@@ -391,10 +388,7 @@ mod tests {
                     kind: NodeKind::Shell,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput {
-                        name: "out".to_string(),
-                        path: "out_a".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out".to_string(), "out_a".to_string(),)],
                     params: param_object(vec![(
                         "argv",
                         serde_json::json!([
@@ -420,10 +414,7 @@ mod tests {
                     kind: NodeKind::Shell,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput {
-                        name: "out".to_string(),
-                        path: "out_b".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out".to_string(), "out_b".to_string(),)],
                     params: param_object(vec![(
                         "argv",
                         serde_json::json!(["/bin/sh", "-c", "echo skipped > ../outputs/out_b"]),
@@ -657,10 +648,7 @@ mod tests {
                     kind: NodeKind::Const,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput {
-                        name: "out_a".to_string(),
-                        path: "out_a".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out_a".to_string(), "out_a".to_string(),)],
                     params: param_object(vec![("value", Value::from("hello"))]),
                     container: None,
                     timeout_ms: None,
@@ -679,10 +667,7 @@ mod tests {
                     kind: NodeKind::Shell,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec!["in".to_string()],
-                    outputs: vec![FileOutput {
-                        name: "out_b".to_string(),
-                        path: "out_b".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out_b".to_string(), "out_b".to_string(),)],
                     params: param_object(vec![(
                         "argv",
                         Value::Array(vec![
@@ -747,14 +732,8 @@ mod tests {
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
 inputs: vec![],
                     outputs: vec![
-                        FileOutput {
-                            name: "a".to_string(),
-                            path: "a.txt".to_string(),
-                        },
-                        FileOutput {
-                            name: "b".to_string(),
-                            path: "b.txt".to_string(),
-                        },
+                        FileOutput::new("a".to_string(), "a.txt".to_string(),),
+                        FileOutput::new("b".to_string(), "b.txt".to_string(),),
                     ],
                     params: param_object(vec![(
                         "argv",
@@ -781,10 +760,7 @@ inputs: vec![],
                     kind: NodeKind::Shell,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
 inputs: vec!["in".to_string()],
-                    outputs: vec![FileOutput {
-                        name: "out_b".to_string(),
-                        path: "out_b".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out_b".to_string(), "out_b".to_string(),)],
                     params: param_object(vec![(
                         "argv",
                         Value::Array(vec![
@@ -874,10 +850,7 @@ inputs: vec!["in".to_string()],
                     kind: NodeKind::Const,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput {
-                        name: "out_a".to_string(),
-                        path: "out_a".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out_a".to_string(), "out_a".to_string(),)],
                     params: param_object(vec![("value", Value::from(1))]),
                     container: None,
                     timeout_ms: None,
@@ -896,10 +869,7 @@ inputs: vec!["in".to_string()],
                     kind: NodeKind::Const,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput {
-                        name: "out_b".to_string(),
-                        path: "out_b".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out_b".to_string(), "out_b".to_string(),)],
                     params: param_object(vec![("value", Value::from(2))]),
                     container: None,
                     timeout_ms: None,
@@ -918,10 +888,7 @@ inputs: vec!["in".to_string()],
                     kind: NodeKind::Const,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput {
-                        name: "out_c".to_string(),
-                        path: "out_c".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out_c".to_string(), "out_c".to_string(),)],
                     params: param_object(vec![("value", Value::from(3))]),
                     container: None,
                     timeout_ms: None,
@@ -970,7 +937,7 @@ inputs: vec!["in".to_string()],
                 kind: NodeKind::Container,
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput { name: "out_c".to_string(), path: "out_c".to_string() }],
+                outputs: vec![FileOutput::new("out_c".to_string(), "out_c".to_string())],
                 params: ParamValue::default(),
                 container: Some(ContainerSpec {
                     image: "alpine:3.19".to_string(),
@@ -1020,7 +987,7 @@ inputs: vec!["in".to_string()],
                 kind: NodeKind::Container,
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput { name: "out".to_string(), path: "out.txt".to_string() }],
+                outputs: vec![FileOutput::new("out".to_string(), "out.txt".to_string())],
                 params: ParamValue::default(),
                 container: Some(ContainerSpec {
                     image: "alpine:3.19".to_string(),
@@ -1071,7 +1038,7 @@ inputs: vec!["in".to_string()],
                 kind: NodeKind::Shell,
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                 params: param_object(vec![(
                     "argv",
                     Value::Array(vec![
@@ -1141,7 +1108,7 @@ inputs: vec!["in".to_string()],
                 kind: NodeKind::External("fake".to_string()),
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: None,
@@ -1216,7 +1183,7 @@ exit 1
                 kind: NodeKind::External("fake".to_string()),
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: None,
@@ -1271,7 +1238,7 @@ exit 1
                 kind: NodeKind::External("fake".to_string()),
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                 params: param_object(vec![("payload", Value::String(big))]),
                 container: None,
                 timeout_ms: None,
@@ -1306,7 +1273,7 @@ exit 1
             symlink(outdir.join("safe"), outdir.join("link")).unwrap();
             fs::write(outdir.join("safe").join("result.txt"), b"ok").unwrap();
             let outputs =
-                vec![FileOutput { name: "out".to_string(), path: "link/result.txt".to_string() }];
+                vec![FileOutput::new("out".to_string(), "link/result.txt".to_string())];
             let failure = validate_outputs_dir(&outdir, &outputs).expect("must fail");
             assert_eq!(failure.code, "OUTPUT_PATH_INVALID");
             assert!(failure.message.contains("traverses symlink"));
@@ -1317,7 +1284,7 @@ exit 1
     fn output_validation_rejects_non_normalized_declared_paths() {
         let dir = tempfile::tempdir().unwrap();
         let outputs =
-            vec![FileOutput { name: "bad".to_string(), path: "nested//out.txt".to_string() }];
+            vec![FileOutput::new("bad".to_string(), "nested//out.txt".to_string())];
         let failure = validate_outputs_dir(dir.path(), &outputs).expect("must fail");
         assert_eq!(failure.code, "OUTPUT_PATH_INVALID");
         assert!(failure.message.contains("invalid output path"));
@@ -1333,12 +1300,130 @@ exit 1
             fs::create_dir_all(outdir.join("real")).unwrap();
             fs::write(outdir.join("real").join("declared.txt"), b"ok").unwrap();
             symlink(outdir.clone(), outdir.join("real").join("loop")).unwrap();
-            let outputs = vec![FileOutput {
-                name: "declared".to_string(),
-                path: "real/declared.txt".to_string(),
-            }];
+            let outputs = vec![FileOutput::new("declared".to_string(), "real/declared.txt".to_string(),)];
             assert!(validate_outputs_dir(&outdir, &outputs).is_none());
         }
+    }
+
+    #[test]
+    fn output_validation_reports_optional_outputs_without_failing() {
+        let dir = tempfile::tempdir().unwrap();
+        let outdir = dir.path().join("outputs");
+        fs::create_dir_all(&outdir).unwrap();
+        fs::write(outdir.join("result.json"), br#"{"ok":true}"#).unwrap();
+
+        let mut optional_log = FileOutput::new("log".to_string(), "logs/run.log".to_string());
+        optional_log.kind = OutputKind::Log;
+        optional_log.required = false;
+        let mut required_value = FileOutput::new("result".to_string(), "result.json".to_string());
+        required_value.kind = OutputKind::Value;
+
+        let report = inspect_declared_outputs(&outdir, &[required_value, optional_log]);
+        assert!(report.failure.is_none());
+        assert_eq!(report.output_evidence.len(), 2);
+        assert!(report
+            .output_evidence
+            .iter()
+            .any(|output| output.name == "log" && !output.present && !output.required));
+        assert!(report.output_evidence.iter().any(|output| {
+            output.name == "result"
+                && output.present
+                && output.kind == "value"
+                && output.media_type == "application/json"
+                && output.sha256.is_some()
+        }));
+    }
+
+    #[test]
+    fn directory_outputs_materialize_for_downstream_nodes() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut source_output = FileOutput::new("data".to_string(), "source-data".to_string());
+        source_output.kind = OutputKind::Directory;
+
+        let graph = Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: std::collections::BTreeMap::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![
+                Node {
+                    id: "source".to_string(),
+                    kind: NodeKind::Shell,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+                    inputs: vec![],
+                    outputs: vec![source_output],
+                    params: param_object(vec![(
+                        "argv",
+                        Value::Array(vec![
+                            Value::from("/bin/sh"),
+                            Value::from("-c"),
+                            Value::from(
+                                "mkdir -p ../outputs/source-data && echo hello > ../outputs/source-data/file.txt",
+                            ),
+                        ]),
+                    )]),
+                    container: None,
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
+                    effects: vec![Effect::Filesystem],
+                    env_allowlist: vec![],
+                    group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
+                },
+                Node {
+                    id: "sink".to_string(),
+                    kind: NodeKind::Shell,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+                    inputs: vec!["in".to_string()],
+                    outputs: vec![FileOutput::new("done".to_string(), "done.txt".to_string())],
+                    params: param_object(vec![(
+                        "argv",
+                        Value::Array(vec![
+                            Value::from("/bin/sh"),
+                            Value::from("-c"),
+                            Value::from("cat ../inputs/source/in/file.txt > ../outputs/done.txt"),
+                        ]),
+                    )]),
+                    container: None,
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
+                    effects: vec![Effect::Filesystem],
+                    env_allowlist: vec![],
+                    group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
+                },
+            ],
+            edges: vec![Edge {
+                id: None,
+                kind: bijux_dag_core::EdgeKind::Data,
+                decision: None,
+                from: PortRef { node_id: "source".to_string(), port: "data".to_string() },
+                to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
+            }],
+        };
+
+        let runtime = Runtime::new();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let rendered =
+            fs::read_to_string(final_path.join("nodes").join("sink").join("outputs").join("done.txt"))
+                .unwrap();
+        assert_eq!(rendered.trim(), "hello");
+
+        let trace: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(final_path.join("nodes").join("source").join("trace.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(trace["outputs"][0]["kind"], "directory");
+        assert_eq!(trace["outputs"][0]["media_type"], "application/vnd.bijux.directory");
+        assert!(trace["outputs"][0]["sha256"].as_str().is_some());
     }
 
     #[test]
@@ -1354,7 +1439,7 @@ exit 1
                 kind: NodeKind::Shell,
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                 params: param_object(vec![(
                     "argv",
                     Value::Array(vec![
@@ -1404,7 +1489,7 @@ exit 1
                 kind: NodeKind::Container,
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                 params: ParamValue::default(),
                 container: Some(ContainerSpec {
                     engine: "docker".to_string(),
@@ -1450,10 +1535,7 @@ exit 1
                 kind: NodeKind::Shell,
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput {
-                    name: "declared".to_string(),
-                    path: "declared.txt".to_string(),
-                }],
+                outputs: vec![FileOutput::new("declared".to_string(), "declared.txt".to_string(),)],
                 params: param_object(vec![(
                     "argv",
                     Value::Array(vec![
@@ -1548,7 +1630,7 @@ exit 1
                 kind: NodeKind::External("missing-kind".to_string()),
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: None,

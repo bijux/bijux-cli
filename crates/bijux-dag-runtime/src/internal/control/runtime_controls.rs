@@ -836,10 +836,7 @@ mod tests {
                     kind: NodeKind::Const,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: Vec::new(),
-                    outputs: vec![FileOutput {
-                        name: "out".to_string(),
-                        path: "a/out".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out".to_string(), "a/out".to_string())],
                     params: ParamValue::Object(BTreeMap::from([(
                         "value".to_string(),
                         ParamValue::Literal(serde_json::json!("1")),
@@ -861,10 +858,7 @@ mod tests {
                     kind: NodeKind::Shell,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec!["in".to_string()],
-                    outputs: vec![FileOutput {
-                        name: "out".to_string(),
-                        path: "b/out".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out".to_string(), "b/out".to_string())],
                     params: ParamValue::Object(BTreeMap::from([(
                         "argv".to_string(),
                         ParamValue::Array(vec![
@@ -931,7 +925,7 @@ mod tests {
             kind: NodeKind::Container,
             semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
             inputs: Vec::new(),
-            outputs: vec![FileOutput { name: "out".to_string(), path: "c/out".to_string() }],
+            outputs: vec![FileOutput::new("out".to_string(), "c/out".to_string())],
             params: ParamValue::default(),
             container: Some(bijux_dag_core::ContainerSpec {
                 image: "alpine:3.19".to_string(),

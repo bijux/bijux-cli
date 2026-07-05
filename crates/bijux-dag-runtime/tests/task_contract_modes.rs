@@ -33,10 +33,10 @@ fn task_contract_supports_all_isolation_modes() {
         kind: NodeKind::Shell,
         semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
         inputs: vec![],
-        outputs: vec![bijux_dag_core::FileOutput {
-            name: "out".to_string(),
-            path: "subprocess_mode/out".to_string(),
-        }],
+        outputs: vec![bijux_dag_core::FileOutput::new(
+            "out".to_string(),
+            "subprocess_mode/out".to_string(),
+        )],
         params: bijux_dag_core::ParamValue::Object(
             [(
                 "argv".to_string(),
@@ -66,10 +66,10 @@ fn task_contract_supports_all_isolation_modes() {
         kind: NodeKind::Container,
         semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
         inputs: vec![],
-        outputs: vec![bijux_dag_core::FileOutput {
-            name: "out".to_string(),
-            path: "container_mode/out".to_string(),
-        }],
+        outputs: vec![bijux_dag_core::FileOutput::new(
+            "out".to_string(),
+            "container_mode/out".to_string(),
+        )],
         params: bijux_dag_core::ParamValue::default(),
         container: Some(bijux_dag_core::ContainerSpec {
             image: "alpine:3.19".to_string(),
@@ -94,10 +94,10 @@ fn task_contract_supports_all_isolation_modes() {
         kind: NodeKind::External("fake".to_string()),
         semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
         inputs: vec![],
-        outputs: vec![bijux_dag_core::FileOutput {
-            name: "out".to_string(),
-            path: "external_mode/out".to_string(),
-        }],
+        outputs: vec![bijux_dag_core::FileOutput::new(
+            "out".to_string(),
+            "external_mode/out".to_string(),
+        )],
         params: bijux_dag_core::ParamValue::default(),
         container: None,
         timeout_ms: None,

@@ -271,13 +271,14 @@ use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
 };
 use bijux_dag_artifacts::{
-    write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError, CacheProof,
-    ContainerTrace, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeTrace, OutputSummary,
-    OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir, RunOutputFile,
-    RunOutputsIndex,
+    sha256_artifact_path, write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError,
+    CacheProof, ContainerTrace, DeclaredOutputArtifact, FailureInfo, InputFile, InputsIndex,
+    NodeCounts, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
+    Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex, TraceOutputArtifact,
 };
 use bijux_dag_core::{
-    Effect, FileOutput, Graph, GraphError, Node, NodeKind, RetryPolicy, Severity,
+    Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
+    Severity,
 };
 pub use cache::{
     cache_entry_has_required_proof, cache_key_explanation, cache_metadata_version_supported,
@@ -584,6 +585,7 @@ pub struct NodeResult {
     pub stdout_path: String,
     pub stderr_path: String,
     pub outputs_dir: String,
+    pub output_evidence: Vec<TraceOutputArtifact>,
     pub failure: Option<FailureInfo>,
     pub attempts: u32,
     pub attempt_events: Vec<AttemptEvent>,
@@ -646,15 +648,16 @@ impl Adapter for ConstAdapter {
         exec.fs.write(&out_path, &serde_json::to_vec_pretty(&value)?)?;
         exec.fs.write(&stdout_path, b"")?;
         exec.fs.write(&stderr_path, b"")?;
+        let output_report = inspect_declared_outputs(&outputs_dir, &node.outputs);
         let fp = node_fingerprint_from_ctx(exec, &node.id);
-        let output_paths = declared_output_paths(node);
-        write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
+        write_outputs_index(&outputs_dir, &node.id, &fp, &output_report.present_outputs)?;
 
         Ok(NodeResult {
             status: NodeStatus::Success,
             stdout_path: stdout_path.display().to_string(),
             stderr_path: stderr_path.display().to_string(),
             outputs_dir: outputs_dir.display().to_string(),
+            output_evidence: output_report.output_evidence,
             failure: None,
             attempts: 1,
             attempt_events: Vec::new(),
@@ -722,13 +725,14 @@ impl Adapter for ShellAdapter {
 
         exec.fs.write(&stdout_path, &output.stdout)?;
         exec.fs.write(&stderr_path, &output.stderr)?;
-        let output_paths = declared_output_paths(node);
-        if let Some(failure) = validate_outputs_dir(&outputs_dir, &node.outputs) {
+        let output_report = inspect_declared_outputs(&outputs_dir, &node.outputs);
+        if let Some(failure) = output_report.failure {
             return Ok(NodeResult {
                 status: NodeStatus::Failed,
                 stdout_path: stdout_path.display().to_string(),
                 stderr_path: stderr_path.display().to_string(),
                 outputs_dir: outputs_dir.display().to_string(),
+                output_evidence: output_report.output_evidence,
                 failure: Some(failure),
                 attempts: 1,
                 attempt_events: Vec::new(),
@@ -737,7 +741,7 @@ impl Adapter for ShellAdapter {
             });
         }
         let fp = node_fingerprint_from_ctx(exec, &node.id);
-        write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
+        write_outputs_index(&outputs_dir, &node.id, &fp, &output_report.present_outputs)?;
 
         let success = output.status.success();
         let exit_code = output.status.code();
@@ -757,6 +761,7 @@ impl Adapter for ShellAdapter {
             stdout_path: stdout_path.display().to_string(),
             stderr_path: stderr_path.display().to_string(),
             outputs_dir: outputs_dir.display().to_string(),
+            output_evidence: output_report.output_evidence,
             failure,
             attempts: 1,
             attempt_events: Vec::new(),
@@ -816,6 +821,7 @@ impl Adapter for ContainerAdapter {
                     stdout_path: stdout_path.display().to_string(),
                     stderr_path: stderr_path.display().to_string(),
                     outputs_dir: outputs_dir.display().to_string(),
+                    output_evidence: Vec::new(),
                     failure: Some(FailureInfo {
                         kind: "Infrastructure".to_string(),
                         code: "CONTAINER_ENGINE_UNAVAILABLE".to_string(),
@@ -840,6 +846,7 @@ impl Adapter for ContainerAdapter {
                 stdout_path: stdout_path.display().to_string(),
                 stderr_path: stderr_path.display().to_string(),
                 outputs_dir: outputs_dir.display().to_string(),
+                output_evidence: Vec::new(),
                 failure: Some(FailureInfo {
                     kind: "Execution".to_string(),
                     code: "CONTAINER_VOLUME_CONTRACT_INVALID".to_string(),
@@ -873,6 +880,7 @@ impl Adapter for ContainerAdapter {
                         stdout_path: stdout_path.display().to_string(),
                         stderr_path: stderr_path.display().to_string(),
                         outputs_dir: outputs_dir.display().to_string(),
+                        output_evidence: Vec::new(),
                         failure: Some(FailureInfo {
                             kind: "Policy".to_string(),
                             code: "POLICY_UNENFORCEABLE".to_string(),
@@ -919,13 +927,14 @@ impl Adapter for ContainerAdapter {
 
         exec.fs.write(&stdout_path, &output.stdout)?;
         exec.fs.write(&stderr_path, &output.stderr)?;
-        let output_paths = declared_output_paths(node);
-        if let Some(failure) = validate_outputs_dir(&outputs_dir, &node.outputs) {
+        let output_report = inspect_declared_outputs(&outputs_dir, &node.outputs);
+        if let Some(failure) = output_report.failure {
             return Ok(NodeResult {
                 status: NodeStatus::Failed,
                 stdout_path: stdout_path.display().to_string(),
                 stderr_path: stderr_path.display().to_string(),
                 outputs_dir: outputs_dir.display().to_string(),
+                output_evidence: output_report.output_evidence,
                 failure: Some(failure),
                 attempts: 1,
                 attempt_events: Vec::new(),
@@ -939,7 +948,7 @@ impl Adapter for ContainerAdapter {
             });
         }
         let fp = node_fingerprint_from_ctx(exec, &node.id);
-        write_outputs_index(&outputs_dir, &node.id, &fp, &output_paths)?;
+        write_outputs_index(&outputs_dir, &node.id, &fp, &output_report.present_outputs)?;
 
         let success = output.status.success();
         let failure = if success {
@@ -958,6 +967,7 @@ impl Adapter for ContainerAdapter {
             stdout_path: stdout_path.display().to_string(),
             stderr_path: stderr_path.display().to_string(),
             outputs_dir: outputs_dir.display().to_string(),
+            output_evidence: output_report.output_evidence,
             failure,
             attempts: 1,
             attempt_events: Vec::new(),
@@ -1156,6 +1166,7 @@ fn write_trace(
     node_id: &str,
     status: NodeStatus,
     failure: Option<FailureInfo>,
+    output_evidence: Vec<TraceOutputArtifact>,
     started_unix_ms: u128,
     finished_unix_ms: u128,
     attempt: u32,
@@ -1183,6 +1194,12 @@ fn write_trace(
         } else {
             None
         };
+    let outputs = if output_evidence.is_empty() {
+        inspect_declared_outputs(ctx.run_dir.node_outputs_dir(node_id).as_path(), &node.outputs)
+            .output_evidence
+    } else {
+        output_evidence
+    };
     let trace = NodeTrace {
         node_id: node_id.to_string(),
         status: status_string(&status),
@@ -1200,6 +1217,7 @@ fn write_trace(
         resources: node.resources.as_ref().map(|r| TraceResources { cpu: r.cpu, mem_mb: r.mem_mb }),
         inputs_index,
         resolved_params: ctx.resolved_params.get(node_id).cloned(),
+        outputs,
         container: container_meta,
         cache_proof,
         branch_decision,
@@ -1385,6 +1403,7 @@ fn failed_node_result_from_runtime_error(
         stdout_path: stdout_path.display().to_string(),
         stderr_path: stderr_path.display().to_string(),
         outputs_dir: outputs_dir.display().to_string(),
+        output_evidence: Vec::new(),
         failure: Some(FailureInfo {
             kind: kind.to_string(),
             code: code.to_string(),
@@ -1684,8 +1703,7 @@ fn materialize_inputs(
         }
         if ctx.fs.metadata(&src_path).is_ok() {
             materialize_file(ctx.fs.as_ref(), &src_path, &dst_path, mode)?;
-            let data = ctx.fs.read(&dst_path)?;
-            let sha = sha256_bytes(&data);
+            let sha = sha256_artifact_path(&dst_path).map_err(RuntimeError::Artifact)?;
             let rel = dst_path.strip_prefix(&inputs_dir).unwrap_or(&dst_path);
             let rel_str = rel.to_string_lossy().to_string();
             let from_fp = node_fingerprint_from_ctx(ctx, &edge.from.node_id);
@@ -1708,8 +1726,209 @@ fn cache_dir_from_env() -> Option<PathBuf> {
     std::env::var("BIJUX_DAG_CACHE_DIR").ok().map(PathBuf::from)
 }
 
-pub(crate) fn declared_output_paths(node: &Node) -> Vec<String> {
-    node.outputs.iter().map(|o| o.path.clone()).collect()
+#[derive(Debug, Clone)]
+struct OutputInspectionReport {
+    pub(crate) output_evidence: Vec<TraceOutputArtifact>,
+    pub(crate) present_outputs: Vec<DeclaredOutputArtifact>,
+    pub(crate) failure: Option<FailureInfo>,
+}
+
+fn output_kind_label(kind: &OutputKind) -> &'static str {
+    match kind {
+        OutputKind::File => "file",
+        OutputKind::Directory => "directory",
+        OutputKind::Value => "value",
+        OutputKind::Table => "table",
+        OutputKind::Log => "log",
+        OutputKind::Binary => "binary",
+        OutputKind::Bundle => "bundle",
+    }
+}
+
+pub(crate) fn declared_output_artifacts(node: &Node) -> Vec<DeclaredOutputArtifact> {
+    node.outputs
+        .iter()
+        .map(|output| DeclaredOutputArtifact {
+            name: output.name.clone(),
+            path: output.path.clone(),
+            kind: output_kind_label(&output.kind).to_string(),
+            media_type: output.effective_media_type(),
+        })
+        .collect()
+}
+
+pub(crate) fn inspect_declared_outputs(
+    dir: &Path,
+    outputs: &[OutputSpec],
+) -> OutputInspectionReport {
+    let mut declared = Vec::new();
+    let mut present_outputs = Vec::new();
+    for output in outputs {
+        declared.push(output.clone());
+        let schema = ArtifactSchemaDescriptor {
+            name: format!("bijux.output.{}", output_kind_label(&output.kind)),
+            version: "v0.1".to_string(),
+            media_type: output.effective_media_type(),
+            encoding: "identity".to_string(),
+            validation_mode: SchemaValidationMode::Strict,
+        };
+        if let Err(message) = validate_output_schema_descriptor(&schema) {
+            return OutputInspectionReport {
+                output_evidence: Vec::new(),
+                present_outputs: Vec::new(),
+                failure: Some(FailureInfo {
+                    kind: "Execution".to_string(),
+                    code: "OUTPUT_SCHEMA_INVALID".to_string(),
+                    message,
+                    details: None,
+                }),
+            };
+        }
+    }
+
+    let mut output_evidence = Vec::new();
+    for output in &declared {
+        if !bijux_dag_artifacts::paths::is_normalized_relative_path(&output.path) {
+            return OutputInspectionReport {
+                output_evidence,
+                present_outputs,
+                failure: Some(FailureInfo {
+                    kind: "Execution".to_string(),
+                    code: "OUTPUT_PATH_INVALID".to_string(),
+                    message: "invalid output path".to_string(),
+                    details: Some(serde_json::json!({ "path": output.path })),
+                }),
+            };
+        }
+        if has_symlink_component(dir, Path::new(&output.path)) {
+            return OutputInspectionReport {
+                output_evidence,
+                present_outputs,
+                failure: Some(FailureInfo {
+                    kind: "Execution".to_string(),
+                    code: "OUTPUT_PATH_INVALID".to_string(),
+                    message: format!("output path traverses symlink: {}", output.path),
+                    details: None,
+                }),
+            };
+        }
+        let path = dir.join(&output.path);
+        if !path.exists() {
+            output_evidence.push(TraceOutputArtifact {
+                name: output.name.clone(),
+                path: output.path.clone(),
+                kind: output_kind_label(&output.kind).to_string(),
+                required: output.required,
+                present: false,
+                media_type: output.effective_media_type(),
+                sha256: None,
+            });
+            if output.required {
+                return OutputInspectionReport {
+                    output_evidence,
+                    present_outputs,
+                    failure: Some(FailureInfo {
+                        kind: "Execution".to_string(),
+                        code: "OUTPUT_MISSING".to_string(),
+                        message: format!("missing required output: {}", output.path),
+                        details: Some(serde_json::json!({ "output": output.name })),
+                    }),
+                };
+            }
+            continue;
+        }
+        if path.is_symlink() {
+            return OutputInspectionReport {
+                output_evidence,
+                present_outputs,
+                failure: Some(FailureInfo {
+                    kind: "Execution".to_string(),
+                    code: "OUTPUT_PATH_INVALID".to_string(),
+                    message: format!("output must not be a symlink: {}", output.path),
+                    details: None,
+                }),
+            };
+        }
+        if output.expects_directory() && !path.is_dir() {
+            return OutputInspectionReport {
+                output_evidence,
+                present_outputs,
+                failure: Some(FailureInfo {
+                    kind: "Execution".to_string(),
+                    code: "OUTPUT_PATH_INVALID".to_string(),
+                    message: format!("output must be a directory: {}", output.path),
+                    details: Some(serde_json::json!({ "output": output.name })),
+                }),
+            };
+        }
+        if output.expects_file() && !path.is_file() {
+            return OutputInspectionReport {
+                output_evidence,
+                present_outputs,
+                failure: Some(FailureInfo {
+                    kind: "Execution".to_string(),
+                    code: "OUTPUT_PATH_INVALID".to_string(),
+                    message: format!("output must be a file: {}", output.path),
+                    details: Some(serde_json::json!({ "output": output.name })),
+                }),
+            };
+        }
+        let sha256 = match sha256_artifact_path(&path) {
+            Ok(sha256) => sha256,
+            Err(error) => {
+                return OutputInspectionReport {
+                    output_evidence,
+                    present_outputs,
+                    failure: Some(FailureInfo {
+                        kind: "Execution".to_string(),
+                        code: "OUTPUT_PATH_INVALID".to_string(),
+                        message: error.to_string(),
+                        details: Some(serde_json::json!({ "output": output.name })),
+                    }),
+                };
+            }
+        };
+        let media_type = output.effective_media_type();
+        output_evidence.push(TraceOutputArtifact {
+            name: output.name.clone(),
+            path: output.path.clone(),
+            kind: output_kind_label(&output.kind).to_string(),
+            required: output.required,
+            present: true,
+            media_type: media_type.clone(),
+            sha256: Some(sha256.clone()),
+        });
+        present_outputs.push(DeclaredOutputArtifact {
+            name: output.name.clone(),
+            path: output.path.clone(),
+            kind: output_kind_label(&output.kind).to_string(),
+            media_type,
+        });
+    }
+
+    let mut actual = std::collections::BTreeSet::new();
+    collect_relative_artifacts(dir, dir, &mut actual);
+    for rel in actual {
+        let declared_match = declared.iter().any(|output| {
+            rel == output.path
+                || (matches!(output.kind, OutputKind::Directory)
+                    && rel.starts_with(&format!("{}/", output.path)))
+        });
+        if !declared_match {
+            return OutputInspectionReport {
+                output_evidence,
+                present_outputs,
+                failure: Some(FailureInfo {
+                    kind: "Execution".to_string(),
+                    code: "OUTPUT_UNDECLARED".to_string(),
+                    message: format!("undeclared output path: {}", rel),
+                    details: None,
+                }),
+            };
+        }
+    }
+
+    OutputInspectionReport { output_evidence, present_outputs, failure: None }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1961,8 +2180,7 @@ fn verify_cache_entry(
         if fs.metadata(&path).is_err() {
             return Ok(false);
         }
-        let bytes = fs.read(&path)?;
-        let sha = sha256_bytes(&bytes);
+        let sha = sha256_artifact_path(&path).map_err(RuntimeError::Artifact)?;
         if sha != file.sha256 {
             return Ok(false);
         }
@@ -2036,75 +2254,7 @@ fn sort_value_maps(value: &mut Value) {
 }
 
 pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option<FailureInfo> {
-    let mut declared = std::collections::BTreeSet::new();
-    for out in outputs {
-        declared.insert(out.path.replace('\\', "/"));
-    }
-
-    for out in outputs {
-        let schema = ArtifactSchemaDescriptor {
-            name: "bijux.output.file".to_string(),
-            version: "v0.1".to_string(),
-            media_type: "application/octet-stream".to_string(),
-            encoding: "identity".to_string(),
-            validation_mode: SchemaValidationMode::Strict,
-        };
-        if let Err(message) = validate_output_schema_descriptor(&schema) {
-            return Some(FailureInfo {
-                kind: "Execution".to_string(),
-                code: "OUTPUT_SCHEMA_INVALID".to_string(),
-                message,
-                details: None,
-            });
-        }
-        if !bijux_dag_artifacts::paths::is_normalized_relative_path(&out.path) {
-            return Some(FailureInfo {
-                kind: "Execution".to_string(),
-                code: "OUTPUT_PATH_INVALID".to_string(),
-                message: "invalid output path".to_string(),
-                details: None,
-            });
-        }
-        let path = dir.join(&out.path);
-        if has_symlink_component(dir, Path::new(&out.path)) {
-            return Some(FailureInfo {
-                kind: "Execution".to_string(),
-                code: "OUTPUT_PATH_INVALID".to_string(),
-                message: format!("output path traverses symlink: {}", out.path),
-                details: None,
-            });
-        }
-        if !path.exists() {
-            return Some(FailureInfo {
-                kind: "Execution".to_string(),
-                code: "OUTPUT_MISSING".to_string(),
-                message: format!("missing output file: {}", out.path),
-                details: None,
-            });
-        }
-        if path.is_dir() || path.is_symlink() {
-            return Some(FailureInfo {
-                kind: "Execution".to_string(),
-                code: "OUTPUT_PATH_INVALID".to_string(),
-                message: format!("output must be a file: {}", out.path),
-                details: None,
-            });
-        }
-    }
-
-    let mut actual = std::collections::BTreeSet::new();
-    collect_relative_files(dir, dir, &mut actual);
-    for rel in actual {
-        if !declared.contains(&rel) {
-            return Some(FailureInfo {
-                kind: "Execution".to_string(),
-                code: "OUTPUT_UNDECLARED".to_string(),
-                message: format!("undeclared output file: {}", rel),
-                details: None,
-            });
-        }
-    }
-    None
+    inspect_declared_outputs(dir, outputs).failure
 }
 
 fn has_symlink_component(root: &Path, relative: &Path) -> bool {
@@ -2121,7 +2271,7 @@ fn has_symlink_component(root: &Path, relative: &Path) -> bool {
     false
 }
 
-fn collect_relative_files(
+fn collect_relative_artifacts(
     root: &Path,
     current: &Path,
     out: &mut std::collections::BTreeSet<String>,
@@ -2139,13 +2289,11 @@ fn collect_relative_files(
             continue;
         }
         if path.is_dir() {
-            collect_relative_files(root, &path, out);
+            collect_relative_artifacts(root, &path, out);
             continue;
         }
-        if path.is_file() {
-            if let Ok(rel) = path.strip_prefix(root) {
-                out.insert(rel.to_string_lossy().replace('\\', "/"));
-            }
+        if let Ok(rel) = path.strip_prefix(root) {
+            out.insert(rel.to_string_lossy().replace('\\', "/"));
         }
     }
 }
@@ -2263,7 +2411,10 @@ fn collect_outputs_summary(
                     out.push(OutputSummary {
                         node_id: f.node_id,
                         node_fingerprint: f.node_fingerprint,
-                        file: f.path,
+                        name: f.name,
+                        path: f.path,
+                        kind: f.kind,
+                        media_type: f.media_type,
                         sha256: f.sha256,
                     });
                 }
@@ -2271,7 +2422,7 @@ fn collect_outputs_summary(
         }
     }
     out.sort_by(|a, b| {
-        (a.node_id.clone(), a.file.clone()).cmp(&(b.node_id.clone(), b.file.clone()))
+        (a.node_id.clone(), a.path.clone()).cmp(&(b.node_id.clone(), b.path.clone()))
     });
     Ok(out)
 }
@@ -2282,10 +2433,13 @@ fn build_run_outputs_index(
 ) -> Result<RunOutputsIndex, RuntimeError> {
     let mut files = Vec::new();
     for out in outputs {
-        let rel = run_dir.node_output_relpath(&out.node_id, &out.file);
+        let rel = run_dir.node_output_relpath(&out.node_id, &out.path);
         files.push(RunOutputFile {
             node_id: out.node_id.clone(),
             node_fingerprint: out.node_fingerprint.clone(),
+            name: out.name.clone(),
+            kind: out.kind.clone(),
+            media_type: out.media_type.clone(),
             sha256: out.sha256.clone(),
             path: rel,
         });
@@ -2338,6 +2492,17 @@ fn materialize_file(
     dst: &Path,
     mode: MaterializeMode,
 ) -> std_io::Result<()> {
+    if src.is_dir() {
+        if matches!(mode, MaterializeMode::Symlink) && fs.symlink(src, dst).is_ok() {
+            return Ok(());
+        }
+        fs.create_dir_all(dst)?;
+        for entry in fs.read_dir(src)? {
+            let child_dst = dst.join(entry.file_name());
+            materialize_file(fs, entry.path().as_path(), child_dst.as_path(), mode)?;
+        }
+        return Ok(());
+    }
     if fs.metadata(dst).is_ok() {
         let _ = fs.remove_file(dst);
     }

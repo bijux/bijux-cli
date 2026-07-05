@@ -252,6 +252,7 @@ fn record_skipped_node(
         node_id,
         NodeStatus::Skipped,
         None,
+        Vec::new(),
         started,
         started,
         1,
@@ -880,6 +881,7 @@ pub fn execute(
                 node_id,
                 NodeStatus::Failed,
                 Some(failure.clone()),
+                Vec::new(),
                 started,
                 started,
                 1,
@@ -1049,6 +1051,7 @@ pub fn execute(
                 node_id,
                 status.clone(),
                 failure.clone(),
+                Vec::new(),
                 started,
                 started,
                 1,
@@ -1240,6 +1243,7 @@ pub fn execute(
                         &node_id,
                         result.status.clone(),
                         trace_failure,
+                        result.output_evidence.clone(),
                         started,
                         finished,
                         result.attempts,
@@ -1347,6 +1351,7 @@ pub fn execute(
                         &node_id,
                         NodeStatus::Failed,
                         Some(failure.clone()),
+                        Vec::new(),
                         started,
                         finished,
                         1,
@@ -1477,6 +1482,7 @@ pub fn execute(
                 &node.id,
                 NodeStatus::Failed,
                 Some(failure.clone()),
+                Vec::new(),
                 started,
                 started,
                 1,
@@ -1524,6 +1530,7 @@ pub fn execute(
                 &node.id,
                 NodeStatus::Failed,
                 Some(failure.clone()),
+                Vec::new(),
                 started,
                 started,
                 1,
@@ -1567,6 +1574,7 @@ pub fn execute(
                     &node.id,
                     NodeStatus::Skipped,
                     None,
+                    Vec::new(),
                     started,
                     started,
                     1,
@@ -1624,7 +1632,7 @@ pub fn execute(
         .outputs
         .iter()
         .map(|out| bijux_dag_artifacts::lineage::ArtifactLineageEdge {
-            artifact_id: format!("{}:{}", out.node_id, out.file),
+            artifact_id: format!("{}:{}", out.node_id, out.name),
             producer_node_id: out.node_id.clone(),
             upstream_artifact_ids: dep_map
                 .get(&out.node_id)
