@@ -32,6 +32,7 @@ pub(crate) fn handle_replay_command(
     hermetic: bool,
     select: &[String],
     exclude: &[String],
+    dependency_closure: bool,
     materialize_inputs: MaterializeModeArg,
     remote_cache_dir: Option<PathBuf>,
 ) -> Result<ExitCode, ExitCode> {
@@ -83,6 +84,7 @@ pub(crate) fn handle_replay_command(
             clean_env: clean_env_effective,
         },
         selectors: selectors.clone(),
+        partial_rerun_dependency_closure: dependency_closure,
         ..RuntimeConfig::default()
     };
     if dry_run {

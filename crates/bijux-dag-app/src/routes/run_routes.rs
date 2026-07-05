@@ -33,6 +33,7 @@ pub(crate) struct RunRouteRequest<'a> {
     pub hermetic: bool,
     pub select: &'a Vec<String>,
     pub exclude: &'a Vec<String>,
+    pub dependency_closure: bool,
     pub materialize_inputs: MaterializeModeArg,
     pub cache: CacheModeArg,
     pub cache_dir: Option<PathBuf>,
@@ -115,6 +116,7 @@ pub(crate) fn handle_run_command(
         latest_symlink: req.latest,
         policy: bijux_dag_runtime::PolicyConfig { deny_network, deny_env, deny_clock, clean_env },
         selectors,
+        partial_rerun_dependency_closure: req.dependency_closure,
         ..RuntimeConfig::default()
     };
     let scheduling = if req.preflight_only || req.explain_scheduling {
@@ -148,6 +150,7 @@ pub(crate) fn handle_run_command(
             "selectors": {
                 "include": req.select,
                 "exclude": req.exclude,
+                "dependency_closure": req.dependency_closure,
             },
             "scheduling": scheduling
                 .as_ref()
@@ -321,6 +324,7 @@ mod tests {
                 hermetic: false,
                 select: &Vec::new(),
                 exclude: &Vec::new(),
+                dependency_closure: false,
                 materialize_inputs: MaterializeModeArg::Copy,
                 cache: CacheModeArg::Off,
                 cache_dir: None,

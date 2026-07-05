@@ -1,20 +1,37 @@
 use crate::commands::{AbsolutePathPolicyArg, DagCli, PlanCommands};
+use crate::graph_helpers::parse_selectors;
 use crate::routes::preconditions::require_safe_path;
 use crate::{emit_json, load_graphs_or_emit, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::RunDirLayout;
 use bijux_dag_runtime::{
     build_backfill_plan, build_planner_analysis, compute_partial_run_closure, diff_plans,
     explain_plan, AbsolutePathPolicy, PlannerBuildResult, PlannerGuardrails, RuntimeConfig,
+    SelectorSet,
 };
 use serde_json::json;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub(crate) struct PlanPreviewConfig {
     pub run_root: Option<PathBuf>,
     pub run_id: Option<String>,
     pub cache_dir: Option<PathBuf>,
     pub absolute_path_policy: AbsolutePathPolicy,
+    pub selectors: SelectorSet,
+    pub dependency_closure: bool,
+}
+
+impl Default for PlanPreviewConfig {
+    fn default() -> Self {
+        Self {
+            run_root: None,
+            run_id: None,
+            cache_dir: None,
+            absolute_path_policy: AbsolutePathPolicy::AllowLiteral,
+            selectors: SelectorSet::default(),
+            dependency_closure: false,
+        }
+    }
 }
 
 impl From<AbsolutePathPolicyArg> for AbsolutePathPolicy {
@@ -32,6 +49,8 @@ pub(crate) fn default_analysis_runtime_config(preview: &PlanPreviewConfig) -> Ru
         run_id: preview.run_id.clone(),
         cache_dir: preview.cache_dir.clone(),
         absolute_path_policy: preview.absolute_path_policy,
+        selectors: preview.selectors.clone(),
+        partial_rerun_dependency_closure: preview.dependency_closure,
         ..RuntimeConfig::default()
     }
 }
@@ -84,11 +103,39 @@ pub(crate) fn plan_explain_payload(
     absolute_path_policy: AbsolutePathPolicy,
 ) -> serde_json::Value {
     let report = explain_plan(result);
+    let mut selected_nodes = result
+        .annotations
+        .iter()
+        .filter(|annotation| annotation.selected)
+        .map(|annotation| annotation.node_id.clone())
+        .collect::<Vec<_>>();
+    let mut omitted_nodes = result
+        .annotations
+        .iter()
+        .filter(|annotation| !annotation.selected)
+        .map(|annotation| json!({
+            "node_id": annotation.node_id,
+            "reason": annotation.reason,
+        }))
+        .collect::<Vec<_>>();
+    selected_nodes.sort();
+    omitted_nodes.sort_by(|left, right| {
+        left["node_id"]
+            .as_str()
+            .unwrap_or_default()
+            .cmp(right["node_id"].as_str().unwrap_or_default())
+    });
     json!({
         "planner_contract_version": result.plan.planner_contract_version,
         "plan_fingerprint": report.plan_fingerprint,
         "run_layout": preview_layout,
         "absolute_path_policy": absolute_path_policy,
+        "selection": {
+            "requested_selectors": result.plan.requested_selectors,
+            "dependency_closure_enabled": result.plan.dependency_closure_enabled,
+            "selected_nodes": selected_nodes,
+            "omitted_nodes": omitted_nodes,
+        },
         "phases": report.phases,
         "ordering": result.plan.order,
         "resource_estimate": result.resource_estimate,
@@ -108,14 +155,26 @@ pub(crate) fn handle_plan_command(
     command: &PlanCommands,
 ) -> Result<ExitCode, ExitCode> {
     match command {
-        PlanCommands::Explain { dags, out, run_id, cache_dir, absolute_path_policy } => {
+        PlanCommands::Explain {
+            dags,
+            out,
+            run_id,
+            cache_dir,
+            absolute_path_policy,
+            select,
+            exclude,
+            dependency_closure,
+        } => {
             let graph = load_graphs_or_emit(cli, "dag.plan.explain", dags)?;
+            let selectors = parse_selectors(select, exclude)?;
             let preview_layout = resolve_plan_preview_layout(out.as_deref(), run_id.as_deref())?;
             let preview = PlanPreviewConfig {
                 run_root: out.clone(),
                 run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
                 cache_dir: cache_dir.clone(),
                 absolute_path_policy: (*absolute_path_policy).into(),
+                selectors,
+                dependency_closure: *dependency_closure,
             };
             let result =
                 build_default_planner_analysis(&graph, &preview).map_err(|_| ExitCode::from(3))?;

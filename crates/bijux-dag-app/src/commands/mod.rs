@@ -265,6 +265,8 @@ pub(crate) enum Commands {
         select: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
         exclude: Vec<String>,
+        #[arg(long)]
+        dependency_closure: bool,
         #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
         materialize_inputs: MaterializeModeArg,
         #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
@@ -322,6 +324,8 @@ pub(crate) enum Commands {
         select: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
         exclude: Vec<String>,
+        #[arg(long)]
+        dependency_closure: bool,
         #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
         materialize_inputs: MaterializeModeArg,
         #[arg(long)]
@@ -513,6 +517,12 @@ pub(crate) enum PlanCommands {
         cache_dir: Option<PathBuf>,
         #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
         absolute_path_policy: AbsolutePathPolicyArg,
+        #[arg(long, action = clap::ArgAction::Append)]
+        select: Vec<String>,
+        #[arg(long, action = clap::ArgAction::Append)]
+        exclude: Vec<String>,
+        #[arg(long)]
+        dependency_closure: bool,
     },
     Diagnostics {
         #[arg(required = true)]
