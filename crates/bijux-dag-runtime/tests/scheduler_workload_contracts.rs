@@ -1,4 +1,6 @@
 use bijux_dag_artifacts as _;
+use chrono::{LocalResult, TimeZone};
+use chrono_tz::America::New_York;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
@@ -18,13 +20,17 @@ use bijux_dag_runtime::{
 use std::collections::BTreeMap;
 
 fn cron_schedule(id: &str, expression: &str) -> ScheduleDefinition {
+    cron_schedule_in_timezone(id, expression, "UTC")
+}
+
+fn cron_schedule_in_timezone(id: &str, expression: &str, timezone: &str) -> ScheduleDefinition {
     ScheduleDefinition {
         id: id.to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
         trigger: TriggerSpec::Cron {
             expression: expression.to_string(),
-            timezone: "UTC".to_string(),
+            timezone: timezone.to_string(),
         },
         queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
         priority: PriorityClass::Standard,
@@ -50,6 +56,16 @@ fn cron_conflict_detection_groups_equal_expressions() {
     assert_eq!(conflicts[0].schedule_ids, vec!["s1".to_string(), "s2".to_string()]);
     assert_eq!(conflicts[0].expression, "0 * * * *");
     assert_eq!(conflicts[0].timezone, "UTC");
+}
+
+#[test]
+fn cron_conflict_detection_distinguishes_timezones() {
+    let defs = vec![
+        cron_schedule_in_timezone("utc", "0 2 * * *", "UTC"),
+        cron_schedule_in_timezone("new-york", "0 2 * * *", "America/New_York"),
+    ];
+
+    assert!(detect_cron_conflicts(&defs).is_empty());
 }
 
 #[test]
@@ -90,6 +106,38 @@ fn materialized_preview_yields_n_cron_runs() {
     let preview = materialize_next_runs(&schedule, 1_000, 3);
     assert_eq!(preview.next_run_unix_ms.len(), 3);
     assert_eq!(preview.next_run_unix_ms[0], 3_600_000);
+}
+
+#[test]
+fn materialized_preview_keeps_dst_fallback_duplicates() {
+    let schedule = cron_schedule_in_timezone("dst-fallback", "30 1 * * *", "America/New_York");
+    let start = New_York
+        .with_ymd_and_hms(2024, 11, 3, 0, 0, 0)
+        .single()
+        .expect("dst start");
+    let preview = materialize_next_runs(
+        &schedule,
+        u128::try_from(start.timestamp_millis()).expect("positive timestamp"),
+        3,
+    );
+
+    let LocalResult::Ambiguous(first, second) = New_York.with_ymd_and_hms(2024, 11, 3, 1, 30, 0)
+    else {
+        panic!("expected ambiguous dst fallback instant");
+    };
+    let next_day = New_York
+        .with_ymd_and_hms(2024, 11, 4, 1, 30, 0)
+        .single()
+        .expect("next day");
+
+    assert_eq!(
+        preview.next_run_unix_ms,
+        vec![
+            u128::try_from(first.timestamp_millis()).expect("positive timestamp"),
+            u128::try_from(second.timestamp_millis()).expect("positive timestamp"),
+            u128::try_from(next_day.timestamp_millis()).expect("positive timestamp"),
+        ]
+    );
 }
 
 #[test]

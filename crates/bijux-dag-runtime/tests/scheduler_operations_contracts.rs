@@ -1,4 +1,6 @@
 use bijux_dag_artifacts as _;
+use chrono::{LocalResult, TimeZone, Utc};
+use chrono_tz::America::New_York;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
@@ -484,6 +486,153 @@ fn schedule_submit_cron_catch_up_respects_existing_submissions_and_cap() {
         .collect::<Vec<_>>();
 
     assert_eq!(scheduled_slots, vec![3 * 60_000, 4 * 60_000]);
+}
+
+#[test]
+fn schedule_submit_cron_catch_up_honors_ranges_lists_and_steps() {
+    let registry = ScheduleRegistry {
+        definitions: vec![ScheduleDefinition {
+            id: "weekday-window".to_string(),
+            dag_name: "atlas.weekday-window".to_string(),
+            dag_version_policy: "run-latest".to_string(),
+            trigger: TriggerSpec::Cron {
+                expression: "*/15 9-10 * * Mon,Wed,Fri".to_string(),
+                timezone: "UTC".to_string(),
+            },
+            queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+            priority: PriorityClass::Standard,
+            concurrency: ConcurrencyPolicyLayers {
+                per_dag: Some(1),
+                per_queue: Some(2),
+                per_tenant: None,
+                per_node_group: None,
+            },
+            catch_up: CatchUpPolicy { enabled: true, max_catch_up_runs: 4 },
+        }],
+    };
+    let last_requested = Utc
+        .with_ymd_and_hms(2024, 1, 3, 9, 15, 0)
+        .single()
+        .expect("last requested");
+    let scheduled_0930 = Utc
+        .with_ymd_and_hms(2024, 1, 3, 9, 30, 0)
+        .single()
+        .expect("09:30");
+    let scheduled_0945 = Utc
+        .with_ymd_and_hms(2024, 1, 3, 9, 45, 0)
+        .single()
+        .expect("09:45");
+    let scheduled_1000 = Utc
+        .with_ymd_and_hms(2024, 1, 3, 10, 0, 0)
+        .single()
+        .expect("10:00");
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: u128::try_from(scheduled_1000.timestamp_millis()).expect("positive timestamp"),
+        ..ScheduleEvaluationInputs::default()
+    };
+    let existing = ScheduleSubmissionLedger {
+        entries: vec![ScheduleSubmissionLedgerEntry {
+            schedule_id: "weekday-window".to_string(),
+            dag_name: "atlas.weekday-window".to_string(),
+            dag_version_policy: "run-latest".to_string(),
+            requested_unix_ms: u128::try_from(last_requested.timestamp_millis())
+                .expect("positive timestamp"),
+            created_unix_ms: u128::try_from(last_requested.timestamp_millis())
+                .expect("positive timestamp"),
+            run_id: "sched-weekday-window-existing".to_string(),
+            trigger_kind: SubmissionTriggerKind::Cron,
+            dedupe_key: format!(
+                "cron:weekday-window:{}",
+                u128::try_from(last_requested.timestamp_millis()).expect("positive timestamp")
+            ),
+            status: ScheduleSubmissionStatus::Pending,
+        }],
+    };
+
+    let report = evaluate_schedule_submissions(&registry, &inputs, &existing);
+    let scheduled_slots = report
+        .generated_requests
+        .iter()
+        .map(|request| request.requested_unix_ms)
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        scheduled_slots,
+        vec![
+            u128::try_from(scheduled_0930.timestamp_millis()).expect("positive timestamp"),
+            u128::try_from(scheduled_0945.timestamp_millis()).expect("positive timestamp"),
+            u128::try_from(scheduled_1000.timestamp_millis()).expect("positive timestamp"),
+        ]
+    );
+}
+
+#[test]
+fn schedule_submit_cron_catch_up_preserves_dst_fallback_duplicates() {
+    let registry = ScheduleRegistry {
+        definitions: vec![ScheduleDefinition {
+            id: "dst-fallback".to_string(),
+            dag_name: "atlas.dst-fallback".to_string(),
+            dag_version_policy: "run-latest".to_string(),
+            trigger: TriggerSpec::Cron {
+                expression: "30 1 * * *".to_string(),
+                timezone: "America/New_York".to_string(),
+            },
+            queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+            priority: PriorityClass::Standard,
+            concurrency: ConcurrencyPolicyLayers {
+                per_dag: Some(1),
+                per_queue: Some(2),
+                per_tenant: None,
+                per_node_group: None,
+            },
+            catch_up: CatchUpPolicy { enabled: true, max_catch_up_runs: 3 },
+        }],
+    };
+    let last_requested = New_York
+        .with_ymd_and_hms(2024, 11, 2, 1, 30, 0)
+        .single()
+        .expect("prior day");
+    let LocalResult::Ambiguous(first, second) = New_York.with_ymd_and_hms(2024, 11, 3, 1, 30, 0)
+    else {
+        panic!("expected ambiguous dst fallback instant");
+    };
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: u128::try_from(second.timestamp_millis()).expect("positive timestamp"),
+        ..ScheduleEvaluationInputs::default()
+    };
+    let existing = ScheduleSubmissionLedger {
+        entries: vec![ScheduleSubmissionLedgerEntry {
+            schedule_id: "dst-fallback".to_string(),
+            dag_name: "atlas.dst-fallback".to_string(),
+            dag_version_policy: "run-latest".to_string(),
+            requested_unix_ms: u128::try_from(last_requested.timestamp_millis())
+                .expect("positive timestamp"),
+            created_unix_ms: u128::try_from(last_requested.timestamp_millis())
+                .expect("positive timestamp"),
+            run_id: "sched-dst-fallback-existing".to_string(),
+            trigger_kind: SubmissionTriggerKind::Cron,
+            dedupe_key: format!(
+                "cron:dst-fallback:{}",
+                u128::try_from(last_requested.timestamp_millis()).expect("positive timestamp")
+            ),
+            status: ScheduleSubmissionStatus::Pending,
+        }],
+    };
+
+    let report = evaluate_schedule_submissions(&registry, &inputs, &existing);
+    let scheduled_slots = report
+        .generated_requests
+        .iter()
+        .map(|request| request.requested_unix_ms)
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        scheduled_slots,
+        vec![
+            u128::try_from(first.timestamp_millis()).expect("positive timestamp"),
+            u128::try_from(second.timestamp_millis()).expect("positive timestamp"),
+        ]
+    );
 }
 
 fn schedule_definition(id: &str, trigger: TriggerSpec) -> ScheduleDefinition {

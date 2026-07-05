@@ -54,6 +54,58 @@ fn scheduler_equal_priority_ready_sets_are_deterministic() {
 }
 
 #[test]
+fn schedule_validation_accepts_ranges_lists_steps_and_timezone() {
+    let schedule = ScheduleDefinition {
+        id: "weekday-window".to_string(),
+        dag_name: "dag.example".to_string(),
+        dag_version_policy: "run-latest".to_string(),
+        trigger: TriggerSpec::Cron {
+            expression: "*/15 9-17 * * 1,3,5".to_string(),
+            timezone: "America/New_York".to_string(),
+        },
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+        priority: PriorityClass::Standard,
+        concurrency: ConcurrencyPolicyLayers {
+            per_dag: Some(1),
+            per_queue: Some(1),
+            per_tenant: None,
+            per_node_group: None,
+        },
+        catch_up: CatchUpPolicy { enabled: true, max_catch_up_runs: 4 },
+    };
+
+    validate_cron_expression("*/15 9-17 * * 1,3,5").expect("cron");
+    validate_schedule_registry(&ScheduleRegistry { definitions: vec![schedule] })
+        .expect("registry");
+}
+
+#[test]
+fn schedule_validation_rejects_unknown_cron_timezone() {
+    let schedule = ScheduleDefinition {
+        id: "bad-timezone".to_string(),
+        dag_name: "dag.example".to_string(),
+        dag_version_policy: "run-latest".to_string(),
+        trigger: TriggerSpec::Cron {
+            expression: "0 1 * * *".to_string(),
+            timezone: "Mars/Olympus".to_string(),
+        },
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+        priority: PriorityClass::Standard,
+        concurrency: ConcurrencyPolicyLayers {
+            per_dag: Some(1),
+            per_queue: Some(1),
+            per_tenant: None,
+            per_node_group: None,
+        },
+        catch_up: CatchUpPolicy { enabled: false, max_catch_up_runs: 0 },
+    };
+
+    let err = validate_schedule_registry(&ScheduleRegistry { definitions: vec![schedule] })
+        .expect_err("invalid timezone");
+    assert!(err.contains("unsupported cron timezone"));
+}
+
+#[test]
 fn scheduler_mixed_cache_and_fresh_paths_keep_order_stable() {
     let nodes = vec![
         ReadyNode { node_id: "fresh".to_string(), priority: 4, attempt: 0, ready_unix_ms: 100 },
