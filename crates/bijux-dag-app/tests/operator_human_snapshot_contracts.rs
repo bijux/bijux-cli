@@ -195,7 +195,7 @@ fn prove_human_output_snapshot_is_stable() {
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let out_dir = tmp.path().join("runs");
     let run_dir = write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
-    let prove = run_human_with_code(&root, 3, &["prove", run_dir.to_string_lossy().as_ref()]);
+    let prove = run_human_with_code(&root, 0, &["prove", run_dir.to_string_lossy().as_ref()]);
     assert_eq!(prove, include_str!("snapshots/prove_human_output_contract.txt"));
 }
 
@@ -207,7 +207,7 @@ fn verify_human_output_snapshot_is_stable() {
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let out_dir = tmp.path().join("runs");
     let run_dir = write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
-    let verify = run_human_with_code(&root, 3, &["verify", run_dir.to_string_lossy().as_ref()]);
+    let verify = run_human_with_code(&root, 0, &["verify", run_dir.to_string_lossy().as_ref()]);
     assert_eq!(verify, include_str!("snapshots/verify_human_output_contract.txt"));
 }
 

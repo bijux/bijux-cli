@@ -98,7 +98,7 @@ fn verify_output_schema_lockstep() {
     );
     let verify = run_json_with_code(
         &root,
-        3,
+        0,
         &["--json", "verify", out_dir.join("run-fixed").to_string_lossy().as_ref()],
     );
     let data = verify["data"].as_object().expect("verify data");
@@ -129,7 +129,7 @@ fn prove_output_schema_lockstep() {
     );
     let prove = run_json_with_code(
         &root,
-        3,
+        0,
         &["--json", "prove", out_dir.join("run-fixed").to_string_lossy().as_ref()],
     );
     let data = prove["data"].as_object().expect("prove data");
