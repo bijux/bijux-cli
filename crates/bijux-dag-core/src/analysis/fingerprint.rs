@@ -1,13 +1,15 @@
 //! Graph fingerprint entrypoints.
 
 use crate::canonical::{normalize_identity_text, normalize_rel_path, sort_value_maps};
+use crate::expansion::expand_graph;
 use crate::resolve::{resolve_command_argv_templates, resolve_param_value};
 use crate::{Graph, GraphError, GraphFingerprintExplain, GraphId, Node, ParamValue};
 use sha2::{Digest, Sha256};
 
 impl Graph {
     pub fn graph_fingerprint(&self) -> Result<String, GraphError> {
-        let canonical_json = self.to_canonical_json()?;
+        let expanded = expand_graph(self).map_err(|_| GraphError::ValidationFailed)?;
+        let canonical_json = serde_json::to_string_pretty(&expanded.canonicalize())?;
         Ok(hash_bytes(canonical_json.as_bytes()))
     }
 
@@ -16,7 +18,8 @@ impl Graph {
     }
 
     pub fn graph_fingerprint_explain(&self) -> Result<GraphFingerprintExplain, GraphError> {
-        let canonical_json = self.to_canonical_json()?;
+        let expanded = expand_graph(self).map_err(|_| GraphError::ValidationFailed)?;
+        let canonical_json = serde_json::to_string_pretty(&expanded.canonicalize())?;
         Ok(GraphFingerprintExplain {
             graph_id: GraphId(hash_bytes(canonical_json.as_bytes())),
             canonical_json_bytes_len: canonical_json.len(),

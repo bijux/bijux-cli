@@ -1,4 +1,5 @@
 use crate::canonical::{error, is_valid_canonical_name, is_valid_output_path, severity_rank, warn};
+use crate::expansion::{expand_graph, expansion_error_diagnostic};
 use crate::{
     is_known_path_variable, materialize_graph_input_value, EdgeKind, Effect, Graph, GraphError,
     GraphInputKind, GraphInputSpec, Node, ParamValue, SemanticNodeKind, Severity, TriggerRule,
@@ -49,6 +50,9 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1033", severity: Severity::Error, domain: ValidationDomain::Schema },
     ValidationRule { id: "E1034", severity: Severity::Error, domain: ValidationDomain::Schema },
     ValidationRule { id: "E1035", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1036", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1037", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1038", severity: Severity::Error, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -92,6 +96,14 @@ fn trigger_rule_supports_conditional_incoming(rule: &TriggerRule) -> bool {
 
 impl Graph {
     pub fn validate_with_warnings(&self) -> Vec<ValidationDiagnostic> {
+        let expanded = match expand_graph(self) {
+            Ok(graph) => graph,
+            Err(error) => return vec![expansion_error_diagnostic(error)],
+        };
+        expanded.validate_expanded_with_warnings()
+    }
+
+    fn validate_expanded_with_warnings(&self) -> Vec<ValidationDiagnostic> {
         let mut diagnostics = Vec::new();
 
         validate_graph_inputs(self, &mut diagnostics);

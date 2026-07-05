@@ -1,10 +1,16 @@
 //! Deterministic topology entrypoints.
 
+use crate::expansion::expand_graph;
 use crate::{Graph, GraphError};
 use std::collections::{BTreeSet, HashMap};
 
 impl Graph {
     pub fn topo_order(&self) -> Result<Vec<String>, GraphError> {
+        let expanded = expand_graph(self).map_err(|_| GraphError::ValidationFailed)?;
+        expanded.topo_order_expanded()
+    }
+
+    fn topo_order_expanded(&self) -> Result<Vec<String>, GraphError> {
         let mut indegree = HashMap::<String, usize>::new();
         let mut adjacency = HashMap::<String, Vec<String>>::new();
         for node in &self.nodes {
@@ -50,7 +56,7 @@ impl Graph {
     }
 
     pub(crate) fn has_cycle(&self) -> bool {
-        self.topo_order().is_err()
+        self.topo_order_expanded().is_err()
     }
 }
 

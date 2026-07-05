@@ -3,7 +3,7 @@
 use crate::canonical::is_valid_canonical_name;
 use crate::{
     materialize_graph_input_value, Graph, GraphInputSpec, NodeOutputRef, ParamValue, RefSpec,
-    SubgraphDefinition, SubgraphInstance,
+    Severity, SubgraphDefinition, SubgraphInstance, ValidationDiagnostic,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -34,6 +34,16 @@ pub fn expand_graph(graph: &Graph) -> Result<Graph, GraphExpansionError> {
 
 pub fn expand_graph_with_exports(graph: &Graph) -> Result<ExpandedGraph, GraphExpansionError> {
     expand_graph_inner(graph, "/")
+}
+
+pub fn expansion_error_diagnostic(error: GraphExpansionError) -> ValidationDiagnostic {
+    ValidationDiagnostic {
+        code: error.code.to_string(),
+        message: error.message,
+        path: error.path,
+        hint: error.hint,
+        severity: Severity::Error,
+    }
 }
 
 fn expand_graph_inner(graph: &Graph, path: &str) -> Result<ExpandedGraph, GraphExpansionError> {

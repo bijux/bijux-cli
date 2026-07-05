@@ -1,5 +1,6 @@
 //! Planner lowering and execution-plan contract.
 
+use crate::expansion::expand_graph;
 use crate::{
     node_io_contract, BranchSpec, CacheBehavior, Edge, EdgeKind, Effect, FileOutput, Graph,
     GraphError, Node, NodeIoContract, NodeKind, ParamValue, Resources, RetryPolicy,
@@ -142,7 +143,8 @@ pub fn lower_graph_to_execution_plan(
     graph: &Graph,
     mut options: PlanOptions,
 ) -> Result<ExecutionPlan, PlannerError> {
-    let validation_diags = graph.validate_with_warnings();
+    let expanded = expand_graph(graph).map_err(|_| PlannerError::ValidationFailed)?;
+    let validation_diags = expanded.validate_with_warnings();
     if validation_diags.iter().any(|d| d.severity == crate::Severity::Error) {
         return Err(PlannerError::ValidationFailed);
     }
@@ -152,7 +154,7 @@ pub fn lower_graph_to_execution_plan(
             ["const", "shell", "container"].into_iter().map(str::to_string).collect();
     }
 
-    let canonical = graph.canonicalize();
+    let canonical = expanded.canonicalize();
 
     let selected = if options.selected_nodes.is_empty() {
         canonical.nodes.iter().map(|n| n.id.clone()).collect::<BTreeSet<_>>()

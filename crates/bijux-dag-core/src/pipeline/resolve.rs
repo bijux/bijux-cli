@@ -1,6 +1,7 @@
 //! DAG resolve entrypoints.
 
 use crate::canonical::sort_value_maps;
+use crate::expansion::expand_graph;
 use crate::{
     is_known_path_variable, materialize_graph_input_value, Graph, GraphError, Node, ParamValue,
     RefSpec, ResolvedGraph,
@@ -10,15 +11,16 @@ use std::collections::BTreeMap;
 
 impl Graph {
     pub fn resolve_graph(&self) -> Result<ResolvedGraph, GraphError> {
+        let expanded = expand_graph(self).map_err(|_| GraphError::ValidationFailed)?;
         let mut resolved_params = BTreeMap::new();
-        for node in &self.nodes {
-            let mut value = resolve_param_value(&node.params, self)?;
-            value = resolve_command_param_templates(self, node, &value)?;
+        for node in &expanded.nodes {
+            let mut value = resolve_param_value(&node.params, &expanded)?;
+            value = resolve_command_param_templates(&expanded, node, &value)?;
             sort_value_maps(&mut value);
             resolved_params.insert(node.id.clone(), value);
         }
 
-        Ok(ResolvedGraph { graph: self.clone(), resolved_params })
+        Ok(ResolvedGraph { graph: expanded, resolved_params })
     }
 }
 
