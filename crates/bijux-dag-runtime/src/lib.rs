@@ -481,7 +481,7 @@ pub use state_machine::{
 use std::collections::{BTreeMap, HashMap};
 use std::io::{self as std_io, Write};
 use std::path::{Path, PathBuf};
-use std::process::Output;
+use std::process::{Output, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::time::Duration;
@@ -613,12 +613,20 @@ pub struct NodeResult {
     pub adapter_binary_sha256: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AttemptEvent {
     pub attempt: u32,
     pub started_unix_ms: u128,
     pub finished_unix_ms: u128,
     pub status: NodeStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stdout_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stderr_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failure: Option<FailureInfo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scheduled_backoff_ms: Option<u64>,
 }
 
 #[derive(Clone)]
@@ -1420,6 +1428,35 @@ fn write_attempt_events(
     Ok(())
 }
 
+fn attempt_log_relative_path(attempt: u32, file_name: &str) -> String {
+    format!("attempts/{attempt}/{file_name}")
+}
+
+fn persist_attempt_logs(
+    ctx: &RunContext,
+    node_id: &str,
+    attempt: u32,
+    stdout_path: &str,
+    stderr_path: &str,
+) -> Result<(String, String), RuntimeError> {
+    let attempt_dir = ctx.run_dir.node_attempt_dir(node_id, attempt);
+    let attempt_stdout_path = ctx.run_dir.node_attempt_stdout_path(node_id, attempt);
+    let attempt_stderr_path = ctx.run_dir.node_attempt_stderr_path(node_id, attempt);
+    ctx.fs.create_dir_all(&attempt_dir)?;
+    let stdout_bytes = ctx.fs.read(Path::new(stdout_path)).unwrap_or_default();
+    let stderr_bytes = ctx.fs.read(Path::new(stderr_path)).unwrap_or_default();
+    ctx.fs.write(&attempt_stdout_path, &stdout_bytes)?;
+    ctx.fs.write(&attempt_stderr_path, &stderr_bytes)?;
+    Ok((
+        attempt_log_relative_path(attempt, "stdout.log"),
+        attempt_log_relative_path(attempt, "stderr.log"),
+    ))
+}
+
+fn retry_backoff_ms(retry: &RetryPolicy, attempt: u32) -> u64 {
+    retry.backoff_ms.saturating_mul(attempt as u64)
+}
+
 #[allow(dead_code)]
 fn node_timeout_ms(
     node: &Node,
@@ -1461,11 +1498,25 @@ fn execute_with_retries(
             Err(err) => failed_node_result_from_runtime_error(ctx, node, err),
         };
         let finished = ctx.clock.now_unix_ms();
+        let scheduled_backoff_ms = (result.status == NodeStatus::Failed && attempt <= max)
+            .then_some(retry_backoff_ms(retry, attempt))
+            .filter(|wait| *wait > 0);
+        let (attempt_stdout_path, attempt_stderr_path) = persist_attempt_logs(
+            ctx,
+            &node.id,
+            attempt,
+            &result.stdout_path,
+            &result.stderr_path,
+        )?;
         attempt_events.push(AttemptEvent {
             attempt,
             started_unix_ms: started,
             finished_unix_ms: finished,
             status: result.status.clone(),
+            stdout_path: Some(attempt_stdout_path),
+            stderr_path: Some(attempt_stderr_path),
+            failure: result.failure.clone(),
+            scheduled_backoff_ms,
         });
         result.attempts = attempt;
         if result.status != NodeStatus::Failed {
@@ -1476,11 +1527,9 @@ fn execute_with_retries(
             result.attempt_events = attempt_events;
             return Ok(result);
         }
-        if retry.backoff_ms > 0 {
-            let wait = retry.backoff_ms.saturating_mul(attempt.saturating_sub(1) as u64);
-            if wait > 0 {
-                std::thread::sleep(Duration::from_millis(wait));
-            }
+        let wait = retry_backoff_ms(retry, attempt);
+        if wait > 0 {
+            std::thread::sleep(Duration::from_millis(wait));
         }
     }
 }
@@ -2501,6 +2550,8 @@ pub(crate) fn command_output_with_controls(
     timeout_ms: Option<u64>,
     cancellation_requested: Option<&AtomicBool>,
 ) -> Result<Output, RuntimeError> {
+    cmd.stdout(Stdio::piped());
+    cmd.stderr(Stdio::piped());
     let Some(limit_ms) = timeout_ms else {
         let mut child = cmd.spawn().map_err(RuntimeError::Io)?;
         loop {
