@@ -121,6 +121,33 @@ The downstream rerun contract is:
 - `--from-node` is exclusive with `--select`, `--exclude`, and
   `--dependency-closure`
 
+## Compare Two Graph Versions Before Running
+
+When an operator needs to understand whether a DAG edit is cosmetic or changes
+execution, use `plan diff` against the two graph files instead of inferring the
+impact from source control alone.
+
+```bash
+bijux-dag plan diff \
+  ./pipelines/main-before.dag.json \
+  ./pipelines/main-after.dag.json \
+  --json
+```
+
+The diff contract reports:
+
+- added and removed nodes
+- node ids with changed params
+- node ids with changed outputs
+- node ids with changed resources
+- node ids with changed retry or timeout policy
+- added and removed dependencies
+- whether drift is metadata-only or execution-affecting
+
+Metadata-only drift means the graph fingerprint changed while the execution
+fingerprint stayed stable. Execution-affecting drift means the planned runtime
+surface changed and should be reviewed as a real workflow mutation.
+
 ## Run Only The Prerequisites For A Target Node
 
 When the operator wants the minimal execution closure required to reach one

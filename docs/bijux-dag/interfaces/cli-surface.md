@@ -133,6 +133,17 @@ for node-local directories and container workdirs:
   literal absolute container `workdir` is accepted or rejected during planning
   and execution.
 - `bijux-dag run --preflight-only --json` and
+
+## Plan Diff Controls
+
+- `bijux-dag plan diff <before> <after>` compares two graph versions through
+  the planner surface instead of a raw text diff.
+- JSON output reports `added_nodes`, `removed_nodes`, `changed_params`,
+  `changed_outputs`, `changed_resources`, `changed_retry_timeout`,
+  `added_dependencies`, and `removed_dependencies`.
+- The diff payload distinguishes `metadata_only_changed` from
+  `execution_affecting_changed` by comparing graph identity against execution
+  identity.
   `bijux-dag run --explain-scheduling --json` include the same `run_layout` and
   `path_previews` contract that `plan explain` uses, including resolved argv
   tokens for command-bearing nodes and the selected execution-cost estimate.
