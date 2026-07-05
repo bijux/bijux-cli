@@ -129,8 +129,9 @@ use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
 use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
-    hide_non_public_help, CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg,
-    HashCommands, MigrateCommands, PolicyCommands,
+    command_access_denial, hide_non_public_help, lane_label, CacheCommands, CommandAccessDenial,
+    Commands, ConfigCommands, DagCli, GraphFormatArg, HashCommands, MigrateCommands,
+    PolicyCommands,
 };
 use config_resolution::{
     show_effective_config, show_effective_policy, ShowEffectiveConfigRequest,
@@ -163,6 +164,9 @@ pub fn dag_run(matches: &ArgMatches) -> Result<ExitCode, ExitCode> {
 }
 
 fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
+    if let Some(denial) = command_access_denial(&cli.command) {
+        return emit_command_access_denial(&cli, denial);
+    }
     match &cli.command {
         Commands::Init { dir } => {
             let base = dir.clone().unwrap_or_else(|| PathBuf::from("."));
@@ -1268,6 +1272,41 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
         },
     }
+}
+
+fn emit_command_access_denial(
+    cli: &DagCli,
+    denial: CommandAccessDenial,
+) -> Result<ExitCode, ExitCode> {
+    let command = format!("dag.{}", denial.root_command);
+    let lane = lane_label(denial.lane);
+    let message = denial.message();
+    let hint = format!(
+        "set {}=1 to run this {} route intentionally or use `bijux-dag commands --all` to inspect non-stable access modes",
+        denial.opt_in_env, lane
+    );
+    if cli.json {
+        return emit_json(
+            cli,
+            &command,
+            false,
+            json!({
+                "command_family": denial.root_command,
+                "lane": denial.lane,
+                "access": "opt-in",
+                "opt_in_env": denial.opt_in_env,
+            }),
+            vec![json!({
+                "code": "release-boundary-opt-in",
+                "message": message,
+                "hint": hint,
+            })],
+            ExitCode::from(2),
+        );
+    }
+    eprintln!("{message}");
+    eprintln!("{hint}");
+    Err(ExitCode::from(2))
 }
 
 pub(crate) fn read_file(path: &Path) -> Result<String, ExitCode> {

@@ -4,7 +4,8 @@ use std::path::PathBuf;
 mod surface_policy;
 
 pub(crate) use surface_policy::{
-    command_access_for_path, lane_label, CommandAvailability, CommandLane, ENABLE_SIMULATED_ENV,
+    command_access_denial, command_access_for_path, lane_label, CommandAccessDenial,
+    CommandAvailability, CommandLane,
 };
 
 const PUBLIC_ROOT_COMMANDS: &[&str] = &[

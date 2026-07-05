@@ -39,7 +39,7 @@ pub(crate) struct CommandAccessDenial {
 impl CommandAccessDenial {
     pub(crate) fn message(self) -> String {
         format!(
-            "`{}` is a {} command family outside the stable v0.4.0 operator surface; set {}=1 to run it intentionally",
+            "`{}` belongs to the {} command lane outside the stable v0.4.0 operator surface; set {}=1 to run it intentionally",
             self.root_command,
             lane_label(self.lane),
             self.opt_in_env,
