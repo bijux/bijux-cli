@@ -16,6 +16,7 @@ RM                    := rm -rf
 PROFRAW_DIR           := artifacts/rust/coverage/profraw
 LLVM_PROFILE_FILE     ?= $(abspath $(PROFRAW_DIR)/default_%m_%p.profraw)
 BIJUX_RUNTIME_BIN     ?= bijux
+PINNED_REF_GATE_BIN  ?= $(ROOT_MK_DIR)/bin/run_pinned_ref_gate.sh
 PYTHON_EDITABLE_EXTRAS ?= test,lint,security,docs,build
 PYTHON_EDITABLE_SPEC  ?= ./crates/bijux-cli-python[$(PYTHON_EDITABLE_EXTRAS)]
 PYTHON_INSTALL_ARTIFACTS_DIR ?= artifacts/python/install
