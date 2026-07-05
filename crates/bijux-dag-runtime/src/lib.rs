@@ -274,18 +274,18 @@ use bijux_dag_artifacts::schema::{
 };
 use bijux_dag_artifacts::{
     artifact_size_bytes, sha256_artifact_path, write_inputs_index, write_outputs_index,
-    AdapterInfo, ArtifactError, CacheProof, ContainerTrace, DeclaredOutputArtifact,
-    FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeLifecycleTransition,
-    NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance, Resources as TraceResources,
-    RunDir, RunOutputFile, RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
+    AdapterInfo, ArtifactError, CacheProof, ContainerTrace, DeclaredOutputArtifact, FailureClass,
+    FailureInfo, InputFile, InputsIndex, NodeCounts, NodeLifecycleTransition, NodeTrace,
+    OutputSummary, OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir,
+    RunOutputFile, RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
     Severity,
 };
 pub use cache::{
-    cache_entry_has_required_proof, cache_key_explanation, cache_metadata_version_supported,
-    CacheKeyInput,
+    cache_entry_has_required_proof, cache_key_explanation, cache_key_input_from_meta,
+    cache_metadata_version_supported, CacheKeyInput, CACHE_METADATA_VERSION,
 };
 use clock::{Clock, SystemClock};
 pub use container_execution::{
@@ -409,9 +409,9 @@ pub use run_state::{
     terminal_transition_audit_events, validate_node_transition, validate_run_transition,
     verify_post_run_state_consistency, NodeState, NodeTransition, PartialRerunContract,
     ReplayNodeAction, ReplayNodeProvenance, ResumeFailureMode, ResumeSummary, RunAttempt,
-    RunCompactionPolicy, RunComparison, RunId, RunSnapshot, RunState, RunSummaryV2,
-    RunTransition, StateConsistencyReport, TransitionAuditEvent, TransitionCause,
-    INV_NODE_TERMINAL_NO_REVERT, INV_RUN_FAILED_CAUSAL_FAILURE,
+    RunCompactionPolicy, RunComparison, RunId, RunSnapshot, RunState, RunSummaryV2, RunTransition,
+    StateConsistencyReport, TransitionAuditEvent, TransitionCause, INV_NODE_TERMINAL_NO_REVERT,
+    INV_RUN_FAILED_CAUSAL_FAILURE,
 };
 pub use runtime_controls::{
     audit_dispatch_discipline, audit_run_event_log, build_cancellation_audit_report,
@@ -587,6 +587,8 @@ pub enum NodeStatus {
 pub struct RunContext {
     pub run_dir: Arc<RunDir>,
     pub graph_fingerprint: Arc<Mutex<HashMap<String, String>>>,
+    pub node_definition_fingerprints: Arc<HashMap<String, String>>,
+    pub declared_environment_fingerprints: Arc<HashMap<String, String>>,
     pub planner_contract_version: String,
     pub execution_fingerprint: String,
     pub evidence_fingerprint: String,
@@ -934,9 +936,7 @@ impl Adapter for ContainerAdapter {
                             "Policy",
                             "POLICY_UNENFORCEABLE",
                             message,
-                            Some(
-                                serde_json::json!({ "engine": engine, "effect": "network" }),
-                            ),
+                            Some(serde_json::json!({ "engine": engine, "effect": "network" })),
                         )),
                         attempts: 1,
                         attempt_events: Vec::new(),
@@ -1576,18 +1576,13 @@ fn execute_with_retries(
             Err(err) => failed_node_result_from_runtime_error(ctx, node, err),
         };
         let finished = ctx.clock.now_unix_ms();
-        let retry_allowed =
-            result.status == NodeStatus::Failed && attempt <= max && retry_policy_allows_failure(params, result.failure.as_ref());
-        let scheduled_backoff_ms = retry_allowed
-            .then_some(retry_backoff_ms(retry, attempt))
-            .filter(|wait| *wait > 0);
-        let (attempt_stdout_path, attempt_stderr_path) = persist_attempt_logs(
-            ctx,
-            &node.id,
-            attempt,
-            &result.stdout_path,
-            &result.stderr_path,
-        )?;
+        let retry_allowed = result.status == NodeStatus::Failed
+            && attempt <= max
+            && retry_policy_allows_failure(params, result.failure.as_ref());
+        let scheduled_backoff_ms =
+            retry_allowed.then_some(retry_backoff_ms(retry, attempt)).filter(|wait| *wait > 0);
+        let (attempt_stdout_path, attempt_stderr_path) =
+            persist_attempt_logs(ctx, &node.id, attempt, &result.stdout_path, &result.stderr_path)?;
         attempt_events.push(AttemptEvent {
             attempt,
             started_unix_ms: started,
@@ -1625,30 +1620,18 @@ fn failed_node_result_from_runtime_error(
     let stderr_path = ctx.run_dir.node_stderr_path(&node.id);
     let (class, kind, code, message) = match error {
         RuntimeError::Graph(err) => (FailureClass::User, "User", "GRAPH_ERROR", err.to_string()),
-        RuntimeError::Artifact(err) => (
-            FailureClass::Infrastructure,
-            "Infrastructure",
-            "ARTIFACT_ERROR",
-            err.to_string(),
-        ),
-        RuntimeError::Io(err) if err.kind() == std_io::ErrorKind::NotFound => (
-            FailureClass::Infrastructure,
-            "Infrastructure",
-            "MISSING_EXECUTABLE",
-            err.to_string(),
-        ),
-        RuntimeError::Io(err) => (
-            FailureClass::Infrastructure,
-            "Infrastructure",
-            "IO_ERROR",
-            err.to_string(),
-        ),
-        RuntimeError::Json(err) => (
-            FailureClass::Infrastructure,
-            "Infrastructure",
-            "JSON_ERROR",
-            err.to_string(),
-        ),
+        RuntimeError::Artifact(err) => {
+            (FailureClass::Infrastructure, "Infrastructure", "ARTIFACT_ERROR", err.to_string())
+        }
+        RuntimeError::Io(err) if err.kind() == std_io::ErrorKind::NotFound => {
+            (FailureClass::Infrastructure, "Infrastructure", "MISSING_EXECUTABLE", err.to_string())
+        }
+        RuntimeError::Io(err) => {
+            (FailureClass::Infrastructure, "Infrastructure", "IO_ERROR", err.to_string())
+        }
+        RuntimeError::Json(err) => {
+            (FailureClass::Infrastructure, "Infrastructure", "JSON_ERROR", err.to_string())
+        }
         RuntimeError::Executor(message) => {
             if message.contains("timed out") {
                 (FailureClass::Timeout, "Timeout", "EXEC_TIMEOUT", message)
@@ -1669,11 +1652,7 @@ fn failed_node_result_from_runtime_error(
     let _ = ctx.fs.write(&stdout_path, b"");
     let _ = ctx.fs.write(&stderr_path, message.as_bytes());
     NodeResult {
-        status: if code == "EXEC_CANCELLED" {
-            NodeStatus::Cancelled
-        } else {
-            NodeStatus::Failed
-        },
+        status: if code == "EXEC_CANCELLED" { NodeStatus::Cancelled } else { NodeStatus::Failed },
         stdout_path: stdout_path.display().to_string(),
         stderr_path: stderr_path.display().to_string(),
         outputs_dir: outputs_dir.display().to_string(),
@@ -1771,46 +1750,35 @@ fn failure_propagation_label(mode: &FailurePropagationMode) -> &'static str {
     }
 }
 
-fn runtime_config_fingerprint(options: &RuntimeConfig) -> String {
-    let include_selectors: Vec<String> =
-        options.selectors.include.iter().map(selector_label).collect();
-    let exclude_selectors: Vec<String> =
-        options.selectors.exclude.iter().map(selector_label).collect();
+fn execution_contract_fingerprint(options: &RuntimeConfig) -> String {
     let payload = serde_json::json!({
-        "jobs": options.jobs,
-        "cpu_budget": options.cpu_budget,
-        "run_timeout_ms": options.run_timeout_ms,
         "node_timeout_ms": options.node_timeout_ms,
         "materialize_inputs": materialize_mode_label(options.materialize_inputs),
-        "scheduler_policy": options.scheduler_policy,
-        "failure_propagation": failure_propagation_label(&options.failure_propagation),
-        "partial_rerun_dependency_closure": options.partial_rerun_dependency_closure,
-        "upstream_selection_targets": options.upstream_selection_targets,
-        "downstream_selection_roots": options.downstream_selection_roots,
-        "selectors": {
-            "include": include_selectors,
-            "exclude": exclude_selectors,
-        },
     });
     sha256_bytes(payload.to_string().as_bytes())
 }
 
 fn cache_key_input_for_run(
     options: &RuntimeConfig,
-    node_fingerprint: &str,
+    node: &Node,
+    execution_fingerprint: &str,
+    ctx: &RunContext,
     adapter_id: &str,
     adapter_version: &str,
     adapter_outputs_schema_version: &str,
-) -> CacheKeyInput {
-    CacheKeyInput {
-        node_fingerprint: node_fingerprint.to_string(),
+) -> Result<CacheKeyInput, RuntimeError> {
+    Ok(CacheKeyInput {
+        execution_fingerprint: execution_fingerprint.to_string(),
+        node_definition_fingerprint: node_definition_fingerprint_from_ctx(ctx, &node.id),
+        declared_environment_fingerprint: declared_environment_fingerprint_from_ctx(ctx, &node.id),
+        input_lineage_fingerprint: input_lineage_fingerprint_from_run(ctx, &node.id)?,
         adapter_id: adapter_id.to_string(),
         adapter_version: adapter_version.to_string(),
         output_schema_version: adapter_outputs_schema_version.to_string(),
         policy_fingerprint: policy_fingerprint(&options.policy),
-        config_fingerprint: runtime_config_fingerprint(options),
+        execution_contract_fingerprint: execution_contract_fingerprint(options),
         backend_class: "local".to_string(),
-    }
+    })
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
@@ -2280,11 +2248,13 @@ fn try_cache_read(
     if options.cache_mode == CacheMode::Read || options.cache_mode == CacheMode::ReadWrite {
         let key_input = cache_key_input_for_run(
             options,
+            node,
             node_fingerprint,
+            ctx,
             adapter_id,
             adapter_version,
             adapter_outputs_schema_version,
-        );
+        )?;
         let key = cache_key_explanation(&key_input).key;
         let store = cache_store.as_ref().unwrap();
         let entry = store.entry(&key);
@@ -2428,25 +2398,30 @@ fn try_cache_write(
     };
     let key_input = cache_key_input_for_run(
         options,
+        node,
         node_fingerprint,
+        ctx,
         adapter_id,
         adapter_version,
         adapter_outputs_schema_version,
-    );
+    )?;
     let key = cache_key_explanation(&key_input).key;
     let entry = store.entry(&key);
     store.fs().create_dir_all(entry.join("outputs").as_path())?;
     store.fs().create_dir_all(entry.join("logs").as_path())?;
     let meta = serde_json::json!({
-        "cache_metadata_version": "cache-meta/v0.1",
+        "cache_metadata_version": crate::cache::CACHE_METADATA_VERSION,
         "cache_key": key,
         "node_id": node.id,
-        "node_fingerprint": key_input.node_fingerprint,
+        "node_fingerprint": key_input.execution_fingerprint,
+        "node_definition_fingerprint": key_input.node_definition_fingerprint,
+        "declared_environment_fingerprint": key_input.declared_environment_fingerprint,
+        "input_lineage_fingerprint": key_input.input_lineage_fingerprint,
         "adapter_id": key_input.adapter_id,
         "adapter_version": key_input.adapter_version,
         "produces_outputs_schema_version": key_input.output_schema_version,
         "policy_fingerprint": key_input.policy_fingerprint,
-        "config_fingerprint": key_input.config_fingerprint,
+        "execution_contract_fingerprint": key_input.execution_contract_fingerprint,
         "backend_class": key_input.backend_class,
         "created_unix_ms": ctx.clock.now_unix_ms(),
         "cache_source": "local",
@@ -2492,7 +2467,22 @@ fn verify_cache_entry(
         return Ok(false);
     }
     if meta.get("node_fingerprint").and_then(|v| v.as_str())
-        != Some(expected_input.node_fingerprint.as_str())
+        != Some(expected_input.execution_fingerprint.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("node_definition_fingerprint").and_then(|v| v.as_str())
+        != Some(expected_input.node_definition_fingerprint.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("declared_environment_fingerprint").and_then(|v| v.as_str())
+        != Some(expected_input.declared_environment_fingerprint.as_str())
+    {
+        return Ok(false);
+    }
+    if meta.get("input_lineage_fingerprint").and_then(|v| v.as_str())
+        != Some(expected_input.input_lineage_fingerprint.as_str())
     {
         return Ok(false);
     }
@@ -2522,8 +2512,8 @@ fn verify_cache_entry(
     {
         return Ok(false);
     }
-    if meta.get("config_fingerprint").and_then(|v| v.as_str())
-        != Some(expected_input.config_fingerprint.as_str())
+    if meta.get("execution_contract_fingerprint").and_then(|v| v.as_str())
+        != Some(expected_input.execution_contract_fingerprint.as_str())
     {
         return Ok(false);
     }
@@ -2558,6 +2548,14 @@ fn node_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> String {
     ctx.graph_fingerprint.lock().ok().and_then(|map| map.get(node_id).cloned()).unwrap_or_default()
 }
 
+fn node_definition_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> String {
+    ctx.node_definition_fingerprints.get(node_id).cloned().unwrap_or_default()
+}
+
+fn declared_environment_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> String {
+    ctx.declared_environment_fingerprints.get(node_id).cloned().unwrap_or_default()
+}
+
 fn set_node_fingerprint(ctx: &RunContext, node_id: &str, fp: String) {
     if let Ok(mut map) = ctx.graph_fingerprint.lock() {
         map.insert(node_id.to_string(), fp);
@@ -2573,6 +2571,23 @@ fn node_fingerprint_with_inputs(
         "inputs": &inputs.files,
     });
     Ok(sha256_bytes(&serde_json::to_vec_pretty(&value)?))
+}
+
+fn input_lineage_fingerprint(inputs: &InputsIndex) -> Result<String, RuntimeError> {
+    Ok(sha256_bytes(&serde_json::to_vec(inputs)?))
+}
+
+fn input_lineage_fingerprint_from_run(
+    ctx: &RunContext,
+    node_id: &str,
+) -> Result<String, RuntimeError> {
+    let index_path = ctx.run_dir.node_inputs_dir(node_id).join("index.json");
+    if ctx.fs.metadata(&index_path).is_err() {
+        return input_lineage_fingerprint(&InputsIndex { files: Vec::new() });
+    }
+    let raw = ctx.fs.read_to_string(&index_path)?;
+    let index: InputsIndex = serde_json::from_str(&raw)?;
+    input_lineage_fingerprint(&index)
 }
 
 fn cache_dir_id(path: &Path) -> String {

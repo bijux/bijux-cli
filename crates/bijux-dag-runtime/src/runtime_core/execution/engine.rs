@@ -4,9 +4,9 @@ use crate::{
     node_fingerprint_from_ctx, node_fingerprint_with_inputs, registered_adapters, sacred_execution,
     serialize_timeline_export, set_node_fingerprint, summarize_failure_root_causes, CacheProof,
     EffectSet, EventRecord, ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry,
-    NodeMetrics, NodePathBindings, NodeResult, NodeStatus, ReplayNodeAction, RunAttempt, RunContext,
-    RunId, RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook, TimelineEntry,
-    TimelineExport,
+    NodeMetrics, NodePathBindings, NodeResult, NodeStatus, ReplayNodeAction, RunAttempt,
+    RunContext, RunId, RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
+    TimelineEntry, TimelineExport,
 };
 #[path = "engine_dispatch.rs"]
 mod engine_dispatch;
@@ -285,16 +285,10 @@ fn read_node_trace(
         }
     }
     let raw = ctx.fs.read_to_string(&trace_path).map_err(|error| {
-        RuntimeError::Executor(format!(
-            "failed to read resume trace for {}: {}",
-            node_id, error
-        ))
+        RuntimeError::Executor(format!("failed to read resume trace for {}: {}", node_id, error))
     })?;
     let trace = serde_json::from_str(&raw).map_err(|error| {
-        RuntimeError::Executor(format!(
-            "failed to parse resume trace for {}: {}",
-            node_id, error
-        ))
+        RuntimeError::Executor(format!("failed to parse resume trace for {}: {}", node_id, error))
     })?;
     Ok(Some(trace))
 }
@@ -308,8 +302,10 @@ fn trace_outputs_match(
     let Some(node) = graph.nodes.iter().find(|node| node.id == node_id) else {
         return false;
     };
-    let inspection =
-        crate::inspect_declared_outputs(ctx.run_dir.node_outputs_dir(node_id).as_path(), &node.outputs);
+    let inspection = crate::inspect_declared_outputs(
+        ctx.run_dir.node_outputs_dir(node_id).as_path(),
+        &node.outputs,
+    );
     inspection.failure.is_none() && inspection.output_evidence == trace.outputs
 }
 
@@ -681,10 +677,7 @@ fn dependency_trigger_failure(node: &Node, trigger_evaluation: &TriggerEvaluatio
         FailureClass::Execution,
         "Dependency",
         "UPSTREAM_FAILED",
-        format!(
-            "upstream dependencies did not satisfy trigger rule {:?}",
-            node.trigger_rule
-        ),
+        format!("upstream dependencies did not satisfy trigger rule {:?}", node.trigger_rule),
         Some(serde_json::json!({
             "parent_statuses": trigger_evaluation.parent_statuses,
             "trigger_rule": trigger_evaluation.trigger_rule,
@@ -889,11 +882,8 @@ fn record_skipped_node(
     if status_map.contains_key(node_id) {
         return Ok(());
     }
-    let node_status = if reason == "cancelled" {
-        NodeStatus::Cancelled
-    } else {
-        NodeStatus::Skipped
-    };
+    let node_status =
+        if reason == "cancelled" { NodeStatus::Cancelled } else { NodeStatus::Skipped };
     sacred_execution::guard_terminal_node_status(&node_status)?;
     status_map.insert(node_id.to_string(), node_status.clone());
     let node_kind = graph
@@ -1127,10 +1117,12 @@ pub fn execute(
     };
     let resolved = graph.resolve_graph()?;
     let ambient_env: BTreeMap<String, String> = std::env::vars().collect();
+    let mut node_definition_fingerprints = HashMap::new();
+    let mut declared_environment_fingerprints = HashMap::new();
     let mut base_fps = HashMap::new();
     for node in &graph.nodes {
         let params = resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
-        let base_fp = graph.node_fingerprint_with_params(node, &params)?;
+        let node_definition_fp = graph.node_fingerprint_with_params(node, &params)?;
         let env_allowlist = crate::effective_env_allowlist(node);
         let declared_env = crate::declared_environment(
             &ambient_env,
@@ -1139,8 +1131,12 @@ pub fn execute(
             &[],
         );
         let env_fp = crate::sha256_bytes(&serde_json::to_vec(&declared_env)?);
-        base_fps
-            .insert(node.id.clone(), crate::sha256_bytes(format!("{base_fp}:{env_fp}").as_bytes()));
+        node_definition_fingerprints.insert(node.id.clone(), node_definition_fp.clone());
+        declared_environment_fingerprints.insert(node.id.clone(), env_fp.clone());
+        base_fps.insert(
+            node.id.clone(),
+            crate::sha256_bytes(format!("{node_definition_fp}:{env_fp}").as_bytes()),
+        );
     }
     let mut resolved_params = HashMap::new();
     for node in &graph.nodes {
@@ -1156,6 +1152,8 @@ pub fn execute(
     let ctx = RunContext {
         run_dir: Arc::clone(&run_dir_arc),
         graph_fingerprint: Arc::clone(&graph_fingerprint),
+        node_definition_fingerprints: Arc::new(node_definition_fingerprints),
+        declared_environment_fingerprints: Arc::new(declared_environment_fingerprints),
         planner_contract_version: plan.planner_contract_version.clone(),
         execution_fingerprint: plan.execution_fingerprint.clone(),
         evidence_fingerprint: plan.evidence_fingerprint.clone(),
@@ -1249,7 +1247,10 @@ pub fn execute(
         .transpose()?
         .unwrap_or_default();
     let run_attempt = RunAttempt {
-        attempt_index: resume_bootstrap.as_ref().map(|bootstrap| bootstrap.attempt_index).unwrap_or(1),
+        attempt_index: resume_bootstrap
+            .as_ref()
+            .map(|bootstrap| bootstrap.attempt_index)
+            .unwrap_or(1),
         run_id: RunId::parse(&manifest.run_id).unwrap_or_else(|_| RunId(manifest.run_id.clone())),
         parent_run_id: options.parent_run_id.as_deref().and_then(|v| RunId::parse(v).ok()),
         reason: if options.resume_run_id.is_some() {
@@ -1351,10 +1352,8 @@ pub fn execute(
                 resume.summary.rejected_nodes.join(", ")
             )));
         }
-        for node_id in plan
-            .order
-            .iter()
-            .filter(|node_id| resume.reusable_nodes.contains_key(*node_id))
+        for node_id in
+            plan.order.iter().filter(|node_id| resume.reusable_nodes.contains_key(*node_id))
         {
             let status = resume.reusable_nodes.get(node_id).expect("resume status");
             ready_queue.take(node_id);
@@ -1582,10 +1581,10 @@ pub fn execute(
                     }
                     let resolved_timeout_ms =
                         resolved_params.get("timeout_ms").and_then(|value| value.as_u64());
-                    let effective_timeout_ms =
-                        node.timeout_ms.or(resolved_timeout_ms).map_or(remaining_ms, |timeout_ms| {
-                            timeout_ms.min(remaining_ms)
-                        });
+                    let effective_timeout_ms = node
+                        .timeout_ms
+                        .or(resolved_timeout_ms)
+                        .map_or(remaining_ms, |timeout_ms| timeout_ms.min(remaining_ms));
                     node.timeout_ms = Some(effective_timeout_ms);
                 }
             }
@@ -2032,6 +2031,10 @@ pub fn execute(
             let ctx_clone = RunContext {
                 run_dir: Arc::clone(&ctx.run_dir),
                 graph_fingerprint: ctx.graph_fingerprint.clone(),
+                node_definition_fingerprints: Arc::clone(&ctx.node_definition_fingerprints),
+                declared_environment_fingerprints: Arc::clone(
+                    &ctx.declared_environment_fingerprints,
+                ),
                 planner_contract_version: ctx.planner_contract_version.clone(),
                 execution_fingerprint: ctx.execution_fingerprint.clone(),
                 evidence_fingerprint: ctx.evidence_fingerprint.clone(),
@@ -2092,9 +2095,9 @@ pub fn execute(
                         crate::RunTimeoutBehavior::CancelRunning
                     ) && result.failure.as_ref().map(|failure| failure.code.as_str())
                         == Some("EXEC_TIMEOUT")
-                        && options
-                            .run_timeout_ms
-                            .is_some_and(|limit_ms| start.elapsed() >= Duration::from_millis(limit_ms))
+                        && options.run_timeout_ms.is_some_and(|limit_ms| {
+                            start.elapsed() >= Duration::from_millis(limit_ms)
+                        })
                     {
                         run_timed_out = true;
                     }
@@ -2497,7 +2500,9 @@ pub fn execute(
             ctx.run_dir.staging_path(),
             "run timed out; partial outputs require resume or repair before completion",
         )
-        .map_err(|err| RuntimeError::Executor(format!("incomplete run marker write failed: {err}")))?;
+        .map_err(|err| {
+            RuntimeError::Executor(format!("incomplete run marker write failed: {err}"))
+        })?;
         for node in &graph.nodes {
             if status_map.contains_key(&node.id) {
                 continue;
@@ -2509,9 +2514,7 @@ pub fn execute(
                 "Timeout",
                 "RUN_TIMEOUT",
                 "run timeout exceeded before node completion",
-                options
-                    .run_timeout_ms
-                    .map(|limit| serde_json::json!({ "run_timeout_ms": limit })),
+                options.run_timeout_ms.map(|limit| serde_json::json!({ "run_timeout_ms": limit })),
             );
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
@@ -2723,9 +2726,10 @@ pub fn execute(
     if let Some(parent) = lineage_snapshot_path.parent() {
         ctx.fs.create_dir_all(parent)?;
     }
-    let lineage_snapshot_payload =
-        bijux_dag_artifacts::lineage::serialize_lineage_snapshot(&lineage_snapshot)
-            .map_err(|err| RuntimeError::Executor(format!("lineage snapshot write failed: {err}")))?;
+    let lineage_snapshot_payload = bijux_dag_artifacts::lineage::serialize_lineage_snapshot(
+        &lineage_snapshot,
+    )
+    .map_err(|err| RuntimeError::Executor(format!("lineage snapshot write failed: {err}")))?;
     ctx.fs
         .write(&lineage_snapshot_path, &lineage_snapshot_payload)
         .map_err(|err| RuntimeError::Executor(format!("lineage snapshot write failed: {err}")))?;
@@ -2741,9 +2745,9 @@ pub fn execute(
             .map_err(|err| {
                 RuntimeError::Executor(format!("lineage visualization write failed: {err}"))
             })?;
-    ctx.fs
-        .write(&lineage_visualization_path, &lineage_visualization_payload)
-        .map_err(|err| RuntimeError::Executor(format!("lineage visualization write failed: {err}")))?;
+    ctx.fs.write(&lineage_visualization_path, &lineage_visualization_payload).map_err(|err| {
+        RuntimeError::Executor(format!("lineage visualization write failed: {err}"))
+    })?;
     write_run_outputs_index(ctx.run_dir.staging_path().join("outputs"), &run_index)?;
     run_dir.write_manifest(&manifest)?;
     crate::append_event(
@@ -2876,11 +2880,8 @@ pub fn execute(
         &RunDirSchemaIndex::default(),
     )
     .map_err(|err| RuntimeError::Executor(format!("run schema index write failed: {err}")))?;
-    let finalization_mode = if run_timed_out {
-        RunFinalizationMode::Incomplete
-    } else {
-        RunFinalizationMode::Complete
-    };
+    let finalization_mode =
+        if run_timed_out { RunFinalizationMode::Incomplete } else { RunFinalizationMode::Complete };
     finalize_run_manifest_with_mode(ctx.run_dir.staging_path(), finalization_mode).map_err(
         |err| RuntimeError::Executor(format!("run finalization marker write failed: {err}")),
     )?;
