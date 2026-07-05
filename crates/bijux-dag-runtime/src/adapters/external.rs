@@ -119,10 +119,9 @@ impl Adapter for ExternalAdapter {
             &outputs_dir.display().to_string(),
         ]);
         cmd.current_dir(&work_dir);
+        let env_allowlist = crate::effective_env_allowlist(node);
         cmd.env_clear();
-        for (key, value) in
-            crate::shaped_environment(exec.policy.clean_env, &node.env_allowlist, &[])
-        {
+        for (key, value) in crate::shaped_environment(exec.policy.clean_env, &env_allowlist, &[]) {
             cmd.env(key, value);
         }
         let output = match crate::command_output_with_timeout(

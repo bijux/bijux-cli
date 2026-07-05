@@ -433,10 +433,19 @@ pub fn execute(
         final_path: run_dir.final_path().to_path_buf(),
     };
     let resolved = graph.resolve_graph()?;
+    let ambient_env: BTreeMap<String, String> = std::env::vars().collect();
     let mut base_fps = HashMap::new();
     for node in &graph.nodes {
         let params = resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
-        base_fps.insert(node.id.clone(), graph.node_fingerprint_with_params(node, &params)?);
+        let base_fp = graph.node_fingerprint_with_params(node, &params)?;
+        let env_allowlist = crate::effective_env_allowlist(node);
+        let declared_env =
+            crate::declared_environment(&ambient_env, options.policy.clean_env, &env_allowlist, &[]);
+        let env_fp = crate::sha256_bytes(&serde_json::to_vec(&declared_env)?);
+        base_fps.insert(
+            node.id.clone(),
+            crate::sha256_bytes(format!("{base_fp}:{env_fp}").as_bytes()),
+        );
     }
     let mut resolved_params = HashMap::new();
     for node in &graph.nodes {

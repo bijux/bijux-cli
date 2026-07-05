@@ -455,7 +455,10 @@ pub use secrets_security::{
     SecretVersionSelection, SecureExecutionMode, SecureTeardownPolicy, SecureWorkspaceRule,
     SensitiveArtifactClass, SensitiveArtifactRestriction,
 };
-pub use security_env::{is_allowed_env_key, is_denied_env_key, shape_environment};
+pub use security_env::{
+    declared_environment, effective_env_allowlist, is_allowed_env_key, is_denied_env_key,
+    missing_required_env_keys, shape_environment,
+};
 pub use semantic_lineage::{
     detect_lineage_conflicts, export_lineage_format, lineage_quality_score,
     policy_hook_allows_operation, recommended_replay_set, summarize_lineage,
@@ -725,10 +728,11 @@ impl Adapter for ShellAdapter {
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
+        let env_allowlist = effective_env_allowlist(node);
         let mut cmd = subprocess::command(&args[0]);
         cmd.args(&args[1..]);
         cmd.current_dir(&work_dir);
-        apply_shaped_env(&mut cmd, exec.policy.clean_env, &node.env_allowlist, &[]);
+        apply_shaped_env(&mut cmd, exec.policy.clean_env, &env_allowlist, &[]);
 
         let output =
             command_output_with_timeout(&mut cmd, effective_node_timeout_ms(node, params))?;
@@ -928,7 +932,8 @@ impl Adapter for ContainerAdapter {
         .map_err(RuntimeError::Executor)?;
         cmd.args(["--workdir", &workdir]);
 
-        for (key, val) in shaped_environment(exec.policy.clean_env, &spec.env_allowlist, &[]) {
+        let env_allowlist = effective_env_allowlist(node);
+        for (key, val) in shaped_environment(exec.policy.clean_env, &env_allowlist, &[]) {
             cmd.arg("-e").arg(format!("{}={}", key, val));
         }
 
@@ -1169,6 +1174,9 @@ impl Runtime {
         if diags.iter().any(|d| d.severity == Severity::Error) {
             return Err(GraphError::ValidationFailed.into());
         }
+        let ambient_env = std::env::vars().collect();
+        security_env::validate_graph_environment_bindings(graph, &ambient_env)
+            .map_err(RuntimeError::Executor)?;
         let _contracts = validate_task_contracts(graph, &options)?;
         let plan = build_plan(graph, &options);
         engine::execute(self, graph, plan, out_dir, options)
@@ -2348,15 +2356,7 @@ pub(crate) fn shaped_environment(
     denylist: &[String],
 ) -> BTreeMap<String, String> {
     let ambient: BTreeMap<String, String> = std::env::vars().collect();
-    let mut explicit = BTreeMap::new();
-    if clean_env && !allowlist.is_empty() {
-        for (key, value) in &ambient {
-            if is_allowed_env_key(key, allowlist) {
-                explicit.insert(key.clone(), value.clone());
-            }
-        }
-    }
-    shape_environment(&ambient, clean_env, allowlist, denylist, &explicit)
+    declared_environment(&ambient, clean_env, allowlist, denylist)
 }
 
 pub(crate) fn command_output_with_timeout(

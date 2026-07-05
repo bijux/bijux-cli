@@ -418,7 +418,7 @@ fn validate_backend_compatibility(graph: &Graph) -> Result<(), String> {
         let requirements = BackendCapabilityRequirement {
             container_required: requires_container,
             network_isolation_required: false,
-            env_allowlist_required: !node.env_allowlist.is_empty(),
+            env_allowlist_required: !crate::effective_env_allowlist(node).is_empty(),
             artifact_mount_required: true,
             remote_logs_required: false,
             gpu_required: node.tags.iter().any(|t| t == "gpu"),
