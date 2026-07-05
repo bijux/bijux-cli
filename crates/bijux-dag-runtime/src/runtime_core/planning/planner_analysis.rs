@@ -76,10 +76,34 @@ pub struct PlannerRetryExposure {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PlannerDurationSource {
+    EstimatedDuration,
+    UnitFallback,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerCriticalPathNode {
+    pub node_id: String,
+    pub duration_ms: u64,
+    pub duration_source: PlannerDurationSource,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerCriticalPathEstimate {
+    pub node_ids: Vec<String>,
+    pub total_duration_ms: u64,
+    pub estimated_duration_nodes: usize,
+    pub unit_duration_fallback_nodes: usize,
+    pub nodes: Vec<PlannerCriticalPathNode>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PlannerExecutionCostEstimate {
     pub node_count: usize,
     pub root_nodes: Vec<String>,
     pub critical_path_length: usize,
+    pub critical_path: PlannerCriticalPathEstimate,
     pub max_parallelism: usize,
     pub demand: PlannerExecutionDemand,
     pub cache_exposure: PlannerCacheExposure,
@@ -541,10 +565,8 @@ fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate
         .iter()
         .filter(|node| !plan.filter_reasons.contains_key(&node.id))
         .collect::<Vec<_>>();
-    let selected_node_ids = selected_nodes
-        .iter()
-        .map(|node| node.id.clone())
-        .collect::<BTreeSet<_>>();
+    let selected_node_ids =
+        selected_nodes.iter().map(|node| node.id.clone()).collect::<BTreeSet<_>>();
     let selected_dependencies = plan
         .planned_dependencies
         .iter()
@@ -559,10 +581,8 @@ fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate
         .cloned()
         .collect::<Vec<_>>();
 
-    let mut indegree = selected_nodes
-        .iter()
-        .map(|node| (node.id.clone(), 0usize))
-        .collect::<HashMap<_, _>>();
+    let mut indegree =
+        selected_nodes.iter().map(|node| (node.id.clone(), 0usize)).collect::<HashMap<_, _>>();
     let mut adjacency = selected_nodes
         .iter()
         .map(|node| (node.id.clone(), Vec::<String>::new()))
@@ -607,7 +627,8 @@ fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate
         if let Some(timeout_ms) = node.timeout_ms {
             timed_node_ids.push(node.id.clone());
             total_timeout_ms += timeout_ms;
-            max_timeout_ms = Some(max_timeout_ms.map_or(timeout_ms, |current| current.max(timeout_ms)));
+            max_timeout_ms =
+                Some(max_timeout_ms.map_or(timeout_ms, |current| current.max(timeout_ms)));
         }
         if node.retry.max_attempts > 0 {
             retrying_node_ids.push(node.id.clone());
@@ -621,14 +642,20 @@ fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate
     timed_node_ids.sort();
     retrying_node_ids.sort();
 
-    let critical_path_length = critical_path_length(&order, &selected_dependencies);
-    let (max_parallelism, cpu_cores_peak_parallel, memory_mb_peak_parallel, gpu_devices_peak_parallel) =
-        parallelism_profile(&selected_nodes, &indegree, &adjacency);
+    let critical_path = critical_path_estimate(&order, &selected_dependencies, &selected_nodes);
+    let critical_path_length = critical_path.node_ids.len();
+    let (
+        max_parallelism,
+        cpu_cores_peak_parallel,
+        memory_mb_peak_parallel,
+        gpu_devices_peak_parallel,
+    ) = parallelism_profile(&selected_nodes, &indegree, &adjacency);
 
     PlannerExecutionCostEstimate {
         node_count: selected_nodes.len(),
         root_nodes,
         critical_path_length,
+        critical_path,
         max_parallelism,
         demand: PlannerExecutionDemand {
             cpu_cores_total,
@@ -677,32 +704,141 @@ fn node_resource_demand(node: &Node) -> (u64, u64, u64) {
     (cpu, memory, gpu)
 }
 
-fn critical_path_length(
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PlannerNodeDurationEstimate {
+    duration_ms: u64,
+    duration_source: PlannerDurationSource,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PlannerCriticalPathState {
+    node_ids: Vec<String>,
+    total_duration_ms: u64,
+    estimated_duration_nodes: usize,
+    unit_duration_fallback_nodes: usize,
+    nodes: Vec<PlannerCriticalPathNode>,
+}
+
+fn critical_path_estimate(
     order: &[String],
     dependencies: &[&crate::PlannedDependency],
-) -> usize {
+    nodes: &[&Node],
+) -> PlannerCriticalPathEstimate {
+    let node_lookup =
+        nodes.iter().map(|node| (node.id.clone(), *node)).collect::<HashMap<String, &Node>>();
     let mut parent_map = HashMap::<String, Vec<String>>::new();
     for edge in dependencies {
         parent_map.entry(edge.to.clone()).or_default().push(edge.from.clone());
     }
-    let mut distances = HashMap::<String, usize>::new();
-    let mut longest = 0usize;
-    for node_id in order {
-        let depth = parent_map
-            .get(node_id)
-            .map(|parents| {
-                parents
-                    .iter()
-                    .filter_map(|parent| distances.get(parent).copied())
-                    .max()
-                    .unwrap_or(0)
-                    + 1
-            })
-            .unwrap_or(1);
-        distances.insert(node_id.clone(), depth);
-        longest = longest.max(depth);
+    for parents in parent_map.values_mut() {
+        parents.sort();
     }
-    longest
+
+    let mut best_path_by_node = HashMap::<String, PlannerCriticalPathState>::new();
+    let mut longest_path = None::<PlannerCriticalPathState>;
+    for node_id in order {
+        let duration_estimate = node_lookup
+            .get(node_id)
+            .map(|node| node_duration_estimate(node))
+            .unwrap_or_else(unit_duration_estimate);
+        let parent_state = parent_map.get(node_id).and_then(|parents| {
+            parents
+                .iter()
+                .filter_map(|parent| best_path_by_node.get(parent))
+                .max_by(|left, right| compare_critical_path_state(left, right))
+                .cloned()
+        });
+        let next_state =
+            append_critical_path_state(parent_state.as_ref(), node_id, &duration_estimate);
+        best_path_by_node.insert(node_id.clone(), next_state.clone());
+        if longest_path
+            .as_ref()
+            .is_none_or(|current| compare_critical_path_state(current, &next_state).is_lt())
+        {
+            longest_path = Some(next_state);
+        }
+    }
+
+    if let Some(path) = longest_path {
+        PlannerCriticalPathEstimate {
+            node_ids: path.node_ids,
+            total_duration_ms: path.total_duration_ms,
+            estimated_duration_nodes: path.estimated_duration_nodes,
+            unit_duration_fallback_nodes: path.unit_duration_fallback_nodes,
+            nodes: path.nodes,
+        }
+    } else {
+        PlannerCriticalPathEstimate {
+            node_ids: Vec::new(),
+            total_duration_ms: 0,
+            estimated_duration_nodes: 0,
+            unit_duration_fallback_nodes: 0,
+            nodes: Vec::new(),
+        }
+    }
+}
+
+fn append_critical_path_state(
+    parent_state: Option<&PlannerCriticalPathState>,
+    node_id: &str,
+    duration_estimate: &PlannerNodeDurationEstimate,
+) -> PlannerCriticalPathState {
+    let mut state = parent_state.cloned().unwrap_or_else(|| PlannerCriticalPathState {
+        node_ids: Vec::new(),
+        total_duration_ms: 0,
+        estimated_duration_nodes: 0,
+        unit_duration_fallback_nodes: 0,
+        nodes: Vec::new(),
+    });
+    state.node_ids.push(node_id.to_string());
+    state.total_duration_ms += duration_estimate.duration_ms;
+    match duration_estimate.duration_source {
+        PlannerDurationSource::EstimatedDuration => state.estimated_duration_nodes += 1,
+        PlannerDurationSource::UnitFallback => state.unit_duration_fallback_nodes += 1,
+    }
+    state.nodes.push(PlannerCriticalPathNode {
+        node_id: node_id.to_string(),
+        duration_ms: duration_estimate.duration_ms,
+        duration_source: duration_estimate.duration_source.clone(),
+    });
+    state
+}
+
+fn compare_critical_path_state(
+    left: &PlannerCriticalPathState,
+    right: &PlannerCriticalPathState,
+) -> std::cmp::Ordering {
+    left.total_duration_ms
+        .cmp(&right.total_duration_ms)
+        .then(left.node_ids.len().cmp(&right.node_ids.len()))
+        .then_with(|| right.node_ids.cmp(&left.node_ids))
+}
+
+fn node_duration_estimate(node: &Node) -> PlannerNodeDurationEstimate {
+    param_literal_u64(node, "estimated_duration_ms")
+        .filter(|duration_ms| *duration_ms > 0)
+        .map(|duration_ms| PlannerNodeDurationEstimate {
+            duration_ms,
+            duration_source: PlannerDurationSource::EstimatedDuration,
+        })
+        .unwrap_or_else(unit_duration_estimate)
+}
+
+fn unit_duration_estimate() -> PlannerNodeDurationEstimate {
+    PlannerNodeDurationEstimate {
+        duration_ms: 1,
+        duration_source: PlannerDurationSource::UnitFallback,
+    }
+}
+
+fn param_literal_u64(node: &Node, key: &str) -> Option<u64> {
+    match &node.params {
+        bijux_dag_core::ParamValue::Object(map) => match map.get(key) {
+            Some(bijux_dag_core::ParamValue::Literal(value)) => value.as_u64(),
+            _ => None,
+        },
+        _ => None,
+    }
 }
 
 fn parallelism_profile(
@@ -765,12 +901,7 @@ fn parallelism_profile(
         ready = next_ready;
     }
 
-    (
-        max_parallelism,
-        cpu_cores_peak_parallel,
-        memory_mb_peak_parallel,
-        gpu_devices_peak_parallel,
-    )
+    (max_parallelism, cpu_cores_peak_parallel, memory_mb_peak_parallel, gpu_devices_peak_parallel)
 }
 
 fn inherit_priority(nodes: &[Node]) -> Vec<PlannerPriorityInheritance> {

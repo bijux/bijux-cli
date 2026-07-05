@@ -378,6 +378,7 @@ pub use planner_analysis::{
     build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
     compute_downstream_run_closure, compute_partial_run_closure, compute_upstream_run_closure,
     diff_plans, explain_plan, fingerprint_plan, PlannerBackfillPlan, PlannerBuildResult,
+    PlannerCriticalPathEstimate, PlannerCriticalPathNode, PlannerDurationSource,
     PlannerExecutionCostEstimate, PlannerExplainReport, PlannerGuardrails, PlannerNodeAction,
     PlannerNodeAnnotation, PlannerNodePathPreview, PlannerPhase, PlannerPlanDiff,
     PlannerPriorityInheritance,
