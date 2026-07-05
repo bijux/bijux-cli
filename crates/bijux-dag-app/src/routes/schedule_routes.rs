@@ -1,11 +1,13 @@
-use crate::commands::{DagCli, ScheduleCommands};
+use crate::commands::{DagCli, ScheduleBackfillCommands, ScheduleCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::{
-    apply_backfill_throttling, compile_submission_request, deduplicate_trigger_events,
+    advance_backfill_operation, apply_backfill_throttling, cancel_backfill_operation,
+    compile_backfill_operation, compile_submission_request, deduplicate_trigger_events,
     detect_cron_conflicts, dry_run_schedule, evaluate_schedule_submissions, evaluate_sla_metrics,
-    materialize_next_runs, validate_schedule_registry, weighted_priority_tie_break_order,
-    BackfillThrottlingPolicy, PriorityClass, ScheduleEvaluationInputs, ScheduleRegistry,
-    ScheduleSubmissionLedger, ScheduledSubmission, WeightedPriorityPolicy,
+    materialize_next_runs, pause_backfill_operation, resume_backfill_operation,
+    validate_schedule_registry, weighted_priority_tie_break_order, BackfillAdvanceRequest,
+    BackfillOperation, BackfillThrottlingPolicy, PriorityClass, ScheduleEvaluationInputs,
+    ScheduleRegistry, ScheduleSubmissionLedger, ScheduledSubmission, WeightedPriorityPolicy,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -315,6 +317,144 @@ pub(crate) fn handle_schedule_command(
                 "allowed_backfill_runs={} pending_live_runs={}",
                 allowed_backfill_runs, pending_live_runs
             );
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleCommands::Backfill { command } => handle_schedule_backfill_command(cli, command),
+    }
+}
+
+fn parse_backfill_operation(path: &std::path::Path) -> Result<BackfillOperation, ExitCode> {
+    parse_json_file(path)
+}
+
+fn maybe_write_backfill_operation(
+    out: &Option<std::path::PathBuf>,
+    operation: &BackfillOperation,
+) -> Result<(), ExitCode> {
+    if let Some(path) = out {
+        write_pretty_json(path, operation)?;
+    }
+    Ok(())
+}
+
+fn handle_schedule_backfill_command(
+    cli: &DagCli,
+    command: &ScheduleBackfillCommands,
+) -> Result<ExitCode, ExitCode> {
+    match command {
+        ScheduleBackfillCommands::Plan { registry, schedule_id, planned_unix_ms, backfill_id, out } => {
+            let registry = parse_schedule_registry(registry)?;
+            validate_schedule_registry(&registry).map_err(|_| ExitCode::from(3))?;
+            let definition = registry
+                .definitions
+                .iter()
+                .find(|definition| definition.id == *schedule_id)
+                .ok_or_else(|| ExitCode::from(3))?;
+            let operation = compile_backfill_operation(
+                definition,
+                backfill_id.as_deref(),
+                *planned_unix_ms,
+            )
+            .map_err(|_| ExitCode::from(3))?;
+            maybe_write_backfill_operation(out, &operation)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.backfill.plan",
+                    true,
+                    serde_json::to_value(&operation).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&operation).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleBackfillCommands::Status { state } => {
+            let operation = parse_backfill_operation(state)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.backfill.status",
+                    true,
+                    serde_json::to_value(&operation).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&operation).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleBackfillCommands::Advance { state, request, out } => {
+            let operation = parse_backfill_operation(state)?;
+            let request: BackfillAdvanceRequest = parse_json_file(request)?;
+            let report =
+                advance_backfill_operation(&operation, &request).map_err(|_| ExitCode::from(3))?;
+            maybe_write_backfill_operation(out, &report.operation)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.backfill.advance",
+                    true,
+                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleBackfillCommands::Pause { state, at_unix_ms, reason, out } => {
+            let mut operation = parse_backfill_operation(state)?;
+            pause_backfill_operation(&mut operation, *at_unix_ms, reason.clone())
+                .map_err(|_| ExitCode::from(3))?;
+            maybe_write_backfill_operation(out, &operation)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.backfill.pause",
+                    true,
+                    serde_json::to_value(&operation).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&operation).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleBackfillCommands::Resume { state, at_unix_ms, out } => {
+            let mut operation = parse_backfill_operation(state)?;
+            resume_backfill_operation(&mut operation, *at_unix_ms).map_err(|_| ExitCode::from(3))?;
+            maybe_write_backfill_operation(out, &operation)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.backfill.resume",
+                    true,
+                    serde_json::to_value(&operation).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&operation).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleBackfillCommands::Cancel { state, at_unix_ms, reason, out } => {
+            let mut operation = parse_backfill_operation(state)?;
+            cancel_backfill_operation(&mut operation, *at_unix_ms, reason.clone())
+                .map_err(|_| ExitCode::from(3))?;
+            maybe_write_backfill_operation(out, &operation)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.backfill.cancel",
+                    true,
+                    serde_json::to_value(&operation).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&operation).unwrap());
             Ok(ExitCode::SUCCESS)
         }
     }

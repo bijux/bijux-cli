@@ -587,6 +587,55 @@ pub(crate) enum PlanCommands {
 }
 
 #[derive(Subcommand)]
+pub(crate) enum ScheduleBackfillCommands {
+    Plan {
+        registry: PathBuf,
+        #[arg(long)]
+        schedule_id: String,
+        #[arg(long)]
+        planned_unix_ms: u128,
+        #[arg(long)]
+        backfill_id: Option<String>,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    Status {
+        state: PathBuf,
+    },
+    Advance {
+        state: PathBuf,
+        request: PathBuf,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    Pause {
+        state: PathBuf,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        reason: Option<String>,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    Resume {
+        state: PathBuf,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    Cancel {
+        state: PathBuf,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        reason: Option<String>,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+}
+
+#[derive(Subcommand)]
 pub(crate) enum ScheduleCommands {
     Validate {
         registry: PathBuf,
@@ -640,6 +689,10 @@ pub(crate) enum ScheduleCommands {
     },
     Throttle {
         simulation: PathBuf,
+    },
+    Backfill {
+        #[command(subcommand)]
+        command: ScheduleBackfillCommands,
     },
 }
 
