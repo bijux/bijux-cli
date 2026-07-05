@@ -155,6 +155,20 @@ fn planner_reports_path_previews_when_run_root_is_known() {
     let shell_preview =
         previews.iter().find(|preview| preview.node_id == "shell").expect("shell preview");
     assert_eq!(shell_preview.execution_surface, "host");
+    assert_eq!(
+        shell_preview.resolved_argv.as_ref().expect("shell argv"),
+        &vec![
+            "cp".to_string(),
+            temp.path()
+                .join("run.tmp-preview/nodes/shell/inputs/seed.txt")
+                .display()
+                .to_string(),
+            temp.path()
+                .join("run.tmp-preview/nodes/shell/outputs/result.txt")
+                .display()
+                .to_string(),
+        ]
+    );
     assert!(shell_preview
         .resolved_paths
         .iter()
@@ -165,8 +179,49 @@ fn planner_reports_path_previews_when_run_root_is_known() {
         .find(|preview| preview.node_id == "container")
         .expect("container preview");
     assert_eq!(container_preview.execution_surface, "container");
+    assert_eq!(
+        container_preview.resolved_argv.as_ref().expect("container argv"),
+        &vec![
+            "cp".to_string(),
+            "/bijux/node/inputs/seed.txt".to_string(),
+            "/bijux/node/outputs/result.txt".to_string(),
+        ]
+    );
     assert!(container_preview
         .resolved_paths
         .iter()
         .any(|path| path.key_path == "container.workdir" && path.resolved_path == "/bijux/node/work/scratch"));
+}
+
+#[test]
+fn planner_rejects_unresolved_container_command_templates() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"container",
+              "kind":"container",
+              "outputs":[{"name":"out","path":"out.txt"}],
+              "params":{},
+              "container":{
+                "image":"alpine:3.20",
+                "argv":["tool","{params.missing}"],
+                "engine":"docker"
+              }
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph should parse");
+
+    let err = build_planner_analysis(
+        &graph,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect_err("planner must reject unresolved container templates");
+    assert!(err.contains("validation failed"));
 }

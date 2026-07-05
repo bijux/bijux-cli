@@ -4,11 +4,13 @@ use crate::infrastructure::{
 };
 use crate::{
     collect_container_argv_path_usages, collect_container_workdir_usage,
-    collect_resolved_path_usages, NodePathBindings, ResolvedPathUsage, RuntimeConfig, SelectorSet,
+    collect_resolved_path_usages, resolve_container_argv, NodePathBindings, ResolvedPathUsage,
+    RuntimeConfig, SelectorSet,
 };
 use bijux_dag_artifacts::RunDirLayout;
 use bijux_dag_core::{Graph, Node};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
@@ -73,6 +75,7 @@ pub struct PlannerNodePathPreview {
     pub execution_surface: String,
     pub variable_bindings: NodePathBindings,
     pub resolved_paths: Vec<ResolvedPathUsage>,
+    pub resolved_argv: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -121,12 +124,14 @@ pub fn build_planner_analysis(
             "planner lowering rejected unsupported runtime capability requirements".to_string()
         );
     }
+    let resolved_graph = normalized_graph.resolve_graph().map_err(|error| error.to_string())?;
+    validate_command_templates(&normalized_graph, &resolved_graph.resolved_params)?;
     let mut annotations = annotate_plan(&normalized_graph, &plan, selector_set);
     plan = apply_optimizer_rules(normalized_graph.clone(), plan, &mut annotations, guardrails);
     let resource_estimate = estimate_resources(&plan.nodes);
     let priority_inheritance = inherit_priority(&plan.nodes);
     let plan_fingerprint = fingerprint_plan(&plan, &annotations)?;
-    let path_previews = build_path_previews(&normalized_graph, options)?;
+    let path_previews = build_path_previews(&normalized_graph, options, &resolved_graph.resolved_params)?;
 
     Ok(PlannerBuildResult {
         plan,
@@ -216,49 +221,75 @@ pub fn explain_plan(result: &PlannerBuildResult) -> PlannerExplainReport {
 fn build_path_previews(
     graph: &Graph,
     options: &RuntimeConfig,
+    resolved_params: &BTreeMap<String, serde_json::Value>,
 ) -> Result<Option<Vec<PlannerNodePathPreview>>, String> {
     let Some(run_root) = options.run_root.as_ref() else {
         return Ok(None);
     };
     let layout = RunDirLayout::preview(run_root, options.run_id.as_deref())
         .map_err(|error| error.to_string())?;
-    let resolved_graph = graph.resolve_graph().map_err(|error| error.to_string())?;
     let effective_cache_dir = options.cache_dir.clone().or_else(crate::cache_dir_from_env);
     let mut previews = Vec::with_capacity(graph.nodes.len());
     for node in &graph.nodes {
-        let (execution_surface, variable_bindings, resolved_paths) =
+        let (execution_surface, variable_bindings, resolved_paths, resolved_argv) =
             preview_node_paths(
+                graph,
                 node,
                 &layout,
                 options,
                 effective_cache_dir.as_deref(),
-                &resolved_graph.resolved_params,
+                resolved_params,
             )?;
         previews.push(PlannerNodePathPreview {
             node_id: node.id.clone(),
             execution_surface,
             variable_bindings,
             resolved_paths,
+            resolved_argv,
         });
     }
     Ok(Some(previews))
 }
 
+fn validate_command_templates(
+    graph: &Graph,
+    resolved_params: &BTreeMap<String, serde_json::Value>,
+) -> Result<(), String> {
+    for node in &graph.nodes {
+        let Some(spec) = node.container.as_ref() else {
+            continue;
+        };
+        let resolved = resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
+        bijux_dag_core::resolve::resolve_command_argv_templates(graph, node, &spec.argv, &resolved)
+            .map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
 fn preview_node_paths(
+    graph: &Graph,
     node: &Node,
     layout: &RunDirLayout,
     options: &RuntimeConfig,
     effective_cache_dir: Option<&std::path::Path>,
     resolved_params: &BTreeMap<String, serde_json::Value>,
-) -> Result<(String, NodePathBindings, Vec<ResolvedPathUsage>), String> {
+) -> Result<(String, NodePathBindings, Vec<ResolvedPathUsage>, Option<Vec<String>>), String> {
+    let resolved = resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
     if node.kind == bijux_dag_core::NodeKind::Container {
         let variable_bindings = NodePathBindings::for_container();
         let mut resolved_paths = Vec::new();
+        let mut resolved_argv = None;
         if let Some(spec) = &node.container {
-            resolved_paths.extend(collect_container_argv_path_usages(
+            let stable_argv = bijux_dag_core::resolve::resolve_command_argv_templates(
+                graph,
+                node,
                 &spec.argv,
-                &variable_bindings,
-            )?);
+                &resolved,
+            )
+            .map_err(|error| error.to_string())?;
+            resolved_paths
+                .extend(collect_container_argv_path_usages(&stable_argv, &variable_bindings)?);
+            resolved_argv = Some(resolve_container_argv(&stable_argv, &variable_bindings)?);
             if let Some(workdir_usage) = collect_container_workdir_usage(
                 spec.workdir.as_deref(),
                 &variable_bindings,
@@ -267,13 +298,26 @@ fn preview_node_paths(
                 resolved_paths.push(workdir_usage);
             }
         }
-        return Ok(("container".to_string(), variable_bindings, resolved_paths));
+        return Ok(("container".to_string(), variable_bindings, resolved_paths, resolved_argv));
     }
 
     let variable_bindings = NodePathBindings::for_host(layout, &node.id, effective_cache_dir);
-    let resolved = resolved_params.get(&node.id).cloned().unwrap_or(serde_json::Value::Null);
+    let bound = crate::bind_path_variables_in_value(&resolved, &variable_bindings)?;
     let resolved_paths = collect_resolved_path_usages(&resolved, &variable_bindings)?;
-    Ok(("host".to_string(), variable_bindings, resolved_paths))
+    let resolved_argv = bound
+        .get("argv")
+        .and_then(Value::as_array)
+        .map(|argv| {
+            argv.iter()
+                .map(|entry| {
+                    entry.as_str()
+                        .map(str::to_string)
+                        .ok_or_else(|| "argv must resolve to strings".to_string())
+                })
+                .collect::<Result<Vec<_>, _>>()
+        })
+        .transpose()?;
+    Ok(("host".to_string(), variable_bindings, resolved_paths, resolved_argv))
 }
 
 pub fn compute_partial_run_closure(
