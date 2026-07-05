@@ -12,6 +12,37 @@ use serde_json::json;
 use std::path::Path;
 use std::path::PathBuf;
 
+fn build_replay_runtime_options(
+    jobs: usize,
+    cpu_budget: Option<u32>,
+    run_id: Option<String>,
+    source_run_id: Option<String>,
+    cache_mode: CacheMode,
+    remote_cache_dir: Option<PathBuf>,
+    selectors: bijux_dag_runtime::SelectorSet,
+    dependency_closure: bool,
+    materialize_inputs: MaterializeModeArg,
+    policy: bijux_dag_runtime::PolicyConfig,
+) -> RuntimeConfig {
+    RuntimeConfig {
+        jobs,
+        cpu_budget,
+        run_timeout_ms: None,
+        node_timeout_ms: None,
+        materialize_inputs: map_materialize_mode(materialize_inputs),
+        cache_mode,
+        cache_dir: None,
+        remote_cache_dir,
+        run_id,
+        parent_run_id: source_run_id,
+        latest_symlink: None,
+        policy,
+        selectors,
+        partial_rerun_dependency_closure: dependency_closure,
+        ..RuntimeConfig::default()
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn handle_replay_command(
     cli: &DagCli,
@@ -65,28 +96,23 @@ pub(crate) fn handle_replay_command(
         clean_env_effective = true;
     }
     let selectors = parse_selectors(select, exclude)?;
-    let options = RuntimeConfig {
+    let options = build_replay_runtime_options(
         jobs,
         cpu_budget,
-        run_timeout_ms: None,
-        node_timeout_ms: None,
-        materialize_inputs: map_materialize_mode(materialize_inputs),
-        cache_mode: cache_mode.clone(),
-        cache_dir: None,
-        remote_cache_dir,
         run_id,
-        parent_run_id: source_run_id.clone(),
-        latest_symlink: None,
-        policy: bijux_dag_runtime::PolicyConfig {
+        source_run_id.clone(),
+        cache_mode.clone(),
+        remote_cache_dir,
+        selectors.clone(),
+        dependency_closure,
+        materialize_inputs,
+        bijux_dag_runtime::PolicyConfig {
             deny_network: deny_network_effective,
             deny_env: deny_env_effective,
             deny_clock: deny_clock_effective,
             clean_env: clean_env_effective,
         },
-        selectors: selectors.clone(),
-        partial_rerun_dependency_closure: dependency_closure,
-        ..RuntimeConfig::default()
-    };
+    );
     if dry_run {
         let dry_select = selectors.include.iter().map(selector_cli_string).collect::<Vec<_>>();
         let dry_exclude = selectors.exclude.iter().map(selector_cli_string).collect::<Vec<_>>();
@@ -191,6 +217,50 @@ pub(crate) fn handle_replay_command(
         }
     }
     Ok(ExitCode::SUCCESS)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_replay_runtime_options;
+    use crate::commands::MaterializeModeArg;
+    use std::path::PathBuf;
+
+    #[test]
+    fn replay_runtime_options_preserve_selector_and_closure_configuration() {
+        let selectors = bijux_dag_runtime::SelectorSet {
+            include: vec![bijux_dag_runtime::Selector::Id("report".to_string())],
+            exclude: vec![bijux_dag_runtime::Selector::Kind("const".to_string())],
+        };
+        let options = build_replay_runtime_options(
+            2,
+            Some(8),
+            Some("replay-run".to_string()),
+            Some("source-run".to_string()),
+            crate::CacheMode::ReadWrite,
+            Some(PathBuf::from("/tmp/remote-cache")),
+            selectors.clone(),
+            true,
+            MaterializeModeArg::Symlink,
+            bijux_dag_runtime::PolicyConfig {
+                deny_network: true,
+                deny_env: false,
+                deny_clock: true,
+                clean_env: true,
+            },
+        );
+
+        assert_eq!(options.jobs, 2);
+        assert_eq!(options.cpu_budget, Some(8));
+        assert_eq!(options.run_id.as_deref(), Some("replay-run"));
+        assert_eq!(options.parent_run_id.as_deref(), Some("source-run"));
+        assert!(options.partial_rerun_dependency_closure);
+        assert_eq!(options.selectors.include.len(), selectors.include.len());
+        assert_eq!(options.selectors.exclude.len(), selectors.exclude.len());
+        assert!(matches!(options.materialize_inputs, bijux_dag_runtime::MaterializeMode::Symlink));
+        assert!(matches!(options.cache_mode, crate::CacheMode::ReadWrite));
+        assert!(options.policy.deny_network);
+        assert!(options.policy.deny_clock);
+    }
 }
 
 pub(crate) fn handle_prove_command(cli: &DagCli, run_dir: &Path) -> Result<ExitCode, ExitCode> {
