@@ -192,7 +192,7 @@ fn fault_missing_required_env_var() {
     let temp = tempfile::tempdir().expect("tmp");
     let graph_path = temp.path().join("env-missing.json");
     let graph = json!({
-      "spec":"dag/v0.1",
+      "spec":"bijux-dag/v0.1",
       "meta":{"name":"env"},
       "nodes":[
         {
@@ -201,7 +201,8 @@ fn fault_missing_required_env_var() {
           "inputs":[],
           "outputs":[{"name":"out","path":"out"}],
           "params":{"argv":["/bin/sh","-c","test -n \"$REQUIRED_X\" && echo ok > ../outputs/out"]},
-          "effects":["filesystem","env"]
+          "effects":["filesystem","env"],
+          "env_allowlist":["REQUIRED_X"]
         }
       ],
       "edges":[]
@@ -218,6 +219,7 @@ fn fault_missing_required_env_var() {
         "--clean-env",
     ]);
     assert!(result.is_err());
+    assert_eq!(fs::read_dir(&out_dir).expect("run root entries").count(), 0);
 }
 
 #[test]
