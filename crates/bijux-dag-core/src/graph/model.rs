@@ -31,6 +31,10 @@ pub fn is_known_path_variable(name: &str) -> bool {
     PATH_VARIABLE_NAMES.iter().any(|candidate| candidate == &name)
 }
 
+pub fn env_allowlist_pattern_is_exact(pattern: &str) -> bool {
+    !pattern.contains('*')
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Graph {

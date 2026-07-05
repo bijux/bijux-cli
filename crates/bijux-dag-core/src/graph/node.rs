@@ -1,4 +1,7 @@
-use crate::{Effect, Graph, Node, OutputKind, OutputSpec, ParamValue, RefSpec};
+use crate::{
+    env_allowlist_pattern_is_exact, Effect, Graph, Node, OutputKind, OutputSpec, ParamValue,
+    RefSpec,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -143,7 +146,10 @@ pub fn node_io_contract(graph: &Graph, node_id: &str) -> Option<NodeIoContract> 
         env_bindings: node
             .env_allowlist
             .iter()
-            .map(|name| NodeEnvBinding { name: name.clone(), required: true })
+            .map(|name| NodeEnvBinding {
+                name: name.clone(),
+                required: env_allowlist_pattern_is_exact(name),
+            })
             .collect(),
         outputs: node
             .outputs

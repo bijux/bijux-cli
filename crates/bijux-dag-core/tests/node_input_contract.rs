@@ -92,3 +92,32 @@ fn node_io_contract_exposes_param_env_and_output_bindings() {
         )
     }));
 }
+
+#[test]
+fn node_io_contract_marks_wildcard_env_patterns_as_optional_matches() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"run",
+              "kind":"shell",
+              "inputs":[],
+              "outputs":[{"name":"out","path":"run/out"}],
+              "params":{"argv":["/bin/sh","-c","env > ../outputs/run/out"]},
+              "effects":["filesystem","env"],
+              "env_allowlist":["EXACT_ENV","PREFIX_*"]
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("parse graph");
+
+    let contract = node_io_contract(&graph, "run").expect("io contract");
+    assert_eq!(contract.env_bindings.len(), 2);
+    assert_eq!(contract.env_bindings[0].name, "EXACT_ENV");
+    assert!(contract.env_bindings[0].required);
+    assert_eq!(contract.env_bindings[1].name, "PREFIX_*");
+    assert!(!contract.env_bindings[1].required);
+}
