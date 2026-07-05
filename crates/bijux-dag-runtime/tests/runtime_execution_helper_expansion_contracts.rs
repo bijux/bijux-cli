@@ -6,9 +6,9 @@ use bijux_dag_runtime::{
     failure_allows_downstream_readiness, failure_propagation_is_deterministic, fingerprint_plan,
     node_transition_allowed, run_batches, run_transition_allowed, scheduler_contract_profile,
     scheduler_invariants_hold, validate_cron_expression, validate_schedule_policy_combination,
-    validate_schedule_registry, BackfillRequest, BackfillThrottlingPolicy, CatchUpPolicy,
-    ConcurrencyPolicyLayers, FailurePropagationMode, NodeLifecycleState, PlannerGuardrails,
-    PlannerPhase, PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyNode,
+    validate_schedule_registry, BackfillFailurePolicy, BackfillRequest, BackfillThrottlingPolicy,
+    CatchUpPolicy, ConcurrencyPolicyLayers, FailurePropagationMode, NodeLifecycleState,
+    PlannerGuardrails, PlannerPhase, PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyNode,
     RetryPolicySemantics, RunBatchPolicy, RunLifecycleState, RuntimeConfig, ScheduleDefinition,
     ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission, SchedulerFairness,
     SchedulerPolicy, SelectorSet, TriggerSpec,
@@ -334,8 +334,9 @@ fn schedule_validation_rejects_backfill_that_exceeds_queue_capacity() {
             window_start_unix_ms: 100,
             window_end_unix_ms: 200,
             partition_by: Some("sample".to_string()),
+            partition_keys: Vec::new(),
             max_parallelism: 4,
-            failure_policy: "continue".to_string(),
+            failure_policy: BackfillFailurePolicy::Continue,
         }),
         queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
         priority: PriorityClass::High,
@@ -350,6 +351,35 @@ fn schedule_validation_rejects_backfill_that_exceeds_queue_capacity() {
 
     let err = validate_schedule_policy_combination(&schedule).expect_err("invalid backfill");
     assert!(err.contains("exceeds queue concurrency cap"));
+}
+
+#[test]
+fn schedule_validation_rejects_partition_list_without_partition_name() {
+    let schedule = ScheduleDefinition {
+        id: "backfill-partition-list".to_string(),
+        dag_name: "dag.example".to_string(),
+        dag_version_policy: "run-latest".to_string(),
+        trigger: TriggerSpec::Backfill(BackfillRequest {
+            window_start_unix_ms: 100,
+            window_end_unix_ms: 200,
+            partition_by: None,
+            partition_keys: vec!["sample-a".to_string()],
+            max_parallelism: 1,
+            failure_policy: BackfillFailurePolicy::Continue,
+        }),
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+        priority: PriorityClass::High,
+        concurrency: ConcurrencyPolicyLayers {
+            per_dag: Some(1),
+            per_queue: Some(1),
+            per_tenant: None,
+            per_node_group: None,
+        },
+        catch_up: CatchUpPolicy { enabled: false, max_catch_up_runs: 0 },
+    };
+
+    let err = validate_schedule_policy_combination(&schedule).expect_err("invalid partition list");
+    assert!(err.contains("partition_keys require partition_by"));
 }
 
 #[test]

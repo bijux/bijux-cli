@@ -14,10 +14,13 @@ use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
-    apply_backfill_throttling, build_plan, build_scheduler, deduplicate_trigger_events,
+    advance_backfill_operation, apply_backfill_throttling, build_plan, build_scheduler,
+    cancel_backfill_operation, compile_backfill_operation, deduplicate_trigger_events,
     deterministic_tick_order, evaluate_schedule_submissions, evaluate_sla_metrics,
-    materialize_next_runs, run_batches, scheduler_debug_event_log, scheduler_invariants_hold,
-    trace_event_count_by_category, BackfillThrottlingPolicy, CatchUpPolicy,
+    materialize_next_runs, pause_backfill_operation, resume_backfill_operation, run_batches,
+    scheduler_debug_event_log, scheduler_invariants_hold, trace_event_count_by_category,
+    BackfillAdvanceRequest, BackfillFailurePolicy, BackfillLifecycleStatus, BackfillRequest,
+    BackfillRunStatus, BackfillStatusUpdate, BackfillThrottlingPolicy, CatchUpPolicy,
     ConcurrencyPolicyLayers, DependencyCompletionRecord, DependencyCounter,
     ManualSubmissionRequest, PriorityClass, QueueIdentity, ReadyNode, ReadyQueue, RunBatchPolicy,
     RuntimeAuditEvent, RuntimeConfig, ScheduleDefinition, ScheduleEvaluationInputs,
@@ -47,6 +50,263 @@ fn scheduler_backpressure_throttles_backfill_when_live_load_is_high() {
     let (allowed, pending_live) = apply_backfill_throttling(10, 20, &policy);
     assert!(allowed < 10);
     assert_eq!(pending_live, 20);
+}
+
+#[test]
+fn scheduler_backfill_operation_expands_time_window_and_partition_list() {
+    let schedule = schedule_definition(
+        "historical-catalog",
+        TriggerSpec::Backfill(BackfillRequest {
+            window_start_unix_ms: 1_000,
+            window_end_unix_ms: 121_000,
+            partition_by: Some("dataset".to_string()),
+            partition_keys: vec!["sample-a".to_string(), "sample-b".to_string()],
+            max_parallelism: 2,
+            failure_policy: BackfillFailurePolicy::Continue,
+        }),
+    );
+
+    let operation =
+        compile_backfill_operation(&schedule, Some("catalog-backfill"), 500).expect("operation");
+    let coordinates = operation
+        .runs
+        .iter()
+        .map(|run| (run.requested_unix_ms, run.partition_key.clone()))
+        .collect::<Vec<_>>();
+
+    assert_eq!(operation.lifecycle, BackfillLifecycleStatus::Active);
+    assert_eq!(coordinates.len(), 6);
+    assert_eq!(
+        coordinates,
+        vec![
+            (1_000, Some("sample-a".to_string())),
+            (1_000, Some("sample-b".to_string())),
+            (61_000, Some("sample-a".to_string())),
+            (61_000, Some("sample-b".to_string())),
+            (121_000, Some("sample-a".to_string())),
+            (121_000, Some("sample-b".to_string())),
+        ]
+    );
+}
+
+#[test]
+fn scheduler_backfill_operation_honors_parallelism_and_throttling() {
+    let schedule = schedule_definition(
+        "historical-catalog",
+        TriggerSpec::Backfill(BackfillRequest {
+            window_start_unix_ms: 1_000,
+            window_end_unix_ms: 181_000,
+            partition_by: Some("dataset".to_string()),
+            partition_keys: vec!["sample-a".to_string()],
+            max_parallelism: 2,
+            failure_policy: BackfillFailurePolicy::Continue,
+        }),
+    );
+    let operation = compile_backfill_operation(&schedule, None, 500).expect("operation");
+
+    let first = advance_backfill_operation(
+        &operation,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 1_500,
+            pending_live_runs: 2,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: Vec::new(),
+        },
+    )
+    .expect("advance");
+    assert_eq!(first.dispatched_requests.len(), 2);
+    assert_eq!(first.active_runs, 2);
+    assert_eq!(first.queued_runs, 2);
+
+    let second = advance_backfill_operation(
+        &first.operation,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 2_000,
+            pending_live_runs: 0,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: vec![
+                BackfillStatusUpdate {
+                    run_id: first.dispatched_requests[0].run_id.clone(),
+                    status: BackfillRunStatus::Completed,
+                    updated_unix_ms: 1_700,
+                },
+                BackfillStatusUpdate {
+                    run_id: first.dispatched_requests[1].run_id.clone(),
+                    status: BackfillRunStatus::Running,
+                    updated_unix_ms: 1_800,
+                },
+            ],
+        },
+    )
+    .expect("advance after completion");
+    assert_eq!(second.dispatched_requests.len(), 1);
+    assert_eq!(second.active_runs, 2);
+    assert_eq!(second.queued_runs, 1);
+}
+
+#[test]
+fn scheduler_backfill_operation_can_pause_resume_and_cancel() {
+    let schedule = schedule_definition(
+        "historical-catalog",
+        TriggerSpec::Backfill(BackfillRequest {
+            window_start_unix_ms: 1_000,
+            window_end_unix_ms: 61_000,
+            partition_by: None,
+            partition_keys: Vec::new(),
+            max_parallelism: 1,
+            failure_policy: BackfillFailurePolicy::Continue,
+        }),
+    );
+    let mut operation = compile_backfill_operation(&schedule, None, 500).expect("operation");
+
+    pause_backfill_operation(&mut operation, 1_000, Some("operator hold".to_string()))
+        .expect("pause");
+    assert_eq!(operation.lifecycle, BackfillLifecycleStatus::Paused);
+    let paused = advance_backfill_operation(
+        &operation,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 1_100,
+            pending_live_runs: 0,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: Vec::new(),
+        },
+    )
+    .expect("paused advance");
+    assert!(paused.dispatched_requests.is_empty());
+
+    resume_backfill_operation(&mut operation, 1_200).expect("resume");
+    let resumed = advance_backfill_operation(
+        &operation,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 1_300,
+            pending_live_runs: 0,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: Vec::new(),
+        },
+    )
+    .expect("resumed advance");
+    assert_eq!(resumed.dispatched_requests.len(), 1);
+
+    let mut cancelled = resumed.operation;
+    cancel_backfill_operation(&mut cancelled, 1_400, Some("operator stop".to_string()))
+        .expect("cancel");
+    assert_eq!(cancelled.lifecycle, BackfillLifecycleStatus::Cancelled);
+    assert!(cancelled.runs.iter().any(|run| matches!(run.status, BackfillRunStatus::Cancelled)));
+}
+
+#[test]
+fn scheduler_backfill_failure_policy_pauses_or_cancels_remaining_work() {
+    let pause_schedule = schedule_definition(
+        "historical-catalog-pause",
+        TriggerSpec::Backfill(BackfillRequest {
+            window_start_unix_ms: 1_000,
+            window_end_unix_ms: 61_000,
+            partition_by: None,
+            partition_keys: Vec::new(),
+            max_parallelism: 2,
+            failure_policy: BackfillFailurePolicy::Pause,
+        }),
+    );
+    let cancel_schedule = schedule_definition(
+        "historical-catalog-cancel",
+        TriggerSpec::Backfill(BackfillRequest {
+            window_start_unix_ms: 1_000,
+            window_end_unix_ms: 121_000,
+            partition_by: None,
+            partition_keys: Vec::new(),
+            max_parallelism: 2,
+            failure_policy: BackfillFailurePolicy::Cancel,
+        }),
+    );
+    let pause_operation = compile_backfill_operation(&pause_schedule, None, 500).expect("pause op");
+    let cancel_operation =
+        compile_backfill_operation(&cancel_schedule, None, 500).expect("cancel op");
+
+    let pause_dispatched = advance_backfill_operation(
+        &pause_operation,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 1_500,
+            pending_live_runs: 0,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: Vec::new(),
+        },
+    )
+    .expect("pause dispatch");
+    let pause_result = advance_backfill_operation(
+        &pause_dispatched.operation,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 2_000,
+            pending_live_runs: 0,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: vec![BackfillStatusUpdate {
+                run_id: pause_dispatched.dispatched_requests[0].run_id.clone(),
+                status: BackfillRunStatus::Failed,
+                updated_unix_ms: 1_900,
+            }],
+        },
+    )
+    .expect("pause result");
+    assert_eq!(pause_result.operation.lifecycle, BackfillLifecycleStatus::Paused);
+    assert!(pause_result.dispatched_requests.is_empty());
+
+    let cancel_dispatched = advance_backfill_operation(
+        &cancel_operation,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 1_500,
+            pending_live_runs: 0,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: Vec::new(),
+        },
+    )
+    .expect("cancel dispatch");
+    let cancel_result = advance_backfill_operation(
+        &cancel_dispatched.operation,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 2_000,
+            pending_live_runs: 0,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: vec![BackfillStatusUpdate {
+                run_id: cancel_dispatched.dispatched_requests[0].run_id.clone(),
+                status: BackfillRunStatus::Failed,
+                updated_unix_ms: 1_900,
+            }],
+        },
+    )
+    .expect("cancel result");
+    assert_eq!(cancel_result.operation.lifecycle, BackfillLifecycleStatus::Cancelled);
+    assert!(
+        cancel_result
+            .operation
+            .runs
+            .iter()
+            .filter(|run| matches!(run.status, BackfillRunStatus::Queued))
+            .count()
+            == 0
+    );
 }
 
 #[test]
