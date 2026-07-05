@@ -99,7 +99,7 @@ pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, Exit
         find_output_by_artifact_id(&run_outputs, &manifest.run_id, artifact_id)?;
     let artifact_path = run_dir.join(&output.path);
     let (size_bytes, payload_missing) = match fs::metadata(&artifact_path) {
-        Ok(metadata) => (Some(metadata.len()), false),
+        Ok(_) => (Some(output.size_bytes), false),
         Err(_) => (None, true),
     };
     let lineage_path = run_dir.join("lineage.snapshot.json");

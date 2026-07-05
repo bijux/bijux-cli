@@ -56,6 +56,7 @@ fn artifact_inspect_reports_missing_payload_when_metadata_entry_exists() {
                 "name":"data",
                 "kind":"file",
                 "media_type":"text/csv",
+                "size_bytes": 17,
                 "sha256":"abc",
                 "path":"nodes/extract/outputs/data.csv"
             }]
@@ -67,6 +68,39 @@ fn artifact_inspect_reports_missing_payload_when_metadata_entry_exists() {
     let inspected = inspect_artifact(&run, "extract:data.csv").expect("inspect");
     assert_eq!(inspected["payload_missing"], true);
     assert!(inspected["size_bytes"].is_null());
+}
+
+#[test]
+fn artifact_inspect_reports_recorded_size_for_present_payload() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let run = tmp.path().join("run-1");
+    let payload = b"a,b\n1,2\n";
+    fs::create_dir_all(run.join("outputs")).expect("mkdir");
+    fs::create_dir_all(run.join("nodes/extract/outputs")).expect("mkdir node outputs");
+    write_manifest(&run);
+    fs::write(run.join("nodes/extract/outputs/data.csv"), payload).expect("write payload");
+
+    fs::write(
+        run.join("outputs/index.json"),
+        serde_json::to_vec_pretty(&json!({
+            "files":[{
+                "node_id":"extract",
+                "node_fingerprint":"fp",
+                "name":"data",
+                "kind":"file",
+                "media_type":"text/csv",
+                "size_bytes": payload.len(),
+                "sha256":"abc",
+                "path":"nodes/extract/outputs/data.csv"
+            }]
+        }))
+        .expect("index"),
+    )
+    .expect("write index");
+
+    let inspected = inspect_artifact(&run, "extract:data.csv").expect("inspect");
+    assert_eq!(inspected["payload_missing"], false);
+    assert_eq!(inspected["size_bytes"], payload.len());
 }
 
 #[test]
