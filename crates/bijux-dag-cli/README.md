@@ -19,9 +19,11 @@ bijux-dag --help
 The supported release boundary is the visible `bijux-dag --help` surface.
 That visible root surface stays intentionally concise for `v0.4.0`: validate,
 plan, run, replay, inspect-oriented routes, cache operations, doctor, version,
-and command discovery. Hidden experimental routes and hidden simulation or
-maintainer namespaces remain available by explicit path for repository-owned
-workflows, but they are not part of the stable public operator contract.
+and command discovery. Hidden experimental routes remain available by explicit
+path for repository-owned workflows. Hidden simulation and maintainer
+namespaces require explicit opt-in through `BIJUX_DAG_ENABLE_SIMULATED=1` or
+`BIJUX_DAG_ENABLE_INTERNAL=1`, and they are not part of the stable public
+operator contract.
 
 ## Deliberate boundaries
 

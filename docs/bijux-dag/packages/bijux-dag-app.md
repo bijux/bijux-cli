@@ -22,8 +22,10 @@ lane is opt-in behind `experimental-public-api`.
 
 This crate also houses hidden experimental operator routes plus hidden
 simulation and maintainer routes that stay in the repository for coverage and
-evidence work. Those paths are intentionally kept outside the visible
-`bijux-dag --help` release contract.
+evidence work. Experimental routes stay on explicit paths, while simulated and
+maintainer lanes require `BIJUX_DAG_ENABLE_SIMULATED=1` or
+`BIJUX_DAG_ENABLE_INTERNAL=1`. Those paths are intentionally kept outside the
+visible `bijux-dag --help` release contract.
 
 ## Responsibility Map
 

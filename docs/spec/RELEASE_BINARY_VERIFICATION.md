@@ -19,7 +19,9 @@ The command surfaces below are the minimum release proof contract.
 
 This is a maintainer release-gate recipe, not a public operator quickstart. It
 therefore includes one internal probe (`capabilities`) in addition to the
-stable operator commands from the `v0.4.0` release boundary.
+stable operator commands from the `v0.4.0` release boundary. That maintainer
+probe now requires `BIJUX_DAG_ENABLE_INTERNAL=1` so the release recipe matches
+the executable boundary enforced by the binary.
 
 ## Required Command Surface
 
@@ -27,7 +29,7 @@ stable operator commands from the `v0.4.0` release boundary.
 bijux --json doctor
 bijux --json cli paths
 bijux-dag version --json
-bijux-dag capabilities --json
+BIJUX_DAG_ENABLE_INTERNAL=1 bijux-dag capabilities --json
 bijux-dag validate --json evidence/authoring/examples/hello.dag.json
 bijux-dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}
 bijux-dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json

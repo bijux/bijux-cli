@@ -114,8 +114,9 @@ flowchart TD
 - affected command or API: hidden namespaces such as `control-plane`, `dataset`,
   `enterprise`, `fleet`, `federation`, `governance`, `incident`, and `lab`
 - limitation: these namespaces model distributed, organizational, or platform
-  behavior for evidence and contract coverage. They do not represent shipped
-  production runtime capabilities in `v0.4.0`.
+  behavior for evidence and contract coverage. They require
+  `BIJUX_DAG_ENABLE_SIMULATED=1` and do not represent shipped production
+  runtime capabilities in `v0.4.0`.
 - impact: operators must not treat these commands as proof that DAG currently
   ships a production scheduler, enterprise control plane, or distributed
   execution fabric.

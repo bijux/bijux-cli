@@ -18,8 +18,9 @@ binary-level integration rather than DAG semantics themselves.
 
 The supported operator contract is the visible `bijux-dag --help` surface.
 That visible root surface stays intentionally concise for `v0.4.0`. Hidden
-experimental routes, simulation namespaces, and maintainer namespaces remain
-executable by explicit path, but `bijux-dag-cli` does not advertise them as
+experimental routes remain executable by explicit path. Simulation namespaces
+and maintainer namespaces require `BIJUX_DAG_ENABLE_SIMULATED=1` or
+`BIJUX_DAG_ENABLE_INTERNAL=1`, and `bijux-dag-cli` does not advertise them as
 stable public behavior.
 
 ## Responsibility Map

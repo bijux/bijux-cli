@@ -22,8 +22,8 @@ The contract source for this page is
 | --- | --- | --- |
 | stable | supported visible `bijux-dag --help` surface for local DAG authoring, execution, replay, and evidence inspection | `validate`, `plan`, `run`, `replay`, `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`, `version`, `commands`, `completions` |
 | experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
-| simulated | modeled platform and control-plane namespaces, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `federation`, `incident`, `lab` |
-| internal | maintainer-only and contract-only routes outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
+| simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
+| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
 | future | not a `v0.4.0` product promise | kubernetes execution, slurm or hpc execution, remote workers, public enterprise or federation APIs, full scheduler service |
 
 ## Stable Capabilities
@@ -42,6 +42,8 @@ The stable `v0.4.0` release contract covers:
 - build operator procedures on the stable row only
 - use `bijux-dag commands --all` when you intentionally need repository-owned
   non-stable routes
+- set `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` only for
+  deliberate maintainer or contract workflows
 - do not treat simulated namespaces as production backends
 - do not describe future platform or scheduler work as already shipped
 

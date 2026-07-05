@@ -56,20 +56,21 @@
     ]
   },
   "simulated_surface": {
-    "summary": "modeled platform and control-plane namespaces, not production backends or services",
+    "summary": "modeled platform and control-plane namespaces that require BIJUX_DAG_ENABLE_SIMULATED=1, not production backends or services",
     "root_commands": [
       "control-plane",
       "state-store",
       "dataset",
       "enterprise",
       "fleet",
+      "governance",
       "federation",
       "incident",
       "lab"
     ]
   },
   "internal_surface": {
-    "summary": "maintainer-only and contract-only routes that stay outside the public operator boundary",
+    "summary": "maintainer-only and contract-only routes that require BIJUX_DAG_ENABLE_INTERNAL=1 and stay outside the public operator boundary",
     "root_commands": [
       "security",
       "durability",

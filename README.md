@@ -39,7 +39,7 @@ Current release line: **`v0.4.0`**.
 - `bijux-dag` now ships as five public Rust crates: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and `bijux-dag-cli`.
 - `bijux-dag-testkit` remains repository-internal test support and is not a crates.io publication target.
 - the supported DAG operator contract is the visible `bijux-dag --help` surface; hidden simulation and maintainer namespaces are intentionally excluded from the public release boundary.
-- the default `bijux-dag --help` surface is intentionally concise for `v0.4.0`; hidden experimental routes remain callable by explicit path but are not advertised as stable operator APIs.
+- the default `bijux-dag --help` surface is intentionally concise for `v0.4.0`; hidden experimental routes remain callable by explicit path, while simulated and internal lanes require explicit opt-in through `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`.
 - DAG runtime manifests, provenance, replay, and cache fingerprints stamp build
   identity from the compiled binary instead of discovering Git state at runtime.
 - GitHub Releases and GHCR now stage both public release families, including a stamped `bijux-dag` binary bundle.
@@ -51,8 +51,8 @@ Current release line: **`v0.4.0`**.
 | --- | --- | --- |
 | stable | supported visible `bijux-dag --help` surface for local DAG authoring, execution, replay, and evidence inspection | `validate`, `plan`, `run`, `replay`, `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`, `version`, `commands`, `completions` |
 | experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
-| simulated | modeled platform and control-plane namespaces, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `federation`, `incident`, `lab` |
-| internal | maintainer-only and contract-only routes outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
+| simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
+| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
 | future | not a `v0.4.0` product promise | kubernetes execution, slurm or hpc execution, remote workers, public enterprise or federation APIs, full scheduler service |
 
 The canonical DAG release-boundary contract lives in

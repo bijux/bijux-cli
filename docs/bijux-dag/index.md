@@ -21,10 +21,11 @@ resolved from build metadata. Changing the shell directory around the compiled
 binary is not supposed to rewrite DAG evidence identity.
 
 The public operator contract is the visible `bijux-dag --help` surface. That
-root help stays intentionally concise for `v0.4.0`. Hidden experimental,
-simulation, and maintainer namespaces remain in the repository for internal
-coverage and evidence work, but they are not presented as stable `v0.4.0`
-operator APIs.
+root help stays intentionally concise for `v0.4.0`. Hidden experimental routes
+remain available by explicit path. Simulated and maintainer namespaces remain
+in the repository for internal coverage and evidence work, but they now require
+`BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` and are not
+presented as stable `v0.4.0` operator APIs.
 
 ## v0.4.0 Surface Truth Table
 
@@ -32,8 +33,8 @@ operator APIs.
 | --- | --- | --- |
 | stable | supported visible `bijux-dag --help` surface for local DAG authoring, execution, replay, and evidence inspection | `validate`, `plan`, `run`, `replay`, `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`, `version`, `commands`, `completions` |
 | experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
-| simulated | modeled platform and control-plane namespaces, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `federation`, `incident`, `lab` |
-| internal | maintainer-only and contract-only routes outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
+| simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
+| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
 | future | not a `v0.4.0` product promise | kubernetes execution, slurm or hpc execution, remote workers, public enterprise or federation APIs, full scheduler service |
 
 For the canonical source, use

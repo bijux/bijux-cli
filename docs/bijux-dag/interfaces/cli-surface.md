@@ -18,9 +18,10 @@ the environment around it.
 
 For `v0.4.0`, the public CLI contract is the visible root help surface from
 `bijux-dag --help`. That surface is intentionally smaller than the full routed
-command tree. Hidden experimental, simulation, and maintainer routes remain
-callable by explicit path, but they are not part of the supported
-operator-facing release boundary.
+command tree. Hidden experimental routes remain callable by explicit path.
+Simulation and maintainer routes require explicit opt-in through
+`BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`. None of those
+lanes are part of the supported operator-facing release boundary.
 
 ## v0.4.0 Surface Truth Table
 
@@ -28,8 +29,8 @@ operator-facing release boundary.
 | --- | --- | --- |
 | stable | supported visible `bijux-dag --help` surface for local DAG authoring, execution, replay, and evidence inspection | `validate`, `plan`, `run`, `replay`, `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`, `version`, `commands`, `completions` |
 | experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
-| simulated | modeled platform and control-plane namespaces, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `federation`, `incident`, `lab` |
-| internal | maintainer-only and contract-only routes outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
+| simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
+| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
 | future | not a `v0.4.0` product promise | kubernetes execution, slurm or hpc execution, remote workers, public enterprise or federation APIs, full scheduler service |
 
 The canonical source for this table is
@@ -76,12 +77,14 @@ either widen the contract too far or still need stricter release posture:
 The following root namespaces are intentionally hidden from the public help
 surface in `v0.4.0`:
 
-- simulation and platform modeling: `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `federation`, `incident`, `lab`
+- simulation and platform modeling: `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab`
 - maintainer quality and release modeling: `security`, `durability`, `performance`, `release`, `runtime`, `schedule`
 - internal capability probes: `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof`
 
 These routes still exist for explicit maintainer workflows and contract tests.
-They can be inventoried with `bijux-dag commands --all`, but they are not
+They can be inventoried with `bijux-dag commands --all`, but execution now
+requires `BIJUX_DAG_ENABLE_SIMULATED=1` for modeled platform namespaces and
+`BIJUX_DAG_ENABLE_INTERNAL=1` for maintainer-only lanes. They are not
 presented as stable operator APIs. See `LIM-005`, `LIM-006`, `RISK-002`, and
 `RISK-009` in [Known Limitations](../quality/known-limitations.md) and
 [Risk Register](../quality/risk-register.md).

@@ -38,8 +38,8 @@ flowchart LR
 ### RISK-002 Simulated platform namespaces can be mistaken for shipped runtime capabilities
 
 - severity: `high`
-- affected component: hidden simulation namespaces such as `control-plane`, `dataset`, `enterprise`, `fleet`, `federation`, `governance`, `incident`, `lab`, `release`, `runtime`, `schedule`, `security`, and `state-store`
-- current status: `accepted-with-restriction`; these routes remain callable by explicit path but stay outside the default `bijux-dag --help` contract and are documented as modeled surfaces only
+- affected component: hidden simulated and maintainer namespaces such as `control-plane`, `dataset`, `enterprise`, `fleet`, `federation`, `governance`, `incident`, `lab`, `release`, `runtime`, `schedule`, `security`, and `state-store`
+- current status: `accepted-with-restriction`; these routes require explicit opt-in through `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`, stay outside the default `bijux-dag --help` contract, and are documented as modeled or maintainer-only surfaces
 - risk: operators may assume DAG already ships a production control plane, enterprise orchestration layer, distributed scheduler, or security platform because simulation routes exist in the binary
 - mitigation: keep simulated namespaces off the default help surface, keep limitation records explicit, and require future promotion work to add real backend semantics, tests, and compatibility commitments before any route is treated as public
 - release decision: do not treat simulated namespaces as stable `v0.4.0` runtime capabilities; promotion requires a later release decision backed by new evidence
