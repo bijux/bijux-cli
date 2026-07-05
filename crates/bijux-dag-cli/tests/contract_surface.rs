@@ -112,6 +112,85 @@ fn write_temp_dag_fragments() -> (tempfile::TempDir, String, String) {
     (dir, foundation.to_string_lossy().into_owned(), publication.to_string_lossy().into_owned())
 }
 
+fn write_invalid_validation_dags() -> (tempfile::TempDir, String, String) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let missing_input = dir.path().join("missing-input.json");
+    let invalid_workdir = dir.path().join("invalid-workdir.json");
+    std::fs::write(
+        &missing_input,
+        r#"{
+  "spec": "bijux-dag/v0.1",
+  "meta": {"name":"missing-input-binding","owners":[],"tags":[]},
+  "nodes": [
+    {
+      "id": "emit",
+      "kind": "const",
+      "outputs": [
+        {
+          "name": "value",
+          "path": "emit/value.json"
+        }
+      ],
+      "params": {
+        "value": "seed"
+      }
+    },
+    {
+      "id": "consume",
+      "kind": "const",
+      "inputs": ["payload"],
+      "outputs": [
+        {
+          "name": "result",
+          "path": "consume/result.json"
+        }
+      ],
+      "params": {
+        "value": 1
+      }
+    }
+  ],
+  "edges": []
+}
+"#,
+    )
+    .expect("write missing input");
+    std::fs::write(
+        &invalid_workdir,
+        r#"{
+  "spec": "bijux-dag/v0.1",
+  "meta": {"name":"invalid-container-workdir","owners":[],"tags":[]},
+  "nodes": [
+    {
+      "id": "publish",
+      "kind": "container",
+      "outputs": [
+        {
+          "name": "result",
+          "path": "publish/result.txt"
+        }
+      ],
+      "container": {
+        "image": "alpine:3.20",
+        "argv": ["sh", "-c", "echo ok > result.txt"],
+        "engine": "docker",
+        "workdir": "{work_dir}/../escape"
+      },
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": []
+}
+"#,
+    )
+    .expect("write invalid workdir");
+    (
+        dir,
+        missing_input.to_string_lossy().into_owned(),
+        invalid_workdir.to_string_lossy().into_owned(),
+    )
+}
+
 fn run_simple_dag_json() -> (tempfile::TempDir, String, serde_json::Value) {
     let dag = write_temp_dag();
     let out_dir = tempfile::tempdir().expect("run out");
@@ -165,6 +244,43 @@ fn dag_validate_accepts_composed_graph_fragments() {
     let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("validate json");
     assert_eq!(payload["command"], "dag.validate");
     assert!(payload["status"].as_str().is_some());
+}
+
+#[test]
+fn dag_validate_json_reports_missing_required_input_binding() {
+    let (_dir, missing_input, _invalid_workdir) = write_invalid_validation_dags();
+    let output = dag_command()
+        .args(["validate", &missing_input, "--json"])
+        .output()
+        .expect("validate missing input");
+
+    assert!(!output.status.success());
+    let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("validate json");
+    assert_eq!(payload["command"], "dag.validate");
+    assert_eq!(payload["ok"], false);
+    assert!(payload["diagnostics"].as_array().unwrap().iter().any(|diagnostic| {
+        diagnostic["code"] == "E1005"
+            && diagnostic["message"] == "missing required input binding: consume.payload"
+    }));
+}
+
+#[test]
+fn dag_validate_json_reports_invalid_container_workdir_path() {
+    let (_dir, _missing_input, invalid_workdir) = write_invalid_validation_dags();
+    let output = dag_command()
+        .args(["validate", &invalid_workdir, "--json"])
+        .output()
+        .expect("validate invalid workdir");
+
+    assert!(!output.status.success());
+    let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("validate json");
+    assert_eq!(payload["command"], "dag.validate");
+    assert_eq!(payload["ok"], false);
+    assert!(payload["diagnostics"].as_array().unwrap().iter().any(|diagnostic| {
+        diagnostic["code"] == "E1025"
+            && diagnostic["path"] == "/nodes/publish/container/workdir"
+            && diagnostic["message"] == "invalid path variable suffix: ../escape"
+    }));
 }
 
 #[test]
