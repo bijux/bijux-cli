@@ -96,9 +96,9 @@ pub mod stable {
     pub use crate::{
         compact_lineage, dedup_metrics_for_hashes, explain_lineage_safe_gc, lineage_dependencies,
         lineage_dependents, normalize_metadata_pairs, sha256_artifact_path, sha256_hex,
-        validate_output_schema_descriptor, verify_run_dir, write_lineage_snapshot,
-        write_outputs_index, ArtifactError, ArtifactId, ArtifactIntegrityProof,
-        ArtifactLineageEdge, ArtifactLineageSnapshot, ArtifactPackManifest,
+        validate_output_schema_descriptor, verify_run_dir, write_inputs_index,
+        write_lineage_snapshot, write_outputs_index, ArtifactError, ArtifactId,
+        ArtifactIntegrityProof, ArtifactLineageEdge, ArtifactLineageSnapshot, ArtifactPackManifest,
         ArtifactSchemaDescriptor, CorruptionDetectionResult, CorruptionRepairPolicy,
         RetentionPolicy, RunArtifactStore, RunArtifactVerifier, RunDir, SchemaValidationMode,
     };
@@ -108,7 +108,8 @@ pub mod stable {
 pub mod prelude {
     pub use crate::stable::{
         sha256_artifact_path, sha256_hex, validate_output_schema_descriptor, verify_run_dir,
-        write_outputs_index, ArtifactError, ArtifactSchemaDescriptor, RunDir, SchemaValidationMode,
+        write_inputs_index, write_outputs_index, ArtifactError, ArtifactSchemaDescriptor, RunDir,
+        SchemaValidationMode,
     };
 }
 

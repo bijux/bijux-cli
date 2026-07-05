@@ -58,6 +58,7 @@ fn canonical_artifact_identity_is_stable_and_explainable() {
 fn run_dir_schema_index_defaults_cover_root_and_node_requirements() {
     let schema = RunDirSchemaIndex::default();
     assert_eq!(schema.schema_version, "run-dir-schema/v0.1");
+    assert_eq!(schema.inputs_index_schema, "configs/dag/schema/inputs_index.schema.json");
     assert!(schema.required_root_files.contains(&"run.schema.json".to_string()));
     assert!(schema.required_root_files.contains(&"manifest.json".to_string()));
     assert!(schema.required_node_files.contains(&"trace.json".to_string()));

@@ -1,11 +1,11 @@
 use bijux_dag_artifacts::prelude::{
-    sha256_hex, validate_output_schema_descriptor, write_outputs_index, ArtifactSchemaDescriptor,
-    RunDir, SchemaValidationMode,
+    sha256_hex, validate_output_schema_descriptor, write_inputs_index, write_outputs_index,
+    ArtifactSchemaDescriptor, RunDir, SchemaValidationMode,
 };
 use bijux_dag_artifacts::stable::{
     lineage_dependencies, ArtifactLineageEdge, ArtifactLineageSnapshot,
 };
-use bijux_dag_artifacts::DeclaredOutputArtifact;
+use bijux_dag_artifacts::{DeclaredOutputArtifact, InputFile, InputsIndex};
 use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
@@ -20,6 +20,21 @@ fn prelude_covers_artifact_write_and_validation_flow() {
 
     let run_dir = RunDir::create_with_id(dir.path(), "api-surface").expect("run dir");
     assert!(run_dir.final_path().ends_with("run-api-surface"));
+
+    write_inputs_index(
+        dir.path(),
+        &InputsIndex {
+            files: vec![InputFile {
+                local_path: "producer/input".to_string(),
+                source_sha256: sha256_hex(b"payload"),
+                source_node_id: "producer".to_string(),
+                source_node_fingerprint: "fp-upstream".to_string(),
+                source_output_name: "out".to_string(),
+                materialization_mode: "copy".to_string(),
+            }],
+        },
+    )
+    .expect("inputs index");
 
     write_outputs_index(
         dir.path(),

@@ -113,6 +113,7 @@ pub struct RunDirSchemaIndex {
     pub manifest_version: String,
     pub manifest_schema: String,
     pub node_trace_schema: String,
+    pub inputs_index_schema: String,
     pub outputs_index_schema: String,
     pub lineage_schema_version: String,
     pub timeline_schema_version: String,
@@ -129,6 +130,7 @@ impl Default for RunDirSchemaIndex {
             manifest_version: default_manifest_version(),
             manifest_schema: "configs/dag/schema/run_manifest.schema.json".to_string(),
             node_trace_schema: "configs/dag/schema/node_trace.schema.json".to_string(),
+            inputs_index_schema: "configs/dag/schema/inputs_index.schema.json".to_string(),
             outputs_index_schema: "configs/dag/schema/outputs_index.schema.json".to_string(),
             lineage_schema_version: "lineage/v0.1".to_string(),
             timeline_schema_version: "v0.1".to_string(),
@@ -350,11 +352,18 @@ pub struct InputsIndex {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct InputFile {
-    pub path: String,
-    pub sha256: String,
-    pub from_node: String,
-    pub from_node_fingerprint: String,
-    pub from_output: String,
+    #[serde(alias = "path")]
+    pub local_path: String,
+    #[serde(alias = "sha256")]
+    pub source_sha256: String,
+    #[serde(alias = "from_node")]
+    pub source_node_id: String,
+    #[serde(alias = "from_node_fingerprint")]
+    pub source_node_fingerprint: String,
+    #[serde(alias = "from_output")]
+    pub source_output_name: String,
+    #[serde(default = "default_input_materialization_mode")]
+    pub materialization_mode: String,
 }
 
 fn default_manifest_version() -> String {
@@ -363,4 +372,8 @@ fn default_manifest_version() -> String {
 
 fn default_planner_contract_version() -> String {
     "bijux-dag-planner/v1".to_string()
+}
+
+fn default_input_materialization_mode() -> String {
+    "unknown".to_string()
 }
