@@ -201,6 +201,14 @@ pub(crate) enum Commands {
     #[command(name = "explain-plan", alias = "show-effective-plan")]
     ExplainPlan {
         dag: PathBuf,
+        #[arg(long)]
+        out: Option<PathBuf>,
+        #[arg(long)]
+        run_id: Option<String>,
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+        #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
+        absolute_path_policy: AbsolutePathPolicyArg,
     },
     Plan {
         #[command(subcommand)]
@@ -256,6 +264,8 @@ pub(crate) enum Commands {
         cache_dir: Option<PathBuf>,
         #[arg(long)]
         remote_cache_dir: Option<PathBuf>,
+        #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
+        absolute_path_policy: AbsolutePathPolicyArg,
         #[arg(long)]
         preflight_only: bool,
         #[arg(long)]
@@ -483,6 +493,14 @@ pub(crate) enum HashCommands {
 pub(crate) enum PlanCommands {
     Explain {
         dag: PathBuf,
+        #[arg(long)]
+        out: Option<PathBuf>,
+        #[arg(long)]
+        run_id: Option<String>,
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+        #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
+        absolute_path_policy: AbsolutePathPolicyArg,
     },
     Diagnostics {
         dag: PathBuf,
@@ -1336,4 +1354,10 @@ pub(crate) enum DiffModeArg {
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 pub(crate) enum GraphFormatArg {
     Dot,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub(crate) enum AbsolutePathPolicyArg {
+    AllowLiteral,
+    DenyLiteral,
 }

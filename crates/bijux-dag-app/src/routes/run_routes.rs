@@ -1,5 +1,7 @@
-use crate::commands::{CacheModeArg, DagCli, MaterializeModeArg};
-use crate::routes::plan_routes::{concise_plan_lines, plan_explain_payload};
+use crate::commands::{AbsolutePathPolicyArg, CacheModeArg, DagCli, MaterializeModeArg};
+use crate::routes::plan_routes::{
+    concise_plan_lines, plan_explain_payload, resolve_plan_preview_layout,
+};
 use crate::routes::policy_surface::policy_surface_payload;
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::run_data::map_materialize_mode;
@@ -35,6 +37,7 @@ pub(crate) struct RunRouteRequest<'a> {
     pub cache: CacheModeArg,
     pub cache_dir: Option<PathBuf>,
     pub remote_cache_dir: Option<PathBuf>,
+    pub absolute_path_policy: AbsolutePathPolicyArg,
     pub preflight_only: bool,
     pub explain_scheduling: bool,
 }
@@ -90,6 +93,8 @@ pub(crate) fn handle_run_command(
     let selectors = parse_selectors(req.select, req.exclude)?;
     let cache_dir = req.cache_dir.clone();
     let remote_cache_dir = req.remote_cache_dir.clone();
+    let preview_layout = resolve_plan_preview_layout(Some(req.out), req.run_id.as_deref())?;
+    let absolute_path_policy = req.absolute_path_policy.into();
     let options = RuntimeConfig {
         jobs: req.jobs,
         cpu_budget: req.cpu_budget,
@@ -103,7 +108,9 @@ pub(crate) fn handle_run_command(
         },
         cache_dir: cache_dir.clone(),
         remote_cache_dir,
-        run_id: req.run_id,
+        run_root: Some(req.out.to_path_buf()),
+        absolute_path_policy,
+        run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
         latest_symlink: req.latest,
         policy: bijux_dag_runtime::PolicyConfig { deny_network, deny_env, deny_clock, clean_env },
         selectors,
@@ -127,6 +134,7 @@ pub(crate) fn handle_run_command(
             "dag": req.dag,
             "adapters": registered_adapters(),
             "cache": cache_preflight(req.cache, &cache_dir),
+            "run_layout": preview_layout,
             "policy": {
                 "deny_network": options.policy.deny_network,
                 "deny_env": options.policy.deny_env,
@@ -140,7 +148,15 @@ pub(crate) fn handle_run_command(
                 "include": req.select,
                 "exclude": req.exclude,
             },
-            "scheduling": scheduling.as_ref().map(plan_explain_payload),
+            "scheduling": scheduling
+                .as_ref()
+                .map(|result| {
+                    plan_explain_payload(
+                        result,
+                        preview_layout.as_ref(),
+                        absolute_path_policy,
+                    )
+                }),
         });
         if cli.json {
             return emit_json(
@@ -164,7 +180,16 @@ pub(crate) fn handle_run_command(
             true,
             json!({
                 "run_dir": run_path,
-                "scheduling": scheduling.as_ref().map(plan_explain_payload),
+                "run_layout": preview_layout,
+                "scheduling": scheduling
+                    .as_ref()
+                    .map(|result| {
+                        plan_explain_payload(
+                            result,
+                            preview_layout.as_ref(),
+                            absolute_path_policy,
+                        )
+                    }),
             }),
             Vec::new(),
             ExitCode::SUCCESS,

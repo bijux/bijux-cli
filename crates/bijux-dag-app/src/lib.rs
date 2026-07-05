@@ -521,12 +521,24 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", serde_json::to_string_pretty(&payload).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        Commands::ExplainPlan { dag } => {
+        Commands::ExplainPlan { dag, out, run_id, cache_dir, absolute_path_policy } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let analysis = routes::plan_routes::build_default_planner_analysis(&graph)
+            let preview_layout =
+                routes::plan_routes::resolve_plan_preview_layout(out.as_deref(), run_id.as_deref())?;
+            let preview = routes::plan_routes::PlanPreviewConfig {
+                run_root: out.clone(),
+                run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
+                cache_dir: cache_dir.clone(),
+                absolute_path_policy: (*absolute_path_policy).into(),
+            };
+            let analysis = routes::plan_routes::build_default_planner_analysis(&graph, &preview)
                 .map_err(|_| ExitCode::from(3))?;
-            let payload = routes::plan_routes::plan_explain_payload(&analysis);
+            let payload = routes::plan_routes::plan_explain_payload(
+                &analysis,
+                preview_layout.as_ref(),
+                preview.absolute_path_policy,
+            );
             if cli.json {
                 return emit_json(
                     &cli,
@@ -701,6 +713,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             cache,
             cache_dir,
             remote_cache_dir,
+            absolute_path_policy,
             preflight_only,
             explain_scheduling,
         } => routes::run_routes::handle_run_command(
@@ -727,6 +740,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 cache: *cache,
                 cache_dir: cache_dir.clone(),
                 remote_cache_dir: remote_cache_dir.clone(),
+                absolute_path_policy: *absolute_path_policy,
                 preflight_only: *preflight_only,
                 explain_scheduling: *explain_scheduling,
             },

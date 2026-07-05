@@ -1,19 +1,59 @@
-use crate::commands::{DagCli, PlanCommands};
+use crate::commands::{AbsolutePathPolicyArg, DagCli, PlanCommands};
+use crate::routes::preconditions::require_safe_path;
 use crate::{emit_json, parse_graph, read_file, ExitCode};
+use bijux_dag_artifacts::RunDirLayout;
 use bijux_dag_runtime::{
     build_backfill_plan, build_planner_analysis, compute_partial_run_closure, diff_plans,
-    explain_plan, PlannerBuildResult, PlannerGuardrails, RuntimeConfig,
+    explain_plan, AbsolutePathPolicy, PlannerBuildResult, PlannerGuardrails, RuntimeConfig,
 };
 use serde_json::json;
+use std::path::{Path, PathBuf};
 
-pub(crate) fn default_analysis_runtime_config() -> RuntimeConfig {
-    RuntimeConfig::default()
+#[derive(Debug, Clone, Default)]
+pub(crate) struct PlanPreviewConfig {
+    pub run_root: Option<PathBuf>,
+    pub run_id: Option<String>,
+    pub cache_dir: Option<PathBuf>,
+    pub absolute_path_policy: AbsolutePathPolicy,
+}
+
+impl From<AbsolutePathPolicyArg> for AbsolutePathPolicy {
+    fn from(value: AbsolutePathPolicyArg) -> Self {
+        match value {
+            AbsolutePathPolicyArg::AllowLiteral => Self::AllowLiteral,
+            AbsolutePathPolicyArg::DenyLiteral => Self::DenyLiteral,
+        }
+    }
+}
+
+pub(crate) fn default_analysis_runtime_config(preview: &PlanPreviewConfig) -> RuntimeConfig {
+    RuntimeConfig {
+        run_root: preview.run_root.clone(),
+        run_id: preview.run_id.clone(),
+        cache_dir: preview.cache_dir.clone(),
+        absolute_path_policy: preview.absolute_path_policy,
+        ..RuntimeConfig::default()
+    }
+}
+
+pub(crate) fn resolve_plan_preview_layout(
+    run_root: Option<&Path>,
+    run_id: Option<&str>,
+) -> Result<Option<RunDirLayout>, ExitCode> {
+    let Some(run_root) = run_root else {
+        return Ok(None);
+    };
+    require_safe_path(run_root)?;
+    RunDirLayout::preview(run_root, run_id)
+        .map(Some)
+        .map_err(|_| ExitCode::from(2))
 }
 
 pub(crate) fn build_default_planner_analysis(
     graph: &bijux_dag_core::Graph,
+    preview: &PlanPreviewConfig,
 ) -> Result<PlannerBuildResult, String> {
-    let config = default_analysis_runtime_config();
+    let config = default_analysis_runtime_config(preview);
     build_planner_analysis(
         graph,
         &config,
@@ -40,11 +80,17 @@ pub(crate) fn concise_plan_lines(result: &PlannerBuildResult) -> Vec<String> {
         .collect()
 }
 
-pub(crate) fn plan_explain_payload(result: &PlannerBuildResult) -> serde_json::Value {
+pub(crate) fn plan_explain_payload(
+    result: &PlannerBuildResult,
+    preview_layout: Option<&RunDirLayout>,
+    absolute_path_policy: AbsolutePathPolicy,
+) -> serde_json::Value {
     let report = explain_plan(result);
     json!({
         "planner_contract_version": result.plan.planner_contract_version,
         "plan_fingerprint": report.plan_fingerprint,
+        "run_layout": preview_layout,
+        "absolute_path_policy": absolute_path_policy,
         "phases": report.phases,
         "ordering": result.plan.order,
         "resource_estimate": result.resource_estimate,
@@ -55,6 +101,7 @@ pub(crate) fn plan_explain_payload(result: &PlannerBuildResult) -> serde_json::V
         "planned_edges": result.plan.planned_dependencies,
         "branch_paths": result.plan.branch_paths,
         "diagnostics": result.plan.diagnostics,
+        "path_previews": result.path_previews,
     })
 }
 
@@ -63,17 +110,29 @@ pub(crate) fn handle_plan_command(
     command: &PlanCommands,
 ) -> Result<ExitCode, ExitCode> {
     match command {
-        PlanCommands::Explain { dag } => {
+        PlanCommands::Explain { dag, out, run_id, cache_dir, absolute_path_policy } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let result = build_default_planner_analysis(&graph).map_err(|_| ExitCode::from(3))?;
+            let preview_layout = resolve_plan_preview_layout(out.as_deref(), run_id.as_deref())?;
+            let preview = PlanPreviewConfig {
+                run_root: out.clone(),
+                run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
+                cache_dir: cache_dir.clone(),
+                absolute_path_policy: (*absolute_path_policy).into(),
+            };
+            let result =
+                build_default_planner_analysis(&graph, &preview).map_err(|_| ExitCode::from(3))?;
             let lines = concise_plan_lines(&result);
             if cli.json {
                 return emit_json(
                     cli,
                     "dag.plan.explain",
                     true,
-                    plan_explain_payload(&result),
+                    plan_explain_payload(
+                        &result,
+                        preview_layout.as_ref(),
+                        preview.absolute_path_policy,
+                    ),
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
@@ -86,7 +145,7 @@ pub(crate) fn handle_plan_command(
         PlanCommands::Diagnostics { dag } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            match build_default_planner_analysis(&graph) {
+            match build_default_planner_analysis(&graph, &PlanPreviewConfig::default()) {
                 Ok(result) => {
                     let payload = serde_json::to_value(&result.plan.diagnostics)
                         .map_err(|_| ExitCode::from(3))?;
@@ -139,13 +198,17 @@ pub(crate) fn handle_plan_command(
         PlanCommands::Diff { before, after } => {
             let before_input = read_file(before)?;
             let before_graph = parse_graph(&before_input)?;
-            let before_result =
-                build_default_planner_analysis(&before_graph).map_err(|_| ExitCode::from(3))?;
+            let before_result = build_default_planner_analysis(
+                &before_graph,
+                &PlanPreviewConfig::default(),
+            )
+            .map_err(|_| ExitCode::from(3))?;
 
             let after_input = read_file(after)?;
             let after_graph = parse_graph(&after_input)?;
             let after_result =
-                build_default_planner_analysis(&after_graph).map_err(|_| ExitCode::from(3))?;
+                build_default_planner_analysis(&after_graph, &PlanPreviewConfig::default())
+                    .map_err(|_| ExitCode::from(3))?;
 
             let diff = diff_plans(&before_result, &after_result);
             let changed = !diff.changed_order_nodes.is_empty()
@@ -189,7 +252,8 @@ pub(crate) fn handle_plan_command(
             }
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let result = build_default_planner_analysis(&graph).map_err(|_| ExitCode::from(3))?;
+            let result = build_default_planner_analysis(&graph, &PlanPreviewConfig::default())
+                .map_err(|_| ExitCode::from(3))?;
             let closure =
                 compute_partial_run_closure(&result.plan, select).into_iter().collect::<Vec<_>>();
             if cli.json {
