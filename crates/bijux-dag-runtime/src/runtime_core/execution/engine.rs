@@ -1,6 +1,5 @@
 use crate::{
-    build_run_outputs_index, cache_dir_from_env, cache_mode_string,
-    bind_path_variables_in_value,
+    bind_path_variables_in_value, build_run_outputs_index, cache_dir_from_env, cache_mode_string,
     category_from_runtime_event_name, collect_outputs_summary, current_process_memory_bytes,
     node_fingerprint_from_ctx, node_fingerprint_with_inputs, registered_adapters, sacred_execution,
     set_node_fingerprint, summarize_failure_root_causes, write_timeline_export, CacheProof,
@@ -22,12 +21,11 @@ mod engine_record;
 use bijux_dag_artifacts::{
     finalize_run_manifest, write_incomplete_run_marker, write_provenance, write_run_outputs_index,
     write_run_schema_index, FailureInfo, Manifest, NodeCounts, Provenance, ReplayProvenance,
-    RunDir, RunDirLayout, RunDirSchemaIndex, RunMetadata, TriggerEvaluation,
-    TriggerParentStatus,
+    RunDir, RunDirLayout, RunDirSchemaIndex, RunMetadata, TriggerEvaluation, TriggerParentStatus,
 };
 use bijux_dag_core::{
-    evaluate_trigger_rule, Effect, Graph, Node, NodeKind, SemanticNodeKind, SPEC_VERSION,
-    TriggerRule, UpstreamTerminalOutcome,
+    evaluate_trigger_rule, Effect, Graph, Node, NodeKind, SemanticNodeKind, TriggerRule,
+    UpstreamTerminalOutcome, SPEC_VERSION,
 };
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -180,12 +178,13 @@ fn replayed_branch_decisions(
                 node.id, error
             ))
         })?;
-        let trace: bijux_dag_artifacts::NodeTrace = serde_json::from_str(&raw).map_err(|error| {
-            RuntimeError::Executor(format!(
-                "failed to parse parent branch trace for {}: {}",
-                node.id, error
-            ))
-        })?;
+        let trace: bijux_dag_artifacts::NodeTrace =
+            serde_json::from_str(&raw).map_err(|error| {
+                RuntimeError::Executor(format!(
+                    "failed to parse parent branch trace for {}: {}",
+                    node.id, error
+                ))
+            })?;
         let Some(decision) = trace.branch_decision else {
             continue;
         };
@@ -249,7 +248,12 @@ mod tests {
         .expect("graph")
     }
 
-    fn write_parent_branch_trace(out_dir: &std::path::Path, run_id: &str, node_id: &str, decision: &str) {
+    fn write_parent_branch_trace(
+        out_dir: &std::path::Path,
+        run_id: &str,
+        node_id: &str,
+        decision: &str,
+    ) {
         let layout = RunDirLayout::preview(out_dir, Some(run_id)).expect("parent layout");
         let node_dir = layout.final_path.join("nodes").join(node_id);
         fs::create_dir_all(&node_dir).expect("create parent node dir");
@@ -279,8 +283,9 @@ mod tests {
         let out_dir = tempfile::tempdir().expect("tempdir");
         write_parent_branch_trace(out_dir.path(), "run-parent", "decide", "left");
 
-        let decisions = replayed_branch_decisions(&StdFs, out_dir.path(), "run-parent", &plan, &graph)
-            .expect("replayed branch decisions");
+        let decisions =
+            replayed_branch_decisions(&StdFs, out_dir.path(), "run-parent", &plan, &graph)
+                .expect("replayed branch decisions");
 
         assert_eq!(decisions, vec![("decide".to_string(), "left".to_string())]);
     }
@@ -320,7 +325,8 @@ mod tests {
 }
 
 fn partial_rerun_selected(options: &RuntimeConfig) -> bool {
-    options.parent_run_id.is_some() && !options.selectors.include.is_empty()
+    options.parent_run_id.is_some()
+        && (!options.selectors.include.is_empty() || !options.downstream_selection_roots.is_empty())
 }
 
 fn selector_matches(node: &Node, selector: &crate::Selector) -> bool {
@@ -346,7 +352,14 @@ fn selected_rerun_targets(graph: &Graph, options: &RuntimeConfig) -> Vec<String>
         })
         .map(|node| node.id.clone())
         .collect::<Vec<_>>();
+    if !options.downstream_selection_roots.is_empty() {
+        selected.extend(
+            crate::compute_downstream_run_closure(graph, &options.downstream_selection_roots)
+                .into_iter(),
+        );
+    }
     selected.sort();
+    selected.dedup();
     selected
 }
 
@@ -388,10 +401,7 @@ fn trigger_evaluation_for_dependencies(
     dependencies: &[String],
     parent_statuses: &[NodeStatus],
 ) -> TriggerEvaluation {
-    let parent_outcomes = parent_statuses
-        .iter()
-        .map(upstream_terminal_outcome)
-        .collect::<Vec<_>>();
+    let parent_outcomes = parent_statuses.iter().map(upstream_terminal_outcome).collect::<Vec<_>>();
     let evaluation = evaluate_trigger_rule(&node.trigger_rule, &parent_outcomes);
     let parent_statuses = dependencies
         .iter()
@@ -414,7 +424,10 @@ fn dependency_trigger_failure(node: &Node, trigger_evaluation: &TriggerEvaluatio
     FailureInfo {
         kind: "Dependency".to_string(),
         code: "UPSTREAM_FAILED".to_string(),
-        message: format!("upstream dependencies did not satisfy trigger rule {:?}", node.trigger_rule),
+        message: format!(
+            "upstream dependencies did not satisfy trigger rule {:?}",
+            node.trigger_rule
+        ),
         details: Some(serde_json::json!({
             "parent_statuses": trigger_evaluation.parent_statuses,
             "trigger_rule": trigger_evaluation.trigger_rule,
@@ -685,18 +698,21 @@ pub fn execute(
         let params = resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
         let base_fp = graph.node_fingerprint_with_params(node, &params)?;
         let env_allowlist = crate::effective_env_allowlist(node);
-        let declared_env =
-            crate::declared_environment(&ambient_env, options.policy.clean_env, &env_allowlist, &[]);
-        let env_fp = crate::sha256_bytes(&serde_json::to_vec(&declared_env)?);
-        base_fps.insert(
-            node.id.clone(),
-            crate::sha256_bytes(format!("{base_fp}:{env_fp}").as_bytes()),
+        let declared_env = crate::declared_environment(
+            &ambient_env,
+            options.policy.clean_env,
+            &env_allowlist,
+            &[],
         );
+        let env_fp = crate::sha256_bytes(&serde_json::to_vec(&declared_env)?);
+        base_fps
+            .insert(node.id.clone(), crate::sha256_bytes(format!("{base_fp}:{env_fp}").as_bytes()));
     }
     let mut resolved_params = HashMap::new();
     for node in &graph.nodes {
         let params = resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
-        let bindings = NodePathBindings::for_host(&layout, &node.id, effective_cache_dir.as_deref());
+        let bindings =
+            NodePathBindings::for_host(&layout, &node.id, effective_cache_dir.as_deref());
         resolved_params.insert(
             node.id.clone(),
             bind_path_variables_in_value(&params, &bindings).map_err(RuntimeError::Executor)?,
@@ -724,13 +740,22 @@ pub fn execute(
         .map(|selector| crate::requested_selector_label("include", selector))
         .chain(
             options
+                .downstream_selection_roots
+                .iter()
+                .map(|node_id| crate::requested_downstream_root_label(node_id)),
+        )
+        .chain(
+            options
                 .selectors
                 .exclude
                 .iter()
                 .map(|selector| crate::requested_selector_label("exclude", selector)),
         )
         .collect();
-    if partial_rerun_selected(&options) && !options.partial_rerun_dependency_closure {
+    if partial_rerun_selected(&options)
+        && options.downstream_selection_roots.is_empty()
+        && !options.partial_rerun_dependency_closure
+    {
         return Err(RuntimeError::Executor(
             "partial rerun requires dependency closure to prevent stale downstream reuse"
                 .to_string(),
@@ -912,8 +937,13 @@ pub fn execute(
         let mut skipped: Vec<(String, String)> = Vec::new();
         let mut cached: Vec<(String, Node, CacheProof)> = Vec::new();
         let mut to_start: Vec<(String, Node, Value)> = Vec::new();
-        let mut preflight_failures: Vec<(String, Node, FailureInfo, String, Option<TriggerEvaluation>)> =
-            Vec::new();
+        let mut preflight_failures: Vec<(
+            String,
+            Node,
+            FailureInfo,
+            String,
+            Option<TriggerEvaluation>,
+        )> = Vec::new();
         let mut trigger_evaluations = HashMap::<String, TriggerEvaluation>::new();
 
         for node_id in &batch {

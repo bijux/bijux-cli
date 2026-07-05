@@ -134,14 +134,14 @@ mod observability_deep;
 mod operations_governance;
 #[path = "artifacts/storage/path_authorization.rs"]
 mod path_authorization;
+#[path = "runtime_core/planning/path_resolution.rs"]
+mod path_resolution;
 #[path = "internal/perf/performance_capacity.rs"]
 mod performance_capacity;
 #[path = "runtime_core/planning/planner.rs"]
 mod planner;
 #[path = "runtime_core/planning/planner_analysis.rs"]
 mod planner_analysis;
-#[path = "runtime_core/planning/path_resolution.rs"]
-mod path_resolution;
 #[doc(hidden)]
 pub mod policy;
 #[path = "artifacts/storage/recovery.rs"]
@@ -376,10 +376,10 @@ pub use performance_capacity::{
 pub use planner::build_plan;
 pub use planner_analysis::{
     build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
-    compute_partial_run_closure, diff_plans, explain_plan, fingerprint_plan, PlannerBackfillPlan,
-    PlannerBuildResult, PlannerExplainReport, PlannerGuardrails, PlannerNodeAction,
-    PlannerNodeAnnotation, PlannerNodePathPreview, PlannerPhase, PlannerPlanDiff,
-    PlannerPriorityInheritance, PlannerResourceEstimate,
+    compute_downstream_run_closure, compute_partial_run_closure, diff_plans, explain_plan,
+    fingerprint_plan, PlannerBackfillPlan, PlannerBuildResult, PlannerExplainReport,
+    PlannerGuardrails, PlannerNodeAction, PlannerNodeAnnotation, PlannerNodePathPreview,
+    PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance, PlannerResourceEstimate,
 };
 pub use policy::policy_allows_effects;
 pub use recovery::{
@@ -941,16 +941,18 @@ impl Adapter for ContainerAdapter {
         }
 
         cmd.arg(&spec.image);
-        let stable_argv =
-            bijux_dag_core::resolve::resolve_command_argv_templates(graph, node, &spec.argv, params)
-                .map_err(|error| RuntimeError::Executor(error.to_string()))?;
+        let stable_argv = bijux_dag_core::resolve::resolve_command_argv_templates(
+            graph, node, &spec.argv, params,
+        )
+        .map_err(|error| RuntimeError::Executor(error.to_string()))?;
         for part in &resolve_container_argv(&stable_argv, &container_bindings)
             .map_err(RuntimeError::Executor)?
         {
             cmd.arg(part);
         }
 
-        let output = command_output_with_timeout(&mut cmd, effective_node_timeout_ms(node, params))?;
+        let output =
+            command_output_with_timeout(&mut cmd, effective_node_timeout_ms(node, params))?;
         let exit_code = output.status.code();
 
         exec.fs.write(&stdout_path, &output.stdout)?;
@@ -1048,6 +1050,7 @@ pub struct RuntimeConfig {
     pub latest_symlink: Option<PathBuf>,
     pub policy: PolicyConfig,
     pub selectors: SelectorSet,
+    pub downstream_selection_roots: Vec<String>,
     pub partial_rerun_dependency_closure: bool,
     pub scheduler_policy: SchedulerPolicy,
     pub failure_propagation: FailurePropagationMode,
@@ -1075,6 +1078,7 @@ impl Default for RuntimeConfig {
             latest_symlink: None,
             policy: PolicyConfig::default(),
             selectors: SelectorSet::default(),
+            downstream_selection_roots: Vec::new(),
             partial_rerun_dependency_closure: true,
             scheduler_policy: SchedulerPolicy::default(),
             failure_propagation: FailurePropagationMode::IsolateBranch,
@@ -1516,6 +1520,10 @@ pub(crate) fn requested_selector_label(scope: &str, selector: &Selector) -> Stri
     format!("{scope}:{}", selector_label(selector))
 }
 
+pub(crate) fn requested_downstream_root_label(node_id: &str) -> String {
+    format!("from-node:{node_id}")
+}
+
 fn materialize_mode_label(mode: MaterializeMode) -> &'static str {
     match mode {
         MaterializeMode::Copy => "copy",
@@ -1547,6 +1555,7 @@ fn runtime_config_fingerprint(options: &RuntimeConfig) -> String {
         "scheduler_policy": options.scheduler_policy,
         "failure_propagation": failure_propagation_label(&options.failure_propagation),
         "partial_rerun_dependency_closure": options.partial_rerun_dependency_closure,
+        "downstream_selection_roots": options.downstream_selection_roots,
         "selectors": {
             "include": include_selectors,
             "exclude": exclude_selectors,
@@ -1744,8 +1753,8 @@ fn materialize_inputs(
         if ctx.fs.metadata(&src_path).is_ok() {
             let source_sha256 = sha256_artifact_path(&src_path).map_err(RuntimeError::Artifact)?;
             materialize_file(ctx.fs.as_ref(), &src_path, &dst_path, mode)?;
-            let local_sha256 =
-                materialized_input_sha256(ctx.fs.as_ref(), &dst_path).map_err(RuntimeError::Artifact)?;
+            let local_sha256 = materialized_input_sha256(ctx.fs.as_ref(), &dst_path)
+                .map_err(RuntimeError::Artifact)?;
             if local_sha256 != source_sha256 {
                 return Err(RuntimeError::Executor(format!(
                     "materialized input hash mismatch for {} -> {}",

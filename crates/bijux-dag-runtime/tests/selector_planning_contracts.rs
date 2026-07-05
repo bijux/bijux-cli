@@ -135,3 +135,36 @@ fn dependency_closure_annotations_distinguish_direct_and_required_nodes() {
     assert!(prep.selected);
     assert!(report.selected);
 }
+
+#[test]
+fn downstream_roots_select_exact_root_and_descendants() {
+    let result = planner_result(RuntimeConfig {
+        downstream_selection_roots: vec!["train".to_string()],
+        partial_rerun_dependency_closure: false,
+        ..RuntimeConfig::default()
+    });
+
+    let train = result
+        .annotations
+        .iter()
+        .find(|annotation| annotation.node_id == "train")
+        .expect("train annotation");
+    let report = result
+        .annotations
+        .iter()
+        .find(|annotation| annotation.node_id == "report")
+        .expect("report annotation");
+    let prep = result
+        .annotations
+        .iter()
+        .find(|annotation| annotation.node_id == "prep")
+        .expect("prep annotation");
+
+    assert_eq!(train.reason, "selected_by_from_node");
+    assert_eq!(report.reason, "selected_by_downstream_closure");
+    assert_eq!(prep.reason, "not_selected_by_from_node");
+    assert!(train.selected);
+    assert!(report.selected);
+    assert!(!prep.selected);
+    assert_eq!(result.plan.requested_selectors, vec!["from-node:train"]);
+}

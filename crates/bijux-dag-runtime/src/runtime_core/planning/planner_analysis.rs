@@ -131,7 +131,8 @@ pub fn build_planner_analysis(
     let resource_estimate = estimate_resources(&plan.nodes);
     let priority_inheritance = inherit_priority(&plan.nodes);
     let plan_fingerprint = fingerprint_plan(&plan, &annotations)?;
-    let path_previews = build_path_previews(&normalized_graph, options, &resolved_graph.resolved_params)?;
+    let path_previews =
+        build_path_previews(&normalized_graph, options, &resolved_graph.resolved_params)?;
 
     Ok(PlannerBuildResult {
         plan,
@@ -281,10 +282,7 @@ fn preview_node_paths(
         let mut resolved_argv = None;
         if let Some(spec) = &node.container {
             let stable_argv = bijux_dag_core::resolve::resolve_command_argv_templates(
-                graph,
-                node,
-                &spec.argv,
-                &resolved,
+                graph, node, &spec.argv, &resolved,
             )
             .map_err(|error| error.to_string())?;
             resolved_paths
@@ -310,7 +308,8 @@ fn preview_node_paths(
         .map(|argv| {
             argv.iter()
                 .map(|entry| {
-                    entry.as_str()
+                    entry
+                        .as_str()
                         .map(str::to_string)
                         .ok_or_else(|| "argv must resolve to strings".to_string())
                 })
@@ -341,6 +340,37 @@ pub fn compute_partial_run_closure(
     let mut keep = BTreeSet::new();
     for selected in selected_nodes {
         expand(selected, &plan.dep_map, &mut keep);
+    }
+    keep
+}
+
+pub fn compute_downstream_run_closure(
+    graph: &Graph,
+    selected_nodes: &[String],
+) -> BTreeSet<String> {
+    fn expand(
+        node_id: &str,
+        adjacency: &HashMap<String, BTreeSet<String>>,
+        keep: &mut BTreeSet<String>,
+    ) {
+        if !keep.insert(node_id.to_string()) {
+            return;
+        }
+        if let Some(children) = adjacency.get(node_id) {
+            for child in children {
+                expand(child, adjacency, keep);
+            }
+        }
+    }
+
+    let mut adjacency = HashMap::<String, BTreeSet<String>>::new();
+    for edge in &graph.edges {
+        adjacency.entry(edge.from.node_id.clone()).or_default().insert(edge.to.node_id.clone());
+    }
+
+    let mut keep = BTreeSet::new();
+    for selected in selected_nodes {
+        expand(selected, &adjacency, &mut keep);
     }
     keep
 }
@@ -379,6 +409,11 @@ fn annotate_plan(
     plan: &ExecutionPlan,
     selector_set: &SelectorSet,
 ) -> Vec<PlannerNodeAnnotation> {
+    let downstream_root_labels = plan
+        .requested_selectors
+        .iter()
+        .filter_map(|value| value.strip_prefix("from-node:"))
+        .collect::<BTreeSet<_>>();
     graph
         .nodes
         .iter()
@@ -386,6 +421,10 @@ fn annotate_plan(
             let selected = !plan.filter_reasons.contains_key(&node.id);
             let reason = if let Some(filter_reason) = plan.filter_reasons.get(&node.id) {
                 filter_reason.clone()
+            } else if downstream_root_labels.contains(node.id.as_str()) {
+                "selected_by_from_node".to_string()
+            } else if !downstream_root_labels.is_empty() {
+                "selected_by_downstream_closure".to_string()
             } else if !selector_set.include.is_empty()
                 && selector_set.include.iter().any(|selector| selector_matches(node, selector))
             {
