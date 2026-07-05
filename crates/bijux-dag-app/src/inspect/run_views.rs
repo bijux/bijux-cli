@@ -55,26 +55,36 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
     let manifest = read_json(&run_dir.join("manifest.json"))?;
     let integrity_state = inspect_integrity_state(run_dir, &manifest);
     let traces = read_node_traces(run_dir)?;
-    let (retry_total, failed_nodes, failed_classes, cache_hits) = traces.iter().fold(
-        (0usize, Vec::<String>::new(), std::collections::BTreeSet::<String>::new(), 0usize),
-        |mut acc, (node_id, trace)| {
-            if trace.get("status").and_then(Value::as_str) == Some("failed") {
-                acc.1.push(node_id.clone());
-                if let Some(class) = trace_failure_class(trace) {
-                    acc.2.insert(class);
+    let (retry_total, failed_nodes, failed_classes, failed_node_reasons, cache_hits) =
+        traces.iter().fold(
+            (
+                0usize,
+                Vec::<String>::new(),
+                std::collections::BTreeSet::<String>::new(),
+                Vec::<Value>::new(),
+                0usize,
+            ),
+            |mut acc, (node_id, trace)| {
+                if trace.get("status").and_then(Value::as_str) == Some("failed") {
+                    acc.1.push(node_id.clone());
+                    if let Some(class) = trace_failure_class(trace) {
+                        acc.2.insert(class);
+                    }
+                    if let Some(reason) = trace_failure_reason(node_id, trace) {
+                        acc.3.push(reason);
+                    }
                 }
-            }
-            if let Some(attempt) = trace.get("attempt").and_then(Value::as_u64) {
-                if attempt > 1 {
-                    acc.0 += (attempt - 1) as usize;
+                if let Some(attempt) = trace.get("attempt").and_then(Value::as_u64) {
+                    if attempt > 1 {
+                        acc.0 += (attempt - 1) as usize;
+                    }
                 }
-            }
-            if trace.get("cache_hit").and_then(Value::as_bool) == Some(true) {
-                acc.3 += 1;
-            }
-            acc
-        },
-    );
+                if trace.get("cache_hit").and_then(Value::as_bool) == Some(true) {
+                    acc.4 += 1;
+                }
+                acc
+            },
+        );
     let artifact_count = read_outputs_count(run_dir);
     Ok(json!({
         "run_id": manifest.get("run_id").cloned().unwrap_or(Value::Null),
@@ -96,7 +106,48 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
         "artifact_count": artifact_count,
         "failed_nodes": failed_nodes,
         "failure_classes": failed_classes.into_iter().collect::<Vec<_>>(),
+        "failed_node_reasons": failed_node_reasons,
+        "run_summary": manifest.get("run_summary").cloned().unwrap_or(Value::Null),
         "integrity_state": integrity_state
+    }))
+}
+
+pub fn run_completion_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
+    let summary = inspect_summary(run_dir)?;
+    let run_id = summary.get("run_id").and_then(Value::as_str).unwrap_or("unknown");
+    let root =
+        run_dir.parent().map(|path| path.display().to_string()).unwrap_or_else(|| ".".to_string());
+    let duration_ms = summary
+        .get("timing_ms")
+        .and_then(Value::as_object)
+        .and_then(|timing| {
+            Some((timing.get("started")?.as_u64()?, timing.get("finished")?.as_u64()?))
+        })
+        .and_then(|(started, finished)| finished.checked_sub(started));
+    let promoted_artifact_count = summary
+        .get("run_summary")
+        .and_then(|value| value.get("promoted_outputs"))
+        .and_then(Value::as_array)
+        .map_or(0, std::vec::Vec::len);
+    let failed_node_reasons =
+        summary.get("failed_node_reasons").cloned().unwrap_or_else(|| Value::Array(Vec::new()));
+    let status = summary.get("status").and_then(Value::as_str).unwrap_or("unknown");
+    let integrity_state =
+        summary.get("integrity_state").and_then(Value::as_str).unwrap_or("unknown");
+    let suggested_next_action = suggested_next_action(run_id, &root, status, integrity_state);
+
+    Ok(json!({
+        "run_id": summary.get("run_id").cloned().unwrap_or(Value::Null),
+        "status": summary.get("status").cloned().unwrap_or(Value::Null),
+        "origin": summary.get("submission_source").cloned().unwrap_or(Value::Null),
+        "integrity_state": summary.get("integrity_state").cloned().unwrap_or(Value::Null),
+        "duration_ms": duration_ms,
+        "node_counts": summary.get("node_counts").cloned().unwrap_or(Value::Null),
+        "failed_node_reasons": failed_node_reasons,
+        "cache_hits": summary.get("cache_hits").cloned().unwrap_or(Value::Null),
+        "promoted_artifact_count": promoted_artifact_count,
+        "artifact_count": summary.get("artifact_count").cloned().unwrap_or(Value::Null),
+        "suggested_next_action": suggested_next_action,
     }))
 }
 
