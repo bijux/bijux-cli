@@ -31,6 +31,30 @@ flowchart TD
 - artifact integrity and provenance records
 - replay and diff proof-relevant metadata
 
+## Timed-Out Run Evidence
+
+Run-level deadlines now persist their own evidence instead of collapsing into a
+generic failed run.
+
+- `manifest.json.status` becomes `timed_out` when the DAG-level deadline is the
+  terminal cause.
+- `manifest.json.run_timeout_behavior` records whether the runtime finished
+  already-running nodes or actively cancelled them at the deadline.
+- `.run-incomplete.json` remains present for timed-out runs so partial outputs
+  are never misrepresented as fully completed evidence.
+- `.run-complete.json` is only written for runs that actually finalized as
+  complete.
+
+The two supported timeout behaviors are:
+
+- `finish_running`
+  The scheduler stops launching new nodes after the deadline and lets already
+  started work finish naturally.
+- `cancel_running`
+  The scheduler stops launching new nodes and caps in-flight execution to the
+  remaining run budget so timeout-capable adapters are terminated at the
+  deadline.
+
 ## Node Trace Lifecycle Evidence
 
 Each persisted `trace.json` now carries two lifecycle-specific fields in
