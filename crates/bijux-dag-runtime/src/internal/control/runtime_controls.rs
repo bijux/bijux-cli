@@ -780,7 +780,19 @@ fn duration_exceeds(observed_ms: Option<u64>, limit_ms: Option<u64>) -> bool {
 }
 
 fn normalize_failure_class(value: &str) -> String {
-    value.chars().filter(|ch| ch.is_ascii_alphanumeric()).flat_map(|ch| ch.to_lowercase()).collect()
+    let normalized = value
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .flat_map(|ch| ch.to_lowercase())
+        .collect::<String>();
+    match normalized.as_str() {
+        "execution" | "executiontransient" => "execution".to_string(),
+        "timeout" | "timeouttransient" => "timeout".to_string(),
+        "policy" | "policytransient" => "policy".to_string(),
+        "user" => "user".to_string(),
+        "infrastructure" => "infrastructure".to_string(),
+        _ => normalized,
+    }
 }
 
 fn recommend_resume_action(

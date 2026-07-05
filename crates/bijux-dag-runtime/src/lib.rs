@@ -274,10 +274,10 @@ use bijux_dag_artifacts::schema::{
 };
 use bijux_dag_artifacts::{
     sha256_artifact_path, write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError,
-    CacheProof, ContainerTrace, DeclaredOutputArtifact, FailureInfo, InputFile, InputsIndex,
-    NodeCounts, NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
-    Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex, TraceOutputArtifact,
-    TriggerEvaluation,
+    CacheProof, ContainerTrace, DeclaredOutputArtifact, FailureClass, FailureInfo, InputFile,
+    InputsIndex, NodeCounts, NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex,
+    ReplayProvenance, Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex,
+    TraceOutputArtifact, TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
@@ -757,6 +757,29 @@ impl Adapter for ShellAdapter {
 
         exec.fs.write(&stdout_path, &output.stdout)?;
         exec.fs.write(&stderr_path, &output.stderr)?;
+        let success = output.status.success();
+        let exit_code = output.status.code();
+        if !success {
+            return Ok(NodeResult {
+                status: NodeStatus::Failed,
+                stdout_path: stdout_path.display().to_string(),
+                stderr_path: stderr_path.display().to_string(),
+                outputs_dir: outputs_dir.display().to_string(),
+                output_evidence: Vec::new(),
+                failure: Some(FailureInfo::new(
+                    FailureClass::Execution,
+                    "Execution",
+                    "EXEC_FAIL",
+                    "command failed",
+                    Some(serde_json::json!({ "exit_code": exit_code })),
+                )),
+                attempts: 1,
+                attempt_events: Vec::new(),
+                container_meta: None,
+                adapter_binary_sha256: None,
+            });
+        }
+
         let output_report = inspect_declared_outputs(&outputs_dir, &node.outputs);
         if let Some(failure) = output_report.failure {
             return Ok(NodeResult {
@@ -775,26 +798,13 @@ impl Adapter for ShellAdapter {
         let fp = node_fingerprint_from_ctx(exec, &node.id);
         write_outputs_index(&outputs_dir, &node.id, &fp, &output_report.present_outputs)?;
 
-        let success = output.status.success();
-        let exit_code = output.status.code();
-        let failure = if success {
-            None
-        } else {
-            Some(FailureInfo {
-                kind: "Execution".to_string(),
-                code: "EXEC_FAIL".to_string(),
-                message: "command failed".to_string(),
-                details: Some(serde_json::json!({ "exit_code": exit_code })),
-            })
-        };
-
         Ok(NodeResult {
-            status: if success { NodeStatus::Success } else { NodeStatus::Failed },
+            status: NodeStatus::Success,
             stdout_path: stdout_path.display().to_string(),
             stderr_path: stderr_path.display().to_string(),
             outputs_dir: outputs_dir.display().to_string(),
             output_evidence: output_report.output_evidence,
-            failure,
+            failure: None,
             attempts: 1,
             attempt_events: Vec::new(),
             container_meta: None,
@@ -856,12 +866,13 @@ impl Adapter for ContainerAdapter {
                     stderr_path: stderr_path.display().to_string(),
                     outputs_dir: outputs_dir.display().to_string(),
                     output_evidence: Vec::new(),
-                    failure: Some(FailureInfo {
-                        kind: "Infrastructure".to_string(),
-                        code: "CONTAINER_ENGINE_UNAVAILABLE".to_string(),
-                        message: message.clone(),
-                        details: Some(serde_json::json!({ "engine": engine })),
-                    }),
+                    failure: Some(FailureInfo::new(
+                        FailureClass::Infrastructure,
+                        "Infrastructure",
+                        "CONTAINER_ENGINE_UNAVAILABLE",
+                        message.clone(),
+                        Some(serde_json::json!({ "engine": engine })),
+                    )),
                     attempts: 1,
                     attempt_events: Vec::new(),
                     container_meta: Some(container_trace(spec, engine, None, None)),
@@ -881,12 +892,13 @@ impl Adapter for ContainerAdapter {
                 stderr_path: stderr_path.display().to_string(),
                 outputs_dir: outputs_dir.display().to_string(),
                 output_evidence: Vec::new(),
-                failure: Some(FailureInfo {
-                    kind: "Execution".to_string(),
-                    code: "CONTAINER_VOLUME_CONTRACT_INVALID".to_string(),
+                failure: Some(FailureInfo::new(
+                    FailureClass::User,
+                    "User",
+                    "CONTAINER_VOLUME_CONTRACT_INVALID",
                     message,
-                    details: Some(serde_json::json!({ "engine": engine })),
-                }),
+                    Some(serde_json::json!({ "engine": engine })),
+                )),
                 attempts: 1,
                 attempt_events: Vec::new(),
                 container_meta: Some(container_trace(
@@ -915,14 +927,15 @@ impl Adapter for ContainerAdapter {
                         stderr_path: stderr_path.display().to_string(),
                         outputs_dir: outputs_dir.display().to_string(),
                         output_evidence: Vec::new(),
-                        failure: Some(FailureInfo {
-                            kind: "Policy".to_string(),
-                            code: "POLICY_UNENFORCEABLE".to_string(),
+                        failure: Some(FailureInfo::new(
+                            FailureClass::Policy,
+                            "Policy",
+                            "POLICY_UNENFORCEABLE",
                             message,
-                            details: Some(
+                            Some(
                                 serde_json::json!({ "engine": engine, "effect": "network" }),
                             ),
-                        }),
+                        )),
                         attempts: 1,
                         attempt_events: Vec::new(),
                         container_meta: Some(container_trace(
@@ -973,10 +986,36 @@ impl Adapter for ContainerAdapter {
             effective_node_timeout_ms(node, params),
             Some(exec.cancellation_requested.as_ref()),
         )?;
-        let exit_code = output.status.code();
-
         exec.fs.write(&stdout_path, &output.stdout)?;
         exec.fs.write(&stderr_path, &output.stderr)?;
+        let success = output.status.success();
+        let exit_code = output.status.code();
+        if !success {
+            return Ok(NodeResult {
+                status: NodeStatus::Failed,
+                stdout_path: stdout_path.display().to_string(),
+                stderr_path: stderr_path.display().to_string(),
+                outputs_dir: outputs_dir.display().to_string(),
+                output_evidence: Vec::new(),
+                failure: Some(FailureInfo::new(
+                    FailureClass::Execution,
+                    "Execution",
+                    "EXEC_FAIL",
+                    "container command failed",
+                    Some(serde_json::json!({ "exit_code": exit_code })),
+                )),
+                attempts: 1,
+                attempt_events: Vec::new(),
+                container_meta: Some(container_trace(
+                    spec,
+                    engine,
+                    exit_code,
+                    Some(engine_version.clone()),
+                )),
+                adapter_binary_sha256: None,
+            });
+        }
+
         let output_report = inspect_declared_outputs(&outputs_dir, &node.outputs);
         if let Some(failure) = output_report.failure {
             return Ok(NodeResult {
@@ -1000,25 +1039,13 @@ impl Adapter for ContainerAdapter {
         let fp = node_fingerprint_from_ctx(exec, &node.id);
         write_outputs_index(&outputs_dir, &node.id, &fp, &output_report.present_outputs)?;
 
-        let success = output.status.success();
-        let failure = if success {
-            None
-        } else {
-            Some(FailureInfo {
-                kind: "Execution".to_string(),
-                code: "EXEC_FAIL".to_string(),
-                message: "container command failed".to_string(),
-                details: Some(serde_json::json!({ "exit_code": exit_code })),
-            })
-        };
-
         Ok(NodeResult {
-            status: if success { NodeStatus::Success } else { NodeStatus::Failed },
+            status: NodeStatus::Success,
             stdout_path: stdout_path.display().to_string(),
             stderr_path: stderr_path.display().to_string(),
             outputs_dir: outputs_dir.display().to_string(),
             output_evidence: output_report.output_evidence,
-            failure,
+            failure: None,
             attempts: 1,
             attempt_events: Vec::new(),
             container_meta: Some(container_trace(spec, engine, exit_code, Some(engine_version))),
@@ -1457,6 +1484,46 @@ fn retry_backoff_ms(retry: &RetryPolicy, attempt: u32) -> u64 {
     retry.backoff_ms.saturating_mul(attempt as u64)
 }
 
+fn canonical_failure_class_name(value: &str) -> &str {
+    let normalized = value
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .flat_map(|ch| ch.to_lowercase())
+        .collect::<String>();
+    match normalized.as_str() {
+        "execution" | "executiontransient" => "execution",
+        "timeout" | "timeouttransient" => "timeout",
+        "policy" | "policytransient" => "policy",
+        "user" => "user",
+        "infrastructure" => "infrastructure",
+        _ => "",
+    }
+}
+
+fn retryable_failure_class_names(params: &Value) -> Vec<&str> {
+    params
+        .get("retryable_failure_classes")
+        .and_then(Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(Value::as_str)
+                .map(canonical_failure_class_name)
+                .filter(|value| !value.is_empty())
+                .collect::<Vec<_>>()
+        })
+        .filter(|values| !values.is_empty())
+        .unwrap_or_else(|| vec!["execution", "timeout"])
+}
+
+fn retry_policy_allows_failure(params: &Value, failure: Option<&FailureInfo>) -> bool {
+    let Some(failure) = failure else {
+        return false;
+    };
+    let failure_class = failure.operator_class().as_str();
+    retryable_failure_class_names(params).into_iter().any(|value| value == failure_class)
+}
+
 #[allow(dead_code)]
 fn node_timeout_ms(
     node: &Node,
@@ -1498,7 +1565,9 @@ fn execute_with_retries(
             Err(err) => failed_node_result_from_runtime_error(ctx, node, err),
         };
         let finished = ctx.clock.now_unix_ms();
-        let scheduled_backoff_ms = (result.status == NodeStatus::Failed && attempt <= max)
+        let retry_allowed =
+            result.status == NodeStatus::Failed && attempt <= max && retry_policy_allows_failure(params, result.failure.as_ref());
+        let scheduled_backoff_ms = retry_allowed
             .then_some(retry_backoff_ms(retry, attempt))
             .filter(|wait| *wait > 0);
         let (attempt_stdout_path, attempt_stderr_path) = persist_attempt_logs(
@@ -1523,7 +1592,7 @@ fn execute_with_retries(
             result.attempt_events = attempt_events;
             return Ok(result);
         }
-        if attempt > max {
+        if attempt > max || !retry_policy_allows_failure(params, result.failure.as_ref()) {
             result.attempt_events = attempt_events;
             return Ok(result);
         }
@@ -1543,18 +1612,44 @@ fn failed_node_result_from_runtime_error(
     let outputs_dir = ctx.run_dir.node_outputs_dir(&node.id);
     let stdout_path = ctx.run_dir.node_stdout_path(&node.id);
     let stderr_path = ctx.run_dir.node_stderr_path(&node.id);
-    let (kind, code, message) = match error {
-        RuntimeError::Graph(err) => ("Internal", "GRAPH_ERROR", err.to_string()),
-        RuntimeError::Artifact(err) => ("Infrastructure", "ARTIFACT_ERROR", err.to_string()),
-        RuntimeError::Io(err) => ("Infrastructure", "IO_ERROR", err.to_string()),
-        RuntimeError::Json(err) => ("Internal", "JSON_ERROR", err.to_string()),
+    let (class, kind, code, message) = match error {
+        RuntimeError::Graph(err) => (FailureClass::User, "User", "GRAPH_ERROR", err.to_string()),
+        RuntimeError::Artifact(err) => (
+            FailureClass::Infrastructure,
+            "Infrastructure",
+            "ARTIFACT_ERROR",
+            err.to_string(),
+        ),
+        RuntimeError::Io(err) if err.kind() == std_io::ErrorKind::NotFound => (
+            FailureClass::Infrastructure,
+            "Infrastructure",
+            "MISSING_EXECUTABLE",
+            err.to_string(),
+        ),
+        RuntimeError::Io(err) => (
+            FailureClass::Infrastructure,
+            "Infrastructure",
+            "IO_ERROR",
+            err.to_string(),
+        ),
+        RuntimeError::Json(err) => (
+            FailureClass::Infrastructure,
+            "Infrastructure",
+            "JSON_ERROR",
+            err.to_string(),
+        ),
         RuntimeError::Executor(message) => {
             if message.contains("timed out") {
-                ("Execution", "EXEC_TIMEOUT", message)
+                (FailureClass::Timeout, "Timeout", "EXEC_TIMEOUT", message)
             } else if message.contains("cancelled") {
-                ("Execution", "EXEC_CANCELLED", message)
+                (FailureClass::Execution, "Execution", "EXEC_CANCELLED", message)
+            } else if matches!(
+                message.as_str(),
+                "missing argv" | "empty argv" | "argv must be strings" | "missing container spec"
+            ) {
+                (FailureClass::User, "User", "EXEC_ERROR", message)
             } else {
-                ("Execution", "EXEC_ERROR", message)
+                (FailureClass::Execution, "Execution", "EXEC_ERROR", message)
             }
         }
     };
@@ -1572,12 +1667,7 @@ fn failed_node_result_from_runtime_error(
         stderr_path: stderr_path.display().to_string(),
         outputs_dir: outputs_dir.display().to_string(),
         output_evidence: Vec::new(),
-        failure: Some(FailureInfo {
-            kind: kind.to_string(),
-            code: code.to_string(),
-            message,
-            details: None,
-        }),
+        failure: Some(FailureInfo::new(class, kind, code, message, None)),
         attempts: 1,
         attempt_events: Vec::new(),
         container_meta: None,
@@ -1946,6 +2036,10 @@ pub(crate) fn declared_output_artifacts(node: &Node) -> Vec<DeclaredOutputArtifa
         .collect()
 }
 
+fn is_managed_output_metadata_path(rel: &str) -> bool {
+    rel == "index.json"
+}
+
 pub(crate) fn inspect_declared_outputs(
     dir: &Path,
     outputs: &[OutputSpec],
@@ -1965,12 +2059,13 @@ pub(crate) fn inspect_declared_outputs(
             return OutputInspectionReport {
                 output_evidence: Vec::new(),
                 present_outputs: Vec::new(),
-                failure: Some(FailureInfo {
-                    kind: "Execution".to_string(),
-                    code: "OUTPUT_SCHEMA_INVALID".to_string(),
+                failure: Some(FailureInfo::new(
+                    FailureClass::User,
+                    "User",
+                    "OUTPUT_SCHEMA_INVALID",
                     message,
-                    details: None,
-                }),
+                    None,
+                )),
             };
         }
     }
@@ -1981,24 +2076,26 @@ pub(crate) fn inspect_declared_outputs(
             return OutputInspectionReport {
                 output_evidence,
                 present_outputs,
-                failure: Some(FailureInfo {
-                    kind: "Execution".to_string(),
-                    code: "OUTPUT_PATH_INVALID".to_string(),
-                    message: "invalid output path".to_string(),
-                    details: Some(serde_json::json!({ "path": output.path })),
-                }),
+                failure: Some(FailureInfo::new(
+                    FailureClass::User,
+                    "User",
+                    "OUTPUT_PATH_INVALID",
+                    "invalid output path",
+                    Some(serde_json::json!({ "path": output.path })),
+                )),
             };
         }
         if has_symlink_component(dir, Path::new(&output.path)) {
             return OutputInspectionReport {
                 output_evidence,
                 present_outputs,
-                failure: Some(FailureInfo {
-                    kind: "Execution".to_string(),
-                    code: "OUTPUT_PATH_INVALID".to_string(),
-                    message: format!("output path traverses symlink: {}", output.path),
-                    details: None,
-                }),
+                failure: Some(FailureInfo::new(
+                    FailureClass::User,
+                    "User",
+                    "OUTPUT_PATH_INVALID",
+                    format!("output path traverses symlink: {}", output.path),
+                    None,
+                )),
             };
         }
         let path = dir.join(&output.path);
@@ -2016,12 +2113,13 @@ pub(crate) fn inspect_declared_outputs(
                 return OutputInspectionReport {
                     output_evidence,
                     present_outputs,
-                    failure: Some(FailureInfo {
-                        kind: "Execution".to_string(),
-                        code: "OUTPUT_MISSING".to_string(),
-                        message: format!("missing required output: {}", output.path),
-                        details: Some(serde_json::json!({ "output": output.name })),
-                    }),
+                    failure: Some(FailureInfo::new(
+                        FailureClass::User,
+                        "User",
+                        "OUTPUT_MISSING",
+                        format!("missing required output: {}", output.path),
+                        Some(serde_json::json!({ "output": output.name })),
+                    )),
                 };
             }
             continue;
@@ -2030,36 +2128,39 @@ pub(crate) fn inspect_declared_outputs(
             return OutputInspectionReport {
                 output_evidence,
                 present_outputs,
-                failure: Some(FailureInfo {
-                    kind: "Execution".to_string(),
-                    code: "OUTPUT_PATH_INVALID".to_string(),
-                    message: format!("output must not be a symlink: {}", output.path),
-                    details: None,
-                }),
+                failure: Some(FailureInfo::new(
+                    FailureClass::User,
+                    "User",
+                    "OUTPUT_PATH_INVALID",
+                    format!("output must not be a symlink: {}", output.path),
+                    None,
+                )),
             };
         }
         if output.expects_directory() && !path.is_dir() {
             return OutputInspectionReport {
                 output_evidence,
                 present_outputs,
-                failure: Some(FailureInfo {
-                    kind: "Execution".to_string(),
-                    code: "OUTPUT_PATH_INVALID".to_string(),
-                    message: format!("output must be a directory: {}", output.path),
-                    details: Some(serde_json::json!({ "output": output.name })),
-                }),
+                failure: Some(FailureInfo::new(
+                    FailureClass::User,
+                    "User",
+                    "OUTPUT_PATH_INVALID",
+                    format!("output must be a directory: {}", output.path),
+                    Some(serde_json::json!({ "output": output.name })),
+                )),
             };
         }
         if output.expects_file() && !path.is_file() {
             return OutputInspectionReport {
                 output_evidence,
                 present_outputs,
-                failure: Some(FailureInfo {
-                    kind: "Execution".to_string(),
-                    code: "OUTPUT_PATH_INVALID".to_string(),
-                    message: format!("output must be a file: {}", output.path),
-                    details: Some(serde_json::json!({ "output": output.name })),
-                }),
+                failure: Some(FailureInfo::new(
+                    FailureClass::User,
+                    "User",
+                    "OUTPUT_PATH_INVALID",
+                    format!("output must be a file: {}", output.path),
+                    Some(serde_json::json!({ "output": output.name })),
+                )),
             };
         }
         let sha256 = match sha256_artifact_path(&path) {
@@ -2068,12 +2169,13 @@ pub(crate) fn inspect_declared_outputs(
                 return OutputInspectionReport {
                     output_evidence,
                     present_outputs,
-                    failure: Some(FailureInfo {
-                        kind: "Execution".to_string(),
-                        code: "OUTPUT_PATH_INVALID".to_string(),
-                        message: error.to_string(),
-                        details: Some(serde_json::json!({ "output": output.name })),
-                    }),
+                    failure: Some(FailureInfo::new(
+                        FailureClass::User,
+                        "User",
+                        "OUTPUT_PATH_INVALID",
+                        error.to_string(),
+                        Some(serde_json::json!({ "output": output.name })),
+                    )),
                 };
             }
         };
@@ -2098,6 +2200,9 @@ pub(crate) fn inspect_declared_outputs(
     let mut actual = std::collections::BTreeSet::new();
     collect_relative_artifacts(dir, dir, &mut actual);
     for rel in actual {
+        if is_managed_output_metadata_path(&rel) {
+            continue;
+        }
         let declared_match = declared.iter().any(|output| {
             rel == output.path
                 || (matches!(output.kind, OutputKind::Directory)
@@ -2107,12 +2212,13 @@ pub(crate) fn inspect_declared_outputs(
             return OutputInspectionReport {
                 output_evidence,
                 present_outputs,
-                failure: Some(FailureInfo {
-                    kind: "Execution".to_string(),
-                    code: "OUTPUT_UNDECLARED".to_string(),
-                    message: format!("undeclared output path: {}", rel),
-                    details: None,
-                }),
+                failure: Some(FailureInfo::new(
+                    FailureClass::User,
+                    "User",
+                    "OUTPUT_UNDECLARED",
+                    format!("undeclared output path: {}", rel),
+                    None,
+                )),
             };
         }
     }

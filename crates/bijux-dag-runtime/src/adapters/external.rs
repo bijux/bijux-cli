@@ -141,15 +141,16 @@ impl Adapter for ExternalAdapter {
                     stderr_path: stderr_path.display().to_string(),
                     outputs_dir: outputs_dir.display().to_string(),
                     output_evidence: Vec::new(),
-                    failure: Some(crate::FailureInfo {
-                        kind: "Execution".to_string(),
-                        code: "EXEC_TIMEOUT".to_string(),
+                    failure: Some(crate::FailureInfo::new(
+                        bijux_dag_artifacts::FailureClass::Timeout,
+                        "Timeout",
+                        "EXEC_TIMEOUT",
                         message,
-                        details: Some(json!({
+                        Some(json!({
                             "timeout_class": "external_adapter_process",
                             "quarantined_outputs_dir": quarantined_outputs_dir,
                         })),
-                    }),
+                    )),
                     attempts: 1,
                     attempt_events: Vec::new(),
                     container_meta: None,
@@ -161,6 +162,27 @@ impl Adapter for ExternalAdapter {
 
         exec.fs.write(&stdout_path, &output.stdout)?;
         exec.fs.write(&stderr_path, &output.stderr)?;
+        let success = output.status.success();
+        if !success {
+            return Ok(NodeResult {
+                status: crate::NodeStatus::Failed,
+                stdout_path: stdout_path.display().to_string(),
+                stderr_path: stderr_path.display().to_string(),
+                outputs_dir: outputs_dir.display().to_string(),
+                output_evidence: Vec::new(),
+                failure: Some(crate::FailureInfo::new(
+                    bijux_dag_artifacts::FailureClass::Execution,
+                    "Execution",
+                    "EXEC_FAIL",
+                    "adapter command failed",
+                    None,
+                )),
+                attempts: 1,
+                attempt_events: Vec::new(),
+                container_meta: None,
+                adapter_binary_sha256: self.binary_hash.clone(),
+            });
+        }
 
         let output_report = crate::inspect_declared_outputs(&outputs_dir, &node.outputs);
         if let Some(failure) = output_report.failure {
@@ -180,25 +202,13 @@ impl Adapter for ExternalAdapter {
         let fp = crate::node_fingerprint_from_ctx(exec, &node.id);
         write_outputs_index(&outputs_dir, &node.id, &fp, &output_report.present_outputs)?;
 
-        let success = output.status.success();
-        let failure = if success {
-            None
-        } else {
-            Some(crate::FailureInfo {
-                kind: "Execution".to_string(),
-                code: "EXEC_FAIL".to_string(),
-                message: "adapter command failed".to_string(),
-                details: None,
-            })
-        };
-
         Ok(NodeResult {
-            status: if success { crate::NodeStatus::Success } else { crate::NodeStatus::Failed },
+            status: crate::NodeStatus::Success,
             stdout_path: stdout_path.display().to_string(),
             stderr_path: stderr_path.display().to_string(),
             outputs_dir: outputs_dir.display().to_string(),
             output_evidence: output_report.output_evidence,
-            failure,
+            failure: None,
             attempts: 1,
             attempt_events: Vec::new(),
             container_meta: None,

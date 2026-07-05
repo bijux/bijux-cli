@@ -20,8 +20,8 @@ mod engine_observe;
 mod engine_record;
 use bijux_dag_artifacts::{
     finalize_run_manifest_with_mode, write_incomplete_run_marker, write_provenance,
-    write_run_outputs_index, write_run_schema_index, FailureInfo, Manifest, NodeCounts,
-    Provenance, ReplayProvenance, RunDir, RunDirLayout, RunDirSchemaIndex,
+    write_run_outputs_index, write_run_schema_index, FailureClass, FailureInfo, Manifest,
+    NodeCounts, Provenance, ReplayProvenance, RunDir, RunDirLayout, RunDirSchemaIndex,
     RunFinalizationMode, RunMetadata, TriggerEvaluation, TriggerParentStatus,
 };
 use bijux_dag_core::{
@@ -59,28 +59,32 @@ fn resolve_branch_decision(
     };
     let Some(output) = node.outputs.iter().find(|output| output.name == branch.decision_output)
     else {
-        return Err(FailureInfo {
-            kind: "Execution".to_string(),
-            code: "BRANCH_OUTPUT_MISSING".to_string(),
-            message: format!(
+        return Err(FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "BRANCH_OUTPUT_MISSING",
+            format!(
                 "branch node {} is missing declared decision output {}",
                 node.id, branch.decision_output
             ),
-            details: Some(serde_json::json!({
+            Some(serde_json::json!({
                 "node_id": node.id,
                 "decision_output": branch.decision_output,
             })),
-        });
+        ));
     };
     let output_path = ctx.run_dir.node_outputs_dir(&node.id).join(&output.path);
-    let raw = ctx.fs.read_to_string(&output_path).map_err(|_| FailureInfo {
-        kind: "Execution".to_string(),
-        code: "BRANCH_DECISION_UNREADABLE".to_string(),
-        message: format!("branch decision output for {} could not be read", node.id),
-        details: Some(serde_json::json!({
-            "node_id": node.id,
-            "path": output.path,
-        })),
+    let raw = ctx.fs.read_to_string(&output_path).map_err(|_| {
+        FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "BRANCH_DECISION_UNREADABLE",
+            format!("branch decision output for {} could not be read", node.id),
+            Some(serde_json::json!({
+                "node_id": node.id,
+                "path": output.path,
+            })),
+        )
     })?;
     let decision = serde_json::from_str::<Value>(&raw)
         .ok()
@@ -100,16 +104,17 @@ fn resolve_branch_decision(
             used_default: true,
         }));
     }
-    Err(FailureInfo {
-        kind: "Execution".to_string(),
-        code: "INVALID_BRANCH_DECISION".to_string(),
-        message: format!("branch node {} produced undeclared decision {}", node.id, decision),
-        details: Some(serde_json::json!({
+    Err(FailureInfo::new(
+        FailureClass::User,
+        "User",
+        "INVALID_BRANCH_DECISION",
+        format!("branch node {} produced undeclared decision {}", node.id, decision),
+        Some(serde_json::json!({
             "node_id": node.id,
             "produced_decision": decision,
             "declared_decisions": branch.decisions,
         })),
-    })
+    ))
 }
 
 fn branch_nodes_to_skip(
@@ -438,19 +443,20 @@ fn trigger_evaluation_for_dependencies(
 }
 
 fn dependency_trigger_failure(node: &Node, trigger_evaluation: &TriggerEvaluation) -> FailureInfo {
-    FailureInfo {
-        kind: "Dependency".to_string(),
-        code: "UPSTREAM_FAILED".to_string(),
-        message: format!(
+    FailureInfo::new(
+        FailureClass::Execution,
+        "Dependency",
+        "UPSTREAM_FAILED",
+        format!(
             "upstream dependencies did not satisfy trigger rule {:?}",
             node.trigger_rule
         ),
-        details: Some(serde_json::json!({
+        Some(serde_json::json!({
             "parent_statuses": trigger_evaluation.parent_statuses,
             "trigger_rule": trigger_evaluation.trigger_rule,
             "reason": trigger_evaluation.reason,
         })),
-    }
+    )
 }
 
 fn invalidated_downstream_nodes(graph: &Graph, selected_nodes: &[String]) -> Vec<String> {
@@ -1174,12 +1180,13 @@ pub fn execute(
                     preflight_failures.push((
                         node_id.clone(),
                         node,
-                        FailureInfo {
-                            kind: "Execution".to_string(),
-                            code: "RUN_TIMEOUT".to_string(),
-                            message: "run timeout exceeded before node start".to_string(),
-                            details: Some(serde_json::json!({ "run_timeout_ms": limit })),
-                        },
+                        FailureInfo::new(
+                            FailureClass::Timeout,
+                            "Timeout",
+                            "RUN_TIMEOUT",
+                            "run timeout exceeded before node start",
+                            Some(serde_json::json!({ "run_timeout_ms": limit })),
+                        ),
                         "TimeoutExceeded".to_string(),
                         None,
                     ));
@@ -1234,12 +1241,13 @@ pub fn execute(
                         preflight_failures.push((
                             node_id.clone(),
                             node,
-                            FailureInfo {
-                                kind: "Execution".to_string(),
-                                code: "RUN_TIMEOUT".to_string(),
-                                message: "run timeout exceeded before node start".to_string(),
-                                details: Some(serde_json::json!({ "run_timeout_ms": limit_ms })),
-                            },
+                            FailureInfo::new(
+                                FailureClass::Timeout,
+                                "Timeout",
+                                "RUN_TIMEOUT",
+                                "run timeout exceeded before node start",
+                                Some(serde_json::json!({ "run_timeout_ms": limit_ms })),
+                            ),
                             "TimeoutExceeded".to_string(),
                             None,
                         ));
@@ -1278,12 +1286,13 @@ pub fn execute(
                 preflight_failures.push((
                     node_id.clone(),
                     node,
-                    FailureInfo {
-                        kind: "Policy".to_string(),
-                        code: "POLICY_DENIED".to_string(),
-                        message: "network effect denied by policy".to_string(),
-                        details: Some(serde_json::json!({ "effect": "network" })),
-                    },
+                    FailureInfo::new(
+                        FailureClass::Policy,
+                        "Policy",
+                        "POLICY_DENIED",
+                        "network effect denied by policy",
+                        Some(serde_json::json!({ "effect": "network" })),
+                    ),
                     "PolicyDenied".to_string(),
                     None,
                 ));
@@ -1302,12 +1311,13 @@ pub fn execute(
                 preflight_failures.push((
                     node_id.clone(),
                     node,
-                    FailureInfo {
-                        kind: "Policy".to_string(),
-                        code: "POLICY_DENIED".to_string(),
-                        message: "env effect denied by policy".to_string(),
-                        details: Some(serde_json::json!({ "effect": "env" })),
-                    },
+                    FailureInfo::new(
+                        FailureClass::Policy,
+                        "Policy",
+                        "POLICY_DENIED",
+                        "env effect denied by policy",
+                        Some(serde_json::json!({ "effect": "env" })),
+                    ),
                     "PolicyDenied".to_string(),
                     None,
                 ));
@@ -1326,12 +1336,13 @@ pub fn execute(
                 preflight_failures.push((
                     node_id.clone(),
                     node,
-                    FailureInfo {
-                        kind: "Policy".to_string(),
-                        code: "POLICY_DENIED".to_string(),
-                        message: "clock effect denied by policy".to_string(),
-                        details: Some(serde_json::json!({ "effect": "clock" })),
-                    },
+                    FailureInfo::new(
+                        FailureClass::Policy,
+                        "Policy",
+                        "POLICY_DENIED",
+                        "clock effect denied by policy",
+                        Some(serde_json::json!({ "effect": "clock" })),
+                    ),
                     "PolicyDenied".to_string(),
                     None,
                 ));
@@ -2014,12 +2025,13 @@ pub fn execute(
                     let cache_proof = cache_proofs.get(&node_id).cloned();
                     let adapter_hash =
                         runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
-                    let failure = FailureInfo {
-                        kind: "Internal".to_string(),
-                        code: "INTERNAL".to_string(),
-                        message: err.to_string(),
-                        details: None,
-                    };
+                    let failure = FailureInfo::new(
+                        FailureClass::Execution,
+                        "Execution",
+                        "INTERNAL",
+                        err.to_string(),
+                        None,
+                    );
                     let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
                         started_unix_ms,
                         lifecycle_timestamps.get(&node_id),
@@ -2165,14 +2177,15 @@ pub fn execute(
             }
             sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
             status_map.insert(node.id.clone(), NodeStatus::Failed);
-            let failure = FailureInfo {
-                kind: "Execution".to_string(),
-                code: "RUN_TIMEOUT".to_string(),
-                message: "run timeout exceeded before node completion".to_string(),
-                details: options
+            let failure = FailureInfo::new(
+                FailureClass::Timeout,
+                "Timeout",
+                "RUN_TIMEOUT",
+                "run timeout exceeded before node completion",
+                options
                     .run_timeout_ms
                     .map(|limit| serde_json::json!({ "run_timeout_ms": limit })),
-            };
+            );
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
             let started = ctx.clock.now_unix_ms();
@@ -2225,12 +2238,13 @@ pub fn execute(
             }
             sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
             status_map.insert(node.id.clone(), NodeStatus::Failed);
-            let failure = FailureInfo {
-                kind: "Execution".to_string(),
-                code: "RUN_ABORTED".to_string(),
-                message: "run aborted after fail-fast trigger".to_string(),
-                details: None,
-            };
+            let failure = FailureInfo::new(
+                FailureClass::Execution,
+                "Execution",
+                "RUN_ABORTED",
+                "run aborted after fail-fast trigger",
+                None,
+            );
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
             let started = ctx.clock.now_unix_ms();

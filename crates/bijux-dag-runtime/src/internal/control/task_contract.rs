@@ -33,6 +33,8 @@ pub enum RetryableFailureClass {
     TimeoutTransient,
     ArtifactTransient,
     PolicyTransient,
+    User,
+    Infrastructure,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -226,10 +228,16 @@ fn build_retry_policy(node: &Node) -> RetryPolicyV2 {
             values
                 .into_iter()
                 .filter_map(|value| match value.as_str() {
-                    "execution_transient" => Some(RetryableFailureClass::ExecutionTransient),
-                    "timeout_transient" => Some(RetryableFailureClass::TimeoutTransient),
+                    "execution" | "execution_transient" => {
+                        Some(RetryableFailureClass::ExecutionTransient)
+                    }
+                    "timeout" | "timeout_transient" => {
+                        Some(RetryableFailureClass::TimeoutTransient)
+                    }
                     "artifact_transient" => Some(RetryableFailureClass::ArtifactTransient),
-                    "policy_transient" => Some(RetryableFailureClass::PolicyTransient),
+                    "policy" | "policy_transient" => Some(RetryableFailureClass::PolicyTransient),
+                    "user" => Some(RetryableFailureClass::User),
+                    "infrastructure" => Some(RetryableFailureClass::Infrastructure),
                     _ => None,
                 })
                 .collect::<Vec<_>>()
