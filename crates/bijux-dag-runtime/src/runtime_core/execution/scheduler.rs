@@ -842,20 +842,7 @@ pub fn scheduler_debug_event_log(state: &SchedulerState) -> Vec<SchedulerEvent> 
 }
 
 pub fn validate_cron_expression(expression: &str) -> Result<(), String> {
-    let fields: Vec<&str> = expression.split_whitespace().collect();
-    if fields.len() != 5 {
-        return Err("cron expression must have exactly five fields".to_string());
-    }
-    for field in fields {
-        if field == "*" {
-            continue;
-        }
-        if field.chars().all(|c| c.is_ascii_digit()) {
-            continue;
-        }
-        return Err(format!("unsupported cron token '{field}'"));
-    }
-    Ok(())
+    crate::cron_calendar::validate_cron_expression(expression)
 }
 
 pub fn validate_schedule_registry(registry: &ScheduleRegistry) -> Result<(), String> {
@@ -867,8 +854,9 @@ pub fn validate_schedule_registry(registry: &ScheduleRegistry) -> Result<(), Str
         if !ids.insert(definition.id.clone()) {
             return Err(format!("duplicate schedule id '{}'", definition.id));
         }
-        if let TriggerSpec::Cron { expression, .. } = &definition.trigger {
+        if let TriggerSpec::Cron { expression, timezone } = &definition.trigger {
             validate_cron_expression(expression)?;
+            crate::cron_calendar::validate_cron_timezone(timezone)?;
         }
         validate_schedule_policy_combination(definition)?;
     }

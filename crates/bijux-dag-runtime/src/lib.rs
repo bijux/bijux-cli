@@ -47,6 +47,8 @@ pub mod builtins;
 pub mod cache;
 #[path = "internal/control/clock.rs"]
 mod clock;
+#[path = "runtime_core/execution/cron_calendar.rs"]
+mod cron_calendar;
 #[doc(hidden)]
 #[path = "internal/control/config.rs"]
 pub mod config;
