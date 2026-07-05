@@ -2442,11 +2442,13 @@ fn try_cache_write(
     if !node.cache.enabled {
         return Ok(());
     }
-    let cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
-    let store = match cache_dir {
-        Some(d) => RuntimeCacheStore::new(d, Arc::clone(&fs)),
+    let local_cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
+    let remote_cache_dir = options.remote_cache_dir.clone();
+    let staging_root = match local_cache_dir.clone().or_else(|| remote_cache_dir.clone()) {
+        Some(d) => d,
         None => return Ok(()),
     };
+    let store = RuntimeCacheStore::new(staging_root.clone(), Arc::clone(&fs));
     let key_input = cache_key_input_for_run(
         options,
         node,
@@ -2457,10 +2459,57 @@ fn try_cache_write(
         adapter_outputs_schema_version,
     )?;
     let key = cache_key_explanation(&key_input).key;
-    let entry = store.entry(&key);
-    store.fs().create_dir_all(entry.join("outputs").as_path())?;
-    store.fs().create_dir_all(entry.join("logs").as_path())?;
-    let manifest = cache_entry_manifest_for_node(node, &key);
+    let staging_entry = cache_staging_entry_path(&staging_root, &key, "publish");
+    populate_cache_entry_dir(store.fs(), &staging_entry, node, ctx, &key_input, &key)?;
+
+    let mut canonical_entry: Option<PathBuf> = None;
+    if let Some(local_dir) = local_cache_dir.as_ref() {
+        let local_entry = local_dir.join(&key);
+        let _ = if local_dir == &staging_root {
+            publish_staged_cache_entry(store.fs(), &staging_entry, &local_entry)?
+        } else {
+            copy_cache_entry_atomically(store.fs(), &staging_entry, &local_entry, "publish")?
+        };
+        canonical_entry = Some(local_entry);
+    }
+    if canonical_entry.is_none() {
+        if let Some(remote_dir) = remote_cache_dir.as_ref() {
+            let remote_entry = remote_dir.join(&key);
+            let _ = if remote_dir == &staging_root {
+                publish_staged_cache_entry(store.fs(), &staging_entry, &remote_entry)?
+            } else {
+                copy_cache_entry_atomically(store.fs(), &staging_entry, &remote_entry, "publish")?
+            };
+            canonical_entry = Some(remote_entry);
+        }
+    }
+    if let (Some(source_entry), Some(remote_dir)) = (canonical_entry.as_ref(), remote_cache_dir.as_ref()) {
+        let remote_entry = remote_dir.join(&key);
+        if &remote_entry != source_entry {
+            let _ =
+                copy_cache_entry_atomically(store.fs(), source_entry, &remote_entry, "publish")?;
+        }
+    }
+    if store.fs().metadata(&staging_entry).is_ok() {
+        let _ = store.fs().remove_dir_all(&staging_entry);
+    }
+    Ok(())
+}
+
+fn populate_cache_entry_dir(
+    fs: &dyn Fs,
+    entry: &Path,
+    node: &Node,
+    ctx: &RunContext,
+    key_input: &CacheKeyInput,
+    key: &str,
+) -> Result<(), RuntimeError> {
+    if fs.metadata(entry).is_ok() {
+        fs.remove_dir_all(entry)?;
+    }
+    fs.create_dir_all(entry.join("outputs").as_path())?;
+    fs.create_dir_all(entry.join("logs").as_path())?;
+    let manifest = cache_entry_manifest_for_node(node, key);
     let meta = serde_json::json!({
         "cache_metadata_version": crate::cache::CACHE_METADATA_VERSION,
         "cache_key": key,
@@ -2481,26 +2530,83 @@ fn try_cache_write(
         "cache_source": "local",
         "schema_version": "v0.1",
     });
-    store.fs().write(
+    fs.write(
         entry.join("manifest.json").as_path(),
         &serde_json::to_vec_pretty(&manifest)?,
     )?;
-    store.fs().write(entry.join("meta.json").as_path(), &serde_json::to_vec_pretty(&meta)?)?;
-    copy_dir_all(store.fs(), ctx.run_dir.node_outputs_dir(&node.id), entry.join("outputs"))?;
+    fs.write(entry.join("meta.json").as_path(), &serde_json::to_vec_pretty(&meta)?)?;
+    copy_dir_all(fs, ctx.run_dir.node_outputs_dir(&node.id), entry.join("outputs"))?;
     let node_dir = ctx.run_dir.node_dir(&node.id);
-    let _ = store.fs().copy(
+    let _ = fs.copy(
         node_dir.join("stdout.log").as_path(),
         entry.join("logs").join("stdout.log").as_path(),
     );
-    let _ = store.fs().copy(
+    let _ = fs.copy(
         node_dir.join("stderr.log").as_path(),
         entry.join("logs").join("stderr.log").as_path(),
     );
-    let _ = store.fs().copy(
+    let _ = fs.copy(
         node_dir.join("trace.json").as_path(),
         entry.join("logs").join("trace.json").as_path(),
     );
     Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CachePublishOutcome {
+    Published,
+    AlreadyPresent,
+}
+
+fn publish_staged_cache_entry(
+    fs: &dyn Fs,
+    staging_entry: &Path,
+    target_entry: &Path,
+) -> std_io::Result<CachePublishOutcome> {
+    if fs.metadata(target_entry).is_ok() {
+        let _ = fs.remove_dir_all(staging_entry);
+        return Ok(CachePublishOutcome::AlreadyPresent);
+    }
+    if let Some(parent) = target_entry.parent() {
+        fs.create_dir_all(parent)?;
+    }
+    match fs.rename(staging_entry, target_entry) {
+        Ok(()) => Ok(CachePublishOutcome::Published),
+        Err(error) => {
+            let target_exists = fs.metadata(target_entry).is_ok();
+            let _ = fs.remove_dir_all(staging_entry);
+            if target_exists {
+                Ok(CachePublishOutcome::AlreadyPresent)
+            } else {
+                Err(error)
+            }
+        }
+    }
+}
+
+fn copy_cache_entry_atomically(
+    fs: &dyn Fs,
+    src_entry: &Path,
+    target_entry: &Path,
+    operation: &str,
+) -> std_io::Result<CachePublishOutcome> {
+    let cache_root = target_entry.parent().ok_or_else(|| {
+        std_io::Error::new(std_io::ErrorKind::InvalidInput, "cache target missing parent directory")
+    })?;
+    let key = target_entry.file_name().and_then(|value| value.to_str()).ok_or_else(|| {
+        std_io::Error::new(std_io::ErrorKind::InvalidInput, "cache target missing cache key")
+    })?;
+    let staging_entry = cache_staging_entry_path(cache_root, key, operation);
+    copy_dir_all(fs, src_entry, &staging_entry)?;
+    publish_staged_cache_entry(fs, &staging_entry, target_entry)
+}
+
+fn cache_staging_entry_path(cache_root: &Path, cache_key: &str, operation: &str) -> PathBuf {
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or(0);
+    cache_root.join(format!(".cache-{cache_key}-{operation}-{}-{nonce}", std::process::id()))
 }
 
 fn cache_entry_manifest_for_node(node: &Node, cache_key: &str) -> CacheEntryManifest {

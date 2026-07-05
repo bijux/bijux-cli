@@ -555,6 +555,48 @@ mod tests {
     }
 
     #[test]
+    fn readwrite_run_publishes_cache_entries_to_remote_root() {
+        let dir = tempfile::tempdir().unwrap();
+        let local_cache = tempfile::tempdir().unwrap();
+        let remote_cache = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+
+        let opt = RuntimeConfig {
+            cache_mode: CacheMode::ReadWrite,
+            cache_dir: Some(local_cache.path().to_path_buf()),
+            remote_cache_dir: Some(remote_cache.path().to_path_buf()),
+            ..RuntimeConfig::default()
+        };
+        let _ = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
+
+        let local_entry = cache_entry_for_node(local_cache.path(), "a");
+        let remote_entry = cache_entry_for_node(remote_cache.path(), "a");
+        assert!(local_entry.join("manifest.json").exists());
+        assert!(remote_entry.join("manifest.json").exists());
+        assert!(remote_entry.join("outputs").join("index.json").exists());
+    }
+
+    #[test]
+    fn readwrite_run_can_publish_remote_cache_without_local_root() {
+        let dir = tempfile::tempdir().unwrap();
+        let remote_cache = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+
+        let opt = RuntimeConfig {
+            cache_mode: CacheMode::ReadWrite,
+            cache_dir: None,
+            remote_cache_dir: Some(remote_cache.path().to_path_buf()),
+            ..RuntimeConfig::default()
+        };
+        let _ = runtime.run(&sample_graph(), dir.path(), opt).unwrap();
+
+        let remote_entry = cache_entry_for_node(remote_cache.path(), "a");
+        assert!(remote_entry.join("manifest.json").exists());
+        assert!(remote_entry.join("meta.json").exists());
+        assert!(remote_entry.join("outputs").join("index.json").exists());
+    }
+
+    #[test]
     fn remote_cache_corruption_reexecutes() {
         let dir = tempfile::tempdir().unwrap();
         let local_cache = tempfile::tempdir().unwrap();
