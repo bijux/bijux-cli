@@ -558,11 +558,10 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
                 .map(|file| OutputSummary {
                     node_id: file.node_id,
                     node_fingerprint: file.node_fingerprint,
-                    file: Path::new(&file.path)
-                        .file_name()
-                        .and_then(|value| value.to_str())
-                        .unwrap_or(file.path.as_str())
-                        .to_string(),
+                    name: file.name,
+                    path: file.path,
+                    kind: file.kind,
+                    media_type: file.media_type,
                     sha256: file.sha256,
                 })
                 .collect::<Vec<_>>()

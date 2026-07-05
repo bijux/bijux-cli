@@ -338,7 +338,10 @@ mod tests {
             files: files
                 .into_iter()
                 .map(|(p, h)| OutputFile {
+                    name: p.to_string(),
                     path: p.to_string(),
+                    kind: "file".to_string(),
+                    media_type: "application/octet-stream".to_string(),
                     sha256: h.to_string(),
                     node_id: "n".to_string(),
                     node_fingerprint: "fp".to_string(),

@@ -22,7 +22,23 @@
     "tool_version": {"type": "string"},
     "jobs": {"type": "integer"},
     "adapters": {"type": "array"},
-    "outputs": {"type": "array"},
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["node_id", "node_fingerprint", "name", "path", "kind", "media_type", "sha256"],
+        "properties": {
+          "node_id": {"type": "string"},
+          "node_fingerprint": {"type": "string"},
+          "name": {"type": "string"},
+          "path": {"type": "string"},
+          "kind": {"type": "string"},
+          "media_type": {"type": "string"},
+          "sha256": {"type": "string"}
+        }
+      }
+    },
     "node_counts": {"type": "object"},
     "policy": {"type": "object"},
     "cache_mode": {"type": ["string", "null"]},

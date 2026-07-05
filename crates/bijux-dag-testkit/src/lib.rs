@@ -348,7 +348,7 @@ fn const_node(id: &str) -> Node {
         kind: NodeKind::Const,
         semantic_kind: SemanticNodeKind::Task,
         inputs: vec![],
-        outputs: vec![FileOutput { name: "out".to_string(), path: format!("out_{id}") }],
+        outputs: vec![FileOutput::new("out".to_string(), format!("out_{id}"))],
         params: param_object(vec![("value", Value::from("ok"))]),
         container: None,
         timeout_ms: None,
@@ -370,7 +370,7 @@ fn shell_node(id: &str) -> Node {
         kind: NodeKind::Shell,
         semantic_kind: SemanticNodeKind::Task,
         inputs: vec!["in".to_string()],
-        outputs: vec![FileOutput { name: "out".to_string(), path: format!("out_{id}") }],
+        outputs: vec![FileOutput::new("out".to_string(), format!("out_{id}"))],
         params: param_object(vec![(
             "argv",
             Value::Array(vec![

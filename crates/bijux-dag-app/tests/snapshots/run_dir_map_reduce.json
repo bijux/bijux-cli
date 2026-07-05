@@ -342,38 +342,53 @@
     },
     "outputs": [
       {
-        "file": "map_left.txt",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
         "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
         "node_id": "map_left",
+        "path": "map_left.txt",
         "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
       },
       {
-        "file": "map_mid.txt",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
         "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
         "node_id": "map_mid",
+        "path": "map_mid.txt",
         "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
       },
       {
-        "file": "map_right.txt",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
         "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
         "node_id": "map_right",
+        "path": "map_right.txt",
         "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
       },
       {
-        "file": "reduce.txt",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
         "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
         "node_id": "reduce",
+        "path": "reduce.txt",
         "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
       },
       {
-        "file": "seed/out.json",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
         "node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
         "node_id": "seed",
+        "path": "seed/out.json",
         "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
       }
     ],
     "planner_contract_version": "bijux-dag-planner/v1",
-    "planner_fingerprint": "df2a0ca936cf9879478c3e460d678b4017064af5da17c62fc7b4f532fe4e4a11",
+    "planner_fingerprint": "6ce7ce94fe74f0f9585acf3cb23b8ae31e887535e04318fadf4bff7356e0bf7b",
     "policy": {
       "clean_env": true,
       "deny_clock": false,
@@ -415,6 +430,9 @@
       "outputs": {
         "files": [
           {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
             "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
             "node_id": "map_left",
             "path": "map_left.txt",
@@ -438,6 +456,9 @@
       "outputs": {
         "files": [
           {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
             "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
             "node_id": "map_mid",
             "path": "map_mid.txt",
@@ -461,6 +482,9 @@
       "outputs": {
         "files": [
           {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
             "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
             "node_id": "map_right",
             "path": "map_right.txt",
@@ -498,6 +522,9 @@
       "outputs": {
         "files": [
           {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
             "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
             "node_id": "reduce",
             "path": "reduce.txt",
@@ -513,6 +540,9 @@
       "outputs": {
         "files": [
           {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
             "node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
             "node_id": "seed",
             "path": "seed/out.json",
@@ -548,6 +578,17 @@
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "map_left",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "map_left.txt",
+          "present": true,
+          "required": true,
+          "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -575,6 +616,17 @@
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "map_mid",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "map_mid.txt",
+          "present": true,
+          "required": true,
+          "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -602,6 +654,17 @@
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "map_right",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "map_right.txt",
+          "present": true,
+          "required": true,
+          "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -629,6 +692,17 @@
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "reduce",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "reduce.txt",
+          "present": true,
+          "required": true,
+          "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -656,6 +730,17 @@
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "seed",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "seed/out.json",
+          "present": true,
+          "required": true,
+          "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -676,30 +761,45 @@
   "outputs_index": {
     "files": [
       {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
         "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
         "node_id": "map_left",
         "path": "nodes/map_left/outputs/map_left.txt",
         "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
       },
       {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
         "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
         "node_id": "map_mid",
         "path": "nodes/map_mid/outputs/map_mid.txt",
         "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
       },
       {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
         "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
         "node_id": "map_right",
         "path": "nodes/map_right/outputs/map_right.txt",
         "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
       },
       {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
         "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
         "node_id": "reduce",
         "path": "nodes/reduce/outputs/reduce.txt",
         "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
       },
       {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
         "node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
         "node_id": "seed",
         "path": "nodes/seed/outputs/seed/out.json",

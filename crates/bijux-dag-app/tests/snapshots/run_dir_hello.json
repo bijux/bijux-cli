@@ -158,20 +158,26 @@
     },
     "outputs": [
       {
-        "file": "out_const",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out_const",
         "node_fingerprint": "c5679252d72bbc44225d1782f8d0c202695b59fdff6c6d108302e8682e9061c2",
         "node_id": "const1",
+        "path": "out_const",
         "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
       },
       {
-        "file": "out_echo",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out_echo",
         "node_fingerprint": "672045107af67a2b8647280fb40048a9808536cd71c9bca262a757a9fe5e3595",
         "node_id": "echo",
+        "path": "out_echo",
         "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8"
       }
     ],
     "planner_contract_version": "bijux-dag-planner/v1",
-    "planner_fingerprint": "41ff26c51f57ff7cff9d1a99744cb07b038494bbe2382c3d8593ddccc6c19aaf",
+    "planner_fingerprint": "0fd8dd9184d1fca09da4d49e9beb4439f71f646a6255cf34fbea7fee00b2acc3",
     "policy": {
       "clean_env": true,
       "deny_clock": false,
@@ -205,6 +211,9 @@
       "outputs": {
         "files": [
           {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out_const",
             "node_fingerprint": "c5679252d72bbc44225d1782f8d0c202695b59fdff6c6d108302e8682e9061c2",
             "node_id": "const1",
             "path": "out_const",
@@ -228,6 +237,9 @@
       "outputs": {
         "files": [
           {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out_echo",
             "node_fingerprint": "672045107af67a2b8647280fb40048a9808536cd71c9bca262a757a9fe5e3595",
             "node_id": "echo",
             "path": "out_echo",
@@ -257,6 +269,17 @@
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "const1",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out_const",
+          "path": "out_const",
+          "present": true,
+          "required": true,
+          "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -280,6 +303,17 @@
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "echo",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out_echo",
+          "path": "out_echo",
+          "present": true,
+          "required": true,
+          "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8"
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -300,12 +334,18 @@
   "outputs_index": {
     "files": [
       {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out_const",
         "node_fingerprint": "c5679252d72bbc44225d1782f8d0c202695b59fdff6c6d108302e8682e9061c2",
         "node_id": "const1",
         "path": "nodes/const1/outputs/out_const",
         "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
       },
       {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out_echo",
         "node_fingerprint": "672045107af67a2b8647280fb40048a9808536cd71c9bca262a757a9fe5e3595",
         "node_id": "echo",
         "path": "nodes/echo/outputs/out_echo",

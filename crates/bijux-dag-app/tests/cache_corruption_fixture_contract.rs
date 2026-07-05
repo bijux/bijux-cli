@@ -58,7 +58,10 @@ fn write_cache_entry(base: &Path, key: &str, meta: &Value, payload: &[u8]) {
     fs::write(entry.join("outputs").join("payload.bin"), payload).expect("write payload");
     let index = OutputsIndex {
         files: vec![OutputFile {
+            name: "payload".to_string(),
             path: "payload.bin".to_string(),
+            kind: "file".to_string(),
+            media_type: "application/octet-stream".to_string(),
             sha256: sha256_hex(payload),
             node_id: "node-a".to_string(),
             node_fingerprint: key.to_string(),
