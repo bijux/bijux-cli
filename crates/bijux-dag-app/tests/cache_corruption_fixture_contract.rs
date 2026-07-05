@@ -10,13 +10,12 @@ fn dag_bin(cwd: &Path) -> Command {
         .or_else(|| option_env!("CARGO").map(ToOwned::to_owned))
         .unwrap_or_else(|| "cargo".to_string());
     let mut command = Command::new(cargo_bin);
-    command.current_dir(cwd).env("CARGO_TARGET_DIR", cwd.join("artifacts/target")).args([
-        "run",
-        "--quiet",
-        "-p",
-        "bijux-dag-cli",
-        "--",
-    ]);
+    command
+        .current_dir(cwd)
+        .env("CARGO_TARGET_DIR", cwd.join("artifacts/target"))
+        .env("CARGO_TERM_COLOR", "never")
+        .env("CARGO_TERM_PROGRESS_WHEN", "never")
+        .args(["run", "--quiet", "-p", "bijux-dag-cli", "--"]);
     command
 }
 
