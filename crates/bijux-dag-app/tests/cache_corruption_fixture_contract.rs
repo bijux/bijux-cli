@@ -1,4 +1,5 @@
 use bijux_dag_artifacts::{hash::sha256_hex, OutputFile, OutputsIndex};
+use bijux_dag_runtime::{cache_key_explanation, CacheKeyInput};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -36,20 +37,39 @@ fn parse_json(stdout: &str, code: i32, stderr: &str) -> Value {
         .unwrap_or_else(|error| panic!("parse json output: {error}; code={code}; stderr={stderr}"))
 }
 
-fn default_meta(key: &str) -> Value {
-    json!({
-        "cache_metadata_version":"cache-meta/v0.1",
-        "cache_key": key,
-        "node_fingerprint": key,
-        "adapter_id":"shell",
-        "adapter_version":"0.1",
-        "produces_outputs_schema_version":"v0.1",
-        "policy_fingerprint":"policy-fixed",
-        "config_fingerprint":"config-fixed",
-        "backend_class":"local",
-        "source_run_id":"run-fixed",
-        "cache_source":"local"
-    })
+fn default_meta(label: &str) -> (String, Value) {
+    let key_input = CacheKeyInput {
+        execution_fingerprint: format!("exec-{label}"),
+        node_definition_fingerprint: format!("node-{label}"),
+        declared_environment_fingerprint: format!("env-{label}"),
+        input_lineage_fingerprint: format!("inputs-{label}"),
+        adapter_id: "shell".to_string(),
+        adapter_version: "0.1".to_string(),
+        output_schema_version: "v0.1".to_string(),
+        policy_fingerprint: "policy-fixed".to_string(),
+        execution_contract_fingerprint: "exec-contract-fixed".to_string(),
+        backend_class: "local".to_string(),
+    };
+    let key = cache_key_explanation(&key_input).key;
+    (
+        key.clone(),
+        json!({
+            "cache_metadata_version":"cache-meta/v0.2",
+            "cache_key": key,
+            "node_fingerprint": key_input.execution_fingerprint,
+            "node_definition_fingerprint": key_input.node_definition_fingerprint,
+            "declared_environment_fingerprint": key_input.declared_environment_fingerprint,
+            "input_lineage_fingerprint": key_input.input_lineage_fingerprint,
+            "adapter_id": key_input.adapter_id,
+            "adapter_version": key_input.adapter_version,
+            "produces_outputs_schema_version": key_input.output_schema_version,
+            "policy_fingerprint": key_input.policy_fingerprint,
+            "execution_contract_fingerprint": key_input.execution_contract_fingerprint,
+            "backend_class": key_input.backend_class,
+            "source_run_id":"run-fixed",
+            "cache_source":"local"
+        }),
+    )
 }
 
 fn write_cache_entry(base: &Path, key: &str, meta: &Value, payload: &[u8]) {
@@ -65,7 +85,11 @@ fn write_cache_entry(base: &Path, key: &str, meta: &Value, payload: &[u8]) {
             size_bytes: payload.len() as u64,
             sha256: sha256_hex(payload),
             node_id: "node-a".to_string(),
-            node_fingerprint: key.to_string(),
+            node_fingerprint: meta
+                .get("node_fingerprint")
+                .and_then(|value| value.as_str())
+                .unwrap_or_default()
+                .to_string(),
         }],
     };
     fs::write(
@@ -78,8 +102,8 @@ fn write_cache_entry(base: &Path, key: &str, meta: &Value, payload: &[u8]) {
 }
 
 fn apply_corruption(cache_dir: &Path, fixture_name: &str) -> String {
-    let key = "node-fp-1".to_string();
-    write_cache_entry(cache_dir, &key, &default_meta(&key), b"ok\n");
+    let (key, meta) = default_meta("cache-entry");
+    write_cache_entry(cache_dir, &key, &meta, b"ok\n");
     let entry = cache_dir.join(&key);
     match fixture_name {
         "hash_mismatch" => {
@@ -91,8 +115,8 @@ fn apply_corruption(cache_dir: &Path, fixture_name: &str) -> String {
         }
         "missing_outputs_proof" => {
             let proofless = json!({
-                "cache_metadata_version":"cache-meta/v0.1",
-                "node_fingerprint": key,
+                "cache_metadata_version":"cache-meta/v0.2",
+                "node_fingerprint": "exec-proofless",
                 "adapter_id":"shell",
                 "adapter_version":"0.1",
                 "source_run_id":"run-fixed",
@@ -102,11 +126,11 @@ fn apply_corruption(cache_dir: &Path, fixture_name: &str) -> String {
                 .expect("write proofless meta");
         }
         "truncated_meta" => {
-            fs::write(entry.join("meta.json"), b"{\"cache_metadata_version\":\"cache-meta/v0.1\"")
+            fs::write(entry.join("meta.json"), b"{\"cache_metadata_version\":\"cache-meta/v0.2\"")
                 .expect("truncate meta");
         }
         "unsupported_metadata_version" => {
-            let mut meta = default_meta(&key);
+            let (_, mut meta) = default_meta("cache-entry");
             meta["cache_metadata_version"] = Value::String("cache-meta/v9.9".to_string());
             fs::write(entry.join("meta.json"), serde_json::to_vec_pretty(&meta).unwrap())
                 .expect("write unsupported meta");
