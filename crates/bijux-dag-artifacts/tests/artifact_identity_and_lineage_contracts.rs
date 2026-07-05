@@ -9,8 +9,8 @@ use bijux_dag_artifacts::store::{
     ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
 };
 use bijux_dag_artifacts::{
-    build_artifact_identity, hash::sha256_hex, write_outputs_index, OutputsIndex,
-    RunDirSchemaIndex, RunOutputFile, RunOutputsIndex,
+    build_artifact_identity, hash::sha256_hex, write_outputs_index, DeclaredOutputArtifact,
+    OutputsIndex, RunDirSchemaIndex, RunOutputFile, RunOutputsIndex,
 };
 use bijux_dag_testkit as _;
 use hex as _;
@@ -101,7 +101,20 @@ fn outputs_index_preserves_nested_paths_and_empty_file_identity() {
         dir.path(),
         "node-a",
         "fp-a",
-        &["nested/deeper/data.txt".to_string(), "nested/deeper/empty.txt".to_string()],
+        &[
+            DeclaredOutputArtifact {
+                name: "data".to_string(),
+                path: "nested/deeper/data.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+            },
+            DeclaredOutputArtifact {
+                name: "empty".to_string(),
+                path: "nested/deeper/empty.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+            },
+        ],
     )
     .expect("write index");
     let index_raw = fs::read_to_string(dir.path().join("index.json")).expect("read index");
@@ -118,6 +131,9 @@ fn metadata_only_indexes_scale_without_payload_materialization() {
         .map(|i| RunOutputFile {
             node_id: "node-bulk".to_string(),
             node_fingerprint: "fp-bulk".to_string(),
+            name: format!("output-{i:05}"),
+            kind: "file".to_string(),
+            media_type: "application/octet-stream".to_string(),
             sha256: format!("{:064x}", i),
             path: format!("node-bulk/output-{i:05}.bin"),
         })

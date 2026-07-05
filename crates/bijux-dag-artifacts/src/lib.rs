@@ -95,7 +95,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub mod stable {
     pub use crate::{
         compact_lineage, dedup_metrics_for_hashes, explain_lineage_safe_gc, lineage_dependencies,
-        lineage_dependents, normalize_metadata_pairs, sha256_hex,
+        lineage_dependents, normalize_metadata_pairs, sha256_artifact_path, sha256_hex,
         validate_output_schema_descriptor, verify_run_dir, write_lineage_snapshot,
         write_outputs_index, ArtifactError, ArtifactId, ArtifactIntegrityProof,
         ArtifactLineageEdge, ArtifactLineageSnapshot, ArtifactPackManifest,
@@ -107,8 +107,8 @@ pub mod stable {
 /// Common imports for reading, writing, and validating run artifacts.
 pub mod prelude {
     pub use crate::stable::{
-        sha256_hex, validate_output_schema_descriptor, verify_run_dir, write_outputs_index,
-        ArtifactError, ArtifactSchemaDescriptor, RunDir, SchemaValidationMode,
+        sha256_artifact_path, sha256_hex, validate_output_schema_descriptor, verify_run_dir,
+        write_outputs_index, ArtifactError, ArtifactSchemaDescriptor, RunDir, SchemaValidationMode,
     };
 }
 
@@ -271,23 +271,26 @@ pub fn write_outputs_index(
     dir: impl AsRef<Path>,
     node_id: &str,
     node_fingerprint: &str,
-    output_paths: &[String],
+    declared_outputs: &[DeclaredOutputArtifact],
 ) -> Result<(), ArtifactError> {
     let mut files = Vec::new();
-    for rel in output_paths {
+    for output in declared_outputs {
+        let rel = &output.path;
         if !paths::is_normalized_relative_path(rel) {
             return Err(ArtifactError::PathViolation(format!(
                 "output path must be normalized relative path: {rel}"
             )));
         }
         let path = dir.as_ref().join(rel);
-        if !path.is_file() {
+        if !path.exists() {
             return Err(ArtifactError::MissingOutput(rel.clone()));
         }
-        let data = std_fs::read(&path)?;
-        let sha = sha256_bytes(&data);
+        let sha = sha256_artifact_path(&path)?;
         files.push(OutputFile {
+            name: output.name.clone(),
             path: rel.clone(),
+            kind: output.kind.clone(),
+            media_type: output.media_type.clone(),
             sha256: sha,
             node_id: node_id.to_string(),
             node_fingerprint: node_fingerprint.to_string(),
@@ -296,6 +299,51 @@ pub fn write_outputs_index(
     files.sort_by(|a, b| a.path.cmp(&b.path));
     let index = OutputsIndex { files };
     write_json(dir.as_ref().join("index.json"), &index)
+}
+
+pub fn sha256_artifact_path(path: impl AsRef<Path>) -> Result<String, ArtifactError> {
+    sha256_artifact_path_inner(path.as_ref(), path.as_ref())
+}
+
+fn sha256_artifact_path_inner(root: &Path, path: &Path) -> Result<String, ArtifactError> {
+    let metadata = std_fs::symlink_metadata(path)?;
+    if metadata.file_type().is_symlink() {
+        return Err(ArtifactError::PathViolation(format!(
+            "artifact path must not be a symlink: {}",
+            path.display()
+        )));
+    }
+    if metadata.is_file() {
+        return Ok(sha256_bytes(&std_fs::read(path)?));
+    }
+    if metadata.is_dir() {
+        let mut entries = Vec::new();
+        for entry in std_fs::read_dir(path)? {
+            let entry = entry?;
+            entries.push(entry.path());
+        }
+        entries.sort();
+        let mut payload = Vec::new();
+        for child in entries {
+            let relative = child
+                .strip_prefix(root)
+                .map_err(|_| {
+                    ArtifactError::PathViolation("artifact path escaped root".to_string())
+                })?
+                .to_string_lossy()
+                .replace('\\', "/");
+            payload.extend_from_slice(relative.as_bytes());
+            payload.push(b'\n');
+            let child_hash = sha256_artifact_path_inner(root, &child)?;
+            payload.extend_from_slice(child_hash.as_bytes());
+            payload.push(b'\n');
+        }
+        return Ok(sha256_bytes(&payload));
+    }
+    Err(ArtifactError::PathViolation(format!(
+        "artifact path must be a regular file or directory: {}",
+        path.display()
+    )))
 }
 
 pub fn write_run_outputs_index(

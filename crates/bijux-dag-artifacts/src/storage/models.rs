@@ -65,6 +65,8 @@ pub struct NodeTrace {
     pub inputs_index: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolved_params: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub outputs: Vec<TraceOutputArtifact>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub container: Option<ContainerTrace>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -225,8 +227,31 @@ pub struct Resources {
 pub struct OutputSummary {
     pub node_id: String,
     pub node_fingerprint: String,
-    pub file: String,
+    pub name: String,
+    pub path: String,
+    pub kind: String,
+    pub media_type: String,
     pub sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DeclaredOutputArtifact {
+    pub name: String,
+    pub path: String,
+    pub kind: String,
+    pub media_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TraceOutputArtifact {
+    pub name: String,
+    pub path: String,
+    pub kind: String,
+    pub required: bool,
+    pub present: bool,
+    pub media_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -258,6 +283,9 @@ pub struct RunOutputsIndex {
 pub struct RunOutputFile {
     pub node_id: String,
     pub node_fingerprint: String,
+    pub name: String,
+    pub kind: String,
+    pub media_type: String,
     pub sha256: String,
     pub path: String,
 }
@@ -294,7 +322,10 @@ pub struct OutputsIndex {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OutputFile {
+    pub name: String,
     pub path: String,
+    pub kind: String,
+    pub media_type: String,
     pub sha256: String,
     pub node_id: String,
     pub node_fingerprint: String,

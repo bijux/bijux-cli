@@ -5,6 +5,7 @@ use bijux_dag_artifacts::prelude::{
 use bijux_dag_artifacts::stable::{
     lineage_dependencies, ArtifactLineageEdge, ArtifactLineageSnapshot,
 };
+use bijux_dag_artifacts::DeclaredOutputArtifact;
 use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
@@ -20,7 +21,18 @@ fn prelude_covers_artifact_write_and_validation_flow() {
     let run_dir = RunDir::create_with_id(dir.path(), "api-surface").expect("run dir");
     assert!(run_dir.final_path().ends_with("run-api-surface"));
 
-    write_outputs_index(dir.path(), "node", "fp", &["out.txt".to_string()]).expect("index");
+    write_outputs_index(
+        dir.path(),
+        "node",
+        "fp",
+        &[DeclaredOutputArtifact {
+            name: "out".to_string(),
+            path: "out.txt".to_string(),
+            kind: "file".to_string(),
+            media_type: "application/octet-stream".to_string(),
+        }],
+    )
+    .expect("index");
     assert_eq!(sha256_hex(b"payload").len(), 64);
 
     validate_output_schema_descriptor(&ArtifactSchemaDescriptor {

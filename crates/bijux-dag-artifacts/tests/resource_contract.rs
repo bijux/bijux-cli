@@ -30,7 +30,10 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
             .map(|idx| bijux_dag_artifacts::OutputSummary {
                 node_id: format!("n{idx}"),
                 node_fingerprint: format!("fp-{idx}"),
-                file: format!("out-{idx}"),
+                name: format!("out-{idx}"),
+                path: format!("node-{idx}/out-{idx}.bin"),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
                 sha256: "hash".to_string(),
             })
             .collect(),
@@ -82,6 +85,7 @@ fn resource_retry_trace_event_volume_stays_bounded() {
         resources: None,
         inputs_index: None,
         resolved_params: Some(json!({"argv":["/bin/sh","-c","exit 1"]})),
+        outputs: Vec::new(),
         container: None,
         cache_proof: None,
         branch_decision: None,

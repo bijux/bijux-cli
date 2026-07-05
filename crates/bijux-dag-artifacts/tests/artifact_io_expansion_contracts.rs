@@ -8,7 +8,7 @@ use bijux_dag_artifacts::retention::RetentionPolicy;
 use bijux_dag_artifacts::store::{
     ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
 };
-use bijux_dag_artifacts::{write_outputs_index, OutputsIndex};
+use bijux_dag_artifacts::{write_outputs_index, DeclaredOutputArtifact, OutputsIndex};
 use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
@@ -40,7 +40,20 @@ fn fs_materialization_rejects_traversal_and_non_normalized_paths() {
         dir.path(),
         "node-a",
         "fp-a",
-        &["../escape.txt".to_string(), "ok.txt".to_string()],
+        &[
+            DeclaredOutputArtifact {
+                name: "escape".to_string(),
+                path: "../escape.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+            },
+            DeclaredOutputArtifact {
+                name: "ok".to_string(),
+                path: "ok.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+            },
+        ],
     )
     .expect_err("path traversal must be rejected");
     assert!(err.to_string().contains("normalized relative path"));
@@ -71,7 +84,20 @@ fn nested_tree_export_style_index_and_empty_payload_identity_are_stable() {
         dir.path(),
         "pack",
         "fp-pack",
-        &["nested/deeper/data.bin".to_string(), "nested/deeper/empty.bin".to_string()],
+        &[
+            DeclaredOutputArtifact {
+                name: "data".to_string(),
+                path: "nested/deeper/data.bin".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+            },
+            DeclaredOutputArtifact {
+                name: "empty".to_string(),
+                path: "nested/deeper/empty.bin".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+            },
+        ],
     )
     .expect("index");
     let parsed: OutputsIndex =

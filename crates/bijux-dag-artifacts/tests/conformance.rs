@@ -12,7 +12,7 @@ use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
 };
 use bijux_dag_artifacts::{
-    write_outputs_index, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex,
+    write_outputs_index, DeclaredOutputArtifact, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex,
 };
 use bijux_dag_testkit as _;
 use hex as _;
@@ -27,7 +27,20 @@ fn outputs_index_is_stable_under_repeated_writes() {
     fs::write(dir.path().join("b.txt"), b"b").unwrap();
     fs::write(dir.path().join("a.txt"), b"a").unwrap();
 
-    let paths = vec!["b.txt".to_string(), "a.txt".to_string()];
+    let paths = vec![
+        DeclaredOutputArtifact {
+            name: "b".to_string(),
+            path: "b.txt".to_string(),
+            kind: "file".to_string(),
+            media_type: "application/octet-stream".to_string(),
+        },
+        DeclaredOutputArtifact {
+            name: "a".to_string(),
+            path: "a.txt".to_string(),
+            kind: "file".to_string(),
+            media_type: "application/octet-stream".to_string(),
+        },
+    ];
     write_outputs_index(dir.path(), "node", "fp", &paths).unwrap();
     let first = fs::read_to_string(dir.path().join("index.json")).unwrap();
 
@@ -133,7 +146,20 @@ fn write_outputs_index_rejects_escaping_paths() {
         dir.path(),
         "node",
         "fp",
-        &["ok.txt".to_string(), "../escape.txt".to_string()],
+        &[
+            DeclaredOutputArtifact {
+                name: "ok".to_string(),
+                path: "ok.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+            },
+            DeclaredOutputArtifact {
+                name: "escape".to_string(),
+                path: "../escape.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+            },
+        ],
     )
     .err()
     .unwrap();
@@ -149,7 +175,20 @@ fn write_outputs_index_rejects_missing_declared_outputs() {
         dir.path(),
         "node",
         "fp",
-        &["ok.txt".to_string(), "missing.txt".to_string()],
+        &[
+            DeclaredOutputArtifact {
+                name: "ok".to_string(),
+                path: "ok.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+            },
+            DeclaredOutputArtifact {
+                name: "missing".to_string(),
+                path: "missing.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+            },
+        ],
     )
     .err()
     .unwrap();

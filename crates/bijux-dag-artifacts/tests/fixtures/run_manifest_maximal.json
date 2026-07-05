@@ -23,7 +23,10 @@
     {
       "node_id": "n1",
       "node_fingerprint": "fp1",
-      "file": "n1/out.txt",
+      "name": "out",
+      "path": "n1/out.txt",
+      "kind": "file",
+      "media_type": "application/octet-stream",
       "sha256": "abc"
     }
   ],
