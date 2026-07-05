@@ -140,6 +140,81 @@ fn write_tagged_graph_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, dag)
 }
 
+fn write_plan_diff_before_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let dag = dir.path().join("graph-diff-before.json");
+    fs::write(
+        &dag,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"plan-diff-before","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {
+              "id":"b",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"out","path":"b/out"}],
+              "params":{"argv":["echo","before"]},
+              "resources":{"cpu":1,"mem_mb":64},
+              "timeout_ms":1000,
+              "retry":{"max_attempts":1,"backoff_ms":10}
+            }
+          ],
+          "edges":[{"from":{"node_id":"a","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("write plan diff before graph");
+    (dir, dag)
+}
+
+fn write_plan_diff_after_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let dag = dir.path().join("graph-diff-after.json");
+    fs::write(
+        &dag,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"plan-diff-after","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"c","kind":"const","outputs":[{"name":"out","path":"c/out"}],"params":{"value":2}},
+            {
+              "id":"b",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"result","path":"b/result.json"}],
+              "params":{"argv":["echo","after"]},
+              "resources":{"cpu":4,"mem_mb":256},
+              "timeout_ms":5000,
+              "retry":{"max_attempts":3,"backoff_ms":50}
+            }
+          ],
+          "edges":[{"from":{"node_id":"c","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("write plan diff after graph");
+    (dir, dag)
+}
+
+fn write_plan_diff_metadata_only_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let dag = dir.path().join("graph-diff-metadata-only.json");
+    fs::write(
+        &dag,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"plan-routes","description":"metadata-only change","owners":["ops"],"tags":["reviewed"]},
+          "nodes":[
+            {"id":"a","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+            {"id":"b","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"params":{"value":"2"}}
+          ],
+          "edges":[{"from":{"node_id":"a","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("write metadata-only diff graph");
+    (dir, dag)
+}
+
 fn write_branch_graph_fixture() -> (tempfile::TempDir, PathBuf) {
     let dir = tempfile::tempdir().expect("tmp");
     let dag = dir.path().join("graph-branch.json");
@@ -420,6 +495,64 @@ fn plan_diff_success_path_returns_success() {
     let cli = quiet_json_cli();
     let code = handle_plan_command(&cli, &PlanCommands::Diff { before, after }).expect("plan diff");
     assert_eq!(code, ExitCode::SUCCESS);
+}
+
+#[test]
+fn plan_diff_payload_reports_execution_affecting_categories() {
+    let (_before_dir, before_path) = write_plan_diff_before_fixture();
+    let (_after_dir, after_path) = write_plan_diff_after_fixture();
+    let before_raw = fs::read_to_string(before_path).expect("read before graph");
+    let after_raw = fs::read_to_string(after_path).expect("read after graph");
+    let before_graph = crate::parse_graph(&before_raw).expect("before graph");
+    let after_graph = crate::parse_graph(&after_raw).expect("after graph");
+    let before_result =
+        super::build_default_planner_analysis(&before_graph, &super::PlanPreviewConfig::default())
+            .expect("before plan");
+    let after_result =
+        super::build_default_planner_analysis(&after_graph, &super::PlanPreviewConfig::default())
+            .expect("after plan");
+    let diff = bijux_dag_runtime::diff_plans(&before_result, &after_result);
+    let payload = super::plan_diff_payload(&before_result, &after_result, &diff);
+
+    assert_eq!(payload["changed"], true);
+    assert_eq!(payload["diff"]["execution_affecting_changed"], true);
+    assert_eq!(payload["diff"]["metadata_only_changed"], false);
+    assert_eq!(payload["diff"]["added_nodes"], serde_json::json!(["c"]));
+    assert_eq!(payload["diff"]["removed_nodes"], serde_json::json!(["a"]));
+    assert_eq!(payload["diff"]["changed_params"], serde_json::json!(["b"]));
+    assert_eq!(payload["diff"]["changed_outputs"], serde_json::json!(["b"]));
+    assert_eq!(payload["diff"]["changed_resources"], serde_json::json!(["b"]));
+    assert_eq!(payload["diff"]["changed_retry_timeout"], serde_json::json!(["b"]));
+    assert_eq!(payload["diff"]["added_dependencies"], serde_json::json!(["data:-:-:c:out->b:in"]));
+    assert_eq!(
+        payload["diff"]["removed_dependencies"],
+        serde_json::json!(["data:-:-:a:out->b:in"])
+    );
+}
+
+#[test]
+fn plan_diff_payload_classifies_metadata_only_change() {
+    let (_before_dir, before_path) = write_graph_fixture();
+    let (_after_dir, after_path) = write_plan_diff_metadata_only_fixture();
+    let before_raw = fs::read_to_string(before_path).expect("read before graph");
+    let after_raw = fs::read_to_string(after_path).expect("read after graph");
+    let before_graph = crate::parse_graph(&before_raw).expect("before graph");
+    let after_graph = crate::parse_graph(&after_raw).expect("after graph");
+    let before_result =
+        super::build_default_planner_analysis(&before_graph, &super::PlanPreviewConfig::default())
+            .expect("before plan");
+    let after_result =
+        super::build_default_planner_analysis(&after_graph, &super::PlanPreviewConfig::default())
+            .expect("after plan");
+    let diff = bijux_dag_runtime::diff_plans(&before_result, &after_result);
+    let payload = super::plan_diff_payload(&before_result, &after_result, &diff);
+
+    assert_eq!(payload["changed"], true);
+    assert_eq!(payload["diff"]["metadata_only_changed"], true);
+    assert_eq!(payload["diff"]["execution_affecting_changed"], false);
+    assert_eq!(payload["diff"]["changed_metadata"], serde_json::json!(["graph_meta"]));
+    assert_eq!(payload["diff"]["added_nodes"], serde_json::json!([]));
+    assert_eq!(payload["diff"]["changed_params"], serde_json::json!([]));
 }
 
 #[test]
