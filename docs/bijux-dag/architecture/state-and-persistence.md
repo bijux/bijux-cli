@@ -45,6 +45,15 @@ generic failed run.
 - `.run-complete.json` is only written for runs that actually finalized as
   complete.
 
+Operator interruption now persists dedicated cancellation evidence too.
+
+- `manifest.json.status` becomes `cancelled` when the operator interrupts the
+  run.
+- `manifest.json.run_cancellation_cause` records the durable cancellation cause
+  instead of forcing downstream readers to infer it from partial traces.
+- already completed nodes keep their existing terminal status, while running or
+  not-yet-started work is finalized as cancelled evidence.
+
 The two supported timeout behaviors are:
 
 - `finish_running`
