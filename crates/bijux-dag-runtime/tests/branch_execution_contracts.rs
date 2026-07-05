@@ -47,6 +47,36 @@ fn branch_graph_json(decision: &str, default_decision: Option<&str>) -> String {
     )
 }
 
+fn branch_join_graph_json(decision: &str, trigger_rule: &str) -> String {
+    format!(
+        r#"{{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {{"id":"seed","kind":"const","outputs":[{{"name":"out","path":"seed/out"}}],"params":{{"value":1}}}},
+            {{
+              "id":"decide",
+              "kind":"const",
+              "semantic_kind":"branch",
+              "inputs":["in"],
+              "outputs":[{{"name":"decision","path":"decide/decision.txt"}}],
+              "params":{{"value":"{decision}"}},
+              "branch":{{"decisions":["left","right"],"decision_output":"decision"}}
+            }},
+            {{"id":"left","kind":"const","inputs":["in"],"outputs":[{{"name":"out","path":"left/out"}}],"params":{{"value":"left"}},"trigger_rule":"any_success"}},
+            {{"id":"right","kind":"const","inputs":["in"],"outputs":[{{"name":"out","path":"right/out"}}],"params":{{"value":"right"}},"trigger_rule":"any_success"}},
+            {{"id":"join","kind":"const","inputs":["lhs","rhs"],"outputs":[{{"name":"out","path":"join/out"}}],"params":{{"value":"join"}},"trigger_rule":"{trigger_rule}"}}
+          ],
+          "edges":[
+            {{"id":"seed-to-decide","from":{{"node_id":"seed","port":"out"}},"to":{{"node_id":"decide","port":"in"}}}},
+            {{"id":"branch-left","kind":"conditional","decision":"left","from":{{"node_id":"decide","port":"decision"}},"to":{{"node_id":"left","port":"in"}}}},
+            {{"id":"branch-right","kind":"conditional","decision":"right","from":{{"node_id":"decide","port":"decision"}},"to":{{"node_id":"right","port":"in"}}}},
+            {{"id":"left-to-join","kind":"control","from":{{"node_id":"left","port":"out"}},"to":{{"node_id":"join","port":"lhs"}}}},
+            {{"id":"right-to-join","kind":"control","from":{{"node_id":"right","port":"out"}},"to":{{"node_id":"join","port":"rhs"}}}}
+          ]
+        }}"#
+    )
+}
+
 fn read_trace(run_dir: &std::path::Path, node_id: &str) -> Value {
     serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join(node_id).join("trace.json"))
@@ -133,4 +163,40 @@ fn runtime_uses_branch_default_when_node_outputs_unknown_decision() {
             && event["node_id"] == "decide"
             && event["details"]["used_default"] == true
     }));
+}
+
+#[test]
+fn runtime_runs_branch_join_with_any_success_after_unselected_path_is_skipped() {
+    let graph = parse_graph_strict(&branch_join_graph_json("left", "any_success"))
+        .expect("parse graph");
+    let runtime = Runtime::new();
+    let out_dir = tempfile::tempdir().expect("tempdir");
+    let run_dir =
+        runtime.run(&graph, out_dir.path(), RuntimeConfig::default()).expect("run branch dag");
+
+    let left = read_trace(&run_dir, "left");
+    let right = read_trace(&run_dir, "right");
+    let join = read_trace(&run_dir, "join");
+
+    assert_eq!(left["status"], "success");
+    assert_eq!(right["status"], "skipped");
+    assert_eq!(join["status"], "success");
+}
+
+#[test]
+fn runtime_runs_branch_join_with_all_done_after_unselected_path_is_skipped() {
+    let graph =
+        parse_graph_strict(&branch_join_graph_json("right", "all_done")).expect("parse graph");
+    let runtime = Runtime::new();
+    let out_dir = tempfile::tempdir().expect("tempdir");
+    let run_dir =
+        runtime.run(&graph, out_dir.path(), RuntimeConfig::default()).expect("run branch dag");
+
+    let left = read_trace(&run_dir, "left");
+    let right = read_trace(&run_dir, "right");
+    let join = read_trace(&run_dir, "join");
+
+    assert_eq!(left["status"], "skipped");
+    assert_eq!(right["status"], "success");
+    assert_eq!(join["status"], "success");
 }
