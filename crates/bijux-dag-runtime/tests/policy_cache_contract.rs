@@ -946,9 +946,13 @@ fn runtime_cache_meta_records_strong_identity_components() {
         })
         .next()
         .expect("cache meta");
+    let manifest_path = meta_path.parent().expect("cache entry").join("manifest.json");
     let meta: Value =
         serde_json::from_str(&fs::read_to_string(meta_path).expect("cache meta json"))
             .expect("parse cache meta");
+    let manifest: Value =
+        serde_json::from_str(&fs::read_to_string(manifest_path).expect("cache manifest json"))
+            .expect("parse cache manifest");
 
     assert_eq!(meta["cache_metadata_version"], "cache-meta/v0.2");
     assert!(meta["cache_key"].is_string());
@@ -959,6 +963,13 @@ fn runtime_cache_meta_records_strong_identity_components() {
     assert!(meta["policy_fingerprint"].is_string());
     assert!(meta["execution_contract_fingerprint"].is_string());
     assert_eq!(meta["backend_class"], "local");
+    assert_eq!(manifest["manifest_version"], "cache-entry/v0.1");
+    assert_eq!(manifest["node_id"], "node");
+    assert!(
+        manifest["outputs"].as_array().is_some_and(|outputs| {
+            outputs.iter().any(|output| output["path"] == "value.txt" && output["required"] == true)
+        })
+    );
 }
 
 #[test]

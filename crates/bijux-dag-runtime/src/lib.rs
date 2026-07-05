@@ -2410,6 +2410,7 @@ fn try_cache_write(
     let entry = store.entry(&key);
     store.fs().create_dir_all(entry.join("outputs").as_path())?;
     store.fs().create_dir_all(entry.join("logs").as_path())?;
+    let manifest = cache_entry_manifest_for_node(node, &key);
     let meta = serde_json::json!({
         "cache_metadata_version": crate::cache::CACHE_METADATA_VERSION,
         "cache_key": key,
@@ -2428,6 +2429,10 @@ fn try_cache_write(
         "cache_source": "local",
         "schema_version": "v0.1",
     });
+    store.fs().write(
+        entry.join("manifest.json").as_path(),
+        &serde_json::to_vec_pretty(&manifest)?,
+    )?;
     store.fs().write(entry.join("meta.json").as_path(), &serde_json::to_vec_pretty(&meta)?)?;
     copy_dir_all(store.fs(), ctx.run_dir.node_outputs_dir(&node.id), entry.join("outputs"))?;
     let node_dir = ctx.run_dir.node_dir(&node.id);
@@ -2444,6 +2449,27 @@ fn try_cache_write(
         entry.join("logs").join("trace.json").as_path(),
     );
     Ok(())
+}
+
+fn cache_entry_manifest_for_node(node: &Node, cache_key: &str) -> CacheEntryManifest {
+    let mut outputs = node
+        .outputs
+        .iter()
+        .map(|output| CacheManifestOutput {
+            name: output.name.clone(),
+            path: output.path.clone(),
+            kind: output_kind_label(&output.kind).to_string(),
+            media_type: output.effective_media_type(),
+            required: output.required,
+        })
+        .collect::<Vec<_>>();
+    outputs.sort_by(|a, b| a.path.cmp(&b.path));
+    CacheEntryManifest {
+        manifest_version: CACHE_ENTRY_MANIFEST_VERSION.to_string(),
+        cache_key: cache_key.to_string(),
+        node_id: node.id.clone(),
+        outputs,
+    }
 }
 
 fn verify_cache_entry(
