@@ -443,6 +443,33 @@
       "fingerprint": "b9bb38554789f15cde013cd23e5248e1d4b3b84113e9264915c7df6c00feecfd",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "failed",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "eligible",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "eligible",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_failed",
+          "from_state": "running",
+          "to_state": "failed",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "branch_a_transform",
       "outputs": [
         {
@@ -499,6 +526,33 @@
       "fingerprint": "1c8290a7509895a0a2b4eee475031614fe787e16b51869c80474fdd847102b7d",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "failed",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "eligible",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "eligible",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_failed",
+          "from_state": "running",
+          "to_state": "failed",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "branch_b_transform",
       "outputs": [
         {
@@ -565,6 +619,27 @@
       },
       "fingerprint": "e63beade789fba56dd03c7f83370b8efdcd38ee8708a78f48aad21643e59b413",
       "finished_unix_ms": 0,
+      "lifecycle_state": "failed",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "eligible",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "eligible",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "dependency_failed",
+          "from_state": "queued",
+          "to_state": "failed",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "join_report",
       "outputs": [
         {
@@ -617,6 +692,33 @@
       "fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "success",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "eligible",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "eligible",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "success",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "seed_a",
       "outputs": [
         {
@@ -651,6 +753,33 @@
       "fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "success",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "eligible",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "eligible",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "success",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "seed_b",
       "outputs": [
         {
@@ -1032,11 +1161,6 @@
       "event": "node_scheduled",
       "node_id": "join_report",
       "reason": "ready",
-      "ts": 0
-    },
-    {
-      "event": "node_started",
-      "node_id": "join_report",
       "ts": 0
     },
     {
