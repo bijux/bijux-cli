@@ -83,9 +83,7 @@ pub(crate) fn bind_path_variables_in_value(
     bindings: &NodePathBindings,
 ) -> Result<Value, String> {
     match value {
-        Value::String(text) => {
-            Ok(Value::String(resolve_path_variables_in_string(text, bindings)?))
-        }
+        Value::String(text) => Ok(Value::String(resolve_path_variables_in_string(text, bindings)?)),
         Value::Array(items) => {
             let mut resolved = Vec::with_capacity(items.len());
             for item in items {
@@ -108,9 +106,7 @@ pub(crate) fn resolve_container_argv(
     argv: &[String],
     bindings: &NodePathBindings,
 ) -> Result<Vec<String>, String> {
-    argv.iter()
-        .map(|entry| resolve_path_variables_in_string(entry, bindings))
-        .collect()
+    argv.iter().map(|entry| resolve_path_variables_in_string(entry, bindings)).collect()
 }
 
 pub(crate) fn collect_resolved_path_usages(
@@ -302,7 +298,8 @@ mod tests {
     fn host_bindings_resolve_path_expressions_recursively() {
         let dir = tempfile::tempdir().expect("tmp");
         let layout = RunDirLayout::preview(dir.path(), Some("paths")).expect("layout");
-        let bindings = NodePathBindings::for_host(&layout, "node", Some(dir.path().join("cache").as_path()));
+        let bindings =
+            NodePathBindings::for_host(&layout, "node", Some(dir.path().join("cache").as_path()));
         let value = serde_json::json!({
             "argv": ["cp", "{inputs_dir}/seed.txt", "{outputs_dir}/value.txt"],
             "nested": {"target": "{cache_dir}/reuse.json"}
@@ -329,10 +326,7 @@ mod tests {
 
         assert_eq!(
             resolved,
-            vec![format!(
-                "--out={}",
-                layout.node_outputs_dir("node").join("result.txt").display()
-            )]
+            vec![format!("--out={}", layout.node_outputs_dir("node").join("result.txt").display())]
         );
     }
 
@@ -351,12 +345,8 @@ mod tests {
     fn container_workdir_resolves_relative_and_variable_paths() {
         let bindings = NodePathBindings::for_container();
         assert_eq!(
-            resolve_container_workdir(
-                Some("scratch"),
-                &bindings,
-                AbsolutePathPolicy::DenyLiteral,
-            )
-            .expect("relative workdir"),
+            resolve_container_workdir(Some("scratch"), &bindings, AbsolutePathPolicy::DenyLiteral,)
+                .expect("relative workdir"),
             "/bijux/node/work/scratch"
         );
         assert_eq!(

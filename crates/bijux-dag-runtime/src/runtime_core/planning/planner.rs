@@ -1,5 +1,5 @@
-use crate::{compute_downstream_run_closure, compute_upstream_run_closure};
 use crate::execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
+use crate::{compute_downstream_run_closure, compute_upstream_run_closure};
 use crate::{RuntimeConfig, Selector, SelectorSet};
 use bijux_dag_core::{
     node_io_contract, Effect, Graph, Node, NodeIoContract, NodeKind, PlanOptions, PlannerSeverity,

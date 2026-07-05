@@ -84,7 +84,9 @@ pub fn missing_required_env_keys(
 ) -> Vec<String> {
     let mut missing = allowlist
         .iter()
-        .filter(|pattern| env_allowlist_pattern_is_exact(pattern) && !ambient.contains_key(*pattern))
+        .filter(|pattern| {
+            env_allowlist_pattern_is_exact(pattern) && !ambient.contains_key(*pattern)
+        })
         .cloned()
         .collect::<Vec<_>>();
     missing.sort();
