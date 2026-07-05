@@ -87,6 +87,55 @@ fn write_temp_owned_dag() -> String {
     path.to_string_lossy().into_owned()
 }
 
+fn write_temp_downstream_dag() -> String {
+    let path = std::env::temp_dir().join(format!(
+        "bijux-dag-cli-downstream-{}.json",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("time")
+            .as_nanos()
+    ));
+    let content = r#"{
+  "spec": "bijux-dag/v0.1",
+  "meta": {"name":"downstream-cli","owners":[],"tags":[]},
+  "nodes": [
+    {
+      "id": "source",
+      "kind": "const",
+      "outputs": [{"name": "out", "path": "source/out.json"}],
+      "params": {"value": "seed"}
+    },
+    {
+      "id": "branch",
+      "kind": "const",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "branch/out.json"}],
+      "params": {"value": "branch"}
+    },
+    {
+      "id": "sink",
+      "kind": "const",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "sink/out.json"}],
+      "params": {"value": "sink"}
+    },
+    {
+      "id": "sidecar",
+      "kind": "const",
+      "outputs": [{"name": "out", "path": "sidecar/out.json"}],
+      "params": {"value": "sidecar"}
+    }
+  ],
+  "edges": [
+    {"from": {"node_id": "source", "port": "out"}, "to": {"node_id": "branch", "port": "in"}},
+    {"from": {"node_id": "branch", "port": "out"}, "to": {"node_id": "sink", "port": "in"}}
+  ]
+}
+"#;
+    std::fs::write(&path, content).expect("write downstream dag");
+    path.to_string_lossy().into_owned()
+}
+
 fn write_temp_dag_fragments() -> (tempfile::TempDir, String, String) {
     let dir = tempfile::tempdir().expect("tmp");
     let foundation = dir.path().join("foundation.json");
@@ -552,6 +601,30 @@ fn dag_explain_plan_aliases_accept_composed_graph_fragments() {
 }
 
 #[test]
+fn dag_explain_plan_alias_surfaces_downstream_selection() {
+    let dag = write_temp_downstream_dag();
+    let output = dag_command()
+        .args(["--json", "explain-plan", "--from-node", "branch", &dag])
+        .output()
+        .expect("explain plan downstream selection");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("explain plan payload");
+    assert_eq!(payload["data"]["selection"]["downstream_roots"], serde_json::json!(["branch"]));
+    assert_eq!(
+        payload["data"]["selection"]["selected_nodes"],
+        serde_json::json!(["branch", "sink"])
+    );
+    assert_eq!(
+        payload["data"]["selection"]["omitted_nodes"],
+        serde_json::json!([
+            {"node_id":"sidecar","reason":"not_selected_by_from_node"},
+            {"node_id":"source","reason":"not_selected_by_from_node"}
+        ])
+    );
+}
+
+#[test]
 fn dag_hidden_simulation_help_remains_discoverable_by_explicit_path() {
     let output = dag_command().args(["lab", "--help"]).output().expect("lab help");
     assert!(output.status.success());
@@ -753,7 +826,7 @@ fn dag_replay_help_surface_contract() {
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in ["--out", "--run-id", "--reuse-cache", "--sandbox", "--hermetic", "replay"] {
+    for token in ["--out", "--run-id", "--reuse-cache", "--sandbox", "--hermetic", "--from-node", "replay"] {
         assert!(text.contains(token));
     }
     for detail in [
@@ -764,6 +837,17 @@ fn dag_replay_help_surface_contract() {
     ] {
         assert!(text.contains(detail), "missing replay help detail: {detail}");
     }
+}
+
+#[test]
+fn dag_plan_explain_help_mentions_downstream_selector() {
+    let output =
+        dag_command().args(["plan", "explain", "--help"]).output().expect("plan explain help");
+
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("bijux-dag plan explain"));
+    assert!(text.contains("--from-node"));
 }
 
 #[test]
