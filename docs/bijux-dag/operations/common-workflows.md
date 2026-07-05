@@ -20,7 +20,7 @@ moving safely from validation to evidence-backed decisions.
 flowchart TD
     define["prepare graph and inputs"] --> validate["validate"]
     validate --> execute["run"]
-    execute --> inspect["inspect status and artifacts"]
+    execute --> inspect["explain run and inspect artifacts"]
     inspect --> compare["replay and diff"]
     compare --> decide["promote or investigate"]
 ```
@@ -37,9 +37,10 @@ flowchart TD
 ```bash
 bijux-dag validate ./pipelines/main.dag.json
 bijux-dag run ./pipelines/main.dag.json --out ./runs/proposed
-bijux-dag status ./runs/proposed/latest
-bijux-dag replay ./runs/proposed/latest --out ./runs/replay
-bijux-dag diff ./runs/reference/latest ./runs/proposed/latest --mode semantic --explain
+bijux-dag explain ./runs/proposed/run-20260406-01
+bijux-dag runs inspect run-20260406-01 --root ./runs/proposed
+bijux-dag replay ./runs/proposed/run-20260406-01 --out ./runs/replay
+bijux-dag diff ./runs/reference/run-20260405-77 ./runs/proposed/run-20260406-01 --mode semantic --explain
 ```
 
 ## Code Anchors

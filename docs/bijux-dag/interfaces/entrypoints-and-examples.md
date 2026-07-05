@@ -4,12 +4,15 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # Entrypoints and Examples
 
 This page records practical DAG entrypoints for CLI users and Rust integrators.
+
+The CLI examples on this page stay on the stable `v0.4.0` operator surface
+from the [Release Boundary](../foundation/release-boundary.md).
 
 ## Visual Summary
 
@@ -29,9 +32,10 @@ flowchart LR
 ```bash
 bijux-dag validate ./examples/simple.dag.json
 bijux-dag run ./examples/simple.dag.json --out ./runs
+bijux-dag explain ./runs/run-123
+bijux-dag runs inspect run-123 --root ./runs
 bijux-dag replay ./runs/run-123 --out ./runs/replay-123
 bijux-dag diff ./runs/run-122 ./runs/run-123 --mode semantic --explain
-bijux-dag status ./runs/run-123
 ```
 
 ## Rust Entrypoint Example

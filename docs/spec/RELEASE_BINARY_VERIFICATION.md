@@ -17,6 +17,10 @@ paths from a clean environment:
 
 The command surfaces below are the minimum release proof contract.
 
+This is a maintainer release-gate recipe, not a public operator quickstart. It
+therefore includes one internal probe (`capabilities`) in addition to the
+stable operator commands from the `v0.4.0` release boundary.
+
 ## Required Command Surface
 
 ```bash
@@ -28,7 +32,7 @@ bijux-dag validate --json evidence/authoring/examples/hello.dag.json
 bijux-dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}
 bijux-dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json
 bijux-dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}
-bijux-dag status --json ${RUN_DIR}
+bijux-dag explain --json ${RUN_DIR}
 ```
 
 ## Scenario Source of Truth

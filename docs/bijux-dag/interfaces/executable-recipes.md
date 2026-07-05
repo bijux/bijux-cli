@@ -13,6 +13,10 @@ This page defines one deterministic command recipe for major DAG operator
 surfaces. The recipe is also executed by CI from
 `crates/bijux-dag-app/tests/docs_executable_recipes_contract.rs`.
 
+The stable examples on this page stay on the visible `bijux-dag --help`
+surface. When a recipe intentionally reaches into explicit-path experimental
+routes, the text calls that out rather than implying stable support.
+
 ## Variables
 
 - `${GRAPH}`: deterministic graph fixture path
@@ -25,12 +29,19 @@ surfaces. The recipe is also executed by CI from
 
 ## CI Recipe: Major DAG Commands
 
+This recipe intentionally spans two lanes:
+
+- stable operator surface: `validate`, `plan explain`, `run`, `runs ...`,
+  `replay`, `diff`, and `verify`
+- experimental explicit-path routes: `prove`, `export`, `import`, and
+  `migrate inspect`
+
 <!-- recipe:ci-major-dag-commands:start -->
 ```bash
 bijux-dag validate --json ${GRAPH}
 bijux-dag plan explain --json ${GRAPH}
 bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id ${RUN_ID}
-bijux-dag status --json ${RUN_DIR}
+bijux-dag explain --json ${RUN_DIR}
 bijux-dag runs history --json --root ${RUN_ROOT} --status success --offset 0 --limit 5 --select run:${RUN_ID}
 bijux-dag runs inspect ${RUN_ID} --root ${RUN_ROOT} --json
 bijux-dag runs diagnostics-bundle ${RUN_ID} --root ${RUN_ROOT} --out ${DIAG_BUNDLE} --json --redact

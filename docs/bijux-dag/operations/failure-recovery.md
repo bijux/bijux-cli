@@ -16,7 +16,7 @@ state with clear attribution.
 
 ```mermaid
 flowchart TD
-    fail[detect run failure] --> capture[capture status and artifacts]
+    fail[detect run failure] --> capture[capture evidence and failure details]
     capture --> classify[classify root cause scope]
     classify --> remediate[apply targeted remediation]
     remediate --> replay[replay and diff verification]
@@ -33,8 +33,9 @@ flowchart TD
 ## Diagnostic Commands
 
 ```bash
-bijux-dag status ./runs/failed-20260406-01
-bijux-dag inspect ./runs/failed-20260406-01
+bijux-dag explain ./runs/failed-20260406-01
+bijux-dag runs explain-failure failed-20260406-01 --root ./runs
+bijux-dag runs inspect failed-20260406-01 --root ./runs
 bijux-dag replay ./runs/failed-20260406-01 --out ./runs/replay-failed
 bijux-dag diff ./runs/good-20260405-77 ./runs/recovered-20260406-02 --mode semantic --explain
 ```

@@ -36,7 +36,7 @@ cargo build --workspace
 cargo test -p bijux-dag-core
 bijux-dag validate ./examples/simple.dag.json
 bijux-dag run ./examples/simple.dag.json --out ./runs/bootstrap
-bijux-dag inspect ./runs/bootstrap/latest
+bijux-dag explain ./runs/bootstrap/latest
 ```
 
 ## Code Anchors
