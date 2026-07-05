@@ -1162,7 +1162,7 @@ pub fn pause_backfill_operation(
     match operation.lifecycle {
         BackfillLifecycleStatus::Active => {
             operation.lifecycle = BackfillLifecycleStatus::Paused;
-            operation.lifecycle_reason = reason.clone();
+            operation.lifecycle_reason.clone_from(&reason);
             operation.updated_unix_ms = at_unix_ms;
             record_backfill_audit(
                 operation,
@@ -1229,7 +1229,7 @@ pub fn cancel_backfill_operation(
                 }
             }
             operation.lifecycle = BackfillLifecycleStatus::Cancelled;
-            operation.lifecycle_reason = reason.clone();
+            operation.lifecycle_reason.clone_from(&reason);
             operation.updated_unix_ms = at_unix_ms;
             record_backfill_audit(
                 operation,
