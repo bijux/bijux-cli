@@ -13,8 +13,7 @@ use thiserror as _;
 use bijux_dag_runtime::{
     imported_run_distinguishable, terminal_transition_audit_events, validate_node_transition,
     validate_run_transition, verify_post_run_state_consistency, NodeState, NodeTransition,
-    ResumeFailureMode, ResumeSummary, RunId, RunSnapshot, RunState, RunTransition,
-    TransitionCause,
+    ResumeFailureMode, ResumeSummary, RunId, RunSnapshot, RunState, RunTransition, TransitionCause,
 };
 
 #[test]

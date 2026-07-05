@@ -45,10 +45,7 @@ fn simple_const_graph() -> String {
 #[test]
 fn build_stamp_normalization_accepts_trimmed_hex_only() {
     assert_eq!(build_support::BUILD_GIT_SHA_ENV, "BIJUX_DAG_BUILD_GIT_SHA");
-    assert_eq!(
-        build_support::normalize_git_sha("  AbC1234  ").as_deref(),
-        Some("abc1234")
-    );
+    assert_eq!(build_support::normalize_git_sha("  AbC1234  ").as_deref(), Some("abc1234"));
     assert!(build_support::normalize_git_sha("abc123").is_none());
     assert!(build_support::normalize_git_sha("not-a-sha").is_none());
 }
@@ -60,11 +57,8 @@ fn build_stamp_supports_gitfile_worktrees() {
     let linked_git_dir = temp.path().join("git-dir");
     fs::create_dir_all(&workspace_root).expect("workspace root");
     fs::create_dir_all(&linked_git_dir).expect("linked git dir");
-    fs::write(
-        workspace_root.join(".git"),
-        format!("gitdir: {}\n", linked_git_dir.display()),
-    )
-    .expect("write git file");
+    fs::write(workspace_root.join(".git"), format!("gitdir: {}\n", linked_git_dir.display()))
+        .expect("write git file");
 
     let resolved = build_support::git_dir_from_workspace_root(&workspace_root)
         .expect("resolve linked git dir");
@@ -80,8 +74,7 @@ fn build_stamp_workspace_root_and_rerun_paths_track_git_metadata() {
     fs::create_dir_all(&crate_dir).expect("crate dir");
     fs::create_dir_all(git_dir.join("refs").join("heads")).expect("git refs");
     fs::write(git_dir.join("HEAD"), "ref: refs/heads/main\n").expect("write head");
-    fs::write(git_dir.join("refs").join("heads").join("main"), "abc1234\n")
-        .expect("write branch");
+    fs::write(git_dir.join("refs").join("heads").join("main"), "abc1234\n").expect("write branch");
 
     let resolved_root = build_support::workspace_root_from_manifest_dir(&crate_dir);
     assert_eq!(resolved_root, workspace_root);
@@ -106,10 +99,9 @@ fn runtime_outputs_use_build_stamped_tool_version() {
         _ => env!("CARGO_PKG_VERSION").to_string(),
     };
 
-    let manifest: Value = serde_json::from_str(
-        &fs::read_to_string(run_dir.join("manifest.json")).expect("manifest"),
-    )
-    .expect("parse manifest");
+    let manifest: Value =
+        serde_json::from_str(&fs::read_to_string(run_dir.join("manifest.json")).expect("manifest"))
+            .expect("parse manifest");
     assert_eq!(manifest["tool_version"], expected);
 
     let provenance: Value = serde_json::from_str(

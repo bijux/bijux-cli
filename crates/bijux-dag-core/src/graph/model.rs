@@ -511,7 +511,7 @@ pub fn default_media_type_for_kind(kind: &OutputKind) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::{OutputSpec, OutputKind};
+    use super::{OutputKind, OutputSpec};
     use serde_json::json;
 
     #[test]

@@ -137,12 +137,11 @@ fn resolver_determinism() {
         "x".to_string(),
         bijux_dag_core::GraphInputSpec::from_default_value(serde_json::json!(1)).expect("spec"),
     );
-    graph.nodes[0].params =
-        ParamValue::Ref(RefSpec {
-            graph_input: Some("x".to_string()),
-            node_output: None,
-            path_var: None,
-        });
+    graph.nodes[0].params = ParamValue::Ref(RefSpec {
+        graph_input: Some("x".to_string()),
+        node_output: None,
+        path_var: None,
+    });
     let left = serde_json::to_string(&graph.resolve_graph().unwrap().resolved_params).unwrap();
     let right = serde_json::to_string(&graph.resolve_graph().unwrap().resolved_params).unwrap();
     assert_eq!(left, right);

@@ -46,27 +46,19 @@ fn load_cache_entry_candidate(entry: &Path) -> Result<Option<CacheEntryCandidate
     if !manifest_path.exists() || !meta_path.exists() {
         return Ok(None);
     }
-    let manifest: CacheEntryManifest = serde_json::from_str(
-        &fs::read_to_string(&manifest_path).map_err(|_| ExitCode::from(3))?,
-    )
-    .map_err(|_| ExitCode::from(3))?;
+    let manifest: CacheEntryManifest =
+        serde_json::from_str(&fs::read_to_string(&manifest_path).map_err(|_| ExitCode::from(3))?)
+            .map_err(|_| ExitCode::from(3))?;
     let meta: Value =
         serde_json::from_str(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
             .map_err(|_| ExitCode::from(3))?;
-    if !cache_metadata_version_supported(&meta) || !cache_entry_manifest_version_supported(&manifest)
+    if !cache_metadata_version_supported(&meta)
+        || !cache_entry_manifest_version_supported(&manifest)
     {
         return Ok(None);
     }
-    let key = meta
-        .get("cache_key")
-        .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_string();
-    let valid = if key.is_empty() {
-        false
-    } else {
-        verify_cache_entry_cli(entry, &key, "", "")?
-    };
+    let key = meta.get("cache_key").and_then(Value::as_str).unwrap_or_default().to_string();
+    let valid = if key.is_empty() { false } else { verify_cache_entry_cli(entry, &key, "", "")? };
     Ok(Some(CacheEntryCandidate {
         key,
         explainability: cache_explainability_proof_from_meta(&meta),
@@ -96,7 +88,10 @@ fn matching_factor_score(
             candidate.meta.get("input_lineage_fingerprint").and_then(Value::as_str),
             Some(identity.input_lineage_fingerprint.as_str()),
         ),
-        (candidate.meta.get("adapter_id").and_then(Value::as_str), trace.get("adapter_id").and_then(Value::as_str)),
+        (
+            candidate.meta.get("adapter_id").and_then(Value::as_str),
+            trace.get("adapter_id").and_then(Value::as_str),
+        ),
         (
             candidate.meta.get("adapter_version").and_then(Value::as_str),
             trace.get("adapter_version").and_then(Value::as_str),
@@ -114,10 +109,7 @@ fn matching_factor_score(
             Some(identity.policy_fingerprint.as_str()),
         ),
         (
-            candidate
-                .meta
-                .get("execution_contract_fingerprint")
-                .and_then(Value::as_str),
+            candidate.meta.get("execution_contract_fingerprint").and_then(Value::as_str),
             Some(identity.execution_contract_fingerprint.as_str()),
         ),
         (
@@ -140,10 +132,7 @@ fn compare_cache_candidate(
 ) -> Vec<CacheMissReason> {
     let mut reasons = Vec::new();
 
-    if candidate
-        .explainability
-        .as_ref()
-        .map(|proof| proof.params_fingerprint.as_str())
+    if candidate.explainability.as_ref().map(|proof| proof.params_fingerprint.as_str())
         != Some(identity.params_fingerprint.as_str())
     {
         reasons.push(CacheMissReason {
@@ -216,10 +205,7 @@ fn compare_cache_candidate(
             message: "declared environment changed".to_string(),
         });
     }
-    if candidate
-        .meta
-        .get("execution_contract_fingerprint")
-        .and_then(Value::as_str)
+    if candidate.meta.get("execution_contract_fingerprint").and_then(Value::as_str)
         != Some(identity.execution_contract_fingerprint.as_str())
     {
         reasons.push(CacheMissReason {
@@ -227,7 +213,9 @@ fn compare_cache_candidate(
             message: "execution contract changed".to_string(),
         });
     }
-    if candidate.meta.get("backend_class").and_then(Value::as_str) != Some(identity.backend_class.as_str()) {
+    if candidate.meta.get("backend_class").and_then(Value::as_str)
+        != Some(identity.backend_class.as_str())
+    {
         reasons.push(CacheMissReason {
             code: "changed_backend",
             message: "backend changed".to_string(),
@@ -237,7 +225,10 @@ fn compare_cache_candidate(
     reasons
 }
 
-fn cache_candidates_for_node(cache_dir: &Path, node_id: &str) -> Result<Vec<CacheEntryCandidate>, ExitCode> {
+fn cache_candidates_for_node(
+    cache_dir: &Path,
+    node_id: &str,
+) -> Result<Vec<CacheEntryCandidate>, ExitCode> {
     let mut candidates = Vec::new();
     if !cache_dir.exists() {
         return Ok(candidates);
@@ -468,7 +459,8 @@ pub(crate) fn verify_cache_entry_cli(
     }
     let data = fs::read_to_string(&index_path).map_err(|_| ExitCode::from(3))?;
     let index: OutputsIndex = serde_json::from_str(&data).map_err(|_| ExitCode::from(3))?;
-    let node_fingerprint = meta.get("node_fingerprint").and_then(|v| v.as_str()).unwrap_or_default();
+    let node_fingerprint =
+        meta.get("node_fingerprint").and_then(|v| v.as_str()).unwrap_or_default();
     for expected_output in &manifest.outputs {
         let indexed = index.files.iter().find(|file| file.path == expected_output.path);
         if expected_output.required && indexed.is_none() {
@@ -647,34 +639,26 @@ pub(crate) fn explain_run_node_cache_miss(
     node_id: &str,
     cache_dir_override: Option<&Path>,
 ) -> Result<Value, ExitCode> {
-    let manifest: Value =
-        serde_json::from_str(&read_file(&run_dir.join("manifest.json"))?).map_err(|_| ExitCode::from(3))?;
+    let manifest: Value = serde_json::from_str(&read_file(&run_dir.join("manifest.json"))?)
+        .map_err(|_| ExitCode::from(3))?;
     let snapshot = load_snapshot(run_dir)?;
-    let node = snapshot
-        .graph
-        .nodes
-        .iter()
-        .find(|node| node.id == node_id)
-        .ok_or(ExitCode::from(3))?;
-    let trace: Value = serde_json::from_str(
-        &read_file(&run_dir.join("nodes").join(node_id).join("trace.json"))?,
-    )
-    .map_err(|_| ExitCode::from(3))?;
-    let cache_identity: CacheIdentity = serde_json::from_value(
-        trace.get("cache_identity").cloned().ok_or(ExitCode::from(3))?,
-    )
-    .map_err(|_| ExitCode::from(3))?;
-    let cache_mode = manifest
-        .get("cache_mode")
-        .and_then(Value::as_str)
-        .unwrap_or("Off")
-        .to_string();
+    let node =
+        snapshot.graph.nodes.iter().find(|node| node.id == node_id).ok_or(ExitCode::from(3))?;
+    let trace: Value =
+        serde_json::from_str(&read_file(&run_dir.join("nodes").join(node_id).join("trace.json"))?)
+            .map_err(|_| ExitCode::from(3))?;
+    let cache_identity: CacheIdentity =
+        serde_json::from_value(trace.get("cache_identity").cloned().ok_or(ExitCode::from(3))?)
+            .map_err(|_| ExitCode::from(3))?;
+    let cache_mode =
+        manifest.get("cache_mode").and_then(Value::as_str).unwrap_or("Off").to_string();
     let cache_dir = cache_dir_override
         .map(Path::to_path_buf)
         .or_else(|| manifest.get("cache_dir").and_then(Value::as_str).map(PathBuf::from))
         .or_else(env_cache_dir);
 
-    let (outcome, reasons, taxonomy, comparison_entry, exact_entry_report) = if !node.cache.enabled {
+    let (outcome, reasons, taxonomy, comparison_entry, exact_entry_report) = if !node.cache.enabled
+    {
         (
             "non_cacheable".to_string(),
             vec![node
@@ -708,7 +692,9 @@ pub(crate) fn explain_run_node_cache_miss(
                 Value::Null
             };
 
-            if exact_entry_exists && exact_entry_report.get("eligible").and_then(Value::as_bool) == Some(false) {
+            if exact_entry_exists
+                && exact_entry_report.get("eligible").and_then(Value::as_bool) == Some(false)
+            {
                 let taxonomy = exact_entry_report
                     .get("taxonomy")
                     .and_then(Value::as_array)
@@ -1013,7 +999,9 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{explain_cache_key, explain_run_node_cache_miss, pack_cache_entry, unpack_cache_entry};
+    use super::{
+        explain_cache_key, explain_run_node_cache_miss, pack_cache_entry, unpack_cache_entry,
+    };
     use bijux_dag_artifacts::CacheIdentity;
     use bijux_dag_runtime::{cache_key_explanation, CacheEntryManifest, CacheKeyInput};
     use serde_json::json;
@@ -1021,7 +1009,11 @@ mod tests {
     use std::path::{Path, PathBuf};
     use std::process::ExitCode;
 
-    fn manifest_json(cache_key: &str, node_id: &str, outputs: serde_json::Value) -> serde_json::Value {
+    fn manifest_json(
+        cache_key: &str,
+        node_id: &str,
+        outputs: serde_json::Value,
+    ) -> serde_json::Value {
         json!({
             "manifest_version": bijux_dag_runtime::CACHE_ENTRY_MANIFEST_VERSION,
             "cache_key": cache_key,
@@ -1302,7 +1294,12 @@ mod tests {
 
         let mut prior = current_key_input();
         prior.node_definition_fingerprint = "node-before-params".to_string();
-        write_valid_cache_entry(&cache_dir, &prior, "params-before", identity.command_fingerprint.as_deref());
+        write_valid_cache_entry(
+            &cache_dir,
+            &prior,
+            "params-before",
+            identity.command_fingerprint.as_deref(),
+        );
 
         let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
         assert_eq!(report["outcome"], "miss");
@@ -1318,7 +1315,12 @@ mod tests {
 
         let mut prior = current_key_input();
         prior.input_lineage_fingerprint = "inputs-before".to_string();
-        write_valid_cache_entry(&cache_dir, &prior, &identity.params_fingerprint, identity.command_fingerprint.as_deref());
+        write_valid_cache_entry(
+            &cache_dir,
+            &prior,
+            &identity.params_fingerprint,
+            identity.command_fingerprint.as_deref(),
+        );
 
         let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
         assert_eq!(report["outcome"], "miss");
@@ -1334,7 +1336,12 @@ mod tests {
 
         let mut prior = current_key_input();
         prior.node_definition_fingerprint = "node-before-command".to_string();
-        write_valid_cache_entry(&cache_dir, &prior, &identity.params_fingerprint, Some("command-before"));
+        write_valid_cache_entry(
+            &cache_dir,
+            &prior,
+            &identity.params_fingerprint,
+            Some("command-before"),
+        );
 
         let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
         assert_eq!(report["outcome"], "miss");
@@ -1350,7 +1357,12 @@ mod tests {
 
         let mut prior = current_key_input();
         prior.adapter_version = "0.9.0".to_string();
-        write_valid_cache_entry(&cache_dir, &prior, &identity.params_fingerprint, identity.command_fingerprint.as_deref());
+        write_valid_cache_entry(
+            &cache_dir,
+            &prior,
+            &identity.params_fingerprint,
+            identity.command_fingerprint.as_deref(),
+        );
 
         let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
         assert_eq!(report["outcome"], "miss");
@@ -1364,7 +1376,12 @@ mod tests {
         let identity = current_identity();
         let run_dir = write_run_fixture(tmp.path(), &cache_dir, "ReadWrite", true, None, &identity);
 
-        let exact_key = write_valid_cache_entry(&cache_dir, &current_key_input(), &identity.params_fingerprint, identity.command_fingerprint.as_deref());
+        let exact_key = write_valid_cache_entry(
+            &cache_dir,
+            &current_key_input(),
+            &identity.params_fingerprint,
+            identity.command_fingerprint.as_deref(),
+        );
         fs::remove_file(cache_dir.join(&exact_key).join("manifest.json")).expect("remove manifest");
 
         let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");

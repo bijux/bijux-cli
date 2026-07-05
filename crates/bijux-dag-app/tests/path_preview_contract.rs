@@ -183,10 +183,7 @@ fn run_preflight_reports_shared_cache_surface() {
     );
 
     assert_eq!(payload["data"]["cache"]["surface"]["mode"], "readwrite");
-    assert_eq!(
-        payload["data"]["cache"]["surface"]["local_dir"],
-        output_path_string(&cache_dir)
-    );
+    assert_eq!(payload["data"]["cache"]["surface"]["local_dir"], output_path_string(&cache_dir));
     assert_eq!(
         payload["data"]["cache"]["surface"]["shared_dir"],
         output_path_string(&remote_cache_dir)
@@ -247,14 +244,8 @@ fn replay_json_reports_shared_cache_surface() {
         payload["data"]["cache_surface"]["shared_dir"],
         output_path_string(&remote_cache_dir)
     );
-    assert_eq!(
-        payload["data"]["cache_surface"]["read_order"],
-        serde_json::json!(["shared"])
-    );
-    assert_eq!(
-        payload["data"]["cache_surface"]["write_targets"],
-        serde_json::json!(["shared"])
-    );
+    assert_eq!(payload["data"]["cache_surface"]["read_order"], serde_json::json!(["shared"]));
+    assert_eq!(payload["data"]["cache_surface"]["write_targets"], serde_json::json!(["shared"]));
 }
 
 #[test]

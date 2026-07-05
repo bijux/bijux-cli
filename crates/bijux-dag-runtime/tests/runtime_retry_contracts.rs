@@ -112,9 +112,7 @@ fn retry_persists_separate_attempt_logs_and_backoff_evidence() {
     let graph = parse_graph_strict(&retry_success_graph(40)).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let run_path = runtime
-        .run(&graph, out.path(), RuntimeConfig::default())
-        .expect("retry run");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("retry run");
 
     let trace = read_node_trace(&run_path, "worker");
     assert_eq!(trace["status"], "success");
@@ -136,14 +134,16 @@ fn retry_persists_separate_attempt_logs_and_backoff_evidence() {
         "retry backoff was not honored: first_finished={first_finished}, second_started={second_started}"
     );
 
-    let first_stderr =
-        fs::read_to_string(run_path.join("nodes").join("worker").join("attempts").join("1").join("stderr.log"))
-            .expect("first stderr");
+    let first_stderr = fs::read_to_string(
+        run_path.join("nodes").join("worker").join("attempts").join("1").join("stderr.log"),
+    )
+    .expect("first stderr");
     assert!(first_stderr.contains("first-attempt"));
 
-    let second_stdout =
-        fs::read_to_string(run_path.join("nodes").join("worker").join("attempts").join("2").join("stdout.log"))
-            .expect("second stdout");
+    let second_stdout = fs::read_to_string(
+        run_path.join("nodes").join("worker").join("attempts").join("2").join("stdout.log"),
+    )
+    .expect("second stdout");
     assert!(second_stdout.contains("recovered"));
 
     let run_log = fs::read_to_string(run_path.join("run.log.jsonl")).expect("run log");
@@ -165,9 +165,8 @@ fn retry_exhaustion_records_final_attempt_and_retry_exhausted_event() {
     let graph = parse_graph_strict(&retry_failure_graph(25)).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let run_path = runtime
-        .run(&graph, out.path(), RuntimeConfig::default())
-        .expect("failed retry run");
+    let run_path =
+        runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("failed retry run");
 
     let trace = read_node_trace(&run_path, "worker");
     assert_eq!(trace["status"], "failed");
@@ -187,9 +186,7 @@ fn retry_stops_when_failure_class_is_not_retry_eligible() {
     let graph = parse_graph_strict(&retry_ineligible_user_failure_graph(25)).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let run_path = runtime
-        .run(&graph, out.path(), RuntimeConfig::default())
-        .expect("failed run");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("failed run");
 
     let trace = read_node_trace(&run_path, "worker");
     assert_eq!(trace["status"], "failed");

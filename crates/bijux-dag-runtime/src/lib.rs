@@ -47,8 +47,6 @@ pub mod builtins;
 pub mod cache;
 #[path = "internal/control/clock.rs"]
 mod clock;
-#[path = "runtime_core/execution/cron_calendar.rs"]
-mod cron_calendar;
 #[doc(hidden)]
 #[path = "internal/control/config.rs"]
 pub mod config;
@@ -62,6 +60,8 @@ mod control_plane_api;
 mod coordination;
 #[path = "internal/analysis/cost_optimization.rs"]
 mod cost_optimization;
+#[path = "runtime_core/execution/cron_calendar.rs"]
+mod cron_calendar;
 #[path = "internal/analysis/dataset_semantics.rs"]
 mod dataset_semantics;
 mod diagnostics;

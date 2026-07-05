@@ -103,8 +103,12 @@ fn build_run_runtime_options(
         run_id: preview_layout.map(|layout| layout.run_id.clone()),
         resume_run_id: req.resume_run.clone(),
         resume_failure_mode: match req.resume_failure_mode {
-            ResumeFailureModeArg::RerunIncomplete => bijux_dag_runtime::ResumeFailureMode::RerunIncomplete,
-            ResumeFailureModeArg::RejectIncomplete => bijux_dag_runtime::ResumeFailureMode::RejectIncomplete,
+            ResumeFailureModeArg::RerunIncomplete => {
+                bijux_dag_runtime::ResumeFailureMode::RerunIncomplete
+            }
+            ResumeFailureModeArg::RejectIncomplete => {
+                bijux_dag_runtime::ResumeFailureMode::RejectIncomplete
+            }
         },
         latest_symlink: req.latest.clone(),
         policy,
@@ -592,11 +596,17 @@ mod tests {
 
         assert_eq!(options.jobs, 3);
         assert_eq!(options.cpu_budget, Some(4));
-        assert_eq!(options.run_timeout_behavior, bijux_dag_runtime::RunTimeoutBehavior::CancelRunning);
+        assert_eq!(
+            options.run_timeout_behavior,
+            bijux_dag_runtime::RunTimeoutBehavior::CancelRunning
+        );
         assert!(options.partial_rerun_dependency_closure);
         assert_eq!(options.run_id.as_deref(), Some("selected-run"));
         assert_eq!(options.resume_run_id.as_deref(), Some("selected-run"));
-        assert_eq!(options.resume_failure_mode, bijux_dag_runtime::ResumeFailureMode::RejectIncomplete);
+        assert_eq!(
+            options.resume_failure_mode,
+            bijux_dag_runtime::ResumeFailureMode::RejectIncomplete
+        );
         assert_eq!(options.selectors.include.len(), selectors.include.len());
         assert_eq!(options.selectors.exclude.len(), selectors.exclude.len());
         assert_eq!(options.upstream_selection_targets, vec!["report".to_string()]);

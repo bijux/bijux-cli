@@ -513,13 +513,7 @@ pub fn render_run_summary(summary: &Value) -> String {
     let failure_classes = summary
         .get("failure_classes")
         .and_then(Value::as_array)
-        .map(|classes| {
-            classes
-                .iter()
-                .filter_map(Value::as_str)
-                .collect::<Vec<_>>()
-                .join(",")
-        })
+        .map(|classes| classes.iter().filter_map(Value::as_str).collect::<Vec<_>>().join(","))
         .filter(|classes| !classes.is_empty());
     let status = summary.get("status").unwrap_or(&Value::Null);
     let status_rendered = match failure_classes {

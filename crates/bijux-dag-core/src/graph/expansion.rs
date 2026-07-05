@@ -99,13 +99,7 @@ fn build_subgraph_templates(
     let mut cache = BTreeMap::new();
     let mut resolving = BTreeSet::new();
     for definition_name in graph.subgraphs.keys() {
-        resolve_subgraph_template(
-            definition_name,
-            graph,
-            path,
-            &mut cache,
-            &mut resolving,
-        )?;
+        resolve_subgraph_template(definition_name, graph, path, &mut cache, &mut resolving)?;
     }
     Ok(cache)
 }
@@ -174,14 +168,9 @@ fn resolve_subgraph_outputs(
             });
         }
         let rewritten = rewrite_export_reference(reference, nested_exports, path)?;
-        if !expanded_graph
-            .nodes
-            .iter()
-            .find(|node| node.id == rewritten.node_id)
-            .is_some_and(|node| {
-                node.outputs.iter().any(|output| output.name == rewritten.output_name)
-            })
-        {
+        if !expanded_graph.nodes.iter().find(|node| node.id == rewritten.node_id).is_some_and(
+            |node| node.outputs.iter().any(|output| output.name == rewritten.output_name),
+        ) {
             return Err(GraphExpansionError {
                 code: "E1037",
                 message: format!(
@@ -306,7 +295,10 @@ fn resolve_instance_bindings(
             return Err(GraphExpansionError {
                 code: "E1037",
                 message: format!("unknown subgraph input binding: {input_name}"),
-                path: format!("{path}subgraph_instances/{}/input_bindings/{input_name}", instance.id),
+                path: format!(
+                    "{path}subgraph_instances/{}/input_bindings/{input_name}",
+                    instance.id
+                ),
                 hint: Some("Bind only declared subgraph inputs".to_string()),
             });
         }
@@ -327,7 +319,10 @@ fn resolve_instance_bindings(
             .map_err(|error| GraphExpansionError {
                 code: "E1037",
                 message: error.message,
-                path: format!("{path}subgraph_instances/{}/input_bindings/{input_name}", instance.id),
+                path: format!(
+                    "{path}subgraph_instances/{}/input_bindings/{input_name}",
+                    instance.id
+                ),
                 hint: Some("Provide a valid default or explicit binding".to_string()),
             })?;
             resolved.insert(input_name.clone(), ParamValue::Literal(materialized));
@@ -364,12 +359,15 @@ fn rewrite_scoped_param_value(
         }
         ParamValue::Ref(reference) => {
             if let Some(input_name) = &reference.graph_input {
-                *value = input_bindings.get(input_name).cloned().ok_or_else(|| GraphExpansionError {
-                    code: "E1037",
-                    message: format!("missing subgraph input binding: {input_name}"),
-                    path: format!("{path}subgraph_instances/{instance_id}/input_bindings/{input_name}"),
-                    hint: Some("Bind every required subgraph input".to_string()),
-                })?;
+                *value =
+                    input_bindings.get(input_name).cloned().ok_or_else(|| GraphExpansionError {
+                        code: "E1037",
+                        message: format!("missing subgraph input binding: {input_name}"),
+                        path: format!(
+                            "{path}subgraph_instances/{instance_id}/input_bindings/{input_name}"
+                        ),
+                        hint: Some("Bind every required subgraph input".to_string()),
+                    })?;
                 return Ok(());
             }
             if let Some(node_output) = &mut reference.node_output {

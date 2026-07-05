@@ -1,9 +1,9 @@
 use bijux_dag_artifacts as _;
-use chrono::{LocalResult, TimeZone};
-use chrono_tz::America::New_York;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
+use chrono::{LocalResult, TimeZone};
+use chrono_tz::America::New_York;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -111,10 +111,7 @@ fn materialized_preview_yields_n_cron_runs() {
 #[test]
 fn materialized_preview_keeps_dst_fallback_duplicates() {
     let schedule = cron_schedule_in_timezone("dst-fallback", "30 1 * * *", "America/New_York");
-    let start = New_York
-        .with_ymd_and_hms(2024, 11, 3, 0, 0, 0)
-        .single()
-        .expect("dst start");
+    let start = New_York.with_ymd_and_hms(2024, 11, 3, 0, 0, 0).single().expect("dst start");
     let preview = materialize_next_runs(
         &schedule,
         u128::try_from(start.timestamp_millis()).expect("positive timestamp"),
@@ -125,10 +122,7 @@ fn materialized_preview_keeps_dst_fallback_duplicates() {
     else {
         panic!("expected ambiguous dst fallback instant");
     };
-    let next_day = New_York
-        .with_ymd_and_hms(2024, 11, 4, 1, 30, 0)
-        .single()
-        .expect("next day");
+    let next_day = New_York.with_ymd_and_hms(2024, 11, 4, 1, 30, 0).single().expect("next day");
 
     assert_eq!(
         preview.next_run_unix_ms,

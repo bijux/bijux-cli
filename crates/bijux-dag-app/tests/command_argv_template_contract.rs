@@ -104,8 +104,9 @@ fn run_executes_shell_argv_templates_with_inputs_outputs_and_params() {
 
     let run_dir = out_dir.join("run-argv-template");
     assert_eq!(payload["data"]["run_dir"], output_path_string(&run_dir));
-    let result = fs::read_to_string(run_dir.join("nodes").join("copy").join("outputs").join("result.txt"))
-        .expect("read templated output");
+    let result =
+        fs::read_to_string(run_dir.join("nodes").join("copy").join("outputs").join("result.txt"))
+            .expect("read templated output");
     assert_eq!(result, "\"hello\"!");
 }
 

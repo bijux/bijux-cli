@@ -10,8 +10,8 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::cancellation_is_terminal;
 use bijux_dag_core::parse_graph_strict;
+use bijux_dag_runtime::cancellation_is_terminal;
 use bijux_dag_runtime::{Runtime, RuntimeConfig};
 use serde_json::{json, Value};
 use std::fs;

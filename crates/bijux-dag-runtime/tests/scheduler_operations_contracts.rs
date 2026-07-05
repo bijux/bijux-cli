@@ -1,9 +1,9 @@
 use bijux_dag_artifacts as _;
-use chrono::{LocalResult, TimeZone, Utc};
-use chrono_tz::America::New_York;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
 use bijux_dag_testkit as _;
+use chrono::{LocalResult, TimeZone, Utc};
+use chrono_tz::America::New_York;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -510,22 +510,11 @@ fn schedule_submit_cron_catch_up_honors_ranges_lists_and_steps() {
             catch_up: CatchUpPolicy { enabled: true, max_catch_up_runs: 4 },
         }],
     };
-    let last_requested = Utc
-        .with_ymd_and_hms(2024, 1, 3, 9, 15, 0)
-        .single()
-        .expect("last requested");
-    let scheduled_0930 = Utc
-        .with_ymd_and_hms(2024, 1, 3, 9, 30, 0)
-        .single()
-        .expect("09:30");
-    let scheduled_0945 = Utc
-        .with_ymd_and_hms(2024, 1, 3, 9, 45, 0)
-        .single()
-        .expect("09:45");
-    let scheduled_1000 = Utc
-        .with_ymd_and_hms(2024, 1, 3, 10, 0, 0)
-        .single()
-        .expect("10:00");
+    let last_requested =
+        Utc.with_ymd_and_hms(2024, 1, 3, 9, 15, 0).single().expect("last requested");
+    let scheduled_0930 = Utc.with_ymd_and_hms(2024, 1, 3, 9, 30, 0).single().expect("09:30");
+    let scheduled_0945 = Utc.with_ymd_and_hms(2024, 1, 3, 9, 45, 0).single().expect("09:45");
+    let scheduled_1000 = Utc.with_ymd_and_hms(2024, 1, 3, 10, 0, 0).single().expect("10:00");
     let inputs = ScheduleEvaluationInputs {
         now_unix_ms: u128::try_from(scheduled_1000.timestamp_millis()).expect("positive timestamp"),
         ..ScheduleEvaluationInputs::default()
@@ -588,10 +577,8 @@ fn schedule_submit_cron_catch_up_preserves_dst_fallback_duplicates() {
             catch_up: CatchUpPolicy { enabled: true, max_catch_up_runs: 3 },
         }],
     };
-    let last_requested = New_York
-        .with_ymd_and_hms(2024, 11, 2, 1, 30, 0)
-        .single()
-        .expect("prior day");
+    let last_requested =
+        New_York.with_ymd_and_hms(2024, 11, 2, 1, 30, 0).single().expect("prior day");
     let LocalResult::Ambiguous(first, second) = New_York.with_ymd_and_hms(2024, 11, 3, 1, 30, 0)
     else {
         panic!("expected ambiguous dst fallback instant");

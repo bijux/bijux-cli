@@ -41,10 +41,7 @@ fn frozen_gate_entrypoints_delegate_to_pinned_ref_launcher() {
             block.contains("$(PINNED_REF_GATE_BIN)"),
             "{target} must use the shared pinned-ref launcher"
         );
-        assert!(
-            block.contains(gate_target),
-            "{target} must set {gate_target}"
-        );
+        assert!(block.contains(gate_target), "{target} must set {gate_target}");
     }
 }
 
@@ -66,10 +63,7 @@ fn pinned_ref_launcher_isolates_artifacts_and_bootstrap_state() {
         "console_log=${console_log}",
         "status_file=${status_file}",
     ] {
-        assert!(
-            launcher.contains(needle),
-            "pinned-ref launcher must preserve `{needle}`"
-        );
+        assert!(launcher.contains(needle), "pinned-ref launcher must preserve `{needle}`");
     }
 }
 
@@ -86,10 +80,7 @@ fn frozen_gate_docs_publish_usage_contract() {
         "artifacts/<sha>/background/",
         "artifacts/<sha>/python/",
     ] {
-        assert!(
-            ci_targets.contains(needle),
-            "CI targets handbook must document `{needle}`"
-        );
+        assert!(ci_targets.contains(needle), "CI targets handbook must document `{needle}`");
     }
 
     for needle in ["make test-all-frozen", "make lint-frozen", "make audit-frozen"] {

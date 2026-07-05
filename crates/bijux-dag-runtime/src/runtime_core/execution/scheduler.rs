@@ -954,21 +954,19 @@ pub fn dry_run_schedule(
             next_fire_unix_ms: None,
             reason: "manual trigger has no automatic fire time".to_string(),
         },
-        TriggerSpec::Cron { expression, timezone } => match crate::cron_calendar::next_cron_fire_unix_ms(
-            expression,
-            timezone,
-            now_unix_ms,
-        ) {
-            Ok(next_fire_unix_ms) => ScheduleDryRunPreview {
-                schedule_id: definition.id.clone(),
-                next_fire_unix_ms,
-                reason: format!("next cron fire resolved in timezone {timezone}"),
-            },
-            Err(error) => ScheduleDryRunPreview {
-                schedule_id: definition.id.clone(),
-                next_fire_unix_ms: None,
-                reason: error,
-            },
+        TriggerSpec::Cron { expression, timezone } => {
+            match crate::cron_calendar::next_cron_fire_unix_ms(expression, timezone, now_unix_ms) {
+                Ok(next_fire_unix_ms) => ScheduleDryRunPreview {
+                    schedule_id: definition.id.clone(),
+                    next_fire_unix_ms,
+                    reason: format!("next cron fire resolved in timezone {timezone}"),
+                },
+                Err(error) => ScheduleDryRunPreview {
+                    schedule_id: definition.id.clone(),
+                    next_fire_unix_ms: None,
+                    reason: error,
+                },
+            }
         }
         TriggerSpec::Event { .. } | TriggerSpec::Dependency { .. } | TriggerSpec::Signal { .. } => {
             ScheduleDryRunPreview {

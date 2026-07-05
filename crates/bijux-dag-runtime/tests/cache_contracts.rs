@@ -11,9 +11,8 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    cache_entry_has_required_proof, cache_entry_manifest_version_supported,
-    cache_key_explanation, cache_metadata_version_supported, CacheEntryManifest,
-    CacheManifestOutput, CacheKeyInput,
+    cache_entry_has_required_proof, cache_entry_manifest_version_supported, cache_key_explanation,
+    cache_metadata_version_supported, CacheEntryManifest, CacheKeyInput, CacheManifestOutput,
 };
 use serde_json::json;
 
@@ -142,9 +141,7 @@ fn cache_entry_manifest_requires_supported_version_and_output_contracts() {
     };
     assert!(cache_entry_manifest_version_supported(&manifest));
 
-    let stale = CacheEntryManifest {
-        manifest_version: "cache-entry/v9.9".to_string(),
-        ..manifest.clone()
-    };
+    let stale =
+        CacheEntryManifest { manifest_version: "cache-entry/v9.9".to_string(), ..manifest.clone() };
     assert!(!cache_entry_manifest_version_supported(&stale));
 }

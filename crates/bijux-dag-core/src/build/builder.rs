@@ -57,11 +57,7 @@ impl DagBuilder {
         self
     }
 
-    pub fn subgraph_definition(
-        mut self,
-        name: &str,
-        definition: SubgraphDefinition,
-    ) -> Self {
+    pub fn subgraph_definition(mut self, name: &str, definition: SubgraphDefinition) -> Self {
         self.subgraphs.insert(name.to_string(), definition);
         self
     }

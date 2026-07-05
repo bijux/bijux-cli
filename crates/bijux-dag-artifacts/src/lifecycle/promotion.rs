@@ -1,4 +1,6 @@
-use crate::{sha256_hex, write_json_atomic_durable, ArtifactError, Manifest, PromotedOutputSummary};
+use crate::{
+    sha256_hex, write_json_atomic_durable, ArtifactError, Manifest, PromotedOutputSummary,
+};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -113,7 +115,10 @@ pub fn append_promotion_record(
         let raw = fs::read_to_string(&index_path)?;
         serde_json::from_str::<ArtifactPromotionIndex>(&raw)?
     } else {
-        ArtifactPromotionIndex { schema_version: "artifact-promotions/v0.1".to_string(), records: Vec::new() }
+        ArtifactPromotionIndex {
+            schema_version: "artifact-promotions/v0.1".to_string(),
+            records: Vec::new(),
+        }
     };
 
     if let Some(existing) = index.records.iter_mut().find(|entry| {
@@ -154,7 +159,9 @@ mod tests {
     fn sample_record(destination_path: &str) -> ArtifactPromotionRecord {
         ArtifactPromotionRecord {
             schema_version: "artifact-promotion/v0.1".to_string(),
-            canonical_artifact_id: "run=run-1;node=publish;path=nodes/publish/outputs/report.json;sha256=abc".to_string(),
+            canonical_artifact_id:
+                "run=run-1;node=publish;path=nodes/publish/outputs/report.json;sha256=abc"
+                    .to_string(),
             legacy_artifact_id: "publish:report.json".to_string(),
             source_run_id: "run-1".to_string(),
             source_node_id: "publish".to_string(),
@@ -168,7 +175,9 @@ mod tests {
             to: PromotionEnvironment::Release,
             promoted_unix_ms: 42,
             lineage: PromotionLineageSummary {
-                subject_artifact_id: "run=run-1;node=publish;path=nodes/publish/outputs/report.json;sha256=abc".to_string(),
+                subject_artifact_id:
+                    "run=run-1;node=publish;path=nodes/publish/outputs/report.json;sha256=abc"
+                        .to_string(),
                 subject_legacy_artifact_id: "publish:report.json".to_string(),
                 upstream_artifact_ids: vec!["extract:seed.csv".to_string()],
                 downstream_artifact_ids: Vec::new(),
@@ -218,10 +227,7 @@ mod tests {
         let summary = build_promoted_output_summary(&sample_record("deliverables/run-1/publish"));
         append_promotion_summary(&mut manifest, summary.clone());
         append_promotion_summary(&mut manifest, summary);
-        assert_eq!(
-            manifest.run_summary.as_ref().expect("summary").promoted_outputs.len(),
-            1
-        );
+        assert_eq!(manifest.run_summary.as_ref().expect("summary").promoted_outputs.len(), 1);
     }
 
     #[test]

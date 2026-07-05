@@ -6,8 +6,8 @@ use std::env;
 use std::process::Command;
 
 use build_support::{
-    git_dir_from_workspace_root, git_rerun_paths, normalize_git_sha, workspace_root_from_manifest_dir,
-    BUILD_GIT_SHA_ENV,
+    git_dir_from_workspace_root, git_rerun_paths, normalize_git_sha,
+    workspace_root_from_manifest_dir, BUILD_GIT_SHA_ENV,
 };
 
 fn main() {
@@ -21,8 +21,9 @@ fn main() {
 }
 
 fn workspace_root() -> std::path::PathBuf {
-    let manifest_dir =
-        std::path::PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR must be set"));
+    let manifest_dir = std::path::PathBuf::from(
+        env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR must be set"),
+    );
     workspace_root_from_manifest_dir(&manifest_dir)
 }
 
@@ -50,14 +51,12 @@ fn git_commit_abbrev(workspace_root: &std::path::Path) -> Option<String> {
 
 fn resolved_build_git_sha(workspace_root: &std::path::Path) -> Option<String> {
     if let Ok(explicit_sha) = env::var(BUILD_GIT_SHA_ENV) {
-        return Some(
-            normalize_git_sha(&explicit_sha).unwrap_or_else(|| {
-                panic!(
-                    "{BUILD_GIT_SHA_ENV} must be a 7-40 character hexadecimal Git revision, got `{}`",
-                    explicit_sha.trim()
-                )
-            }),
-        );
+        return Some(normalize_git_sha(&explicit_sha).unwrap_or_else(|| {
+            panic!(
+                "{BUILD_GIT_SHA_ENV} must be a 7-40 character hexadecimal Git revision, got `{}`",
+                explicit_sha.trim()
+            )
+        }));
     }
     git_commit_abbrev(workspace_root)
 }

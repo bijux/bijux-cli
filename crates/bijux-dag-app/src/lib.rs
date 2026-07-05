@@ -116,8 +116,8 @@ pub mod experimental {
 }
 
 use crate::cache::{
-    cache_diff, cache_prune_simulate, cache_stats, explain_cache_key,
-    explain_run_node_cache_miss, pack_cache_entry, unpack_cache_entry, verify_cache_dirs,
+    cache_diff, cache_prune_simulate, cache_stats, explain_cache_key, explain_run_node_cache_miss,
+    pack_cache_entry, unpack_cache_entry, verify_cache_dirs,
 };
 use crate::cli_model::command_name as dag_command_name;
 use crate::integrity_service::{check_engine, hash_run_dir, verify_run};
@@ -528,13 +528,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             to_node,
         } => {
             let graph = load_graphs_or_emit(&cli, "dag.explain-plan", dags)?;
-            graph_helpers::validate_partial_selection_surface(
-                from_node,
-                to_node,
-                &[],
-                &[],
-                false,
-            )?;
+            graph_helpers::validate_partial_selection_surface(from_node, to_node, &[], &[], false)?;
             let (upstream_selection_targets, _) =
                 graph_helpers::resolve_upstream_run_selection(&graph, to_node)?;
             let (downstream_selection_roots, _) =
@@ -682,7 +676,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             node,
             cache_dir,
         } => {
-            let payload = if let (Some(run_dir), Some(node_id)) = (run_dir.as_ref(), node.as_deref()) {
+            let payload = if let (Some(run_dir), Some(node_id)) =
+                (run_dir.as_ref(), node.as_deref())
+            {
                 explain_run_node_cache_miss(run_dir, node_id, cache_dir.as_deref())?
             } else {
                 let key = key.as_deref().ok_or(ExitCode::from(3))?;

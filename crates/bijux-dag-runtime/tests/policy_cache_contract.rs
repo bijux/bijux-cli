@@ -1066,11 +1066,9 @@ fn runtime_cache_meta_records_strong_identity_components() {
     assert_eq!(meta["backend_class"], "local");
     assert_eq!(manifest["manifest_version"], "cache-entry/v0.1");
     assert_eq!(manifest["node_id"], "node");
-    assert!(
-        manifest["outputs"].as_array().is_some_and(|outputs| {
-            outputs.iter().any(|output| output["path"] == "value.txt" && output["required"] == true)
-        })
-    );
+    assert!(manifest["outputs"].as_array().is_some_and(|outputs| {
+        outputs.iter().any(|output| output["path"] == "value.txt" && output["required"] == true)
+    }));
 
     let trace: Value = serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join("node").join("trace.json")).expect("trace"),

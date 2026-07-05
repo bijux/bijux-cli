@@ -195,22 +195,22 @@ fn cache_corruption_fixtures_are_classified_by_verify_and_explain() {
                 "unexpected stderr for truncated meta verify fixture: {verify_stderr}"
             );
         } else {
-        let verify_payload = parse_json(&verify_stdout, verify_code, &verify_stderr);
-        assert!(verify_code == 0 || verify_code == 3);
-        let corrupt_total = verify_payload["data"]["corrupt_total"].as_u64().unwrap_or(0);
-        let expected_corrupt = matches!(
-            fixture,
-            "hash_mismatch"
-                | "missing_manifest"
-                | "missing_meta"
-                | "missing_outputs_proof"
-                | "unsupported_metadata_version"
-        );
-        assert_eq!(
-            corrupt_total > 0,
-            expected_corrupt,
-            "unexpected verify classification for fixture {fixture}"
-        );
+            let verify_payload = parse_json(&verify_stdout, verify_code, &verify_stderr);
+            assert!(verify_code == 0 || verify_code == 3);
+            let corrupt_total = verify_payload["data"]["corrupt_total"].as_u64().unwrap_or(0);
+            let expected_corrupt = matches!(
+                fixture,
+                "hash_mismatch"
+                    | "missing_manifest"
+                    | "missing_meta"
+                    | "missing_outputs_proof"
+                    | "unsupported_metadata_version"
+            );
+            assert_eq!(
+                corrupt_total > 0,
+                expected_corrupt,
+                "unexpected verify classification for fixture {fixture}"
+            );
         }
 
         let (explain_code, explain_stdout, explain_stderr) = run_command(

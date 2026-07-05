@@ -1136,7 +1136,8 @@ pub fn execute(
         node_definition_fingerprints.insert(node.id.clone(), node_definition_fp.clone());
         declared_environment_fingerprints.insert(node.id.clone(), env_fp.clone());
         params_fingerprints.insert(node.id.clone(), crate::params_fingerprint(&params)?);
-        command_fingerprints.insert(node.id.clone(), crate::command_fingerprint(graph, node, &params)?);
+        command_fingerprints
+            .insert(node.id.clone(), crate::command_fingerprint(graph, node, &params)?);
         base_fps.insert(
             node.id.clone(),
             crate::sha256_bytes(format!("{node_definition_fp}:{env_fp}").as_bytes()),

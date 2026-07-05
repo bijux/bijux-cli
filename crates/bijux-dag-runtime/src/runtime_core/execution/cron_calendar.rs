@@ -32,14 +32,9 @@ pub(crate) fn next_cron_fire_unix_ms(
 ) -> Result<Option<u128>, String> {
     let schedule = parse_cron_schedule(expression)?;
     let timezone = parse_cron_timezone(timezone)?;
-    let anchor = utc_datetime_from_unix_ms(unix_ms)?
-        .with_timezone(&timezone)
-        - Duration::milliseconds(1);
-    schedule
-        .after(&anchor)
-        .next()
-        .map(unix_ms_from_datetime)
-        .transpose()
+    let anchor =
+        utc_datetime_from_unix_ms(unix_ms)?.with_timezone(&timezone) - Duration::milliseconds(1);
+    schedule.after(&anchor).next().map(unix_ms_from_datetime).transpose()
 }
 
 pub(crate) fn materialize_next_cron_runs(
@@ -50,14 +45,9 @@ pub(crate) fn materialize_next_cron_runs(
 ) -> Result<Vec<u128>, String> {
     let schedule = parse_cron_schedule(expression)?;
     let timezone = parse_cron_timezone(timezone)?;
-    let anchor = utc_datetime_from_unix_ms(unix_ms)?
-        .with_timezone(&timezone)
-        - Duration::milliseconds(1);
-    schedule
-        .after(&anchor)
-        .take(limit.max(1))
-        .map(unix_ms_from_datetime)
-        .collect()
+    let anchor =
+        utc_datetime_from_unix_ms(unix_ms)?.with_timezone(&timezone) - Duration::milliseconds(1);
+    schedule.after(&anchor).take(limit.max(1)).map(unix_ms_from_datetime).collect()
 }
 
 pub(crate) fn cron_fire_times_between(
@@ -73,8 +63,7 @@ pub(crate) fn cron_fire_times_between(
 
     let schedule = parse_cron_schedule(expression)?;
     let timezone = parse_cron_timezone(timezone)?;
-    let anchor = utc_datetime_from_unix_ms(start_unix_ms)?
-        .with_timezone(&timezone)
+    let anchor = utc_datetime_from_unix_ms(start_unix_ms)?.with_timezone(&timezone)
         + Duration::milliseconds(1);
 
     let mut fire_times = Vec::new();
@@ -105,9 +94,7 @@ fn normalize_five_field_expression(expression: &str) -> Result<String, String> {
 }
 
 fn parse_cron_timezone(timezone: &str) -> Result<Tz, String> {
-    timezone
-        .parse::<Tz>()
-        .map_err(|_| format!("unsupported cron timezone '{timezone}'"))
+    timezone.parse::<Tz>().map_err(|_| format!("unsupported cron timezone '{timezone}'"))
 }
 
 fn utc_datetime_from_unix_ms(unix_ms: u128) -> Result<DateTime<Utc>, String> {

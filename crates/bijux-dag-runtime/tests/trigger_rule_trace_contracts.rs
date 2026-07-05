@@ -222,8 +222,7 @@ fn retry_trigger_graph() -> String {
 
 #[test]
 fn runtime_records_none_failed_trace_for_branch_skip() {
-    let graph =
-        parse_graph_strict(&branch_join_graph("none_failed", "left")).expect("parse graph");
+    let graph = parse_graph_strict(&branch_join_graph("none_failed", "left")).expect("parse graph");
     let runtime = Runtime::new();
     let out_dir = tempfile::tempdir().expect("tempdir");
     let run_dir =

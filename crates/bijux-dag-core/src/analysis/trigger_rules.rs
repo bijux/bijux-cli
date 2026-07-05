@@ -28,19 +28,19 @@ pub fn evaluate_trigger_rule(
             matches!(outcome, UpstreamTerminalOutcome::Success | UpstreamTerminalOutcome::Cached)
         })
         .count();
-    let failed =
-        parent_outcomes.iter().filter(|outcome| matches!(outcome, UpstreamTerminalOutcome::Failed)).count();
+    let failed = parent_outcomes
+        .iter()
+        .filter(|outcome| matches!(outcome, UpstreamTerminalOutcome::Failed))
+        .count();
     let total = parent_outcomes.len();
 
     let (satisfied, reason) = match trigger_rule {
-        TriggerRule::AllSuccess => (
-            success == total,
-            "requires every upstream to complete in success or cached status",
-        ),
-        TriggerRule::AnySuccess => (
-            success > 0,
-            "requires at least one upstream to complete in success or cached status",
-        ),
+        TriggerRule::AllSuccess => {
+            (success == total, "requires every upstream to complete in success or cached status")
+        }
+        TriggerRule::AnySuccess => {
+            (success > 0, "requires at least one upstream to complete in success or cached status")
+        }
         TriggerRule::AllDone => (true, "accepts any terminal upstream status"),
         TriggerRule::NoneFailed => (failed == 0, "requires upstream completion without failures"),
     };

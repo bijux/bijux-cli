@@ -78,12 +78,12 @@ pub use paths::is_normalized_relative_path;
 pub use platform::{
     compact_lineage, explain_lineage_safe_gc, lineage_dependencies, lineage_dependents,
 };
-pub use proof::{ArtifactIntegrityProof, CorruptionDetectionResult, CorruptionRepairPolicy};
 pub use promotion::{
     append_promotion_record, append_promotion_summary, build_promoted_output_summary,
     promotion_record_path, ArtifactPromotionIndex, ArtifactPromotionRecord, PromotionEnvironment,
     PromotionLineageSummary,
 };
+pub use proof::{ArtifactIntegrityProof, CorruptionDetectionResult, CorruptionRepairPolicy};
 pub use retention::RetentionPolicy;
 pub use schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
@@ -646,11 +646,7 @@ mod tests {
         assert!(layout.final_path.ends_with("run-path-preview"));
         assert_eq!(
             layout.node_outputs_dir("align"),
-            dir.path()
-                .join("run.tmp-path-preview")
-                .join("nodes")
-                .join("align")
-                .join("outputs")
+            dir.path().join("run.tmp-path-preview").join("nodes").join("align").join("outputs")
         );
         assert_eq!(
             layout.node_temp_dir("align"),

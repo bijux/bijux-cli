@@ -162,10 +162,8 @@ fn schedule_validate_reports_invalid_timezones_through_binary() {
         serde_json::from_slice(&output.stdout).expect("schedule validate json");
     assert_eq!(payload["command"], "dag.schedule.validate");
     assert_eq!(payload["ok"], false);
-    assert!(
-        payload["diagnostics"][0]["message"]
-            .as_str()
-            .expect("diagnostic message")
-            .contains("unsupported cron timezone")
-    );
+    assert!(payload["diagnostics"][0]["message"]
+        .as_str()
+        .expect("diagnostic message")
+        .contains("unsupported cron timezone"));
 }

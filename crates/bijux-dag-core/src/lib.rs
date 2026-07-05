@@ -101,15 +101,15 @@ mod scientific_integration_contracts;
 #[doc(hidden)]
 #[path = "analysis/semantics.rs"]
 pub mod semantics;
-#[doc(hidden)]
-#[path = "analysis/trigger_rules.rs"]
-pub mod trigger_rules;
 #[cfg(feature = "experimental-public-api")]
 #[path = "contracts/semantics_iteration04.rs"]
 mod semantics_iteration04;
 #[doc(hidden)]
 #[path = "graph/topology.rs"]
 pub mod topology;
+#[doc(hidden)]
+#[path = "analysis/trigger_rules.rs"]
+pub mod trigger_rules;
 #[doc(hidden)]
 #[path = "pipeline/validate.rs"]
 pub mod validate;
@@ -156,8 +156,8 @@ pub use planner::{
 };
 pub use resolve::resolve_graph;
 pub use resources::GraphDefaults;
-pub use trigger_rules::{evaluate_trigger_rule, TriggerRuleEvaluation, UpstreamTerminalOutcome};
 pub use topology::deterministic_topology_order;
+pub use trigger_rules::{evaluate_trigger_rule, TriggerRuleEvaluation, UpstreamTerminalOutcome};
 pub use validate::{
     validate_graph, validate_schema, validate_semantics, validate_topology,
     validation_rule_registry, ValidationDomain,
@@ -174,8 +174,8 @@ pub mod stable {
         planner_identity_for_graph, validate_graph, CompatibilityDecision, DagCompilePlanHints,
         DagCompileResult, DagSnapshot, ExecutionPlan, Graph, GraphCompositionError, GraphContract,
         GraphError, GraphExecutionPolicy, PlanOptions, PlannedEdge, PlannedNode, PlannerDiagnostic,
-        PlannerError, PlannerSeverity, SPEC_VERSION, TriggerRuleEvaluation,
-        UpstreamTerminalOutcome,
+        PlannerError, PlannerSeverity, TriggerRuleEvaluation, UpstreamTerminalOutcome,
+        SPEC_VERSION,
     };
 }
 

@@ -81,9 +81,5 @@ pub fn build_lineage_visualization(
                 .collect::<Vec<_>>()
         })
         .collect();
-    ArtifactLineageVisualization {
-        schema_version: snapshot.schema_version.clone(),
-        nodes,
-        links,
-    }
+    ArtifactLineageVisualization { schema_version: snapshot.schema_version.clone(), nodes, links }
 }

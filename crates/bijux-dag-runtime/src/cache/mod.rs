@@ -136,7 +136,9 @@ pub fn cache_explainability_proof_from_meta(
 pub fn cache_metadata_version_supported(meta: &serde_json::Value) -> bool {
     meta.get("cache_metadata_version")
         .and_then(|v| v.as_str())
-        .map(|version| version == CACHE_METADATA_VERSION || version == CACHE_METADATA_VERSION_LEGACY)
+        .map(|version| {
+            version == CACHE_METADATA_VERSION || version == CACHE_METADATA_VERSION_LEGACY
+        })
         .unwrap_or(false)
 }
 

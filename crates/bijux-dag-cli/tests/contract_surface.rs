@@ -535,17 +535,13 @@ fn dag_commands_json_can_include_hidden_namespaces_when_requested() {
     let payload: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("commands json all");
     let commands = payload["data"]["commands"].as_array().expect("commands array");
-    assert!(commands.iter().any(
-        |entry| entry["path"] == "artifact fetch"
-            && entry["lane"] == "experimental"
-            && entry["availability"] == "explicit-path"
-    ));
-    assert!(commands.iter().any(
-        |entry| entry["path"] == "lab federation schedule"
-            && entry["lane"] == "simulation"
-            && entry["availability"] == "opt-in"
-            && entry["opt_in_env"] == "BIJUX_DAG_ENABLE_SIMULATED"
-    ));
+    assert!(commands.iter().any(|entry| entry["path"] == "artifact fetch"
+        && entry["lane"] == "experimental"
+        && entry["availability"] == "explicit-path"));
+    assert!(commands.iter().any(|entry| entry["path"] == "lab federation schedule"
+        && entry["lane"] == "simulation"
+        && entry["availability"] == "opt-in"
+        && entry["opt_in_env"] == "BIJUX_DAG_ENABLE_SIMULATED"));
     assert!(commands.iter().any(|entry| entry["path"] == "trace-node"));
 }
 
@@ -669,7 +665,11 @@ fn dag_simulated_routes_require_opt_in_before_execution() {
         .args(["--json", "governance", "ownership", &dag])
         .output()
         .expect("governance ownership allowed");
-    assert!(allowed.status.success(), "allowed stderr: {}", String::from_utf8_lossy(&allowed.stderr));
+    assert!(
+        allowed.status.success(),
+        "allowed stderr: {}",
+        String::from_utf8_lossy(&allowed.stderr)
+    );
     let payload: serde_json::Value =
         serde_json::from_slice(&allowed.stdout).expect("governance payload");
     assert_eq!(payload["command"], "dag.governance.ownership");
@@ -705,7 +705,11 @@ fn dag_internal_routes_require_opt_in_before_execution() {
         .args(["--json", "version-inspect", "--dag", &dag])
         .output()
         .expect("version inspect allowed");
-    assert!(allowed.status.success(), "allowed stderr: {}", String::from_utf8_lossy(&allowed.stderr));
+    assert!(
+        allowed.status.success(),
+        "allowed stderr: {}",
+        String::from_utf8_lossy(&allowed.stderr)
+    );
     let payload: serde_json::Value =
         serde_json::from_slice(&allowed.stdout).expect("version inspect payload");
     assert_eq!(payload["command"], "dag.version-inspect");
@@ -826,7 +830,9 @@ fn dag_replay_help_surface_contract() {
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in ["--out", "--run-id", "--reuse-cache", "--sandbox", "--hermetic", "--from-node", "replay"] {
+    for token in
+        ["--out", "--run-id", "--reuse-cache", "--sandbox", "--hermetic", "--from-node", "replay"]
+    {
         assert!(text.contains(token));
     }
     for detail in [

@@ -276,10 +276,7 @@ pub fn detect_cron_conflicts(definitions: &[ScheduleDefinition]) -> Vec<CronConf
     let mut grouped: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
     for d in definitions {
         if let TriggerSpec::Cron { expression, timezone } = &d.trigger {
-            grouped
-                .entry((expression.clone(), timezone.clone()))
-                .or_default()
-                .push(d.id.clone());
+            grouped.entry((expression.clone(), timezone.clone())).or_default().push(d.id.clone());
         }
     }
     grouped

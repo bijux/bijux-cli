@@ -159,11 +159,16 @@ fn command_access_for_head(head: &str) -> CommandAccess {
             opt_in_env: None,
         };
     }
-    CommandAccess { lane: CommandLane::Stable, availability: CommandAvailability::Default, opt_in_env: None }
+    CommandAccess {
+        lane: CommandLane::Stable,
+        availability: CommandAvailability::Default,
+        opt_in_env: None,
+    }
 }
 
 fn is_path_scoped_experimental_route(path: &str) -> bool {
-    matches!(path, "explain-plan" | "run-bundle" | "trace-node") || path.starts_with("artifact fetch")
+    matches!(path, "explain-plan" | "run-bundle" | "trace-node")
+        || path.starts_with("artifact fetch")
 }
 
 fn root_command(command: &Commands) -> &'static str {

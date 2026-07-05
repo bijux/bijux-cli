@@ -32,11 +32,8 @@ fn process_env_lock() -> std::sync::MutexGuard<'static, ()> {
 fn shell_graph(command: &str, effects: &[&str]) -> String {
     let effects =
         effects.iter().map(|effect| format!("\"{effect}\"")).collect::<Vec<_>>().join(",");
-    let env_allowlist = if effects.contains(&"env") {
-        ",\n              \"env_allowlist\":[\"PATH\"]"
-    } else {
-        ""
-    };
+    let env_allowlist =
+        if effects.contains(&"env") { ",\n              \"env_allowlist\":[\"PATH\"]" } else { "" };
     format!(
         r#"{{
           "spec":"bijux-dag/v0.1",

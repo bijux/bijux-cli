@@ -14,10 +14,7 @@ pub(crate) fn normalize_git_sha(value: &str) -> Option<String> {
     if !(7..=40).contains(&normalized.len()) {
         return None;
     }
-    normalized
-        .chars()
-        .all(|character| character.is_ascii_hexdigit())
-        .then_some(normalized)
+    normalized.chars().all(|character| character.is_ascii_hexdigit()).then_some(normalized)
 }
 
 pub(crate) fn git_dir_from_workspace_root(workspace_root: &Path) -> Option<PathBuf> {
@@ -29,11 +26,7 @@ pub(crate) fn git_dir_from_workspace_root(workspace_root: &Path) -> Option<PathB
     let git_file = std::fs::read_to_string(&dot_git).ok()?;
     let reference = git_file.trim().strip_prefix("gitdir: ")?;
     let git_dir = Path::new(reference);
-    Some(if git_dir.is_absolute() {
-        git_dir.to_path_buf()
-    } else {
-        workspace_root.join(git_dir)
-    })
+    Some(if git_dir.is_absolute() { git_dir.to_path_buf() } else { workspace_root.join(git_dir) })
 }
 
 pub(crate) fn git_rerun_paths(git_dir: &Path) -> Vec<PathBuf> {

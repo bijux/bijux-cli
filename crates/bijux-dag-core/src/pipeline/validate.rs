@@ -1014,9 +1014,7 @@ fn validate_param_value(
                     "E1031",
                     "reference must declare exactly one source".to_string(),
                     path.to_string(),
-                    Some(
-                        "Use exactly one of graph_input, node_output, or path_var".to_string(),
-                    ),
+                    Some("Use exactly one of graph_input, node_output, or path_var".to_string()),
                 );
             }
             if let Some(input) = &spec.graph_input {

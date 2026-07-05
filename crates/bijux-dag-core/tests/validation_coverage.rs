@@ -16,9 +16,9 @@ use bijux_dag_core::{
 #[test]
 fn validation_error_and_warning_coverage() {
     let expected_error_codes = [
-        "E1001", "E1002", "E1003", "E1004", "E1005", "E1007", "E1008", "E1009", "E1010", "E1011", "E1020",
-        "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030", "E1031",
-        "E1032", "E1035",
+        "E1001", "E1002", "E1003", "E1004", "E1005", "E1007", "E1008", "E1009", "E1010", "E1011",
+        "E1020", "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030",
+        "E1031", "E1032", "E1035",
     ];
 
     for code in expected_error_codes {
@@ -237,9 +237,9 @@ fn container_workdir_validation_rejects_relative_escapes() {
 
     let diags = graph.validate_with_warnings();
 
-    assert!(diags.iter().any(|d| {
-        d.code == "E1025" && d.path == "/nodes/source/container/workdir"
-    }));
+    assert!(diags
+        .iter()
+        .any(|d| { d.code == "E1025" && d.path == "/nodes/source/container/workdir" }));
 }
 
 #[test]

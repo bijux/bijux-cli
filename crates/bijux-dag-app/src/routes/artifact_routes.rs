@@ -192,11 +192,7 @@ fn deliverable_dir(
     node_id: &str,
     output_name: &str,
 ) -> std::path::PathBuf {
-    deliverables_root
-        .join(target_environment.label())
-        .join(run_id)
-        .join(node_id)
-        .join(output_name)
+    deliverables_root.join(target_environment.label()).join(run_id).join(node_id).join(output_name)
 }
 
 fn write_manifest_with_promotion_summary(
@@ -210,7 +206,8 @@ fn write_manifest_with_promotion_summary(
         .map_err(|_| ExitCode::from(3))?;
     let finalized_path = run_dir.join("manifest.finalized.json");
     if finalized_path.exists() {
-        write_json_atomic_durable(finalized_path, &manifest_value).map_err(|_| ExitCode::from(3))?;
+        write_json_atomic_durable(finalized_path, &manifest_value)
+            .map_err(|_| ExitCode::from(3))?;
     }
     Ok(())
 }
@@ -315,15 +312,15 @@ fn promote_artifact(
     } else {
         let parent = destination_dir.parent().ok_or(ExitCode::from(3))?;
         fs::create_dir_all(parent).map_err(|_| ExitCode::from(3))?;
-        let stage_dir =
-            parent.join(format!(".promotion-{}-{}", output.name, promoted_unix_ms));
+        let stage_dir = parent.join(format!(".promotion-{}-{}", output.name, promoted_unix_ms));
         if stage_dir.exists() {
             fs::remove_dir_all(&stage_dir).map_err(|_| ExitCode::from(3))?;
         }
         fs::create_dir_all(&stage_dir).map_err(|_| ExitCode::from(3))?;
         let staged_payload_root = stage_dir.join("payload");
         if source_payload.is_dir() {
-            copy_dir_recursive(&source_payload, &staged_payload_root).map_err(|_| ExitCode::from(3))?;
+            copy_dir_recursive(&source_payload, &staged_payload_root)
+                .map_err(|_| ExitCode::from(3))?;
         } else {
             fs::create_dir_all(&staged_payload_root).map_err(|_| ExitCode::from(3))?;
             fs::copy(&source_payload, staged_payload_root.join(payload_file_name))
@@ -668,7 +665,8 @@ mod tests {
         .expect("promote");
         assert_eq!(exit, ExitCode::SUCCESS);
 
-        let promotion_dir = deliverables.join("release").join("run-01").join("extract").join("report");
+        let promotion_dir =
+            deliverables.join("release").join("run-01").join("extract").join("report");
         assert!(promotion_dir.join("payload").join("report.json").exists());
         let promotion: serde_json::Value = serde_json::from_str(
             &std::fs::read_to_string(promotion_dir.join("promotion.json")).expect("promotion"),

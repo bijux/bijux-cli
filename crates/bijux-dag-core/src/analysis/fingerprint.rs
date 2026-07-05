@@ -57,7 +57,8 @@ impl Graph {
             crate::Effect::Clock => 3,
         });
         if let Some(argv) = node.container.as_ref().map(|container| container.argv.clone()) {
-            let resolved_argv = resolve_command_argv_templates(self, &node, &argv, resolved_params)?;
+            let resolved_argv =
+                resolve_command_argv_templates(self, &node, &argv, resolved_params)?;
             if let Some(container) = node.container.as_mut() {
                 container.argv = resolved_argv;
             }

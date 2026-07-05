@@ -176,8 +176,8 @@ fn runtime_uses_branch_default_when_node_outputs_unknown_decision() {
 
 #[test]
 fn runtime_runs_branch_join_with_any_success_after_unselected_path_is_skipped() {
-    let graph = parse_graph_strict(&branch_join_graph_json("left", "any_success"))
-        .expect("parse graph");
+    let graph =
+        parse_graph_strict(&branch_join_graph_json("left", "any_success")).expect("parse graph");
     let runtime = Runtime::new();
     let out_dir = tempfile::tempdir().expect("tempdir");
     let run_dir =

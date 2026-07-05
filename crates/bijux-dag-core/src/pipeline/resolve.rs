@@ -109,7 +109,8 @@ fn resolve_command_param_templates(
         .iter()
         .map(|entry| match entry {
             Value::String(text) => {
-                resolve_command_template_string(graph, node, resolved_params, text).map(Value::String)
+                resolve_command_template_string(graph, node, resolved_params, text)
+                    .map(Value::String)
             }
             Value::Number(number) => Ok(Value::String(number.to_string())),
             Value::Bool(flag) => Ok(Value::String(flag.to_string())),
