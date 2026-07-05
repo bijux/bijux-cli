@@ -1,6 +1,44 @@
 {
-  "asset_count": 150,
+  "asset_count": 153,
   "assets": [
+    {
+      "canonical_path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "consumers": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "consumers": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
     {
       "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
       "consumers": [
@@ -108,6 +146,25 @@
       "kind": "authoring",
       "owner": "team-authoring",
       "registry_key": "authoring:evidence/authoring/examples/multi-output-artifact.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/parameterized-report.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/parameterized-report.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/parameterized-report.dag.json",
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "keep",

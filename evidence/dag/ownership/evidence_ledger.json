@@ -903,6 +903,74 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
+      "canonical_location": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "canonical_path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "consumer_surfaces": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide app integration descriptor fixture used by release and integration scenarios"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "canonical_path": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "consumer_surfaces": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide app integration plugin manifest fixture used by release and integration scenarios"
+    },
+    {
       "canonical_location": "evidence/authoring/examples/cached-branched-report.dag.json",
       "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
       "consumer_surfaces": [
@@ -1107,6 +1175,40 @@
       "why_exists": "provide executable authoring references"
     },
     {
+      "canonical_location": "evidence/authoring/examples/parameterized-report.dag.json",
+      "canonical_path": "evidence/authoring/examples/parameterized-report.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/parameterized-report.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/parameterized-report.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references that exercise typed inputs and downstream output references"
+    },
+    {
       "canonical_location": "evidence/authoring/examples/replay-heavy-branching.dag.json",
       "canonical_path": "evidence/authoring/examples/replay-heavy-branching.dag.json",
       "consumer_surfaces": [
@@ -1139,74 +1241,6 @@
       ],
       "trust_property": "schema-compatibility",
       "why_exists": "provide executable authoring references"
-    },
-    {
-      "canonical_location": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
-      "canonical_path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
-      "consumer_surfaces": [
-        "app-integration",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "app-integration",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide app integration descriptor fixture used by release and integration scenarios"
-    },
-    {
-      "canonical_location": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
-      "canonical_path": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
-      "consumer_surfaces": [
-        "app-integration",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "app-integration",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide app integration plugin manifest fixture used by release and integration scenarios"
     },
     {
       "canonical_location": "evidence/authoring/negative/cycle.json",
