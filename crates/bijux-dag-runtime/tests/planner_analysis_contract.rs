@@ -41,7 +41,7 @@ fn execution_cost_graph() -> &'static str {
           "id":"b",
           "kind":"shell",
           "outputs":[{"name":"out","path":"b/out"}],
-          "params":{"argv":["echo","b"]},
+          "params":{"argv":["echo","b"],"estimated_duration_ms":9000},
           "resources":{"cpu":4,"mem_mb":2048},
           "tags":["gpu:2"],
           "timeout_ms":5000,
@@ -53,7 +53,7 @@ fn execution_cost_graph() -> &'static str {
           "kind":"shell",
           "inputs":["left","right"],
           "outputs":[{"name":"out","path":"c/out"}],
-          "params":{"argv":["echo","c"]},
+          "params":{"argv":["echo","c"],"estimated_duration_ms":3000},
           "resources":{"cpu":2,"mem_mb":1024}
         }
       ],
@@ -132,6 +132,10 @@ fn planner_execution_cost_estimate_reports_topology_demand_and_exposure() {
     assert_eq!(estimate.node_count, 3);
     assert_eq!(estimate.root_nodes, vec!["a".to_string(), "b".to_string()]);
     assert_eq!(estimate.critical_path_length, 2);
+    assert_eq!(estimate.critical_path.node_ids, vec!["b".to_string(), "c".to_string()]);
+    assert_eq!(estimate.critical_path.total_duration_ms, 12_000);
+    assert_eq!(estimate.critical_path.estimated_duration_nodes, 2);
+    assert_eq!(estimate.critical_path.unit_duration_fallback_nodes, 0);
     assert_eq!(estimate.max_parallelism, 2);
     assert_eq!(estimate.demand.cpu_cores_total, 7);
     assert_eq!(estimate.demand.memory_mb_total, 3328);
@@ -176,6 +180,10 @@ fn planner_execution_cost_estimate_tracks_partial_selection() {
     assert_eq!(estimate.node_count, 1);
     assert_eq!(estimate.root_nodes, vec!["c".to_string()]);
     assert_eq!(estimate.critical_path_length, 1);
+    assert_eq!(estimate.critical_path.node_ids, vec!["c".to_string()]);
+    assert_eq!(estimate.critical_path.total_duration_ms, 3_000);
+    assert_eq!(estimate.critical_path.estimated_duration_nodes, 1);
+    assert_eq!(estimate.critical_path.unit_duration_fallback_nodes, 0);
     assert_eq!(estimate.max_parallelism, 1);
     assert_eq!(estimate.demand.cpu_cores_total, 2);
     assert_eq!(estimate.demand.memory_mb_total, 1024);
@@ -183,6 +191,40 @@ fn planner_execution_cost_estimate_tracks_partial_selection() {
     assert_eq!(estimate.cache_exposure.non_cacheable_nodes, 0);
     assert_eq!(estimate.timeout_exposure.timed_nodes, 0);
     assert_eq!(estimate.retry_exposure.retrying_nodes, 0);
+}
+
+#[test]
+fn planner_critical_path_uses_unit_duration_fallback_when_estimates_are_missing() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {"id":"b","kind":"shell","outputs":[{"name":"out","path":"b/out"}],"params":{"argv":["echo","b"]}},
+            {"id":"c","kind":"shell","inputs":["left","right"],"outputs":[{"name":"out","path":"c/out"}],"params":{"argv":["echo","c"]}}
+          ],
+          "edges":[
+            {"from":{"node_id":"a","port":"out"},"to":{"node_id":"c","port":"left"}},
+            {"from":{"node_id":"b","port":"out"},"to":{"node_id":"c","port":"right"}}
+          ]
+        }"#,
+    )
+    .expect("graph should parse");
+
+    let result = build_planner_analysis(
+        &graph,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("planner build should succeed");
+
+    let estimate = result.execution_cost_estimate;
+    assert_eq!(estimate.critical_path_length, 2);
+    assert_eq!(estimate.critical_path.node_ids, vec!["a".to_string(), "c".to_string()]);
+    assert_eq!(estimate.critical_path.total_duration_ms, 2);
+    assert_eq!(estimate.critical_path.estimated_duration_nodes, 0);
+    assert_eq!(estimate.critical_path.unit_duration_fallback_nodes, 2);
 }
 
 #[test]
@@ -260,25 +302,18 @@ fn planner_reports_path_previews_when_run_root_is_known() {
         shell_preview.resolved_argv.as_ref().expect("shell argv"),
         &vec![
             "cp".to_string(),
-            temp.path()
-                .join("run.tmp-preview/nodes/shell/inputs/seed.txt")
-                .display()
-                .to_string(),
+            temp.path().join("run.tmp-preview/nodes/shell/inputs/seed.txt").display().to_string(),
             temp.path()
                 .join("run.tmp-preview/nodes/shell/outputs/result.txt")
                 .display()
                 .to_string(),
         ]
     );
-    assert!(shell_preview
-        .resolved_paths
-        .iter()
-        .any(|path| path.key_path == "$.argv[1]" && path.resolved_path.contains("/nodes/shell/inputs/seed.txt")));
+    assert!(shell_preview.resolved_paths.iter().any(|path| path.key_path == "$.argv[1]"
+        && path.resolved_path.contains("/nodes/shell/inputs/seed.txt")));
 
-    let container_preview = previews
-        .iter()
-        .find(|preview| preview.node_id == "container")
-        .expect("container preview");
+    let container_preview =
+        previews.iter().find(|preview| preview.node_id == "container").expect("container preview");
     assert_eq!(container_preview.execution_surface, "container");
     assert_eq!(
         container_preview.resolved_argv.as_ref().expect("container argv"),
@@ -291,7 +326,8 @@ fn planner_reports_path_previews_when_run_root_is_known() {
     assert!(container_preview
         .resolved_paths
         .iter()
-        .any(|path| path.key_path == "container.workdir" && path.resolved_path == "/bijux/node/work/scratch"));
+        .any(|path| path.key_path == "container.workdir"
+            && path.resolved_path == "/bijux/node/work/scratch"));
 }
 
 #[test]
