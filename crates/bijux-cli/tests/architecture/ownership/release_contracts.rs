@@ -281,10 +281,7 @@ fn managed_release_toolchains_match_workspace_rust_version() {
         quoted_value_after(&workspace_manifest, "rust-version = ").expect("workspace rust-version");
     let exact_toolchain = format!("{workspace_rust_version}.0");
 
-    for key in [
-        "BIJUX_RELEASE_RUST_TOOLCHAIN",
-        "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN",
-    ] {
+    for key in ["BIJUX_RELEASE_RUST_TOOLCHAIN", "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN"] {
         assert_eq!(
             release_env_value_for_repo("bijux-core", key),
             exact_toolchain,
@@ -299,10 +296,7 @@ fn managed_release_toolchains_match_workspace_rust_version() {
     );
 
     let release_env = read_repo_file(".github/release.env");
-    for key in [
-        "BIJUX_RELEASE_RUST_TOOLCHAIN",
-        "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN",
-    ] {
+    for key in ["BIJUX_RELEASE_RUST_TOOLCHAIN", "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN"] {
         assert_eq!(
             shell_assignment_value(&release_env, key).as_deref(),
             Some(exact_toolchain.as_str()),
@@ -370,9 +364,8 @@ fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tre
 fn release_build_matrices_cover_cli_and_dag_release_families() {
     let manifest_build_matrix =
         release_env_json_value_for_repo("bijux-core", "BIJUX_RELEASE_BUILD_MATRIX_JSON");
-    let manifest_build_entries = manifest_build_matrix
-        .as_array()
-        .expect("release build matrix should be an array");
+    let manifest_build_entries =
+        manifest_build_matrix.as_array().expect("release build matrix should be an array");
     let manifest_build_slugs: Vec<&str> = manifest_build_entries
         .iter()
         .map(|entry| entry["package_slug"].as_str().expect("package_slug"))

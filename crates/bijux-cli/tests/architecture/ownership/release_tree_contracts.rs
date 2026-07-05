@@ -15,7 +15,12 @@ fn script_path() -> PathBuf {
     repo_root().join(".github/scripts/prepare_release_tree.py")
 }
 
-fn run_prepare_release_tree(script: &Path, workspace_root: &Path, output_dir: &Path, version: &str) -> Output {
+fn run_prepare_release_tree(
+    script: &Path,
+    workspace_root: &Path,
+    output_dir: &Path,
+    version: &str,
+) -> Output {
     Command::new("python3")
         .args([
             script.to_str().expect("script path utf-8"),
@@ -71,9 +76,18 @@ edition = "2021"
 path = "src/lib.rs"
 "#,
     );
-    write_file(&root.join("crates/bijux-demo/src/lib.rs"), "pub fn exported_value() -> &'static str { \"committed-head\" }\n");
-    write_file(&root.join("crates/bijux-demo/src/build/builder.rs"), "pub const BUILDER_SURFACE: &str = \"preserved\";\n");
-    write_file(&root.join("crates/bijux-demo/src/artifacts/mod.rs"), "pub const ARTIFACTS_SURFACE: &str = \"preserved\";\n");
+    write_file(
+        &root.join("crates/bijux-demo/src/lib.rs"),
+        "pub fn exported_value() -> &'static str { \"committed-head\" }\n",
+    );
+    write_file(
+        &root.join("crates/bijux-demo/src/build/builder.rs"),
+        "pub const BUILDER_SURFACE: &str = \"preserved\";\n",
+    );
+    write_file(
+        &root.join("crates/bijux-demo/src/artifacts/mod.rs"),
+        "pub const ARTIFACTS_SURFACE: &str = \"preserved\";\n",
+    );
     write_file(
         &root.join("templates/plugins-py/cookiecutter.json"),
         "{\n  \"cli_min\": \"0.2.0\",\n  \"cli_max\": \"0.3.0\"\n}\n",
@@ -101,7 +115,10 @@ fn prepare_release_tree_exports_committed_head_not_dirty_worktree() {
     let output_dir = output_root.path().join("release-tree");
     fs::create_dir(&output_dir).expect("create output dir");
 
-    write_file(&root.join("crates/bijux-demo/src/lib.rs"), "pub fn exported_value() -> &'static str { \"dirty-worktree\" }\n");
+    write_file(
+        &root.join("crates/bijux-demo/src/lib.rs"),
+        "pub fn exported_value() -> &'static str { \"dirty-worktree\" }\n",
+    );
     write_file(&root.join("untracked-note.txt"), "this file must not leak into the release tree\n");
 
     let out = run_prepare_release_tree(&script_path(), root, &output_dir, "0.3.0");
@@ -111,8 +128,8 @@ fn prepare_release_tree_exports_committed_head_not_dirty_worktree() {
         String::from_utf8_lossy(&out.stderr)
     );
 
-    let released_source =
-        fs::read_to_string(output_dir.join("crates/bijux-demo/src/lib.rs")).expect("release source");
+    let released_source = fs::read_to_string(output_dir.join("crates/bijux-demo/src/lib.rs"))
+        .expect("release source");
     assert!(released_source.contains("committed-head"));
     assert!(!released_source.contains("dirty-worktree"));
     assert!(

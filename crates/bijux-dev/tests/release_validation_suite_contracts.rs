@@ -102,7 +102,9 @@ fn release_validation_suite_commands_cover_required_release_checks() {
         .expect("fmt command");
     let clippy_index = commands
         .iter()
-        .position(|entry| entry == "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings")
+        .position(|entry| {
+            entry == "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings"
+        })
         .expect("clippy command");
     let test_index = commands
         .iter()
@@ -114,7 +116,9 @@ fn release_validation_suite_commands_cover_required_release_checks() {
         .expect("doc command");
     let smoke_index = commands
         .iter()
-        .position(|entry| entry == "cargo test -p bijux-dag-cli --test smoke_pipeline --locked -- --nocapture")
+        .position(|entry| {
+            entry == "cargo test -p bijux-dag-cli --test smoke_pipeline --locked -- --nocapture"
+        })
         .expect("smoke command");
 
     assert!(fmt_index < clippy_index);

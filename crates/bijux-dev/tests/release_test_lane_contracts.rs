@@ -59,15 +59,14 @@ fn repo_root() -> PathBuf {
 
 fn read_governance() -> ReleaseTestLaneGovernance {
     let path = repo_root().join("configs/dag/policy/release_test_lane_governance.json");
-    let raw = fs::read_to_string(&path).unwrap_or_else(|err| panic!("read governance failed: {err}"));
+    let raw =
+        fs::read_to_string(&path).unwrap_or_else(|err| panic!("read governance failed: {err}"));
     serde_json::from_str(&raw).unwrap_or_else(|err| panic!("parse governance failed: {err}"))
 }
 
 fn collect_ignored_tests(root: &Path) -> Vec<IgnoredTestCase> {
-    let targets = [
-        root.join("crates/bijux-dag-app/tests"),
-        root.join("crates/bijux-dag-cli/tests"),
-    ];
+    let targets =
+        [root.join("crates/bijux-dag-app/tests"), root.join("crates/bijux-dag-cli/tests")];
     let mut ignored = Vec::new();
 
     for dir in targets {
@@ -80,13 +79,10 @@ fn collect_ignored_tests(root: &Path) -> Vec<IgnoredTestCase> {
                 continue;
             }
 
-            let source =
-                fs::read_to_string(&path).unwrap_or_else(|err| panic!("read {} failed: {err}", path.display()));
-            let rel = path
-                .strip_prefix(root)
-                .expect("relative path")
-                .to_string_lossy()
-                .into_owned();
+            let source = fs::read_to_string(&path)
+                .unwrap_or_else(|err| panic!("read {} failed: {err}", path.display()));
+            let rel =
+                path.strip_prefix(root).expect("relative path").to_string_lossy().into_owned();
             let mut pending_reason: Option<String> = None;
 
             for line in source.lines() {
@@ -99,12 +95,9 @@ fn collect_ignored_tests(root: &Path) -> Vec<IgnoredTestCase> {
 
                 if let Some(reason) = pending_reason.take() {
                     if let Some(name) = trimmed.strip_prefix("fn ") {
-                        let name = name.split('(').next().expect("function name").trim().to_string();
-                        ignored.push(IgnoredTestCase {
-                            path: rel.clone(),
-                            reason,
-                            name,
-                        });
+                        let name =
+                            name.split('(').next().expect("function name").trim().to_string();
+                        ignored.push(IgnoredTestCase { path: rel.clone(), reason, name });
                     } else {
                         panic!("ignore attribute in {rel} was not followed by a test function");
                     }
