@@ -97,7 +97,8 @@ The stable planning and execution routes expose one explicit path-preview lane
 for node-local directories and container workdirs:
 
 - `bijux-dag plan explain <dag> --out <run-root>` computes a preview run layout
-  and includes resolved path previews in JSON output.
+  and includes resolved path previews plus resolved command argv arrays in JSON
+  output.
 - `bijux-dag show-effective-plan <dag> --out <run-root>` exposes the same
   payload through the compatibility alias route.
 - `--run-id` makes the previewed run layout stable instead of auto-generated.
@@ -108,7 +109,8 @@ for node-local directories and container workdirs:
   and execution.
 - `bijux-dag run --preflight-only --json` and
   `bijux-dag run --explain-scheduling --json` include the same `run_layout` and
-  `path_previews` contract that `plan explain` uses.
+  `path_previews` contract that `plan explain` uses, including resolved argv
+  tokens for command-bearing nodes.
 
 ## Code Anchors
 
