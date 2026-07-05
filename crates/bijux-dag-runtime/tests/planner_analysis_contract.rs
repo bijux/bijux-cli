@@ -32,6 +32,38 @@ fn sample_graph() -> &'static str {
     }"#
 }
 
+fn execution_cost_graph() -> &'static str {
+    r#"{
+      "spec":"bijux-dag/v0.1",
+      "nodes":[
+        {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+        {
+          "id":"b",
+          "kind":"shell",
+          "outputs":[{"name":"out","path":"b/out"}],
+          "params":{"argv":["echo","b"]},
+          "resources":{"cpu":4,"mem_mb":2048},
+          "tags":["gpu:2"],
+          "timeout_ms":5000,
+          "retry":{"max_attempts":3,"backoff_ms":250},
+          "cache":{"enabled":false,"reason":"network-bound"}
+        },
+        {
+          "id":"c",
+          "kind":"shell",
+          "inputs":["left","right"],
+          "outputs":[{"name":"out","path":"c/out"}],
+          "params":{"argv":["echo","c"]},
+          "resources":{"cpu":2,"mem_mb":1024}
+        }
+      ],
+      "edges":[
+        {"from":{"node_id":"a","port":"out"},"to":{"node_id":"c","port":"left"}},
+        {"from":{"node_id":"b","port":"out"},"to":{"node_id":"c","port":"right"}}
+      ]
+    }"#
+}
+
 #[test]
 fn planner_builds_phased_result_and_fingerprint() {
     let graph = parse_graph_strict(sample_graph()).expect("graph should parse");
@@ -82,6 +114,75 @@ fn planner_supports_closure_replay_backfill_diff_and_explain() {
     assert!(!diff.changed_annotations.is_empty() || !diff.changed_filter_reasons.is_empty());
     let explain = explain_plan(&after);
     assert!(!explain.phases.is_empty());
+}
+
+#[test]
+fn planner_execution_cost_estimate_reports_topology_demand_and_exposure() {
+    let graph = parse_graph_strict(execution_cost_graph()).expect("graph should parse");
+    let options = RuntimeConfig::default();
+    let result = build_planner_analysis(
+        &graph,
+        &options,
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("planner build should succeed");
+
+    let estimate = result.execution_cost_estimate;
+    assert_eq!(estimate.node_count, 3);
+    assert_eq!(estimate.root_nodes, vec!["a".to_string(), "b".to_string()]);
+    assert_eq!(estimate.critical_path_length, 2);
+    assert_eq!(estimate.max_parallelism, 2);
+    assert_eq!(estimate.demand.cpu_cores_total, 7);
+    assert_eq!(estimate.demand.memory_mb_total, 3328);
+    assert_eq!(estimate.demand.gpu_devices_total, 2);
+    assert_eq!(estimate.demand.cpu_cores_peak_parallel, 5);
+    assert_eq!(estimate.demand.memory_mb_peak_parallel, 2304);
+    assert_eq!(estimate.demand.gpu_devices_peak_parallel, 2);
+    assert_eq!(estimate.cache_exposure.cacheable_nodes, 2);
+    assert_eq!(estimate.cache_exposure.non_cacheable_nodes, 1);
+    assert_eq!(estimate.cache_exposure.non_cacheable_node_ids, vec!["b".to_string()]);
+    assert_eq!(estimate.timeout_exposure.timed_nodes, 1);
+    assert_eq!(estimate.timeout_exposure.timed_node_ids, vec!["b".to_string()]);
+    assert_eq!(estimate.timeout_exposure.max_timeout_ms, Some(5_000));
+    assert_eq!(estimate.timeout_exposure.total_timeout_ms, 5_000);
+    assert_eq!(estimate.retry_exposure.retrying_nodes, 1);
+    assert_eq!(estimate.retry_exposure.retrying_node_ids, vec!["b".to_string()]);
+    assert_eq!(estimate.retry_exposure.max_attempts, 3);
+    assert_eq!(estimate.retry_exposure.max_backoff_ms, 250);
+    assert_eq!(estimate.retry_exposure.total_retry_attempts, 3);
+}
+
+#[test]
+fn planner_execution_cost_estimate_tracks_partial_selection() {
+    let graph = parse_graph_strict(execution_cost_graph()).expect("graph should parse");
+    let options = RuntimeConfig {
+        selectors: SelectorSet {
+            include: vec![Selector::Id("c".to_string())],
+            exclude: Vec::new(),
+        },
+        partial_rerun_dependency_closure: false,
+        ..RuntimeConfig::default()
+    };
+    let result = build_planner_analysis(
+        &graph,
+        &options,
+        &options.selectors,
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("planner build should succeed");
+
+    let estimate = result.execution_cost_estimate;
+    assert_eq!(estimate.node_count, 1);
+    assert_eq!(estimate.root_nodes, vec!["c".to_string()]);
+    assert_eq!(estimate.critical_path_length, 1);
+    assert_eq!(estimate.max_parallelism, 1);
+    assert_eq!(estimate.demand.cpu_cores_total, 2);
+    assert_eq!(estimate.demand.memory_mb_total, 1024);
+    assert_eq!(estimate.cache_exposure.cacheable_nodes, 1);
+    assert_eq!(estimate.cache_exposure.non_cacheable_nodes, 0);
+    assert_eq!(estimate.timeout_exposure.timed_nodes, 0);
+    assert_eq!(estimate.retry_exposure.retrying_nodes, 0);
 }
 
 #[test]
