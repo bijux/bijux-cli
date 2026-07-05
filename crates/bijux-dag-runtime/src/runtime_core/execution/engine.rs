@@ -22,9 +22,13 @@ mod engine_record;
 use bijux_dag_artifacts::{
     finalize_run_manifest, write_incomplete_run_marker, write_provenance, write_run_outputs_index,
     write_run_schema_index, FailureInfo, Manifest, NodeCounts, Provenance, ReplayProvenance,
-    RunDir, RunDirLayout, RunDirSchemaIndex, RunMetadata,
+    RunDir, RunDirLayout, RunDirSchemaIndex, RunMetadata, TriggerEvaluation,
+    TriggerParentStatus,
 };
-use bijux_dag_core::{Effect, Graph, Node, NodeKind, SemanticNodeKind, SPEC_VERSION, TriggerRule};
+use bijux_dag_core::{
+    evaluate_trigger_rule, Effect, Graph, Node, NodeKind, SemanticNodeKind, SPEC_VERSION,
+    TriggerRule, UpstreamTerminalOutcome,
+};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
@@ -363,48 +367,57 @@ fn upstream_nodes(dep_map: &HashMap<String, BTreeSet<String>>, node_id: &str) ->
     upstreams
 }
 
-fn trigger_rule_accepts_upstream_states(
-    rule: &TriggerRule,
-    parent_statuses: &[NodeStatus],
-) -> bool {
-    let success = parent_statuses
-        .iter()
-        .filter(|status| matches!(status, NodeStatus::Success | NodeStatus::Cached))
-        .count();
-    let failed = parent_statuses.iter().filter(|status| matches!(status, NodeStatus::Failed)).count();
-    let total = parent_statuses.len();
-
-    match rule {
-        TriggerRule::AllSuccess => success == total,
-        TriggerRule::AnySuccess => success > 0,
-        TriggerRule::AllDone => true,
-        TriggerRule::NoneFailed => failed == 0,
+fn upstream_terminal_outcome(status: &NodeStatus) -> UpstreamTerminalOutcome {
+    match status {
+        NodeStatus::Success => UpstreamTerminalOutcome::Success,
+        NodeStatus::Cached => UpstreamTerminalOutcome::Cached,
+        NodeStatus::Failed => UpstreamTerminalOutcome::Failed,
+        NodeStatus::Skipped => UpstreamTerminalOutcome::Skipped,
     }
 }
 
-fn dependency_trigger_failure(
+fn trigger_rule_name(rule: &TriggerRule) -> String {
+    serde_json::to_string(rule)
+        .map(|value| value.trim_matches('"').to_string())
+        .unwrap_or_else(|_| format!("{rule:?}").to_lowercase())
+}
+
+fn trigger_evaluation_for_dependencies(
     node: &Node,
     dependencies: &[String],
     parent_statuses: &[NodeStatus],
-) -> FailureInfo {
-    let statuses = dependencies
+) -> TriggerEvaluation {
+    let parent_outcomes = parent_statuses
+        .iter()
+        .map(upstream_terminal_outcome)
+        .collect::<Vec<_>>();
+    let evaluation = evaluate_trigger_rule(&node.trigger_rule, &parent_outcomes);
+    let parent_statuses = dependencies
         .iter()
         .zip(parent_statuses.iter())
-        .map(|(node_id, status)| {
-            (
-                node_id.clone(),
-                crate::status_string(status),
-            )
+        .map(|(node_id, status)| TriggerParentStatus {
+            node_id: node_id.clone(),
+            status: crate::status_string(status),
         })
         .collect::<Vec<_>>();
+
+    TriggerEvaluation {
+        trigger_rule: trigger_rule_name(&evaluation.trigger_rule),
+        satisfied: evaluation.satisfied,
+        reason: evaluation.reason,
+        parent_statuses,
+    }
+}
+
+fn dependency_trigger_failure(node: &Node, trigger_evaluation: &TriggerEvaluation) -> FailureInfo {
     FailureInfo {
         kind: "Dependency".to_string(),
         code: "UPSTREAM_FAILED".to_string(),
         message: format!("upstream dependencies did not satisfy trigger rule {:?}", node.trigger_rule),
         details: Some(serde_json::json!({
-            "dependencies": dependencies,
-            "parent_statuses": statuses,
-            "trigger_rule": node.trigger_rule,
+            "parent_statuses": trigger_evaluation.parent_statuses,
+            "trigger_rule": trigger_evaluation.trigger_rule,
+            "reason": trigger_evaluation.reason,
         })),
     }
 }
@@ -493,6 +506,7 @@ fn record_skipped_node(
         &aschema,
         None,
         adapter_hash,
+        None,
         None,
         Some(bijux_dag_artifacts::SkipReason { reason: reason.to_string() }),
         Some(crate::transition_cause_for_skip_reason(reason).to_string()),
@@ -897,7 +911,9 @@ pub fn execute(
         let mut skipped: Vec<(String, String)> = Vec::new();
         let mut cached: Vec<(String, Node, CacheProof)> = Vec::new();
         let mut to_start: Vec<(String, Node, Value)> = Vec::new();
-        let mut preflight_failures: Vec<(String, Node, FailureInfo, String)> = Vec::new();
+        let mut preflight_failures: Vec<(String, Node, FailureInfo, String, Option<TriggerEvaluation>)> =
+            Vec::new();
+        let mut trigger_evaluations = HashMap::<String, TriggerEvaluation>::new();
 
         for node_id in &batch {
             if status_map.contains_key(node_id) {
@@ -934,6 +950,7 @@ pub fn execute(
                             details: Some(serde_json::json!({ "run_timeout_ms": limit })),
                         },
                         "TimeoutExceeded".to_string(),
+                        None,
                     ));
                     continue;
                 }
@@ -945,31 +962,34 @@ pub fn execute(
                     .iter()
                     .filter_map(|dependency| status_map.get(dependency).cloned())
                     .collect::<Vec<_>>();
-                if parent_statuses.len() == dependencies.len()
-                    && !trigger_rule_accepts_upstream_states(&node.trigger_rule, &parent_statuses)
-                {
-                    let trigger_rule = node.trigger_rule.clone();
-                    let failure =
-                        dependency_trigger_failure(&node, &dependencies, &parent_statuses);
-                    preflight_failures.push((
-                        node_id.clone(),
-                        node,
-                        failure,
-                        "DependencyFailed".to_string(),
-                    ));
-                    engine_record::append_indexed_event(
-                        &mut run_log,
-                        &mut run_log_index,
-                        serde_json::json!({
-                            "event": "node_blocked",
-                            "ts": ctx.clock.now_unix_ms(),
-                            "node_id": node_id,
-                            "reason": "blocked_by_trigger_rule",
-                            "blocking_nodes": dependencies,
-                            "trigger_rule": trigger_rule,
-                        }),
-                    )?;
-                    continue;
+                if parent_statuses.len() == dependencies.len() {
+                    let trigger_evaluation =
+                        trigger_evaluation_for_dependencies(&node, &dependencies, &parent_statuses);
+                    trigger_evaluations.insert(node_id.clone(), trigger_evaluation.clone());
+                    if !trigger_evaluation.satisfied {
+                        let trigger_rule = node.trigger_rule.clone();
+                        let failure = dependency_trigger_failure(&node, &trigger_evaluation);
+                        preflight_failures.push((
+                            node_id.clone(),
+                            node,
+                            failure,
+                            "DependencyFailed".to_string(),
+                            Some(trigger_evaluation),
+                        ));
+                        engine_record::append_indexed_event(
+                            &mut run_log,
+                            &mut run_log_index,
+                            serde_json::json!({
+                                "event": "node_blocked",
+                                "ts": ctx.clock.now_unix_ms(),
+                                "node_id": node_id,
+                                "reason": "blocked_by_trigger_rule",
+                                "blocking_nodes": dependencies,
+                                "trigger_rule": trigger_rule,
+                            }),
+                        )?;
+                        continue;
+                    }
                 }
             }
             let resolved_params = ctx.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
@@ -1004,6 +1024,7 @@ pub fn execute(
                         details: Some(serde_json::json!({ "effect": "network" })),
                     },
                     "PolicyDenied".to_string(),
+                    None,
                 ));
                 continue;
             }
@@ -1027,6 +1048,7 @@ pub fn execute(
                         details: Some(serde_json::json!({ "effect": "env" })),
                     },
                     "PolicyDenied".to_string(),
+                    None,
                 ));
                 continue;
             }
@@ -1050,6 +1072,7 @@ pub fn execute(
                         details: Some(serde_json::json!({ "effect": "clock" })),
                     },
                     "PolicyDenied".to_string(),
+                    None,
                 ));
                 continue;
             }
@@ -1145,7 +1168,7 @@ pub fn execute(
             )?;
         }
         preflight_failures.sort_by(|a, b| a.0.cmp(&b.0));
-        for (node_id, node, failure, transition_cause) in &preflight_failures {
+        for (node_id, node, failure, transition_cause, trigger_evaluation) in &preflight_failures {
             sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
             status_map.insert(node_id.clone(), NodeStatus::Failed);
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
@@ -1169,6 +1192,7 @@ pub fn execute(
                 &aschema,
                 None,
                 adapter_hash,
+                trigger_evaluation.clone(),
                 None,
                 None,
                 Some(transition_cause.clone()),
@@ -1206,7 +1230,7 @@ pub fn execute(
         for (node_id, _, _) in &cached {
             started_ids.push(node_id.clone());
         }
-        for (node_id, _, _, _) in &preflight_failures {
+        for (node_id, _, _, _, _) in &preflight_failures {
             started_ids.push(node_id.clone());
         }
         started_ids.sort();
@@ -1339,6 +1363,7 @@ pub fn execute(
                 &aschema,
                 None,
                 adapter_hash,
+                trigger_evaluations.get(node_id).cloned(),
                 branch_decision,
                 None,
                 transition_cause,
@@ -1535,6 +1560,7 @@ pub fn execute(
                         &aschema,
                         result.container_meta.clone(),
                         adapter_hash,
+                        trigger_evaluations.get(&node_id).cloned(),
                         branch_decision,
                         None,
                         Some(
@@ -1643,6 +1669,7 @@ pub fn execute(
                         &aschema,
                         None,
                         adapter_hash,
+                        trigger_evaluations.get(&node_id).cloned(),
                         None,
                         None,
                         Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
@@ -1776,6 +1803,7 @@ pub fn execute(
                 runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
                 None,
                 None,
+                None,
                 Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
                 Some(ReplayProvenance {
                     node_action: "skipped".to_string(),
@@ -1824,6 +1852,7 @@ pub fn execute(
                 runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
                 None,
                 None,
+                None,
                 Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
                 Some(ReplayProvenance {
                     node_action: "skipped".to_string(),
@@ -1866,6 +1895,7 @@ pub fn execute(
                     &aschema,
                     None,
                     runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
+                    None,
                     None,
                     Some(bijux_dag_artifacts::SkipReason { reason: "cancelled".to_string() }),
                     Some("CancelRequested".to_string()),

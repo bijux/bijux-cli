@@ -6,7 +6,9 @@ use crate::{
     DependencyCounter, NodeResult, NodeStatus, ReadyQueue, RetryPolicy, RunContext, RuntimeConfig,
     RuntimeError,
 };
-use bijux_dag_artifacts::{ContainerTrace, FailureInfo, InputsIndex, NodeCounts, ReplayProvenance};
+use bijux_dag_artifacts::{
+    ContainerTrace, FailureInfo, InputsIndex, NodeCounts, ReplayProvenance, TriggerEvaluation,
+};
 use bijux_dag_core::{Graph, Node};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -40,6 +42,7 @@ pub(crate) fn run_write_trace(
     adapter_outputs_schema_version: &str,
     container_meta: Option<ContainerTrace>,
     adapter_binary_sha256: Option<String>,
+    trigger_evaluation: Option<TriggerEvaluation>,
     branch_decision: Option<String>,
     skip_reason: Option<bijux_dag_artifacts::SkipReason>,
     transition_cause: Option<String>,
@@ -61,6 +64,7 @@ pub(crate) fn run_write_trace(
         adapter_outputs_schema_version,
         container_meta,
         adapter_binary_sha256,
+        trigger_evaluation,
         branch_decision,
         skip_reason,
         transition_cause,

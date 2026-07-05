@@ -277,6 +277,7 @@ use bijux_dag_artifacts::{
     CacheProof, ContainerTrace, DeclaredOutputArtifact, FailureInfo, InputFile, InputsIndex,
     NodeCounts, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
     Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex, TraceOutputArtifact,
+    TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
@@ -1210,6 +1211,7 @@ fn write_trace(
     adapter_outputs_schema_version: &str,
     container_meta: Option<ContainerTrace>,
     adapter_binary_sha256: Option<String>,
+    trigger_evaluation: Option<TriggerEvaluation>,
     branch_decision: Option<String>,
     skip_reason: Option<bijux_dag_artifacts::SkipReason>,
     transition_cause: Option<String>,
@@ -1255,6 +1257,7 @@ fn write_trace(
         container: container_meta,
         cache_proof,
         branch_decision,
+        trigger_evaluation,
         skip_reason,
         failure,
         transition_cause,
