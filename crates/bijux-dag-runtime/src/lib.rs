@@ -806,8 +806,10 @@ impl Adapter for ContainerAdapter {
     }
 
     fn execute(&self, ctx: &NodeCtx) -> Result<NodeResult, RuntimeError> {
+        let graph = ctx.graph;
         let node = ctx.node;
         let exec = ctx.exec;
+        let params = ctx.params;
         let spec = node
             .container
             .as_ref()
@@ -938,14 +940,16 @@ impl Adapter for ContainerAdapter {
         }
 
         cmd.arg(&spec.image);
-        for part in &resolve_container_argv(&spec.argv, &container_bindings)
+        let stable_argv =
+            bijux_dag_core::resolve::resolve_command_argv_templates(graph, node, &spec.argv, params)
+                .map_err(|error| RuntimeError::Executor(error.to_string()))?;
+        for part in &resolve_container_argv(&stable_argv, &container_bindings)
             .map_err(RuntimeError::Executor)?
         {
             cmd.arg(part);
         }
 
-        let output =
-            command_output_with_timeout(&mut cmd, effective_node_timeout_ms(node, &Value::Null))?;
+        let output = command_output_with_timeout(&mut cmd, effective_node_timeout_ms(node, params))?;
         let exit_code = output.status.code();
 
         exec.fs.write(&stdout_path, &output.stdout)?;
@@ -1361,6 +1365,7 @@ fn node_cpu(graph: &Graph, node_id: &str) -> u32 {
 
 fn execute_with_retries(
     adapter: &dyn Adapter,
+    graph: &Graph,
     node: &Node,
     params: &Value,
     ctx: &RunContext,
@@ -1372,7 +1377,7 @@ fn execute_with_retries(
     loop {
         attempt += 1;
         let started = ctx.clock.now_unix_ms();
-        let node_ctx = NodeCtx { node, exec: ctx, params };
+        let node_ctx = NodeCtx { graph, node, exec: ctx, params };
         let mut result = match adapter.execute(&node_ctx) {
             Ok(result) => result,
             Err(err) => failed_node_result_from_runtime_error(ctx, node, err),

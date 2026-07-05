@@ -84,11 +84,7 @@ pub(crate) fn bind_path_variables_in_value(
 ) -> Result<Value, String> {
     match value {
         Value::String(text) => {
-            if let Some(resolved) = resolve_path_expression(text, bindings)? {
-                Ok(Value::String(resolved))
-            } else {
-                Ok(Value::String(text.clone()))
-            }
+            Ok(Value::String(resolve_path_variables_in_string(text, bindings)?))
         }
         Value::Array(items) => {
             let mut resolved = Vec::with_capacity(items.len());
@@ -112,15 +108,9 @@ pub(crate) fn resolve_container_argv(
     argv: &[String],
     bindings: &NodePathBindings,
 ) -> Result<Vec<String>, String> {
-    let mut resolved = Vec::with_capacity(argv.len());
-    for entry in argv {
-        if let Some(value) = resolve_path_expression(entry, bindings)? {
-            resolved.push(value);
-        } else {
-            resolved.push(entry.clone());
-        }
-    }
-    Ok(resolved)
+    argv.iter()
+        .map(|entry| resolve_path_variables_in_string(entry, bindings))
+        .collect()
 }
 
 pub(crate) fn collect_resolved_path_usages(
@@ -204,6 +194,39 @@ fn resolve_path_expression(
         Some(relative_path) => Ok(Some(format!("{base}/{relative_path}"))),
         None => Ok(Some(base.to_string())),
     }
+}
+
+fn resolve_path_variables_in_string(
+    value: &str,
+    bindings: &NodePathBindings,
+) -> Result<String, String> {
+    if let Some(resolved) = resolve_path_expression(value, bindings)? {
+        return Ok(resolved);
+    }
+
+    let mut rendered = String::with_capacity(value.len());
+    let mut cursor = 0;
+    while let Some(open_offset) = value[cursor..].find('{') {
+        let open_index = cursor + open_offset;
+        rendered.push_str(&value[cursor..open_index]);
+        let Some(close_offset) = value[(open_index + 1)..].find('}') else {
+            rendered.push_str(&value[open_index..]);
+            return Ok(rendered);
+        };
+        let close_index = open_index + 1 + close_offset;
+        let variable = &value[(open_index + 1)..close_index];
+        if is_known_path_variable(variable) {
+            let base = bindings.variable_value(variable).ok_or_else(|| {
+                format!("path variable unavailable for this execution surface: {variable}")
+            })?;
+            rendered.push_str(base);
+        } else {
+            rendered.push_str(&value[open_index..=close_index]);
+        }
+        cursor = close_index + 1;
+    }
+    rendered.push_str(&value[cursor..]);
+    Ok(rendered)
 }
 
 fn collect_resolved_path_usages_inner(
@@ -292,6 +315,24 @@ mod tests {
         assert_eq!(
             resolved["nested"]["target"].as_str(),
             Some(dir.path().join("cache").join("reuse.json").display().to_string().as_str())
+        );
+    }
+
+    #[test]
+    fn host_bindings_interpolate_path_variables_inside_command_tokens() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let layout = RunDirLayout::preview(dir.path(), Some("argv")).expect("layout");
+        let bindings = NodePathBindings::for_host(&layout, "node", None);
+        let argv = vec!["--out={outputs_dir}/result.txt".to_string()];
+
+        let resolved = resolve_container_argv(&argv, &bindings).expect("resolve argv");
+
+        assert_eq!(
+            resolved,
+            vec![format!(
+                "--out={}",
+                layout.node_outputs_dir("node").join("result.txt").display()
+            )]
         );
     }
 

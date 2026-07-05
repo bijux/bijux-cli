@@ -14,12 +14,13 @@ use std::sync::Arc;
 
 pub(crate) fn run_retry_logic(
     adapter: &dyn Adapter,
+    graph: &Graph,
     node: &Node,
     params: &Value,
     ctx: &RunContext,
     retry: &RetryPolicy,
 ) -> Result<NodeResult, RuntimeError> {
-    crate::execute_with_retries(adapter, node, params, ctx, retry)
+    crate::execute_with_retries(adapter, graph, node, params, ctx, retry)
 }
 
 #[allow(clippy::too_many_arguments)]

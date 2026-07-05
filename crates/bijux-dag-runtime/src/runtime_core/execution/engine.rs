@@ -1144,6 +1144,7 @@ pub fn execute(
             let node_id_clone = node_id.clone();
             let node_for_thread = node.clone();
             let params_for_thread = params.clone();
+            let graph_for_thread = graph.clone();
             let retry = node.retry.clone();
             handles.push((
                 node_id_clone,
@@ -1152,6 +1153,7 @@ pub fn execute(
                     let started = ctx_clone.clock.now_unix_ms();
                     let result = sacred_execution::run_retry_logic(
                         adapter.as_ref(),
+                        &graph_for_thread,
                         &node_for_thread,
                         &params_for_thread,
                         &ctx_clone,
