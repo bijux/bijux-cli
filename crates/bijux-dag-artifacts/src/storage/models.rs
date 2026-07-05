@@ -74,6 +74,8 @@ pub struct NodeTrace {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub branch_decision: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub trigger_evaluation: Option<TriggerEvaluation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub skip_reason: Option<SkipReason>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure: Option<FailureInfo>,
@@ -81,6 +83,21 @@ pub struct NodeTrace {
     pub transition_cause: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub replay_provenance: Option<ReplayProvenance>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TriggerEvaluation {
+    pub trigger_rule: String,
+    pub satisfied: bool,
+    pub reason: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parent_statuses: Vec<TriggerParentStatus>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TriggerParentStatus {
+    pub node_id: String,
+    pub status: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

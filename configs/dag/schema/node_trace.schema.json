@@ -41,6 +41,29 @@
     },
     "container": {"type": ["object", "null"]},
     "cache_proof": {"type": ["object", "null"]},
+    "branch_decision": {"type": ["string", "null"]},
+    "trigger_evaluation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["trigger_rule", "satisfied", "reason", "parent_statuses"],
+      "properties": {
+        "trigger_rule": {"type": "string"},
+        "satisfied": {"type": "boolean"},
+        "reason": {"type": "string"},
+        "parent_statuses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["node_id", "status"],
+            "properties": {
+              "node_id": {"type": "string"},
+              "status": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
     "skip_reason": {"type": ["object", "null"]},
     "failure": {"type": ["object", "null"]},
     "transition_cause": {"type": ["string", "null"]},

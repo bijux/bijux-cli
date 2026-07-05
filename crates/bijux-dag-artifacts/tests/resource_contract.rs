@@ -89,6 +89,15 @@ fn resource_retry_trace_event_volume_stays_bounded() {
         container: None,
         cache_proof: None,
         branch_decision: None,
+        trigger_evaluation: Some(bijux_dag_artifacts::TriggerEvaluation {
+            trigger_rule: "all_success".to_string(),
+            satisfied: false,
+            reason: "requires every upstream to complete in success or cached status".to_string(),
+            parent_statuses: vec![bijux_dag_artifacts::TriggerParentStatus {
+                node_id: "extract".to_string(),
+                status: "failed".to_string(),
+            }],
+        }),
         skip_reason: None,
         failure: Some(bijux_dag_artifacts::FailureInfo {
             kind: "execution".to_string(),
