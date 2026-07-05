@@ -44,6 +44,21 @@ bijux-dag replay ./runs/run-20260406-01 --out ./runs/replay
 bijux-dag diff ./runs/run-20260405-77 ./runs/run-20260406-01 --mode semantic --explain
 ```
 
+After `bijux-dag run`, the command now prints a compact post-run summary in
+human mode and exposes the same structure under `data.summary` in JSON mode.
+
+That completion summary answers the immediate operator questions without forcing
+an extra inspect call:
+
+- final status
+- elapsed `duration_ms`
+- `node_counts`
+- failed node reasons when the run did not succeed
+- `cache_hits`
+- `artifact_count`
+- `promoted_artifact_count`
+- one suggested next action with a concrete follow-up command
+
 ## Preview Resolved Paths Before Execution
 
 When a graph uses `{run_dir}`, `{work_dir}`, `{inputs_dir}`, `{outputs_dir}`, or
