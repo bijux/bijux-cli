@@ -7,6 +7,8 @@
     "manifest.finalized.json",
     "manifest.json",
     "nodes/const1/attempts.json",
+    "nodes/const1/attempts/1/stderr.log",
+    "nodes/const1/attempts/1/stdout.log",
     "nodes/const1/inputs/index.json",
     "nodes/const1/outputs/index.json",
     "nodes/const1/outputs/out_const",
@@ -15,6 +17,8 @@
     "nodes/const1/stdout.log",
     "nodes/const1/trace.json",
     "nodes/echo/attempts.json",
+    "nodes/echo/attempts/1/stderr.log",
+    "nodes/echo/attempts/1/stdout.log",
     "nodes/echo/inputs/const1/in",
     "nodes/echo/inputs/index.json",
     "nodes/echo/outputs/index.json",
@@ -164,7 +168,8 @@
         "node_fingerprint": "633d7014a89a7b51f66a5177bd8043904c4b042080a6a0756f162837cea4cee3",
         "node_id": "const1",
         "path": "out_const",
-        "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+        "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a",
+        "size_bytes": 7
       },
       {
         "kind": "file",
@@ -173,7 +178,8 @@
         "node_fingerprint": "dc4ad6f162b02a8b5edc9fc952895e0b0e628202c3861118dd17d08946168932",
         "node_id": "echo",
         "path": "out_echo",
-        "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8"
+        "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8",
+        "size_bytes": 11
       }
     ],
     "planner_contract_version": "bijux-dag-planner/v1",
@@ -217,7 +223,8 @@
             "node_fingerprint": "633d7014a89a7b51f66a5177bd8043904c4b042080a6a0756f162837cea4cee3",
             "node_id": "const1",
             "path": "out_const",
-            "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+            "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a",
+            "size_bytes": 7
           }
         ]
       }
@@ -244,7 +251,8 @@
             "node_fingerprint": "dc4ad6f162b02a8b5edc9fc952895e0b0e628202c3861118dd17d08946168932",
             "node_id": "echo",
             "path": "out_echo",
-            "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8"
+            "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8",
+            "size_bytes": 11
           }
         ]
       }
@@ -264,6 +272,16 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "4288a9105f1f5b14cd16e9de62b70eb5ae8d84f10b69ed88385e6653c0baa6e1",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "602e35a92eec4bc0a2ec6ae113f07bfc6933322fb69fe8dee416e5a67217e2a2",
+        "node_definition_fingerprint": "e87c71d279ce994acde0ad2ca76c81eb55f6b8a726c0b13d33d32f6fa9915358",
+        "params_fingerprint": "5e99d76e946ff987af1402a9ef575fb4fbf3d2bc668d8be30ad48aac48cc3878",
+        "policy_fingerprint": "75f5bd0e2ebb55cf6dea7eeda632ebf1d04a4715e887bc52b1dbecdb40770924"
+      },
       "evidence_fingerprint": "a0c2b8052f242fee706012ed591f54e9677bbe975f10f59a62f78b2cbf3336d2",
       "execution_fingerprint": "f0c1c3999bcd1fc14e0277e00964399f985cc115dbc8ad3a3495c6e7177a39ea",
       "fingerprint": "633d7014a89a7b51f66a5177bd8043904c4b042080a6a0756f162837cea4cee3",
@@ -305,7 +323,8 @@
           "path": "out_const",
           "present": true,
           "required": true,
-          "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+          "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a",
+          "size_bytes": 7
         }
       ],
       "planner_contract_version": "bijux-dag-planner/v1",
@@ -325,6 +344,17 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "5fde59d5741af45204fea246b44167c524e1ae85f9bf310d4aa5c7dad2d22721",
+        "command_fingerprint": "d0281e0435ef37936951fc4dec4675ab92884b0d1b17cdd76d92920398a4b05a",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "4229d8b7406bd1a427ce6aea05398fd7fd67450108ad607511afaa600d9fdc18",
+        "node_definition_fingerprint": "8c46109faf9fdb30f97c65904f24862ba18386a1eb10ae3cd17c9108d37ef7ba",
+        "params_fingerprint": "ccc96dd5f48b6069261e9315fe5e3babfd412a3b6878ae7f39c35d9ebb432377",
+        "policy_fingerprint": "75f5bd0e2ebb55cf6dea7eeda632ebf1d04a4715e887bc52b1dbecdb40770924"
+      },
       "evidence_fingerprint": "a0c2b8052f242fee706012ed591f54e9677bbe975f10f59a62f78b2cbf3336d2",
       "execution_fingerprint": "f0c1c3999bcd1fc14e0277e00964399f985cc115dbc8ad3a3495c6e7177a39ea",
       "fingerprint": "dc4ad6f162b02a8b5edc9fc952895e0b0e628202c3861118dd17d08946168932",
@@ -366,7 +396,8 @@
           "path": "out_echo",
           "present": true,
           "required": true,
-          "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8"
+          "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8",
+          "size_bytes": 11
         }
       ],
       "planner_contract_version": "bijux-dag-planner/v1",
@@ -406,7 +437,8 @@
         "node_fingerprint": "633d7014a89a7b51f66a5177bd8043904c4b042080a6a0756f162837cea4cee3",
         "node_id": "const1",
         "path": "nodes/const1/outputs/out_const",
-        "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+        "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a",
+        "size_bytes": 7
       },
       {
         "kind": "file",
@@ -415,7 +447,8 @@
         "node_fingerprint": "dc4ad6f162b02a8b5edc9fc952895e0b0e628202c3861118dd17d08946168932",
         "node_id": "echo",
         "path": "nodes/echo/outputs/out_echo",
-        "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8"
+        "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8",
+        "size_bytes": 11
       }
     ]
   },

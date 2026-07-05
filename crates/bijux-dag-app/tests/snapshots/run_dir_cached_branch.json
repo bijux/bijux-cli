@@ -7,6 +7,8 @@
     "manifest.finalized.json",
     "manifest.json",
     "nodes/branch_a_transform/attempts.json",
+    "nodes/branch_a_transform/attempts/1/stderr.log",
+    "nodes/branch_a_transform/attempts/1/stdout.log",
     "nodes/branch_a_transform/inputs/index.json",
     "nodes/branch_a_transform/inputs/seed_a/seed",
     "nodes/branch_a_transform/resolved_params.json",
@@ -14,6 +16,8 @@
     "nodes/branch_a_transform/stdout.log",
     "nodes/branch_a_transform/trace.json",
     "nodes/branch_b_transform/attempts.json",
+    "nodes/branch_b_transform/attempts/1/stderr.log",
+    "nodes/branch_b_transform/attempts/1/stdout.log",
     "nodes/branch_b_transform/inputs/index.json",
     "nodes/branch_b_transform/inputs/seed_b/seed",
     "nodes/branch_b_transform/resolved_params.json",
@@ -23,6 +27,8 @@
     "nodes/join_report/resolved_params.json",
     "nodes/join_report/trace.json",
     "nodes/seed_a/attempts.json",
+    "nodes/seed_a/attempts/1/stderr.log",
+    "nodes/seed_a/attempts/1/stdout.log",
     "nodes/seed_a/inputs/index.json",
     "nodes/seed_a/outputs/index.json",
     "nodes/seed_a/outputs/seed_a.txt",
@@ -31,6 +37,8 @@
     "nodes/seed_a/stdout.log",
     "nodes/seed_a/trace.json",
     "nodes/seed_b/attempts.json",
+    "nodes/seed_b/attempts/1/stderr.log",
+    "nodes/seed_b/attempts/1/stdout.log",
     "nodes/seed_b/inputs/index.json",
     "nodes/seed_b/outputs/index.json",
     "nodes/seed_b/outputs/seed_b.txt",
@@ -311,7 +319,8 @@
         "node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
         "node_id": "seed_a",
         "path": "seed_a.txt",
-        "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+        "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+        "size_bytes": 12
       },
       {
         "kind": "file",
@@ -320,7 +329,8 @@
         "node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
         "node_id": "seed_b",
         "path": "seed_b.txt",
-        "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+        "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+        "size_bytes": 12
       }
     ],
     "planner_contract_version": "bijux-dag-planner/v1",
@@ -392,7 +402,8 @@
             "node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
             "node_id": "seed_a",
             "path": "seed_a.txt",
-            "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+            "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+            "size_bytes": 12
           }
         ]
       }
@@ -410,7 +421,8 @@
             "node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
             "node_id": "seed_b",
             "path": "seed_b.txt",
-            "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+            "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+            "size_bytes": 12
           }
         ]
       }
@@ -430,15 +442,27 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "eb4e37e42d473dd82b238ecd43309e38b585b347e5a682f58a85da219568cca4",
+        "command_fingerprint": "1a5e7798622d525bde9d9ce689067bfce283718f8a22d85418ea2fbaefbb67c6",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "961f03582067397be73de6e5d17c34994e3bb159bcd9222a6ea4f39302614755",
+        "node_definition_fingerprint": "3f0bcf82b8a38ed156c3dd6bdb84c1f526e4f454a248012cd3ba6436e4b75eca",
+        "params_fingerprint": "eb9a5db2a8b7fe57fa570998f7f9255f848a584ff2a9288bf4b1e1f7307d5715",
+        "policy_fingerprint": "75f5bd0e2ebb55cf6dea7eeda632ebf1d04a4715e887bc52b1dbecdb40770924"
+      },
       "evidence_fingerprint": "a2999ccf3a3fa0184e138828043f66470ac80e04d979a0abe14ffa0b052db0b0",
       "execution_fingerprint": "1cdfa0a7a8082fa9bd38d5325bb952489af5b6f07a46525e2b1d2c4ddee78cff",
       "failure": {
-        "code": "OUTPUT_MISSING",
+        "class": "execution",
+        "code": "EXEC_FAIL",
         "details": {
-          "output": "value"
+          "exit_code": 1
         },
         "kind": "Execution",
-        "message": "missing required output: branch_a.txt"
+        "message": "command failed"
       },
       "fingerprint": "b9bb38554789f15cde013cd23e5248e1d4b3b84113e9264915c7df6c00feecfd",
       "finished_unix_ms": 0,
@@ -478,7 +502,8 @@
           "name": "value",
           "path": "branch_a.txt",
           "present": false,
-          "required": true
+          "required": true,
+          "size_bytes": null
         }
       ],
       "planner_contract_version": "bijux-dag-planner/v1",
@@ -495,7 +520,7 @@
       },
       "started_unix_ms": 0,
       "status": "failed",
-      "transition_cause": "MissingRequiredOutput",
+      "transition_cause": "ExecutionFailed",
       "trigger_evaluation": {
         "parent_statuses": [
           {
@@ -513,15 +538,27 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "360ee156a8cbd4f50477538af895cf96740b27ea3f700b3c13bef650bb8dd4d2",
+        "command_fingerprint": "bb28f7a55327a7c324546a41ce1a79e174e080fea3ad43e826a2865e14818922",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "ecfa25dec10e2bb29dc22b3b1e2a338446a3149ef191975c14f175702c6025b1",
+        "node_definition_fingerprint": "ce345ac93c0a020083d5820aef23703ebf2893eb91b773934b00364815db3f01",
+        "params_fingerprint": "fce2354ae0fadedf720eef95474f6478619c3299e02f26d603a19446eb7d23f3",
+        "policy_fingerprint": "75f5bd0e2ebb55cf6dea7eeda632ebf1d04a4715e887bc52b1dbecdb40770924"
+      },
       "evidence_fingerprint": "a2999ccf3a3fa0184e138828043f66470ac80e04d979a0abe14ffa0b052db0b0",
       "execution_fingerprint": "1cdfa0a7a8082fa9bd38d5325bb952489af5b6f07a46525e2b1d2c4ddee78cff",
       "failure": {
-        "code": "OUTPUT_MISSING",
+        "class": "execution",
+        "code": "EXEC_FAIL",
         "details": {
-          "output": "value"
+          "exit_code": 1
         },
         "kind": "Execution",
-        "message": "missing required output: branch_b.txt"
+        "message": "command failed"
       },
       "fingerprint": "1c8290a7509895a0a2b4eee475031614fe787e16b51869c80474fdd847102b7d",
       "finished_unix_ms": 0,
@@ -561,7 +598,8 @@
           "name": "value",
           "path": "branch_b.txt",
           "present": false,
-          "required": true
+          "required": true,
+          "size_bytes": null
         }
       ],
       "planner_contract_version": "bijux-dag-planner/v1",
@@ -578,7 +616,7 @@
       },
       "started_unix_ms": 0,
       "status": "failed",
-      "transition_cause": "MissingRequiredOutput",
+      "transition_cause": "ExecutionFailed",
       "trigger_evaluation": {
         "parent_statuses": [
           {
@@ -596,9 +634,21 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "e2367c001e3aa6b308cfcacceda0d0e68b671d9e99505dba27ec30a2de4377d0",
+        "command_fingerprint": "ca41b12e01e9bae9ac697dba6e4dae9402ab95e91fa862bbc3b290a945a755e0",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "602e35a92eec4bc0a2ec6ae113f07bfc6933322fb69fe8dee416e5a67217e2a2",
+        "node_definition_fingerprint": "55cd4d2e90f0c98e7e9f142fabbd8349a2b8686221a5cf248a89c06f0f0c8fb4",
+        "params_fingerprint": "08a6c9597370a605e4993f3dd3fd341003317cfe7f832ec7275d89846d028c9b",
+        "policy_fingerprint": "75f5bd0e2ebb55cf6dea7eeda632ebf1d04a4715e887bc52b1dbecdb40770924"
+      },
       "evidence_fingerprint": "a2999ccf3a3fa0184e138828043f66470ac80e04d979a0abe14ffa0b052db0b0",
       "execution_fingerprint": "1cdfa0a7a8082fa9bd38d5325bb952489af5b6f07a46525e2b1d2c4ddee78cff",
       "failure": {
+        "class": "execution",
         "code": "UPSTREAM_FAILED",
         "details": {
           "parent_statuses": [
@@ -648,7 +698,8 @@
           "name": "value",
           "path": "report.txt",
           "present": false,
-          "required": true
+          "required": true,
+          "size_bytes": null
         }
       ],
       "planner_contract_version": "bijux-dag-planner/v1",
@@ -687,6 +738,16 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "7272ee3f2f380fd18d4060c6dd2e310e468b2d4659b132ee74aa27c6f3bf2036",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "602e35a92eec4bc0a2ec6ae113f07bfc6933322fb69fe8dee416e5a67217e2a2",
+        "node_definition_fingerprint": "37e6751d656284c1d260ab7e0ef855f6de56b891b19aaed0eaab1794ed8eb473",
+        "params_fingerprint": "5a1613d88fd28b394c92990176b54f994980c7a13c0d4ecc2f1bde92f7eb23aa",
+        "policy_fingerprint": "75f5bd0e2ebb55cf6dea7eeda632ebf1d04a4715e887bc52b1dbecdb40770924"
+      },
       "evidence_fingerprint": "a2999ccf3a3fa0184e138828043f66470ac80e04d979a0abe14ffa0b052db0b0",
       "execution_fingerprint": "1cdfa0a7a8082fa9bd38d5325bb952489af5b6f07a46525e2b1d2c4ddee78cff",
       "fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
@@ -728,7 +789,8 @@
           "path": "seed_a.txt",
           "present": true,
           "required": true,
-          "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+          "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+          "size_bytes": 12
         }
       ],
       "planner_contract_version": "bijux-dag-planner/v1",
@@ -748,6 +810,16 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "85a46879da14287dbef397c1b9178795228a605cd996652f9272435165b88732",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "602e35a92eec4bc0a2ec6ae113f07bfc6933322fb69fe8dee416e5a67217e2a2",
+        "node_definition_fingerprint": "02278c51af07cfcefbf01dea903f9a9833fb0aafbb2c21959a568ab19cb28e4e",
+        "params_fingerprint": "59098a13ed4bfccdd642b1e07a982b0d132335b3231b67fcaeac6467e59ea015",
+        "policy_fingerprint": "75f5bd0e2ebb55cf6dea7eeda632ebf1d04a4715e887bc52b1dbecdb40770924"
+      },
       "evidence_fingerprint": "a2999ccf3a3fa0184e138828043f66470ac80e04d979a0abe14ffa0b052db0b0",
       "execution_fingerprint": "1cdfa0a7a8082fa9bd38d5325bb952489af5b6f07a46525e2b1d2c4ddee78cff",
       "fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
@@ -789,7 +861,8 @@
           "path": "seed_b.txt",
           "present": true,
           "required": true,
-          "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+          "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+          "size_bytes": 12
         }
       ],
       "planner_contract_version": "bijux-dag-planner/v1",
@@ -814,7 +887,8 @@
         "node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
         "node_id": "seed_a",
         "path": "nodes/seed_a/outputs/seed_a.txt",
-        "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+        "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+        "size_bytes": 12
       },
       {
         "kind": "file",
@@ -823,7 +897,8 @@
         "node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
         "node_id": "seed_b",
         "path": "nodes/seed_b/outputs/seed_b.txt",
-        "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+        "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+        "size_bytes": 12
       }
     ]
   },
@@ -990,6 +1065,14 @@
       "ts": 0
     },
     {
+      "attempt": 1,
+      "event": "node_retry_exhausted",
+      "failure_code": "EXEC_FAIL",
+      "node_id": "branch_a_transform",
+      "status": "failed",
+      "ts": 0
+    },
+    {
       "event": "node_finished",
       "node_id": "branch_a_transform",
       "status": "failed",
@@ -1100,6 +1183,14 @@
     {
       "attempt": 1,
       "event": "node_attempt_finished",
+      "node_id": "branch_b_transform",
+      "status": "failed",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_retry_exhausted",
+      "failure_code": "EXEC_FAIL",
       "node_id": "branch_b_transform",
       "status": "failed",
       "ts": 0
