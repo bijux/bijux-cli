@@ -158,8 +158,9 @@ fn collect_ignored_test_rows(workspace_root: &Path, roots: &[&str]) -> (Vec<Valu
                 }
 
                 if let Some(reason) = pending_reason.take() {
-                    let Some(name) =
-                        trimmed.strip_prefix("fn ").and_then(|candidate| candidate.split('(').next())
+                    let Some(name) = trimmed
+                        .strip_prefix("fn ")
+                        .and_then(|candidate| candidate.split('(').next())
                     else {
                         scan_errors.push(json!({
                             "path": relative_path,
@@ -357,9 +358,7 @@ pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
     let tests: Vec<Value> = tests
         .into_iter()
         .filter(|row| {
-            row.get("reason")
-                .and_then(Value::as_str)
-                .is_some_and(|reason| reason.contains("flaky"))
+            row.get("reason").and_then(Value::as_str).is_some_and(|reason| reason.contains("flaky"))
         })
         .map(|row| {
             json!({
@@ -385,7 +384,8 @@ pub fn build_flaky_tests_report(workspace_root: &Path) -> Value {
 /// Builds `bijux-dev-cli maintenance ignored-dag-tests` report payload.
 #[must_use]
 pub fn build_ignored_dag_tests_report(workspace_root: &Path) -> Value {
-    let governance_path = workspace_root.join("configs/dag/policy/release_test_lane_governance.json");
+    let governance_path =
+        workspace_root.join("configs/dag/policy/release_test_lane_governance.json");
     let governance = fs::read_to_string(&governance_path)
         .ok()
         .and_then(|raw| serde_json::from_str::<Value>(&raw).ok());
@@ -441,9 +441,7 @@ pub fn build_ignored_dag_tests_report(workspace_root: &Path) -> Value {
     let flaky_ignored_tests: Vec<Value> = tests
         .iter()
         .filter(|row| {
-            row.get("reason")
-                .and_then(Value::as_str)
-                .is_some_and(|reason| reason.contains("flaky"))
+            row.get("reason").and_then(Value::as_str).is_some_and(|reason| reason.contains("flaky"))
         })
         .cloned()
         .collect();

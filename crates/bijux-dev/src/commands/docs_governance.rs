@@ -25,16 +25,8 @@ const RISK_REQUIRED_FIELDS: [&str; 6] = [
     "- release decision:",
 ];
 const REQUIRED_RISK_IDS: [&str; 10] = [
-    "RISK-001",
-    "RISK-002",
-    "RISK-003",
-    "RISK-004",
-    "RISK-005",
-    "RISK-006",
-    "RISK-007",
-    "RISK-008",
-    "RISK-009",
-    "RISK-010",
+    "RISK-001", "RISK-002", "RISK-003", "RISK-004", "RISK-005", "RISK-006", "RISK-007", "RISK-008",
+    "RISK-009", "RISK-010",
 ];
 
 #[derive(Debug, Deserialize, Default)]
@@ -253,17 +245,10 @@ fn repo_code_anchor_candidate(span: &str) -> Option<&str> {
         return None;
     }
 
-    let starts_with_repo_root = [
-        "crates/",
-        "docs/",
-        "configs/",
-        ".github/",
-        "makes/",
-        "templates/",
-        "evidence/",
-    ]
-    .iter()
-    .any(|prefix| anchor.starts_with(prefix));
+    let starts_with_repo_root =
+        ["crates/", "docs/", "configs/", ".github/", "makes/", "templates/", "evidence/"]
+            .iter()
+            .any(|prefix| anchor.starts_with(prefix));
     if !starts_with_repo_root {
         return None;
     }
@@ -316,11 +301,8 @@ fn parse_limitation_records(content: &str) -> Vec<LimitationRecord> {
                     records.push(record);
                 }
                 let id = heading.split_whitespace().next().unwrap_or_default().to_string();
-                current = Some(LimitationRecord {
-                    id,
-                    heading_line: line_index + 1,
-                    body: Vec::new(),
-                });
+                current =
+                    Some(LimitationRecord { id, heading_line: line_index + 1, body: Vec::new() });
                 continue;
             }
             if let Some(record) = current.take() {
@@ -342,10 +324,7 @@ fn parse_limitation_records(content: &str) -> Vec<LimitationRecord> {
 
 fn limitation_field_value<'a>(record: &'a LimitationRecord, field: &str) -> Option<&'a str> {
     record.body.iter().find_map(|line| {
-        line.trim_start()
-            .strip_prefix(field)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
+        line.trim_start().strip_prefix(field).map(str::trim).filter(|value| !value.is_empty())
     })
 }
 
@@ -419,11 +398,7 @@ fn parse_risk_records(content: &str) -> Vec<RiskRecord> {
                     records.push(record);
                 }
                 let id = heading.split_whitespace().next().unwrap_or_default().to_string();
-                current = Some(RiskRecord {
-                    id,
-                    heading_line: line_index + 1,
-                    body: Vec::new(),
-                });
+                current = Some(RiskRecord { id, heading_line: line_index + 1, body: Vec::new() });
                 continue;
             }
             if let Some(record) = current.take() {
@@ -445,10 +420,7 @@ fn parse_risk_records(content: &str) -> Vec<RiskRecord> {
 
 fn risk_field_value<'a>(record: &'a RiskRecord, field: &str) -> Option<&'a str> {
     record.body.iter().find_map(|line| {
-        line.trim_start()
-            .strip_prefix(field)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
+        line.trim_start().strip_prefix(field).map(str::trim).filter(|value| !value.is_empty())
     })
 }
 
@@ -463,10 +435,8 @@ fn validate_risk_register_content(content: &str) -> Result<(), String> {
 
     for record in &records {
         if !seen_ids.insert(record.id.clone()) {
-            violations.push(format!(
-                "{}:{}: duplicate risk identifier",
-                record.id, record.heading_line
-            ));
+            violations
+                .push(format!("{}:{}: duplicate risk identifier", record.id, record.heading_line));
         }
 
         for field in RISK_REQUIRED_FIELDS {
@@ -1118,10 +1088,7 @@ after `docs/index.md`\n";
         let spans = extract_inline_code_spans(content);
         assert_eq!(
             spans,
-            vec![
-                (1, "crates/demo/src/lib.rs".to_string()),
-                (5, "docs/index.md".to_string())
-            ]
+            vec![(1, "crates/demo/src/lib.rs".to_string()), (5, "docs/index.md".to_string())]
         );
     }
 
@@ -1236,9 +1203,7 @@ also good `docs/index.md`\n";
 
     #[test]
     fn known_limitations_handbook_matches_record_contract() {
-        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("..");
+        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
         let content = fs::read_to_string(repo_root.join(KNOWN_LIMITATIONS_REL_PATH))
             .expect("read known limitations handbook");
 
@@ -1298,9 +1263,7 @@ also good `docs/index.md`\n";
 
     #[test]
     fn risk_register_handbook_matches_record_contract() {
-        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("..");
+        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
         let content = fs::read_to_string(repo_root.join(RISK_REGISTER_REL_PATH))
             .expect("read risk register handbook");
 

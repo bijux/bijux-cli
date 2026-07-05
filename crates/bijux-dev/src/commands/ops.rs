@@ -3637,9 +3637,10 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     let install = fs::read_to_string(root.join("docs/user/INSTALLATION.md"))
         .map_err(|err| err.to_string())?;
-    for required_cmd in
-        ["cargo build -p bijux-dag-cli --release", "cargo run -p bijux-dag-cli --bin bijux-dag -- version"]
-    {
+    for required_cmd in [
+        "cargo build -p bijux-dag-cli --release",
+        "cargo run -p bijux-dag-cli --bin bijux-dag -- version",
+    ] {
         if !install.contains(required_cmd) {
             return Err(format!(
                 "installation doc missing clean-environment command `{}`",
