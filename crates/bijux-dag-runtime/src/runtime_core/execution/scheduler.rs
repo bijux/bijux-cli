@@ -1,7 +1,8 @@
 use crate::execution_plan::ExecutionPlan;
 use crate::RuntimeConfig;
-use bijux_dag_core::Graph;
+use bijux_dag_core::{materialize_graph_input_value, Graph, GraphInputSpec};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
 use std::time::{Duration, Instant};
@@ -110,12 +111,16 @@ pub struct BackfillAuditRecord {
     pub detail: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct BackfillOperation {
     pub backfill_id: String,
     pub schedule_id: String,
     pub dag_name: String,
     pub dag_version_policy: String,
+    #[serde(default)]
+    pub input_contract: BTreeMap<String, GraphInputSpec>,
+    #[serde(default)]
+    pub input_bindings: BTreeMap<String, ScheduleInputSource>,
     pub queue: QueueIdentity,
     pub priority: PriorityClass,
     pub request: BackfillRequest,
@@ -150,7 +155,7 @@ pub struct BackfillAdvanceRequest {
     pub status_updates: Vec<BackfillStatusUpdate>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct BackfillAdvanceReport {
     pub operation: BackfillOperation,
     #[serde(default)]
@@ -161,10 +166,28 @@ pub struct BackfillAdvanceReport {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "source", rename_all = "snake_case")]
+pub enum ScheduleInputSource {
+    RequestedUnixMs,
+    ManualArgument { key: String },
+    EventPayload { pointer: Option<String> },
+    SignalPayload { pointer: Option<String> },
+    DependencyUpstreamRunId,
+    DependencyStatus,
+    BackfillWindowStartUnixMs,
+    BackfillWindowEndUnixMs,
+    BackfillPartitionKey,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ScheduleDefinition {
     pub id: String,
     pub dag_name: String,
     pub dag_version_policy: String,
+    #[serde(default)]
+    pub input_contract: BTreeMap<String, GraphInputSpec>,
+    #[serde(default)]
+    pub input_bindings: BTreeMap<String, ScheduleInputSource>,
     pub trigger: TriggerSpec,
     pub queue: QueueIdentity,
     pub priority: PriorityClass,
@@ -172,7 +195,7 @@ pub struct ScheduleDefinition {
     pub catch_up: CatchUpPolicy,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct ScheduleRegistry {
     pub definitions: Vec<ScheduleDefinition>,
 }
@@ -212,6 +235,8 @@ pub struct ExecutionSubmissionRequest {
     pub schedule_id: String,
     pub dag_name: String,
     pub dag_version_policy: String,
+    #[serde(default)]
+    pub graph_inputs: BTreeMap<String, Value>,
     pub requested_unix_ms: u128,
     pub run_id: String,
     pub trigger_kind: SubmissionTriggerKind,
@@ -234,6 +259,8 @@ pub struct ManualSubmissionRequest {
     pub request_id: String,
     pub schedule_id: String,
     pub requested_unix_ms: u128,
+    #[serde(default)]
+    pub arguments: BTreeMap<String, Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -242,6 +269,7 @@ pub struct ScheduleEventRecord {
     pub event_type: String,
     pub source: String,
     pub occurred_unix_ms: u128,
+    pub payload: Option<Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -257,6 +285,7 @@ pub struct SignalRecord {
     pub signal_id: String,
     pub signal_name: String,
     pub occurred_unix_ms: u128,
+    pub payload: Option<Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -277,6 +306,8 @@ pub struct ScheduleSubmissionLedgerEntry {
     pub schedule_id: String,
     pub dag_name: String,
     pub dag_version_policy: String,
+    #[serde(default)]
+    pub graph_inputs: BTreeMap<String, Value>,
     pub requested_unix_ms: u128,
     pub created_unix_ms: u128,
     pub run_id: String,
@@ -1065,6 +1096,7 @@ pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> 
     } else if definition.concurrency.per_queue.is_none() {
         return Err(format!("schedule '{}' must declare queue concurrency cap", definition.id));
     }
+    validate_schedule_input_contract(definition)?;
     Ok(())
 }
 
@@ -1110,13 +1142,78 @@ pub fn dry_run_schedule(
 pub fn compile_submission_request(
     definition: &ScheduleDefinition,
     requested_unix_ms: u128,
-) -> ExecutionSubmissionRequest {
+) -> Result<ExecutionSubmissionRequest, String> {
+    validate_schedule_policy_combination(definition)?;
     build_submission_request(
         definition,
-        requested_unix_ms,
-        SubmissionTriggerKind::Manual,
-        format!("manual:{}:{}", definition.id, requested_unix_ms),
+        &compile_submission_candidate(definition, requested_unix_ms)?,
     )
+}
+
+#[derive(Debug, Clone)]
+struct SubmissionCandidate {
+    requested_unix_ms: u128,
+    trigger_kind: SubmissionTriggerKind,
+    dedupe_key: String,
+    context: SubmissionContext,
+}
+
+#[derive(Debug, Clone)]
+enum SubmissionContext {
+    Manual { arguments: BTreeMap<String, Value> },
+    Cron,
+    Event { payload: Option<Value> },
+    Dependency { upstream_run_id: String, status: String },
+    Signal { payload: Option<Value> },
+    Backfill { window_start_unix_ms: u128, window_end_unix_ms: u128, partition_key: Option<String> },
+}
+
+fn compile_submission_candidate(
+    definition: &ScheduleDefinition,
+    requested_unix_ms: u128,
+) -> Result<SubmissionCandidate, String> {
+    let candidate = match &definition.trigger {
+        TriggerSpec::Manual => SubmissionCandidate {
+            requested_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Manual,
+            dedupe_key: format!("manual:{}:{}", definition.id, requested_unix_ms),
+            context: SubmissionContext::Manual { arguments: BTreeMap::new() },
+        },
+        TriggerSpec::Cron { .. } => SubmissionCandidate {
+            requested_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Cron,
+            dedupe_key: format!("cron:{}:{}", definition.id, requested_unix_ms),
+            context: SubmissionContext::Cron,
+        },
+        TriggerSpec::Event { .. } => SubmissionCandidate {
+            requested_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Event,
+            dedupe_key: format!("event:{}:compile", definition.id),
+            context: SubmissionContext::Event { payload: None },
+        },
+        TriggerSpec::Dependency { .. } => SubmissionCandidate {
+            requested_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Dependency,
+            dedupe_key: format!("dependency:{}:compile", definition.id),
+            context: SubmissionContext::Dependency {
+                upstream_run_id: String::new(),
+                status: String::new(),
+            },
+        },
+        TriggerSpec::Signal { .. } => SubmissionCandidate {
+            requested_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Signal,
+            dedupe_key: format!("signal:{}:compile", definition.id),
+            context: SubmissionContext::Signal { payload: None },
+        },
+        TriggerSpec::Backfill(_) => {
+            return Err(format!(
+                "schedule '{}' uses a backfill trigger; use schedule backfill plan instead",
+                definition.id
+            ));
+        }
+    };
+    Ok(candidate)
 }
 
 pub fn compile_backfill_operation(
@@ -1137,6 +1234,8 @@ pub fn compile_backfill_operation(
         schedule_id: definition.id.clone(),
         dag_name: definition.dag_name.clone(),
         dag_version_policy: definition.dag_version_policy.clone(),
+        input_contract: definition.input_contract.clone(),
+        input_bindings: definition.input_bindings.clone(),
         queue: definition.queue.clone(),
         priority: definition.priority.clone(),
         request: backfill.clone(),
@@ -1283,6 +1382,13 @@ pub fn advance_backfill_operation(
     let allowed_dispatches = available_parallelism.min(throttled_dispatches);
 
     let mut dispatched_requests = Vec::new();
+    let schedule_id = operation.schedule_id.clone();
+    let dag_name = operation.dag_name.clone();
+    let dag_version_policy = operation.dag_version_policy.clone();
+    let input_contract = operation.input_contract.clone();
+    let input_bindings = operation.input_bindings.clone();
+    let window_start_unix_ms = operation.request.window_start_unix_ms;
+    let window_end_unix_ms = operation.request.window_end_unix_ms;
     if allowed_dispatches > 0 {
         for run in operation
             .runs
@@ -1292,15 +1398,16 @@ pub fn advance_backfill_operation(
         {
             run.status = BackfillRunStatus::Submitted;
             run.updated_unix_ms = request.now_unix_ms;
-            dispatched_requests.push(ExecutionSubmissionRequest {
-                schedule_id: operation.schedule_id.clone(),
-                dag_name: operation.dag_name.clone(),
-                dag_version_policy: operation.dag_version_policy.clone(),
-                requested_unix_ms: run.requested_unix_ms,
-                run_id: run.run_id.clone(),
-                trigger_kind: SubmissionTriggerKind::Backfill,
-                dedupe_key: run.dedupe_key.clone(),
-            });
+            dispatched_requests.push(build_backfill_submission_request(
+                &schedule_id,
+                &dag_name,
+                &dag_version_policy,
+                &input_contract,
+                &input_bindings,
+                window_start_unix_ms,
+                window_end_unix_ms,
+                run,
+            )?);
         }
         record_backfill_audit(
             &mut operation,
@@ -1338,8 +1445,19 @@ pub fn evaluate_schedule_submissions(
     definitions.sort_by(|left, right| left.id.cmp(&right.id));
 
     let mut candidates = Vec::<ExecutionSubmissionRequest>::new();
+    let mut audits = Vec::new();
     for definition in definitions {
-        candidates.extend(candidate_submissions_for_definition(definition, inputs, existing));
+        for candidate in candidate_submissions_for_definition(definition, inputs, existing) {
+            match build_submission_request(definition, &candidate) {
+                Ok(request) => candidates.push(request),
+                Err(error) => audits.push(ScheduleAuditRecord {
+                    schedule_id: definition.id.clone(),
+                    evaluated_unix_ms: inputs.now_unix_ms,
+                    decision: "mapping_rejected".to_string(),
+                    reason: Some(error),
+                }),
+            }
+        }
     }
     candidates.sort_by(|left, right| {
         left.requested_unix_ms
@@ -1354,7 +1472,6 @@ pub fn evaluate_schedule_submissions(
     let mut generated_requests = Vec::new();
     let mut recorded_submissions = existing.entries.clone();
     let mut duplicate_suppressions = Vec::new();
-    let mut audits = Vec::new();
 
     for request in candidates {
         if !seen_keys.insert(request.dedupe_key.clone()) {
@@ -1406,6 +1523,7 @@ impl ScheduleSubmissionLedgerEntry {
             schedule_id: request.schedule_id.clone(),
             dag_name: request.dag_name.clone(),
             dag_version_policy: request.dag_version_policy.clone(),
+            graph_inputs: request.graph_inputs.clone(),
             requested_unix_ms: request.requested_unix_ms,
             created_unix_ms,
             run_id: request.run_id.clone(),
@@ -1420,7 +1538,7 @@ fn candidate_submissions_for_definition(
     definition: &ScheduleDefinition,
     inputs: &ScheduleEvaluationInputs,
     existing: &ScheduleSubmissionLedger,
-) -> Vec<ExecutionSubmissionRequest> {
+) -> Vec<SubmissionCandidate> {
     match &definition.trigger {
         TriggerSpec::Manual => manual_submission_candidates(definition, inputs),
         TriggerSpec::Cron { expression, timezone } => {
@@ -1444,7 +1562,7 @@ fn candidate_submissions_for_definition(
 fn manual_submission_candidates(
     definition: &ScheduleDefinition,
     inputs: &ScheduleEvaluationInputs,
-) -> Vec<ExecutionSubmissionRequest> {
+) -> Vec<SubmissionCandidate> {
     let mut requests = inputs
         .manual_requests
         .iter()
@@ -1458,13 +1576,11 @@ fn manual_submission_candidates(
     });
     requests
         .into_iter()
-        .map(|request| {
-            build_submission_request(
-                definition,
-                request.requested_unix_ms,
-                SubmissionTriggerKind::Manual,
-                format!("manual:{}:{}", definition.id, request.request_id),
-            )
+        .map(|request| SubmissionCandidate {
+            requested_unix_ms: request.requested_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Manual,
+            dedupe_key: format!("manual:{}:{}", definition.id, request.request_id),
+            context: SubmissionContext::Manual { arguments: request.arguments },
         })
         .collect()
 }
@@ -1475,7 +1591,7 @@ fn cron_submission_candidates(
     existing: &ScheduleSubmissionLedger,
     expression: &str,
     timezone: &str,
-) -> Vec<ExecutionSubmissionRequest> {
+) -> Vec<SubmissionCandidate> {
     let last_requested = existing
         .entries
         .iter()
@@ -1517,13 +1633,11 @@ fn cron_submission_candidates(
 
     slots
         .into_iter()
-        .map(|requested_unix_ms| {
-            build_submission_request(
-                definition,
-                requested_unix_ms,
-                SubmissionTriggerKind::Cron,
-                format!("cron:{}:{}", definition.id, requested_unix_ms),
-            )
+        .map(|requested_unix_ms| SubmissionCandidate {
+            requested_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Cron,
+            dedupe_key: format!("cron:{}:{}", definition.id, requested_unix_ms),
+            context: SubmissionContext::Cron,
         })
         .collect()
 }
@@ -1533,7 +1647,7 @@ fn event_submission_candidates(
     inputs: &ScheduleEvaluationInputs,
     expected_type: &str,
     expected_source: &str,
-) -> Vec<ExecutionSubmissionRequest> {
+) -> Vec<SubmissionCandidate> {
     let mut events = inputs
         .events
         .iter()
@@ -1547,13 +1661,11 @@ fn event_submission_candidates(
     });
     events
         .into_iter()
-        .map(|event| {
-            build_submission_request(
-                definition,
-                event.occurred_unix_ms,
-                SubmissionTriggerKind::Event,
-                format!("event:{}:{}", definition.id, event.event_id),
-            )
+        .map(|event| SubmissionCandidate {
+            requested_unix_ms: event.occurred_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Event,
+            dedupe_key: format!("event:{}:{}", definition.id, event.event_id),
+            context: SubmissionContext::Event { payload: event.payload },
         })
         .collect()
 }
@@ -1563,7 +1675,7 @@ fn dependency_submission_candidates(
     inputs: &ScheduleEvaluationInputs,
     expected_dag_name: &str,
     expected_status: &str,
-) -> Vec<ExecutionSubmissionRequest> {
+) -> Vec<SubmissionCandidate> {
     let expected_status = normalize_schedule_status(expected_status);
     let mut completions = inputs
         .dependencies
@@ -1582,18 +1694,19 @@ fn dependency_submission_candidates(
     });
     completions
         .into_iter()
-        .map(|completion| {
-            build_submission_request(
-                definition,
-                completion.finished_unix_ms,
-                SubmissionTriggerKind::Dependency,
-                format!(
-                    "dependency:{}:{}:{}",
-                    definition.id,
-                    completion.upstream_run_id,
-                    normalize_schedule_status(&completion.status)
-                ),
-            )
+        .map(|completion| SubmissionCandidate {
+            requested_unix_ms: completion.finished_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Dependency,
+            dedupe_key: format!(
+                "dependency:{}:{}:{}",
+                definition.id,
+                completion.upstream_run_id,
+                normalize_schedule_status(&completion.status)
+            ),
+            context: SubmissionContext::Dependency {
+                upstream_run_id: completion.upstream_run_id,
+                status: completion.status,
+            },
         })
         .collect()
 }
@@ -1602,7 +1715,7 @@ fn signal_submission_candidates(
     definition: &ScheduleDefinition,
     inputs: &ScheduleEvaluationInputs,
     expected_signal_name: &str,
-) -> Vec<ExecutionSubmissionRequest> {
+) -> Vec<SubmissionCandidate> {
     let mut signals = inputs
         .signals
         .iter()
@@ -1616,13 +1729,11 @@ fn signal_submission_candidates(
     });
     signals
         .into_iter()
-        .map(|signal| {
-            build_submission_request(
-                definition,
-                signal.occurred_unix_ms,
-                SubmissionTriggerKind::Signal,
-                format!("signal:{}:{}", definition.id, signal.signal_id),
-            )
+        .map(|signal| SubmissionCandidate {
+            requested_unix_ms: signal.occurred_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Signal,
+            dedupe_key: format!("signal:{}:{}", definition.id, signal.signal_id),
+            context: SubmissionContext::Signal { payload: signal.payload },
         })
         .collect()
 }
@@ -1631,37 +1742,339 @@ fn backfill_submission_candidates(
     definition: &ScheduleDefinition,
     _inputs: &ScheduleEvaluationInputs,
     backfill: &BackfillRequest,
-) -> Vec<ExecutionSubmissionRequest> {
+) -> Vec<SubmissionCandidate> {
     plan_backfill_runs(definition, backfill, backfill.window_start_unix_ms)
         .into_iter()
         .take(backfill.max_parallelism.max(1) as usize)
-        .map(|run| ExecutionSubmissionRequest {
-            schedule_id: definition.id.clone(),
-            dag_name: definition.dag_name.clone(),
-            dag_version_policy: definition.dag_version_policy.clone(),
+        .map(|run| SubmissionCandidate {
             requested_unix_ms: run.requested_unix_ms,
-            run_id: run.run_id,
             trigger_kind: SubmissionTriggerKind::Backfill,
             dedupe_key: run.dedupe_key,
+            context: SubmissionContext::Backfill {
+                window_start_unix_ms: backfill.window_start_unix_ms,
+                window_end_unix_ms: backfill.window_end_unix_ms,
+                partition_key: run.partition_key,
+            },
         })
         .collect()
 }
 
 fn build_submission_request(
     definition: &ScheduleDefinition,
-    requested_unix_ms: u128,
-    trigger_kind: SubmissionTriggerKind,
-    dedupe_key: String,
-) -> ExecutionSubmissionRequest {
-    ExecutionSubmissionRequest {
+    candidate: &SubmissionCandidate,
+) -> Result<ExecutionSubmissionRequest, String> {
+    let graph_inputs = bind_schedule_graph_inputs(definition, candidate)?;
+    Ok(ExecutionSubmissionRequest {
         schedule_id: definition.id.clone(),
         dag_name: definition.dag_name.clone(),
         dag_version_policy: definition.dag_version_policy.clone(),
-        requested_unix_ms,
-        run_id: deterministic_schedule_run_id(&definition.id, &dedupe_key),
-        trigger_kind,
-        dedupe_key,
+        graph_inputs,
+        requested_unix_ms: candidate.requested_unix_ms,
+        run_id: deterministic_schedule_run_id(&definition.id, &candidate.dedupe_key),
+        trigger_kind: candidate.trigger_kind.clone(),
+        dedupe_key: candidate.dedupe_key.clone(),
+    })
+}
+
+fn build_backfill_submission_request(
+    schedule_id: &str,
+    dag_name: &str,
+    dag_version_policy: &str,
+    input_contract: &BTreeMap<String, GraphInputSpec>,
+    input_bindings: &BTreeMap<String, ScheduleInputSource>,
+    window_start_unix_ms: u128,
+    window_end_unix_ms: u128,
+    run: &BackfillRunRecord,
+) -> Result<ExecutionSubmissionRequest, String> {
+    let graph_inputs = bind_schedule_graph_inputs_with_contract(
+        schedule_id,
+        input_contract,
+        input_bindings,
+        &SubmissionCandidate {
+            requested_unix_ms: run.requested_unix_ms,
+            trigger_kind: SubmissionTriggerKind::Backfill,
+            dedupe_key: run.dedupe_key.clone(),
+            context: SubmissionContext::Backfill {
+                window_start_unix_ms,
+                window_end_unix_ms,
+                partition_key: run.partition_key.clone(),
+            },
+        },
+    )?;
+    Ok(ExecutionSubmissionRequest {
+        schedule_id: schedule_id.to_string(),
+        dag_name: dag_name.to_string(),
+        dag_version_policy: dag_version_policy.to_string(),
+        graph_inputs,
+        requested_unix_ms: run.requested_unix_ms,
+        run_id: run.run_id.clone(),
+        trigger_kind: SubmissionTriggerKind::Backfill,
+        dedupe_key: run.dedupe_key.clone(),
+    })
+}
+
+fn bind_schedule_graph_inputs(
+    definition: &ScheduleDefinition,
+    candidate: &SubmissionCandidate,
+) -> Result<BTreeMap<String, Value>, String> {
+    bind_schedule_graph_inputs_with_contract(
+        &definition.id,
+        &definition.input_contract,
+        &definition.input_bindings,
+        candidate,
+    )
+}
+
+fn bind_schedule_graph_inputs_with_contract(
+    schedule_id: &str,
+    input_contract: &BTreeMap<String, GraphInputSpec>,
+    input_bindings: &BTreeMap<String, ScheduleInputSource>,
+    candidate: &SubmissionCandidate,
+) -> Result<BTreeMap<String, Value>, String> {
+    let mut graph_inputs = BTreeMap::new();
+    for (input_name, source) in input_bindings {
+        let Some(spec) = input_contract.get(input_name) else {
+            return Err(format!(
+                "schedule '{schedule_id}' binds undeclared graph input '{input_name}'"
+            ));
+        };
+        let raw_value = resolve_schedule_input_source(schedule_id, input_name, source, candidate)?;
+        let normalized = materialize_graph_input_value(
+            spec,
+            &raw_value,
+            &format!("/schedule/{schedule_id}/graph_inputs/{input_name}"),
+        )
+        .map_err(|error| format!("{}: {}", error.path, error.message))?;
+        graph_inputs.insert(input_name.clone(), normalized);
     }
+
+    for (input_name, spec) in input_contract {
+        if graph_inputs.contains_key(input_name) {
+            continue;
+        }
+        if let Some(default) = spec.effective_value() {
+            let normalized = materialize_graph_input_value(
+                spec,
+                default,
+                &format!("/schedule/{schedule_id}/graph_inputs/{input_name}"),
+            )
+            .map_err(|error| format!("{}: {}", error.path, error.message))?;
+            graph_inputs.insert(input_name.clone(), normalized);
+        } else if spec.required {
+            return Err(format!(
+                "schedule '{schedule_id}' could not bind required graph input '{input_name}'"
+            ));
+        }
+    }
+    Ok(graph_inputs)
+}
+
+fn resolve_schedule_input_source(
+    schedule_id: &str,
+    input_name: &str,
+    source: &ScheduleInputSource,
+    candidate: &SubmissionCandidate,
+) -> Result<Value, String> {
+    match source {
+        ScheduleInputSource::RequestedUnixMs => Ok(json_u128(candidate.requested_unix_ms)),
+        ScheduleInputSource::ManualArgument { key } => {
+            let SubmissionContext::Manual { arguments } = &candidate.context else {
+                return Err(format!(
+                    "schedule '{schedule_id}' binds graph input '{input_name}' from a manual argument on a non-manual trigger"
+                ));
+            };
+            arguments.get(key).cloned().ok_or_else(|| {
+                format!(
+                    "schedule '{schedule_id}' missing manual argument '{key}' for graph input '{input_name}'"
+                )
+            })
+        }
+        ScheduleInputSource::EventPayload { pointer } => {
+            let SubmissionContext::Event { payload } = &candidate.context else {
+                return Err(format!(
+                    "schedule '{schedule_id}' binds graph input '{input_name}' from event payload on a non-event trigger"
+                ));
+            };
+            resolve_payload_binding(
+                schedule_id,
+                input_name,
+                "event payload",
+                payload.as_ref(),
+                pointer.as_deref(),
+            )
+        }
+        ScheduleInputSource::SignalPayload { pointer } => {
+            let SubmissionContext::Signal { payload } = &candidate.context else {
+                return Err(format!(
+                    "schedule '{schedule_id}' binds graph input '{input_name}' from signal payload on a non-signal trigger"
+                ));
+            };
+            resolve_payload_binding(
+                schedule_id,
+                input_name,
+                "signal payload",
+                payload.as_ref(),
+                pointer.as_deref(),
+            )
+        }
+        ScheduleInputSource::DependencyUpstreamRunId => {
+            let SubmissionContext::Dependency { upstream_run_id, .. } = &candidate.context else {
+                return Err(format!(
+                    "schedule '{schedule_id}' binds graph input '{input_name}' from dependency metadata on a non-dependency trigger"
+                ));
+            };
+            Ok(Value::String(upstream_run_id.clone()))
+        }
+        ScheduleInputSource::DependencyStatus => {
+            let SubmissionContext::Dependency { status, .. } = &candidate.context else {
+                return Err(format!(
+                    "schedule '{schedule_id}' binds graph input '{input_name}' from dependency metadata on a non-dependency trigger"
+                ));
+            };
+            Ok(Value::String(normalize_schedule_status(status)))
+        }
+        ScheduleInputSource::BackfillWindowStartUnixMs => {
+            let SubmissionContext::Backfill { window_start_unix_ms, .. } = &candidate.context
+            else {
+                return Err(format!(
+                    "schedule '{schedule_id}' binds graph input '{input_name}' from backfill metadata on a non-backfill trigger"
+                ));
+            };
+            Ok(json_u128(*window_start_unix_ms))
+        }
+        ScheduleInputSource::BackfillWindowEndUnixMs => {
+            let SubmissionContext::Backfill { window_end_unix_ms, .. } = &candidate.context else {
+                return Err(format!(
+                    "schedule '{schedule_id}' binds graph input '{input_name}' from backfill metadata on a non-backfill trigger"
+                ));
+            };
+            Ok(json_u128(*window_end_unix_ms))
+        }
+        ScheduleInputSource::BackfillPartitionKey => {
+            let SubmissionContext::Backfill { partition_key, .. } = &candidate.context else {
+                return Err(format!(
+                    "schedule '{schedule_id}' binds graph input '{input_name}' from backfill metadata on a non-backfill trigger"
+                ));
+            };
+            partition_key.clone().map(Value::String).ok_or_else(|| {
+                format!(
+                    "schedule '{schedule_id}' missing backfill partition key for graph input '{input_name}'"
+                )
+            })
+        }
+    }
+}
+
+fn resolve_payload_binding(
+    schedule_id: &str,
+    input_name: &str,
+    payload_name: &str,
+    payload: Option<&Value>,
+    pointer: Option<&str>,
+) -> Result<Value, String> {
+    let Some(payload) = payload else {
+        return Err(format!(
+            "schedule '{schedule_id}' missing {payload_name} for graph input '{input_name}'"
+        ));
+    };
+    let Some(pointer) = pointer else {
+        return Ok(payload.clone());
+    };
+    payload.pointer(pointer).cloned().ok_or_else(|| {
+        format!(
+            "schedule '{schedule_id}' could not resolve {payload_name} pointer '{pointer}' for graph input '{input_name}'"
+        )
+    })
+}
+
+fn validate_schedule_input_contract(definition: &ScheduleDefinition) -> Result<(), String> {
+    for input_name in definition.input_bindings.keys() {
+        if !definition.input_contract.contains_key(input_name) {
+            return Err(format!(
+                "schedule '{}' binds undeclared graph input '{}'",
+                definition.id, input_name
+            ));
+        }
+    }
+    for (input_name, source) in &definition.input_bindings {
+        match source {
+            ScheduleInputSource::RequestedUnixMs => {}
+            ScheduleInputSource::ManualArgument { key } => {
+                if key.trim().is_empty() {
+                    return Err(format!(
+                        "schedule '{}' manual argument binding for graph input '{}' must not be blank",
+                        definition.id, input_name
+                    ));
+                }
+                if !matches!(definition.trigger, TriggerSpec::Manual) {
+                    return Err(format!(
+                        "schedule '{}' uses manual argument binding for graph input '{}' on a non-manual trigger",
+                        definition.id, input_name
+                    ));
+                }
+            }
+            ScheduleInputSource::EventPayload { pointer } => {
+                if !matches!(definition.trigger, TriggerSpec::Event { .. }) {
+                    return Err(format!(
+                        "schedule '{}' uses event payload binding for graph input '{}' on a non-event trigger",
+                        definition.id, input_name
+                    ));
+                }
+                validate_payload_pointer(&definition.id, input_name, pointer.as_deref())?;
+            }
+            ScheduleInputSource::SignalPayload { pointer } => {
+                if !matches!(definition.trigger, TriggerSpec::Signal { .. }) {
+                    return Err(format!(
+                        "schedule '{}' uses signal payload binding for graph input '{}' on a non-signal trigger",
+                        definition.id, input_name
+                    ));
+                }
+                validate_payload_pointer(&definition.id, input_name, pointer.as_deref())?;
+            }
+            ScheduleInputSource::DependencyUpstreamRunId
+            | ScheduleInputSource::DependencyStatus => {
+                if !matches!(definition.trigger, TriggerSpec::Dependency { .. }) {
+                    return Err(format!(
+                        "schedule '{}' uses dependency metadata binding for graph input '{}' on a non-dependency trigger",
+                        definition.id, input_name
+                    ));
+                }
+            }
+            ScheduleInputSource::BackfillWindowStartUnixMs
+            | ScheduleInputSource::BackfillWindowEndUnixMs
+            | ScheduleInputSource::BackfillPartitionKey => {
+                if !matches!(definition.trigger, TriggerSpec::Backfill(_)) {
+                    return Err(format!(
+                        "schedule '{}' uses backfill binding for graph input '{}' on a non-backfill trigger",
+                        definition.id, input_name
+                    ));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_payload_pointer(
+    schedule_id: &str,
+    input_name: &str,
+    pointer: Option<&str>,
+) -> Result<(), String> {
+    let Some(pointer) = pointer else {
+        return Ok(());
+    };
+    if pointer.is_empty() || pointer.starts_with('/') {
+        Ok(())
+    } else {
+        Err(format!(
+            "schedule '{}' payload pointer for graph input '{}' must be empty or start with '/'",
+            schedule_id, input_name
+        ))
+    }
+}
+
+fn json_u128(value: u128) -> Value {
+    serde_json::to_value(value).expect("u128 should serialize into json")
 }
 
 fn deterministic_schedule_run_id(schedule_id: &str, dedupe_key: &str) -> String {

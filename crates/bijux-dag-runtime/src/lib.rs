@@ -444,11 +444,11 @@ pub use scheduler::{
     FailurePropagationMode, ManualSubmissionRequest, NoopSchedulerEventHook, PriorityClass,
     QueueIdentity, QueueIsolationPolicy, ReadyQueue, ReadyTieBreak, ScheduleAuditRecord,
     ScheduleDefinition, ScheduleDryRunPreview, ScheduleEvaluationInputs, ScheduleEvaluationReport,
-    ScheduleEventRecord, ScheduleRegistry, ScheduleSubmissionLedger, ScheduleSubmissionLedgerEntry,
-    ScheduleSubmissionStatus, ScheduledSubmission, Scheduler, SchedulerContractProfile,
-    SchedulerEvent, SchedulerEventHook, SchedulerEventKind, SchedulerFairness, SchedulerModel,
-    SchedulerPolicy, SchedulerPriorityModel, SchedulerState, SchedulerUnit, SignalRecord,
-    SubmissionTriggerKind, ThroughputScheduler, TriggerSpec,
+    ScheduleEventRecord, ScheduleInputSource, ScheduleRegistry, ScheduleSubmissionLedger,
+    ScheduleSubmissionLedgerEntry, ScheduleSubmissionStatus, ScheduledSubmission, Scheduler,
+    SchedulerContractProfile, SchedulerEvent, SchedulerEventHook, SchedulerEventKind,
+    SchedulerFairness, SchedulerModel, SchedulerPolicy, SchedulerPriorityModel, SchedulerState,
+    SchedulerUnit, SignalRecord, SubmissionTriggerKind, ThroughputScheduler, TriggerSpec,
 };
 pub use scheduler_workload::{
     apply_backfill_throttling, compute_partition_backfill_batches, deduplicate_trigger_events,
