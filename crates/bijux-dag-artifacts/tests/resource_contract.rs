@@ -106,6 +106,27 @@ fn resource_retry_trace_event_volume_stays_bounded() {
             details: None,
         }),
         transition_cause: Some("retry_exhausted".to_string()),
+        lifecycle_state: Some("failed".to_string()),
+        lifecycle_transitions: vec![
+            bijux_dag_artifacts::NodeLifecycleTransition {
+                from_state: "pending".to_string(),
+                to_state: "eligible".to_string(),
+                cause: "scheduler_eligible".to_string(),
+                unix_ms: 1,
+            },
+            bijux_dag_artifacts::NodeLifecycleTransition {
+                from_state: "eligible".to_string(),
+                to_state: "queued".to_string(),
+                cause: "scheduler_queued".to_string(),
+                unix_ms: 1,
+            },
+            bijux_dag_artifacts::NodeLifecycleTransition {
+                from_state: "queued".to_string(),
+                to_state: "failed".to_string(),
+                cause: "execution_failed".to_string(),
+                unix_ms: 2,
+            },
+        ],
         replay_provenance: None,
     };
 
