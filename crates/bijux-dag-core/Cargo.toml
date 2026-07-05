@@ -32,7 +32,7 @@ unicode-normalization = "0.1"
 tempfile = { workspace = true }
 criterion = "0.5"
 serde_yaml = "0.9"
-bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit", version = "0.4.0" }
+bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit" }
 
 [[bench]]
 name = "micro_parse_validate"
