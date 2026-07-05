@@ -83,6 +83,7 @@ fn setup_run_with_lineage() -> (tempfile::TempDir, PathBuf) {
                 "name":"data",
                 "kind":"file",
                 "media_type":"text/csv",
+                "size_bytes": 7,
                 "sha256":sha,
                 "path":"nodes/extract/outputs/data.csv"
             }]
@@ -228,6 +229,7 @@ fn provenance_query_latency_contract_on_large_lineage_snapshot() {
                 "name":"data",
                 "kind":"file",
                 "media_type":"text/csv",
+                "size_bytes": 7,
                 "sha256":sha,
                 "path":"nodes/extract/outputs/data.csv"
             }]

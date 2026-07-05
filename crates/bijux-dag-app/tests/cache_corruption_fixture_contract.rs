@@ -62,6 +62,7 @@ fn write_cache_entry(base: &Path, key: &str, meta: &Value, payload: &[u8]) {
             path: "payload.bin".to_string(),
             kind: "file".to_string(),
             media_type: "application/octet-stream".to_string(),
+            size_bytes: payload.len() as u64,
             sha256: sha256_hex(payload),
             node_id: "node-a".to_string(),
             node_fingerprint: key.to_string(),

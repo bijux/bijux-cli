@@ -46,7 +46,7 @@ fn why_rerun_and_trace_artifact_commands_are_json_capable() {
         .expect("write snap");
         fs::write(
             run.join("outputs/index.json"),
-            serde_json::to_vec_pretty(&json!({"files":[{"node_id":"extract","node_fingerprint":"fp1","name":"out","kind":"file","media_type":"text/plain","sha256":"2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881","path":"nodes/extract/outputs/data.txt"}]}))
+            serde_json::to_vec_pretty(&json!({"files":[{"node_id":"extract","node_fingerprint":"fp1","name":"out","kind":"file","media_type":"text/plain","size_bytes":5,"sha256":"2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881","path":"nodes/extract/outputs/data.txt"}]}))
                 .expect("index"),
         )
         .expect("write index");

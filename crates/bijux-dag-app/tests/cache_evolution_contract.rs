@@ -36,6 +36,7 @@ fn write_cache_entry(base: &std::path::Path, key: &str, valid: bool) {
             "path": "out.txt",
             "kind": "file",
             "media_type": "text/plain",
+            "size_bytes": 2,
             "sha256": if valid { sha256_hex(b"ok") } else { sha256_hex(b"other") },
             "node_id": "n",
             "node_fingerprint": key

@@ -53,6 +53,7 @@ fn hash_artifact_and_artifact_inspect_are_json_capable() {
                 "name": "data",
                 "kind": "file",
                 "media_type": "text/csv",
+                "size_bytes": 8,
                 "sha256": bijux_dag_artifacts::hash::sha256_hex(b"a,b\n1,2\n"),
                 "path": "nodes/extract/outputs/data.csv"
             }]
