@@ -170,6 +170,60 @@ This keeps cosmetic metadata edits separate from real workflow mutations, and
 it does not over-claim safety when planner-visible execution drift exists even
 if the current execution fingerprint remains unchanged.
 
+## Control A Historical Backfill
+
+When an operator needs to replay a bounded historical window, treat the
+backfill as a durable operation instead of a loose list of manual reruns.
+
+Plan the operation from the schedule registry first:
+
+```bash
+bijux-dag schedule backfill plan ./ops/schedule-registry.json \
+  --schedule-id historical-catalog \
+  --planned-unix-ms 1762387200000 \
+  --out ./artifacts/backfill-state.json
+```
+
+Advance the operation with explicit throttling inputs:
+
+```bash
+bijux-dag schedule backfill advance \
+  ./artifacts/backfill-state.json \
+  ./ops/backfill-advance-request.json \
+  --out ./artifacts/backfill-state.json
+```
+
+Pause, resume, or cancel the same durable state file when operator control is
+needed:
+
+```bash
+bijux-dag schedule backfill pause ./artifacts/backfill-state.json \
+  --at-unix-ms 1762387500000 \
+  --reason "hold while downstream catalog is degraded" \
+  --out ./artifacts/backfill-state.json
+
+bijux-dag schedule backfill resume ./artifacts/backfill-state.json \
+  --at-unix-ms 1762388400000 \
+  --out ./artifacts/backfill-state.json
+
+bijux-dag schedule backfill cancel ./artifacts/backfill-state.json \
+  --at-unix-ms 1762389000000 \
+  --reason "superseded by corrected source snapshot" \
+  --out ./artifacts/backfill-state.json
+```
+
+The backfill control contract is:
+
+- time-window expansion is deterministic and advances in one-minute request
+  slots across the declared window
+- partition-list backfills expand deterministically within each time slot
+- `max_parallelism` limits concurrent submitted or running backfill work
+- the advance request applies live-load throttling before dispatching new runs
+- failure policy controls whether a failed backfill run continues, pauses, or
+  cancels remaining queued work
+- pause and cancel stop new dispatches without pretending that already
+  submitted runs were never issued
+
 ## Run Only The Prerequisites For A Target Node
 
 When the operator wants the minimal execution closure required to reach one
@@ -206,6 +260,7 @@ The upstream target contract is:
 - `crates/bijux-dag-app/src/routes/inspect_routes.rs`
 - `crates/bijux-dag-app/src/routes/replay_routes.rs`
 - `crates/bijux-dag-app/src/routes/diff_routes.rs`
+- `crates/bijux-dag-app/src/routes/schedule_routes.rs`
 
 ## Reading Rule
 
