@@ -42,6 +42,9 @@ pub mod contract;
 #[path = "graph/edge.rs"]
 pub mod edge;
 #[doc(hidden)]
+#[path = "graph/expansion.rs"]
+pub mod expansion;
+#[doc(hidden)]
 #[path = "analysis/effects.rs"]
 pub mod effects;
 #[doc(hidden)]
