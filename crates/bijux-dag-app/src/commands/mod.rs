@@ -392,11 +392,16 @@ pub(crate) enum Commands {
     },
     #[command(name = "why-cache-missed")]
     WhyCacheMissed {
-        key: String,
+        #[arg(required_unless_present_all = ["run_dir", "node"])]
+        key: Option<String>,
+        #[arg(long, required_unless_present_all = ["run_dir", "node"])]
+        expected_adapter_id: Option<String>,
+        #[arg(long, required_unless_present_all = ["run_dir", "node"])]
+        expected_adapter_version: Option<String>,
         #[arg(long)]
-        expected_adapter_id: String,
-        #[arg(long)]
-        expected_adapter_version: String,
+        run_dir: Option<PathBuf>,
+        #[arg(long, requires = "run_dir")]
+        node: Option<String>,
         #[arg(long)]
         cache_dir: Option<PathBuf>,
     },

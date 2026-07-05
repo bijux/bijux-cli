@@ -116,8 +116,8 @@ pub mod experimental {
 }
 
 use crate::cache::{
-    cache_diff, cache_prune_simulate, cache_stats, explain_cache_key, pack_cache_entry,
-    unpack_cache_entry, verify_cache_dirs,
+    cache_diff, cache_prune_simulate, cache_stats, explain_cache_key,
+    explain_run_node_cache_miss, pack_cache_entry, unpack_cache_entry, verify_cache_dirs,
 };
 use crate::cli_model::command_name as dag_command_name;
 use crate::integrity_service::{check_engine, hash_run_dir, verify_run};
@@ -678,24 +678,36 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             key,
             expected_adapter_id,
             expected_adapter_version,
+            run_dir,
+            node,
             cache_dir,
         } => {
-            let dir = cache_dir
-                .clone()
-                .or_else(env_cache_dir)
-                .unwrap_or_else(|| PathBuf::from(".bijux/cache"));
-            let report =
-                explain_cache_key(&dir, key, expected_adapter_id, expected_adapter_version)?;
-            let payload = json!({
-                "cache_dir": dir,
-                "key": key,
-                "eligible": report["eligible"],
-                "reasons": report["reasons"],
-                "taxonomy": report["taxonomy"],
-                "key_components": report["key_components"],
-                "proof_verified": report["proof_verified"],
-                "meta": report["meta"]
-            });
+            let payload = if let (Some(run_dir), Some(node_id)) = (run_dir.as_ref(), node.as_deref()) {
+                explain_run_node_cache_miss(run_dir, node_id, cache_dir.as_deref())?
+            } else {
+                let key = key.as_deref().ok_or(ExitCode::from(3))?;
+                let expected_adapter_id =
+                    expected_adapter_id.as_deref().ok_or(ExitCode::from(3))?;
+                let expected_adapter_version =
+                    expected_adapter_version.as_deref().ok_or(ExitCode::from(3))?;
+                let dir = cache_dir
+                    .clone()
+                    .or_else(env_cache_dir)
+                    .unwrap_or_else(|| PathBuf::from(".bijux/cache"));
+                let report =
+                    explain_cache_key(&dir, key, expected_adapter_id, expected_adapter_version)?;
+                json!({
+                    "mode": "key",
+                    "cache_dir": dir,
+                    "key": key,
+                    "eligible": report["eligible"],
+                    "reasons": report["reasons"],
+                    "taxonomy": report["taxonomy"],
+                    "key_components": report["key_components"],
+                    "proof_verified": report["proof_verified"],
+                    "meta": report["meta"]
+                })
+            };
             if cli.json {
                 return emit_json(
                     &cli,
