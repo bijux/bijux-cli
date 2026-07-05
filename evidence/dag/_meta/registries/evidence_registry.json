@@ -1,5 +1,5 @@
 {
-  "asset_count": 153,
+  "asset_count": 156,
   "assets": [
     {
       "canonical_path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
@@ -211,6 +211,25 @@
       ]
     },
     {
+      "canonical_path": "evidence/authoring/negative/invalid_container_workdir.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/negative/invalid_container_workdir.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/negative/invalid_container_workdir.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
       "canonical_path": "evidence/authoring/negative/invalid_refs.json",
       "consumers": [
         "dag-validate",
@@ -241,6 +260,25 @@
       "kind": "authoring",
       "owner": "team-authoring",
       "registry_key": "authoring:evidence/authoring/negative/invalid_selectors.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/negative/missing_required_input_binding.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/negative/missing_required_input_binding.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/negative/missing_required_input_binding.json",
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "keep",
@@ -1473,6 +1511,25 @@
       "kind": "cache",
       "owner": "team-runtime",
       "registry_key": "cache:evidence/cache/corrupt/hash_mismatch.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "cache-correctness"
+      ]
+    },
+    {
+      "canonical_path": "evidence/cache/corrupt/missing_manifest.json",
+      "consumers": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/corrupt/missing_manifest.json",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "registry_key": "cache:evidence/cache/corrupt/missing_manifest.json",
       "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",

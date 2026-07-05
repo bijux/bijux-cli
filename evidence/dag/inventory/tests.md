@@ -3,8 +3,10 @@
 - tests/CONTRACT.md
 - tests/README.md
 - evidence/authoring/negative/cycle.json
+- evidence/authoring/negative/invalid_container_workdir.json
 - evidence/authoring/negative/invalid_refs.json
 - evidence/authoring/negative/invalid_selectors.json
+- evidence/authoring/negative/missing_required_input_binding.json
 - evidence/authoring/negative/undeclared_outputs.json
 - evidence/authoring/negative/unsupported_adapter_payload.json
 - evidence/authoring/patterns/medium.json
@@ -16,6 +18,7 @@
 - evidence/authoring/patterns/pattern_fanout.json
 - evidence/authoring/patterns/pattern_replay_sensitive.json
 - evidence/cache/corrupt/hash_mismatch.json
+- evidence/cache/corrupt/missing_manifest.json
 - evidence/cache/corrupt/missing_meta.json
 - evidence/cache/corrupt/missing_outputs_proof.json
 - evidence/cache/corrupt/truncated_meta.json

@@ -130,6 +130,7 @@ Classification for files in tasks 21-34 scopes.
 | crates/bijux-dag-runtime/tests/fixtures/verification/invariants.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/workflow_product/workflow_health.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence | candidate speculative asset; verify release relevance |
 | evidence/cache/corrupt/hash_mismatch.json | cache | transitional | root-owned | evidence/cache |  |
+| evidence/cache/corrupt/missing_manifest.json | cache | transitional | root-owned | evidence/cache |  |
 | evidence/cache/corrupt/missing_meta.json | cache | transitional | root-owned | evidence/cache |  |
 | evidence/cache/corrupt/missing_outputs_proof.json | cache | transitional | root-owned | evidence/cache |  |
 | evidence/cache/corrupt/truncated_meta.json | cache | transitional | root-owned | evidence/cache |  |

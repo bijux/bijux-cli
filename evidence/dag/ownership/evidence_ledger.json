@@ -4947,6 +4947,40 @@
       "why_exists": "exercise cache corruption and warm/cold semantics"
     },
     {
+      "canonical_location": "evidence/cache/corrupt/missing_manifest.json",
+      "canonical_path": "evidence/cache/corrupt/missing_manifest.json",
+      "consumer_surfaces": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "cache",
+      "id": "evidence/cache/corrupt/missing_manifest.json",
+      "implementation_status": "implemented",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "path": "evidence/cache/corrupt/missing_manifest.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "cache-correctness"
+      ],
+      "trust_properties_protected": [
+        "cache-correctness"
+      ],
+      "trust_property": "cache-correctness",
+      "why_exists": "exercise cache corruption and warm/cold semantics"
+    },
+    {
       "canonical_location": "evidence/cache/corrupt/missing_meta.json",
       "canonical_path": "evidence/cache/corrupt/missing_meta.json",
       "consumer_surfaces": [

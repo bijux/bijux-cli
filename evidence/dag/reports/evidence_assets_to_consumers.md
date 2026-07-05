@@ -15,8 +15,10 @@ Generated from `evidence/_meta/registries/evidence_registry.json`.
 | `evidence/authoring/examples/parameterized-report.dag.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/examples/replay-heavy-branching.dag.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/negative/cycle.json` | `authoring` | `dag-validate, authoring-contracts` |
+| `evidence/authoring/negative/invalid_container_workdir.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/negative/invalid_refs.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/negative/invalid_selectors.json` | `authoring` | `dag-validate, authoring-contracts` |
+| `evidence/authoring/negative/missing_required_input_binding.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/negative/undeclared_outputs.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/negative/unsupported_adapter_payload.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/patterns/medium.json` | `authoring` | `dag-validate, authoring-contracts` |
@@ -81,6 +83,7 @@ Generated from `evidence/_meta/registries/evidence_registry.json`.
 | `evidence/battle/workflows/runtime/version_compatibility_workflow.json` | `battle` | `crate-contracts, runtime-tests` |
 | `evidence/battle/workflows/selection/include_exclude_filters.json` | `battle` | `crate-contracts, runtime-tests` |
 | `evidence/cache/corrupt/hash_mismatch.json` | `cache` | `cache-contracts, runtime-tests` |
+| `evidence/cache/corrupt/missing_manifest.json` | `cache` | `cache-contracts, runtime-tests` |
 | `evidence/cache/corrupt/missing_meta.json` | `cache` | `cache-contracts, runtime-tests` |
 | `evidence/cache/corrupt/missing_outputs_proof.json` | `cache` | `cache-contracts, runtime-tests` |
 | `evidence/cache/corrupt/truncated_meta.json` | `cache` | `cache-contracts, runtime-tests` |
