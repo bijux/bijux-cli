@@ -1,8 +1,8 @@
 use crate::ExitCode;
 use bijux_dag_artifacts::OutputsIndex;
 use bijux_dag_runtime::{
-    cache_entry_has_required_proof, cache_key_explanation, cache_metadata_version_supported,
-    CacheKeyInput,
+    cache_entry_has_required_proof, cache_key_explanation, cache_key_input_from_meta,
+    cache_metadata_version_supported,
 };
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
@@ -87,9 +87,35 @@ pub(crate) fn pack_cache_entry(entry: &Path, out: &Path) -> Result<(), ExitCode>
     let file = fs::File::create(out).map_err(|_| ExitCode::from(3))?;
     let enc = GzEncoder::new(file, Compression::default());
     let mut builder = Builder::new(enc);
-    builder.append_dir_all(".", entry).map_err(|_| ExitCode::from(3))?;
+    append_cache_entry_archive(&mut builder, entry, entry)?;
     let enc = builder.into_inner().map_err(|_| ExitCode::from(3))?;
     enc.finish().map_err(|_| ExitCode::from(3))?;
+    Ok(())
+}
+
+fn append_cache_entry_archive<W: std::io::Write>(
+    builder: &mut Builder<W>,
+    root: &Path,
+    current: &Path,
+) -> Result<(), ExitCode> {
+    let mut entries = fs::read_dir(current)
+        .map_err(|_| ExitCode::from(3))?
+        .filter_map(|entry| entry.ok())
+        .collect::<Vec<_>>();
+    entries.sort_by_key(|entry| entry.file_name());
+    for entry in entries {
+        let path = entry.path();
+        let rel = path.strip_prefix(root).map_err(|_| ExitCode::from(3))?;
+        let file_type = entry.file_type().map_err(|_| ExitCode::from(3))?;
+        if file_type.is_dir() {
+            builder.append_dir(rel, &path).map_err(|_| ExitCode::from(3))?;
+            append_cache_entry_archive(builder, root, &path)?;
+        } else if file_type.is_file() {
+            builder.append_path_with_name(&path, rel).map_err(|_| ExitCode::from(3))?;
+        } else {
+            return Err(ExitCode::from(3));
+        }
+    }
     Ok(())
 }
 
@@ -99,19 +125,16 @@ pub(crate) fn unpack_cache_entry(pack: &Path, cache_dir: &Path) -> Result<(), Ex
     let mut archive = Archive::new(dec);
     let tmp = tempfile::tempdir().map_err(|_| ExitCode::from(3))?;
     unpack_cache_archive_bounded(&mut archive, tmp.path())?;
-    let meta_path = tmp.path().join("meta.json");
-    if !meta_path.exists() {
-        return Err(ExitCode::from(3));
-    }
+    let unpacked_root = unpacked_cache_entry_root(tmp.path())?;
+    let meta_path = unpacked_root.join("meta.json");
     let mut meta: Value =
         serde_json::from_str(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
             .map_err(|_| ExitCode::from(3))?;
-    let key =
-        meta.get("node_fingerprint").and_then(|v| v.as_str()).ok_or(ExitCode::from(3))?.to_string();
+    let key = meta.get("cache_key").and_then(|v| v.as_str()).ok_or(ExitCode::from(3))?.to_string();
     let adapter_id = meta.get("adapter_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let adapter_version =
         meta.get("adapter_version").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    if !verify_cache_entry_cli(tmp.path(), &key, &adapter_id, &adapter_version)? {
+    if !verify_cache_entry_cli(&unpacked_root, &key, &adapter_id, &adapter_version)? {
         return Err(ExitCode::from(3));
     }
     if let Some(obj) = meta.as_object_mut() {
@@ -123,8 +146,24 @@ pub(crate) fn unpack_cache_entry(pack: &Path, cache_dir: &Path) -> Result<(), Ex
     if dst.exists() {
         let _ = fs::remove_dir_all(&dst);
     }
-    copy_dir_all(tmp.path(), &dst).map_err(|_| ExitCode::from(3))?;
+    copy_dir_all(&unpacked_root, &dst).map_err(|_| ExitCode::from(3))?;
     Ok(())
+}
+
+fn unpacked_cache_entry_root(root: &Path) -> Result<std::path::PathBuf, ExitCode> {
+    if root.join("meta.json").exists() {
+        return Ok(root.to_path_buf());
+    }
+    let mut children = fs::read_dir(root)
+        .map_err(|_| ExitCode::from(3))?
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .filter(|path| path.is_dir())
+        .collect::<Vec<_>>();
+    children.sort();
+    if children.len() == 1 && children[0].join("meta.json").exists() {
+        return Ok(children.remove(0));
+    }
+    Err(ExitCode::from(3))
 }
 
 pub(crate) fn unpack_cache_archive_bounded<R: std::io::Read>(
@@ -165,10 +204,18 @@ pub(crate) fn verify_cache_entry_cli(
     if !index_path.exists() || !meta_path.exists() {
         return Ok(false);
     }
-    let meta: Value =
-        serde_json::from_str(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
-            .map_err(|_| ExitCode::from(3))?;
-    if meta.get("node_fingerprint").and_then(|v| v.as_str()) != Some(expected_key) {
+    let meta_raw = fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?;
+    let meta: Value = serde_json::from_str(&meta_raw).map_err(|_| ExitCode::from(3))?;
+    if meta.get("cache_key").and_then(|v| v.as_str()) != Some(expected_key) {
+        return Ok(false);
+    }
+    if !cache_metadata_version_supported(&meta) || !cache_entry_has_required_proof(&meta) {
+        return Ok(false);
+    }
+    let Some(key_input) = cache_key_input_from_meta(&meta) else {
+        return Ok(false);
+    };
+    if cache_key_explanation(&key_input).key != expected_key {
         return Ok(false);
     }
     if !adapter_id.is_empty() && meta.get("adapter_id").and_then(|v| v.as_str()) != Some(adapter_id)
@@ -232,71 +279,37 @@ pub(crate) fn explain_cache_key(
             &fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?,
         )
         .map_err(|_| ExitCode::from(3))?;
-        let key_input = CacheKeyInput {
-            node_fingerprint: meta
-                .get("node_fingerprint")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default()
-                .to_string(),
-            adapter_id: meta
-                .get("adapter_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default()
-                .to_string(),
-            adapter_version: meta
-                .get("adapter_version")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default()
-                .to_string(),
-            output_schema_version: meta
-                .get("produces_outputs_schema_version")
-                .or_else(|| meta.get("output_schema_version"))
-                .and_then(|v| v.as_str())
-                .unwrap_or_default()
-                .to_string(),
-            policy_fingerprint: meta
-                .get("policy_fingerprint")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default()
-                .to_string(),
-            config_fingerprint: meta
-                .get("config_fingerprint")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default()
-                .to_string(),
-            backend_class: meta
-                .get("backend_class")
-                .and_then(|v| v.as_str())
-                .unwrap_or_default()
-                .to_string(),
-        };
-        let explanation = cache_key_explanation(&key_input);
-        key_components = json!({
-            "graph_fingerprint_component": Value::Null,
-            "node_fingerprint_component": meta.get("node_fingerprint").cloned().unwrap_or(Value::Null),
-            "inputs_index_component": meta.get("config_fingerprint").cloned().unwrap_or(Value::Null),
-            "adapter_component": {
-                "adapter_id": meta.get("adapter_id").cloned().unwrap_or(Value::Null),
-                "adapter_version": meta.get("adapter_version").cloned().unwrap_or(Value::Null),
-                "output_schema_version": meta.get("produces_outputs_schema_version")
-                    .or_else(|| meta.get("output_schema_version"))
+        if let Some(key_input) = cache_key_input_from_meta(&meta) {
+            let explanation = cache_key_explanation(&key_input);
+            key_components = json!({
+                "execution_fingerprint_component": meta.get("node_fingerprint").cloned().unwrap_or(Value::Null),
+                "node_definition_component": meta.get("node_definition_fingerprint").cloned().unwrap_or(Value::Null),
+                "declared_environment_component": meta.get("declared_environment_fingerprint").cloned().unwrap_or(Value::Null),
+                "input_lineage_component": meta.get("input_lineage_fingerprint").cloned().unwrap_or(Value::Null),
+                "adapter_component": {
+                    "adapter_id": meta.get("adapter_id").cloned().unwrap_or(Value::Null),
+                    "adapter_version": meta.get("adapter_version").cloned().unwrap_or(Value::Null),
+                    "output_schema_version": meta.get("produces_outputs_schema_version")
+                        .or_else(|| meta.get("output_schema_version"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                },
+                "policy_component": meta.get("policy_fingerprint").cloned().unwrap_or(Value::Null),
+                "execution_contract_component": meta.get("execution_contract_fingerprint")
                     .cloned()
                     .unwrap_or(Value::Null),
-            },
-            "policy_component": meta.get("policy_fingerprint").cloned().unwrap_or(Value::Null),
-            "env_component": {
-                "backend_class": meta.get("backend_class").cloned().unwrap_or(Value::Null),
-                "note": "runtime env fingerprint is not currently persisted in cache meta"
-            },
-            "computed_cache_key": explanation.key,
-            "intentional_inputs": explanation.intentional_inputs,
-        });
+                "backend_component": meta.get("backend_class").cloned().unwrap_or(Value::Null),
+                "computed_cache_key": explanation.key,
+                "stored_cache_key": meta.get("cache_key").cloned().unwrap_or(Value::Null),
+                "intentional_inputs": explanation.intentional_inputs,
+            });
+            if meta.get("cache_key").and_then(|v| v.as_str()) != Some(explanation.key.as_str()) {
+                reasons.push("stored cache key does not match persisted proof fields".to_string());
+                taxonomy.push("hash_mismatch".to_string());
+            }
+        }
         if meta.get("cache_key").and_then(|v| v.as_str()) != Some(key) {
             reasons.push("cache key does not match requested key".to_string());
-            taxonomy.push("hash_mismatch".to_string());
-        }
-        if meta.get("node_fingerprint").and_then(|v| v.as_str()) != Some(key) {
-            reasons.push("node_fingerprint mismatch".to_string());
             taxonomy.push("hash_mismatch".to_string());
         }
         if !expected_adapter_id.is_empty()
@@ -446,12 +459,16 @@ pub(crate) fn cache_diff(cache_dir: &Path, key_a: &str, key_b: &str) -> Result<V
     let b_meta = load_meta(&b_path)?;
     let mut differences = Vec::new();
     for field in [
+        "cache_key",
         "node_fingerprint",
+        "node_definition_fingerprint",
+        "declared_environment_fingerprint",
+        "input_lineage_fingerprint",
         "adapter_id",
         "adapter_version",
-        "output_schema_version",
+        "produces_outputs_schema_version",
         "policy_fingerprint",
-        "config_fingerprint",
+        "execution_contract_fingerprint",
         "backend_class",
         "cache_metadata_version",
         "source_run_id",
@@ -514,6 +531,7 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::{explain_cache_key, pack_cache_entry, unpack_cache_entry};
+    use bijux_dag_runtime::{cache_key_explanation, CacheKeyInput};
     use serde_json::json;
     use std::fs;
     use std::process::ExitCode;
@@ -522,20 +540,36 @@ mod tests {
     fn explain_cache_key_reports_taxonomy_and_components() {
         let tmp = tempfile::tempdir().expect("tmp");
         let cache_dir = tmp.path().join("cache");
-        let entry = cache_dir.join("key-a");
+        let key_input = CacheKeyInput {
+            execution_fingerprint: "exec-a".to_string(),
+            node_definition_fingerprint: "node-a".to_string(),
+            declared_environment_fingerprint: "env-a".to_string(),
+            input_lineage_fingerprint: "inputs-a".to_string(),
+            adapter_id: "shell".to_string(),
+            adapter_version: "1.0.0".to_string(),
+            output_schema_version: "schema/v1".to_string(),
+            policy_fingerprint: "policy-a".to_string(),
+            execution_contract_fingerprint: "exec-contract-a".to_string(),
+            backend_class: "local".to_string(),
+        };
+        let cache_key = cache_key_explanation(&key_input).key;
+        let entry = cache_dir.join(&cache_key);
         fs::create_dir_all(entry.join("outputs")).expect("mkdir outputs");
         fs::write(
             entry.join("meta.json"),
             serde_json::to_vec_pretty(&json!({
-                "cache_key":"key-a",
-                "cache_metadata_version":"cache-meta/v0.1",
-                "node_fingerprint":"node-a",
-                "adapter_id":"shell",
-                "adapter_version":"1.0.0",
-                "produces_outputs_schema_version":"schema/v1",
-                "policy_fingerprint":"policy-a",
-                "config_fingerprint":"config-a",
-                "backend_class":"local"
+                "cache_key": cache_key,
+                "cache_metadata_version": bijux_dag_runtime::CACHE_METADATA_VERSION,
+                "node_fingerprint": key_input.execution_fingerprint,
+                "node_definition_fingerprint": key_input.node_definition_fingerprint,
+                "declared_environment_fingerprint": key_input.declared_environment_fingerprint,
+                "input_lineage_fingerprint": key_input.input_lineage_fingerprint,
+                "adapter_id": key_input.adapter_id,
+                "adapter_version": key_input.adapter_version,
+                "produces_outputs_schema_version": key_input.output_schema_version,
+                "policy_fingerprint": key_input.policy_fingerprint,
+                "execution_contract_fingerprint": key_input.execution_contract_fingerprint,
+                "backend_class": key_input.backend_class
             }))
             .expect("meta"),
         )
@@ -543,7 +577,7 @@ mod tests {
         fs::write(
             entry.join("outputs/index.json"),
             serde_json::to_vec_pretty(&json!({
-                "files":[{"name":"report","path":"report.txt","kind":"file","media_type":"text/plain","sha256":"deadbeef","node_id":"n1","node_fingerprint":"node-a"}]
+                "files":[{"name":"report","path":"report.txt","kind":"file","media_type":"text/plain","size_bytes":7,"sha256":"deadbeef","node_id":"n1","node_fingerprint":"exec-a"}]
             }))
             .expect("index"),
         )
@@ -551,7 +585,7 @@ mod tests {
         fs::write(entry.join("outputs/report.txt"), b"payload").expect("payload");
 
         let report =
-            explain_cache_key(&cache_dir, "key-a", "shell", "1.0.0").expect("explain cache key");
+            explain_cache_key(&cache_dir, &cache_key, "shell", "1.0.0").expect("explain cache key");
         assert_eq!(report["eligible"], false);
         assert!(report["taxonomy"].as_array().is_some_and(|items| !items.is_empty()));
         assert!(report["key_components"].is_object());
@@ -561,18 +595,35 @@ mod tests {
     fn cache_pack_unpack_preserves_metadata_and_rejects_corruption() {
         let tmp = tempfile::tempdir().expect("tmp");
         let entry = tmp.path().join("entry");
+        let key_input = CacheKeyInput {
+            execution_fingerprint: "exec-key".to_string(),
+            node_definition_fingerprint: "node-key".to_string(),
+            declared_environment_fingerprint: "env-key".to_string(),
+            input_lineage_fingerprint: "inputs-key".to_string(),
+            adapter_id: "shell".to_string(),
+            adapter_version: "1.0.0".to_string(),
+            output_schema_version: "schema/v1".to_string(),
+            policy_fingerprint: "policy-a".to_string(),
+            execution_contract_fingerprint: "exec-contract-a".to_string(),
+            backend_class: "local".to_string(),
+        };
+        let cache_key = cache_key_explanation(&key_input).key;
         fs::create_dir_all(entry.join("outputs")).expect("mkdir outputs");
         fs::write(
             entry.join("meta.json"),
             serde_json::to_vec_pretty(&json!({
-                "cache_key":"cache-key",
-                "cache_metadata_version":"cache-meta/v0.1",
-                "node_fingerprint":"node-key",
-                "adapter_id":"shell",
-                "adapter_version":"1.0.0",
-                "policy_fingerprint":"policy-a",
-                "config_fingerprint":"config-a",
-                "backend_class":"local"
+                "cache_key": cache_key,
+                "cache_metadata_version": bijux_dag_runtime::CACHE_METADATA_VERSION,
+                "node_fingerprint": key_input.execution_fingerprint,
+                "node_definition_fingerprint": key_input.node_definition_fingerprint,
+                "declared_environment_fingerprint": key_input.declared_environment_fingerprint,
+                "input_lineage_fingerprint": key_input.input_lineage_fingerprint,
+                "adapter_id": key_input.adapter_id,
+                "adapter_version": key_input.adapter_version,
+                "produces_outputs_schema_version": key_input.output_schema_version,
+                "policy_fingerprint": key_input.policy_fingerprint,
+                "execution_contract_fingerprint": key_input.execution_contract_fingerprint,
+                "backend_class": key_input.backend_class
             }))
             .expect("meta"),
         )
@@ -586,9 +637,10 @@ mod tests {
                     "path":"data.txt",
                     "kind":"file",
                     "media_type":"text/plain",
+                    "size_bytes":7,
                     "sha256": bijux_dag_artifacts::hash::sha256_hex(b"payload"),
                     "node_id":"n1",
-                    "node_fingerprint":"node-key"
+                    "node_fingerprint":"exec-key"
                 }]
             }))
             .expect("index"),
@@ -601,7 +653,7 @@ mod tests {
         unpack_cache_entry(&pack, &unpack_dir).expect("unpack entry");
 
         let unpacked_meta: serde_json::Value = serde_json::from_slice(
-            &fs::read(unpack_dir.join("node-key").join("meta.json")).expect("read unpacked meta"),
+            &fs::read(unpack_dir.join(&cache_key).join("meta.json")).expect("read unpacked meta"),
         )
         .expect("parse unpacked meta");
         assert_eq!(unpacked_meta["adapter_id"], "shell");
