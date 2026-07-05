@@ -551,10 +551,9 @@ fn schedule_backfill_lifecycle_commands_update_state_and_dispatches() {
         },
     )
     .expect("pause state");
-    let paused_payload: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(&paused).expect("read paused"),
-    )
-    .expect("parse paused");
+    let paused_payload: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&paused).expect("read paused"))
+            .expect("parse paused");
     assert_eq!(paused_payload["lifecycle"], "paused");
 
     handle_schedule_command(
@@ -568,10 +567,9 @@ fn schedule_backfill_lifecycle_commands_update_state_and_dispatches() {
         },
     )
     .expect("resume state");
-    let resumed_payload: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(&resumed).expect("read resumed"),
-    )
-    .expect("parse resumed");
+    let resumed_payload: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&resumed).expect("read resumed"))
+            .expect("parse resumed");
     assert_eq!(resumed_payload["lifecycle"], "active");
 
     handle_schedule_command(
@@ -585,10 +583,9 @@ fn schedule_backfill_lifecycle_commands_update_state_and_dispatches() {
         },
     )
     .expect("advance state");
-    let advanced_payload: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(&advanced).expect("read advanced"),
-    )
-    .expect("parse advanced");
+    let advanced_payload: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&advanced).expect("read advanced"))
+            .expect("parse advanced");
     let submitted = advanced_payload["runs"]
         .as_array()
         .expect("runs")
@@ -609,10 +606,9 @@ fn schedule_backfill_lifecycle_commands_update_state_and_dispatches() {
         },
     )
     .expect("cancel state");
-    let cancelled_payload: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(&cancelled).expect("read cancelled"),
-    )
-    .expect("parse cancelled");
+    let cancelled_payload: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&cancelled).expect("read cancelled"))
+            .expect("parse cancelled");
     assert_eq!(cancelled_payload["lifecycle"], "cancelled");
     assert!(cancelled_payload["runs"]
         .as_array()

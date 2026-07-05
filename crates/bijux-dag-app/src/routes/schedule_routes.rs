@@ -342,7 +342,13 @@ fn handle_schedule_backfill_command(
     command: &ScheduleBackfillCommands,
 ) -> Result<ExitCode, ExitCode> {
     match command {
-        ScheduleBackfillCommands::Plan { registry, schedule_id, planned_unix_ms, backfill_id, out } => {
+        ScheduleBackfillCommands::Plan {
+            registry,
+            schedule_id,
+            planned_unix_ms,
+            backfill_id,
+            out,
+        } => {
             let registry = parse_schedule_registry(registry)?;
             validate_schedule_registry(&registry).map_err(|_| ExitCode::from(3))?;
             let definition = registry
@@ -350,12 +356,9 @@ fn handle_schedule_backfill_command(
                 .iter()
                 .find(|definition| definition.id == *schedule_id)
                 .ok_or_else(|| ExitCode::from(3))?;
-            let operation = compile_backfill_operation(
-                definition,
-                backfill_id.as_deref(),
-                *planned_unix_ms,
-            )
-            .map_err(|_| ExitCode::from(3))?;
+            let operation =
+                compile_backfill_operation(definition, backfill_id.as_deref(), *planned_unix_ms)
+                    .map_err(|_| ExitCode::from(3))?;
             maybe_write_backfill_operation(out, &operation)?;
             if cli.json {
                 return emit_json(
@@ -424,7 +427,8 @@ fn handle_schedule_backfill_command(
         }
         ScheduleBackfillCommands::Resume { state, at_unix_ms, out } => {
             let mut operation = parse_backfill_operation(state)?;
-            resume_backfill_operation(&mut operation, *at_unix_ms).map_err(|_| ExitCode::from(3))?;
+            resume_backfill_operation(&mut operation, *at_unix_ms)
+                .map_err(|_| ExitCode::from(3))?;
             maybe_write_backfill_operation(out, &operation)?;
             if cli.json {
                 return emit_json(
