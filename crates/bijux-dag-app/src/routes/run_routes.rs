@@ -1,4 +1,6 @@
-use crate::commands::{AbsolutePathPolicyArg, CacheModeArg, DagCli, MaterializeModeArg};
+use crate::commands::{
+    AbsolutePathPolicyArg, CacheModeArg, DagCli, MaterializeModeArg, RunTimeoutBehaviorArg,
+};
 use crate::graph_helpers::{
     parse_selectors, resolve_downstream_run_selection, resolve_upstream_run_selection,
     validate_partial_selection_surface,
@@ -12,8 +14,8 @@ use crate::run_data::map_materialize_mode;
 use crate::runtime_inputs::{bind_runtime_inputs, missing_required_graph_inputs};
 use crate::{emit_json, load_graphs_or_emit, ExitCode};
 use bijux_dag_runtime::{
-    build_planner_analysis, registered_adapters, CacheMode, PlannerGuardrails, Runtime,
-    RuntimeConfig,
+    build_planner_analysis, registered_adapters, CacheMode, PlannerGuardrails, RunTimeoutBehavior,
+    Runtime, RuntimeConfig,
 };
 use serde_json::json;
 use std::fs;
@@ -30,6 +32,7 @@ pub(crate) struct RunRouteRequest<'a> {
     pub cpu_budget: Option<u32>,
     pub node_timeout_ms: Option<u64>,
     pub run_timeout_ms: Option<u64>,
+    pub run_timeout_behavior: RunTimeoutBehaviorArg,
     pub deny_network: bool,
     pub deny_env: bool,
     pub deny_clock: bool,
@@ -79,6 +82,10 @@ fn build_run_runtime_options(
         jobs: req.jobs,
         cpu_budget: req.cpu_budget,
         run_timeout_ms: req.run_timeout_ms,
+        run_timeout_behavior: match req.run_timeout_behavior {
+            RunTimeoutBehaviorArg::FinishRunning => RunTimeoutBehavior::FinishRunning,
+            RunTimeoutBehaviorArg::CancelRunning => RunTimeoutBehavior::CancelRunning,
+        },
         node_timeout_ms: req.node_timeout_ms,
         materialize_inputs: map_materialize_mode(req.materialize_inputs),
         cache_mode: match req.cache {
@@ -297,6 +304,7 @@ mod tests {
     };
     use crate::commands::{
         AbsolutePathPolicyArg, CacheModeArg, Commands, DagCli, MaterializeModeArg,
+        RunTimeoutBehaviorArg,
     };
     use crate::ExitCode;
     use serde_json::json;
@@ -364,6 +372,7 @@ mod tests {
                 cpu_budget: None,
                 node_timeout_ms: None,
                 run_timeout_ms: None,
+                run_timeout_behavior: RunTimeoutBehaviorArg::FinishRunning,
                 deny_network: false,
                 deny_env: false,
                 deny_clock: false,
@@ -420,6 +429,7 @@ mod tests {
                 cpu_budget: None,
                 node_timeout_ms: None,
                 run_timeout_ms: None,
+                run_timeout_behavior: RunTimeoutBehaviorArg::FinishRunning,
                 deny_network: false,
                 deny_env: false,
                 deny_clock: false,
@@ -457,6 +467,7 @@ mod tests {
             cpu_budget: Some(4),
             node_timeout_ms: Some(10),
             run_timeout_ms: Some(20),
+            run_timeout_behavior: RunTimeoutBehaviorArg::CancelRunning,
             deny_network: false,
             deny_env: false,
             deny_clock: false,
@@ -499,6 +510,7 @@ mod tests {
 
         assert_eq!(options.jobs, 3);
         assert_eq!(options.cpu_budget, Some(4));
+        assert_eq!(options.run_timeout_behavior, bijux_dag_runtime::RunTimeoutBehavior::CancelRunning);
         assert!(options.partial_rerun_dependency_closure);
         assert_eq!(options.run_id.as_deref(), Some("selected-run"));
         assert_eq!(options.selectors.include.len(), selectors.include.len());

@@ -213,6 +213,7 @@ fn parse_run_state_str(status: &str) -> Option<RunState> {
         "interrupted" => Some(RunState::Interrupted),
         "cancelling" => Some(RunState::Cancelling),
         "cancelled" => Some(RunState::Cancelled),
+        "timed_out" => Some(RunState::TimedOut),
         "failed" => Some(RunState::Failed),
         "success" | "succeeded" => Some(RunState::Succeeded),
         _ => None,
@@ -532,7 +533,14 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
             "success" => success += 1,
             "failed" => {
                 failed += 1;
-                status = "failed".to_string();
+                if trace.lifecycle_state.as_deref() == Some("timed_out")
+                    || trace.failure.as_ref().map(|failure| failure.code.as_str())
+                        == Some("RUN_TIMEOUT")
+                {
+                    status = "timed_out".to_string();
+                } else if status != "timed_out" {
+                    status = "failed".to_string();
+                }
             }
             "skipped" => skipped += 1,
             "cached" => cached += 1,
@@ -600,6 +608,7 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
         cache_mode: None,
         cache_dir: None,
         run_timeout_ms: None,
+        run_timeout_behavior: None,
         run_metadata: Some(RunMetadata {
             submission_source: run_snapshot.submission_source,
             trigger_source: run_snapshot.trigger_source,

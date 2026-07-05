@@ -262,6 +262,8 @@ pub(crate) enum Commands {
         node_timeout_ms: Option<u64>,
         #[arg(long)]
         run_timeout_ms: Option<u64>,
+        #[arg(long, value_enum, default_value_t = RunTimeoutBehaviorArg::FinishRunning)]
+        run_timeout_behavior: RunTimeoutBehaviorArg,
         #[arg(long, help = DENY_NETWORK_HELP)]
         deny_network: bool,
         #[arg(long, help = DENY_ENV_HELP)]
@@ -1407,4 +1409,10 @@ pub(crate) enum GraphFormatArg {
 pub(crate) enum AbsolutePathPolicyArg {
     AllowLiteral,
     DenyLiteral,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub(crate) enum RunTimeoutBehaviorArg {
+    FinishRunning,
+    CancelRunning,
 }
