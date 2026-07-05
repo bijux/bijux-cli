@@ -524,8 +524,10 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::ExplainPlan { dag, out, run_id, cache_dir, absolute_path_policy } => {
             let input = read_file(dag)?;
             let graph = parse_graph(&input)?;
-            let preview_layout =
-                routes::plan_routes::resolve_plan_preview_layout(out.as_deref(), run_id.as_deref())?;
+            let preview_layout = routes::plan_routes::resolve_plan_preview_layout(
+                out.as_deref(),
+                run_id.as_deref(),
+            )?;
             let preview = routes::plan_routes::PlanPreviewConfig {
                 run_root: out.clone(),
                 run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
@@ -1299,6 +1301,35 @@ pub(crate) fn parse_graph(input: &str) -> Result<Graph, ExitCode> {
         Err(GraphError::Json(_)) => Err(ExitCode::from(2)),
         Err(GraphError::InvalidSpec(_)) => Err(ExitCode::from(1)),
         Err(_) => Err(ExitCode::from(3)),
+    }
+}
+
+pub(crate) fn load_graphs_or_emit(
+    cli: &commands::DagCli,
+    command_name: &str,
+    dags: &[PathBuf],
+) -> Result<Graph, ExitCode> {
+    match read_graph::load_graphs(dags) {
+        Ok(graph) => Ok(graph),
+        Err(error) => {
+            let code = error.exit_code();
+            if cli.json {
+                let _ = emit_json(
+                    cli,
+                    command_name,
+                    false,
+                    json!({
+                        "error": error.to_string(),
+                        "dags": dags,
+                    }),
+                    Vec::new(),
+                    code,
+                );
+            } else if !cli.quiet {
+                eprintln!("{error}");
+            }
+            Err(code)
+        }
     }
 }
 
