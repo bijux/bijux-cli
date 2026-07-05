@@ -276,6 +276,8 @@ pub(crate) enum Commands {
         select: Vec<String>,
         #[arg(long, action = clap::ArgAction::Append)]
         exclude: Vec<String>,
+        #[arg(long = "to-node", action = clap::ArgAction::Append)]
+        to_node: Vec<String>,
         #[arg(long)]
         dependency_closure: bool,
         #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]

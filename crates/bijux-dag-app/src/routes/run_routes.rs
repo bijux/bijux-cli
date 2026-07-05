@@ -1,4 +1,8 @@
 use crate::commands::{AbsolutePathPolicyArg, CacheModeArg, DagCli, MaterializeModeArg};
+use crate::graph_helpers::{
+    parse_selectors, resolve_downstream_run_selection, resolve_upstream_run_selection,
+    validate_partial_selection_surface,
+};
 use crate::routes::plan_routes::{
     concise_plan_lines, plan_explain_payload, resolve_plan_preview_layout,
 };
@@ -6,7 +10,7 @@ use crate::routes::policy_surface::policy_surface_payload;
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::run_data::map_materialize_mode;
 use crate::runtime_inputs::{bind_runtime_inputs, missing_required_graph_inputs};
-use crate::{emit_json, load_graphs_or_emit, parse_selectors, ExitCode};
+use crate::{emit_json, load_graphs_or_emit, ExitCode};
 use bijux_dag_runtime::{
     build_planner_analysis, registered_adapters, CacheMode, PlannerGuardrails, Runtime,
     RuntimeConfig,
@@ -33,6 +37,7 @@ pub(crate) struct RunRouteRequest<'a> {
     pub hermetic: bool,
     pub select: &'a Vec<String>,
     pub exclude: &'a Vec<String>,
+    pub to_node: &'a Vec<String>,
     pub dependency_closure: bool,
     pub materialize_inputs: MaterializeModeArg,
     pub cache: CacheModeArg,
@@ -67,6 +72,8 @@ fn build_run_runtime_options(
     remote_cache_dir: Option<PathBuf>,
     absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy,
     policy: bijux_dag_runtime::PolicyConfig,
+    upstream_selection_targets: Vec<String>,
+    downstream_selection_roots: Vec<String>,
 ) -> RuntimeConfig {
     RuntimeConfig {
         jobs: req.jobs,
@@ -87,6 +94,8 @@ fn build_run_runtime_options(
         latest_symlink: req.latest.clone(),
         policy,
         selectors,
+        upstream_selection_targets,
+        downstream_selection_roots,
         partial_rerun_dependency_closure: req.dependency_closure,
         ..RuntimeConfig::default()
     }
@@ -125,7 +134,21 @@ pub(crate) fn handle_run_command(
     let (deny_network, deny_clock, clean_env) =
         effective_policy_flags(req.deny_network, req.deny_clock, req.clean_env, req.hermetic);
     let deny_env = req.deny_env;
-    let selectors = parse_selectors(req.select, req.exclude)?;
+    validate_partial_selection_surface(
+        &[],
+        req.to_node,
+        req.select,
+        req.exclude,
+        req.dependency_closure,
+    )?;
+    let (upstream_selection_targets, _) = resolve_upstream_run_selection(&graph, req.to_node)?;
+    let (downstream_selection_roots, _) = resolve_downstream_run_selection(&graph, &[])?;
+    let selectors =
+        if upstream_selection_targets.is_empty() && downstream_selection_roots.is_empty() {
+            parse_selectors(req.select, req.exclude)?
+        } else {
+            bijux_dag_runtime::SelectorSet::default()
+        };
     let cache_dir = req.cache_dir.clone();
     let remote_cache_dir = req.remote_cache_dir.clone();
     let preview_layout = resolve_plan_preview_layout(Some(req.out), req.run_id.as_deref())?;
@@ -138,6 +161,8 @@ pub(crate) fn handle_run_command(
         remote_cache_dir,
         absolute_path_policy,
         bijux_dag_runtime::PolicyConfig { deny_network, deny_env, deny_clock, clean_env },
+        upstream_selection_targets.clone(),
+        downstream_selection_roots.clone(),
     );
     let scheduling = if req.preflight_only || req.explain_scheduling {
         Some(
@@ -170,6 +195,8 @@ pub(crate) fn handle_run_command(
             "selectors": {
                 "include": req.select,
                 "exclude": req.exclude,
+                "upstream_targets": upstream_selection_targets,
+                "downstream_roots": downstream_selection_roots,
                 "dependency_closure": req.dependency_closure,
             },
             "scheduling": scheduling
@@ -344,6 +371,63 @@ mod tests {
                 hermetic: false,
                 select: &Vec::new(),
                 exclude: &Vec::new(),
+                to_node: &Vec::new(),
+                dependency_closure: false,
+                materialize_inputs: MaterializeModeArg::Copy,
+                cache: CacheModeArg::Off,
+                cache_dir: None,
+                remote_cache_dir: None,
+                absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
+                preflight_only: true,
+                explain_scheduling: false,
+            },
+        )
+        .expect("run preflight");
+
+        assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn run_preflight_accepts_upstream_target_mode() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let dag = dir.path().join("graph.json");
+        let out = dir.path().join("runs");
+        let to_node = vec!["publish".to_string()];
+        fs::write(
+            &dag,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "nodes":[
+                {"id":"extract","kind":"const","outputs":[{"name":"report","path":"extract/report.json"}],"params":{"value":"seed"}},
+                {"id":"publish","kind":"const","inputs":["report"],"outputs":[{"name":"out","path":"publish/out.json"}],"params":{"seed":{"node_output":{"node_id":"extract","output_name":"report"}}}}
+              ],
+              "edges":[{"from":{"node_id":"extract","port":"report"},"to":{"node_id":"publish","port":"report"}}]
+            }"#,
+        )
+        .expect("write graph");
+
+        let cli = DagCli { json: true, quiet: true, command: Commands::Version };
+        let code = handle_run_command(
+            &cli,
+            RunRouteRequest {
+                dags: &[dag],
+                out: &out,
+                input: &Vec::new(),
+                inputs_file: None,
+                run_id: Some("previewed".to_string()),
+                latest: None,
+                jobs: 1,
+                cpu_budget: None,
+                node_timeout_ms: None,
+                run_timeout_ms: None,
+                deny_network: false,
+                deny_env: false,
+                deny_clock: false,
+                clean_env: false,
+                hermetic: false,
+                select: &Vec::new(),
+                exclude: &Vec::new(),
+                to_node: &to_node,
                 dependency_closure: false,
                 materialize_inputs: MaterializeModeArg::Copy,
                 cache: CacheModeArg::Off,
@@ -380,6 +464,7 @@ mod tests {
             hermetic: false,
             select: &Vec::new(),
             exclude: &Vec::new(),
+            to_node: &Vec::new(),
             dependency_closure: true,
             materialize_inputs: MaterializeModeArg::Hardlink,
             cache: CacheModeArg::Readwrite,
@@ -408,6 +493,8 @@ mod tests {
                 deny_clock: true,
                 clean_env: true,
             },
+            vec!["report".to_string()],
+            Vec::new(),
         );
 
         assert_eq!(options.jobs, 3);
@@ -416,6 +503,7 @@ mod tests {
         assert_eq!(options.run_id.as_deref(), Some("selected-run"));
         assert_eq!(options.selectors.include.len(), selectors.include.len());
         assert_eq!(options.selectors.exclude.len(), selectors.exclude.len());
+        assert_eq!(options.upstream_selection_targets, vec!["report".to_string()]);
         assert!(matches!(options.materialize_inputs, bijux_dag_runtime::MaterializeMode::Hardlink));
         assert!(matches!(options.cache_mode, bijux_dag_runtime::CacheMode::ReadWrite));
         assert!(options.policy.deny_network);
