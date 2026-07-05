@@ -44,6 +44,39 @@ bijux-dag replay ./runs/run-20260406-01 --out ./runs/replay
 bijux-dag diff ./runs/run-20260405-77 ./runs/run-20260406-01 --mode semantic --explain
 ```
 
+## Preview Resolved Paths Before Execution
+
+When a graph uses `{run_dir}`, `{work_dir}`, `{inputs_dir}`, `{outputs_dir}`, or
+`{cache_dir}`, preview the concrete bindings before the first run instead of
+guessing where the runtime will materialize them:
+
+```bash
+bijux-dag plan explain ./pipelines/main.dag.json \
+  --json \
+  --out ./runs \
+  --run-id rehearsal-main \
+  --cache-dir ./.bijux/cache
+```
+
+The JSON payload reports:
+
+- `run_layout`: the previewed staging and final run directories
+- `path_previews`: the resolved path expressions per node
+- `absolute_path_policy`: the policy used for literal absolute container
+  workdirs
+
+If you want the same scheduling payload from the execution route without
+starting the run, use preflight:
+
+```bash
+bijux-dag run ./pipelines/main.dag.json \
+  --json \
+  --out ./runs \
+  --run-id rehearsal-main \
+  --preflight-only \
+  --explain-scheduling
+```
+
 ## Code Anchors
 
 - `crates/bijux-dag-app/src/routes/run_routes.rs`

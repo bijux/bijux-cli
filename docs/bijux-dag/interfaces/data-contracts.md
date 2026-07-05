@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-05
 ---
 
 # Data Contracts
@@ -142,6 +142,36 @@ Graph params can also bind to a downstream-consumable output from another node:
 The legacy `path` field is still accepted as an alias inside `node_output`
 references for compatibility, but durable docs and examples use `output_name`.
 
+Graph params can also bind to stable node-local execution directories through
+graph-level path variables:
+
+```json
+{ "path_var": "outputs_dir" }
+```
+
+```json
+{
+  "path_var": {
+    "name": "cache_dir",
+    "relative_path": "aligned/sample-a.bam"
+  }
+}
+```
+
+The path-variable contract is intentionally narrow:
+
+- supported variables are `run_dir`, `work_dir`, `inputs_dir`, `outputs_dir`,
+  and `cache_dir`
+- `relative_path` stays normalized and relative; traversal such as `../` is
+  rejected during validation
+- host-node params may also use whole-string brace expressions such as
+  `"{outputs_dir}/result.txt"` inside JSON scalar values
+- container `argv` and `workdir` accept the same whole-string brace
+  expressions, but container-visible bindings resolve to the container mount
+  paths rather than the host staging paths
+- literal absolute container `workdir` values are governed by the runtime
+  absolute-path policy instead of being guessed or rewritten
+
 ### Execution Policy Fields
 
 - `resources` currently supports `cpu` and `mem_mb`.
@@ -159,9 +189,28 @@ guessing:
 
 - unknown fields are rejected
 - malformed references are rejected
-- a reference must specify exactly one of `graph_input` or `node_output`
+- a reference must specify exactly one of `graph_input`, `node_output`, or `path_var`
 - cache disablement without a reason is rejected
 - references to undeclared graph inputs or missing node outputs are rejected
+- unknown path variables and traversal-bearing path suffixes are rejected
+
+## Plan Preview Contract
+
+`plan explain`, `show-effective-plan`, and JSON scheduling payloads emitted by
+`run --preflight-only` or `run --explain-scheduling` can include a resolved path
+preview when the caller supplies a run root.
+
+The preview payload exposes:
+
+- `run_layout`: the previewed `run_id`, staging path, and final path
+- `absolute_path_policy`: the policy used to judge literal absolute container
+  workdirs
+- `path_previews`: per-node bindings plus the resolved path expressions that
+  were found in params, container `argv`, or container `workdir`
+
+The planner preview is advisory rather than proof of successful execution, but
+it uses the same run-id selection and path-binding rules that the runtime uses
+when the run is actually launched.
 
 ## Run Manifest Input Contract
 
