@@ -358,6 +358,16 @@ fn materialize_value_against_kind(
             if let Some(properties) = properties {
                 let mut normalized = serde_json::Map::new();
                 for (key, property_spec) in properties {
+                    if entries.contains_key(key) || !property_spec.required || property_spec.default.is_some()
+                    {
+                        continue;
+                    }
+                    return Err(GraphInputViolation {
+                        path: format!("{path}/{key}"),
+                        message: "missing required object property".to_string(),
+                    });
+                }
+                for (key, property_spec) in properties {
                     let property_path = format!("{path}/{key}");
                     match entries.get(key) {
                         Some(candidate) => {
@@ -369,12 +379,6 @@ fn materialize_value_against_kind(
                                     &property_path,
                                 )?,
                             );
-                        }
-                        None if property_spec.required && property_spec.default.is_none() => {
-                            return Err(GraphInputViolation {
-                                path: property_path,
-                                message: "missing required object property".to_string(),
-                            });
                         }
                         None => {
                             if let Some(default) = &property_spec.default {
