@@ -29,6 +29,15 @@ hosted verification stay aligned.
 - `make test-release-rs` uses the `ci` nextest profile and is the required release-candidate Rust lane
 - `make test-all-rs` is the full Rust verification lane and includes governed ignored DAG tests
 
+## Frozen Commit Gates
+
+- `TEST_ALL_FROZEN_REF=<ref> make test-all-frozen` starts the full Rust verification lane from a detached checkout of `<ref>`
+- `TEST_ALL_FROZEN_REF=<ref> make lint-frozen` starts the Rust lint gate from a detached checkout of `<ref>`
+- `TEST_ALL_FROZEN_REF=<ref> make audit-frozen` starts the dependency audit gate from a detached checkout of `<ref>`
+- each frozen gate writes run state under `artifacts/<sha>/`, including the pinned source tree at `artifacts/<sha>/frozen-repo/`
+- background process metadata lives under `artifacts/<sha>/background/`, including `<gate>.console.log`, `<gate>.pid`, and `<gate>.exit.status`
+- frozen runs isolate cargo and bootstrap state per gate under `artifacts/<sha>/target/<gate>/`, `artifacts/<sha>/cargo/home/<gate>/`, `artifacts/<sha>/tmp/<gate>/`, and `artifacts/<sha>/python/`
+
 ## CI Rule
 
 When a workflow grows shell logic that make already owns, move that logic back

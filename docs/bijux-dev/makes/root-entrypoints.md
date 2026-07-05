@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-05
 ---
 
 # Root Entrypoints
@@ -18,6 +18,8 @@ workflow.
 - `make install` and `make bootstrap` for local setup
 - `make fmt`, `make lint`, `make security`, `make test`, and `make build` for
   aggregate quality lanes
+- `make test-all-frozen`, `make lint-frozen`, and `make audit-frozen` for
+  detached pinned-commit verification runs
 - `make docs-check` for handbook integrity
 - `make dag-help` for DAG governance entrypoints
 
