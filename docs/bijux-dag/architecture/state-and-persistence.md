@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-05
 ---
 
 # State and Persistence
@@ -30,6 +30,34 @@ flowchart TD
 - outputs/input index files
 - artifact integrity and provenance records
 - replay and diff proof-relevant metadata
+
+## Node Trace Lifecycle Evidence
+
+Each persisted `trace.json` now carries two lifecycle-specific fields in
+addition to the coarse terminal `status`.
+
+- `lifecycle_state` records the final runtime state that best matches what
+  actually happened to the node.
+- `lifecycle_transitions` records the validated state path the runtime observed
+  while scheduling or executing that node.
+
+This separation matters because terminal status alone is not always honest
+enough. A node can end with status `failed` while its lifecycle state is
+`timed_out` or `cancelled`, and a cached node should never claim that execution
+started just because it was scheduled for cache lookup.
+
+The persisted lifecycle states are:
+
+- `pending`
+- `eligible`
+- `queued`
+- `running`
+- `success`
+- `failed`
+- `skipped`
+- `cached`
+- `cancelled`
+- `timed_out`
 
 ## Code Anchors
 
