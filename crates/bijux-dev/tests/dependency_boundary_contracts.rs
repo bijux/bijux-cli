@@ -122,6 +122,9 @@ fn runtime_dependencies_match_runtime_allowed_list() {
     let allowed: BTreeSet<String> = [
         "bijux-dag-artifacts",
         "bijux-dag-core",
+        "chrono",
+        "chrono-tz",
+        "croner",
         "ctrlc",
         "hex",
         "serde",
