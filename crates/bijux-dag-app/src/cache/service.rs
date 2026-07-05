@@ -1,16 +1,18 @@
-use crate::ExitCode;
-use bijux_dag_artifacts::OutputsIndex;
+use crate::run_data::{env_cache_dir, load_snapshot};
+use crate::{read_file, ExitCode};
+use bijux_dag_artifacts::{CacheIdentity, OutputsIndex};
 use bijux_dag_runtime::{
     cache_entry_has_required_proof, cache_entry_manifest_version_supported,
-    cache_key_explanation, cache_key_input_from_meta, cache_metadata_version_supported,
-    CacheEntryManifest, CacheManifestOutput,
+    cache_explainability_proof_from_meta, cache_key_explanation, cache_key_input_from_meta,
+    cache_metadata_version_supported, CacheEntryManifest, CacheExplainabilityProof,
+    CacheManifestOutput,
 };
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use serde_json::{json, Value};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tar::{Archive, Builder};
 
 const MAX_CACHE_ARCHIVE_TOTAL_BYTES: u64 = 8 * 1024 * 1024;
@@ -18,6 +20,243 @@ const MAX_CACHE_ARCHIVE_ENTRIES: usize = 10_000;
 
 fn hash_bytes(bytes: &[u8]) -> String {
     bijux_dag_artifacts::hash::sha256_hex(bytes)
+}
+
+#[derive(Debug, Clone)]
+struct CacheEntryCandidate {
+    key: String,
+    meta: Value,
+    explainability: Option<CacheExplainabilityProof>,
+    valid: bool,
+}
+
+#[derive(Debug, Clone)]
+struct CacheMissReason {
+    code: &'static str,
+    message: String,
+}
+
+fn cache_entry_exists(cache_dir: &Path, key: &str) -> bool {
+    cache_dir.join(key).is_dir()
+}
+
+fn load_cache_entry_candidate(entry: &Path) -> Result<Option<CacheEntryCandidate>, ExitCode> {
+    let manifest_path = entry.join("manifest.json");
+    let meta_path = entry.join("meta.json");
+    if !manifest_path.exists() || !meta_path.exists() {
+        return Ok(None);
+    }
+    let manifest: CacheEntryManifest = serde_json::from_str(
+        &fs::read_to_string(&manifest_path).map_err(|_| ExitCode::from(3))?,
+    )
+    .map_err(|_| ExitCode::from(3))?;
+    let meta: Value =
+        serde_json::from_str(&fs::read_to_string(&meta_path).map_err(|_| ExitCode::from(3))?)
+            .map_err(|_| ExitCode::from(3))?;
+    if !cache_metadata_version_supported(&meta) || !cache_entry_manifest_version_supported(&manifest)
+    {
+        return Ok(None);
+    }
+    let key = meta
+        .get("cache_key")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let valid = if key.is_empty() {
+        false
+    } else {
+        verify_cache_entry_cli(entry, &key, "", "")?
+    };
+    Ok(Some(CacheEntryCandidate {
+        key,
+        explainability: cache_explainability_proof_from_meta(&meta),
+        meta,
+        valid,
+    }))
+}
+
+fn matching_factor_score(
+    identity: &CacheIdentity,
+    trace: &Value,
+    candidate: &CacheEntryCandidate,
+) -> usize {
+    let adapter_outputs_schema_version =
+        trace.get("adapter_outputs_schema_version").and_then(Value::as_str).unwrap_or_default();
+    let mut score = 0usize;
+    let checks = [
+        (
+            candidate.meta.get("node_definition_fingerprint").and_then(Value::as_str),
+            Some(identity.node_definition_fingerprint.as_str()),
+        ),
+        (
+            candidate.meta.get("declared_environment_fingerprint").and_then(Value::as_str),
+            Some(identity.declared_environment_fingerprint.as_str()),
+        ),
+        (
+            candidate.meta.get("input_lineage_fingerprint").and_then(Value::as_str),
+            Some(identity.input_lineage_fingerprint.as_str()),
+        ),
+        (candidate.meta.get("adapter_id").and_then(Value::as_str), trace.get("adapter_id").and_then(Value::as_str)),
+        (
+            candidate.meta.get("adapter_version").and_then(Value::as_str),
+            trace.get("adapter_version").and_then(Value::as_str),
+        ),
+        (
+            candidate
+                .meta
+                .get("produces_outputs_schema_version")
+                .or_else(|| candidate.meta.get("output_schema_version"))
+                .and_then(Value::as_str),
+            Some(adapter_outputs_schema_version),
+        ),
+        (
+            candidate.meta.get("policy_fingerprint").and_then(Value::as_str),
+            Some(identity.policy_fingerprint.as_str()),
+        ),
+        (
+            candidate
+                .meta
+                .get("execution_contract_fingerprint")
+                .and_then(Value::as_str),
+            Some(identity.execution_contract_fingerprint.as_str()),
+        ),
+        (
+            candidate.meta.get("backend_class").and_then(Value::as_str),
+            Some(identity.backend_class.as_str()),
+        ),
+    ];
+    for (stored, current) in checks {
+        if stored == current {
+            score += 1;
+        }
+    }
+    score
+}
+
+fn compare_cache_candidate(
+    identity: &CacheIdentity,
+    trace: &Value,
+    candidate: &CacheEntryCandidate,
+) -> Vec<CacheMissReason> {
+    let mut reasons = Vec::new();
+
+    if candidate
+        .explainability
+        .as_ref()
+        .map(|proof| proof.params_fingerprint.as_str())
+        != Some(identity.params_fingerprint.as_str())
+    {
+        reasons.push(CacheMissReason {
+            code: "changed_params",
+            message: "changed params".to_string(),
+        });
+    }
+    if candidate.meta.get("input_lineage_fingerprint").and_then(Value::as_str)
+        != Some(identity.input_lineage_fingerprint.as_str())
+    {
+        reasons.push(CacheMissReason {
+            code: "changed_input_hashes",
+            message: "changed input hashes".to_string(),
+        });
+    }
+    if let (Some(current), Some(stored)) = (
+        identity.command_fingerprint.as_deref(),
+        candidate.explainability.as_ref().and_then(|proof| proof.command_fingerprint.as_deref()),
+    ) {
+        if stored != current {
+            reasons.push(CacheMissReason {
+                code: "changed_command",
+                message: "changed command".to_string(),
+            });
+        }
+    }
+
+    let adapter_outputs_schema_version =
+        trace.get("adapter_outputs_schema_version").and_then(Value::as_str).unwrap_or_default();
+    let adapter_changed = candidate.meta.get("adapter_id").and_then(Value::as_str)
+        != trace.get("adapter_id").and_then(Value::as_str)
+        || candidate.meta.get("adapter_version").and_then(Value::as_str)
+            != trace.get("adapter_version").and_then(Value::as_str)
+        || candidate
+            .meta
+            .get("produces_outputs_schema_version")
+            .or_else(|| candidate.meta.get("output_schema_version"))
+            .and_then(Value::as_str)
+            != Some(adapter_outputs_schema_version);
+    if adapter_changed {
+        reasons.push(CacheMissReason {
+            code: "changed_adapter_identity",
+            message: "changed adapter identity".to_string(),
+        });
+    }
+
+    if candidate.meta.get("policy_fingerprint").and_then(Value::as_str)
+        != Some(identity.policy_fingerprint.as_str())
+    {
+        reasons.push(CacheMissReason {
+            code: "policy_bypass",
+            message: "policy-based cache bypass".to_string(),
+        });
+    }
+
+    if reasons.is_empty()
+        && candidate.meta.get("node_definition_fingerprint").and_then(Value::as_str)
+            != Some(identity.node_definition_fingerprint.as_str())
+    {
+        reasons.push(CacheMissReason {
+            code: "changed_node_definition",
+            message: "node definition changed".to_string(),
+        });
+    }
+    if candidate.meta.get("declared_environment_fingerprint").and_then(Value::as_str)
+        != Some(identity.declared_environment_fingerprint.as_str())
+    {
+        reasons.push(CacheMissReason {
+            code: "changed_environment",
+            message: "declared environment changed".to_string(),
+        });
+    }
+    if candidate
+        .meta
+        .get("execution_contract_fingerprint")
+        .and_then(Value::as_str)
+        != Some(identity.execution_contract_fingerprint.as_str())
+    {
+        reasons.push(CacheMissReason {
+            code: "changed_execution_contract",
+            message: "execution contract changed".to_string(),
+        });
+    }
+    if candidate.meta.get("backend_class").and_then(Value::as_str) != Some(identity.backend_class.as_str()) {
+        reasons.push(CacheMissReason {
+            code: "changed_backend",
+            message: "backend changed".to_string(),
+        });
+    }
+
+    reasons
+}
+
+fn cache_candidates_for_node(cache_dir: &Path, node_id: &str) -> Result<Vec<CacheEntryCandidate>, ExitCode> {
+    let mut candidates = Vec::new();
+    if !cache_dir.exists() {
+        return Ok(candidates);
+    }
+    for entry in fs::read_dir(cache_dir).map_err(|_| ExitCode::from(3))? {
+        let entry = entry.map_err(|_| ExitCode::from(3))?;
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let Some(candidate) = load_cache_entry_candidate(&path)? else {
+            continue;
+        };
+        if candidate.meta.get("node_id").and_then(Value::as_str) == Some(node_id) {
+            candidates.push(candidate);
+        }
+    }
+    candidates.sort_by(|left, right| left.key.cmp(&right.key));
+    Ok(candidates)
 }
 
 fn verify_cache_dir(dir: &Path) -> Result<Value, ExitCode> {
@@ -403,6 +642,188 @@ pub(crate) fn explain_cache_key(
     }))
 }
 
+pub(crate) fn explain_run_node_cache_miss(
+    run_dir: &Path,
+    node_id: &str,
+    cache_dir_override: Option<&Path>,
+) -> Result<Value, ExitCode> {
+    let manifest: Value =
+        serde_json::from_str(&read_file(&run_dir.join("manifest.json"))?).map_err(|_| ExitCode::from(3))?;
+    let snapshot = load_snapshot(run_dir)?;
+    let node = snapshot
+        .graph
+        .nodes
+        .iter()
+        .find(|node| node.id == node_id)
+        .ok_or(ExitCode::from(3))?;
+    let trace: Value = serde_json::from_str(
+        &read_file(&run_dir.join("nodes").join(node_id).join("trace.json"))?,
+    )
+    .map_err(|_| ExitCode::from(3))?;
+    let cache_identity: CacheIdentity = serde_json::from_value(
+        trace.get("cache_identity").cloned().ok_or(ExitCode::from(3))?,
+    )
+    .map_err(|_| ExitCode::from(3))?;
+    let cache_mode = manifest
+        .get("cache_mode")
+        .and_then(Value::as_str)
+        .unwrap_or("Off")
+        .to_string();
+    let cache_dir = cache_dir_override
+        .map(Path::to_path_buf)
+        .or_else(|| manifest.get("cache_dir").and_then(Value::as_str).map(PathBuf::from))
+        .or_else(env_cache_dir);
+
+    let (outcome, reasons, taxonomy, comparison_entry, exact_entry_report) = if !node.cache.enabled {
+        (
+            "non_cacheable".to_string(),
+            vec![node
+                .cache
+                .reason
+                .clone()
+                .unwrap_or_else(|| "policy-based cache bypass".to_string())],
+            vec!["policy_bypass".to_string()],
+            Value::Null,
+            Value::Null,
+        )
+    } else if cache_mode == "Off" {
+        (
+            "miss".to_string(),
+            vec!["policy-based cache bypass".to_string()],
+            vec!["policy_bypass".to_string()],
+            Value::Null,
+            Value::Null,
+        )
+    } else {
+        if let Some(cache_dir) = cache_dir.as_ref() {
+            let exact_entry_exists = cache_entry_exists(cache_dir, &cache_identity.cache_key);
+            let exact_entry_report = if exact_entry_exists {
+                explain_cache_key(
+                    cache_dir,
+                    &cache_identity.cache_key,
+                    trace.get("adapter_id").and_then(Value::as_str).unwrap_or_default(),
+                    trace.get("adapter_version").and_then(Value::as_str).unwrap_or_default(),
+                )?
+            } else {
+                Value::Null
+            };
+
+            if exact_entry_exists && exact_entry_report.get("eligible").and_then(Value::as_bool) == Some(false) {
+                let taxonomy = exact_entry_report
+                    .get("taxonomy")
+                    .and_then(Value::as_array)
+                    .map(|items| {
+                        items
+                            .iter()
+                            .filter_map(Value::as_str)
+                            .map(ToString::to_string)
+                            .collect::<Vec<_>>()
+                    })
+                    .unwrap_or_else(|| vec!["corrupt_entry".to_string()]);
+                let reasons = exact_entry_report
+                    .get("reasons")
+                    .and_then(Value::as_array)
+                    .map(|items| {
+                        items
+                            .iter()
+                            .filter_map(Value::as_str)
+                            .map(ToString::to_string)
+                            .collect::<Vec<_>>()
+                    })
+                    .filter(|items| !items.is_empty())
+                    .unwrap_or_else(|| vec!["missing/corrupt cache entry".to_string()]);
+                (
+                    "unsafe_reuse_refused".to_string(),
+                    reasons,
+                    taxonomy,
+                    json!({ "key": cache_identity.cache_key, "valid": false }),
+                    exact_entry_report,
+                )
+            } else if exact_entry_exists
+                && exact_entry_report.get("eligible").and_then(Value::as_bool) == Some(true)
+                && trace.get("status").and_then(Value::as_str) == Some("cached")
+            {
+                (
+                    "hit".to_string(),
+                    vec!["cache key matched all compatibility factors".to_string()],
+                    vec!["hit".to_string()],
+                    json!({ "key": cache_identity.cache_key, "valid": true }),
+                    exact_entry_report,
+                )
+            } else {
+                let mut candidates = cache_candidates_for_node(cache_dir, node_id)?;
+                candidates.retain(|candidate| candidate.key != cache_identity.cache_key);
+                if candidates.is_empty() {
+                    (
+                        "miss".to_string(),
+                        vec!["missing/corrupt cache entry".to_string()],
+                        vec!["missing_entry".to_string()],
+                        Value::Null,
+                        exact_entry_report,
+                    )
+                } else {
+                    candidates.sort_by(|left, right| {
+                        let left_score = matching_factor_score(&cache_identity, &trace, left);
+                        let right_score = matching_factor_score(&cache_identity, &trace, right);
+                        right_score
+                            .cmp(&left_score)
+                            .then_with(|| right.valid.cmp(&left.valid))
+                            .then_with(|| left.key.cmp(&right.key))
+                    });
+                    let candidate = candidates.remove(0);
+                    let reasons = compare_cache_candidate(&cache_identity, &trace, &candidate);
+                    let reason_messages =
+                        reasons.iter().map(|reason| reason.message.clone()).collect::<Vec<_>>();
+                    let taxonomy =
+                        reasons.iter().map(|reason| reason.code.to_string()).collect::<Vec<_>>();
+                    (
+                        if candidate.valid {
+                            "miss".to_string()
+                        } else {
+                            "unsafe_reuse_refused".to_string()
+                        },
+                        if reason_messages.is_empty() {
+                            vec!["missing/corrupt cache entry".to_string()]
+                        } else {
+                            reason_messages
+                        },
+                        if taxonomy.is_empty() {
+                            vec!["missing_entry".to_string()]
+                        } else {
+                            taxonomy
+                        },
+                        json!({ "key": candidate.key, "valid": candidate.valid }),
+                        exact_entry_report,
+                    )
+                }
+            }
+        } else {
+            (
+                "miss".to_string(),
+                vec!["missing cache entry directory".to_string()],
+                vec!["missing_entry".to_string()],
+                Value::Null,
+                Value::Null,
+            )
+        }
+    };
+
+    Ok(json!({
+        "mode": "node",
+        "run_dir": run_dir,
+        "node_id": node_id,
+        "cache_dir": cache_dir,
+        "cache_mode": cache_mode,
+        "cache_key": cache_identity.cache_key,
+        "outcome": outcome,
+        "reasons": reasons,
+        "taxonomy": taxonomy,
+        "comparison_entry": comparison_entry,
+        "cache_identity": cache_identity,
+        "exact_entry_report": exact_entry_report,
+    }))
+}
+
 pub(crate) fn cache_stats(cache_dir: &Path) -> Result<Value, ExitCode> {
     if !cache_dir.exists() {
         return Ok(json!({
@@ -592,10 +1013,12 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{explain_cache_key, pack_cache_entry, unpack_cache_entry};
+    use super::{explain_cache_key, explain_run_node_cache_miss, pack_cache_entry, unpack_cache_entry};
+    use bijux_dag_artifacts::CacheIdentity;
     use bijux_dag_runtime::{cache_key_explanation, CacheEntryManifest, CacheKeyInput};
     use serde_json::json;
     use std::fs;
+    use std::path::{Path, PathBuf};
     use std::process::ExitCode;
 
     fn manifest_json(cache_key: &str, node_id: &str, outputs: serde_json::Value) -> serde_json::Value {
@@ -605,6 +1028,198 @@ mod tests {
             "node_id": node_id,
             "outputs": outputs
         })
+    }
+
+    fn current_key_input() -> CacheKeyInput {
+        CacheKeyInput {
+            execution_fingerprint: "exec-current".to_string(),
+            node_definition_fingerprint: "node-current".to_string(),
+            declared_environment_fingerprint: "env-current".to_string(),
+            input_lineage_fingerprint: "inputs-current".to_string(),
+            adapter_id: "shell".to_string(),
+            adapter_version: "1.0.0".to_string(),
+            output_schema_version: "schema/v1".to_string(),
+            policy_fingerprint: "policy-current".to_string(),
+            execution_contract_fingerprint: "exec-contract-current".to_string(),
+            backend_class: "local".to_string(),
+        }
+    }
+
+    fn current_identity() -> CacheIdentity {
+        let key_input = current_key_input();
+        CacheIdentity {
+            cache_key: cache_key_explanation(&key_input).key,
+            node_definition_fingerprint: key_input.node_definition_fingerprint,
+            declared_environment_fingerprint: key_input.declared_environment_fingerprint,
+            input_lineage_fingerprint: key_input.input_lineage_fingerprint,
+            params_fingerprint: "params-current".to_string(),
+            command_fingerprint: Some("command-current".to_string()),
+            policy_fingerprint: key_input.policy_fingerprint,
+            execution_contract_fingerprint: key_input.execution_contract_fingerprint,
+            backend_class: key_input.backend_class,
+        }
+    }
+
+    fn write_run_fixture(
+        root: &Path,
+        cache_dir: &Path,
+        cache_mode: &str,
+        cache_enabled: bool,
+        cache_reason: Option<&str>,
+        identity: &CacheIdentity,
+    ) -> PathBuf {
+        let run_dir = root.join("run");
+        fs::create_dir_all(run_dir.join("nodes/node")).expect("mkdir nodes");
+        fs::write(
+            run_dir.join("manifest.json"),
+            serde_json::to_vec_pretty(&json!({
+                "manifest_version":"run-manifest/v0.1",
+                "run_id":"run-1",
+                "created_unix_ms":1,
+                "started_unix_ms":2,
+                "finished_unix_ms":3,
+                "graph_snapshot":"graph.snapshot.json",
+                "status":"success",
+                "spec":"bijux-dag/v0.1",
+                "graph_fingerprint":"graph-1",
+                "tool_version":"0.1.0",
+                "jobs":1,
+                "adapters":[],
+                "outputs":[],
+                "node_counts":{"success":1,"failed":0,"skipped":0,"cached":0},
+                "policy":{"deny_network":true,"deny_env":true,"deny_clock":true,"clean_env":true},
+                "cache_mode": cache_mode,
+                "cache_dir": cache_dir.display().to_string()
+            }))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
+        fs::write(
+            run_dir.join("graph.snapshot.json"),
+            serde_json::to_vec_pretty(&json!({
+                "graph":{
+                    "spec":"bijux-dag/v0.1",
+                    "meta":{"name":"cache-explain","owners":[],"tags":[]},
+                    "inputs":{},
+                    "nodes":[{
+                        "id":"node",
+                        "kind":"shell",
+                        "inputs":[],
+                        "outputs":[{"name":"value","path":"value.txt"}],
+                        "params":{"argv":["/bin/sh","-c","printf '%s' ok > ../outputs/value.txt"]},
+                        "cache":{"enabled":cache_enabled,"reason":cache_reason},
+                        "effects":["filesystem"]
+                    }],
+                    "edges":[]
+                },
+                "graph_fingerprint":"graph-1"
+            }))
+            .expect("snapshot"),
+        )
+        .expect("write snapshot");
+        fs::write(
+            run_dir.join("nodes/node/trace.json"),
+            serde_json::to_vec_pretty(&json!({
+                "node_id":"node",
+                "status":"success",
+                "started_unix_ms":1,
+                "finished_unix_ms":2,
+                "attempt":1,
+                "fingerprint":"exec-current",
+                "adapter_id":"shell",
+                "adapter_version":"1.0.0",
+                "adapter_outputs_schema_version":"schema/v1",
+                "cache_identity": identity
+            }))
+            .expect("trace"),
+        )
+        .expect("write trace");
+        run_dir
+    }
+
+    fn cache_meta(
+        key_input: &CacheKeyInput,
+        cache_key: &str,
+        params_fingerprint: &str,
+        command_fingerprint: Option<&str>,
+    ) -> serde_json::Value {
+        json!({
+            "cache_metadata_version": bijux_dag_runtime::CACHE_METADATA_VERSION,
+            "cache_key": cache_key,
+            "node_id": "node",
+            "node_fingerprint": key_input.execution_fingerprint,
+            "node_definition_fingerprint": key_input.node_definition_fingerprint,
+            "declared_environment_fingerprint": key_input.declared_environment_fingerprint,
+            "input_lineage_fingerprint": key_input.input_lineage_fingerprint,
+            "params_fingerprint": params_fingerprint,
+            "command_fingerprint": command_fingerprint,
+            "adapter_id": key_input.adapter_id,
+            "adapter_version": key_input.adapter_version,
+            "produces_outputs_schema_version": key_input.output_schema_version,
+            "policy_fingerprint": key_input.policy_fingerprint,
+            "execution_contract_fingerprint": key_input.execution_contract_fingerprint,
+            "backend_class": key_input.backend_class,
+            "created_unix_ms": 1,
+            "cache_source": "local",
+            "schema_version": "v0.1"
+        })
+    }
+
+    fn write_valid_cache_entry(
+        cache_dir: &Path,
+        key_input: &CacheKeyInput,
+        params_fingerprint: &str,
+        command_fingerprint: Option<&str>,
+    ) -> String {
+        let cache_key = cache_key_explanation(key_input).key;
+        let entry = cache_dir.join(&cache_key);
+        fs::create_dir_all(entry.join("outputs")).expect("mkdir outputs");
+        fs::write(
+            entry.join("meta.json"),
+            serde_json::to_vec_pretty(&cache_meta(
+                key_input,
+                &cache_key,
+                params_fingerprint,
+                command_fingerprint,
+            ))
+            .expect("meta"),
+        )
+        .expect("write meta");
+        fs::write(
+            entry.join("manifest.json"),
+            serde_json::to_vec_pretty(&manifest_json(
+                &cache_key,
+                "node",
+                json!([{
+                    "name":"value",
+                    "path":"value.txt",
+                    "kind":"file",
+                    "media_type":"text/plain",
+                    "required": true
+                }]),
+            ))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
+        fs::write(entry.join("outputs/value.txt"), b"ok").expect("payload");
+        fs::write(
+            entry.join("outputs/index.json"),
+            serde_json::to_vec_pretty(&json!({
+                "files":[{
+                    "name":"value",
+                    "path":"value.txt",
+                    "kind":"file",
+                    "media_type":"text/plain",
+                    "size_bytes":2,
+                    "sha256": bijux_dag_artifacts::hash::sha256_hex(b"ok"),
+                    "node_id":"node",
+                    "node_fingerprint": key_input.execution_fingerprint
+                }]
+            }))
+            .expect("index"),
+        )
+        .expect("write index");
+        cache_key
     }
 
     #[test]
@@ -676,6 +1291,99 @@ mod tests {
         assert_eq!(report["eligible"], false);
         assert!(report["taxonomy"].as_array().is_some_and(|items| !items.is_empty()));
         assert!(report["key_components"].is_object());
+    }
+
+    #[test]
+    fn explain_run_node_cache_miss_reports_changed_params() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let cache_dir = tmp.path().join("cache");
+        let identity = current_identity();
+        let run_dir = write_run_fixture(tmp.path(), &cache_dir, "ReadWrite", true, None, &identity);
+
+        let mut prior = current_key_input();
+        prior.node_definition_fingerprint = "node-before-params".to_string();
+        write_valid_cache_entry(&cache_dir, &prior, "params-before", identity.command_fingerprint.as_deref());
+
+        let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
+        assert_eq!(report["outcome"], "miss");
+        assert_eq!(report["taxonomy"][0], "changed_params");
+    }
+
+    #[test]
+    fn explain_run_node_cache_miss_reports_changed_input_hashes() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let cache_dir = tmp.path().join("cache");
+        let identity = current_identity();
+        let run_dir = write_run_fixture(tmp.path(), &cache_dir, "ReadWrite", true, None, &identity);
+
+        let mut prior = current_key_input();
+        prior.input_lineage_fingerprint = "inputs-before".to_string();
+        write_valid_cache_entry(&cache_dir, &prior, &identity.params_fingerprint, identity.command_fingerprint.as_deref());
+
+        let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
+        assert_eq!(report["outcome"], "miss");
+        assert_eq!(report["taxonomy"][0], "changed_input_hashes");
+    }
+
+    #[test]
+    fn explain_run_node_cache_miss_reports_changed_command() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let cache_dir = tmp.path().join("cache");
+        let identity = current_identity();
+        let run_dir = write_run_fixture(tmp.path(), &cache_dir, "ReadWrite", true, None, &identity);
+
+        let mut prior = current_key_input();
+        prior.node_definition_fingerprint = "node-before-command".to_string();
+        write_valid_cache_entry(&cache_dir, &prior, &identity.params_fingerprint, Some("command-before"));
+
+        let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
+        assert_eq!(report["outcome"], "miss");
+        assert_eq!(report["taxonomy"][0], "changed_command");
+    }
+
+    #[test]
+    fn explain_run_node_cache_miss_reports_changed_adapter_identity() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let cache_dir = tmp.path().join("cache");
+        let identity = current_identity();
+        let run_dir = write_run_fixture(tmp.path(), &cache_dir, "ReadWrite", true, None, &identity);
+
+        let mut prior = current_key_input();
+        prior.adapter_version = "0.9.0".to_string();
+        write_valid_cache_entry(&cache_dir, &prior, &identity.params_fingerprint, identity.command_fingerprint.as_deref());
+
+        let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
+        assert_eq!(report["outcome"], "miss");
+        assert_eq!(report["taxonomy"][0], "changed_adapter_identity");
+    }
+
+    #[test]
+    fn explain_run_node_cache_miss_reports_corrupt_entry() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let cache_dir = tmp.path().join("cache");
+        let identity = current_identity();
+        let run_dir = write_run_fixture(tmp.path(), &cache_dir, "ReadWrite", true, None, &identity);
+
+        let exact_key = write_valid_cache_entry(&cache_dir, &current_key_input(), &identity.params_fingerprint, identity.command_fingerprint.as_deref());
+        fs::remove_file(cache_dir.join(&exact_key).join("manifest.json")).expect("remove manifest");
+
+        let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
+        assert_eq!(report["outcome"], "unsafe_reuse_refused");
+        assert!(report["reasons"].as_array().is_some_and(|items| {
+            items.iter().filter_map(|item| item.as_str()).any(|reason| reason.contains("manifest"))
+        }));
+    }
+
+    #[test]
+    fn explain_run_node_cache_miss_reports_policy_bypass() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let cache_dir = tmp.path().join("cache");
+        let identity = current_identity();
+        let run_dir = write_run_fixture(tmp.path(), &cache_dir, "Off", true, None, &identity);
+
+        let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
+        assert_eq!(report["outcome"], "miss");
+        assert_eq!(report["taxonomy"][0], "policy_bypass");
     }
 
     #[test]
