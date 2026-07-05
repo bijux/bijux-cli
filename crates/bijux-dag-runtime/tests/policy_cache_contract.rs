@@ -193,6 +193,33 @@ fn shell_retry_failure_graph() -> String {
     .to_string()
 }
 
+fn graph_with_cached_downstream_dependency(seed_value: &str) -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "seed",
+                "kind": "const",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "seed.txt"}],
+                "params": {"value": seed_value}
+            },
+            {
+                "id": "consume",
+                "kind": "shell",
+                "inputs": ["in"],
+                "outputs": [{"name": "value", "path": "result.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "cat ../inputs/seed/in > ../outputs/result.txt"]},
+                "effects": ["filesystem"]
+            }
+        ],
+        "edges": [
+            {"from": {"node_id": "seed", "port": "value"}, "to": {"node_id": "consume", "port": "in"}}
+        ]
+    })
+    .to_string()
+}
+
 fn read_node_status(run_dir: &std::path::Path, node_id: &str) -> String {
     let data: Value = serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join(node_id).join("trace.json"))
@@ -420,6 +447,48 @@ fn runtime_cache_hit_uses_cached_nodes_when_mode_is_readwrite() {
     .expect("parse manifest");
     let cached = manifest["node_counts"]["cached"].as_u64().unwrap_or(0);
     assert!(cached >= 1);
+}
+
+#[test]
+fn runtime_cache_key_changes_when_materialized_input_hash_changes() {
+    let first_graph =
+        parse_graph_strict(&graph_with_cached_downstream_dependency("first")).expect("parse graph");
+    let second_graph = parse_graph_strict(&graph_with_cached_downstream_dependency("second"))
+        .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let cache = tempfile::tempdir().expect("temp cache");
+
+    let _ = runtime
+        .run(
+            &first_graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+    let initial_cache_entries = fs::read_dir(cache.path()).expect("cache entries").count();
+
+    let rerun = runtime
+        .run(
+            &second_graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("rerun");
+
+    assert_eq!(read_node_status(&rerun, "seed"), "success");
+    assert_eq!(read_node_status(&rerun, "consume"), "success");
+    let final_cache_entries = fs::read_dir(cache.path()).expect("cache entries").count();
+    assert_eq!(initial_cache_entries, 2);
+    assert_eq!(final_cache_entries, 4);
 }
 
 #[test]

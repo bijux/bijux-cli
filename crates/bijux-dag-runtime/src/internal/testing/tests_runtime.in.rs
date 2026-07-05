@@ -3,6 +3,7 @@ mod tests {
     use crate::clock::FixedClock;
     use crate::test_support::{docker_available, param_object, sample_graph};
     use crate::{Fs, StdFs};
+    use bijux_dag_artifacts::InputsIndex;
     use bijux_dag_core::{
         ContainerSpec, Edge, Effect, OutputKind, ParamValue, PortRef, Severity, SPEC_VERSION,
     };
@@ -77,6 +78,14 @@ mod tests {
                     .as_deref()
                     == Some(node_id)
             })
+    }
+
+    fn read_inputs_index(run_dir: &Path, node_id: &str) -> InputsIndex {
+        serde_json::from_str(
+            &fs::read_to_string(run_dir.join("nodes").join(node_id).join("inputs").join("index.json"))
+                .expect("read inputs index"),
+        )
+        .expect("parse inputs index")
     }
 
     #[derive(Clone)]
@@ -710,11 +719,9 @@ mod tests {
             fs::read_to_string(final_path.join("nodes").join("b").join("outputs").join("out_b"))
                 .unwrap();
         assert!(out.contains("hello"));
-        let inputs_index = fs::read_to_string(
-            final_path.join("nodes").join("b").join("inputs").join("index.json"),
-        )
-        .unwrap();
-        assert!(inputs_index.contains("a/in"));
+        let inputs_index = read_inputs_index(&final_path, "b");
+        assert_eq!(inputs_index.files.len(), 1);
+        assert_eq!(inputs_index.files[0].local_path, "a/in");
     }
 
     #[test]
@@ -805,12 +812,9 @@ inputs: vec!["in".to_string()],
             fs::read_to_string(final_path.join("nodes").join("b").join("outputs").join("out_b"))
                 .unwrap();
         assert!(out.contains("a"));
-        let inputs_index = fs::read_to_string(
-            final_path.join("nodes").join("b").join("inputs").join("index.json"),
-        )
-        .unwrap();
-        assert!(inputs_index.contains("a/in"));
-        assert!(!inputs_index.contains("a/b"));
+        let inputs_index = read_inputs_index(&final_path, "b");
+        assert_eq!(inputs_index.files.len(), 1);
+        assert_eq!(inputs_index.files[0].local_path, "a/in");
     }
 
     #[test]
@@ -1424,6 +1428,151 @@ exit 1
         assert_eq!(trace["outputs"][0]["kind"], "directory");
         assert_eq!(trace["outputs"][0]["media_type"], "application/vnd.bijux.directory");
         assert!(trace["outputs"][0]["sha256"].as_str().is_some());
+        let inputs_index = read_inputs_index(&final_path, "sink");
+        assert_eq!(inputs_index.files.len(), 1);
+        assert_eq!(inputs_index.files[0].local_path, "source/in");
+        assert_eq!(inputs_index.files[0].materialization_mode, "copy");
+    }
+
+    fn materialized_input_graph() -> Graph {
+        Graph {
+            spec: SPEC_VERSION.to_string(),
+            meta: None,
+            inputs: std::collections::BTreeMap::new(),
+            nondeterminism_allowed: false,
+            nodes: vec![
+                Node {
+                    id: "source".to_string(),
+                    kind: NodeKind::Shell,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+                    inputs: vec![],
+                    outputs: vec![FileOutput::new("out".to_string(), "value.txt".to_string())],
+                    params: param_object(vec![(
+                        "argv",
+                        Value::Array(vec![
+                            Value::from("/bin/sh"),
+                            Value::from("-c"),
+                            Value::from("printf payload > ../outputs/value.txt"),
+                        ]),
+                    )]),
+                    container: None,
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
+                    effects: vec![Effect::Filesystem],
+                    env_allowlist: vec![],
+                    group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
+                },
+                Node {
+                    id: "sink".to_string(),
+                    kind: NodeKind::Shell,
+                    semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+                    inputs: vec!["in".to_string()],
+                    outputs: vec![FileOutput::new("done".to_string(), "done.txt".to_string())],
+                    params: param_object(vec![(
+                        "argv",
+                        Value::Array(vec![
+                            Value::from("/bin/sh"),
+                            Value::from("-c"),
+                            Value::from("cat ../inputs/source/in > ../outputs/done.txt"),
+                        ]),
+                    )]),
+                    container: None,
+                    timeout_ms: None,
+                    resources: None,
+                    tags: vec![],
+                    retry: bijux_dag_core::RetryPolicy::default(),
+                    cache: Default::default(),
+                    effects: vec![Effect::Filesystem],
+                    env_allowlist: vec![],
+                    group: None,
+                    trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+                    branch: None,
+                },
+            ],
+            edges: vec![Edge {
+                id: None,
+                kind: bijux_dag_core::EdgeKind::Data,
+                decision: None,
+                from: PortRef { node_id: "source".to_string(), port: "out".to_string() },
+                to: PortRef { node_id: "sink".to_string(), port: "in".to_string() },
+            }],
+        }
+    }
+
+    #[test]
+    fn copy_mode_records_explicit_source_input_contract() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(&materialized_input_graph(), dir.path(), RuntimeConfig::default())
+            .unwrap();
+
+        let inputs_index = read_inputs_index(&final_path, "sink");
+        assert_eq!(inputs_index.files.len(), 1);
+        let input = &inputs_index.files[0];
+        assert_eq!(input.local_path, "source/in");
+        assert_eq!(input.source_node_id, "source");
+        assert_eq!(input.source_output_name, "out");
+        assert_eq!(input.materialization_mode, "copy");
+        assert_eq!(
+            input.source_sha256,
+            sha256_artifact_path(
+                &final_path.join("nodes").join("source").join("outputs").join("value.txt"),
+            )
+            .expect("source hash"),
+        );
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn hardlink_mode_reuses_source_inode_for_materialized_input() {
+        use std::os::unix::fs::MetadataExt;
+
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(
+                &materialized_input_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    materialize_inputs: MaterializeMode::Hardlink,
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
+
+        let source = final_path.join("nodes").join("source").join("outputs").join("value.txt");
+        let local = final_path.join("nodes").join("sink").join("inputs").join("source").join("in");
+        let inputs_index = read_inputs_index(&final_path, "sink");
+        assert_eq!(inputs_index.files[0].materialization_mode, "hardlink");
+        assert_eq!(fs::metadata(&source).unwrap().ino(), fs::metadata(&local).unwrap().ino());
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn symlink_mode_materializes_input_as_symlink() {
+        let dir = tempfile::tempdir().unwrap();
+        let runtime = Runtime::new();
+        let final_path = runtime
+            .run(
+                &materialized_input_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    materialize_inputs: MaterializeMode::Symlink,
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
+
+        let local = final_path.join("nodes").join("sink").join("inputs").join("source").join("in");
+        let inputs_index = read_inputs_index(&final_path, "sink");
+        assert_eq!(inputs_index.files[0].materialization_mode, "symlink");
+        assert!(fs::symlink_metadata(&local).unwrap().file_type().is_symlink());
     }
 
     #[test]
@@ -1609,12 +1758,9 @@ exit 1
             ..RuntimeConfig::default()
         };
         let final_path = runtime.run(&graph, dir.path(), options).unwrap();
-        let inputs_index = fs::read_to_string(
-            final_path.join("nodes").join("b").join("inputs").join("index.json"),
-        )
-        .unwrap();
-        assert!(inputs_index.contains("\"path\": \"a/in\""));
-        assert!(!inputs_index.contains("\"path\": \"a/undeclared\""));
+        let inputs_index = read_inputs_index(&final_path, "b");
+        assert_eq!(inputs_index.files.len(), 1);
+        assert_eq!(inputs_index.files[0].local_path, "a/in");
     }
 
     #[test]
