@@ -8,6 +8,7 @@ pub fn summarize_counts(counts: &NodeCounts) -> RunSummary {
         skipped: counts.skipped,
         cached: counts.cached,
         cancelled: counts.cancelled,
+        promoted_outputs: Vec::new(),
     }
 }
 

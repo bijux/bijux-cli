@@ -177,6 +177,7 @@ impl RunSummaryV2 {
             skipped: self.counts.skipped,
             cached: self.counts.cached,
             cancelled: self.counts.cancelled,
+            promoted_outputs: Vec::new(),
         }
     }
 }

@@ -142,6 +142,20 @@ pub struct RunSummary {
     pub cached: u32,
     #[serde(default, skip_serializing_if = "is_zero")]
     pub cancelled: u32,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub promoted_outputs: Vec<PromotedOutputSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PromotedOutputSummary {
+    pub canonical_artifact_id: String,
+    pub legacy_artifact_id: String,
+    pub node_id: String,
+    pub output_name: String,
+    pub artifact_sha256: String,
+    pub destination_path: String,
+    pub target_environment: String,
+    pub promoted_unix_ms: u128,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
