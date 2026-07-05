@@ -24,7 +24,7 @@ use bijux_dag_artifacts::{
     write_run_schema_index, FailureInfo, Manifest, NodeCounts, Provenance, ReplayProvenance,
     RunDir, RunDirLayout, RunDirSchemaIndex, RunMetadata,
 };
-use bijux_dag_core::{Effect, Graph, Node, NodeKind, SemanticNodeKind, SPEC_VERSION};
+use bijux_dag_core::{Effect, Graph, Node, NodeKind, SemanticNodeKind, SPEC_VERSION, TriggerRule};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
@@ -177,6 +177,52 @@ fn upstream_nodes(dep_map: &HashMap<String, BTreeSet<String>>, node_id: &str) ->
         .unwrap_or_default();
     upstreams.sort();
     upstreams
+}
+
+fn trigger_rule_accepts_upstream_states(
+    rule: &TriggerRule,
+    parent_statuses: &[NodeStatus],
+) -> bool {
+    let success = parent_statuses
+        .iter()
+        .filter(|status| matches!(status, NodeStatus::Success | NodeStatus::Cached))
+        .count();
+    let failed = parent_statuses.iter().filter(|status| matches!(status, NodeStatus::Failed)).count();
+    let total = parent_statuses.len();
+
+    match rule {
+        TriggerRule::AllSuccess => success == total,
+        TriggerRule::AnySuccess => success > 0,
+        TriggerRule::AllDone => true,
+        TriggerRule::NoneFailed => failed == 0,
+    }
+}
+
+fn dependency_trigger_failure(
+    node: &Node,
+    dependencies: &[String],
+    parent_statuses: &[NodeStatus],
+) -> FailureInfo {
+    let statuses = dependencies
+        .iter()
+        .zip(parent_statuses.iter())
+        .map(|(node_id, status)| {
+            (
+                node_id.clone(),
+                crate::status_string(status),
+            )
+        })
+        .collect::<Vec<_>>();
+    FailureInfo {
+        kind: "Dependency".to_string(),
+        code: "UPSTREAM_FAILED".to_string(),
+        message: format!("upstream dependencies did not satisfy trigger rule {:?}", node.trigger_rule),
+        details: Some(serde_json::json!({
+            "dependencies": dependencies,
+            "parent_statuses": statuses,
+            "trigger_rule": node.trigger_rule,
+        })),
+    }
 }
 
 fn invalidated_downstream_nodes(graph: &Graph, selected_nodes: &[String]) -> Vec<String> {
@@ -687,22 +733,21 @@ pub fn execute(
             }
 
             if let Some(deps) = dep_map.get(node_id) {
-                if deps.iter().any(|d| {
-                    matches!(
-                        status_map.get(d),
-                        Some(NodeStatus::Failed) | Some(NodeStatus::Skipped)
-                    )
-                }) {
+                let dependencies = deps.iter().cloned().collect::<Vec<_>>();
+                let parent_statuses = dependencies
+                    .iter()
+                    .filter_map(|dependency| status_map.get(dependency).cloned())
+                    .collect::<Vec<_>>();
+                if parent_statuses.len() == dependencies.len()
+                    && !trigger_rule_accepts_upstream_states(&node.trigger_rule, &parent_statuses)
+                {
+                    let trigger_rule = node.trigger_rule.clone();
+                    let failure =
+                        dependency_trigger_failure(&node, &dependencies, &parent_statuses);
                     preflight_failures.push((
                         node_id.clone(),
                         node,
-                        FailureInfo {
-                            kind: "Dependency".to_string(),
-                            code: "UPSTREAM_FAILED".to_string(),
-                            message: "upstream dependency did not complete successfully"
-                                .to_string(),
-                            details: Some(serde_json::json!({ "dependencies": deps })),
-                        },
+                        failure,
                         "DependencyFailed".to_string(),
                     ));
                     engine_record::append_indexed_event(
@@ -712,8 +757,9 @@ pub fn execute(
                             "event": "node_blocked",
                             "ts": ctx.clock.now_unix_ms(),
                             "node_id": node_id,
-                            "reason": "blocked_by_dependency",
-                            "blocking_nodes": deps,
+                            "reason": "blocked_by_trigger_rule",
+                            "blocking_nodes": dependencies,
+                            "trigger_rule": trigger_rule,
                         }),
                     )?;
                     continue;
