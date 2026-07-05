@@ -3228,6 +3228,7 @@ pub(super) fn run_cache_evolution_guard() -> Result<(), String> {
         "evidence/cache/metadata.json",
         "evidence/cache/corrupt/missing_meta.json",
         "evidence/cache/corrupt/hash_mismatch.json",
+        "evidence/cache/corrupt/missing_manifest.json",
         "evidence/cache/corrupt/unsupported_metadata_version.json",
         "evidence/cache/corrupt/truncated_meta.json",
         "evidence/cache/corrupt/missing_outputs_proof.json",
@@ -3257,6 +3258,7 @@ pub(super) fn run_cache_evolution_guard() -> Result<(), String> {
     for fixture in [
         "evidence/cache/corrupt/missing_meta.json",
         "evidence/cache/corrupt/hash_mismatch.json",
+        "evidence/cache/corrupt/missing_manifest.json",
         "evidence/cache/corrupt/unsupported_metadata_version.json",
         "evidence/cache/corrupt/truncated_meta.json",
         "evidence/cache/corrupt/missing_outputs_proof.json",

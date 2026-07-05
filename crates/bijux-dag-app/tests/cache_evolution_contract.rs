@@ -138,6 +138,7 @@ fn cache_corruption_fixtures_and_warm_cold_expectations_exist() {
     for rel in [
         "corrupt/missing_meta.json",
         "corrupt/hash_mismatch.json",
+        "corrupt/missing_manifest.json",
         "corrupt/unsupported_metadata_version.json",
         "corrupt/truncated_meta.json",
         "corrupt/missing_outputs_proof.json",

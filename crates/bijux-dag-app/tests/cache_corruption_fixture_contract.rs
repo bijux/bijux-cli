@@ -75,6 +75,23 @@ fn default_meta(label: &str) -> (String, Value) {
 fn write_cache_entry(base: &Path, key: &str, meta: &Value, payload: &[u8]) {
     let entry = base.join(key);
     fs::create_dir_all(entry.join("outputs")).expect("create outputs dir");
+    fs::write(
+        entry.join("manifest.json"),
+        serde_json::to_vec_pretty(&json!({
+            "manifest_version":"cache-entry/v0.1",
+            "cache_key": key,
+            "node_id":"node-a",
+            "outputs":[{
+                "name":"payload",
+                "path":"payload.bin",
+                "kind":"file",
+                "media_type":"application/octet-stream",
+                "required": true
+            }]
+        }))
+        .expect("serialize manifest"),
+    )
+    .expect("write manifest");
     fs::write(entry.join("outputs").join("payload.bin"), payload).expect("write payload");
     let index = OutputsIndex {
         files: vec![OutputFile {
@@ -109,6 +126,9 @@ fn apply_corruption(cache_dir: &Path, fixture_name: &str) -> String {
         "hash_mismatch" => {
             fs::write(entry.join("outputs").join("payload.bin"), b"tampered\n")
                 .expect("tamper payload");
+        }
+        "missing_manifest" => {
+            fs::remove_file(entry.join("manifest.json")).expect("remove manifest");
         }
         "missing_meta" => {
             fs::remove_file(entry.join("meta.json")).expect("remove meta");
@@ -146,6 +166,7 @@ fn cache_corruption_fixtures_are_classified_by_verify_and_explain() {
     let fixture_root = root.join("evidence/dag/cache/corrupt");
     for fixture in [
         "hash_mismatch",
+        "missing_manifest",
         "missing_meta",
         "missing_outputs_proof",
         "truncated_meta",
@@ -162,15 +183,34 @@ fn cache_corruption_fixtures_are_classified_by_verify_and_explain() {
             &["--json", "cache", "verify", "--cache-dir", cache_dir.to_str().unwrap()],
             &root,
         );
+        if fixture == "truncated_meta" {
+            assert_ne!(verify_code, 0);
+            assert!(
+                verify_stdout.trim().is_empty(),
+                "expected fatal malformed-meta verify path to emit no json payload, got: {verify_stdout}"
+            );
+            assert!(
+                verify_stderr.trim().is_empty(),
+                "unexpected stderr for truncated meta verify fixture: {verify_stderr}"
+            );
+        } else {
         let verify_payload = parse_json(&verify_stdout, verify_code, &verify_stderr);
         assert!(verify_code == 0 || verify_code == 3);
         let corrupt_total = verify_payload["data"]["corrupt_total"].as_u64().unwrap_or(0);
-        let expected_corrupt = matches!(fixture, "hash_mismatch" | "missing_meta");
+        let expected_corrupt = matches!(
+            fixture,
+            "hash_mismatch"
+                | "missing_manifest"
+                | "missing_meta"
+                | "missing_outputs_proof"
+                | "unsupported_metadata_version"
+        );
         assert_eq!(
             corrupt_total > 0,
             expected_corrupt,
             "unexpected verify classification for fixture {fixture}"
         );
+        }
 
         let (explain_code, explain_stdout, explain_stderr) = run_command(
             &[
@@ -202,6 +242,7 @@ fn cache_corruption_fixtures_are_classified_by_verify_and_explain() {
         assert!(!taxonomy.is_empty(), "expected explain taxonomy for corruption fixture {fixture}");
         let expected_labels: &[&str] = match fixture {
             "hash_mismatch" => &["hash_mismatch", "artifact_corrupt"],
+            "missing_manifest" => &["artifact_missing"],
             "missing_meta" => &["artifact_missing"],
             "missing_outputs_proof" => &["policy_mismatch"],
             "unsupported_metadata_version" => &["schema_mismatch"],
