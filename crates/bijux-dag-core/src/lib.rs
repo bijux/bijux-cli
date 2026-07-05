@@ -36,14 +36,14 @@ pub mod canonical;
 #[path = "build/compile.rs"]
 pub mod compile;
 #[doc(hidden)]
+#[path = "graph/composition.rs"]
+pub mod composition;
+#[doc(hidden)]
 #[path = "build/contract.rs"]
 pub mod contract;
 #[doc(hidden)]
 #[path = "graph/edge.rs"]
 pub mod edge;
-#[doc(hidden)]
-#[path = "graph/expansion.rs"]
-pub mod expansion;
 #[doc(hidden)]
 #[path = "analysis/effects.rs"]
 pub mod effects;
@@ -53,6 +53,9 @@ pub mod error;
 #[cfg(feature = "experimental-public-api")]
 #[path = "contracts/execution_iteration12.rs"]
 mod execution_iteration12;
+#[doc(hidden)]
+#[path = "graph/expansion.rs"]
+pub mod expansion;
 #[doc(hidden)]
 #[path = "analysis/fingerprint.rs"]
 pub mod fingerprint;
@@ -117,6 +120,7 @@ pub use compile::{
     compile_graph, compile_graph_contract, compile_graph_strict, compile_graph_with_defaults,
     negotiate_spec_version, CompatibilityDecision, DagCompilePlanHints, DagCompileResult,
 };
+pub use composition::{compose_graphs, GraphCompositionError};
 pub use contract::{DagSnapshot, GraphContract, GraphExecutionPolicy};
 pub use edge::{EdgeDependencyKind, TypedEdge};
 pub use error::GraphError;
@@ -161,11 +165,12 @@ pub const CANONICALIZATION_CONTRACT_VERSION: &str = "bijux-dag-canonical/v1";
 pub mod stable {
     pub use crate::{
         canonical_json, canonicalize_graph, compile_graph, compile_graph_contract,
-        compile_graph_strict, compile_graph_with_defaults, lower_graph_to_execution_plan,
-        negotiate_spec_version, parse_graph_strict, planner_identity_for_graph, validate_graph,
-        CompatibilityDecision, DagCompilePlanHints, DagCompileResult, DagSnapshot, ExecutionPlan,
-        Graph, GraphContract, GraphError, GraphExecutionPolicy, PlanOptions, PlannedEdge,
-        PlannedNode, PlannerDiagnostic, PlannerError, PlannerSeverity, SPEC_VERSION,
+        compile_graph_strict, compile_graph_with_defaults, compose_graphs,
+        lower_graph_to_execution_plan, negotiate_spec_version, parse_graph_strict,
+        planner_identity_for_graph, validate_graph, CompatibilityDecision, DagCompilePlanHints,
+        DagCompileResult, DagSnapshot, ExecutionPlan, Graph, GraphCompositionError, GraphContract,
+        GraphError, GraphExecutionPolicy, PlanOptions, PlannedEdge, PlannedNode, PlannerDiagnostic,
+        PlannerError, PlannerSeverity, SPEC_VERSION,
     };
 }
 
@@ -173,10 +178,11 @@ pub mod stable {
 pub mod prelude {
     pub use crate::stable::{
         canonical_json, canonicalize_graph, compile_graph, compile_graph_contract,
-        compile_graph_strict, compile_graph_with_defaults, negotiate_spec_version, validate_graph,
-        CompatibilityDecision, DagCompilePlanHints, DagCompileResult, DagSnapshot, ExecutionPlan,
-        Graph, GraphContract, GraphError, GraphExecutionPolicy, PlanOptions, PlannedEdge,
-        PlannedNode, PlannerDiagnostic, PlannerError, PlannerSeverity, SPEC_VERSION,
+        compile_graph_strict, compile_graph_with_defaults, compose_graphs, negotiate_spec_version,
+        validate_graph, CompatibilityDecision, DagCompilePlanHints, DagCompileResult, DagSnapshot,
+        ExecutionPlan, Graph, GraphCompositionError, GraphContract, GraphError,
+        GraphExecutionPolicy, PlanOptions, PlannedEdge, PlannedNode, PlannerDiagnostic,
+        PlannerError, PlannerSeverity, SPEC_VERSION,
     };
     pub use crate::{
         lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph,
