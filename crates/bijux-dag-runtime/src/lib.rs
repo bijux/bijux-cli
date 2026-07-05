@@ -2309,41 +2309,42 @@ fn try_cache_read(
         let key = cache_key_explanation(&key_input).key;
         let store = cache_store.as_ref().unwrap();
         let entry = store.entry(&key);
+        let mut local_corrupt_entry: Option<PathBuf> = None;
+        let mut local_corrupt_proof: Option<CacheProof> = None;
         if store.fs().metadata(&entry).is_ok() {
             if !verify_cache_entry(store.fs(), &entry, node, &key_input)? {
-                return Ok(CacheRead {
+                local_corrupt_entry = Some(entry.clone());
+                local_corrupt_proof = Some(CacheProof {
                     hit: false,
+                    key: key.clone(),
+                    source: "local".to_string(),
+                    verified: false,
+                    reason: "corrupt".to_string(),
+                    corrupt_detected: true,
+                });
+            } else {
+                let source =
+                    cache_source_from_meta(store.fs(), &entry).unwrap_or_else(|| "local".to_string());
+                prepare_node_execution_dirs(ctx, &node.id)?;
+                let node_dir = ctx.run_dir.node_dir(&node.id);
+                copy_dir_all(
+                    store.fs(),
+                    entry.join("outputs"),
+                    ctx.run_dir.node_outputs_dir(&node.id),
+                )?;
+                copy_dir_all(store.fs(), entry.join("logs"), node_dir.clone())?;
+                return Ok(CacheRead {
+                    hit: true,
                     proof: Some(CacheProof {
-                        hit: false,
+                        hit: true,
                         key,
-                        source: "local".to_string(),
-                        verified: false,
-                        reason: "corrupt".to_string(),
-                        corrupt_detected: true,
+                        source,
+                        verified: true,
+                        reason: "hit".to_string(),
+                        corrupt_detected: false,
                     }),
                 });
             }
-            let source =
-                cache_source_from_meta(store.fs(), &entry).unwrap_or_else(|| "local".to_string());
-            prepare_node_execution_dirs(ctx, &node.id)?;
-            let node_dir = ctx.run_dir.node_dir(&node.id);
-            copy_dir_all(
-                store.fs(),
-                entry.join("outputs"),
-                ctx.run_dir.node_outputs_dir(&node.id),
-            )?;
-            copy_dir_all(store.fs(), entry.join("logs"), node_dir.clone())?;
-            return Ok(CacheRead {
-                hit: true,
-                proof: Some(CacheProof {
-                    hit: true,
-                    key,
-                    source,
-                    verified: true,
-                    reason: "hit".to_string(),
-                    corrupt_detected: false,
-                }),
-            });
         }
         if let Some(remote_dir) = options.remote_cache_dir.as_ref() {
             let remote_entry = remote_dir.join(&key);
@@ -2369,9 +2370,20 @@ fn try_cache_read(
                     ctx.run_dir.node_outputs_dir(&node.id),
                 )?;
                 copy_dir_all(store.fs(), remote_entry.join("logs"), node_dir.clone())?;
+                if let Some(corrupt_entry) = local_corrupt_entry.as_ref() {
+                    let _ = store.fs().remove_dir_all(corrupt_entry);
+                }
                 if let Some(local_dir) = options.cache_dir.as_ref() {
                     let local_entry = local_dir.join(&key);
-                    let _ = copy_dir_all(store.fs(), &remote_entry, &local_entry);
+                    if let Ok(outcome) =
+                        copy_cache_entry_atomically(store.fs(), &remote_entry, &local_entry, "hydrate")
+                    {
+                        if matches!(outcome, CachePublishOutcome::Published)
+                            && !verify_cache_entry(store.fs(), &local_entry, node, &key_input)?
+                        {
+                            let _ = store.fs().remove_dir_all(&local_entry);
+                        }
+                    }
                 }
                 return Ok(CacheRead {
                     hit: true,
@@ -2385,6 +2397,9 @@ fn try_cache_read(
                     }),
                 });
             }
+        }
+        if let Some(proof) = local_corrupt_proof {
+            return Ok(CacheRead { hit: false, proof: Some(proof) });
         }
     }
     Ok(CacheRead { hit: false, proof: None })
