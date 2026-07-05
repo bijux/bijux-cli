@@ -223,6 +223,26 @@ fn path_variable_reference_validation_rejects_traversal_suffixes() {
 }
 
 #[test]
+fn container_workdir_validation_rejects_relative_escapes() {
+    let mut graph = base_graph();
+    graph.nodes[0].kind = NodeKind::Container;
+    graph.nodes[0].container = Some(bijux_dag_core::ContainerSpec {
+        image: "alpine".to_string(),
+        argv: vec!["echo".to_string(), "ok".to_string()],
+        env_allowlist: vec![],
+        workdir: Some("../escape".to_string()),
+        engine: "docker".to_string(),
+    });
+    graph.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+
+    let diags = graph.validate_with_warnings();
+
+    assert!(diags.iter().any(|d| {
+        d.code == "E1025" && d.path == "/nodes/source/container/workdir"
+    }));
+}
+
+#[test]
 fn env_and_effect_requirements_regression() {
     let mut graph = base_graph();
     graph.nodes[0].env_allowlist = vec!["HOME".to_string()];

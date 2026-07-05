@@ -90,8 +90,49 @@ fn valid_env_allowlist_pattern(pattern: &str) -> bool {
     core.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
 }
 
+fn is_normalized_relative_path(path: &str) -> bool {
+    !path.is_empty()
+        && !path.starts_with('/')
+        && !path.contains('\\')
+        && path.split('/').all(|segment| !segment.is_empty() && segment != "." && segment != "..")
+}
+
 fn trigger_rule_supports_conditional_incoming(rule: &TriggerRule) -> bool {
     matches!(rule, TriggerRule::AnySuccess | TriggerRule::AllDone)
+}
+
+fn validate_path_variable_expression(value: &str) -> Result<(), String> {
+    let Some(close_index) = value.find('}') else {
+        return Err(format!("invalid path variable expression: {value}"));
+    };
+    let variable = &value[1..close_index];
+    if variable.is_empty() || !is_known_path_variable(variable) {
+        return Err(format!("unknown path variable expression: {value}"));
+    }
+    let rest = &value[(close_index + 1)..];
+    if rest.is_empty() {
+        return Ok(());
+    }
+    let Some(relative_path) = rest.strip_prefix('/') else {
+        return Err(format!("invalid path variable expression: {value}"));
+    };
+    if !is_normalized_relative_path(relative_path) {
+        return Err(format!("invalid path variable suffix: {relative_path}"));
+    }
+    Ok(())
+}
+
+fn validate_container_workdir_value(workdir: &str) -> Result<(), String> {
+    if workdir.starts_with('{') {
+        return validate_path_variable_expression(workdir);
+    }
+    if workdir.starts_with('/') {
+        return Ok(());
+    }
+    if is_normalized_relative_path(workdir) {
+        return Ok(());
+    }
+    Err(format!("invalid relative workdir: {workdir}"))
 }
 
 impl Graph {
@@ -302,6 +343,20 @@ impl Graph {
                             format!("/nodes/{}/container/argv", node.id),
                             Some("Provide argv for container nodes".to_string()),
                         );
+                    }
+                    if let Some(workdir) = spec.workdir.as_deref() {
+                        if let Err(message) = validate_container_workdir_value(workdir) {
+                            emit_rule(
+                                &mut diagnostics,
+                                "E1025",
+                                message,
+                                format!("/nodes/{}/container/workdir", node.id),
+                                Some(
+                                    "Use an absolute path or a normalized relative/path-variable workdir"
+                                        .to_string(),
+                                ),
+                            );
+                        }
                     }
                 }
             }
@@ -1068,11 +1123,7 @@ fn validate_param_value(
 }
 
 fn is_valid_relative_path_suffix(path: &str) -> bool {
-    !path.is_empty()
-        && is_valid_output_path(path)
-        && path
-            .split('/')
-            .all(|segment| !segment.is_empty() && segment != "." && segment != "..")
+    is_normalized_relative_path(path) && is_valid_output_path(path)
 }
 
 fn classify_rule_domain(code: &str) -> Option<ValidationDomain> {
