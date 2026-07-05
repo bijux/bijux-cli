@@ -3,7 +3,7 @@ use crate::routes::policy_surface::policy_surface_payload;
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::{
     AdapterInfo, Manifest, NodeCounts, NodeTrace, OutputSummary, PolicyInfo, RunMetadata,
-    RunOutputsIndex,
+    RunOutputsIndex, RunSummary,
 };
 use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use bijux_dag_runtime::{
@@ -523,6 +523,7 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
     let mut failed = 0u32;
     let mut skipped = 0u32;
     let mut cached = 0u32;
+    let mut cancelled = 0u32;
     let mut created_unix_ms = u128::MAX;
     let mut finished_unix_ms = 0u128;
     let mut status = "success".to_string();
@@ -544,7 +545,10 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
             }
             "skipped" => skipped += 1,
             "cached" => cached += 1,
-            "cancelled" => status = "cancelled".to_string(),
+            "cancelled" => {
+                cancelled += 1;
+                status = "cancelled".to_string();
+            }
             _ => {}
         }
         let key = format!("{}:{}", trace.adapter_id, trace.adapter_version);
@@ -576,6 +580,23 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
+    let run_cancellation_cause = if status == "cancelled" {
+        let audit_path = run_dir.join("run.audit.json");
+        if audit_path.exists() {
+            read_json_value(&audit_path).ok().and_then(|value| {
+                value.as_array().and_then(|events| {
+                    events.iter().find_map(|event| {
+                        (event.get("action").and_then(Value::as_str) == Some("cancel"))
+                            .then_some("operator_interrupt".to_string())
+                    })
+                })
+            })
+        } else {
+            None
+        }
+    } else {
+        None
+    };
     Ok(Manifest {
         manifest_version: "run-manifest/v0.1".to_string(),
         run_id: run_snapshot.run_id.to_string(),
@@ -598,7 +619,7 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
         jobs: traces.len().max(1),
         adapters,
         outputs,
-        node_counts: NodeCounts { success, failed, skipped, cached },
+        node_counts: NodeCounts { success, failed, skipped, cached, cancelled },
         policy: PolicyInfo {
             deny_network: false,
             deny_env: false,
@@ -609,6 +630,7 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
         cache_dir: None,
         run_timeout_ms: None,
         run_timeout_behavior: None,
+        run_cancellation_cause,
         run_metadata: Some(RunMetadata {
             submission_source: run_snapshot.submission_source,
             trigger_source: run_snapshot.trigger_source,
@@ -618,7 +640,14 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
             source_run_id: run_snapshot.replay_source_run_id.map(|id| id.to_string()),
             graph_inputs: std::collections::BTreeMap::new(),
         }),
-        run_summary: None,
+        run_summary: Some(RunSummary {
+            total_nodes: success + failed + skipped + cached + cancelled,
+            success,
+            failed,
+            skipped,
+            cached,
+            cancelled,
+        }),
     })
 }
 
@@ -1125,6 +1154,7 @@ mod tests {
     use super::handle_runtime_command;
     use crate::commands::{Commands, DagCli, RuntimeCommands};
     use crate::ExitCode;
+    use serde_json::Value;
     use std::fs;
     use std::path::PathBuf;
 
@@ -1753,6 +1783,104 @@ mod tests {
         )
         .expect("repair");
         assert_eq!(repair_exit, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_repair_rebuilds_cancellation_cause_and_counts_from_traces() {
+        let dir = tempfile::tempdir().expect("tmp");
+        std::fs::create_dir_all(dir.path().join("nodes").join("prepare")).expect("prepare dir");
+        std::fs::create_dir_all(dir.path().join("nodes").join("execute")).expect("execute dir");
+        std::fs::create_dir_all(dir.path().join("outputs")).expect("outputs");
+        std::fs::write(
+            dir.path().join("graph.snapshot.json"),
+            r#"{"graph":{"nodes":[],"edges":[]},"graph_fingerprint":"fp"}"#,
+        )
+        .expect("graph snapshot");
+        std::fs::write(
+            dir.path().join("run.snapshot.json"),
+            r#"{
+              "run_id":"run-cancelled",
+              "graph_snapshot_path":"graph.snapshot.json",
+              "planner_config":"{}",
+              "scheduler_config":"{}",
+              "policy_config":"{}",
+              "provenance":"{}",
+              "submission_source":"manual",
+              "trigger_source":"cli",
+              "operator":"ops",
+              "labels":["cancelled"],
+              "parent_run_id":null,
+              "requested_selectors":[],
+              "selected_nodes":["prepare","execute"],
+              "dependency_closure_enabled":false,
+              "replay_source_run_id":null,
+              "partial_rerun_contract":null
+            }"#,
+        )
+        .expect("run snapshot");
+        std::fs::write(
+            dir.path().join("nodes").join("prepare").join("trace.json"),
+            r#"{
+              "node_id":"prepare",
+              "status":"success",
+              "started_unix_ms":1,
+              "finished_unix_ms":2,
+              "attempt":1,
+              "fingerprint":"fp-prepare",
+              "adapter_id":"const",
+              "adapter_version":"v1",
+              "adapter_outputs_schema_version":"schema/v1"
+            }"#,
+        )
+        .expect("prepare trace");
+        std::fs::write(
+            dir.path().join("nodes").join("execute").join("trace.json"),
+            r#"{
+              "node_id":"execute",
+              "status":"cancelled",
+              "started_unix_ms":3,
+              "finished_unix_ms":4,
+              "attempt":1,
+              "fingerprint":"fp-execute",
+              "adapter_id":"shell",
+              "adapter_version":"v1",
+              "adapter_outputs_schema_version":"schema/v1",
+              "failure":{"kind":"Execution","code":"EXEC_CANCELLED","message":"execution cancelled by operator"},
+              "transition_cause":"CancelRequested",
+              "lifecycle_state":"cancelled"
+            }"#,
+        )
+        .expect("execute trace");
+        std::fs::write(
+            dir.path().join("run.audit.json"),
+            r#"[{"action":"cancel","ts":4,"run_id":"run-cancelled"}]"#,
+        )
+        .expect("audit");
+        std::fs::write(dir.path().join("run.log.jsonl"), r#"{"event":"run_cancelled","ts":4}"#)
+            .expect("run log");
+        std::fs::write(dir.path().join("outputs").join("index.json"), r#"{"files":[]}"#)
+            .expect("outputs");
+
+        let repair_cli = quiet_json_cli(RuntimeCommands::Repair {
+            run_dir: dir.path().to_path_buf(),
+            apply: true,
+        });
+        let repair = handle_runtime_command(
+            &repair_cli,
+            &RuntimeCommands::Repair { run_dir: dir.path().to_path_buf(), apply: true },
+        )
+        .expect("repair");
+        assert_eq!(repair, ExitCode::SUCCESS);
+
+        let manifest: Value = serde_json::from_str(
+            &std::fs::read_to_string(dir.path().join("manifest.json")).expect("manifest"),
+        )
+        .expect("parse manifest");
+        assert_eq!(manifest["status"], "cancelled");
+        assert_eq!(manifest["run_cancellation_cause"], "operator_interrupt");
+        assert_eq!(manifest["node_counts"]["success"], 1);
+        assert_eq!(manifest["node_counts"]["cancelled"], 1);
+        assert_eq!(manifest["run_summary"]["cancelled"], 1);
     }
 
     #[test]
