@@ -274,19 +274,21 @@ use bijux_dag_artifacts::schema::{
 };
 use bijux_dag_artifacts::{
     artifact_size_bytes, sha256_artifact_path, write_inputs_index, write_outputs_index,
-    AdapterInfo, ArtifactError, CacheProof, ContainerTrace, DeclaredOutputArtifact, FailureClass,
-    FailureInfo, InputFile, InputsIndex, NodeCounts, NodeLifecycleTransition, NodeTrace,
-    OutputSummary, OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir,
-    RunOutputFile, RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
+    AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace,
+    DeclaredOutputArtifact, FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts,
+    NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
+    Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex, TraceOutputArtifact,
+    TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
     Severity,
 };
 pub use cache::{
-    cache_entry_has_required_proof, cache_entry_manifest_version_supported, cache_key_explanation,
-    cache_key_input_from_meta, cache_metadata_version_supported, CacheEntryManifest,
-    CacheKeyInput, CacheManifestOutput, CACHE_ENTRY_MANIFEST_VERSION, CACHE_METADATA_VERSION,
+    cache_entry_has_required_proof, cache_entry_manifest_version_supported,
+    cache_explainability_proof_from_meta, cache_key_explanation, cache_key_input_from_meta,
+    cache_metadata_version_supported, CacheEntryManifest, CacheExplainabilityProof, CacheKeyInput,
+    CacheManifestOutput, CACHE_ENTRY_MANIFEST_VERSION, CACHE_METADATA_VERSION,
 };
 use clock::{Clock, SystemClock};
 pub use container_execution::{
@@ -590,9 +592,12 @@ pub struct RunContext {
     pub graph_fingerprint: Arc<Mutex<HashMap<String, String>>>,
     pub node_definition_fingerprints: Arc<HashMap<String, String>>,
     pub declared_environment_fingerprints: Arc<HashMap<String, String>>,
+    pub params_fingerprints: Arc<HashMap<String, String>>,
+    pub command_fingerprints: Arc<HashMap<String, Option<String>>>,
     pub planner_contract_version: String,
     pub execution_fingerprint: String,
     pub evidence_fingerprint: String,
+    pub execution_contract_fingerprint: String,
     pub resolved_params: HashMap<String, Value>,
     pub effective_cache_dir: Option<PathBuf>,
     pub fs: Arc<dyn Fs>,
@@ -1312,6 +1317,13 @@ fn write_trace(
     } else {
         output_evidence
     };
+    let cache_identity = Some(cache_identity_for_trace(
+        ctx,
+        node_id,
+        adapter_id,
+        adapter_version,
+        adapter_outputs_schema_version,
+    )?);
     let trace = NodeTrace {
         node_id: node_id.to_string(),
         status: status_string(&status),
@@ -1332,6 +1344,7 @@ fn write_trace(
         outputs,
         container: container_meta,
         cache_proof,
+        cache_identity,
         branch_decision,
         trigger_evaluation,
         skip_reason,
@@ -1757,6 +1770,43 @@ fn execution_contract_fingerprint(options: &RuntimeConfig) -> String {
         "materialize_inputs": materialize_mode_label(options.materialize_inputs),
     });
     sha256_bytes(payload.to_string().as_bytes())
+}
+
+fn params_fingerprint(params: &Value) -> Result<String, RuntimeError> {
+    let mut normalized = params.clone();
+    sort_value_maps(&mut normalized);
+    Ok(sha256_bytes(&serde_json::to_vec(&normalized)?))
+}
+
+fn command_fingerprint(graph: &Graph, node: &Node, params: &Value) -> Result<Option<String>, RuntimeError> {
+    let command_surface = if matches!(node.kind, NodeKind::Shell) {
+        Some(serde_json::json!({
+            "kind": "shell",
+            "argv": params.get("argv").cloned().unwrap_or(Value::Null),
+        }))
+    } else if let Some(container) = node.container.as_ref() {
+        let argv = bijux_dag_core::resolve::resolve_command_argv_templates(
+            graph,
+            node,
+            &container.argv,
+            params,
+        )
+        .map_err(|error| RuntimeError::Executor(error.to_string()))?;
+        Some(serde_json::json!({
+            "kind": "container",
+            "engine": container.engine,
+            "image": container.image,
+            "workdir": container.workdir,
+            "argv": argv,
+        }))
+    } else {
+        None
+    };
+
+    command_surface
+        .map(|surface| serde_json::to_vec(&surface).map(|bytes| sha256_bytes(&bytes)))
+        .transpose()
+        .map_err(RuntimeError::from)
 }
 
 fn cache_key_input_for_run(
@@ -2419,6 +2469,8 @@ fn try_cache_write(
         "node_definition_fingerprint": key_input.node_definition_fingerprint,
         "declared_environment_fingerprint": key_input.declared_environment_fingerprint,
         "input_lineage_fingerprint": key_input.input_lineage_fingerprint,
+        "params_fingerprint": params_fingerprint_from_ctx(ctx, &node.id),
+        "command_fingerprint": command_fingerprint_from_ctx(ctx, &node.id),
         "adapter_id": key_input.adapter_id,
         "adapter_version": key_input.adapter_version,
         "produces_outputs_schema_version": key_input.output_schema_version,
@@ -2609,6 +2661,38 @@ pub(crate) fn sha256_bytes(bytes: &[u8]) -> String {
     hex::encode(result)
 }
 
+fn cache_identity_for_trace(
+    ctx: &RunContext,
+    node_id: &str,
+    adapter_id: &str,
+    adapter_version: &str,
+    adapter_outputs_schema_version: &str,
+) -> Result<CacheIdentity, RuntimeError> {
+    let key_input = CacheKeyInput {
+        execution_fingerprint: node_fingerprint_from_ctx(ctx, node_id),
+        node_definition_fingerprint: node_definition_fingerprint_from_ctx(ctx, node_id),
+        declared_environment_fingerprint: declared_environment_fingerprint_from_ctx(ctx, node_id),
+        input_lineage_fingerprint: input_lineage_fingerprint_from_run(ctx, node_id)?,
+        adapter_id: adapter_id.to_string(),
+        adapter_version: adapter_version.to_string(),
+        output_schema_version: adapter_outputs_schema_version.to_string(),
+        policy_fingerprint: policy_fingerprint(&ctx.policy),
+        execution_contract_fingerprint: ctx.execution_contract_fingerprint.clone(),
+        backend_class: "local".to_string(),
+    };
+    Ok(CacheIdentity {
+        cache_key: cache_key_explanation(&key_input).key,
+        node_definition_fingerprint: key_input.node_definition_fingerprint,
+        declared_environment_fingerprint: key_input.declared_environment_fingerprint,
+        input_lineage_fingerprint: key_input.input_lineage_fingerprint,
+        params_fingerprint: params_fingerprint_from_ctx(ctx, node_id),
+        command_fingerprint: command_fingerprint_from_ctx(ctx, node_id),
+        policy_fingerprint: key_input.policy_fingerprint,
+        execution_contract_fingerprint: key_input.execution_contract_fingerprint,
+        backend_class: key_input.backend_class,
+    })
+}
+
 fn node_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> String {
     ctx.graph_fingerprint.lock().ok().and_then(|map| map.get(node_id).cloned()).unwrap_or_default()
 }
@@ -2619,6 +2703,14 @@ fn node_definition_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> Stri
 
 fn declared_environment_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> String {
     ctx.declared_environment_fingerprints.get(node_id).cloned().unwrap_or_default()
+}
+
+fn params_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> String {
+    ctx.params_fingerprints.get(node_id).cloned().unwrap_or_default()
+}
+
+fn command_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> Option<String> {
+    ctx.command_fingerprints.get(node_id).cloned().flatten()
 }
 
 fn set_node_fingerprint(ctx: &RunContext, node_id: &str, fp: String) {

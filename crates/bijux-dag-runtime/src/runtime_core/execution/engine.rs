@@ -1119,6 +1119,8 @@ pub fn execute(
     let ambient_env: BTreeMap<String, String> = std::env::vars().collect();
     let mut node_definition_fingerprints = HashMap::new();
     let mut declared_environment_fingerprints = HashMap::new();
+    let mut params_fingerprints = HashMap::new();
+    let mut command_fingerprints = HashMap::new();
     let mut base_fps = HashMap::new();
     for node in &graph.nodes {
         let params = resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
@@ -1133,6 +1135,8 @@ pub fn execute(
         let env_fp = crate::sha256_bytes(&serde_json::to_vec(&declared_env)?);
         node_definition_fingerprints.insert(node.id.clone(), node_definition_fp.clone());
         declared_environment_fingerprints.insert(node.id.clone(), env_fp.clone());
+        params_fingerprints.insert(node.id.clone(), crate::params_fingerprint(&params)?);
+        command_fingerprints.insert(node.id.clone(), crate::command_fingerprint(graph, node, &params)?);
         base_fps.insert(
             node.id.clone(),
             crate::sha256_bytes(format!("{node_definition_fp}:{env_fp}").as_bytes()),
@@ -1154,9 +1158,12 @@ pub fn execute(
         graph_fingerprint: Arc::clone(&graph_fingerprint),
         node_definition_fingerprints: Arc::new(node_definition_fingerprints),
         declared_environment_fingerprints: Arc::new(declared_environment_fingerprints),
+        params_fingerprints: Arc::new(params_fingerprints),
+        command_fingerprints: Arc::new(command_fingerprints),
         planner_contract_version: plan.planner_contract_version.clone(),
         execution_fingerprint: plan.execution_fingerprint.clone(),
         evidence_fingerprint: plan.evidence_fingerprint.clone(),
+        execution_contract_fingerprint: crate::execution_contract_fingerprint(&options),
         resolved_params,
         effective_cache_dir: effective_cache_dir.clone(),
         fs: Arc::clone(&runtime.fs),
@@ -2035,9 +2042,12 @@ pub fn execute(
                 declared_environment_fingerprints: Arc::clone(
                     &ctx.declared_environment_fingerprints,
                 ),
+                params_fingerprints: Arc::clone(&ctx.params_fingerprints),
+                command_fingerprints: Arc::clone(&ctx.command_fingerprints),
                 planner_contract_version: ctx.planner_contract_version.clone(),
                 execution_fingerprint: ctx.execution_fingerprint.clone(),
                 evidence_fingerprint: ctx.evidence_fingerprint.clone(),
+                execution_contract_fingerprint: ctx.execution_contract_fingerprint.clone(),
                 resolved_params: ctx.resolved_params.clone(),
                 effective_cache_dir: ctx.effective_cache_dir.clone(),
                 fs: Arc::clone(&ctx.fs),

@@ -76,6 +76,8 @@ pub struct NodeTrace {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_proof: Option<CacheProof>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_identity: Option<CacheIdentity>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub branch_decision: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trigger_evaluation: Option<TriggerEvaluation>,
@@ -293,6 +295,20 @@ pub struct CacheProof {
     pub reason: String,
     #[serde(default)]
     pub corrupt_detected: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CacheIdentity {
+    pub cache_key: String,
+    pub node_definition_fingerprint: String,
+    pub declared_environment_fingerprint: String,
+    pub input_lineage_fingerprint: String,
+    pub params_fingerprint: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub command_fingerprint: Option<String>,
+    pub policy_fingerprint: String,
+    pub execution_contract_fingerprint: String,
+    pub backend_class: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -93,6 +93,7 @@ fn resource_retry_trace_event_volume_stays_bounded() {
         outputs: Vec::new(),
         container: None,
         cache_proof: None,
+        cache_identity: None,
         branch_decision: None,
         trigger_evaluation: Some(bijux_dag_artifacts::TriggerEvaluation {
             trigger_rule: "all_success".to_string(),

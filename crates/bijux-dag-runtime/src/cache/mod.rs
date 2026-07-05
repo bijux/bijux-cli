@@ -8,7 +8,8 @@ pub use crate::CacheMode;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-pub const CACHE_METADATA_VERSION: &str = "cache-meta/v0.2";
+pub const CACHE_METADATA_VERSION: &str = "cache-meta/v0.3";
+pub const CACHE_METADATA_VERSION_LEGACY: &str = "cache-meta/v0.2";
 pub const CACHE_ENTRY_MANIFEST_VERSION: &str = "cache-entry/v0.1";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -47,6 +48,12 @@ pub struct CacheEntryManifest {
     pub cache_key: String,
     pub node_id: String,
     pub outputs: Vec<CacheManifestOutput>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheExplainabilityProof {
+    pub params_fingerprint: String,
+    pub command_fingerprint: Option<String>,
 }
 
 pub fn cache_key_explanation(input: &CacheKeyInput) -> CacheKeyExplanation {
@@ -114,10 +121,22 @@ pub fn cache_entry_has_required_proof(meta: &serde_json::Value) -> bool {
         && cache_key_input_from_meta(meta).is_some()
 }
 
+pub fn cache_explainability_proof_from_meta(
+    meta: &serde_json::Value,
+) -> Option<CacheExplainabilityProof> {
+    Some(CacheExplainabilityProof {
+        params_fingerprint: meta.get("params_fingerprint").and_then(|v| v.as_str())?.to_string(),
+        command_fingerprint: meta
+            .get("command_fingerprint")
+            .and_then(|v| v.as_str())
+            .map(ToString::to_string),
+    })
+}
+
 pub fn cache_metadata_version_supported(meta: &serde_json::Value) -> bool {
     meta.get("cache_metadata_version")
         .and_then(|v| v.as_str())
-        .map(|v| v == CACHE_METADATA_VERSION)
+        .map(|version| version == CACHE_METADATA_VERSION || version == CACHE_METADATA_VERSION_LEGACY)
         .unwrap_or(false)
 }
 

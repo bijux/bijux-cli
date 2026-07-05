@@ -1019,7 +1019,7 @@ fn runtime_cache_meta_records_strong_identity_components() {
     let out = tempfile::tempdir().expect("temp out");
     let cache = tempfile::tempdir().expect("temp cache");
 
-    let _ = runtime
+    let run_dir = runtime
         .run(
             &graph,
             out.path(),
@@ -1053,12 +1053,14 @@ fn runtime_cache_meta_records_strong_identity_components() {
         serde_json::from_str(&fs::read_to_string(manifest_path).expect("cache manifest json"))
             .expect("parse cache manifest");
 
-    assert_eq!(meta["cache_metadata_version"], "cache-meta/v0.2");
+    assert_eq!(meta["cache_metadata_version"], "cache-meta/v0.3");
     assert!(meta["cache_key"].is_string());
     assert!(meta["node_fingerprint"].is_string());
     assert!(meta["node_definition_fingerprint"].is_string());
     assert!(meta["declared_environment_fingerprint"].is_string());
     assert!(meta["input_lineage_fingerprint"].is_string());
+    assert!(meta["params_fingerprint"].is_string());
+    assert!(meta["command_fingerprint"].is_string());
     assert!(meta["policy_fingerprint"].is_string());
     assert!(meta["execution_contract_fingerprint"].is_string());
     assert_eq!(meta["backend_class"], "local");
@@ -1069,6 +1071,14 @@ fn runtime_cache_meta_records_strong_identity_components() {
             outputs.iter().any(|output| output["path"] == "value.txt" && output["required"] == true)
         })
     );
+
+    let trace: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("node").join("trace.json")).expect("trace"),
+    )
+    .expect("parse trace");
+    assert!(trace["cache_identity"]["cache_key"].is_string());
+    assert!(trace["cache_identity"]["params_fingerprint"].is_string());
+    assert!(trace["cache_identity"]["command_fingerprint"].is_string());
 }
 
 #[test]

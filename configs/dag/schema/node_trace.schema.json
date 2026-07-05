@@ -42,6 +42,31 @@
     },
     "container": {"type": ["object", "null"]},
     "cache_proof": {"type": ["object", "null"]},
+    "cache_identity": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "cache_key",
+        "node_definition_fingerprint",
+        "declared_environment_fingerprint",
+        "input_lineage_fingerprint",
+        "params_fingerprint",
+        "policy_fingerprint",
+        "execution_contract_fingerprint",
+        "backend_class"
+      ],
+      "properties": {
+        "cache_key": {"type": "string"},
+        "node_definition_fingerprint": {"type": "string"},
+        "declared_environment_fingerprint": {"type": "string"},
+        "input_lineage_fingerprint": {"type": "string"},
+        "params_fingerprint": {"type": "string"},
+        "command_fingerprint": {"type": ["string", "null"]},
+        "policy_fingerprint": {"type": "string"},
+        "execution_contract_fingerprint": {"type": "string"},
+        "backend_class": {"type": "string"}
+      }
+    },
     "branch_decision": {"type": ["string", "null"]},
     "trigger_evaluation": {
       "type": ["object", "null"],
