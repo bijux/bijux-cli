@@ -15,6 +15,7 @@ use tempfile as _;
 use thiserror as _;
 
 use std::fs;
+use std::sync::{Mutex, MutexGuard, OnceLock};
 
 fn write_graph_fixture() -> (tempfile::TempDir, std::path::PathBuf) {
     let dir = tempfile::tempdir().expect("tmp");
@@ -33,6 +34,24 @@ fn write_graph_fixture() -> (tempfile::TempDir, std::path::PathBuf) {
     )
     .expect("write graph");
     (dir, dag)
+}
+
+fn internal_lane_lock() -> MutexGuard<'static, ()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(())).lock().expect("internal lane lock")
+}
+
+fn run_with_internal_lane(matches: &clap::ArgMatches) -> std::process::ExitCode {
+    let _guard = internal_lane_lock();
+    let previous = std::env::var_os("BIJUX_DAG_ENABLE_INTERNAL");
+    std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", "1");
+    let result = dag_run(matches).expect("run");
+    if let Some(value) = previous {
+        std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", value);
+    } else {
+        std::env::remove_var("BIJUX_DAG_ENABLE_INTERNAL");
+    }
+    result
 }
 
 #[test]
@@ -199,7 +218,7 @@ fn schedule_validate_supports_json_output() {
         ])
         .expect("parse");
 
-    let code = dag_run(&matches).expect("run");
+    let code = run_with_internal_lane(&matches);
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
 
@@ -250,7 +269,7 @@ fn schedule_compile_supports_json_output() {
         ])
         .expect("parse");
 
-    let code = dag_run(&matches).expect("run");
+    let code = run_with_internal_lane(&matches);
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
 
@@ -343,7 +362,7 @@ fn schedule_audit_supports_json_output() {
         ])
         .expect("parse");
 
-    let code = dag_run(&matches).expect("run");
+    let code = run_with_internal_lane(&matches);
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
 
@@ -363,6 +382,71 @@ fn schedule_dedup_supports_json_output() {
         ])
         .expect("parse");
 
-    let code = dag_run(&matches).expect("run");
+    let code = run_with_internal_lane(&matches);
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_submit_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-registry.json");
+    let inputs = dir.path().join("schedule-inputs.json");
+    let ledger = dir.path().join("schedule-ledger.json");
+    let out = dir.path().join("schedule-ledger-updated.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "manual-ops",
+              "dag_name": "atlas.manual-ops",
+              "dag_version_policy": "run-latest",
+              "trigger": "Manual",
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            }
+          ]
+        }"#,
+    )
+    .expect("write registry");
+    fs::write(
+        &inputs,
+        r#"{
+          "now_unix_ms": 200000,
+          "manual_requests": [
+            {
+              "request_id": "manual-001",
+              "schedule_id": "manual-ops",
+              "requested_unix_ms": 175000
+            }
+          ]
+        }"#,
+    )
+    .expect("write inputs");
+    fs::write(&ledger, r#"{"entries":[]}"#).expect("write ledger");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "schedule",
+            "submit",
+            registry.to_string_lossy().as_ref(),
+            inputs.to_string_lossy().as_ref(),
+            "--ledger",
+            ledger.to_string_lossy().as_ref(),
+            "--out",
+            out.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = run_with_internal_lane(&matches);
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
