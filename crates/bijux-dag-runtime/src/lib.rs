@@ -361,8 +361,9 @@ pub use observability_deep::{
 pub use path_authorization::{authorize_input_path, authorize_output_path};
 pub use path_resolution::AbsolutePathPolicy;
 pub(crate) use path_resolution::{
-    bind_path_variables_in_value, resolve_container_argv, resolve_container_workdir,
-    NodePathBindings,
+    bind_path_variables_in_value, collect_container_argv_path_usages,
+    collect_container_workdir_usage, collect_resolved_path_usages, resolve_container_argv,
+    resolve_container_workdir, NodePathBindings, ResolvedPathUsage,
 };
 pub use performance_capacity::{
     build_cost_model, build_performance_maturity_report, compile_environment_profiles,
@@ -376,8 +377,8 @@ pub use planner_analysis::{
     build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
     compute_partial_run_closure, diff_plans, explain_plan, fingerprint_plan, PlannerBackfillPlan,
     PlannerBuildResult, PlannerExplainReport, PlannerGuardrails, PlannerNodeAction,
-    PlannerNodeAnnotation, PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance,
-    PlannerResourceEstimate,
+    PlannerNodeAnnotation, PlannerNodePathPreview, PlannerPhase, PlannerPlanDiff,
+    PlannerPriorityInheritance, PlannerResourceEstimate,
 };
 pub use policy::policy_allows_effects;
 pub use recovery::{
@@ -1026,6 +1027,7 @@ pub struct RuntimeConfig {
     pub cache_mode: CacheMode,
     pub cache_dir: Option<PathBuf>,
     pub remote_cache_dir: Option<PathBuf>,
+    pub run_root: Option<PathBuf>,
     pub absolute_path_policy: AbsolutePathPolicy,
     pub run_id: Option<String>,
     pub parent_run_id: Option<String>,
@@ -1052,6 +1054,7 @@ impl Default for RuntimeConfig {
             cache_mode: CacheMode::Off,
             cache_dir: None,
             remote_cache_dir: None,
+            run_root: None,
             absolute_path_policy: AbsolutePathPolicy::AllowLiteral,
             run_id: None,
             parent_run_id: None,

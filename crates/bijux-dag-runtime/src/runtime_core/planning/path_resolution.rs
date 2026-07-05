@@ -26,6 +26,13 @@ pub struct NodePathBindings {
     pub cache_dir: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResolvedPathUsage {
+    pub key_path: String,
+    pub expression: String,
+    pub resolved_path: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum PathBindingSurface {
     Host,
@@ -116,6 +123,48 @@ pub(crate) fn resolve_container_argv(
     Ok(resolved)
 }
 
+pub(crate) fn collect_resolved_path_usages(
+    value: &Value,
+    bindings: &NodePathBindings,
+) -> Result<Vec<ResolvedPathUsage>, String> {
+    let mut usages = Vec::new();
+    collect_resolved_path_usages_inner(value, bindings, "$", &mut usages)?;
+    Ok(usages)
+}
+
+pub(crate) fn collect_container_argv_path_usages(
+    argv: &[String],
+    bindings: &NodePathBindings,
+) -> Result<Vec<ResolvedPathUsage>, String> {
+    let mut usages = Vec::new();
+    for (index, entry) in argv.iter().enumerate() {
+        if let Some(resolved_path) = resolve_path_expression(entry, bindings)? {
+            usages.push(ResolvedPathUsage {
+                key_path: format!("container.argv[{index}]"),
+                expression: entry.clone(),
+                resolved_path,
+            });
+        }
+    }
+    Ok(usages)
+}
+
+pub(crate) fn collect_container_workdir_usage(
+    workdir: Option<&str>,
+    bindings: &NodePathBindings,
+    absolute_path_policy: AbsolutePathPolicy,
+) -> Result<Option<ResolvedPathUsage>, String> {
+    let Some(workdir) = workdir else {
+        return Ok(None);
+    };
+    let resolved_path = resolve_container_workdir(Some(workdir), bindings, absolute_path_policy)?;
+    Ok(Some(ResolvedPathUsage {
+        key_path: "container.workdir".to_string(),
+        expression: workdir.to_string(),
+        resolved_path,
+    }))
+}
+
 pub(crate) fn resolve_container_workdir(
     workdir: Option<&str>,
     bindings: &NodePathBindings,
@@ -155,6 +204,47 @@ fn resolve_path_expression(
         Some(relative_path) => Ok(Some(format!("{base}/{relative_path}"))),
         None => Ok(Some(base.to_string())),
     }
+}
+
+fn collect_resolved_path_usages_inner(
+    value: &Value,
+    bindings: &NodePathBindings,
+    key_path: &str,
+    usages: &mut Vec<ResolvedPathUsage>,
+) -> Result<(), String> {
+    match value {
+        Value::String(text) => {
+            if let Some(resolved_path) = resolve_path_expression(text, bindings)? {
+                usages.push(ResolvedPathUsage {
+                    key_path: key_path.to_string(),
+                    expression: text.clone(),
+                    resolved_path,
+                });
+            }
+        }
+        Value::Array(items) => {
+            for (index, item) in items.iter().enumerate() {
+                collect_resolved_path_usages_inner(
+                    item,
+                    bindings,
+                    &format!("{key_path}[{index}]"),
+                    usages,
+                )?;
+            }
+        }
+        Value::Object(map) => {
+            for (field, item) in map {
+                collect_resolved_path_usages_inner(
+                    item,
+                    bindings,
+                    &format!("{key_path}.{field}"),
+                    usages,
+                )?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 fn parse_path_expression(value: &str) -> Result<Option<PathExpression<'_>>, String> {

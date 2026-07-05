@@ -106,3 +106,67 @@ fn planner_rejects_unsupported_runtime_capability_during_lowering() {
     .expect_err("planner must fail for unsupported capability requirements");
     assert!(err.contains("unsupported runtime capability"));
 }
+
+#[test]
+fn planner_reports_path_previews_when_run_root_is_known() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"shell",
+              "kind":"shell",
+              "outputs":[{"name":"out","path":"out.txt"}],
+              "params":{"argv":["cp","{inputs_dir}/seed.txt","{outputs_dir}/result.txt"]},
+              "effects":["filesystem"]
+            },
+            {
+              "id":"container",
+              "kind":"container",
+              "outputs":[{"name":"out","path":"out.txt"}],
+              "container":{
+                "image":"alpine:3.20",
+                "argv":["cp","{inputs_dir}/seed.txt","{outputs_dir}/result.txt"],
+                "workdir":"{work_dir}/scratch",
+                "engine":"docker"
+              },
+              "effects":["filesystem"]
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph should parse");
+
+    let temp = tempfile::tempdir().expect("tmp");
+    let result = build_planner_analysis(
+        &graph,
+        &RuntimeConfig {
+            run_root: Some(temp.path().to_path_buf()),
+            run_id: Some("preview".to_string()),
+            ..RuntimeConfig::default()
+        },
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("planner build should succeed");
+
+    let previews = result.path_previews.expect("path previews");
+    let shell_preview =
+        previews.iter().find(|preview| preview.node_id == "shell").expect("shell preview");
+    assert_eq!(shell_preview.execution_surface, "host");
+    assert!(shell_preview
+        .resolved_paths
+        .iter()
+        .any(|path| path.key_path == "$.argv[1]" && path.resolved_path.contains("/nodes/shell/inputs/seed.txt")));
+
+    let container_preview = previews
+        .iter()
+        .find(|preview| preview.node_id == "container")
+        .expect("container preview");
+    assert_eq!(container_preview.execution_surface, "container");
+    assert!(container_preview
+        .resolved_paths
+        .iter()
+        .any(|path| path.key_path == "container.workdir" && path.resolved_path == "/bijux/node/work/scratch"));
+}

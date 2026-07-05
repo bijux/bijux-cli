@@ -2,7 +2,11 @@ use crate::execution_plan::ExecutionPlan;
 use crate::infrastructure::{
     negotiate_backend_capabilities, BackendCapabilities, BackendCapabilityRequirement,
 };
-use crate::{RuntimeConfig, SelectorSet};
+use crate::{
+    collect_container_argv_path_usages, collect_container_workdir_usage,
+    collect_resolved_path_usages, NodePathBindings, ResolvedPathUsage, RuntimeConfig, SelectorSet,
+};
+use bijux_dag_artifacts::RunDirLayout;
 use bijux_dag_core::{Graph, Node};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -64,6 +68,14 @@ pub struct PlannerExplainReport {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerNodePathPreview {
+    pub node_id: String,
+    pub execution_surface: String,
+    pub variable_bindings: NodePathBindings,
+    pub resolved_paths: Vec<ResolvedPathUsage>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PlannerPlanDiff {
     pub changed_order_nodes: Vec<String>,
     pub changed_filter_reasons: Vec<String>,
@@ -83,6 +95,7 @@ pub struct PlannerBuildResult {
     pub resource_estimate: PlannerResourceEstimate,
     pub priority_inheritance: Vec<PlannerPriorityInheritance>,
     pub plan_fingerprint: String,
+    pub path_previews: Option<Vec<PlannerNodePathPreview>>,
 }
 
 pub fn build_planner_analysis(
@@ -109,10 +122,11 @@ pub fn build_planner_analysis(
         );
     }
     let mut annotations = annotate_plan(&normalized_graph, &plan, selector_set);
-    plan = apply_optimizer_rules(normalized_graph, plan, &mut annotations, guardrails);
+    plan = apply_optimizer_rules(normalized_graph.clone(), plan, &mut annotations, guardrails);
     let resource_estimate = estimate_resources(&plan.nodes);
     let priority_inheritance = inherit_priority(&plan.nodes);
     let plan_fingerprint = fingerprint_plan(&plan, &annotations)?;
+    let path_previews = build_path_previews(&normalized_graph, options)?;
 
     Ok(PlannerBuildResult {
         plan,
@@ -121,6 +135,7 @@ pub fn build_planner_analysis(
         resource_estimate,
         priority_inheritance,
         plan_fingerprint,
+        path_previews,
     })
 }
 
@@ -196,6 +211,69 @@ pub fn explain_plan(result: &PlannerBuildResult) -> PlannerExplainReport {
             .map(|a| format!("{} -> {}", a.node_id, a.reason))
             .collect(),
     }
+}
+
+fn build_path_previews(
+    graph: &Graph,
+    options: &RuntimeConfig,
+) -> Result<Option<Vec<PlannerNodePathPreview>>, String> {
+    let Some(run_root) = options.run_root.as_ref() else {
+        return Ok(None);
+    };
+    let layout = RunDirLayout::preview(run_root, options.run_id.as_deref())
+        .map_err(|error| error.to_string())?;
+    let resolved_graph = graph.resolve_graph().map_err(|error| error.to_string())?;
+    let effective_cache_dir = options.cache_dir.clone().or_else(crate::cache_dir_from_env);
+    let mut previews = Vec::with_capacity(graph.nodes.len());
+    for node in &graph.nodes {
+        let (execution_surface, variable_bindings, resolved_paths) =
+            preview_node_paths(
+                node,
+                &layout,
+                options,
+                effective_cache_dir.as_deref(),
+                &resolved_graph.resolved_params,
+            )?;
+        previews.push(PlannerNodePathPreview {
+            node_id: node.id.clone(),
+            execution_surface,
+            variable_bindings,
+            resolved_paths,
+        });
+    }
+    Ok(Some(previews))
+}
+
+fn preview_node_paths(
+    node: &Node,
+    layout: &RunDirLayout,
+    options: &RuntimeConfig,
+    effective_cache_dir: Option<&std::path::Path>,
+    resolved_params: &BTreeMap<String, serde_json::Value>,
+) -> Result<(String, NodePathBindings, Vec<ResolvedPathUsage>), String> {
+    if node.kind == bijux_dag_core::NodeKind::Container {
+        let variable_bindings = NodePathBindings::for_container();
+        let mut resolved_paths = Vec::new();
+        if let Some(spec) = &node.container {
+            resolved_paths.extend(collect_container_argv_path_usages(
+                &spec.argv,
+                &variable_bindings,
+            )?);
+            if let Some(workdir_usage) = collect_container_workdir_usage(
+                spec.workdir.as_deref(),
+                &variable_bindings,
+                options.absolute_path_policy,
+            )? {
+                resolved_paths.push(workdir_usage);
+            }
+        }
+        return Ok(("container".to_string(), variable_bindings, resolved_paths));
+    }
+
+    let variable_bindings = NodePathBindings::for_host(layout, &node.id, effective_cache_dir);
+    let resolved = resolved_params.get(&node.id).cloned().unwrap_or(serde_json::Value::Null);
+    let resolved_paths = collect_resolved_path_usages(&resolved, &variable_bindings)?;
+    Ok(("host".to_string(), variable_bindings, resolved_paths))
 }
 
 pub fn compute_partial_run_closure(
