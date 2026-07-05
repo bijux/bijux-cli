@@ -28,6 +28,8 @@ fn cron_schedule_in_timezone(id: &str, expression: &str, timezone: &str) -> Sche
         id: id.to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Cron {
             expression: expression.to_string(),
             timezone: timezone.to_string(),

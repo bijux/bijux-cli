@@ -12,21 +12,21 @@ use sha2::{Digest, Sha256};
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_core::parse_graph_strict;
+use bijux_dag_core::{parse_graph_strict, GraphInputSpec};
 use bijux_dag_runtime::{
     advance_backfill_operation, apply_backfill_throttling, build_plan, build_scheduler,
-    cancel_backfill_operation, compile_backfill_operation, deduplicate_trigger_events,
-    deterministic_tick_order, evaluate_schedule_submissions, evaluate_sla_metrics,
-    materialize_next_runs, pause_backfill_operation, resume_backfill_operation, run_batches,
-    scheduler_debug_event_log, scheduler_invariants_hold, trace_event_count_by_category,
-    BackfillAdvanceRequest, BackfillFailurePolicy, BackfillLifecycleStatus, BackfillRequest,
-    BackfillRunStatus, BackfillStatusUpdate, BackfillThrottlingPolicy, CatchUpPolicy,
-    ConcurrencyPolicyLayers, DependencyCompletionRecord, DependencyCounter,
-    ManualSubmissionRequest, PriorityClass, QueueIdentity, ReadyNode, ReadyQueue, RunBatchPolicy,
-    RuntimeAuditEvent, RuntimeConfig, ScheduleDefinition, ScheduleEvaluationInputs,
-    ScheduleEventRecord, ScheduleRegistry, ScheduleSubmissionLedger, ScheduleSubmissionLedgerEntry,
-    ScheduleSubmissionStatus, ScheduledSubmission, Selector, SelectorSet, SignalRecord,
-    SubmissionTriggerKind, TriggerSpec,
+    cancel_backfill_operation, compile_backfill_operation, compile_submission_request,
+    deduplicate_trigger_events, deterministic_tick_order, evaluate_schedule_submissions,
+    evaluate_sla_metrics, materialize_next_runs, pause_backfill_operation,
+    resume_backfill_operation, run_batches, scheduler_debug_event_log, scheduler_invariants_hold,
+    trace_event_count_by_category, BackfillAdvanceRequest, BackfillFailurePolicy,
+    BackfillLifecycleStatus, BackfillRequest, BackfillRunStatus, BackfillStatusUpdate,
+    BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCompletionRecord,
+    DependencyCounter, ManualSubmissionRequest, PriorityClass, QueueIdentity, ReadyNode,
+    ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig, ScheduleDefinition,
+    ScheduleEvaluationInputs, ScheduleEventRecord, ScheduleInputSource, ScheduleRegistry,
+    ScheduleSubmissionLedger, ScheduleSubmissionLedgerEntry, ScheduleSubmissionStatus,
+    ScheduledSubmission, Selector, SelectorSet, SignalRecord, SubmissionTriggerKind, TriggerSpec,
 };
 use std::collections::{BTreeMap, VecDeque};
 use std::fs;
@@ -505,6 +505,8 @@ fn scheduler_materialization_and_trigger_dedup_helpers_are_consistent() {
         id: "sched-1".to_string(),
         dag_name: "dag".to_string(),
         dag_version_policy: "pinned".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Cron {
             expression: "* * * * *".to_string(),
             timezone: "UTC".to_string(),
@@ -587,12 +589,14 @@ fn schedule_submit_evaluates_manual_cron_event_dependency_and_signal_triggers() 
             request_id: "manual-001".to_string(),
             schedule_id: "manual-ops".to_string(),
             requested_unix_ms: 175_000,
+            arguments: BTreeMap::new(),
         }],
         events: vec![ScheduleEventRecord {
             event_id: "evt-001".to_string(),
             event_type: "dataset.ready".to_string(),
             source: "catalog".to_string(),
             occurred_unix_ms: 176_000,
+            payload: None,
         }],
         dependencies: vec![DependencyCompletionRecord {
             upstream_run_id: "atlas-run-7".to_string(),
@@ -604,6 +608,7 @@ fn schedule_submit_evaluates_manual_cron_event_dependency_and_signal_triggers() 
             signal_id: "sig-001".to_string(),
             signal_name: "refresh-cache".to_string(),
             occurred_unix_ms: 178_000,
+            payload: None,
         }],
     };
     let existing = ScheduleSubmissionLedger::default();
@@ -633,6 +638,238 @@ fn schedule_submit_evaluates_manual_cron_event_dependency_and_signal_triggers() 
 }
 
 #[test]
+fn schedule_submit_binds_trigger_values_into_typed_graph_inputs() {
+    let registry = ScheduleRegistry {
+        definitions: vec![
+            ScheduleDefinition {
+                input_contract: schedule_input_contract(),
+                input_bindings: BTreeMap::from([
+                    ("requested_at".to_string(), ScheduleInputSource::RequestedUnixMs),
+                    (
+                        "manual_region".to_string(),
+                        ScheduleInputSource::ManualArgument { key: "region".to_string() },
+                    ),
+                ]),
+                ..schedule_definition("manual-ops", TriggerSpec::Manual)
+            },
+            ScheduleDefinition {
+                input_contract: schedule_input_contract(),
+                input_bindings: BTreeMap::from([
+                    ("requested_at".to_string(), ScheduleInputSource::RequestedUnixMs),
+                    (
+                        "event_tenant".to_string(),
+                        ScheduleInputSource::EventPayload { pointer: Some("/tenant".to_string()) },
+                    ),
+                    (
+                        "event_payload".to_string(),
+                        ScheduleInputSource::EventPayload { pointer: None },
+                    ),
+                ]),
+                ..schedule_definition(
+                    "event-ingest",
+                    TriggerSpec::Event {
+                        event_type: "dataset.ready".to_string(),
+                        source: "catalog".to_string(),
+                    },
+                )
+            },
+            ScheduleDefinition {
+                input_contract: schedule_input_contract(),
+                input_bindings: BTreeMap::from([
+                    ("requested_at".to_string(), ScheduleInputSource::RequestedUnixMs),
+                    ("dependency_status".to_string(), ScheduleInputSource::DependencyStatus),
+                    ("dependency_run_id".to_string(), ScheduleInputSource::DependencyUpstreamRunId),
+                ]),
+                ..schedule_definition(
+                    "dependency-publish",
+                    TriggerSpec::Dependency {
+                        dag_name: "atlas.ingest".to_string(),
+                        on_status: "success".to_string(),
+                    },
+                )
+            },
+            ScheduleDefinition {
+                input_contract: schedule_input_contract(),
+                input_bindings: BTreeMap::from([
+                    ("requested_at".to_string(), ScheduleInputSource::RequestedUnixMs),
+                    (
+                        "signal_tenant".to_string(),
+                        ScheduleInputSource::SignalPayload { pointer: Some("/tenant".to_string()) },
+                    ),
+                ]),
+                ..schedule_definition(
+                    "signal-refresh",
+                    TriggerSpec::Signal {
+                        signal_name: "refresh-cache".to_string(),
+                        payload_schema: None,
+                    },
+                )
+            },
+            ScheduleDefinition {
+                input_contract: schedule_input_contract(),
+                input_bindings: BTreeMap::from([
+                    ("requested_at".to_string(), ScheduleInputSource::RequestedUnixMs),
+                    ("window_start".to_string(), ScheduleInputSource::BackfillWindowStartUnixMs),
+                    ("window_end".to_string(), ScheduleInputSource::BackfillWindowEndUnixMs),
+                    ("partition_key".to_string(), ScheduleInputSource::BackfillPartitionKey),
+                ]),
+                ..schedule_definition(
+                    "historical-catalog",
+                    TriggerSpec::Backfill(BackfillRequest {
+                        window_start_unix_ms: 100,
+                        window_end_unix_ms: 60_100,
+                        partition_by: Some("dataset".to_string()),
+                        partition_keys: vec!["sample-a".to_string()],
+                        max_parallelism: 2,
+                        failure_policy: BackfillFailurePolicy::Continue,
+                    }),
+                )
+            },
+        ],
+    };
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: 180_000,
+        manual_requests: vec![ManualSubmissionRequest {
+            request_id: "manual-001".to_string(),
+            schedule_id: "manual-ops".to_string(),
+            requested_unix_ms: 175_000,
+            arguments: BTreeMap::from([("region".to_string(), serde_json::json!("eu-west-1"))]),
+        }],
+        events: vec![ScheduleEventRecord {
+            event_id: "evt-001".to_string(),
+            event_type: "dataset.ready".to_string(),
+            source: "catalog".to_string(),
+            occurred_unix_ms: 176_000,
+            payload: Some(serde_json::json!({
+                "tenant":"atlas",
+                "batch":7
+            })),
+        }],
+        dependencies: vec![DependencyCompletionRecord {
+            upstream_run_id: "atlas-run-7".to_string(),
+            dag_name: "atlas.ingest".to_string(),
+            status: "SUCCESS".to_string(),
+            finished_unix_ms: 177_000,
+        }],
+        signals: vec![SignalRecord {
+            signal_id: "sig-001".to_string(),
+            signal_name: "refresh-cache".to_string(),
+            occurred_unix_ms: 178_000,
+            payload: Some(serde_json::json!({"tenant":"atlas"})),
+        }],
+    };
+
+    let report =
+        evaluate_schedule_submissions(&registry, &inputs, &ScheduleSubmissionLedger::default());
+    let by_schedule = report
+        .generated_requests
+        .iter()
+        .map(|request| (request.schedule_id.as_str(), &request.graph_inputs))
+        .collect::<BTreeMap<_, _>>();
+
+    assert_eq!(by_schedule["manual-ops"]["requested_at"], serde_json::json!(175000u128));
+    assert_eq!(by_schedule["manual-ops"]["manual_region"], "eu-west-1");
+    assert_eq!(by_schedule["event-ingest"]["requested_at"], serde_json::json!(176000u128));
+    assert_eq!(by_schedule["event-ingest"]["event_tenant"], "atlas");
+    assert_eq!(by_schedule["event-ingest"]["event_payload"]["batch"], 7);
+    assert_eq!(by_schedule["dependency-publish"]["dependency_status"], "success");
+    assert_eq!(by_schedule["dependency-publish"]["dependency_run_id"], "atlas-run-7");
+    assert_eq!(by_schedule["signal-refresh"]["signal_tenant"], "atlas");
+
+    let backfill_request = report
+        .generated_requests
+        .iter()
+        .find(|request| request.schedule_id == "historical-catalog")
+        .expect("backfill request");
+    assert_eq!(backfill_request.graph_inputs["window_start"], serde_json::json!(100u128));
+    assert_eq!(backfill_request.graph_inputs["window_end"], serde_json::json!(60100u128));
+    assert_eq!(backfill_request.graph_inputs["partition_key"], "sample-a");
+}
+
+#[test]
+fn schedule_compile_binds_requested_timestamp_into_typed_graph_inputs() {
+    let schedule = ScheduleDefinition {
+        input_contract: serde_json::from_value(serde_json::json!({
+            "requested_at":{"type":"integer","required":true}
+        }))
+        .expect("input contract"),
+        input_bindings: BTreeMap::from([(
+            "requested_at".to_string(),
+            ScheduleInputSource::RequestedUnixMs,
+        )]),
+        ..schedule_definition(
+            "nightly-catalog",
+            TriggerSpec::Cron { expression: "0 2 * * *".to_string(), timezone: "UTC".to_string() },
+        )
+    };
+
+    let request = compile_submission_request(&schedule, 176_000).expect("compiled submission");
+
+    assert_eq!(request.schedule_id, "nightly-catalog");
+    assert_eq!(request.graph_inputs["requested_at"], serde_json::json!(176000u128));
+}
+
+#[test]
+fn schedule_compile_rejects_unavailable_manual_argument_binding() {
+    let schedule = ScheduleDefinition {
+        input_contract: serde_json::from_value(serde_json::json!({
+            "manual_region":{"type":"string","required":true}
+        }))
+        .expect("input contract"),
+        input_bindings: BTreeMap::from([(
+            "manual_region".to_string(),
+            ScheduleInputSource::ManualArgument { key: "region".to_string() },
+        )]),
+        ..schedule_definition("manual-ops", TriggerSpec::Manual)
+    };
+
+    let error = compile_submission_request(&schedule, 176_000).unwrap_err();
+
+    assert!(error.contains("missing manual argument 'region'"));
+}
+
+#[test]
+fn schedule_submit_rejects_invalid_input_mapping_before_submission() {
+    let registry = ScheduleRegistry {
+        definitions: vec![ScheduleDefinition {
+            input_contract: serde_json::from_value(serde_json::json!({
+                "event_tenant":{"type":"integer","required":true}
+            }))
+            .expect("input contract"),
+            input_bindings: BTreeMap::from([(
+                "event_tenant".to_string(),
+                ScheduleInputSource::EventPayload { pointer: Some("/tenant".to_string()) },
+            )]),
+            ..schedule_definition(
+                "event-ingest",
+                TriggerSpec::Event {
+                    event_type: "dataset.ready".to_string(),
+                    source: "catalog".to_string(),
+                },
+            )
+        }],
+    };
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: 180_000,
+        events: vec![ScheduleEventRecord {
+            event_id: "evt-001".to_string(),
+            event_type: "dataset.ready".to_string(),
+            source: "catalog".to_string(),
+            occurred_unix_ms: 176_000,
+            payload: Some(serde_json::json!({"tenant":"atlas"})),
+        }],
+        ..ScheduleEvaluationInputs::default()
+    };
+
+    let report =
+        evaluate_schedule_submissions(&registry, &inputs, &ScheduleSubmissionLedger::default());
+
+    assert!(report.generated_requests.is_empty());
+    assert!(report.audits.iter().any(|audit| audit.decision == "mapping_rejected"
+        && audit.reason.as_deref().is_some_and(|reason| reason.contains("expected integer"))));
+}
+
+#[test]
 fn schedule_submit_prevents_duplicates_from_existing_ledger_and_current_tick() {
     let registry = ScheduleRegistry {
         definitions: vec![
@@ -653,11 +890,13 @@ fn schedule_submit_prevents_duplicates_from_existing_ledger_and_current_tick() {
                 request_id: "manual-001".to_string(),
                 schedule_id: "manual-ops".to_string(),
                 requested_unix_ms: 175_000,
+                arguments: BTreeMap::new(),
             },
             ManualSubmissionRequest {
                 request_id: "manual-001".to_string(),
                 schedule_id: "manual-ops".to_string(),
                 requested_unix_ms: 175_000,
+                arguments: BTreeMap::new(),
             },
         ],
         events: vec![
@@ -666,12 +905,14 @@ fn schedule_submit_prevents_duplicates_from_existing_ledger_and_current_tick() {
                 event_type: "dataset.ready".to_string(),
                 source: "catalog".to_string(),
                 occurred_unix_ms: 176_000,
+                payload: None,
             },
             ScheduleEventRecord {
                 event_id: "evt-001".to_string(),
                 event_type: "dataset.ready".to_string(),
                 source: "catalog".to_string(),
                 occurred_unix_ms: 176_000,
+                payload: None,
             },
         ],
         dependencies: Vec::new(),
@@ -682,6 +923,7 @@ fn schedule_submit_prevents_duplicates_from_existing_ledger_and_current_tick() {
             schedule_id: "manual-ops".to_string(),
             dag_name: "atlas.manual-ops".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            graph_inputs: BTreeMap::new(),
             requested_unix_ms: 175_000,
             created_unix_ms: 170_000,
             run_id: "sched-manual-ops-existing".to_string(),
@@ -707,6 +949,8 @@ fn schedule_submit_cron_catch_up_respects_existing_submissions_and_cap() {
             id: "cron-minute".to_string(),
             dag_name: "atlas.cron-minute".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            input_contract: BTreeMap::new(),
+            input_bindings: BTreeMap::new(),
             trigger: TriggerSpec::Cron {
                 expression: "* * * * *".to_string(),
                 timezone: "UTC".to_string(),
@@ -729,6 +973,7 @@ fn schedule_submit_cron_catch_up_respects_existing_submissions_and_cap() {
             schedule_id: "cron-minute".to_string(),
             dag_name: "atlas.cron-minute".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            graph_inputs: BTreeMap::new(),
             requested_unix_ms: 2 * 60_000,
             created_unix_ms: 2 * 60_000,
             run_id: "sched-cron-minute-existing".to_string(),
@@ -755,6 +1000,8 @@ fn schedule_submit_cron_catch_up_honors_ranges_lists_and_steps() {
             id: "weekday-window".to_string(),
             dag_name: "atlas.weekday-window".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            input_contract: BTreeMap::new(),
+            input_bindings: BTreeMap::new(),
             trigger: TriggerSpec::Cron {
                 expression: "*/15 9-10 * * Mon,Wed,Fri".to_string(),
                 timezone: "UTC".to_string(),
@@ -784,6 +1031,7 @@ fn schedule_submit_cron_catch_up_honors_ranges_lists_and_steps() {
             schedule_id: "weekday-window".to_string(),
             dag_name: "atlas.weekday-window".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            graph_inputs: BTreeMap::new(),
             requested_unix_ms: u128::try_from(last_requested.timestamp_millis())
                 .expect("positive timestamp"),
             created_unix_ms: u128::try_from(last_requested.timestamp_millis())
@@ -822,6 +1070,8 @@ fn schedule_submit_cron_catch_up_preserves_dst_fallback_duplicates() {
             id: "dst-fallback".to_string(),
             dag_name: "atlas.dst-fallback".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            input_contract: BTreeMap::new(),
+            input_bindings: BTreeMap::new(),
             trigger: TriggerSpec::Cron {
                 expression: "30 1 * * *".to_string(),
                 timezone: "America/New_York".to_string(),
@@ -852,6 +1102,7 @@ fn schedule_submit_cron_catch_up_preserves_dst_fallback_duplicates() {
             schedule_id: "dst-fallback".to_string(),
             dag_name: "atlas.dst-fallback".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            graph_inputs: BTreeMap::new(),
             requested_unix_ms: u128::try_from(last_requested.timestamp_millis())
                 .expect("positive timestamp"),
             created_unix_ms: u128::try_from(last_requested.timestamp_millis())
@@ -887,6 +1138,8 @@ fn schedule_definition(id: &str, trigger: TriggerSpec) -> ScheduleDefinition {
         id: id.to_string(),
         dag_name: format!("atlas.{id}"),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger,
         queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
         priority: PriorityClass::Standard,
@@ -898,4 +1151,20 @@ fn schedule_definition(id: &str, trigger: TriggerSpec) -> ScheduleDefinition {
         },
         catch_up: CatchUpPolicy { enabled: false, max_catch_up_runs: 0 },
     }
+}
+
+fn schedule_input_contract() -> BTreeMap<String, GraphInputSpec> {
+    serde_json::from_value(serde_json::json!({
+        "requested_at":{"type":"integer"},
+        "manual_region":{"type":"string"},
+        "event_tenant":{"type":"string"},
+        "event_payload":{"type":"object"},
+        "signal_tenant":{"type":"string"},
+        "dependency_status":{"type":"string"},
+        "dependency_run_id":{"type":"string"},
+        "window_start":{"type":"integer"},
+        "window_end":{"type":"integer"},
+        "partition_key":{"type":"string"}
+    }))
+    .expect("input contract")
 }

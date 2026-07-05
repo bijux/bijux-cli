@@ -59,6 +59,8 @@ fn schedule_validation_accepts_ranges_lists_steps_and_timezone() {
         id: "weekday-window".to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Cron {
             expression: "*/15 9-17 * * 1,3,5".to_string(),
             timezone: "America/New_York".to_string(),
@@ -85,6 +87,8 @@ fn schedule_validation_rejects_unknown_cron_timezone() {
         id: "bad-timezone".to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Cron {
             expression: "0 1 * * *".to_string(),
             timezone: "Mars/Olympus".to_string(),
@@ -229,6 +233,8 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
         id: "sched-1".to_string(),
         dag_name: "dag".to_string(),
         dag_version_policy: "pinned".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Cron {
             expression: "* * * * *".to_string(),
             timezone: "UTC".to_string(),
@@ -280,6 +286,8 @@ fn schedule_validation_rejects_blank_queue_and_noncron_catchup() {
         id: "manual-catchup".to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Manual,
         queue: QueueIdentity {
             queue_name: "   ".to_string(),
@@ -305,6 +313,8 @@ fn schedule_validation_rejects_zero_or_inconsistent_concurrency_layers() {
         id: "zero-cap".to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Cron {
             expression: "* * * * *".to_string(),
             timezone: "UTC".to_string(),
@@ -330,6 +340,8 @@ fn schedule_validation_rejects_backfill_that_exceeds_queue_capacity() {
         id: "backfill-over-cap".to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Backfill(BackfillRequest {
             window_start_unix_ms: 100,
             window_end_unix_ms: 200,
@@ -359,6 +371,8 @@ fn schedule_validation_rejects_partition_list_without_partition_name() {
         id: "backfill-partition-list".to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Backfill(BackfillRequest {
             window_start_unix_ms: 100,
             window_end_unix_ms: 200,
