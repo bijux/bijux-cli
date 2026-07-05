@@ -246,6 +246,18 @@ impl RunDir {
         self.node_dir(node_id).join("attempts.json")
     }
 
+    pub fn node_attempt_dir(&self, node_id: &str, attempt: u32) -> PathBuf {
+        self.node_dir(node_id).join("attempts").join(attempt.to_string())
+    }
+
+    pub fn node_attempt_stdout_path(&self, node_id: &str, attempt: u32) -> PathBuf {
+        self.node_attempt_dir(node_id, attempt).join("stdout.log")
+    }
+
+    pub fn node_attempt_stderr_path(&self, node_id: &str, attempt: u32) -> PathBuf {
+        self.node_attempt_dir(node_id, attempt).join("stderr.log")
+    }
+
     pub fn run_log_path(&self) -> PathBuf {
         self.staging_path.join("run.log.jsonl")
     }
