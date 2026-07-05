@@ -8,8 +8,8 @@ use crate::{emit_json, load_graphs_or_emit, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::RunDirLayout;
 use bijux_dag_runtime::{
     build_backfill_plan, build_planner_analysis, compute_partial_run_closure, diff_plans,
-    explain_plan, AbsolutePathPolicy, PlannerBuildResult, PlannerGuardrails, RuntimeConfig,
-    SelectorSet,
+    explain_plan, AbsolutePathPolicy, PlannerBuildResult, PlannerGuardrails, PlannerPlanDiff,
+    RuntimeConfig, SelectorSet,
 };
 use serde_json::json;
 use std::path::{Path, PathBuf};
@@ -173,6 +173,25 @@ pub(crate) fn plan_explain_payload(
     })
 }
 
+pub(crate) fn plan_diff_changed(diff: &PlannerPlanDiff) -> bool {
+    diff.graph_fingerprint_changed
+}
+
+pub(crate) fn plan_diff_payload(
+    before_result: &PlannerBuildResult,
+    after_result: &PlannerBuildResult,
+    diff: &PlannerPlanDiff,
+) -> serde_json::Value {
+    json!({
+        "changed": plan_diff_changed(diff),
+        "before_plan_fingerprint": before_result.plan_fingerprint,
+        "after_plan_fingerprint": after_result.plan_fingerprint,
+        "before_execution_cost_estimate": before_result.execution_cost_estimate,
+        "after_execution_cost_estimate": after_result.execution_cost_estimate,
+        "diff": diff,
+    })
+}
+
 pub(crate) fn handle_plan_command(
     cli: &DagCli,
     command: &PlanCommands,
@@ -203,10 +222,10 @@ pub(crate) fn handle_plan_command(
                 resolve_downstream_run_selection(&graph, from_node)?;
             let selectors =
                 if upstream_selection_targets.is_empty() && downstream_selection_roots.is_empty() {
-                parse_selectors(select, exclude)?
-            } else {
-                SelectorSet::default()
-            };
+                    parse_selectors(select, exclude)?
+                } else {
+                    SelectorSet::default()
+                };
             let preview_layout = resolve_plan_preview_layout(out.as_deref(), run_id.as_deref())?;
             let preview = PlanPreviewConfig {
                 run_root: out.clone(),
@@ -306,37 +325,51 @@ pub(crate) fn handle_plan_command(
                     .map_err(|_| ExitCode::from(3))?;
 
             let diff = diff_plans(&before_result, &after_result);
-            let changed = !diff.changed_order_nodes.is_empty()
-                || !diff.changed_filter_reasons.is_empty()
-                || !diff.changed_annotations.is_empty();
             if cli.json {
                 return emit_json(
                     cli,
                     "dag.plan.diff",
                     true,
-                    json!({
-                        "changed": changed,
-                        "before_plan_fingerprint": before_result.plan_fingerprint,
-                        "after_plan_fingerprint": after_result.plan_fingerprint,
-                        "before_execution_cost_estimate": before_result.execution_cost_estimate,
-                        "after_execution_cost_estimate": after_result.execution_cost_estimate,
-                        "diff": diff,
-                    }),
+                    plan_diff_payload(&before_result, &after_result, &diff),
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
             }
-            if !changed {
+            if !plan_diff_changed(&diff) {
                 println!("plan diff: no semantic planner differences");
             } else {
-                if !diff.changed_order_nodes.is_empty() {
-                    println!("changed_order_nodes: {}", diff.changed_order_nodes.join(", "));
+                if diff.metadata_only_changed {
+                    println!("metadata_only_changed: true");
                 }
-                if !diff.changed_filter_reasons.is_empty() {
-                    println!("changed_filter_reasons: {}", diff.changed_filter_reasons.join(", "));
+                if diff.execution_affecting_changed {
+                    println!("execution_affecting_changed: true");
                 }
-                if !diff.changed_annotations.is_empty() {
-                    println!("changed_annotations: {}", diff.changed_annotations.join(", "));
+                if !diff.added_nodes.is_empty() {
+                    println!("added_nodes: {}", diff.added_nodes.join(", "));
+                }
+                if !diff.removed_nodes.is_empty() {
+                    println!("removed_nodes: {}", diff.removed_nodes.join(", "));
+                }
+                if !diff.changed_params.is_empty() {
+                    println!("changed_params: {}", diff.changed_params.join(", "));
+                }
+                if !diff.changed_outputs.is_empty() {
+                    println!("changed_outputs: {}", diff.changed_outputs.join(", "));
+                }
+                if !diff.changed_resources.is_empty() {
+                    println!("changed_resources: {}", diff.changed_resources.join(", "));
+                }
+                if !diff.changed_retry_timeout.is_empty() {
+                    println!("changed_retry_timeout: {}", diff.changed_retry_timeout.join(", "));
+                }
+                if !diff.added_dependencies.is_empty() {
+                    println!("added_dependencies: {}", diff.added_dependencies.join(", "));
+                }
+                if !diff.removed_dependencies.is_empty() {
+                    println!("removed_dependencies: {}", diff.removed_dependencies.join(", "));
+                }
+                if !diff.changed_metadata.is_empty() {
+                    println!("changed_metadata: {}", diff.changed_metadata.join(", "));
                 }
             }
             Ok(ExitCode::SUCCESS)
