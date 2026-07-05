@@ -35,6 +35,7 @@ the `experimental` lane is opt-in behind `experimental-public-api`.
 - runtime manifests and provenance records derive `tool_version` from the crate
   build, not from the operator's current shell environment
 - a Git short SHA may appear only when it was captured during the build itself
+  or injected through `BIJUX_DAG_BUILD_GIT_SHA` for a clean release tree
 - runtime fingerprints stay stable when the same binary is executed from a
   different working directory
 - unrelated ambient Git repositories are not allowed to rewrite replay or cache

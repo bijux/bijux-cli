@@ -29,6 +29,9 @@ flowchart TD
 - replay/diff classification vocabulary changes require contract review
 - runtime build identity must be captured at compile time; release flows must
   not depend on ambient runtime Git discovery
+- clean release-tree builds must carry the source revision through
+  `BIJUX_DAG_BUILD_GIT_SHA` when the original checkout SHA should remain visible
+  in `tool_version`
 
 ## Release Validation Matrix
 
@@ -37,6 +40,8 @@ flowchart TD
 - replay and diff contract tests for schema lockstep
 - runtime identity checks confirming working-directory changes do not rewrite
   provenance or cache fingerprints
+- release-tree validation proving `tool_version` keeps the source build stamp
+  without depending on a live `.git` directory
 - docs checks ensuring references align with released behavior
 
 The release gate risks behind this matrix are tracked directly in `RISK-003`,

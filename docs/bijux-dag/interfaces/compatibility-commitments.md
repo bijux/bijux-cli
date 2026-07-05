@@ -42,6 +42,8 @@ flowchart LR
 - capability expansion is acceptable when downgrade semantics remain explicit
 - build metadata may include a captured Git short SHA, but ambient runtime Git
   state is not part of the compatibility surface
+- clean release-tree builds may inject `BIJUX_DAG_BUILD_GIT_SHA`, but that
+  remains a compile-time input rather than a runtime discovery path
 
 ## Reading Rule
 
