@@ -64,8 +64,9 @@ pub mod services;
 pub mod store;
 
 pub use hardening::{
-    build_cleanup_plan, finalize_run_manifest, verify_run_dir, write_incomplete_run_marker,
-    write_json_atomic_durable, ArtifactCleanupPlan, RunDirAuditReport, VerificationMode,
+    build_cleanup_plan, finalize_run_manifest, finalize_run_manifest_with_mode, verify_run_dir,
+    write_incomplete_run_marker, write_json_atomic_durable, ArtifactCleanupPlan,
+    RunDirAuditReport, RunFinalizationMode, VerificationMode,
 };
 pub use hash::sha256_hex;
 pub use index::{

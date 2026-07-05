@@ -11,6 +11,12 @@ pub enum VerificationMode {
     Strict,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RunFinalizationMode {
+    Complete,
+    Incomplete,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunDirAuditReport {
     pub run_dir: PathBuf,
@@ -54,6 +60,13 @@ pub fn write_incomplete_run_marker(
 }
 
 pub fn finalize_run_manifest(run_dir: impl AsRef<Path>) -> Result<(), ArtifactError> {
+    finalize_run_manifest_with_mode(run_dir, RunFinalizationMode::Complete)
+}
+
+pub fn finalize_run_manifest_with_mode(
+    run_dir: impl AsRef<Path>,
+    mode: RunFinalizationMode,
+) -> Result<(), ArtifactError> {
     let run_dir = run_dir.as_ref();
     let manifest = run_dir.join("manifest.json");
     if !manifest.exists() {
@@ -64,12 +77,26 @@ pub fn finalize_run_manifest(run_dir: impl AsRef<Path>) -> Result<(), ArtifactEr
     let finalized = run_dir.join("manifest.finalized.json");
     fs::copy(&manifest, &finalized)?;
     let incomplete_marker_path = run_dir.join(".run-incomplete.json");
-    if incomplete_marker_path.exists() {
-        fs::remove_file(&incomplete_marker_path)?;
+    let complete_marker_path = run_dir.join(".run-complete.json");
+    match mode {
+        RunFinalizationMode::Complete => {
+            if incomplete_marker_path.exists() {
+                fs::remove_file(&incomplete_marker_path)?;
+            }
+            let marker =
+                serde_json::json!({"status": "complete", "manifest": "manifest.finalized.json"});
+            write_json_atomic_durable(complete_marker_path, &marker)
+        }
+        RunFinalizationMode::Incomplete => {
+            if complete_marker_path.exists() {
+                fs::remove_file(&complete_marker_path)?;
+            }
+            if !incomplete_marker_path.exists() {
+                write_incomplete_run_marker(run_dir, "run finalized with incomplete outputs")?;
+            }
+            Ok(())
+        }
     }
-    let marker_path = run_dir.join(".run-complete.json");
-    let marker = serde_json::json!({"status": "complete", "manifest": "manifest.finalized.json"});
-    write_json_atomic_durable(marker_path, &marker)
 }
 
 pub fn verify_run_dir(
