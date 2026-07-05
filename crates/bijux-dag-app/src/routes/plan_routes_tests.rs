@@ -1,11 +1,21 @@
 use super::handle_plan_command;
-use crate::commands::{Commands, DagCli, PlanCommands};
+use crate::commands::{AbsolutePathPolicyArg, Commands, DagCli, PlanCommands};
 use crate::ExitCode;
 use std::fs;
 use std::path::PathBuf;
 
 fn quiet_json_cli() -> DagCli {
     DagCli { json: true, quiet: true, command: Commands::Version }
+}
+
+fn explain_command(dag: PathBuf) -> PlanCommands {
+    PlanCommands::Explain {
+        dag,
+        out: None,
+        run_id: None,
+        cache_dir: None,
+        absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
+    }
 }
 
 fn write_graph_fixture() -> (tempfile::TempDir, PathBuf) {
@@ -72,11 +82,67 @@ fn write_branch_graph_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, dag)
 }
 
+fn write_path_graph_fixture() -> (tempfile::TempDir, PathBuf, PathBuf, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let dag = dir.path().join("graph-paths.json");
+    let out = dir.path().join("runs");
+    let cache_dir = dir.path().join("cache");
+    fs::write(
+        &dag,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"plan-routes-paths","owners":[],"tags":[]},
+          "nodes":[
+            {
+              "id":"shell-copy",
+              "kind":"shell",
+              "inputs":[],
+              "outputs":[{"name":"result","path":"result.txt"}],
+              "params":{"argv":["cp","{inputs_dir}/seed.txt","{outputs_dir}/result.txt"]}
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("write path graph");
+    (dir, dag, out, cache_dir)
+}
+
+fn write_container_workdir_graph_fixture() -> (tempfile::TempDir, PathBuf, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let dag = dir.path().join("graph-container-workdir.json");
+    let out = dir.path().join("runs");
+    fs::write(
+        &dag,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"plan-routes-container-workdir","owners":[],"tags":[]},
+          "nodes":[
+            {
+              "id":"container-copy",
+              "kind":"container",
+              "outputs":[{"name":"result","path":"result.txt"}],
+              "params":{},
+              "container":{
+                "image":"alpine:3.19",
+                "argv":["cp","{inputs_dir}/seed.txt","{outputs_dir}/result.txt"],
+                "workdir":"/absolute/workdir",
+                "engine":"docker"
+              }
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("write container workdir graph");
+    (dir, dag, out)
+}
+
 #[test]
 fn plan_explain_success_path_returns_success() {
     let (_tmp, dag) = write_graph_fixture();
     let cli = quiet_json_cli();
-    let code = handle_plan_command(&cli, &PlanCommands::Explain { dag }).expect("plan explain");
+    let code = handle_plan_command(&cli, &explain_command(dag)).expect("plan explain");
     assert_eq!(code, ExitCode::SUCCESS);
 }
 
@@ -95,7 +161,7 @@ fn plan_command_rejects_malformed_input_without_panic() {
     let result = std::panic::catch_unwind(|| {
         handle_plan_command(
             &cli,
-            &PlanCommands::Explain { dag: PathBuf::from("/no/such/graph.json") },
+            &explain_command(PathBuf::from("/no/such/graph.json")),
         )
     });
     assert!(result.is_ok(), "plan route should not panic on malformed input");
@@ -148,7 +214,7 @@ fn plan_routes_support_replay_and_imported_bundle_shaped_graphs() {
     )
     .expect("write graph");
     let cli = quiet_json_cli();
-    let code = handle_plan_command(&cli, &PlanCommands::Explain { dag }).expect("plan explain");
+    let code = handle_plan_command(&cli, &explain_command(dag)).expect("plan explain");
     assert_eq!(code, ExitCode::SUCCESS);
 }
 
@@ -189,7 +255,11 @@ fn plan_explain_payload_exposes_branch_contracts() {
     )
     .expect("plan");
 
-    let payload = super::plan_explain_payload(&result);
+    let payload = super::plan_explain_payload(
+        &result,
+        None,
+        bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+    );
     let planned_edges = payload["planned_edges"].as_array().expect("planned edges array");
     let branch_left = planned_edges
         .iter()
@@ -209,6 +279,57 @@ fn plan_explain_payload_exposes_branch_contracts() {
     assert_eq!(branch_node["semantic_kind"], "branch");
     assert_eq!(branch_node["trigger_rule"], "all_success");
     assert_eq!(branch_node["branch"]["decision_output"], "decision");
+}
+
+#[test]
+fn plan_explain_payload_reports_previewed_path_bindings() {
+    let (_tmp, dag, out, cache_dir) = write_path_graph_fixture();
+    let raw = fs::read_to_string(dag).expect("read graph");
+    let graph = crate::parse_graph(&raw).expect("graph");
+    let preview_layout =
+        super::resolve_plan_preview_layout(Some(out.as_path()), Some("previewed")).expect("layout");
+    let preview = super::PlanPreviewConfig {
+        run_root: Some(out),
+        run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
+        cache_dir: Some(cache_dir),
+        absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+    };
+    let result = super::build_default_planner_analysis(&graph, &preview).expect("plan");
+    let payload = super::plan_explain_payload(
+        &result,
+        preview_layout.as_ref(),
+        preview.absolute_path_policy,
+    );
+
+    assert_eq!(payload["run_layout"]["run_id"], "previewed");
+    assert_eq!(payload["absolute_path_policy"], "allow_literal");
+    let resolved_paths = payload["path_previews"][0]["resolved_paths"]
+        .as_array()
+        .expect("resolved paths");
+    assert_eq!(resolved_paths.len(), 2);
+    assert_eq!(resolved_paths[0]["expression"], "{inputs_dir}/seed.txt");
+    assert!(resolved_paths[0]["resolved_path"]
+        .as_str()
+        .is_some_and(|value| value.contains("/run.tmp-previewed/nodes/shell-copy/inputs/seed.txt")));
+}
+
+#[test]
+fn plan_explain_rejects_literal_container_workdir_when_policy_denies_it() {
+    let (_tmp, dag, out) = write_container_workdir_graph_fixture();
+    let cli = quiet_json_cli();
+    let error = handle_plan_command(
+        &cli,
+        &PlanCommands::Explain {
+            dag,
+            out: Some(out),
+            run_id: Some("container-preview".to_string()),
+            cache_dir: None,
+            absolute_path_policy: AbsolutePathPolicyArg::DenyLiteral,
+        },
+    )
+    .expect_err("plan explain should fail");
+
+    assert_eq!(error, ExitCode::from(3));
 }
 
 #[test]
