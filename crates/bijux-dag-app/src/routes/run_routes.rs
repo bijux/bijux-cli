@@ -59,6 +59,39 @@ fn cache_preflight(cache_mode: CacheModeArg, cache_dir: &Option<PathBuf>) -> ser
     json!({"status": if writable { "ok" } else { "error" }, "path": dir, "writable": writable})
 }
 
+fn build_run_runtime_options(
+    req: &RunRouteRequest<'_>,
+    preview_layout: Option<&bijux_dag_artifacts::RunDirLayout>,
+    selectors: bijux_dag_runtime::SelectorSet,
+    cache_dir: Option<PathBuf>,
+    remote_cache_dir: Option<PathBuf>,
+    absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy,
+    policy: bijux_dag_runtime::PolicyConfig,
+) -> RuntimeConfig {
+    RuntimeConfig {
+        jobs: req.jobs,
+        cpu_budget: req.cpu_budget,
+        run_timeout_ms: req.run_timeout_ms,
+        node_timeout_ms: req.node_timeout_ms,
+        materialize_inputs: map_materialize_mode(req.materialize_inputs),
+        cache_mode: match req.cache {
+            CacheModeArg::Off => CacheMode::Off,
+            CacheModeArg::Read => CacheMode::Read,
+            CacheModeArg::Readwrite => CacheMode::ReadWrite,
+        },
+        cache_dir,
+        remote_cache_dir,
+        run_root: Some(req.out.to_path_buf()),
+        absolute_path_policy,
+        run_id: preview_layout.map(|layout| layout.run_id.clone()),
+        latest_symlink: req.latest.clone(),
+        policy,
+        selectors,
+        partial_rerun_dependency_closure: req.dependency_closure,
+        ..RuntimeConfig::default()
+    }
+}
+
 pub(crate) fn handle_run_command(
     cli: &DagCli,
     req: RunRouteRequest<'_>,
@@ -97,28 +130,15 @@ pub(crate) fn handle_run_command(
     let remote_cache_dir = req.remote_cache_dir.clone();
     let preview_layout = resolve_plan_preview_layout(Some(req.out), req.run_id.as_deref())?;
     let absolute_path_policy = req.absolute_path_policy.into();
-    let options = RuntimeConfig {
-        jobs: req.jobs,
-        cpu_budget: req.cpu_budget,
-        run_timeout_ms: req.run_timeout_ms,
-        node_timeout_ms: req.node_timeout_ms,
-        materialize_inputs: map_materialize_mode(req.materialize_inputs),
-        cache_mode: match req.cache {
-            CacheModeArg::Off => CacheMode::Off,
-            CacheModeArg::Read => CacheMode::Read,
-            CacheModeArg::Readwrite => CacheMode::ReadWrite,
-        },
-        cache_dir: cache_dir.clone(),
-        remote_cache_dir,
-        run_root: Some(req.out.to_path_buf()),
-        absolute_path_policy,
-        run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
-        latest_symlink: req.latest,
-        policy: bijux_dag_runtime::PolicyConfig { deny_network, deny_env, deny_clock, clean_env },
+    let options = build_run_runtime_options(
+        &req,
+        preview_layout.as_ref(),
         selectors,
-        partial_rerun_dependency_closure: req.dependency_closure,
-        ..RuntimeConfig::default()
-    };
+        cache_dir.clone(),
+        remote_cache_dir,
+        absolute_path_policy,
+        bijux_dag_runtime::PolicyConfig { deny_network, deny_env, deny_clock, clean_env },
+    );
     let scheduling = if req.preflight_only || req.explain_scheduling {
         Some(
             build_planner_analysis(
@@ -245,8 +265,8 @@ fn effective_policy_flags(
 #[cfg(test)]
 mod tests {
     use super::{
-        cache_preflight, effective_policy_flags, emit_run_input_error, handle_run_command,
-        RunRouteRequest,
+        build_run_runtime_options, cache_preflight, effective_policy_flags, emit_run_input_error,
+        handle_run_command, RunRouteRequest,
     };
     use crate::commands::{
         AbsolutePathPolicyArg, CacheModeArg, Commands, DagCli, MaterializeModeArg,
@@ -337,5 +357,68 @@ mod tests {
         .expect("run preflight");
 
         assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn run_runtime_options_preserve_selector_and_closure_configuration() {
+        let out_dir = tempfile::tempdir().expect("tmp");
+        let request = RunRouteRequest {
+            dags: &[],
+            out: out_dir.path(),
+            input: &Vec::new(),
+            inputs_file: None,
+            run_id: Some("selected-run".to_string()),
+            latest: None,
+            jobs: 3,
+            cpu_budget: Some(4),
+            node_timeout_ms: Some(10),
+            run_timeout_ms: Some(20),
+            deny_network: false,
+            deny_env: false,
+            deny_clock: false,
+            clean_env: true,
+            hermetic: false,
+            select: &Vec::new(),
+            exclude: &Vec::new(),
+            dependency_closure: true,
+            materialize_inputs: MaterializeModeArg::Hardlink,
+            cache: CacheModeArg::Readwrite,
+            cache_dir: Some(out_dir.path().join("cache")),
+            remote_cache_dir: Some(out_dir.path().join("remote-cache")),
+            absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
+            preflight_only: false,
+            explain_scheduling: false,
+        };
+        let selectors = bijux_dag_runtime::SelectorSet {
+            include: vec![bijux_dag_runtime::Selector::Id("train".to_string())],
+            exclude: vec![bijux_dag_runtime::Selector::Kind("const".to_string())],
+        };
+        let layout = super::resolve_plan_preview_layout(Some(out_dir.path()), Some("selected-run"))
+            .expect("layout");
+        let options = build_run_runtime_options(
+            &request,
+            layout.as_ref(),
+            selectors.clone(),
+            request.cache_dir.clone(),
+            request.remote_cache_dir.clone(),
+            bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+            bijux_dag_runtime::PolicyConfig {
+                deny_network: true,
+                deny_env: false,
+                deny_clock: true,
+                clean_env: true,
+            },
+        );
+
+        assert_eq!(options.jobs, 3);
+        assert_eq!(options.cpu_budget, Some(4));
+        assert!(options.partial_rerun_dependency_closure);
+        assert_eq!(options.run_id.as_deref(), Some("selected-run"));
+        assert_eq!(options.selectors.include.len(), selectors.include.len());
+        assert_eq!(options.selectors.exclude.len(), selectors.exclude.len());
+        assert!(matches!(options.materialize_inputs, bijux_dag_runtime::MaterializeMode::Hardlink));
+        assert!(matches!(options.cache_mode, bijux_dag_runtime::CacheMode::ReadWrite));
+        assert!(options.policy.deny_network);
+        assert!(options.policy.deny_clock);
     }
 }
