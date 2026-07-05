@@ -92,6 +92,22 @@ The persisted lifecycle states are:
 - `cancelled`
 - `timed_out`
 
+## Retry Attempt Evidence
+
+Retry execution now persists attempt-level evidence instead of collapsing every
+attempt into one overwritten node log.
+
+- `nodes/<node_id>/attempts.json` records each attempt with start time, finish
+  time, terminal status, failure payload, scheduled backoff, and relative log
+  paths.
+- `nodes/<node_id>/attempts/<attempt>/stdout.log` and
+  `nodes/<node_id>/attempts/<attempt>/stderr.log` preserve the stdout/stderr
+  captured for that specific attempt.
+- node-level `stdout.log` and `stderr.log` still reflect the terminal attempt
+  for compatibility with existing operator tooling.
+- `run.log.jsonl` and `observability.timeline.json` now carry explicit retry
+  lifecycle events such as `node_retry_scheduled` and `node_retry_exhausted`.
+
 ## Code Anchors
 
 - `crates/bijux-dag-artifacts/src/storage/models.rs`
