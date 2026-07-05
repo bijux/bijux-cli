@@ -38,6 +38,15 @@ fn legacy_artifact_id(file: &RunOutputFile) -> String {
     )
 }
 
+fn lineage_lookup_ids(file: &RunOutputFile) -> Vec<String> {
+    let mut ids = vec![legacy_artifact_id(file)];
+    let declared_output_id = format!("{}:{}", file.node_id, file.name);
+    if !ids.iter().any(|candidate| candidate == &declared_output_id) {
+        ids.push(declared_output_id);
+    }
+    ids
+}
+
 fn output_name(file: &RunOutputFile) -> String {
     Path::new(&file.path)
         .file_name()
@@ -97,8 +106,23 @@ pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, Exit
     let lineage = if lineage_path.exists() {
         let snapshot: bijux_dag_artifacts::lineage::ArtifactLineageSnapshot =
             read_typed_json(&lineage_path)?;
-        let upstream = bijux_dag_artifacts::platform::lineage_dependencies(&snapshot, &legacy_id);
-        let downstream = bijux_dag_artifacts::platform::lineage_dependents(&snapshot, &legacy_id);
+        let lookup_ids = lineage_lookup_ids(output);
+        let upstream = lookup_ids
+            .iter()
+            .flat_map(|candidate| {
+                bijux_dag_artifacts::platform::lineage_dependencies(&snapshot, candidate)
+            })
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        let downstream = lookup_ids
+            .iter()
+            .flat_map(|candidate| {
+                bijux_dag_artifacts::platform::lineage_dependents(&snapshot, candidate)
+            })
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
         json!({
             "subject_artifact_id": canonical_identity.canonical_artifact_id,
             "subject_legacy_artifact_id": legacy_id,
