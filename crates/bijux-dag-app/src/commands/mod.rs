@@ -591,6 +591,14 @@ pub(crate) enum ScheduleCommands {
     Validate {
         registry: PathBuf,
     },
+    Submit {
+        registry: PathBuf,
+        inputs: PathBuf,
+        #[arg(long)]
+        ledger: Option<PathBuf>,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
     Preview {
         registry: PathBuf,
         #[arg(long)]

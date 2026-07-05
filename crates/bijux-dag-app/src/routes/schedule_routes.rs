@@ -2,9 +2,10 @@ use crate::commands::{DagCli, ScheduleCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::{
     apply_backfill_throttling, compile_submission_request, deduplicate_trigger_events,
-    detect_cron_conflicts, dry_run_schedule, evaluate_sla_metrics, materialize_next_runs,
-    validate_schedule_registry, weighted_priority_tie_break_order, BackfillThrottlingPolicy,
-    PriorityClass, ScheduleRegistry, ScheduledSubmission, WeightedPriorityPolicy,
+    detect_cron_conflicts, dry_run_schedule, evaluate_schedule_submissions, evaluate_sla_metrics,
+    materialize_next_runs, validate_schedule_registry, weighted_priority_tie_break_order,
+    BackfillThrottlingPolicy, PriorityClass, ScheduleEvaluationInputs, ScheduleRegistry,
+    ScheduleSubmissionLedger, ScheduledSubmission, WeightedPriorityPolicy,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -52,6 +53,14 @@ fn parse_json_file<T: serde::de::DeserializeOwned>(path: &std::path::Path) -> Re
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
 }
 
+fn write_pretty_json<T: serde::Serialize>(
+    path: &std::path::Path,
+    value: &T,
+) -> Result<(), ExitCode> {
+    let bytes = serde_json::to_vec_pretty(value).map_err(|_| ExitCode::from(3))?;
+    std::fs::write(path, bytes).map_err(|_| ExitCode::from(3))
+}
+
 pub(crate) fn handle_schedule_command(
     cli: &DagCli,
     command: &ScheduleCommands,
@@ -93,6 +102,44 @@ pub(crate) fn handle_schedule_command(
                     Err(ExitCode::from(3))
                 }
             }
+        }
+        ScheduleCommands::Submit { registry, inputs, ledger, out } => {
+            let registry = parse_schedule_registry(registry)?;
+            validate_schedule_registry(&registry).map_err(|_| ExitCode::from(3))?;
+            let inputs: ScheduleEvaluationInputs = parse_json_file(inputs)?;
+            let existing_ledger = if let Some(ledger_path) = ledger {
+                parse_json_file(ledger_path)?
+            } else {
+                ScheduleSubmissionLedger::default()
+            };
+            let report = evaluate_schedule_submissions(&registry, &inputs, &existing_ledger);
+            let updated_ledger =
+                ScheduleSubmissionLedger { entries: report.recorded_submissions.clone() };
+            if let Some(out_path) = out {
+                write_pretty_json(out_path, &updated_ledger)?;
+            }
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.submit",
+                    true,
+                    json!({
+                        "generated_requests": report.generated_requests,
+                        "recorded_submissions": report.recorded_submissions,
+                        "duplicate_suppressions": report.duplicate_suppressions,
+                        "audits": report.audits,
+                        "written_ledger": out,
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("generated_submissions={}", report.generated_requests.len());
+            println!("duplicate_suppressions={}", report.duplicate_suppressions.len());
+            if let Some(out_path) = out {
+                println!("written_ledger={}", out_path.display());
+            }
+            Ok(ExitCode::SUCCESS)
         }
         ScheduleCommands::Preview { registry, now_unix_ms, next_runs } => {
             let registry = parse_schedule_registry(registry)?;
