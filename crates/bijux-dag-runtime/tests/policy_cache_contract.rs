@@ -912,6 +912,105 @@ fn runtime_cache_verify_detects_corrupt_entry() {
 }
 
 #[test]
+fn runtime_cache_verify_rejects_missing_manifest_before_reuse() {
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let cache = tempfile::tempdir().expect("temp cache");
+
+    let _ = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+
+    let cache_entry = fs::read_dir(cache.path())
+        .expect("cache entries")
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .find(|path| path.join("manifest.json").exists())
+        .expect("cache manifest entry");
+    fs::remove_file(cache_entry.join("manifest.json")).expect("remove cache manifest");
+
+    let rerun = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::Read,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("cache verify");
+
+    let trace: Value = serde_json::from_str(
+        &fs::read_to_string(rerun.join("nodes").join("node").join("trace.json")).expect("trace"),
+    )
+    .expect("parse trace");
+    let proof = trace["cache_proof"].as_object().expect("cache proof");
+    assert_eq!(proof["hit"], false);
+    assert_eq!(proof["corrupt_detected"], true);
+}
+
+#[test]
+fn runtime_cache_verify_rejects_incomplete_required_output_index() {
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let cache = tempfile::tempdir().expect("temp cache");
+
+    let _ = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+
+    let cache_entry = fs::read_dir(cache.path())
+        .expect("cache entries")
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .find(|path| path.join("outputs").join("index.json").exists())
+        .expect("cache outputs entry");
+    fs::write(cache_entry.join("outputs").join("index.json"), "{\"files\":[]}")
+        .expect("truncate outputs index");
+
+    let rerun = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::Read,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("cache verify");
+
+    let trace: Value = serde_json::from_str(
+        &fs::read_to_string(rerun.join("nodes").join("node").join("trace.json")).expect("trace"),
+    )
+    .expect("parse trace");
+    let proof = trace["cache_proof"].as_object().expect("cache proof");
+    assert_eq!(proof["hit"], false);
+    assert_eq!(proof["corrupt_detected"], true);
+}
+
+#[test]
 fn runtime_cache_meta_records_strong_identity_components() {
     let graph =
         parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))

@@ -2260,7 +2260,7 @@ fn try_cache_read(
         let store = cache_store.as_ref().unwrap();
         let entry = store.entry(&key);
         if store.fs().metadata(&entry).is_ok() {
-            if !verify_cache_entry(store.fs(), &entry, &key_input)? {
+            if !verify_cache_entry(store.fs(), &entry, node, &key_input)? {
                 return Ok(CacheRead {
                     hit: false,
                     proof: Some(CacheProof {
@@ -2298,7 +2298,7 @@ fn try_cache_read(
         if let Some(remote_dir) = options.remote_cache_dir.as_ref() {
             let remote_entry = remote_dir.join(&key);
             if store.fs().metadata(&remote_entry).is_ok() {
-                if !verify_cache_entry(store.fs(), &remote_entry, &key_input)? {
+                if !verify_cache_entry(store.fs(), &remote_entry, node, &key_input)? {
                     return Ok(CacheRead {
                         hit: false,
                         proof: Some(CacheProof {
@@ -2475,10 +2475,15 @@ fn cache_entry_manifest_for_node(node: &Node, cache_key: &str) -> CacheEntryMani
 fn verify_cache_entry(
     fs: &dyn Fs,
     entry: &Path,
+    node: &Node,
     expected_input: &CacheKeyInput,
 ) -> Result<bool, RuntimeError> {
     let index_path = entry.join("outputs").join("index.json");
     if fs.metadata(&index_path).is_err() {
+        return Ok(false);
+    }
+    let manifest_path = entry.join("manifest.json");
+    if fs.metadata(&manifest_path).is_err() {
         return Ok(false);
     }
     let meta_path = entry.join("meta.json");
@@ -2491,6 +2496,14 @@ fn verify_cache_entry(
     }
     let expected_key = cache_key_explanation(expected_input).key;
     if meta.get("cache_key").and_then(|v| v.as_str()) != Some(expected_key.as_str()) {
+        return Ok(false);
+    }
+    let manifest: CacheEntryManifest = serde_json::from_str(&fs.read_to_string(&manifest_path)?)?;
+    if !cache_entry_manifest_version_supported(&manifest) {
+        return Ok(false);
+    }
+    let expected_manifest = cache_entry_manifest_for_node(node, &expected_key);
+    if manifest != expected_manifest {
         return Ok(false);
     }
     if meta.get("node_fingerprint").and_then(|v| v.as_str())
@@ -2551,13 +2564,38 @@ fn verify_cache_entry(
     }
     let data = fs.read_to_string(&index_path)?;
     let index: OutputsIndex = serde_json::from_str(&data)?;
-    for file in index.files {
+    for expected_output in &manifest.outputs {
+        let indexed = index.files.iter().find(|file| file.path == expected_output.path);
+        if expected_output.required && indexed.is_none() {
+            return Ok(false);
+        }
+        let Some(file) = indexed else {
+            continue;
+        };
+        if file.name != expected_output.name
+            || file.kind != expected_output.kind
+            || file.media_type != expected_output.media_type
+            || file.node_id != node.id
+            || file.node_fingerprint != expected_input.execution_fingerprint
+        {
+            return Ok(false);
+        }
         let path = entry.join("outputs").join(&file.path);
         if fs.metadata(&path).is_err() {
             return Ok(false);
         }
         let sha = sha256_artifact_path(&path).map_err(RuntimeError::Artifact)?;
         if sha != file.sha256 {
+            return Ok(false);
+        }
+    }
+    for file in index.files {
+        if !manifest.outputs.iter().any(|output| {
+            output.path == file.path
+                && output.name == file.name
+                && output.kind == file.kind
+                && output.media_type == file.media_type
+        }) {
             return Ok(false);
         }
     }
