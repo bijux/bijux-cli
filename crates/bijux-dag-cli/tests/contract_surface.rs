@@ -970,6 +970,7 @@ fn fsck_alias_supports_bundle_verification_mode() {
 #[test]
 fn capabilities_backend_query_supports_kubernetes() {
     let output = dag_command()
+        .env("BIJUX_DAG_ENABLE_INTERNAL", "1")
         .args(["capabilities", "--backend", "kubernetes", "--json"])
         .output()
         .expect("capabilities backend");
@@ -984,6 +985,7 @@ fn capabilities_backend_query_supports_kubernetes() {
 #[test]
 fn capabilities_backend_query_supports_hpc() {
     let output = dag_command()
+        .env("BIJUX_DAG_ENABLE_INTERNAL", "1")
         .args(["capabilities", "--backend", "hpc", "--json"])
         .output()
         .expect("capabilities hpc backend");
@@ -998,6 +1000,7 @@ fn capabilities_backend_query_supports_hpc() {
 #[test]
 fn capabilities_backend_query_supports_remote() {
     let output = dag_command()
+        .env("BIJUX_DAG_ENABLE_INTERNAL", "1")
         .args(["capabilities", "--backend", "remote", "--json"])
         .output()
         .expect("capabilities remote backend");
@@ -1013,6 +1016,7 @@ fn capabilities_backend_query_supports_remote() {
 #[test]
 fn semantic_portability_backend_query_surface_is_available() {
     let output = dag_command()
+        .env("BIJUX_DAG_ENABLE_INTERNAL", "1")
         .args(["semantic-portability", "--backend", "kubernetes", "--json"])
         .output()
         .expect("semantic portability");
@@ -1045,6 +1049,7 @@ fn equivalence_proof_surface_reports_for_two_runs() {
     let run_b_dir = run_b_payload["data"]["run_dir"].as_str().expect("run b dir");
 
     let output = dag_command()
+        .env("BIJUX_DAG_ENABLE_INTERNAL", "1")
         .args([
             "equivalence-proof",
             run_a_dir,
