@@ -19,9 +19,10 @@ mod engine_observe;
 #[path = "engine_record.rs"]
 mod engine_record;
 use bijux_dag_artifacts::{
-    finalize_run_manifest, write_incomplete_run_marker, write_provenance, write_run_outputs_index,
-    write_run_schema_index, FailureInfo, Manifest, NodeCounts, Provenance, ReplayProvenance,
-    RunDir, RunDirLayout, RunDirSchemaIndex, RunMetadata, TriggerEvaluation, TriggerParentStatus,
+    finalize_run_manifest_with_mode, write_incomplete_run_marker, write_provenance,
+    write_run_outputs_index, write_run_schema_index, FailureInfo, Manifest, NodeCounts,
+    Provenance, ReplayProvenance, RunDir, RunDirLayout, RunDirSchemaIndex,
+    RunFinalizationMode, RunMetadata, TriggerEvaluation, TriggerParentStatus,
 };
 use bijux_dag_core::{
     evaluate_trigger_rule, Effect, Graph, Node, NodeKind, SemanticNodeKind, TriggerRule,
@@ -779,6 +780,13 @@ pub fn execute(
         cache_mode: cache_mode_string(&options.cache_mode),
         cache_dir: effective_cache_dir.as_ref().map(|p| p.display().to_string()),
         run_timeout_ms: options.run_timeout_ms,
+        run_timeout_behavior: options.run_timeout_ms.map(|_| {
+            match options.run_timeout_behavior {
+                crate::RunTimeoutBehavior::FinishRunning => "finish_running",
+                crate::RunTimeoutBehavior::CancelRunning => "cancel_running",
+            }
+            .to_string()
+        }),
         run_metadata: None,
         run_summary: None,
     };
@@ -1153,7 +1161,7 @@ pub fn execute(
                 continue;
             }
             if let Some(limit) = options.run_timeout_ms {
-                if start.elapsed() > Duration::from_millis(limit) {
+                if start.elapsed() >= Duration::from_millis(limit) {
                     run_timed_out = true;
                     preflight_failures.push((
                         node_id.clone(),
@@ -1208,6 +1216,36 @@ pub fn execute(
                 }
             }
             let resolved_params = ctx.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
+            let mut node = node;
+            if matches!(options.run_timeout_behavior, crate::RunTimeoutBehavior::CancelRunning) {
+                if let Some(limit_ms) = options.run_timeout_ms {
+                    let elapsed_ms = start.elapsed().as_millis() as u64;
+                    let remaining_ms = limit_ms.saturating_sub(elapsed_ms);
+                    if remaining_ms == 0 {
+                        run_timed_out = true;
+                        preflight_failures.push((
+                            node_id.clone(),
+                            node,
+                            FailureInfo {
+                                kind: "Execution".to_string(),
+                                code: "RUN_TIMEOUT".to_string(),
+                                message: "run timeout exceeded before node start".to_string(),
+                                details: Some(serde_json::json!({ "run_timeout_ms": limit_ms })),
+                            },
+                            "TimeoutExceeded".to_string(),
+                            None,
+                        ));
+                        continue;
+                    }
+                    let resolved_timeout_ms =
+                        resolved_params.get("timeout_ms").and_then(|value| value.as_u64());
+                    let effective_timeout_ms =
+                        node.timeout_ms.or(resolved_timeout_ms).map_or(remaining_ms, |timeout_ms| {
+                            timeout_ms.min(remaining_ms)
+                        });
+                    node.timeout_ms = Some(effective_timeout_ms);
+                }
+            }
 
             if node.retry.max_attempts > 0
                 && (node.effects.contains(&Effect::Clock)
@@ -1701,6 +1739,17 @@ pub fn execute(
             }
             match res {
                 Ok(mut result) => {
+                    if matches!(
+                        options.run_timeout_behavior,
+                        crate::RunTimeoutBehavior::CancelRunning
+                    ) && result.failure.as_ref().map(|failure| failure.code.as_str())
+                        == Some("EXEC_TIMEOUT")
+                        && options
+                            .run_timeout_ms
+                            .is_some_and(|limit_ms| start.elapsed() >= Duration::from_millis(limit_ms))
+                    {
+                        run_timed_out = true;
+                    }
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
                     let aschema = runtime.adapter_schema_for_kind(&node.kind);
                     let adapter_hash =
@@ -2034,6 +2083,11 @@ pub fn execute(
     }
 
     if run_timed_out {
+        write_incomplete_run_marker(
+            ctx.run_dir.staging_path(),
+            "run timed out; partial outputs require resume or repair before completion",
+        )
+        .map_err(|err| RuntimeError::Executor(format!("incomplete run marker write failed: {err}")))?;
         for node in &graph.nodes {
             if status_map.contains_key(&node.id) {
                 continue;
@@ -2213,7 +2267,7 @@ pub fn execute(
     if cancel.load(Ordering::SeqCst) {
         manifest.status = "cancelled".to_string();
     } else if run_timed_out {
-        manifest.status = "failed".to_string();
+        manifest.status = "timed_out".to_string();
     } else if status_map.values().any(|s| *s == NodeStatus::Failed) {
         manifest.status = "failed".to_string();
     }
@@ -2389,9 +2443,14 @@ pub fn execute(
         &RunDirSchemaIndex::default(),
     )
     .map_err(|err| RuntimeError::Executor(format!("run schema index write failed: {err}")))?;
-    finalize_run_manifest(ctx.run_dir.staging_path()).map_err(|err| {
-        RuntimeError::Executor(format!("run finalization marker write failed: {err}"))
-    })?;
+    let finalization_mode = if run_timed_out {
+        RunFinalizationMode::Incomplete
+    } else {
+        RunFinalizationMode::Complete
+    };
+    finalize_run_manifest_with_mode(ctx.run_dir.staging_path(), finalization_mode).map_err(
+        |err| RuntimeError::Executor(format!("run finalization marker write failed: {err}")),
+    )?;
 
     let final_path = run_dir.finalize()?;
     if let Some(latest) = options.latest_symlink {

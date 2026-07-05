@@ -1017,6 +1017,13 @@ pub enum CacheMode {
     ReadWrite,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RunTimeoutBehavior {
+    FinishRunning,
+    CancelRunning,
+}
+
 struct CacheRead {
     hit: bool,
     proof: Option<CacheProof>,
@@ -1037,6 +1044,7 @@ pub struct RuntimeConfig {
     pub jobs: usize,
     pub cpu_budget: Option<u32>,
     pub run_timeout_ms: Option<u64>,
+    pub run_timeout_behavior: RunTimeoutBehavior,
     pub node_timeout_ms: Option<u64>,
     pub materialize_inputs: MaterializeMode,
     pub cache_mode: CacheMode,
@@ -1066,6 +1074,7 @@ impl Default for RuntimeConfig {
             jobs: 1,
             cpu_budget: None,
             run_timeout_ms: None,
+            run_timeout_behavior: RunTimeoutBehavior::FinishRunning,
             node_timeout_ms: None,
             materialize_inputs: MaterializeMode::Copy,
             cache_mode: CacheMode::Off,

@@ -13,7 +13,8 @@ use thiserror as _;
 use bijux_dag_artifacts::RunOutputsIndex;
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
-    registered_adapters, CacheMode, FailurePropagationMode, PolicyConfig, Runtime, RuntimeConfig,
+    registered_adapters, CacheMode, FailurePropagationMode, PolicyConfig, RunTimeoutBehavior,
+    Runtime, RuntimeConfig,
 };
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -1032,7 +1033,7 @@ fn runtime_fail_fast_marks_unscheduled_nodes_as_aborted_failures() {
 }
 
 #[test]
-fn runtime_marks_pending_nodes_failed_when_run_times_out() {
+fn runtime_marks_timed_out_runs_incomplete_when_deadline_is_exceeded() {
     let graph = parse_graph_strict(&graph_with_run_timeout_pending_node()).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
@@ -1048,7 +1049,10 @@ fn runtime_marks_pending_nodes_failed_when_run_times_out() {
         &fs::read_to_string(run_path.join("manifest.json")).expect("manifest"),
     )
     .expect("parse manifest");
-    assert_eq!(manifest["status"], "failed");
+    assert_eq!(manifest["status"], "timed_out");
+    assert_eq!(manifest["run_timeout_behavior"], "finish_running");
+    assert!(run_path.join(".run-incomplete.json").exists());
+    assert!(!run_path.join(".run-complete.json").exists());
 
     let trace = read_node_trace(&run_path, "b");
     assert_eq!(trace["status"], "failed");
@@ -1077,6 +1081,42 @@ fn runtime_marks_pending_nodes_failed_when_run_times_out() {
     assert!(propagation
         .iter()
         .any(|entry| entry["node_id"] == "b" && entry["cause"] == "timeout_exceeded"));
+}
+
+#[test]
+fn runtime_can_cancel_inflight_nodes_when_run_timeout_behavior_requires_it() {
+    let graph = parse_graph_strict(&graph_with_run_timeout_pending_node()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                run_timeout_ms: Some(10),
+                run_timeout_behavior: RunTimeoutBehavior::CancelRunning,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("timed run");
+
+    let manifest: Value = serde_json::from_str(
+        &fs::read_to_string(run_path.join("manifest.json")).expect("manifest"),
+    )
+    .expect("parse manifest");
+    assert_eq!(manifest["status"], "timed_out");
+    assert_eq!(manifest["run_timeout_behavior"], "cancel_running");
+    assert!(run_path.join(".run-incomplete.json").exists());
+    assert!(!run_path.join(".run-complete.json").exists());
+
+    let running_trace = read_node_trace(&run_path, "a");
+    assert_eq!(running_trace["status"], "failed");
+    assert_eq!(running_trace["failure"]["code"], "EXEC_TIMEOUT");
+    assert_eq!(running_trace["lifecycle_state"], "timed_out");
+
+    let pending_trace = read_node_trace(&run_path, "b");
+    assert_eq!(pending_trace["failure"]["code"], "RUN_TIMEOUT");
+    assert_eq!(pending_trace["lifecycle_state"], "timed_out");
 }
 
 #[test]

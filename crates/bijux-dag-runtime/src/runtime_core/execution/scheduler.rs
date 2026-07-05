@@ -520,7 +520,7 @@ fn preflight_decision(
         });
     }
     if let Some(limit_ms) = options.run_timeout_ms {
-        if started.elapsed() > Duration::from_millis(limit_ms) {
+        if started.elapsed() >= Duration::from_millis(limit_ms) {
             return Some(ScheduleDecision {
                 ready_candidates: Vec::new(),
                 batch: Vec::new(),
