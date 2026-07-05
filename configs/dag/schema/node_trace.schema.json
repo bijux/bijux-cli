@@ -27,7 +27,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name", "path", "kind", "required", "present", "media_type"],
+        "required": ["name", "path", "kind", "required", "present", "media_type", "size_bytes"],
         "properties": {
           "name": {"type": "string"},
           "path": {"type": "string"},
@@ -35,6 +35,7 @@
           "required": {"type": "boolean"},
           "present": {"type": "boolean"},
           "media_type": {"type": "string"},
+          "size_bytes": {"type": ["integer", "null"]},
           "sha256": {"type": ["string", "null"]}
         }
       }
