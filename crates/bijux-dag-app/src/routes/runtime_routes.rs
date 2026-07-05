@@ -575,6 +575,7 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
                     path: file.path,
                     kind: file.kind,
                     media_type: file.media_type,
+                    size_bytes: file.size_bytes,
                     sha256: file.sha256,
                 })
                 .collect::<Vec<_>>()
