@@ -31,13 +31,23 @@ fn explain_output_shape_snapshot_is_stable() {
     fs::create_dir_all(run.join("nodes/fail")).expect("mkdir");
     fs::write(
         run.join("nodes/fail/trace.json"),
-        serde_json::to_vec_pretty(&json!({"status":"failed"})).expect("trace"),
+        serde_json::to_vec_pretty(&json!({
+            "status":"failed",
+            "failure":{
+                "kind":"Policy",
+                "code":"POLICY_DENIED",
+                "message":"clock denied"
+            }
+        }))
+        .expect("trace"),
     )
     .expect("write");
     let explained = explain_failure(&run).expect("explain failure");
     let rendered = serde_json::to_string_pretty(&explained).expect("json");
     assert!(rendered.contains("root_failure"));
+    assert!(rendered.contains("root_failure_class"));
     assert!(rendered.contains("failed_nodes"));
+    assert!(rendered.contains("failure_classes"));
 }
 
 #[test]
@@ -64,8 +74,23 @@ fn inspect_output_shape_snapshot_is_stable() {
         serde_json::to_vec_pretty(&json!({"files":[]})).expect("outputs"),
     )
     .expect("write");
+    fs::write(
+        run.join("nodes/a/trace.json"),
+        serde_json::to_vec_pretty(&json!({
+            "status":"failed",
+            "failure":{
+                "kind":"Execution",
+                "code":"EXEC_FAIL",
+                "message":"command exited"
+            }
+        }))
+        .expect("trace"),
+    )
+    .expect("write");
     let summary = inspect_summary(&run).expect("summary");
     let text = format_inspect_human(&summary);
+    assert_eq!(summary["failure_classes"], json!(["execution"]));
     assert!(text.contains("run_id"));
+    assert!(text.contains("[execution]"));
     assert!(text.contains("origin"));
 }

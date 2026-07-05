@@ -197,6 +197,35 @@ fn run_rejects_missing_required_runtime_input_before_execution() {
 }
 
 #[test]
+fn run_json_error_includes_user_error_class_for_missing_required_inputs() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let graph = temp.path().join("graph.json");
+    write_runtime_input_graph(&graph);
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("runs dir");
+
+    let (code, stdout, stderr) = support::run_dag_command(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--input",
+            "region=only-region",
+        ],
+        &root,
+    );
+    assert_eq!(code, 2);
+    assert!(stderr.is_empty(), "json errors should not write human stderr: {stderr}");
+    let payload: Value = serde_json::from_str(&stdout).expect("parse json error");
+    assert_eq!(payload["status"], "invalid");
+    assert_eq!(payload["data"]["error_class"], "user");
+    assert_eq!(payload["data"]["missing_inputs"], json!(["api_token", "payload"]));
+}
+
+#[test]
 fn run_human_output_redacts_secret_like_input_values() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
