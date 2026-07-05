@@ -1702,21 +1702,31 @@ fn materialize_inputs(
             ctx.fs.create_dir_all(parent)?;
         }
         if ctx.fs.metadata(&src_path).is_ok() {
+            let source_sha256 = sha256_artifact_path(&src_path).map_err(RuntimeError::Artifact)?;
             materialize_file(ctx.fs.as_ref(), &src_path, &dst_path, mode)?;
-            let sha = sha256_artifact_path(&dst_path).map_err(RuntimeError::Artifact)?;
+            let local_sha256 =
+                materialized_input_sha256(ctx.fs.as_ref(), &dst_path).map_err(RuntimeError::Artifact)?;
+            if local_sha256 != source_sha256 {
+                return Err(RuntimeError::Executor(format!(
+                    "materialized input hash mismatch for {} -> {}",
+                    src_path.display(),
+                    dst_path.display()
+                )));
+            }
             let rel = dst_path.strip_prefix(&inputs_dir).unwrap_or(&dst_path);
             let rel_str = rel.to_string_lossy().to_string();
             let from_fp = node_fingerprint_from_ctx(ctx, &edge.from.node_id);
             files.push(InputFile {
-                path: rel_str,
-                sha256: sha,
-                from_node: edge.from.node_id.clone(),
-                from_node_fingerprint: from_fp,
-                from_output: edge.from.port.clone(),
+                local_path: rel_str,
+                source_sha256,
+                source_node_id: edge.from.node_id.clone(),
+                source_node_fingerprint: from_fp,
+                source_output_name: edge.from.port.clone(),
+                materialization_mode: materialize_mode_label(mode).to_string(),
             });
         }
     }
-    files.sort_by(|a, b| a.path.cmp(&b.path));
+    files.sort_by(|a, b| a.local_path.cmp(&b.local_path));
     let index = InputsIndex { files };
     write_inputs_index(&inputs_dir, &index)?;
     Ok(index)
@@ -2522,6 +2532,11 @@ fn materialize_file(
         }
     }
     Ok(())
+}
+
+fn materialized_input_sha256(fs: &dyn Fs, path: &Path) -> Result<String, ArtifactError> {
+    let resolved = fs.canonicalize(path)?;
+    sha256_artifact_path(&resolved)
 }
 
 #[cfg(test)]
