@@ -104,6 +104,7 @@ fn resource_retry_trace_event_volume_stays_bounded() {
         }),
         skip_reason: None,
         failure: Some(bijux_dag_artifacts::FailureInfo {
+            class: Some(bijux_dag_artifacts::FailureClass::Execution),
             kind: "execution".to_string(),
             code: "EXEC_NON_ZERO".to_string(),
             message: "failed".to_string(),

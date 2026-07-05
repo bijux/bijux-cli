@@ -208,11 +208,80 @@ pub struct ReplayProvenance {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FailureInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub class: Option<FailureClass>,
     pub kind: String,
     pub code: String,
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum FailureClass {
+    User,
+    Infrastructure,
+    Execution,
+    Timeout,
+    Policy,
+}
+
+impl FailureClass {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::User => "user",
+            Self::Infrastructure => "infrastructure",
+            Self::Execution => "execution",
+            Self::Timeout => "timeout",
+            Self::Policy => "policy",
+        }
+    }
+}
+
+impl FailureInfo {
+    pub fn new(
+        class: FailureClass,
+        kind: impl Into<String>,
+        code: impl Into<String>,
+        message: impl Into<String>,
+        details: Option<serde_json::Value>,
+    ) -> Self {
+        Self {
+            class: Some(class),
+            kind: kind.into(),
+            code: code.into(),
+            message: message.into(),
+            details,
+        }
+    }
+
+    pub fn operator_class(&self) -> FailureClass {
+        self.class.unwrap_or_else(|| infer_failure_class(&self.kind, &self.code))
+    }
+}
+
+fn infer_failure_class(kind: &str, code: &str) -> FailureClass {
+    match code {
+        "POLICY_DENIED" | "POLICY_UNENFORCEABLE" => FailureClass::Policy,
+        "RUN_TIMEOUT" | "EXEC_TIMEOUT" => FailureClass::Timeout,
+        "INPUT_MISSING"
+        | "OUTPUT_MISSING"
+        | "OUTPUT_PATH_INVALID"
+        | "OUTPUT_SCHEMA_INVALID"
+        | "OUTPUT_UNDECLARED"
+        | "BRANCH_OUTPUT_MISSING" => FailureClass::User,
+        "CONTAINER_ENGINE_UNAVAILABLE" | "ARTIFACT_ERROR" | "IO_ERROR" => {
+            FailureClass::Infrastructure
+        }
+        _ => match kind {
+            "Policy" => FailureClass::Policy,
+            "Infrastructure" => FailureClass::Infrastructure,
+            "Timeout" => FailureClass::Timeout,
+            "User" | "Dependency" => FailureClass::User,
+            _ => FailureClass::Execution,
+        },
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
