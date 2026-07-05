@@ -1798,6 +1798,56 @@ pub fn execute(
                             "attempt": attempt.attempt,
                             "status": crate::status_string(&attempt.status),
                         }));
+                        if let Some(backoff_ms) = attempt.scheduled_backoff_ms {
+                            crate::append_event(
+                                &mut run_log,
+                                serde_json::json!({
+                                    "event": "node_retry_scheduled",
+                                    "ts": attempt.finished_unix_ms,
+                                    "node_id": node_id,
+                                    "attempt": attempt.attempt,
+                                    "next_attempt": attempt.attempt + 1,
+                                    "backoff_ms": backoff_ms,
+                                }),
+                            )?;
+                            run_log_index.push(serde_json::json!({
+                                "event": "node_retry_scheduled",
+                                "ts": attempt.finished_unix_ms,
+                                "node_id": node_id,
+                                "attempt": attempt.attempt,
+                                "next_attempt": attempt.attempt + 1,
+                                "backoff_ms": backoff_ms,
+                            }));
+                        }
+                    }
+                    if result.status == NodeStatus::Failed {
+                        if let Some(final_attempt) = result.attempt_events.last() {
+                            crate::append_event(
+                                &mut run_log,
+                                serde_json::json!({
+                                    "event": "node_retry_exhausted",
+                                    "ts": final_attempt.finished_unix_ms,
+                                    "node_id": node_id,
+                                    "attempt": final_attempt.attempt,
+                                    "status": crate::status_string(&final_attempt.status),
+                                    "failure_code": final_attempt
+                                        .failure
+                                        .as_ref()
+                                        .map(|failure| failure.code.clone()),
+                                }),
+                            )?;
+                            run_log_index.push(serde_json::json!({
+                                "event": "node_retry_exhausted",
+                                "ts": final_attempt.finished_unix_ms,
+                                "node_id": node_id,
+                                "attempt": final_attempt.attempt,
+                                "status": crate::status_string(&final_attempt.status),
+                                "failure_code": final_attempt
+                                    .failure
+                                    .as_ref()
+                                    .map(|failure| failure.code.clone()),
+                            }));
+                        }
                     }
                     crate::write_attempt_events(&ctx, &node_id, &result.attempt_events)?;
                     let branch_decision = match resolve_branch_decision(&ctx, &node) {

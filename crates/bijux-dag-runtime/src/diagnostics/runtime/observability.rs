@@ -314,7 +314,10 @@ pub fn category_from_runtime_event_name(name: &str) -> EventCategory {
         }
         "node_dispatch" => EventCategory::Dispatch,
         "node_started" | "run_started" => EventCategory::Start,
-        "node_attempt_started" | "node_attempt_finished" => EventCategory::Retry,
+        "node_attempt_started"
+        | "node_attempt_finished"
+        | "node_retry_scheduled"
+        | "node_retry_exhausted" => EventCategory::Retry,
         "run_timeout" => EventCategory::Timeout,
         "cache_hit" => EventCategory::CacheHit,
         "cache_miss" => EventCategory::CacheMiss,
