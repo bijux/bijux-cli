@@ -997,6 +997,7 @@ pub fn execute(
         } else {
             "initial_submission".to_string()
         },
+        resume_summary: None,
     };
     let run_attempts_path = ctx.run_dir.staging_path().join("run.attempts.json");
     ctx.fs.write(&run_attempts_path, &serde_json::to_vec_pretty(&vec![run_attempt])?)?;

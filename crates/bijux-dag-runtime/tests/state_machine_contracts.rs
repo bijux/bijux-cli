@@ -12,8 +12,9 @@ use thiserror as _;
 
 use bijux_dag_runtime::{
     imported_run_distinguishable, terminal_transition_audit_events, validate_node_transition,
-    validate_run_transition, verify_post_run_state_consistency, NodeState, NodeTransition, RunId,
-    RunSnapshot, RunState, RunTransition, TransitionCause,
+    validate_run_transition, verify_post_run_state_consistency, NodeState, NodeTransition,
+    ResumeFailureMode, ResumeSummary, RunId, RunSnapshot, RunState, RunTransition,
+    TransitionCause,
 };
 
 #[test]
@@ -85,12 +86,19 @@ fn retry_attempts_keep_node_identity_but_change_attempt_identity() {
         run_id: RunId("run-1".to_string()),
         parent_run_id: None,
         reason: "initial".to_string(),
+        resume_summary: None,
     };
     let second = bijux_dag_runtime::RunAttempt {
         attempt_index: 2,
         run_id: RunId("run-1".to_string()),
         parent_run_id: Some(RunId("run-1".to_string())),
         reason: "retry".to_string(),
+        resume_summary: Some(ResumeSummary {
+            failure_mode: ResumeFailureMode::RerunIncomplete,
+            reused_nodes: vec!["extract".to_string()],
+            rerun_nodes: vec!["publish".to_string()],
+            rejected_nodes: Vec::new(),
+        }),
     };
     assert_eq!(first.run_id, second.run_id);
     assert_ne!(first.attempt_index, second.attempt_index);
