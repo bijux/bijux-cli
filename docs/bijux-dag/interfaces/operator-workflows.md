@@ -148,6 +148,28 @@ Metadata-only drift means the graph fingerprint changed while the execution
 fingerprint stayed stable. Execution-affecting drift means the planned runtime
 surface changed and should be reviewed as a real workflow mutation.
 
+When the operator needs a yes-or-no answer instead of a raw diff, use
+`plan equivalence` against the same pair of graph files.
+
+```bash
+bijux-dag plan equivalence \
+  ./pipelines/main-before.dag.json \
+  ./pipelines/main-after.dag.json \
+  --json
+```
+
+The equivalence contract reports:
+
+- whether the graphs are execution-equivalent
+- whether canonical graph identity stayed equal
+- whether the execution fingerprint stayed equal
+- which metadata drift was ignored to preserve equivalence
+- the exact execution-affecting causes when equivalence fails
+
+This keeps cosmetic metadata edits separate from real workflow mutations, and
+it does not over-claim safety when planner-visible execution drift exists even
+if the current execution fingerprint remains unchanged.
+
 ## Run Only The Prerequisites For A Target Node
 
 When the operator wants the minimal execution closure required to reach one

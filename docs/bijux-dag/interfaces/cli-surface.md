@@ -144,6 +144,15 @@ for node-local directories and container workdirs:
 - The diff payload distinguishes `metadata_only_changed` from
   `execution_affecting_changed` by comparing graph identity against execution
   identity.
+- `bijux-dag plan equivalence <before> <after>` answers the higher-level
+  operator question: do these two graph files still execute the same logical
+  workflow?
+- The equivalence payload reports canonical graph identity equality,
+  execution-fingerprint equality, ignored non-execution metadata drift, and the
+  exact execution-affecting causes when equivalence fails.
+- A matching execution fingerprint is not treated as sufficient proof on its
+  own; execution-affecting planner drift still fails equivalence and is exposed
+  explicitly in `non_equivalence_causes`.
   `bijux-dag run --explain-scheduling --json` include the same `run_layout` and
   `path_previews` contract that `plan explain` uses, including resolved argv
   tokens for command-bearing nodes and the selected execution-cost estimate.
