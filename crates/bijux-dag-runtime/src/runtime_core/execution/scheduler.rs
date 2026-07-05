@@ -55,12 +55,109 @@ pub struct CatchUpPolicy {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum BackfillFailurePolicy {
+    Continue,
+    Pause,
+    Cancel,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BackfillRequest {
     pub window_start_unix_ms: u128,
     pub window_end_unix_ms: u128,
     pub partition_by: Option<String>,
+    #[serde(default)]
+    pub partition_keys: Vec<String>,
     pub max_parallelism: u32,
-    pub failure_policy: String,
+    pub failure_policy: BackfillFailurePolicy,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum BackfillLifecycleStatus {
+    Active,
+    Paused,
+    Cancelled,
+    Completed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum BackfillRunStatus {
+    Queued,
+    Submitted,
+    Running,
+    Completed,
+    Failed,
+    Cancelled,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BackfillRunRecord {
+    pub requested_unix_ms: u128,
+    pub partition_key: Option<String>,
+    pub dedupe_key: String,
+    pub run_id: String,
+    pub status: BackfillRunStatus,
+    pub updated_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BackfillAuditRecord {
+    pub at_unix_ms: u128,
+    pub action: String,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BackfillOperation {
+    pub backfill_id: String,
+    pub schedule_id: String,
+    pub dag_name: String,
+    pub dag_version_policy: String,
+    pub queue: QueueIdentity,
+    pub priority: PriorityClass,
+    pub request: BackfillRequest,
+    pub lifecycle: BackfillLifecycleStatus,
+    pub lifecycle_reason: Option<String>,
+    pub updated_unix_ms: u128,
+    #[serde(default)]
+    pub audit: Vec<BackfillAuditRecord>,
+    #[serde(default)]
+    pub runs: Vec<BackfillRunRecord>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BackfillStatusUpdate {
+    pub run_id: String,
+    pub status: BackfillRunStatus,
+    pub updated_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct BackfillStatusUpdateBatch {
+    #[serde(default)]
+    pub updates: Vec<BackfillStatusUpdate>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BackfillAdvanceRequest {
+    pub now_unix_ms: u128,
+    pub pending_live_runs: usize,
+    pub throttling_policy: crate::scheduler_workload::BackfillThrottlingPolicy,
+    #[serde(default)]
+    pub status_updates: Vec<BackfillStatusUpdate>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BackfillAdvanceReport {
+    pub operation: BackfillOperation,
+    #[serde(default)]
+    pub dispatched_requests: Vec<ExecutionSubmissionRequest>,
+    pub active_runs: usize,
+    pub queued_runs: usize,
+    pub allowed_dispatches: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -938,6 +1035,33 @@ pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> 
                 definition.id
             ));
         }
+        if backfill.partition_by.as_ref().is_some_and(|value| value.trim().is_empty()) {
+            return Err(format!(
+                "schedule '{}' backfill partition_by must not be blank",
+                definition.id
+            ));
+        }
+        if !backfill.partition_keys.is_empty() && backfill.partition_by.is_none() {
+            return Err(format!(
+                "schedule '{}' backfill partition_keys require partition_by",
+                definition.id
+            ));
+        }
+        let mut seen_partition_keys = BTreeSet::new();
+        for partition_key in &backfill.partition_keys {
+            if partition_key.trim().is_empty() {
+                return Err(format!(
+                    "schedule '{}' backfill partition_keys must not contain blanks",
+                    definition.id
+                ));
+            }
+            if !seen_partition_keys.insert(partition_key) {
+                return Err(format!(
+                    "schedule '{}' backfill partition_keys must be unique",
+                    definition.id
+                ));
+            }
+        }
     } else if definition.concurrency.per_queue.is_none() {
         return Err(format!("schedule '{}' must declare queue concurrency cap", definition.id));
     }
@@ -993,6 +1117,216 @@ pub fn compile_submission_request(
         SubmissionTriggerKind::Manual,
         format!("manual:{}:{}", definition.id, requested_unix_ms),
     )
+}
+
+pub fn compile_backfill_operation(
+    definition: &ScheduleDefinition,
+    backfill_id: Option<&str>,
+    planned_unix_ms: u128,
+) -> Result<BackfillOperation, String> {
+    validate_schedule_policy_combination(definition)?;
+    let TriggerSpec::Backfill(backfill) = &definition.trigger else {
+        return Err(format!("schedule '{}' does not declare a backfill trigger", definition.id));
+    };
+    let backfill_id = backfill_id
+        .map(str::to_string)
+        .unwrap_or_else(|| deterministic_backfill_id(&definition.id, backfill));
+    let runs = plan_backfill_runs(definition, backfill, planned_unix_ms);
+    let mut operation = BackfillOperation {
+        backfill_id,
+        schedule_id: definition.id.clone(),
+        dag_name: definition.dag_name.clone(),
+        dag_version_policy: definition.dag_version_policy.clone(),
+        queue: definition.queue.clone(),
+        priority: definition.priority.clone(),
+        request: backfill.clone(),
+        lifecycle: BackfillLifecycleStatus::Active,
+        lifecycle_reason: None,
+        updated_unix_ms: planned_unix_ms,
+        audit: vec![BackfillAuditRecord {
+            at_unix_ms: planned_unix_ms,
+            action: "planned".to_string(),
+            detail: format!("planned {} backfill runs", runs.len()),
+        }],
+        runs,
+    };
+    refresh_backfill_completion(&mut operation, planned_unix_ms);
+    Ok(operation)
+}
+
+pub fn pause_backfill_operation(
+    operation: &mut BackfillOperation,
+    at_unix_ms: u128,
+    reason: Option<String>,
+) -> Result<(), String> {
+    match operation.lifecycle {
+        BackfillLifecycleStatus::Active => {
+            operation.lifecycle = BackfillLifecycleStatus::Paused;
+            operation.lifecycle_reason = reason.clone();
+            operation.updated_unix_ms = at_unix_ms;
+            record_backfill_audit(
+                operation,
+                at_unix_ms,
+                "paused",
+                reason.unwrap_or_else(|| "operator pause".to_string()),
+            );
+            Ok(())
+        }
+        BackfillLifecycleStatus::Paused => {
+            Err(format!("backfill '{}' is already paused", operation.backfill_id))
+        }
+        BackfillLifecycleStatus::Cancelled => {
+            Err(format!("backfill '{}' is cancelled and cannot be paused", operation.backfill_id))
+        }
+        BackfillLifecycleStatus::Completed => {
+            Err(format!("backfill '{}' is completed and cannot be paused", operation.backfill_id))
+        }
+    }
+}
+
+pub fn resume_backfill_operation(
+    operation: &mut BackfillOperation,
+    at_unix_ms: u128,
+) -> Result<(), String> {
+    match operation.lifecycle {
+        BackfillLifecycleStatus::Paused => {
+            operation.lifecycle = BackfillLifecycleStatus::Active;
+            operation.lifecycle_reason = None;
+            operation.updated_unix_ms = at_unix_ms;
+            record_backfill_audit(operation, at_unix_ms, "resumed", "operator resume".to_string());
+            refresh_backfill_completion(operation, at_unix_ms);
+            Ok(())
+        }
+        BackfillLifecycleStatus::Active => {
+            Err(format!("backfill '{}' is already active", operation.backfill_id))
+        }
+        BackfillLifecycleStatus::Cancelled => {
+            Err(format!("backfill '{}' is cancelled and cannot resume", operation.backfill_id))
+        }
+        BackfillLifecycleStatus::Completed => {
+            Err(format!("backfill '{}' is completed and cannot resume", operation.backfill_id))
+        }
+    }
+}
+
+pub fn cancel_backfill_operation(
+    operation: &mut BackfillOperation,
+    at_unix_ms: u128,
+    reason: Option<String>,
+) -> Result<(), String> {
+    match operation.lifecycle {
+        BackfillLifecycleStatus::Completed => {
+            Err(format!("backfill '{}' is completed and cannot cancel", operation.backfill_id))
+        }
+        BackfillLifecycleStatus::Cancelled => {
+            Err(format!("backfill '{}' is already cancelled", operation.backfill_id))
+        }
+        BackfillLifecycleStatus::Active | BackfillLifecycleStatus::Paused => {
+            for run in &mut operation.runs {
+                if matches!(run.status, BackfillRunStatus::Queued) {
+                    run.status = BackfillRunStatus::Cancelled;
+                    run.updated_unix_ms = at_unix_ms;
+                }
+            }
+            operation.lifecycle = BackfillLifecycleStatus::Cancelled;
+            operation.lifecycle_reason = reason.clone();
+            operation.updated_unix_ms = at_unix_ms;
+            record_backfill_audit(
+                operation,
+                at_unix_ms,
+                "cancelled",
+                reason.unwrap_or_else(|| "operator cancel".to_string()),
+            );
+            Ok(())
+        }
+    }
+}
+
+pub fn advance_backfill_operation(
+    operation: &BackfillOperation,
+    request: &BackfillAdvanceRequest,
+) -> Result<BackfillAdvanceReport, String> {
+    let mut operation = operation.clone();
+    let failure_seen = apply_backfill_status_updates(&mut operation, &request.status_updates)?;
+    if matches!(operation.lifecycle, BackfillLifecycleStatus::Active) {
+        apply_backfill_failure_policy(&mut operation, request.now_unix_ms, failure_seen);
+    }
+    refresh_backfill_completion(&mut operation, request.now_unix_ms);
+
+    let active_runs = operation
+        .runs
+        .iter()
+        .filter(|run| {
+            matches!(run.status, BackfillRunStatus::Submitted | BackfillRunStatus::Running)
+        })
+        .count();
+    let queued_runs =
+        operation.runs.iter().filter(|run| matches!(run.status, BackfillRunStatus::Queued)).count();
+    if !matches!(operation.lifecycle, BackfillLifecycleStatus::Active) {
+        return Ok(BackfillAdvanceReport {
+            operation,
+            dispatched_requests: Vec::new(),
+            active_runs,
+            queued_runs,
+            allowed_dispatches: 0,
+        });
+    }
+
+    let available_parallelism = operation.request.max_parallelism.max(1) as usize
+        - active_runs.min(operation.request.max_parallelism.max(1) as usize);
+    let throttled_dispatches = crate::scheduler_workload::apply_backfill_throttling(
+        queued_runs,
+        request.pending_live_runs,
+        &request.throttling_policy,
+    )
+    .0;
+    let allowed_dispatches = available_parallelism.min(throttled_dispatches);
+
+    let mut dispatched_requests = Vec::new();
+    if allowed_dispatches > 0 {
+        for run in operation
+            .runs
+            .iter_mut()
+            .filter(|run| matches!(run.status, BackfillRunStatus::Queued))
+            .take(allowed_dispatches)
+        {
+            run.status = BackfillRunStatus::Submitted;
+            run.updated_unix_ms = request.now_unix_ms;
+            dispatched_requests.push(ExecutionSubmissionRequest {
+                schedule_id: operation.schedule_id.clone(),
+                dag_name: operation.dag_name.clone(),
+                dag_version_policy: operation.dag_version_policy.clone(),
+                requested_unix_ms: run.requested_unix_ms,
+                run_id: run.run_id.clone(),
+                trigger_kind: SubmissionTriggerKind::Backfill,
+                dedupe_key: run.dedupe_key.clone(),
+            });
+        }
+        record_backfill_audit(
+            &mut operation,
+            request.now_unix_ms,
+            "advanced",
+            format!("dispatched {} backfill runs", dispatched_requests.len()),
+        );
+    }
+    refresh_backfill_completion(&mut operation, request.now_unix_ms);
+    let active_runs = operation
+        .runs
+        .iter()
+        .filter(|run| {
+            matches!(run.status, BackfillRunStatus::Submitted | BackfillRunStatus::Running)
+        })
+        .count();
+    let queued_runs =
+        operation.runs.iter().filter(|run| matches!(run.status, BackfillRunStatus::Queued)).count();
+
+    Ok(BackfillAdvanceReport {
+        operation,
+        dispatched_requests,
+        active_runs,
+        queued_runs,
+        allowed_dispatches,
+    })
 }
 
 pub fn evaluate_schedule_submissions(
@@ -1298,19 +1632,19 @@ fn backfill_submission_candidates(
     _inputs: &ScheduleEvaluationInputs,
     backfill: &BackfillRequest,
 ) -> Vec<ExecutionSubmissionRequest> {
-    let mut requested_unix_ms = backfill.window_start_unix_ms;
-    let mut requests = Vec::new();
-    let max_runs = backfill.max_parallelism.max(1) as usize;
-    while requested_unix_ms <= backfill.window_end_unix_ms && requests.len() < max_runs {
-        requests.push(build_submission_request(
-            definition,
-            requested_unix_ms,
-            SubmissionTriggerKind::Backfill,
-            format!("backfill:{}:{}", definition.id, requested_unix_ms),
-        ));
-        requested_unix_ms = requested_unix_ms.saturating_add(60_000);
-    }
-    requests
+    plan_backfill_runs(definition, backfill, backfill.window_start_unix_ms)
+        .into_iter()
+        .take(backfill.max_parallelism.max(1) as usize)
+        .map(|run| ExecutionSubmissionRequest {
+            schedule_id: definition.id.clone(),
+            dag_name: definition.dag_name.clone(),
+            dag_version_policy: definition.dag_version_policy.clone(),
+            requested_unix_ms: run.requested_unix_ms,
+            run_id: run.run_id,
+            trigger_kind: SubmissionTriggerKind::Backfill,
+            dedupe_key: run.dedupe_key,
+        })
+        .collect()
 }
 
 fn build_submission_request(
@@ -1348,6 +1682,178 @@ fn deterministic_schedule_run_id(schedule_id: &str, dedupe_key: &str) -> String 
     let digest = Sha256::digest(dedupe_key.as_bytes());
     let checksum = format!("{:x}", digest);
     format!("sched-{slug}-{}", &checksum[..12])
+}
+
+fn deterministic_backfill_id(schedule_id: &str, backfill: &BackfillRequest) -> String {
+    let dedupe_key = format!(
+        "backfill:{}:{}:{}:{}:{}",
+        schedule_id,
+        backfill.window_start_unix_ms,
+        backfill.window_end_unix_ms,
+        backfill.partition_by.as_deref().unwrap_or("none"),
+        backfill.partition_keys.join(",")
+    );
+    deterministic_schedule_run_id(schedule_id, &dedupe_key)
+}
+
+fn plan_backfill_runs(
+    definition: &ScheduleDefinition,
+    backfill: &BackfillRequest,
+    planned_unix_ms: u128,
+) -> Vec<BackfillRunRecord> {
+    let mut runs = Vec::new();
+    let partition_keys = if backfill.partition_keys.is_empty() {
+        vec![None]
+    } else {
+        backfill.partition_keys.iter().cloned().map(Some).collect::<Vec<_>>()
+    };
+    let mut requested_unix_ms = backfill.window_start_unix_ms;
+    while requested_unix_ms <= backfill.window_end_unix_ms {
+        for partition_key in &partition_keys {
+            let dedupe_key = match partition_key {
+                Some(partition_key) => {
+                    format!("backfill:{}:{}:{}", definition.id, requested_unix_ms, partition_key)
+                }
+                None => format!("backfill:{}:{}", definition.id, requested_unix_ms),
+            };
+            runs.push(BackfillRunRecord {
+                requested_unix_ms,
+                partition_key: partition_key.clone(),
+                run_id: deterministic_schedule_run_id(&definition.id, &dedupe_key),
+                dedupe_key,
+                status: BackfillRunStatus::Queued,
+                updated_unix_ms: planned_unix_ms,
+            });
+        }
+        requested_unix_ms = requested_unix_ms.saturating_add(60_000);
+    }
+    runs
+}
+
+fn apply_backfill_status_updates(
+    operation: &mut BackfillOperation,
+    updates: &[BackfillStatusUpdate],
+) -> Result<bool, String> {
+    let mut failure_seen = false;
+    for update in updates {
+        let Some(run) = operation.runs.iter_mut().find(|run| run.run_id == update.run_id) else {
+            return Err(format!(
+                "backfill '{}' does not contain run '{}'",
+                operation.backfill_id, update.run_id
+            ));
+        };
+        if !backfill_status_transition_allowed(&run.status, &update.status) {
+            return Err(format!(
+                "backfill '{}' cannot transition run '{}' from {:?} to {:?}",
+                operation.backfill_id, update.run_id, run.status, update.status
+            ));
+        }
+        if matches!(update.status, BackfillRunStatus::Failed) {
+            failure_seen = true;
+        }
+        run.status = update.status.clone();
+        run.updated_unix_ms = update.updated_unix_ms;
+    }
+    Ok(failure_seen)
+}
+
+fn backfill_status_transition_allowed(
+    current: &BackfillRunStatus,
+    next: &BackfillRunStatus,
+) -> bool {
+    if current == next {
+        return true;
+    }
+    match current {
+        BackfillRunStatus::Queued => matches!(next, BackfillRunStatus::Cancelled),
+        BackfillRunStatus::Submitted => matches!(
+            next,
+            BackfillRunStatus::Running
+                | BackfillRunStatus::Completed
+                | BackfillRunStatus::Failed
+                | BackfillRunStatus::Cancelled
+        ),
+        BackfillRunStatus::Running => matches!(
+            next,
+            BackfillRunStatus::Completed | BackfillRunStatus::Failed | BackfillRunStatus::Cancelled
+        ),
+        BackfillRunStatus::Completed | BackfillRunStatus::Failed | BackfillRunStatus::Cancelled => {
+            false
+        }
+    }
+}
+
+fn apply_backfill_failure_policy(
+    operation: &mut BackfillOperation,
+    at_unix_ms: u128,
+    failure_seen: bool,
+) {
+    if !failure_seen {
+        return;
+    }
+    match operation.request.failure_policy {
+        BackfillFailurePolicy::Continue => {
+            record_backfill_audit(
+                operation,
+                at_unix_ms,
+                "failure_observed",
+                "failure policy kept backfill active".to_string(),
+            );
+        }
+        BackfillFailurePolicy::Pause => {
+            operation.lifecycle = BackfillLifecycleStatus::Paused;
+            operation.lifecycle_reason = Some("paused after failed backfill run".to_string());
+            operation.updated_unix_ms = at_unix_ms;
+            record_backfill_audit(
+                operation,
+                at_unix_ms,
+                "paused",
+                "failure policy paused backfill after failed run".to_string(),
+            );
+        }
+        BackfillFailurePolicy::Cancel => {
+            for run in &mut operation.runs {
+                if matches!(run.status, BackfillRunStatus::Queued) {
+                    run.status = BackfillRunStatus::Cancelled;
+                    run.updated_unix_ms = at_unix_ms;
+                }
+            }
+            operation.lifecycle = BackfillLifecycleStatus::Cancelled;
+            operation.lifecycle_reason = Some("cancelled after failed backfill run".to_string());
+            operation.updated_unix_ms = at_unix_ms;
+            record_backfill_audit(
+                operation,
+                at_unix_ms,
+                "cancelled",
+                "failure policy cancelled remaining backfill runs".to_string(),
+            );
+        }
+    }
+}
+
+fn refresh_backfill_completion(operation: &mut BackfillOperation, at_unix_ms: u128) {
+    if matches!(operation.lifecycle, BackfillLifecycleStatus::Cancelled) {
+        return;
+    }
+    if operation.runs.iter().all(|run| {
+        matches!(
+            run.status,
+            BackfillRunStatus::Completed | BackfillRunStatus::Failed | BackfillRunStatus::Cancelled
+        )
+    }) {
+        operation.lifecycle = BackfillLifecycleStatus::Completed;
+        operation.lifecycle_reason = None;
+        operation.updated_unix_ms = at_unix_ms;
+    }
+}
+
+fn record_backfill_audit(
+    operation: &mut BackfillOperation,
+    at_unix_ms: u128,
+    action: &str,
+    detail: String,
+) {
+    operation.audit.push(BackfillAuditRecord { at_unix_ms, action: action.to_string(), detail });
 }
 
 fn normalize_schedule_status(status: &str) -> String {

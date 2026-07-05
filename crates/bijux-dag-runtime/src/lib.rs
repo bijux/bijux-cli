@@ -430,13 +430,17 @@ pub use runtime_controls::{
 };
 pub use runtime_semantics::*;
 pub use scheduler::{
-    build_scheduler, compile_submission_request, deterministic_tick_order, dry_run_schedule,
-    evaluate_schedule_submissions, failure_allows_downstream_readiness, failure_mode_name,
-    replay_scheduler_checkpoint, scheduler_contract_profile, scheduler_debug_event_log,
+    advance_backfill_operation, build_scheduler, cancel_backfill_operation,
+    compile_backfill_operation, compile_submission_request, deterministic_tick_order,
+    dry_run_schedule, evaluate_schedule_submissions, failure_allows_downstream_readiness,
+    failure_mode_name, pause_backfill_operation, replay_scheduler_checkpoint,
+    resume_backfill_operation, scheduler_contract_profile, scheduler_debug_event_log,
     scheduler_invariant_violations, scheduler_invariants_hold, validate_cron_expression,
-    validate_schedule_policy_combination, validate_schedule_registry, BackfillRequest,
-    CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCompletionRecord, DependencyCounter,
-    DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest,
+    validate_schedule_policy_combination, validate_schedule_registry, BackfillAdvanceReport,
+    BackfillAdvanceRequest, BackfillAuditRecord, BackfillFailurePolicy, BackfillLifecycleStatus,
+    BackfillOperation, BackfillRequest, BackfillRunRecord, BackfillRunStatus, BackfillStatusUpdate,
+    BackfillStatusUpdateBatch, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCompletionRecord,
+    DependencyCounter, DeterministicScheduler, ExecutionCheckpoint, ExecutionSubmissionRequest,
     FailurePropagationMode, ManualSubmissionRequest, NoopSchedulerEventHook, PriorityClass,
     QueueIdentity, QueueIsolationPolicy, ReadyQueue, ReadyTieBreak, ScheduleAuditRecord,
     ScheduleDefinition, ScheduleDryRunPreview, ScheduleEvaluationInputs, ScheduleEvaluationReport,
