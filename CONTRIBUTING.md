@@ -86,7 +86,7 @@ changes:
 
 ```bash
 cargo test -p bijux-dag-app
-cargo run -q -p bijux-dag-cli --bin bijux-dag -- dag --help
+cargo run -q -p bijux-dag-cli --bin bijux-dag -- --help
 cargo run -q -p bijux-dev --bin bijux-dev-dag -- verify evidence-release-set
 ```
 

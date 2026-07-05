@@ -368,6 +368,16 @@ fn dag_root_help_surface_contract() {
 }
 
 #[test]
+fn dag_root_rejects_redundant_dag_subcommand() {
+    let output = dag_command().args(["dag", "--help"]).output().expect("nested dag help");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("unrecognized subcommand 'dag'"));
+    assert!(stderr.contains("Usage: bijux-dag [OPTIONS] [COMMAND]"));
+}
+
+#[test]
 fn dag_run_help_surface_contract() {
     let output = dag_command().args(["run", "--help"]).output().expect("run help");
 
