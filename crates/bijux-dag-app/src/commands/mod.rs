@@ -591,12 +591,21 @@ pub(crate) enum ScheduleCommands {
     Validate {
         registry: PathBuf,
     },
+    #[command(
+        about = "evaluate internal schedule trigger inputs into deterministic submission records"
+    )]
     Submit {
         registry: PathBuf,
+        #[arg(
+            help = "json file containing now_unix_ms and any manual, event, dependency, or signal trigger inputs"
+        )]
         inputs: PathBuf,
-        #[arg(long)]
+        #[arg(
+            long,
+            help = "existing submission ledger json used to suppress duplicate submissions"
+        )]
         ledger: Option<PathBuf>,
-        #[arg(long)]
+        #[arg(long, help = "write the updated submission ledger json to this path")]
         out: Option<PathBuf>,
     },
     Preview {
