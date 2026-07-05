@@ -2428,8 +2428,8 @@ fn prepare_node_execution_dirs(ctx: &RunContext, node_id: &str) -> Result<(), Ru
     let node_dir = ctx.run_dir.node_dir(node_id);
     ctx.fs.create_dir_all(&node_dir)?;
     recreate_dir(ctx.fs.as_ref(), &ctx.run_dir.node_outputs_dir(node_id))?;
-    recreate_dir(ctx.fs.as_ref(), &ctx.run_dir.node_work_dir(node_id))?;
-    ctx.fs.create_dir_all(&ctx.run_dir.node_temp_dir(node_id))?;
+    ctx.fs.create_dir_all(&ctx.run_dir.node_work_dir(node_id))?;
+    recreate_dir(ctx.fs.as_ref(), &ctx.run_dir.node_temp_dir(node_id))?;
     Ok(())
 }
 

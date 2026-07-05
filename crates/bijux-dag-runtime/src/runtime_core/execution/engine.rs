@@ -1856,20 +1856,21 @@ pub fn execute(
         }
         started_ids.sort();
         let schedule_reason = if forced_batch { "ready" } else { "budget_available" };
+        let scheduled_event_unix_ms = ctx.clock.now_unix_ms();
         for node_id in &started_ids {
             scheduler_hook.on_node_scheduled(node_id);
             crate::append_event(
                 &mut run_log,
                 serde_json::json!({
                     "event": "node_scheduled",
-                    "ts": schedule_unix_ms,
+                    "ts": scheduled_event_unix_ms,
                     "node_id": node_id,
                     "reason": schedule_reason,
                 }),
             )?;
             run_log_index.push(serde_json::json!({
                 "event": "node_scheduled",
-                "ts": schedule_unix_ms,
+                "ts": scheduled_event_unix_ms,
                 "node_id": node_id,
                 "reason": schedule_reason,
             }));
@@ -1911,18 +1912,19 @@ pub fn execute(
                 "scheduler state invariants violated after checkpoint replay".to_string(),
             ));
         }
+        let started_event_unix_ms = ctx.clock.now_unix_ms();
         for node_id in &actual_started_ids {
             crate::append_event(
                 &mut run_log,
                 serde_json::json!({
                     "event": "node_started",
-                    "ts": schedule_unix_ms,
+                    "ts": started_event_unix_ms,
                     "node_id": node_id,
                 }),
             )?;
             run_log_index.push(serde_json::json!({
                 "event": "node_started",
-                "ts": schedule_unix_ms,
+                "ts": started_event_unix_ms,
                 "node_id": node_id,
             }));
         }

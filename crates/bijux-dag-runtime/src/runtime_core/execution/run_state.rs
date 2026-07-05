@@ -232,6 +232,7 @@ pub const INV_NODE_TRANSITION_PENDING_TIMED_OUT: &str = "INV-NODE-TERMINAL-012";
 pub const INV_NODE_TRANSITION_ELIGIBLE_TIMED_OUT: &str = "INV-NODE-TERMINAL-013";
 pub const INV_NODE_TRANSITION_QUEUED_TIMED_OUT: &str = "INV-NODE-TERMINAL-014";
 pub const INV_NODE_TRANSITION_RUNNING_TIMED_OUT: &str = "INV-NODE-TERMINAL-015";
+pub const INV_NODE_TRANSITION_PENDING_SKIPPED: &str = "INV-NODE-TERMINAL-016";
 pub const INV_NODE_TERMINAL_NO_REVERT: &str = "INV-NODE-TERMINAL-REVERT-001";
 
 pub const INV_RUN_TRANSITION_SUBMITTED_PLANNING: &str = "INV-RUN-TRANSITION-001";
@@ -262,6 +263,7 @@ pub fn node_transition_invariant_id(from: NodeState, to: NodeState) -> Option<&'
         (S::Queued, S::Cached) => Some(INV_NODE_TRANSITION_QUEUED_CACHED),
         (S::Running, S::Cancelled) => Some(INV_NODE_TRANSITION_RUNNING_CANCELLED),
         (S::Queued, S::Failed) => Some(INV_NODE_TRANSITION_QUEUED_FAILED),
+        (S::Pending, S::Skipped) => Some(INV_NODE_TRANSITION_PENDING_SKIPPED),
         (S::Pending, S::Cancelled) => Some(INV_NODE_TRANSITION_PENDING_CANCELLED),
         (S::Eligible, S::Cancelled) => Some(INV_NODE_TRANSITION_ELIGIBLE_CANCELLED),
         (S::Queued, S::Cancelled) => Some(INV_NODE_TRANSITION_QUEUED_CANCELLED),
@@ -319,6 +321,7 @@ pub fn validate_node_transition(transition: &NodeTransition) -> Result<(), Strin
             | (S::Queued, S::Running)
             | (S::Running, S::Success)
             | (S::Running, S::Failed)
+            | (S::Pending, S::Skipped)
             | (S::Eligible, S::Skipped)
             | (S::Queued, S::Skipped)
             | (S::Eligible, S::Cached)
