@@ -39,6 +39,7 @@ fn sample_manifest(run_id: &str) -> Manifest {
             failed: 0,
             skipped: 0,
             cached: 0,
+            cancelled: 0,
         },
         policy: bijux_dag_artifacts::PolicyInfo {
             deny_network: true,
@@ -50,6 +51,7 @@ fn sample_manifest(run_id: &str) -> Manifest {
         cache_dir: None,
         run_timeout_ms: None,
         run_timeout_behavior: None,
+        run_cancellation_cause: None,
         run_metadata: None,
         run_summary: None,
     }

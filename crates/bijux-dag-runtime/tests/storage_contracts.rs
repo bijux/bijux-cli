@@ -35,7 +35,7 @@ fn sample_manifest(run_id: &str) -> Manifest {
         jobs: 1,
         adapters: Vec::new(),
         outputs: Vec::new(),
-        node_counts: NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0 },
+        node_counts: NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0, cancelled: 0 },
         policy: PolicyInfo {
             deny_network: false,
             deny_env: false,
@@ -46,6 +46,7 @@ fn sample_manifest(run_id: &str) -> Manifest {
         cache_dir: None,
         run_timeout_ms: None,
         run_timeout_behavior: None,
+        run_cancellation_cause: None,
         run_metadata: None,
         run_summary: None,
     }

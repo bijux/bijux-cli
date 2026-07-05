@@ -42,6 +42,7 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
             failed: 0,
             skipped: 0,
             cached: 0,
+            cancelled: 0,
         },
         policy: bijux_dag_artifacts::PolicyInfo {
             deny_network: false,
@@ -53,6 +54,7 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
         cache_dir: None,
         run_timeout_ms: None,
         run_timeout_behavior: None,
+        run_cancellation_cause: None,
         run_metadata: None,
         run_summary: Some(RunSummary {
             total_nodes: 200,
@@ -60,6 +62,7 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
             failed: 0,
             skipped: 0,
             cached: 0,
+            cancelled: 0,
         }),
     };
 

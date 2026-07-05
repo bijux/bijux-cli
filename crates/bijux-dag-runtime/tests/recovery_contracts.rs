@@ -48,7 +48,7 @@ fn consistency_and_quarantine_contracts_detect_inconsistent_terminal_run() {
     let summary = RunSummaryV2 {
         run_id: RunId("run_01".to_string()),
         state: RunState::Failed,
-        counts: NodeCounts { success: 2, failed: 0, skipped: 0, cached: 0 },
+        counts: NodeCounts { success: 2, failed: 0, skipped: 0, cached: 0, cancelled: 0 },
     };
     let node_states =
         vec![("n1".to_string(), NodeState::Success), ("n2".to_string(), NodeState::Failed)];
