@@ -168,6 +168,8 @@ pub struct OutputSpec {
     pub required: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub media_type: Option<String>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub promotable: bool,
 }
 
 impl OutputSpec {
@@ -178,6 +180,7 @@ impl OutputSpec {
             kind: OutputKind::File,
             required: true,
             media_type: None,
+            promotable: false,
         }
     }
 
@@ -490,6 +493,10 @@ pub fn output_required_is_default(required: &bool) -> bool {
     *required
 }
 
+fn is_false(value: &bool) -> bool {
+    !value
+}
+
 pub fn default_media_type_for_kind(kind: &OutputKind) -> &'static str {
     match kind {
         OutputKind::File => "application/octet-stream",
@@ -499,6 +506,32 @@ pub fn default_media_type_for_kind(kind: &OutputKind) -> &'static str {
         OutputKind::Log => "text/plain",
         OutputKind::Binary => "application/octet-stream",
         OutputKind::Bundle => "application/vnd.bijux.bundle",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{OutputSpec, OutputKind};
+    use serde_json::json;
+
+    #[test]
+    fn output_spec_defaults_to_non_promotable() {
+        let output = OutputSpec::new("report", "report.json");
+        assert!(!output.promotable);
+    }
+
+    #[test]
+    fn output_spec_deserializes_promotable_outputs() {
+        let output: OutputSpec = serde_json::from_value(json!({
+            "name": "deliverable",
+            "path": "publish/report.json",
+            "kind": "file",
+            "required": true,
+            "promotable": true
+        }))
+        .expect("output spec");
+        assert!(output.promotable);
+        assert_eq!(output.kind, OutputKind::File);
     }
 }
 

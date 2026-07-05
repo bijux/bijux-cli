@@ -63,6 +63,7 @@ pub struct NodeOutputContract {
     pub kind: OutputKind,
     pub required: bool,
     pub media_type: String,
+    pub promotable: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -160,6 +161,7 @@ pub fn node_io_contract(graph: &Graph, node_id: &str) -> Option<NodeIoContract> 
                 kind: output.kind.clone(),
                 required: output.required,
                 media_type: output.effective_media_type(),
+                promotable: output.promotable,
             })
             .collect(),
     })
@@ -219,4 +221,47 @@ fn param_binding_from_ref(key_path: &str, reference: &RefSpec) -> Option<NodePar
             relative_path: path_var.relative_path().map(str::to_string),
         },
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::node_io_contract;
+    use crate::{Graph, NodeOutputContract};
+    use serde_json::json;
+
+    #[test]
+    fn node_io_contract_preserves_promotable_output_declarations() {
+        let graph: Graph = serde_json::from_value(json!({
+            "spec": "bijux-dag/v0.1",
+            "nodes": [
+                {
+                    "id": "publish",
+                    "kind": "const",
+                    "outputs": [
+                        {
+                            "name": "report",
+                            "path": "publish/report.json",
+                            "promotable": true
+                        }
+                    ],
+                    "params": {"value": "ok"}
+                }
+            ],
+            "edges": []
+        }))
+        .expect("graph");
+
+        let contract = node_io_contract(&graph, "publish").expect("io contract");
+        assert_eq!(
+            contract.outputs,
+            vec![NodeOutputContract {
+                name: "report".to_string(),
+                path: "publish/report.json".to_string(),
+                kind: crate::OutputKind::File,
+                required: true,
+                media_type: "application/octet-stream".to_string(),
+                promotable: true,
+            }]
+        );
+    }
 }
