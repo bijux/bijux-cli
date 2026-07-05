@@ -18,11 +18,14 @@ use std::fs;
 
 #[test]
 fn hash_graph_and_fingerprint_explain_commands_are_wired() {
-    let mut cmd = dag_command();
-    let help = cmd.render_long_help().to_string();
-    assert!(help.contains("hash"));
-    assert!(help.contains("canonical-bytes"));
-    assert!(help.contains("canonical-diff"));
+    let command_names = dag_command()
+        .get_subcommands()
+        .map(|command| command.get_name().to_string())
+        .collect::<Vec<_>>();
+    assert!(command_names.contains(&"hash".to_string()));
+    assert!(command_names.contains(&"canonical-bytes".to_string()));
+    assert!(command_names.contains(&"canonical-diff".to_string()));
+    assert!(command_names.contains(&"fingerprint".to_string()));
 }
 
 #[test]
