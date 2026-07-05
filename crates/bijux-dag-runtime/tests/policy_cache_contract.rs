@@ -684,6 +684,32 @@ fn runtime_cache_identity_tracks_declared_env_and_ignores_undeclared_env() {
 }
 
 #[test]
+fn runtime_artifacts_do_not_serialize_declared_env_values() {
+    let _env_lock = process_env_lock();
+    std::env::set_var("BIJUX_SECRET_VALUE", "top-secret-value");
+    let graph = parse_graph_strict(&shell_graph_with_allowlist(
+        "printf '%s' ok > ../outputs/value.txt",
+        &["filesystem", "env"],
+        &["BIJUX_SECRET_VALUE"],
+    ))
+    .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run");
+
+    for relative_path in ["manifest.json", "provenance.json", "nodes/node/trace.json"] {
+        let payload =
+            fs::read_to_string(run_path.join(relative_path)).expect("read runtime artifact");
+        assert!(
+            !payload.contains("top-secret-value"),
+            "runtime artifact {relative_path} must not serialize declared env values"
+        );
+    }
+
+    std::env::remove_var("BIJUX_SECRET_VALUE");
+}
+
+#[test]
 fn runtime_cache_off_mode_never_uses_cached_nodes() {
     let graph =
         parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
