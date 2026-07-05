@@ -273,11 +273,11 @@ use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
 };
 use bijux_dag_artifacts::{
-    sha256_artifact_path, write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError,
-    CacheProof, ContainerTrace, DeclaredOutputArtifact, FailureClass, FailureInfo, InputFile,
-    InputsIndex, NodeCounts, NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex,
-    ReplayProvenance, Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex,
-    TraceOutputArtifact, TriggerEvaluation,
+    artifact_size_bytes, sha256_artifact_path, write_inputs_index, write_outputs_index,
+    AdapterInfo, ArtifactError, CacheProof, ContainerTrace, DeclaredOutputArtifact,
+    FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeLifecycleTransition,
+    NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance, Resources as TraceResources,
+    RunDir, RunOutputFile, RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
@@ -2107,6 +2107,7 @@ pub(crate) fn inspect_declared_outputs(
                 required: output.required,
                 present: false,
                 media_type: output.effective_media_type(),
+                size_bytes: None,
                 sha256: None,
             });
             if output.required {
@@ -2163,6 +2164,22 @@ pub(crate) fn inspect_declared_outputs(
                 )),
             };
         }
+        let size_bytes = match artifact_size_bytes(&path) {
+            Ok(size_bytes) => size_bytes,
+            Err(error) => {
+                return OutputInspectionReport {
+                    output_evidence,
+                    present_outputs,
+                    failure: Some(FailureInfo::new(
+                        FailureClass::User,
+                        "User",
+                        "OUTPUT_PATH_INVALID",
+                        error.to_string(),
+                        Some(serde_json::json!({ "output": output.name })),
+                    )),
+                };
+            }
+        };
         let sha256 = match sha256_artifact_path(&path) {
             Ok(sha256) => sha256,
             Err(error) => {
@@ -2187,6 +2204,7 @@ pub(crate) fn inspect_declared_outputs(
             required: output.required,
             present: true,
             media_type: media_type.clone(),
+            size_bytes: Some(size_bytes),
             sha256: Some(sha256.clone()),
         });
         present_outputs.push(DeclaredOutputArtifact {
@@ -2760,6 +2778,7 @@ fn collect_outputs_summary(
                         path: f.path,
                         kind: f.kind,
                         media_type: f.media_type,
+                        size_bytes: f.size_bytes,
                         sha256: f.sha256,
                     });
                 }
@@ -2785,6 +2804,7 @@ fn build_run_outputs_index(
             name: out.name.clone(),
             kind: out.kind.clone(),
             media_type: out.media_type.clone(),
+            size_bytes: out.size_bytes,
             sha256: out.sha256.clone(),
             path: rel,
         });

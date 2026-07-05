@@ -1347,15 +1347,16 @@ exit 1
         let report = inspect_declared_outputs(&outdir, &[required_value, optional_log]);
         assert!(report.failure.is_none());
         assert_eq!(report.output_evidence.len(), 2);
-        assert!(report
-            .output_evidence
-            .iter()
-            .any(|output| output.name == "log" && !output.present && !output.required));
+        assert!(report.output_evidence.iter().any(|output| output.name == "log"
+            && !output.present
+            && !output.required
+            && output.size_bytes.is_none()));
         assert!(report.output_evidence.iter().any(|output| {
             output.name == "result"
                 && output.present
                 && output.kind == "value"
                 && output.media_type == "application/json"
+                && output.size_bytes == Some(br#"{"ok":true}"#.len() as u64)
                 && output.sha256.is_some()
         }));
     }
@@ -1451,17 +1452,20 @@ exit 1
 
         let runtime = Runtime::new();
         let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
-        let rendered =
-            fs::read_to_string(final_path.join("nodes").join("sink").join("outputs").join("done.txt"))
-                .unwrap();
+        let rendered = fs::read_to_string(
+            final_path.join("nodes").join("sink").join("outputs").join("done.txt"),
+        )
+        .unwrap();
         assert_eq!(rendered.trim(), "hello");
 
         let trace: serde_json::Value = serde_json::from_str(
-            &fs::read_to_string(final_path.join("nodes").join("source").join("trace.json")).unwrap(),
+            &fs::read_to_string(final_path.join("nodes").join("source").join("trace.json"))
+                .unwrap(),
         )
         .unwrap();
         assert_eq!(trace["outputs"][0]["kind"], "directory");
         assert_eq!(trace["outputs"][0]["media_type"], "application/vnd.bijux.directory");
+        assert_eq!(trace["outputs"][0]["size_bytes"], 6);
         assert!(trace["outputs"][0]["sha256"].as_str().is_some());
         let inputs_index = read_inputs_index(&final_path, "sink");
         assert_eq!(inputs_index.files.len(), 1);

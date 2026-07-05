@@ -466,6 +466,9 @@ fn runtime_declared_outputs_index_includes_all_nodes() {
     let expected =
         HashSet::from(["nodes/a/outputs/a.txt".to_string(), "nodes/b/outputs/b.txt".to_string()]);
     assert_eq!(actual, expected);
+    assert!(files
+        .iter()
+        .all(|file| file["size_bytes"].as_u64().is_some_and(|size| size > 0)));
 }
 
 #[test]
