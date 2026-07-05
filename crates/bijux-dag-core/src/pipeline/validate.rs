@@ -26,7 +26,7 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1002", severity: Severity::Error, domain: ValidationDomain::Topology },
     ValidationRule { id: "E1003", severity: Severity::Error, domain: ValidationDomain::Topology },
     ValidationRule { id: "E1004", severity: Severity::Error, domain: ValidationDomain::Topology },
-    ValidationRule { id: "E1005", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1005", severity: Severity::Error, domain: ValidationDomain::Topology },
     ValidationRule { id: "E1006", severity: Severity::Error, domain: ValidationDomain::Schema },
     ValidationRule { id: "E1007", severity: Severity::Error, domain: ValidationDomain::Schema },
     ValidationRule { id: "E1008", severity: Severity::Error, domain: ValidationDomain::Topology },
@@ -402,6 +402,7 @@ impl Graph {
 
         let mut edge_pairs = BTreeSet::new();
         let mut target_bindings = BTreeSet::new();
+        let mut bound_inputs = BTreeSet::<(String, String)>::new();
         let mut conditional_edge_counts = HashMap::<(String, String), usize>::new();
         let mut conditional_incoming_targets = BTreeSet::new();
         for edge in &self.edges {
@@ -447,6 +448,11 @@ impl Graph {
                     format!("/edges/to/{}/{}", edge.to.node_id, edge.to.port),
                     None,
                 );
+            }
+            if from_node.outputs.iter().any(|output| output.name == edge.from.port)
+                && to_node.inputs.iter().any(|input| input == &edge.to.port)
+            {
+                bound_inputs.insert((edge.to.node_id.clone(), edge.to.port.clone()));
             }
 
             let pair_key = format!(
@@ -555,6 +561,17 @@ impl Graph {
         }
 
         for node in &self.nodes {
+            for input in &node.inputs {
+                if !bound_inputs.contains(&(node.id.clone(), input.clone())) {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1005",
+                        format!("missing required input binding: {}.{}", node.id, input),
+                        format!("/nodes/{}/inputs/{}", node.id, input),
+                        Some("Connect an upstream edge for every declared node input".to_string()),
+                    );
+                }
+            }
             if let Some(decisions) = branch_decisions_by_node.get(node.id.as_str()) {
                 for decision in decisions {
                     if conditional_edge_counts
