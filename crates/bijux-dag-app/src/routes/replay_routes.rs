@@ -154,14 +154,13 @@ pub(crate) fn handle_replay_command(
     } else {
         None
     };
-    let response =
-        ReplayCommandResponse {
-            run_dir: Some(run_path.clone()),
-            dry_run_plan: None,
-            replay_proof,
-            policy_surface: Some(policy_surface_payload(&snapshot.graph, &options, hermetic)?),
-            sandbox_scope: Some(replay_sandbox_scope_payload(sandbox)),
-        };
+    let response = ReplayCommandResponse {
+        run_dir: Some(run_path.clone()),
+        dry_run_plan: None,
+        replay_proof,
+        policy_surface: Some(policy_surface_payload(&snapshot.graph, &options, hermetic)?),
+        sandbox_scope: Some(replay_sandbox_scope_payload(sandbox)),
+    };
     if cli.json {
         return emit_json(
             cli,

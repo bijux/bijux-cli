@@ -358,7 +358,9 @@ fn materialize_value_against_kind(
             if let Some(properties) = properties {
                 let mut normalized = serde_json::Map::new();
                 for (key, property_spec) in properties {
-                    if entries.contains_key(key) || !property_spec.required || property_spec.default.is_some()
+                    if entries.contains_key(key)
+                        || !property_spec.required
+                        || property_spec.default.is_some()
                     {
                         continue;
                     }

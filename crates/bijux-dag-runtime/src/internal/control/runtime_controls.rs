@@ -257,7 +257,8 @@ pub fn build_policy_enforcement_report(
         .collect::<Vec<_>>();
     surfaces.sort_by(|left, right| left.executor_surface.cmp(&right.executor_surface));
     surfaces.dedup_by(|left, right| {
-        left.executor_surface == right.executor_surface && left.isolation_mode == right.isolation_mode
+        left.executor_surface == right.executor_surface
+            && left.isolation_mode == right.isolation_mode
     });
     Ok(PolicyEnforcementReport { surfaces })
 }
@@ -342,9 +343,7 @@ fn effect_gate_guard(guard: &str, effect: &str) -> PolicyGuardSemanticsReport {
     PolicyGuardSemanticsReport {
         guard: guard.to_string(),
         enforcement_mode: "declared_effect_gate".to_string(),
-        guarantee: format!(
-            "refuses nodes that declare {effect} effects before execution starts"
-        ),
+        guarantee: format!("refuses nodes that declare {effect} effects before execution starts"),
         limitations: vec![
             "depends on accurate effect declarations in the DAG".to_string(),
             "does not interpose on syscalls after the executor has started".to_string(),
@@ -356,7 +355,8 @@ fn clean_env_guard() -> PolicyGuardSemanticsReport {
     PolicyGuardSemanticsReport {
         guard: "clean-env".to_string(),
         enforcement_mode: "environment_shaping".to_string(),
-        guarantee: "starts executors with a stripped environment and optional allowlist".to_string(),
+        guarantee: "starts executors with a stripped environment and optional allowlist"
+            .to_string(),
         limitations: vec![
             "does not sandbox filesystem access".to_string(),
             "does not prevent subprocess side effects outside environment variables".to_string(),
@@ -804,8 +804,8 @@ fn recommend_resume_action(
 #[cfg(test)]
 mod tests {
     use super::{
-        audit_dispatch_discipline, build_execution_isolation_report, build_policy_enforcement_report,
-        DispatchKeyRecord,
+        audit_dispatch_discipline, build_execution_isolation_report,
+        build_policy_enforcement_report, DispatchKeyRecord,
     };
     use crate::simulated_platform::{
         HeartbeatClass, HeartbeatSemantics, LivenessPolicy, TaskLeaseSemantics, WorkLease,
@@ -907,9 +907,8 @@ mod tests {
 
     #[test]
     fn policy_enforcement_report_marks_subprocess_as_best_effort() {
-        let report =
-            build_policy_enforcement_report(&graph_fixture(), &RuntimeConfig::default())
-                .expect("policy report");
+        let report = build_policy_enforcement_report(&graph_fixture(), &RuntimeConfig::default())
+            .expect("policy report");
         let subprocess = report
             .surfaces
             .iter()
@@ -920,11 +919,8 @@ mod tests {
             .limitations
             .iter()
             .any(|entry| entry.contains("does not firewall network access")));
-        assert!(subprocess
-            .guards
-            .iter()
-            .any(|guard| guard.guard == "deny-network"
-                && guard.enforcement_mode == "declared_effect_gate"));
+        assert!(subprocess.guards.iter().any(|guard| guard.guard == "deny-network"
+            && guard.enforcement_mode == "declared_effect_gate"));
     }
 
     #[test]
@@ -935,10 +931,7 @@ mod tests {
             kind: NodeKind::Container,
             semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
             inputs: Vec::new(),
-            outputs: vec![FileOutput {
-                name: "out".to_string(),
-                path: "c/out".to_string(),
-            }],
+            outputs: vec![FileOutput { name: "out".to_string(), path: "c/out".to_string() }],
             params: ParamValue::default(),
             container: Some(bijux_dag_core::ContainerSpec {
                 image: "alpine:3.19".to_string(),
@@ -958,8 +951,8 @@ mod tests {
             trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
             branch: None,
         });
-        let report =
-            build_policy_enforcement_report(&graph, &RuntimeConfig::default()).expect("policy report");
+        let report = build_policy_enforcement_report(&graph, &RuntimeConfig::default())
+            .expect("policy report");
         let container = report
             .surfaces
             .iter()
@@ -970,7 +963,6 @@ mod tests {
             guard.guard == "deny-network" && guard.enforcement_mode == "container_runtime_flag"
         }));
     }
-
 
     #[test]
     fn dispatch_audit_flags_duplicate_dispatch_keys() {

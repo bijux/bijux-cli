@@ -687,8 +687,7 @@ pub(crate) fn handle_runtime_command(
             let graph = parse_graph(&read_file(dag)?)?;
             let report = build_execution_isolation_report(&graph, &RuntimeConfig::default())
                 .map_err(|_| ExitCode::from(3))?;
-            let policy_surface =
-                policy_surface_payload(&graph, &RuntimeConfig::default(), false)?;
+            let policy_surface = policy_surface_payload(&graph, &RuntimeConfig::default(), false)?;
             if cli.json {
                 return emit_json(
                     cli,
