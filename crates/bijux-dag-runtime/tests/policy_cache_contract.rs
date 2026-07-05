@@ -18,6 +18,7 @@ use bijux_dag_runtime::{
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
+use std::sync::{Mutex, MutexGuard, OnceLock};
 
 fn shell_graph(script: &str, effects: &[&str]) -> String {
     let effect_values: Vec<Value> =
@@ -45,6 +46,41 @@ fn shell_graph(script: &str, effects: &[&str]) -> String {
     });
 
     graph.to_string()
+}
+
+fn shell_graph_with_allowlist(script: &str, effects: &[&str], env_allowlist: &[&str]) -> String {
+    let effect_values: Vec<Value> =
+        effects.iter().map(|effect| Value::String((*effect).to_string())).collect();
+    let env_values: Vec<Value> =
+        env_allowlist.iter().map(|key| Value::String((*key).to_string())).collect();
+
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "node",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "value.txt"}],
+                "params": {
+                    "argv": [
+                        "/bin/sh",
+                        "-c",
+                        script
+                    ]
+                },
+                "effects": effect_values,
+                "env_allowlist": env_values,
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
+fn process_env_lock() -> MutexGuard<'static, ()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(())).lock().expect("env lock")
 }
 
 fn graph_with_two_const_nodes() -> String {
@@ -246,27 +282,27 @@ fn read_failure_propagation(run_dir: &std::path::Path) -> Vec<Value> {
 
 #[test]
 fn runtime_clean_env_defaults_to_stripped_environment() {
-    let graph = parse_graph_strict(&shell_graph(
-        "printf '%s' '${PATH:-missing-path}' > ../outputs/value.txt",
+    let _env_lock = process_env_lock();
+    std::env::set_var("BIJUX_TEST_PATH", "declared-path");
+    let undeclared_graph = parse_graph_strict(&shell_graph(
+        "printf '%s' \"${BIJUX_TEST_PATH:-missing-path}\" > ../outputs/value.txt",
         &["filesystem"],
     ))
     .expect("parse graph");
     let runtime = Runtime::new();
     let with_clean_env = tempfile::tempdir().expect("temp");
     let run_clean = runtime
-        .run(&graph, with_clean_env.path(), RuntimeConfig::default())
+        .run(&undeclared_graph, with_clean_env.path(), RuntimeConfig::default())
         .expect("run clean env");
     let clean_output =
         fs::read_to_string(run_clean.join("nodes").join("node").join("outputs").join("value.txt"))
             .expect("clean output");
-    assert!(
-        clean_output.contains("${PATH:-missing-path}") || clean_output.trim() == "missing-path"
-    );
+    assert_eq!(clean_output.trim(), "missing-path");
 
     let run_dir = tempfile::tempdir().expect("temp");
     let run_unstripped = runtime
         .run(
-            &graph,
+            &undeclared_graph,
             run_dir.path(),
             RuntimeConfig {
                 policy: PolicyConfig { clean_env: false, ..PolicyConfig::default() },
@@ -278,7 +314,52 @@ fn runtime_clean_env_defaults_to_stripped_environment() {
         run_unstripped.join("nodes").join("node").join("outputs").join("value.txt"),
     )
     .expect("unstripped output");
-    assert_ne!(unstripped_output, "missing-path");
+    assert_eq!(unstripped_output.trim(), "missing-path");
+
+    let declared_graph = parse_graph_strict(&shell_graph_with_allowlist(
+        "printf '%s' \"$BIJUX_TEST_PATH\" > ../outputs/value.txt",
+        &["filesystem", "env"],
+        &["BIJUX_TEST_PATH"],
+    ))
+    .expect("parse declared graph");
+    let declared_out = tempfile::tempdir().expect("declared out");
+    let declared_run = runtime
+        .run(
+            &declared_graph,
+            declared_out.path(),
+            RuntimeConfig {
+                policy: PolicyConfig { clean_env: false, ..PolicyConfig::default() },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("run declared env");
+    let declared_output = fs::read_to_string(
+        declared_run.join("nodes").join("node").join("outputs").join("value.txt"),
+    )
+    .expect("declared output");
+    assert_eq!(declared_output.trim(), "declared-path");
+    std::env::remove_var("BIJUX_TEST_PATH");
+}
+
+#[test]
+fn runtime_requires_declared_exact_env_before_execution() {
+    let _env_lock = process_env_lock();
+    std::env::remove_var("BIJUX_REQUIRED_ENV");
+    let graph = parse_graph_strict(&shell_graph_with_allowlist(
+        "printf '%s' \"$BIJUX_REQUIRED_ENV\" > ../outputs/value.txt",
+        &["filesystem", "env"],
+        &["BIJUX_REQUIRED_ENV"],
+    ))
+    .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let error = runtime
+        .run(&graph, out.path(), RuntimeConfig::default())
+        .expect_err("missing env should fail before execution");
+    let message = error.to_string();
+    assert!(message.contains("missing required environment bindings"));
+    assert!(message.contains("BIJUX_REQUIRED_ENV"));
+    assert_eq!(fs::read_dir(out.path()).expect("out dir entries").count(), 0);
 }
 
 #[test]
@@ -311,9 +392,12 @@ fn runtime_rejects_network_effect_when_denied() {
 
 #[test]
 fn runtime_rejects_env_effect_when_denied() {
-    let graph = parse_graph_strict(&shell_graph(
+    let _env_lock = process_env_lock();
+    std::env::set_var("BIJUX_DENIED_ENV", "present");
+    let graph = parse_graph_strict(&shell_graph_with_allowlist(
         "printf '%s' ok > ../outputs/value.txt",
         &["filesystem", "env"],
+        &["BIJUX_DENIED_ENV"],
     ))
     .expect("parse graph");
     let runtime = Runtime::new();
@@ -333,6 +417,7 @@ fn runtime_rejects_env_effect_when_denied() {
     assert_eq!(trace["failure"]["kind"], "Policy");
     assert_eq!(trace["failure"]["details"]["effect"], "env");
     assert_eq!(trace["transition_cause"], "PolicyDenied");
+    std::env::remove_var("BIJUX_DENIED_ENV");
 }
 
 #[test]
@@ -529,6 +614,73 @@ fn runtime_cache_key_changes_when_policy_changes() {
 
     let cache_entries = fs::read_dir(cache.path()).expect("cache entries").count();
     assert_eq!(cache_entries, 2);
+}
+
+#[test]
+fn runtime_cache_identity_tracks_declared_env_and_ignores_undeclared_env() {
+    let _env_lock = process_env_lock();
+    let graph = parse_graph_strict(&shell_graph_with_allowlist(
+        "printf '%s' \"$BIJUX_DECLARED_CACHE_ENV\" > ../outputs/value.txt",
+        &["filesystem", "env"],
+        &["BIJUX_DECLARED_CACHE_ENV"],
+    ))
+    .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let cache = tempfile::tempdir().expect("temp cache");
+
+    std::env::set_var("BIJUX_DECLARED_CACHE_ENV", "alpha");
+    std::env::set_var("BIJUX_UNDECLARED_CACHE_ENV", "noise-a");
+    let _ = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+
+    std::env::set_var("BIJUX_UNDECLARED_CACHE_ENV", "noise-b");
+    let cached_run = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("cache hit");
+    assert_eq!(read_node_status(&cached_run, "node"), "cached");
+    let cached_output =
+        fs::read_to_string(cached_run.join("nodes").join("node").join("outputs").join("value.txt"))
+            .expect("cached output");
+    assert_eq!(cached_output.trim(), "alpha");
+
+    std::env::set_var("BIJUX_DECLARED_CACHE_ENV", "beta");
+    let rerun = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("declared env change rerun");
+    assert_eq!(read_node_status(&rerun, "node"), "success");
+    let rerun_output =
+        fs::read_to_string(rerun.join("nodes").join("node").join("outputs").join("value.txt"))
+            .expect("rerun output");
+    assert_eq!(rerun_output.trim(), "beta");
+
+    std::env::remove_var("BIJUX_DECLARED_CACHE_ENV");
+    std::env::remove_var("BIJUX_UNDECLARED_CACHE_ENV");
 }
 
 #[test]
