@@ -1090,6 +1090,7 @@ pub struct SelectorSet {
 
 #[derive(Debug, Clone)]
 pub enum Selector {
+    Id(String),
     IdPrefix(String),
     Tag(String),
     Kind(String),
@@ -1504,6 +1505,7 @@ pub(crate) fn policy_fingerprint(policy: &PolicyConfig) -> String {
 
 fn selector_label(selector: &Selector) -> String {
     match selector {
+        Selector::Id(v) => format!("id:{v}"),
         Selector::IdPrefix(v) => format!("id_prefix:{v}"),
         Selector::Tag(v) => format!("tag:{v}"),
         Selector::Kind(v) => format!("kind:{v}"),

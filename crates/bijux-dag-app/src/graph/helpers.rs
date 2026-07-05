@@ -27,7 +27,8 @@ pub(crate) fn parse_selectors(
 pub(crate) fn parse_selector(raw: &str) -> Result<Selector, ExitCode> {
     let selector = parse_selector_expression(raw)?;
     match selector.field {
-        SelectorField::Id | SelectorField::Node => Ok(Selector::IdPrefix(selector.value)),
+        SelectorField::Id | SelectorField::Node => Ok(Selector::Id(selector.value)),
+        SelectorField::IdPrefix | SelectorField::NodePrefix => Ok(Selector::IdPrefix(selector.value)),
         SelectorField::Tag => Ok(Selector::Tag(selector.value)),
         SelectorField::Kind => Ok(Selector::Kind(selector.value)),
         SelectorField::Run
@@ -373,7 +374,10 @@ mod tests {
         )
         .expect("selector set");
 
-        assert_eq!(format!("{by_id:?}"), "IdPrefix(\"train\")");
+        let by_id_prefix = parse_selector("id-prefix:train").expect("id-prefix selector");
+
+        assert_eq!(format!("{by_id:?}"), "Id(\"train\")");
+        assert_eq!(format!("{by_id_prefix:?}"), "IdPrefix(\"train\")");
         assert_eq!(format!("{by_tag:?}"), "Tag(\"gpu\")");
         assert_eq!(format!("{by_kind:?}"), "Kind(\"shell\")");
         assert_eq!(set.include.len(), 2);
@@ -391,7 +395,9 @@ mod tests {
     #[test]
     fn selector_parser_accepts_node_alias_for_execution_selectors() {
         let by_node = parse_selector("node:train").expect("node selector");
-        assert_eq!(format!("{by_node:?}"), "IdPrefix(\"train\")");
+        let by_node_prefix = parse_selector("node-prefix:train").expect("node-prefix selector");
+        assert_eq!(format!("{by_node:?}"), "Id(\"train\")");
+        assert_eq!(format!("{by_node_prefix:?}"), "IdPrefix(\"train\")");
     }
 
     #[test]

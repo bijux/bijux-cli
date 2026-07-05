@@ -339,6 +339,7 @@ fn expand_dependencies(
 
 fn selector_matches(node: &Node, selector: &Selector) -> bool {
     match selector {
+        Selector::Id(id) => node.id == *id,
         Selector::IdPrefix(prefix) => node.id.starts_with(prefix),
         Selector::Tag(tag) => node.tags.iter().any(|t| t == tag),
         Selector::Kind(kind) => node.kind.as_str() == kind,

@@ -525,6 +525,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
                 cache_dir: cache_dir.clone(),
                 absolute_path_policy: (*absolute_path_policy).into(),
+                selectors: bijux_dag_runtime::SelectorSet::default(),
+                dependency_closure: false,
             };
             let analysis = routes::plan_routes::build_default_planner_analysis(&graph, &preview)
                 .map_err(|_| ExitCode::from(3))?;
@@ -593,6 +595,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             hermetic,
             select,
             exclude,
+            dependency_closure,
             materialize_inputs,
             remote_cache_dir,
         } => routes::replay_routes::handle_replay_command(
@@ -614,6 +617,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             *hermetic,
             select,
             exclude,
+            *dependency_closure,
             *materialize_inputs,
             remote_cache_dir.clone(),
         ),
@@ -702,6 +706,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             hermetic,
             select,
             exclude,
+            dependency_closure,
             materialize_inputs,
             cache,
             cache_dir,
@@ -729,6 +734,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 hermetic: *hermetic,
                 select,
                 exclude,
+                dependency_closure: *dependency_closure,
                 materialize_inputs: *materialize_inputs,
                 cache: *cache,
                 cache_dir: cache_dir.clone(),
@@ -1280,7 +1286,8 @@ pub(crate) fn read_run_id(run_dir: &Path) -> Result<String, ExitCode> {
 
 pub(crate) fn selector_cli_string(selector: &bijux_dag_runtime::Selector) -> String {
     match selector {
-        bijux_dag_runtime::Selector::IdPrefix(v) => format!("id:{v}"),
+        bijux_dag_runtime::Selector::Id(v) => format!("id:{v}"),
+        bijux_dag_runtime::Selector::IdPrefix(v) => format!("id-prefix:{v}"),
         bijux_dag_runtime::Selector::Tag(v) => format!("tag:{v}"),
         bijux_dag_runtime::Selector::Kind(v) => format!("kind:{v}"),
     }

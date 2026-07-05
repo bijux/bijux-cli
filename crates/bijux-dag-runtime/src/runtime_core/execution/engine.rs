@@ -325,6 +325,7 @@ fn partial_rerun_selected(options: &RuntimeConfig) -> bool {
 
 fn selector_matches(node: &Node, selector: &crate::Selector) -> bool {
     match selector {
+        crate::Selector::Id(id) => node.id == *id,
         crate::Selector::IdPrefix(prefix) => node.id.starts_with(prefix),
         crate::Selector::Tag(tag) => node.tags.iter().any(|candidate| candidate == tag),
         crate::Selector::Kind(kind) => node.kind.as_str() == kind,

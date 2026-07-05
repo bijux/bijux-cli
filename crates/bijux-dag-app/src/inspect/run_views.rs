@@ -231,12 +231,13 @@ fn selector_matches_row(selector: &SelectorExpression, row: &Value) -> bool {
                 labels.iter().any(|label| label.as_str() == Some(selector.value.as_str()))
             })
             .unwrap_or(false),
-        SelectorField::Id => row
+        SelectorField::Id | SelectorField::IdPrefix => row
             .get("run_id")
             .and_then(Value::as_str)
             .map(|run_id| run_id.starts_with(selector.value.as_str()))
             .unwrap_or(false),
         SelectorField::Node
+        | SelectorField::NodePrefix
         | SelectorField::Artifact
         | SelectorField::Branch
         | SelectorField::Attempt

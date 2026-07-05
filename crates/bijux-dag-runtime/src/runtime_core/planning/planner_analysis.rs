@@ -5,7 +5,7 @@ use crate::infrastructure::{
 use crate::{
     collect_container_argv_path_usages, collect_container_workdir_usage,
     collect_resolved_path_usages, resolve_container_argv, NodePathBindings, ResolvedPathUsage,
-    RuntimeConfig, SelectorSet,
+    RuntimeConfig, Selector, SelectorSet,
 };
 use bijux_dag_artifacts::RunDirLayout;
 use bijux_dag_core::{Graph, Node};
@@ -386,8 +386,12 @@ fn annotate_plan(
             let selected = !plan.filter_reasons.contains_key(&node.id);
             let reason = if let Some(filter_reason) = plan.filter_reasons.get(&node.id) {
                 filter_reason.clone()
-            } else if !selector_set.include.is_empty() {
+            } else if !selector_set.include.is_empty()
+                && selector_set.include.iter().any(|selector| selector_matches(node, selector))
+            {
                 "selected_by_include_selector".to_string()
+            } else if !selector_set.include.is_empty() {
+                "selected_by_dependency_closure".to_string()
             } else {
                 "selected_by_default".to_string()
             };
@@ -405,6 +409,15 @@ fn annotate_plan(
             }
         })
         .collect()
+}
+
+fn selector_matches(node: &Node, selector: &Selector) -> bool {
+    match selector {
+        Selector::Id(id) => node.id == *id,
+        Selector::IdPrefix(prefix) => node.id.starts_with(prefix),
+        Selector::Tag(tag) => node.tags.iter().any(|candidate| candidate == tag),
+        Selector::Kind(kind) => node.kind.as_str() == kind,
+    }
 }
 
 fn estimate_resources(nodes: &[Node]) -> PlannerResourceEstimate {
