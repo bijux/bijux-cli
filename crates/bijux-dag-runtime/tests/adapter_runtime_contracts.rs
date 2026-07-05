@@ -62,6 +62,8 @@ fn external_graph(kind: &str, timeout_ms: Option<u64>) -> Graph {
         meta: None,
         inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
+        subgraphs: std::collections::BTreeMap::new(),
+        subgraph_instances: Vec::new(),
         nodes: vec![Node {
             id: "n1".to_string(),
             kind: NodeKind::External(kind.to_string()),

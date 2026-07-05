@@ -281,6 +281,8 @@ mod tests {
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![
                 Node {
                     id: "b".to_string(),
@@ -391,6 +393,8 @@ mod tests {
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![
                 Node {
                     id: "long_a".to_string(),
@@ -651,6 +655,8 @@ mod tests {
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![
                 Node {
                     id: "a".to_string(),
@@ -732,6 +738,8 @@ mod tests {
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![
                 Node {
                     id: "a".to_string(),
@@ -848,6 +856,8 @@ inputs: vec!["in".to_string()],
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![
                 Node {
                     id: "a".to_string(),
@@ -936,6 +946,8 @@ inputs: vec!["in".to_string()],
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![Node {
                 id: "c1".to_string(),
                 kind: NodeKind::Container,
@@ -986,6 +998,8 @@ inputs: vec!["in".to_string()],
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![Node {
                 id: "c1".to_string(),
                 kind: NodeKind::Container,
@@ -1037,6 +1051,8 @@ inputs: vec!["in".to_string()],
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![Node {
                 id: "env".to_string(),
                 kind: NodeKind::Shell,
@@ -1107,6 +1123,8 @@ inputs: vec!["in".to_string()],
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::External("fake".to_string()),
@@ -1182,6 +1200,8 @@ exit 1
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::External("fake".to_string()),
@@ -1237,6 +1257,8 @@ exit 1
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::External("fake".to_string()),
@@ -1349,6 +1371,8 @@ exit 1
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![
                 Node {
                     id: "source".to_string(),
@@ -1440,6 +1464,8 @@ exit 1
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![
                 Node {
                     id: "source".to_string(),
@@ -1583,6 +1609,8 @@ exit 1
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::Shell,
@@ -1633,6 +1661,8 @@ exit 1
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![Node {
                 id: "c".to_string(),
                 kind: NodeKind::Container,
@@ -1679,6 +1709,8 @@ exit 1
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::Shell,
@@ -1771,6 +1803,8 @@ exit 1
             meta: None,
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![Node {
                 id: "n1".to_string(),
                 kind: NodeKind::External("missing-kind".to_string()),

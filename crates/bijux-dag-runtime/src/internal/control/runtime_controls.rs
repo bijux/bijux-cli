@@ -830,6 +830,8 @@ mod tests {
             }),
             inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![
                 Node {
                     id: "const1".to_string(),
