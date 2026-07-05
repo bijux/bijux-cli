@@ -26,7 +26,7 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "cat <<EOF > ../outputs/primary.json\n{\"status\":\"ready\"}\nEOF\nprintf '%s' \"$(cat ../inputs/seed/seed.txt)\" > ../outputs/secondary.txt"
+          "cat <<EOF > ../outputs/primary.json\n{\"status\":\"ready\"}\nEOF\nprintf '%s' \"$(cat ../inputs/seed/seed_input)\" > ../outputs/secondary.txt"
         ]
       },
       "effects": ["filesystem"]

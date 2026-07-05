@@ -39,7 +39,7 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "cat ../inputs/raw_line_a/raw_a.txt ../inputs/raw_line_b/raw_b.txt | sort -u > ../outputs/normalized.txt"
+          "cat ../inputs/raw_line_a/raw_a_input ../inputs/raw_line_b/raw_b_input | sort -u > ../outputs/normalized.txt"
         ]
       },
       "effects": ["filesystem"]
@@ -57,7 +57,7 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "cat ../inputs/normalize/normalized.txt | tr '[:lower:]' '[:upper:]' > ../outputs/report.txt"
+          "cat ../inputs/normalize/lines | tr '[:lower:]' '[:upper:]' > ../outputs/report.txt"
         ]
       },
       "effects": ["filesystem"]

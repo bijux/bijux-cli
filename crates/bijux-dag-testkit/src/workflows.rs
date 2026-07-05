@@ -164,7 +164,7 @@ pub fn graph_map_reduce_fixture() -> Graph {
             &[
                 "/bin/sh",
                 "-c",
-                "printf '%s-%s-%s' \"$(cat ../inputs/map_left/map_left.txt)\" \"$(cat ../inputs/map_mid/map_mid.txt)\" \"$(cat ../inputs/map_right/map_right.txt)\" > ../outputs/reduce.txt",
+                "printf '%s-%s-%s' \"$(cat ../inputs/map_left/left)\" \"$(cat ../inputs/map_mid/mid)\" \"$(cat ../inputs/map_right/right)\" > ../outputs/reduce.txt",
             ],
             "reduce.txt",
         )
@@ -192,7 +192,7 @@ pub fn graph_branch_join_fixture() -> Graph {
         .shell_node(
             "join",
             &["lhs"],
-            &["/bin/sh", "-c", "cat ../inputs/left/out.json > ../outputs/join.txt"],
+            &["/bin/sh", "-c", "cat ../inputs/left/lhs > ../outputs/join.txt"],
             "join.txt",
         )
         .edge("seed", "out", "decide", "in")

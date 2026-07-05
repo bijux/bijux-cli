@@ -43,7 +43,7 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "cp ../inputs/plan_request/plan/request.json ../outputs/report/report.json"
+          "cp ../inputs/plan_request/request ../outputs/report/report.json"
         ]
       },
       "timeout_ms": 30000,
@@ -67,7 +67,7 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "printf 'published %s\\n' \"$(cat ../inputs/build_report/report/report.json)\" > ../outputs/publish/receipt.txt"
+          "printf 'published %s\\n' \"$(cat ../inputs/build_report/report)\" > ../outputs/publish/receipt.txt"
         ]
       },
       "timeout_ms": 15000,
