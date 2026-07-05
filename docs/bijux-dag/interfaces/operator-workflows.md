@@ -105,6 +105,36 @@ The downstream rerun contract is:
 - `--from-node` is exclusive with `--select`, `--exclude`, and
   `--dependency-closure`
 
+## Run Only The Prerequisites For A Target Node
+
+When the operator wants the minimal execution closure required to reach one
+target node, use `--to-node` instead of manually translating dependencies into
+selectors.
+
+```bash
+bijux-dag plan explain ./pipelines/main.dag.json \
+  --json \
+  --to-node publish
+
+bijux-dag run ./pipelines/main.dag.json \
+  --json \
+  --out ./runs \
+  --run-id publish-prereqs \
+  --to-node publish \
+  --preflight-only
+```
+
+The upstream target contract is:
+
+- the named node is included exactly once, by exact node id
+- every required ancestor is included deterministically
+- unrelated nodes stay omitted and are reported as outside the requested
+  target boundary
+- plan output distinguishes `selected_by_to_node` from
+  `selected_by_upstream_closure`
+- `--to-node` is exclusive with `--select`, `--exclude`, and
+  `--dependency-closure`
+
 ## Code Anchors
 
 - `crates/bijux-dag-app/src/routes/run_routes.rs`

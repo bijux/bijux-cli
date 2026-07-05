@@ -98,12 +98,18 @@ presented as stable operator APIs. See `LIM-005`, `LIM-006`, `RISK-002`, and
 
 - `--select` and `--exclude` remain the stable partial-planning selectors for
   `plan explain` and replay surfaces.
+- `--to-node <node-id>` is available on `bijux-dag plan explain`,
+  `bijux-dag run`, and the compatibility alias `bijux-dag explain-plan`.
+- `--to-node` selects the named node and its deterministic upstream closure,
+  then reports the requested upstream targets in the planning payload.
 - `--from-node <node-id>` is available on `bijux-dag plan explain`,
   `bijux-dag replay`, and the compatibility alias `bijux-dag explain-plan`.
 - `--from-node` selects the named node and its deterministic downstream
   closure, then reports the requested downstream roots in the planning payload.
 - `replay --from-node` treats the selected closure as a rerun boundary, so the
   selected nodes reexecute instead of being satisfied by stale replay reuse.
+- `--to-node` is exclusive with `--select`, `--exclude`, and
+  `--dependency-closure`.
 - `--from-node` is exclusive with `--select`, `--exclude`, and
   `--dependency-closure`.
 
