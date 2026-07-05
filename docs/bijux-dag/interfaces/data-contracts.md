@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-06
 ---
 
 # Data Contracts
@@ -226,6 +226,66 @@ explicit typed schema such as
 - `--inputs-file` values can be overridden by later `--input key=value` flags
 - operator-facing human output redacts secret-like keys, but the manifest
   preserves the effective input values for replay and audit context
+
+## Schedule Trigger Input Contract
+
+Schedule definitions can bind trigger-derived context into typed graph inputs
+before a submission request is issued.
+
+- `input_contract` declares the allowed graph inputs and their types
+- `input_bindings` maps each declared input to a trigger source
+- bound values are normalized with the same graph-input materialization rules
+  used by direct runtime inputs
+- a schedule that cannot produce a required bound input is rejected before
+  submission instead of issuing a partially formed run request
+
+The supported binding sources are:
+
+- `requested_unix_ms`
+- `manual_argument`
+- `event_payload`
+- `signal_payload`
+- `dependency_upstream_run_id`
+- `dependency_status`
+- `backfill_window_start_unix_ms`
+- `backfill_window_end_unix_ms`
+- `backfill_partition_key`
+
+Payload bindings may target either the whole payload or a JSON Pointer inside
+the payload. Pointer values must be empty or begin with `/`.
+
+### Example
+
+```json
+{
+  "id": "event-ingest",
+  "dag_name": "atlas.event-ingest",
+  "dag_version_policy": "run-latest",
+  "input_contract": {
+    "event_tenant": { "type": "string", "required": true },
+    "event_payload": { "type": "object", "required": true }
+  },
+  "input_bindings": {
+    "event_tenant": {
+      "source": "event_payload",
+      "pointer": "/tenant"
+    },
+    "event_payload": {
+      "source": "event_payload"
+    }
+  },
+  "trigger": {
+    "Event": {
+      "event_type": "dataset.ready",
+      "source": "catalog"
+    }
+  }
+}
+```
+
+When the scheduler evaluates this definition against an event payload such as
+`{"tenant":"atlas","batch":7}`, the generated submission request records typed
+graph inputs for both `event_tenant` and `event_payload`.
 
 ### Example
 

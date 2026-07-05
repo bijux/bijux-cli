@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-06
 ---
 
 # Operator Workflows
@@ -169,6 +169,73 @@ The equivalence contract reports:
 This keeps cosmetic metadata edits separate from real workflow mutations, and
 it does not over-claim safety when planner-visible execution drift exists even
 if the current execution fingerprint remains unchanged.
+
+## Drive Scheduled Runs From Typed Trigger Context
+
+When scheduled work needs graph inputs from trigger metadata, declare the input
+contract in the schedule registry and submit explicit trigger payloads instead
+of encoding that context indirectly in DAG defaults or ad hoc environment
+state.
+
+A submit input file can carry manual arguments, event payloads, dependency
+completions, and signal payloads:
+
+```json
+{
+  "now_unix_ms": 1762387200000,
+  "manual_requests": [
+    {
+      "request_id": "manual-001",
+      "schedule_id": "manual-ops",
+      "requested_unix_ms": 1762387200000,
+      "arguments": {
+        "region": "eu-west-1"
+      }
+    }
+  ],
+  "events": [
+    {
+      "event_id": "evt-001",
+      "event_type": "dataset.ready",
+      "source": "catalog",
+      "occurred_unix_ms": 1762387260000,
+      "payload": {
+        "tenant": "atlas",
+        "batch": 7
+      }
+    }
+  ],
+  "signals": [
+    {
+      "signal_id": "sig-001",
+      "signal_name": "refresh-cache",
+      "occurred_unix_ms": 1762387320000,
+      "payload": {
+        "tenant": "atlas"
+      }
+    }
+  ]
+}
+```
+
+Submit the registry and trigger inputs together:
+
+```bash
+bijux-dag schedule submit ./ops/schedule-registry.json \
+  ./ops/schedule-inputs.json \
+  --out ./artifacts/schedule-ledger.json
+```
+
+The schedule-input binding contract is:
+
+- trigger-derived values are normalized against the declared graph input types
+- manual submissions can supply `manual_requests[].arguments` for bound inputs
+- event and signal schedules can bind either the full payload or a JSON Pointer
+  inside the payload
+- dependency-triggered schedules can bind upstream run ids and completion
+  status
+- invalid or missing bindings suppress submission instead of creating a run
+  request with partial graph input state
 
 ## Control A Historical Backfill
 
