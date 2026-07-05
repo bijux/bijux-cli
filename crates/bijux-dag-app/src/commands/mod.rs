@@ -37,6 +37,10 @@ const CLEAN_ENV_HELP: &str =
     "run with the curated bijux environment instead of inheriting the full parent environment; this shapes environment variables only";
 const HERMETIC_HELP: &str =
     "enable the best-effort local policy profile by forcing --deny-network, --deny-clock, and --clean-env; this does not claim syscall sandboxing or host filesystem isolation";
+const RESUME_RUN_HELP: &str =
+    "resume an existing run directory by run id, reusing only nodes whose persisted outputs still match their recorded evidence";
+const RESUME_FAILURE_MODE_HELP: &str =
+    "choose whether nodes that cannot be safely reused are rerun or rejected during resume";
 const REPLAY_SANDBOX_HELP: &str =
     "forbid replay outputs from being written inside the source run directory; this is a write-boundary check, not a process sandbox";
 const ROOT_HELP_BOUNDARY_HELP: &str =
@@ -252,6 +256,10 @@ pub(crate) enum Commands {
         inputs_file: Option<PathBuf>,
         #[arg(long)]
         run_id: Option<String>,
+        #[arg(long, help = RESUME_RUN_HELP)]
+        resume_run: Option<String>,
+        #[arg(long, value_enum, default_value_t = ResumeFailureModeArg::RerunIncomplete, help = RESUME_FAILURE_MODE_HELP)]
+        resume_failure_mode: ResumeFailureModeArg,
         #[arg(long)]
         latest: Option<PathBuf>,
         #[arg(long, default_value_t = 1)]
@@ -1415,4 +1423,10 @@ pub(crate) enum AbsolutePathPolicyArg {
 pub(crate) enum RunTimeoutBehaviorArg {
     FinishRunning,
     CancelRunning,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub(crate) enum ResumeFailureModeArg {
+    RerunIncomplete,
+    RejectIncomplete,
 }

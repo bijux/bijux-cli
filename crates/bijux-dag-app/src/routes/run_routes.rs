@@ -1,5 +1,6 @@
 use crate::commands::{
-    AbsolutePathPolicyArg, CacheModeArg, DagCli, MaterializeModeArg, RunTimeoutBehaviorArg,
+    AbsolutePathPolicyArg, CacheModeArg, DagCli, MaterializeModeArg, ResumeFailureModeArg,
+    RunTimeoutBehaviorArg,
 };
 use crate::graph_helpers::{
     parse_selectors, resolve_downstream_run_selection, resolve_upstream_run_selection,
@@ -27,6 +28,8 @@ pub(crate) struct RunRouteRequest<'a> {
     pub input: &'a Vec<String>,
     pub inputs_file: Option<PathBuf>,
     pub run_id: Option<String>,
+    pub resume_run: Option<String>,
+    pub resume_failure_mode: ResumeFailureModeArg,
     pub latest: Option<PathBuf>,
     pub jobs: usize,
     pub cpu_budget: Option<u32>,
@@ -98,6 +101,11 @@ fn build_run_runtime_options(
         run_root: Some(req.out.to_path_buf()),
         absolute_path_policy,
         run_id: preview_layout.map(|layout| layout.run_id.clone()),
+        resume_run_id: req.resume_run.clone(),
+        resume_failure_mode: match req.resume_failure_mode {
+            ResumeFailureModeArg::RerunIncomplete => bijux_dag_runtime::ResumeFailureMode::RerunIncomplete,
+            ResumeFailureModeArg::RejectIncomplete => bijux_dag_runtime::ResumeFailureMode::RejectIncomplete,
+        },
         latest_symlink: req.latest.clone(),
         policy,
         selectors,
@@ -106,6 +114,25 @@ fn build_run_runtime_options(
         partial_rerun_dependency_closure: req.dependency_closure,
         ..RuntimeConfig::default()
     }
+}
+
+fn load_resume_summary(run_dir: &Path) -> Option<bijux_dag_runtime::ResumeSummary> {
+    let attempts_path = run_dir.join("run.attempts.json");
+    let raw = fs::read_to_string(attempts_path).ok()?;
+    let attempts = serde_json::from_str::<Vec<bijux_dag_runtime::RunAttempt>>(&raw).ok()?;
+    attempts.last()?.resume_summary.clone()
+}
+
+fn emit_run_execution_error(
+    cli: &DagCli,
+    message: &str,
+    payload: serde_json::Value,
+) -> Result<ExitCode, ExitCode> {
+    if cli.json {
+        return emit_json(cli, "dag.run", false, payload, Vec::new(), ExitCode::from(3));
+    }
+    eprintln!("{message}");
+    Err(ExitCode::from(3))
 }
 
 pub(crate) fn handle_run_command(
@@ -163,7 +190,10 @@ pub(crate) fn handle_run_command(
         };
     let cache_dir = req.cache_dir.clone();
     let remote_cache_dir = req.remote_cache_dir.clone();
-    let preview_layout = resolve_plan_preview_layout(Some(req.out), req.run_id.as_deref())?;
+    let preview_layout = resolve_plan_preview_layout(
+        Some(req.out),
+        req.resume_run.as_deref().or(req.run_id.as_deref()),
+    )?;
     let absolute_path_policy = req.absolute_path_policy.into();
     let options = build_run_runtime_options(
         &req,
@@ -195,6 +225,15 @@ pub(crate) fn handle_run_command(
             "adapters": registered_adapters(),
             "cache": cache_preflight(req.cache, &cache_dir),
             "run_layout": preview_layout,
+            "resume": req.resume_run.as_ref().map(|run_id| {
+                json!({
+                    "run_id": run_id,
+                    "failure_mode": match req.resume_failure_mode {
+                        ResumeFailureModeArg::RerunIncomplete => "rerun_incomplete",
+                        ResumeFailureModeArg::RejectIncomplete => "reject_incomplete",
+                    },
+                })
+            }),
             "policy": {
                 "deny_network": options.policy.deny_network,
                 "deny_env": options.policy.deny_env,
@@ -234,7 +273,25 @@ pub(crate) fn handle_run_command(
         println!("{}", serde_json::to_string_pretty(&payload).unwrap());
         return Ok(ExitCode::SUCCESS);
     }
-    let run_path = runtime.run(&graph, req.out, options).map_err(|_| ExitCode::from(3))?;
+    let run_path = match runtime.run(&graph, req.out, options) {
+        Ok(path) => path,
+        Err(error) => {
+            let resume_summary = preview_layout
+                .as_ref()
+                .and_then(|layout| load_resume_summary(&layout.staging_path));
+            return emit_run_execution_error(
+                cli,
+                &error.to_string(),
+                json!({
+                    "error": error.to_string(),
+                    "error_class": "runtime",
+                    "run_layout": preview_layout,
+                    "resume_summary": resume_summary,
+                }),
+            );
+        }
+    };
+    let resume_summary = load_resume_summary(&run_path);
 
     if cli.json {
         return emit_json(
@@ -244,6 +301,7 @@ pub(crate) fn handle_run_command(
             json!({
                 "run_dir": run_path,
                 "run_layout": preview_layout,
+                "resume_summary": resume_summary,
                 "scheduling": scheduling
                     .as_ref()
                     .map(|result| {
@@ -269,6 +327,14 @@ pub(crate) fn handle_run_command(
         }
         if !runtime_inputs.redacted_keys.is_empty() {
             println!("redacted_inputs: {:?}", runtime_inputs.redacted_keys);
+        }
+        if let Some(summary) = resume_summary.as_ref() {
+            println!(
+                "resume: reused={} rerun={} rejected={}",
+                summary.reused_nodes.len(),
+                summary.rerun_nodes.len(),
+                summary.rejected_nodes.len(),
+            );
         }
         println!("run dir: {}", run_path.display());
     }
@@ -305,11 +371,11 @@ fn effective_policy_flags(
 mod tests {
     use super::{
         build_run_runtime_options, cache_preflight, effective_policy_flags, emit_run_input_error,
-        handle_run_command, RunRouteRequest,
+        handle_run_command, load_resume_summary, RunRouteRequest,
     };
     use crate::commands::{
         AbsolutePathPolicyArg, CacheModeArg, Commands, DagCli, MaterializeModeArg,
-        RunTimeoutBehaviorArg,
+        ResumeFailureModeArg, RunTimeoutBehaviorArg,
     };
     use crate::ExitCode;
     use serde_json::json;
@@ -372,6 +438,8 @@ mod tests {
                 input: &Vec::new(),
                 inputs_file: None,
                 run_id: Some("previewed".to_string()),
+                resume_run: None,
+                resume_failure_mode: ResumeFailureModeArg::RerunIncomplete,
                 latest: None,
                 jobs: 1,
                 cpu_budget: None,
@@ -429,6 +497,8 @@ mod tests {
                 input: &Vec::new(),
                 inputs_file: None,
                 run_id: Some("previewed".to_string()),
+                resume_run: None,
+                resume_failure_mode: ResumeFailureModeArg::RerunIncomplete,
                 latest: None,
                 jobs: 1,
                 cpu_budget: None,
@@ -467,6 +537,8 @@ mod tests {
             input: &Vec::new(),
             inputs_file: None,
             run_id: Some("selected-run".to_string()),
+            resume_run: Some("selected-run".to_string()),
+            resume_failure_mode: ResumeFailureModeArg::RejectIncomplete,
             latest: None,
             jobs: 3,
             cpu_budget: Some(4),
@@ -518,6 +590,8 @@ mod tests {
         assert_eq!(options.run_timeout_behavior, bijux_dag_runtime::RunTimeoutBehavior::CancelRunning);
         assert!(options.partial_rerun_dependency_closure);
         assert_eq!(options.run_id.as_deref(), Some("selected-run"));
+        assert_eq!(options.resume_run_id.as_deref(), Some("selected-run"));
+        assert_eq!(options.resume_failure_mode, bijux_dag_runtime::ResumeFailureMode::RejectIncomplete);
         assert_eq!(options.selectors.include.len(), selectors.include.len());
         assert_eq!(options.selectors.exclude.len(), selectors.exclude.len());
         assert_eq!(options.upstream_selection_targets, vec!["report".to_string()]);
@@ -525,5 +599,41 @@ mod tests {
         assert!(matches!(options.cache_mode, bijux_dag_runtime::CacheMode::ReadWrite));
         assert!(options.policy.deny_network);
         assert!(options.policy.deny_clock);
+    }
+
+    #[test]
+    fn load_resume_summary_reads_latest_attempt_summary() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let attempts = vec![
+            bijux_dag_runtime::RunAttempt {
+                attempt_index: 1,
+                run_id: bijux_dag_runtime::RunId("resume-run".to_string()),
+                parent_run_id: None,
+                reason: "initial_submission".to_string(),
+                resume_summary: None,
+            },
+            bijux_dag_runtime::RunAttempt {
+                attempt_index: 2,
+                run_id: bijux_dag_runtime::RunId("resume-run".to_string()),
+                parent_run_id: None,
+                reason: "resume".to_string(),
+                resume_summary: Some(bijux_dag_runtime::ResumeSummary {
+                    failure_mode: bijux_dag_runtime::ResumeFailureMode::RerunIncomplete,
+                    reused_nodes: vec!["extract".to_string()],
+                    rerun_nodes: vec!["publish".to_string()],
+                    rejected_nodes: Vec::new(),
+                }),
+            },
+        ];
+        fs::write(
+            dir.path().join("run.attempts.json"),
+            serde_json::to_vec_pretty(&attempts).expect("serialize attempts"),
+        )
+        .expect("write attempts");
+
+        let summary = load_resume_summary(dir.path()).expect("resume summary");
+        assert_eq!(summary.reused_nodes, vec!["extract"]);
+        assert_eq!(summary.rerun_nodes, vec!["publish"]);
+        assert!(summary.rejected_nodes.is_empty());
     }
 }
