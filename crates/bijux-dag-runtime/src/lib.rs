@@ -376,10 +376,11 @@ pub use performance_capacity::{
 pub use planner::build_plan;
 pub use planner_analysis::{
     build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
-    compute_downstream_run_closure, compute_partial_run_closure, diff_plans, explain_plan,
-    fingerprint_plan, PlannerBackfillPlan, PlannerBuildResult, PlannerExplainReport,
-    PlannerGuardrails, PlannerNodeAction, PlannerNodeAnnotation, PlannerNodePathPreview,
-    PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance, PlannerResourceEstimate,
+    compute_downstream_run_closure, compute_partial_run_closure, compute_upstream_run_closure,
+    diff_plans, explain_plan, fingerprint_plan, PlannerBackfillPlan, PlannerBuildResult,
+    PlannerExplainReport, PlannerGuardrails, PlannerNodeAction, PlannerNodeAnnotation,
+    PlannerNodePathPreview, PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance,
+    PlannerResourceEstimate,
 };
 pub use policy::policy_allows_effects;
 pub use recovery::{
@@ -1050,6 +1051,7 @@ pub struct RuntimeConfig {
     pub latest_symlink: Option<PathBuf>,
     pub policy: PolicyConfig,
     pub selectors: SelectorSet,
+    pub upstream_selection_targets: Vec<String>,
     pub downstream_selection_roots: Vec<String>,
     pub partial_rerun_dependency_closure: bool,
     pub scheduler_policy: SchedulerPolicy,
@@ -1078,6 +1080,7 @@ impl Default for RuntimeConfig {
             latest_symlink: None,
             policy: PolicyConfig::default(),
             selectors: SelectorSet::default(),
+            upstream_selection_targets: Vec::new(),
             downstream_selection_roots: Vec::new(),
             partial_rerun_dependency_closure: true,
             scheduler_policy: SchedulerPolicy::default(),
@@ -1524,6 +1527,10 @@ pub(crate) fn requested_downstream_root_label(node_id: &str) -> String {
     format!("from-node:{node_id}")
 }
 
+pub(crate) fn requested_upstream_target_label(node_id: &str) -> String {
+    format!("to-node:{node_id}")
+}
+
 fn materialize_mode_label(mode: MaterializeMode) -> &'static str {
     match mode {
         MaterializeMode::Copy => "copy",
@@ -1555,6 +1562,7 @@ fn runtime_config_fingerprint(options: &RuntimeConfig) -> String {
         "scheduler_policy": options.scheduler_policy,
         "failure_propagation": failure_propagation_label(&options.failure_propagation),
         "partial_rerun_dependency_closure": options.partial_rerun_dependency_closure,
+        "upstream_selection_targets": options.upstream_selection_targets,
         "downstream_selection_roots": options.downstream_selection_roots,
         "selectors": {
             "include": include_selectors,

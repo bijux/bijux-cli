@@ -375,6 +375,34 @@ pub fn compute_downstream_run_closure(
     keep
 }
 
+pub fn compute_upstream_run_closure(graph: &Graph, selected_nodes: &[String]) -> BTreeSet<String> {
+    fn expand(
+        node_id: &str,
+        dep_map: &HashMap<String, BTreeSet<String>>,
+        keep: &mut BTreeSet<String>,
+    ) {
+        if !keep.insert(node_id.to_string()) {
+            return;
+        }
+        if let Some(deps) = dep_map.get(node_id) {
+            for dep in deps {
+                expand(dep, dep_map, keep);
+            }
+        }
+    }
+
+    let mut dep_map = HashMap::<String, BTreeSet<String>>::new();
+    for edge in &graph.edges {
+        dep_map.entry(edge.to.node_id.clone()).or_default().insert(edge.from.node_id.clone());
+    }
+
+    let mut keep = BTreeSet::new();
+    for selected in selected_nodes {
+        expand(selected, &dep_map, &mut keep);
+    }
+    keep
+}
+
 pub fn build_replay_plan_annotations(plan: &ExecutionPlan) -> Vec<PlannerNodeAnnotation> {
     plan.nodes
         .iter()

@@ -326,7 +326,9 @@ mod tests {
 
 fn partial_rerun_selected(options: &RuntimeConfig) -> bool {
     options.parent_run_id.is_some()
-        && (!options.selectors.include.is_empty() || !options.downstream_selection_roots.is_empty())
+        && (!options.selectors.include.is_empty()
+            || !options.upstream_selection_targets.is_empty()
+            || !options.downstream_selection_roots.is_empty())
 }
 
 fn selector_matches(node: &Node, selector: &crate::Selector) -> bool {
@@ -352,6 +354,12 @@ fn selected_rerun_targets(graph: &Graph, options: &RuntimeConfig) -> Vec<String>
         })
         .map(|node| node.id.clone())
         .collect::<Vec<_>>();
+    if !options.upstream_selection_targets.is_empty() {
+        selected.extend(
+            crate::compute_upstream_run_closure(graph, &options.upstream_selection_targets)
+                .into_iter(),
+        );
+    }
     if !options.downstream_selection_roots.is_empty() {
         selected.extend(
             crate::compute_downstream_run_closure(graph, &options.downstream_selection_roots)
@@ -738,6 +746,12 @@ pub fn execute(
         .include
         .iter()
         .map(|selector| crate::requested_selector_label("include", selector))
+        .chain(
+            options
+                .upstream_selection_targets
+                .iter()
+                .map(|node_id| crate::requested_upstream_target_label(node_id)),
+        )
         .chain(
             options
                 .downstream_selection_roots
