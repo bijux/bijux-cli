@@ -158,8 +158,12 @@ fn planner_analysis_diagnostics_and_fingerprints_are_deterministic() {
     assert!(!second.plan_fingerprint.is_empty());
 
     let diff = diff_plans(&first, &second);
-    assert!(diff.changed_order_nodes.is_empty());
-    assert!(diff.changed_annotations.is_empty());
+    assert!(!diff.graph_fingerprint_changed);
+    assert!(!diff.execution_fingerprint_changed);
+    assert!(!diff.execution_affecting_changed);
+    assert!(!diff.metadata_only_changed);
+    assert!(diff.added_nodes.is_empty());
+    assert!(diff.changed_params.is_empty());
 
     let explain = explain_plan(&first);
     assert!(explain.phases.contains(&PlannerPhase::ScheduleReadyTransform));

@@ -111,7 +111,11 @@ fn planner_supports_closure_replay_backfill_diff_and_explain() {
     let backfill = build_backfill_plan(1, 10, vec!["p0".to_string(), "p1".to_string()]);
     assert_eq!(backfill.partition_keys.len(), 2);
     let diff = diff_plans(&before, &after);
-    assert!(!diff.changed_annotations.is_empty() || !diff.changed_filter_reasons.is_empty());
+    assert!(
+        !diff.graph_fingerprint_changed
+            || diff.execution_affecting_changed
+            || diff.metadata_only_changed
+    );
     let explain = explain_plan(&after);
     assert!(!explain.phases.is_empty());
 }
@@ -225,6 +229,130 @@ fn planner_critical_path_uses_unit_duration_fallback_when_estimates_are_missing(
     assert_eq!(estimate.critical_path.total_duration_ms, 2);
     assert_eq!(estimate.critical_path.estimated_duration_nodes, 0);
     assert_eq!(estimate.critical_path.unit_duration_fallback_nodes, 2);
+}
+
+#[test]
+fn planner_diff_detects_added_removed_and_execution_affecting_changes() {
+    let before = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"before","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {
+              "id":"b",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"out","path":"b/out"}],
+              "params":{"argv":["echo","before"]},
+              "resources":{"cpu":1,"mem_mb":64},
+              "timeout_ms":1000,
+              "retry":{"max_attempts":1,"backoff_ms":10}
+            }
+          ],
+          "edges":[{"from":{"node_id":"a","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("before graph should parse");
+    let after = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"after","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"c","kind":"const","outputs":[{"name":"out","path":"c/out"}],"params":{"value":2}},
+            {
+              "id":"b",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"result","path":"b/result.json"}],
+              "params":{"argv":["echo","after"]},
+              "resources":{"cpu":4,"mem_mb":256},
+              "timeout_ms":5000,
+              "retry":{"max_attempts":3,"backoff_ms":50}
+            }
+          ],
+          "edges":[{"from":{"node_id":"c","port":"out"},"to":{"node_id":"b","port":"in"}}]
+        }"#,
+    )
+    .expect("after graph should parse");
+
+    let before_result = build_planner_analysis(
+        &before,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("before analysis should succeed");
+    let after_result = build_planner_analysis(
+        &after,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("after analysis should succeed");
+
+    let diff = diff_plans(&before_result, &after_result);
+    assert!(diff.graph_fingerprint_changed);
+    assert!(diff.execution_affecting_changed);
+    assert!(!diff.metadata_only_changed);
+    assert_eq!(diff.added_nodes, vec!["c".to_string()]);
+    assert_eq!(diff.removed_nodes, vec!["a".to_string()]);
+    assert_eq!(diff.changed_params, vec!["b".to_string()]);
+    assert_eq!(diff.changed_outputs, vec!["b".to_string()]);
+    assert_eq!(diff.changed_resources, vec!["b".to_string()]);
+    assert_eq!(diff.changed_retry_timeout, vec!["b".to_string()]);
+    assert_eq!(diff.added_dependencies, vec!["data:-:-:c:out->b:in".to_string()]);
+    assert_eq!(diff.removed_dependencies, vec!["data:-:-:a:out->b:in".to_string()]);
+}
+
+#[test]
+fn planner_diff_classifies_graph_meta_drift_as_metadata_only() {
+    let before = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"baseline","description":"before","owners":["ops"],"tags":["stable"]},
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("before graph should parse");
+    let after = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"baseline","description":"after","owners":["platform"],"tags":["reviewed"]},
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("after graph should parse");
+
+    let before_result = build_planner_analysis(
+        &before,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("before analysis should succeed");
+    let after_result = build_planner_analysis(
+        &after,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("after analysis should succeed");
+
+    let diff = diff_plans(&before_result, &after_result);
+    assert!(diff.graph_fingerprint_changed);
+    assert!(!diff.execution_fingerprint_changed);
+    assert!(diff.metadata_only_changed);
+    assert!(!diff.execution_affecting_changed);
+    assert_eq!(diff.changed_metadata, vec!["graph_meta".to_string()]);
+    assert!(diff.added_nodes.is_empty());
+    assert!(diff.changed_params.is_empty());
 }
 
 #[test]
