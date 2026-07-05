@@ -46,6 +46,7 @@ flowchart LR
 - [API Surface](api-surface.md)
 - [Configuration Surface](configuration-surface.md)
 - [Data Contracts](data-contracts.md)
+- [Reusable Subgraphs](reusable-subgraphs.md)
 - [Artifact Contracts](artifact-contracts.md)
 - [Entrypoints and Examples](entrypoints-and-examples.md)
 - [Executable Recipes](executable-recipes.md)
