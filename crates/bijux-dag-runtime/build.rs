@@ -1,43 +1,41 @@
 #![forbid(unsafe_code)]
 
+mod build_support;
+
 use std::env;
-use std::path::{Path, PathBuf};
 use std::process::Command;
+
+use build_support::{
+    git_dir_from_workspace_root, git_rerun_paths, normalize_git_sha, workspace_root_from_manifest_dir,
+    BUILD_GIT_SHA_ENV,
+};
 
 fn main() {
     let workspace_root = workspace_root();
     emit_git_rerun_hints(&workspace_root);
+    println!("cargo:rerun-if-env-changed={BUILD_GIT_SHA_ENV}");
 
     if let Some(git_sha) = git_commit_abbrev(&workspace_root) {
         println!("cargo:rustc-env=BIJUX_DAG_BUILD_GIT_SHA={git_sha}");
     }
 }
 
-fn workspace_root() -> PathBuf {
+fn workspace_root() -> std::path::PathBuf {
     let manifest_dir =
-        PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR must be set"));
-    manifest_dir
-        .parent()
-        .and_then(Path::parent)
-        .map_or_else(|| manifest_dir.clone(), Path::to_path_buf)
+        std::path::PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR must be set"));
+    workspace_root_from_manifest_dir(&manifest_dir)
 }
 
-fn emit_git_rerun_hints(workspace_root: &Path) {
-    let git_dir = workspace_root.join(".git");
-    let head_path = git_dir.join("HEAD");
-    println!("cargo:rerun-if-changed={}", head_path.display());
-
-    let Ok(head_contents) = std::fs::read_to_string(&head_path) else {
+fn emit_git_rerun_hints(workspace_root: &std::path::Path) {
+    let Some(git_dir) = git_dir_from_workspace_root(workspace_root) else {
         return;
     };
-    let Some(reference) = head_contents.trim().strip_prefix("ref: ") else {
-        return;
-    };
-    let ref_path = git_dir.join(reference);
-    println!("cargo:rerun-if-changed={}", ref_path.display());
+    for rerun_path in git_rerun_paths(&git_dir) {
+        println!("cargo:rerun-if-changed={}", rerun_path.display());
+    }
 }
 
-fn git_commit_abbrev(workspace_root: &Path) -> Option<String> {
+fn git_commit_abbrev(workspace_root: &std::path::Path) -> Option<String> {
     let output = Command::new("git")
         .args(["-C", workspace_root.to_string_lossy().as_ref()])
         .args(["rev-parse", "--short", "HEAD"])
@@ -47,6 +45,5 @@ fn git_commit_abbrev(workspace_root: &Path) -> Option<String> {
         return None;
     }
 
-    let commit = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    (!commit.is_empty()).then_some(commit)
+    normalize_git_sha(&String::from_utf8_lossy(&output.stdout))
 }
