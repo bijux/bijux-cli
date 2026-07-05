@@ -1091,8 +1091,8 @@ fn candidate_submissions_for_definition(
 ) -> Vec<ExecutionSubmissionRequest> {
     match &definition.trigger {
         TriggerSpec::Manual => manual_submission_candidates(definition, inputs),
-        TriggerSpec::Cron { expression, .. } => {
-            cron_submission_candidates(definition, inputs, existing, expression)
+        TriggerSpec::Cron { expression, timezone } => {
+            cron_submission_candidates(definition, inputs, existing, expression, timezone)
         }
         TriggerSpec::Event { event_type, source } => {
             event_submission_candidates(definition, inputs, event_type, source)
@@ -1142,11 +1142,8 @@ fn cron_submission_candidates(
     inputs: &ScheduleEvaluationInputs,
     existing: &ScheduleSubmissionLedger,
     expression: &str,
+    timezone: &str,
 ) -> Vec<ExecutionSubmissionRequest> {
-    if validate_cron_expression(expression).is_err() {
-        return Vec::new();
-    }
-    let current_slot = floor_to_minute(inputs.now_unix_ms);
     let last_requested = existing
         .entries
         .iter()
@@ -1157,18 +1154,33 @@ fn cron_submission_candidates(
         .max();
 
     let slots = if definition.catch_up.enabled {
-        let mut next_slot = last_requested.map(|value| value + 60_000).unwrap_or(current_slot);
-        let mut slots = Vec::new();
-        let max_runs = definition.catch_up.max_catch_up_runs.max(1) as usize;
-        while next_slot <= current_slot && slots.len() < max_runs {
-            slots.push(next_slot);
-            next_slot += 60_000;
+        if let Some(last_requested) = last_requested {
+            crate::cron_calendar::cron_fire_times_between(
+                expression,
+                timezone,
+                last_requested,
+                inputs.now_unix_ms,
+                definition.catch_up.max_catch_up_runs.max(1) as usize,
+            )
+            .unwrap_or_default()
+        } else if crate::cron_calendar::cron_matches_unix_ms(
+            expression,
+            timezone,
+            inputs.now_unix_ms,
+        )
+        .unwrap_or(false)
+        {
+            vec![inputs.now_unix_ms]
+        } else {
+            Vec::new()
         }
-        slots
-    } else if last_requested == Some(current_slot) {
-        Vec::new()
+    } else if crate::cron_calendar::cron_matches_unix_ms(expression, timezone, inputs.now_unix_ms)
+        .unwrap_or(false)
+        && last_requested != Some(inputs.now_unix_ms)
+    {
+        vec![inputs.now_unix_ms]
     } else {
-        vec![current_slot]
+        Vec::new()
     };
 
     slots
@@ -1338,10 +1350,6 @@ fn deterministic_schedule_run_id(schedule_id: &str, dedupe_key: &str) -> String 
     let digest = Sha256::digest(dedupe_key.as_bytes());
     let checksum = format!("{:x}", digest);
     format!("sched-{slug}-{}", &checksum[..12])
-}
-
-fn floor_to_minute(unix_ms: u128) -> u128 {
-    unix_ms - (unix_ms % 60_000)
 }
 
 fn normalize_schedule_status(status: &str) -> String {
