@@ -44,6 +44,7 @@
     "cache_mode": {"type": ["string", "null"]},
     "cache_dir": {"type": ["string", "null"]},
     "run_timeout_ms": {"type": ["integer", "null"]},
+    "run_timeout_behavior": {"type": ["string", "null"]},
     "run_metadata": {"type": ["object", "null"]},
     "run_summary": {"type": ["object", "null"]}
   }

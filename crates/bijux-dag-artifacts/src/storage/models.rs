@@ -35,6 +35,8 @@ pub struct Manifest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_timeout_ms: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub run_timeout_behavior: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub run_metadata: Option<RunMetadata>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_summary: Option<RunSummary>,

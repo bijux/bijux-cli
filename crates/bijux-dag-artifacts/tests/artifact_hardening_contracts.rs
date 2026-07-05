@@ -49,6 +49,7 @@ fn sample_manifest(run_id: &str) -> Manifest {
         cache_mode: None,
         cache_dir: None,
         run_timeout_ms: None,
+        run_timeout_behavior: None,
         run_metadata: None,
         run_summary: None,
     }

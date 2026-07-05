@@ -52,6 +52,7 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
         cache_mode: None,
         cache_dir: None,
         run_timeout_ms: None,
+        run_timeout_behavior: None,
         run_metadata: None,
         run_summary: Some(RunSummary {
             total_nodes: 200,

@@ -45,6 +45,7 @@
   "cache_mode": "readwrite",
   "cache_dir": "cache",
   "run_timeout_ms": 1000,
+  "run_timeout_behavior": "finish_running",
   "run_metadata": {
     "submission_source": "manual",
     "trigger_source": "cli",
