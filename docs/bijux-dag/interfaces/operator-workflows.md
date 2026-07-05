@@ -77,6 +77,34 @@ bijux-dag run ./pipelines/main.dag.json \
   --explain-scheduling
 ```
 
+## Rerun Everything Downstream Of A Node
+
+When a parent run already exists and the operator knows which node should be
+treated as the restart boundary, use `--from-node` instead of rebuilding the
+entire graph mentally.
+
+```bash
+bijux-dag plan explain ./pipelines/main.dag.json \
+  --json \
+  --from-node train
+
+bijux-dag replay ./runs/run-20260406-01 \
+  --json \
+  --out ./runs/replay-train \
+  --from-node train
+```
+
+The downstream rerun contract is:
+
+- the named node is included exactly once, by exact node id
+- every descendant in the graph is included deterministically
+- replay reexecutes the selected closure instead of satisfying it from stale
+  replay cache reuse
+- nodes outside the closure stay omitted and are reported as outside the
+  requested downstream rerun boundary
+- `--from-node` is exclusive with `--select`, `--exclude`, and
+  `--dependency-closure`
+
 ## Code Anchors
 
 - `crates/bijux-dag-app/src/routes/run_routes.rs`

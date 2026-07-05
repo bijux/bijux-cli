@@ -94,6 +94,19 @@ presented as stable operator APIs. See `LIM-005`, `LIM-006`, `RISK-002`, and
 - `--json`: machine-readable output mode
 - `--quiet`: reduced human-oriented output noise
 
+## Selection Controls
+
+- `--select` and `--exclude` remain the stable partial-planning selectors for
+  `plan explain` and replay surfaces.
+- `--from-node <node-id>` is available on `bijux-dag plan explain`,
+  `bijux-dag replay`, and the compatibility alias `bijux-dag explain-plan`.
+- `--from-node` selects the named node and its deterministic downstream
+  closure, then reports the requested downstream roots in the planning payload.
+- `replay --from-node` treats the selected closure as a rerun boundary, so the
+  selected nodes reexecute instead of being satisfied by stale replay reuse.
+- `--from-node` is exclusive with `--select`, `--exclude`, and
+  `--dependency-closure`.
+
 ## Path Preview Controls
 
 The stable planning and execution routes expose one explicit path-preview lane
