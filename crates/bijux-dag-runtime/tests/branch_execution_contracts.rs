@@ -11,7 +11,7 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
-use bijux_dag_runtime::{Runtime, RuntimeConfig};
+use bijux_dag_runtime::{Runtime, RuntimeConfig, Selector, SelectorSet};
 use serde_json::Value;
 use std::fs;
 
@@ -90,6 +90,15 @@ fn read_events(run_dir: &std::path::Path) -> Vec<Value> {
         &fs::read_to_string(run_dir.join("observability.events.json")).expect("read events"),
     )
     .expect("parse events")
+}
+
+fn run_id_from_dir(run_dir: &std::path::Path) -> String {
+    run_dir
+        .file_name()
+        .and_then(|value| value.to_str())
+        .and_then(|value| value.strip_prefix("run-"))
+        .expect("run id")
+        .to_string()
 }
 
 #[test]
@@ -199,4 +208,39 @@ fn runtime_runs_branch_join_with_all_done_after_unselected_path_is_skipped() {
     assert_eq!(left["status"], "skipped");
     assert_eq!(right["status"], "success");
     assert_eq!(join["status"], "success");
+}
+
+#[test]
+fn runtime_replays_parent_branch_decision_for_filtered_branch_nodes() {
+    let graph = parse_graph_strict(&branch_graph_json("left", Some("left"))).expect("parse graph");
+    let runtime = Runtime::new();
+    let out_dir = tempfile::tempdir().expect("tempdir");
+
+    let original =
+        runtime.run(&graph, out_dir.path(), RuntimeConfig::default()).expect("original run");
+    let parent_run_id = run_id_from_dir(&original);
+
+    let replay = runtime
+        .run(
+            &graph,
+            out_dir.path(),
+            RuntimeConfig {
+                parent_run_id: Some(parent_run_id.clone()),
+                selectors: SelectorSet {
+                    include: vec![Selector::IdPrefix("seed".to_string())],
+                    exclude: vec![],
+                },
+                partial_rerun_dependency_closure: true,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("replay run");
+
+    let events = read_events(&replay);
+    assert!(events.iter().any(|event| {
+        event["name"] == "branch_decision_replayed"
+            && event["node_id"] == "decide"
+            && event["details"]["decision"] == "left"
+            && event["details"]["source_run_id"] == parent_run_id
+    }));
 }
