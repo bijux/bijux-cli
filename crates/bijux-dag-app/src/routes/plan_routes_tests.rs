@@ -76,7 +76,7 @@ fn write_execution_cost_graph_fixture() -> (tempfile::TempDir, PathBuf) {
               "id":"b",
               "kind":"shell",
               "outputs":[{"name":"out","path":"b/out"}],
-              "params":{"argv":["echo","b"]},
+              "params":{"argv":["echo","b"],"estimated_duration_ms":9000},
               "resources":{"cpu":4,"mem_mb":2048},
               "tags":["gpu:2"],
               "timeout_ms":5000,
@@ -88,7 +88,7 @@ fn write_execution_cost_graph_fixture() -> (tempfile::TempDir, PathBuf) {
               "kind":"shell",
               "inputs":["left","right"],
               "outputs":[{"name":"out","path":"c/out"}],
-              "params":{"argv":["echo","c"]},
+              "params":{"argv":["echo","c"],"estimated_duration_ms":3000},
               "resources":{"cpu":2,"mem_mb":1024}
             }
           ],
@@ -541,6 +541,16 @@ fn plan_explain_payload_surfaces_execution_cost_estimate() {
     assert_eq!(payload["execution_cost_estimate"]["node_count"], 3);
     assert_eq!(payload["execution_cost_estimate"]["root_nodes"], serde_json::json!(["a", "b"]));
     assert_eq!(payload["execution_cost_estimate"]["critical_path_length"], 2);
+    assert_eq!(
+        payload["execution_cost_estimate"]["critical_path"]["node_ids"],
+        serde_json::json!(["b", "c"])
+    );
+    assert_eq!(payload["execution_cost_estimate"]["critical_path"]["total_duration_ms"], 12000);
+    assert_eq!(payload["execution_cost_estimate"]["critical_path"]["estimated_duration_nodes"], 2);
+    assert_eq!(
+        payload["execution_cost_estimate"]["critical_path"]["unit_duration_fallback_nodes"],
+        0
+    );
     assert_eq!(payload["execution_cost_estimate"]["max_parallelism"], 2);
     assert_eq!(payload["execution_cost_estimate"]["demand"]["cpu_cores_total"], 7);
     assert_eq!(payload["execution_cost_estimate"]["demand"]["gpu_devices_total"], 2);
@@ -548,14 +558,8 @@ fn plan_explain_payload_surfaces_execution_cost_estimate() {
         payload["execution_cost_estimate"]["cache_exposure"]["non_cacheable_node_ids"],
         serde_json::json!(["b"])
     );
-    assert_eq!(
-        payload["execution_cost_estimate"]["timeout_exposure"]["max_timeout_ms"],
-        5000
-    );
-    assert_eq!(
-        payload["execution_cost_estimate"]["retry_exposure"]["max_attempts"],
-        3
-    );
+    assert_eq!(payload["execution_cost_estimate"]["timeout_exposure"]["max_timeout_ms"], 5000);
+    assert_eq!(payload["execution_cost_estimate"]["retry_exposure"]["max_attempts"], 3);
 }
 
 #[test]
