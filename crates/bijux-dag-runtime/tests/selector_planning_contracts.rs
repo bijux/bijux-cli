@@ -168,3 +168,43 @@ fn downstream_roots_select_exact_root_and_descendants() {
     assert!(!prep.selected);
     assert_eq!(result.plan.requested_selectors, vec!["from-node:train"]);
 }
+
+#[test]
+fn upstream_targets_select_exact_target_and_required_ancestors() {
+    let result = planner_result(RuntimeConfig {
+        upstream_selection_targets: vec!["report".to_string()],
+        partial_rerun_dependency_closure: false,
+        ..RuntimeConfig::default()
+    });
+
+    let prep = result
+        .annotations
+        .iter()
+        .find(|annotation| annotation.node_id == "prep")
+        .expect("prep annotation");
+    let train = result
+        .annotations
+        .iter()
+        .find(|annotation| annotation.node_id == "train")
+        .expect("train annotation");
+    let report = result
+        .annotations
+        .iter()
+        .find(|annotation| annotation.node_id == "report")
+        .expect("report annotation");
+    let prep_archive = result
+        .annotations
+        .iter()
+        .find(|annotation| annotation.node_id == "prep-archive")
+        .expect("prep-archive annotation");
+
+    assert_eq!(prep.reason, "selected_by_upstream_closure");
+    assert_eq!(train.reason, "selected_by_upstream_closure");
+    assert_eq!(report.reason, "selected_by_to_node");
+    assert_eq!(prep_archive.reason, "not_selected_by_to_node");
+    assert!(prep.selected);
+    assert!(train.selected);
+    assert!(report.selected);
+    assert!(!prep_archive.selected);
+    assert_eq!(result.plan.requested_selectors, vec!["to-node:report"]);
+}

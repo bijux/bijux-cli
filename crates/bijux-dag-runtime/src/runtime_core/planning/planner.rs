@@ -1,4 +1,4 @@
-use crate::compute_downstream_run_closure;
+use crate::{compute_downstream_run_closure, compute_upstream_run_closure};
 use crate::execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 use crate::{RuntimeConfig, Selector, SelectorSet};
 use bijux_dag_core::{
@@ -13,6 +13,12 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         .include
         .iter()
         .map(|selector| crate::requested_selector_label("include", selector))
+        .chain(
+            options
+                .upstream_selection_targets
+                .iter()
+                .map(|node_id| crate::requested_upstream_target_label(node_id)),
+        )
         .chain(
             options
                 .downstream_selection_roots
@@ -32,6 +38,19 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
     for node in &graph.nodes {
         if let Some(reason) = filter_reason(node, &options.selectors) {
             filter_reasons.insert(node.id.clone(), reason);
+        }
+    }
+    if !options.upstream_selection_targets.is_empty() {
+        let keep = compute_upstream_run_closure(graph, &options.upstream_selection_targets);
+        for node_id in &keep {
+            filter_reasons.remove(node_id);
+        }
+        for node in &graph.nodes {
+            if !keep.contains(&node.id) {
+                filter_reasons
+                    .entry(node.id.clone())
+                    .or_insert_with(|| "not_selected_by_to_node".to_string());
+            }
         }
     }
     if !options.downstream_selection_roots.is_empty() {

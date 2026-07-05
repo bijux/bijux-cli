@@ -437,6 +437,11 @@ fn annotate_plan(
     plan: &ExecutionPlan,
     selector_set: &SelectorSet,
 ) -> Vec<PlannerNodeAnnotation> {
+    let upstream_target_labels = plan
+        .requested_selectors
+        .iter()
+        .filter_map(|value| value.strip_prefix("to-node:"))
+        .collect::<BTreeSet<_>>();
     let downstream_root_labels = plan
         .requested_selectors
         .iter()
@@ -449,6 +454,10 @@ fn annotate_plan(
             let selected = !plan.filter_reasons.contains_key(&node.id);
             let reason = if let Some(filter_reason) = plan.filter_reasons.get(&node.id) {
                 filter_reason.clone()
+            } else if upstream_target_labels.contains(node.id.as_str()) {
+                "selected_by_to_node".to_string()
+            } else if !upstream_target_labels.is_empty() {
+                "selected_by_upstream_closure".to_string()
             } else if downstream_root_labels.contains(node.id.as_str()) {
                 "selected_by_from_node".to_string()
             } else if !downstream_root_labels.is_empty() {
