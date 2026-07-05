@@ -46,6 +46,44 @@ fn write_host_path_graph(root: &Path) -> PathBuf {
     path
 }
 
+fn write_execution_cost_graph(root: &Path) -> PathBuf {
+    let path = root.join("execution-cost.dag.json");
+    fs::write(
+        &path,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {
+              "id":"b",
+              "kind":"shell",
+              "outputs":[{"name":"out","path":"b/out"}],
+              "params":{"argv":["echo","b"]},
+              "resources":{"cpu":4,"mem_mb":2048},
+              "tags":["gpu:2"],
+              "timeout_ms":5000,
+              "retry":{"max_attempts":3,"backoff_ms":250},
+              "cache":{"enabled":false,"reason":"network-bound"}
+            },
+            {
+              "id":"c",
+              "kind":"shell",
+              "inputs":["left","right"],
+              "outputs":[{"name":"out","path":"c/out"}],
+              "params":{"argv":["echo","c"]},
+              "resources":{"cpu":2,"mem_mb":1024}
+            }
+          ],
+          "edges":[
+            {"from":{"node_id":"a","port":"out"},"to":{"node_id":"c","port":"left"}},
+            {"from":{"node_id":"b","port":"out"},"to":{"node_id":"c","port":"right"}}
+          ]
+        }"#,
+    )
+    .expect("write execution cost graph");
+    path
+}
+
 #[test]
 fn plan_explain_json_reports_previewed_run_layout_and_paths() {
     let root = repo_root();
@@ -118,4 +156,37 @@ fn run_json_reuses_previewed_run_layout_for_execution_and_scheduling() {
         output_path_string(&out_dir.join("run.tmp-executed-shell/nodes/const/outputs/result.txt"))
     );
     assert!(payload["data"]["scheduling"]["path_previews"][0]["resolved_argv"].is_null());
+}
+
+#[test]
+fn plan_explain_json_reports_execution_cost_estimate() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let graph = write_execution_cost_graph(tmp.path());
+
+    let payload = run_json(&["plan", "explain", "--json", &output_path_string(&graph)], &root);
+
+    assert_eq!(payload["data"]["execution_cost_estimate"]["node_count"], 3);
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["root_nodes"],
+        serde_json::json!(["a", "b"])
+    );
+    assert_eq!(payload["data"]["execution_cost_estimate"]["critical_path_length"], 2);
+    assert_eq!(payload["data"]["execution_cost_estimate"]["max_parallelism"], 2);
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["demand"]["cpu_cores_total"],
+        7
+    );
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["cache_exposure"]["non_cacheable_node_ids"],
+        serde_json::json!(["b"])
+    );
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["timeout_exposure"]["max_timeout_ms"],
+        5000
+    );
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["retry_exposure"]["max_attempts"],
+        3
+    );
 }
