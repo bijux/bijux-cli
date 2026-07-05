@@ -33,8 +33,10 @@ fn read_json(path: &Path) -> Result<Value, std::io::Error> {
 }
 
 fn inspect_integrity_state(run_dir: &Path, manifest: &Value) -> &'static str {
-    let required = ["manifest.json", "snapshot.json", "outputs.index.json"];
-    if required.iter().any(|rel| !run_dir.join(rel).exists()) {
+    if !run_dir.join("manifest.json").exists()
+        || snapshot_path(run_dir).is_none()
+        || output_inventory_path(run_dir).is_none()
+    {
         return "incomplete";
     }
     if manifest.is_null() {
@@ -358,10 +360,14 @@ pub fn explain_failure(run_dir: &Path) -> Result<Value, std::io::Error> {
 
 pub fn doctor_run(run_dir: &Path) -> Value {
     let mut findings = Vec::new();
-    for rel in ["manifest.json", "snapshot.json", "outputs.index.json"] {
-        if !run_dir.join(rel).exists() {
-            findings.push(format!("missing {rel}"));
-        }
+    if !run_dir.join("manifest.json").exists() {
+        findings.push("missing manifest.json".to_string());
+    }
+    if snapshot_path(run_dir).is_none() {
+        findings.push("missing graph snapshot".to_string());
+    }
+    if output_inventory_path(run_dir).is_none() {
+        findings.push("missing outputs index".to_string());
     }
     let manifest = read_json(&run_dir.join("manifest.json")).unwrap_or(Value::Null);
     let expected_trace_nodes = manifest
@@ -544,8 +550,61 @@ pub fn format_show_human(summary: &Value) -> String {
     )
 }
 
+pub fn format_run_completion_human(summary: &Value) -> String {
+    let next_action = summary
+        .get("suggested_next_action")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
+    let failed_nodes =
+        summary.get("failed_node_reasons").and_then(Value::as_array).cloned().unwrap_or_default();
+    let failed_render = if failed_nodes.is_empty() {
+        "[]".to_string()
+    } else {
+        serde_json::to_string(&failed_nodes).unwrap_or_else(|_| "[]".to_string())
+    };
+    format!(
+        "run_summary_status: {}\nrun_summary_duration_ms: {}\nrun_summary_node_counts: {}\nrun_summary_failed_nodes: {}\nrun_summary_cache_hits: {}\nrun_summary_artifact_count: {}\nrun_summary_promoted_artifact_count: {}\nrun_summary_next_action: {}\nrun_summary_next_command: {}",
+        summary.get("status").unwrap_or(&Value::Null),
+        summary.get("duration_ms").unwrap_or(&Value::Null),
+        summary.get("node_counts").unwrap_or(&Value::Null),
+        failed_render,
+        summary.get("cache_hits").unwrap_or(&Value::Null),
+        summary.get("artifact_count").unwrap_or(&Value::Null),
+        summary.get("promoted_artifact_count").unwrap_or(&Value::Null),
+        next_action.get("reason").cloned().unwrap_or(Value::Null),
+        next_action.get("command").cloned().unwrap_or(Value::Null),
+    )
+}
+
+fn output_inventory_path(run_dir: &Path) -> Option<PathBuf> {
+    let nested = run_dir.join("outputs").join("index.json");
+    if nested.exists() {
+        return Some(nested);
+    }
+    let legacy = run_dir.join("outputs.index.json");
+    if legacy.exists() {
+        return Some(legacy);
+    }
+    None
+}
+
+fn snapshot_path(run_dir: &Path) -> Option<PathBuf> {
+    let current = run_dir.join("graph.snapshot.json");
+    if current.exists() {
+        return Some(current);
+    }
+    let legacy = run_dir.join("snapshot.json");
+    if legacy.exists() {
+        return Some(legacy);
+    }
+    None
+}
+
 fn read_outputs_count(run_dir: &Path) -> usize {
-    let path = run_dir.join("outputs.index.json");
+    let Some(path) = output_inventory_path(run_dir) else {
+        return 0;
+    };
     let payload = fs::read_to_string(path).ok();
     payload
         .and_then(|p| serde_json::from_str::<Value>(&p).ok())
@@ -556,6 +615,49 @@ fn read_outputs_count(run_dir: &Path) -> usize {
                 .or_else(|| v.get("outputs").and_then(Value::as_array).map(|arr| arr.len()))
         })
         .unwrap_or(0)
+}
+
+fn suggested_next_action(run_id: &str, root: &str, status: &str, integrity_state: &str) -> Value {
+    if integrity_state != "healthy" {
+        return json!({
+            "action": "doctor-run",
+            "reason": "run artifacts are incomplete or corrupt and should be checked before reuse",
+            "command": format!("bijux-dag runs doctor {run_id} --root {root}")
+        });
+    }
+    match status {
+        "failed" => json!({
+            "action": "explain-failure",
+            "reason": "failed nodes should be classified before rerun or replay decisions",
+            "command": format!("bijux-dag runs explain-failure {run_id} --root {root}")
+        }),
+        "cancelled" => json!({
+            "action": "inspect-run",
+            "reason": "cancelled runs should be inspected before resume or replay",
+            "command": format!("bijux-dag runs inspect {run_id} --root {root}")
+        }),
+        "success" | "cached" => json!({
+            "action": "inspect-run",
+            "reason": "successful runs should be inspected before replay, diff, or promotion",
+            "command": format!("bijux-dag runs inspect {run_id} --root {root}")
+        }),
+        _ => json!({
+            "action": "inspect-run",
+            "reason": "inspect the finalized run evidence before taking follow-up actions",
+            "command": format!("bijux-dag runs inspect {run_id} --root {root}")
+        }),
+    }
+}
+
+fn trace_failure_reason(node_id: &str, trace: &Value) -> Option<Value> {
+    let failure = trace.get("failure")?.clone();
+    let parsed: FailureInfo = serde_json::from_value(failure).ok()?;
+    Some(json!({
+        "node_id": node_id,
+        "class": parsed.operator_class().as_str(),
+        "code": parsed.code,
+        "message": parsed.message,
+    }))
 }
 
 fn trace_failure_class(trace: &Value) -> Option<String> {
@@ -588,7 +690,7 @@ fn read_node_traces(
 
 #[cfg(test)]
 mod tests {
-    use super::runs_history_query_with_selectors;
+    use super::{run_completion_summary, runs_history_query_with_selectors};
     use crate::routes::selector_grammar::parse_selector_expressions;
     use serde_json::json;
 
@@ -632,5 +734,88 @@ mod tests {
         assert_eq!(runs.len(), 1);
         assert_eq!(runs[0]["run_id"], "run-b");
         assert_eq!(report["page"]["total"], 1);
+    }
+
+    #[test]
+    fn completion_summary_reads_nested_output_index_and_success_next_action() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let run_dir = temp.path().join("run-success");
+        std::fs::create_dir_all(run_dir.join("outputs")).expect("mkdir outputs");
+        std::fs::write(
+            run_dir.join("manifest.json"),
+            serde_json::to_vec_pretty(&json!({
+                "run_id": "run-success",
+                "status": "success",
+                "started_unix_ms": 100,
+                "finished_unix_ms": 180,
+                "node_counts": {"success": 2, "failed": 0, "skipped": 0, "cached": 1, "cancelled": 0},
+                "run_metadata": {"submission_source": "manual"},
+                "run_summary": {
+                    "promoted_outputs": [
+                        {"artifact_id": "deliverable:report", "output_name": "report"}
+                    ]
+                }
+            }))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
+        std::fs::write(run_dir.join("snapshot.json"), "{}").expect("write snapshot");
+        std::fs::write(
+            run_dir.join("outputs").join("index.json"),
+            r#"{"files":[{"name":"report"},{"name":"metrics"}]}"#,
+        )
+        .expect("write outputs index");
+
+        let summary = run_completion_summary(&run_dir).expect("completion summary");
+        assert_eq!(summary["duration_ms"], 80);
+        assert_eq!(summary["artifact_count"], 2);
+        assert_eq!(summary["promoted_artifact_count"], 1);
+        assert_eq!(summary["suggested_next_action"]["action"], "inspect-run");
+        assert!(summary["suggested_next_action"]["command"]
+            .as_str()
+            .is_some_and(|command| command.contains("bijux-dag runs inspect")));
+    }
+
+    #[test]
+    fn completion_summary_surfaces_failure_reasons_and_doctor_action_for_incomplete_run() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let run_dir = temp.path().join("run-failed");
+        std::fs::create_dir_all(run_dir.join("nodes").join("transform")).expect("mkdir nodes");
+        std::fs::write(
+            run_dir.join("manifest.json"),
+            serde_json::to_vec_pretty(&json!({
+                "run_id": "run-failed",
+                "status": "failed",
+                "started_unix_ms": 100,
+                "finished_unix_ms": 150,
+                "node_counts": {"success": 0, "failed": 1, "skipped": 0, "cached": 0, "cancelled": 0},
+                "run_metadata": {"submission_source": "manual"}
+            }))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
+        std::fs::write(
+            run_dir.join("nodes").join("transform").join("trace.json"),
+            serde_json::to_vec_pretty(&json!({
+                "status": "failed",
+                "attempt": 1,
+                "failure": {
+                    "class": "execution",
+                    "kind": "Execution",
+                    "code": "EXEC_ERROR",
+                    "message": "tool exited non-zero"
+                }
+            }))
+            .expect("trace"),
+        )
+        .expect("write trace");
+
+        let summary = run_completion_summary(&run_dir).expect("completion summary");
+        let reasons = summary["failed_node_reasons"].as_array().expect("reason list");
+        assert_eq!(reasons.len(), 1);
+        assert_eq!(reasons[0]["node_id"], "transform");
+        assert_eq!(reasons[0]["code"], "EXEC_ERROR");
+        assert_eq!(summary["integrity_state"], "incomplete");
+        assert_eq!(summary["suggested_next_action"]["action"], "doctor-run");
     }
 }
