@@ -183,7 +183,7 @@
       }
     ],
     "planner_contract_version": "bijux-dag-planner/v1",
-    "planner_fingerprint": "0fd8dd9184d1fca09da4d49e9beb4439f71f646a6255cf34fbea7fee00b2acc3",
+    "planner_fingerprint": "f54b2b75b6ecd4f69ae09cbe009e3b5dcabfc88aa44b3a5e0bcaa27745ed85b7",
     "policy": {
       "clean_env": true,
       "deny_clock": false,

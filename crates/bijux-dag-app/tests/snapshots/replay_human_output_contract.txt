@@ -23,8 +23,10 @@
   "prove_requested": false,
   "sandbox_mode": "standard",
   "selectors": {
+    "downstream_roots": [],
     "exclude": [],
-    "select": []
+    "select": [],
+    "selected_node_ids": []
   },
   "source_run_dir": "<TMP>/runs/run-fixed",
   "source_run_id": "fixed",
