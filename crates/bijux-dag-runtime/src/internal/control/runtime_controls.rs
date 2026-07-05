@@ -753,11 +753,11 @@ fn backoff_for_attempt(policy: &RetryPolicyV2, attempt: u32) -> u64 {
     if attempt == 0 {
         return 0;
     }
-    let ordinal = attempt.saturating_sub(1) as u64;
     match policy.backoff_strategy {
         BackoffStrategy::Fixed => policy.backoff_ms,
-        BackoffStrategy::Linear => policy.backoff_ms.saturating_mul(ordinal),
+        BackoffStrategy::Linear => policy.backoff_ms.saturating_mul(attempt as u64),
         BackoffStrategy::Exponential => {
+            let ordinal = attempt.saturating_sub(1) as u64;
             let multiplier = 1u64.checked_shl(ordinal.min(20) as u32).unwrap_or(u64::MAX);
             policy.backoff_ms.saturating_mul(multiplier)
         }
@@ -1022,6 +1022,31 @@ mod tests {
         assert_eq!(report.base_backoff_ms, 20);
         assert!(report.deterministic_jitter_ms <= 7);
         assert_eq!(report.next_attempt, Some(3));
+    }
+
+    #[test]
+    fn linear_retry_backoff_waits_for_the_first_retry_window() {
+        let mut graph = graph_fixture();
+        graph.nodes[1].retry.max_attempts = 3;
+        graph.nodes[1].retry.backoff_ms = 15;
+        graph.nodes[1].params = bijux_dag_core::ParamValue::Object(BTreeMap::from([(
+            "argv".to_string(),
+            bijux_dag_core::ParamValue::Array(vec![
+                bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                bijux_dag_core::ParamValue::Literal(serde_json::json!("true")),
+            ]),
+        )]));
+
+        let report = super::build_retry_decision_report(
+            &graph,
+            &RuntimeConfig::default(),
+            "shell1",
+            1,
+            "execution_transient",
+        )
+        .expect("report");
+        assert_eq!(report.base_backoff_ms, 15);
     }
 
     #[test]
