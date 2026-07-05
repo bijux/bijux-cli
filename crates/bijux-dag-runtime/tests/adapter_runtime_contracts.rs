@@ -158,6 +158,7 @@ fn shell_adapter_missing_declared_output_fails_contract() {
     let trace = read_trace(&run_dir);
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "OUTPUT_MISSING");
+    assert_eq!(trace["failure"]["class"], "user");
 }
 
 #[test]
@@ -173,6 +174,7 @@ fn shell_adapter_failure_records_exit_code() {
     let trace = read_trace(&run_dir);
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "EXEC_FAIL");
+    assert_eq!(trace["failure"]["class"], "execution");
     assert_eq!(trace["failure"]["details"]["exit_code"], 7);
 }
 
@@ -197,6 +199,34 @@ fn shell_adapter_env_policy_denial_is_structured() {
     let trace = read_trace(&run_dir);
     assert_eq!(trace["failure"]["kind"], "Policy");
     assert_eq!(trace["failure"]["code"], "POLICY_DENIED");
+    assert_eq!(trace["failure"]["class"], "policy");
+}
+
+#[test]
+fn shell_adapter_missing_executable_is_infrastructure_error() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"shell",
+              "kind":"shell",
+              "outputs":[{"name":"value","path":"value.txt"}],
+              "params":{"argv":["definitely-missing-bijux-command"]},
+              "effects":["filesystem"]
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("run");
+    let trace = read_trace(&run_dir);
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "MISSING_EXECUTABLE");
+    assert_eq!(trace["failure"]["class"], "infrastructure");
 }
 
 #[test]
@@ -330,6 +360,7 @@ exit 1
     )
     .expect("trace json");
     assert_eq!(trace["failure"]["code"], "EXEC_TIMEOUT");
+    assert_eq!(trace["failure"]["class"], "timeout");
     assert_eq!(trace["failure"]["details"]["timeout_class"], "external_adapter_process");
     assert!(trace["adapter_binary_sha256"].as_str().is_some());
     let quarantine_dir =

@@ -214,7 +214,7 @@ fn shell_retry_failure_graph() -> String {
                 "id": "node",
                 "kind": "shell",
                 "inputs": [],
-                "outputs": [{"name": "value", "path": "value.txt"}],
+                "outputs": [],
                 "params": {
                     "argv": ["/bin/sh", "-c", "exit 1"]
                 },
@@ -487,6 +487,7 @@ fn runtime_missing_output_file_fails_with_missing_output() {
     .expect("parse trace");
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "OUTPUT_MISSING");
+    assert_eq!(trace["failure"]["class"], "user");
     assert_eq!(trace["transition_cause"], "MissingRequiredOutput");
     let propagation = read_failure_propagation(&run_path);
     assert_eq!(propagation[0]["cause"], "missing_required_output");
@@ -1112,10 +1113,12 @@ fn runtime_can_cancel_inflight_nodes_when_run_timeout_behavior_requires_it() {
     let running_trace = read_node_trace(&run_path, "a");
     assert_eq!(running_trace["status"], "failed");
     assert_eq!(running_trace["failure"]["code"], "EXEC_TIMEOUT");
+    assert_eq!(running_trace["failure"]["class"], "timeout");
     assert_eq!(running_trace["lifecycle_state"], "timed_out");
 
     let pending_trace = read_node_trace(&run_path, "b");
     assert_eq!(pending_trace["failure"]["code"], "RUN_TIMEOUT");
+    assert_eq!(pending_trace["failure"]["class"], "timeout");
     assert_eq!(pending_trace["lifecycle_state"], "timed_out");
 }
 

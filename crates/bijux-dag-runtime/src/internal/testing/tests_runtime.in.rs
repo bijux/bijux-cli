@@ -1361,6 +1361,17 @@ exit 1
     }
 
     #[test]
+    fn output_validation_ignores_managed_output_index_metadata() {
+        let dir = tempfile::tempdir().unwrap();
+        let outdir = dir.path().join("outputs");
+        fs::create_dir_all(&outdir).unwrap();
+        fs::write(outdir.join("index.json"), br#"{"files":[]}"#).unwrap();
+
+        let report = inspect_declared_outputs(&outdir, &[]);
+        assert!(report.failure.is_none());
+    }
+
+    #[test]
     fn directory_outputs_materialize_for_downstream_nodes() {
         let dir = tempfile::tempdir().unwrap();
         let mut source_output = FileOutput::new("data".to_string(), "source-data".to_string());

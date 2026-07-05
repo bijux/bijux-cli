@@ -65,6 +65,32 @@ fn retry_failure_graph(backoff_ms: u64) -> String {
     .to_string()
 }
 
+fn retry_ineligible_user_failure_graph(backoff_ms: u64) -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "worker",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "worker.txt"}],
+                "retry": {"max_attempts": 2, "backoff_ms": backoff_ms},
+                "effects": ["filesystem"],
+                "params": {
+                    "retryable_failure_classes": ["execution"],
+                    "argv": [
+                        "/bin/sh",
+                        "-c",
+                        "printf 'completed without declared output'"
+                    ]
+                }
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
 fn read_node_trace(run_dir: &std::path::Path, node_id: &str) -> Value {
     serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join(node_id).join("trace.json"))
@@ -154,4 +180,30 @@ fn retry_exhaustion_records_final_attempt_and_retry_exhausted_event() {
 
     let run_log = fs::read_to_string(run_path.join("run.log.jsonl")).expect("run log");
     assert!(run_log.contains("\"event\":\"node_retry_exhausted\""));
+}
+
+#[test]
+fn retry_stops_when_failure_class_is_not_retry_eligible() {
+    let graph = parse_graph_strict(&retry_ineligible_user_failure_graph(25)).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime
+        .run(&graph, out.path(), RuntimeConfig::default())
+        .expect("failed run");
+
+    let trace = read_node_trace(&run_path, "worker");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["attempt"], 1);
+    assert_eq!(trace["failure"]["code"], "OUTPUT_MISSING");
+    assert_eq!(trace["failure"]["class"], "user");
+
+    let attempts = read_attempts(&run_path, "worker");
+    assert_eq!(attempts.len(), 1);
+    assert!(attempts[0].get("scheduled_backoff_ms").is_none());
+    assert_eq!(attempts[0]["failure"]["class"], "user");
+
+    let run_log = fs::read_to_string(run_path.join("run.log.jsonl")).expect("run log");
+    assert!(!run_log.contains("\"event\":\"node_retry_scheduled\""));
+    assert!(run_log.contains("\"event\":\"node_retry_exhausted\""));
+    assert!(run_log.contains("\"failure_code\":\"OUTPUT_MISSING\""));
 }
