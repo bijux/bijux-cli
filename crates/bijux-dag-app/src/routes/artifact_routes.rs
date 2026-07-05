@@ -725,6 +725,37 @@ mod tests {
     }
 
     #[test]
+    fn artifact_promote_rejects_outputs_that_are_not_marked_promotable() {
+        let dir = tempfile::tempdir().expect("tmp");
+        write_run_fixture(dir.path());
+        let index_path = dir.path().join("outputs").join("index.json");
+        std::fs::write(
+            &index_path,
+            r#"{"files":[{"node_id":"extract","node_fingerprint":"fp-node","name":"report","kind":"file","media_type":"application/json","size_bytes":2,"sha256":"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","path":"nodes/extract/outputs/report.json","promotable":false}]}"#,
+        )
+        .expect("index");
+
+        let deliverables = dir.path().join("deliverables");
+        let cli = quiet_json_cli(ArtifactCommands::Promote {
+            run_dir: dir.path().to_path_buf(),
+            artifact_id: "extract:report.json".to_string(),
+            deliverables_root: deliverables,
+            to: "release".to_string(),
+        });
+        let err = handle_artifact_command(
+            &cli,
+            &ArtifactCommands::Promote {
+                run_dir: dir.path().to_path_buf(),
+                artifact_id: "extract:report.json".to_string(),
+                deliverables_root: dir.path().join("deliverables"),
+                to: "release".to_string(),
+            },
+        )
+        .expect_err("non-promotable outputs must be rejected");
+        assert_eq!(err, ExitCode::from(2));
+    }
+
+    #[test]
     fn artifact_inspect_route_rejects_missing_run_without_panic() {
         let cli = DagCli::parse_from(["bijux-dag", "artifact-inspect", "/missing/run", "n1:out"]);
         let result = handle_artifact_inspect_command(&cli, Path::new("/missing/run"), "n1:out");

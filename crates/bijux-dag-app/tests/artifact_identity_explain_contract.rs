@@ -85,7 +85,8 @@ fn setup_run_with_lineage() -> (tempfile::TempDir, PathBuf) {
                 "media_type":"text/csv",
                 "size_bytes": 7,
                 "sha256":sha,
-                "path":"nodes/extract/outputs/data.csv"
+                "path":"nodes/extract/outputs/data.csv",
+                "promotable": true
             }]
         }))
         .expect("index"),
@@ -135,6 +136,7 @@ fn artifact_identity_explain_covers_provenance_and_lineage_traversal() {
     let inspected = inspect_artifact(&run, "extract:data.csv").expect("inspect");
 
     assert_eq!(inspected["node_id"], "extract");
+    assert_eq!(inspected["promotable"], true);
     assert_eq!(inspected["provenance"]["run_id"], "run-1");
     assert_eq!(inspected["legacy_artifact_id"], "extract:data.csv");
     assert_eq!(inspected["lineage"]["upstream_artifact_ids"][0], "source:input.csv");
