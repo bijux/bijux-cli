@@ -199,6 +199,11 @@ impl RunDir {
         Self::create_with_layout(layout)
     }
 
+    pub fn resume_with_id(out_base: impl AsRef<Path>, run_id: &str) -> Result<Self, ArtifactError> {
+        let layout = RunDirLayout::preview(out_base, Some(run_id))?;
+        Self::resume_with_layout(layout)
+    }
+
     pub fn staging_path(&self) -> &Path {
         &self.staging_path
     }
@@ -308,6 +313,44 @@ impl RunDir {
         ensure_run_path_absent(&layout.final_path, "final run directory")?;
         std_fs::create_dir_all(layout.staging_path.join("nodes"))?;
         Ok(Self { staging_path: layout.staging_path, final_path: layout.final_path })
+    }
+
+    fn resume_with_layout(layout: RunDirLayout) -> Result<Self, ArtifactError> {
+        let staging_exists = layout.staging_path.exists();
+        let final_exists = layout.final_path.exists();
+        match (staging_exists, final_exists) {
+            (true, false) => Ok(Self {
+                staging_path: layout.staging_path,
+                final_path: layout.final_path,
+            }),
+            (false, true) => {
+                if let Some(parent) = layout.staging_path.parent() {
+                    std_fs::create_dir_all(parent)?;
+                }
+                std_fs::rename(&layout.final_path, &layout.staging_path)?;
+                Ok(Self {
+                    staging_path: layout.staging_path,
+                    final_path: layout.final_path,
+                })
+            }
+            (false, false) => Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!(
+                    "resume run directory missing: {}",
+                    layout.final_path.display()
+                ),
+            )
+            .into()),
+            (true, true) => Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                format!(
+                    "resume run directory is ambiguous because both staging and final paths exist: {} and {}",
+                    layout.staging_path.display(),
+                    layout.final_path.display()
+                ),
+            )
+            .into()),
+        }
     }
 }
 
@@ -627,6 +670,47 @@ mod tests {
         std_fs::create_dir_all(dir.path().join("run-fixed")).unwrap();
         let err = RunDir::create_with_id(dir.path(), "fixed").unwrap_err();
         assert!(err.to_string().contains("final run directory already exists"));
+    }
+
+    #[test]
+    fn run_dir_resume_moves_final_path_back_to_staging() {
+        let dir = tempfile::tempdir().unwrap();
+        let final_path = dir.path().join("run-resume-ready");
+        std_fs::create_dir_all(final_path.join("nodes")).unwrap();
+
+        let run_dir = RunDir::resume_with_id(dir.path(), "resume-ready").unwrap();
+
+        assert_eq!(run_dir.staging_path(), dir.path().join("run.tmp-resume-ready").as_path());
+        assert_eq!(run_dir.final_path(), dir.path().join("run-resume-ready").as_path());
+        assert!(run_dir.staging_path().exists());
+        assert!(!run_dir.final_path().exists());
+    }
+
+    #[test]
+    fn run_dir_resume_reuses_existing_staging_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let staging_path = dir.path().join("run.tmp-resume-ready");
+        std_fs::create_dir_all(staging_path.join("nodes")).unwrap();
+
+        let run_dir = RunDir::resume_with_id(dir.path(), "resume-ready").unwrap();
+
+        assert_eq!(run_dir.staging_path(), staging_path.as_path());
+        assert!(!run_dir.final_path().exists());
+    }
+
+    #[test]
+    fn run_dir_resume_rejects_missing_or_ambiguous_paths() {
+        let dir = tempfile::tempdir().unwrap();
+        let missing = RunDir::resume_with_id(dir.path(), "resume-ready").unwrap_err();
+        assert!(missing.to_string().contains("resume run directory missing"));
+
+        let staging_path = dir.path().join("run.tmp-resume-ready");
+        let final_path = dir.path().join("run-resume-ready");
+        std_fs::create_dir_all(staging_path.join("nodes")).unwrap();
+        std_fs::create_dir_all(final_path.join("nodes")).unwrap();
+
+        let ambiguous = RunDir::resume_with_id(dir.path(), "resume-ready").unwrap_err();
+        assert!(ambiguous.to_string().contains("resume run directory is ambiguous"));
     }
 
     #[test]
