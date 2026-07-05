@@ -1,7 +1,7 @@
 //! Graph fingerprint entrypoints.
 
 use crate::canonical::{normalize_identity_text, normalize_rel_path, sort_value_maps};
-use crate::resolve::resolve_param_value;
+use crate::resolve::{resolve_command_argv_templates, resolve_param_value};
 use crate::{Graph, GraphError, GraphFingerprintExplain, GraphId, Node, ParamValue};
 use sha2::{Digest, Sha256};
 
@@ -53,6 +53,12 @@ impl Graph {
             crate::Effect::Env => 2,
             crate::Effect::Clock => 3,
         });
+        if let Some(argv) = node.container.as_ref().map(|container| container.argv.clone()) {
+            let resolved_argv = resolve_command_argv_templates(self, &node, &argv, resolved_params)?;
+            if let Some(container) = node.container.as_mut() {
+                container.argv = resolved_argv;
+            }
+        }
         node.env_allowlist =
             node.env_allowlist.iter().map(|entry| normalize_identity_text(entry)).collect();
         node.env_allowlist.sort();
