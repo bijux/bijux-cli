@@ -41,6 +41,7 @@ flowchart LR
 ## Pages In This Section
 
 - [Package Overview](package-overview.md)
+- [Release Boundary](release-boundary.md)
 - [Scope and Non-Goals](scope-and-non-goals.md)
 - [Ownership Boundary](ownership-boundary.md)
 - [Repository Fit](repository-fit.md)
