@@ -275,7 +275,7 @@ use bijux_dag_artifacts::schema::{
 use bijux_dag_artifacts::{
     sha256_artifact_path, write_inputs_index, write_outputs_index, AdapterInfo, ArtifactError,
     CacheProof, ContainerTrace, DeclaredOutputArtifact, FailureInfo, InputFile, InputsIndex,
-    NodeCounts, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
+    NodeCounts, NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
     Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex, TraceOutputArtifact,
     TriggerEvaluation,
 };
@@ -1225,6 +1225,8 @@ fn write_trace(
     branch_decision: Option<String>,
     skip_reason: Option<bijux_dag_artifacts::SkipReason>,
     transition_cause: Option<String>,
+    lifecycle_state: Option<String>,
+    lifecycle_transitions: Vec<NodeLifecycleTransition>,
     replay_provenance: Option<ReplayProvenance>,
 ) -> Result<(), RuntimeError> {
     let node = graph
@@ -1271,6 +1273,8 @@ fn write_trace(
         skip_reason,
         failure,
         transition_cause,
+        lifecycle_state,
+        lifecycle_transitions,
         replay_provenance,
     };
     let data = serde_json::to_vec_pretty(&trace)?;
@@ -1285,6 +1289,45 @@ fn status_string(status: &NodeStatus) -> String {
         NodeStatus::Skipped => "skipped".to_string(),
         NodeStatus::Cached => "cached".to_string(),
     }
+}
+
+pub(crate) fn node_state_string(state: &NodeState) -> String {
+    match state {
+        NodeState::Pending => "pending",
+        NodeState::Eligible => "eligible",
+        NodeState::Queued => "queued",
+        NodeState::Running => "running",
+        NodeState::Success => "success",
+        NodeState::Failed => "failed",
+        NodeState::Skipped => "skipped",
+        NodeState::Cached => "cached",
+        NodeState::Cancelled => "cancelled",
+        NodeState::TimedOut => "timed_out",
+    }
+    .to_string()
+}
+
+pub(crate) fn transition_cause_string(cause: &TransitionCause) -> String {
+    match cause {
+        TransitionCause::Submission => "submission",
+        TransitionCause::PlanningCompleted => "planning_completed",
+        TransitionCause::SchedulerEligible => "scheduler_eligible",
+        TransitionCause::SchedulerQueued => "scheduler_queued",
+        TransitionCause::ExecutionStarted => "execution_started",
+        TransitionCause::ExecutionSucceeded => "execution_succeeded",
+        TransitionCause::ExecutionFailed => "execution_failed",
+        TransitionCause::CachedReuse => "cached_reuse",
+        TransitionCause::PolicyDenied => "policy_denied",
+        TransitionCause::DependencyFailed => "dependency_failed",
+        TransitionCause::SelectionFiltered => "selection_filtered",
+        TransitionCause::ExecutionAborted => "execution_aborted",
+        TransitionCause::CancelRequested => "cancel_requested",
+        TransitionCause::TimeoutExceeded => "timeout_exceeded",
+        TransitionCause::ReplayReused => "replay_reused",
+        TransitionCause::ReplayReexecuted => "replay_reexecuted",
+        TransitionCause::ResumeRequested => "resume_requested",
+    }
+    .to_string()
 }
 
 pub(crate) fn transition_cause_for_status(status: &NodeStatus) -> &'static str {

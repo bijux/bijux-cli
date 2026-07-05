@@ -33,6 +33,13 @@ use std::path::{Path, PathBuf};
 use std::sync::{atomic::Ordering, Arc, Mutex};
 use std::time::{Duration, Instant};
 
+#[derive(Debug, Clone, Default)]
+struct NodeLifecycleTimestamps {
+    eligible_unix_ms: Option<u128>,
+    queued_unix_ms: Option<u128>,
+    running_unix_ms: Option<u128>,
+}
+
 #[derive(Debug, Clone)]
 struct BranchResolution {
     decision: String,
@@ -466,6 +473,142 @@ fn invalidated_downstream_nodes(graph: &Graph, selected_nodes: &[String]) -> Vec
     visited.into_iter().collect()
 }
 
+fn remember_first_timestamp(slot: &mut Option<u128>, unix_ms: u128) {
+    if slot.is_none() {
+        *slot = Some(unix_ms);
+    }
+}
+
+fn lifecycle_terminal_state(
+    status: &NodeStatus,
+    failure: Option<&FailureInfo>,
+    skip_reason: Option<&bijux_dag_artifacts::SkipReason>,
+) -> crate::NodeState {
+    match status {
+        NodeStatus::Success => crate::NodeState::Success,
+        NodeStatus::Cached => crate::NodeState::Cached,
+        NodeStatus::Skipped => {
+            if skip_reason.is_some_and(|reason| reason.reason == "cancelled") {
+                crate::NodeState::Cancelled
+            } else {
+                crate::NodeState::Skipped
+            }
+        }
+        NodeStatus::Failed => {
+            if failure.is_some_and(|record| {
+                matches!(record.code.as_str(), "RUN_TIMEOUT" | "EXEC_TIMEOUT")
+            }) {
+                crate::NodeState::TimedOut
+            } else if failure.is_some_and(|record| record.code == "RUN_ABORTED") {
+                crate::NodeState::Cancelled
+            } else {
+                crate::NodeState::Failed
+            }
+        }
+    }
+}
+
+fn lifecycle_terminal_cause(
+    status: &NodeStatus,
+    failure: Option<&FailureInfo>,
+    skip_reason: Option<&bijux_dag_artifacts::SkipReason>,
+) -> crate::TransitionCause {
+    match status {
+        NodeStatus::Success => crate::TransitionCause::ExecutionSucceeded,
+        NodeStatus::Cached => crate::TransitionCause::CachedReuse,
+        NodeStatus::Skipped => {
+            if skip_reason.is_some_and(|reason| reason.reason == "cancelled") {
+                crate::TransitionCause::CancelRequested
+            } else {
+                crate::TransitionCause::SelectionFiltered
+            }
+        }
+        NodeStatus::Failed => match failure.map(|record| record.code.as_str()) {
+            Some("POLICY_DENIED") => crate::TransitionCause::PolicyDenied,
+            Some("UPSTREAM_FAILED") => crate::TransitionCause::DependencyFailed,
+            Some("RUN_TIMEOUT" | "EXEC_TIMEOUT") => crate::TransitionCause::TimeoutExceeded,
+            Some("RUN_ABORTED") => crate::TransitionCause::ExecutionAborted,
+            _ => crate::TransitionCause::ExecutionFailed,
+        },
+    }
+}
+
+fn append_lifecycle_transition(
+    transitions: &mut Vec<bijux_dag_artifacts::NodeLifecycleTransition>,
+    from_state: crate::NodeState,
+    to_state: crate::NodeState,
+    cause: crate::TransitionCause,
+    unix_ms: u128,
+) -> Result<(), RuntimeError> {
+    crate::validate_node_transition(&crate::NodeTransition {
+        from: from_state.clone(),
+        to: to_state.clone(),
+        cause: cause.clone(),
+    })
+    .map_err(RuntimeError::Executor)?;
+    transitions.push(bijux_dag_artifacts::NodeLifecycleTransition {
+        from_state: crate::node_state_string(&from_state),
+        to_state: crate::node_state_string(&to_state),
+        cause: crate::transition_cause_string(&cause),
+        unix_ms,
+    });
+    Ok(())
+}
+
+fn build_lifecycle_trace(
+    run_started_unix_ms: u128,
+    timestamps: Option<&NodeLifecycleTimestamps>,
+    terminal_state: crate::NodeState,
+    terminal_cause: crate::TransitionCause,
+    finished_unix_ms: u128,
+) -> Result<(String, Vec<bijux_dag_artifacts::NodeLifecycleTransition>), RuntimeError> {
+    let mut transitions = Vec::new();
+    let mut current_state = crate::NodeState::Pending;
+
+    if let Some(timestamps) = timestamps {
+        if let Some(eligible_unix_ms) = timestamps.eligible_unix_ms {
+            append_lifecycle_transition(
+                &mut transitions,
+                current_state.clone(),
+                crate::NodeState::Eligible,
+                crate::TransitionCause::SchedulerEligible,
+                eligible_unix_ms.max(run_started_unix_ms),
+            )?;
+            current_state = crate::NodeState::Eligible;
+        }
+        if let Some(queued_unix_ms) = timestamps.queued_unix_ms {
+            append_lifecycle_transition(
+                &mut transitions,
+                current_state.clone(),
+                crate::NodeState::Queued,
+                crate::TransitionCause::SchedulerQueued,
+                queued_unix_ms,
+            )?;
+            current_state = crate::NodeState::Queued;
+        }
+        if let Some(running_unix_ms) = timestamps.running_unix_ms {
+            append_lifecycle_transition(
+                &mut transitions,
+                current_state.clone(),
+                crate::NodeState::Running,
+                crate::TransitionCause::ExecutionStarted,
+                running_unix_ms,
+            )?;
+            current_state = crate::NodeState::Running;
+        }
+    }
+
+    append_lifecycle_transition(
+        &mut transitions,
+        current_state,
+        terminal_state.clone(),
+        terminal_cause,
+        finished_unix_ms,
+    )?;
+
+    Ok((crate::node_state_string(&terminal_state), transitions))
+}
+
 fn write_scheduler_invariant_bundle(
     ctx: &RunContext,
     loop_index: u64,
@@ -496,6 +639,8 @@ fn record_skipped_node(
     options: &RuntimeConfig,
     node_id: &str,
     reason: &str,
+    run_started_unix_ms: u128,
+    lifecycle_timestamps: &HashMap<String, NodeLifecycleTimestamps>,
 ) -> Result<(), RuntimeError> {
     if status_map.contains_key(node_id) {
         return Ok(());
@@ -512,6 +657,14 @@ fn record_skipped_node(
     let aschema = runtime.adapter_schema_for_kind(&node_kind);
     let adapter_hash = runtime.adapter_for_kind(&node_kind).ok().and_then(|a| a.binary_hash());
     let started = ctx.clock.now_unix_ms();
+    let skip_reason = bijux_dag_artifacts::SkipReason { reason: reason.to_string() };
+    let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
+        run_started_unix_ms,
+        lifecycle_timestamps.get(node_id),
+        lifecycle_terminal_state(&NodeStatus::Skipped, None, Some(&skip_reason)),
+        lifecycle_terminal_cause(&NodeStatus::Skipped, None, Some(&skip_reason)),
+        started,
+    )?;
     sacred_execution::run_write_trace(
         ctx,
         graph,
@@ -530,8 +683,10 @@ fn record_skipped_node(
         adapter_hash,
         None,
         None,
-        Some(bijux_dag_artifacts::SkipReason { reason: reason.to_string() }),
+        Some(skip_reason),
         Some(crate::transition_cause_for_skip_reason(reason).to_string()),
+        Some(lifecycle_state),
+        lifecycle_transitions,
         Some(ReplayProvenance {
             node_action: "skipped".to_string(),
             source_run_id: options.parent_run_id.clone(),
@@ -836,6 +991,11 @@ pub fn execute(
     let scheduler_hook = crate::NoopSchedulerEventHook;
     let mut loop_index: u64 = 0;
     let mut branch_pruned_nodes = BTreeSet::new();
+    let mut lifecycle_timestamps = graph
+        .nodes
+        .iter()
+        .map(|node| (node.id.clone(), NodeLifecycleTimestamps::default()))
+        .collect::<HashMap<_, _>>();
     engine_record::append_indexed_event(
         &mut run_log,
         &mut run_log_index,
@@ -869,6 +1029,9 @@ pub fn execute(
     }
     for node_id in &initial_ready {
         scheduler_hook.on_node_eligible(node_id);
+        if let Some(timestamps) = lifecycle_timestamps.get_mut(node_id) {
+            remember_first_timestamp(&mut timestamps.eligible_unix_ms, started_unix_ms);
+        }
     }
     for event in engine_observe::node_eligible_events(
         &initial_ready,
@@ -945,6 +1108,12 @@ pub fn execute(
                     "reason": reason_code,
                 }),
             )?;
+        }
+        let schedule_unix_ms = ctx.clock.now_unix_ms();
+        for node_id in &batch {
+            if let Some(timestamps) = lifecycle_timestamps.get_mut(node_id) {
+                remember_first_timestamp(&mut timestamps.queued_unix_ms, schedule_unix_ms);
+            }
         }
         let forced_batch = batch.len() == 1;
 
@@ -1213,6 +1382,8 @@ pub fn execute(
                 &options,
                 node_id,
                 reason,
+                started_unix_ms,
+                &lifecycle_timestamps,
             )?;
         }
         preflight_failures.sort_by(|a, b| a.0.cmp(&b.0));
@@ -1224,6 +1395,13 @@ pub fn execute(
             let adapter_hash =
                 runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash());
             let started = ctx.clock.now_unix_ms();
+            let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
+                started_unix_ms,
+                lifecycle_timestamps.get(node_id),
+                lifecycle_terminal_state(&NodeStatus::Failed, Some(failure), None),
+                lifecycle_terminal_cause(&NodeStatus::Failed, Some(failure), None),
+                started,
+            )?;
             sacred_execution::run_write_trace(
                 &ctx,
                 graph,
@@ -1244,6 +1422,8 @@ pub fn execute(
                 None,
                 None,
                 Some(transition_cause.clone()),
+                Some(lifecycle_state),
+                lifecycle_transitions,
                 Some(ReplayProvenance {
                     node_action: "reexecuted".to_string(),
                     source_run_id: options.parent_run_id.clone(),
@@ -1272,10 +1452,12 @@ pub fn execute(
         }
 
         let mut started_ids: Vec<String> = Vec::new();
-        for (node_id, _, _) in &to_start {
+        let actual_started_ids =
+            to_start.iter().map(|(node_id, _, _)| node_id.clone()).collect::<Vec<_>>();
+        for (node_id, _, _) in &cached {
             started_ids.push(node_id.clone());
         }
-        for (node_id, _, _) in &cached {
+        for node_id in &actual_started_ids {
             started_ids.push(node_id.clone());
         }
         for (node_id, _, _, _, _) in &preflight_failures {
@@ -1289,14 +1471,14 @@ pub fn execute(
                 &mut run_log,
                 serde_json::json!({
                     "event": "node_scheduled",
-                    "ts": ctx.clock.now_unix_ms(),
+                    "ts": schedule_unix_ms,
                     "node_id": node_id,
                     "reason": schedule_reason,
                 }),
             )?;
             run_log_index.push(serde_json::json!({
                 "event": "node_scheduled",
-                "ts": ctx.clock.now_unix_ms(),
+                "ts": schedule_unix_ms,
                 "node_id": node_id,
                 "reason": schedule_reason,
             }));
@@ -1306,7 +1488,7 @@ pub fn execute(
             loop_index,
             ready_queue_depth: ready_queue.len(),
             ready_queue: ready_queue.snapshot_sorted(),
-            inflight: started_ids.clone(),
+            inflight: actual_started_ids.clone(),
             scheduled: started_ids.clone(),
             blocked_by_budget: blocked_by_budget.clone(),
             blocked_reasons: blocked_reasons.clone(),
@@ -1337,18 +1519,18 @@ pub fn execute(
                 "scheduler state invariants violated after checkpoint replay".to_string(),
             ));
         }
-        for node_id in &started_ids {
+        for node_id in &actual_started_ids {
             crate::append_event(
                 &mut run_log,
                 serde_json::json!({
                     "event": "node_started",
-                    "ts": ctx.clock.now_unix_ms(),
+                    "ts": schedule_unix_ms,
                     "node_id": node_id,
                 }),
             )?;
             run_log_index.push(serde_json::json!({
                 "event": "node_started",
-                "ts": ctx.clock.now_unix_ms(),
+                "ts": schedule_unix_ms,
                 "node_id": node_id,
             }));
         }
@@ -1393,6 +1575,13 @@ pub fn execute(
                     Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
                 ),
             };
+            let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
+                started_unix_ms,
+                lifecycle_timestamps.get(node_id),
+                lifecycle_terminal_state(&status, failure.as_ref(), None),
+                lifecycle_terminal_cause(&status, failure.as_ref(), None),
+                started,
+            )?;
             sacred_execution::guard_terminal_node_status(&status)?;
             status_map.insert(node_id.clone(), status.clone());
             sacred_execution::run_write_trace(
@@ -1415,6 +1604,8 @@ pub fn execute(
                 branch_decision,
                 None,
                 transition_cause,
+                Some(lifecycle_state),
+                lifecycle_transitions,
                 Some(ReplayProvenance {
                     node_action: "reused".to_string(),
                     source_run_id: options.parent_run_id.clone(),
@@ -1505,6 +1696,9 @@ pub fn execute(
         }
         results.sort_by(|a, b| a.0.cmp(&b.0));
         for (node_id, node, started, finished, res) in results {
+            if let Some(timestamps) = lifecycle_timestamps.get_mut(&node_id) {
+                remember_first_timestamp(&mut timestamps.running_unix_ms, started);
+            }
             match res {
                 Ok(mut result) => {
                     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
@@ -1592,6 +1786,13 @@ pub fn execute(
                         "ts": ctx.clock.now_unix_ms(),
                         "node_id": node_id,
                     }));
+                    let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
+                        started_unix_ms,
+                        lifecycle_timestamps.get(&node_id),
+                        lifecycle_terminal_state(&result.status, result.failure.as_ref(), None),
+                        lifecycle_terminal_cause(&result.status, result.failure.as_ref(), None),
+                        finished,
+                    )?;
                     sacred_execution::run_write_trace(
                         &ctx,
                         graph,
@@ -1619,6 +1820,8 @@ pub fn execute(
                             }
                             .to_string(),
                         ),
+                        Some(lifecycle_state),
+                        lifecycle_transitions,
                         Some(ReplayProvenance {
                             node_action: match replay_action {
                                 ReplayNodeAction::Reexecuted => "reexecuted",
@@ -1701,6 +1904,13 @@ pub fn execute(
                         message: err.to_string(),
                         details: None,
                     };
+                    let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
+                        started_unix_ms,
+                        lifecycle_timestamps.get(&node_id),
+                        lifecycle_terminal_state(&NodeStatus::Failed, Some(&failure), None),
+                        lifecycle_terminal_cause(&NodeStatus::Failed, Some(&failure), None),
+                        finished,
+                    )?;
                     sacred_execution::run_write_trace(
                         &ctx,
                         graph,
@@ -1721,6 +1931,8 @@ pub fn execute(
                         None,
                         None,
                         Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
+                        Some(lifecycle_state),
+                        lifecycle_transitions,
                         Some(ReplayProvenance {
                             node_action: "reexecuted".to_string(),
                             source_run_id: options.parent_run_id.clone(),
@@ -1778,6 +1990,8 @@ pub fn execute(
                 &options,
                 node_id,
                 "branch_decision_not_selected",
+                started_unix_ms,
+                &lifecycle_timestamps,
             )?;
             completed_node_ids.push(node_id.clone());
         }
@@ -1788,12 +2002,16 @@ pub fn execute(
                     continue;
                 }
                 scheduler_hook.on_node_eligible(&newly_ready);
+                let ready_unix_ms = ctx.clock.now_unix_ms();
+                if let Some(timestamps) = lifecycle_timestamps.get_mut(&newly_ready) {
+                    remember_first_timestamp(&mut timestamps.eligible_unix_ms, ready_unix_ms);
+                }
                 engine_record::append_indexed_event(
                     &mut run_log,
                     &mut run_log_index,
                     serde_json::json!({
                         "event": "node_ready",
-                        "ts": ctx.clock.now_unix_ms(),
+                        "ts": ready_unix_ms,
                         "node_id": newly_ready,
                         "reason": {
                             "code": "dependencies_satisfied",
@@ -1833,6 +2051,13 @@ pub fn execute(
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
             let started = ctx.clock.now_unix_ms();
+            let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
+                started_unix_ms,
+                lifecycle_timestamps.get(&node.id),
+                lifecycle_terminal_state(&NodeStatus::Failed, Some(&failure), None),
+                lifecycle_terminal_cause(&NodeStatus::Failed, Some(&failure), None),
+                started,
+            )?;
             sacred_execution::run_write_trace(
                 &ctx,
                 graph,
@@ -1853,6 +2078,8 @@ pub fn execute(
                 None,
                 None,
                 Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
+                Some(lifecycle_state),
+                lifecycle_transitions,
                 Some(ReplayProvenance {
                     node_action: "skipped".to_string(),
                     source_run_id: options.parent_run_id.clone(),
@@ -1882,6 +2109,13 @@ pub fn execute(
             let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
             let aschema = runtime.adapter_schema_for_kind(&node.kind);
             let started = ctx.clock.now_unix_ms();
+            let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
+                started_unix_ms,
+                lifecycle_timestamps.get(&node.id),
+                lifecycle_terminal_state(&NodeStatus::Failed, Some(&failure), None),
+                lifecycle_terminal_cause(&NodeStatus::Failed, Some(&failure), None),
+                started,
+            )?;
             sacred_execution::run_write_trace(
                 &ctx,
                 graph,
@@ -1902,6 +2136,8 @@ pub fn execute(
                 None,
                 None,
                 Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
+                Some(lifecycle_state),
+                lifecycle_transitions,
                 Some(ReplayProvenance {
                     node_action: "skipped".to_string(),
                     source_run_id: options.parent_run_id.clone(),
@@ -1927,6 +2163,15 @@ pub fn execute(
                 let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
                 let aschema = runtime.adapter_schema_for_kind(&node.kind);
                 let started = ctx.clock.now_unix_ms();
+                let skip_reason =
+                    bijux_dag_artifacts::SkipReason { reason: "cancelled".to_string() };
+                let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
+                    started_unix_ms,
+                    lifecycle_timestamps.get(&node.id),
+                    lifecycle_terminal_state(&NodeStatus::Skipped, None, Some(&skip_reason)),
+                    lifecycle_terminal_cause(&NodeStatus::Skipped, None, Some(&skip_reason)),
+                    started,
+                )?;
                 sacred_execution::run_write_trace(
                     &ctx,
                     graph,
@@ -1945,8 +2190,10 @@ pub fn execute(
                     runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
                     None,
                     None,
-                    Some(bijux_dag_artifacts::SkipReason { reason: "cancelled".to_string() }),
+                    Some(skip_reason),
                     Some("CancelRequested".to_string()),
+                    Some(lifecycle_state),
+                    lifecycle_transitions,
                     Some(ReplayProvenance {
                         node_action: "skipped".to_string(),
                         source_run_id: options.parent_run_id.clone(),

@@ -7,7 +7,8 @@ use crate::{
     RuntimeError,
 };
 use bijux_dag_artifacts::{
-    ContainerTrace, FailureInfo, InputsIndex, NodeCounts, ReplayProvenance, TriggerEvaluation,
+    ContainerTrace, FailureInfo, InputsIndex, NodeCounts, NodeLifecycleTransition,
+    ReplayProvenance, TriggerEvaluation,
 };
 use bijux_dag_core::{Graph, Node};
 use serde_json::Value;
@@ -46,6 +47,8 @@ pub(crate) fn run_write_trace(
     branch_decision: Option<String>,
     skip_reason: Option<bijux_dag_artifacts::SkipReason>,
     transition_cause: Option<String>,
+    lifecycle_state: Option<String>,
+    lifecycle_transitions: Vec<NodeLifecycleTransition>,
     replay_provenance: Option<ReplayProvenance>,
 ) -> Result<(), RuntimeError> {
     write_trace(
@@ -68,6 +71,8 @@ pub(crate) fn run_write_trace(
         branch_decision,
         skip_reason,
         transition_cause,
+        lifecycle_state,
+        lifecycle_transitions,
         replay_provenance,
     )
 }
@@ -145,7 +150,7 @@ pub(crate) fn guard_terminal_node_status(to: &NodeStatus) -> Result<(), RuntimeE
         NodeStatus::Success => (S::Running, S::Succeeded),
         NodeStatus::Failed => (S::Running, S::Failed),
         NodeStatus::Skipped => (S::Ready, S::Skipped),
-        NodeStatus::Cached => (S::Running, S::Cached),
+        NodeStatus::Cached => (S::Ready, S::Cached),
     };
     if node_transition_allowed(from, target) {
         Ok(())

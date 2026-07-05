@@ -67,6 +67,21 @@
     "skip_reason": {"type": ["object", "null"]},
     "failure": {"type": ["object", "null"]},
     "transition_cause": {"type": ["string", "null"]},
+    "lifecycle_state": {"type": ["string", "null"]},
+    "lifecycle_transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from_state", "to_state", "cause", "unix_ms"],
+        "properties": {
+          "from_state": {"type": "string"},
+          "to_state": {"type": "string"},
+          "cause": {"type": "string"},
+          "unix_ms": {"type": "integer"}
+        }
+      }
+    },
     "replay_provenance": {"type": ["object", "null"]}
   }
 }

@@ -82,7 +82,19 @@ pub struct NodeTrace {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transition_cause: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub lifecycle_state: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub lifecycle_transitions: Vec<NodeLifecycleTransition>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub replay_provenance: Option<ReplayProvenance>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NodeLifecycleTransition {
+    pub from_state: String,
+    pub to_state: String,
+    pub cause: String,
+    pub unix_ms: u128,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

@@ -195,6 +195,7 @@ fn parse_node_state_str(status: &str) -> Option<NodeState> {
         "skipped" => Some(NodeState::Skipped),
         "cached" => Some(NodeState::Cached),
         "cancelled" => Some(NodeState::Cancelled),
+        "timed_out" => Some(NodeState::TimedOut),
         "queued" => Some(NodeState::Queued),
         "running" => Some(NodeState::Running),
         "eligible" => Some(NodeState::Eligible),

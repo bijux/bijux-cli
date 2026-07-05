@@ -34,6 +34,7 @@ pub enum NodeState {
     Skipped,
     Cached,
     Cancelled,
+    TimedOut,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -62,6 +63,7 @@ pub enum TransitionCause {
     PolicyDenied,
     DependencyFailed,
     SelectionFiltered,
+    ExecutionAborted,
     CancelRequested,
     TimeoutExceeded,
     ReplayReused,
@@ -198,6 +200,14 @@ pub const INV_NODE_TRANSITION_QUEUED_SKIPPED: &str = "INV-NODE-TERMINAL-004";
 pub const INV_NODE_TRANSITION_ELIGIBLE_CACHED: &str = "INV-NODE-TERMINAL-005";
 pub const INV_NODE_TRANSITION_QUEUED_CACHED: &str = "INV-NODE-TERMINAL-006";
 pub const INV_NODE_TRANSITION_RUNNING_CANCELLED: &str = "INV-NODE-TERMINAL-007";
+pub const INV_NODE_TRANSITION_QUEUED_FAILED: &str = "INV-NODE-TERMINAL-008";
+pub const INV_NODE_TRANSITION_PENDING_CANCELLED: &str = "INV-NODE-TERMINAL-009";
+pub const INV_NODE_TRANSITION_ELIGIBLE_CANCELLED: &str = "INV-NODE-TERMINAL-010";
+pub const INV_NODE_TRANSITION_QUEUED_CANCELLED: &str = "INV-NODE-TERMINAL-011";
+pub const INV_NODE_TRANSITION_PENDING_TIMED_OUT: &str = "INV-NODE-TERMINAL-012";
+pub const INV_NODE_TRANSITION_ELIGIBLE_TIMED_OUT: &str = "INV-NODE-TERMINAL-013";
+pub const INV_NODE_TRANSITION_QUEUED_TIMED_OUT: &str = "INV-NODE-TERMINAL-014";
+pub const INV_NODE_TRANSITION_RUNNING_TIMED_OUT: &str = "INV-NODE-TERMINAL-015";
 pub const INV_NODE_TERMINAL_NO_REVERT: &str = "INV-NODE-TERMINAL-REVERT-001";
 
 pub const INV_RUN_TRANSITION_SUBMITTED_PLANNING: &str = "INV-RUN-TRANSITION-001";
@@ -226,6 +236,14 @@ pub fn node_transition_invariant_id(from: NodeState, to: NodeState) -> Option<&'
         (S::Eligible, S::Cached) => Some(INV_NODE_TRANSITION_ELIGIBLE_CACHED),
         (S::Queued, S::Cached) => Some(INV_NODE_TRANSITION_QUEUED_CACHED),
         (S::Running, S::Cancelled) => Some(INV_NODE_TRANSITION_RUNNING_CANCELLED),
+        (S::Queued, S::Failed) => Some(INV_NODE_TRANSITION_QUEUED_FAILED),
+        (S::Pending, S::Cancelled) => Some(INV_NODE_TRANSITION_PENDING_CANCELLED),
+        (S::Eligible, S::Cancelled) => Some(INV_NODE_TRANSITION_ELIGIBLE_CANCELLED),
+        (S::Queued, S::Cancelled) => Some(INV_NODE_TRANSITION_QUEUED_CANCELLED),
+        (S::Pending, S::TimedOut) => Some(INV_NODE_TRANSITION_PENDING_TIMED_OUT),
+        (S::Eligible, S::TimedOut) => Some(INV_NODE_TRANSITION_ELIGIBLE_TIMED_OUT),
+        (S::Queued, S::TimedOut) => Some(INV_NODE_TRANSITION_QUEUED_TIMED_OUT),
+        (S::Running, S::TimedOut) => Some(INV_NODE_TRANSITION_RUNNING_TIMED_OUT),
         _ => None,
     }
 }
@@ -256,6 +274,7 @@ fn node_is_terminal(state: NodeState) -> bool {
             | NodeState::Skipped
             | NodeState::Cached
             | NodeState::Cancelled
+            | NodeState::TimedOut
     )
 }
 
@@ -278,7 +297,15 @@ pub fn validate_node_transition(transition: &NodeTransition) -> Result<(), Strin
             | (S::Queued, S::Skipped)
             | (S::Eligible, S::Cached)
             | (S::Queued, S::Cached)
+            | (S::Queued, S::Failed)
+            | (S::Pending, S::Cancelled)
+            | (S::Eligible, S::Cancelled)
+            | (S::Queued, S::Cancelled)
             | (S::Running, S::Cancelled)
+            | (S::Pending, S::TimedOut)
+            | (S::Eligible, S::TimedOut)
+            | (S::Queued, S::TimedOut)
+            | (S::Running, S::TimedOut)
     );
     if allowed {
         Ok(())
@@ -336,6 +363,7 @@ pub fn verify_post_run_state_consistency(
                     | NodeState::Skipped
                     | NodeState::Cached
                     | NodeState::Cancelled
+                    | NodeState::TimedOut
             )
         });
         if non_terminal {
