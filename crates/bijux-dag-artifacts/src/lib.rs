@@ -100,7 +100,8 @@ pub mod stable {
         write_lineage_snapshot, write_outputs_index, ArtifactError, ArtifactId,
         ArtifactIntegrityProof, ArtifactLineageEdge, ArtifactLineageSnapshot, ArtifactPackManifest,
         ArtifactSchemaDescriptor, CorruptionDetectionResult, CorruptionRepairPolicy,
-        RetentionPolicy, RunArtifactStore, RunArtifactVerifier, RunDir, SchemaValidationMode,
+        RetentionPolicy, RunArtifactStore, RunArtifactVerifier, RunDir, RunDirLayout,
+        SchemaValidationMode,
     };
 }
 
@@ -109,7 +110,7 @@ pub mod prelude {
     pub use crate::stable::{
         sha256_artifact_path, sha256_hex, validate_output_schema_descriptor, verify_run_dir,
         write_inputs_index, write_outputs_index, ArtifactError, ArtifactSchemaDescriptor, RunDir,
-        SchemaValidationMode,
+        RunDirLayout, SchemaValidationMode,
     };
 }
 
@@ -142,18 +143,52 @@ pub struct RunDir {
     final_path: PathBuf,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct RunDirLayout {
+    pub run_id: String,
+    pub staging_path: PathBuf,
+    pub final_path: PathBuf,
+}
+
+impl RunDirLayout {
+    pub fn preview(out_base: impl AsRef<Path>, run_id: Option<&str>) -> Result<Self, ArtifactError> {
+        let run_id = match run_id {
+            Some(run_id) => normalize_run_id(run_id)?,
+            None => generate_run_id(),
+        };
+        Ok(Self {
+            staging_path: out_base.as_ref().join(format!("run.tmp-{}", run_id)),
+            final_path: out_base.as_ref().join(format!("run-{}", run_id)),
+            run_id,
+        })
+    }
+
+    pub fn node_dir(&self, node_id: &str) -> PathBuf {
+        self.staging_path.join("nodes").join(node_id)
+    }
+
+    pub fn node_outputs_dir(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("outputs")
+    }
+
+    pub fn node_inputs_dir(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("inputs")
+    }
+
+    pub fn node_work_dir(&self, node_id: &str) -> PathBuf {
+        self.node_dir(node_id).join("work")
+    }
+}
+
 impl RunDir {
     pub fn create(out_base: impl AsRef<Path>) -> Result<Self, ArtifactError> {
-        let run_id = generate_run_id();
-        Self::create_with_id(out_base, &run_id)
+        let layout = RunDirLayout::preview(out_base, None)?;
+        Self::create_with_layout(layout)
     }
 
     pub fn create_with_id(out_base: impl AsRef<Path>, run_id: &str) -> Result<Self, ArtifactError> {
-        let run_id = normalize_run_id(run_id)?;
-        let staging = out_base.as_ref().join(format!("run.tmp-{}", run_id));
-        let final_path = out_base.as_ref().join(format!("run-{}", run_id));
-        std_fs::create_dir_all(staging.join("nodes"))?;
-        Ok(Self { staging_path: staging, final_path })
+        let layout = RunDirLayout::preview(out_base, Some(run_id))?;
+        Self::create_with_layout(layout)
     }
 
     pub fn staging_path(&self) -> &Path {
@@ -240,6 +275,13 @@ impl RunDir {
         }
         std_fs::rename(&self.staging_path, &self.final_path)?;
         Ok(self.final_path)
+    }
+}
+
+impl RunDir {
+    fn create_with_layout(layout: RunDirLayout) -> Result<Self, ArtifactError> {
+        std_fs::create_dir_all(layout.staging_path.join("nodes"))?;
+        Ok(Self { staging_path: layout.staging_path, final_path: layout.final_path })
     }
 }
 
@@ -471,6 +513,24 @@ mod tests {
 
         let err = RunDir::create_with_id(dir.path(), "../escape").unwrap_err();
         assert!(err.to_string().contains("invalid run id"));
+    }
+
+    #[test]
+    fn run_dir_layout_previews_paths_without_materializing_directories() {
+        let dir = tempfile::tempdir().unwrap();
+        let layout = RunDirLayout::preview(dir.path(), Some("path-preview")).unwrap();
+        assert_eq!(layout.run_id, "path-preview");
+        assert!(layout.staging_path.ends_with("run.tmp-path-preview"));
+        assert!(layout.final_path.ends_with("run-path-preview"));
+        assert_eq!(
+            layout.node_outputs_dir("align"),
+            dir.path()
+                .join("run.tmp-path-preview")
+                .join("nodes")
+                .join("align")
+                .join("outputs")
+        );
+        assert!(!layout.staging_path.exists());
     }
 
     #[test]
