@@ -18,11 +18,7 @@ const PUBLIC_ROOT_COMMANDS: &[&str] = &[
     "version",
 ];
 
-const HIDDEN_DEFAULT_COMMAND_PATHS: &[&str] = &[
-    "artifact fetch",
-    "explain-plan",
-    "run-bundle",
-];
+const HIDDEN_DEFAULT_COMMAND_PATHS: &[&str] = &["artifact fetch", "explain-plan", "run-bundle"];
 
 const DENY_NETWORK_HELP: &str =
     "deny declared network effects; shell execution does not firewall sockets, and container execution only enforces this when the runtime can honor a no-network mode";
@@ -52,14 +48,12 @@ pub(crate) fn command_path_hidden_from_public_help(path: &str) -> bool {
 }
 
 pub(crate) fn hide_non_public_help(mut command: Command, prefix: &str) -> Command {
-    let subcommand_names =
-        command.get_subcommands().map(|subcommand| subcommand.get_name().to_string()).collect::<Vec<_>>();
+    let subcommand_names = command
+        .get_subcommands()
+        .map(|subcommand| subcommand.get_name().to_string())
+        .collect::<Vec<_>>();
     for name in subcommand_names {
-        let path = if prefix.is_empty() {
-            name.clone()
-        } else {
-            format!("{prefix} {name}")
-        };
+        let path = if prefix.is_empty() { name.clone() } else { format!("{prefix} {name}") };
         command = command.mut_subcommand(&name, |subcommand| {
             let subcommand = hide_non_public_help(subcommand, &path);
             if command_path_hidden_from_public_help(&path) {

@@ -202,7 +202,11 @@ fn command_maturity(path: &str) -> CommandMaturity {
     CommandMaturity::Stable
 }
 
-fn build_entry(prefix: &str, command: &Command, include_hidden: bool) -> Option<CommandCatalogEntry> {
+fn build_entry(
+    prefix: &str,
+    command: &Command,
+    include_hidden: bool,
+) -> Option<CommandCatalogEntry> {
     let path = if prefix.is_empty() {
         command.get_name().to_string()
     } else {
@@ -328,11 +332,7 @@ mod tests {
         }
         assert!(flattened.iter().any(|entry| entry.path == "commands"));
         assert!(flattened.iter().any(|entry| entry.path == "doctor"));
-        assert!(
-            flattened
-                .iter()
-                .all(|entry| entry.maturity == CommandMaturity::Stable)
-        );
+        assert!(flattened.iter().all(|entry| entry.maturity == CommandMaturity::Stable));
         assert!(!flattened.iter().any(|entry| entry.path == "artifact fetch"));
         assert!(!flattened.iter().any(|entry| entry.path == "status"));
         assert!(!flattened.iter().any(|entry| entry.path == "init"));

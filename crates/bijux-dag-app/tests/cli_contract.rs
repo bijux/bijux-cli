@@ -32,11 +32,16 @@ fn dag_root_help_describes_release_boundary() {
     dag_command().write_long_help(&mut buffer).expect("render help");
     let rendered = String::from_utf8(buffer).expect("utf8 help");
 
-    assert!(rendered.contains("Validate, run, replay, explain, and compare reproducible computation graphs"));
+    assert!(rendered
+        .contains("Validate, run, replay, explain, and compare reproducible computation graphs"));
     assert!(rendered.contains("v0.4.0 surface truth table:"));
     assert!(rendered.contains("stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands"));
-    assert!(rendered.contains("Use `bijux-dag commands --all` to inventory repository-owned non-stable routes."));
-    assert!(!rendered.contains("Validate, run, replay, and inspect reproducible computation graphs"));
+    assert!(rendered.contains(
+        "Use `bijux-dag commands --all` to inventory repository-owned non-stable routes."
+    ));
+    assert!(
+        !rendered.contains("Validate, run, replay, and inspect reproducible computation graphs")
+    );
 }
 
 #[test]

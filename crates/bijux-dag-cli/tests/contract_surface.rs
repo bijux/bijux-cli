@@ -81,8 +81,7 @@ fn dag_unknown_subcommand_fails_with_code() {
 #[test]
 fn dag_validate_json_schema_contract() {
     let dag = write_temp_dag();
-    let output =
-        dag_command().args(["validate", &dag, "--json"]).output().expect("json validate");
+    let output = dag_command().args(["validate", &dag, "--json"]).output().expect("json validate");
 
     assert!(output.status.success());
     let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("validate json");
@@ -100,7 +99,12 @@ fn dag_root_help_lists_top_level_commands() {
     assert!(text.contains("validate"));
     assert!(text.contains("run"));
     assert!(text.contains("completions"));
-    assert!(text.contains("Validate, run, replay, and inspect reproducible computation graphs"));
+    assert!(text
+        .contains("Validate, run, replay, explain, and compare reproducible computation graphs"));
+    assert!(text.contains("v0.4.0 surface truth table:"));
+    assert!(text.contains(
+        "Use `bijux-dag commands --all` to inventory repository-owned non-stable routes."
+    ));
 }
 
 #[test]
@@ -206,15 +210,7 @@ fn dag_commands_groups_surface_is_stable_enough() {
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
     for token in [
-        "artifact",
-        "cache",
-        "config",
-        "doctor",
-        "graph",
-        "inspect",
-        "plan",
-        "prove",
-        "replay",
+        "artifact", "cache", "config", "doctor", "graph", "inspect", "plan", "prove", "replay",
         "run",
     ] {
         assert!(text.contains(token), "missing group token: {token}");
@@ -239,7 +235,8 @@ fn dag_commands_json_exposes_group_and_maturity_metadata() {
 
 #[test]
 fn dag_commands_json_can_include_hidden_namespaces_when_requested() {
-    let output = dag_command().args(["--json", "commands", "--all"]).output().expect("commands json all");
+    let output =
+        dag_command().args(["--json", "commands", "--all"]).output().expect("commands json all");
     assert!(output.status.success());
     let payload: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("commands json all");
@@ -273,10 +270,8 @@ fn dag_doctor_json_includes_schema_and_runtime_config_status() {
 #[test]
 fn dag_explain_plan_alias_and_legacy_alias_both_work() {
     let dag = write_temp_dag();
-    for args in [
-        vec!["--json", "explain-plan", &dag],
-        vec!["--json", "show-effective-plan", &dag],
-    ] {
+    for args in [vec!["--json", "explain-plan", &dag], vec!["--json", "show-effective-plan", &dag]]
+    {
         let output = dag_command().args(args).output().expect("explain plan");
         assert!(output.status.success());
         let payload: serde_json::Value =
@@ -293,8 +288,10 @@ fn dag_hidden_lab_namespace_remains_addressable_by_explicit_path() {
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(!text.contains("federation"));
 
-    let nested =
-        dag_command().args(["lab", "federation", "schedule", "--help"]).output().expect("nested lab help");
+    let nested = dag_command()
+        .args(["lab", "federation", "schedule", "--help"])
+        .output()
+        .expect("nested lab help");
     assert!(nested.status.success());
     let nested_text = String::from_utf8_lossy(&nested.stdout);
     assert!(nested_text.contains("bijux-dag lab federation schedule"));
@@ -705,8 +702,7 @@ fn equivalence_proof_surface_reports_for_two_runs() {
 
 #[test]
 fn export_import_help_includes_bundle_control_flags() {
-    let export_help =
-        dag_command().args(["export", "--help"]).output().expect("export help");
+    let export_help = dag_command().args(["export", "--help"]).output().expect("export help");
     assert!(export_help.status.success());
     let export_text = String::from_utf8_lossy(&export_help.stdout);
     assert!(export_text.contains("--from-run"));
@@ -714,8 +710,7 @@ fn export_import_help_includes_bundle_control_flags() {
     assert!(export_text.contains("--provenance-only"));
     assert!(export_text.contains("--redact"));
 
-    let import_help =
-        dag_command().args(["import", "--help"]).output().expect("import help");
+    let import_help = dag_command().args(["import", "--help"]).output().expect("import help");
     assert!(import_help.status.success());
     let import_text = String::from_utf8_lossy(&import_help.stdout);
     assert!(import_text.contains("--verify-only"));
@@ -731,10 +726,8 @@ fn prove_help_and_json_surface_are_available() {
 
 #[test]
 fn proof_summary_help_surface_is_available() {
-    let help = dag_command()
-        .args(["proof-summary", "--help"])
-        .output()
-        .expect("proof-summary help");
+    let help =
+        dag_command().args(["proof-summary", "--help"]).output().expect("proof-summary help");
     assert!(help.status.success());
     let text = String::from_utf8_lossy(&help.stdout);
     assert!(text.contains("bijux-dag proof-summary"));
@@ -742,8 +735,7 @@ fn proof_summary_help_surface_is_available() {
 
 #[test]
 fn migrate_help_includes_dry_run_preview_flag() {
-    let help =
-        dag_command().args(["migrate", "dag", "--help"]).output().expect("migrate help");
+    let help = dag_command().args(["migrate", "dag", "--help"]).output().expect("migrate help");
     assert!(help.status.success());
     let text = String::from_utf8_lossy(&help.stdout);
     assert!(text.contains("--dry-run"));
@@ -761,8 +753,7 @@ fn dag_status_json_schema_contract() {
         serde_json::from_slice(&run.stdout).expect("parse run payload");
     let run_path = run_payload["data"]["run_dir"].as_str().unwrap();
 
-    let output =
-        dag_command().args(["status", "--json", run_path]).output().expect("status json");
+    let output = dag_command().args(["status", "--json", run_path]).output().expect("status json");
 
     assert!(output.status.success());
     let payload: serde_json::Value =
@@ -797,10 +788,8 @@ fn dag_diff_json_schema_contract() {
     let run_a_path = payload_a["data"]["run_dir"].as_str().unwrap();
     let run_b_path = payload_b["data"]["run_dir"].as_str().unwrap();
 
-    let output = dag_command()
-        .args(["diff", "--json", run_a_path, run_b_path])
-        .output()
-        .expect("diff json");
+    let output =
+        dag_command().args(["diff", "--json", run_a_path, run_b_path]).output().expect("diff json");
 
     assert!(output.status.success());
     let payload: serde_json::Value =

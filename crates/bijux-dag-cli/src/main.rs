@@ -10,14 +10,12 @@ use tempfile as _;
 
 fn main() -> ExitCode {
     let mut cmd = dag_command().subcommand(
-        Cmd::new("completions")
-            .about("Generate shell completion script")
-            .arg(
-                Arg::new("shell")
-                    .long("shell")
-                    .value_parser(["bash", "zsh", "fish", "elvish", "powershell"])
-                    .required(true),
-            ),
+        Cmd::new("completions").about("Generate shell completion script").arg(
+            Arg::new("shell")
+                .long("shell")
+                .value_parser(["bash", "zsh", "fish", "elvish", "powershell"])
+                .required(true),
+        ),
     );
     let matches = cmd.clone().get_matches();
 
@@ -28,16 +26,9 @@ fn main() -> ExitCode {
                 "bash" => generate(shells::Bash, &mut cmd, "bijux-dag", &mut std::io::stdout()),
                 "zsh" => generate(shells::Zsh, &mut cmd, "bijux-dag", &mut std::io::stdout()),
                 "fish" => generate(shells::Fish, &mut cmd, "bijux-dag", &mut std::io::stdout()),
-                "elvish" => {
-                    generate(shells::Elvish, &mut cmd, "bijux-dag", &mut std::io::stdout())
-                }
+                "elvish" => generate(shells::Elvish, &mut cmd, "bijux-dag", &mut std::io::stdout()),
                 "powershell" => {
-                    generate(
-                        shells::PowerShell,
-                        &mut cmd,
-                        "bijux-dag",
-                        &mut std::io::stdout(),
-                    )
+                    generate(shells::PowerShell, &mut cmd, "bijux-dag", &mut std::io::stdout())
                 }
                 _ => return ExitCode::from(2),
             }

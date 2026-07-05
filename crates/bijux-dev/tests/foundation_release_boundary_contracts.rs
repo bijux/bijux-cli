@@ -77,11 +77,7 @@ fn parse_root_help_commands(help: &str) -> BTreeSet<String> {
             continue;
         }
 
-        let command = trimmed
-            .split_whitespace()
-            .next()
-            .expect("command token")
-            .to_string();
+        let command = trimmed.split_whitespace().next().expect("command token").to_string();
         commands.insert(command);
     }
 
@@ -90,10 +86,7 @@ fn parse_root_help_commands(help: &str) -> BTreeSet<String> {
 
 fn assert_contains_all(text: &str, needles: &[&str], context: &str) {
     for needle in needles {
-        assert!(
-            text.contains(needle),
-            "{context} must contain `{needle}`"
-        );
+        assert!(text.contains(needle), "{context} must contain `{needle}`");
     }
 }
 
@@ -148,7 +141,10 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
 
     assert_contains_all(
         &readme,
-        &["### `bijux-dag` v0.4.0 Surface Truth Table", "contracts/foundation/dag_release_truth_table.v1.json"],
+        &[
+            "### `bijux-dag` v0.4.0 Surface Truth Table",
+            "contracts/foundation/dag_release_truth_table.v1.json",
+        ],
         "README.md",
     );
     assert_contains_all(

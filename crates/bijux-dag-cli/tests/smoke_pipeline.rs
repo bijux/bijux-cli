@@ -226,12 +226,7 @@ fn cli_smoke_export_import_and_fsck_verify_only() {
     assert!(export.status.success(), "export failed");
 
     let import = dag_command()
-        .args([
-            "import",
-            bundle_file.to_str().expect("bundle path"),
-            "--verify-only",
-            "--json",
-        ])
+        .args(["import", bundle_file.to_str().expect("bundle path"), "--verify-only", "--json"])
         .output()
         .expect("import verify-only output");
     assert!(import.status.success(), "import verify-only failed");
@@ -263,13 +258,7 @@ fn cli_smoke_runs_history_list_show_timeline_and_tree() {
     let run_id = run_id_from_run_dir(&run_dir);
 
     for args in [
-        vec![
-            "runs",
-            "list",
-            "--root",
-            run_out.path().to_str().expect("run out path"),
-            "--json",
-        ],
+        vec!["runs", "list", "--root", run_out.path().to_str().expect("run out path"), "--json"],
         vec![
             "runs",
             "show",
@@ -278,13 +267,7 @@ fn cli_smoke_runs_history_list_show_timeline_and_tree() {
             run_id.as_str(),
             "--json",
         ],
-        vec![
-            "runs",
-            "history",
-            "--root",
-            run_out.path().to_str().expect("run out path"),
-            "--json",
-        ],
+        vec!["runs", "history", "--root", run_out.path().to_str().expect("run out path"), "--json"],
         vec![
             "runs",
             "timeline",
