@@ -267,10 +267,12 @@ fn fault_stale_cache_metadata_mismatch() {
 fn fault_run_id_collision() {
     let temp = tempfile::tempdir().expect("tmp");
     let first = RunDir::create_with_id(temp.path(), "same-id").expect("run1");
-    let second = RunDir::create_with_id(temp.path(), "same-id").expect("run2");
     let _ = first.finalize();
-    let collision = second.finalize();
-    assert!(collision.is_err() || collision.is_ok());
+    let second = RunDir::create_with_id(temp.path(), "same-id");
+    assert!(
+        second.is_err() || second.and_then(|run| run.finalize()).is_err(),
+        "run id collision should be rejected when reserving or finalizing duplicate paths"
+    );
 }
 
 #[test]

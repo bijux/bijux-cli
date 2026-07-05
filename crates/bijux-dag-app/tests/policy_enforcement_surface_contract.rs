@@ -26,8 +26,18 @@ fn run_dag(args: &[&str], cwd: &Path) -> (i32, String, String) {
     support::run_dag_command(args, cwd)
 }
 
+fn run_dag_with_internal_lane(args: &[&str], cwd: &Path) -> (i32, String, String) {
+    support::run_dag_command_with_env(args, cwd, &[("BIJUX_DAG_ENABLE_INTERNAL", "1")])
+}
+
 fn run_json(args: &[&str], cwd: &Path) -> Value {
     let (code, stdout, stderr) = run_dag(args, cwd);
+    assert!(code == 0, "command failed: args={args:?} code={code} stdout={stdout} stderr={stderr}");
+    serde_json::from_str(&stdout).expect("parse json envelope")
+}
+
+fn run_json_with_internal_lane(args: &[&str], cwd: &Path) -> Value {
+    let (code, stdout, stderr) = run_dag_with_internal_lane(args, cwd);
     assert!(code == 0, "command failed: args={args:?} code={code} stdout={stdout} stderr={stderr}");
     serde_json::from_str(&stdout).expect("parse json envelope")
 }
@@ -186,7 +196,8 @@ fn runtime_isolation_reports_container_network_runtime_enforcement() {
     let tmp = tempfile::tempdir().expect("tmp");
     let graph = write_container_graph(tmp.path());
 
-    let payload = run_json(&["runtime", "isolation", "--json", &output_path_string(&graph)], &root);
+    let payload =
+        run_json_with_internal_lane(&["runtime", "isolation", "--json", &output_path_string(&graph)], &root);
 
     let surfaces =
         payload["data"]["policy_surface"]["enforcement"]["surfaces"].as_array().expect("surfaces");

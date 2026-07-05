@@ -7,8 +7,17 @@ pub fn repo_root_from_manifest_dir(manifest_dir: &str) -> PathBuf {
 }
 
 pub fn run_dag_command(args: &[&str], cwd: &Path) -> (i32, String, String) {
+    run_dag_command_with_env(args, cwd, &[])
+}
+
+pub fn run_dag_command_with_env(
+    args: &[&str],
+    cwd: &Path,
+    envs: &[(&str, &str)],
+) -> (i32, String, String) {
     let output = Command::new(resolve_bijux_dag_binary(cwd))
         .current_dir(cwd)
+        .envs(envs.iter().copied())
         .args(args)
         .output()
         .expect("run dag command");

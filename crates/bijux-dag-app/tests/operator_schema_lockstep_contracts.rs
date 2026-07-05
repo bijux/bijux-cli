@@ -52,6 +52,18 @@ fn run_json(root: &Path, args: &[&str]) -> serde_json::Value {
     run_json_with_code(root, 0, args)
 }
 
+fn run_json_with_internal_lane(root: &Path, args: &[&str]) -> serde_json::Value {
+    let output =
+        dag_command(root).env("BIJUX_DAG_ENABLE_INTERNAL", "1").args(args).output().expect("run dag command");
+    assert_eq!(
+        output.status.code().unwrap_or(1),
+        0,
+        "command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).expect("parse json envelope")
+}
+
 fn required_fields(schema_rel: &str) -> Vec<String> {
     let root = repo_root();
     let schema: serde_json::Value =
@@ -69,7 +81,7 @@ fn required_fields(schema_rel: &str) -> Vec<String> {
 #[ignore = "slow"]
 fn capability_query_output_schema_lockstep() {
     let root = repo_root();
-    let payload = run_json(&root, &["--json", "capabilities", "--backend", "hpc"]);
+    let payload = run_json_with_internal_lane(&root, &["--json", "capabilities", "--backend", "hpc"]);
     let data = payload["data"].as_object().expect("capability data object");
     for field in required_fields("configs/dag/schema/operator/capability_query.schema.json") {
         assert!(data.contains_key(&field), "capability output missing required field: {field}");

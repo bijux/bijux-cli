@@ -23,6 +23,21 @@ fn run_ok(args: &[String]) {
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
 
+fn run_ok_with_internal_lane(args: &[String]) {
+    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    let matches = dag_command().try_get_matches_from(refs).expect("parse command");
+    let previous = std::env::var_os("BIJUX_DAG_ENABLE_INTERNAL");
+    std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", "1");
+    let result = dag_run(&matches);
+    if let Some(value) = previous {
+        std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", value);
+    } else {
+        std::env::remove_var("BIJUX_DAG_ENABLE_INTERNAL");
+    }
+    let code = result.expect("run command");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
 fn write_graph(path: &Path, graph: &bijux_dag_core::Graph) {
     let payload = serde_json::to_vec_pretty(graph).expect("serialize graph");
     fs::write(path, payload).expect("write graph");
@@ -229,13 +244,13 @@ fn smoke_prove_verify_and_surface_queries() {
     let run_dir = first_run_dir(&runs_root);
     run_ok(&["bijux-dag".to_string(), "prove".to_string(), run_dir.display().to_string()]);
     run_ok(&["bijux-dag".to_string(), "verify".to_string(), run_dir.display().to_string()]);
-    run_ok(&[
+    run_ok_with_internal_lane(&[
         "bijux-dag".to_string(),
         "semantic-portability".to_string(),
         "--backend".to_string(),
         "hpc".to_string(),
     ]);
-    run_ok(&[
+    run_ok_with_internal_lane(&[
         "bijux-dag".to_string(),
         "capabilities".to_string(),
         "--backend".to_string(),

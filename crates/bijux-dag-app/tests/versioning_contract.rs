@@ -17,6 +17,20 @@ use thiserror as _;
 use bijux_dag_app::{dag_command, dag_run};
 use std::fs;
 
+fn run_with_internal_lane(
+    matches: &clap::ArgMatches,
+) -> Result<std::process::ExitCode, std::process::ExitCode> {
+    let previous = std::env::var_os("BIJUX_DAG_ENABLE_INTERNAL");
+    std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", "1");
+    let result = dag_run(matches);
+    if let Some(value) = previous {
+        std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", value);
+    } else {
+        std::env::remove_var("BIJUX_DAG_ENABLE_INTERNAL");
+    }
+    result
+}
+
 #[test]
 fn version_inspect_reports_supported_graph_versions() {
     let dir = tempfile::tempdir().expect("tmp");
@@ -37,7 +51,7 @@ fn version_inspect_reports_supported_graph_versions() {
             dag.to_string_lossy().as_ref(),
         ])
         .expect("parse args");
-    let code = dag_run(&matches).expect("run inspect");
+    let code = run_with_internal_lane(&matches).expect("run inspect");
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
 
@@ -61,7 +75,7 @@ fn version_inspect_rejects_unsupported_graph_versions() {
             dag.to_string_lossy().as_ref(),
         ])
         .expect("parse args");
-    let result = dag_run(&matches);
+    let result = run_with_internal_lane(&matches);
     assert!(result.is_err());
 }
 

@@ -21,6 +21,20 @@ fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
+fn run_with_internal_lane(
+    matches: &clap::ArgMatches,
+) -> Result<std::process::ExitCode, std::process::ExitCode> {
+    let previous = std::env::var_os("BIJUX_DAG_ENABLE_INTERNAL");
+    std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", "1");
+    let result = dag_run(matches);
+    if let Some(value) = previous {
+        std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", value);
+    } else {
+        std::env::remove_var("BIJUX_DAG_ENABLE_INTERNAL");
+    }
+    result
+}
+
 #[test]
 fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
     let root = repo_root();
@@ -39,7 +53,7 @@ fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
             supported.to_string_lossy().as_ref(),
         ])
         .expect("parse args supported");
-    assert!(dag_run(&ok_matches).is_ok());
+    assert!(run_with_internal_lane(&ok_matches).is_ok());
 
     let bad_matches = cmd
         .try_get_matches_from([
@@ -50,7 +64,7 @@ fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
             unsupported_future.to_string_lossy().as_ref(),
         ])
         .expect("parse args unsupported");
-    assert!(dag_run(&bad_matches).is_err());
+    assert!(run_with_internal_lane(&bad_matches).is_err());
 }
 
 #[test]
@@ -70,7 +84,7 @@ fn supported_and_unsupported_run_dir_formats_are_classified() {
             supported.to_string_lossy().as_ref(),
         ])
         .expect("parse args supported run");
-    assert!(dag_run(&ok_matches).is_ok());
+    assert!(run_with_internal_lane(&ok_matches).is_ok());
 
     let bad_matches = cmd
         .try_get_matches_from([
@@ -81,7 +95,7 @@ fn supported_and_unsupported_run_dir_formats_are_classified() {
             unsupported.to_string_lossy().as_ref(),
         ])
         .expect("parse args unsupported run");
-    assert!(dag_run(&bad_matches).is_err());
+    assert!(run_with_internal_lane(&bad_matches).is_err());
 }
 
 #[test]
