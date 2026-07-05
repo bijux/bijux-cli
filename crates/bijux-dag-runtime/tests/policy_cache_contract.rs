@@ -13,8 +13,8 @@ use thiserror as _;
 use bijux_dag_artifacts::RunOutputsIndex;
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
-    registered_adapters, CacheMode, FailurePropagationMode, PolicyConfig, RunTimeoutBehavior,
-    Runtime, RuntimeConfig,
+    registered_adapters, CacheMode, FailurePropagationMode, PolicyConfig, QueueIsolationPolicy,
+    RunTimeoutBehavior, Runtime, RuntimeConfig, SchedulerFairness, SchedulerPolicy,
 };
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -466,9 +466,7 @@ fn runtime_declared_outputs_index_includes_all_nodes() {
     let expected =
         HashSet::from(["nodes/a/outputs/a.txt".to_string(), "nodes/b/outputs/b.txt".to_string()]);
     assert_eq!(actual, expected);
-    assert!(files
-        .iter()
-        .all(|file| file["size_bytes"].as_u64().is_some_and(|size| size > 0)));
+    assert!(files.iter().all(|file| file["size_bytes"].as_u64().is_some_and(|size| size > 0)));
 }
 
 #[test]
@@ -617,6 +615,99 @@ fn runtime_cache_key_changes_when_policy_changes() {
 
     assert_eq!(read_node_status(&run_with_different_policy, "node"), "success");
 
+    let cache_entries = fs::read_dir(cache.path()).expect("cache entries").count();
+    assert_eq!(cache_entries, 2);
+}
+
+#[test]
+fn runtime_cache_reuses_entries_across_operator_only_config_changes() {
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let cache = tempfile::tempdir().expect("temp cache");
+
+    let _ = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+
+    let cached_run = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                jobs: 4,
+                cpu_budget: Some(8),
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                run_id: Some("operator-shaped-run".to_string()),
+                submission_source: "automation".to_string(),
+                trigger_source: "scheduler".to_string(),
+                operator: "release-operator".to_string(),
+                labels: vec!["nightly".to_string(), "priority:high".to_string()],
+                scheduler_policy: SchedulerPolicy {
+                    max_parallelism: 4,
+                    cpu_budget: Some(8),
+                    fairness: SchedulerFairness::ThroughputPreferred,
+                    queue_isolation: QueueIsolationPolicy::GroupIsolated,
+                    bounded_executor_capacity: 8,
+                    prefer_throughput_scheduler: true,
+                },
+                failure_propagation: FailurePropagationMode::ContinueIndependent,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("cache hit");
+
+    assert_eq!(read_node_status(&cached_run, "node"), "cached");
+    let cache_entries = fs::read_dir(cache.path()).expect("cache entries").count();
+    assert_eq!(cache_entries, 1);
+}
+
+#[test]
+fn runtime_cache_key_changes_when_execution_contract_changes() {
+    let graph =
+        parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
+            .expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp out");
+    let cache = tempfile::tempdir().expect("temp cache");
+
+    let _ = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("seed cache");
+
+    let rerun = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                cache_mode: CacheMode::ReadWrite,
+                cache_dir: Some(cache.path().to_path_buf()),
+                node_timeout_ms: Some(1000),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("execution contract rerun");
+
+    assert_eq!(read_node_status(&rerun, "node"), "success");
     let cache_entries = fs::read_dir(cache.path()).expect("cache entries").count();
     assert_eq!(cache_entries, 2);
 }
@@ -821,7 +912,7 @@ fn runtime_cache_verify_detects_corrupt_entry() {
 }
 
 #[test]
-fn runtime_cache_meta_records_policy_and_config_proof() {
+fn runtime_cache_meta_records_strong_identity_components() {
     let graph =
         parse_graph_strict(&shell_graph("printf '%s' ok > ../outputs/value.txt", &["filesystem"]))
             .expect("parse graph");
@@ -859,11 +950,14 @@ fn runtime_cache_meta_records_policy_and_config_proof() {
         serde_json::from_str(&fs::read_to_string(meta_path).expect("cache meta json"))
             .expect("parse cache meta");
 
-    assert_eq!(meta["cache_metadata_version"], "cache-meta/v0.1");
+    assert_eq!(meta["cache_metadata_version"], "cache-meta/v0.2");
     assert!(meta["cache_key"].is_string());
     assert!(meta["node_fingerprint"].is_string());
+    assert!(meta["node_definition_fingerprint"].is_string());
+    assert!(meta["declared_environment_fingerprint"].is_string());
+    assert!(meta["input_lineage_fingerprint"].is_string());
     assert!(meta["policy_fingerprint"].is_string());
-    assert!(meta["config_fingerprint"].is_string());
+    assert!(meta["execution_contract_fingerprint"].is_string());
     assert_eq!(meta["backend_class"], "local");
 }
 
