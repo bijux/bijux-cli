@@ -354,17 +354,20 @@ mod tests {
     #[test]
     fn command_groups_cover_public_taxonomy() {
         let groups = command_groups(&command_catalog(false));
-        assert!(groups.contains(&"graph".to_string()));
-        assert!(groups.contains(&"plan".to_string()));
-        assert!(groups.contains(&"run".to_string()));
-        assert!(groups.contains(&"inspect".to_string()));
-        assert!(groups.contains(&"replay".to_string()));
-        assert!(groups.contains(&"cache".to_string()));
-        assert!(groups.contains(&"artifact".to_string()));
-        assert!(groups.contains(&"config".to_string()));
-        assert!(groups.contains(&"migrate".to_string()));
-        assert!(groups.contains(&"doctor".to_string()));
-        assert!(groups.contains(&"prove".to_string()));
-        assert!(groups.contains(&"export-import".to_string()));
+        assert_eq!(
+            groups,
+            vec![
+                "artifact".to_string(),
+                "cache".to_string(),
+                "config".to_string(),
+                "doctor".to_string(),
+                "graph".to_string(),
+                "inspect".to_string(),
+                "plan".to_string(),
+                "prove".to_string(),
+                "replay".to_string(),
+                "run".to_string(),
+            ]
+        );
     }
 }
