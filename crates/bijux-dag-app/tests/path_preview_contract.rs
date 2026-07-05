@@ -156,6 +156,108 @@ fn run_json_reuses_previewed_run_layout_for_execution_and_scheduling() {
 }
 
 #[test]
+fn run_preflight_reports_shared_cache_surface() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let graph = write_host_path_graph(tmp.path());
+    let out_dir = tmp.path().join("runs");
+    let cache_dir = tmp.path().join("cache-local");
+    let remote_cache_dir = tmp.path().join("cache-shared");
+
+    let payload = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--cache",
+            "readwrite",
+            "--cache-dir",
+            &output_path_string(&cache_dir),
+            "--remote-cache-dir",
+            &output_path_string(&remote_cache_dir),
+            "--preflight-only",
+        ],
+        &root,
+    );
+
+    assert_eq!(payload["data"]["cache"]["surface"]["mode"], "readwrite");
+    assert_eq!(
+        payload["data"]["cache"]["surface"]["local_dir"],
+        output_path_string(&cache_dir)
+    );
+    assert_eq!(
+        payload["data"]["cache"]["surface"]["shared_dir"],
+        output_path_string(&remote_cache_dir)
+    );
+    assert_eq!(
+        payload["data"]["cache"]["surface"]["read_order"],
+        serde_json::json!(["local", "shared"])
+    );
+    assert_eq!(
+        payload["data"]["cache"]["surface"]["write_targets"],
+        serde_json::json!(["local", "shared"])
+    );
+}
+
+#[test]
+fn replay_json_reports_shared_cache_surface() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let graph = write_host_path_graph(tmp.path());
+    let runs_dir = tmp.path().join("runs");
+    let replay_dir = tmp.path().join("replays");
+    let remote_cache_dir = tmp.path().join("cache-shared");
+    fs::create_dir_all(&runs_dir).expect("mkdir runs");
+    fs::create_dir_all(&replay_dir).expect("mkdir replays");
+
+    let run_payload = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&runs_dir),
+            "--run-id",
+            "source-run",
+        ],
+        &root,
+    );
+    let run_dir = PathBuf::from(run_payload["data"]["run_dir"].as_str().expect("run dir"));
+
+    let payload = run_json(
+        &[
+            "replay",
+            "--json",
+            &output_path_string(&run_dir),
+            "--out",
+            &output_path_string(&replay_dir),
+            "--cache",
+            "readwrite",
+            "--remote-cache-dir",
+            &output_path_string(&remote_cache_dir),
+        ],
+        &root,
+    );
+
+    assert_eq!(payload["data"]["cache_surface"]["mode"], "readwrite");
+    assert!(payload["data"]["cache_surface"]["local_dir"].is_null());
+    assert_eq!(
+        payload["data"]["cache_surface"]["shared_dir"],
+        output_path_string(&remote_cache_dir)
+    );
+    assert_eq!(
+        payload["data"]["cache_surface"]["read_order"],
+        serde_json::json!(["shared"])
+    );
+    assert_eq!(
+        payload["data"]["cache_surface"]["write_targets"],
+        serde_json::json!(["shared"])
+    );
+}
+
+#[test]
 fn plan_explain_json_reports_execution_cost_estimate() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
