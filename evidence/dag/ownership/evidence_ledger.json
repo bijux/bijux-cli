@@ -461,6 +461,40 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/invalid_container_workdir.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/invalid_container_workdir.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/invalid_container_workdir.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/invalid_container_workdir.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts"
+    },
+    {
       "canonical_location": "crates/bijux-dag-core/tests/fixtures/invalid_env_reference.json",
       "canonical_path": "crates/bijux-dag-core/tests/fixtures/invalid_env_reference.json",
       "consumer_surfaces": [
@@ -583,6 +617,40 @@
       "kind": "authoring",
       "owner": "team-core",
       "path": "crates/bijux-dag-core/tests/fixtures/missing_effects.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/missing_required_input_binding.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/missing_required_input_binding.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/missing_required_input_binding.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/missing_required_input_binding.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -1277,6 +1345,40 @@
       "why_exists": "provide negative authoring validation references"
     },
     {
+      "canonical_location": "evidence/authoring/negative/invalid_container_workdir.json",
+      "canonical_path": "evidence/authoring/negative/invalid_container_workdir.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/negative/invalid_container_workdir.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/negative/invalid_container_workdir.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide negative authoring validation references"
+    },
+    {
       "canonical_location": "evidence/authoring/negative/invalid_refs.json",
       "canonical_path": "evidence/authoring/negative/invalid_refs.json",
       "consumer_surfaces": [
@@ -1331,6 +1433,40 @@
       "kind": "authoring",
       "owner": "team-authoring",
       "path": "evidence/authoring/negative/invalid_selectors.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide negative authoring validation references"
+    },
+    {
+      "canonical_location": "evidence/authoring/negative/missing_required_input_binding.json",
+      "canonical_path": "evidence/authoring/negative/missing_required_input_binding.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/negative/missing_required_input_binding.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/negative/missing_required_input_binding.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
