@@ -143,9 +143,19 @@ pub struct PlannerNodePathPreview {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PlannerPlanDiff {
-    pub changed_order_nodes: Vec<String>,
-    pub changed_filter_reasons: Vec<String>,
-    pub changed_annotations: Vec<String>,
+    pub graph_fingerprint_changed: bool,
+    pub execution_fingerprint_changed: bool,
+    pub metadata_only_changed: bool,
+    pub execution_affecting_changed: bool,
+    pub added_nodes: Vec<String>,
+    pub removed_nodes: Vec<String>,
+    pub changed_params: Vec<String>,
+    pub changed_outputs: Vec<String>,
+    pub changed_resources: Vec<String>,
+    pub changed_retry_timeout: Vec<String>,
+    pub added_dependencies: Vec<String>,
+    pub removed_dependencies: Vec<String>,
+    pub changed_metadata: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -162,6 +172,8 @@ pub struct PlannerBuildResult {
     pub priority_inheritance: Vec<PlannerPriorityInheritance>,
     pub plan_fingerprint: String,
     pub path_previews: Option<Vec<PlannerNodePathPreview>>,
+    #[serde(skip, default = "planner_build_result_graph_placeholder")]
+    analysis_graph: Graph,
 }
 
 pub fn build_planner_analysis(
@@ -205,7 +217,21 @@ pub fn build_planner_analysis(
         priority_inheritance,
         plan_fingerprint,
         path_previews,
+        analysis_graph: normalized_graph,
     })
+}
+
+fn planner_build_result_graph_placeholder() -> Graph {
+    Graph {
+        spec: String::new(),
+        meta: None,
+        inputs: BTreeMap::new(),
+        nondeterminism_allowed: false,
+        subgraphs: BTreeMap::new(),
+        subgraph_instances: Vec::new(),
+        nodes: Vec::new(),
+        edges: Vec::new(),
+    }
 }
 
 fn apply_optimizer_rules(
@@ -245,27 +271,129 @@ pub fn fingerprint_plan(
 }
 
 pub fn diff_plans(before: &PlannerBuildResult, after: &PlannerBuildResult) -> PlannerPlanDiff {
-    let before_order: BTreeSet<String> = before.plan.order.iter().cloned().collect();
-    let after_order: BTreeSet<String> = after.plan.order.iter().cloned().collect();
-    let changed_order_nodes =
-        before_order.symmetric_difference(&after_order).cloned().collect::<Vec<_>>();
+    let before_nodes = before
+        .analysis_graph
+        .nodes
+        .iter()
+        .map(|node| (node.id.clone(), node))
+        .collect::<BTreeMap<_, _>>();
+    let after_nodes = after
+        .analysis_graph
+        .nodes
+        .iter()
+        .map(|node| (node.id.clone(), node))
+        .collect::<BTreeMap<_, _>>();
 
-    let mut changed_filter_reasons = Vec::new();
-    for (k, v) in &after.plan.filter_reasons {
-        if before.plan.filter_reasons.get(k) != Some(v) {
-            changed_filter_reasons.push(format!("{k}:{v}"));
+    let mut added_nodes = after_nodes
+        .keys()
+        .filter(|node_id| !before_nodes.contains_key(*node_id))
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut removed_nodes = before_nodes
+        .keys()
+        .filter(|node_id| !after_nodes.contains_key(*node_id))
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut changed_params = Vec::new();
+    let mut changed_outputs = Vec::new();
+    let mut changed_resources = Vec::new();
+    let mut changed_retry_timeout = Vec::new();
+
+    for node_id in before_nodes.keys().filter(|node_id| after_nodes.contains_key(*node_id)) {
+        let before_node =
+            before_nodes.get(node_id).expect("before node must exist for intersection comparison");
+        let after_node =
+            after_nodes.get(node_id).expect("after node must exist for intersection comparison");
+
+        if !serialized_value_eq(&before_node.params, &after_node.params) {
+            changed_params.push(node_id.clone());
+        }
+        if before_node.outputs != after_node.outputs {
+            changed_outputs.push(node_id.clone());
+        }
+        if !serialized_value_eq(&before_node.resources, &after_node.resources) {
+            changed_resources.push(node_id.clone());
+        }
+        if !serialized_value_eq(&before_node.retry, &after_node.retry)
+            || before_node.timeout_ms != after_node.timeout_ms
+        {
+            changed_retry_timeout.push(node_id.clone());
         }
     }
 
-    let before_ann: BTreeMap<String, String> =
-        before.annotations.iter().map(|a| (a.node_id.clone(), a.reason.clone())).collect();
-    let mut changed_annotations = Vec::new();
-    for ann in &after.annotations {
-        if before_ann.get(&ann.node_id) != Some(&ann.reason) {
-            changed_annotations.push(format!("{}:{}", ann.node_id, ann.reason));
-        }
+    let before_dependencies =
+        before.analysis_graph.edges.iter().map(edge_diff_key).collect::<BTreeSet<_>>();
+    let after_dependencies =
+        after.analysis_graph.edges.iter().map(edge_diff_key).collect::<BTreeSet<_>>();
+    let mut added_dependencies =
+        after_dependencies.difference(&before_dependencies).cloned().collect::<Vec<_>>();
+    let mut removed_dependencies =
+        before_dependencies.difference(&after_dependencies).cloned().collect::<Vec<_>>();
+
+    let graph_fingerprint_changed = before.plan.graph_fingerprint != after.plan.graph_fingerprint;
+    let execution_fingerprint_changed =
+        before.plan.execution_fingerprint != after.plan.execution_fingerprint;
+    let mut changed_metadata = Vec::new();
+    if !serialized_value_eq(&before.analysis_graph.meta, &after.analysis_graph.meta) {
+        changed_metadata.push("graph_meta".to_string());
     }
-    PlannerPlanDiff { changed_order_nodes, changed_filter_reasons, changed_annotations }
+
+    added_nodes.sort();
+    removed_nodes.sort();
+    changed_params.sort();
+    changed_outputs.sort();
+    changed_resources.sort();
+    changed_retry_timeout.sort();
+    added_dependencies.sort();
+    removed_dependencies.sort();
+    changed_metadata.sort();
+
+    let execution_affecting_changed = execution_fingerprint_changed
+        || !added_nodes.is_empty()
+        || !removed_nodes.is_empty()
+        || !changed_params.is_empty()
+        || !changed_outputs.is_empty()
+        || !changed_resources.is_empty()
+        || !changed_retry_timeout.is_empty()
+        || !added_dependencies.is_empty()
+        || !removed_dependencies.is_empty();
+    let metadata_only_changed = graph_fingerprint_changed && !execution_affecting_changed;
+
+    PlannerPlanDiff {
+        graph_fingerprint_changed,
+        execution_fingerprint_changed,
+        metadata_only_changed,
+        execution_affecting_changed,
+        added_nodes,
+        removed_nodes,
+        changed_params,
+        changed_outputs,
+        changed_resources,
+        changed_retry_timeout,
+        added_dependencies,
+        removed_dependencies,
+        changed_metadata,
+    }
+}
+
+fn edge_diff_key(edge: &bijux_dag_core::Edge) -> String {
+    let kind = match edge.kind {
+        bijux_dag_core::EdgeKind::Data => "data",
+        bijux_dag_core::EdgeKind::Control => "control",
+        bijux_dag_core::EdgeKind::Conditional => "conditional",
+    };
+    let id = edge.id.as_deref().unwrap_or("-");
+    let decision = edge.decision.as_deref().unwrap_or("-");
+    format!(
+        "{kind}:{id}:{decision}:{}:{}->{}:{}",
+        edge.from.node_id, edge.from.port, edge.to.node_id, edge.to.port
+    )
+}
+
+fn serialized_value_eq<T: Serialize>(left: &T, right: &T) -> bool {
+    serde_json::to_value(left).expect("planner diff comparison should serialize left operand")
+        == serde_json::to_value(right)
+            .expect("planner diff comparison should serialize right operand")
 }
 
 pub fn explain_plan(result: &PlannerBuildResult) -> PlannerExplainReport {
