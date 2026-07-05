@@ -135,6 +135,7 @@ fn metadata_only_indexes_scale_without_payload_materialization() {
             name: format!("output-{i:05}"),
             kind: "file".to_string(),
             media_type: "application/octet-stream".to_string(),
+            size_bytes: i as u64,
             sha256: format!("{:064x}", i),
             path: format!("node-bulk/output-{i:05}.bin"),
         })

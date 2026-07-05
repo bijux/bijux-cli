@@ -343,6 +343,7 @@ pub struct OutputSummary {
     pub path: String,
     pub kind: String,
     pub media_type: String,
+    pub size_bytes: u64,
     pub sha256: String,
 }
 
@@ -362,6 +363,7 @@ pub struct TraceOutputArtifact {
     pub required: bool,
     pub present: bool,
     pub media_type: String,
+    pub size_bytes: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sha256: Option<String>,
 }
@@ -398,6 +400,7 @@ pub struct RunOutputFile {
     pub name: String,
     pub kind: String,
     pub media_type: String,
+    pub size_bytes: u64,
     pub sha256: String,
     pub path: String,
 }
@@ -438,6 +441,7 @@ pub struct OutputFile {
     pub path: String,
     pub kind: String,
     pub media_type: String,
+    pub size_bytes: u64,
     pub sha256: String,
     pub node_id: String,
     pub node_fingerprint: String,

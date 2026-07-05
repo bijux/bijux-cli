@@ -104,6 +104,8 @@ fn nested_tree_export_style_index_and_empty_payload_identity_are_stable() {
         serde_json::from_str(&fs::read_to_string(dir.path().join("index.json")).expect("read"))
             .expect("parse");
     assert_eq!(parsed.files[0].path, "nested/deeper/data.bin");
+    assert_eq!(parsed.files[0].size_bytes, 3);
+    assert_eq!(parsed.files[1].size_bytes, 0);
     assert_eq!(parsed.files[1].sha256, sha256_hex(b""));
 }
 

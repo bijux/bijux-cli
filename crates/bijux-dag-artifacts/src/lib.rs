@@ -65,8 +65,8 @@ pub mod store;
 
 pub use hardening::{
     build_cleanup_plan, finalize_run_manifest, finalize_run_manifest_with_mode, verify_run_dir,
-    write_incomplete_run_marker, write_json_atomic_durable, ArtifactCleanupPlan,
-    RunDirAuditReport, RunFinalizationMode, VerificationMode,
+    write_incomplete_run_marker, write_json_atomic_durable, ArtifactCleanupPlan, RunDirAuditReport,
+    RunFinalizationMode, VerificationMode,
 };
 pub use hash::sha256_hex;
 pub use index::{
@@ -95,9 +95,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// Explicit long-lived artifact storage, integrity, and lifecycle surface.
 pub mod stable {
     pub use crate::{
-        compact_lineage, dedup_metrics_for_hashes, explain_lineage_safe_gc, lineage_dependencies,
-        lineage_dependents, normalize_metadata_pairs, sha256_artifact_path, sha256_hex,
-        validate_output_schema_descriptor, verify_run_dir, write_inputs_index,
+        artifact_size_bytes, compact_lineage, dedup_metrics_for_hashes, explain_lineage_safe_gc,
+        lineage_dependencies, lineage_dependents, normalize_metadata_pairs, sha256_artifact_path,
+        sha256_hex, validate_output_schema_descriptor, verify_run_dir, write_inputs_index,
         write_lineage_snapshot, write_outputs_index, ArtifactError, ArtifactId,
         ArtifactIntegrityProof, ArtifactLineageEdge, ArtifactLineageSnapshot, ArtifactPackManifest,
         ArtifactSchemaDescriptor, CorruptionDetectionResult, CorruptionRepairPolicy,
@@ -109,9 +109,9 @@ pub mod stable {
 /// Common imports for reading, writing, and validating run artifacts.
 pub mod prelude {
     pub use crate::stable::{
-        sha256_artifact_path, sha256_hex, validate_output_schema_descriptor, verify_run_dir,
-        write_inputs_index, write_outputs_index, ArtifactError, ArtifactSchemaDescriptor, RunDir,
-        RunDirLayout, SchemaValidationMode,
+        artifact_size_bytes, sha256_artifact_path, sha256_hex, validate_output_schema_descriptor,
+        verify_run_dir, write_inputs_index, write_outputs_index, ArtifactError,
+        ArtifactSchemaDescriptor, RunDir, RunDirLayout, SchemaValidationMode,
     };
 }
 
@@ -152,7 +152,10 @@ pub struct RunDirLayout {
 }
 
 impl RunDirLayout {
-    pub fn preview(out_base: impl AsRef<Path>, run_id: Option<&str>) -> Result<Self, ArtifactError> {
+    pub fn preview(
+        out_base: impl AsRef<Path>,
+        run_id: Option<&str>,
+    ) -> Result<Self, ArtifactError> {
         let run_id = match run_id {
             Some(run_id) => normalize_run_id(run_id)?,
             None => generate_run_id(),
@@ -341,12 +344,14 @@ pub fn write_outputs_index(
         if !path.exists() {
             return Err(ArtifactError::MissingOutput(rel.clone()));
         }
+        let size_bytes = artifact_size_bytes(&path)?;
         let sha = sha256_artifact_path(&path)?;
         files.push(OutputFile {
             name: output.name.clone(),
             path: rel.clone(),
             kind: output.kind.clone(),
             media_type: output.media_type.clone(),
+            size_bytes,
             sha256: sha,
             node_id: node_id.to_string(),
             node_fingerprint: node_fingerprint.to_string(),
@@ -359,6 +364,10 @@ pub fn write_outputs_index(
 
 pub fn sha256_artifact_path(path: impl AsRef<Path>) -> Result<String, ArtifactError> {
     sha256_artifact_path_inner(path.as_ref(), path.as_ref())
+}
+
+pub fn artifact_size_bytes(path: impl AsRef<Path>) -> Result<u64, ArtifactError> {
+    artifact_size_bytes_inner(path.as_ref())
 }
 
 fn sha256_artifact_path_inner(root: &Path, path: &Path) -> Result<String, ArtifactError> {
@@ -395,6 +404,36 @@ fn sha256_artifact_path_inner(root: &Path, path: &Path) -> Result<String, Artifa
             payload.push(b'\n');
         }
         return Ok(sha256_bytes(&payload));
+    }
+    Err(ArtifactError::PathViolation(format!(
+        "artifact path must be a regular file or directory: {}",
+        path.display()
+    )))
+}
+
+fn artifact_size_bytes_inner(path: &Path) -> Result<u64, ArtifactError> {
+    let metadata = std_fs::symlink_metadata(path)?;
+    if metadata.file_type().is_symlink() {
+        return Err(ArtifactError::PathViolation(format!(
+            "artifact path must not be a symlink: {}",
+            path.display()
+        )));
+    }
+    if metadata.is_file() {
+        return Ok(metadata.len());
+    }
+    if metadata.is_dir() {
+        let mut total = 0u64;
+        for entry in std_fs::read_dir(path)? {
+            let child = entry?.path();
+            total = total.checked_add(artifact_size_bytes_inner(&child)?).ok_or_else(|| {
+                ArtifactError::PathViolation(format!(
+                    "artifact size exceeded u64 accounting: {}",
+                    path.display()
+                ))
+            })?;
+        }
+        return Ok(total);
     }
     Err(ArtifactError::PathViolation(format!(
         "artifact path must be a regular file or directory: {}",

@@ -34,6 +34,7 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
                 path: format!("node-{idx}/out-{idx}.bin"),
                 kind: "file".to_string(),
                 media_type: "application/octet-stream".to_string(),
+                size_bytes: idx as u64,
                 sha256: "hash".to_string(),
             })
             .collect(),
