@@ -1,4 +1,5 @@
 use crate::routes::selector_grammar::{SelectorExpression, SelectorField};
+use bijux_dag_artifacts::FailureInfo;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -52,10 +53,14 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
     let manifest = read_json(&run_dir.join("manifest.json"))?;
     let integrity_state = inspect_integrity_state(run_dir, &manifest);
     let traces = read_node_traces(run_dir)?;
-    let (retry_total, failed_nodes, cache_hits) =
-        traces.iter().fold((0usize, Vec::<String>::new(), 0usize), |mut acc, (node_id, trace)| {
+    let (retry_total, failed_nodes, failed_classes, cache_hits) = traces.iter().fold(
+        (0usize, Vec::<String>::new(), std::collections::BTreeSet::<String>::new(), 0usize),
+        |mut acc, (node_id, trace)| {
             if trace.get("status").and_then(Value::as_str) == Some("failed") {
                 acc.1.push(node_id.clone());
+                if let Some(class) = trace_failure_class(trace) {
+                    acc.2.insert(class);
+                }
             }
             if let Some(attempt) = trace.get("attempt").and_then(Value::as_u64) {
                 if attempt > 1 {
@@ -63,10 +68,11 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
                 }
             }
             if trace.get("cache_hit").and_then(Value::as_bool) == Some(true) {
-                acc.2 += 1;
+                acc.3 += 1;
             }
             acc
-        });
+        },
+    );
     let artifact_count = read_outputs_count(run_dir);
     Ok(json!({
         "run_id": manifest.get("run_id").cloned().unwrap_or(Value::Null),
@@ -87,6 +93,7 @@ pub fn inspect_summary(run_dir: &Path) -> Result<Value, std::io::Error> {
         "cache_hits": cache_hits,
         "artifact_count": artifact_count,
         "failed_nodes": failed_nodes,
+        "failure_classes": failed_classes.into_iter().collect::<Vec<_>>(),
         "integrity_state": integrity_state
     }))
 }
@@ -322,10 +329,16 @@ pub fn run_timeline(run_dir: &Path) -> Result<Value, std::io::Error> {
 pub fn explain_failure(run_dir: &Path) -> Result<Value, std::io::Error> {
     let traces = read_node_traces(run_dir)?;
     let mut failed = Vec::new();
+    let mut failure_classes = serde_json::Map::new();
     let mut skipped = Vec::new();
     for (node_id, trace) in traces {
         match trace.get("status").and_then(Value::as_str).unwrap_or("unknown") {
-            "failed" => failed.push(node_id),
+            "failed" => {
+                if let Some(class) = trace_failure_class(&trace) {
+                    failure_classes.insert(node_id.clone(), Value::String(class));
+                }
+                failed.push(node_id);
+            }
             "skipped" => skipped.push(node_id),
             _ => {}
         }
@@ -333,7 +346,12 @@ pub fn explain_failure(run_dir: &Path) -> Result<Value, std::io::Error> {
     let root = failed.first().cloned();
     Ok(json!({
         "root_failure": root,
+        "root_failure_class": root
+            .as_ref()
+            .and_then(|node_id| failure_classes.get(node_id).cloned())
+            .unwrap_or(Value::Null),
         "failed_nodes": failed,
+        "failure_classes": failure_classes,
         "propagated_or_skipped_nodes": skipped
     }))
 }
@@ -492,10 +510,26 @@ pub fn render_run_summary(summary: &Value) -> String {
         "import" => "imported",
         _ => "native",
     };
+    let failure_classes = summary
+        .get("failure_classes")
+        .and_then(Value::as_array)
+        .map(|classes| {
+            classes
+                .iter()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>()
+                .join(",")
+        })
+        .filter(|classes| !classes.is_empty());
+    let status = summary.get("status").unwrap_or(&Value::Null);
+    let status_rendered = match failure_classes {
+        Some(classes) => format!("{status} [{classes}]"),
+        None => status.to_string(),
+    };
     format!(
         "note: human output is operator-facing; use --json for stable automation\nrun_id: {}\nstatus: {}\norigin: {}\nintegrity_state: {}\nretry_count: {}\ncache_hits: {}\nartifact_count: {}",
         summary.get("run_id").unwrap_or(&Value::Null),
-        summary.get("status").unwrap_or(&Value::Null),
+        status_rendered,
         origin,
         summary.get("integrity_state").unwrap_or(&Value::Null),
         summary.get("retry_count").unwrap_or(&Value::Null),
@@ -528,6 +562,12 @@ fn read_outputs_count(run_dir: &Path) -> usize {
                 .or_else(|| v.get("outputs").and_then(Value::as_array).map(|arr| arr.len()))
         })
         .unwrap_or(0)
+}
+
+fn trace_failure_class(trace: &Value) -> Option<String> {
+    let failure = trace.get("failure")?.clone();
+    let parsed: FailureInfo = serde_json::from_value(failure).ok()?;
+    Some(parsed.operator_class().as_str().to_string())
 }
 
 fn read_node_traces(

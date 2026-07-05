@@ -121,7 +121,11 @@ pub(crate) fn handle_run_command(
         match bind_runtime_inputs(&graph.inputs, req.inputs_file.as_deref(), req.input) {
             Ok(binding) => binding,
             Err(message) => {
-                return emit_run_input_error(cli, &message, json!({ "error": message }));
+                return emit_run_input_error(
+                    cli,
+                    &message,
+                    json!({ "error": message, "error_class": "user" }),
+                );
             }
         };
     graph.inputs = runtime_inputs.bound_inputs.clone();
@@ -133,6 +137,7 @@ pub(crate) fn handle_run_command(
             &message,
             json!({
                 "error": message,
+                "error_class": "user",
                 "missing_inputs": missing_inputs,
             }),
         );

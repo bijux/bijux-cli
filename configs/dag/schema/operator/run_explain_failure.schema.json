@@ -2,10 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "run_explain_failure",
   "type": "object",
-  "required": ["failed_nodes", "propagated_or_skipped_nodes"],
+  "required": [
+    "failed_nodes",
+    "failure_classes",
+    "propagated_or_skipped_nodes",
+    "root_failure_class"
+  ],
   "properties": {
     "root_failure": {"type": ["string", "null"]},
+    "root_failure_class": {"type": ["string", "null"]},
     "failed_nodes": {"type": "array", "items": {"type": "string"}},
+    "failure_classes": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
     "propagated_or_skipped_nodes": {"type": "array", "items": {"type": "string"}}
   }
 }
