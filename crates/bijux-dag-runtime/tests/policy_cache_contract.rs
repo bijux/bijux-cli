@@ -1006,6 +1006,24 @@ fn runtime_fail_fast_marks_unscheduled_nodes_as_aborted_failures() {
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "RUN_ABORTED");
     assert_eq!(trace["transition_cause"], "ExecutionAborted");
+    assert_eq!(trace["lifecycle_state"], "cancelled");
+    assert_eq!(
+        trace["lifecycle_transitions"],
+        serde_json::json!([
+            {
+                "from_state": "pending",
+                "to_state": "eligible",
+                "cause": "scheduler_eligible",
+                "unix_ms": trace["lifecycle_transitions"][0]["unix_ms"],
+            },
+            {
+                "from_state": "eligible",
+                "to_state": "cancelled",
+                "cause": "execution_aborted",
+                "unix_ms": trace["lifecycle_transitions"][1]["unix_ms"],
+            }
+        ])
+    );
 
     let propagation = read_failure_propagation(&run_path);
     assert!(propagation
@@ -1036,6 +1054,24 @@ fn runtime_marks_pending_nodes_failed_when_run_times_out() {
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "RUN_TIMEOUT");
     assert_eq!(trace["transition_cause"], "TimeoutExceeded");
+    assert_eq!(trace["lifecycle_state"], "timed_out");
+    assert_eq!(
+        trace["lifecycle_transitions"],
+        serde_json::json!([
+            {
+                "from_state": "pending",
+                "to_state": "eligible",
+                "cause": "scheduler_eligible",
+                "unix_ms": trace["lifecycle_transitions"][0]["unix_ms"],
+            },
+            {
+                "from_state": "eligible",
+                "to_state": "timed_out",
+                "cause": "timeout_exceeded",
+                "unix_ms": trace["lifecycle_transitions"][1]["unix_ms"],
+            }
+        ])
+    );
 
     let propagation = read_failure_propagation(&run_path);
     assert!(propagation

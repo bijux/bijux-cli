@@ -159,6 +159,44 @@ fn runtime_cache_contract_uses_cached_nodes_when_enabled() {
     assert_eq!(one_success, 1);
     assert_eq!(one_cached, 0);
     assert!(two_cached >= 1);
+
+    let trace: Value = serde_json::from_str(
+        &fs::read_to_string(run_two.join("nodes").join("const1").join("trace.json"))
+            .expect("cached trace"),
+    )
+    .expect("cached trace parse");
+    assert_eq!(trace["lifecycle_state"], "cached");
+    assert_eq!(
+        trace["lifecycle_transitions"],
+        serde_json::json!([
+            {
+                "from_state": "pending",
+                "to_state": "eligible",
+                "cause": "scheduler_eligible",
+                "unix_ms": trace["lifecycle_transitions"][0]["unix_ms"],
+            },
+            {
+                "from_state": "eligible",
+                "to_state": "queued",
+                "cause": "scheduler_queued",
+                "unix_ms": trace["lifecycle_transitions"][1]["unix_ms"],
+            },
+            {
+                "from_state": "queued",
+                "to_state": "cached",
+                "cause": "cached_reuse",
+                "unix_ms": trace["lifecycle_transitions"][2]["unix_ms"],
+            }
+        ])
+    );
+
+    let cached_events = read_run_events(&run_two);
+    assert!(cached_events
+        .iter()
+        .any(|event| { event["event"] == "node_scheduled" && event["node_id"] == "const1" }));
+    assert!(!cached_events
+        .iter()
+        .any(|event| { event["event"] == "node_started" && event["node_id"] == "const1" }));
 }
 
 #[test]
