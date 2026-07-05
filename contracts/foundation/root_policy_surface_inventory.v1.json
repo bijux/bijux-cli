@@ -26,6 +26,14 @@
       ]
     },
     {
+      "path": "contracts/foundation/dag_release_truth_table.v1.json",
+      "gates_behavior": "defines the authoritative DAG crate public release boundary and publication intent",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_release_boundary_contracts.rs"
+      ]
+    },
+    {
       "path": "contracts/foundation/hard_release_gate.v1.json",
       "gates_behavior": "defines the deterministic foundation release gate workflow and required lifecycle checks",
       "owning_crate": "bijux-dev",
