@@ -62,6 +62,46 @@ fn write_selection_graph_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, dag)
 }
 
+fn write_execution_cost_graph_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let dag = dir.path().join("graph-cost.json");
+    fs::write(
+        &dag,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "meta":{"name":"plan-cost","owners":[],"tags":[]},
+          "nodes":[
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+            {
+              "id":"b",
+              "kind":"shell",
+              "outputs":[{"name":"out","path":"b/out"}],
+              "params":{"argv":["echo","b"]},
+              "resources":{"cpu":4,"mem_mb":2048},
+              "tags":["gpu:2"],
+              "timeout_ms":5000,
+              "retry":{"max_attempts":3,"backoff_ms":250},
+              "cache":{"enabled":false,"reason":"network-bound"}
+            },
+            {
+              "id":"c",
+              "kind":"shell",
+              "inputs":["left","right"],
+              "outputs":[{"name":"out","path":"c/out"}],
+              "params":{"argv":["echo","c"]},
+              "resources":{"cpu":2,"mem_mb":1024}
+            }
+          ],
+          "edges":[
+            {"from":{"node_id":"a","port":"out"},"to":{"node_id":"c","port":"left"}},
+            {"from":{"node_id":"b","port":"out"},"to":{"node_id":"c","port":"right"}}
+          ]
+        }"#,
+    )
+    .expect("write graph");
+    (dir, dag)
+}
+
 fn write_invalid_graph_fixture() -> (tempfile::TempDir, PathBuf) {
     let dir = tempfile::tempdir().expect("tmp");
     let dag = dir.path().join("graph-invalid.json");
@@ -481,6 +521,40 @@ fn plan_explain_payload_surfaces_upstream_targets_and_closure_reasons() {
     assert_eq!(
         payload["selection"]["omitted_nodes"],
         serde_json::json!([{ "node_id": "c", "reason": "not_selected_by_to_node" }])
+    );
+}
+
+#[test]
+fn plan_explain_payload_surfaces_execution_cost_estimate() {
+    let (_tmp, dag) = write_execution_cost_graph_fixture();
+    let raw = fs::read_to_string(dag).expect("read graph");
+    let graph = crate::parse_graph(&raw).expect("graph");
+    let result =
+        super::build_default_planner_analysis(&graph, &super::PlanPreviewConfig::default())
+            .expect("plan");
+    let payload = super::plan_explain_payload(
+        &result,
+        None,
+        bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+    );
+
+    assert_eq!(payload["execution_cost_estimate"]["node_count"], 3);
+    assert_eq!(payload["execution_cost_estimate"]["root_nodes"], serde_json::json!(["a", "b"]));
+    assert_eq!(payload["execution_cost_estimate"]["critical_path_length"], 2);
+    assert_eq!(payload["execution_cost_estimate"]["max_parallelism"], 2);
+    assert_eq!(payload["execution_cost_estimate"]["demand"]["cpu_cores_total"], 7);
+    assert_eq!(payload["execution_cost_estimate"]["demand"]["gpu_devices_total"], 2);
+    assert_eq!(
+        payload["execution_cost_estimate"]["cache_exposure"]["non_cacheable_node_ids"],
+        serde_json::json!(["b"])
+    );
+    assert_eq!(
+        payload["execution_cost_estimate"]["timeout_exposure"]["max_timeout_ms"],
+        5000
+    );
+    assert_eq!(
+        payload["execution_cost_estimate"]["retry_exposure"]["max_attempts"],
+        3
     );
 }
 
