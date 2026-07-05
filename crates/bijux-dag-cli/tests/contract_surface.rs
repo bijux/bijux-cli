@@ -49,6 +49,69 @@ fn write_temp_dag() -> String {
     path.to_string_lossy().into_owned()
 }
 
+fn write_temp_dag_fragments() -> (tempfile::TempDir, String, String) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let foundation = dir.path().join("foundation.json");
+    let publication = dir.path().join("publication.json");
+    std::fs::write(
+        &foundation,
+        r#"{
+  "spec": "bijux-dag/v0.1",
+  "meta": {"name":"foundation","owners":[],"tags":[]},
+  "nodes": [
+    {
+      "id": "extract",
+      "kind": "const",
+      "outputs": [
+        {
+          "name": "report",
+          "path": "extract/report.json"
+        }
+      ],
+      "params": {
+        "value": "hello"
+      }
+    }
+  ],
+  "edges": []
+}
+"#,
+    )
+    .expect("write foundation");
+    std::fs::write(
+        &publication,
+        r#"{
+  "spec": "bijux-dag/v0.1",
+  "meta": {"name":"publication","owners":[],"tags":[]},
+  "nodes": [
+    {
+      "id": "publish",
+      "kind": "const",
+      "inputs": ["report"],
+      "outputs": [
+        {
+          "name": "value",
+          "path": "publish/value.txt"
+        }
+      ],
+      "params": {
+        "seed": {"node_output": {"node_id": "extract", "output_name": "report"}}
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {"node_id": "extract", "port": "report"},
+      "to": {"node_id": "publish", "port": "report"}
+    }
+  ]
+}
+"#,
+    )
+    .expect("write publication");
+    (dir, foundation.to_string_lossy().into_owned(), publication.to_string_lossy().into_owned())
+}
+
 fn run_simple_dag_json() -> (tempfile::TempDir, String, serde_json::Value) {
     let dag = write_temp_dag();
     let out_dir = tempfile::tempdir().expect("run out");
@@ -68,7 +131,7 @@ fn dag_validate_help_is_stable_enough() {
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(text.contains("Usage:"));
-    assert!(text.contains("bijux-dag validate [OPTIONS] <DAG>"));
+    assert!(text.contains("bijux-dag validate [OPTIONS] <DAGS>..."));
 }
 
 #[test]
@@ -88,6 +151,20 @@ fn dag_validate_json_schema_contract() {
     assert_eq!(payload["command"], "dag.validate");
     assert!(payload["status"].as_str().is_some());
     assert!(payload["data"].is_object());
+}
+
+#[test]
+fn dag_validate_accepts_composed_graph_fragments() {
+    let (_dir, foundation, publication) = write_temp_dag_fragments();
+    let output = dag_command()
+        .args(["validate", &foundation, &publication, "--json"])
+        .output()
+        .expect("composed validate");
+
+    assert!(output.status.success());
+    let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("validate json");
+    assert_eq!(payload["command"], "dag.validate");
+    assert!(payload["status"].as_str().is_some());
 }
 
 #[test]
@@ -282,6 +359,22 @@ fn dag_explain_plan_alias_and_legacy_alias_both_work() {
 }
 
 #[test]
+fn dag_explain_plan_aliases_accept_composed_graph_fragments() {
+    let (_dir, foundation, publication) = write_temp_dag_fragments();
+    for args in [
+        vec!["--json", "explain-plan", &foundation, &publication],
+        vec!["--json", "show-effective-plan", &foundation, &publication],
+    ] {
+        let output = dag_command().args(args).output().expect("explain plan");
+        assert!(output.status.success());
+        let payload: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("explain plan payload");
+        assert!(payload["data"]["planner_contract_version"].as_str().is_some());
+        assert!(payload["data"]["planned_nodes"].is_array());
+    }
+}
+
+#[test]
 fn dag_hidden_lab_namespace_remains_addressable_by_explicit_path() {
     let output = dag_command().args(["lab", "--help"]).output().expect("lab help");
     assert!(output.status.success());
@@ -333,6 +426,28 @@ fn dag_run_preflight_and_scheduling_surfaces_work_end_to_end() {
     let run_payload: serde_json::Value = serde_json::from_slice(&run.stdout).expect("run payload");
     assert!(run_payload["data"]["run_dir"].as_str().is_some());
     assert!(run_payload["data"]["scheduling"]["planned_nodes"].is_array());
+}
+
+#[test]
+fn dag_run_preflight_accepts_composed_graph_fragments() {
+    let (_dir, foundation, publication) = write_temp_dag_fragments();
+    let out_dir = tempfile::tempdir().expect("out");
+
+    let preflight = dag_command()
+        .args([
+            "--json",
+            "run",
+            &foundation,
+            &publication,
+            "--out",
+            out_dir.path().to_str().unwrap(),
+            "--preflight-only",
+        ])
+        .output()
+        .expect("preflight");
+    assert!(preflight.status.success());
+    let payload: serde_json::Value = serde_json::from_slice(&preflight.stdout).expect("payload");
+    assert!(payload["data"]["scheduling"]["planned_nodes"].is_array());
 }
 
 #[test]
