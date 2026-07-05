@@ -146,6 +146,10 @@ mod tests {
             self.inner.remove_file(path)
         }
 
+        fn remove_dir_all(&self, path: &Path) -> io::Result<()> {
+            self.inner.remove_dir_all(path)
+        }
+
         fn copy(&self, from: &Path, to: &Path) -> io::Result<u64> {
             self.inner.copy(from, to)
         }
@@ -846,6 +850,86 @@ inputs: vec!["in".to_string()],
             fs::read_to_string(final_path.join("nodes").join("b").join("trace.json")).unwrap();
         assert!(trace.contains("\"attempt\": 2"));
         assert!(trace.contains("\"status\""));
+    }
+
+    #[test]
+    fn retry_recreates_work_and_output_sandboxes_between_attempts() {
+        let dir = tempfile::tempdir().unwrap();
+        let retry_gate = dir.path().join("retry-gate");
+        let mut graph = sample_graph();
+        graph.nodes[1].retry = bijux_dag_core::RetryPolicy { max_attempts: 1, backoff_ms: 0 };
+        graph.nodes[1].params = param_object(vec![(
+            "argv",
+            Value::Array(vec![
+                Value::from("/bin/sh"),
+                Value::from("-c"),
+                Value::from(format!(
+                    "if [ ! -f \"{}\" ]; then touch \"{}\"; echo stale > \"$TMPDIR/first-attempt.tmp\"; echo stale > ../outputs/extra.txt; exit 1; fi; test ! -e \"$TMPDIR/first-attempt.tmp\"; echo ok > ../outputs/out_b",
+                    retry_gate.display(),
+                    retry_gate.display(),
+                )),
+            ]),
+        )]);
+
+        let runtime = Runtime::new();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let trace =
+            fs::read_to_string(final_path.join("nodes").join("b").join("trace.json")).unwrap();
+
+        assert!(trace.contains("\"attempt\": 2"));
+        assert!(final_path.join("nodes").join("b").join("outputs").join("out_b").exists());
+        assert!(!final_path.join("nodes").join("b").join("outputs").join("extra.txt").exists());
+        assert!(
+            !final_path
+                .join("nodes")
+                .join("b")
+                .join("work")
+                .join("temp")
+                .join("first-attempt.tmp")
+                .exists()
+        );
+    }
+
+    #[test]
+    fn shell_runtime_pins_temp_env_to_node_temp_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut graph = sample_graph();
+        graph.nodes[1].params = param_object(vec![(
+            "argv",
+            Value::Array(vec![
+                Value::from("/bin/sh"),
+                Value::from("-c"),
+                Value::from("printf '%s\\n%s\\n%s\\n' \"$TMPDIR\" \"$TMP\" \"$TEMP\" > ../outputs/out_b"),
+            ]),
+        )]);
+
+        let runtime = Runtime::new();
+        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let reported =
+            fs::read_to_string(final_path.join("nodes").join("b").join("outputs").join("out_b"))
+                .unwrap();
+        let run_id = final_path
+            .file_name()
+            .and_then(|value| value.to_str())
+            .and_then(|value| value.strip_prefix("run-"))
+            .expect("run id");
+        let expected = dir
+            .path()
+            .join(format!("run.tmp-{run_id}"))
+            .join("nodes")
+            .join("b")
+            .join("work")
+            .join("temp");
+        let finalized_temp_dir =
+            final_path.join("nodes").join("b").join("work").join("temp");
+        let lines = reported.lines().collect::<Vec<_>>();
+
+        assert_eq!(lines, vec![
+            expected.display().to_string(),
+            expected.display().to_string(),
+            expected.display().to_string(),
+        ]);
+        assert!(finalized_temp_dir.is_dir());
     }
 
     #[test]
@@ -1883,6 +1967,24 @@ exit 1
     }
 
     #[test]
+    fn stale_staging_run_dir_is_rejected_before_execution() {
+        let dir = tempfile::tempdir().unwrap();
+        create_staging_conflict(dir.path(), "stale-run", "nodes/a/work");
+        let runtime = Runtime::new();
+        let err = runtime
+            .run(
+                &sample_graph(),
+                dir.path(),
+                RuntimeConfig {
+                    run_id: Some("stale-run".to_string()),
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap_err();
+        assert!(format!("{err}").contains("staging run directory already exists"));
+    }
+
+    #[test]
     fn latest_symlink_updates_do_not_mutate_previous_run() {
         let dir = tempfile::tempdir().unwrap();
         let latest = dir.path().join("latest");
@@ -1934,16 +2036,15 @@ exit 1
     #[test]
     fn lineage_snapshot_write_failures_abort_the_run() {
         let dir = tempfile::tempdir().unwrap();
-        create_staging_conflict(dir.path(), "lineage-conflict", "lineage.snapshot.json");
-        let runtime = Runtime::new();
+        let runtime = Runtime::with_io(
+            Arc::new(InterceptFs::fail_write("lineage.snapshot.json")),
+            Arc::new(SystemClock),
+        );
         let err = runtime
             .run(
                 &sample_graph(),
                 dir.path(),
-                RuntimeConfig {
-                    run_id: Some("lineage-conflict".to_string()),
-                    ..RuntimeConfig::default()
-                },
+                RuntimeConfig::default(),
             )
             .unwrap_err();
         let rendered = format!("{err}");
@@ -1957,20 +2058,15 @@ exit 1
     #[test]
     fn lineage_visualization_write_failures_abort_the_run() {
         let dir = tempfile::tempdir().unwrap();
-        create_staging_conflict(
-            dir.path(),
-            "lineage-visualization-conflict",
-            "observability.lineage-visualization.json",
+        let runtime = Runtime::with_io(
+            Arc::new(InterceptFs::fail_write("observability.lineage-visualization.json")),
+            Arc::new(SystemClock),
         );
-        let runtime = Runtime::new();
         let err = runtime
             .run(
                 &sample_graph(),
                 dir.path(),
-                RuntimeConfig {
-                    run_id: Some("lineage-visualization-conflict".to_string()),
-                    ..RuntimeConfig::default()
-                },
+                RuntimeConfig::default(),
             )
             .unwrap_err();
         let rendered = format!("{err}");
@@ -1984,16 +2080,15 @@ exit 1
     #[test]
     fn timeline_export_write_failures_abort_the_run() {
         let dir = tempfile::tempdir().unwrap();
-        create_staging_conflict(dir.path(), "timeline-conflict", "observability.timeline.json");
-        let runtime = Runtime::new();
+        let runtime = Runtime::with_io(
+            Arc::new(InterceptFs::fail_write("observability.timeline.json")),
+            Arc::new(SystemClock),
+        );
         let err = runtime
             .run(
                 &sample_graph(),
                 dir.path(),
-                RuntimeConfig {
-                    run_id: Some("timeline-conflict".to_string()),
-                    ..RuntimeConfig::default()
-                },
+                RuntimeConfig::default(),
             )
             .unwrap_err();
         let rendered = format!("{err}");
