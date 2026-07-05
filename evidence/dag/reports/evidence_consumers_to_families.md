@@ -4,6 +4,7 @@ Generated from `evidence/_meta/registries/evidence_registry.json`.
 
 | Consumer | Consumer Kind | Evidence Families |
 | --- | --- | --- |
+| `app-integration` | `other` | `authoring` |
 | `authoring-contracts` | `contract` | `authoring` |
 | `battle-suite` | `suite` | `battle` |
 | `benchmark-suite` | `suite` | `perf` |
