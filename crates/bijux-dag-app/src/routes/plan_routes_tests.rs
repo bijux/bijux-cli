@@ -498,6 +498,16 @@ fn plan_diff_success_path_returns_success() {
 }
 
 #[test]
+fn plan_equivalence_success_path_returns_success() {
+    let (_base_dir, before) = write_graph_fixture();
+    let (_tagged_dir, after) = write_tagged_graph_fixture();
+    let cli = quiet_json_cli();
+    let code =
+        handle_plan_command(&cli, &PlanCommands::Equivalence { before, after }).expect("equiv");
+    assert_eq!(code, ExitCode::SUCCESS);
+}
+
+#[test]
 fn plan_diff_payload_reports_execution_affecting_categories() {
     let (_before_dir, before_path) = write_plan_diff_before_fixture();
     let (_after_dir, after_path) = write_plan_diff_after_fixture();
@@ -553,6 +563,69 @@ fn plan_diff_payload_classifies_metadata_only_change() {
     assert_eq!(payload["diff"]["changed_metadata"], serde_json::json!(["graph_meta"]));
     assert_eq!(payload["diff"]["added_nodes"], serde_json::json!([]));
     assert_eq!(payload["diff"]["changed_params"], serde_json::json!([]));
+}
+
+#[test]
+fn plan_equivalence_payload_reports_metadata_drift_equivalence() {
+    let (_before_dir, before_path) = write_graph_fixture();
+    let (_after_dir, after_path) = write_tagged_graph_fixture();
+    let before_raw = fs::read_to_string(before_path).expect("read before graph");
+    let after_raw = fs::read_to_string(after_path).expect("read after graph");
+    let before_graph = crate::parse_graph(&before_raw).expect("before graph");
+    let after_graph = crate::parse_graph(&after_raw).expect("after graph");
+    let before_result =
+        super::build_default_planner_analysis(&before_graph, &super::PlanPreviewConfig::default())
+            .expect("before plan");
+    let after_result =
+        super::build_default_planner_analysis(&after_graph, &super::PlanPreviewConfig::default())
+            .expect("after plan");
+    let report = bijux_dag_runtime::compare_plan_equivalence(&before_result, &after_result);
+    let payload = super::plan_equivalence_payload(&before_result, &after_result, &report);
+
+    assert_eq!(payload["equivalent"], true);
+    assert_eq!(payload["report"]["equivalence_class"], "metadata_drift_equivalent");
+    assert_eq!(payload["report"]["graph_identity_equal"], false);
+    assert_eq!(payload["report"]["execution_fingerprint_equal"], true);
+    assert_eq!(
+        payload["report"]["ignored_non_execution_drift"],
+        serde_json::json!(["graph_meta", "node_tags:a"])
+    );
+    assert_eq!(payload["report"]["non_equivalence_causes"], serde_json::json!([]));
+}
+
+#[test]
+fn plan_equivalence_payload_reports_exact_non_equivalence_causes() {
+    let (_before_dir, before_path) = write_plan_diff_before_fixture();
+    let (_after_dir, after_path) = write_plan_diff_after_fixture();
+    let before_raw = fs::read_to_string(before_path).expect("read before graph");
+    let after_raw = fs::read_to_string(after_path).expect("read after graph");
+    let before_graph = crate::parse_graph(&before_raw).expect("before graph");
+    let after_graph = crate::parse_graph(&after_raw).expect("after graph");
+    let before_result =
+        super::build_default_planner_analysis(&before_graph, &super::PlanPreviewConfig::default())
+            .expect("before plan");
+    let after_result =
+        super::build_default_planner_analysis(&after_graph, &super::PlanPreviewConfig::default())
+            .expect("after plan");
+    let report = bijux_dag_runtime::compare_plan_equivalence(&before_result, &after_result);
+    let payload = super::plan_equivalence_payload(&before_result, &after_result, &report);
+
+    assert_eq!(payload["equivalent"], false);
+    assert_eq!(payload["report"]["equivalence_class"], "not_equivalent");
+    assert_eq!(payload["report"]["execution_fingerprint_equal"], true);
+    assert_eq!(
+        payload["report"]["non_equivalence_causes"],
+        serde_json::json!([
+            "added_dependency:data:-:-:c:out->b:in",
+            "added_node:c",
+            "changed_outputs:b",
+            "changed_params:b",
+            "changed_resources:b",
+            "changed_retry_timeout:b",
+            "removed_dependency:data:-:-:a:out->b:in",
+            "removed_node:a"
+        ])
+    );
 }
 
 #[test]
