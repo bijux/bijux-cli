@@ -35,6 +35,8 @@ RS_DEV_CLI_BIN ?= $(RS_TARGET_DIR)/debug/bijux-dev-cli
 RS_RELEASE_BUNDLE_DIR ?= $(RS_ARTIFACT_ROOT)/build
 DAG_RELEASE_PACKAGE ?= bijux-dag-cli
 DAG_RELEASE_BIN ?= bijux-dag
+RS_BUILD_GIT_SHA ?= $(shell git rev-parse --short HEAD 2>/dev/null || true)
+RS_BUILD_GIT_SHA_ENV ?= $(if $(strip $(RS_BUILD_GIT_SHA)),BIJUX_DAG_BUILD_GIT_SHA="$(strip $(RS_BUILD_GIT_SHA))")
 RUST_PUBLIC_DAG_PACKAGES ?= bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli
 RUST_PUBLISH_PACKAGES ?= bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-cli
 RUST_PUBLISH_DRY_RUN ?= 1
@@ -199,6 +201,7 @@ fmt-release-rs: prepare-release-tree-rs ## Run release-candidate formatting vali
 	@printf '%s\n' "run: cargo fmt --all -- --check"
 	@set -o pipefail; \
 	cd "$(RS_RELEASE_TREE_DIR)"; \
+	$(RS_BUILD_GIT_SHA_ENV) \
 	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -212,6 +215,7 @@ clippy-release-rs: prepare-release-tree-rs ## Run release-candidate clippy valid
 	@set -o pipefail; \
 	cd "$(RS_RELEASE_TREE_DIR)"; \
 	CLIPPY_CONF_DIR="configs/rust" \
+	$(RS_BUILD_GIT_SHA_ENV) \
 	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -224,6 +228,7 @@ test-release-workspace-rs: prepare-release-tree-rs ## Run release-candidate work
 	@printf '%s\n' "run: cargo test --workspace --all-targets --all-features --locked"
 	@set -o pipefail; \
 	cd "$(RS_RELEASE_TREE_DIR)"; \
+	$(RS_BUILD_GIT_SHA_ENV) \
 	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -236,6 +241,7 @@ doc-release-rs: prepare-release-tree-rs ## Run release-candidate docs build in a
 	@printf '%s\n' "run: cargo doc --workspace --all-features --no-deps"
 	@set -o pipefail; \
 	cd "$(RS_RELEASE_TREE_DIR)"; \
+	$(RS_BUILD_GIT_SHA_ENV) \
 	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -251,6 +257,7 @@ package-release-rs: prepare-release-tree-rs ## Run release-candidate cargo packa
 		printf '%s\n' "run: cargo package -p $${package} --list" | tee -a "$(RS_RELEASE_PACKAGE_REPORT)"; \
 		( \
 			cd "$(RS_RELEASE_TREE_DIR)"; \
+			$(RS_BUILD_GIT_SHA_ENV) \
 			CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
 			CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 			CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -268,6 +275,7 @@ publish-dry-run-release-rs: prepare-release-tree-rs ## Run release-candidate car
 		printf '%s\n' "run: cargo publish -p $${package} --dry-run --locked" | tee -a "$(RS_RELEASE_PUBLISH_DRY_RUN_REPORT)"; \
 		( \
 			cd "$(RS_RELEASE_TREE_DIR)"; \
+			$(RS_BUILD_GIT_SHA_ENV) \
 			CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
 			CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 			CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -282,6 +290,7 @@ smoke-release-rs: prepare-release-tree-rs ## Run release-candidate DAG CLI smoke
 	@printf '%s\n' "run: cargo test -p bijux-dag-cli --test smoke_pipeline --locked -- --nocapture"
 	@set -o pipefail; \
 	cd "$(RS_RELEASE_TREE_DIR)"; \
+	$(RS_BUILD_GIT_SHA_ENV) \
 	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -403,7 +412,7 @@ publish-rs: ## Publish Rust crates and dry-run by default
 		fi; \
 		echo "→ cargo publish -p $$pkg@$${publish_version} --registry $(RUST_PUBLISH_REGISTRY) $$dry_run_flag"; \
 		publish_log="$$(mktemp "$${TMPDIR:-/tmp}/bijux-cargo-publish.XXXXXX.log")"; \
-		if CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
+		if $(RS_BUILD_GIT_SHA_ENV) CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
 			cargo publish \
 				--locked \
 				--manifest-path "$${workspace_root}/Cargo.toml" \
@@ -450,7 +459,7 @@ build-dag-release-bundle: ## Build a stamped bijux-dag binary release bundle und
 	rm -rf "$${stage_dir}"; \
 	rm -f "$${archive_path}" "$${archive_path}.sha256"; \
 	mkdir -p "$${stage_dir}/bin"; \
-	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build --release --locked --manifest-path "$${workspace_root}/Cargo.toml" -p "$(DAG_RELEASE_PACKAGE)" --bin "$(DAG_RELEASE_BIN)"; \
+	$(RS_BUILD_GIT_SHA_ENV) CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build --release --locked --manifest-path "$${workspace_root}/Cargo.toml" -p "$(DAG_RELEASE_PACKAGE)" --bin "$(DAG_RELEASE_BIN)"; \
 	cp "$(RS_TARGET_DIR)/release/$(DAG_RELEASE_BIN)" "$${stage_dir}/bin/$(DAG_RELEASE_BIN)"; \
 	cp "$${workspace_root}/LICENSE" "$${stage_dir}/LICENSE"; \
 	cp "$${workspace_root}/crates/$(DAG_RELEASE_PACKAGE)/README.md" "$${stage_dir}/README.md"; \
