@@ -53,6 +53,17 @@ fn write_submission_registry_fixture() -> (tempfile::TempDir, PathBuf) {
               "id": "manual-ops",
               "dag_name": "atlas.manual-ops",
               "dag_version_policy": "run-latest",
+              "input_contract": {
+                "requested_at": {"type": "integer", "required": true},
+                "manual_region": {"type": "string", "required": true}
+              },
+              "input_bindings": {
+                "requested_at": {"source": "requested_unix_ms"},
+                "manual_region": {
+                  "source": "manual_argument",
+                  "key": "region"
+                }
+              },
               "trigger": "Manual",
               "queue": {"queue_name": "catalog", "tenant": "atlas"},
               "priority": "High",
@@ -68,6 +79,89 @@ fn write_submission_registry_fixture() -> (tempfile::TempDir, PathBuf) {
               "id": "event-ingest",
               "dag_name": "atlas.event-ingest",
               "dag_version_policy": "run-latest",
+              "input_contract": {
+                "event_tenant": {"type": "string", "required": true},
+                "event_payload": {"type": "object", "required": true}
+              },
+              "input_bindings": {
+                "event_tenant": {
+                  "source": "event_payload",
+                  "pointer": "/tenant"
+                },
+                "event_payload": {"source": "event_payload"}
+              },
+              "trigger": {
+                "Event": {
+                  "event_type": "dataset.ready",
+                  "source": "catalog"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            },
+            {
+              "id": "signal-refresh",
+              "dag_name": "atlas.signal-refresh",
+              "dag_version_policy": "run-latest",
+              "input_contract": {
+                "signal_tenant": {"type": "string", "required": true}
+              },
+              "input_bindings": {
+                "signal_tenant": {
+                  "source": "signal_payload",
+                  "pointer": "/tenant"
+                }
+              },
+              "trigger": {
+                "Signal": {
+                  "signal_name": "refresh-cache",
+                  "payload_schema": "atlas.refresh-cache"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            }
+          ]
+        }"#,
+    )
+    .expect("write submit registry");
+    (dir, registry)
+}
+
+fn write_submission_rejection_registry_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-submit-rejection-registry.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "event-ingest",
+              "dag_name": "atlas.event-ingest",
+              "dag_version_policy": "run-latest",
+              "input_contract": {
+                "event_tenant": {"type": "integer", "required": true}
+              },
+              "input_bindings": {
+                "event_tenant": {
+                  "source": "event_payload",
+                  "pointer": "/tenant"
+                }
+              },
               "trigger": {
                 "Event": {
                   "event_type": "dataset.ready",
@@ -87,7 +181,45 @@ fn write_submission_registry_fixture() -> (tempfile::TempDir, PathBuf) {
           ]
         }"#,
     )
-    .expect("write submit registry");
+    .expect("write rejection registry");
+    (dir, registry)
+}
+
+fn write_compile_rejection_registry_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-compile-rejection-registry.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "manual-ops",
+              "dag_name": "atlas.manual-ops",
+              "dag_version_policy": "run-latest",
+              "input_contract": {
+                "manual_region": {"type": "string", "required": true}
+              },
+              "input_bindings": {
+                "manual_region": {
+                  "source": "manual_argument",
+                  "key": "region"
+                }
+              },
+              "trigger": "Manual",
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            }
+          ]
+        }"#,
+    )
+    .expect("write compile rejection registry");
     (dir, registry)
 }
 
@@ -296,7 +428,10 @@ fn write_submission_inputs_fixture() -> (tempfile::TempDir, PathBuf) {
             {
               "request_id": "manual-001",
               "schedule_id": "manual-ops",
-              "requested_unix_ms": 175000
+              "requested_unix_ms": 175000,
+              "arguments": {
+                "region": "eu-west-1"
+              }
             }
           ],
           "events": [
@@ -304,12 +439,50 @@ fn write_submission_inputs_fixture() -> (tempfile::TempDir, PathBuf) {
               "event_id": "evt-001",
               "event_type": "dataset.ready",
               "source": "catalog",
-              "occurred_unix_ms": 176000
+              "occurred_unix_ms": 176000,
+              "payload": {
+                "tenant": "atlas",
+                "batch": 7
+              }
+            }
+          ],
+          "signals": [
+            {
+              "signal_id": "sig-001",
+              "signal_name": "refresh-cache",
+              "occurred_unix_ms": 177000,
+              "payload": {
+                "tenant": "atlas"
+              }
             }
           ]
         }"#,
     )
     .expect("write submit inputs");
+    (dir, inputs)
+}
+
+fn write_submission_rejection_inputs_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let inputs = dir.path().join("schedule-submit-rejection-inputs.json");
+    fs::write(
+        &inputs,
+        r#"{
+          "now_unix_ms": 200000,
+          "events": [
+            {
+              "event_id": "evt-001",
+              "event_type": "dataset.ready",
+              "source": "catalog",
+              "occurred_unix_ms": 176000,
+              "payload": {
+                "tenant": "atlas"
+              }
+            }
+          ]
+        }"#,
+    )
+    .expect("write rejection inputs");
     (dir, inputs)
 }
 
@@ -324,11 +497,15 @@ fn write_submission_ledger_fixture() -> (tempfile::TempDir, PathBuf) {
               "schedule_id": "manual-ops",
               "dag_name": "atlas.manual-ops",
               "dag_version_policy": "run-latest",
-              "requested_unix_ms": 175000,
+              "graph_inputs": {
+                "requested_at": 170000,
+                "manual_region": "us-east-1"
+              },
+              "requested_unix_ms": 170000,
               "created_unix_ms": 170000,
               "run_id": "sched-manual-ops-existing",
               "trigger_kind": "manual",
-              "dedupe_key": "manual:manual-ops:manual-001",
+              "dedupe_key": "manual:manual-ops:manual-000",
               "status": "Pending"
             }
           ]
@@ -390,8 +567,47 @@ fn schedule_submit_returns_success_and_can_write_updated_ledger() {
         serde_json::from_str(&fs::read_to_string(&out).expect("read written ledger"))
             .expect("parse written ledger");
     let entries = written["entries"].as_array().expect("ledger entries");
-    assert_eq!(entries.len(), 2);
-    assert!(entries.iter().any(|entry| entry["schedule_id"] == "event-ingest"));
+    assert_eq!(entries.len(), 4);
+
+    let manual_entry = entries
+        .iter()
+        .find(|entry| entry["dedupe_key"] == "manual:manual-ops:manual-001")
+        .expect("manual ledger entry");
+    assert_eq!(manual_entry["graph_inputs"]["requested_at"], 175000u64);
+    assert_eq!(manual_entry["graph_inputs"]["manual_region"], "eu-west-1");
+
+    let event_entry = entries
+        .iter()
+        .find(|entry| entry["schedule_id"] == "event-ingest")
+        .expect("event ledger entry");
+    assert_eq!(event_entry["graph_inputs"]["event_tenant"], "atlas");
+    assert_eq!(event_entry["graph_inputs"]["event_payload"]["batch"], 7);
+
+    let signal_entry = entries
+        .iter()
+        .find(|entry| entry["schedule_id"] == "signal-refresh")
+        .expect("signal ledger entry");
+    assert_eq!(signal_entry["graph_inputs"]["signal_tenant"], "atlas");
+}
+
+#[test]
+fn schedule_submit_rejects_invalid_trigger_mapping_and_keeps_ledger_clean() {
+    let (_tmp_registry, registry) = write_submission_rejection_registry_fixture();
+    let (_tmp_inputs, inputs) = write_submission_rejection_inputs_fixture();
+    let out_dir = tempfile::tempdir().expect("tmp");
+    let out = out_dir.path().join("updated-ledger.json");
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Submit { registry, inputs, ledger: None, out: Some(out.clone()) },
+    )
+    .expect("schedule submit");
+    assert_eq!(code, ExitCode::SUCCESS);
+
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&out).expect("read written ledger"))
+            .expect("parse written ledger");
+    assert_eq!(written["entries"].as_array().expect("ledger entries").len(), 0);
 }
 
 #[test]
@@ -436,6 +652,22 @@ fn schedule_compile_returns_success_for_known_schedule() {
     )
     .expect("schedule compile");
     assert_eq!(code, ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_compile_rejects_bindings_that_need_missing_trigger_context() {
+    let (_tmp, registry) = write_compile_rejection_registry_fixture();
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Compile {
+            registry,
+            schedule_id: "manual-ops".to_string(),
+            requested_unix_ms: 42,
+        },
+    )
+    .unwrap_err();
+    assert_eq!(code, ExitCode::from(3));
 }
 
 #[test]
