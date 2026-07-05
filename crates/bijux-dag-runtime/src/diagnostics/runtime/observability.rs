@@ -286,8 +286,12 @@ pub fn write_timeline_export(
     if let Some(parent) = path.as_ref().parent() {
         fs::create_dir_all(parent).map_err(|err| err.to_string())?;
     }
-    let payload = serde_json::to_vec_pretty(timeline).map_err(|err| err.to_string())?;
+    let payload = serialize_timeline_export(timeline)?;
     fs::write(path, payload).map_err(|err| err.to_string())
+}
+
+pub fn serialize_timeline_export(timeline: &TimelineExport) -> Result<Vec<u8>, String> {
+    serde_json::to_vec_pretty(timeline).map_err(|err| err.to_string())
 }
 
 pub fn summarize_failure_root_causes(events: &[EventRecord]) -> Vec<String> {

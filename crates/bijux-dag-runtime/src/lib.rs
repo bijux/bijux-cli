@@ -345,11 +345,12 @@ pub use local_executor::LocalExecutor;
 pub use observability::{
     category_from_runtime_event_name, current_process_memory_bytes,
     event_contains_sensitive_material, event_names_emitted_once, reconstruct_timeline_from_events,
-    required_event_fields_present, summarize_failure_root_causes, validate_required_event_names,
-    verify_event_log_completeness, write_timeline_export, EventCategory,
-    EventLogCompletenessReport, EventRecord, EventSink, FileEventSink, InMemoryMetricsRegistry,
-    MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics, SchedulerMetrics, SpanKind,
-    StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan, REQUIRED_RUNTIME_EVENT_NAMES,
+    required_event_fields_present, serialize_timeline_export, summarize_failure_root_causes,
+    validate_required_event_names, verify_event_log_completeness, write_timeline_export,
+    EventCategory, EventLogCompletenessReport, EventRecord, EventSink, FileEventSink,
+    InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics,
+    SchedulerMetrics, SpanKind, StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan,
+    REQUIRED_RUNTIME_EVENT_NAMES,
 };
 pub use observability_deep::{
     build_diagnostics, build_topology_overlay, detect_metric_drift, observability_contract_status,

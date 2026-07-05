@@ -2,11 +2,11 @@ use crate::{
     bind_path_variables_in_value, build_run_outputs_index, cache_dir_from_env, cache_mode_string,
     category_from_runtime_event_name, collect_outputs_summary, current_process_memory_bytes,
     node_fingerprint_from_ctx, node_fingerprint_with_inputs, registered_adapters, sacred_execution,
-    set_node_fingerprint, summarize_failure_root_causes, write_timeline_export, CacheProof,
+    serialize_timeline_export, set_node_fingerprint, summarize_failure_root_causes, CacheProof,
     EffectSet, EventRecord, ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry,
-    NodeMetrics, NodePathBindings, NodeResult, NodeStatus, ReplayNodeAction, RunAttempt,
-    RunContext, RunId, RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
-    TimelineEntry, TimelineExport,
+    NodeMetrics, NodePathBindings, NodeResult, NodeStatus, ReplayNodeAction, RunAttempt, RunContext,
+    RunId, RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook, TimelineEntry,
+    TimelineExport,
 };
 #[path = "engine_dispatch.rs"]
 mod engine_dispatch;
@@ -2392,16 +2392,31 @@ pub fn execute(
         schema_version: "v0.1".to_string(),
         edges: lineage_edges,
     };
-    bijux_dag_artifacts::lineage::write_lineage_snapshot(
-        ctx.run_dir.staging_path().join("lineage.snapshot.json"),
-        &lineage_snapshot,
-    )
-    .map_err(|err| RuntimeError::Executor(format!("lineage snapshot write failed: {err}")))?;
-    bijux_dag_artifacts::lineage::export_lineage_visualization(
-        ctx.run_dir.staging_path().join("observability.lineage-visualization.json"),
-        &lineage_snapshot,
-    )
-    .map_err(|err| RuntimeError::Executor(format!("lineage visualization write failed: {err}")))?;
+    let lineage_snapshot_path = ctx.run_dir.staging_path().join("lineage.snapshot.json");
+    if let Some(parent) = lineage_snapshot_path.parent() {
+        ctx.fs.create_dir_all(parent)?;
+    }
+    let lineage_snapshot_payload =
+        bijux_dag_artifacts::lineage::serialize_lineage_snapshot(&lineage_snapshot)
+            .map_err(|err| RuntimeError::Executor(format!("lineage snapshot write failed: {err}")))?;
+    ctx.fs
+        .write(&lineage_snapshot_path, &lineage_snapshot_payload)
+        .map_err(|err| RuntimeError::Executor(format!("lineage snapshot write failed: {err}")))?;
+    let lineage_visualization_path =
+        ctx.run_dir.staging_path().join("observability.lineage-visualization.json");
+    if let Some(parent) = lineage_visualization_path.parent() {
+        ctx.fs.create_dir_all(parent)?;
+    }
+    let lineage_visualization =
+        bijux_dag_artifacts::lineage::build_lineage_visualization(&lineage_snapshot);
+    let lineage_visualization_payload =
+        bijux_dag_artifacts::lineage::serialize_lineage_visualization(&lineage_visualization)
+            .map_err(|err| {
+                RuntimeError::Executor(format!("lineage visualization write failed: {err}"))
+            })?;
+    ctx.fs
+        .write(&lineage_visualization_path, &lineage_visualization_payload)
+        .map_err(|err| RuntimeError::Executor(format!("lineage visualization write failed: {err}")))?;
     write_run_outputs_index(ctx.run_dir.staging_path().join("outputs"), &run_index)?;
     run_dir.write_manifest(&manifest)?;
     crate::append_event(
@@ -2471,11 +2486,15 @@ pub fn execute(
             })
             .collect(),
     };
-    write_timeline_export(
-        ctx.run_dir.staging_path().join("observability.timeline.json"),
-        &timeline,
-    )
-    .map_err(|err| RuntimeError::Executor(format!("timeline export write failed: {err}")))?;
+    let timeline_path = ctx.run_dir.staging_path().join("observability.timeline.json");
+    if let Some(parent) = timeline_path.parent() {
+        ctx.fs.create_dir_all(parent)?;
+    }
+    let timeline_payload = serialize_timeline_export(&timeline)
+        .map_err(|err| RuntimeError::Executor(format!("timeline export write failed: {err}")))?;
+    ctx.fs
+        .write(&timeline_path, &timeline_payload)
+        .map_err(|err| RuntimeError::Executor(format!("timeline export write failed: {err}")))?;
     let root_causes = summarize_failure_root_causes(&structured_events);
     ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.root-causes.json"),
