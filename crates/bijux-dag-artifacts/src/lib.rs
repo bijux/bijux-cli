@@ -182,6 +182,10 @@ impl RunDirLayout {
     pub fn node_work_dir(&self, node_id: &str) -> PathBuf {
         self.node_dir(node_id).join("work")
     }
+
+    pub fn node_temp_dir(&self, node_id: &str) -> PathBuf {
+        self.node_work_dir(node_id).join("temp")
+    }
 }
 
 impl RunDir {
@@ -227,6 +231,10 @@ impl RunDir {
 
     pub fn node_work_dir(&self, node_id: &str) -> PathBuf {
         self.node_dir(node_id).join("work")
+    }
+
+    pub fn node_temp_dir(&self, node_id: &str) -> PathBuf {
+        self.node_work_dir(node_id).join("temp")
     }
 
     pub fn node_stdout_path(&self, node_id: &str) -> PathBuf {
@@ -296,9 +304,22 @@ impl RunDir {
 
 impl RunDir {
     fn create_with_layout(layout: RunDirLayout) -> Result<Self, ArtifactError> {
+        ensure_run_path_absent(&layout.staging_path, "staging run directory")?;
+        ensure_run_path_absent(&layout.final_path, "final run directory")?;
         std_fs::create_dir_all(layout.staging_path.join("nodes"))?;
         Ok(Self { staging_path: layout.staging_path, final_path: layout.final_path })
     }
+}
+
+fn ensure_run_path_absent(path: &Path, label: &str) -> Result<(), ArtifactError> {
+    if path.exists() {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!("{label} already exists: {}", path.display()),
+        )
+        .into());
+    }
+    Ok(())
 }
 
 fn write_json<T: Serialize>(path: impl AsRef<Path>, value: &T) -> Result<(), ArtifactError> {
@@ -582,7 +603,30 @@ mod tests {
                 .join("align")
                 .join("outputs")
         );
+        assert_eq!(
+            layout.node_temp_dir("align"),
+            dir.path()
+                .join("run.tmp-path-preview")
+                .join("nodes")
+                .join("align")
+                .join("work")
+                .join("temp")
+        );
         assert!(!layout.staging_path.exists());
+    }
+
+    #[test]
+    fn run_dir_creation_rejects_existing_paths() {
+        let dir = tempfile::tempdir().unwrap();
+        let staging = dir.path().join("run.tmp-fixed");
+        std_fs::create_dir_all(staging.join("nodes")).unwrap();
+        let err = RunDir::create_with_id(dir.path(), "fixed").unwrap_err();
+        assert!(err.to_string().contains("staging run directory already exists"));
+
+        std_fs::remove_dir_all(&staging).unwrap();
+        std_fs::create_dir_all(dir.path().join("run-fixed")).unwrap();
+        let err = RunDir::create_with_id(dir.path(), "fixed").unwrap_err();
+        assert!(err.to_string().contains("final run directory already exists"));
     }
 
     #[test]
