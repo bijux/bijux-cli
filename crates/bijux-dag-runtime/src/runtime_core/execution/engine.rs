@@ -20,8 +20,8 @@ mod engine_observe;
 mod engine_record;
 use bijux_dag_artifacts::{
     finalize_run_manifest_with_mode, write_incomplete_run_marker, write_provenance,
-    write_run_outputs_index, write_run_schema_index, FailureClass, FailureInfo, Manifest,
-    NodeCounts, Provenance, ReplayProvenance, RunDir, RunDirLayout, RunDirSchemaIndex,
+    write_run_outputs_index, write_run_schema_index, FailureClass, FailureInfo, InputsIndex,
+    Manifest, NodeCounts, Provenance, ReplayProvenance, RunDir, RunDirLayout, RunDirSchemaIndex,
     RunFinalizationMode, RunMetadata, TriggerEvaluation, TriggerParentStatus,
 };
 use bijux_dag_core::{
@@ -313,6 +313,40 @@ fn trace_outputs_match(
     inspection.failure.is_none() && inspection.output_evidence == trace.outputs
 }
 
+fn resume_fingerprint_matches(
+    ctx: &RunContext,
+    node_id: &str,
+    trace: &bijux_dag_artifacts::NodeTrace,
+) -> Result<bool, RuntimeError> {
+    let inputs_index_path = ctx.run_dir.node_inputs_index_path(node_id);
+    let inputs_index = match ctx.fs.metadata(&inputs_index_path) {
+        Ok(_) => {
+            let raw = ctx.fs.read_to_string(&inputs_index_path).map_err(|error| {
+                RuntimeError::Executor(format!(
+                    "failed to read persisted inputs index for {}: {}",
+                    node_id, error
+                ))
+            })?;
+            serde_json::from_str::<InputsIndex>(&raw).map_err(|error| {
+                RuntimeError::Executor(format!(
+                    "failed to parse persisted inputs index for {}: {}",
+                    node_id, error
+                ))
+            })?
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => InputsIndex { files: vec![] },
+        Err(error) => {
+            return Err(RuntimeError::Executor(format!(
+                "failed to inspect persisted inputs index for {}: {}",
+                node_id, error
+            )));
+        }
+    };
+    let current_fingerprint =
+        node_fingerprint_with_inputs(&node_fingerprint_from_ctx(ctx, node_id), &inputs_index)?;
+    Ok(trace.fingerprint == current_fingerprint)
+}
+
 fn clear_resumed_node_dir(ctx: &RunContext, node_id: &str) -> Result<(), RuntimeError> {
     let node_dir = ctx.run_dir.node_dir(node_id);
     match ctx.fs.metadata(&node_dir) {
@@ -358,7 +392,7 @@ fn prepare_resume_bootstrap(
         if !matches!(status, NodeStatus::Success | NodeStatus::Cached) {
             continue;
         }
-        if trace.fingerprint != node_fingerprint_from_ctx(ctx, node_id) {
+        if !resume_fingerprint_matches(ctx, node_id, &trace)? {
             continue;
         }
         if !trace_outputs_match(ctx, graph, node_id, &trace) {
@@ -1317,7 +1351,12 @@ pub fn execute(
                 resume.summary.rejected_nodes.join(", ")
             )));
         }
-        for (node_id, status) in &resume.reusable_nodes {
+        for node_id in plan
+            .order
+            .iter()
+            .filter(|node_id| resume.reusable_nodes.contains_key(*node_id))
+        {
+            let status = resume.reusable_nodes.get(node_id).expect("resume status");
             ready_queue.take(node_id);
             sacred_execution::guard_terminal_node_status(status)?;
             status_map.insert(node_id.clone(), status.clone());
