@@ -196,8 +196,10 @@ fn runtime_isolation_reports_container_network_runtime_enforcement() {
     let tmp = tempfile::tempdir().expect("tmp");
     let graph = write_container_graph(tmp.path());
 
-    let payload =
-        run_json_with_internal_lane(&["runtime", "isolation", "--json", &output_path_string(&graph)], &root);
+    let payload = run_json_with_internal_lane(
+        &["runtime", "isolation", "--json", &output_path_string(&graph)],
+        &root,
+    );
 
     let surfaces =
         payload["data"]["policy_surface"]["enforcement"]["surfaces"].as_array().expect("surfaces");
