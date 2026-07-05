@@ -103,16 +103,35 @@ fn resolve_branch_decision(
 }
 
 fn branch_nodes_to_skip(
-    plan: &crate::ExecutionPlan,
+    graph: &Graph,
     branch_node_id: &str,
     selected_decision: &str,
 ) -> Vec<String> {
+    let mut adjacency = BTreeMap::<String, Vec<String>>::new();
+    for edge in &graph.edges {
+        adjacency.entry(edge.from.node_id.clone()).or_default().push(edge.to.node_id.clone());
+    }
     let mut selected_reachable = BTreeSet::new();
     let mut by_decision = BTreeMap::<String, BTreeSet<String>>::new();
-    for path in plan.branch_paths.iter().filter(|path| path.branch_node_id == branch_node_id) {
-        let nodes = by_decision.entry(path.decision.clone()).or_default();
-        nodes.extend(path.direct_targets.iter().cloned());
-        nodes.extend(path.reachable_nodes.iter().cloned());
+    for edge in graph.edges.iter().filter(|edge| {
+        edge.from.node_id == branch_node_id && edge.kind == bijux_dag_core::EdgeKind::Conditional
+    }) {
+        let Some(decision) = edge.decision.as_ref() else {
+            continue;
+        };
+        let nodes = by_decision.entry(decision.clone()).or_default();
+        let mut reachable = BTreeSet::from([edge.to.node_id.clone()]);
+        let mut queue = vec![edge.to.node_id.clone()];
+        while let Some(node_id) = queue.pop() {
+            if let Some(children) = adjacency.get(&node_id) {
+                for child in children {
+                    if reachable.insert(child.clone()) {
+                        queue.push(child.clone());
+                    }
+                }
+            }
+        }
+        nodes.extend(reachable);
     }
     if let Some(selected) = by_decision.get(selected_decision) {
         selected_reachable.extend(selected.iter().cloned());
@@ -129,6 +148,171 @@ fn branch_nodes_to_skip(
         }
     }
     pruned.into_iter().collect()
+}
+
+fn replayed_branch_decisions(
+    fs: &dyn crate::Fs,
+    out_dir: &Path,
+    parent_run_id: &str,
+    plan: &crate::ExecutionPlan,
+    graph: &Graph,
+) -> Result<Vec<(String, String)>, RuntimeError> {
+    let parent_layout = RunDirLayout::preview(out_dir, Some(parent_run_id))
+        .map_err(|error| RuntimeError::Executor(format!("invalid parent run id: {error}")))?;
+    let mut decisions = Vec::new();
+    for node in &graph.nodes {
+        if node.semantic_kind != SemanticNodeKind::Branch
+            || !plan.filter_reasons.contains_key(&node.id)
+        {
+            continue;
+        }
+        let trace_path = parent_layout.final_path.join("nodes").join(&node.id).join("trace.json");
+        if fs.metadata(&trace_path).is_err() {
+            continue;
+        }
+        let raw = fs.read_to_string(&trace_path).map_err(|error| {
+            RuntimeError::Executor(format!(
+                "failed to read parent branch trace for {}: {}",
+                node.id, error
+            ))
+        })?;
+        let trace: bijux_dag_artifacts::NodeTrace = serde_json::from_str(&raw).map_err(|error| {
+            RuntimeError::Executor(format!(
+                "failed to parse parent branch trace for {}: {}",
+                node.id, error
+            ))
+        })?;
+        let Some(decision) = trace.branch_decision else {
+            continue;
+        };
+        decisions.push((node.id.clone(), decision));
+    }
+    decisions.sort();
+    Ok(decisions)
+}
+
+fn seed_replayed_branch_pruning(
+    fs: &dyn crate::Fs,
+    out_dir: &Path,
+    parent_run_id: &str,
+    plan: &crate::ExecutionPlan,
+    graph: &Graph,
+    branch_pruned_nodes: &mut BTreeSet<String>,
+) -> Result<Vec<(String, String)>, RuntimeError> {
+    let decisions = replayed_branch_decisions(fs, out_dir, parent_run_id, plan, graph)?;
+    for (branch_node_id, decision) in &decisions {
+        for pruned in branch_nodes_to_skip(graph, branch_node_id, decision) {
+            branch_pruned_nodes.insert(pruned);
+        }
+    }
+    Ok(decisions)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{replayed_branch_decisions, seed_replayed_branch_pruning};
+    use crate::{build_plan, Selector, SelectorSet, StdFs};
+    use bijux_dag_artifacts::RunDirLayout;
+    use bijux_dag_core::parse_graph_strict;
+    use std::collections::BTreeSet;
+    use std::fs;
+
+    fn filtered_branch_graph() -> bijux_dag_core::Graph {
+        parse_graph_strict(
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "nodes":[
+                {"id":"seed","kind":"const","outputs":[{"name":"out","path":"seed/out"}],"params":{"value":1}},
+                {
+                  "id":"decide",
+                  "kind":"const",
+                  "semantic_kind":"branch",
+                  "inputs":["in"],
+                  "outputs":[{"name":"decision","path":"decide/decision.txt"}],
+                  "params":{"value":"left"},
+                  "branch":{"decisions":["left","right"],"decision_output":"decision"}
+                },
+                {"id":"left","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":"left"},"trigger_rule":"any_success"},
+                {"id":"right","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"right/out"}],"params":{"value":"right"},"trigger_rule":"any_success"}
+              ],
+              "edges":[
+                {"from":{"node_id":"seed","port":"out"},"to":{"node_id":"decide","port":"in"}},
+                {"kind":"conditional","decision":"left","from":{"node_id":"decide","port":"decision"},"to":{"node_id":"left","port":"in"}},
+                {"kind":"conditional","decision":"right","from":{"node_id":"decide","port":"decision"},"to":{"node_id":"right","port":"in"}}
+              ]
+            }"#,
+        )
+        .expect("graph")
+    }
+
+    fn write_parent_branch_trace(out_dir: &std::path::Path, run_id: &str, node_id: &str, decision: &str) {
+        let layout = RunDirLayout::preview(out_dir, Some(run_id)).expect("parent layout");
+        let node_dir = layout.final_path.join("nodes").join(node_id);
+        fs::create_dir_all(&node_dir).expect("create parent node dir");
+        fs::write(
+            node_dir.join("trace.json"),
+            format!(
+                r#"{{"node_id":"{node_id}","status":"success","started_unix_ms":0,"finished_unix_ms":0,"attempt":1,"fingerprint":"fp","adapter_id":"const","adapter_version":"1","adapter_outputs_schema_version":"1","branch_decision":"{decision}"}}"#
+            ),
+        )
+        .expect("write parent trace");
+    }
+
+    #[test]
+    fn replayed_branch_decisions_read_parent_trace_for_filtered_branch_nodes() {
+        let graph = filtered_branch_graph();
+        let plan = build_plan(
+            &graph,
+            &crate::RuntimeConfig {
+                selectors: SelectorSet {
+                    include: vec![Selector::IdPrefix("left".to_string())],
+                    exclude: vec![Selector::IdPrefix("decide".to_string())],
+                },
+                partial_rerun_dependency_closure: false,
+                ..crate::RuntimeConfig::default()
+            },
+        );
+        let out_dir = tempfile::tempdir().expect("tempdir");
+        write_parent_branch_trace(out_dir.path(), "run-parent", "decide", "left");
+
+        let decisions = replayed_branch_decisions(&StdFs, out_dir.path(), "run-parent", &plan, &graph)
+            .expect("replayed branch decisions");
+
+        assert_eq!(decisions, vec![("decide".to_string(), "left".to_string())]);
+    }
+
+    #[test]
+    fn replayed_branch_decisions_seed_pruned_nodes_from_parent_trace() {
+        let graph = filtered_branch_graph();
+        let plan = build_plan(
+            &graph,
+            &crate::RuntimeConfig {
+                selectors: SelectorSet {
+                    include: vec![Selector::IdPrefix("left".to_string())],
+                    exclude: vec![Selector::IdPrefix("decide".to_string())],
+                },
+                partial_rerun_dependency_closure: false,
+                ..crate::RuntimeConfig::default()
+            },
+        );
+        let out_dir = tempfile::tempdir().expect("tempdir");
+        write_parent_branch_trace(out_dir.path(), "run-parent", "decide", "left");
+        let mut pruned = BTreeSet::new();
+
+        let decisions = seed_replayed_branch_pruning(
+            &StdFs,
+            out_dir.path(),
+            "run-parent",
+            &plan,
+            &graph,
+            &mut pruned,
+        )
+        .expect("seed branch pruning");
+
+        assert_eq!(decisions, vec![("decide".to_string(), "left".to_string())]);
+        assert!(pruned.contains("right"));
+        assert!(!pruned.contains("left"));
+    }
 }
 
 fn partial_rerun_selected(options: &RuntimeConfig) -> bool {
@@ -352,10 +536,11 @@ pub fn execute(
     out_dir: impl AsRef<Path>,
     options: RuntimeConfig,
 ) -> Result<PathBuf, RuntimeError> {
+    let out_dir = out_dir.as_ref().to_path_buf();
     let run_dir = if let Some(ref run_id) = options.run_id {
-        RunDir::create_with_id(out_dir, run_id)?
+        RunDir::create_with_id(&out_dir, run_id)?
     } else {
-        RunDir::create(out_dir)?
+        RunDir::create(&out_dir)?
     };
     let graph_fp = graph.graph_fingerprint()?;
     let graph_json = serde_json::json!({
@@ -605,6 +790,28 @@ pub fn execute(
             "nodes": graph.nodes.len(),
         }),
     )?;
+    if let Some(parent_run_id) = options.parent_run_id.as_deref() {
+        for (branch_node_id, decision) in seed_replayed_branch_pruning(
+            ctx.fs.as_ref(),
+            &out_dir,
+            parent_run_id,
+            &plan,
+            graph,
+            &mut branch_pruned_nodes,
+        )? {
+            engine_record::append_indexed_event(
+                &mut run_log,
+                &mut run_log_index,
+                serde_json::json!({
+                    "event": "branch_decision_replayed",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": branch_node_id,
+                    "decision": decision,
+                    "source_run_id": parent_run_id,
+                }),
+            )?;
+        }
+    }
     for node_id in &initial_ready {
         scheduler_hook.on_node_eligible(node_id);
     }
@@ -1095,7 +1302,7 @@ pub fn execute(
                             "used_default": selection.used_default,
                         }),
                     )?;
-                    for pruned in branch_nodes_to_skip(&plan, node_id, &selection.decision) {
+                    for pruned in branch_nodes_to_skip(graph, node_id, &selection.decision) {
                         branch_pruned_nodes.insert(pruned.clone());
                         branch_pruned.insert(pruned);
                     }
@@ -1280,7 +1487,7 @@ pub fn execute(
                                     "used_default": selection.used_default,
                                 }),
                             )?;
-                            for pruned in branch_nodes_to_skip(&plan, &node_id, &selection.decision)
+                            for pruned in branch_nodes_to_skip(graph, &node_id, &selection.decision)
                             {
                                 branch_pruned_nodes.insert(pruned.clone());
                                 branch_pruned.insert(pruned);
