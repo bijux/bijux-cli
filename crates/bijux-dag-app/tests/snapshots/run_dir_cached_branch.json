@@ -355,11 +355,12 @@
       "inputs": {
         "files": [
           {
-            "from_node": "seed_a",
-            "from_node_fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
-            "from_output": "value",
-            "path": "seed_a/seed",
-            "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+            "local_path": "seed_a/seed",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
+            "source_node_id": "seed_a",
+            "source_output_name": "value",
+            "source_sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
           }
         ]
       }
@@ -368,11 +369,12 @@
       "inputs": {
         "files": [
           {
-            "from_node": "seed_b",
-            "from_node_fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
-            "from_output": "value",
-            "path": "seed_b/seed",
-            "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+            "local_path": "seed_b/seed",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
+            "source_node_id": "seed_b",
+            "source_output_name": "value",
+            "source_sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
           }
         ]
       }
@@ -438,7 +440,7 @@
         "kind": "Execution",
         "message": "missing required output: branch_a.txt"
       },
-      "fingerprint": "6397907444f1053efc2746f4dfa41277f2d75b98a984ec3faa6ecc3429bccfd3",
+      "fingerprint": "cb77afa2bf7550b4c20787fabaa46cdd63fa33bafb53e118bb4138208a1da25e",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "branch_a_transform",
@@ -483,7 +485,7 @@
         "kind": "Execution",
         "message": "missing required output: branch_b.txt"
       },
-      "fingerprint": "e4e6004045175044ea5a6d1e6e2c088777de11b87ee0478850c1a8b3c4b80bcd",
+      "fingerprint": "8652d09af5056da77b5af03322cfdfb09a17d322dde46ee6860546ebbb0788e0",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "branch_b_transform",

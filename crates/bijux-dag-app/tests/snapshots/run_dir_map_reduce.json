@@ -345,7 +345,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "out",
-        "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+        "node_fingerprint": "1fc70c8318ae01be22c6cd9bd97a82b9095a67f62aca52cb7d2d58e1ce4f2150",
         "node_id": "map_left",
         "path": "map_left.txt",
         "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
@@ -354,7 +354,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "out",
-        "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+        "node_fingerprint": "5b806462f3e5ffb979690598d062c23289bc453f8c2f8783ce117cc5c233c641",
         "node_id": "map_mid",
         "path": "map_mid.txt",
         "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
@@ -363,7 +363,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "out",
-        "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+        "node_fingerprint": "9ec3a15f341f99fad0c7191183771b4b71404e2e5cc4d9d52d9a6e254b243603",
         "node_id": "map_right",
         "path": "map_right.txt",
         "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
@@ -372,7 +372,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "out",
-        "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+        "node_fingerprint": "92a723c747fd297be2d26728092e3318e6c950cdf0f05573721f2ce7f706df9e",
         "node_id": "reduce",
         "path": "reduce.txt",
         "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
@@ -419,11 +419,12 @@
       "inputs": {
         "files": [
           {
-            "from_node": "seed",
-            "from_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
-            "from_output": "out",
-            "path": "seed/in",
-            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+            "local_path": "seed/in",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+            "source_node_id": "seed",
+            "source_output_name": "out",
+            "source_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
           }
         ]
       },
@@ -433,7 +434,7 @@
             "kind": "file",
             "media_type": "application/octet-stream",
             "name": "out",
-            "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+            "node_fingerprint": "1fc70c8318ae01be22c6cd9bd97a82b9095a67f62aca52cb7d2d58e1ce4f2150",
             "node_id": "map_left",
             "path": "map_left.txt",
             "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
@@ -445,11 +446,12 @@
       "inputs": {
         "files": [
           {
-            "from_node": "seed",
-            "from_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
-            "from_output": "out",
-            "path": "seed/in",
-            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+            "local_path": "seed/in",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+            "source_node_id": "seed",
+            "source_output_name": "out",
+            "source_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
           }
         ]
       },
@@ -459,7 +461,7 @@
             "kind": "file",
             "media_type": "application/octet-stream",
             "name": "out",
-            "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+            "node_fingerprint": "5b806462f3e5ffb979690598d062c23289bc453f8c2f8783ce117cc5c233c641",
             "node_id": "map_mid",
             "path": "map_mid.txt",
             "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
@@ -471,11 +473,12 @@
       "inputs": {
         "files": [
           {
-            "from_node": "seed",
-            "from_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
-            "from_output": "out",
-            "path": "seed/in",
-            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+            "local_path": "seed/in",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+            "source_node_id": "seed",
+            "source_output_name": "out",
+            "source_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
           }
         ]
       },
@@ -485,7 +488,7 @@
             "kind": "file",
             "media_type": "application/octet-stream",
             "name": "out",
-            "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+            "node_fingerprint": "9ec3a15f341f99fad0c7191183771b4b71404e2e5cc4d9d52d9a6e254b243603",
             "node_id": "map_right",
             "path": "map_right.txt",
             "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
@@ -497,25 +500,28 @@
       "inputs": {
         "files": [
           {
-            "from_node": "map_left",
-            "from_node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
-            "from_output": "out",
-            "path": "map_left/left",
-            "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
+            "local_path": "map_left/left",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "1fc70c8318ae01be22c6cd9bd97a82b9095a67f62aca52cb7d2d58e1ce4f2150",
+            "source_node_id": "map_left",
+            "source_output_name": "out",
+            "source_sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
           },
           {
-            "from_node": "map_mid",
-            "from_node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
-            "from_output": "out",
-            "path": "map_mid/mid",
-            "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
+            "local_path": "map_mid/mid",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "5b806462f3e5ffb979690598d062c23289bc453f8c2f8783ce117cc5c233c641",
+            "source_node_id": "map_mid",
+            "source_output_name": "out",
+            "source_sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
           },
           {
-            "from_node": "map_right",
-            "from_node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
-            "from_output": "out",
-            "path": "map_right/right",
-            "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
+            "local_path": "map_right/right",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "9ec3a15f341f99fad0c7191183771b4b71404e2e5cc4d9d52d9a6e254b243603",
+            "source_node_id": "map_right",
+            "source_output_name": "out",
+            "source_sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
           }
         ]
       },
@@ -525,7 +531,7 @@
             "kind": "file",
             "media_type": "application/octet-stream",
             "name": "out",
-            "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+            "node_fingerprint": "92a723c747fd297be2d26728092e3318e6c950cdf0f05573721f2ce7f706df9e",
             "node_id": "reduce",
             "path": "reduce.txt",
             "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
@@ -574,7 +580,7 @@
       "attempt": 1,
       "evidence_fingerprint": "651a2ca4cbba3548f1f4f268b4a156075b8fdf0efcecad2b07ce78765f73180f",
       "execution_fingerprint": "028dfeaa5f07516b3deb0b9c090f5372db53ead830712bf0f856419c1752b600",
-      "fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+      "fingerprint": "1fc70c8318ae01be22c6cd9bd97a82b9095a67f62aca52cb7d2d58e1ce4f2150",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "map_left",
@@ -612,7 +618,7 @@
       "attempt": 1,
       "evidence_fingerprint": "651a2ca4cbba3548f1f4f268b4a156075b8fdf0efcecad2b07ce78765f73180f",
       "execution_fingerprint": "028dfeaa5f07516b3deb0b9c090f5372db53ead830712bf0f856419c1752b600",
-      "fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+      "fingerprint": "5b806462f3e5ffb979690598d062c23289bc453f8c2f8783ce117cc5c233c641",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "map_mid",
@@ -650,7 +656,7 @@
       "attempt": 1,
       "evidence_fingerprint": "651a2ca4cbba3548f1f4f268b4a156075b8fdf0efcecad2b07ce78765f73180f",
       "execution_fingerprint": "028dfeaa5f07516b3deb0b9c090f5372db53ead830712bf0f856419c1752b600",
-      "fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+      "fingerprint": "9ec3a15f341f99fad0c7191183771b4b71404e2e5cc4d9d52d9a6e254b243603",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "map_right",
@@ -688,7 +694,7 @@
       "attempt": 1,
       "evidence_fingerprint": "651a2ca4cbba3548f1f4f268b4a156075b8fdf0efcecad2b07ce78765f73180f",
       "execution_fingerprint": "028dfeaa5f07516b3deb0b9c090f5372db53ead830712bf0f856419c1752b600",
-      "fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+      "fingerprint": "92a723c747fd297be2d26728092e3318e6c950cdf0f05573721f2ce7f706df9e",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "node_id": "reduce",
@@ -764,7 +770,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "out",
-        "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+        "node_fingerprint": "1fc70c8318ae01be22c6cd9bd97a82b9095a67f62aca52cb7d2d58e1ce4f2150",
         "node_id": "map_left",
         "path": "nodes/map_left/outputs/map_left.txt",
         "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
@@ -773,7 +779,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "out",
-        "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+        "node_fingerprint": "5b806462f3e5ffb979690598d062c23289bc453f8c2f8783ce117cc5c233c641",
         "node_id": "map_mid",
         "path": "nodes/map_mid/outputs/map_mid.txt",
         "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
@@ -782,7 +788,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "out",
-        "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+        "node_fingerprint": "9ec3a15f341f99fad0c7191183771b4b71404e2e5cc4d9d52d9a6e254b243603",
         "node_id": "map_right",
         "path": "nodes/map_right/outputs/map_right.txt",
         "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
@@ -791,7 +797,7 @@
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "out",
-        "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+        "node_fingerprint": "92a723c747fd297be2d26728092e3318e6c950cdf0f05573721f2ce7f706df9e",
         "node_id": "reduce",
         "path": "nodes/reduce/outputs/reduce.txt",
         "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
