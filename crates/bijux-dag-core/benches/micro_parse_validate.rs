@@ -10,18 +10,18 @@ use unicode_normalization as _;
 
 fn sample_graph() -> &'static str {
     r#"{
-      \"spec\": \"dag/v0.1\",
-      \"meta\": {\"name\": \"bench\"},
-      \"nodes\": [
+      "spec": "bijux-dag/v0.1",
+      "meta": {"name": "bench"},
+      "nodes": [
         {
-          \"id\": \"a\",
-          \"kind\": \"const\",
-          \"inputs\": [],
-          \"outputs\": [{\"name\":\"out\",\"path\":\"out\"}],
-          \"params\": {\"value\":\"x\"}
+          "id": "a",
+          "kind": "const",
+          "inputs": [],
+          "outputs": [{"name":"out","path":"out"}],
+          "params": {"value":"x"}
         }
       ],
-      \"edges\": []
+      "edges": []
     }"#
 }
 
