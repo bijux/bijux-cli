@@ -716,6 +716,14 @@ pub(crate) enum ArtifactCommands {
         #[arg(long)]
         artifact_id: Option<String>,
     },
+    Promote {
+        run_dir: PathBuf,
+        artifact_id: String,
+        #[arg(long)]
+        deliverables_root: PathBuf,
+        #[arg(long, default_value = "release")]
+        to: String,
+    },
     Retention {
         root: PathBuf,
     },

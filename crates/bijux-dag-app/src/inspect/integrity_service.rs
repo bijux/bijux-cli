@@ -148,6 +148,7 @@ pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, Exit
         "path": output.path,
         "size_bytes": size_bytes,
         "payload_missing": payload_missing,
+        "promotable": output.promotable,
         "provenance": {
             "graph_fingerprint": manifest.graph_fingerprint,
             "run_id": manifest.run_id,

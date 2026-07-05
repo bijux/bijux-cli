@@ -649,6 +649,7 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
             skipped,
             cached,
             cancelled,
+            promoted_outputs: Vec::new(),
         }),
     })
 }
