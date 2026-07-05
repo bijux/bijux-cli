@@ -63,8 +63,8 @@ The JSON payload reports:
 - `run_layout`: the previewed staging and final run directories
 - `path_previews`: the resolved path expressions per node
 - `execution_cost_estimate`: the selected node count, root set, critical path
-  length, topology-limited parallelism, resource demand, cache exposure, and
-  timeout/retry exposure
+  length, weighted `critical_path` details, topology-limited parallelism,
+  resource demand, cache exposure, and timeout/retry exposure
 - `absolute_path_policy`: the policy used for literal absolute container
   workdirs
 
@@ -87,6 +87,11 @@ operator questions up front:
 - where the dependency bottleneck is
 - whether resource demand, non-cacheable nodes, or aggressive timeout/retry
   settings make the run more expensive than it first looks
+
+When a node carries `params.estimated_duration_ms`, the planner uses that value
+to weight the reported `critical_path`. Nodes without an estimate fall back to
+`1`, and the payload reports both the chosen path and how many nodes on that
+path relied on the unit fallback.
 
 ## Rerun Everything Downstream Of A Node
 

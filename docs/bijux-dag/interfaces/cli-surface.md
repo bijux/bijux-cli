@@ -120,7 +120,10 @@ for node-local directories and container workdirs:
 
 - `bijux-dag plan explain <dag> --out <run-root>` computes a preview run layout
   and includes resolved path previews, resolved command argv arrays, and an
-  `execution_cost_estimate` summary in JSON output.
+  `execution_cost_estimate` summary in JSON output. The estimate includes a
+  weighted `critical_path` object; if a node declares
+  `params.estimated_duration_ms`, that value is used, otherwise the planner
+  falls back to unit duration for that node.
 - `bijux-dag show-effective-plan <dag> --out <run-root>` exposes the same
   payload through the compatibility alias route.
 - `--run-id` makes the previewed run layout stable instead of auto-generated.
