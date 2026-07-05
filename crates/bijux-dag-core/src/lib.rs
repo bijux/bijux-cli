@@ -123,12 +123,13 @@ pub use input::{
 };
 pub use model::{
     cache_behavior_enabled, cache_behavior_is_default, default_media_type_for_kind,
-    edge_kind_is_default, output_kind_is_default, output_required_default,
-    output_required_is_default, semantic_kind_is_default, trigger_rule_is_default, BranchSpec,
-    CacheBehavior, ContainerSpec, Edge, EdgeKind, Effect, FileOutput, Graph,
-    GraphFingerprintExplain, GraphId, GraphMeta, Node, NodeKind, NodeOutputRef, OutputKind,
-    OutputSpec, ParamValue, PortRef, RefSpec, ResolvedGraph, Resources, RetryPolicy,
-    SemanticNodeKind, Severity, TriggerRule, ValidationDiagnostic,
+    edge_kind_is_default, is_known_path_variable, output_kind_is_default,
+    output_required_default, output_required_is_default, semantic_kind_is_default,
+    trigger_rule_is_default, BranchSpec, CacheBehavior, ContainerSpec, Edge, EdgeKind, Effect,
+    FileOutput, Graph, GraphFingerprintExplain, GraphId, GraphMeta, Node, NodeKind,
+    NodeOutputRef, OutputKind, OutputSpec, ParamValue, PathVarBinding, PathVarRef, PortRef,
+    RefSpec, ResolvedGraph, Resources, RetryPolicy, SemanticNodeKind, Severity, TriggerRule,
+    ValidationDiagnostic, PATH_VARIABLE_NAMES,
 };
 pub use node::{
     derive_interface, node_input_bindings, node_io_contract, NodeEnvBinding, NodeInputBinding,

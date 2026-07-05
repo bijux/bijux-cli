@@ -1,7 +1,7 @@
 use crate::canonical::{error, is_valid_canonical_name, is_valid_output_path, severity_rank, warn};
 use crate::{
-    materialize_graph_input_value, EdgeKind, Effect, Graph, GraphError, GraphInputKind,
-    GraphInputSpec, Node, ParamValue, SemanticNodeKind, Severity, TriggerRule,
+    is_known_path_variable, materialize_graph_input_value, EdgeKind, Effect, Graph, GraphError,
+    GraphInputKind, GraphInputSpec, Node, ParamValue, SemanticNodeKind, Severity, TriggerRule,
     ValidationDiagnostic,
 };
 use std::collections::{BTreeSet, HashMap};
@@ -904,15 +904,17 @@ fn validate_param_value(
 ) {
     match value {
         ParamValue::Ref(spec) => {
-            if spec.graph_input.is_some() == spec.node_output.is_some() {
+            let source_count = usize::from(spec.graph_input.is_some())
+                + usize::from(spec.node_output.is_some())
+                + usize::from(spec.path_var.is_some());
+            if source_count != 1 {
                 emit_rule(
                     diagnostics,
                     "E1031",
                     "reference must declare exactly one source".to_string(),
                     path.to_string(),
                     Some(
-                        "Use either graph_input or node_output, and do not provide both"
-                            .to_string(),
+                        "Use exactly one of graph_input, node_output, or path_var".to_string(),
                     ),
                 );
             }
@@ -965,6 +967,31 @@ fn validate_param_value(
                     }
                 }
             }
+            if let Some(path_var) = &spec.path_var {
+                if !is_known_path_variable(path_var.name()) {
+                    emit_rule(
+                        diagnostics,
+                        "E1020",
+                        format!("unknown path variable ref: {}", path_var.name()),
+                        path.to_string(),
+                        Some(
+                            "Use one of run_dir, work_dir, inputs_dir, outputs_dir, or cache_dir"
+                                .to_string(),
+                        ),
+                    );
+                }
+                if let Some(relative_path) = path_var.relative_path() {
+                    if !is_valid_relative_path_suffix(relative_path) {
+                        emit_rule(
+                            diagnostics,
+                            "E1025",
+                            format!("invalid path variable suffix: {}", relative_path),
+                            path.to_string(),
+                            Some("Use a normalized relative path without '..'".to_string()),
+                        );
+                    }
+                }
+            }
         }
         ParamValue::Array(items) => {
             for (index, value) in items.iter().enumerate() {
@@ -992,6 +1019,14 @@ fn validate_param_value(
         }
         ParamValue::Literal(_) => {}
     }
+}
+
+fn is_valid_relative_path_suffix(path: &str) -> bool {
+    !path.is_empty()
+        && is_valid_output_path(path)
+        && path
+            .split('/')
+            .all(|segment| !segment.is_empty() && segment != "." && segment != "..")
 }
 
 fn classify_rule_domain(code: &str) -> Option<ValidationDomain> {

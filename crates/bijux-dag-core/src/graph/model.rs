@@ -24,6 +24,13 @@ pub struct GraphFingerprintExplain {
     pub hash_algorithm: String,
 }
 
+pub const PATH_VARIABLE_NAMES: &[&str] =
+    &["run_dir", "work_dir", "inputs_dir", "outputs_dir", "cache_dir"];
+
+pub fn is_known_path_variable(name: &str) -> bool {
+    PATH_VARIABLE_NAMES.iter().any(|candidate| candidate == &name)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Graph {
@@ -213,6 +220,8 @@ pub struct RefSpec {
     pub graph_input: Option<String>,
     #[serde(default)]
     pub node_output: Option<NodeOutputRef>,
+    #[serde(default)]
+    pub path_var: Option<PathVarRef>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -221,6 +230,44 @@ pub struct NodeOutputRef {
     pub node_id: String,
     #[serde(alias = "path")]
     pub output_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum PathVarRef {
+    Name(String),
+    Binding(PathVarBinding),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct PathVarBinding {
+    pub name: String,
+    #[serde(default)]
+    pub relative_path: Option<String>,
+}
+
+impl PathVarRef {
+    pub fn name(&self) -> &str {
+        match self {
+            Self::Name(name) => name,
+            Self::Binding(binding) => &binding.name,
+        }
+    }
+
+    pub fn relative_path(&self) -> Option<&str> {
+        match self {
+            Self::Name(_) => None,
+            Self::Binding(binding) => binding.relative_path.as_deref(),
+        }
+    }
+
+    pub fn display_path(&self) -> String {
+        match self.relative_path() {
+            Some(relative_path) => format!("{{{}}}/{}", self.name(), relative_path),
+            None => format!("{{{}}}", self.name()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -441,7 +488,9 @@ fn param_value_from_json(value: Value) -> Result<ParamValue, String> {
         }
         Value::Object(map) => {
             let ref_like = !map.is_empty()
-                && map.keys().all(|key| matches!(key.as_str(), "graph_input" | "node_output"));
+                && map
+                    .keys()
+                    .all(|key| matches!(key.as_str(), "graph_input" | "node_output" | "path_var"));
             if ref_like {
                 let reference = serde_json::from_value(Value::Object(map))
                     .map_err(|error| error.to_string())?;

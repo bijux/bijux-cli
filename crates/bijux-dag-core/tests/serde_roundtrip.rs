@@ -18,7 +18,8 @@ use thiserror as _;
 
 use bijux_dag_core::{
     CacheBehavior, ContainerSpec, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind,
-    NodeOutputRef, ParamValue, PortRef, RefSpec, Resources, RetryPolicy,
+    NodeOutputRef, ParamValue, PathVarBinding, PathVarRef, PortRef, RefSpec, Resources,
+    RetryPolicy,
 };
 
 #[test]
@@ -116,6 +117,7 @@ fn serde_roundtrip_ref_models() {
             node_id: "src".to_string(),
             output_name: "out".to_string(),
         }),
+        path_var: None,
     };
     let encoded = serde_json::to_string(&ref_spec).unwrap();
     let decoded: RefSpec = serde_json::from_str(&encoded).unwrap();
@@ -129,6 +131,24 @@ fn serde_accepts_legacy_node_output_ref_field_name() {
     let decoded: RefSpec =
         serde_json::from_str(r#"{"node_output":{"node_id":"src","path":"out"}}"#).unwrap();
     assert_eq!(decoded.node_output.as_ref().map(|output| output.output_name.as_str()), Some("out"));
+}
+
+#[test]
+fn serde_accepts_path_variable_ref_shapes() {
+    let simple: RefSpec = serde_json::from_str(r#"{"path_var":"outputs_dir"}"#).unwrap();
+    assert_eq!(simple.path_var, Some(PathVarRef::Name("outputs_dir".to_string())));
+
+    let nested: RefSpec = serde_json::from_str(
+        r#"{"path_var":{"name":"cache_dir","relative_path":"reused/result.json"}}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        nested.path_var,
+        Some(PathVarRef::Binding(PathVarBinding {
+            name: "cache_dir".to_string(),
+            relative_path: Some("reused/result.json".to_string()),
+        }))
+    );
 }
 
 #[test]
@@ -154,6 +174,7 @@ fn serde_roundtrip_param_value_model() {
                 ParamValue::Ref(RefSpec {
                     graph_input: Some("seed".to_string()),
                     node_output: None,
+                    path_var: None,
                 }),
             ),
         ]

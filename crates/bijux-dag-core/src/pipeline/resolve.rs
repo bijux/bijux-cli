@@ -69,5 +69,9 @@ fn resolve_ref(reference: &RefSpec, graph: &Graph) -> Result<Value, GraphError> 
         return Err(GraphError::ValidationFailed);
     }
 
+    if let Some(path_var) = &reference.path_var {
+        return Ok(Value::String(path_var.display_path()));
+    }
+
     Err(GraphError::ValidationFailed)
 }

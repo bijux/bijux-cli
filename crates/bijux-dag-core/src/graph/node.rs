@@ -38,6 +38,7 @@ pub struct NodeInputBinding {
 pub enum ParamBindingSource {
     GraphInput { input_name: String },
     NodeOutput { node_id: String, output_name: String },
+    PathVariable { name: String, relative_path: Option<String> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -196,11 +197,20 @@ fn param_binding_from_ref(key_path: &str, reference: &RefSpec) -> Option<NodePar
             source: ParamBindingSource::GraphInput { input_name: input_name.clone() },
         });
     }
-    reference.node_output.as_ref().map(|node_output| NodeParamBinding {
+    if let Some(node_output) = &reference.node_output {
+        return Some(NodeParamBinding {
+            key_path: key_path.to_string(),
+            source: ParamBindingSource::NodeOutput {
+                node_id: node_output.node_id.clone(),
+                output_name: node_output.output_name.clone(),
+            },
+        });
+    }
+    reference.path_var.as_ref().map(|path_var| NodeParamBinding {
         key_path: key_path.to_string(),
-        source: ParamBindingSource::NodeOutput {
-            node_id: node_output.node_id.clone(),
-            output_name: node_output.output_name.clone(),
+        source: ParamBindingSource::PathVariable {
+            name: path_var.name().to_string(),
+            relative_path: path_var.relative_path().map(str::to_string),
         },
     })
 }

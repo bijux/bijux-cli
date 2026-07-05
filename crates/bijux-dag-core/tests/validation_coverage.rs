@@ -167,6 +167,7 @@ fn property_param_reference_validation() {
             bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
                 graph_input: Some("missing_input".to_string()),
                 node_output: None,
+                path_var: None,
             }),
         )]
         .into_iter()
@@ -174,6 +175,49 @@ fn property_param_reference_validation() {
     );
     let diags = graph.validate_with_warnings();
     assert!(diags.iter().any(|d| d.code == "E1020"));
+}
+
+#[test]
+fn path_variable_reference_validation_rejects_unknown_bindings() {
+    let mut graph = base_graph();
+    graph.nodes[0].params = bijux_dag_core::ParamValue::Object(
+        [(
+            "target".to_string(),
+            bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
+                graph_input: None,
+                node_output: None,
+                path_var: Some(bijux_dag_core::PathVarRef::Name("unknown_dir".to_string())),
+            }),
+        )]
+        .into_iter()
+        .collect(),
+    );
+    let diags = graph.validate_with_warnings();
+    assert!(diags.iter().any(|d| d.code == "E1020"));
+}
+
+#[test]
+fn path_variable_reference_validation_rejects_traversal_suffixes() {
+    let mut graph = base_graph();
+    graph.nodes[0].params = bijux_dag_core::ParamValue::Object(
+        [(
+            "target".to_string(),
+            bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
+                graph_input: None,
+                node_output: None,
+                path_var: Some(bijux_dag_core::PathVarRef::Binding(
+                    bijux_dag_core::PathVarBinding {
+                        name: "outputs_dir".to_string(),
+                        relative_path: Some("../escape.txt".to_string()),
+                    },
+                )),
+            }),
+        )]
+        .into_iter()
+        .collect(),
+    );
+    let diags = graph.validate_with_warnings();
+    assert!(diags.iter().any(|d| d.code == "E1025"));
 }
 
 #[test]
@@ -308,6 +352,7 @@ fn graph_for_code(code: &str) -> Graph {
                     bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
                         graph_input: Some("missing_seed".to_string()),
                         node_output: None,
+                        path_var: None,
                     }),
                 )]
                 .into_iter()
@@ -329,6 +374,7 @@ fn graph_for_code(code: &str) -> Graph {
                         node_id: "ghost".to_string(),
                         output_name: "out".to_string(),
                     }),
+                    path_var: None,
                 }),
                 container: None,
                 timeout_ms: None,
@@ -368,6 +414,7 @@ fn graph_for_code(code: &str) -> Graph {
                     node_id: "sink".to_string(),
                     output_name: "out".to_string(),
                 }),
+                path_var: None,
             });
             g
         }
@@ -516,6 +563,7 @@ fn graph_for_code(code: &str) -> Graph {
                     node_id: "source".to_string(),
                     output_name: "out".to_string(),
                 }),
+                path_var: None,
             });
             g
         }
