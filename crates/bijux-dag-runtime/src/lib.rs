@@ -140,6 +140,8 @@ mod performance_capacity;
 mod planner;
 #[path = "runtime_core/planning/planner_analysis.rs"]
 mod planner_analysis;
+#[path = "runtime_core/planning/path_resolution.rs"]
+mod path_resolution;
 #[doc(hidden)]
 pub mod policy;
 #[path = "artifacts/storage/recovery.rs"]
@@ -357,6 +359,11 @@ pub use observability_deep::{
     ReplaySpanLink, SamplingPolicy, TimelineTextSummary, TopologyOverlay, TopologyOverlayNode,
 };
 pub use path_authorization::{authorize_input_path, authorize_output_path};
+pub use path_resolution::AbsolutePathPolicy;
+pub(crate) use path_resolution::{
+    bind_path_variables_in_value, resolve_container_argv, resolve_container_workdir,
+    NodePathBindings,
+};
 pub use performance_capacity::{
     build_cost_model, build_performance_maturity_report, compile_environment_profiles,
     derive_autoscaling_hint, detect_performance_regression, forecast_storage_growth,
@@ -506,18 +513,18 @@ pub mod stable {
         cache_key_explanation, registered_adapter_descriptors,
         registered_adapter_reference_document, registered_adapters, trace_time_order_ok,
         validate_node_transition, validate_run_transition, verify_post_run_state_consistency,
-        CacheKeyInput, CacheMode, ExecutionContext, NodeExecutionContext, NodeLifecycleState,
-        PlannerGuardrails, RunLifecycleState, Runtime, RuntimeConfig, RuntimeError,
-        SchedulerPolicy, SelectorSet,
+        AbsolutePathPolicy, CacheKeyInput, CacheMode, ExecutionContext, NodeExecutionContext,
+        NodeLifecycleState, PlannerGuardrails, RunLifecycleState, Runtime, RuntimeConfig,
+        RuntimeError, SchedulerPolicy, SelectorSet,
     };
 }
 
 /// Common imports for planning, scheduling, and executing local DAG runs.
 pub mod prelude {
     pub use crate::stable::{
-        build_plan, build_planner_analysis, build_scheduler, CacheMode, ExecutionContext,
-        NodeExecutionContext, PlannerGuardrails, Runtime, RuntimeConfig, RuntimeError,
-        SchedulerPolicy, SelectorSet,
+        build_plan, build_planner_analysis, build_scheduler, AbsolutePathPolicy, CacheMode,
+        ExecutionContext, NodeExecutionContext, PlannerGuardrails, Runtime, RuntimeConfig,
+        RuntimeError, SchedulerPolicy, SelectorSet,
     };
 }
 
@@ -573,10 +580,12 @@ pub struct RunContext {
     pub execution_fingerprint: String,
     pub evidence_fingerprint: String,
     pub resolved_params: HashMap<String, Value>,
+    pub effective_cache_dir: Option<PathBuf>,
     pub fs: Arc<dyn Fs>,
     pub clock: Arc<dyn Clock>,
     pub store: RuntimeArtifactStore,
     pub policy: PolicyConfig,
+    pub absolute_path_policy: AbsolutePathPolicy,
 }
 
 #[derive(Debug, Clone)]
@@ -909,7 +918,13 @@ impl Adapter for ContainerAdapter {
             cmd.args(["-v", &format!("{}:{}:{}", mount.local_path, mount.container_path, mode)]);
         }
 
-        let workdir = spec.workdir.clone().unwrap_or_else(|| "/bijux/node/work".to_string());
+        let container_bindings = NodePathBindings::for_container();
+        let workdir = resolve_container_workdir(
+            spec.workdir.as_deref(),
+            &container_bindings,
+            exec.absolute_path_policy,
+        )
+        .map_err(RuntimeError::Executor)?;
         cmd.args(["--workdir", &workdir]);
 
         for (key, val) in shaped_environment(exec.policy.clean_env, &spec.env_allowlist, &[]) {
@@ -917,7 +932,9 @@ impl Adapter for ContainerAdapter {
         }
 
         cmd.arg(&spec.image);
-        for part in &spec.argv {
+        for part in &resolve_container_argv(&spec.argv, &container_bindings)
+            .map_err(RuntimeError::Executor)?
+        {
             cmd.arg(part);
         }
 
@@ -1009,6 +1026,7 @@ pub struct RuntimeConfig {
     pub cache_mode: CacheMode,
     pub cache_dir: Option<PathBuf>,
     pub remote_cache_dir: Option<PathBuf>,
+    pub absolute_path_policy: AbsolutePathPolicy,
     pub run_id: Option<String>,
     pub parent_run_id: Option<String>,
     pub submission_source: String,
@@ -1034,6 +1052,7 @@ impl Default for RuntimeConfig {
             cache_mode: CacheMode::Off,
             cache_dir: None,
             remote_cache_dir: None,
+            absolute_path_policy: AbsolutePathPolicy::AllowLiteral,
             run_id: None,
             parent_run_id: None,
             submission_source: "manual".to_string(),

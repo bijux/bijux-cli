@@ -97,7 +97,11 @@ impl Adapter for ExternalAdapter {
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
-        let node_spec = serde_json::to_string(node)?;
+        let mut node_spec_value = serde_json::to_value(node)?;
+        if let serde_json::Value::Object(map) = &mut node_spec_value {
+            map.insert("params".to_string(), ctx.params.clone());
+        }
+        let node_spec = serde_json::to_string(&node_spec_value)?;
         if node_spec.len() > MAX_NODE_SPEC_BYTES {
             return Err(RuntimeError::Executor(format!(
                 "node spec payload exceeds {} bytes",

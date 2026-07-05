@@ -1,12 +1,13 @@
 use crate::{
     build_run_outputs_index, cache_dir_from_env, cache_mode_string,
+    bind_path_variables_in_value,
     category_from_runtime_event_name, collect_outputs_summary, current_process_memory_bytes,
     node_fingerprint_from_ctx, node_fingerprint_with_inputs, registered_adapters, sacred_execution,
     set_node_fingerprint, summarize_failure_root_causes, write_timeline_export, CacheProof,
     EffectSet, EventRecord, ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry,
-    NodeMetrics, NodeResult, NodeStatus, ReplayNodeAction, RunAttempt, RunContext, RunId,
-    RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook, TimelineEntry,
-    TimelineExport,
+    NodeMetrics, NodePathBindings, NodeResult, NodeStatus, ReplayNodeAction, RunAttempt,
+    RunContext, RunId, RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
+    TimelineEntry, TimelineExport,
 };
 #[path = "engine_dispatch.rs"]
 mod engine_dispatch;
@@ -21,7 +22,7 @@ mod engine_record;
 use bijux_dag_artifacts::{
     finalize_run_manifest, write_incomplete_run_marker, write_provenance, write_run_outputs_index,
     write_run_schema_index, FailureInfo, Manifest, NodeCounts, Provenance, ReplayProvenance,
-    RunDir, RunDirSchemaIndex, RunMetadata,
+    RunDir, RunDirLayout, RunDirSchemaIndex, RunMetadata,
 };
 use bijux_dag_core::{Effect, Graph, Node, NodeKind, SemanticNodeKind, SPEC_VERSION};
 use serde_json::Value;
@@ -330,7 +331,7 @@ pub fn execute(
     let effective_cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
     let mut manifest = Manifest {
         manifest_version: "run-manifest/v0.1".to_string(),
-        run_id,
+        run_id: run_id.clone(),
         created_unix_ms: runtime.clock.now_unix_ms(),
         started_unix_ms,
         finished_unix_ms: started_unix_ms,
@@ -426,13 +427,26 @@ pub fn execute(
         "run_id": manifest.run_id.clone(),
     }));
 
+    let layout = RunDirLayout {
+        run_id: run_id.clone(),
+        staging_path: run_dir.staging_path().to_path_buf(),
+        final_path: run_dir.final_path().to_path_buf(),
+    };
     let resolved = graph.resolve_graph()?;
     let mut base_fps = HashMap::new();
     for node in &graph.nodes {
         let params = resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
         base_fps.insert(node.id.clone(), graph.node_fingerprint_with_params(node, &params)?);
     }
-    let resolved_params: HashMap<String, Value> = resolved.resolved_params.into_iter().collect();
+    let mut resolved_params = HashMap::new();
+    for node in &graph.nodes {
+        let params = resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
+        let bindings = NodePathBindings::for_host(&layout, &node.id, effective_cache_dir.as_deref());
+        resolved_params.insert(
+            node.id.clone(),
+            bind_path_variables_in_value(&params, &bindings).map_err(RuntimeError::Executor)?,
+        );
+    }
     let graph_fingerprint = Arc::new(Mutex::new(base_fps.clone()));
     let ctx = RunContext {
         run_dir: Arc::clone(&run_dir_arc),
@@ -441,10 +455,12 @@ pub fn execute(
         execution_fingerprint: plan.execution_fingerprint.clone(),
         evidence_fingerprint: plan.evidence_fingerprint.clone(),
         resolved_params,
+        effective_cache_dir: effective_cache_dir.clone(),
         fs: Arc::clone(&runtime.fs),
         clock: Arc::clone(&runtime.clock),
         store,
         policy: options.policy.clone(),
+        absolute_path_policy: options.absolute_path_policy,
     };
     let requested_selectors = options
         .selectors
@@ -1109,10 +1125,12 @@ pub fn execute(
                 execution_fingerprint: ctx.execution_fingerprint.clone(),
                 evidence_fingerprint: ctx.evidence_fingerprint.clone(),
                 resolved_params: ctx.resolved_params.clone(),
+                effective_cache_dir: ctx.effective_cache_dir.clone(),
                 fs: Arc::clone(&ctx.fs),
                 clock: Arc::clone(&ctx.clock),
                 store: ctx.store.clone(),
                 policy: ctx.policy.clone(),
+                absolute_path_policy: ctx.absolute_path_policy,
             };
             let node_id_clone = node_id.clone();
             let node_for_thread = node.clone();
