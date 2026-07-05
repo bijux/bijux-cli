@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 pub const CACHE_METADATA_VERSION: &str = "cache-meta/v0.2";
+pub const CACHE_ENTRY_MANIFEST_VERSION: &str = "cache-entry/v0.1";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CacheKeyInput {
@@ -29,6 +30,23 @@ pub struct CacheKeyExplanation {
     pub key: String,
     pub intentional_inputs: Vec<(String, String)>,
     pub accidental_inputs: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheManifestOutput {
+    pub name: String,
+    pub path: String,
+    pub kind: String,
+    pub media_type: String,
+    pub required: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CacheEntryManifest {
+    pub manifest_version: String,
+    pub cache_key: String,
+    pub node_id: String,
+    pub outputs: Vec<CacheManifestOutput>,
 }
 
 pub fn cache_key_explanation(input: &CacheKeyInput) -> CacheKeyExplanation {
@@ -101,4 +119,8 @@ pub fn cache_metadata_version_supported(meta: &serde_json::Value) -> bool {
         .and_then(|v| v.as_str())
         .map(|v| v == CACHE_METADATA_VERSION)
         .unwrap_or(false)
+}
+
+pub fn cache_entry_manifest_version_supported(manifest: &CacheEntryManifest) -> bool {
+    manifest.manifest_version == CACHE_ENTRY_MANIFEST_VERSION
 }

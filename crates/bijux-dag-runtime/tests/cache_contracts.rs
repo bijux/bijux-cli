@@ -11,8 +11,9 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    cache_entry_has_required_proof, cache_key_explanation, cache_metadata_version_supported,
-    CacheKeyInput,
+    cache_entry_has_required_proof, cache_entry_manifest_version_supported,
+    cache_key_explanation, cache_metadata_version_supported, CacheEntryManifest,
+    CacheManifestOutput, CacheKeyInput,
 };
 use serde_json::json;
 
@@ -114,4 +115,36 @@ fn cache_proof_requires_explicit_metadata_fields() {
         "cache_metadata_version": "cache-meta/v0.0",
     });
     assert!(!cache_metadata_version_supported(&stale_version));
+}
+
+#[test]
+fn cache_entry_manifest_requires_supported_version_and_output_contracts() {
+    let manifest = CacheEntryManifest {
+        manifest_version: "cache-entry/v0.1".to_string(),
+        cache_key: "cache-key-1".to_string(),
+        node_id: "node-a".to_string(),
+        outputs: vec![
+            CacheManifestOutput {
+                name: "report".to_string(),
+                path: "report.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "text/plain".to_string(),
+                required: true,
+            },
+            CacheManifestOutput {
+                name: "debug-log".to_string(),
+                path: "debug.log".to_string(),
+                kind: "log".to_string(),
+                media_type: "text/plain".to_string(),
+                required: false,
+            },
+        ],
+    };
+    assert!(cache_entry_manifest_version_supported(&manifest));
+
+    let stale = CacheEntryManifest {
+        manifest_version: "cache-entry/v9.9".to_string(),
+        ..manifest.clone()
+    };
+    assert!(!cache_entry_manifest_version_supported(&stale));
 }

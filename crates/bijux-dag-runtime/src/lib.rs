@@ -284,8 +284,9 @@ use bijux_dag_core::{
     Severity,
 };
 pub use cache::{
-    cache_entry_has_required_proof, cache_key_explanation, cache_key_input_from_meta,
-    cache_metadata_version_supported, CacheKeyInput, CACHE_METADATA_VERSION,
+    cache_entry_has_required_proof, cache_entry_manifest_version_supported, cache_key_explanation,
+    cache_key_input_from_meta, cache_metadata_version_supported, CacheEntryManifest,
+    CacheKeyInput, CacheManifestOutput, CACHE_ENTRY_MANIFEST_VERSION, CACHE_METADATA_VERSION,
 };
 use clock::{Clock, SystemClock};
 pub use container_execution::{
