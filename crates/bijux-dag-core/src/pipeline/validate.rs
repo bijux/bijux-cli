@@ -48,6 +48,7 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1032", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1033", severity: Severity::Error, domain: ValidationDomain::Schema },
     ValidationRule { id: "E1034", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1035", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -209,6 +210,10 @@ impl Graph {
                     Some("Provide cache.reason when cache.enabled is false".to_string()),
                 );
             }
+            let container_env_allowlist =
+                node.container.as_ref().map(|spec| spec.env_allowlist.as_slice()).unwrap_or(&[]);
+            let has_declared_env_bindings =
+                !node.env_allowlist.is_empty() || !container_env_allowlist.is_empty();
             if !node.env_allowlist.is_empty() && !node.effects.contains(&Effect::Env) {
                 emit_rule(
                     &mut diagnostics,
@@ -230,6 +235,18 @@ impl Graph {
                         ),
                     );
                 }
+            }
+            if node.effects.contains(&Effect::Env) && !has_declared_env_bindings {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1035",
+                    format!("env effect requires declared env_allowlist bindings: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some(
+                        "Declare allowed environment variables in env_allowlist or container.env_allowlist"
+                            .to_string(),
+                    ),
+                );
             }
             if node.kind == crate::NodeKind::Container {
                 if let Some(spec) = &node.container {

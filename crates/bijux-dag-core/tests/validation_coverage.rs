@@ -18,7 +18,7 @@ fn validation_error_and_warning_coverage() {
     let expected_error_codes = [
         "E1001", "E1002", "E1003", "E1004", "E1007", "E1008", "E1009", "E1010", "E1011", "E1020",
         "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030", "E1031",
-        "E1032",
+        "E1032", "E1035",
     ];
 
     for code in expected_error_codes {
@@ -570,6 +570,12 @@ fn graph_for_code(code: &str) -> Graph {
         "E1032" => {
             let mut g = base_graph();
             g.nodes[0].cache = CacheBehavior { enabled: false, reason: None };
+            g
+        }
+        "E1035" => {
+            let mut g = base_graph();
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Env];
             g
         }
         "W2001" => {
