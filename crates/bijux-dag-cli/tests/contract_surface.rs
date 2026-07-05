@@ -295,6 +295,8 @@ fn dag_root_help_lists_top_level_commands() {
     assert!(text
         .contains("Validate, run, replay, explain, and compare reproducible computation graphs"));
     assert!(text.contains("v0.4.0 surface truth table:"));
+    assert!(text.contains("BIJUX_DAG_ENABLE_SIMULATED=1"));
+    assert!(text.contains("BIJUX_DAG_ENABLE_INTERNAL=1"));
     assert!(text.contains(
         "Use `bijux-dag commands --all` to inventory repository-owned non-stable routes."
     ));
@@ -427,12 +429,14 @@ fn dag_commands_json_exposes_group_and_maturity_metadata() {
     let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("commands json");
     let commands = payload["data"]["commands"].as_array().expect("commands array");
     assert!(commands.iter().any(|entry| entry["path"] == "doctor"));
-    assert!(commands.iter().all(|entry| entry["maturity"] == "stable"));
+    assert!(commands.iter().all(|entry| entry["lane"] == "stable"));
+    assert!(commands.iter().all(|entry| entry["availability"] == "default"));
     assert!(!commands.iter().any(|entry| entry["path"] == "artifact fetch"));
     assert!(!commands.iter().any(|entry| entry["path"] == "status"));
     assert!(!commands.iter().any(|entry| entry["path"] == "init"));
     assert!(!commands.iter().any(|entry| entry["path"] == "lab federation schedule"));
-    assert!(commands.iter().all(|entry| entry.get("maturity").is_some()));
+    assert!(commands.iter().all(|entry| entry.get("lane").is_some()));
+    assert!(commands.iter().all(|entry| entry.get("availability").is_some()));
     assert!(commands.iter().all(|entry| entry.get("group").is_some()));
 }
 
@@ -444,8 +448,17 @@ fn dag_commands_json_can_include_hidden_namespaces_when_requested() {
     let payload: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("commands json all");
     let commands = payload["data"]["commands"].as_array().expect("commands array");
-    assert!(commands.iter().any(|entry| entry["path"] == "artifact fetch"));
-    assert!(commands.iter().any(|entry| entry["path"] == "lab federation schedule"));
+    assert!(commands.iter().any(
+        |entry| entry["path"] == "artifact fetch"
+            && entry["lane"] == "experimental"
+            && entry["availability"] == "explicit-path"
+    ));
+    assert!(commands.iter().any(
+        |entry| entry["path"] == "lab federation schedule"
+            && entry["lane"] == "simulation"
+            && entry["availability"] == "opt-in"
+            && entry["opt_in_env"] == "BIJUX_DAG_ENABLE_SIMULATED"
+    ));
     assert!(commands.iter().any(|entry| entry["path"] == "trace-node"));
 }
 

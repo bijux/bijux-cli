@@ -1,4 +1,7 @@
-use crate::commands::{command_path_hidden_from_public_help, DagCli};
+use crate::commands::{
+    command_access_for_path, command_path_hidden_from_public_help, lane_label, CommandAvailability,
+    CommandLane, DagCli,
+};
 use crate::{dag_command, emit_json, ExitCode};
 use clap::Command;
 use serde::Serialize;
@@ -21,20 +24,13 @@ enum CommandGroup {
     ExportImport,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case")]
-enum CommandMaturity {
-    Stable,
-    Experimental,
-    Simulation,
-    Internal,
-}
-
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 struct CommandCatalogEntry {
     path: String,
     group: CommandGroup,
-    maturity: CommandMaturity,
+    lane: CommandLane,
+    availability: CommandAvailability,
+    opt_in_env: Option<&'static str>,
     about: Option<String>,
     aliases: Vec<String>,
     subcommands: Vec<CommandCatalogEntry>,
@@ -139,69 +135,6 @@ fn command_group(path: &str) -> CommandGroup {
     }
 }
 
-fn command_maturity(path: &str) -> CommandMaturity {
-    let head = path.split(' ').next().unwrap_or(path);
-    if matches!(
-        head,
-        "control-plane"
-            | "dataset"
-            | "enterprise"
-            | "federation"
-            | "fleet"
-            | "governance"
-            | "incident"
-            | "lab"
-            | "release"
-            | "runtime"
-            | "schedule"
-            | "security"
-            | "state-store"
-    ) {
-        return CommandMaturity::Simulation;
-    }
-    if matches!(
-        head,
-        "adapters"
-            | "canonical-bytes"
-            | "canonical-diff"
-            | "canonicalize"
-            | "dataset"
-            | "export"
-            | "fingerprint"
-            | "fsck"
-            | "graph"
-            | "graph-lint"
-            | "hash"
-            | "import"
-            | "init"
-            | "lint"
-            | "migrate"
-            | "node"
-            | "policy"
-            | "proof-summary"
-            | "prove"
-            | "show-effective-graph"
-            | "status"
-            | "trace-artifact"
-            | "why-cache-missed"
-            | "why-rerun"
-    ) || matches!(path, "explain-plan" | "run-bundle" | "trace-node")
-        || path.starts_with("artifact fetch")
-    {
-        return CommandMaturity::Experimental;
-    }
-    if head == "doctor" {
-        return CommandMaturity::Stable;
-    }
-    if matches!(
-        head,
-        "capabilities" | "equivalence-proof" | "semantic-portability" | "version-inspect"
-    ) {
-        return CommandMaturity::Internal;
-    }
-    CommandMaturity::Stable
-}
-
 fn build_entry(
     prefix: &str,
     command: &Command,
@@ -223,10 +156,13 @@ fn build_entry(
     let mut aliases =
         command.get_all_aliases().map(std::string::ToString::to_string).collect::<Vec<_>>();
     aliases.sort();
+    let access = command_access_for_path(&path);
     Some(CommandCatalogEntry {
         path: path.clone(),
         group: command_group(&path),
-        maturity: command_maturity(&path),
+        lane: access.lane,
+        availability: access.availability,
+        opt_in_env: access.opt_in_env,
         about: command.get_about().map(|value| value.to_string()),
         aliases,
         subcommands,
@@ -266,12 +202,11 @@ fn command_groups(entries: &[CommandCatalogEntry]) -> Vec<String> {
     groups
 }
 
-fn maturity_label(maturity: CommandMaturity) -> &'static str {
-    match maturity {
-        CommandMaturity::Stable => "stable",
-        CommandMaturity::Experimental => "experimental",
-        CommandMaturity::Simulation => "simulation",
-        CommandMaturity::Internal => "internal",
+fn availability_label(availability: CommandAvailability) -> &'static str {
+    match availability {
+        CommandAvailability::Default => "default",
+        CommandAvailability::ExplicitPath => "explicit-path",
+        CommandAvailability::OptIn => "opt-in",
     }
 }
 
@@ -314,14 +249,32 @@ pub(crate) fn handle_command_catalog_command(
             .ok()
             .and_then(|value| value.as_str().map(ToOwned::to_owned))
             .unwrap_or_else(|| "core".to_string());
-        println!("{} [{} | {}]", entry.path, group, maturity_label(entry.maturity));
+        if let Some(env_name) = entry.opt_in_env {
+            println!(
+                "{} [{} | {} | {} via {}]",
+                entry.path,
+                group,
+                lane_label(entry.lane),
+                availability_label(entry.availability),
+                env_name
+            );
+        } else {
+            println!(
+                "{} [{} | {} | {}]",
+                entry.path,
+                group,
+                lane_label(entry.lane),
+                availability_label(entry.availability)
+            );
+        }
     }
     Ok(ExitCode::SUCCESS)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{command_catalog, command_groups, CommandMaturity};
+    use super::{command_catalog, command_groups};
+    use crate::commands::{CommandAvailability, CommandLane, ENABLE_SIMULATED_ENV};
 
     #[test]
     fn command_catalog_exposes_public_surface_by_default() {
@@ -332,7 +285,8 @@ mod tests {
         }
         assert!(flattened.iter().any(|entry| entry.path == "commands"));
         assert!(flattened.iter().any(|entry| entry.path == "doctor"));
-        assert!(flattened.iter().all(|entry| entry.maturity == CommandMaturity::Stable));
+        assert!(flattened.iter().all(|entry| entry.lane == CommandLane::Stable));
+        assert!(flattened.iter().all(|entry| entry.availability == CommandAvailability::Default));
         assert!(!flattened.iter().any(|entry| entry.path == "artifact fetch"));
         assert!(!flattened.iter().any(|entry| entry.path == "status"));
         assert!(!flattened.iter().any(|entry| entry.path == "init"));
@@ -349,6 +303,17 @@ mod tests {
         }
         assert!(flattened.iter().any(|entry| entry.path == "lab federation schedule"));
         assert!(flattened.iter().any(|entry| entry.path == "trace-node"));
+        assert!(flattened.iter().any(|entry| {
+            entry.path == "artifact fetch"
+                && entry.lane == CommandLane::Experimental
+                && entry.availability == CommandAvailability::ExplicitPath
+        }));
+        assert!(flattened.iter().any(|entry| {
+            entry.path == "governance ownership"
+                && entry.lane == CommandLane::Simulation
+                && entry.availability == CommandAvailability::OptIn
+                && entry.opt_in_env == Some(ENABLE_SIMULATED_ENV)
+        }));
     }
 
     #[test]

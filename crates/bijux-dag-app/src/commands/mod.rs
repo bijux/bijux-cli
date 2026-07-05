@@ -1,6 +1,12 @@
 use clap::{Command, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
+mod surface_policy;
+
+pub(crate) use surface_policy::{
+    command_access_for_path, lane_label, CommandAvailability, CommandLane, ENABLE_SIMULATED_ENV,
+};
+
 const PUBLIC_ROOT_COMMANDS: &[&str] = &[
     "artifact",
     "artifact-inspect",
@@ -33,7 +39,7 @@ const HERMETIC_HELP: &str =
 const REPLAY_SANDBOX_HELP: &str =
     "forbid replay outputs from being written inside the source run directory; this is a write-boundary check, not a process sandbox";
 const ROOT_HELP_BOUNDARY_HELP: &str =
-    "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: explicit-path routes such as init, status, export, import, policy, prove, and migrate\n  simulated: control-plane, state-store, dataset, enterprise, fleet, federation, incident, and lab\n  internal: security, durability, performance, release, runtime, schedule, capabilities, and version-inspect\n  future: kubernetes, slurm or hpc, remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands --all` to inventory repository-owned non-stable routes.";
+    "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: explicit-path routes such as init, status, export, import, policy, prove, and migrate\n  simulated: control-plane, state-store, dataset, enterprise, fleet, governance, federation, incident, and lab require BIJUX_DAG_ENABLE_SIMULATED=1\n  internal: security, durability, performance, release, runtime, schedule, capabilities, and version-inspect require BIJUX_DAG_ENABLE_INTERNAL=1\n  future: kubernetes, slurm or hpc, remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands --all` to inventory repository-owned non-stable routes.";
 
 pub(crate) fn root_command_hidden_from_public_help(name: &str) -> bool {
     !PUBLIC_ROOT_COMMANDS.contains(&name)
