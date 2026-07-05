@@ -1375,6 +1375,18 @@ mod tests {
     }
 
     #[test]
+    fn explain_run_node_cache_miss_reports_missing_entry() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let cache_dir = tmp.path().join("cache");
+        let identity = current_identity();
+        let run_dir = write_run_fixture(tmp.path(), &cache_dir, "ReadWrite", true, None, &identity);
+
+        let report = explain_run_node_cache_miss(&run_dir, "node", None).expect("explain");
+        assert_eq!(report["outcome"], "miss");
+        assert_eq!(report["taxonomy"][0], "missing_entry");
+    }
+
+    #[test]
     fn explain_run_node_cache_miss_reports_policy_bypass() {
         let tmp = tempfile::tempdir().expect("tmp");
         let cache_dir = tmp.path().join("cache");

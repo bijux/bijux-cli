@@ -53,6 +53,11 @@
       "source_test": "explain_run_node_cache_miss_reports_policy_bypass"
     },
     {
+      "id": "why-cache-miss-missing-entry",
+      "scenario": "why-cache-missed reports a missing cache entry for a rerun node",
+      "source_test": "explain_run_node_cache_miss_reports_missing_entry"
+    },
+    {
       "id": "trace-artifact-replayed-provenance",
       "scenario": "trace-artifact supports replayed run provenance context",
       "source_test": "trace_artifact_supports_replayed_run_provenance_surface"
