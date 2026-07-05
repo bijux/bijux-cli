@@ -780,7 +780,7 @@ mod tests {
         let simulation = TransactionSimulation {
             run_id: "run-1".to_string(),
             run_state: RunState::Succeeded,
-            counts: NodeCounts { success: 1, failed: 0, skipped: 0, cached: 0 },
+            counts: NodeCounts { success: 1, failed: 0, skipped: 0, cached: 0, cancelled: 0 },
             node_states: vec![NodeStateRecord {
                 node_id: "extract".to_string(),
                 state: NodeState::Success,
@@ -801,7 +801,7 @@ mod tests {
         let simulation = TransactionSimulation {
             run_id: String::new(),
             run_state: RunState::Succeeded,
-            counts: NodeCounts { success: 1, failed: 0, skipped: 0, cached: 0 },
+            counts: NodeCounts { success: 1, failed: 0, skipped: 0, cached: 0, cancelled: 0 },
             node_states: vec![NodeStateRecord {
                 node_id: "extract".to_string(),
                 state: NodeState::Success,

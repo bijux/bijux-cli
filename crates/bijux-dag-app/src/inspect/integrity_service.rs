@@ -389,6 +389,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
         failed: manifest.node_counts.failed,
         skipped: manifest.node_counts.skipped,
         cached: manifest.node_counts.cached,
+        cancelled: manifest.node_counts.cancelled,
     };
     if !invariants::run_summary_invariant_ok(manifest_counts, &observed_statuses) {
         invariant_violations

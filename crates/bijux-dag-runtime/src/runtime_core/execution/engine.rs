@@ -403,6 +403,7 @@ fn upstream_terminal_outcome(status: &NodeStatus) -> UpstreamTerminalOutcome {
         NodeStatus::Cached => UpstreamTerminalOutcome::Cached,
         NodeStatus::Failed => UpstreamTerminalOutcome::Failed,
         NodeStatus::Skipped => UpstreamTerminalOutcome::Skipped,
+        NodeStatus::Cancelled => UpstreamTerminalOutcome::Failed,
     }
 }
 
@@ -488,6 +489,7 @@ fn lifecycle_terminal_state(
     match status {
         NodeStatus::Success => crate::NodeState::Success,
         NodeStatus::Cached => crate::NodeState::Cached,
+        NodeStatus::Cancelled => crate::NodeState::Cancelled,
         NodeStatus::Skipped => {
             if skip_reason.is_some_and(|reason| reason.reason == "cancelled") {
                 crate::NodeState::Cancelled
@@ -517,6 +519,7 @@ fn lifecycle_terminal_cause(
     match status {
         NodeStatus::Success => crate::TransitionCause::ExecutionSucceeded,
         NodeStatus::Cached => crate::TransitionCause::CachedReuse,
+        NodeStatus::Cancelled => crate::TransitionCause::CancelRequested,
         NodeStatus::Skipped => {
             if skip_reason.is_some_and(|reason| reason.reason == "cancelled") {
                 crate::TransitionCause::CancelRequested
@@ -646,8 +649,13 @@ fn record_skipped_node(
     if status_map.contains_key(node_id) {
         return Ok(());
     }
-    sacred_execution::guard_terminal_node_status(&NodeStatus::Skipped)?;
-    status_map.insert(node_id.to_string(), NodeStatus::Skipped);
+    let node_status = if reason == "cancelled" {
+        NodeStatus::Cancelled
+    } else {
+        NodeStatus::Skipped
+    };
+    sacred_execution::guard_terminal_node_status(&node_status)?;
+    status_map.insert(node_id.to_string(), node_status.clone());
     let node_kind = graph
         .nodes
         .iter()
@@ -662,15 +670,15 @@ fn record_skipped_node(
     let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
         run_started_unix_ms,
         lifecycle_timestamps.get(node_id),
-        lifecycle_terminal_state(&NodeStatus::Skipped, None, Some(&skip_reason)),
-        lifecycle_terminal_cause(&NodeStatus::Skipped, None, Some(&skip_reason)),
+        lifecycle_terminal_state(&node_status, None, Some(&skip_reason)),
+        lifecycle_terminal_cause(&node_status, None, Some(&skip_reason)),
         started,
     )?;
     sacred_execution::run_write_trace(
         ctx,
         graph,
         node_id,
-        NodeStatus::Skipped,
+        node_status.clone(),
         None,
         Vec::new(),
         started,
@@ -695,7 +703,7 @@ fn record_skipped_node(
     )?;
     failure_propagation_records.push(serde_json::json!({
         "node_id": node_id,
-        "status": "skipped",
+        "status": crate::status_string(&node_status),
         "cause": crate::transition_cause_for_skip_reason(reason).to_lowercase(),
     }));
     engine_record::append_indexed_event(
@@ -770,7 +778,7 @@ pub fn execute(
         jobs: options.jobs.max(1),
         adapters: registered_adapters(),
         outputs: Vec::new(),
-        node_counts: NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0 },
+        node_counts: NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0, cancelled: 0 },
         policy: bijux_dag_artifacts::PolicyInfo {
             deny_network: options.policy.deny_network,
             deny_env: options.policy.deny_env,
@@ -787,6 +795,7 @@ pub fn execute(
             }
             .to_string()
         }),
+        run_cancellation_cause: None,
         run_metadata: None,
         run_summary: None,
     };
@@ -830,10 +839,8 @@ pub fn execute(
     write_provenance(run_dir.provenance_path(), &prov)?;
 
     let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let cancel_flag = cancel.clone();
-    let _ = ctrlc::set_handler(move || {
-        cancel_flag.store(true, Ordering::SeqCst);
-    });
+    crate::install_runtime_cancellation_handler();
+    crate::register_runtime_cancellation_flag(&cancel);
 
     let run_dir_arc = Arc::new(run_dir.clone());
     let store = crate::store::ArtifactStore::new(Arc::clone(&run_dir_arc), Arc::clone(&runtime.fs));
@@ -903,6 +910,7 @@ pub fn execute(
         store,
         policy: options.policy.clone(),
         absolute_path_policy: options.absolute_path_policy,
+        cancellation_requested: Arc::clone(&cancel),
     };
     let requested_selectors = options
         .selectors
@@ -1537,6 +1545,7 @@ pub fn execute(
                     NodeStatus::Failed => (node_id.clone(), "failed".to_string()),
                     NodeStatus::Skipped => (node_id.clone(), "skipped".to_string()),
                     NodeStatus::Cached => (node_id.clone(), "cached".to_string()),
+                    NodeStatus::Cancelled => (node_id.clone(), "cancelled".to_string()),
                 })
                 .collect(),
             failure_propagation_mode: crate::failure_mode_name(&options.failure_propagation)
@@ -1695,6 +1704,7 @@ pub fn execute(
                 store: ctx.store.clone(),
                 policy: ctx.policy.clone(),
                 absolute_path_policy: ctx.absolute_path_policy,
+                cancellation_requested: Arc::clone(&ctx.cancellation_requested),
             };
             let node_id_clone = node_id.clone();
             let node_for_thread = node.clone();
@@ -1862,7 +1872,7 @@ pub fn execute(
                         branch_decision,
                         None,
                         Some(
-                            if result.status == NodeStatus::Failed {
+                            if matches!(result.status, NodeStatus::Failed | NodeStatus::Cancelled) {
                                 crate::transition_cause_for_failure(result.failure.as_ref())
                             } else {
                                 crate::transition_cause_for_status(&result.status)
@@ -1903,6 +1913,13 @@ pub fn execute(
                             "node_id": node_id,
                             "status": "failed",
                             "cause": crate::failure_propagation_cause(result.failure.as_ref()),
+                        }));
+                    } else if result.status == NodeStatus::Cancelled {
+                        status_map.insert(node_id.clone(), NodeStatus::Cancelled);
+                        failure_propagation_records.push(serde_json::json!({
+                            "node_id": node_id,
+                            "status": "cancelled",
+                            "cause": "cancel_requested",
                         }));
                     } else {
                         status_map.insert(node_id.clone(), result.status.clone());
@@ -2013,7 +2030,11 @@ pub fn execute(
                         execution_time_ms: finished.saturating_sub(started),
                         retries: 0,
                         output_bytes: 0,
-                        cache_status: "failed".to_string(),
+                        cache_status: if failure.code == "EXEC_CANCELLED" {
+                            "cancelled".to_string()
+                        } else {
+                            "failed".to_string()
+                        },
                         effect_usage: node
                             .effects
                             .iter()
@@ -2211,9 +2232,10 @@ pub fn execute(
             "ts": ctx.clock.now_unix_ms(),
             "run_id": manifest.run_id.clone(),
         }));
+        manifest.run_cancellation_cause = Some("operator_interrupt".to_string());
         for node in &graph.nodes {
             if !status_map.contains_key(&node.id) {
-                status_map.insert(node.id.clone(), NodeStatus::Skipped);
+                status_map.insert(node.id.clone(), NodeStatus::Cancelled);
                 let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
                 let aschema = runtime.adapter_schema_for_kind(&node.kind);
                 let started = ctx.clock.now_unix_ms();
@@ -2222,15 +2244,15 @@ pub fn execute(
                 let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
                     started_unix_ms,
                     lifecycle_timestamps.get(&node.id),
-                    lifecycle_terminal_state(&NodeStatus::Skipped, None, Some(&skip_reason)),
-                    lifecycle_terminal_cause(&NodeStatus::Skipped, None, Some(&skip_reason)),
+                    lifecycle_terminal_state(&NodeStatus::Cancelled, None, Some(&skip_reason)),
+                    lifecycle_terminal_cause(&NodeStatus::Cancelled, None, Some(&skip_reason)),
                     started,
                 )?;
                 sacred_execution::run_write_trace(
                     &ctx,
                     graph,
                     &node.id,
-                    NodeStatus::Skipped,
+                    NodeStatus::Cancelled,
                     None,
                     Vec::new(),
                     started,
@@ -2255,7 +2277,7 @@ pub fn execute(
                 )?;
                 failure_propagation_records.push(serde_json::json!({
                     "node_id": node.id,
-                    "status": "skipped",
+                    "status": "cancelled",
                     "cause": "cancel_requested",
                 }));
             }
@@ -2279,6 +2301,7 @@ pub fn execute(
         failed: manifest.node_counts.failed,
         skipped: manifest.node_counts.skipped,
         cached: manifest.node_counts.cached,
+        cancelled: manifest.node_counts.cancelled,
     };
     if !crate::invariants::run_summary_invariant_ok(invariant_counts, &trace_statuses) {
         return Err(RuntimeError::Executor(

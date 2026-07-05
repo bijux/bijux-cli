@@ -37,6 +37,8 @@ pub struct Manifest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_timeout_behavior: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub run_cancellation_cause: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub run_metadata: Option<RunMetadata>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_summary: Option<RunSummary>,
@@ -136,6 +138,8 @@ pub struct RunSummary {
     pub failed: u32,
     pub skipped: u32,
     pub cached: u32,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub cancelled: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -233,6 +237,12 @@ pub struct NodeCounts {
     pub failed: u32,
     pub skipped: u32,
     pub cached: u32,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub cancelled: u32,
+}
+
+fn is_zero(value: &u32) -> bool {
+    *value == 0
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

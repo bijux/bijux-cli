@@ -46,6 +46,7 @@ pub struct RunNodeCounts {
     pub failed: u32,
     pub skipped: u32,
     pub cached: u32,
+    pub cancelled: u32,
 }
 
 pub fn run_summary_invariant_ok(manifest: RunNodeCounts, traces: &[crate::NodeStatus]) -> bool {
@@ -56,6 +57,7 @@ pub fn run_summary_invariant_ok(manifest: RunNodeCounts, traces: &[crate::NodeSt
             crate::NodeStatus::Failed => observed.failed += 1,
             crate::NodeStatus::Skipped => observed.skipped += 1,
             crate::NodeStatus::Cached => observed.cached += 1,
+            crate::NodeStatus::Cancelled => observed.cancelled += 1,
         }
     }
     manifest == observed
@@ -69,6 +71,7 @@ pub fn terminal_run_has_terminal_node(statuses: &[crate::NodeStatus]) -> bool {
                 | crate::NodeStatus::Failed
                 | crate::NodeStatus::Cached
                 | crate::NodeStatus::Skipped
+                | crate::NodeStatus::Cancelled
         )
     })
 }

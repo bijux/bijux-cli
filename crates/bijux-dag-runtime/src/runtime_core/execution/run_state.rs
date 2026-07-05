@@ -150,11 +150,13 @@ impl RunSummaryV2 {
             total_nodes: self.counts.success
                 + self.counts.failed
                 + self.counts.skipped
-                + self.counts.cached,
+                + self.counts.cached
+                + self.counts.cancelled,
             success: self.counts.success,
             failed: self.counts.failed,
             skipped: self.counts.skipped,
             cached: self.counts.cached,
+            cancelled: self.counts.cancelled,
         }
     }
 }

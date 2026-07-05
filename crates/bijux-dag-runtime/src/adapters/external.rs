@@ -124,9 +124,10 @@ impl Adapter for ExternalAdapter {
         for (key, value) in crate::shaped_environment(exec.policy.clean_env, &env_allowlist, &[]) {
             cmd.env(key, value);
         }
-        let output = match crate::command_output_with_timeout(
+        let output = match crate::command_output_with_controls(
             &mut cmd,
             node.timeout_ms.or_else(|| ctx.params.get("timeout_ms").and_then(|v| v.as_u64())),
+            Some(exec.cancellation_requested.as_ref()),
         ) {
             Ok(output) => output,
             Err(RuntimeError::Executor(message)) if message.contains("timed out") => {

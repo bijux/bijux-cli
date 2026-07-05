@@ -151,6 +151,7 @@ pub(crate) fn guard_terminal_node_status(to: &NodeStatus) -> Result<(), RuntimeE
         NodeStatus::Failed => (S::Running, S::Failed),
         NodeStatus::Skipped => (S::Ready, S::Skipped),
         NodeStatus::Cached => (S::Ready, S::Cached),
+        NodeStatus::Cancelled => (S::Running, S::Cancelled),
     };
     if node_transition_allowed(from, target) {
         Ok(())

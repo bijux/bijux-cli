@@ -482,7 +482,8 @@ use std::collections::{BTreeMap, HashMap};
 use std::io::{self as std_io, Write};
 use std::path::{Path, PathBuf};
 use std::process::Output;
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::time::Duration;
 pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
 use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
@@ -579,6 +580,7 @@ pub enum NodeStatus {
     Failed,
     Skipped,
     Cached,
+    Cancelled,
 }
 
 pub struct RunContext {
@@ -594,6 +596,7 @@ pub struct RunContext {
     pub store: RuntimeArtifactStore,
     pub policy: PolicyConfig,
     pub absolute_path_policy: AbsolutePathPolicy,
+    pub cancellation_requested: Arc<std::sync::atomic::AtomicBool>,
 }
 
 #[derive(Debug, Clone)]
@@ -738,8 +741,11 @@ impl Adapter for ShellAdapter {
         cmd.current_dir(&work_dir);
         apply_shaped_env(&mut cmd, exec.policy.clean_env, &env_allowlist, &[]);
 
-        let output =
-            command_output_with_timeout(&mut cmd, effective_node_timeout_ms(node, params))?;
+        let output = command_output_with_controls(
+            &mut cmd,
+            effective_node_timeout_ms(node, params),
+            Some(exec.cancellation_requested.as_ref()),
+        )?;
 
         exec.fs.write(&stdout_path, &output.stdout)?;
         exec.fs.write(&stderr_path, &output.stderr)?;
@@ -954,8 +960,11 @@ impl Adapter for ContainerAdapter {
             cmd.arg(part);
         }
 
-        let output =
-            command_output_with_timeout(&mut cmd, effective_node_timeout_ms(node, params))?;
+        let output = command_output_with_controls(
+            &mut cmd,
+            effective_node_timeout_ms(node, params),
+            Some(exec.cancellation_requested.as_ref()),
+        )?;
         let exit_code = output.status.code();
 
         exec.fs.write(&stdout_path, &output.stdout)?;
@@ -1297,6 +1306,7 @@ fn status_string(status: &NodeStatus) -> String {
         NodeStatus::Failed => "failed".to_string(),
         NodeStatus::Skipped => "skipped".to_string(),
         NodeStatus::Cached => "cached".to_string(),
+        NodeStatus::Cancelled => "cancelled".to_string(),
     }
 }
 
@@ -1345,6 +1355,7 @@ pub(crate) fn transition_cause_for_status(status: &NodeStatus) -> &'static str {
         NodeStatus::Failed => "ExecutionFailed",
         NodeStatus::Skipped => "SelectionFiltered",
         NodeStatus::Cached => "CachedReuse",
+        NodeStatus::Cancelled => "CancelRequested",
     }
 }
 
@@ -1353,6 +1364,7 @@ pub(crate) fn transition_cause_for_failure(failure: Option<&FailureInfo>) -> &'s
         Some(failure) if failure.kind == "Policy" => "PolicyDenied",
         Some(failure) if failure.code == "UPSTREAM_FAILED" => "DependencyFailed",
         Some(failure) if failure.code == "RUN_ABORTED" => "ExecutionAborted",
+        Some(failure) if failure.code == "EXEC_CANCELLED" => "CancelRequested",
         Some(failure) if failure.code == "RUN_TIMEOUT" => "TimeoutExceeded",
         Some(failure) if failure.code == "EXEC_TIMEOUT" => "TimeoutExceeded",
         Some(failure) if failure.code == "CONTAINER_ENGINE_UNAVAILABLE" => "InfrastructureFailed",
@@ -1381,6 +1393,7 @@ pub(crate) fn failure_propagation_cause(failure: Option<&FailureInfo>) -> &'stat
         "PolicyDenied" => "policy_denied",
         "DependencyFailed" => "upstream_failed",
         "ExecutionAborted" => "execution_aborted",
+        "CancelRequested" => "cancel_requested",
         "TimeoutExceeded" => "timeout_exceeded",
         "InfrastructureFailed" => "infrastructure_failed",
         "MissingRequiredOutput" => "missing_required_output",
@@ -1489,6 +1502,8 @@ fn failed_node_result_from_runtime_error(
         RuntimeError::Executor(message) => {
             if message.contains("timed out") {
                 ("Execution", "EXEC_TIMEOUT", message)
+            } else if message.contains("cancelled") {
+                ("Execution", "EXEC_CANCELLED", message)
             } else {
                 ("Execution", "EXEC_ERROR", message)
             }
@@ -1499,7 +1514,11 @@ fn failed_node_result_from_runtime_error(
     let _ = ctx.fs.write(&stdout_path, b"");
     let _ = ctx.fs.write(&stderr_path, message.as_bytes());
     NodeResult {
-        status: NodeStatus::Failed,
+        status: if code == "EXEC_CANCELLED" {
+            NodeStatus::Cancelled
+        } else {
+            NodeStatus::Failed
+        },
         stdout_path: stdout_path.display().to_string(),
         stderr_path: stderr_path.display().to_string(),
         outputs_dir: outputs_dir.display().to_string(),
@@ -2444,8 +2463,56 @@ pub(crate) fn command_output_with_timeout(
     cmd: &mut std::process::Command,
     timeout_ms: Option<u64>,
 ) -> Result<Output, RuntimeError> {
+    command_output_with_controls(cmd, timeout_ms, None)
+}
+
+fn cancellation_registry() -> &'static Mutex<Vec<Weak<AtomicBool>>> {
+    static REGISTRY: OnceLock<Mutex<Vec<Weak<AtomicBool>>>> = OnceLock::new();
+    REGISTRY.get_or_init(|| Mutex::new(Vec::new()))
+}
+
+fn broadcast_runtime_cancellation() {
+    let mut registry = cancellation_registry().lock().expect("cancellation registry");
+    registry.retain(|entry| {
+        if let Some(flag) = entry.upgrade() {
+            flag.store(true, Ordering::SeqCst);
+            true
+        } else {
+            false
+        }
+    });
+}
+
+pub(crate) fn install_runtime_cancellation_handler() {
+    static INSTALLED: OnceLock<()> = OnceLock::new();
+    INSTALLED.get_or_init(|| {
+        let _ = ctrlc::set_handler(broadcast_runtime_cancellation);
+    });
+}
+
+pub(crate) fn register_runtime_cancellation_flag(flag: &Arc<AtomicBool>) {
+    let mut registry = cancellation_registry().lock().expect("cancellation registry");
+    registry.retain(|entry| entry.strong_count() > 0);
+    registry.push(Arc::downgrade(flag));
+}
+
+pub(crate) fn command_output_with_controls(
+    cmd: &mut std::process::Command,
+    timeout_ms: Option<u64>,
+    cancellation_requested: Option<&AtomicBool>,
+) -> Result<Output, RuntimeError> {
     let Some(limit_ms) = timeout_ms else {
-        return cmd.output().map_err(RuntimeError::Io);
+        let mut child = cmd.spawn().map_err(RuntimeError::Io)?;
+        loop {
+            if let Some(_status) = child.try_wait().map_err(RuntimeError::Io)? {
+                return child.wait_with_output().map_err(RuntimeError::Io);
+            }
+            if cancellation_requested.is_some_and(|requested| requested.load(Ordering::SeqCst)) {
+                terminate_child_best_effort(&mut child);
+                return Err(RuntimeError::Executor("execution cancelled by operator".to_string()));
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
     };
     let mut child = cmd.spawn().map_err(RuntimeError::Io)?;
     let start = std::time::Instant::now();
@@ -2453,18 +2520,26 @@ pub(crate) fn command_output_with_timeout(
         if let Some(_status) = child.try_wait().map_err(RuntimeError::Io)? {
             return child.wait_with_output().map_err(RuntimeError::Io);
         }
+        if cancellation_requested.is_some_and(|requested| requested.load(Ordering::SeqCst)) {
+            terminate_child_best_effort(&mut child);
+            return Err(RuntimeError::Executor("execution cancelled by operator".to_string()));
+        }
         if start.elapsed().as_millis() > limit_ms as u128 {
-            #[cfg(unix)]
-            {
-                let pid = child.id();
-                kill_child_descendants_best_effort(pid);
-            }
-            let _ = child.kill();
-            let _ = child.wait();
+            terminate_child_best_effort(&mut child);
             return Err(RuntimeError::Executor(format!("execution timed out after {limit_ms}ms")));
         }
         std::thread::sleep(Duration::from_millis(10));
     }
+}
+
+fn terminate_child_best_effort(child: &mut std::process::Child) {
+    #[cfg(unix)]
+    {
+        let pid = child.id();
+        kill_child_descendants_best_effort(pid);
+    }
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 #[cfg(unix)]
@@ -2571,13 +2646,14 @@ fn rustc_version() -> String {
 }
 
 fn count_nodes(status_map: &HashMap<String, NodeStatus>) -> NodeCounts {
-    let mut counts = NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0 };
+    let mut counts = NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0, cancelled: 0 };
     for status in status_map.values() {
         match status {
             NodeStatus::Success => counts.success += 1,
             NodeStatus::Failed => counts.failed += 1,
             NodeStatus::Skipped => counts.skipped += 1,
             NodeStatus::Cached => counts.cached += 1,
+            NodeStatus::Cancelled => counts.cancelled += 1,
         }
     }
     counts
