@@ -355,6 +355,41 @@ fn deterministic_scheduler_respects_gpu_device_budget() {
 }
 
 #[test]
+fn deterministic_scheduler_respects_named_resource_capacities() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","resources":{"cpu":1,"mem_mb":64,"named_resources":{"database_slot":1}},"outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {"id":"b","kind":"const","resources":{"cpu":1,"mem_mb":64,"named_resources":{"database_slot":1}},"outputs":[{"name":"out","path":"b/out"}],"params":{"value":2}},
+            {"id":"cpu","kind":"const","outputs":[{"name":"out","path":"cpu/out"}],"params":{"value":3}}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .unwrap();
+    let mut options = RuntimeConfig::default();
+    options.jobs = 3;
+    options.scheduler_policy.max_parallelism = 3;
+    options.scheduler_policy.cpu_budget = Some(3);
+    options.named_resource_capacities =
+        std::collections::BTreeMap::from([("database_slot".to_string(), 1)]);
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let decision =
+        scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), false);
+    assert!(decision.batch.contains(&"a".to_string()));
+    assert!(decision.batch.contains(&"cpu".to_string()));
+    assert!(!decision.batch.contains(&"b".to_string()));
+    assert_eq!(
+        decision.blocked_reasons.get("b").map(String::as_str),
+        Some("blocked_by_named_resource:database_slot")
+    );
+}
+
+#[test]
 fn deterministic_scheduler_forces_single_progress_for_oversized_root() {
     let graph = parse_graph_strict(
         r#"{

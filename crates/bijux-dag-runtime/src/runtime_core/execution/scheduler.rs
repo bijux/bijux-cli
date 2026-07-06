@@ -726,6 +726,7 @@ struct ReadyCandidate {
     cpu: u32,
     memory_mb: u32,
     gpu_devices: u32,
+    named_resources: BTreeMap<String, u32>,
 }
 
 fn preflight_decision(
@@ -783,9 +784,11 @@ impl Scheduler for DeterministicScheduler {
             options.scheduler_policy.memory_budget_mb.or(options.memory_budget_mb);
         let gpu_device_budget =
             options.scheduler_policy.gpu_device_budget.or(options.gpu_device_budget);
+        let named_resource_capacities = effective_named_resource_capacities(options);
         let mut used_cpu = 0u32;
         let mut used_memory_mb = 0u32;
         let mut used_gpu_devices = 0u32;
+        let mut used_named_resources = BTreeMap::<String, u32>::new();
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
         let mut blocked_reasons = BTreeMap::new();
@@ -797,6 +800,7 @@ impl Scheduler for DeterministicScheduler {
                 cpu: node_cpu(graph, &node_id),
                 memory_mb: node_memory_mb(graph, &node_id),
                 gpu_devices: node_gpu_devices(graph, &node_id),
+                named_resources: node_named_resources(graph, &node_id),
                 node_id,
             })
             .collect::<Vec<_>>();
@@ -837,9 +841,22 @@ impl Scheduler for DeterministicScheduler {
                 blocked_reasons.insert(candidate.node_id.clone(), "blocked_by_gpu".to_string());
                 continue;
             }
+            if let Some(resource_name) = first_exhausted_named_resource(
+                &named_resource_capacities,
+                &used_named_resources,
+                &candidate.named_resources,
+            ) {
+                blocked.push(candidate.node_id.clone());
+                blocked_reasons.insert(
+                    candidate.node_id.clone(),
+                    format!("blocked_by_named_resource:{resource_name}"),
+                );
+                continue;
+            }
             used_cpu += candidate.cpu;
             used_memory_mb += candidate.memory_mb;
             used_gpu_devices += candidate.gpu_devices;
+            reserve_named_resources(&mut used_named_resources, &candidate.named_resources);
             let _ = ready_queue.take(&candidate.node_id);
             batch.push(candidate.node_id.clone());
         }
@@ -887,9 +904,11 @@ impl Scheduler for ThroughputScheduler {
             options.scheduler_policy.memory_budget_mb.or(options.memory_budget_mb);
         let gpu_device_budget =
             options.scheduler_policy.gpu_device_budget.or(options.gpu_device_budget);
+        let named_resource_capacities = effective_named_resource_capacities(options);
         let mut used_cpu = 0u32;
         let mut used_memory_mb = 0u32;
         let mut used_gpu_devices = 0u32;
+        let mut used_named_resources = BTreeMap::<String, u32>::new();
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
         let mut blocked_reasons = BTreeMap::new();
@@ -905,6 +924,7 @@ impl Scheduler for ThroughputScheduler {
             let cpu = node_cpu(graph, &id);
             let memory_mb = node_memory_mb(graph, &id);
             let gpu_devices = node_gpu_devices(graph, &id);
+            let named_resources = node_named_resources(graph, &id);
             if used_cpu + cpu > cpu_budget {
                 blocked_reasons.insert(id.clone(), "blocked_by_cpu".to_string());
                 blocked.push(id);
@@ -920,9 +940,20 @@ impl Scheduler for ThroughputScheduler {
                 blocked.push(id);
                 continue;
             }
+            if let Some(resource_name) = first_exhausted_named_resource(
+                &named_resource_capacities,
+                &used_named_resources,
+                &named_resources,
+            ) {
+                blocked_reasons
+                    .insert(id.clone(), format!("blocked_by_named_resource:{resource_name}"));
+                blocked.push(id);
+                continue;
+            }
             used_cpu += cpu;
             used_memory_mb += memory_mb;
             used_gpu_devices += gpu_devices;
+            reserve_named_resources(&mut used_named_resources, &named_resources);
             batch.push(id);
         }
         for id in blocked.clone() {
@@ -2372,6 +2403,41 @@ fn node_memory_mb(graph: &Graph, node_id: &str) -> u32 {
 
 fn node_gpu_devices(graph: &Graph, node_id: &str) -> u32 {
     graph.nodes.iter().find(|n| n.id == node_id).map(resources::node_gpu_devices).unwrap_or(0)
+}
+
+fn node_named_resources(graph: &Graph, node_id: &str) -> BTreeMap<String, u32> {
+    graph
+        .nodes
+        .iter()
+        .find(|n| n.id == node_id)
+        .map(resources::node_named_resources)
+        .unwrap_or_default()
+}
+
+fn effective_named_resource_capacities(options: &RuntimeConfig) -> BTreeMap<String, u32> {
+    let mut capacities = options.named_resource_capacities.clone();
+    for (name, amount) in &options.scheduler_policy.named_resource_capacities {
+        capacities.insert(name.clone(), *amount);
+    }
+    capacities
+}
+
+fn first_exhausted_named_resource(
+    capacities: &BTreeMap<String, u32>,
+    used: &BTreeMap<String, u32>,
+    requested: &BTreeMap<String, u32>,
+) -> Option<String> {
+    requested.iter().find_map(|(name, amount)| {
+        let capacity = capacities.get(name).copied().unwrap_or_default();
+        let in_use = used.get(name).copied().unwrap_or_default();
+        (in_use.saturating_add(*amount) > capacity).then(|| name.clone())
+    })
+}
+
+fn reserve_named_resources(used: &mut BTreeMap<String, u32>, requested: &BTreeMap<String, u32>) {
+    for (name, amount) in requested {
+        *used.entry(name.clone()).or_default() += *amount;
+    }
 }
 
 fn node_priority(graph: &Graph, node_id: &str) -> u8 {
