@@ -62,6 +62,9 @@ either widen the contract too far or still need stricter release posture:
 
 - authoring helpers and raw graph internals: `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `canonical-bytes`, `canonical-diff`
 - advanced inspection and comparison helpers: `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`
+  `node` is the explicit-path deep inspection route for one persisted node and
+  surfaces planned fields, artifact indexes, attempts, log tails, cache state,
+  failure evidence, and evidence gaps
 - bundle, migration, and environment control helpers: `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary`
 
 ## Full Command Families
@@ -69,6 +72,9 @@ either widen the contract too far or still need stricter release posture:
 - definition: `init`, `validate`, `canonicalize`, `lint`, `graph-lint`, `fingerprint`
 - execution and replay: `run`, `replay`, `prove`, `proof-summary`, `verify`, `fsck`
 - inspect and history: `status`, `explain`, `node`, `runs ...`, `artifact-inspect`
+
+For the explicit node-evidence route, see
+[`node-inspection.md`](./node-inspection.md).
 - comparison: `diff`, `why-rerun`, `why-cache-missed`, `trace-artifact`
 - operations: `cache ...`, `adapters ...`, `export`, `import`, `config ...`, `policy ...`
 
