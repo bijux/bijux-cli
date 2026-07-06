@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-06
 ---
 
 # bijux-canon
@@ -21,6 +21,7 @@ acts as a wide governance matrix for DAG, evidence, coverage, and schema work.
 
 ## Job Shape
 
+- provision Rust `1.86.0` through the workflow `RUST_TOOLCHAIN_VERSION` pin
 - run formatting, lint, governance tests, and compatibility drift checks
 - verify evidence and generated reports
 - run docs and public-surface drift checks

@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-06
 ---
 
 # release-pypi
@@ -23,6 +23,7 @@ PyPI.
 - wait for `ci.yml` to pass on the tagged commit
 - decide publication with `make gh-release-plan-pypi`
 - prepare the release tree
+- provision Rust `1.86.0` through `BIJUX_PYPI_RUST_TOOLCHAIN`
 - build wheel and source distribution with Maturin
 - publish through `make publish-py`
 
