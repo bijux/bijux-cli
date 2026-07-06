@@ -93,7 +93,12 @@ pub(super) const CONTRACT_SUITES: &[SuiteDef] = &[
         slow: false,
         internal: false,
         effect: CommandEffect::ReadWrite,
-        run: || run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"]),
+        run: || {
+            run_status(
+                "cargo",
+                &["run", "-p", "bijux-dag-cli", "--bin", "bijux-dag", "--", "compat"],
+            )
+        },
     },
     SuiteDef {
         id: "golden",

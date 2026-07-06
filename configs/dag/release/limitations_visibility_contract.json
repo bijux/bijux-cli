@@ -3,11 +3,36 @@
   "commands": [
     {
       "id": "dag-capabilities",
-      "run": "cargo run -q -p bijux-dag-cli -- dag capabilities --json",
+      "program": "cargo",
+      "args": [
+        "run",
+        "-q",
+        "-p",
+        "bijux-dag-cli",
+        "--bin",
+        "bijux-dag",
+        "--",
+        "capabilities",
+        "--json"
+      ],
+      "env": {
+        "BIJUX_DAG_ENABLE_INTERNAL": "1"
+      },
+      "run": "BIJUX_DAG_ENABLE_INTERNAL=1 cargo run -q -p bijux-dag-cli --bin bijux-dag -- capabilities --json",
       "required_tokens": ["simulated", "production_ready", "status"]
     },
     {
       "id": "root-doctor",
+      "program": "cargo",
+      "args": [
+        "run",
+        "-q",
+        "-p",
+        "bijux-cli",
+        "--",
+        "--json",
+        "doctor"
+      ],
       "run": "cargo run -q -p bijux-cli -- --json doctor",
       "required_tokens": ["status", "severity", "suggestions"]
     }

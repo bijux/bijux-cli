@@ -1210,7 +1210,10 @@ fn run(cli: Cli) -> Result<(), String> {
         ),
         CommandLine::Compat => {
             run_command_reported(&context, "compat", CommandEffect::ReadWrite, json!({}), || {
-                run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])
+                run_status(
+                    "cargo",
+                    &["run", "-p", "bijux-dag-cli", "--bin", "bijux-dag", "--", "compat"],
+                )
             })
         }
         CommandLine::Api { command } => match command {
@@ -1398,7 +1401,10 @@ fn run_ci() -> Result<(), String> {
     run_missing_workspace_dependency_checks()?;
     run_status("cargo", &["test", "--workspace"])?;
     run_golden()?;
-    run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])?;
+    run_status(
+        "cargo",
+        &["run", "-p", "bijux-dag-cli", "--bin", "bijux-dag", "--", "compat"],
+    )?;
 
     let root = repo_root()?;
     let scratch = std::env::temp_dir().join(format!("bijux-dag-ci-{}", now_secs()));
@@ -1411,8 +1417,9 @@ fn run_ci() -> Result<(), String> {
             "run",
             "-p",
             "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
             "--",
-            "dag",
             "run",
             "evidence/authoring/examples/hello.dag.json",
             "--out",
@@ -1423,7 +1430,16 @@ fn run_ci() -> Result<(), String> {
     run_status_in_dir(
         &root,
         "cargo",
-        &["run", "-p", "bijux-dag-cli", "--", "dag", "verify", run_dir.to_str().expect("utf-8")],
+        &[
+            "run",
+            "-p",
+            "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
+            "--",
+            "verify",
+            run_dir.to_str().expect("utf-8"),
+        ],
     )
 }
 

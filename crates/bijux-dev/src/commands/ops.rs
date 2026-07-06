@@ -1876,8 +1876,9 @@ pub(super) fn run_e2e_matrix() -> Result<(), String> {
                 "run",
                 "-p",
                 "bijux-dag-cli",
+                "--bin",
+                "bijux-dag",
                 "--",
-                "dag",
                 "validate",
                 "evidence/authoring/examples/hello.dag.json",
             ],
@@ -3223,15 +3224,15 @@ pub(super) fn run_operator_ux_guard() -> Result<(), String> {
         fs::read_to_string(root.join("docs/bijux-dag/interfaces/operator-command-index.md"))
             .map_err(|err| err.to_string())?;
     for command in [
-        "dag runs list",
-        "dag runs show",
-        "dag runs inspect",
-        "dag runs tree",
-        "dag runs timeline",
-        "dag runs diff",
-        "dag runs verify",
-        "dag runs doctor",
-        "dag runs explain-failure",
+        "bijux-dag runs list",
+        "bijux-dag runs show",
+        "bijux-dag runs inspect",
+        "bijux-dag runs tree",
+        "bijux-dag runs timeline",
+        "bijux-dag runs diff",
+        "bijux-dag runs verify",
+        "bijux-dag runs doctor",
+        "bijux-dag runs explain-failure",
     ] {
         if !index.contains(command) {
             return Err(format!("operator command index missing `{command}`"));
@@ -3770,7 +3771,8 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     if !commands_src.contains("Capabilities") {
         return Err(
-            "dag capabilities command is required for machine-readable support summary".to_string()
+            "dag capabilities command is required for maintainer-only support probes"
+                .to_string(),
         );
     }
 
@@ -3779,6 +3781,11 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
             .map_err(|err| err.to_string())?;
     let install =
         fs::read_to_string(root.join("docs/bijux-dag/operations/installation-and-setup.md"))
+            .map_err(|err| err.to_string())?;
+    let ci = fs::read_to_string(root.join("docs/bijux-dag/operations/ci-integration.md"))
+        .map_err(|err| err.to_string())?;
+    let support_matrix =
+        fs::read_to_string(root.join("docs/bijux-dag/interfaces/support-matrix.md"))
             .map_err(|err| err.to_string())?;
     for required_cmd in [
         "cargo build -p bijux-dag-cli --release",
@@ -3799,6 +3806,46 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
             ));
         }
     }
+    for required_cmd in [
+        "cargo run -p bijux-dag-cli --bin bijux-dag -- commands",
+        "Maintainer-only probes such as `capabilities` remain outside this first-hour",
+    ] {
+        if !quickstart.contains(required_cmd) {
+            return Err(format!(
+                "first-hour doc missing public-boundary reminder `{}`",
+                required_cmd
+            ));
+        }
+    }
+    if quickstart.contains("cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json") {
+        return Err(
+            "first-hour doc must not present `capabilities --json` as part of the operator lane"
+                .to_string(),
+        );
+    }
+    for required_cmd in [
+        "cargo run -p bijux-dag-cli --bin bijux-dag -- commands",
+        "BIJUX_DAG_ENABLE_INTERNAL=1 cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json",
+        "not part of the public operator boundary",
+    ] {
+        if !ci.contains(required_cmd) {
+            return Err(format!(
+                "ci integration doc missing support-boundary reminder `{}`",
+                required_cmd
+            ));
+        }
+    }
+    for required_cmd in [
+        "| `commands` | stable | visible CLI | route inventory for stable and non-stable command discovery |",
+        "| `capabilities` | internal | `BIJUX_DAG_ENABLE_INTERNAL=1` | maintainer-only support probe outside the public operator lane |",
+    ] {
+        if !support_matrix.contains(required_cmd) {
+            return Err(format!(
+                "support matrix missing release-boundary classification `{}`",
+                required_cmd
+            ));
+        }
+    }
     Ok(())
 }
 
@@ -3816,7 +3863,7 @@ pub(super) fn run_release_artifact_verification_suite() -> Result<(), String> {
     }
     let policy = fs::read_to_string(root.join("docs/spec/RELEASE_BINARY_VERIFICATION.md"))
         .map_err(|err| err.to_string())?;
-    for token in ["dag version --json", "dag capabilities --json"] {
+    for token in ["bijux-dag version --json", "bijux-dag capabilities --json"] {
         if !policy.contains(token) {
             return Err(format!(
                 "release binary verification doc missing required check `{}`",
@@ -3947,8 +3994,8 @@ pub(super) fn run_anti_drift_governance_guard() -> Result<(), String> {
 
     let release_doc = fs::read_to_string(root.join("docs/spec/RELEASE_BINARY_VERIFICATION.md"))
         .map_err(|err| err.to_string())?;
-    if !release_doc.contains("dag version --json")
-        || !release_doc.contains("dag capabilities --json")
+    if !release_doc.contains("bijux-dag version --json")
+        || !release_doc.contains("bijux-dag capabilities --json")
     {
         return Err(
             "release verification doc must define machine-readable artifact checks".to_string()
@@ -5329,22 +5376,59 @@ fn evaluate_limitations_visibility(root: &Path) -> Result<Value, String> {
             violations.push(format!("command `{id}` is missing run field"));
             continue;
         }
-        let output = if id == "dag-capabilities" {
-            command_stdout(
-                root,
-                "cargo",
-                &["run", "-q", "-p", "bijux-dag-cli", "--", "dag", "capabilities", "--json"],
-            )?
-        } else if id == "root-doctor" {
-            command_stdout(
-                root,
-                "cargo",
-                &["run", "-q", "-p", "bijux-cli", "--", "--json", "doctor"],
-            )?
-        } else {
-            violations.push(format!("unknown limitations command id `{id}`"));
+        let Some(program) = command.get("program").and_then(Value::as_str) else {
+            violations.push(format!("command `{id}` is missing program field"));
             continue;
         };
+        let Some(args) = command.get("args").and_then(Value::as_array) else {
+            violations.push(format!("command `{id}` is missing args field"));
+            continue;
+        };
+        let mut argv = Vec::with_capacity(args.len());
+        let mut args_valid = true;
+        for arg in args {
+            let Some(arg) = arg.as_str() else {
+                violations.push(format!("command `{id}` args entries must be strings"));
+                args_valid = false;
+                break;
+            };
+            argv.push(arg.to_string());
+        }
+        if !args_valid {
+            continue;
+        }
+        let mut command_process = Command::new(program);
+        command_process.current_dir(root).args(&argv);
+        if let Some(env) = command.get("env").and_then(Value::as_object) {
+            for (key, value) in env {
+                let Some(value) = value.as_str() else {
+                    violations.push(format!("command `{id}` env values must be strings"));
+                    args_valid = false;
+                    break;
+                };
+                command_process.env(key, value);
+            }
+        }
+        if !args_valid {
+            continue;
+        }
+        let command_output = command_process.output().map_err(|err| {
+            format!("command `{id}` failed to spawn `{program}` from contract: {err}")
+        })?;
+        if !command_output.status.success() {
+            violations.push(format!(
+                "command `{id}` failed: {} {}",
+                program,
+                argv.join(" ")
+            ));
+            continue;
+        }
+        let output = String::from_utf8(command_output.stdout)
+            .map_err(|err| format!("command `{id}` stdout was not utf-8: {err}"))?;
+        if id != "dag-capabilities" && id != "root-doctor" {
+            violations.push(format!("unknown limitations command id `{id}`"));
+            continue;
+        }
         let payload: Value = serde_json::from_str(&output)
             .map_err(|err| format!("command `{id}` did not emit JSON: {err}"))?;
         let rendered = serde_json::to_string(&payload).map_err(|err| err.to_string())?;
@@ -5465,12 +5549,35 @@ fn evaluate_production_candidate_suite(root: &Path) -> Result<Value, String> {
     run_step(
         "dag.validate",
         "cargo",
-        &["run", "-q", "-p", "bijux-dag-cli", "--", "dag", "validate", "--json", graph],
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
+            "--",
+            "validate",
+            "--json",
+            graph,
+        ],
     )?;
     run_step(
         "dag.plan",
         "cargo",
-        &["run", "-q", "-p", "bijux-dag-cli", "--", "dag", "plan", "explain", "--json", graph],
+        &[
+            "run",
+            "-q",
+            "-p",
+            "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
+            "--",
+            "plan",
+            "explain",
+            "--json",
+            graph,
+        ],
     )?;
     run_step(
         "dag.run",
@@ -5480,8 +5587,9 @@ fn evaluate_production_candidate_suite(root: &Path) -> Result<Value, String> {
             "-q",
             "-p",
             "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
             "--",
-            "dag",
             "run",
             "--json",
             graph,
@@ -5499,8 +5607,9 @@ fn evaluate_production_candidate_suite(root: &Path) -> Result<Value, String> {
             "-q",
             "-p",
             "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
             "--",
-            "dag",
             "replay",
             "--json",
             first_run.to_string_lossy().as_ref(),
@@ -5517,8 +5626,9 @@ fn evaluate_production_candidate_suite(root: &Path) -> Result<Value, String> {
             "-q",
             "-p",
             "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
             "--",
-            "dag",
             "diff",
             "--json",
             first_run.to_string_lossy().as_ref(),
@@ -5533,8 +5643,9 @@ fn evaluate_production_candidate_suite(root: &Path) -> Result<Value, String> {
             "-q",
             "-p",
             "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
             "--",
-            "dag",
             "export",
             "--json",
             first_run.to_string_lossy().as_ref(),
@@ -5550,8 +5661,9 @@ fn evaluate_production_candidate_suite(root: &Path) -> Result<Value, String> {
             "-q",
             "-p",
             "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
             "--",
-            "dag",
             "import",
             "--json",
             "--verify-only",
