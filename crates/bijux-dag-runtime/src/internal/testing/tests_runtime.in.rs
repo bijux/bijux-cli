@@ -2165,10 +2165,45 @@ exit 1
 
     #[test]
     fn container_execution_enforces_node_timeout_when_engine_is_available() {
-        if !docker_available() {
-            return;
-        }
+        let _env_lock = process_env_lock();
         let dir = tempfile::tempdir().unwrap();
+        let bin_dir = dir.path().join("bin");
+        fs::create_dir_all(&bin_dir).unwrap();
+        let docker = bin_dir.join("docker");
+        fs::write(
+            &docker,
+            r#"#!/bin/sh
+if [ "$1" = "--version" ]; then
+  echo "docker fake 1.0"
+  exit 0
+fi
+if [ "$1" = "image" ] && [ "$2" = "inspect" ]; then
+  echo "sha256:feedface"
+  exit 0
+fi
+if [ "$1" = "run" ]; then
+  shift
+  trap 'exit 143' TERM
+  sleep 2
+  exit 0
+fi
+exit 1
+"#,
+        )
+        .unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&docker).unwrap().permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&docker, perms).unwrap();
+        }
+        let mut path_entries = vec![bin_dir.display().to_string()];
+        if let Some(existing_path) = std::env::var_os("PATH") {
+            path_entries.push(existing_path.to_string_lossy().to_string());
+        }
+        let path_value = path_entries.join(":");
+        let _path_guard = EnvVarGuard::replace("PATH", &path_value);
         let graph = Graph {
             spec: SPEC_VERSION.to_string(),
             meta: None,
@@ -2185,7 +2220,7 @@ exit 1
                 params: ParamValue::default(),
                 container: Some(ContainerSpec {
                     engine: "docker".to_string(),
-                    image: "alpine:3.20".to_string(),
+                    image: "example.local/runner@sha256:feedface".to_string(),
                     argv: vec![
                         "/bin/sh".to_string(),
                         "-c".to_string(),
@@ -2211,7 +2246,7 @@ exit 1
         let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
         let trace =
             fs::read_to_string(final_path.join("nodes").join("c").join("trace.json")).unwrap();
-        assert!(trace.contains("timed out"));
+        assert!(trace.contains("\"code\": \"EXEC_TIMEOUT\""));
     }
 
     #[test]
