@@ -195,12 +195,20 @@ fn node_cache_result(node: &Node, trace: &NodeTrace) -> String {
     "not_reused".to_string()
 }
 
-fn node_inspection_payload(run_dir: &Path, node_id: &str) -> Result<NodeInspectionPayload, ExitCode> {
+fn node_inspection_payload(
+    run_dir: &Path,
+    node_id: &str,
+) -> Result<NodeInspectionPayload, ExitCode> {
     require_run_directory(run_dir)?;
     let snapshot = load_snapshot(run_dir)?;
     let trace: NodeTrace = read_required_json_file(&node_trace_path(run_dir, node_id))?;
-    let planned =
-        snapshot.graph.nodes.iter().find(|node| node.id == node_id).cloned().ok_or(ExitCode::from(3))?;
+    let planned = snapshot
+        .graph
+        .nodes
+        .iter()
+        .find(|node| node.id == node_id)
+        .cloned()
+        .ok_or(ExitCode::from(3))?;
     let dependencies = snapshot
         .graph
         .edges
@@ -250,12 +258,16 @@ fn node_inspection_payload(run_dir: &Path, node_id: &str) -> Result<NodeInspecti
             .stdout_path
             .as_ref()
             .map(|path| run_dir.join("nodes").join(node_id).join(path))
-            .and_then(|path| read_optional_log_tail(run_dir, &path, "attempt stdout log", &mut evidence_gaps)),
+            .and_then(|path| {
+                read_optional_log_tail(run_dir, &path, "attempt stdout log", &mut evidence_gaps)
+            }),
         stderr: attempt
             .stderr_path
             .as_ref()
             .map(|path| run_dir.join("nodes").join(node_id).join(path))
-            .and_then(|path| read_optional_log_tail(run_dir, &path, "attempt stderr log", &mut evidence_gaps)),
+            .and_then(|path| {
+                read_optional_log_tail(run_dir, &path, "attempt stderr log", &mut evidence_gaps)
+            }),
         failure: serialize_optional(attempt.failure),
         scheduled_backoff_ms: attempt.scheduled_backoff_ms,
     })
@@ -310,12 +322,8 @@ fn node_inspection_payload(run_dir: &Path, node_id: &str) -> Result<NodeInspecti
 fn format_node_inspection_human(payload: &NodeInspectionPayload) -> String {
     let planned_inputs =
         serde_json::to_string(&payload.planned.inputs).unwrap_or_else(|_| "[]".to_string());
-    let planned_outputs = payload
-        .planned
-        .outputs
-        .iter()
-        .map(|output| output.name.clone())
-        .collect::<Vec<_>>();
+    let planned_outputs =
+        payload.planned.outputs.iter().map(|output| output.name.clone()).collect::<Vec<_>>();
     let attempt_summary = if payload.attempts.is_empty() {
         "[]".to_string()
     } else {
@@ -323,8 +331,11 @@ fn format_node_inspection_human(payload: &NodeInspectionPayload) -> String {
             .attempts
             .iter()
             .map(|attempt| {
-                let status =
-                    attempt.status.as_str().map(ToString::to_string).unwrap_or_else(|| attempt.status.to_string());
+                let status = attempt
+                    .status
+                    .as_str()
+                    .map(ToString::to_string)
+                    .unwrap_or_else(|| attempt.status.to_string());
                 format!(
                     "attempt={} status={} backoff_ms={}",
                     attempt.attempt,
@@ -344,18 +355,10 @@ fn format_node_inspection_human(payload: &NodeInspectionPayload) -> String {
         .as_ref()
         .map(|failure| serde_json::to_string(failure).unwrap_or_else(|_| "null".to_string()))
         .unwrap_or_else(|| "null".to_string());
-    let stdout_tail = payload
-        .logs
-        .stdout
-        .as_ref()
-        .map(|log| log.tail.join("\n"))
-        .unwrap_or_default();
-    let stderr_tail = payload
-        .logs
-        .stderr
-        .as_ref()
-        .map(|log| log.tail.join("\n"))
-        .unwrap_or_default();
+    let stdout_tail =
+        payload.logs.stdout.as_ref().map(|log| log.tail.join("\n")).unwrap_or_default();
+    let stderr_tail =
+        payload.logs.stderr.as_ref().map(|log| log.tail.join("\n")).unwrap_or_default();
     let evidence_gaps = if payload.evidence_gaps.is_empty() {
         "[]".to_string()
     } else {
@@ -668,8 +671,9 @@ fn operator_status_human(summary: &Value) -> String {
 mod tests {
     use super::{
         concise_explain_human, explain_node_payload, format_node_inspection_human,
-        handle_explain_command, handle_node_command, handle_status_command, node_inspection_payload,
-        operator_status_human, operator_status_summary, render_cache_policy, status_next_action,
+        handle_explain_command, handle_node_command, handle_status_command,
+        node_inspection_payload, operator_status_human, operator_status_summary,
+        render_cache_policy, status_next_action,
     };
     use crate::commands::{Commands, DagCli};
     use crate::read_file;
@@ -966,7 +970,10 @@ mod tests {
         assert_eq!(payload.terminal_attempt, 1);
         assert_eq!(payload.attempts.len(), 1);
         assert_eq!(payload.attempts[0].attempt, 1);
-        assert_eq!(payload.attempts[0].stdout.as_ref().expect("stdout").path, "nodes/extract/attempts/1/stdout.log");
+        assert_eq!(
+            payload.attempts[0].stdout.as_ref().expect("stdout").path,
+            "nodes/extract/attempts/1/stdout.log"
+        );
         assert_eq!(
             payload.logs.stdout.as_ref().expect("stdout log").tail,
             vec!["terminal stdout".to_string(), "second line".to_string()]
@@ -1004,7 +1011,12 @@ mod tests {
         assert_eq!(payload.status, "failed");
         assert_eq!(payload.terminal_attempt, 2);
         assert_eq!(
-            payload.failure.failure.as_ref().and_then(|failure| failure.get("code")).and_then(|value| value.as_str()),
+            payload
+                .failure
+                .failure
+                .as_ref()
+                .and_then(|failure| failure.get("code"))
+                .and_then(|value| value.as_str()),
             Some("EXEC_FAIL")
         );
         assert_eq!(payload.failure.transition_cause.as_deref(), Some("ExecutionFailed"));

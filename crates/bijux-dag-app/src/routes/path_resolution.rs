@@ -56,10 +56,7 @@ mod tests {
             node_resolved_params_path(run_dir, "n1"),
             Path::new("/runs/r1/nodes/n1/resolved_params.json")
         );
-        assert_eq!(
-            node_attempts_path(run_dir, "n1"),
-            Path::new("/runs/r1/nodes/n1/attempts.json")
-        );
+        assert_eq!(node_attempts_path(run_dir, "n1"), Path::new("/runs/r1/nodes/n1/attempts.json"));
         assert_eq!(node_stdout_path(run_dir, "n1"), Path::new("/runs/r1/nodes/n1/stdout.log"));
         assert_eq!(node_stderr_path(run_dir, "n1"), Path::new("/runs/r1/nodes/n1/stderr.log"));
     }

@@ -38,7 +38,8 @@ fn run_json(args: &[&str], cwd: &Path) -> Value {
 
 fn write_node_fixture(root: &Path) -> PathBuf {
     let run_dir = root.join("run-node");
-    fs::create_dir_all(run_dir.join("nodes").join("extract").join("outputs")).expect("mkdir outputs");
+    fs::create_dir_all(run_dir.join("nodes").join("extract").join("outputs"))
+        .expect("mkdir outputs");
     fs::create_dir_all(run_dir.join("nodes").join("extract").join("inputs")).expect("mkdir inputs");
     fs::create_dir_all(run_dir.join("nodes").join("extract").join("attempts").join("1"))
         .expect("mkdir attempt one");
@@ -231,10 +232,8 @@ fn node_command_json_surfaces_planned_runtime_and_log_evidence() {
     let temp = tempfile::tempdir().expect("tmp");
     let run_dir = write_node_fixture(temp.path());
 
-    let payload = run_json(
-        &["node", &output_path_string(&run_dir), "--id", "extract", "--json"],
-        &root,
-    );
+    let payload =
+        run_json(&["node", &output_path_string(&run_dir), "--id", "extract", "--json"], &root);
 
     assert_eq!(payload["command"], "dag.node");
     assert_eq!(payload["data"]["node_id"], "extract");
