@@ -164,7 +164,13 @@ fn operator_tree_timeline_and_failure_explain_work_from_explicit_run_dir() {
     let explain = explain_failure(&run).expect("explain");
     assert_eq!(explain["root_failure"], "b");
     assert_eq!(explain["root_failure_class"], "execution");
+    assert_eq!(explain["root_failure_code"], "EXEC_FAIL");
+    assert_eq!(explain["root_failure_message"], "command exited with status 7");
+    assert_eq!(explain["root_failure_reason"], "execution_failed");
     assert_eq!(explain["failure_classes"]["b"], "execution");
+    assert_eq!(explain["primary_failure"]["node_id"], "b");
+    assert_eq!(explain["propagated_failures"], json!([]));
+    assert_eq!(explain["propagated_skips"], json!([]));
 }
 
 #[test]

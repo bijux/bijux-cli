@@ -46,8 +46,11 @@ fn explain_output_shape_snapshot_is_stable() {
     let rendered = serde_json::to_string_pretty(&explained).expect("json");
     assert!(rendered.contains("root_failure"));
     assert!(rendered.contains("root_failure_class"));
+    assert!(rendered.contains("root_failure_message"));
     assert!(rendered.contains("failed_nodes"));
     assert!(rendered.contains("failure_classes"));
+    assert!(rendered.contains("propagated_failures"));
+    assert!(rendered.contains("downstream_affected_groups"));
 }
 
 #[test]
