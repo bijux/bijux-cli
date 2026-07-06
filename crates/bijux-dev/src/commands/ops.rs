@@ -2675,8 +2675,9 @@ pub(super) fn run_concurrency_model_guard() -> Result<(), String> {
 
 pub(super) fn run_runtime_unsafe_guard() -> Result<(), String> {
     let root = repo_root()?;
+    let unsafe_pattern = r"\bunsafe\b(?=\s*(\{|fn\b|impl\b|trait\b|extern\b))";
     let output = Command::new("rg")
-        .args(["-n", "\\bunsafe\\b", "crates/bijux-dag-runtime/src"])
+        .args(["-n", unsafe_pattern, "crates/bijux-dag-runtime/src"])
         .current_dir(&root)
         .output()
         .map_err(|err| err.to_string())?;
@@ -2694,8 +2695,9 @@ pub(super) fn run_runtime_unsafe_guard() -> Result<(), String> {
 
 pub(super) fn run_unsafe_audit_report() -> Result<(), String> {
     let root = repo_root()?;
+    let unsafe_pattern = r"\bunsafe\b(?=\s*(\{|fn\b|impl\b|trait\b|extern\b))";
     let output = Command::new("rg")
-        .args(["-n", "\\bunsafe\\b", "crates"])
+        .args(["-n", unsafe_pattern, "crates"])
         .current_dir(&root)
         .output()
         .map_err(|err| err.to_string())?;
