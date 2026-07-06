@@ -657,6 +657,7 @@ fn runtime_cache_reuses_entries_across_operator_only_config_changes() {
                 scheduler_policy: SchedulerPolicy {
                     max_parallelism: 4,
                     cpu_budget: Some(8),
+                    memory_budget_mb: None,
                     fairness: SchedulerFairness::ThroughputPreferred,
                     queue_isolation: QueueIsolationPolicy::GroupIsolated,
                     bounded_executor_capacity: 8,

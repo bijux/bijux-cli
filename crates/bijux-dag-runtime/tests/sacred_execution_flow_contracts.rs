@@ -48,7 +48,7 @@ fn scheduler_profile_is_deterministic_and_lexicographic() {
     let as_json = serde_json::to_value(profile).expect("serialize");
     assert_eq!(as_json["canonical_unit"], "node");
     assert_eq!(as_json["model"], "event_driven");
-    assert_eq!(as_json["ready_tie_break"], "priority_cpu_fit_then_node_id");
+    assert_eq!(as_json["ready_tie_break"], "priority_cpu_memory_fit_then_node_id");
 }
 
 #[test]

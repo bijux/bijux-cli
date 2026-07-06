@@ -264,13 +264,14 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
     let scheduler = build_scheduler(&SchedulerPolicy {
         max_parallelism: 1,
         cpu_budget: Some(1),
+        memory_budget_mb: None,
         fairness: SchedulerFairness::Deterministic,
         queue_isolation: QueueIsolationPolicy::SingleQueue,
         bounded_executor_capacity: 1,
         prefer_throughput_scheduler: false,
     });
     let profile = scheduler_contract_profile();
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuFitThenNodeId");
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuMemoryFitThenNodeId");
     assert!(failure_allows_downstream_readiness(FailurePropagationMode::ContinueIndependent));
 
     let graph = tiny_graph();

@@ -283,6 +283,7 @@ fn runtime_events_explain_ready_and_scheduler_blocking_reasons() {
                 scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
                     max_parallelism: 2,
                     cpu_budget: Some(1),
+                    memory_budget_mb: None,
                     ..bijux_dag_runtime::SchedulerPolicy::default()
                 },
                 ..RuntimeConfig::default()
@@ -312,6 +313,54 @@ fn runtime_events_explain_ready_and_scheduler_blocking_reasons() {
         })
         .expect("scheduler decision");
     assert_eq!(scheduler_decision["blocked_reasons"]["big"], "blocked_by_cpu");
+}
+
+#[test]
+fn runtime_events_report_memory_budget_blocking_reasons() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"root","kind":"const","outputs":[{"name":"out","path":"root/out"}],"params":{"value":1}},
+            {"id":"memory-heavy","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"memory-heavy/out"}],"resources":{"cpu":1,"mem_mb":2048},"params":{"value":2}},
+            {"id":"memory-light","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"memory-light/out"}],"resources":{"cpu":1,"mem_mb":512},"params":{"value":3}}
+          ],
+          "edges":[
+            {"from":{"node_id":"root","port":"out"},"to":{"node_id":"memory-heavy","port":"in"}},
+            {"from":{"node_id":"root","port":"out"},"to":{"node_id":"memory-light","port":"in"}}
+          ]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig {
+                jobs: 2,
+                scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
+                    max_parallelism: 2,
+                    cpu_budget: Some(2),
+                    memory_budget_mb: Some(1024),
+                    ..bijux_dag_runtime::SchedulerPolicy::default()
+                },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("runtime run");
+
+    let events = read_run_events(&run_dir);
+    let scheduler_decision = events
+        .iter()
+        .find(|event| {
+            event["event"] == "scheduler_decision"
+                && event["blocked_reasons"]["memory-heavy"] == "blocked_by_memory"
+        })
+        .expect("scheduler decision");
+    assert_eq!(scheduler_decision["blocked_reasons"]["memory-heavy"], "blocked_by_memory");
 }
 
 #[test]

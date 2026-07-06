@@ -82,7 +82,7 @@ fn scheduler_contract_profile_is_explicit_and_stable() {
     assert_eq!(format!("{:?}", profile.canonical_unit), "Node");
     assert_eq!(format!("{:?}", profile.model), "EventDriven");
     assert_eq!(format!("{:?}", profile.priority_model), "StaticHints");
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuFitThenNodeId");
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuMemoryFitThenNodeId");
 }
 
 #[test]
@@ -258,10 +258,52 @@ fn deterministic_scheduler_packs_smaller_ready_nodes_within_cpu_budget() {
     assert_eq!(decision.batch, vec!["small-a".to_string(), "small-b".to_string()]);
     assert!(decision.blocked_by_budget.contains(&"big".to_string()));
     assert_eq!(decision.blocked_reasons.get("big").map(String::as_str), Some("blocked_by_cpu"));
-    assert_eq!(decision.tie_break_reason.as_deref(), Some("priority_cpu_fit_then_node_id"));
+    assert_eq!(decision.tie_break_reason.as_deref(), Some("priority_cpu_memory_fit_then_node_id"));
     assert_eq!(
         decision.ready_candidates,
         vec!["small-a".to_string(), "small-b".to_string(), "big".to_string()]
+    );
+}
+
+#[test]
+fn deterministic_scheduler_packs_smaller_ready_nodes_within_memory_budget() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {"id":"memory-heavy","kind":"const","outputs":[{"name":"out","path":"memory-heavy/out"}],"resources":{"cpu":1,"mem_mb":2048},"params":{"value":1}},
+            {"id":"memory-light-a","kind":"const","outputs":[{"name":"out","path":"memory-light-a/out"}],"resources":{"cpu":1,"mem_mb":512},"params":{"value":2}},
+            {"id":"memory-light-b","kind":"const","outputs":[{"name":"out","path":"memory-light-b/out"}],"resources":{"cpu":1,"mem_mb":512},"params":{"value":3}}
+          ],
+          "edges": []
+        }"#,
+    )
+    .unwrap();
+    let mut options = RuntimeConfig::default();
+    options.jobs = 3;
+    options.scheduler_policy.max_parallelism = 3;
+    options.scheduler_policy.cpu_budget = Some(3);
+    options.scheduler_policy.memory_budget_mb = Some(1024);
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let decision =
+        scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), false);
+    assert_eq!(decision.batch, vec!["memory-light-a".to_string(), "memory-light-b".to_string()]);
+    assert!(decision.blocked_by_budget.contains(&"memory-heavy".to_string()));
+    assert_eq!(
+        decision.blocked_reasons.get("memory-heavy").map(String::as_str),
+        Some("blocked_by_memory")
+    );
+    assert_eq!(decision.tie_break_reason.as_deref(), Some("priority_cpu_memory_fit_then_node_id"));
+    assert_eq!(
+        decision.ready_candidates,
+        vec![
+            "memory-light-a".to_string(),
+            "memory-light-b".to_string(),
+            "memory-heavy".to_string()
+        ]
     );
 }
 

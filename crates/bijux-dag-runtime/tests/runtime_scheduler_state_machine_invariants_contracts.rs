@@ -40,7 +40,7 @@ fn scheduler_profile_contract_values_match_reported_surface() {
     let profile = scheduler_contract_profile();
     assert_eq!(format!("{:?}", profile.canonical_unit), "Node");
     assert_eq!(format!("{:?}", profile.model), "EventDriven");
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuFitThenNodeId");
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuMemoryFitThenNodeId");
 }
 
 #[test]
@@ -106,6 +106,40 @@ fn scheduler_emits_backpressure_when_cpu_budget_is_exceeded() {
     let decision = scheduler.next_batch(&graph, &mut ready, &options, Instant::now(), false);
     assert_eq!(decision.batch, vec!["a".to_string()]);
     assert_eq!(decision.blocked_by_budget, vec!["b".to_string()]);
+}
+
+#[test]
+fn scheduler_emits_backpressure_when_memory_budget_is_exceeded() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1},"resources":{"cpu":1,"mem_mb":1024}},
+            {"id":"b","kind":"const","outputs":[{"name":"out","path":"b/out"}],"params":{"value":2},"resources":{"cpu":1,"mem_mb":1024}},
+            {"id":"c","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"c/out"}],"params":{"value":3},"resources":{"cpu":1,"mem_mb":256}}
+          ],
+          "edges": [
+            {"from":{"node_id":"a","port":"out"},"to":{"node_id":"c","port":"in"}}
+          ]
+        }"#,
+    )
+    .expect("graph");
+    let mut options = RuntimeConfig::default();
+    options.jobs = 2;
+    options.scheduler_policy = SchedulerPolicy {
+        max_parallelism: 2,
+        cpu_budget: Some(2),
+        memory_budget_mb: Some(1024),
+        ..SchedulerPolicy::default()
+    };
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let decision = scheduler.next_batch(&graph, &mut ready, &options, Instant::now(), false);
+    assert_eq!(decision.batch, vec!["a".to_string()]);
+    assert_eq!(decision.blocked_by_budget, vec!["b".to_string()]);
+    assert_eq!(decision.blocked_reasons.get("b").map(String::as_str), Some("blocked_by_memory"));
 }
 
 #[test]
