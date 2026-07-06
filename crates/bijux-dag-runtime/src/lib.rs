@@ -125,6 +125,8 @@ mod iteration15_contracts;
 mod iteration17_contracts;
 #[path = "backend/runtime/local_executor.rs"]
 mod local_executor;
+#[path = "backend/runtime/local_worker_pool.rs"]
+mod local_worker_pool;
 #[doc(hidden)]
 #[path = "runtime_core/execution/node_result.rs"]
 pub mod node_result;
@@ -347,6 +349,10 @@ pub use invariants::{
 };
 use io::{Fs, StdFs};
 pub use local_executor::LocalExecutor;
+pub use local_worker_pool::{
+    LocalWorkerAssignment, LocalWorkerCompletion, LocalWorkerExecution, LocalWorkerPool,
+    LocalWorkerState, LocalWorkerStatus,
+};
 pub use observability::{
     category_from_runtime_event_name, current_process_memory_bytes,
     event_contains_sensitive_material, event_names_emitted_once, reconstruct_timeline_from_events,
