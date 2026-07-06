@@ -30,7 +30,7 @@ permissions:
   contents: read
 
 env:
-  RUST_TOOLCHAIN_VERSION: "1.85.0"
+  RUST_TOOLCHAIN_VERSION: "1.86.0"
 
 jobs:
   canon:
