@@ -15,6 +15,8 @@ classification, and diff classification. The `v0.4.0` release makes five DAG
 Rust crates public for the first time: `bijux-dag-core`,
 `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and
 `bijux-dag-cli`. `bijux-dag-testkit` remains repository-internal test support.
+The canonical public/private package contract lives in
+[Package Boundary](../bijux-core/foundation/package-boundary.md).
 
 Runtime identity in manifests, provenance, replay, and cache fingerprints is
 resolved from build metadata. Changing the shell directory around the compiled
@@ -37,8 +39,9 @@ presented as stable `v0.4.0` operator APIs.
 | internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
 | future | not a `v0.4.0` product promise | kubernetes execution, slurm or hpc execution, remote workers, public enterprise or federation APIs, full scheduler service |
 
-For the canonical source, use
-[Release Boundary](foundation/release-boundary.md).
+For the canonical operator-surface source, use
+[Release Boundary](foundation/release-boundary.md). For crate publication
+status, use [Package Boundary](../bijux-core/foundation/package-boundary.md).
 
 Use this handbook when the question is about graph truth, execution policy,
 replay outcomes, artifact behavior, or how the DAG crates divide ownership.

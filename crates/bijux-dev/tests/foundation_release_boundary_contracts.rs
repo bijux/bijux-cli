@@ -156,7 +156,11 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
     );
     assert_contains_all(
         &handbook,
-        &["## v0.4.0 Surface Truth Table", "[Release Boundary](foundation/release-boundary.md)"],
+        &[
+            "## v0.4.0 Surface Truth Table",
+            "[Release Boundary](foundation/release-boundary.md)",
+            "../bijux-core/foundation/package-boundary.md",
+        ],
         "docs/bijux-dag/index.md",
     );
     assert_contains_all(
@@ -179,8 +183,20 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
             "| future |",
             "BIJUX_DAG_ENABLE_SIMULATED=1",
             "BIJUX_DAG_ENABLE_INTERNAL=1",
+            "contracts/foundation/workspace_package_boundary.v1.json",
+            "../../bijux-core/foundation/package-boundary.md",
         ],
         "docs/bijux-dag/foundation/release-boundary.md",
+    );
+
+    let package_index = read_repo_file("docs/bijux-dag/packages/index.md");
+    assert_contains_all(
+        &package_index,
+        &[
+            "../../bijux-core/foundation/package-boundary.md",
+            "contracts/foundation/workspace_package_boundary.v1.json",
+        ],
+        "docs/bijux-dag/packages/index.md",
     );
 
     for path in [

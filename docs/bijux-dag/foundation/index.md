@@ -28,6 +28,7 @@ flowchart LR
 - what `bijux-dag` is built to solve
 - what it intentionally does not claim
 - responsibility boundaries across DAG crates
+- how DAG crates fit inside the workspace publication boundary
 - terms used for identity, replay, and diff classification
 - principles for safe long-term DAG evolution
 
@@ -54,4 +55,6 @@ flowchart LR
 ## Reading Rule
 
 Start here when the graph system itself is still unclear. Move to Architecture
-or Interfaces once the package purpose and boundaries already make sense.
+or Interfaces once the package purpose and boundaries already make sense. Use
+[Package Boundary](../../bijux-core/foundation/package-boundary.md) when the
+question is whether a crate is public or repository-internal.

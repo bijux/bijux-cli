@@ -16,6 +16,11 @@ simulation-only, and which claims still belong to the future.
 The contract source for this page is
 `contracts/foundation/dag_release_truth_table.v1.json`.
 
+This page governs operator-surface release status. For public/private crate
+publication status, use
+[Package Boundary](../../bijux-core/foundation/package-boundary.md) and
+`contracts/foundation/workspace_package_boundary.v1.json`.
+
 ## v0.4.0 Surface Truth Table
 
 | Class | `v0.4.0` meaning | Representative surfaces |
@@ -57,5 +62,6 @@ The stable `v0.4.0` release contract covers:
 ## Next Reads
 
 - [CLI Surface](../interfaces/cli-surface.md)
+- [Package Boundary](../../bijux-core/foundation/package-boundary.md)
 - [Scope and Non-Goals](scope-and-non-goals.md)
 - [Known Limitations](../quality/known-limitations.md)

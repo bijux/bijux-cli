@@ -12,6 +12,10 @@ For `v0.4.0`, five DAG crates are public release targets:
 `bijux-dag-app`, and `bijux-dag-cli`. `bijux-dag-testkit` remains
 repository-internal support for tests.
 
+The canonical public/private package contract lives in
+[Package Boundary](../../bijux-core/foundation/package-boundary.md) and
+`contracts/foundation/workspace_package_boundary.v1.json`.
+
 Public release status is not enough by itself. `RISK-008` in
 [Risk Register](../quality/risk-register.md) tracks whether the published crate
 surfaces remain understandable on crates.io and docs.rs.
