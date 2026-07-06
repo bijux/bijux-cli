@@ -26,6 +26,11 @@ The operator inspection lane is the stable home for:
 - `dag runs list`
 - `dag runs show`
 - `dag runs inspect`
+- `dag runs summary`
+- `dag runs compare`
+- `dag runs trend`
+- `dag runs failures`
+- `dag runs flakes`
 - `dag runs tree`
 - `dag runs timeline`
 - `dag runs diff`
