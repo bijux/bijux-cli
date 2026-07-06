@@ -11,10 +11,9 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    build_slurm_execution_request, AbsolutePathPolicy, MockSlurmBackend, PolicyConfig,
+    build_slurm_execution_request, AbsolutePathPolicy, MockSlurmBackend, NodeStatus, PolicyConfig,
     RemoteExecutionFingerprintSet, RemoteExecutionIdentity, RemoteExecutionWorkspace,
     RemoteInputArtifact, RemoteNodeExecutionPayload, SlurmBackendExecutor, SlurmJobStatus,
-    NodeStatus,
 };
 use std::fs;
 use std::path::Path;
