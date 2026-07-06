@@ -18,7 +18,7 @@ fn validation_error_and_warning_coverage() {
     let expected_error_codes = [
         "E1001", "E1002", "E1003", "E1004", "E1005", "E1007", "E1008", "E1009", "E1010", "E1011",
         "E1020", "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030",
-        "E1031", "E1032", "E1035",
+        "E1031", "E1032", "E1035", "E1039", "E1040", "E1041",
     ];
 
     for code in expected_error_codes {
@@ -613,6 +613,38 @@ fn graph_for_code(code: &str) -> Graph {
             let mut g = base_graph();
             g.nodes[0].effects =
                 vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Env];
+            g
+        }
+        "E1039" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Python;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Literal(serde_json::json!("bad"));
+            g
+        }
+        "E1040" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Python;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "function".to_string(),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("run")),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1041" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Python;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "module".to_string(),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("demo_module")),
+                )]
+                .into_iter()
+                .collect(),
+            );
             g
         }
         "W2001" => {

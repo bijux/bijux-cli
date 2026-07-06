@@ -427,6 +427,13 @@ pub fn run_plan_preflight(
                     message: "shell adapter unavailable in planner preflight".to_string(),
                 });
             }
+            crate::NodeKind::Python if !capabilities.shell_available => {
+                diagnostics.push(PlanPreflightDiagnosticV1 {
+                    node_id: node.id.clone(),
+                    code: "PF4501_SHELL_UNAVAILABLE".to_string(),
+                    message: "python adapter unavailable in planner preflight".to_string(),
+                });
+            }
             crate::NodeKind::Container if !capabilities.container_available => {
                 diagnostics.push(PlanPreflightDiagnosticV1 {
                     node_id: node.id.clone(),

@@ -53,6 +53,9 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1036", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1037", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1038", severity: Severity::Error, domain: ValidationDomain::Topology },
+    ValidationRule { id: "E1039", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1040", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1041", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -88,6 +91,20 @@ fn valid_env_allowlist_pattern(pattern: &str) -> bool {
         return false;
     }
     core.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+}
+
+fn node_param_object(node: &Node) -> Option<&std::collections::BTreeMap<String, ParamValue>> {
+    match &node.params {
+        ParamValue::Object(map) => Some(map),
+        _ => None,
+    }
+}
+
+fn node_param_literal_string<'a>(node: &'a Node, key: &str) -> Option<&'a str> {
+    node_param_object(node).and_then(|params| params.get(key)).and_then(|value| match value {
+        ParamValue::Literal(serde_json::Value::String(text)) => Some(text.as_str()),
+        _ => None,
+    })
 }
 
 fn is_normalized_relative_path(path: &str) -> bool {
@@ -200,6 +217,56 @@ impl Graph {
                     format!("/nodes/{}/effects", node.id),
                     Some("Include filesystem effect for shell nodes".to_string()),
                 );
+            }
+            if node.kind == crate::NodeKind::Python && node.effects.is_empty() {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("missing effects for python node: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Declare effects for python nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Python && !node.effects.contains(&Effect::Filesystem) {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("python node missing filesystem effect: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Include filesystem effect for python nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Python && !matches!(node.params, ParamValue::Object(_))
+            {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1039",
+                    format!("python node params must be an object: {}", node.id),
+                    format!("/nodes/{}/params", node.id),
+                    Some("Declare python module and function inside params".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Python {
+                match node_param_literal_string(node, "module") {
+                    Some(module) if !module.trim().is_empty() => {}
+                    _ => emit_rule(
+                        &mut diagnostics,
+                        "E1040",
+                        format!("python node missing module: {}", node.id),
+                        format!("/nodes/{}/params/module", node.id),
+                        Some("Provide a non-empty module string for python nodes".to_string()),
+                    ),
+                }
+                match node_param_literal_string(node, "function") {
+                    Some(function) if !function.trim().is_empty() => {}
+                    _ => emit_rule(
+                        &mut diagnostics,
+                        "E1041",
+                        format!("python node missing function: {}", node.id),
+                        format!("/nodes/{}/params/function", node.id),
+                        Some("Provide a non-empty function string for python nodes".to_string()),
+                    ),
+                }
             }
             if node.kind == crate::NodeKind::Container && node.container.is_none() {
                 emit_rule(

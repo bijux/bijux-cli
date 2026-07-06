@@ -82,7 +82,12 @@ pub struct NodeTypeRegistry {
 impl NodeTypeRegistry {
     pub fn default_registry() -> Self {
         Self {
-            known_types: vec!["const".to_string(), "shell".to_string(), "container".to_string()],
+            known_types: vec![
+                "const".to_string(),
+                "shell".to_string(),
+                "python".to_string(),
+                "container".to_string(),
+            ],
         }
     }
 

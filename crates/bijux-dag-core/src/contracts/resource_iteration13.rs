@@ -336,6 +336,7 @@ fn infer_requested_pool(node: &crate::Node) -> ExecutionPoolV1 {
     }
     match node.kind {
         crate::NodeKind::Container => ExecutionPoolV1::Container,
+        crate::NodeKind::Python => ExecutionPoolV1::Shell,
         crate::NodeKind::Shell => ExecutionPoolV1::Shell,
         _ => ExecutionPoolV1::Local,
     }
@@ -369,6 +370,15 @@ pub fn builtin_adapter_capability_registry() -> Vec<AdapterCapabilityDescriptorV
             adapter_kind: "shell".to_string(),
             input_contract: "argv-only".to_string(),
             output_contract: "declared-artifact".to_string(),
+            effects: vec!["filesystem".to_string(), "env".to_string()],
+            cacheable: true,
+            sandbox_profile: "process".to_string(),
+            side_effect_class: "writes_run".to_string(),
+        },
+        AdapterCapabilityDescriptorV1 {
+            adapter_kind: "python".to_string(),
+            input_contract: "json-call".to_string(),
+            output_contract: "declared-json-artifact".to_string(),
             effects: vec!["filesystem".to_string(), "env".to_string()],
             cacheable: true,
             sandbox_profile: "process".to_string(),
@@ -654,8 +664,12 @@ mod tests {
     #[test]
     fn g123_adapter_capabilities_are_machine_readable_for_planner_runnability() {
         let shell = adapter_capability_for_kind("shell").expect("shell capability");
+        let python = adapter_capability_for_kind("python").expect("python capability");
         assert_eq!(shell.sandbox_profile, "process");
+        assert_eq!(python.sandbox_profile, "process");
         assert!(planner_runnable_from_capabilities("shell", false));
+        assert!(planner_runnable_from_capabilities("python", false));
+        assert!(!planner_runnable_from_capabilities("python", true));
         assert!(!planner_runnable_from_capabilities("shell", true));
         assert!(planner_runnable_from_capabilities("container", true));
         assert!(!planner_runnable_from_capabilities("external-unregistered", false));
