@@ -1107,6 +1107,7 @@ fn cache_hit_proof(cache_read: CacheRead) -> Result<Option<CacheProof>, RuntimeE
 pub struct RuntimeConfig {
     pub jobs: usize,
     pub cpu_budget: Option<u32>,
+    pub memory_budget_mb: Option<u32>,
     pub run_timeout_ms: Option<u64>,
     pub run_timeout_behavior: RunTimeoutBehavior,
     pub node_timeout_ms: Option<u64>,
@@ -1139,6 +1140,7 @@ impl Default for RuntimeConfig {
         Self {
             jobs: 1,
             cpu_budget: None,
+            memory_budget_mb: None,
             run_timeout_ms: None,
             run_timeout_behavior: RunTimeoutBehavior::FinishRunning,
             node_timeout_ms: None,
