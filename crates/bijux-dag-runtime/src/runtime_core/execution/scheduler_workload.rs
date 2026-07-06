@@ -96,6 +96,12 @@ pub struct WeightedPriorityPolicy {
     pub low_weight: u32,
 }
 
+impl Default for WeightedPriorityPolicy {
+    fn default() -> Self {
+        Self { critical_weight: 100, high_weight: 75, standard_weight: 50, low_weight: 25 }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DependencyTriggerBufferPolicy {
     pub max_buffered_events: usize,
@@ -182,6 +188,19 @@ pub struct SchedulerMaturityMatrix {
     pub ha_ready: bool,
 }
 
+pub(crate) fn priority_class_weight(
+    class: Option<&PriorityClass>,
+    policy: &WeightedPriorityPolicy,
+) -> u32 {
+    match class {
+        Some(PriorityClass::Critical) => policy.critical_weight,
+        Some(PriorityClass::High) => policy.high_weight,
+        Some(PriorityClass::Standard) => policy.standard_weight,
+        Some(PriorityClass::Low) => policy.low_weight,
+        None => 0,
+    }
+}
+
 pub fn is_suppressed_by_calendar(
     calendar: &DagCalendar,
     environment: &str,
@@ -222,18 +241,9 @@ pub fn weighted_priority_tie_break_order(
     priorities: &BTreeMap<String, PriorityClass>,
     policy: &WeightedPriorityPolicy,
 ) -> Vec<ScheduledSubmission> {
-    fn weight(class: Option<&PriorityClass>, p: &WeightedPriorityPolicy) -> u32 {
-        match class {
-            Some(PriorityClass::Critical) => p.critical_weight,
-            Some(PriorityClass::High) => p.high_weight,
-            Some(PriorityClass::Standard) => p.standard_weight,
-            Some(PriorityClass::Low) => p.low_weight,
-            None => 0,
-        }
-    }
     submissions.sort_by(|a, b| {
-        let wa = weight(priorities.get(&a.schedule_id), policy);
-        let wb = weight(priorities.get(&b.schedule_id), policy);
+        let wa = priority_class_weight(priorities.get(&a.schedule_id), policy);
+        let wb = priority_class_weight(priorities.get(&b.schedule_id), policy);
         wb.cmp(&wa)
             .then_with(|| a.created_unix_ms.cmp(&b.created_unix_ms))
             .then_with(|| a.schedule_id.cmp(&b.schedule_id))

@@ -1,4 +1,7 @@
 use crate::execution_plan::ExecutionPlan;
+use crate::scheduler_workload::{
+    priority_class_weight, StarvationPreventionPolicy, WeightedPriorityPolicy,
+};
 use crate::RuntimeConfig;
 use bijux_dag_core::{materialize_graph_input_value, resources, Graph, GraphInputSpec};
 use serde::{Deserialize, Serialize};
@@ -325,6 +328,8 @@ pub struct ScheduleSubmissionLedgerEntry {
     pub trigger_kind: SubmissionTriggerKind,
     pub dedupe_key: String,
     pub status: ScheduleSubmissionStatus,
+    #[serde(default)]
+    pub starvation_ticks: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -353,8 +358,47 @@ pub struct ScheduleQueueRunRecord {
     pub run_id: String,
     pub priority: PriorityClass,
     pub status: ScheduleSubmissionStatus,
+    pub starvation_ticks: u32,
     pub requested_unix_ms: u128,
     pub created_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SchedulePriorityDispatchPolicy {
+    #[serde(default)]
+    pub weights: WeightedPriorityPolicy,
+    pub starvation: StarvationPreventionPolicy,
+}
+
+impl Default for SchedulePriorityDispatchPolicy {
+    fn default() -> Self {
+        Self {
+            weights: WeightedPriorityPolicy::default(),
+            starvation: StarvationPreventionPolicy {
+                max_ticks_without_dispatch: 3,
+                priority_boost_after_ticks: 1,
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleDispatchRecord {
+    pub schedule_id: String,
+    pub run_id: String,
+    pub queue: QueueIdentity,
+    pub priority: PriorityClass,
+    pub starvation_ticks: u32,
+    pub effective_weight: u32,
+    pub starvation_guard_applied: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct ScheduleDispatchReport {
+    #[serde(default)]
+    pub dispatched_runs: Vec<ScheduleDispatchRecord>,
+    #[serde(default)]
+    pub deferred_runs: Vec<ScheduleDispatchRecord>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -1239,6 +1283,36 @@ fn schedule_submission_status_can_transition(
     )
 }
 
+fn starvation_guard_applies(starvation_ticks: u32, policy: &StarvationPreventionPolicy) -> bool {
+    starvation_ticks >= policy.max_ticks_without_dispatch
+}
+
+fn starvation_boost(
+    starvation_ticks: u32,
+    weights: &WeightedPriorityPolicy,
+    policy: &StarvationPreventionPolicy,
+) -> u32 {
+    if !starvation_guard_applies(starvation_ticks, policy) {
+        return 0;
+    }
+    let boost_interval = policy.priority_boost_after_ticks.max(1);
+    let overdue_ticks = starvation_ticks.saturating_sub(policy.max_ticks_without_dispatch);
+    let boost_steps = 1 + (overdue_ticks / boost_interval);
+    weights.critical_weight.saturating_mul(boost_steps)
+}
+
+fn effective_priority_weight(
+    priority: &PriorityClass,
+    starvation_ticks: u32,
+    policy: &SchedulePriorityDispatchPolicy,
+) -> u32 {
+    priority_class_weight(Some(priority), &policy.weights).saturating_add(starvation_boost(
+        starvation_ticks,
+        &policy.weights,
+        &policy.starvation,
+    ))
+}
+
 pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> Result<(), String> {
     if definition.id.trim().is_empty() {
         return Err("schedule id must not be blank".to_string());
@@ -1874,8 +1948,98 @@ impl ScheduleSubmissionLedgerEntry {
             trigger_kind: request.trigger_kind.clone(),
             dedupe_key: request.dedupe_key.clone(),
             status: ScheduleSubmissionStatus::Pending,
+            starvation_ticks: 0,
         }
     }
+}
+
+pub fn dispatch_schedule_queue_runs(
+    ledger: &mut ScheduleSubmissionLedger,
+    max_dispatches: usize,
+    policy: &SchedulePriorityDispatchPolicy,
+) -> ScheduleDispatchReport {
+    #[derive(Debug, Clone)]
+    struct RankedPendingSubmission {
+        ledger_index: usize,
+        effective_weight: u32,
+        starvation_guard_applied: bool,
+        starvation_ticks: u32,
+        created_unix_ms: u128,
+        schedule_id: String,
+        run_id: String,
+        queue: QueueIdentity,
+        priority: PriorityClass,
+    }
+
+    let mut ranked = ledger
+        .entries
+        .iter()
+        .enumerate()
+        .filter(|(_, entry)| entry.status == ScheduleSubmissionStatus::Pending)
+        .map(|(ledger_index, entry)| RankedPendingSubmission {
+            ledger_index,
+            effective_weight: effective_priority_weight(
+                &entry.priority,
+                entry.starvation_ticks,
+                policy,
+            ),
+            starvation_guard_applied: starvation_guard_applies(
+                entry.starvation_ticks,
+                &policy.starvation,
+            ),
+            starvation_ticks: entry.starvation_ticks,
+            created_unix_ms: entry.created_unix_ms,
+            schedule_id: entry.schedule_id.clone(),
+            run_id: entry.run_id.clone(),
+            queue: entry.queue.clone(),
+            priority: entry.priority.clone(),
+        })
+        .collect::<Vec<_>>();
+
+    ranked.sort_by(|left, right| {
+        right
+            .effective_weight
+            .cmp(&left.effective_weight)
+            .then_with(|| right.starvation_ticks.cmp(&left.starvation_ticks))
+            .then_with(|| left.created_unix_ms.cmp(&right.created_unix_ms))
+            .then_with(|| left.schedule_id.cmp(&right.schedule_id))
+            .then_with(|| left.run_id.cmp(&right.run_id))
+    });
+
+    let selected = max_dispatches.min(ranked.len());
+    let mut dispatched_runs = Vec::with_capacity(selected);
+    let mut deferred_runs = Vec::with_capacity(ranked.len().saturating_sub(selected));
+
+    for (position, candidate) in ranked.into_iter().enumerate() {
+        let entry = &mut ledger.entries[candidate.ledger_index];
+        let record = ScheduleDispatchRecord {
+            schedule_id: candidate.schedule_id,
+            run_id: candidate.run_id,
+            queue: candidate.queue,
+            priority: candidate.priority,
+            starvation_ticks: candidate.starvation_ticks,
+            effective_weight: candidate.effective_weight,
+            starvation_guard_applied: candidate.starvation_guard_applied,
+        };
+        if position < selected {
+            entry.status = ScheduleSubmissionStatus::Running;
+            entry.starvation_ticks = 0;
+            dispatched_runs.push(record);
+        } else {
+            entry.starvation_ticks = entry.starvation_ticks.saturating_add(1);
+            deferred_runs.push(record);
+        }
+    }
+
+    ledger.entries.sort_by(|left, right| {
+        left.created_unix_ms
+            .cmp(&right.created_unix_ms)
+            .then_with(|| left.schedule_id.cmp(&right.schedule_id))
+            .then_with(|| left.run_id.cmp(&right.run_id))
+            .then_with(|| left.dedupe_key.cmp(&right.dedupe_key))
+    });
+
+    ScheduleDispatchReport { dispatched_runs, deferred_runs }
 }
 
 pub fn apply_submission_status_updates(
@@ -1936,6 +2100,7 @@ pub fn build_schedule_queue_state(
                 run_id: entry.run_id.clone(),
                 priority: entry.priority.clone(),
                 status: entry.status.clone(),
+                starvation_ticks: entry.starvation_ticks,
                 requested_unix_ms: entry.requested_unix_ms,
                 created_unix_ms: entry.created_unix_ms,
             },
