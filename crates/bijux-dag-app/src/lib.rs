@@ -38,6 +38,8 @@ mod graph_helpers;
 #[path = "commands/import_cmd.rs"]
 mod import_cmd;
 mod inspect;
+#[path = "inspect/node_execution_explanation.rs"]
+mod node_execution_explanation;
 #[path = "inspect/service.rs"]
 mod inspect_service;
 #[path = "inspect/integrity_service.rs"]
