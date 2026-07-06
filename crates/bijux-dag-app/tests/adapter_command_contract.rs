@@ -73,6 +73,13 @@ fn adapters_describe_json_contains_descriptor_fields() {
                 .is_some_and(|kinds| kinds.iter().any(|kind| kind == "python"))
             && descriptor.get("supports_timeout").is_some()
     }));
+    assert!(descriptors.iter().any(|descriptor| {
+        descriptor["id"] == "file_transform"
+            && descriptor["supported_kinds"]
+                .as_array()
+                .is_some_and(|kinds| kinds.iter().any(|kind| kind == "file_transform"))
+            && descriptor.get("supports_timeout").is_some()
+    }));
 }
 
 #[test]
@@ -137,10 +144,25 @@ fn adapters_conformance_json_reports_scenario_matrix() {
     let (code, payload, stderr) = run_json(&root, &["--json", "adapters", "conformance"]);
     assert_eq!(code, 0, "command failed: {stderr}");
     let suites = payload["data"]["suites"].as_array().expect("suites");
+    let file_transform = suites
+        .iter()
+        .find(|suite| suite["adapter_id"] == "file_transform")
+        .expect("file_transform suite");
     let http = suites.iter().find(|suite| suite["adapter_id"] == "http").expect("http suite");
     let shell = suites.iter().find(|suite| suite["adapter_id"] == "shell").expect("shell suite");
     let python = suites.iter().find(|suite| suite["adapter_id"] == "python").expect("python suite");
+    let file_transform_scenarios =
+        file_transform["scenarios"].as_array().expect("file_transform scenarios");
     let scenarios = shell["scenarios"].as_array().expect("shell scenarios");
+    assert!(file_transform_scenarios
+        .iter()
+        .any(|scenario| scenario["scenario"] == "success" && scenario["status"] == "pass"));
+    assert!(file_transform_scenarios
+        .iter()
+        .any(|scenario| scenario["scenario"] == "cache_output" && scenario["status"] == "pass"));
+    assert!(file_transform_scenarios.iter().any(
+        |scenario| scenario["scenario"] == "missing_executable" && scenario["status"] == "skip"
+    ));
     assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "timeout"));
     assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "cache_output"));
     let http_scenarios = http["scenarios"].as_array().expect("http scenarios");
