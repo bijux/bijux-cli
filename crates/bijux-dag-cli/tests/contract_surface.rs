@@ -1170,6 +1170,21 @@ fn capabilities_backend_query_supports_kubernetes() {
 }
 
 #[test]
+fn capabilities_json_reports_container_execution_as_implemented() {
+    let output = dag_command()
+        .env("BIJUX_DAG_ENABLE_INTERNAL", "1")
+        .args(["capabilities", "--json"])
+        .output()
+        .expect("capabilities json");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("capabilities json");
+    assert_eq!(payload["command"], "dag.capabilities");
+    assert_eq!(payload["data"]["execution_modes"]["container"], "implemented");
+    assert_eq!(payload["data"]["execution_lanes"]["container"], "ENFORCED");
+}
+
+#[test]
 fn capabilities_backend_query_supports_hpc() {
     let output = dag_command()
         .env("BIJUX_DAG_ENABLE_INTERNAL", "1")
