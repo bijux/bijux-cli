@@ -4588,7 +4588,7 @@ pub(super) fn run_foundation_review_report() -> Result<(), String> {
         "runtime_module_count": runtime_modules.len(),
         "docs_root_markdown_count": docs_root_markdown_count,
         "repo_suite_count": crate::suites::repo::IDS.len(),
-        "has_foundation_final_report": root.join("docs/reports/foundation/FOUNDATION_FINAL_REPORT.md").exists(),
+        "has_foundation_final_report": root.join("docs/reports/foundation/foundation-final-report.md").exists(),
     });
     println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);
     Ok(())
@@ -4606,10 +4606,10 @@ pub(super) fn run_foundation_review_guard() -> Result<(), String> {
         "docs/reports/foundation/PERFORMANCE_EVIDENCE_REPORT.md",
         "docs/reports/foundation/TEST_TRUST_COVERAGE_REPORT.md",
         "docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md",
-        "docs/reports/foundation/REPOSITORY_PROOF_STATEMENT.md",
+        "docs/reports/foundation/repository-proof-statement.md",
         "docs/reports/foundation/cleanup_backlog.md",
         "docs/reports/foundation/subsystem_strength_assessment.md",
-        "docs/reports/foundation/FOUNDATION_FINAL_REPORT.md",
+        "docs/reports/foundation/foundation-final-report.md",
     ] {
         if !root.join(rel).exists() {
             return Err(format!("missing foundation review artifact: {rel}"));
