@@ -17,18 +17,19 @@ use bijux_dag_runtime::{
     advance_backfill_operation, apply_backfill_throttling, apply_submission_status_updates,
     build_plan, build_schedule_queue_state, build_scheduler, cancel_backfill_operation,
     compile_backfill_operation, compile_submission_request, deduplicate_trigger_events,
-    deterministic_tick_order, evaluate_schedule_submissions, evaluate_sla_metrics,
-    materialize_next_runs, pause_backfill_operation, resume_backfill_operation, run_batches,
-    scheduler_debug_event_log, scheduler_invariants_hold, trace_event_count_by_category,
-    validate_schedule_registry, BackfillAdvanceRequest, BackfillFailurePolicy,
-    BackfillLifecycleStatus, BackfillRequest, BackfillRunStatus, BackfillStatusUpdate,
-    BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCompletionRecord,
-    DependencyCounter, ManualSubmissionRequest, PriorityClass, QueueIdentity, ReadyNode,
-    ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig, ScheduleDefinition,
-    ScheduleEvaluationInputs, ScheduleEventRecord, ScheduleInputSource, ScheduleRegistry,
-    ScheduleSubmissionLedger, ScheduleSubmissionLedgerEntry, ScheduleSubmissionStatus,
-    ScheduleSubmissionStatusUpdate, ScheduledSubmission, Selector, SelectorSet, SignalRecord,
-    SubmissionTriggerKind, TriggerSpec,
+    deterministic_tick_order, dispatch_schedule_queue_runs, evaluate_schedule_submissions,
+    evaluate_sla_metrics, materialize_next_runs, pause_backfill_operation,
+    resume_backfill_operation, run_batches, scheduler_debug_event_log, scheduler_invariants_hold,
+    trace_event_count_by_category, validate_schedule_registry, BackfillAdvanceRequest,
+    BackfillFailurePolicy, BackfillLifecycleStatus, BackfillRequest, BackfillRunStatus,
+    BackfillStatusUpdate, BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers,
+    DependencyCompletionRecord, DependencyCounter, ManualSubmissionRequest, PriorityClass,
+    QueueIdentity, ReadyNode, ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig,
+    ScheduleDefinition, ScheduleEvaluationInputs, ScheduleEventRecord, ScheduleInputSource,
+    SchedulePriorityDispatchPolicy, ScheduleRegistry, ScheduleSubmissionLedger,
+    ScheduleSubmissionLedgerEntry, ScheduleSubmissionStatus, ScheduleSubmissionStatusUpdate,
+    ScheduledSubmission, Selector, SelectorSet, SignalRecord, StarvationPreventionPolicy,
+    SubmissionTriggerKind, TriggerSpec, WeightedPriorityPolicy,
 };
 use std::collections::{BTreeMap, VecDeque};
 use std::fs;
@@ -937,6 +938,7 @@ fn schedule_submit_prevents_duplicates_from_existing_ledger_and_current_tick() {
             trigger_kind: SubmissionTriggerKind::Manual,
             dedupe_key: "manual:manual-ops:manual-001".to_string(),
             status: ScheduleSubmissionStatus::Pending,
+            starvation_ticks: 0,
         }],
     };
 
@@ -989,6 +991,7 @@ fn schedule_submit_cron_catch_up_respects_existing_submissions_and_cap() {
             trigger_kind: SubmissionTriggerKind::Cron,
             dedupe_key: "cron:cron-minute:120000".to_string(),
             status: ScheduleSubmissionStatus::Pending,
+            starvation_ticks: 0,
         }],
     };
 
@@ -1050,6 +1053,7 @@ fn schedule_submit_tenant_caps_are_scoped_per_queue() {
             trigger_kind: SubmissionTriggerKind::Manual,
             dedupe_key: "manual:catalog-alpha:manual-000".to_string(),
             status: ScheduleSubmissionStatus::Running,
+            starvation_ticks: 0,
         }],
     };
 
@@ -1112,6 +1116,7 @@ fn schedule_submit_cron_catch_up_honors_ranges_lists_and_steps() {
                 u128::try_from(last_requested.timestamp_millis()).expect("positive timestamp")
             ),
             status: ScheduleSubmissionStatus::Pending,
+            starvation_ticks: 0,
         }],
     };
 
@@ -1185,6 +1190,7 @@ fn schedule_submit_cron_catch_up_preserves_dst_fallback_duplicates() {
                 u128::try_from(last_requested.timestamp_millis()).expect("positive timestamp")
             ),
             status: ScheduleSubmissionStatus::Pending,
+            starvation_ticks: 0,
         }],
     };
 
@@ -1229,6 +1235,7 @@ fn schedule_queue_state_reports_active_runs_and_available_slots() {
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:atlas-pending".to_string(),
                 status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 0,
             },
             ScheduleSubmissionLedgerEntry {
                 schedule_id: "catalog-sync".to_string(),
@@ -1246,6 +1253,7 @@ fn schedule_queue_state_reports_active_runs_and_available_slots() {
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:atlas-running".to_string(),
                 status: ScheduleSubmissionStatus::Running,
+                starvation_ticks: 0,
             },
             ScheduleSubmissionLedgerEntry {
                 schedule_id: "catalog-sync".to_string(),
@@ -1263,6 +1271,7 @@ fn schedule_queue_state_reports_active_runs_and_available_slots() {
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:zeus-running".to_string(),
                 status: ScheduleSubmissionStatus::Running,
+                starvation_ticks: 0,
             },
             ScheduleSubmissionLedgerEntry {
                 schedule_id: "catalog-sync".to_string(),
@@ -1280,6 +1289,7 @@ fn schedule_queue_state_reports_active_runs_and_available_slots() {
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:zeus-completed".to_string(),
                 status: ScheduleSubmissionStatus::Completed,
+                starvation_ticks: 0,
             },
         ],
     };
@@ -1294,6 +1304,7 @@ fn schedule_queue_state_reports_active_runs_and_available_slots() {
     assert_eq!(queue.available_slots, 0);
     assert_eq!(queue.runs.len(), 3);
     assert_eq!(queue.runs[0].run_id, "sched-atlas-pending");
+    assert_eq!(queue.runs[0].starvation_ticks, 0);
     assert_eq!(queue.tenants.len(), 2);
     assert_eq!(queue.tenants[0].tenant, "atlas");
     assert_eq!(queue.tenants[0].active_runs, 2);
@@ -1301,6 +1312,206 @@ fn schedule_queue_state_reports_active_runs_and_available_slots() {
     assert_eq!(queue.tenants[1].tenant, "zeus");
     assert_eq!(queue.tenants[1].active_runs, 1);
     assert_eq!(queue.tenants[1].available_slots, Some(1));
+}
+
+#[test]
+fn schedule_queue_dispatch_respects_priority_classes() {
+    let mut ledger = ScheduleSubmissionLedger {
+        entries: vec![
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "low".to_string(),
+                dag_name: "atlas.low".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+                priority: PriorityClass::Low,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 101,
+                created_unix_ms: 101,
+                run_id: "run-low".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:low:001".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 0,
+            },
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "critical".to_string(),
+                dag_name: "atlas.critical".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+                priority: PriorityClass::Critical,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 102,
+                created_unix_ms: 102,
+                run_id: "run-critical".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:critical:001".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 0,
+            },
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "standard".to_string(),
+                dag_name: "atlas.standard".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+                priority: PriorityClass::Standard,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 103,
+                created_unix_ms: 103,
+                run_id: "run-standard".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:standard:001".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 0,
+            },
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "high".to_string(),
+                dag_name: "atlas.high".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+                priority: PriorityClass::High,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 104,
+                created_unix_ms: 104,
+                run_id: "run-high".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:high:001".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 0,
+            },
+        ],
+    };
+
+    let report =
+        dispatch_schedule_queue_runs(&mut ledger, 4, &SchedulePriorityDispatchPolicy::default());
+
+    assert_eq!(
+        report.dispatched_runs.iter().map(|run| run.schedule_id.as_str()).collect::<Vec<_>>(),
+        vec!["critical", "high", "standard", "low"]
+    );
+    assert!(ledger.entries.iter().all(|entry| entry.status == ScheduleSubmissionStatus::Running));
+}
+
+#[test]
+fn schedule_queue_dispatch_breaks_equal_priority_deterministically() {
+    let mut ledger = ScheduleSubmissionLedger {
+        entries: vec![
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "beta".to_string(),
+                dag_name: "atlas.beta".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+                priority: PriorityClass::High,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 201,
+                created_unix_ms: 201,
+                run_id: "run-b".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:beta:001".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 0,
+            },
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "alpha".to_string(),
+                dag_name: "atlas.alpha".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+                priority: PriorityClass::High,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 200,
+                created_unix_ms: 200,
+                run_id: "run-a".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:alpha:001".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 0,
+            },
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "alpha".to_string(),
+                dag_name: "atlas.alpha".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+                priority: PriorityClass::High,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 200,
+                created_unix_ms: 200,
+                run_id: "run-c".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:alpha:002".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 0,
+            },
+        ],
+    };
+
+    let report =
+        dispatch_schedule_queue_runs(&mut ledger, 3, &SchedulePriorityDispatchPolicy::default());
+
+    assert_eq!(
+        report.dispatched_runs.iter().map(|run| run.run_id.as_str()).collect::<Vec<_>>(),
+        vec!["run-a", "run-c", "run-b"]
+    );
+}
+
+#[test]
+fn schedule_queue_dispatch_promotes_starved_runs() {
+    let mut ledger = ScheduleSubmissionLedger {
+        entries: vec![
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "critical".to_string(),
+                dag_name: "atlas.critical".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+                priority: PriorityClass::Critical,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 300,
+                created_unix_ms: 300,
+                run_id: "run-critical".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:critical:002".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 0,
+            },
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "low".to_string(),
+                dag_name: "atlas.low".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+                priority: PriorityClass::Low,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 299,
+                created_unix_ms: 299,
+                run_id: "run-low".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:low:002".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 3,
+            },
+        ],
+    };
+
+    let report = dispatch_schedule_queue_runs(
+        &mut ledger,
+        1,
+        &SchedulePriorityDispatchPolicy {
+            weights: WeightedPriorityPolicy::default(),
+            starvation: StarvationPreventionPolicy {
+                max_ticks_without_dispatch: 3,
+                priority_boost_after_ticks: 1,
+            },
+        },
+    );
+
+    assert_eq!(report.dispatched_runs[0].run_id, "run-low");
+    assert!(report.dispatched_runs[0].starvation_guard_applied);
+    let by_run_id = ledger
+        .entries
+        .iter()
+        .map(|entry| (entry.run_id.as_str(), entry))
+        .collect::<BTreeMap<_, _>>();
+    assert_eq!(by_run_id["run-critical"].starvation_ticks, 1);
+    assert_eq!(by_run_id["run-critical"].status, ScheduleSubmissionStatus::Pending);
+    assert_eq!(by_run_id["run-low"].starvation_ticks, 0);
+    assert_eq!(by_run_id["run-low"].status, ScheduleSubmissionStatus::Running);
 }
 
 #[test]
@@ -1326,6 +1537,7 @@ fn schedule_submission_status_updates_change_active_queue_state() {
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:atlas-pending".to_string(),
                 status: ScheduleSubmissionStatus::Pending,
+                starvation_ticks: 0,
             },
             ScheduleSubmissionLedgerEntry {
                 schedule_id: "catalog-sync".to_string(),
@@ -1343,6 +1555,7 @@ fn schedule_submission_status_updates_change_active_queue_state() {
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:atlas-running".to_string(),
                 status: ScheduleSubmissionStatus::Running,
+                starvation_ticks: 0,
             },
         ],
     };
@@ -1393,6 +1606,7 @@ fn schedule_submission_status_updates_reject_invalid_transitions() {
             trigger_kind: SubmissionTriggerKind::Manual,
             dedupe_key: "manual:catalog-sync:atlas-completed".to_string(),
             status: ScheduleSubmissionStatus::Completed,
+            starvation_ticks: 0,
         }],
     };
 
@@ -1450,6 +1664,7 @@ fn schedule_submission_ledger_defaults_legacy_queue_fields() {
     assert_eq!(ledger.entries[0].queue.queue_name, "default");
     assert_eq!(ledger.entries[0].queue.tenant, None);
     assert_eq!(ledger.entries[0].priority, PriorityClass::Standard);
+    assert_eq!(ledger.entries[0].starvation_ticks, 0);
 }
 
 fn schedule_definition(id: &str, trigger: TriggerSpec) -> ScheduleDefinition {
