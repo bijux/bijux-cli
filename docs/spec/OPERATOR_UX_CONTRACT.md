@@ -36,6 +36,9 @@ The governed operator inspection lanes are:
 
 - human output must remain concise enough to scan quickly
 - timing summaries must remain coherent with trace evidence
+- timeline inspection must expose timestamps and causes in human output
+- timeline inspection filters must remain available for node, event, and
+  inclusive time windows
 - integrity state must distinguish healthy, incomplete, corrupt, and
   unsupported runs
 - explicit `--root` input must be sufficient without ambient repository state
