@@ -7,15 +7,15 @@ Responsibility: DAG schema, parsing, canonicalization, validation, and determini
 
 ## Internal boundaries
 - `src/lib.rs` is a thin export surface and should not contain core algorithms.
-- `graph/model.rs` owns graph domain types.
-- `graph/canonical.rs` owns canonicalization and normalization.
-- `graph/topology.rs` owns deterministic ordering.
-- `pipeline/*` owns parse, resolve, and validate entrypoints.
-- `analysis/*` owns fingerprinting and semantic analysis.
-- `build/contract.rs` owns optional packaging metadata and default application.
-- `planner/*` owns lowering and planning surfaces.
-- `build/*` owns authoring helpers and compile-oriented wrappers around the kernel.
-- `contracts/*` owns error and compatibility contract types.
+- `src/graph/model.rs` owns graph domain types.
+- `src/graph/canonical.rs` owns canonicalization and normalization.
+- `src/graph/topology.rs` owns deterministic ordering.
+- `src/pipeline/` owns parse, resolve, and validate entrypoints.
+- `src/analysis/` owns fingerprinting and semantic analysis.
+- `src/build/contract.rs` owns optional packaging metadata and default application.
+- `src/planner/` owns lowering and planning surfaces.
+- `src/build/` owns authoring helpers and compile-oriented wrappers around the kernel.
+- `src/contracts/` owns error and compatibility contract types.
 
 ## Purity boundary
 Core is pure logic and data transformation.
@@ -32,7 +32,7 @@ Allowed utility dependencies:
 - collections and deterministic ordering utilities
 
 ## Validation model
-Validation diagnostics must carry stable IDs and severities and remain documented in `docs/spec/VALIDATION_RULES.md`.
+Validation diagnostics must carry stable IDs and severities and remain documented in `docs/bijux-dag/interfaces/data-contracts.md` and `docs/bijux-dag/interfaces/error-codes.md`.
 
 ## Related schemas
 

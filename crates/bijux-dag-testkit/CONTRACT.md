@@ -21,7 +21,7 @@ This crate is the single source of truth for shared DAG fixture builders and run
 - Introduce test harness utilities for new test families.
 
 ## Related tests
-- `crates/bijux-dag-runtime/src/test_support.rs`
+- `crates/bijux-dag-runtime/src/internal/testing/test_support.rs`
 - `crates/bijux-dag-app/tests/e2e_integration_scenarios.rs`
 - `crates/bijux-dag-app/tests/fault_resilience_integration.rs`
 

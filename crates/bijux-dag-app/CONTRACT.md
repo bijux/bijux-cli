@@ -15,15 +15,15 @@ This crate is the owner of command orchestration behavior, command-level respons
 - `src/lib.rs` is the only root Rust file; command logic must live in bounded domain folders.
 
 ## Internal boundaries
-- `commands/*`: orchestration command surfaces and runtime config resolution.
-- `graph/*`: graph-oriented command surfaces and validation entrypoints.
-- `read/*` and `write/*`: input/output IO shaping boundaries.
-- `inspect/*`: run status, doctor, and run-view presentation boundaries.
-- `replay/*`: replay and diff command boundaries.
-- `cache/*`, `explain/*`, `format/*`, `migrate/*`: focused domain command helpers.
+- `src/commands/`: orchestration command surfaces and runtime config resolution.
+- `src/graph/`: graph-oriented command surfaces and validation entrypoints.
+- `src/read/` and `src/write/`: input/output IO shaping boundaries.
+- `src/inspect/`: run status, doctor, and run-view presentation boundaries.
+- `src/replay/`: replay and diff command boundaries.
+- `src/cache/`, `src/explain/`, `src/format/`, `src/migrate/`: focused domain command helpers.
 
 ## Allowed changes
-- Add or evolve orchestration modules while keeping command contracts backward-compatible per [docs/spec/CLI_BACKWARD_COMPATIBILITY.md](/Users/bijan/bijux/bijux-core/docs/dag/04-cli-reference/01-cli-overview.md).
+- Add or evolve orchestration modules while keeping command contracts backward-compatible with `docs/bijux-dag/interfaces/compatibility-commitments.md`.
 - Add formatting variants that do not weaken machine-readable contracts.
 
 ## Related tests

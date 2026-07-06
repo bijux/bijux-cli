@@ -18,7 +18,7 @@ This crate is authoritative for process entrypoint behavior and top-level CLI bo
 - Error mapping refinements that preserve published error contract behavior.
 
 ## Related tests
-- `crates/bijux-dag-cli/tests/smoke_help.rs`
+- `crates/bijux-dag-cli/tests/smoke_pipeline.rs`
 - `crates/bijux-dag-app/tests/cli_contract.rs`
 
 ## Related schemas

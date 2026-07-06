@@ -15,11 +15,11 @@ It is explicitly a `format + IO` crate.
 - `src/lib.rs` is the only root Rust file; module logic must live in bounded domain folders.
 
 ## Internal boundaries
-- `storage/*`: authoritative artifact models, hardening, and service orchestration.
-- `io/*`: filesystem-backed read/write surfaces.
-- `integrity/*`: hashing, proof, schema, and index validation surfaces.
-- `layout/*`: path and platform layout helpers.
-- `lifecycle/*`: retention, promotion, and lineage policy surfaces.
+- `src/storage/`: authoritative artifact models, hardening, and service orchestration.
+- `src/io/`: filesystem-backed read/write surfaces.
+- `src/integrity/`: hashing, proof, schema, and index validation surfaces.
+- `src/layout/`: path and platform layout helpers.
+- `src/lifecycle/`: retention, promotion, and lineage policy surfaces.
 
 ## Boundary
 - Runtime must use artifact persistence through this crate's stable APIs.
