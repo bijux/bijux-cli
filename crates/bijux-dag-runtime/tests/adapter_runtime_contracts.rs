@@ -108,9 +108,7 @@ fn container_graph(
 ) -> Graph {
     let effects =
         effects.iter().map(|effect| format!("\"{effect}\"")).collect::<Vec<_>>().join(",");
-    let timeout = timeout_ms
-        .map(|value| format!(",\"timeout_ms\":{value}"))
-        .unwrap_or_default();
+    let timeout = timeout_ms.map(|value| format!(",\"timeout_ms\":{value}")).unwrap_or_default();
     parse_graph_strict(&format!(
         r#"{{
           "spec":"bijux-dag/v0.1",
@@ -642,12 +640,8 @@ exit 1
     );
     let _path_guard = prepend_path(&bin_dir);
 
-    let graph = container_graph(
-        &["filesystem", "network"],
-        None,
-        "example.local/runner:latest",
-        "true",
-    );
+    let graph =
+        container_graph(&["filesystem", "network"], None, "example.local/runner:latest", "true");
     let runtime = Runtime::new();
     let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
 
@@ -691,12 +685,8 @@ exit 1
     );
     let _path_guard = prepend_path(&bin_dir);
 
-    let graph = container_graph(
-        &["filesystem"],
-        Some(50),
-        "example.local/runner:latest",
-        "sleep 1",
-    );
+    let graph =
+        container_graph(&["filesystem"], Some(50), "example.local/runner:latest", "sleep 1");
     let runtime = Runtime::new();
     let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
 
@@ -705,9 +695,8 @@ exit 1
             .expect("stdout"),
         "partial-stdout"
     );
-    let stderr =
-        fs::read_to_string(run_dir.join("nodes").join("container").join("stderr.log"))
-            .expect("stderr");
+    let stderr = fs::read_to_string(run_dir.join("nodes").join("container").join("stderr.log"))
+        .expect("stderr");
     assert!(stderr.starts_with("partial-stderr"));
     let trace = read_node_trace(&run_dir, "container");
     assert_eq!(trace["status"], "failed");

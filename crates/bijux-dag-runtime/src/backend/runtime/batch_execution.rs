@@ -99,11 +99,7 @@ pub fn restart_recovery_supported() -> bool {
 
 pub fn execution_mode_report() -> BatchModeReport {
     BatchModeReport {
-        implemented: vec![
-            "local".to_string(),
-            "subprocess".to_string(),
-            "container".to_string(),
-        ],
+        implemented: vec!["local".to_string(), "subprocess".to_string(), "container".to_string()],
         simulated: vec![
             "remote-contract".to_string(),
             "batch-contract".to_string(),

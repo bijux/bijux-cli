@@ -657,13 +657,17 @@ pub(crate) enum ControlledCommandResult {
 impl ControlledCommandResult {
     pub(crate) fn stdout(&self) -> &[u8] {
         match self {
-            Self::Exited(output) | Self::TimedOut(output) | Self::Cancelled(output) => &output.stdout,
+            Self::Exited(output) | Self::TimedOut(output) | Self::Cancelled(output) => {
+                &output.stdout
+            }
         }
     }
 
     pub(crate) fn stderr(&self) -> &[u8] {
         match self {
-            Self::Exited(output) | Self::TimedOut(output) | Self::Cancelled(output) => &output.stderr,
+            Self::Exited(output) | Self::TimedOut(output) | Self::Cancelled(output) => {
+                &output.stderr
+            }
         }
     }
 }
@@ -3369,11 +3373,15 @@ fn join_output_reader(
 ) -> Result<Vec<u8>, RuntimeError> {
     reader
         .join()
-        .map_err(|_| RuntimeError::Executor(format!("failed to join {stream_name} capture thread")))?
+        .map_err(|_| {
+            RuntimeError::Executor(format!("failed to join {stream_name} capture thread"))
+        })?
         .map_err(RuntimeError::Io)
 }
 
-fn terminate_child_best_effort(child: &mut std::process::Child) -> std_io::Result<std::process::ExitStatus> {
+fn terminate_child_best_effort(
+    child: &mut std::process::Child,
+) -> std_io::Result<std::process::ExitStatus> {
     #[cfg(unix)]
     {
         let pid = child.id();
