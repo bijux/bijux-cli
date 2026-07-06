@@ -190,10 +190,7 @@ pub fn reconstruct_timeline_from_events(events: &[EventRecord]) -> TimelineExpor
     let ordered = canonicalize_event_records(events);
     TimelineExport {
         schema_version: "v0.1".to_string(),
-        entries: ordered
-            .iter()
-            .map(timeline_entry_from_event)
-            .collect(),
+        entries: ordered.iter().map(timeline_entry_from_event).collect(),
     }
 }
 
