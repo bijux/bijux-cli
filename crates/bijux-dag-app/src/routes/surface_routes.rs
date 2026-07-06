@@ -11,6 +11,7 @@ fn operator_commands() -> Vec<&'static str> {
         "runs.show",
         "runs.inspect",
         "runs.history",
+        "runs.stop",
         "runs.id-explain",
         "runs.tree",
         "runs.timeline",
@@ -355,6 +356,7 @@ mod tests {
         let operator_commands =
             payload["operator_commands"].as_array().expect("operator commands payload");
         for expected in [
+            "runs.stop",
             "runtime.state",
             "runtime.write-discipline",
             "runtime.worker-recovery",
