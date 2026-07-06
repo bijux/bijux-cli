@@ -1375,7 +1375,20 @@ inputs: vec!["in".to_string()],
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let final_path = runtime
+            .run(
+                &graph,
+                dir.path(),
+                RuntimeConfig {
+                    policy: PolicyConfig {
+                        container_image_reference_policy:
+                            ContainerImageReferencePolicy::AllowUnpinned,
+                        ..PolicyConfig::default()
+                    },
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
         let out = final_path.join("nodes").join("c1").join("outputs").join("out_c");
         let out_alt = final_path.join("nodes").join("c1").join("outputs").join("out");
         if !out.exists() && !out_alt.exists() {
@@ -1427,7 +1440,20 @@ inputs: vec!["in".to_string()],
             edges: vec![],
         };
         let runtime = Runtime::new();
-        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let final_path = runtime
+            .run(
+                &graph,
+                dir.path(),
+                RuntimeConfig {
+                    policy: PolicyConfig {
+                        container_image_reference_policy:
+                            ContainerImageReferencePolicy::AllowUnpinned,
+                        ..PolicyConfig::default()
+                    },
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
         let trace =
             fs::read_to_string(final_path.join("nodes").join("c1").join("trace.json")).unwrap();
         assert!(trace.contains("\"status\": \"failed\""));
