@@ -368,6 +368,28 @@ The queue-state control contract is:
 - the queue-state file is derived output, while the submission ledger remains
   the durable source of truth
 
+When the ledger contains more than one pending scheduled run, dispatch from the
+same durable ledger instead of relying on arrival order:
+
+```bash
+bijux-dag schedule queue dispatch \
+  ./artifacts/schedule-ledger.json \
+  --max-dispatches 2 \
+  --out ./artifacts/schedule-ledger.json
+```
+
+The priority-dispatch contract is:
+
+- `critical`, `high`, `standard`, and `low` priorities are ordered by explicit
+  weights
+- equal effective priority is broken deterministically by creation time, then
+  schedule id, then run id
+- deferred pending runs accumulate durable starvation ticks in the ledger
+- once a run crosses the starvation threshold, the dispatcher boosts it above
+  the normal priority lane so low-priority work cannot starve forever
+- dispatched runs move from `pending` to `running` and reset their starvation
+  counter
+
 ## Control A Historical Backfill
 
 When an operator needs to replay a bounded historical window, treat the

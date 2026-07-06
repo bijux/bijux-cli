@@ -98,7 +98,8 @@ surface in `v0.4.0`:
 
 Inside the internal `schedule` namespace, the current maintained control
 surfaces cover registry validation, submission evaluation, queue state
-inspection, queue ledger updates, and durable backfill control.
+inspection, priority-aware queue dispatch, queue ledger updates, and durable
+backfill control.
 
 These routes still exist for explicit maintainer workflows and contract tests.
 They can be inventoried with `bijux-dag commands --all`, but execution now
