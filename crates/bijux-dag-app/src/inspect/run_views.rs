@@ -2,12 +2,45 @@ use crate::routes::run_lookup::RunWorkspacePaths;
 use crate::routes::selector_grammar::{SelectorExpression, SelectorField};
 use bijux_dag_artifacts::FailureInfo;
 use bijux_dag_runtime::TimelineExport;
+use serde::Serialize;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const RUN_HISTORY_INDEX_FILE: &str = ".bijux-run-history-index.json";
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+pub(crate) struct RunTimelineQuery {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub event: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub since_unix_ms: Option<u128>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub until_unix_ms: Option<u128>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+struct TimelineEventView {
+    unix_ms: Option<u128>,
+    category: String,
+    label: String,
+    node_id: Option<String>,
+    status: Option<String>,
+    reason: Option<String>,
+    source_event: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+struct TimelineQueryReport {
+    source: String,
+    filters: RunTimelineQuery,
+    total_event_count: usize,
+    matched_event_count: usize,
+    events: Vec<TimelineEventView>,
+}
 
 pub fn resolve_run_dir(root: &Path, run_id: &str) -> PathBuf {
     RunWorkspacePaths::for_run(root, run_id)
@@ -519,26 +552,27 @@ pub fn run_tree(run_dir: &Path) -> Result<Value, std::io::Error> {
     Ok(json!({"nodes": items}))
 }
 
-pub fn run_timeline(run_dir: &Path) -> Result<Value, std::io::Error> {
+pub(crate) fn run_timeline_with_query(
+    run_dir: &Path,
+    query: &RunTimelineQuery,
+) -> Result<Value, std::io::Error> {
     if let Ok(payload) = fs::read_to_string(run_dir.join("observability.timeline.json")) {
         if let Ok(mut timeline) = serde_json::from_str::<TimelineExport>(&payload) {
             timeline.entries.sort_by_key(|entry| entry.unix_ms);
             let events = timeline
                 .entries
                 .into_iter()
-                .map(|entry| {
-                    json!({
-                        "unix_ms": entry.unix_ms,
-                        "category": entry.category,
-                        "label": entry.label,
-                        "node_id": entry.node_id,
-                        "status": entry.status,
-                        "reason": entry.reason,
-                        "source_event": entry.source_event,
-                    })
+                .map(|entry| TimelineEventView {
+                    unix_ms: Some(entry.unix_ms),
+                    category: entry.category,
+                    label: entry.label,
+                    node_id: entry.node_id,
+                    status: entry.status,
+                    reason: entry.reason,
+                    source_event: entry.source_event.unwrap_or_else(|| "unknown".to_string()),
                 })
                 .collect::<Vec<_>>();
-            return Ok(json!({"events": events, "source": "observability_timeline"}));
+            return timeline_query_report("observability_timeline", events, query);
         }
     }
 
@@ -570,22 +604,87 @@ pub fn run_timeline(run_dir: &Path) -> Result<Value, std::io::Error> {
                 _ => "complete",
             }
         };
-        events.push(json!({
-            "unix_ms": finish.or(start),
-            "category": category,
-            "label": label,
-            "node_id": node_id,
-            "status": status,
-            "reason": trace
-                .get("skip_reason")
-                .and_then(|value| value.get("reason"))
-                .cloned()
-                .unwrap_or(Value::Null),
-            "source_event": "trace_projection",
-        }));
+        events.push(TimelineEventView {
+            unix_ms: finish.map(u128::from).or_else(|| start.map(u128::from)),
+            category: category.to_string(),
+            label: label.to_string(),
+            node_id: Some(node_id),
+            status: Some(status.to_string()),
+            reason: trace_timeline_reason(&trace),
+            source_event: "trace_projection".to_string(),
+        });
     }
-    events.sort_by_key(|event| event.get("unix_ms").and_then(Value::as_u64).unwrap_or(0));
-    Ok(json!({"events": events, "source": "node_traces"}))
+    events.sort_by_key(|event| event.unix_ms.unwrap_or(0));
+    timeline_query_report("node_traces", events, query)
+}
+
+pub fn run_timeline(run_dir: &Path) -> Result<Value, std::io::Error> {
+    run_timeline_with_query(run_dir, &RunTimelineQuery::default())
+}
+
+fn timeline_query_report(
+    source: &str,
+    events: Vec<TimelineEventView>,
+    query: &RunTimelineQuery,
+) -> Result<Value, std::io::Error> {
+    let total_event_count = events.len();
+    let filtered_events = events
+        .into_iter()
+        .filter(|event| timeline_event_matches_query(event, query))
+        .collect::<Vec<_>>();
+    let report = TimelineQueryReport {
+        source: source.to_string(),
+        filters: query.clone(),
+        total_event_count,
+        matched_event_count: filtered_events.len(),
+        events: filtered_events,
+    };
+    serde_json::to_value(report)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))
+}
+
+fn timeline_event_matches_query(event: &TimelineEventView, query: &RunTimelineQuery) -> bool {
+    if let Some(node_filter) = query.node.as_deref() {
+        if event.node_id.as_deref() != Some(node_filter) {
+            return false;
+        }
+    }
+    if let Some(event_filter) = query.event.as_ref() {
+        let expected = event_filter.to_ascii_lowercase();
+        let label = event.label.to_ascii_lowercase();
+        let category = event.category.to_ascii_lowercase();
+        let source_event = event.source_event.to_ascii_lowercase();
+        if label != expected && category != expected && source_event != expected {
+            return false;
+        }
+    }
+    if let Some(since_unix_ms) = query.since_unix_ms {
+        if event.unix_ms.is_none_or(|unix_ms| unix_ms < since_unix_ms) {
+            return false;
+        }
+    }
+    if let Some(until_unix_ms) = query.until_unix_ms {
+        if event.unix_ms.is_none_or(|unix_ms| unix_ms > until_unix_ms) {
+            return false;
+        }
+    }
+    true
+}
+
+fn trace_timeline_reason(trace: &Value) -> Option<String> {
+    trace
+        .get("skip_reason")
+        .and_then(|value| value.get("reason"))
+        .and_then(Value::as_str)
+        .map(ToString::to_string)
+        .or_else(|| trace.get("transition_cause").and_then(Value::as_str).map(ToString::to_string))
+        .or_else(|| {
+            trace
+                .get("failure")
+                .and_then(|value| value.get("code"))
+                .and_then(Value::as_str)
+                .map(ToString::to_string)
+        })
 }
 
 pub fn explain_failure(run_dir: &Path) -> Result<Value, std::io::Error> {
@@ -951,7 +1050,8 @@ fn read_node_traces(
 #[cfg(test)]
 mod tests {
     use super::{
-        run_completion_summary, runs_history_query_with_filters, runs_history_query_with_selectors,
+        run_completion_summary, run_timeline_with_query, runs_history_query_with_filters,
+        runs_history_query_with_selectors, RunTimelineQuery,
     };
     use crate::routes::selector_grammar::parse_selector_expressions;
     use serde_json::json;
@@ -976,6 +1076,78 @@ mod tests {
         .expect("write manifest");
     }
 
+    fn write_timeline_fixture(root: &std::path::Path, run_id: &str) -> std::path::PathBuf {
+        let run_dir = root.join(run_id);
+        std::fs::create_dir_all(run_dir.join("nodes").join("worker")).expect("mkdir worker");
+        std::fs::write(
+            run_dir.join("observability.timeline.json"),
+            serde_json::to_vec_pretty(&json!({
+                "schema_version": "v0.1",
+                "entries": [
+                    {
+                        "unix_ms": 100u64,
+                        "category": "run",
+                        "label": "run_started",
+                        "node_id": null,
+                        "source_event": "run_started"
+                    },
+                    {
+                        "unix_ms": 110u64,
+                        "category": "ready",
+                        "label": "node_ready",
+                        "node_id": "worker",
+                        "source_event": "node_ready"
+                    },
+                    {
+                        "unix_ms": 130u64,
+                        "category": "failure",
+                        "label": "node_failed",
+                        "node_id": "worker",
+                        "status": "failed",
+                        "reason": "execution_failed",
+                        "source_event": "node_finished"
+                    },
+                    {
+                        "unix_ms": 140u64,
+                        "category": "run",
+                        "label": "run_completed",
+                        "node_id": null,
+                        "source_event": "run_finished"
+                    }
+                ]
+            }))
+            .expect("timeline"),
+        )
+        .expect("write timeline");
+        run_dir
+    }
+
+    fn write_trace_only_timeline_fixture(
+        root: &std::path::Path,
+        run_id: &str,
+    ) -> std::path::PathBuf {
+        let run_dir = root.join(run_id);
+        std::fs::create_dir_all(run_dir.join("nodes").join("worker")).expect("mkdir worker");
+        std::fs::write(
+            run_dir.join("nodes").join("worker").join("trace.json"),
+            serde_json::to_vec_pretty(&json!({
+                "status": "failed",
+                "started_unix_ms": 200u64,
+                "finished_unix_ms": 250u64,
+                "attempt": 1,
+                "transition_cause": "ExecutionFailed",
+                "failure": {
+                    "code": "EXEC_FAIL",
+                    "kind": "Execution",
+                    "message": "tool failed"
+                }
+            }))
+            .expect("trace"),
+        )
+        .expect("write trace");
+        run_dir
+    }
+
     #[test]
     fn history_query_applies_selector_filters_with_pagination() {
         let temp = tempfile::tempdir().expect("tmp");
@@ -996,6 +1168,70 @@ mod tests {
         assert_eq!(runs.len(), 1);
         assert_eq!(runs[0]["run_id"], "run-b");
         assert_eq!(report["page"]["total"], 1);
+    }
+
+    #[test]
+    fn timeline_query_filters_persisted_timeline_by_node_event_and_time() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let run_dir = write_timeline_fixture(temp.path(), "run-filtered");
+        let report = run_timeline_with_query(
+            &run_dir,
+            &RunTimelineQuery {
+                node: Some("worker".to_string()),
+                event: Some("node_failed".to_string()),
+                since_unix_ms: Some(120),
+                until_unix_ms: Some(135),
+            },
+        )
+        .expect("timeline");
+
+        assert_eq!(report["source"], "observability_timeline");
+        assert_eq!(report["total_event_count"], 4);
+        assert_eq!(report["matched_event_count"], 1);
+        let events = report["events"].as_array().expect("events");
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0]["label"], "node_failed");
+        assert_eq!(events[0]["reason"], "execution_failed");
+    }
+
+    #[test]
+    fn timeline_query_matches_source_event_names_for_persisted_timelines() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let run_dir = write_timeline_fixture(temp.path(), "run-source-match");
+        let report = run_timeline_with_query(
+            &run_dir,
+            &RunTimelineQuery {
+                event: Some("run_finished".to_string()),
+                ..RunTimelineQuery::default()
+            },
+        )
+        .expect("timeline");
+
+        assert_eq!(report["matched_event_count"], 1);
+        let events = report["events"].as_array().expect("events");
+        assert_eq!(events[0]["label"], "run_completed");
+        assert_eq!(events[0]["source_event"], "run_finished");
+    }
+
+    #[test]
+    fn timeline_query_falls_back_to_trace_projection_with_reason() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let run_dir = write_trace_only_timeline_fixture(temp.path(), "run-trace-only");
+        let report = run_timeline_with_query(
+            &run_dir,
+            &RunTimelineQuery {
+                event: Some("node_failed".to_string()),
+                ..RunTimelineQuery::default()
+            },
+        )
+        .expect("timeline");
+
+        assert_eq!(report["source"], "node_traces");
+        assert_eq!(report["matched_event_count"], 1);
+        let events = report["events"].as_array().expect("events");
+        assert_eq!(events[0]["unix_ms"], 250);
+        assert_eq!(events[0]["reason"], "ExecutionFailed");
+        assert_eq!(events[0]["source_event"], "trace_projection");
     }
 
     #[test]
