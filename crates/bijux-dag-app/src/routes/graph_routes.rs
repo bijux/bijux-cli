@@ -13,7 +13,6 @@ use crate::routes::preconditions::require_run_directory;
 use crate::run_data::load_snapshot;
 use crate::{emit_json, load_graphs_or_emit, read_file, ExitCode};
 use bijux_dag_runtime::RunSnapshot;
-use serde_json::json;
 use std::path::{Path, PathBuf};
 
 fn selection_preview_payload(
@@ -63,16 +62,17 @@ fn run_snapshot_selection_payload(run_dir: &Path) -> Result<serde_json::Value, E
         serde_json::from_str(&read_file(&run_dir.join("run.snapshot.json"))?)
             .map_err(|_| ExitCode::from(3))?;
     let selection = selection_summary_from_run_snapshot(&graph_snapshot.graph, &run_snapshot);
-    Ok(json!({
-        "source": {
-            "kind": "run_dir",
-            "run_dir": run_dir.display().to_string(),
-            "run_id": run_snapshot.run_id.to_string(),
+    serde_json::to_value(build_graph_inspection_payload(
+        &graph_snapshot.graph,
+        Some(graph_snapshot.graph_fingerprint),
+        GraphInspectionSource {
+            kind: "run_dir".to_string(),
+            run_dir: Some(run_dir.display().to_string()),
+            run_id: Some(run_snapshot.run_id.to_string()),
         },
-        "graph_fingerprint": graph_snapshot.graph_fingerprint,
-        "graph": graph_snapshot.graph.canonicalize(),
-        "selection": selection,
-    }))
+        selection,
+    ))
+    .map_err(|_| ExitCode::from(3))
 }
 
 pub(crate) fn handle_show_effective_graph_command(
@@ -198,5 +198,71 @@ mod tests {
 
         let value: Value = payload;
         assert_eq!(value["selection"]["selected_nodes"], serde_json::json!(["a", "b"]));
+    }
+
+    #[test]
+    fn run_snapshot_payload_surfaces_persisted_selection_and_topology() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let run_dir = dir.path().join("run-graph");
+        fs::create_dir_all(&run_dir).expect("mkdir");
+        fs::write(run_dir.join("manifest.json"), br#"{"run_id":"run-graph","status":"success"}"#)
+            .expect("manifest");
+        fs::write(
+            run_dir.join("graph.snapshot.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "graph": {
+                    "spec":"bijux-dag/v0.1",
+                    "nodes":[
+                        {"id":"a","kind":"const","outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+                        {"id":"b","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"params":{"value":2}},
+                        {"id":"c","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"c/out"}],"params":{"value":3}}
+                    ],
+                    "edges":[
+                        {"from":{"node_id":"a","port":"out"},"to":{"node_id":"b","port":"in"}},
+                        {"from":{"node_id":"b","port":"out"},"to":{"node_id":"c","port":"in"}}
+                    ]
+                },
+                "graph_fingerprint":"graph-fp-1"
+            }))
+            .expect("snapshot"),
+        )
+        .expect("write graph snapshot");
+        fs::write(
+            run_dir.join("run.snapshot.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "run_id":"run-graph",
+                "graph_snapshot_path":"graph.snapshot.json",
+                "planner_config":"default",
+                "scheduler_config":"local",
+                "policy_config":"runtime-policy-v0.1",
+                "provenance":"provenance.json",
+                "submission_source":"run",
+                "trigger_source":"manual",
+                "operator":"operator",
+                "labels":[],
+                "parent_run_id":null,
+                "requested_selectors":["to-node:b"],
+                "selected_nodes":["a","b"],
+                "dependency_closure_enabled":false,
+                "replay_source_run_id":null,
+                "partial_rerun_contract":null
+            }))
+            .expect("run snapshot"),
+        )
+        .expect("write run snapshot");
+
+        let payload = super::run_snapshot_selection_payload(&run_dir).expect("payload");
+        let value: Value = payload;
+
+        assert_eq!(value["source"]["kind"], "run_dir");
+        assert_eq!(value["source"]["run_id"], "run-graph");
+        assert_eq!(value["graph_fingerprint"], "graph-fp-1");
+        assert_eq!(value["selection"]["selected_nodes"], serde_json::json!(["a", "b"]));
+        assert_eq!(
+            value["selection"]["omitted_nodes"],
+            serde_json::json!([{ "node_id": "c", "reason": "omitted_from_run_snapshot" }])
+        );
+        assert_eq!(value["topology"]["selected_roots"], serde_json::json!(["a"]));
+        assert_eq!(value["topology"]["selected_leaves"], serde_json::json!(["b"]));
     }
 }
