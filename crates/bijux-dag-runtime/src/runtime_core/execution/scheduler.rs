@@ -1,6 +1,6 @@
 use crate::execution_plan::ExecutionPlan;
 use crate::RuntimeConfig;
-use bijux_dag_core::{materialize_graph_input_value, Graph, GraphInputSpec};
+use bijux_dag_core::{materialize_graph_input_value, resources, Graph, GraphInputSpec};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -722,6 +722,7 @@ struct ReadyCandidate {
     priority: u8,
     cpu: u32,
     memory_mb: u32,
+    gpu_devices: u32,
 }
 
 fn preflight_decision(
@@ -777,8 +778,11 @@ impl Scheduler for DeterministicScheduler {
             .unwrap_or(options.jobs.max(1) as u32);
         let memory_budget_mb =
             options.scheduler_policy.memory_budget_mb.or(options.memory_budget_mb);
+        let gpu_device_budget =
+            options.scheduler_policy.gpu_device_budget.or(options.gpu_device_budget);
         let mut used_cpu = 0u32;
         let mut used_memory_mb = 0u32;
+        let mut used_gpu_devices = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
         let mut blocked_reasons = BTreeMap::new();
@@ -789,6 +793,7 @@ impl Scheduler for DeterministicScheduler {
                 priority: node_priority(graph, &node_id),
                 cpu: node_cpu(graph, &node_id),
                 memory_mb: node_memory_mb(graph, &node_id),
+                gpu_devices: node_gpu_devices(graph, &node_id),
                 node_id,
             })
             .collect::<Vec<_>>();
@@ -797,6 +802,7 @@ impl Scheduler for DeterministicScheduler {
                 .cmp(&a.priority)
                 .then_with(|| a.cpu.cmp(&b.cpu))
                 .then_with(|| a.memory_mb.cmp(&b.memory_mb))
+                .then_with(|| a.gpu_devices.cmp(&b.gpu_devices))
                 .then_with(|| a.node_id.cmp(&b.node_id))
         });
         let ready_candidates =
@@ -821,8 +827,16 @@ impl Scheduler for DeterministicScheduler {
                 blocked_reasons.insert(candidate.node_id.clone(), "blocked_by_memory".to_string());
                 continue;
             }
+            if gpu_device_budget
+                .is_some_and(|budget| used_gpu_devices + candidate.gpu_devices > budget)
+            {
+                blocked.push(candidate.node_id.clone());
+                blocked_reasons.insert(candidate.node_id.clone(), "blocked_by_gpu".to_string());
+                continue;
+            }
             used_cpu += candidate.cpu;
             used_memory_mb += candidate.memory_mb;
+            used_gpu_devices += candidate.gpu_devices;
             let _ = ready_queue.take(&candidate.node_id);
             batch.push(candidate.node_id.clone());
         }
@@ -868,8 +882,11 @@ impl Scheduler for ThroughputScheduler {
             .unwrap_or(options.jobs.max(1) as u32);
         let memory_budget_mb =
             options.scheduler_policy.memory_budget_mb.or(options.memory_budget_mb);
+        let gpu_device_budget =
+            options.scheduler_policy.gpu_device_budget.or(options.gpu_device_budget);
         let mut used_cpu = 0u32;
         let mut used_memory_mb = 0u32;
+        let mut used_gpu_devices = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
         let mut blocked_reasons = BTreeMap::new();
@@ -884,6 +901,7 @@ impl Scheduler for ThroughputScheduler {
             };
             let cpu = node_cpu(graph, &id);
             let memory_mb = node_memory_mb(graph, &id);
+            let gpu_devices = node_gpu_devices(graph, &id);
             if used_cpu + cpu > cpu_budget {
                 blocked_reasons.insert(id.clone(), "blocked_by_cpu".to_string());
                 blocked.push(id);
@@ -894,8 +912,14 @@ impl Scheduler for ThroughputScheduler {
                 blocked.push(id);
                 continue;
             }
+            if gpu_device_budget.is_some_and(|budget| used_gpu_devices + gpu_devices > budget) {
+                blocked_reasons.insert(id.clone(), "blocked_by_gpu".to_string());
+                blocked.push(id);
+                continue;
+            }
             used_cpu += cpu;
             used_memory_mb += memory_mb;
+            used_gpu_devices += gpu_devices;
             batch.push(id);
         }
         for id in blocked.clone() {
@@ -2341,6 +2365,10 @@ fn node_memory_mb(graph: &Graph, node_id: &str) -> u32 {
         .and_then(|n| n.resources.as_ref().map(|r| r.mem_mb))
         .unwrap_or(256)
         .max(1)
+}
+
+fn node_gpu_devices(graph: &Graph, node_id: &str) -> u32 {
+    graph.nodes.iter().find(|n| n.id == node_id).map(resources::node_gpu_devices).unwrap_or(0)
 }
 
 fn node_priority(graph: &Graph, node_id: &str) -> u8 {

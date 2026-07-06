@@ -308,6 +308,53 @@ fn deterministic_scheduler_packs_smaller_ready_nodes_within_memory_budget() {
 }
 
 #[test]
+fn deterministic_scheduler_respects_gpu_device_budget() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {"id":"gpu-a","kind":"const","tags":["gpu"],"outputs":[{"name":"out","path":"gpu-a/out"}],"params":{"value":1}},
+            {"id":"gpu-b","kind":"const","resources":{"cpu":1,"mem_mb":64,"gpu_devices":1},"outputs":[{"name":"out","path":"gpu-b/out"}],"params":{"value":2}},
+            {"id":"cpu","kind":"const","outputs":[{"name":"out","path":"cpu/out"}],"params":{"value":3}}
+          ],
+          "edges": []
+        }"#,
+    )
+    .unwrap();
+    let mut options = RuntimeConfig::default();
+    options.jobs = 3;
+    options.scheduler_policy.max_parallelism = 3;
+    options.scheduler_policy.cpu_budget = Some(3);
+    options.scheduler_policy.gpu_device_budget = Some(1);
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let decision =
+        scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), false);
+    let scheduled_gpu_nodes = decision
+        .batch
+        .iter()
+        .filter(|node_id| node_id.starts_with("gpu-"))
+        .cloned()
+        .collect::<Vec<_>>();
+    assert_eq!(scheduled_gpu_nodes.len(), 1);
+    assert!(decision.batch.contains(&"cpu".to_string()));
+    let blocked_gpu_nodes = decision
+        .blocked_by_budget
+        .iter()
+        .filter(|node_id| node_id.starts_with("gpu-"))
+        .cloned()
+        .collect::<Vec<_>>();
+    assert_eq!(blocked_gpu_nodes.len(), 1);
+    let blocked_gpu = &blocked_gpu_nodes[0];
+    assert_eq!(
+        decision.blocked_reasons.get(blocked_gpu).map(String::as_str),
+        Some("blocked_by_gpu")
+    );
+}
+
+#[test]
 fn deterministic_scheduler_forces_single_progress_for_oversized_root() {
     let graph = parse_graph_strict(
         r#"{

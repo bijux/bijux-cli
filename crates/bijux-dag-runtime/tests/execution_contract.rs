@@ -428,6 +428,64 @@ fn runtime_events_report_memory_budget_blocking_reasons() {
 }
 
 #[test]
+fn runtime_events_report_gpu_budget_blocking_reasons() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"root","kind":"const","outputs":[{"name":"out","path":"root/out"}],"params":{"value":1}},
+            {"id":"gpu-a","kind":"const","inputs":["in"],"tags":["gpu"],"outputs":[{"name":"out","path":"gpu-a/out"}],"params":{"value":2}},
+            {"id":"gpu-b","kind":"const","inputs":["in"],"resources":{"cpu":1,"mem_mb":64,"gpu_devices":1},"outputs":[{"name":"out","path":"gpu-b/out"}],"params":{"value":3}}
+          ],
+          "edges":[
+            {"from":{"node_id":"root","port":"out"},"to":{"node_id":"gpu-a","port":"in"}},
+            {"from":{"node_id":"root","port":"out"},"to":{"node_id":"gpu-b","port":"in"}}
+          ]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig {
+                jobs: 3,
+                gpu_device_budget: Some(1),
+                scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
+                    max_parallelism: 3,
+                    cpu_budget: Some(3),
+                    memory_budget_mb: None,
+                    gpu_device_budget: Some(1),
+                    ..bijux_dag_runtime::SchedulerPolicy::default()
+                },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("runtime run");
+
+    let events = read_run_events(&run_dir);
+    let scheduler_decision = events
+        .iter()
+        .find(|event| {
+            event["event"] == "scheduler_decision"
+                && event["blocked_reasons"].as_object().is_some_and(|blocked_reasons| {
+                    blocked_reasons.values().any(|reason| reason == "blocked_by_gpu")
+                })
+        })
+        .expect("scheduler decision");
+    let blocked_reasons =
+        scheduler_decision["blocked_reasons"].as_object().expect("blocked reasons object");
+    let blocked_gpu = blocked_reasons
+        .iter()
+        .find_map(|(node_id, reason)| (reason == "blocked_by_gpu").then_some(node_id.clone()))
+        .expect("gpu-blocked node");
+    assert!(blocked_gpu == "gpu-a" || blocked_gpu == "gpu-b");
+}
+
+#[test]
 fn partial_rerun_requires_dependency_closure_and_records_invalidation_contract() {
     let graph = parse_graph_strict(
         r#"{

@@ -1290,10 +1290,8 @@ fn validate_gpu_runtime_capacity(
     plan: &ExecutionPlan,
     options: &RuntimeConfig,
 ) -> Result<(), RuntimeError> {
-    let gpu_device_budget = options
-        .scheduler_policy
-        .gpu_device_budget
-        .or(options.gpu_device_budget);
+    let gpu_device_budget =
+        options.scheduler_policy.gpu_device_budget.or(options.gpu_device_budget);
     let mut required_nodes = Vec::new();
     let mut oversized_nodes = Vec::new();
 
