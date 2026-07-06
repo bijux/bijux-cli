@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # Ci Integration
@@ -17,8 +17,12 @@ environment before any repository-specific automation layers are added.
 ```bash
 cargo build -p bijux-dag-cli --release
 cargo run -p bijux-dag-cli --bin bijux-dag -- version
-cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json
+cargo run -p bijux-dag-cli --bin bijux-dag -- commands
 ```
+
+Maintainer-only CI probes may add
+`BIJUX_DAG_ENABLE_INTERNAL=1 cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json`,
+but that probe is not part of the public operator boundary.
 
 ## Fixture bootstrap
 
