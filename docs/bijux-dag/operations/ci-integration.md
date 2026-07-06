@@ -1,0 +1,34 @@
+---
+title: Ci Integration
+audience: operators
+type: operations
+status: canonical
+owner: bijux-dag-docs
+last_reviewed: 2026-07-06
+---
+
+# Ci Integration
+
+CI integration for `bijux-dag` should prove the visible DAG surface in a clean
+environment before any repository-specific automation layers are added.
+
+## Minimum lane
+
+```bash
+cargo build -p bijux-dag-cli --release
+cargo run -p bijux-dag-cli --bin bijux-dag -- version
+cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json
+```
+
+## Fixture bootstrap
+
+- use `evidence/authoring/examples/minimal_consumer.dag.json` as the minimum
+  validation fixture
+- keep run outputs under a repository-owned `artifacts/` root
+- treat non-zero exits from `validate`, `run`, `verify`, or `doctor` as CI
+  failures
+
+## Next reads
+
+- [Installation And Setup](installation-and-setup.md)
+- [First Hour With Bijux Dag](first-hour-with-bijux-dag.md)

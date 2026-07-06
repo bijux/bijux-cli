@@ -3745,12 +3745,12 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/ADOPTION_SURFACES.md",
-        "docs/user/INSTALLATION.md",
-        "docs/user/CI_INTEGRATION.md",
-        "docs/user/FIRST_HOUR_WITH_BIJUX_DAG.md",
-        "docs/reference/SUPPORT_MATRIX.md",
+        "docs/bijux-dag/operations/installation-and-setup.md",
+        "docs/bijux-dag/operations/ci-integration.md",
+        "docs/bijux-dag/operations/first-hour-with-bijux-dag.md",
+        "docs/bijux-dag/interfaces/support-matrix.md",
         "docs/spec/RELEASE_BINARY_VERIFICATION.md",
-        "docs/user/TRUST_BOUNDARIES.md",
+        "docs/bijux-dag/operations/trust-boundaries.md",
         "evidence/authoring/examples/minimal_consumer.dag.json",
         "crates/bijux-dag-testkit/fixtures/minimal_consumer/README.md",
     ];
@@ -3775,9 +3775,10 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
         );
     }
 
-    let quickstart = fs::read_to_string(root.join("docs/user/FIRST_HOUR_WITH_BIJUX_DAG.md"))
+    let quickstart =
+        fs::read_to_string(root.join("docs/bijux-dag/operations/first-hour-with-bijux-dag.md"))
         .map_err(|err| err.to_string())?;
-    let install = fs::read_to_string(root.join("docs/user/INSTALLATION.md"))
+    let install = fs::read_to_string(root.join("docs/bijux-dag/operations/installation-and-setup.md"))
         .map_err(|err| err.to_string())?;
     for required_cmd in [
         "cargo build -p bijux-dag-cli --release",

@@ -32,7 +32,8 @@ flowchart TD
 ## Recommended Validation Sequence
 
 ```bash
-cargo build --workspace
+cargo build -p bijux-dag-cli --release
+cargo run -p bijux-dag-cli --bin bijux-dag -- version
 cargo test -p bijux-dag-core
 bijux-dag validate ./examples/simple.dag.json
 bijux-dag run ./examples/simple.dag.json --out ./runs/bootstrap
