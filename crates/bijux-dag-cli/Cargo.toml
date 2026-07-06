@@ -19,7 +19,7 @@ workspace = true
 [dependencies]
 clap = { workspace = true }
 clap_complete = { workspace = true }
-bijux_dag_app = { package = "bijux-dag-app", path = "../bijux-dag-app", version = "0.4.0" }
+"bijux-dag-app" = { path = "../bijux-dag-app", version = "0.4.0" }
 
 [dev-dependencies]
 tempfile = { workspace = true }
