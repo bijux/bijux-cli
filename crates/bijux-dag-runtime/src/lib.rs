@@ -1391,10 +1391,7 @@ fn validate_named_resource_runtime_capacity(
                 }
                 Some(_) => {}
                 None => {
-                    missing
-                        .entry(name)
-                        .or_default()
-                        .push(format!("{}={requested}", node.id));
+                    missing.entry(name).or_default().push(format!("{}={requested}", node.id));
                 }
             }
         }

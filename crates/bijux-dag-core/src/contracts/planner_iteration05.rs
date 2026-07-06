@@ -1096,13 +1096,12 @@ mod tests {
             )
             .build();
         let mut graph = graph;
-        graph.nodes[0].resources =
-            Some(crate::Resources {
-                cpu: 16,
-                mem_mb: 32768,
-                gpu_devices: 0,
-                named_resources: std::collections::BTreeMap::new(),
-            });
+        graph.nodes[0].resources = Some(crate::Resources {
+            cpu: 16,
+            mem_mb: 32768,
+            gpu_devices: 0,
+            named_resources: std::collections::BTreeMap::new(),
+        });
         let report = build_resource_hints_report(
             &graph,
             GraphResourceHintsV1 {
