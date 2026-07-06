@@ -88,10 +88,7 @@ impl<T: Send + 'static> LocalWorkerPool<T> {
     }
 
     pub fn available_workers(&self) -> usize {
-        self.workers
-            .iter()
-            .filter(|worker| matches!(worker.state, LocalWorkerState::Idle))
-            .count()
+        self.workers.iter().filter(|worker| matches!(worker.state, LocalWorkerState::Idle)).count()
     }
 
     pub fn has_running(&self) -> bool {
@@ -144,8 +141,10 @@ impl<T: Send + 'static> LocalWorkerPool<T> {
     }
 
     pub fn wait_for_completion(&mut self) -> Result<LocalWorkerCompletion<T>, String> {
-        let message =
-            self.completion_rx.recv().map_err(|_| "local worker completion channel closed".to_string())?;
+        let message = self
+            .completion_rx
+            .recv()
+            .map_err(|_| "local worker completion channel closed".to_string())?;
         match message {
             LocalWorkerMessage::Completed(completion) => {
                 self.mark_worker_idle(completion.worker_id);

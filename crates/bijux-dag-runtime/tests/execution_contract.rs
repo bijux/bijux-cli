@@ -490,10 +490,8 @@ fn runtime_requeues_parallelism_blocked_roots_after_worker_completion() {
         .expect("runtime run");
 
     let events = read_run_events(&run_dir);
-    let scheduler_decisions = events
-        .iter()
-        .filter(|event| event["event"] == "scheduler_decision")
-        .collect::<Vec<_>>();
+    let scheduler_decisions =
+        events.iter().filter(|event| event["event"] == "scheduler_decision").collect::<Vec<_>>();
     assert_eq!(scheduler_decisions.len(), 3);
     assert_eq!(scheduler_decisions[0]["batch"], serde_json::json!(["alpha"]));
     assert_eq!(

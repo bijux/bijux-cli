@@ -10,9 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_runtime::{
-    LocalWorkerExecution, LocalWorkerPool, LocalWorkerState,
-};
+use bijux_dag_runtime::{LocalWorkerExecution, LocalWorkerPool, LocalWorkerState};
 use std::sync::{mpsc, Arc, Barrier};
 
 #[test]

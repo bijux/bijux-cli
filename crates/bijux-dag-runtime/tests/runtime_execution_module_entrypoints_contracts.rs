@@ -30,11 +30,7 @@ fn execution_facade_exports_local_worker_pool_surface() {
     let mut pool = LocalWorkerPool::<&'static str>::new(1);
     pool.submit(
         "alpha".to_string(),
-        Box::new(|| LocalWorkerExecution {
-            started_unix_ms: 1,
-            finished_unix_ms: 2,
-            result: "ok",
-        }),
+        Box::new(|| LocalWorkerExecution { started_unix_ms: 1, finished_unix_ms: 2, result: "ok" }),
     )
     .expect("submit alpha");
     let completion = pool.wait_for_completion().expect("completion");

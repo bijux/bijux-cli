@@ -2132,10 +2132,10 @@ pub fn execute(
                         let started = ctx_clone.clock.now_unix_ms();
                         let result = sacred_execution::run_retry_logic(
                             adapter.as_ref(),
-                        &graph_for_thread,
-                        &node_for_thread,
-                        &params_for_thread,
-                        &ctx_clone,
+                            &graph_for_thread,
+                            &node_for_thread,
+                            &params_for_thread,
+                            &ctx_clone,
                             &retry,
                         );
                         let finished = ctx_clone.clock.now_unix_ms();
@@ -2160,9 +2160,9 @@ pub fn execute(
                 local_workers.request_cancellation();
             }
             let completion = local_workers.wait_for_completion().map_err(RuntimeError::Executor)?;
-            let node = submitted_nodes
-                .remove(&completion.node_id)
-                .ok_or_else(|| RuntimeError::Executor("missing worker completion node".to_string()))?;
+            let node = submitted_nodes.remove(&completion.node_id).ok_or_else(|| {
+                RuntimeError::Executor("missing worker completion node".to_string())
+            })?;
             results.push((
                 completion.node_id,
                 node,
