@@ -150,7 +150,8 @@ fn mock_remote_worker_executes_const_payload_with_shared_node_result_shape() {
     assert_eq!(result.identity.backend_id, "remote-worker");
     assert_eq!(result.node_result.status, NodeStatus::Success);
 
-    let serialized = serialize_node_result_payload(&result.node_result).expect("serialize node result");
+    let serialized =
+        serialize_node_result_payload(&result.node_result).expect("serialize node result");
     assert!(serialized["stdout_path"].is_string());
     assert!(serialized["stderr_path"].is_string());
     assert!(serialized["outputs_dir"].is_string());
@@ -193,8 +194,9 @@ fn mock_remote_worker_materializes_inputs_for_shell_payloads() {
 
     let result = MockRemoteWorker.execute_payload(payload).expect("remote shell execute");
     assert_eq!(result.node_result.status, NodeStatus::Success);
-    let rendered = fs::read_to_string(Path::new(&result.node_result.outputs_dir).join("result.txt"))
-        .expect("rendered output");
+    let rendered =
+        fs::read_to_string(Path::new(&result.node_result.outputs_dir).join("result.txt"))
+            .expect("rendered output");
     assert_eq!(rendered, "remote-input");
 }
 

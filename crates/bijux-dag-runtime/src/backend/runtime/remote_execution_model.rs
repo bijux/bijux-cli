@@ -114,7 +114,9 @@ pub fn validate_remote_identity(identity: &RemoteExecutionIdentity) -> Result<()
     Ok(())
 }
 
-pub fn validate_remote_execution_workspace(workspace: &RemoteExecutionWorkspace) -> Result<(), String> {
+pub fn validate_remote_execution_workspace(
+    workspace: &RemoteExecutionWorkspace,
+) -> Result<(), String> {
     if Path::new(&workspace.out_base).as_os_str().is_empty() {
         return Err("remote workspace out_base must be non-empty".to_string());
     }
@@ -162,17 +164,11 @@ pub fn validate_remote_execution_fingerprint_set(
     for (label, value) in [
         ("node_fingerprint", &fingerprints.node_fingerprint),
         ("node_definition_fingerprint", &fingerprints.node_definition_fingerprint),
-        (
-            "declared_environment_fingerprint",
-            &fingerprints.declared_environment_fingerprint,
-        ),
+        ("declared_environment_fingerprint", &fingerprints.declared_environment_fingerprint),
         ("params_fingerprint", &fingerprints.params_fingerprint),
         ("execution_fingerprint", &fingerprints.execution_fingerprint),
         ("evidence_fingerprint", &fingerprints.evidence_fingerprint),
-        (
-            "execution_contract_fingerprint",
-            &fingerprints.execution_contract_fingerprint,
-        ),
+        ("execution_contract_fingerprint", &fingerprints.execution_contract_fingerprint),
     ] {
         if value.trim().is_empty() {
             return Err(format!("remote execution fingerprint '{label}' must be non-empty"));
@@ -181,7 +177,9 @@ pub fn validate_remote_execution_fingerprint_set(
     Ok(())
 }
 
-pub fn validate_remote_execution_payload(payload: &RemoteNodeExecutionPayload) -> Result<(), String> {
+pub fn validate_remote_execution_payload(
+    payload: &RemoteNodeExecutionPayload,
+) -> Result<(), String> {
     validate_remote_identity(&payload.identity)?;
     validate_remote_execution_workspace(&payload.workspace)?;
     validate_remote_execution_fingerprint_set(&payload.fingerprints)?;
@@ -195,10 +193,7 @@ pub fn validate_remote_execution_payload(payload: &RemoteNodeExecutionPayload) -
         ));
     }
     if !payload.graph.nodes.iter().any(|node| node.id == payload.node.id) {
-        return Err(format!(
-            "remote payload graph does not contain node '{}'",
-            payload.node.id
-        ));
+        return Err(format!("remote payload graph does not contain node '{}'", payload.node.id));
     }
     for artifact in &payload.input_artifacts {
         validate_remote_input_artifact(artifact)?;
@@ -252,22 +247,20 @@ impl RemoteWorkerExecutor for MockRemoteWorker {
         graph_fingerprint.insert(node_id.clone(), payload.fingerprints.node_fingerprint.clone());
 
         let mut node_definition_fingerprints = HashMap::new();
-        node_definition_fingerprints.insert(
-            node_id.clone(),
-            payload.fingerprints.node_definition_fingerprint.clone(),
-        );
+        node_definition_fingerprints
+            .insert(node_id.clone(), payload.fingerprints.node_definition_fingerprint.clone());
 
         let mut declared_environment_fingerprints = HashMap::new();
-        declared_environment_fingerprints.insert(
-            node_id.clone(),
-            payload.fingerprints.declared_environment_fingerprint.clone(),
-        );
+        declared_environment_fingerprints
+            .insert(node_id.clone(), payload.fingerprints.declared_environment_fingerprint.clone());
 
         let mut params_fingerprints = HashMap::new();
-        params_fingerprints.insert(node_id.clone(), payload.fingerprints.params_fingerprint.clone());
+        params_fingerprints
+            .insert(node_id.clone(), payload.fingerprints.params_fingerprint.clone());
 
         let mut command_fingerprints = HashMap::new();
-        command_fingerprints.insert(node_id.clone(), payload.fingerprints.command_fingerprint.clone());
+        command_fingerprints
+            .insert(node_id.clone(), payload.fingerprints.command_fingerprint.clone());
 
         let mut resolved_params = HashMap::new();
         resolved_params.insert(node_id.clone(), payload.params.clone());
@@ -325,8 +318,7 @@ fn materialize_remote_inputs(
     input_artifacts: &[RemoteInputArtifact],
 ) -> Result<(), String> {
     let inputs_dir = run_dir.node_inputs_dir(node_id);
-    fs.create_dir_all(&inputs_dir)
-        .map_err(|error| format!("create remote inputs dir: {error}"))?;
+    fs.create_dir_all(&inputs_dir).map_err(|error| format!("create remote inputs dir: {error}"))?;
     for artifact in input_artifacts {
         validate_remote_input_artifact(artifact)?;
         let target = inputs_dir.join(&artifact.relative_path);
@@ -334,8 +326,9 @@ fn materialize_remote_inputs(
             fs.create_dir_all(parent)
                 .map_err(|error| format!("create remote input parent dir: {error}"))?;
         }
-        fs.write(&target, &artifact.bytes)
-            .map_err(|error| format!("write remote input artifact '{}': {error}", artifact.relative_path))?;
+        fs.write(&target, &artifact.bytes).map_err(|error| {
+            format!("write remote input artifact '{}': {error}", artifact.relative_path)
+        })?;
     }
     Ok(())
 }
@@ -470,9 +463,7 @@ mod tests {
             Value::Bool(_) => Value::String("bool".to_string()),
             Value::Number(_) => Value::String("number".to_string()),
             Value::String(_) => Value::String("string".to_string()),
-            Value::Array(items) => {
-                Value::Array(items.iter().map(shape).collect())
-            }
+            Value::Array(items) => Value::Array(items.iter().map(shape).collect()),
             Value::Object(map) => {
                 let shaped = map.iter().map(|(key, entry)| (key.clone(), shape(entry))).collect();
                 Value::Object(shaped)
@@ -499,18 +490,14 @@ mod tests {
         .expect("parse graph");
         let node = graph.nodes[0].clone();
         let temp = tempfile::tempdir().expect("temp dir");
-        let payload = remote_payload(
-            temp.path(),
-            "remote-const",
-            graph,
-            node,
-            json!({"value": "hello"}),
-        );
+        let payload =
+            remote_payload(temp.path(), "remote-const", graph, node, json!({"value": "hello"}));
 
         let remote = MockRemoteWorker.execute_payload(payload).expect("remote execute");
         let local = local_const_result(temp.path(), "local-const");
 
-        let remote_shape = shape(&serialize_node_result_payload(&remote.node_result).expect("remote value"));
+        let remote_shape =
+            shape(&serialize_node_result_payload(&remote.node_result).expect("remote value"));
         let local_shape = shape(&serialize_node_result_payload(&local).expect("local value"));
         assert_eq!(remote_shape, local_shape);
     }
