@@ -367,7 +367,7 @@ pub use local_worker_pool::{
     LocalWorkerState, LocalWorkerStatus,
 };
 pub use observability::{
-    category_from_runtime_event_name, current_process_memory_bytes,
+    canonicalize_event_records, category_from_runtime_event_name, current_process_memory_bytes,
     event_contains_sensitive_material, event_names_emitted_once, reconstruct_timeline_from_events,
     required_event_fields_present, serialize_timeline_export, summarize_failure_root_causes,
     validate_required_event_names, verify_event_log_completeness, write_timeline_export,

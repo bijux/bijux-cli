@@ -74,15 +74,39 @@ fn required_event_name_catalog_contains_core_lifecycle_events() {
 #[test]
 fn timeline_reconstruction_is_stable_from_event_log_only() {
     let events = vec![
-        base_event("run_started", 1),
-        base_event("node_ready", 2),
         base_event("run_finished", 3),
+        base_event("node_ready", 2),
+        base_event("run_started", 1),
     ];
     let timeline = reconstruct_timeline_from_events(&events);
     assert_eq!(timeline.schema_version, "v0.1");
     assert_eq!(timeline.entries.len(), 3);
+    assert_eq!(timeline.entries[0].label, "run_started");
     assert_eq!(timeline.entries[1].label, "node_ready");
-    assert_eq!(timeline.entries[1].category, "start");
+    assert_eq!(timeline.entries[1].category, "ready");
+    assert_eq!(timeline.entries[2].label, "run_completed");
+    assert_eq!(timeline.entries[2].source_event.as_deref(), Some("run_finished"));
+}
+
+#[test]
+fn timeline_reconstruction_normalizes_terminal_node_outcomes() {
+    let mut failed = base_event("node_finished", 4);
+    failed.category = EventCategory::Failure;
+    failed.details = json!({"status":"failed","reason":"exit_code"});
+    let mut cached = base_event("node_finished", 3);
+    cached.category = EventCategory::CacheHit;
+    cached.details = json!({"status":"cached"});
+    let mut cancelled = base_event("node_skipped", 2);
+    cancelled.category = EventCategory::Failure;
+    cancelled.details = json!({"reason":"cancelled"});
+
+    let timeline = reconstruct_timeline_from_events(&[failed, cached, cancelled]);
+    assert_eq!(timeline.entries[0].label, "node_cancelled");
+    assert_eq!(timeline.entries[0].category, "cancel");
+    assert_eq!(timeline.entries[1].label, "node_cached");
+    assert_eq!(timeline.entries[1].status.as_deref(), Some("cached"));
+    assert_eq!(timeline.entries[2].label, "node_failed");
+    assert_eq!(timeline.entries[2].reason.as_deref(), Some("exit_code"));
 }
 
 #[test]

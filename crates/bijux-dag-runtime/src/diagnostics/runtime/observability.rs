@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::fs;
 use std::io::Write;
 use std::path::Path;
@@ -165,6 +166,12 @@ pub struct TimelineEntry {
     pub category: String,
     pub label: String,
     pub node_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_event: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -173,17 +180,19 @@ pub struct TimelineExport {
     pub entries: Vec<TimelineEntry>,
 }
 
+pub fn canonicalize_event_records(events: &[EventRecord]) -> Vec<EventRecord> {
+    let mut ordered = events.to_vec();
+    ordered.sort_by(compare_runtime_events);
+    ordered
+}
+
 pub fn reconstruct_timeline_from_events(events: &[EventRecord]) -> TimelineExport {
+    let ordered = canonicalize_event_records(events);
     TimelineExport {
         schema_version: "v0.1".to_string(),
-        entries: events
+        entries: ordered
             .iter()
-            .map(|event| TimelineEntry {
-                unix_ms: event.unix_ms,
-                category: format!("{:?}", event.category).to_lowercase(),
-                label: event.name.clone(),
-                node_id: event.node_id.clone(),
-            })
+            .map(timeline_entry_from_event)
             .collect(),
     }
 }
@@ -228,6 +237,123 @@ pub fn verify_event_log_completeness(
         monotonic_timestamps,
         timeline_matches_reconstruction,
         gaps,
+    }
+}
+
+fn timeline_entry_from_event(event: &EventRecord) -> TimelineEntry {
+    TimelineEntry {
+        unix_ms: event.unix_ms,
+        category: timeline_category(event),
+        label: timeline_label(event),
+        node_id: event.node_id.clone(),
+        status: event_status(event),
+        reason: event_reason(event),
+        source_event: Some(event.name.clone()),
+    }
+}
+
+fn timeline_category(event: &EventRecord) -> String {
+    match event.name.as_str() {
+        "run_started" | "run_finished" => "run".to_string(),
+        "node_ready" => "ready".to_string(),
+        "node_scheduled" => "schedule".to_string(),
+        "node_started" | "node_attempt_started" => "start".to_string(),
+        "node_attempt_finished" | "node_retry_scheduled" | "node_retry_exhausted" => {
+            "retry".to_string()
+        }
+        "cache_hit" => "cache_hit".to_string(),
+        "cache_miss" => "cache_miss".to_string(),
+        "run_timeout" => "timeout".to_string(),
+        "run_cancel_requested" => "cancel".to_string(),
+        "node_blocked" => "blocked".to_string(),
+        "node_skipped" | "node_finished" => timeline_terminal_category(event).to_string(),
+        _ => format!("{:?}", event.category).to_lowercase(),
+    }
+}
+
+fn timeline_terminal_category(event: &EventRecord) -> &'static str {
+    match event_terminal_status(event).as_deref() {
+        Some("failed") => "failure",
+        Some("skipped") => "skip",
+        Some("cached") => "cache_hit",
+        Some("cancelled") => "cancel",
+        _ => "complete",
+    }
+}
+
+fn timeline_label(event: &EventRecord) -> String {
+    match event.name.as_str() {
+        "run_started" => "run_started".to_string(),
+        "run_finished" => "run_completed".to_string(),
+        "node_ready" => "node_ready".to_string(),
+        "node_scheduled" => "node_scheduled".to_string(),
+        "node_started" => "node_started".to_string(),
+        "node_attempt_started" => "node_attempt_started".to_string(),
+        "node_attempt_finished" => "node_attempt_finished".to_string(),
+        "node_retry_scheduled" => "node_retry_scheduled".to_string(),
+        "node_retry_exhausted" => "node_retry_exhausted".to_string(),
+        "cache_hit" => "cache_hit".to_string(),
+        "cache_miss" => "cache_miss".to_string(),
+        "run_timeout" => "run_timed_out".to_string(),
+        "run_cancel_requested" => "run_cancel_requested".to_string(),
+        "node_blocked" => "node_blocked".to_string(),
+        "node_skipped" | "node_finished" => match event_terminal_status(event).as_deref() {
+            Some("failed") => "node_failed".to_string(),
+            Some("skipped") => "node_skipped".to_string(),
+            Some("cached") => "node_cached".to_string(),
+            Some("cancelled") => "node_cancelled".to_string(),
+            _ => "node_completed".to_string(),
+        },
+        _ => event.name.clone(),
+    }
+}
+
+fn event_terminal_status(event: &EventRecord) -> Option<String> {
+    if event.name == "node_skipped" {
+        return Some(if event_reason(event).as_deref() == Some("cancelled") {
+            "cancelled".to_string()
+        } else {
+            "skipped".to_string()
+        });
+    }
+    event_status(event)
+}
+
+fn event_status(event: &EventRecord) -> Option<String> {
+    event.details.get("status").and_then(|value| value.as_str()).map(ToString::to_string)
+}
+
+fn event_reason(event: &EventRecord) -> Option<String> {
+    event.details.get("reason").and_then(|value| value.as_str()).map(ToString::to_string)
+}
+
+fn compare_runtime_events(left: &EventRecord, right: &EventRecord) -> Ordering {
+    left.unix_ms
+        .cmp(&right.unix_ms)
+        .then_with(|| runtime_event_rank(left).cmp(&runtime_event_rank(right)))
+        .then_with(|| left.node_id.cmp(&right.node_id))
+        .then_with(|| left.name.cmp(&right.name))
+}
+
+fn runtime_event_rank(event: &EventRecord) -> u8 {
+    match event.name.as_str() {
+        "run_started" => 0,
+        "plan_built" => 5,
+        "node_ready" => 10,
+        "scheduler_decision" => 15,
+        "node_scheduled" => 20,
+        "cache_hit" | "cache_miss" => 25,
+        "node_started" => 30,
+        "node_attempt_started" => 40,
+        "node_attempt_finished" => 50,
+        "node_retry_scheduled" => 60,
+        "node_retry_exhausted" => 65,
+        "run_cancel_requested" | "run_timeout" => 70,
+        "node_blocked" => 75,
+        "branch_decision_selected" => 80,
+        "node_skipped" | "node_finished" => 90,
+        "run_finished" => 255,
+        _ => 200,
     }
 }
 
@@ -317,7 +443,7 @@ pub fn category_from_runtime_event_name(name: &str) -> EventCategory {
             EventCategory::Schedule
         }
         "node_dispatch" => EventCategory::Dispatch,
-        "node_started" | "run_started" => EventCategory::Start,
+        "node_started" | "run_started" | "run_finished" => EventCategory::Start,
         "node_attempt_started"
         | "node_attempt_finished"
         | "node_retry_scheduled"
@@ -325,7 +451,10 @@ pub fn category_from_runtime_event_name(name: &str) -> EventCategory {
         "run_timeout" => EventCategory::Timeout,
         "cache_hit" => EventCategory::CacheHit,
         "cache_miss" => EventCategory::CacheMiss,
-        "node_failed" | "node_finished" | "policy_denied" => EventCategory::Failure,
+        "node_failed" | "node_finished" | "node_skipped" | "policy_denied" => {
+            EventCategory::Failure
+        }
+        "run_cancel_requested" => EventCategory::Dispatch,
         "replay_reused" | "replay_reexecuted" => EventCategory::Replay,
         "verify_completed" => EventCategory::Verify,
         _ => EventCategory::Dispatch,
