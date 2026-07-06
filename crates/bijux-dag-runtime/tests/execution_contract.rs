@@ -40,6 +40,88 @@ fn simple_const_graph() -> String {
     .to_string()
 }
 
+fn semantic_map_reduce_graph() -> String {
+    r#"{
+      "spec": "bijux-dag/v0.1",
+      "nodes": [
+        {
+          "id": "seed",
+          "kind": "const",
+          "outputs": [{"name": "out", "path": "seed/items.json"}],
+          "params": {"value": ["alpha", "beta"]}
+        },
+        {
+          "id": "map",
+          "kind": "shell",
+          "semantic_kind": "map",
+          "inputs": ["in"],
+          "outputs": [{"name": "out", "path": "mapped", "kind": "directory"}],
+          "effects": ["filesystem"],
+          "params": {
+            "argv": [
+              "/bin/sh",
+              "-c",
+              "value=$(tr -d '\"' < ../inputs/seed/in); mkdir -p ../outputs/mapped; printf '%s' \"$value\" > ../outputs/mapped/value.txt"
+            ]
+          }
+        },
+        {
+          "id": "reduce",
+          "kind": "shell",
+          "semantic_kind": "reduce",
+          "inputs": ["mapped"],
+          "outputs": [{"name": "out", "path": "reduce.txt"}],
+          "effects": ["filesystem"],
+          "params": {
+            "argv": [
+              "/bin/sh",
+              "-c",
+              "first=1; for file in $(find ../inputs/map/mapped/items -name value.txt | sort); do if [ \"$first\" -eq 0 ]; then printf ',' >> ../outputs/reduce.txt; fi; cat \"$file\" >> ../outputs/reduce.txt; first=0; done"
+            ]
+          }
+        }
+      ],
+      "edges": [
+        {"from": {"node_id": "seed", "port": "out"}, "to": {"node_id": "map", "port": "in"}},
+        {"from": {"node_id": "map", "port": "out"}, "to": {"node_id": "reduce", "port": "mapped"}}
+      ]
+    }"#
+    .to_string()
+}
+
+fn semantic_map_failure_graph() -> String {
+    r#"{
+      "spec": "bijux-dag/v0.1",
+      "nodes": [
+        {
+          "id": "seed",
+          "kind": "const",
+          "outputs": [{"name": "out", "path": "seed/items.json"}],
+          "params": {"value": ["ok", "fail", "later"]}
+        },
+        {
+          "id": "map",
+          "kind": "shell",
+          "semantic_kind": "map",
+          "inputs": ["in"],
+          "outputs": [{"name": "out", "path": "mapped", "kind": "directory"}],
+          "effects": ["filesystem"],
+          "params": {
+            "argv": [
+              "/bin/sh",
+              "-c",
+              "value=$(tr -d '\"' < ../inputs/seed/in); mkdir -p ../outputs/mapped; if [ \"$value\" = fail ]; then printf 'broken item' >&2; exit 7; fi; printf '%s' \"$value\" > ../outputs/mapped/value.txt"
+            ]
+          }
+        }
+      ],
+      "edges": [
+        {"from": {"node_id": "seed", "port": "out"}, "to": {"node_id": "map", "port": "in"}}
+      ]
+    }"#
+    .to_string()
+}
+
 fn read_counts(manifest: &Path) -> (u32, u32, u32, u32) {
     let data: Value =
         serde_json::from_str(&fs::read_to_string(manifest).expect("manifest")).unwrap();
@@ -90,6 +172,83 @@ fn runtime_executes_const_graph_and_emits_output_trace() {
     assert_eq!(trace["planner_contract_version"], "bijux-dag-planner/v1");
     assert!(trace["execution_fingerprint"].as_str().is_some());
     assert!(trace["evidence_fingerprint"].as_str().is_some());
+}
+
+#[test]
+fn runtime_executes_semantic_map_node_and_reduce_consumes_directory_outputs() {
+    let graph = parse_graph_strict(&semantic_map_reduce_graph()).expect("parse graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("runtime run");
+
+    let reduce_output =
+        fs::read_to_string(run_dir.join("nodes").join("reduce").join("outputs").join("reduce.txt"))
+            .expect("reduce output");
+    assert_eq!(reduce_output, "alpha,beta");
+
+    let map_summary: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("map").join("map.execution.json"))
+            .expect("map summary"),
+    )
+    .expect("parse map summary");
+    assert_eq!(map_summary["item_count"], 2);
+    assert_eq!(map_summary["successful_item_count"], 2);
+    assert_eq!(map_summary["failed_item_count"], 0);
+
+    let item_root = run_dir.join("nodes").join("map").join("outputs").join("mapped").join("items");
+    let mut item_values = fs::read_dir(&item_root)
+        .expect("item root")
+        .filter_map(|entry| entry.ok())
+        .map(|entry| fs::read_to_string(entry.path().join("value.txt")).expect("item value"))
+        .collect::<Vec<_>>();
+    item_values.sort();
+    assert_eq!(item_values, vec!["alpha".to_string(), "beta".to_string()]);
+}
+
+#[test]
+fn runtime_aggregates_semantic_map_item_failures_without_hiding_successful_outputs() {
+    let graph = parse_graph_strict(&semantic_map_failure_graph()).expect("parse graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("runtime run");
+
+    let manifest: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("manifest.json")).expect("manifest"),
+    )
+    .expect("manifest parse");
+    assert_eq!(manifest["status"], "failed");
+
+    let trace: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("map").join("trace.json")).expect("trace"),
+    )
+    .expect("trace parse");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "MAP_ITEMS_FAILED");
+
+    let map_summary: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("map").join("map.execution.json"))
+            .expect("map summary"),
+    )
+    .expect("parse map summary");
+    assert_eq!(map_summary["item_count"], 3);
+    assert_eq!(map_summary["successful_item_count"], 2);
+    assert_eq!(map_summary["failed_item_count"], 1);
+    assert!(map_summary["items"]
+        .as_array()
+        .expect("items array")
+        .iter()
+        .any(|item| { item["status"] == "failed" && item["failure"].is_object() }));
+
+    let item_root = run_dir.join("nodes").join("map").join("outputs").join("mapped").join("items");
+    let mut item_values = fs::read_dir(&item_root)
+        .expect("item root")
+        .filter_map(|entry| entry.ok())
+        .map(|entry| fs::read_to_string(entry.path().join("value.txt")).expect("item value"))
+        .collect::<Vec<_>>();
+    item_values.sort();
+    assert_eq!(item_values, vec!["later".to_string(), "ok".to_string()]);
 }
 
 #[test]
