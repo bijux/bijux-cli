@@ -151,7 +151,10 @@ pub fn lower_graph_to_execution_plan(
 
     if options.supported_kinds.is_empty() {
         options.supported_kinds =
-            ["const", "shell", "container"].into_iter().map(str::to_string).collect();
+            ["const", "shell", "python", "http", "file_transform", "container"]
+                .into_iter()
+                .map(str::to_string)
+                .collect();
     }
 
     let canonical = expanded.canonicalize();
@@ -482,7 +485,12 @@ pub fn can_runtime_execute_plan_without_raw_graph() -> bool {
 pub fn node_kind_supported(kind: &NodeKind) -> bool {
     matches!(
         kind,
-        NodeKind::Const | NodeKind::Shell | NodeKind::Python | NodeKind::Http | NodeKind::Container
+        NodeKind::Const
+            | NodeKind::Shell
+            | NodeKind::Python
+            | NodeKind::Http
+            | NodeKind::FileTransform
+            | NodeKind::Container
     )
 }
 

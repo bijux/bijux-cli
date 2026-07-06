@@ -19,7 +19,7 @@ fn validation_error_and_warning_coverage() {
         "E1001", "E1002", "E1003", "E1004", "E1005", "E1007", "E1008", "E1009", "E1010", "E1011",
         "E1020", "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030",
         "E1031", "E1032", "E1035", "E1039", "E1040", "E1041", "E1042", "E1043", "E1044", "E1045",
-        "E1046",
+        "E1046", "E1047", "E1048", "E1049", "E1050", "E1051", "E1052", "E1053", "E1054", "E1055",
     ];
 
     for code in expected_error_codes {
@@ -737,6 +737,188 @@ fn graph_for_code(code: &str) -> Graph {
                         bijux_dag_core::ParamValue::Literal(serde_json::json!(
                             "https://example.test"
                         )),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1047" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Literal(serde_json::json!("bad"));
+            g
+        }
+        "E1048" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "operation".to_string(),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("rename")),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1049" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("copy")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("../escape.txt")),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1050" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("concatenate")),
+                    ),
+                    (
+                        "sources".to_string(),
+                        bijux_dag_core::ParamValue::Array(vec![
+                            bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                            bijux_dag_core::ParamValue::Literal(serde_json::json!("../bad.txt")),
+                        ]),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1051" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].outputs =
+                vec![FileOutput::new("chunk".to_string(), "source/chunk-1.txt".to_string())];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("split")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                    ),
+                    (
+                        "chunk_bytes".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!(0)),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1052" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("checksum")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                    ),
+                    (
+                        "checksum_algorithm".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("md5")),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1053" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("gzip_compress")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                    ),
+                    (
+                        "compression_level".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!(12)),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1054" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].outputs[0].kind = bijux_dag_core::OutputKind::Directory;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("copy")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1055" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0]
+                .outputs
+                .push(FileOutput::new("extra".to_string(), "source/extra.txt".to_string()));
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("copy")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
                     ),
                 ]
                 .into_iter()

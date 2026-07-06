@@ -310,6 +310,7 @@ pub enum NodeKind {
     Shell,
     Python,
     Http,
+    FileTransform,
     Container,
     External(String),
 }
@@ -321,6 +322,7 @@ impl NodeKind {
             Self::Shell => "shell",
             Self::Python => "python",
             Self::Http => "http",
+            Self::FileTransform => "file_transform",
             Self::Container => "container",
             Self::External(kind) => kind.as_str(),
         }
@@ -347,6 +349,7 @@ impl<'de> Deserialize<'de> for NodeKind {
             "shell" => Self::Shell,
             "python" => Self::Python,
             "http" => Self::Http,
+            "file_transform" => Self::FileTransform,
             "container" => Self::Container,
             _ => Self::External(value),
         })

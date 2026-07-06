@@ -61,6 +61,15 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1044", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1045", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1046", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1047", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1048", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1049", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1050", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1051", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1052", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1053", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1054", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1055", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -122,8 +131,22 @@ fn node_param_object_field<'a>(
     })
 }
 
+fn node_param_array_field<'a>(node: &'a Node, key: &str) -> Option<&'a [ParamValue]> {
+    node_param_object(node).and_then(|params| params.get(key)).and_then(|value| match value {
+        ParamValue::Array(items) => Some(items.as_slice()),
+        _ => None,
+    })
+}
+
 fn param_value_is_literal_string(value: &ParamValue) -> bool {
     matches!(value, ParamValue::Literal(serde_json::Value::String(_)))
+}
+
+fn param_value_literal_u64(value: &ParamValue) -> Option<u64> {
+    match value {
+        ParamValue::Literal(serde_json::Value::Number(number)) => number.as_u64(),
+        _ => None,
+    }
 }
 
 fn is_normalized_relative_path(path: &str) -> bool {
@@ -375,6 +398,222 @@ impl Graph {
                         format!("/nodes/{}/outputs", node.id),
                         Some("Declare exactly one output to capture the HTTP response".to_string()),
                     );
+                }
+            }
+            if node.kind == crate::NodeKind::FileTransform && node.effects.is_empty() {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("missing effects for file_transform node: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Declare effects for file_transform nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::FileTransform
+                && !node.effects.contains(&Effect::Filesystem)
+            {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("file_transform node missing filesystem effect: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Include filesystem effect for file_transform nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::FileTransform
+                && !matches!(node.params, ParamValue::Object(_))
+            {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1047",
+                    format!("file_transform node params must be an object: {}", node.id),
+                    format!("/nodes/{}/params", node.id),
+                    Some(
+                        "Declare operation-specific fields inside an object for file_transform nodes"
+                            .to_string(),
+                    ),
+                );
+            }
+            if node.kind == crate::NodeKind::FileTransform {
+                let operation = match node_param_literal_string(node, "operation") {
+                    Some(
+                        "copy" | "concatenate" | "split" | "gzip_compress" | "gzip_decompress"
+                        | "checksum",
+                    ) => node_param_literal_string(node, "operation"),
+                    _ => {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1048",
+                            format!(
+                                "file_transform node operation must be one of copy, concatenate, split, gzip_compress, gzip_decompress, checksum: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/operation", node.id),
+                            Some("Choose a supported built-in file_transform operation".to_string()),
+                        );
+                        None
+                    }
+                };
+
+                let requires_single_source = matches!(
+                    operation,
+                    Some("copy" | "split" | "gzip_compress" | "gzip_decompress" | "checksum")
+                );
+                if requires_single_source {
+                    match node_param_literal_string(node, "source") {
+                        Some(path) if is_normalized_relative_path(path) => {}
+                        _ => emit_rule(
+                            &mut diagnostics,
+                            "E1049",
+                            format!(
+                                "file_transform node source must be a normalized relative input path: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/source", node.id),
+                            Some(
+                                "Reference an input artifact relative to the node inputs directory"
+                                    .to_string(),
+                            ),
+                        ),
+                    }
+                }
+
+                if matches!(operation, Some("concatenate")) {
+                    match node_param_array_field(node, "sources") {
+                        Some(paths)
+                            if !paths.is_empty()
+                                && paths.iter().all(|value| {
+                                    matches!(
+                                        value,
+                                        ParamValue::Literal(serde_json::Value::String(path))
+                                            if is_normalized_relative_path(path)
+                                    )
+                                }) => {}
+                        _ => emit_rule(
+                            &mut diagnostics,
+                            "E1050",
+                            format!(
+                                "file_transform node sources must be a non-empty array of normalized relative input paths: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/sources", node.id),
+                            Some(
+                                "Provide concatenate sources as an ordered array of input-relative paths"
+                                    .to_string(),
+                            ),
+                        ),
+                    }
+                }
+
+                if matches!(operation, Some("split")) {
+                    match node_param_object(node)
+                        .and_then(|params| params.get("chunk_bytes"))
+                        .and_then(param_value_literal_u64)
+                    {
+                        Some(chunk_bytes) if chunk_bytes > 0 => {}
+                        _ => emit_rule(
+                            &mut diagnostics,
+                            "E1051",
+                            format!(
+                                "file_transform split node requires chunk_bytes > 0: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/chunk_bytes", node.id),
+                            Some(
+                                "Provide a positive chunk_bytes integer for split operations"
+                                    .to_string(),
+                            ),
+                        ),
+                    }
+                }
+
+                if matches!(operation, Some("checksum"))
+                    && node_param_object(node)
+                        .is_some_and(|params| params.contains_key("checksum_algorithm"))
+                {
+                    match node_param_literal_string(node, "checksum_algorithm") {
+                        Some("sha256") => {}
+                        _ => emit_rule(
+                            &mut diagnostics,
+                            "E1052",
+                            format!(
+                                "file_transform checksum_algorithm must be sha256 when provided: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/checksum_algorithm", node.id),
+                            Some("Use checksum_algorithm: \"sha256\"".to_string()),
+                        ),
+                    }
+                }
+
+                if matches!(operation, Some("gzip_compress"))
+                    && node_param_object(node)
+                        .is_some_and(|params| params.contains_key("compression_level"))
+                {
+                    match node_param_object(node)
+                        .and_then(|params| params.get("compression_level"))
+                        .and_then(param_value_literal_u64)
+                    {
+                        Some(level) if level <= 9 => {}
+                        _ => emit_rule(
+                            &mut diagnostics,
+                            "E1053",
+                            format!(
+                                "file_transform compression_level must be an integer between 0 and 9: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/compression_level", node.id),
+                            Some("Use gzip compression levels from 0 through 9".to_string()),
+                        ),
+                    }
+                }
+
+                if node.outputs.iter().any(|output| output.expects_directory()) {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1054",
+                        format!(
+                            "file_transform node outputs must be file outputs, not directories: {}",
+                            node.id
+                        ),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some("Declare file outputs for file_transform operations".to_string()),
+                    );
+                }
+
+                match operation {
+                    Some("split") if node.outputs.is_empty() => emit_rule(
+                        &mut diagnostics,
+                        "E1055",
+                        format!(
+                            "file_transform split node requires one or more declared outputs: {}",
+                            node.id
+                        ),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some(
+                            "Declare outputs for each split chunk you expect to materialize"
+                                .to_string(),
+                        ),
+                    ),
+                    Some(
+                        "copy" | "concatenate" | "gzip_compress" | "gzip_decompress" | "checksum",
+                    ) if node.outputs.len() != 1 => {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1055",
+                            format!(
+                                "file_transform node requires exactly one declared output for operation {}: {}",
+                                operation.unwrap_or("unknown"),
+                                node.id
+                            ),
+                            format!("/nodes/{}/outputs", node.id),
+                            Some(
+                                "Declare exactly one output for copy, concatenate, gzip, and checksum operations"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                    _ => {}
                 }
             }
             if node.kind == crate::NodeKind::Container && node.container.is_none() {
