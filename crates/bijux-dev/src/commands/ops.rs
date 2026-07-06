@@ -3261,7 +3261,10 @@ pub(super) fn run_operator_ux_guard() -> Result<(), String> {
 
 pub(super) fn run_authoring_ux_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let required_docs = ["docs/spec/AUTHORING_UX_CONTRACT.md", "docs/user/AUTHORING_GUIDE.md"];
+    let required_docs = [
+        "docs/spec/AUTHORING_UX_CONTRACT.md",
+        "docs/bijux-dag/interfaces/authoring-guide.md",
+    ];
     let required_examples = [
         "evidence/authoring/patterns/minimal.json",
         "evidence/authoring/patterns/medium.json",
@@ -3291,7 +3294,7 @@ pub(super) fn run_authoring_ux_guard() -> Result<(), String> {
 
     let contract = fs::read_to_string(root.join("docs/spec/AUTHORING_UX_CONTRACT.md"))
         .map_err(|err| err.to_string())?;
-    let guide = fs::read_to_string(root.join("docs/user/AUTHORING_GUIDE.md"))
+    let guide = fs::read_to_string(root.join("docs/bijux-dag/interfaces/authoring-guide.md"))
         .map_err(|err| err.to_string())?;
     for rel in required_examples.iter().chain(required_bad.iter()) {
         if !contract.contains(rel) {
