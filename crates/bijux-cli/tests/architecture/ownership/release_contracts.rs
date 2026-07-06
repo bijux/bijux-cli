@@ -307,7 +307,11 @@ fn managed_release_toolchains_match_workspace_rust_version() {
         quoted_value_after(&workspace_manifest, "rust-version = ").expect("workspace rust-version");
     let exact_toolchain = format!("{workspace_rust_version}.0");
 
-    for key in ["BIJUX_RELEASE_RUST_TOOLCHAIN", "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN"] {
+    for key in [
+        "BIJUX_RELEASE_RUST_TOOLCHAIN",
+        "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN",
+        "BIJUX_PYPI_RUST_TOOLCHAIN",
+    ] {
         assert_eq!(
             release_env_value_for_repo("bijux-core", key),
             exact_toolchain,
@@ -322,7 +326,11 @@ fn managed_release_toolchains_match_workspace_rust_version() {
     );
 
     let release_env = read_repo_file(".github/release.env");
-    for key in ["BIJUX_RELEASE_RUST_TOOLCHAIN", "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN"] {
+    for key in [
+        "BIJUX_RELEASE_RUST_TOOLCHAIN",
+        "BIJUX_CRATES_RELEASE_RUST_TOOLCHAIN",
+        "BIJUX_PYPI_RUST_TOOLCHAIN",
+    ] {
         assert_eq!(
             shell_assignment_value(&release_env, key).as_deref(),
             Some(exact_toolchain.as_str()),
@@ -336,6 +344,29 @@ fn managed_release_toolchains_match_workspace_rust_version() {
     assert!(
         ci_workflow.contains(&unquoted) || ci_workflow.contains(&quoted),
         ".github/workflows/ci.yml must keep RUST_TOOLCHAIN_VERSION aligned with the workspace rust-version"
+    );
+}
+
+#[test]
+fn repo_owned_toolchain_overrides_match_workspace_rust_version() {
+    let workspace_manifest = read_repo_file("Cargo.toml");
+    let workspace_rust_version =
+        quoted_value_after(&workspace_manifest, "rust-version = ").expect("workspace rust-version");
+    let exact_toolchain = format!("{workspace_rust_version}.0");
+
+    let canon_workflow = read_repo_file(".github/workflows/bijux-canon.yml");
+    let unquoted = format!("RUST_TOOLCHAIN_VERSION: {exact_toolchain}");
+    let quoted = format!("RUST_TOOLCHAIN_VERSION: \"{exact_toolchain}\"");
+    assert!(
+        canon_workflow.contains(&unquoted) || canon_workflow.contains(&quoted),
+        ".github/workflows/bijux-canon.yml must keep RUST_TOOLCHAIN_VERSION aligned with the workspace rust-version"
+    );
+
+    let docs_deploy_env = read_repo_file(".github/docs-deploy.env");
+    assert_eq!(
+        shell_assignment_value(&docs_deploy_env, "BIJUX_DOCS_RUST_TOOLCHAIN").as_deref(),
+        Some(exact_toolchain.as_str()),
+        ".github/docs-deploy.env must keep BIJUX_DOCS_RUST_TOOLCHAIN aligned with the workspace rust-version"
     );
 }
 
