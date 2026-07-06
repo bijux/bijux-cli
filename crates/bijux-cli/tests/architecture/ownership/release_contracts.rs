@@ -1,7 +1,9 @@
 #![forbid(unsafe_code)]
 //! Publishing metadata and automation contract guardrails.
 
+use serde::Deserialize;
 use serde_json::Value;
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -11,6 +13,20 @@ fn repo_root() -> PathBuf {
 
 fn read_repo_file(path: &str) -> String {
     fs::read_to_string(repo_root().join(path)).expect("repo file should exist")
+}
+
+#[derive(Debug, Deserialize)]
+struct WorkspacePackageBoundary {
+    packages: Vec<PackageBoundaryEntry>,
+    crates_io_publish_order: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PackageBoundaryEntry {
+    #[serde(rename = "crate")]
+    crate_name: String,
+    product_family: String,
+    release_status: String,
 }
 
 fn quoted_value_after(text: &str, prefix: &str) -> Option<String> {
@@ -99,9 +115,28 @@ fn shell_assignment_value(text: &str, key: &str) -> Option<String> {
     })
 }
 
+fn make_assignment_value(text: &str, key: &str) -> Option<String> {
+    let prefix = format!("{key} ?= ");
+    text.lines().find_map(|line| {
+        let trimmed = line.trim();
+        trimmed.strip_prefix(&prefix).map(|value| value.trim().to_string())
+    })
+}
+
 fn json_shell_assignment_value(text: &str, key: &str) -> Value {
     let raw = shell_assignment_value(text, key).expect("shell assignment should exist");
     serde_json::from_str(&raw).expect("shell assignment JSON should parse")
+}
+
+fn read_workspace_package_boundary() -> WorkspacePackageBoundary {
+    let path = repo_root().join("contracts/foundation/workspace_package_boundary.v1.json");
+    let raw = fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+    serde_json::from_str(&raw).unwrap_or_else(|err| panic!("invalid {}: {err}", path.display()))
+}
+
+fn manifest_path_for(crate_name: &str) -> String {
+    format!("crates/{crate_name}/Cargo.toml")
 }
 
 #[test]
@@ -232,32 +267,23 @@ fn crate_manifests_declare_clear_publish_metadata() {
 }
 
 #[test]
-fn dag_release_boundary_keeps_test_support_private() {
-    let private_support_crates = [
-        "crates/bijux-dag-testkit/Cargo.toml",
-        "crates/bijux-dev/Cargo.toml",
-        "crates/bijux-cli-python/Cargo.toml",
-    ];
-    for path in private_support_crates {
-        let manifest = read_repo_file(path);
-        assert!(
-            manifest.contains("publish = false"),
-            "{path} must stay private to protect the public release boundary"
-        );
-    }
+fn workspace_package_boundary_keeps_support_crates_private() {
+    let boundary = read_workspace_package_boundary();
 
-    for path in [
-        "crates/bijux-dag-core/Cargo.toml",
-        "crates/bijux-dag-artifacts/Cargo.toml",
-        "crates/bijux-dag-runtime/Cargo.toml",
-        "crates/bijux-dag-app/Cargo.toml",
-        "crates/bijux-dag-cli/Cargo.toml",
-    ] {
-        let manifest = read_repo_file(path);
-        assert!(
-            !manifest.contains("publish = false"),
-            "{path} must remain publishable as part of the public DAG release boundary"
-        );
+    for entry in boundary.packages {
+        let path = manifest_path_for(&entry.crate_name);
+        let manifest = read_repo_file(&path);
+        if entry.release_status == "private" {
+            assert!(
+                manifest.contains("publish = false"),
+                "{path} must stay private to protect the public release boundary"
+            );
+        } else {
+            assert!(
+                !manifest.contains("publish = false"),
+                "{path} must remain publishable as part of the public release boundary"
+            );
+        }
     }
 }
 #[test]
@@ -458,14 +484,53 @@ fn pypi_release_workflow_builds_pypi_compatible_distributions() {
 
 #[test]
 fn crates_release_automation_targets_public_cli_and_dag_crates() {
+    let boundary = read_workspace_package_boundary();
     let workflow_support = read_repo_file("makes/gh.mk");
     let publish_support = read_repo_file("makes/rust.mk");
     let release_env = read_repo_file(".github/release.env");
-    let expected_packages =
-        "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-cli";
+    let expected_packages = boundary.crates_io_publish_order.join(" ");
+    let workflow_packages = make_assignment_value(&workflow_support, "GH_CRATES_RELEASE_PACKAGES")
+        .expect("GH_CRATES_RELEASE_PACKAGES");
+    let publish_packages = make_assignment_value(&publish_support, "RUST_PUBLISH_PACKAGES")
+        .expect("RUST_PUBLISH_PACKAGES");
+    let release_packages = shell_assignment_value(&release_env, "BIJUX_CRATES_RELEASE_PACKAGES")
+        .expect("BIJUX_CRATES_RELEASE_PACKAGES");
+    let allowed_packages =
+        shell_assignment_value(&release_env, "BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES")
+            .expect("BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES");
+    let private_crates = boundary
+        .packages
+        .iter()
+        .filter(|entry| entry.release_status == "private")
+        .map(|entry| entry.crate_name.as_str())
+        .collect::<BTreeSet<_>>();
+    let dag_public_crates = boundary
+        .packages
+        .iter()
+        .filter(|entry| entry.product_family == "bijux-dag" && entry.release_status == "public")
+        .map(|entry| entry.crate_name.as_str())
+        .collect::<BTreeSet<_>>();
+    let cli_index = boundary
+        .crates_io_publish_order
+        .iter()
+        .position(|crate_name| crate_name == "bijux-cli")
+        .expect("workspace package boundary must publish bijux-cli");
+    for dag_crate in &dag_public_crates {
+        let dag_index = boundary
+            .crates_io_publish_order
+            .iter()
+            .position(|crate_name| crate_name == dag_crate)
+            .unwrap_or_else(|| {
+                panic!("workspace package boundary missing DAG public crate `{dag_crate}`")
+            });
+        assert!(
+            dag_index < cli_index,
+            "workspace package boundary must publish DAG crates before bijux-cli"
+        );
+    }
 
     assert!(
-        workflow_support.contains(&format!("GH_CRATES_RELEASE_PACKAGES ?= {expected_packages}")),
+        workflow_packages == expected_packages,
         "release planning should publish the DAG crate family in dependency order before the CLI runtime crate"
     );
     assert!(
@@ -473,36 +538,41 @@ fn crates_release_automation_targets_public_cli_and_dag_crates() {
         "release planning support should include a dedicated GitHub Release lane"
     );
     assert!(
-        publish_support.contains(&format!("RUST_PUBLISH_PACKAGES ?= {expected_packages}")),
+        publish_packages == expected_packages,
         "cargo publish automation should publish the DAG crate family in dependency order before the CLI runtime crate"
     );
     assert!(
         !workflow_support.contains("GH_CRATES_RELEASE_PACKAGES ?= bijux-cli bijux-cli-python"),
         "release planning must not treat the Python bridge crate as a crates.io package"
     );
-    assert!(
-        !workflow_support.contains("bijux-dag-testkit"),
-        "release planning must keep the DAG test support crate out of the crates.io publish order"
-    );
-    assert!(
-        !publish_support.contains("bijux-dag-testkit"),
-        "cargo publish automation must keep the DAG test support crate out of the crates.io publish order"
-    );
+    for private_crate in private_crates {
+        assert!(
+            !workflow_packages.split_whitespace().any(|crate_name| crate_name == private_crate),
+            "release planning must keep private crates out of the crates.io publish order"
+        );
+        assert!(
+            !publish_packages.split_whitespace().any(|crate_name| crate_name == private_crate),
+            "cargo publish automation must keep private crates out of the crates.io publish order"
+        );
+        assert!(
+            !release_packages.split_whitespace().any(|crate_name| crate_name == private_crate)
+                && !allowed_packages
+                    .split_whitespace()
+                    .any(|crate_name| crate_name == private_crate),
+            ".github/release.env must not reintroduce private crates into the public release set"
+        );
+    }
     assert!(
         publish_support.contains("build-dag-release-bundle"),
         "Rust release automation should expose a dedicated DAG binary bundle target for release workflows"
     );
     assert!(
-        release_env.contains(&format!("BIJUX_CRATES_RELEASE_PACKAGES={expected_packages}")),
+        release_packages == expected_packages,
         ".github/release.env must export the DAG-first crates publish order"
     );
     assert!(
-        release_env.contains(&format!("BIJUX_CRATES_RELEASE_ALLOWED_PACKAGES={expected_packages}")),
+        allowed_packages == expected_packages,
         ".github/release.env must explicitly allow only the intended public crates release set"
-    );
-    assert!(
-        !release_env.contains("bijux-dag-testkit"),
-        ".github/release.env must not reintroduce the DAG test support crate into the public release set"
     );
     assert!(
         publish_support.contains("RUST_PUBLISH_SKIP_EXISTING ?= 1"),
