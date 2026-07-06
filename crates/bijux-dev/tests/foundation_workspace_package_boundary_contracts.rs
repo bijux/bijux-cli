@@ -78,6 +78,12 @@ fn release_status_map(boundary: &WorkspacePackageBoundary) -> BTreeMap<String, &
         .collect()
 }
 
+fn read_repo_file(path: &str) -> String {
+    let absolute = repo_root().join(path);
+    fs::read_to_string(&absolute)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", absolute.display()))
+}
+
 #[test]
 fn workspace_package_boundary_contract_covers_every_workspace_crate() {
     let boundary = read_boundary();
@@ -237,4 +243,39 @@ fn workspace_package_boundary_publish_order_is_dependency_topological() {
             );
         }
     }
+}
+
+#[test]
+fn workspace_package_boundary_docs_and_release_guides_stay_linked() {
+    let readme = read_repo_file("README.md");
+    let foundation_index = read_repo_file("docs/bijux-core/foundation/index.md");
+    let package_map = read_repo_file("docs/bijux-core/foundation/package-map.md");
+    let package_boundary = read_repo_file("docs/bijux-core/foundation/package-boundary.md");
+    let packages_index = read_repo_file("docs/bijux-core/packages/index.md");
+    let release_operations = read_repo_file("docs/bijux-dev/operations/release-operations.md");
+    let release_crates = read_repo_file("docs/bijux-dev/gh-workflows/release-crates.md");
+
+    for content in [readme.as_str(), package_boundary.as_str(), packages_index.as_str()] {
+        assert!(
+            content.contains("contracts/foundation/workspace_package_boundary.v1.json"),
+            "package-boundary-facing docs must point at the canonical contract"
+        );
+    }
+
+    assert!(
+        foundation_index.contains("[Package Boundary](package-boundary.md)"),
+        "foundation index must route readers to the package boundary page"
+    );
+    assert!(
+        package_map.contains("[Package Boundary](package-boundary.md)"),
+        "package map must point readers to the package boundary page"
+    );
+    assert!(
+        release_operations.contains("../../bijux-core/foundation/package-boundary.md"),
+        "release operations must point to the package boundary handbook page"
+    );
+    assert!(
+        release_crates.contains("contracts/foundation/workspace_package_boundary.v1.json"),
+        "release-crates workflow doc must point to the package boundary contract"
+    );
 }

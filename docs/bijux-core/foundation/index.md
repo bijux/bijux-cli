@@ -28,6 +28,7 @@ flowchart LR
 - [Repository Scope](repository-scope.md)
 - [Workspace Layout](workspace-layout.md)
 - [Package Map](package-map.md)
+- [Package Boundary](package-boundary.md)
 - [Ownership Model](ownership-model.md)
 - [Domain Language](domain-language.md)
 - [Documentation System](documentation-system.md)

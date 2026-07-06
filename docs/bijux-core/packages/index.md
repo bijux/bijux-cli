@@ -21,6 +21,10 @@ For `v0.4.0`, the public release crates are `bijux-cli`, `bijux-dag-core`,
 `bijux-dag-cli`. `bijux-cli-python`, `bijux-dag-testkit`, and `bijux-dev`
 remain repository-internal support crates.
 
+The canonical contract for that release status lives in
+[Package Boundary](../foundation/package-boundary.md) and
+`contracts/foundation/workspace_package_boundary.v1.json`.
+
 ## Package Map
 
 ```mermaid
@@ -74,6 +78,7 @@ flowchart TB
 ## Code Anchors
 
 - `Cargo.toml`
+- `contracts/foundation/workspace_package_boundary.v1.json`
 - `crates/bijux-cli/README.md`
 - `crates/bijux-cli-python/README.md`
 - `crates/bijux-dag-core/README.md`

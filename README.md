@@ -44,6 +44,7 @@ Current release line: **`v0.4.0`**.
   identity from the compiled binary instead of discovering Git state at runtime.
 - GitHub Releases and GHCR now stage both public release families, including a stamped `bijux-dag` binary bundle.
 - `bijux-dev` and `bijux-cli-python` remain repository-internal support tooling and are not crates.io publication targets.
+- the canonical workspace package-boundary contract lives in [`docs/bijux-core/foundation/package-boundary.md`](docs/bijux-core/foundation/package-boundary.md) and `contracts/foundation/workspace_package_boundary.v1.json`.
 
 ### `bijux-dag` v0.4.0 Surface Truth Table
 

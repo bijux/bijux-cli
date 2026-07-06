@@ -27,6 +27,9 @@ present and CI on the tagged commit is healthy.
 
 ## Publication Order
 
+The canonical publication contract lives in
+`contracts/foundation/workspace_package_boundary.v1.json`.
+
 The default publish order is dependency-first:
 
 - `bijux-dag-core`

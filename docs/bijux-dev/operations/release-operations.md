@@ -36,6 +36,10 @@ flowchart LR
 
 ## Current Publication Policy
 
+Canonical package status and publish order are defined by
+`contracts/foundation/workspace_package_boundary.v1.json` and
+[Package Boundary](../../bijux-core/foundation/package-boundary.md).
+
 - `v0.4.0` publishes `bijux-cli` to crates.io and PyPI.
 - `v0.4.0` publishes the DAG Rust crates to crates.io in dependency order: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and `bijux-dag-cli`.
 - GitHub Releases and GHCR publish two stamped release families: the `bijux-cli` distribution bundle and the `bijux-dag` binary tarball.

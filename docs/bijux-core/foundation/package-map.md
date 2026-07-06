@@ -12,6 +12,9 @@ last_reviewed: 2026-04-12
 The package map helps readers move from a repository question to the owning
 package family before they inspect source files.
 
+For canonical public/private publication status, use
+[Package Boundary](package-boundary.md).
+
 ```mermaid
 flowchart LR
     question["Your question"] --> cli["CLI behavior and Python distribution"]
@@ -35,5 +38,6 @@ clear, move to the owning handbook and package page.
 ## Next Reads
 
 - [Ownership Model](ownership-model.md)
+- [Package Boundary](package-boundary.md)
 - [Repository Packages](../packages/index.md)
 - [Decision Rules](decision-rules.md)
