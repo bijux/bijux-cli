@@ -59,6 +59,7 @@ fn mode_report_separates_implemented_simulated_and_aspirational() {
     assert!(report.implemented.contains(&"local".to_string()));
     assert!(report.implemented.contains(&"container".to_string()));
     assert!(report.simulated.contains(&"fake-batch-backend".to_string()));
+    assert!(report.simulated.contains(&"slurm-backend".to_string()));
     assert!(!report.simulated.contains(&"container-contract".to_string()));
-    assert!(report.aspirational.contains(&"slurm-backend".to_string()));
+    assert!(!report.aspirational.contains(&"slurm-backend".to_string()));
 }

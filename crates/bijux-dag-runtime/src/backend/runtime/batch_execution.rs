@@ -104,11 +104,8 @@ pub fn execution_mode_report() -> BatchModeReport {
             "remote-contract".to_string(),
             "batch-contract".to_string(),
             "fake-batch-backend".to_string(),
-        ],
-        aspirational: vec![
-            "kubernetes-backend".to_string(),
             "slurm-backend".to_string(),
-            "pbs-backend".to_string(),
         ],
+        aspirational: vec!["kubernetes-backend".to_string(), "pbs-backend".to_string()],
     }
 }

@@ -61,14 +61,18 @@ pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value
             let retry = bijux_dag_runtime::effective_hpc_retry_policy(true, true);
             let mut payload = base_payload("hpc", "simulated");
             payload["capabilities"] = json!({
+                "job_submission": true,
+                "job_id_capture": true,
                 "queue_partition_mapping": true,
                 "walltime_mapping": true,
+                "status_mapping": true,
+                "log_capture": true,
                 "scheduler_retry_precedence": retry.effective_retry_owner
             });
             payload["version_metadata"] = json!(version);
             payload["notes"] = json!([
-                "hpc execution remains simulated in this repository",
-                "slurm contract semantics are evidence-backed"
+                "slurm execution is modeled and exercised through the shared runtime lane",
+                "scheduler semantics remain simulated rather than cluster-backed in this repository"
             ]);
             Some(payload)
         }
@@ -151,6 +155,9 @@ mod tests {
         assert_eq!(first["status"], "simulated");
         assert_eq!(first["execution_lane"], "SIMULATED");
         assert_eq!(first["production_ready"], false);
+        assert_eq!(first["capabilities"]["job_id_capture"], true);
+        assert_eq!(first["capabilities"]["status_mapping"], true);
+        assert_eq!(first["capabilities"]["log_capture"], true);
     }
 
     #[test]

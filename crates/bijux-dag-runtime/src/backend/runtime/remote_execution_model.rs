@@ -204,10 +204,13 @@ pub fn validate_remote_execution_payload(
 pub fn execution_mode_status(mode: &str) -> ExecutionModeStatus {
     match mode {
         "local" | "subprocess" => ExecutionModeStatus::Implemented,
-        "container" | "remote-contract" | "remote-worker" | "kubernetes-contract" => {
-            ExecutionModeStatus::Simulated
-        }
-        "kubernetes" | "hpc" => ExecutionModeStatus::NotImplemented,
+        "container"
+        | "remote-contract"
+        | "remote-worker"
+        | "kubernetes-contract"
+        | "hpc"
+        | "slurm" => ExecutionModeStatus::Simulated,
+        "kubernetes" => ExecutionModeStatus::NotImplemented,
         _ => ExecutionModeStatus::NotImplemented,
     }
 }

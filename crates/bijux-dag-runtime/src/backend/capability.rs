@@ -31,7 +31,7 @@ pub fn hpc_backend_capability() -> BackendCapabilityQuery {
         backend: "hpc".to_string(),
         status: "simulated".to_string(),
         supports_replay: true,
-        supports_stream_capture: false,
+        supports_stream_capture: true,
     }
 }
 
