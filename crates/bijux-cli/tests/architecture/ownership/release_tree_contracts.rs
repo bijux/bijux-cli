@@ -158,7 +158,6 @@ fn prepare_release_tree_preserves_nested_source_directories() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn prepare_release_tree_stamps_template_compatibility_defaults() {
     let workspace_root = repo_root();
     let output_root = tempdir().expect("temp output root");

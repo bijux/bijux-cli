@@ -75,7 +75,6 @@ fn version_json_contract_exposes_provenance_fields() {
 }
 
 #[test]
-#[ignore = "release-tag coupling is unstable in merged-history checkouts"]
 fn version_json_tracks_the_latest_release_tag_in_git_checkouts() {
     let Some(tag) = latest_version_tag() else {
         return;

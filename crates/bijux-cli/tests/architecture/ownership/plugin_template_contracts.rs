@@ -161,7 +161,6 @@ fn assert_rendered_project_readme(path: &str) {
 }
 
 #[test]
-#[ignore = "template documentation wording contract is being retired during docs rewrite"]
 fn template_docs_reference_current_rendering_and_install_flow() {
     for path in
         ["templates/README.md", "templates/plugins-py/README.md", "templates/plugins-rs/README.md"]

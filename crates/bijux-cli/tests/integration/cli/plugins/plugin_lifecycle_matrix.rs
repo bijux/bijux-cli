@@ -131,7 +131,6 @@ fn python_scaffold_install_list_inspect_uninstall_end_to_end() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn rust_scaffold_install_list_inspect_uninstall_end_to_end() {
     let root = tmp_dir("plugin-lifecycle");
     let plugins_dir = root.join("plugins");

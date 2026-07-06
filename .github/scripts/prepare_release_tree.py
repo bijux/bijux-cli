@@ -86,7 +86,7 @@ def rewrite_workspace_version(path: Path, release_version: str) -> None:
 def rewrite_bijux_dependency_versions(path: Path, release_version: str) -> None:
     content = path.read_text(encoding="utf-8")
     rewritten, replacements = re.subn(
-        r'(\bbijux[-_][A-Za-z0-9_-]+\b\s*=\s*\{[^{}]*?\bversion\s*=\s*")([^"]+)(")',
+        r'((?:"bijux[-_][A-Za-z0-9_-]+"|bijux[-_][A-Za-z0-9_-]+)\s*=\s*\{[^{}]*?\bversion\s*=\s*")([^"]+)(")',
         rf'\g<1>{release_version}\g<3>',
         content,
         flags=re.DOTALL,
