@@ -1,6 +1,6 @@
 use bijux_dag_testkit::{
     collect_run_dir_snapshot, fixture_path_string, fixture_snapshot_path, graph_map_reduce_fixture,
-    update_or_assert_snapshot, write_graph_fixture,
+    graph_semantic_map_reduce_fixture, update_or_assert_snapshot, write_graph_fixture,
 };
 use serde_json::Value;
 use std::path::{Path, PathBuf};
@@ -113,6 +113,35 @@ fn map_reduce_workflow_run_dir_snapshot_is_stable() {
         &fixture_snapshot_path(
             env!("CARGO_MANIFEST_DIR"),
             "tests/snapshots/run_dir_map_reduce.json",
+        ),
+        &snapshot,
+    );
+}
+
+#[test]
+fn semantic_map_reduce_workflow_run_dir_snapshot_is_stable() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let graph_path = temp.path().join("semantic_map_reduce.json");
+    write_graph_fixture(&graph_path, &graph_semantic_map_reduce_fixture());
+    let out_dir = temp.path().join("runs");
+    let payload = run_json(
+        &[
+            "--json",
+            "run",
+            &fixture_path_string(&graph_path),
+            "--out",
+            &fixture_path_string(&out_dir),
+            "--run-id",
+            "semantic-map-reduce-fixed",
+        ],
+        &root,
+    );
+    let snapshot = collect_run_dir_snapshot(&run_dir_from(&payload));
+    update_or_assert_snapshot(
+        &fixture_snapshot_path(
+            env!("CARGO_MANIFEST_DIR"),
+            "tests/snapshots/run_dir_semantic_map_reduce.json",
         ),
         &snapshot,
     );
