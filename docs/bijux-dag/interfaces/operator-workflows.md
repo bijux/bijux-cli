@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # Operator Workflows
@@ -335,6 +335,38 @@ The schedule-input binding contract is:
   status
 - invalid or missing bindings suppress submission instead of creating a run
   request with partial graph input state
+
+The submission ledger is also the durable queue-state source for scheduled
+work. Each recorded submission preserves its queue identity, priority, dedupe
+key, and status so queue occupancy can be reconstructed after a restart.
+
+Inspect queue occupancy from the registry plus the current submission ledger:
+
+```bash
+bijux-dag schedule queue status ./ops/schedule-registry.json \
+  --ledger ./artifacts/schedule-ledger.json \
+  --out ./artifacts/queue-state.json
+```
+
+When external execution state proves a scheduled run finished, advance the same
+ledger explicitly instead of editing queue occupancy by hand:
+
+```bash
+bijux-dag schedule queue update \
+  ./artifacts/schedule-ledger.json \
+  ./ops/submission-status-updates.json \
+  --out ./artifacts/schedule-ledger.json
+```
+
+The queue-state control contract is:
+
+- queue occupancy is reconstructed from `pending` and `running` ledger entries
+- queue caps are enforced per queue name and, when configured, per queue plus
+  tenant
+- queue status only reflects capacities declared in the validated registry
+- status updates are transition-checked before the ledger is rewritten
+- the queue-state file is derived output, while the submission ledger remains
+  the durable source of truth
 
 ## Control A Historical Backfill
 

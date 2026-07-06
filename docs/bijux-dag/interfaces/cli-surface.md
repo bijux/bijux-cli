@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # CLI Surface
@@ -95,6 +95,10 @@ surface in `v0.4.0`:
 - simulation and platform modeling: `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab`
 - maintainer quality and release modeling: `security`, `durability`, `performance`, `release`, `runtime`, `schedule`
 - internal capability probes: `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof`
+
+Inside the internal `schedule` namespace, the current maintained control
+surfaces cover registry validation, submission evaluation, queue state
+inspection, queue ledger updates, and durable backfill control.
 
 These routes still exist for explicit maintainer workflows and contract tests.
 They can be inventoried with `bijux-dag commands --all`, but execution now
