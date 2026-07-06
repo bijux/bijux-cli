@@ -896,7 +896,9 @@ fn read_node_traces(
 
 #[cfg(test)]
 mod tests {
-    use super::{run_completion_summary, runs_history_query_with_selectors};
+    use super::{
+        run_completion_summary, runs_history_query_with_filters, runs_history_query_with_selectors,
+    };
     use crate::routes::selector_grammar::parse_selector_expressions;
     use serde_json::json;
 
@@ -940,6 +942,159 @@ mod tests {
         assert_eq!(runs.len(), 1);
         assert_eq!(runs[0]["run_id"], "run-b");
         assert_eq!(report["page"]["total"], 1);
+    }
+
+    #[test]
+    fn history_query_filters_by_graph_and_marks_active_runs() {
+        let temp = tempfile::tempdir().expect("tmp");
+        let active = temp.path().join("run-active");
+        std::fs::create_dir_all(active.join("outputs")).expect("mkdir outputs");
+        std::fs::write(
+            active.join("manifest.json"),
+            serde_json::to_vec_pretty(&json!({
+                "run_id": "run-active",
+                "status": "running",
+                "created_unix_ms": 20,
+                "started_unix_ms": 21,
+                "graph_fingerprint": "graph-train",
+                "run_metadata": {
+                    "submission_source": "manual",
+                    "trigger_source": "cli",
+                    "parent_run_id": "run-parent",
+                    "source_run_id": "run-parent",
+                    "labels": ["train"]
+                }
+            }))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
+        std::fs::write(
+            active.join("graph.snapshot.json"),
+            serde_json::to_vec_pretty(&json!({
+                "graph_fingerprint": "graph-train",
+                "graph": {"meta": {"name": "training-pipeline"}, "nodes": [], "edges": []}
+            }))
+            .expect("snapshot"),
+        )
+        .expect("write snapshot");
+        std::fs::write(active.join("outputs").join("index.json"), "{\"files\":[]}")
+            .expect("outputs");
+        std::fs::write(
+            active.join(".run-incomplete.json"),
+            r#"{"reason":"run not finalized"}"#,
+        )
+        .expect("incomplete marker");
+
+        let historical = temp.path().join("run-parent");
+        std::fs::create_dir_all(historical.join("outputs")).expect("mkdir outputs");
+        std::fs::write(
+            historical.join("manifest.json"),
+            serde_json::to_vec_pretty(&json!({
+                "run_id": "run-parent",
+                "status": "success",
+                "created_unix_ms": 10,
+                "started_unix_ms": 11,
+                "finished_unix_ms": 12,
+                "graph_fingerprint": "graph-train",
+                "run_metadata": {
+                    "submission_source": "manual",
+                    "trigger_source": "cli",
+                    "labels": ["train"]
+                }
+            }))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
+        std::fs::write(
+            historical.join("graph.snapshot.json"),
+            serde_json::to_vec_pretty(&json!({
+                "graph_fingerprint": "graph-train",
+                "graph": {"meta": {"name": "training-pipeline"}, "nodes": [], "edges": []}
+            }))
+            .expect("snapshot"),
+        )
+        .expect("write snapshot");
+        std::fs::write(historical.join("outputs").join("index.json"), "{\"files\":[]}")
+            .expect("outputs");
+
+        let report = runs_history_query_with_filters(
+            temp.path(),
+            Some("running"),
+            None,
+            Some("training-pipeline"),
+            None,
+            None,
+        )
+        .expect("history report");
+        let rows = report["runs"].as_array().expect("rows");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0]["run_id"], "run-active");
+        assert_eq!(rows[0]["lifecycle_state"], "active");
+        assert_eq!(rows[0]["graph_fingerprint"], "graph-train");
+        assert_eq!(
+            rows[0]["output_location"],
+            json!(active.join("outputs").display().to_string())
+        );
+    }
+
+    #[test]
+    fn history_rows_sort_recent_first_and_surface_child_lineage() {
+        let temp = tempfile::tempdir().expect("tmp");
+
+        for (run_id, created, parent_run_id) in [
+            ("run-parent", 10_u64, None),
+            ("run-child", 30_u64, Some("run-parent")),
+            ("run-middle", 20_u64, None),
+        ] {
+            let run_dir = temp.path().join(run_id);
+            std::fs::create_dir_all(run_dir.join("outputs")).expect("mkdir outputs");
+            std::fs::write(
+                run_dir.join("manifest.json"),
+                serde_json::to_vec_pretty(&json!({
+                    "run_id": run_id,
+                    "status": "success",
+                    "created_unix_ms": created,
+                    "started_unix_ms": created + 1,
+                    "finished_unix_ms": created + 2,
+                    "graph_fingerprint": "graph-train",
+                    "run_metadata": {
+                        "submission_source": "manual",
+                        "trigger_source": "cli",
+                        "parent_run_id": parent_run_id,
+                        "source_run_id": parent_run_id,
+                        "labels": []
+                    }
+                }))
+                .expect("manifest"),
+            )
+            .expect("write manifest");
+            std::fs::write(
+                run_dir.join("graph.snapshot.json"),
+                serde_json::to_vec_pretty(&json!({
+                    "graph_fingerprint": "graph-train",
+                    "graph": {"meta": {"name": "training-pipeline"}, "nodes": [], "edges": []}
+                }))
+                .expect("snapshot"),
+            )
+            .expect("write snapshot");
+            std::fs::write(run_dir.join("outputs").join("index.json"), "{\"files\":[]}")
+                .expect("outputs");
+        }
+
+        let report = runs_history_query_with_filters(
+            temp.path(),
+            None,
+            None,
+            Some("graph-train"),
+            None,
+            None,
+        )
+        .expect("history report");
+        let rows = report["runs"].as_array().expect("rows");
+        assert_eq!(rows[0]["run_id"], "run-child");
+        assert_eq!(rows[1]["run_id"], "run-middle");
+        assert_eq!(rows[2]["run_id"], "run-parent");
+        assert_eq!(rows[2]["lineage"]["child_run_ids"], json!(["run-child"]));
     }
 
     #[test]
