@@ -151,13 +151,13 @@ fn capabilities_payload() -> serde_json::Value {
         },
         "execution_modes": {
             "local_process": "implemented",
-            "container": "simulated",
+            "container": "implemented",
             "remote": "simulated",
             "batch_hpc": "simulated"
         },
         "execution_lanes": {
             "local_process": "ENFORCED",
-            "container": "SIMULATED",
+            "container": "ENFORCED",
             "remote": "SIMULATED",
             "batch_hpc": "SIMULATED"
         },
@@ -349,8 +349,9 @@ mod tests {
         let code = handle_capabilities_command(&cli, &None).expect("capabilities");
         assert_eq!(code, ExitCode::SUCCESS);
         let payload = super::capabilities_payload();
+        assert_eq!(payload["execution_modes"]["container"], "implemented");
         assert_eq!(payload["execution_lanes"]["local_process"], "ENFORCED");
-        assert_eq!(payload["execution_lanes"]["container"], "SIMULATED");
+        assert_eq!(payload["execution_lanes"]["container"], "ENFORCED");
         assert_eq!(payload["execution_lanes"]["remote"], "SIMULATED");
         assert_eq!(payload["execution_lanes"]["batch_hpc"], "SIMULATED");
         let operator_commands =
