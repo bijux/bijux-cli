@@ -1,12 +1,13 @@
 use crate::{
-    bind_path_variables_in_value, build_run_outputs_index, cache_dir_from_env, cache_mode_string,
-    category_from_runtime_event_name, collect_outputs_summary, current_process_memory_bytes,
-    node_fingerprint_from_ctx, node_fingerprint_with_inputs, registered_adapters, sacred_execution,
-    serialize_timeline_export, set_node_fingerprint, summarize_failure_root_causes, CacheProof,
-    EffectSet, EventRecord, ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry,
-    NodeMetrics, NodePathBindings, NodeResult, NodeStatus, ReplayNodeAction, RunAttempt,
-    RunContext, RunId, RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
-    TimelineEntry, TimelineExport,
+    bind_path_variables_in_value, build_run_outputs_index, cache_dir_from_env,
+    cache_mode_string, canonicalize_event_records, category_from_runtime_event_name,
+    collect_outputs_summary, current_process_memory_bytes, node_fingerprint_from_ctx,
+    node_fingerprint_with_inputs, reconstruct_timeline_from_events, registered_adapters,
+    sacred_execution, serialize_timeline_export, set_node_fingerprint,
+    summarize_failure_root_causes, CacheProof, EffectSet, EventRecord, ExecutionCheckpoint,
+    InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodePathBindings, NodeResult,
+    NodeStatus, ReplayNodeAction, RunAttempt, RunContext, RunId, RunSnapshot, Runtime,
+    RuntimeConfig, RuntimeError, SchedulerEventHook,
 };
 #[path = "engine_dispatch.rs"]
 mod engine_dispatch;
@@ -1005,7 +1006,84 @@ fn record_skipped_node(
             "event": "node_skipped",
             "ts": ctx.clock.now_unix_ms(),
             "node_id": node_id,
+            "status": crate::status_string(&node_status),
             "reason": reason,
+        }),
+    )?;
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn record_failed_node(
+    runtime: &Runtime,
+    ctx: &RunContext,
+    graph: &Graph,
+    run_log: &mut std::fs::File,
+    run_log_index: &mut Vec<serde_json::Value>,
+    failure_propagation_records: &mut Vec<serde_json::Value>,
+    status_map: &mut HashMap<String, NodeStatus>,
+    options: &RuntimeConfig,
+    node: &Node,
+    failure: FailureInfo,
+    transition_cause: &str,
+    run_started_unix_ms: u128,
+    lifecycle_timestamps: &HashMap<String, NodeLifecycleTimestamps>,
+    trigger_evaluation: Option<TriggerEvaluation>,
+) -> Result<(), RuntimeError> {
+    sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
+    status_map.insert(node.id.clone(), NodeStatus::Failed);
+    let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
+    let aschema = runtime.adapter_schema_for_kind(&node.kind);
+    let finished_unix_ms = ctx.clock.now_unix_ms();
+    let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
+        run_started_unix_ms,
+        lifecycle_timestamps.get(&node.id),
+        lifecycle_terminal_state(&NodeStatus::Failed, Some(&failure), None),
+        lifecycle_terminal_cause(&NodeStatus::Failed, Some(&failure), None),
+        finished_unix_ms,
+    )?;
+    sacred_execution::run_write_trace(
+        ctx,
+        graph,
+        &node.id,
+        NodeStatus::Failed,
+        Some(failure.clone()),
+        Vec::new(),
+        finished_unix_ms,
+        finished_unix_ms,
+        1,
+        None,
+        &aid,
+        &aver,
+        &aschema,
+        None,
+        runtime.adapter_for_kind(&node.kind).ok().and_then(|adapter| adapter.binary_hash()),
+        trigger_evaluation,
+        None,
+        None,
+        Some(transition_cause.to_string()),
+        Some(lifecycle_state),
+        lifecycle_transitions,
+        Some(ReplayProvenance {
+            node_action: "skipped".to_string(),
+            source_run_id: options.parent_run_id.clone(),
+        }),
+    )?;
+    failure_propagation_records.push(serde_json::json!({
+        "node_id": node.id,
+        "status": "failed",
+        "cause": crate::failure_propagation_cause(Some(&failure)),
+    }));
+    engine_record::append_indexed_event(
+        run_log,
+        run_log_index,
+        serde_json::json!({
+            "event": "node_finished",
+            "ts": finished_unix_ms,
+            "node_id": node.id,
+            "status": "failed",
+            "reason": crate::failure_propagation_cause(Some(&failure)),
+            "failure_code": failure.code,
         }),
     )?;
     Ok(())
@@ -1891,6 +1969,8 @@ pub fn execute(
                     "ts": ctx.clock.now_unix_ms(),
                     "node_id": node_id,
                     "status": "failed",
+                    "reason": crate::failure_propagation_cause(Some(failure)),
+                    "failure_code": failure.code,
                 }),
             )?;
             run_log_index.push(serde_json::json!({
@@ -1898,6 +1978,8 @@ pub fn execute(
                 "ts": ctx.clock.now_unix_ms(),
                 "node_id": node_id,
                 "status": "failed",
+                "reason": crate::failure_propagation_cause(Some(failure)),
+                "failure_code": failure.code,
             }));
         }
 
@@ -2072,6 +2154,10 @@ pub fn execute(
                     "ts": ctx.clock.now_unix_ms(),
                     "node_id": node_id,
                     "status": crate::status_string(&status),
+                    "reason": failure
+                        .as_ref()
+                        .map(|failure| crate::failure_propagation_cause(Some(failure))),
+                    "failure_code": failure.as_ref().map(|failure| failure.code.clone()),
                 }),
             )?;
             if status == NodeStatus::Failed {
@@ -2378,6 +2464,14 @@ pub fn execute(
                             "ts": ctx.clock.now_unix_ms(),
                             "node_id": node_id,
                             "status": crate::status_string(&result.status),
+                            "reason": result
+                                .failure
+                                .as_ref()
+                                .map(|failure| crate::failure_propagation_cause(Some(failure))),
+                            "failure_code": result
+                                .failure
+                                .as_ref()
+                                .map(|failure| failure.code.clone()),
                         }),
                     )?;
                     run_log_index.push(serde_json::json!({
@@ -2385,6 +2479,14 @@ pub fn execute(
                         "ts": ctx.clock.now_unix_ms(),
                         "node_id": node_id,
                         "status": crate::status_string(&result.status),
+                        "reason": result
+                            .failure
+                            .as_ref()
+                            .map(|failure| crate::failure_propagation_cause(Some(failure))),
+                        "failure_code": result
+                            .failure
+                            .as_ref()
+                            .map(|failure| failure.code.clone()),
                     }));
                     if result.status == NodeStatus::Failed {
                         status_map.insert(node_id.clone(), NodeStatus::Failed);
@@ -2496,6 +2598,8 @@ pub fn execute(
                             "ts": ctx.clock.now_unix_ms(),
                             "node_id": node_id,
                             "status": "failed",
+                            "reason": crate::failure_propagation_cause(Some(&failure)),
+                            "failure_code": failure.code,
                         }),
                     )?;
                     run_log_index.push(serde_json::json!({
@@ -2503,6 +2607,8 @@ pub fn execute(
                         "ts": ctx.clock.now_unix_ms(),
                         "node_id": node_id,
                         "status": "failed",
+                        "reason": crate::failure_propagation_cause(Some(&failure)),
+                        "failure_code": failure.code,
                     }));
                     node_metric_rows.push(NodeMetrics {
                         node_id: node_id.clone(),
@@ -2595,8 +2701,6 @@ pub fn execute(
             if status_map.contains_key(&node.id) {
                 continue;
             }
-            sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
-            status_map.insert(node.id.clone(), NodeStatus::Failed);
             let failure = FailureInfo::new(
                 FailureClass::Timeout,
                 "Timeout",
@@ -2604,48 +2708,23 @@ pub fn execute(
                 "run timeout exceeded before node completion",
                 options.run_timeout_ms.map(|limit| serde_json::json!({ "run_timeout_ms": limit })),
             );
-            let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
-            let aschema = runtime.adapter_schema_for_kind(&node.kind);
-            let started = ctx.clock.now_unix_ms();
-            let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
-                started_unix_ms,
-                lifecycle_timestamps.get(&node.id),
-                lifecycle_terminal_state(&NodeStatus::Failed, Some(&failure), None),
-                lifecycle_terminal_cause(&NodeStatus::Failed, Some(&failure), None),
-                started,
-            )?;
-            sacred_execution::run_write_trace(
+            let transition_cause = crate::transition_cause_for_failure(Some(&failure));
+            record_failed_node(
+                runtime,
                 &ctx,
                 graph,
-                &node.id,
-                NodeStatus::Failed,
-                Some(failure.clone()),
-                Vec::new(),
-                started,
-                started,
-                1,
+                &mut run_log,
+                &mut run_log_index,
+                &mut failure_propagation_records,
+                &mut status_map,
+                &options,
+                node,
+                failure,
+                transition_cause,
+                started_unix_ms,
+                &lifecycle_timestamps,
                 None,
-                &aid,
-                &aver,
-                &aschema,
-                None,
-                runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
-                None,
-                None,
-                None,
-                Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
-                Some(lifecycle_state),
-                lifecycle_transitions,
-                Some(ReplayProvenance {
-                    node_action: "skipped".to_string(),
-                    source_run_id: options.parent_run_id.clone(),
-                }),
             )?;
-            failure_propagation_records.push(serde_json::json!({
-                "node_id": node.id,
-                "status": "failed",
-                "cause": crate::failure_propagation_cause(Some(&failure)),
-            }));
         }
     }
 
@@ -2654,8 +2733,6 @@ pub fn execute(
             if status_map.contains_key(&node.id) {
                 continue;
             }
-            sacred_execution::guard_terminal_node_status(&NodeStatus::Failed)?;
-            status_map.insert(node.id.clone(), NodeStatus::Failed);
             let failure = FailureInfo::new(
                 FailureClass::Execution,
                 "Execution",
@@ -2663,48 +2740,23 @@ pub fn execute(
                 "run aborted after fail-fast trigger",
                 None,
             );
-            let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
-            let aschema = runtime.adapter_schema_for_kind(&node.kind);
-            let started = ctx.clock.now_unix_ms();
-            let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
-                started_unix_ms,
-                lifecycle_timestamps.get(&node.id),
-                lifecycle_terminal_state(&NodeStatus::Failed, Some(&failure), None),
-                lifecycle_terminal_cause(&NodeStatus::Failed, Some(&failure), None),
-                started,
-            )?;
-            sacred_execution::run_write_trace(
+            let transition_cause = crate::transition_cause_for_failure(Some(&failure));
+            record_failed_node(
+                runtime,
                 &ctx,
                 graph,
-                &node.id,
-                NodeStatus::Failed,
-                Some(failure.clone()),
-                Vec::new(),
-                started,
-                started,
-                1,
+                &mut run_log,
+                &mut run_log_index,
+                &mut failure_propagation_records,
+                &mut status_map,
+                &options,
+                node,
+                failure,
+                transition_cause,
+                started_unix_ms,
+                &lifecycle_timestamps,
                 None,
-                &aid,
-                &aver,
-                &aschema,
-                None,
-                runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
-                None,
-                None,
-                None,
-                Some(crate::transition_cause_for_failure(Some(&failure)).to_string()),
-                Some(lifecycle_state),
-                lifecycle_transitions,
-                Some(ReplayProvenance {
-                    node_action: "skipped".to_string(),
-                    source_run_id: options.parent_run_id.clone(),
-                }),
             )?;
-            failure_propagation_records.push(serde_json::json!({
-                "node_id": node.id,
-                "status": "failed",
-                "cause": crate::failure_propagation_cause(Some(&failure)),
-            }));
         }
     }
 
@@ -2742,51 +2794,20 @@ pub fn execute(
         });
         for node in &graph.nodes {
             if !status_map.contains_key(&node.id) {
-                status_map.insert(node.id.clone(), NodeStatus::Cancelled);
-                let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
-                let aschema = runtime.adapter_schema_for_kind(&node.kind);
-                let started = ctx.clock.now_unix_ms();
-                let skip_reason =
-                    bijux_dag_artifacts::SkipReason { reason: "cancelled".to_string() };
-                let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
-                    started_unix_ms,
-                    lifecycle_timestamps.get(&node.id),
-                    lifecycle_terminal_state(&NodeStatus::Cancelled, None, Some(&skip_reason)),
-                    lifecycle_terminal_cause(&NodeStatus::Cancelled, None, Some(&skip_reason)),
-                    started,
-                )?;
-                sacred_execution::run_write_trace(
+                record_skipped_node(
+                    runtime,
                     &ctx,
                     graph,
+                    &mut run_log,
+                    &mut run_log_index,
+                    &mut failure_propagation_records,
+                    &mut status_map,
+                    &options,
                     &node.id,
-                    NodeStatus::Cancelled,
-                    None,
-                    Vec::new(),
-                    started,
-                    started,
-                    1,
-                    None,
-                    &aid,
-                    &aver,
-                    &aschema,
-                    None,
-                    runtime.adapter_for_kind(&node.kind).ok().and_then(|a| a.binary_hash()),
-                    None,
-                    None,
-                    Some(skip_reason),
-                    Some("CancelRequested".to_string()),
-                    Some(lifecycle_state),
-                    lifecycle_transitions,
-                    Some(ReplayProvenance {
-                        node_action: "skipped".to_string(),
-                        source_run_id: options.parent_run_id.clone(),
-                    }),
+                    "cancelled",
+                    started_unix_ms,
+                    &lifecycle_timestamps,
                 )?;
-                failure_propagation_records.push(serde_json::json!({
-                    "node_id": node.id,
-                    "status": "cancelled",
-                    "cause": "cancel_requested",
-                }));
             }
         }
     }
@@ -2897,6 +2918,7 @@ pub fn execute(
             details,
         });
     }
+    let structured_events = canonicalize_event_records(&structured_events);
     let cache_hits = engine_metrics::count_cache_hits(&status_map);
     let run_metrics = engine_metrics::build_run_metrics(
         &manifest.node_counts,
@@ -2918,18 +2940,7 @@ pub fn execute(
     }
     metrics_registry.record_run(run_metrics);
     metrics_registry.record_scheduler(scheduler_metrics);
-    let timeline = TimelineExport {
-        schema_version: "v0.1".to_string(),
-        entries: structured_events
-            .iter()
-            .map(|event| TimelineEntry {
-                unix_ms: event.unix_ms,
-                category: format!("{:?}", event.category).to_lowercase(),
-                label: event.name.clone(),
-                node_id: event.node_id.clone(),
-            })
-            .collect(),
-    };
+    let timeline = reconstruct_timeline_from_events(&structured_events);
     let timeline_path = ctx.run_dir.staging_path().join("observability.timeline.json");
     if let Some(parent) = timeline_path.parent() {
         ctx.fs.create_dir_all(parent)?;
@@ -2978,7 +2989,12 @@ pub fn execute(
     )?;
     ctx.fs.write(
         &ctx.run_dir.staging_path().join("run-log.index.json"),
-        &serde_json::to_vec_pretty(&run_log_index)?,
+        &serde_json::to_vec_pretty(
+            &structured_events
+                .iter()
+                .map(|event| event.details.clone())
+                .collect::<Vec<_>>(),
+        )?,
     )?;
     ctx.fs.write(
         &ctx.run_dir.staging_path().join("run.audit.json"),
