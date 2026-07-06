@@ -3034,7 +3034,7 @@ pub(super) fn run_extensibility_contract_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/EXTENSIBILITY_CONTRACT.md",
-        "docs/reference/INTERNAL_HOOK_PROMOTION_CHECKLIST.md",
+        "docs/spec/INTERNAL_HOOK_PROMOTION_CHECKLIST.md",
         "configs/dag/schema/extension_descriptor.schema.json",
         "crates/bijux-dag-runtime/tests/extension_catalog_contracts.rs",
     ];
