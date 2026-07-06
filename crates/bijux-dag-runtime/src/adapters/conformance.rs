@@ -142,6 +142,7 @@ pub fn build_adapter_conformance_suite(
     let shell_backed = descriptor.id == "shell";
     let process_backed = descriptor.id == "shell"
         || descriptor.id == "container"
+        || descriptor.id == "python"
         || matches!(descriptor.origin, AdapterOrigin::External);
     let schema_compatibility = validate_output_schema_compatibility(
         descriptor.cache_compatibility.clone(),

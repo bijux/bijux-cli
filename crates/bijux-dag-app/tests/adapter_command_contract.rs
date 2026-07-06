@@ -59,6 +59,13 @@ fn adapters_describe_json_contains_descriptor_fields() {
             && descriptor.get("supports_timeout").is_some()
             && descriptor.get("supports_cancel").is_some()
     }));
+    assert!(descriptors.iter().any(|descriptor| {
+        descriptor["id"] == "python"
+            && descriptor["supported_kinds"]
+                .as_array()
+                .is_some_and(|kinds| kinds.iter().any(|kind| kind == "python"))
+            && descriptor.get("supports_timeout").is_some()
+    }));
 }
 
 #[test]
@@ -124,9 +131,18 @@ fn adapters_conformance_json_reports_scenario_matrix() {
     assert_eq!(code, 0, "command failed: {stderr}");
     let suites = payload["data"]["suites"].as_array().expect("suites");
     let shell = suites.iter().find(|suite| suite["adapter_id"] == "shell").expect("shell suite");
+    let python = suites.iter().find(|suite| suite["adapter_id"] == "python").expect("python suite");
     let scenarios = shell["scenarios"].as_array().expect("shell scenarios");
     assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "timeout"));
     assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "cache_output"));
+    let python_scenarios = python["scenarios"].as_array().expect("python scenarios");
+    assert!(python_scenarios.iter().any(|scenario| scenario["scenario"] == "timeout"));
+    assert!(python_scenarios.iter().any(
+        |scenario| scenario["scenario"] == "workdir_isolation" && scenario["status"] == "pass"
+    ));
+    assert!(python_scenarios.iter().any(
+        |scenario| scenario["scenario"] == "missing_executable" && scenario["status"] == "pass"
+    ));
 }
 
 #[test]
