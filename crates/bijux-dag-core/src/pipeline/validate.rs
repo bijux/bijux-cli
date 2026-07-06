@@ -367,13 +367,13 @@ impl Graph {
                         Some("Provide request headers as an object of string values".to_string()),
                     );
                 }
-                if node.outputs.is_empty() {
+                if node.outputs.len() != 1 {
                     emit_rule(
                         &mut diagnostics,
                         "E1046",
-                        format!("http node requires at least one declared output: {}", node.id),
+                        format!("http node requires exactly one declared output: {}", node.id),
                         format!("/nodes/{}/outputs", node.id),
-                        Some("Declare an output to capture the HTTP response".to_string()),
+                        Some("Declare exactly one output to capture the HTTP response".to_string()),
                     );
                 }
             }

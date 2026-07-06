@@ -96,6 +96,8 @@ mod formal_verification;
 mod geo_federation;
 #[path = "backend/distributed/ha_scheduler.rs"]
 mod ha_scheduler;
+#[path = "adapters/http.rs"]
+mod http_adapter;
 #[path = "backend/distributed/infrastructure.rs"]
 mod infrastructure;
 mod internal;
@@ -346,6 +348,7 @@ pub use formal_verification::{
     ReplayDeterminismInvariant, SchedulerStateSpaceCheck, VerificationGate,
     VerificationMaturityLabel, VerifiedCoreScope,
 };
+use http_adapter::HttpRequestAdapter;
 pub use infrastructure::{
     negotiate_backend_capabilities, BackendCapabilities as InfrastructureBackendCapabilities,
     BackendCapabilityRequirement, BackendExecutionCompletion, BackendExecutionRequest,
@@ -1565,6 +1568,7 @@ impl Runtime {
     pub fn new() -> Self {
         let registry_result = build_registry(vec![
             Arc::new(ConstAdapter),
+            Arc::new(HttpRequestAdapter),
             Arc::new(ShellAdapter),
             Arc::new(PythonFunctionAdapter),
             Arc::new(ContainerAdapter),
@@ -2270,6 +2274,14 @@ fn command_fingerprint(
             "kind": "python",
             "params": params,
         }))
+    } else if matches!(node.kind, NodeKind::Http) {
+        Some(serde_json::json!({
+            "kind": "http",
+            "method": params.get("method").cloned().unwrap_or(Value::Null),
+            "url": params.get("url").cloned().unwrap_or(Value::Null),
+            "headers": params.get("headers").cloned().unwrap_or(Value::Null),
+            "body": params.get("body").cloned().unwrap_or(Value::Null),
+        }))
     } else if let Some(container) = node.container.as_ref() {
         let argv = bijux_dag_core::resolve::resolve_command_argv_templates(
             graph,
@@ -2337,6 +2349,7 @@ pub struct AdapterAdmissionReport {
 pub fn registered_adapters() -> Vec<AdapterInfo> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
+        Arc::new(HttpRequestAdapter),
         Arc::new(ShellAdapter),
         Arc::new(PythonFunctionAdapter),
         Arc::new(ContainerAdapter),
@@ -2348,6 +2361,7 @@ pub fn registered_adapters() -> Vec<AdapterInfo> {
 pub fn registered_adapter_descriptors() -> Vec<adapter::AdapterDescriptor> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
+        Arc::new(HttpRequestAdapter),
         Arc::new(ShellAdapter),
         Arc::new(PythonFunctionAdapter),
         Arc::new(ContainerAdapter),

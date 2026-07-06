@@ -305,9 +305,11 @@ fn kubernetes_workspace_transfer(node: &Node) -> KubernetesWorkspaceTransfer {
     KubernetesWorkspaceTransfer {
         mode: match node.kind {
             NodeKind::Container => KubernetesWorkspaceTransferMode::MountedWorkdir,
-            NodeKind::Const | NodeKind::Shell | NodeKind::Python | NodeKind::External(_) => {
-                KubernetesWorkspaceTransferMode::StagedArtifacts
-            }
+            NodeKind::Const
+            | NodeKind::Shell
+            | NodeKind::Python
+            | NodeKind::Http
+            | NodeKind::External(_) => KubernetesWorkspaceTransferMode::StagedArtifacts,
         },
         mounts: vec![
             KubernetesVolumeMount {
@@ -363,6 +365,7 @@ fn effective_timeout_seconds(node: &Node, params: &Value) -> u32 {
 fn kubernetes_backend_adapter(kind: &NodeKind) -> Result<Box<dyn crate::adapter::Adapter>, String> {
     match kind {
         NodeKind::Const => Ok(Box::new(ConstAdapter)),
+        NodeKind::Http => Ok(Box::new(crate::http_adapter::HttpRequestAdapter)),
         NodeKind::Shell => Ok(Box::new(ShellAdapter)),
         NodeKind::Python => Ok(Box::new(crate::python_adapter::PythonFunctionAdapter)),
         NodeKind::Container => Ok(Box::new(ContainerAdapter)),

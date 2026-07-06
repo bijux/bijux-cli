@@ -344,6 +344,7 @@ fn materialize_remote_inputs(
 fn remote_worker_adapter(kind: &NodeKind) -> Result<Box<dyn Adapter>, String> {
     match kind {
         NodeKind::Const => Ok(Box::new(ConstAdapter)),
+        NodeKind::Http => Ok(Box::new(crate::http_adapter::HttpRequestAdapter)),
         NodeKind::Shell => Ok(Box::new(ShellAdapter)),
         NodeKind::Python => Ok(Box::new(crate::python_adapter::PythonFunctionAdapter)),
         NodeKind::Container => Err(
