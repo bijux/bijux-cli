@@ -208,10 +208,12 @@ pub fn execution_mode_status(mode: &str) -> ExecutionModeStatus {
         "container"
         | "remote-contract"
         | "remote-worker"
+        | "k8s"
         | "kubernetes-contract"
+        | "kubernetes"
+        | "kubernetes-job"
         | "hpc"
         | "slurm" => ExecutionModeStatus::Simulated,
-        "kubernetes" => ExecutionModeStatus::NotImplemented,
         _ => ExecutionModeStatus::NotImplemented,
     }
 }

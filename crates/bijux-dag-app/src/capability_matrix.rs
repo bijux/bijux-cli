@@ -45,14 +45,20 @@ pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value
             let caps = bijux_dag_runtime::k8s_capability_declaration();
             let mut payload = base_payload("kubernetes", "simulated");
             payload["capabilities"] = json!({
+                "job_submission": true,
+                "resource_mapping": true,
+                "active_deadline_mapping": true,
+                "pod_phase_mapping": true,
+                "workspace_transfer": true,
+                "log_capture": true,
                 "node_selector": caps.supports_node_selector,
                 "node_affinity": caps.supports_node_affinity,
                 "pod_affinity": caps.supports_pod_affinity
             });
             payload["version_metadata"] = json!(version);
             payload["notes"] = json!([
-                "kubernetes execution remains simulated in this repository",
-                "capability declaration is contract-level and evidence-backed"
+                "kubernetes job execution is modeled and exercised through the shared runtime lane",
+                "cluster semantics remain simulated rather than control-plane-backed in this repository"
             ]);
             Some(payload)
         }
@@ -131,6 +137,9 @@ mod tests {
         assert_eq!(first["status"], "simulated");
         assert_eq!(first["execution_lane"], "SIMULATED");
         assert_eq!(first["production_ready"], false);
+        assert_eq!(first["capabilities"]["job_submission"], true);
+        assert_eq!(first["capabilities"]["pod_phase_mapping"], true);
+        assert_eq!(first["capabilities"]["workspace_transfer"], true);
     }
 
     #[test]
