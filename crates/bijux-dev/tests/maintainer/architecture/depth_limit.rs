@@ -49,7 +49,6 @@ fn collect_directories_named(root: &Path, target_name: &str, out: &mut Vec<PathB
 }
 
 #[test]
-#[ignore = "legacy source-depth bounds are too strict for current merged repository"]
 fn crate_src_path_depth_is_bounded() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let workspace_root = crate_root.join("..").join("..");
@@ -128,7 +127,6 @@ fn legacy_exception_artifacts_are_absent() {
 }
 
 #[test]
-#[ignore = "legacy artifacts-root contract predates merged docs and evidence compatibility layout"]
 fn artifact_directories_exist_only_under_workspace_artifacts_root() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let workspace_root = crate_root.join("..").join("..");

@@ -19,7 +19,6 @@ fn collect_files_recursive(root: &Path, out: &mut Vec<PathBuf>) {
 }
 
 #[test]
-#[ignore = "legacy src tree contract enforces pre-merge maintainer layout"]
 fn src_tree_matches_cli_contracts_suites_reports_infra_schema_layout() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
 

@@ -31,7 +31,6 @@ fn collect_makefiles(root: &Path) -> Vec<PathBuf> {
 }
 
 #[test]
-#[ignore = "legacy make entrypoint contract expects historical module wiring"]
 fn root_make_includes_evidence_module() {
     let root = repo_root();
     let root_mk = fs::read_to_string(root.join("makes/root.mk")).expect("read makes/root.mk");

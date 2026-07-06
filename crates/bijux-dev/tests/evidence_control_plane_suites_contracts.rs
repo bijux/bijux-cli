@@ -128,7 +128,6 @@ fn release_evidence_set_assets_exist_and_are_registered() {
 }
 
 #[test]
-#[ignore = "legacy evidence summary contract enforces historical docs and release-report surface"]
 fn evidence_suite_summary_models_exist() {
     let root = repo_root();
     for rel in [

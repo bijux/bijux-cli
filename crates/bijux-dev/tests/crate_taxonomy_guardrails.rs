@@ -20,7 +20,6 @@ fn cargo_toml(path: &str) -> String {
 }
 
 #[test]
-#[ignore = "legacy crate taxonomy contract assumes single bin ownership from pre-merge layout"]
 fn only_cli_crate_declares_bin_target() {
     let crates_dir = root().join("crates");
     let mut offenders = Vec::new();

@@ -120,7 +120,6 @@ fn glob_match(pattern: &str, text: &str) -> bool {
 }
 
 #[test]
-#[ignore = "slow"]
 fn evidence_governance_contract_enforces_ownership_and_freeze() {
     let root = repo_root();
     let release_subset: serde_json::Value = serde_json::from_str(

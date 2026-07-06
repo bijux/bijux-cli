@@ -145,7 +145,6 @@ fn runtime_dependencies_match_runtime_allowed_list() {
 }
 
 #[test]
-#[ignore = "legacy dependency allowlist contract reflects historical module partitioning"]
 fn dev_governance_dependencies_match_allowed_list() {
     let allowed: BTreeSet<String> = [
         "anyhow",
