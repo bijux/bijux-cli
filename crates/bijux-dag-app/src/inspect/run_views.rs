@@ -795,20 +795,6 @@ pub fn runs_summary(root: &Path) -> Result<Value, std::io::Error> {
     }))
 }
 
-pub fn runs_compare(root: &Path, run_a: &str, run_b: &str) -> Result<Value, std::io::Error> {
-    let a = inspect_summary(&resolve_run_dir(root, run_a))?;
-    let b = inspect_summary(&resolve_run_dir(root, run_b))?;
-    Ok(json!({
-        "run_a": run_a,
-        "run_b": run_b,
-        "status": {"a": a.get("status"), "b": b.get("status")},
-        "retries": {"a": a.get("retry_count"), "b": b.get("retry_count")},
-        "cache_hits": {"a": a.get("cache_hits"), "b": b.get("cache_hits")},
-        "artifact_count": {"a": a.get("artifact_count"), "b": b.get("artifact_count")},
-        "timing_ms": {"a": a.get("timing_ms"), "b": b.get("timing_ms")}
-    }))
-}
-
 pub fn runs_trend(root: &Path) -> Result<Value, std::io::Error> {
     let run_ids = list_runs(root)?;
     let mut points = Vec::new();
