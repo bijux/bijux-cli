@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-06
 ---
 
 # Docs Operations
@@ -26,6 +26,7 @@ flowchart LR
 - handbook structures must match documented section contracts
 - MkDocs navigation must include all canonical pages
 - docs changes must ship with behavior changes in the same pull request
+- `.github/docs-deploy.env` must keep `BIJUX_DOCS_RUST_TOOLCHAIN` aligned with the workspace Rust version
 
 ## Documentation Preflight
 

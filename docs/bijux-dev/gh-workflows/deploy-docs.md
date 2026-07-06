@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-06
 ---
 
 # deploy-docs
@@ -20,6 +20,7 @@ docs, generated artifact pages, and navigation checks.
 ## Job Shape
 
 - install the docs toolchain with `make gh-docs-install`
+- honor `.github/docs-deploy.env`, including `BIJUX_DOCS_RUST_TOOLCHAIN=1.86.0`
 - generate release artifact summary pages
 - run `make docs-check`
 - configure the Git author
