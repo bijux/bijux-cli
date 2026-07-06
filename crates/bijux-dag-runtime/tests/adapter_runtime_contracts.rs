@@ -23,8 +23,12 @@ use bijux_dag_runtime::{
 use serde_json::Value;
 use std::ffi::OsString;
 use std::fs;
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
 use std::path::Path;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
+use std::thread;
+use std::time::Duration;
 
 fn process_env_lock() -> std::sync::MutexGuard<'static, ()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -97,6 +101,51 @@ fn python_graph(
     .to_string()
 }
 
+fn http_graph(
+    method: &str,
+    url: &str,
+    headers: Option<Value>,
+    body: Option<Value>,
+    timeout_ms: Option<u64>,
+    retry: Option<(u32, u64)>,
+    nondeterminism_allowed: bool,
+) -> String {
+    let mut params = serde_json::Map::new();
+    params.insert("method".to_string(), Value::String(method.to_string()));
+    params.insert("url".to_string(), Value::String(url.to_string()));
+    if let Some(headers) = headers {
+        params.insert("headers".to_string(), headers);
+    }
+    if let Some(body) = body {
+        params.insert("body".to_string(), body);
+    }
+
+    let mut node = serde_json::json!({
+        "id":"http",
+        "kind":"http",
+        "outputs":[{"name":"response","path":"response.json","media_type":"application/json"}],
+        "params": Value::Object(params),
+        "effects":["filesystem", "network"],
+    });
+    if let Some(timeout_ms) = timeout_ms {
+        node["timeout_ms"] = serde_json::json!(timeout_ms);
+    }
+    if let Some((max_attempts, backoff_ms)) = retry {
+        node["retry"] = serde_json::json!({
+            "max_attempts": max_attempts,
+            "backoff_ms": backoff_ms,
+        });
+    }
+
+    serde_json::json!({
+        "spec":"bijux-dag/v0.1",
+        "nondeterminism_allowed": nondeterminism_allowed,
+        "nodes":[node],
+        "edges":[]
+    })
+    .to_string()
+}
+
 fn read_trace(run_dir: &std::path::Path) -> Value {
     serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join("shell").join("trace.json")).expect("trace"),
@@ -124,6 +173,139 @@ fn write_executable(path: &Path, contents: &str) {
 
 fn write_python_module(path: &Path, contents: &str) {
     fs::write(path, contents).expect("write python module");
+}
+
+#[derive(Clone)]
+struct ScriptedHttpResponse {
+    status_line: String,
+    headers: Vec<(String, String)>,
+    body: Vec<u8>,
+    delay_ms: u64,
+}
+
+#[derive(Debug, Clone)]
+struct CapturedHttpRequest {
+    method: String,
+    path: String,
+    headers: std::collections::BTreeMap<String, String>,
+    body: Vec<u8>,
+}
+
+struct ScriptedHttpServer {
+    base_url: String,
+    requests: Arc<Mutex<Vec<CapturedHttpRequest>>>,
+    join: Option<std::thread::JoinHandle<()>>,
+}
+
+impl ScriptedHttpServer {
+    fn spawn(responses: Vec<ScriptedHttpResponse>) -> Self {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind listener");
+        listener.set_nonblocking(false).expect("blocking listener");
+        let address = listener.local_addr().expect("listener addr");
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let requests_thread = Arc::clone(&requests);
+        let join = thread::spawn(move || {
+            for response in responses {
+                let (mut stream, _) = listener.accept().expect("accept");
+                let request = read_http_request(&mut stream);
+                requests_thread.lock().expect("requests").push(request);
+                if response.delay_ms > 0 {
+                    thread::sleep(Duration::from_millis(response.delay_ms));
+                }
+                write_http_response(&mut stream, &response);
+            }
+        });
+        Self { base_url: format!("http://{}", address), requests, join: Some(join) }
+    }
+
+    fn url(&self, path: &str) -> String {
+        format!("{}{}", self.base_url, path)
+    }
+
+    fn requests(&self) -> Vec<CapturedHttpRequest> {
+        self.requests.lock().expect("requests").clone()
+    }
+}
+
+impl Drop for ScriptedHttpServer {
+    fn drop(&mut self) {
+        if let Some(join) = self.join.take() {
+            join.join().expect("server join");
+        }
+    }
+}
+
+fn read_http_request(stream: &mut TcpStream) -> CapturedHttpRequest {
+    stream.set_read_timeout(Some(Duration::from_secs(2))).expect("read timeout");
+    let mut buffer = Vec::new();
+    let mut chunk = [0_u8; 1024];
+    loop {
+        let read = stream.read(&mut chunk).expect("read request");
+        if read == 0 {
+            break;
+        }
+        buffer.extend_from_slice(&chunk[..read]);
+        if let Some(end) = find_header_end(&buffer) {
+            let content_length = parse_content_length(&buffer[..end]);
+            if buffer.len() >= end + 4 + content_length {
+                break;
+            }
+        }
+    }
+
+    let header_end = find_header_end(&buffer).expect("header end");
+    let header_text = String::from_utf8(buffer[..header_end].to_vec()).expect("header text");
+    let mut lines = header_text.split("\r\n");
+    let request_line = lines.next().expect("request line");
+    let mut request_parts = request_line.split_whitespace();
+    let method = request_parts.next().expect("method").to_string();
+    let path = request_parts.next().expect("path").to_string();
+    let headers = lines
+        .filter_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            Some((name.trim().to_ascii_lowercase(), value.trim().to_string()))
+        })
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let content_length = parse_content_length(&buffer[..header_end]);
+    let body = buffer[(header_end + 4)..(header_end + 4 + content_length)].to_vec();
+
+    CapturedHttpRequest { method, path, headers, body }
+}
+
+fn find_header_end(buffer: &[u8]) -> Option<usize> {
+    buffer.windows(4).position(|window| window == b"\r\n\r\n")
+}
+
+fn parse_content_length(headers: &[u8]) -> usize {
+    let header_text = String::from_utf8_lossy(headers);
+    header_text
+        .lines()
+        .find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case("content-length")
+                .then(|| value.trim().parse::<usize>().ok())
+                .flatten()
+        })
+        .unwrap_or(0)
+}
+
+fn write_http_response(stream: &mut TcpStream, response: &ScriptedHttpResponse) {
+    let mut response_bytes = format!("HTTP/1.1 {}\r\n", response.status_line).into_bytes();
+    let mut has_content_length = false;
+    for (name, value) in &response.headers {
+        if name.eq_ignore_ascii_case("content-length") {
+            has_content_length = true;
+        }
+        response_bytes.extend_from_slice(format!("{name}: {value}\r\n").as_bytes());
+    }
+    if !has_content_length {
+        response_bytes
+            .extend_from_slice(format!("Content-Length: {}\r\n", response.body.len()).as_bytes());
+    }
+    response_bytes.extend_from_slice(b"Connection: close\r\n\r\n");
+    response_bytes.extend_from_slice(&response.body);
+    stream.write_all(&response_bytes).expect("write response");
+    stream.flush().expect("flush response");
 }
 
 struct PathGuard(Option<OsString>);
@@ -252,6 +434,22 @@ fn python_adapter_descriptor_exposes_timeout_cache_and_protocol_contracts() {
         python.cache_compatibility,
         bijux_dag_runtime::CacheCompatibilityMode::FingerprintExact
     );
+}
+
+#[test]
+fn http_adapter_descriptor_exposes_timeout_cache_and_protocol_contracts() {
+    let descriptors = registered_adapter_descriptors();
+    let http =
+        descriptors.iter().find(|descriptor| descriptor.id == "http").expect("http descriptor");
+    assert_eq!(http.protocol_version, "bijux-dag-adapter/v1");
+    assert!(http.supports_timeout);
+    assert!(!http.supports_cancel);
+    assert_eq!(
+        http.cache_compatibility,
+        bijux_dag_runtime::CacheCompatibilityMode::FingerprintExact
+    );
+    assert!(http.required_effects.filesystem);
+    assert!(http.required_effects.network);
 }
 
 #[test]
@@ -649,6 +847,201 @@ fn python_adapter_timeout_is_reported_structurally() {
     assert_eq!(trace["failure"]["code"], "EXEC_TIMEOUT");
     assert_eq!(trace["failure"]["class"], "timeout");
     std::env::remove_var("PYTHONPATH");
+}
+
+#[test]
+fn http_adapter_captures_response_status_headers_and_body() {
+    let server = ScriptedHttpServer::spawn(vec![ScriptedHttpResponse {
+        status_line: "200 OK".to_string(),
+        headers: vec![("content-type".to_string(), "application/json".to_string())],
+        body: br#"{"ok":true,"source":"adapter"}"#.to_vec(),
+        delay_ms: 0,
+    }]);
+    let graph = parse_graph_strict(&http_graph(
+        "POST",
+        &server.url("/v1/run"),
+        Some(serde_json::json!({"x-token":"secret"})),
+        Some(serde_json::json!({"value": 7})),
+        None,
+        None,
+        false,
+    ))
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let response: Value = serde_json::from_str(
+        &fs::read_to_string(
+            run_dir.join("nodes").join("http").join("outputs").join("response.json"),
+        )
+        .expect("response output"),
+    )
+    .expect("response json");
+    assert_eq!(response["request"]["method"], "POST");
+    assert_eq!(response["response"]["status"], 200);
+    assert_eq!(response["response"]["body"]["json"]["ok"], true);
+    assert_eq!(response["response"]["body"]["text"], "{\"ok\":true,\"source\":\"adapter\"}");
+
+    let requests = server.requests();
+    assert_eq!(requests.len(), 1);
+    assert_eq!(requests[0].method, "POST");
+    assert_eq!(requests[0].path, "/v1/run");
+    assert_eq!(requests[0].headers.get("x-token").map(String::as_str), Some("secret"));
+    let request_body: Value = serde_json::from_slice(&requests[0].body).expect("request body");
+    assert_eq!(request_body["value"], 7);
+}
+
+#[test]
+fn http_adapter_structures_http_status_failures() {
+    let server = ScriptedHttpServer::spawn(vec![ScriptedHttpResponse {
+        status_line: "503 Service Unavailable".to_string(),
+        headers: vec![("content-type".to_string(), "text/plain".to_string())],
+        body: b"service down".to_vec(),
+        delay_ms: 0,
+    }]);
+    let graph = parse_graph_strict(&http_graph(
+        "GET",
+        &server.url("/health"),
+        None,
+        None,
+        None,
+        None,
+        false,
+    ))
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let trace = read_node_trace(&run_dir, "http");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "HTTP_STATUS_ERROR");
+    assert_eq!(trace["failure"]["class"], "execution");
+    assert_eq!(trace["failure"]["details"]["status"], 503);
+    assert_eq!(trace["failure"]["details"]["response_body"]["text"], "service down");
+
+    let response: Value = serde_json::from_str(
+        &fs::read_to_string(
+            run_dir.join("nodes").join("http").join("outputs").join("response.json"),
+        )
+        .expect("response output"),
+    )
+    .expect("response json");
+    assert_eq!(response["response"]["status"], 503);
+}
+
+#[test]
+fn http_adapter_timeout_is_reported_structurally() {
+    let server = ScriptedHttpServer::spawn(vec![ScriptedHttpResponse {
+        status_line: "200 OK".to_string(),
+        headers: vec![("content-type".to_string(), "application/json".to_string())],
+        body: br#"{"ok":true}"#.to_vec(),
+        delay_ms: 200,
+    }]);
+    let graph = parse_graph_strict(&http_graph(
+        "GET",
+        &server.url("/slow"),
+        None,
+        None,
+        Some(50),
+        None,
+        false,
+    ))
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let trace = read_node_trace(&run_dir, "http");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "EXEC_TIMEOUT");
+    assert_eq!(trace["failure"]["class"], "timeout");
+}
+
+#[test]
+fn http_adapter_retry_succeeds_on_second_attempt() {
+    let server = ScriptedHttpServer::spawn(vec![
+        ScriptedHttpResponse {
+            status_line: "503 Service Unavailable".to_string(),
+            headers: vec![("content-type".to_string(), "text/plain".to_string())],
+            body: b"retry later".to_vec(),
+            delay_ms: 0,
+        },
+        ScriptedHttpResponse {
+            status_line: "200 OK".to_string(),
+            headers: vec![("content-type".to_string(), "application/json".to_string())],
+            body: br#"{"attempt":"second"}"#.to_vec(),
+            delay_ms: 0,
+        },
+    ]);
+    let graph = parse_graph_strict(&http_graph(
+        "GET",
+        &server.url("/flaky"),
+        None,
+        None,
+        None,
+        Some((1, 10)),
+        true,
+    ))
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let trace = read_node_trace(&run_dir, "http");
+    assert_eq!(trace["status"], "success");
+    assert_eq!(trace["attempt"], 2);
+
+    let response: Value = serde_json::from_str(
+        &fs::read_to_string(
+            run_dir.join("nodes").join("http").join("outputs").join("response.json"),
+        )
+        .expect("response output"),
+    )
+    .expect("response json");
+    assert_eq!(response["response"]["body"]["json"]["attempt"], "second");
+
+    let attempts: Vec<Value> = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("http").join("attempts.json"))
+            .expect("attempts"),
+    )
+    .expect("attempts json");
+    assert_eq!(attempts.len(), 2);
+}
+
+#[test]
+fn http_adapter_network_policy_denial_is_structured() {
+    let graph = parse_graph_strict(&http_graph(
+        "GET",
+        "http://127.0.0.1:1/policy",
+        None,
+        None,
+        None,
+        None,
+        false,
+    ))
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime
+        .run(
+            &graph,
+            dir.path(),
+            RuntimeConfig {
+                policy: bijux_dag_runtime::PolicyConfig {
+                    deny_network: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        )
+        .expect("run");
+    let trace = read_node_trace(&run_dir, "http");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "POLICY_DENIED");
+    assert_eq!(trace["failure"]["details"]["effect"], "network");
 }
 
 #[test]
@@ -1314,8 +1707,10 @@ fn adapter_output_schema_compatibility_reports_exact_mismatch() {
 #[test]
 fn adapter_conformance_suite_covers_shell_hardening_and_output_contract_scenarios() {
     let suites = adapter_conformance_suite().expect("suite");
+    let http = suites.iter().find(|suite| suite.adapter_id == "http").expect("http");
     let shell = suites.iter().find(|suite| suite.adapter_id == "shell").expect("shell");
     let python = suites.iter().find(|suite| suite.adapter_id == "python").expect("python");
+    let http_scenarios = &http.scenarios;
     let python_scenarios = &python.scenarios;
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "argv_contract"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "timeout"));
@@ -1340,5 +1735,17 @@ fn adapter_conformance_suite_covers_shell_hardening_and_output_contract_scenario
     assert!(python_scenarios.iter().any(|scenario| {
         scenario.scenario == "missing_executable"
             && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+    }));
+    assert!(http_scenarios.iter().any(|scenario| {
+        scenario.scenario == "failure"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+    }));
+    assert!(http_scenarios.iter().any(|scenario| {
+        scenario.scenario == "timeout"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+    }));
+    assert!(http_scenarios.iter().any(|scenario| {
+        scenario.scenario == "missing_executable"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Skip
     }));
 }

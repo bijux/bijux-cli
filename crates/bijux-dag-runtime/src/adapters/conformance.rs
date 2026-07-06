@@ -144,6 +144,7 @@ pub fn build_adapter_conformance_suite(
         || descriptor.id == "container"
         || descriptor.id == "python"
         || matches!(descriptor.origin, AdapterOrigin::External);
+    let request_backed = process_backed || descriptor.id == "http";
     let schema_compatibility = validate_output_schema_compatibility(
         descriptor.cache_compatibility.clone(),
         &descriptor.produces_outputs_schema_version,
@@ -159,10 +160,10 @@ pub fn build_adapter_conformance_suite(
         ),
         scenario(
             "failure",
-            if process_backed { AdapterScenarioStatus::Pass } else { AdapterScenarioStatus::Skip },
-            process_backed,
-            !process_backed,
-            if process_backed {
+            if request_backed { AdapterScenarioStatus::Pass } else { AdapterScenarioStatus::Skip },
+            request_backed,
+            !request_backed,
+            if request_backed {
                 "runtime records explicit execution failure results"
             } else {
                 "non-process adapters do not expose a process failure boundary"

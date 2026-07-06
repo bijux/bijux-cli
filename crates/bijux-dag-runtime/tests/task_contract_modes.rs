@@ -187,6 +187,55 @@ fn python_nodes_use_subprocess_task_isolation() {
 }
 
 #[test]
+fn http_nodes_use_in_process_task_isolation() {
+    let graph = Graph {
+        spec: "bijux-dag/v0.1".to_string(),
+        meta: None,
+        inputs: Default::default(),
+        nondeterminism_allowed: false,
+        subgraphs: Default::default(),
+        subgraph_instances: Vec::new(),
+        nodes: vec![bijux_dag_core::Node {
+            id: "http_mode".to_string(),
+            kind: NodeKind::Http,
+            semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+            inputs: vec![],
+            outputs: vec![bijux_dag_core::FileOutput::new(
+                "response".to_string(),
+                "http_mode/response.json".to_string(),
+            )],
+            params: bijux_dag_core::ParamValue::Object(
+                [
+                    ("method".to_string(), bijux_dag_core::ParamValue::Literal(json!("GET"))),
+                    (
+                        "url".to_string(),
+                        bijux_dag_core::ParamValue::Literal(json!("https://example.test/health")),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            ),
+            container: None,
+            timeout_ms: None,
+            resources: None,
+            tags: vec![],
+            retry: Default::default(),
+            cache: Default::default(),
+            effects: vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network],
+            env_allowlist: vec![],
+            group: None,
+            trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+            branch: None,
+        }],
+        edges: vec![],
+    };
+
+    let contracts = validate_task_contracts(&graph, &RuntimeConfig::default()).unwrap();
+    assert_eq!(contracts.len(), 1);
+    assert_eq!(contracts[0].isolation_mode, TaskIsolationMode::InProcess);
+}
+
+#[test]
 fn task_result_envelope_json_shape_is_stable() {
     let graph = fixture("linear.dag.json");
     let node = graph.nodes.first().unwrap().clone();
