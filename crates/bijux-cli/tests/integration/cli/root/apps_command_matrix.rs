@@ -239,6 +239,8 @@ fn official_runtime_delegation_reports_missing_runtime_binary() {
     let stderr = String::from_utf8(out.stderr).expect("utf-8");
     assert!(stderr.contains("failed to run `bijux dag`"));
     assert!(stderr.contains("bijux-dag"));
+    assert!(stderr.contains("cargo install bijux-dag-cli"));
+    assert!(stderr.contains("bijux-dag --help"));
 }
 
 #[test]
