@@ -152,6 +152,8 @@ mod planner;
 mod planner_analysis;
 #[doc(hidden)]
 pub mod policy;
+#[path = "adapters/python.rs"]
+mod python_adapter;
 #[path = "artifacts/storage/recovery.rs"]
 mod recovery;
 #[path = "adapters/runtime_registry.rs"]
@@ -413,6 +415,7 @@ pub use planner_analysis::{
     PlannerSchedulingBound, PlannerSchedulingSimulation,
 };
 pub use policy::policy_allows_effects;
+use python_adapter::PythonFunctionAdapter;
 pub use recovery::{
     check_run_consistency, detect_stuck_run, evaluate_pause_state, reconcile_orphaned_node,
     should_quarantine_run, validate_and_repair_run_metadata, BranchRecoveryMode,
@@ -1563,6 +1566,7 @@ impl Runtime {
         let registry_result = build_registry(vec![
             Arc::new(ConstAdapter),
             Arc::new(ShellAdapter),
+            Arc::new(PythonFunctionAdapter),
             Arc::new(ContainerAdapter),
         ]);
         let (registry, init_error) = match registry_result {
@@ -2261,6 +2265,11 @@ fn command_fingerprint(
             "kind": "shell",
             "argv": params.get("argv").cloned().unwrap_or(Value::Null),
         }))
+    } else if matches!(node.kind, NodeKind::Python) {
+        Some(serde_json::json!({
+            "kind": "python",
+            "params": params,
+        }))
     } else if let Some(container) = node.container.as_ref() {
         let argv = bijux_dag_core::resolve::resolve_command_argv_templates(
             graph,
@@ -2329,6 +2338,7 @@ pub fn registered_adapters() -> Vec<AdapterInfo> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
         Arc::new(ShellAdapter),
+        Arc::new(PythonFunctionAdapter),
         Arc::new(ContainerAdapter),
     ])
     .unwrap_or_else(|_| AdapterRegistry::new());
@@ -2339,6 +2349,7 @@ pub fn registered_adapter_descriptors() -> Vec<adapter::AdapterDescriptor> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
         Arc::new(ShellAdapter),
+        Arc::new(PythonFunctionAdapter),
         Arc::new(ContainerAdapter),
     ])
     .unwrap_or_else(|_| AdapterRegistry::new());
@@ -2913,7 +2924,7 @@ fn recreate_dir(fs: &dyn Fs, path: &Path) -> std_io::Result<()> {
     fs.create_dir_all(path)
 }
 
-fn apply_temp_env(cmd: &mut std::process::Command, temp_dir: &Path) {
+pub(crate) fn apply_temp_env(cmd: &mut std::process::Command, temp_dir: &Path) {
     let temp_dir = temp_dir.display().to_string();
     cmd.env("TMPDIR", &temp_dir);
     cmd.env("TMP", &temp_dir);
@@ -3297,7 +3308,7 @@ fn cache_identity_for_trace(
     })
 }
 
-fn node_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> String {
+pub(crate) fn node_fingerprint_from_ctx(ctx: &RunContext, node_id: &str) -> String {
     ctx.graph_fingerprint.lock().ok().and_then(|map| map.get(node_id).cloned()).unwrap_or_default()
 }
 
@@ -3433,7 +3444,7 @@ fn collect_relative_artifacts(
     }
 }
 
-fn apply_shaped_env(
+pub(crate) fn apply_shaped_env(
     cmd: &mut std::process::Command,
     clean_env: bool,
     allowlist: &[String],
@@ -3578,7 +3589,7 @@ fn kill_child_descendants_best_effort(pid: u32) {
     let _ = std::process::Command::new("pkill").args(["-KILL", "-P", &parent]).status();
 }
 
-fn effective_node_timeout_ms(node: &Node, params: &Value) -> Option<u64> {
+pub(crate) fn effective_node_timeout_ms(node: &Node, params: &Value) -> Option<u64> {
     node.timeout_ms.or_else(|| params.get("timeout_ms").and_then(|v| v.as_u64()))
 }
 

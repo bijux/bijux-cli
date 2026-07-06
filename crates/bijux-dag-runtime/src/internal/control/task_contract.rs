@@ -212,6 +212,7 @@ fn isolation_mode_for_node(node: &Node) -> TaskIsolationMode {
     match node.kind {
         NodeKind::Const => TaskIsolationMode::InProcess,
         NodeKind::Shell => TaskIsolationMode::Subprocess,
+        NodeKind::Python => TaskIsolationMode::Subprocess,
         NodeKind::Container => TaskIsolationMode::Container,
         NodeKind::External(_) => TaskIsolationMode::ExternalAdapter,
     }

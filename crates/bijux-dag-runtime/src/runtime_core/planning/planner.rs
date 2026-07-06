@@ -276,17 +276,18 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
 }
 
 fn node_kind_supported(kind: &str) -> bool {
-    matches!(kind, "const" | "shell" | "container")
+    matches!(kind, "const" | "shell" | "python" | "container")
 }
 
 fn runtime_resource_capability_supported(kind: &NodeKind) -> bool {
-    matches!(kind, NodeKind::Shell | NodeKind::Container)
+    matches!(kind, NodeKind::Shell | NodeKind::Python | NodeKind::Container)
 }
 
 fn planner_runnable_from_runtime_capabilities(kind: &str, requires_network: bool) -> bool {
     match kind {
         "const" => !requires_network,
         "shell" => !requires_network,
+        "python" => !requires_network,
         "container" => true,
         _ => false,
     }

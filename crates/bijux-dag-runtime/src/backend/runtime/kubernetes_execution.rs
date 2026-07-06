@@ -305,7 +305,7 @@ fn kubernetes_workspace_transfer(node: &Node) -> KubernetesWorkspaceTransfer {
     KubernetesWorkspaceTransfer {
         mode: match node.kind {
             NodeKind::Container => KubernetesWorkspaceTransferMode::MountedWorkdir,
-            NodeKind::Const | NodeKind::Shell | NodeKind::External(_) => {
+            NodeKind::Const | NodeKind::Shell | NodeKind::Python | NodeKind::External(_) => {
                 KubernetesWorkspaceTransferMode::StagedArtifacts
             }
         },
@@ -364,6 +364,7 @@ fn kubernetes_backend_adapter(kind: &NodeKind) -> Result<Box<dyn crate::adapter:
     match kind {
         NodeKind::Const => Ok(Box::new(ConstAdapter)),
         NodeKind::Shell => Ok(Box::new(ShellAdapter)),
+        NodeKind::Python => Ok(Box::new(crate::python_adapter::PythonFunctionAdapter)),
         NodeKind::Container => Ok(Box::new(ContainerAdapter)),
         NodeKind::External(kind) => Err(format!(
             "kubernetes backend model does not yet execute external adapter kind '{kind}'"
