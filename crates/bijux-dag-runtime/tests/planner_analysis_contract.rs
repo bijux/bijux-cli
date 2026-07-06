@@ -215,9 +215,17 @@ fn planner_critical_path_uses_unit_duration_fallback_when_estimates_are_missing(
     )
     .expect("graph should parse");
 
+    let options = RuntimeConfig {
+        jobs: 2,
+        scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
+            max_parallelism: 2,
+            ..bijux_dag_runtime::SchedulerPolicy::default()
+        },
+        ..RuntimeConfig::default()
+    };
     let result = build_planner_analysis(
         &graph,
-        &RuntimeConfig::default(),
+        &options,
         &SelectorSet::default(),
         &PlannerGuardrails { allow_semantic_optimizations: true },
     )
@@ -229,6 +237,113 @@ fn planner_critical_path_uses_unit_duration_fallback_when_estimates_are_missing(
     assert_eq!(estimate.critical_path.total_duration_ms, 2);
     assert_eq!(estimate.critical_path.estimated_duration_nodes, 0);
     assert_eq!(estimate.critical_path.unit_duration_fallback_nodes, 2);
+    assert_eq!(
+        estimate.scheduling_simulation.run_bound,
+        bijux_dag_runtime::PlannerSchedulingBound::DependencyBound
+    );
+}
+
+#[test]
+fn planner_scheduling_simulation_reports_named_resource_bottlenecks() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"root","kind":"const","outputs":[{"name":"out","path":"root/out"}],"params":{"value":1}},
+            {
+              "id":"left",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"out","path":"left/out"}],
+              "params":{"argv":["echo","left"],"estimated_duration_ms":10000},
+              "resources":{"cpu":1,"mem_mb":64,"named_resources":{"database_slot":1}}
+            },
+            {
+              "id":"right",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"out","path":"right/out"}],
+              "params":{"argv":["echo","right"],"estimated_duration_ms":10000},
+              "resources":{"cpu":1,"mem_mb":64,"named_resources":{"database_slot":1}}
+            },
+            {
+              "id":"join",
+              "kind":"shell",
+              "inputs":["left","right"],
+              "outputs":[{"name":"out","path":"join/out"}],
+              "params":{"argv":["echo","join"]}
+            }
+          ],
+          "edges":[
+            {"from":{"node_id":"root","port":"out"},"to":{"node_id":"left","port":"in"}},
+            {"from":{"node_id":"root","port":"out"},"to":{"node_id":"right","port":"in"}},
+            {"from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"left"}},
+            {"from":{"node_id":"right","port":"out"},"to":{"node_id":"join","port":"right"}}
+          ]
+        }"#,
+    )
+    .expect("graph should parse");
+    let options = RuntimeConfig {
+        jobs: 2,
+        named_resource_capacities: std::collections::BTreeMap::from([(
+            "database_slot".to_string(),
+            1,
+        )]),
+        scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
+            max_parallelism: 2,
+            ..bijux_dag_runtime::SchedulerPolicy::default()
+        },
+        ..RuntimeConfig::default()
+    };
+    let result = build_planner_analysis(
+        &graph,
+        &options,
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect("planner build should succeed");
+
+    let estimate = result.execution_cost_estimate;
+    assert_eq!(
+        estimate.demand.named_resources_total,
+        std::collections::BTreeMap::from([("database_slot".to_string(), 2)])
+    );
+    assert_eq!(
+        estimate.demand.named_resources_peak_parallel,
+        std::collections::BTreeMap::from([("database_slot".to_string(), 2)])
+    );
+    assert!(estimate.critical_path.total_duration_ms >= 10000);
+    assert_eq!(estimate.scheduling_simulation.scheduled_waves, 4);
+    assert!(estimate.scheduling_simulation.simulated_makespan_ms >= 20000);
+    assert_eq!(
+        estimate.scheduling_simulation.resource_delay_ms,
+        estimate
+            .scheduling_simulation
+            .simulated_makespan_ms
+            .saturating_sub(estimate.critical_path.total_duration_ms)
+    );
+    assert_eq!(
+        estimate.scheduling_simulation.run_bound,
+        bijux_dag_runtime::PlannerSchedulingBound::ResourceBound
+    );
+    assert_eq!(
+        estimate.scheduling_simulation.bottlenecks,
+        vec![bijux_dag_runtime::PlannerResourceBottleneck {
+            resource: "named_resource:database_slot".to_string(),
+            blocking_events: 1,
+            blocked_node_ids: vec!["right".to_string()],
+            blocked_duration_ms: 10000,
+        }]
+    );
+    assert_eq!(
+        estimate.scheduling_simulation.blocked_nodes,
+        vec![bijux_dag_runtime::PlannerBlockedNodeEstimate {
+            node_id: "right".to_string(),
+            blocked_by: vec!["blocked_by_named_resource:database_slot".to_string()],
+            blocked_waves: 1,
+            blocked_duration_ms: 10000,
+        }]
+    );
 }
 
 #[test]

@@ -4,8 +4,8 @@ use crate::infrastructure::{
 };
 use crate::{
     collect_container_argv_path_usages, collect_container_workdir_usage,
-    collect_resolved_path_usages, resolve_container_argv, NodePathBindings, ResolvedPathUsage,
-    RuntimeConfig, Selector, SelectorSet,
+    collect_resolved_path_usages, resolve_container_argv, NodePathBindings, ReadyQueue,
+    ResolvedPathUsage, RuntimeConfig, Selector, SelectorSet,
 };
 use bijux_dag_artifacts::RunDirLayout;
 use bijux_dag_core::{resources, Graph, Node};
@@ -49,6 +49,41 @@ pub struct PlannerExecutionDemand {
     pub cpu_cores_peak_parallel: u64,
     pub memory_mb_peak_parallel: u64,
     pub gpu_devices_peak_parallel: u64,
+    pub named_resources_total: BTreeMap<String, u64>,
+    pub named_resources_peak_parallel: BTreeMap<String, u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PlannerSchedulingBound {
+    DependencyBound,
+    ResourceBound,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerBlockedNodeEstimate {
+    pub node_id: String,
+    pub blocked_by: Vec<String>,
+    pub blocked_waves: usize,
+    pub blocked_duration_ms: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerResourceBottleneck {
+    pub resource: String,
+    pub blocking_events: usize,
+    pub blocked_node_ids: Vec<String>,
+    pub blocked_duration_ms: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlannerSchedulingSimulation {
+    pub scheduled_waves: usize,
+    pub simulated_makespan_ms: u64,
+    pub resource_delay_ms: u64,
+    pub run_bound: PlannerSchedulingBound,
+    pub bottlenecks: Vec<PlannerResourceBottleneck>,
+    pub blocked_nodes: Vec<PlannerBlockedNodeEstimate>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -106,6 +141,7 @@ pub struct PlannerExecutionCostEstimate {
     pub critical_path: PlannerCriticalPathEstimate,
     pub max_parallelism: usize,
     pub demand: PlannerExecutionDemand,
+    pub scheduling_simulation: PlannerSchedulingSimulation,
     pub cache_exposure: PlannerCacheExposure,
     pub timeout_exposure: PlannerTimeoutExposure,
     pub retry_exposure: PlannerRetryExposure,
@@ -232,7 +268,7 @@ pub fn build_planner_analysis(
     validate_command_templates(&normalized_graph, &resolved_graph.resolved_params)?;
     let mut annotations = annotate_plan(&normalized_graph, &plan, selector_set);
     plan = apply_optimizer_rules(normalized_graph.clone(), plan, &mut annotations, guardrails);
-    let execution_cost_estimate = estimate_execution_cost(&plan);
+    let execution_cost_estimate = estimate_execution_cost(&normalized_graph, &plan, options);
     let priority_inheritance = inherit_priority(&plan.nodes);
     let plan_fingerprint = fingerprint_plan(&plan, &annotations)?;
     let path_previews =
@@ -861,7 +897,11 @@ fn selector_matches(node: &Node, selector: &Selector) -> bool {
     }
 }
 
-fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate {
+fn estimate_execution_cost(
+    graph: &Graph,
+    plan: &ExecutionPlan,
+    options: &RuntimeConfig,
+) -> PlannerExecutionCostEstimate {
     let selected_nodes = plan
         .nodes
         .iter()
@@ -906,6 +946,7 @@ fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate
     let mut cpu_cores_total = 0u64;
     let mut memory_mb_total = 0u64;
     let mut gpu_devices_total = 0u64;
+    let mut named_resources_total = BTreeMap::<String, u64>::new();
     let mut cacheable_nodes = 0usize;
     let mut non_cacheable_node_ids = Vec::new();
     let mut timed_node_ids = Vec::new();
@@ -921,6 +962,10 @@ fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate
         cpu_cores_total += cpu;
         memory_mb_total += memory;
         gpu_devices_total += gpu;
+        accumulate_named_resource_demand(
+            &mut named_resources_total,
+            &node_named_resource_demand(node),
+        );
         if node.cache.enabled {
             cacheable_nodes += 1;
         } else {
@@ -951,7 +996,16 @@ fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate
         cpu_cores_peak_parallel,
         memory_mb_peak_parallel,
         gpu_devices_peak_parallel,
+        named_resources_peak_parallel,
     ) = parallelism_profile(&selected_nodes, &indegree, &adjacency);
+    let scheduling_simulation = scheduling_simulation(
+        graph,
+        options,
+        &selected_nodes,
+        &indegree,
+        &adjacency,
+        critical_path.total_duration_ms,
+    );
 
     PlannerExecutionCostEstimate {
         node_count: selected_nodes.len(),
@@ -966,7 +1020,10 @@ fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate
             cpu_cores_peak_parallel,
             memory_mb_peak_parallel,
             gpu_devices_peak_parallel,
+            named_resources_total,
+            named_resources_peak_parallel,
         },
+        scheduling_simulation,
         cache_exposure: PlannerCacheExposure {
             cacheable_nodes,
             non_cacheable_nodes: non_cacheable_node_ids.len(),
@@ -993,6 +1050,13 @@ fn node_resource_demand(node: &Node) -> (u64, u64, u64) {
     let memory = node.resources.as_ref().map(|resources| resources.mem_mb as u64).unwrap_or(256);
     let gpu = u64::from(resources::node_gpu_devices(node));
     (cpu, memory, gpu)
+}
+
+fn node_named_resource_demand(node: &Node) -> BTreeMap<String, u64> {
+    resources::node_named_resources(node)
+        .into_iter()
+        .map(|(name, amount)| (name, u64::from(amount)))
+        .collect()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1136,9 +1200,9 @@ fn parallelism_profile(
     nodes: &[&Node],
     indegree: &HashMap<String, usize>,
     adjacency: &HashMap<String, Vec<String>>,
-) -> (usize, u64, u64, u64) {
+) -> (usize, u64, u64, u64, BTreeMap<String, u64>) {
     if nodes.is_empty() {
-        return (0, 0, 0, 0);
+        return (0, 0, 0, 0, BTreeMap::new());
     }
 
     let node_lookup =
@@ -1154,12 +1218,14 @@ fn parallelism_profile(
     let mut cpu_cores_peak_parallel = 0u64;
     let mut memory_mb_peak_parallel = 0u64;
     let mut gpu_devices_peak_parallel = 0u64;
+    let mut named_resources_peak_parallel = BTreeMap::<String, u64>::new();
 
     while !ready.is_empty() {
         max_parallelism = max_parallelism.max(ready.len());
         let mut batch_cpu = 0u64;
         let mut batch_memory = 0u64;
         let mut batch_gpu = 0u64;
+        let mut batch_named_resources = BTreeMap::<String, u64>::new();
         let batch = ready.clone();
         let mut next_ready = Vec::new();
 
@@ -1171,6 +1237,10 @@ fn parallelism_profile(
             batch_cpu += cpu;
             batch_memory += memory;
             batch_gpu += gpu;
+            accumulate_named_resource_demand(
+                &mut batch_named_resources,
+                &node_named_resource_demand(node),
+            );
             if let Some(children) = adjacency.get(node_id) {
                 for child in children {
                     let count = remaining_indegree
@@ -1187,12 +1257,194 @@ fn parallelism_profile(
         cpu_cores_peak_parallel = cpu_cores_peak_parallel.max(batch_cpu);
         memory_mb_peak_parallel = memory_mb_peak_parallel.max(batch_memory);
         gpu_devices_peak_parallel = gpu_devices_peak_parallel.max(batch_gpu);
+        maximize_named_resource_demand(&mut named_resources_peak_parallel, &batch_named_resources);
         next_ready.sort();
         next_ready.dedup();
         ready = next_ready;
     }
 
-    (max_parallelism, cpu_cores_peak_parallel, memory_mb_peak_parallel, gpu_devices_peak_parallel)
+    (
+        max_parallelism,
+        cpu_cores_peak_parallel,
+        memory_mb_peak_parallel,
+        gpu_devices_peak_parallel,
+        named_resources_peak_parallel,
+    )
+}
+
+#[derive(Debug, Clone, Default)]
+struct PlannerBlockedNodeAccumulator {
+    blocked_reasons: BTreeSet<String>,
+    blocked_waves: usize,
+    blocked_duration_ms: u64,
+}
+
+#[derive(Debug, Clone, Default)]
+struct PlannerResourceBottleneckAccumulator {
+    blocked_node_ids: BTreeSet<String>,
+    blocking_events: usize,
+    blocked_duration_ms: u64,
+}
+
+fn scheduling_simulation(
+    graph: &Graph,
+    options: &RuntimeConfig,
+    selected_nodes: &[&Node],
+    indegree: &HashMap<String, usize>,
+    adjacency: &HashMap<String, Vec<String>>,
+    topology_critical_path_duration_ms: u64,
+) -> PlannerSchedulingSimulation {
+    if selected_nodes.is_empty() {
+        return PlannerSchedulingSimulation {
+            scheduled_waves: 0,
+            simulated_makespan_ms: 0,
+            resource_delay_ms: 0,
+            run_bound: PlannerSchedulingBound::DependencyBound,
+            bottlenecks: Vec::new(),
+            blocked_nodes: Vec::new(),
+        };
+    }
+
+    let node_lookup = selected_nodes
+        .iter()
+        .map(|node| (node.id.clone(), *node))
+        .collect::<HashMap<String, &Node>>();
+    let mut remaining_indegree = indegree.clone();
+    let mut ready_queue = ReadyQueue::from_indegree(indegree);
+    let mut scheduler = crate::build_scheduler(&options.scheduler_policy);
+    let mut scheduled_waves = 0usize;
+    let mut simulated_makespan_ms = 0u64;
+    let mut blocked_nodes = BTreeMap::<String, PlannerBlockedNodeAccumulator>::new();
+    let mut bottlenecks = BTreeMap::<String, PlannerResourceBottleneckAccumulator>::new();
+
+    while !ready_queue.is_empty() {
+        let decision = scheduler.next_batch(
+            graph,
+            &mut ready_queue,
+            options,
+            std::time::Instant::now(),
+            false,
+        );
+        if decision.batch.is_empty() {
+            break;
+        }
+        scheduled_waves += 1;
+        let wave_duration_ms = decision
+            .batch
+            .iter()
+            .filter_map(|node_id| node_lookup.get(node_id))
+            .map(|node| node_duration_estimate(node).duration_ms)
+            .max()
+            .unwrap_or(0);
+        simulated_makespan_ms += wave_duration_ms;
+
+        for node_id in &decision.blocked_by_budget {
+            let reason = decision
+                .blocked_reasons
+                .get(node_id)
+                .cloned()
+                .unwrap_or_else(|| "blocked_by_policy".to_string());
+            let blocked_node = blocked_nodes.entry(node_id.clone()).or_default();
+            blocked_node.blocked_reasons.insert(reason.clone());
+            blocked_node.blocked_waves += 1;
+            blocked_node.blocked_duration_ms += wave_duration_ms;
+
+            let resource = blocked_resource_label(&reason);
+            let bottleneck = bottlenecks.entry(resource).or_default();
+            bottleneck.blocking_events += 1;
+            bottleneck.blocked_duration_ms += wave_duration_ms;
+            bottleneck.blocked_node_ids.insert(node_id.clone());
+        }
+
+        for node_id in &decision.batch {
+            if let Some(children) = adjacency.get(node_id) {
+                for child in children {
+                    let count = remaining_indegree
+                        .get_mut(child)
+                        .expect("child indegree must exist in scheduling simulation");
+                    *count = count.saturating_sub(1);
+                    if *count == 0 {
+                        ready_queue.insert(child.clone());
+                    }
+                }
+            }
+        }
+    }
+
+    let resource_delay_ms =
+        simulated_makespan_ms.saturating_sub(topology_critical_path_duration_ms);
+    let run_bound = if resource_delay_ms > 0 {
+        PlannerSchedulingBound::ResourceBound
+    } else {
+        PlannerSchedulingBound::DependencyBound
+    };
+    let mut blocked_nodes = blocked_nodes
+        .into_iter()
+        .map(|(node_id, entry)| PlannerBlockedNodeEstimate {
+            node_id,
+            blocked_by: entry.blocked_reasons.into_iter().collect(),
+            blocked_waves: entry.blocked_waves,
+            blocked_duration_ms: entry.blocked_duration_ms,
+        })
+        .collect::<Vec<_>>();
+    blocked_nodes.sort_by(|left, right| left.node_id.cmp(&right.node_id));
+
+    let mut bottlenecks = bottlenecks
+        .into_iter()
+        .map(|(resource, entry)| PlannerResourceBottleneck {
+            resource,
+            blocking_events: entry.blocking_events,
+            blocked_node_ids: entry.blocked_node_ids.into_iter().collect(),
+            blocked_duration_ms: entry.blocked_duration_ms,
+        })
+        .collect::<Vec<_>>();
+    bottlenecks.sort_by(|left, right| {
+        right
+            .blocked_duration_ms
+            .cmp(&left.blocked_duration_ms)
+            .then_with(|| left.resource.cmp(&right.resource))
+    });
+
+    PlannerSchedulingSimulation {
+        scheduled_waves,
+        simulated_makespan_ms,
+        resource_delay_ms,
+        run_bound,
+        bottlenecks,
+        blocked_nodes,
+    }
+}
+
+fn blocked_resource_label(reason: &str) -> String {
+    if let Some(name) = reason.strip_prefix("blocked_by_named_resource:") {
+        return format!("named_resource:{name}");
+    }
+    match reason {
+        "blocked_by_parallelism" => "parallelism".to_string(),
+        "blocked_by_cpu" => "cpu_cores".to_string(),
+        "blocked_by_memory" => "memory_mb".to_string(),
+        "blocked_by_gpu" => "gpu_devices".to_string(),
+        _ => reason.to_string(),
+    }
+}
+
+fn accumulate_named_resource_demand(
+    totals: &mut BTreeMap<String, u64>,
+    demand: &BTreeMap<String, u64>,
+) {
+    for (name, amount) in demand {
+        *totals.entry(name.clone()).or_default() += *amount;
+    }
+}
+
+fn maximize_named_resource_demand(
+    peaks: &mut BTreeMap<String, u64>,
+    demand: &BTreeMap<String, u64>,
+) {
+    for (name, amount) in demand {
+        let peak = peaks.entry(name.clone()).or_default();
+        *peak = (*peak).max(*amount);
+    }
 }
 
 fn inherit_priority(nodes: &[Node]) -> Vec<PlannerPriorityInheritance> {
