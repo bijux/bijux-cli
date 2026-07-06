@@ -1194,7 +1194,7 @@ fn runtime_adapter_errors_materialize_failure_logs() {
     );
     let stderr =
         fs::read_to_string(run_path.join("nodes").join("node").join("stderr.log")).expect("stderr");
-    assert!(stderr.contains("missing argv"));
+    assert!(stderr.contains("argv must be an array of strings"));
     assert!(run_path.join("nodes").join("node").join("trace.json").exists());
 }
 

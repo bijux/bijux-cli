@@ -783,6 +783,89 @@ impl Adapter for ConstAdapter {
 #[derive(Clone)]
 pub struct ShellAdapter;
 
+fn shell_argv(params: &Value) -> Result<Vec<String>, FailureInfo> {
+    let Some(argv_value) = params.get("argv") else {
+        return Err(FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "EXEC_ERROR",
+            "argv is required",
+            Some(serde_json::json!({
+                "field": "argv",
+                "reason": "missing",
+            })),
+        ));
+    };
+    let Some(argv) = argv_value.as_array() else {
+        return Err(FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "EXEC_ERROR",
+            "argv must be an array of strings",
+            Some(serde_json::json!({
+                "field": "argv",
+                "reason": "expected_array",
+            })),
+        ));
+    };
+    if argv.is_empty() {
+        return Err(FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "EXEC_ERROR",
+            "argv must not be empty",
+            Some(serde_json::json!({
+                "field": "argv",
+                "reason": "empty",
+            })),
+        ));
+    }
+
+    let mut args = Vec::with_capacity(argv.len());
+    for (index, value) in argv.iter().enumerate() {
+        let Some(arg) = value.as_str() else {
+            return Err(FailureInfo::new(
+                FailureClass::User,
+                "User",
+                "EXEC_ERROR",
+                format!("argv[{index}] must be a string"),
+                Some(serde_json::json!({
+                    "field": "argv",
+                    "reason": "non_string_entry",
+                    "index": index,
+                })),
+            ));
+        };
+        args.push(arg.to_string());
+    }
+    Ok(args)
+}
+
+fn node_failure_result(
+    fs: &dyn Fs,
+    stdout_path: &Path,
+    stderr_path: &Path,
+    outputs_dir: &Path,
+    status: NodeStatus,
+    failure: FailureInfo,
+    stderr_contents: &[u8],
+) -> Result<NodeResult, RuntimeError> {
+    fs.write(stdout_path, b"")?;
+    fs.write(stderr_path, stderr_contents)?;
+    Ok(NodeResult {
+        status,
+        stdout_path: stdout_path.display().to_string(),
+        stderr_path: stderr_path.display().to_string(),
+        outputs_dir: outputs_dir.display().to_string(),
+        output_evidence: Vec::new(),
+        failure: Some(failure),
+        attempts: 1,
+        attempt_events: Vec::new(),
+        container_meta: None,
+        adapter_binary_sha256: None,
+    })
+}
+
 impl Adapter for ShellAdapter {
     fn id(&self) -> AdapterId {
         AdapterId { id: "shell".to_string(), version: "0.1".to_string() }
@@ -804,21 +887,6 @@ impl Adapter for ShellAdapter {
         let node = ctx.node;
         let exec = ctx.exec;
         let params = ctx.params;
-        let argv = params
-            .get("argv")
-            .and_then(|v| v.as_array())
-            .ok_or_else(|| RuntimeError::Executor("missing argv".to_string()))?;
-        if argv.is_empty() {
-            return Err(RuntimeError::Executor("empty argv".to_string()));
-        }
-        let mut args: Vec<String> = Vec::new();
-        for v in argv {
-            let s = v
-                .as_str()
-                .ok_or_else(|| RuntimeError::Executor("argv must be strings".to_string()))?;
-            args.push(s.to_string());
-        }
-
         let node_dir = exec.run_dir.node_dir(&node.id);
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
         let work_dir = exec.run_dir.node_work_dir(&node.id);
@@ -827,6 +895,21 @@ impl Adapter for ShellAdapter {
         exec.fs.create_dir_all(&work_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
+        let args = match shell_argv(params) {
+            Ok(args) => args,
+            Err(failure) => {
+                let stderr_message = failure.message.clone();
+                return node_failure_result(
+                    exec.fs.as_ref(),
+                    &stdout_path,
+                    &stderr_path,
+                    &outputs_dir,
+                    NodeStatus::Failed,
+                    failure,
+                    stderr_message.as_bytes(),
+                );
+            }
+        };
 
         let env_allowlist = effective_env_allowlist(node);
         let mut cmd = subprocess::command(&args[0]);
@@ -835,11 +918,37 @@ impl Adapter for ShellAdapter {
         apply_shaped_env(&mut cmd, exec.policy.clean_env, &env_allowlist, &[]);
         apply_temp_env(&mut cmd, &exec.run_dir.node_temp_dir(&node.id));
 
-        let output = command_output_with_controls(
+        let output = match command_output_with_controls(
             &mut cmd,
             effective_node_timeout_ms(node, params),
             Some(exec.cancellation_requested.as_ref()),
-        )?;
+        ) {
+            Ok(output) => output,
+            Err(RuntimeError::Io(error)) if error.kind() == std_io::ErrorKind::NotFound => {
+                let failure = FailureInfo::new(
+                    FailureClass::Infrastructure,
+                    "Infrastructure",
+                    "MISSING_EXECUTABLE",
+                    format!("executable could not be resolved: {}", args[0]),
+                    Some(serde_json::json!({
+                        "executable": args[0],
+                        "io_error_kind": "not_found",
+                        "os_error_code": error.raw_os_error(),
+                    })),
+                );
+                let stderr_message = failure.message.clone();
+                return node_failure_result(
+                    exec.fs.as_ref(),
+                    &stdout_path,
+                    &stderr_path,
+                    &outputs_dir,
+                    NodeStatus::Failed,
+                    failure,
+                    stderr_message.as_bytes(),
+                );
+            }
+            Err(error) => return Err(error),
+        };
 
         exec.fs.write(&stdout_path, output.stdout())?;
         exec.fs.write(&stderr_path, output.stderr())?;

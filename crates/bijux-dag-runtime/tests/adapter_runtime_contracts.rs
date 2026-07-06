@@ -312,6 +312,138 @@ fn shell_adapter_missing_executable_is_infrastructure_error() {
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "MISSING_EXECUTABLE");
     assert_eq!(trace["failure"]["class"], "infrastructure");
+    assert_eq!(trace["failure"]["details"]["executable"], "definitely-missing-bijux-command");
+    assert_eq!(trace["failure"]["details"]["io_error_kind"], "not_found");
+}
+
+#[test]
+fn shell_adapter_rejects_non_array_argv_structurally() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"shell",
+              "kind":"shell",
+              "outputs":[{"name":"value","path":"value.txt"}],
+              "params":{"argv":"not-an-array"},
+              "effects":["filesystem"]
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("run");
+    let trace = read_trace(&run_dir);
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "EXEC_ERROR");
+    assert_eq!(trace["failure"]["class"], "user");
+    assert_eq!(trace["failure"]["details"]["field"], "argv");
+    assert_eq!(trace["failure"]["details"]["reason"], "expected_array");
+}
+
+#[test]
+fn shell_adapter_rejects_empty_argv_structurally() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"shell",
+              "kind":"shell",
+              "outputs":[{"name":"value","path":"value.txt"}],
+              "params":{"argv":[]},
+              "effects":["filesystem"]
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("run");
+    let trace = read_trace(&run_dir);
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "EXEC_ERROR");
+    assert_eq!(trace["failure"]["class"], "user");
+    assert_eq!(trace["failure"]["details"]["field"], "argv");
+    assert_eq!(trace["failure"]["details"]["reason"], "empty");
+}
+
+#[test]
+fn shell_adapter_executes_from_isolated_work_dir() {
+    let graph = parse_graph_strict(&shell_graph(
+        "pwd > ../outputs/value.txt; printf isolated > marker.txt",
+        &["filesystem"],
+    ))
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("run");
+    let work_dir = run_dir.join("nodes").join("shell").join("work");
+    let observed_dir =
+        fs::read_to_string(run_dir.join("nodes").join("shell").join("outputs").join("value.txt"))
+            .expect("output");
+    let observed_path = Path::new(observed_dir.trim());
+    assert!(observed_path.ends_with(Path::new("nodes").join("shell").join("work")));
+    assert_ne!(observed_path, std::env::current_dir().expect("current dir"));
+    assert!(work_dir.join("marker.txt").exists());
+    assert!(!run_dir.join("marker.txt").exists());
+}
+
+#[test]
+fn shell_adapter_rejects_undeclared_outputs() {
+    let graph = parse_graph_strict(&shell_graph(
+        "printf ok > ../outputs/value.txt; printf extra > ../outputs/extra.txt",
+        &["filesystem"],
+    ))
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("run");
+    let trace = read_trace(&run_dir);
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "OUTPUT_UNDECLARED");
+    assert_eq!(trace["failure"]["class"], "user");
+}
+
+#[test]
+fn shell_adapter_timeout_preserves_partial_stdout_and_stderr() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"shell",
+              "kind":"shell",
+              "outputs":[{"name":"value","path":"value.txt"}],
+              "params":{"argv":["/bin/sh","-c","printf partial-out; printf partial-err >&2; sleep 1"]},
+              "timeout_ms":50,
+              "effects":["filesystem"]
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("run");
+    assert_eq!(
+        fs::read_to_string(run_dir.join("nodes").join("shell").join("stdout.log")).expect("stdout"),
+        "partial-out"
+    );
+    let stderr =
+        fs::read_to_string(run_dir.join("nodes").join("shell").join("stderr.log")).expect("stderr");
+    assert!(stderr.starts_with("partial-err"));
+    let trace = read_trace(&run_dir);
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "EXEC_TIMEOUT");
+    assert_eq!(trace["failure"]["class"], "timeout");
 }
 
 #[test]
