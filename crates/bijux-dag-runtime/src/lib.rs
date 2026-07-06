@@ -271,17 +271,16 @@ pub use batch_execution::{
     heartbeat_stale, restart_recovery_supported, retry_attempt, validate_batch_metadata,
     BatchAttemptState, BatchHeartbeat, BatchJobMetadata, BatchLifecycleEvent, BatchModeReport,
 };
-pub use bijux_dag_artifacts::ContainerImageReferencePolicy;
 use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
 };
+pub use bijux_dag_artifacts::ContainerImageReferencePolicy;
 use bijux_dag_artifacts::{
     artifact_size_bytes, sha256_artifact_path, write_inputs_index, write_outputs_index,
-    AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace,
-    DeclaredOutputArtifact, FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts,
-    NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
-    Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex, TraceOutputArtifact,
-    TriggerEvaluation,
+    AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace, DeclaredOutputArtifact,
+    FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeLifecycleTransition,
+    NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir,
+    RunOutputFile, RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
@@ -2079,9 +2078,7 @@ fn materialize_mode_label(mode: MaterializeMode) -> &'static str {
     }
 }
 
-fn container_image_reference_policy_label(
-    policy: ContainerImageReferencePolicy,
-) -> &'static str {
+fn container_image_reference_policy_label(policy: ContainerImageReferencePolicy) -> &'static str {
     match policy {
         ContainerImageReferencePolicy::RequireDigest => "require_digest",
         ContainerImageReferencePolicy::AllowUnpinned => "allow_unpinned",

@@ -588,10 +588,7 @@ fn container_adapter_rejects_unpinned_image_reference_by_default() {
     assert_eq!(trace["failure"]["class"], "policy");
     assert_eq!(trace["failure"]["code"], "POLICY_CONTAINER_IMAGE_REFERENCE_DENIED");
     assert_eq!(trace["failure"]["details"]["image"], "example.local/runner:latest");
-    assert_eq!(
-        trace["failure"]["details"]["container_image_reference_policy"],
-        "require_digest"
-    );
+    assert_eq!(trace["failure"]["details"]["container_image_reference_policy"], "require_digest");
 }
 
 #[test]
@@ -794,8 +791,12 @@ exit 1
     );
     let _path_guard = prepend_path(&bin_dir);
 
-    let graph =
-        container_graph(&["filesystem"], Some(50), "example.local/runner@sha256:feedface", "sleep 1");
+    let graph = container_graph(
+        &["filesystem"],
+        Some(50),
+        "example.local/runner@sha256:feedface",
+        "sleep 1",
+    );
     let runtime = Runtime::new();
     let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
 
