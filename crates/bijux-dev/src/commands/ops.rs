@@ -3124,7 +3124,7 @@ pub(super) fn run_container_remote_boundary_guard() -> Result<(), String> {
     let required = [
         "docs/spec/CONTAINER_EXECUTION_CONTRACT.md",
         "docs/spec/REMOTE_EXECUTION_MODEL.md",
-        "docs/architecture/EXECUTION-MODE-RESPONSIBILITIES.md",
+        "docs/bijux-dag/architecture/execution-mode-responsibilities.md",
         "crates/bijux-dag-runtime/tests/container_execution_contracts.rs",
         "crates/bijux-dag-runtime/tests/remote_execution_contracts.rs",
     ];
@@ -3149,8 +3149,9 @@ pub(super) fn run_container_remote_boundary_guard() -> Result<(), String> {
                 .to_string(),
         );
     }
-    let deployment_doc = fs::read_to_string(root.join("docs/DEPLOYMENT_BACKENDS.md"))
-        .map_err(|err| err.to_string())?;
+    let deployment_doc =
+        fs::read_to_string(root.join("docs/bijux-dag/operations/deployment-boundaries.md"))
+            .map_err(|err| err.to_string())?;
     if deployment_doc.contains("Kubernetes execution is production-ready")
         || deployment_doc.contains("HPC execution is production-ready")
     {
