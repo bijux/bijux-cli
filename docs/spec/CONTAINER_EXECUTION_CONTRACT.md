@@ -9,16 +9,20 @@ last_reviewed: 2026-07-06
 
 # Container Execution Contract
 
-Container execution in `bijux-dag` is a governed local execution mode with
-typed contract validation, path normalization, and explicit environment
-shaping rules.
+Container execution in `bijux-dag` is an implemented local execution mode with
+typed contract validation, explicit mount boundaries, path normalization, and
+environment shaping rules.
 
 ## Scope
 
-This contract covers the typed container execution descriptor, container mount
-and output-path validation, GPU runtime argument shaping, local-to-container
-path mapping, and environment isolation behavior exercised by
-`crates/bijux-dag-runtime/tests/container_execution_contracts.rs`.
+This contract covers the typed container execution descriptor, mounted input
+materialization, declared output collection, timeout handling, stdout/stderr
+capture, image identity tracing, container network-mode shaping, GPU runtime
+argument shaping, local-to-container path mapping, and environment isolation
+behavior exercised by:
+
+- `crates/bijux-dag-runtime/tests/container_execution_contracts.rs`
+- `crates/bijux-dag-runtime/tests/adapter_runtime_contracts.rs`
 
 ## Required container contract fields
 
@@ -34,18 +38,23 @@ Image literals are validated as image names, not shell options.
 ## Path and mount rules
 
 - mount mappings must preserve a deterministic local-to-container path rewrite
+- upstream materialized inputs must be mounted under `/bijux/node/inputs`
+- declared outputs must be collected from `/bijux/node/outputs`
+- node work state must stay under `/bijux/node/work`
 - declared output paths must reject traversal such as `../escape`
 - normalized relative container paths are part of the governed contract
 
 ## Environment and runtime rules
 
 - container environment isolation is governed by allowlist and denylist rules
+- timeout termination must preserve partial stdout and stderr for operator
+  inspection
+- node traces must record the declared image reference and any discovered image
+  digest or engine version evidence
+- deny-network must map to a concrete engine flag when the selected engine can
+  enforce it
 - GPU runtime arguments are supported only for recognized engines
 - unsupported engines must reject GPU requests explicitly
-
-## Related tests
-
-- `crates/bijux-dag-runtime/tests/container_execution_contracts.rs`
 
 ## Versioning and change policy
 
