@@ -50,7 +50,7 @@ delivery surfaces without losing coherence.
 
 - `.github/workflows/`
 - `crates/bijux-cli-python/`
-- `tools/release/`
+- `.github/release.env`
 - `makes/gh.mk`
 
 ## Next Reads

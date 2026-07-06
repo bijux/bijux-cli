@@ -26,7 +26,9 @@ flowchart LR
 ## System Components
 
 - `crates/bijux-cli` owns CLI runtime behavior
-- `crates/bijux-dag-*` owns DAG execution, replay, diff, and artifacts
+- `crates/bijux-dag-core`, `crates/bijux-dag-artifacts`, `crates/bijux-dag-runtime`,
+  `crates/bijux-dag-app`, and `crates/bijux-dag-cli` own DAG execution,
+  replay, diff, and artifacts
 - `crates/bijux-cli-python` owns Python packaging and bridge integration
 - `crates/bijux-dev` owns maintainer-only diagnostics and governance workflows
 

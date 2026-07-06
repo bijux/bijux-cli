@@ -1,6 +1,6 @@
 # Iteration 06 Goal Status (bijux-core)
 
-Source: `/Users/bijan/bijux/bijux-core-goals.md` (read on 2026-04-30).
+Source: repository foundation backlog baseline (reviewed on 2026-04-30).
 
 Status legend: `not-started`, `in-progress`, `done`, `deferred`, `blocked`.
 

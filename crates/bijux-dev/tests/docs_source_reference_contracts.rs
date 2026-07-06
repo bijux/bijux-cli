@@ -1,0 +1,145 @@
+use std::fs;
+use std::path::{Path, PathBuf};
+
+fn repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+fn collect_markdown_files(root: &Path) -> Vec<PathBuf> {
+    let mut files = Vec::new();
+    collect_markdown_files_inner(root, &mut files);
+    files.sort();
+    files
+}
+
+fn collect_markdown_files_inner(root: &Path, files: &mut Vec<PathBuf>) {
+    let entries = fs::read_dir(root)
+        .unwrap_or_else(|err| panic!("failed to read markdown directory {}: {err}", root.display()));
+    for entry in entries {
+        let entry = entry.expect("markdown directory entry");
+        let path = entry.path();
+        if entry.file_type().expect("markdown file type").is_dir() {
+            collect_markdown_files_inner(&path, files);
+            continue;
+        }
+        if path.extension().is_some_and(|ext| ext == "md") {
+            files.push(path);
+        }
+    }
+}
+
+fn extract_inline_code_references(markdown: &str) -> Vec<(usize, String)> {
+    let mut references = Vec::new();
+    let mut in_fenced_block = false;
+
+    for (line_idx, line) in markdown.lines().enumerate() {
+        if line.trim_start().starts_with("```") {
+            in_fenced_block = !in_fenced_block;
+            continue;
+        }
+        if in_fenced_block {
+            continue;
+        }
+
+        let mut cursor = 0;
+        while let Some(open) = line[cursor..].find('`') {
+            let start = cursor + open + 1;
+            let Some(close) = line[start..].find('`') else {
+                break;
+            };
+            let end = start + close;
+            let candidate = line[start..end].trim();
+            if !candidate.is_empty() {
+                references.push((line_idx + 1, candidate.to_string()));
+            }
+            cursor = end + 1;
+        }
+    }
+
+    references
+}
+
+fn looks_like_path_reference(candidate: &str) -> bool {
+    if candidate.contains(' ') || candidate.contains("://") || candidate.starts_with('#') {
+        return false;
+    }
+
+    let exact_root_files = [
+        "Cargo.toml",
+        "Makefile",
+        "README.md",
+        "mkdocs.yml",
+        "mkdocs.shared.yml",
+        "PROJECT_TREE.md",
+        "TOOLING.md",
+    ];
+    if exact_root_files.contains(&candidate) {
+        return true;
+    }
+
+    let path_prefixes = [
+        "/",
+        "./",
+        "../",
+        ".github/",
+        "analysis/",
+        "build/",
+        "configs/",
+        "contracts/",
+        "crates/",
+        "docs/",
+        "graph/",
+        "internal/",
+        "makes/",
+        "pipeline/",
+        "planner/",
+        "scripts/",
+        "src/",
+        "templates/",
+        "tools/",
+    ];
+    path_prefixes.iter().any(|prefix| candidate.starts_with(prefix))
+}
+
+fn reference_resolves(doc: &Path, repo_root: &Path, reference: &str) -> bool {
+    let path_text = reference.split_once('#').map_or(reference, |(path, _)| path).trim_end_matches('/');
+    if path_text.is_empty()
+        || path_text.contains('*')
+        || path_text.contains('{')
+        || path_text.contains('}')
+        || path_text.contains('?')
+        || path_text.contains("...")
+    {
+        return false;
+    }
+
+    let relative = doc.parent().expect("markdown parent").join(path_text);
+    relative.exists() || repo_root.join(path_text).exists()
+}
+
+#[test]
+fn workspace_handbook_source_references_resolve() {
+    let root = repo_root();
+    let markdown_files = collect_markdown_files(&root.join("docs/bijux-core"));
+    let mut failures = Vec::new();
+
+    for doc in markdown_files {
+        let text =
+            fs::read_to_string(&doc).unwrap_or_else(|err| panic!("failed to read {}: {err}", doc.display()));
+        for (line, reference) in extract_inline_code_references(&text) {
+            if !looks_like_path_reference(&reference) {
+                continue;
+            }
+            if !reference_resolves(&doc, &root, &reference) {
+                let rel = doc.strip_prefix(&root).expect("repo-relative doc path");
+                failures.push(format!("{}:{} `{}`", rel.display(), line, reference));
+            }
+        }
+    }
+
+    assert!(
+        failures.is_empty(),
+        "workspace handbook contains stale source references:\n{}",
+        failures.join("\n")
+    );
+}

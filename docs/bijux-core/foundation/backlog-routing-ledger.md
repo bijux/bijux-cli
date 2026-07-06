@@ -1,6 +1,6 @@
 # Foundation Backlog Routing Ledger
 
-Source goals: `/Users/bijan/bijux/bijux-core-goals.md`.
+Source goals: repository foundation backlog baseline and owning contracts.
 Issue class contract: `contracts/foundation/backlog_issue_class_routing.v1.json`.
 
 | Goal | Issue Class | Owning Crate | Evidence Location | Status | Note |

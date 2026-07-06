@@ -29,7 +29,9 @@ flowchart LR
 ## Package Boundaries
 
 - `crates/bijux-cli`: CLI command runtime and plugin behavior
-- `crates/bijux-dag-*`: DAG parse/run/replay/diff and artifact behavior
+- `crates/bijux-dag-core`, `crates/bijux-dag-artifacts`, `crates/bijux-dag-runtime`,
+  `crates/bijux-dag-app`, and `crates/bijux-dag-cli`: DAG parse/run/replay/diff
+  and artifact behavior
 - `crates/bijux-cli-python`: Python package and bridge behavior
 - `crates/bijux-dev`: maintainer automation, suites, and evidence reports
 
