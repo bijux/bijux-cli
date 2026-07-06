@@ -38,8 +38,6 @@ mod graph_helpers;
 #[path = "commands/import_cmd.rs"]
 mod import_cmd;
 mod inspect;
-#[path = "inspect/node_execution_explanation.rs"]
-mod node_execution_explanation;
 #[path = "inspect/service.rs"]
 mod inspect_service;
 #[path = "inspect/integrity_service.rs"]
@@ -51,6 +49,8 @@ mod iteration08_contracts;
 #[path = "commands/iteration11_contracts.rs"]
 mod iteration11_contracts;
 mod migrate;
+#[path = "inspect/node_execution_explanation.rs"]
+mod node_execution_explanation;
 #[path = "commands/output_contract.rs"]
 mod output_contract;
 mod read;

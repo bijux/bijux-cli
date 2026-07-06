@@ -70,11 +70,8 @@ pub(crate) fn explain_node_execution(
     trace: Option<&Value>,
 ) -> NodeExecutionExplanation {
     let node_events = read_node_event_evidence(run_dir, node_id);
-    let latest_blocked = node_events
-        .details
-        .iter()
-        .rev()
-        .find(|event| event_name(event) == Some("node_blocked"));
+    let latest_blocked =
+        node_events.details.iter().rev().find(|event| event_name(event) == Some("node_blocked"));
     let latest_block_reason = latest_blocked.and_then(event_reason);
     let scheduler_reasons = node_events
         .details
@@ -103,62 +100,60 @@ pub(crate) fn explain_node_execution(
         evidence_sources.push(source.to_string());
     }
 
-    let classification = if trace_status == Some("cached")
-        || trace_transition_cause == Some("CachedReuse")
-    {
-        NodeExecutionClassification::CacheReused
-    } else if trace_failure_code == Some("POLICY_DENIED")
-        || trace_transition_cause == Some("PolicyDenied")
-    {
-        NodeExecutionClassification::PolicyDenied
-    } else if trace_trigger_satisfied(trace) == Some(false)
-        || latest_block_reason.as_deref() == Some("blocked_by_trigger_rule")
-    {
-        NodeExecutionClassification::TriggerRuleBlocked
-    } else if matches!(
-        latest_block_reason.as_deref(),
-        Some("branch_decision_not_selected")
-    ) || matches!(trace_skip_reason, Some("branch_decision_not_selected"))
-        || trace_transition_cause == Some("BranchDecisionFiltered")
-    {
-        NodeExecutionClassification::BranchSkipped
-    } else if matches!(
-        latest_block_reason.as_deref(),
-        Some(
-            "filtered"
-                | "not_selected_by_include_selector"
-                | "excluded_by_selector"
-                | "not_selected_by_dependency_closure"
-        )
-    ) || matches!(
-        trace_skip_reason,
-        Some(
-            "filtered"
-                | "not_selected_by_include_selector"
-                | "excluded_by_selector"
-                | "not_selected_by_dependency_closure"
-        )
-    ) || trace_transition_cause == Some("SelectionFiltered")
-    {
-        NodeExecutionClassification::SelectorExcluded
-    } else if latest_block_reason.as_deref() == Some("upstream_failed")
-        || trace_failure_code == Some("UPSTREAM_FAILED")
-        || trace_skip_reason == Some("upstream_failed")
-        || trace_transition_cause == Some("DependencyFailed")
-        || (!is_terminal_status(trace_status) && has_non_success_dependencies(&dependencies, &all_traces))
-    {
-        NodeExecutionClassification::DependencyBlocked
-    } else if !is_terminal_status(trace_status)
-        && scheduler_reasons.iter().any(|reason| {
-            reason.starts_with("blocked_by_") && reason != "blocked_by_trigger_rule"
-        })
-    {
-        NodeExecutionClassification::ResourceBlocked
-    } else if did_node_execute(trace_status) {
-        NodeExecutionClassification::Executed
-    } else {
-        NodeExecutionClassification::Unknown
-    };
+    let classification =
+        if trace_status == Some("cached") || trace_transition_cause == Some("CachedReuse") {
+            NodeExecutionClassification::CacheReused
+        } else if trace_failure_code == Some("POLICY_DENIED")
+            || trace_transition_cause == Some("PolicyDenied")
+        {
+            NodeExecutionClassification::PolicyDenied
+        } else if trace_trigger_satisfied(trace) == Some(false)
+            || latest_block_reason.as_deref() == Some("blocked_by_trigger_rule")
+        {
+            NodeExecutionClassification::TriggerRuleBlocked
+        } else if matches!(latest_block_reason.as_deref(), Some("branch_decision_not_selected"))
+            || matches!(trace_skip_reason, Some("branch_decision_not_selected"))
+            || trace_transition_cause == Some("BranchDecisionFiltered")
+        {
+            NodeExecutionClassification::BranchSkipped
+        } else if matches!(
+            latest_block_reason.as_deref(),
+            Some(
+                "filtered"
+                    | "not_selected_by_include_selector"
+                    | "excluded_by_selector"
+                    | "not_selected_by_dependency_closure"
+            )
+        ) || matches!(
+            trace_skip_reason,
+            Some(
+                "filtered"
+                    | "not_selected_by_include_selector"
+                    | "excluded_by_selector"
+                    | "not_selected_by_dependency_closure"
+            )
+        ) || trace_transition_cause == Some("SelectionFiltered")
+        {
+            NodeExecutionClassification::SelectorExcluded
+        } else if latest_block_reason.as_deref() == Some("upstream_failed")
+            || trace_failure_code == Some("UPSTREAM_FAILED")
+            || trace_skip_reason == Some("upstream_failed")
+            || trace_transition_cause == Some("DependencyFailed")
+            || (!is_terminal_status(trace_status)
+                && has_non_success_dependencies(&dependencies, &all_traces))
+        {
+            NodeExecutionClassification::DependencyBlocked
+        } else if !is_terminal_status(trace_status)
+            && scheduler_reasons.iter().any(|reason| {
+                reason.starts_with("blocked_by_") && reason != "blocked_by_trigger_rule"
+            })
+        {
+            NodeExecutionClassification::ResourceBlocked
+        } else if did_node_execute(trace_status) {
+            NodeExecutionClassification::Executed
+        } else {
+            NodeExecutionClassification::Unknown
+        };
 
     let executed = did_node_execute(trace_status);
     let reason = explanation_reason(
@@ -167,9 +162,7 @@ pub(crate) fn explain_node_execution(
         trace_transition_cause,
         trace_failure_code,
         trace_skip_reason,
-        latest_block_reason
-            .as_deref()
-            .or_else(|| scheduler_reasons.first().map(String::as_str)),
+        latest_block_reason.as_deref().or_else(|| scheduler_reasons.first().map(String::as_str)),
     );
     let summary = explanation_summary(
         classification,
@@ -270,10 +263,7 @@ fn dependency_blocking_nodes(
         .iter()
         .filter(|dependency| {
             traces.get(*dependency).is_some_and(|trace| {
-                !matches!(
-                    trace.get("status").and_then(Value::as_str),
-                    Some("success" | "cached")
-                )
+                !matches!(trace.get("status").and_then(Value::as_str), Some("success" | "cached"))
             })
         })
         .cloned()
@@ -281,15 +271,8 @@ fn dependency_blocking_nodes(
     (!blocking.is_empty()).then_some(blocking)
 }
 
-fn has_non_success_dependencies(
-    dependencies: &[String],
-    traces: &HashMap<String, Value>,
-) -> bool {
-    dependency_blocking_nodes(dependencies, traces)
-        .into_iter()
-        .flatten()
-        .next()
-        .is_some()
+fn has_non_success_dependencies(dependencies: &[String], traces: &HashMap<String, Value>) -> bool {
+    dependency_blocking_nodes(dependencies, traces).into_iter().flatten().next().is_some()
 }
 
 fn event_name(event: &Value) -> Option<&str> {
@@ -302,11 +285,7 @@ fn event_reason(event: &Value) -> Option<String> {
 
 fn event_blocking_nodes(event: &Value) -> Option<Vec<String>> {
     event.get("blocking_nodes").and_then(Value::as_array).map(|nodes| {
-        nodes
-            .iter()
-            .filter_map(Value::as_str)
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
+        nodes.iter().filter_map(Value::as_str).map(ToString::to_string).collect::<Vec<_>>()
     })
 }
 
@@ -456,16 +435,12 @@ fn explanation_summary(
         }
         NodeExecutionClassification::PolicyDenied => format!(
             "node did not execute because policy denied it{}",
-            failure_message
-                .map(|message| format!(": {message}"))
-                .unwrap_or_default()
+            failure_message.map(|message| format!(": {message}")).unwrap_or_default()
         ),
         NodeExecutionClassification::TriggerRuleBlocked => format!(
             "node did not execute because trigger rule `{}` was unsatisfied{}",
             trigger_rule.unwrap_or("unknown"),
-            trigger_reason
-                .map(|detail| format!(" ({detail})"))
-                .unwrap_or_default()
+            trigger_reason.map(|detail| format!(" ({detail})")).unwrap_or_default()
         ),
         NodeExecutionClassification::BranchSkipped => {
             "node was skipped because the selected branch did not include it".to_string()
@@ -492,9 +467,7 @@ fn explanation_summary(
         ),
         NodeExecutionClassification::Unknown => format!(
             "insufficient persisted evidence to explain the node execution state{}",
-            trace_status
-                .map(|status| format!(" (current status `{status}`)"))
-                .unwrap_or_default()
+            trace_status.map(|status| format!(" (current status `{status}`)")).unwrap_or_default()
         ),
     }
 }
@@ -516,10 +489,7 @@ fn snake_case_transition_cause(cause: &str) -> String {
 
 fn dedup_strings(values: Vec<String>) -> Vec<String> {
     let mut seen = BTreeSet::new();
-    values
-        .into_iter()
-        .filter(|value| seen.insert(value.clone()))
-        .collect::<Vec<_>>()
+    values.into_iter().filter(|value| seen.insert(value.clone())).collect::<Vec<_>>()
 }
 
 #[cfg(test)]

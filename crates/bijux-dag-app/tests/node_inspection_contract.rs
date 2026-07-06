@@ -351,10 +351,8 @@ fn explain_node_json_reports_resource_block_when_trace_is_missing() {
     let temp = tempfile::tempdir().expect("tmp");
     let run_dir = write_blocked_node_fixture(temp.path());
 
-    let payload = run_json(
-        &["explain", &output_path_string(&run_dir), "--node", "publish", "--json"],
-        &root,
-    );
+    let payload =
+        run_json(&["explain", &output_path_string(&run_dir), "--node", "publish", "--json"], &root);
 
     assert_eq!(payload["command"], "dag.explain");
     assert_eq!(payload["data"]["node"], "publish");
@@ -379,7 +377,9 @@ fn explain_node_human_reports_missing_trace_and_block_reason() {
 
     assert_eq!(code, 0, "command failed: {stderr}");
     assert!(stdout.contains("node: publish"));
-    assert!(stdout.contains("execution_explanation: executed=false classification=resource_blocked"));
+    assert!(
+        stdout.contains("execution_explanation: executed=false classification=resource_blocked")
+    );
     assert!(stdout.contains("reason=blocked_by_cpu"));
     assert!(stdout.contains("trace: <missing>"));
 }
