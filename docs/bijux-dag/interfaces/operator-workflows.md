@@ -59,6 +59,29 @@ an extra inspect call:
 - `promoted_artifact_count`
 - one suggested next action with a concrete follow-up command
 
+## Query Recent Run Status
+
+When you need the current status lane instead of a single-run deep dive, use
+`runs history` as the status surface for both active and historical runs.
+
+```bash
+bijux-dag runs history --root ./runs --status success --limit 5
+bijux-dag runs history --json --root ./runs --graph training-pipeline --limit 10
+```
+
+The history rows now report:
+
+- `status` and `lifecycle_state` so active runs are distinguishable from
+  finalized historical ones
+- `graph_name` and `graph_fingerprint` for first-class graph filtering
+- `parent_run_id`, `source_run_id`, and `lineage.child_run_ids` for run
+  ancestry
+- `run_dir` and `output_location` so the evidence location is visible without
+  an extra lookup
+
+Use the JSON form when another tool needs stable fields, and use the default
+human form when an operator needs a compact recent-run status list.
+
 ## Preview Resolved Paths Before Execution
 
 When a graph uses `{run_dir}`, `{work_dir}`, `{inputs_dir}`, `{outputs_dir}`, or
