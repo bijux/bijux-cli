@@ -123,7 +123,11 @@ fn shell_payload(
     }
 }
 
-fn container_payload(backend_id: &str, out_base: &Path, run_id: &str) -> RemoteNodeExecutionPayload {
+fn container_payload(
+    backend_id: &str,
+    out_base: &Path,
+    run_id: &str,
+) -> RemoteNodeExecutionPayload {
     let graph: Graph = parse_graph_strict(
         r#"{
           "spec": "bijux-dag/v0.1",
@@ -302,12 +306,8 @@ exit 1
 #[test]
 fn mock_kubernetes_backend_maps_failed_shell_payload_into_failed_pod_status() {
     let temp = tempfile::tempdir().expect("temp dir");
-    let payload = shell_payload(
-        "k8s",
-        temp.path(),
-        "k8s-shell-failure",
-        "echo broken 1>&2; exit 17",
-    );
+    let payload =
+        shell_payload("k8s", temp.path(), "k8s-shell-failure", "echo broken 1>&2; exit 17");
     let request = build_kubernetes_execution_request(payload, "bijux-jobs");
     let backend = MockKubernetesBackend::default();
 

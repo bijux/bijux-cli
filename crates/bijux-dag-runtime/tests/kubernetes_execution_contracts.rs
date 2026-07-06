@@ -94,7 +94,8 @@ fn kubernetes_request_builder_maps_node_contract_into_job_request() {
 
 #[test]
 fn kubernetes_request_validation_rejects_non_kubernetes_backend_identity() {
-    let request = build_kubernetes_execution_request(payload_with_backend("remote-worker"), "bijux");
+    let request =
+        build_kubernetes_execution_request(payload_with_backend("remote-worker"), "bijux");
     let error =
         validate_kubernetes_execution_request(&request).expect_err("invalid backend identity");
     assert!(error.contains("backend_id"));

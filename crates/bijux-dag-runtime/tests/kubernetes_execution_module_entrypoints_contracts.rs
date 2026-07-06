@@ -67,9 +67,7 @@ fn runtime_facade_exports_modeled_kubernetes_backend_surface() {
         },
     };
     let request = build_kubernetes_execution_request(payload, "bijux");
-    let result = MockKubernetesBackend::default()
-        .execute_job(request)
-        .expect("kubernetes execute");
+    let result = MockKubernetesBackend::default().execute_job(request).expect("kubernetes execute");
 
     assert!(result.job.job_id.starts_with("k8s-"));
     assert_eq!(result.pod_status.phase, KubernetesPodPhase::Succeeded);

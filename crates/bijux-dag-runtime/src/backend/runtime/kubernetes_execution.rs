@@ -1,12 +1,12 @@
 use crate::backend_cluster::{
-    map_node_policy_to_k8s_job, map_node_resources_to_k8s, K8sJobPolicyMapping,
-    K8sResourceMapping, NodeExecutionContract,
+    map_node_policy_to_k8s_job, map_node_resources_to_k8s, K8sJobPolicyMapping, K8sResourceMapping,
+    NodeExecutionContract,
 };
 use crate::remote_execution_model::{
     execute_modeled_payload, validate_remote_execution_payload, RemoteNodeExecutionPayload,
     RemoteNodeExecutionResult,
 };
-use crate::{ContainerAdapter, ConstAdapter, FailureClass, NodeResult, NodeStatus, ShellAdapter};
+use crate::{ConstAdapter, ContainerAdapter, FailureClass, NodeResult, NodeStatus, ShellAdapter};
 use bijux_dag_core::{Node, NodeKind};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -218,10 +218,9 @@ pub fn map_kubernetes_pod_status_to_node_status(status: &KubernetesPodStatus) ->
 
 pub fn kubernetes_pod_status_from_node_result(result: &NodeResult) -> KubernetesPodStatus {
     match result.status {
-        NodeStatus::Success => KubernetesPodStatus {
-            phase: KubernetesPodPhase::Succeeded,
-            reason: None,
-        },
+        NodeStatus::Success => {
+            KubernetesPodStatus { phase: KubernetesPodPhase::Succeeded, reason: None }
+        }
         NodeStatus::Cancelled => KubernetesPodStatus {
             phase: KubernetesPodPhase::Failed,
             reason: Some("Cancelled".to_string()),
@@ -273,10 +272,7 @@ impl KubernetesBackendExecutor for MockKubernetesBackend {
         let job = build_kubernetes_job_record(&job_id, &request, &remote_result, &pod_status);
         let logs = capture_logs(&remote_result.node_result)?;
 
-        self.jobs
-            .lock()
-            .expect("kubernetes job lock poisoned")
-            .insert(job_id, job.clone());
+        self.jobs.lock().expect("kubernetes job lock poisoned").insert(job_id, job.clone());
 
         Ok(KubernetesExecutionResult {
             identity: remote_result.identity,
@@ -393,18 +389,12 @@ fn build_kubernetes_job_record(
     let lifecycle = vec![
         KubernetesPodLifecycleEvent {
             job_id: job_id.to_string(),
-            status: KubernetesPodStatus {
-                phase: KubernetesPodPhase::Pending,
-                reason: None,
-            },
+            status: KubernetesPodStatus { phase: KubernetesPodPhase::Pending, reason: None },
             unix_ms: metadata.submission_time_unix_ms,
         },
         KubernetesPodLifecycleEvent {
             job_id: job_id.to_string(),
-            status: KubernetesPodStatus {
-                phase: KubernetesPodPhase::Running,
-                reason: None,
-            },
+            status: KubernetesPodStatus { phase: KubernetesPodPhase::Running, reason: None },
             unix_ms: remote_result.started_unix_ms,
         },
         KubernetesPodLifecycleEvent {
@@ -541,10 +531,7 @@ mod tests {
         assert_eq!(request.workspace.input_artifact_count, 1);
         assert_eq!(request.workspace.declared_output_count, 1);
         assert_eq!(request.workload.kind, KubernetesWorkloadKind::ContainerNode);
-        assert_eq!(
-            request.workload.image.as_deref(),
-            Some("example.local/runner@sha256:feedface")
-        );
+        assert_eq!(request.workload.image.as_deref(), Some("example.local/runner@sha256:feedface"));
         validate_kubernetes_execution_request(&request).expect("valid request");
     }
 

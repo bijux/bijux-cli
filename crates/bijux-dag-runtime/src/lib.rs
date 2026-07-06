@@ -52,8 +52,6 @@ mod clock;
 pub mod config;
 #[path = "backend/runtime/container_execution.rs"]
 mod container_execution;
-#[path = "backend/runtime/kubernetes_execution.rs"]
-mod kubernetes_execution;
 #[path = "diagnostics/runtime/control_plane.rs"]
 mod control_plane;
 #[path = "diagnostics/runtime/control_plane_api.rs"]
@@ -125,6 +123,8 @@ mod iteration15_contracts;
 #[cfg(feature = "experimental-public-api")]
 #[path = "runtime_core/execution/iteration17_contracts.rs"]
 mod iteration17_contracts;
+#[path = "backend/runtime/kubernetes_execution.rs"]
+mod kubernetes_execution;
 #[path = "backend/runtime/local_executor.rs"]
 mod local_executor;
 #[path = "backend/runtime/local_worker_pool.rs"]
@@ -352,11 +352,6 @@ pub use invariants::{
     INVARIANT_REGISTRY,
 };
 use io::{Fs, StdFs};
-pub use local_executor::LocalExecutor;
-pub use local_worker_pool::{
-    LocalWorkerAssignment, LocalWorkerCompletion, LocalWorkerExecution, LocalWorkerPool,
-    LocalWorkerState, LocalWorkerStatus,
-};
 pub use kubernetes_execution::{
     build_kubernetes_execution_request, kubernetes_pod_status_from_node_result,
     map_kubernetes_pod_status_to_node_status, validate_kubernetes_execution_request,
@@ -365,6 +360,11 @@ pub use kubernetes_execution::{
     KubernetesPodStatus, KubernetesVolumeMount, KubernetesWorkloadDescriptor,
     KubernetesWorkloadKind, KubernetesWorkspaceTransfer, KubernetesWorkspaceTransferMode,
     MockKubernetesBackend,
+};
+pub use local_executor::LocalExecutor;
+pub use local_worker_pool::{
+    LocalWorkerAssignment, LocalWorkerCompletion, LocalWorkerExecution, LocalWorkerPool,
+    LocalWorkerState, LocalWorkerStatus,
 };
 pub use observability::{
     category_from_runtime_event_name, current_process_memory_bytes,

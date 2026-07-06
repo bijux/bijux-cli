@@ -288,10 +288,7 @@ pub(crate) fn execute_modeled_payload(
         planner_contract_version: payload.planner_contract_version.clone(),
         execution_fingerprint: payload.fingerprints.execution_fingerprint.clone(),
         evidence_fingerprint: payload.fingerprints.evidence_fingerprint.clone(),
-        execution_contract_fingerprint: payload
-            .fingerprints
-            .execution_contract_fingerprint
-            .clone(),
+        execution_contract_fingerprint: payload.fingerprints.execution_contract_fingerprint.clone(),
         resolved_params,
         effective_cache_dir: payload.workspace.cache_dir.as_ref().map(PathBuf::from),
         fs: Arc::clone(&fs),
