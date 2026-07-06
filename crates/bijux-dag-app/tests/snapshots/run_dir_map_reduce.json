@@ -1118,7 +1118,7 @@
         "seed"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -1216,7 +1216,7 @@
         "map_right"
       ],
       "ready_queue_depth": 2,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -1284,7 +1284,7 @@
         "map_right"
       ],
       "ready_queue_depth": 1,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -1341,7 +1341,7 @@
         "map_right"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -1407,7 +1407,7 @@
         "reduce"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {

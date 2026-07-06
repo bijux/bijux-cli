@@ -280,6 +280,11 @@ fn plan_explain_json_reports_execution_cost_estimate() {
     );
     assert_eq!(payload["data"]["execution_cost_estimate"]["max_parallelism"], 2);
     assert_eq!(payload["data"]["execution_cost_estimate"]["demand"]["cpu_cores_total"], 7);
+    assert_eq!(payload["data"]["execution_cost_estimate"]["demand"]["memory_mb_total"], 3328);
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["demand"]["memory_mb_peak_parallel"],
+        2304
+    );
     assert_eq!(
         payload["data"]["execution_cost_estimate"]["cache_exposure"]["non_cacheable_node_ids"],
         serde_json::json!(["b"])

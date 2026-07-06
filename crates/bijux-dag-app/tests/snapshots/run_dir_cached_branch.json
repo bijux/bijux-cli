@@ -1070,7 +1070,7 @@
         "seed_b"
       ],
       "ready_queue_depth": 1,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -1145,7 +1145,7 @@
         "seed_b"
       ],
       "ready_queue_depth": 1,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -1202,7 +1202,7 @@
         "seed_b"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -1266,7 +1266,7 @@
         "branch_b_transform"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -1331,7 +1331,7 @@
         "join_report"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
