@@ -139,6 +139,7 @@ fn scenario(
 pub fn build_adapter_conformance_suite(
     descriptor: &AdapterDescriptor,
 ) -> AdapterConformanceSuiteReport {
+    let shell_backed = descriptor.id == "shell";
     let process_backed = descriptor.id == "shell"
         || descriptor.id == "container"
         || matches!(descriptor.origin, AdapterOrigin::External);
@@ -167,11 +168,29 @@ pub fn build_adapter_conformance_suite(
             },
         ),
         scenario(
+            "argv_contract",
+            if shell_backed { AdapterScenarioStatus::Pass } else { AdapterScenarioStatus::Skip },
+            shell_backed,
+            !shell_backed,
+            if shell_backed {
+                "shell nodes require a non-empty argv array of strings before execution starts"
+            } else {
+                "argv validation is specific to shell-backed command adapters"
+            },
+        ),
+        scenario(
             "missing_output",
             AdapterScenarioStatus::Pass,
             true,
             false,
             "runtime validates declared output files for every adapter execution",
+        ),
+        scenario(
+            "undeclared_output",
+            AdapterScenarioStatus::Pass,
+            true,
+            false,
+            "runtime rejects files written outside the declared output contract",
         ),
         scenario(
             "timeout",
@@ -216,6 +235,28 @@ pub fn build_adapter_conformance_suite(
                 "runtime shapes and filters adapter environments before execution"
             } else {
                 "non-process adapters do not read process environment directly"
+            },
+        ),
+        scenario(
+            "workdir_isolation",
+            if process_backed { AdapterScenarioStatus::Pass } else { AdapterScenarioStatus::Skip },
+            process_backed,
+            !process_backed,
+            if process_backed {
+                "runtime executes process-backed adapters from a dedicated node work directory"
+            } else {
+                "in-process adapters do not cross a working-directory boundary"
+            },
+        ),
+        scenario(
+            "missing_executable",
+            if process_backed { AdapterScenarioStatus::Pass } else { AdapterScenarioStatus::Skip },
+            process_backed,
+            !process_backed,
+            if process_backed {
+                "runtime reports executable resolution failures with structured infrastructure errors"
+            } else {
+                "in-process adapters do not resolve external executables"
             },
         ),
         scenario(

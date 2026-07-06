@@ -1107,10 +1107,14 @@ fn adapter_output_schema_compatibility_reports_exact_mismatch() {
 }
 
 #[test]
-fn adapter_conformance_suite_covers_timeout_cache_and_non_utf8_scenarios() {
+fn adapter_conformance_suite_covers_shell_hardening_and_output_contract_scenarios() {
     let suites = adapter_conformance_suite().expect("suite");
     let shell = suites.iter().find(|suite| suite.adapter_id == "shell").expect("shell");
+    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "argv_contract"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "timeout"));
+    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "undeclared_output"));
+    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "workdir_isolation"));
+    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "missing_executable"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "cache_output"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "non_utf8_output"));
 }

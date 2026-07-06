@@ -11,10 +11,14 @@ This document is generated from runtime adapter descriptors and backend contract
 ### const 0.1
 - `success`: Pass (enforced_by_runtime=true, advisory_only=false) - successful adapter execution is a required runtime path
 - `failure`: Skip (enforced_by_runtime=false, advisory_only=true) - non-process adapters do not expose a process failure boundary
+- `argv_contract`: Skip (enforced_by_runtime=false, advisory_only=true) - argv validation is specific to shell-backed command adapters
 - `missing_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime validates declared output files for every adapter execution
+- `undeclared_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime rejects files written outside the declared output contract
 - `timeout`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime kills timed-out adapter processes and records timeout failures
 - `cancel`: Skip (enforced_by_runtime=false, advisory_only=true) - adapter descriptor does not declare cancellation support
 - `env_policy`: Skip (enforced_by_runtime=false, advisory_only=true) - non-process adapters do not read process environment directly
+- `workdir_isolation`: Skip (enforced_by_runtime=false, advisory_only=true) - in-process adapters do not cross a working-directory boundary
+- `missing_executable`: Skip (enforced_by_runtime=false, advisory_only=true) - in-process adapters do not resolve external executables
 - `cache_output`: Pass (enforced_by_runtime=true, advisory_only=false) - produced output schema matches the expected adapter schema
 - `large_stdout`: Skip (enforced_by_runtime=false, advisory_only=true) - non-process adapters do not emit stdout streams
 - `non_utf8_output`: Skip (enforced_by_runtime=false, advisory_only=true) - non-process adapters do not emit process byte streams
@@ -22,10 +26,14 @@ This document is generated from runtime adapter descriptors and backend contract
 ### container 0.1
 - `success`: Pass (enforced_by_runtime=true, advisory_only=false) - successful adapter execution is a required runtime path
 - `failure`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime records explicit execution failure results
+- `argv_contract`: Skip (enforced_by_runtime=false, advisory_only=true) - argv validation is specific to shell-backed command adapters
 - `missing_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime validates declared output files for every adapter execution
+- `undeclared_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime rejects files written outside the declared output contract
 - `timeout`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime kills timed-out adapter processes and records timeout failures
 - `cancel`: Skip (enforced_by_runtime=false, advisory_only=true) - adapter descriptor does not declare cancellation support
 - `env_policy`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime shapes and filters adapter environments before execution
+- `workdir_isolation`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime executes process-backed adapters from a dedicated node work directory
+- `missing_executable`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime reports executable resolution failures with structured infrastructure errors
 - `cache_output`: Pass (enforced_by_runtime=true, advisory_only=false) - produced output schema matches the expected adapter schema
 - `large_stdout`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime captures stdout and stderr as node evidence files
 - `non_utf8_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime stores output bytes and artifact files without requiring UTF-8 payloads
@@ -33,10 +41,14 @@ This document is generated from runtime adapter descriptors and backend contract
 ### shell 0.1
 - `success`: Pass (enforced_by_runtime=true, advisory_only=false) - successful adapter execution is a required runtime path
 - `failure`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime records explicit execution failure results
+- `argv_contract`: Pass (enforced_by_runtime=true, advisory_only=false) - shell nodes require a non-empty argv array of strings before execution starts
 - `missing_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime validates declared output files for every adapter execution
+- `undeclared_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime rejects files written outside the declared output contract
 - `timeout`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime kills timed-out adapter processes and records timeout failures
 - `cancel`: Skip (enforced_by_runtime=false, advisory_only=true) - adapter descriptor does not declare cancellation support
 - `env_policy`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime shapes and filters adapter environments before execution
+- `workdir_isolation`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime executes process-backed adapters from a dedicated node work directory
+- `missing_executable`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime reports executable resolution failures with structured infrastructure errors
 - `cache_output`: Pass (enforced_by_runtime=true, advisory_only=false) - produced output schema matches the expected adapter schema
 - `large_stdout`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime captures stdout and stderr as node evidence files
 - `non_utf8_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime stores output bytes and artifact files without requiring UTF-8 payloads
