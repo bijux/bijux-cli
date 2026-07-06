@@ -73,6 +73,10 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1056", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1057", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1058", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1059", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1060", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1061", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1062", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -155,6 +159,13 @@ fn param_value_is_literal_string(value: &ParamValue) -> bool {
 fn param_value_literal_u64(value: &ParamValue) -> Option<u64> {
     match value {
         ParamValue::Literal(serde_json::Value::Number(number)) => number.as_u64(),
+        _ => None,
+    }
+}
+
+fn param_value_literal_bool(value: &ParamValue) -> Option<bool> {
+    match value {
+        ParamValue::Literal(serde_json::Value::Bool(value)) => Some(*value),
         _ => None,
     }
 }
@@ -945,6 +956,89 @@ impl Graph {
                                     .to_string(),
                             ),
                         ),
+                    }
+                }
+            }
+            if node.semantic_kind == SemanticNodeKind::Reduce {
+                if node.outputs.len() != 1 {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1059",
+                        format!("reduce node must declare exactly one output: {}", node.id),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some(
+                            "Declare one reducer output artifact so fan-in has a single result contract"
+                                .to_string(),
+                        ),
+                    );
+                }
+                if node.trigger_rule != TriggerRule::AllSuccess {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1062",
+                        format!("reduce node trigger_rule must remain all_success: {}", node.id),
+                        format!("/nodes/{}/trigger_rule", node.id),
+                        Some(
+                            "Use params.reduce.mode to choose all_success or partial reducer behavior"
+                                .to_string(),
+                        ),
+                    );
+                }
+                if let Some(reduce) = node_param_object_field(node, "reduce") {
+                    if reduce
+                        .get("allow_empty_collection")
+                        .and_then(param_value_literal_bool)
+                        .is_some()
+                    {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1061",
+                            format!(
+                                "reduce.allow_empty_collection is not supported on node {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/reduce/allow_empty_collection", node.id),
+                            Some(
+                                "Use params.reduce.empty with forbid, allow, or skip"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                    if let Some(mode) = reduce.get("mode").and_then(param_value_literal_string) {
+                        if !matches!(mode, "all_success" | "partial") {
+                            emit_rule(
+                                &mut diagnostics,
+                                "E1060",
+                                format!(
+                                    "reduce.mode '{}' is not supported on node {}",
+                                    mode, node.id
+                                ),
+                                format!("/nodes/{}/params/reduce/mode", node.id),
+                                Some(
+                                    "Choose reduce.mode=all_success or reduce.mode=partial"
+                                        .to_string(),
+                                ),
+                            );
+                        }
+                    }
+                    if let Some(empty_policy) =
+                        reduce.get("empty").and_then(param_value_literal_string)
+                    {
+                        if !matches!(empty_policy, "forbid" | "allow" | "skip") {
+                            emit_rule(
+                                &mut diagnostics,
+                                "E1061",
+                                format!(
+                                    "reduce.empty '{}' is not supported on node {}",
+                                    empty_policy, node.id
+                                ),
+                                format!("/nodes/{}/params/reduce/empty", node.id),
+                                Some(
+                                    "Choose reduce.empty=forbid, allow, or skip"
+                                        .to_string(),
+                                ),
+                            );
+                        }
                     }
                 }
             }
