@@ -20,6 +20,7 @@ fn validation_error_and_warning_coverage() {
         "E1020", "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030",
         "E1031", "E1032", "E1035", "E1039", "E1040", "E1041", "E1042", "E1043", "E1044", "E1045",
         "E1046", "E1047", "E1048", "E1049", "E1050", "E1051", "E1052", "E1053", "E1054", "E1055",
+        "E1056", "E1057", "E1058",
     ];
 
     for code in expected_error_codes {
@@ -921,6 +922,66 @@ fn graph_for_code(code: &str) -> Graph {
                         bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
                     ),
                 ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1056" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Shell;
+            g.nodes[0].semantic_kind = SemanticNodeKind::Map;
+            g.nodes[0].inputs = vec!["in".to_string()];
+            g.nodes[0].outputs.clear();
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "argv".to_string(),
+                    bijux_dag_core::ParamValue::Array(vec![
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("printf ok")),
+                    ]),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1057" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Shell;
+            g.nodes[0].semantic_kind = SemanticNodeKind::Map;
+            g.nodes[0].inputs = vec!["in".to_string()];
+            g.nodes[0].outputs[0].kind = bijux_dag_core::OutputKind::File;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "argv".to_string(),
+                    bijux_dag_core::ParamValue::Array(vec![
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("printf ok")),
+                    ]),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1058" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Shell;
+            g.nodes[0].semantic_kind = SemanticNodeKind::Map;
+            g.nodes[0].inputs = vec!["left".to_string(), "right".to_string()];
+            g.nodes[0].outputs[0].kind = bijux_dag_core::OutputKind::Directory;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "argv".to_string(),
+                    bijux_dag_core::ParamValue::Array(vec![
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("printf ok")),
+                    ]),
+                )]
                 .into_iter()
                 .collect(),
             );
