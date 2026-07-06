@@ -21,11 +21,14 @@ exercised by `crates/bijux-dag-runtime/tests/remote_execution_contracts.rs`.
 ## Execution-mode status
 
 - `local`: implemented
-- `container`: simulated
+- `container`: implemented local execution mode
 - `kubernetes`: not implemented
 - `hpc`: not implemented
 
 > Not implemented: production Kubernetes/HPC
+
+Container execution is a local engine-mediated lane. It does not imply remote
+workers, Kubernetes scheduling, or HPC submission.
 
 ## Remote identity and handoff rules
 
@@ -40,7 +43,8 @@ exercised by `crates/bijux-dag-runtime/tests/remote_execution_contracts.rs`.
 
 This document governs modeled remote execution surfaces only. It does not claim
 implemented remote workers, production Kubernetes execution, or production HPC
-execution in `v0.4.0`.
+execution in `v0.4.0`, and it does not treat local container runs as remote
+execution.
 
 ## Related tests
 

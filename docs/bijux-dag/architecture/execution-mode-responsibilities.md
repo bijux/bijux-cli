@@ -16,7 +16,8 @@ claims.
 ## Current mode boundaries
 
 - local execution: implemented runtime path
-- container execution: validated and modeled with explicit constraints
+- container execution: implemented local engine-backed path with explicit
+  constraints
 - kubernetes execution: modeled contract surface, not implemented
 - hpc execution: modeled contract surface, not implemented
 
@@ -29,6 +30,7 @@ claims.
 
 ## Primary proof
 
+- `crates/bijux-dag-runtime/tests/adapter_runtime_contracts.rs`
 - `crates/bijux-dag-runtime/tests/container_execution_contracts.rs`
 - `crates/bijux-dag-runtime/tests/remote_execution_contracts.rs`
 - `docs/spec/CONTAINER_EXECUTION_CONTRACT.md`
