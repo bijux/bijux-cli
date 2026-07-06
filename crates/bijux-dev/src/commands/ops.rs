@@ -3005,7 +3005,7 @@ pub(super) fn run_observability_contract_guard() -> Result<(), String> {
         "docs/spec/OBSERVABILITY_CONTRACT.md",
         "docs/tracking/OBSERVABILITY_SURFACE_PLAN.md",
         "crates/bijux-dag-runtime/tests/observability_contracts.rs",
-        "crates/bijux-dag-runtime/src/observability.rs",
+        "crates/bijux-dag-runtime/src/diagnostics/runtime/observability.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
