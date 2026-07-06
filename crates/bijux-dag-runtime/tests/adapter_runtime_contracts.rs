@@ -16,8 +16,8 @@ use bijux_dag_core::{
 };
 use bijux_dag_runtime::{
     adapter_admission_matrix, adapter_conformance_suite, container_engine_discovery,
-    container_network_policy_args, container_volume_contract, probe_external_adapters,
-    registered_adapter_descriptors, validate_container_mount_contract,
+    container_gpu_runtime_args, container_network_policy_args, container_volume_contract,
+    probe_external_adapters, registered_adapter_descriptors, validate_container_mount_contract,
     validate_output_schema_compatibility, Runtime, RuntimeConfig,
 };
 use serde_json::Value;
@@ -253,6 +253,120 @@ fn container_network_policy_rejects_unknown_engine_when_isolation_is_required() 
 fn container_engine_discovery_reports_unavailable_engine_structurally() {
     let error = container_engine_discovery("definitely-missing-engine").expect_err("missing");
     assert!(error.contains("container engine unavailable"));
+}
+
+#[test]
+fn container_gpu_runtime_args_reject_unknown_engine() {
+    let error = container_gpu_runtime_args("custom-engine", 1).expect_err("must reject");
+    assert!(error.contains("cannot request gpu devices"));
+}
+
+#[test]
+fn container_adapter_passes_gpu_flags_to_supported_engine() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let bin_dir = dir.path().join("bin");
+    fs::create_dir_all(&bin_dir).expect("bin dir");
+    let docker = bin_dir.join("docker");
+    fs::write(
+        &docker,
+        r#"#!/bin/sh
+if [ "$1" = "--version" ]; then
+  echo "docker fake"
+  exit 0
+fi
+if [ "$1" = "run" ]; then
+  outputs_dir=""
+  gpu_arg=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --gpus=*)
+        gpu_arg="$1"
+        shift
+        ;;
+      -v)
+        mount="$2"
+        host_path=$(printf '%s' "$mount" | cut -d: -f1)
+        container_path=$(printf '%s' "$mount" | cut -d: -f2)
+        if [ "$container_path" = "/bijux/node/outputs" ]; then
+          outputs_dir="$host_path"
+        fi
+        shift 2
+        ;;
+      *)
+        shift
+        ;;
+    esac
+  done
+  printf '%s' "$gpu_arg" > "$outputs_dir/gpu-args.txt"
+  printf 'ok' > "$outputs_dir/result.txt"
+  exit 0
+fi
+exit 1
+"#,
+    )
+    .expect("docker shim");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = fs::metadata(&docker).expect("docker meta").permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&docker, perms).expect("docker chmod");
+    }
+
+    let path_backup = std::env::var_os("PATH");
+    let mut path_entries = vec![bin_dir.display().to_string()];
+    if let Some(path_backup) = &path_backup {
+        path_entries.push(path_backup.to_string_lossy().to_string());
+    }
+    std::env::set_var("PATH", path_entries.join(":"));
+
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"container",
+              "kind":"container",
+              "outputs":[
+                {"name":"result","path":"result.txt"},
+                {"name":"gpu_args","path":"gpu-args.txt"}
+              ],
+              "resources":{"cpu":1,"mem_mb":64,"gpu_devices":1},
+              "effects":["filesystem"],
+              "container":{
+                "image":"example.local/runner:latest",
+                "argv":["/bin/true"],
+                "engine":"docker"
+              },
+              "params":{}
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let run_dir = runtime
+        .run(
+            &graph,
+            dir.path(),
+            RuntimeConfig { gpu_device_budget: Some(1), ..RuntimeConfig::default() },
+        )
+        .expect("container run");
+
+    if let Some(path_backup) = path_backup {
+        std::env::set_var("PATH", path_backup);
+    } else {
+        std::env::remove_var("PATH");
+    }
+
+    let gpu_args = fs::read_to_string(
+        run_dir.join("nodes").join("container").join("outputs").join("gpu-args.txt"),
+    )
+    .expect("gpu args");
+    assert_eq!(gpu_args, "--gpus=1");
 }
 
 #[test]

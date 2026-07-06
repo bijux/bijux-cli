@@ -293,9 +293,9 @@ pub use cache::{
 };
 use clock::{Clock, SystemClock};
 pub use container_execution::{
-    container_engine_discovery, container_env_isolated, container_network_policy_args,
-    container_volume_contract, map_local_path_to_container, supported_container_engines,
-    validate_container_contract, validate_container_mount_contract,
+    container_engine_discovery, container_env_isolated, container_gpu_runtime_args,
+    container_network_policy_args, container_volume_contract, map_local_path_to_container,
+    supported_container_engines, validate_container_contract, validate_container_mount_contract,
     validate_container_relative_path, ContainerExecutionContract, ContainerMount,
 };
 pub use coordination::{
@@ -965,6 +965,40 @@ impl Adapter for ContainerAdapter {
                 }
             };
         for arg in network_args {
+            cmd.arg(arg);
+        }
+        let gpu_devices = bijux_dag_core::resources::node_gpu_devices(node);
+        let gpu_args = match container_execution::container_gpu_runtime_args(engine, gpu_devices) {
+            Ok(args) => args,
+            Err(message) => {
+                exec.fs.write(&stdout_path, b"")?;
+                exec.fs.write(&stderr_path, message.as_bytes())?;
+                return Ok(NodeResult {
+                    status: NodeStatus::Failed,
+                    stdout_path: stdout_path.display().to_string(),
+                    stderr_path: stderr_path.display().to_string(),
+                    outputs_dir: outputs_dir.display().to_string(),
+                    output_evidence: Vec::new(),
+                    failure: Some(FailureInfo::new(
+                        FailureClass::Infrastructure,
+                        "Infrastructure",
+                        "CONTAINER_GPU_UNSUPPORTED",
+                        message,
+                        Some(serde_json::json!({ "engine": engine, "gpu_devices": gpu_devices })),
+                    )),
+                    attempts: 1,
+                    attempt_events: Vec::new(),
+                    container_meta: Some(container_trace(
+                        spec,
+                        engine,
+                        None,
+                        Some(engine_version.clone()),
+                    )),
+                    adapter_binary_sha256: None,
+                });
+            }
+        };
+        for arg in gpu_args {
             cmd.arg(arg);
         }
         for mount in &mounts {

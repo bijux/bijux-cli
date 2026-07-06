@@ -9,6 +9,8 @@ pub struct ContainerExecutionContract {
     pub env: BTreeMap<String, String>,
     pub mounts: Vec<ContainerMount>,
     pub declared_outputs: Vec<String>,
+    #[serde(default)]
+    pub gpu_devices: u32,
     pub timeout_ms: Option<u64>,
 }
 
@@ -68,6 +70,16 @@ pub fn container_network_policy_args(
         "container engine {} cannot enforce deny_network with the built-in adapter",
         engine
     ))
+}
+
+pub fn container_gpu_runtime_args(engine: &str, gpu_devices: u32) -> Result<Vec<String>, String> {
+    if gpu_devices == 0 {
+        return Ok(Vec::new());
+    }
+    if supported_container_engines().iter().any(|candidate| candidate == &engine) {
+        return Ok(vec![format!("--gpus={gpu_devices}")]);
+    }
+    Err(format!("container engine {} cannot request gpu devices with the built-in adapter", engine))
 }
 
 pub fn container_volume_contract(node_dir: &Path) -> Vec<ContainerMount> {
