@@ -1,6 +1,6 @@
 use bijux_dag_core::{
-    BranchSpec, ContainerSpec, DagBuilder, Effect, Graph, NodeBuilder, NodeKind, SemanticNodeKind,
-    TriggerRule,
+    BranchSpec, ContainerSpec, DagBuilder, Effect, Graph, NodeBuilder, NodeKind, OutputKind,
+    SemanticNodeKind, TriggerRule,
 };
 use serde_json::{json, Map, Value};
 use std::fs;
@@ -174,6 +174,48 @@ pub fn graph_map_reduce_fixture() -> Graph {
         .edge("map_left", "out", "reduce", "left")
         .edge("map_mid", "out", "reduce", "mid")
         .edge("map_right", "out", "reduce", "right")
+        .build()
+}
+
+pub fn graph_semantic_map_reduce_fixture() -> Graph {
+    DagFixture::new()
+        .const_node("seed", json!(["alpha", "beta", "gamma"]))
+        .node(
+            {
+                let mut node = NodeBuilder::new("map", NodeKind::Shell)
+                .semantic_kind(SemanticNodeKind::Map)
+                .input("in")
+                .output("out", "mapped")
+                .effect(Effect::Filesystem)
+                .param_literal(json!({
+                    "argv": [
+                        "/bin/sh",
+                        "-c",
+                        "value=$(tr -d '\"' < ../inputs/seed/in); mkdir -p ../outputs/mapped; printf '%s' \"$value\" > ../outputs/mapped/value.txt"
+                    ]
+                }))
+                .build();
+                node.outputs[0].kind = OutputKind::Directory;
+                node
+            },
+        )
+        .node(
+            NodeBuilder::new("reduce", NodeKind::Shell)
+                .semantic_kind(SemanticNodeKind::Reduce)
+                .input("mapped")
+                .output("out", "reduce.txt")
+                .effect(Effect::Filesystem)
+                .param_literal(json!({
+                    "argv": [
+                        "/bin/sh",
+                        "-c",
+                        "first=1; for file in $(find ../inputs/map/mapped/items -name value.txt | sort); do if [ \"$first\" -eq 0 ]; then printf ',' >> ../outputs/reduce.txt; fi; cat \"$file\" >> ../outputs/reduce.txt; first=0; done"
+                    ]
+                }))
+                .build(),
+        )
+        .edge("seed", "out", "map", "in")
+        .edge("map", "out", "reduce", "mapped")
         .build()
 }
 
