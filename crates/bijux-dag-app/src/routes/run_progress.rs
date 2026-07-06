@@ -103,8 +103,7 @@ impl CompactRunProgressState {
 
         let active_nodes = self
             .checkpoint_active_nodes
-            .as_ref()
-            .cloned()
+            .clone()
             .unwrap_or_else(|| self.event_active_nodes.clone())
             .into_iter()
             .collect::<Vec<_>>();

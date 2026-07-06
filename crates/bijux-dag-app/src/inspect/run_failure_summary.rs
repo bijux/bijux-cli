@@ -193,9 +193,7 @@ fn render_failure_report(
     })
 }
 
-fn sorted_failures<'a>(
-    traces: &'a BTreeMap<String, FailureTrace>,
-) -> Vec<(&'a str, &'a FailureTrace)> {
+fn sorted_failures(traces: &BTreeMap<String, FailureTrace>) -> Vec<(&str, &FailureTrace)> {
     let mut failures = traces
         .iter()
         .filter(|(_, trace)| trace.status == "failed")
