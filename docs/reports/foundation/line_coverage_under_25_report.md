@@ -1,6 +1,6 @@
 # Line Coverage Under 25% Report
 
-Files in crate `src/` trees below 25% line coverage.
+Files in crate source trees below 25% line coverage.
 
 | file | covered_lines | instrumented_lines | line_coverage_pct |
 | --- | ---: | ---: | ---: |

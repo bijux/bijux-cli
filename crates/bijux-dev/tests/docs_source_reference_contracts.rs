@@ -78,22 +78,25 @@ fn looks_like_path_reference(candidate: &str) -> bool {
         "mkdocs.shared.yml",
         "PROJECT_TREE.md",
         "TOOLING.md",
+        "simulated_platform.rs",
     ];
     if exact_root_files.contains(&candidate) {
         return true;
     }
 
     let path_prefixes = [
-        "/",
-        "./",
-        "../",
         ".github/",
         "analysis/",
+        "adapters/",
+        "backend/",
         "build/",
+        "builtins/",
         "configs/",
         "contracts/",
         "crates/",
+        "diagnostics/",
         "docs/",
+        "error/",
         "graph/",
         "internal/",
         "makes/",
@@ -113,6 +116,9 @@ fn resolution_roots(doc: &Path, repo_root: &Path) -> Vec<PathBuf> {
 
     if repo_relative.starts_with("docs/bijux-cli") {
         roots.push(repo_root.join("crates/bijux-cli"));
+    }
+    if repo_relative == Path::new("docs/reports/foundation/RUNTIME_NON_KERNEL_MODULES_REPORT.md") {
+        roots.push(repo_root.join("crates/bijux-dag-runtime/src"));
     }
     if repo_relative.starts_with("docs/bijux-dev") {
         roots.push(repo_root.join("crates/bijux-dev"));
@@ -136,10 +142,8 @@ fn reference_resolves(doc: &Path, repo_root: &Path, reference: &str) -> bool {
     resolution_roots(doc, repo_root).into_iter().any(|root| root.join(path_text).exists())
 }
 
-#[test]
-fn workspace_handbook_source_references_resolve() {
+fn assert_source_references_resolve(markdown_files: impl IntoIterator<Item = PathBuf>, label: &str) {
     let root = repo_root();
-    let markdown_files = collect_markdown_files(&root.join("docs/bijux-core"));
     let mut failures = Vec::new();
 
     for doc in markdown_files {
@@ -158,36 +162,73 @@ fn workspace_handbook_source_references_resolve() {
 
     assert!(
         failures.is_empty(),
-        "workspace handbook contains stale source references:\n{}",
-        failures.join("\n")
+        "{}",
+        format!("{label} contain stale source references:\n{}", failures.join("\n"))
+    );
+}
+
+#[test]
+fn workspace_handbook_source_references_resolve() {
+    let root = repo_root();
+    assert_source_references_resolve(
+        collect_markdown_files(&root.join("docs/bijux-core")),
+        "workspace handbook pages",
     );
 }
 
 #[test]
 fn cli_handbook_source_references_resolve() {
     let root = repo_root();
-    let markdown_files = collect_markdown_files(&root.join("docs/bijux-cli"));
-    let mut failures = Vec::new();
-
-    for doc in markdown_files {
-        let text =
-            fs::read_to_string(&doc).unwrap_or_else(|err| panic!("failed to read {}: {err}", doc.display()));
-        for (line, reference) in extract_inline_code_references(&text) {
-            if !looks_like_path_reference(&reference) {
-                continue;
-            }
-            if !reference_resolves(&doc, &root, &reference) {
-                let rel = doc.strip_prefix(&root).expect("repo-relative doc path");
-                failures.push(format!("{}:{} `{}`", rel.display(), line, reference));
-            }
-        }
-    }
-
-    assert!(
-        failures.is_empty(),
-        "CLI handbook contains stale source references:\n{}",
-        failures.join("\n")
+    assert_source_references_resolve(
+        collect_markdown_files(&root.join("docs/bijux-cli")),
+        "CLI handbook pages",
     );
+}
+
+#[test]
+fn dag_handbook_source_references_resolve() {
+    let root = repo_root();
+    assert_source_references_resolve(
+        collect_markdown_files(&root.join("docs/bijux-dag")),
+        "DAG handbook pages",
+    );
+}
+
+#[test]
+fn maintainer_handbook_source_references_resolve() {
+    let root = repo_root();
+    assert_source_references_resolve(
+        collect_markdown_files(&root.join("docs/bijux-dev")),
+        "maintainer handbook pages",
+    );
+}
+
+#[test]
+fn repository_specs_and_reports_source_references_resolve() {
+    let root = repo_root();
+    let mut markdown_files = collect_markdown_files(&root.join("docs/spec"));
+    markdown_files.extend(collect_markdown_files(&root.join("docs/reports")));
+    markdown_files.extend(collect_markdown_files(&root.join("docs/tracking")));
+    markdown_files.push(root.join("README.md"));
+    markdown_files.push(root.join("docs/index.md"));
+    assert_source_references_resolve(markdown_files, "repository specification and report pages");
+}
+
+#[test]
+fn package_readme_source_references_resolve() {
+    let root = repo_root();
+    let markdown_files = [
+        root.join("crates/bijux-cli/README.md"),
+        root.join("crates/bijux-cli-python/README.md"),
+        root.join("crates/bijux-dag-app/README.md"),
+        root.join("crates/bijux-dag-artifacts/README.md"),
+        root.join("crates/bijux-dag-cli/README.md"),
+        root.join("crates/bijux-dag-core/README.md"),
+        root.join("crates/bijux-dag-runtime/README.md"),
+        root.join("crates/bijux-dag-testkit/README.md"),
+        root.join("crates/bijux-dev/README.md"),
+    ];
+    assert_source_references_resolve(markdown_files, "package readme pages");
 }
 
 #[test]
@@ -201,27 +242,7 @@ fn dag_crate_contract_source_references_resolve() {
         root.join("crates/bijux-dag-runtime/CONTRACT.md"),
         root.join("crates/bijux-dag-testkit/CONTRACT.md"),
     ];
-    let mut failures = Vec::new();
-
-    for doc in markdown_files {
-        let text =
-            fs::read_to_string(&doc).unwrap_or_else(|err| panic!("failed to read {}: {err}", doc.display()));
-        for (line, reference) in extract_inline_code_references(&text) {
-            if !looks_like_path_reference(&reference) {
-                continue;
-            }
-            if !reference_resolves(&doc, &root, &reference) {
-                let rel = doc.strip_prefix(&root).expect("repo-relative doc path");
-                failures.push(format!("{}:{} `{}`", rel.display(), line, reference));
-            }
-        }
-    }
-
-    assert!(
-        failures.is_empty(),
-        "DAG crate contracts contain stale source references:\n{}",
-        failures.join("\n")
-    );
+    assert_source_references_resolve(markdown_files, "DAG crate contract pages");
 }
 
 #[test]
@@ -231,25 +252,5 @@ fn package_changelog_source_references_resolve() {
         root.join("crates/bijux-cli/CHANGELOG.md"),
         root.join("crates/bijux-cli-python/CHANGELOG.md"),
     ];
-    let mut failures = Vec::new();
-
-    for doc in markdown_files {
-        let text =
-            fs::read_to_string(&doc).unwrap_or_else(|err| panic!("failed to read {}: {err}", doc.display()));
-        for (line, reference) in extract_inline_code_references(&text) {
-            if !looks_like_path_reference(&reference) {
-                continue;
-            }
-            if !reference_resolves(&doc, &root, &reference) {
-                let rel = doc.strip_prefix(&root).expect("repo-relative doc path");
-                failures.push(format!("{}:{} `{}`", rel.display(), line, reference));
-            }
-        }
-    }
-
-    assert!(
-        failures.is_empty(),
-        "package changelogs contain stale source references:\n{}",
-        failures.join("\n")
-    );
+    assert_source_references_resolve(markdown_files, "package changelog pages");
 }
