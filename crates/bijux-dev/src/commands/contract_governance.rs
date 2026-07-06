@@ -219,8 +219,8 @@ pub(super) fn run_error_code_registry_report() -> Result<(), String> {
 pub(super) fn run_error_code_docs_tests_guard() -> Result<(), String> {
     let root = repo_root()?;
     let registry = load_error_code_registry(&root)?;
-    let docs_error_ref =
-        fs::read_to_string(root.join("docs/reference/ERRORS.md")).map_err(|err| err.to_string())?;
+    let docs_error_ref = fs::read_to_string(root.join("docs/bijux-dag/interfaces/error-codes.md"))
+        .map_err(|err| err.to_string())?;
     let docs_error_contract = fs::read_to_string(root.join("docs/spec/ERROR_CONTRACT.md"))
         .map_err(|err| err.to_string())?;
     let tests = [
@@ -229,18 +229,22 @@ pub(super) fn run_error_code_docs_tests_guard() -> Result<(), String> {
     ];
 
     let mut violations = Vec::new();
+    if !docs_error_contract.contains("Public error code additions require docs plus test coverage")
+    {
+        violations.push(
+            "docs/spec/ERROR_CONTRACT.md missing public code governance rule".to_string(),
+        );
+    }
     for code in &registry.codes {
         if !docs_error_ref.contains(&code.category) {
             violations.push(format!(
-                "docs/reference/ERRORS.md missing category {} for {}",
+                "docs/bijux-dag/interfaces/error-codes.md missing category {} for {}",
                 code.category, code.code
             ));
         }
-        if !docs_error_contract
-            .contains("Public error code additions require docs plus test coverage")
-        {
+        if !docs_error_ref.contains(&code.code) {
             violations.push(
-                "docs/spec/ERROR_CONTRACT.md missing public code governance rule".to_string(),
+                format!("docs/bijux-dag/interfaces/error-codes.md missing public code {}", code.code),
             );
         }
     }
