@@ -1,13 +1,95 @@
 use crate::commands::DagCli;
-use crate::routes::path_resolution::{manifest_path, node_outputs_index_path, node_trace_path};
+use crate::routes::path_resolution::{
+    manifest_path, node_attempts_path, node_inputs_index_path, node_outputs_index_path,
+    node_resolved_params_path, node_stderr_path, node_stdout_path, node_trace_path,
+};
 use crate::routes::preconditions::require_run_directory;
 use crate::routes::run_lookup::read_manifest_json;
 use crate::run_data::{load_snapshot, read_node_traces};
 use crate::{emit_json, read_file, ExitCode};
-use bijux_dag_core::{node_io_contract, CacheBehavior, Graph, Node};
+use bijux_dag_artifacts::{InputFile, InputsIndex, NodeTrace, OutputFile, OutputsIndex};
+use bijux_dag_core::{node_io_contract, CacheBehavior, Graph, Node, NodeIoContract};
+use bijux_dag_runtime::AttemptEvent;
+use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
+
+const NODE_LOG_TAIL_LINE_LIMIT: usize = 20;
+
+#[derive(Debug, Serialize)]
+struct NodeLogTail {
+    path: String,
+    tail: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct NodeAttemptInspection {
+    attempt: u32,
+    started_unix_ms: u128,
+    finished_unix_ms: u128,
+    status: Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stdout: Option<NodeLogTail>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stderr: Option<NodeLogTail>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    failure: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    scheduled_backoff_ms: Option<u64>,
+}
+
+#[derive(Debug, Serialize)]
+struct NodeLogsInspection {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stdout: Option<NodeLogTail>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stderr: Option<NodeLogTail>,
+}
+
+#[derive(Debug, Serialize)]
+struct NodeCacheInspection {
+    configured: CacheBehavior,
+    observed_result: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    identity: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    proof: Option<Value>,
+}
+
+#[derive(Debug, Serialize)]
+struct NodeFailureInspection {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    failure: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    skip_reason: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    transition_cause: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    lifecycle_state: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct NodeInspectionPayload {
+    run_dir: String,
+    node_id: String,
+    status: String,
+    planned: Node,
+    dependencies: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    io_contract: Option<NodeIoContract>,
+    resolved_params: Value,
+    input_artifacts: Vec<InputFile>,
+    output_artifacts: Vec<OutputFile>,
+    terminal_attempt: u32,
+    attempts: Vec<NodeAttemptInspection>,
+    logs: NodeLogsInspection,
+    cache: NodeCacheInspection,
+    failure: NodeFailureInspection,
+    fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    evidence_gaps: Vec<String>,
+}
 
 fn concise_explain_human(
     status: &Value,
@@ -30,6 +112,276 @@ fn render_cache_policy(cache: &CacheBehavior) -> String {
     } else {
         format!("disabled (reason: {})", cache.reason.as_deref().unwrap_or("unspecified"))
     }
+}
+
+fn read_required_json_file<T: DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
+    let raw = fs::read_to_string(path).map_err(|_| ExitCode::from(3))?;
+    serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
+}
+
+fn relative_run_path(run_dir: &Path, path: &Path) -> String {
+    path.strip_prefix(run_dir).unwrap_or(path).display().to_string()
+}
+
+fn read_optional_json_file<T: DeserializeOwned>(
+    run_dir: &Path,
+    path: &Path,
+    label: &str,
+    evidence_gaps: &mut Vec<String>,
+) -> Option<T> {
+    if !path.exists() {
+        evidence_gaps.push(format!("missing {label}: {}", relative_run_path(run_dir, path)));
+        return None;
+    }
+    let raw = match fs::read_to_string(path) {
+        Ok(raw) => raw,
+        Err(_) => {
+            evidence_gaps.push(format!("unreadable {label}: {}", relative_run_path(run_dir, path)));
+            return None;
+        }
+    };
+    match serde_json::from_str(&raw) {
+        Ok(value) => Some(value),
+        Err(_) => {
+            evidence_gaps.push(format!("invalid {label}: {}", relative_run_path(run_dir, path)));
+            None
+        }
+    }
+}
+
+fn read_optional_log_tail(
+    run_dir: &Path,
+    path: &Path,
+    label: &str,
+    evidence_gaps: &mut Vec<String>,
+) -> Option<NodeLogTail> {
+    if !path.exists() {
+        evidence_gaps.push(format!("missing {label}: {}", relative_run_path(run_dir, path)));
+        return None;
+    }
+    let bytes = match fs::read(path) {
+        Ok(bytes) => bytes,
+        Err(_) => {
+            evidence_gaps.push(format!("unreadable {label}: {}", relative_run_path(run_dir, path)));
+            return None;
+        }
+    };
+    let content = String::from_utf8_lossy(&bytes);
+    let mut tail = content.lines().map(ToString::to_string).collect::<Vec<_>>();
+    if tail.len() > NODE_LOG_TAIL_LINE_LIMIT {
+        tail = tail.split_off(tail.len() - NODE_LOG_TAIL_LINE_LIMIT);
+    }
+    Some(NodeLogTail { path: relative_run_path(run_dir, path), tail })
+}
+
+fn serialize_optional<T: Serialize>(value: Option<T>) -> Option<Value> {
+    value.and_then(|value| serde_json::to_value(value).ok())
+}
+
+fn attempt_status_value(attempt: &AttemptEvent) -> Value {
+    serde_json::to_value(&attempt.status).unwrap_or(Value::Null)
+}
+
+fn node_cache_result(node: &Node, trace: &NodeTrace) -> String {
+    if !node.cache.enabled {
+        return "disabled".to_string();
+    }
+    if trace.status.eq_ignore_ascii_case("cached") {
+        return "hit".to_string();
+    }
+    if trace.cache_identity.is_some() || trace.cache_proof.is_some() {
+        return "evaluated_without_reuse".to_string();
+    }
+    "not_reused".to_string()
+}
+
+fn node_inspection_payload(run_dir: &Path, node_id: &str) -> Result<NodeInspectionPayload, ExitCode> {
+    require_run_directory(run_dir)?;
+    let snapshot = load_snapshot(run_dir)?;
+    let trace: NodeTrace = read_required_json_file(&node_trace_path(run_dir, node_id))?;
+    let planned =
+        snapshot.graph.nodes.iter().find(|node| node.id == node_id).cloned().ok_or(ExitCode::from(3))?;
+    let dependencies = snapshot
+        .graph
+        .edges
+        .iter()
+        .filter(|edge| edge.to.node_id == node_id)
+        .map(|edge| edge.from.node_id.clone())
+        .collect::<Vec<_>>();
+    let io_contract = node_io_contract(&snapshot.graph, node_id);
+    let mut evidence_gaps = Vec::new();
+    let resolved_params = read_optional_json_file::<Value>(
+        run_dir,
+        &node_resolved_params_path(run_dir, node_id),
+        "resolved params",
+        &mut evidence_gaps,
+    )
+    .unwrap_or(Value::Null);
+    let input_artifacts = read_optional_json_file::<InputsIndex>(
+        run_dir,
+        &node_inputs_index_path(run_dir, node_id),
+        "input artifact index",
+        &mut evidence_gaps,
+    )
+    .map(|index| index.files)
+    .unwrap_or_default();
+    let output_artifacts = read_optional_json_file::<OutputsIndex>(
+        run_dir,
+        &node_outputs_index_path(run_dir, node_id),
+        "output artifact index",
+        &mut evidence_gaps,
+    )
+    .map(|index| index.files)
+    .unwrap_or_default();
+    let attempts = read_optional_json_file::<Vec<AttemptEvent>>(
+        run_dir,
+        &node_attempts_path(run_dir, node_id),
+        "attempt history",
+        &mut evidence_gaps,
+    )
+    .unwrap_or_default()
+    .into_iter()
+    .map(|attempt| NodeAttemptInspection {
+        attempt: attempt.attempt,
+        started_unix_ms: attempt.started_unix_ms,
+        finished_unix_ms: attempt.finished_unix_ms,
+        status: attempt_status_value(&attempt),
+        stdout: attempt
+            .stdout_path
+            .as_ref()
+            .map(|path| run_dir.join("nodes").join(node_id).join(path))
+            .and_then(|path| read_optional_log_tail(run_dir, &path, "attempt stdout log", &mut evidence_gaps)),
+        stderr: attempt
+            .stderr_path
+            .as_ref()
+            .map(|path| run_dir.join("nodes").join(node_id).join(path))
+            .and_then(|path| read_optional_log_tail(run_dir, &path, "attempt stderr log", &mut evidence_gaps)),
+        failure: serialize_optional(attempt.failure),
+        scheduled_backoff_ms: attempt.scheduled_backoff_ms,
+    })
+    .collect::<Vec<_>>();
+    let logs = NodeLogsInspection {
+        stdout: read_optional_log_tail(
+            run_dir,
+            &node_stdout_path(run_dir, node_id),
+            "stdout log",
+            &mut evidence_gaps,
+        ),
+        stderr: read_optional_log_tail(
+            run_dir,
+            &node_stderr_path(run_dir, node_id),
+            "stderr log",
+            &mut evidence_gaps,
+        ),
+    };
+    let cache = NodeCacheInspection {
+        configured: planned.cache.clone(),
+        observed_result: node_cache_result(&planned, &trace),
+        identity: serialize_optional(trace.cache_identity.clone()),
+        proof: serialize_optional(trace.cache_proof.clone()),
+    };
+    let failure = NodeFailureInspection {
+        failure: serialize_optional(trace.failure.clone()),
+        skip_reason: serialize_optional(trace.skip_reason.clone()),
+        transition_cause: trace.transition_cause.clone(),
+        lifecycle_state: trace.lifecycle_state.clone(),
+    };
+
+    Ok(NodeInspectionPayload {
+        run_dir: run_dir.display().to_string(),
+        node_id: node_id.to_string(),
+        status: trace.status.clone(),
+        planned: planned.clone(),
+        dependencies,
+        io_contract,
+        resolved_params,
+        input_artifacts,
+        output_artifacts,
+        terminal_attempt: trace.attempt,
+        attempts,
+        logs,
+        cache,
+        failure,
+        fingerprint: snapshot.graph.node_fingerprint(&planned).ok(),
+        evidence_gaps,
+    })
+}
+
+fn format_node_inspection_human(payload: &NodeInspectionPayload) -> String {
+    let planned_inputs =
+        serde_json::to_string(&payload.planned.inputs).unwrap_or_else(|_| "[]".to_string());
+    let planned_outputs = payload
+        .planned
+        .outputs
+        .iter()
+        .map(|output| output.name.clone())
+        .collect::<Vec<_>>();
+    let attempt_summary = if payload.attempts.is_empty() {
+        "[]".to_string()
+    } else {
+        payload
+            .attempts
+            .iter()
+            .map(|attempt| {
+                let status =
+                    attempt.status.as_str().map(ToString::to_string).unwrap_or_else(|| attempt.status.to_string());
+                format!(
+                    "attempt={} status={} backoff_ms={}",
+                    attempt.attempt,
+                    status,
+                    attempt
+                        .scheduled_backoff_ms
+                        .map(|value| value.to_string())
+                        .unwrap_or_else(|| "-".to_string())
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let failure_summary = payload
+        .failure
+        .failure
+        .as_ref()
+        .map(|failure| serde_json::to_string(failure).unwrap_or_else(|_| "null".to_string()))
+        .unwrap_or_else(|| "null".to_string());
+    let stdout_tail = payload
+        .logs
+        .stdout
+        .as_ref()
+        .map(|log| log.tail.join("\n"))
+        .unwrap_or_default();
+    let stderr_tail = payload
+        .logs
+        .stderr
+        .as_ref()
+        .map(|log| log.tail.join("\n"))
+        .unwrap_or_default();
+    let evidence_gaps = if payload.evidence_gaps.is_empty() {
+        "[]".to_string()
+    } else {
+        payload.evidence_gaps.join("; ")
+    };
+    format!(
+        "node: {}\nstatus: {}\nplanned_kind: {}\nplanned_inputs: {}\nplanned_outputs: {:?}\nresolved_params: {}\ninput_artifact_count: {}\noutput_artifact_count: {}\nterminal_attempt: {}\nattempts:\n{}\ncache_status: configured={} observed={}\nfailure_info: {}\nstdout_path: {}\nstderr_path: {}\nstdout_tail:\n{}\nstderr_tail:\n{}\nevidence_gaps: {}",
+        payload.node_id,
+        payload.status,
+        payload.planned.kind.as_str(),
+        planned_inputs,
+        planned_outputs,
+        payload.resolved_params,
+        payload.input_artifacts.len(),
+        payload.output_artifacts.len(),
+        payload.terminal_attempt,
+        attempt_summary,
+        render_cache_policy(&payload.cache.configured),
+        payload.cache.observed_result,
+        failure_summary,
+        payload.logs.stdout.as_ref().map(|log| log.path.as_str()).unwrap_or("-"),
+        payload.logs.stderr.as_ref().map(|log| log.path.as_str()).unwrap_or("-"),
+        stdout_tail,
+        stderr_tail,
+        evidence_gaps,
+    )
 }
 
 fn explain_node_payload(
@@ -172,21 +524,18 @@ pub(crate) fn handle_node_command(
     run_dir: &Path,
     node: &str,
 ) -> Result<ExitCode, ExitCode> {
-    require_run_directory(run_dir)?;
-    let trace = read_file(&node_trace_path(run_dir, node))?;
-    let index = read_file(&node_outputs_index_path(run_dir, node))?;
+    let payload = node_inspection_payload(run_dir, node)?;
     if cli.json {
         return emit_json(
             cli,
             "dag.node",
             true,
-            json!({"trace": trace, "outputs": index}),
+            serde_json::to_value(&payload).map_err(|_| ExitCode::from(3))?,
             Vec::new(),
             ExitCode::SUCCESS,
         );
     }
-    println!("trace:\n{}", trace);
-    println!("outputs:\n{}", index);
+    println!("{}", format_node_inspection_human(&payload));
     Ok(ExitCode::SUCCESS)
 }
 
@@ -318,9 +667,9 @@ fn operator_status_human(summary: &Value) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        concise_explain_human, explain_node_payload, handle_explain_command, handle_node_command,
-        handle_status_command, operator_status_human, operator_status_summary, render_cache_policy,
-        status_next_action,
+        concise_explain_human, explain_node_payload, format_node_inspection_human,
+        handle_explain_command, handle_node_command, handle_status_command, node_inspection_payload,
+        operator_status_human, operator_status_summary, render_cache_policy, status_next_action,
     };
     use crate::commands::{Commands, DagCli};
     use crate::read_file;
@@ -341,7 +690,8 @@ mod tests {
     fn write_run_fixture(imported: bool, malformed_manifest: bool) -> tempfile::TempDir {
         let dir = tempfile::tempdir().expect("tmp");
         let run = dir.path();
-        fs::create_dir_all(run.join("nodes/extract/outputs")).expect("mkdir nodes");
+        fs::create_dir_all(run.join("nodes/extract/outputs")).expect("mkdir outputs");
+        fs::create_dir_all(run.join("nodes/extract/inputs")).expect("mkdir inputs");
         if malformed_manifest {
             fs::write(run.join("manifest.json"), b"{not-json").expect("write malformed manifest");
         } else {
@@ -400,9 +750,98 @@ mod tests {
             .expect("snapshot"),
         )
         .expect("write snapshot");
-        fs::write(run.join("nodes/extract/trace.json"), b"{\"status\":\"success\"}")
-            .expect("trace");
-        fs::write(run.join("nodes/extract/outputs/index.json"), b"{\"files\":[]}").expect("index");
+        fs::write(
+            run.join("nodes/extract/trace.json"),
+            serde_json::to_vec_pretty(&json!({
+                "node_id":"extract",
+                "status":"success",
+                "started_unix_ms": 1u64,
+                "finished_unix_ms": 2u64,
+                "attempt": 1,
+                "fingerprint":"fp-extract",
+                "adapter_id":"const",
+                "adapter_version":"0.1",
+                "adapter_outputs_schema_version":"1",
+                "inputs_index":"inputs/index.json",
+                "resolved_params":{"request":{"dataset_uri":"s3://warehouse/catalog","region":"eu-west-1"}},
+                "outputs":[{
+                    "name":"out",
+                    "path":"extract/out",
+                    "kind":"file",
+                    "required":true,
+                    "present":true,
+                    "media_type":"text/plain",
+                    "size_bytes":4,
+                    "sha256":"abcd"
+                }]
+            }))
+            .expect("trace"),
+        )
+        .expect("write trace");
+        fs::write(
+            run.join("nodes/extract/inputs/index.json"),
+            serde_json::to_vec_pretty(&json!({
+                "files":[{
+                    "local_path":"seed/in",
+                    "source_sha256":"seed-sha",
+                    "source_node_id":"seed",
+                    "source_node_fingerprint":"seed-fp",
+                    "source_output_name":"out",
+                    "materialization_mode":"copy"
+                }]
+            }))
+            .expect("inputs index"),
+        )
+        .expect("write inputs index");
+        fs::write(
+            run.join("nodes/extract/outputs/index.json"),
+            serde_json::to_vec_pretty(&json!({
+                "files":[{
+                    "name":"out",
+                    "path":"extract/out",
+                    "kind":"file",
+                    "media_type":"text/plain",
+                    "size_bytes":4,
+                    "sha256":"abcd",
+                    "node_id":"extract",
+                    "node_fingerprint":"fp-extract"
+                }]
+            }))
+            .expect("outputs index"),
+        )
+        .expect("write outputs index");
+        fs::write(
+            run.join("nodes/extract/resolved_params.json"),
+            serde_json::to_vec_pretty(&json!({
+                "request":{
+                    "dataset_uri":"s3://warehouse/catalog",
+                    "region":"eu-west-1"
+                }
+            }))
+            .expect("resolved params"),
+        )
+        .expect("write resolved params");
+        fs::write(
+            run.join("nodes/extract/attempts.json"),
+            serde_json::to_vec_pretty(&json!([{
+                "attempt":1,
+                "started_unix_ms":1u64,
+                "finished_unix_ms":2u64,
+                "status":"Success",
+                "stdout_path":"attempts/1/stdout.log",
+                "stderr_path":"attempts/1/stderr.log"
+            }]))
+            .expect("attempts"),
+        )
+        .expect("write attempts");
+        fs::create_dir_all(run.join("nodes/extract/attempts/1")).expect("mkdir attempts");
+        fs::write(run.join("nodes/extract/stdout.log"), "terminal stdout\nsecond line\n")
+            .expect("stdout");
+        fs::write(run.join("nodes/extract/stderr.log"), "terminal stderr\n").expect("stderr");
+        fs::write(run.join("nodes/extract/attempts/1/stdout.log"), "attempt stdout\n")
+            .expect("attempt stdout");
+        fs::write(run.join("nodes/extract/attempts/1/stderr.log"), "attempt stderr\n")
+            .expect("attempt stderr");
         dir
     }
 
@@ -513,6 +952,69 @@ mod tests {
     }
 
     #[test]
+    fn inspect_node_payload_surfaces_attempts_logs_and_artifacts() {
+        let run = write_run_fixture(false, false);
+        let payload = node_inspection_payload(run.path(), "extract").expect("node inspection");
+
+        assert_eq!(payload.status, "success");
+        assert_eq!(payload.planned.id, "extract");
+        assert_eq!(payload.resolved_params["request"]["region"], "eu-west-1");
+        assert_eq!(payload.input_artifacts.len(), 1);
+        assert_eq!(payload.input_artifacts[0].source_node_id, "seed");
+        assert_eq!(payload.output_artifacts.len(), 1);
+        assert_eq!(payload.output_artifacts[0].name, "out");
+        assert_eq!(payload.terminal_attempt, 1);
+        assert_eq!(payload.attempts.len(), 1);
+        assert_eq!(payload.attempts[0].attempt, 1);
+        assert_eq!(payload.attempts[0].stdout.as_ref().expect("stdout").path, "nodes/extract/attempts/1/stdout.log");
+        assert_eq!(
+            payload.logs.stdout.as_ref().expect("stdout log").tail,
+            vec!["terminal stdout".to_string(), "second line".to_string()]
+        );
+        assert_eq!(payload.cache.observed_result, "disabled");
+        assert!(payload.failure.failure.is_none());
+        assert!(payload.evidence_gaps.is_empty());
+    }
+
+    #[test]
+    fn inspect_node_payload_records_failure_and_missing_evidence_gaps() {
+        let run = write_run_fixture(false, false);
+        fs::remove_file(run.path().join("nodes/extract/stderr.log")).expect("remove stderr");
+        fs::write(
+            run.path().join("nodes/extract/trace.json"),
+            serde_json::to_vec_pretty(&json!({
+                "node_id":"extract",
+                "status":"failed",
+                "started_unix_ms": 1u64,
+                "finished_unix_ms": 2u64,
+                "attempt": 2,
+                "fingerprint":"fp-extract",
+                "adapter_id":"const",
+                "adapter_version":"0.1",
+                "adapter_outputs_schema_version":"1",
+                "failure":{"class":"execution","kind":"Execution","code":"EXEC_FAIL","message":"boom"},
+                "transition_cause":"ExecutionFailed",
+                "lifecycle_state":"failed"
+            }))
+            .expect("trace"),
+        )
+        .expect("write failed trace");
+
+        let payload = node_inspection_payload(run.path(), "extract").expect("node inspection");
+        assert_eq!(payload.status, "failed");
+        assert_eq!(payload.terminal_attempt, 2);
+        assert_eq!(
+            payload.failure.failure.as_ref().and_then(|failure| failure.get("code")).and_then(|value| value.as_str()),
+            Some("EXEC_FAIL")
+        );
+        assert_eq!(payload.failure.transition_cause.as_deref(), Some("ExecutionFailed"));
+        assert!(payload
+            .evidence_gaps
+            .iter()
+            .any(|gap| gap == "missing stderr log: nodes/extract/stderr.log"));
+    }
+
+    #[test]
     fn cache_policy_rendering_is_explicit() {
         let rendered = render_cache_policy(&bijux_dag_core::CacheBehavior {
             enabled: false,
@@ -534,6 +1036,23 @@ graph_fingerprint: \"g1\"\n\
 node_counts: {\"cached\":0,\"failed\":0,\"skipped\":0,\"success\":1}\n\
 failed_nodes: [\"n1\"]";
         assert_eq!(rendered, expected);
+    }
+
+    #[test]
+    fn node_human_output_surfaces_cache_paths_and_attempts() {
+        let run = write_run_fixture(false, false);
+        let payload = node_inspection_payload(run.path(), "extract").expect("node inspection");
+        let rendered = format_node_inspection_human(&payload);
+
+        assert!(rendered.contains("node: extract"));
+        assert!(rendered.contains("planned_kind: const"));
+        assert!(rendered.contains("input_artifact_count: 1"));
+        assert!(rendered.contains("output_artifact_count: 1"));
+        assert!(rendered.contains("attempt=1 status=Success"));
+        assert!(rendered.contains("cache_status: configured=disabled"));
+        assert!(rendered.contains("stdout_path: nodes/extract/stdout.log"));
+        assert!(rendered.contains("stderr_path: nodes/extract/stderr.log"));
+        assert!(rendered.contains("terminal stdout"));
     }
 
     #[test]
