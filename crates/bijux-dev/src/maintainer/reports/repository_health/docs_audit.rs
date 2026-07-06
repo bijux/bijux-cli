@@ -75,7 +75,6 @@ mod tests {
     use super::build_report;
 
     #[test]
-    #[ignore = "docs audit shape contract is unstable during documentation layout migration"]
     fn docs_audit_report_shape_is_stable() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = build_report(&root);
@@ -88,7 +87,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "docs asset inventory contract enforces legacy documentation tree assumptions"]
     fn docs_audit_tracks_non_markdown_files_under_docs_and_contract_roots() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = build_report(&root);

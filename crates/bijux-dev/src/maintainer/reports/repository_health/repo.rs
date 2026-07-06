@@ -273,7 +273,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "docs drift reference enforcement is disabled while docs tree is being restructured"]
     fn repo_drift_reports_all_broken_docs_references_per_file() {
         let root = temp_root("docs-refs");
         fs::create_dir_all(root.join("docs/02-getting-started")).expect("mkdir docs");

@@ -239,7 +239,6 @@ fn parity_inspect_against_current_expected_behavior() {
 }
 
 #[test]
-#[ignore = "docs route parity contract is deprecated while documentation layout is being rebuilt"]
 fn parity_docs_against_current_expected_behavior() {
     let out = run(&["docs"]);
     assert!(out.status.success());
