@@ -3,11 +3,12 @@ use crate::{
     bind_path_variables_in_value, build_run_outputs_index, cache_dir_from_env, cache_mode_string,
     canonicalize_event_records, category_from_runtime_event_name, collect_outputs_summary,
     current_process_memory_bytes, node_fingerprint_from_ctx, node_fingerprint_with_inputs,
-    reconstruct_timeline_from_events, registered_adapters, sacred_execution,
-    serialize_timeline_export, set_node_fingerprint, CacheProof, EffectSet, EventRecord,
-    ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodePathBindings,
-    NodeResult, NodeStatus, ReplayNodeAction, RunAttempt, RunContext, RunId, RunSnapshot, Runtime,
-    RuntimeConfig, RuntimeError, SchedulerEventHook,
+    reconstruct_timeline_from_events, reduce_execution_config, registered_adapters,
+    sacred_execution, serialize_timeline_export, set_node_fingerprint, CacheProof, EffectSet,
+    EventRecord, ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics,
+    NodePathBindings, NodeResult, NodeStatus, ReduceEmptyPolicy, ReduceExecutionMode,
+    ReplayNodeAction, RunAttempt, RunContext, RunId, RunSnapshot, Runtime, RuntimeConfig,
+    RuntimeError, SchedulerEventHook,
 };
 #[path = "engine_dispatch.rs"]
 mod engine_dispatch;
@@ -740,6 +741,137 @@ fn dependency_trigger_failure(node: &Node, trigger_evaluation: &TriggerEvaluatio
             "reason": trigger_evaluation.reason,
         })),
     )
+}
+
+enum ReducePreflightAction {
+    Run,
+    Skip,
+    Fail(FailureInfo),
+}
+
+struct ReducePreflightDecision {
+    trigger_evaluation: TriggerEvaluation,
+    action: ReducePreflightAction,
+}
+
+fn reduce_empty_collection_failure(
+    node: &Node,
+    trigger_evaluation: &TriggerEvaluation,
+) -> FailureInfo {
+    FailureInfo::new(
+        FailureClass::Execution,
+        "Dependency",
+        "REDUCE_EMPTY_COLLECTION",
+        format!("reduce node {} did not receive any usable upstream outputs", node.id),
+        Some(serde_json::json!({
+            "node_id": node.id,
+            "parent_statuses": trigger_evaluation.parent_statuses,
+            "trigger_rule": trigger_evaluation.trigger_rule,
+            "reason": trigger_evaluation.reason,
+        })),
+    )
+}
+
+fn reduce_preflight_decision(
+    node: &Node,
+    dependencies: &[String],
+    parent_status_map: &HashMap<String, NodeStatus>,
+) -> Result<ReducePreflightDecision, FailureInfo> {
+    let config = reduce_execution_config(node)?;
+    let ordered_statuses = dependencies
+        .iter()
+        .map(|dependency| {
+            parent_status_map.get(dependency).cloned().ok_or_else(|| {
+                FailureInfo::new(
+                    FailureClass::Execution,
+                    "Dependency",
+                    "REDUCE_STATUS_UNAVAILABLE",
+                    format!(
+                        "missing terminal status for reduce dependency {} on node {}",
+                        dependency, node.id
+                    ),
+                    Some(serde_json::json!({
+                        "node_id": node.id,
+                        "dependency": dependency,
+                    })),
+                )
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let parent_statuses = dependencies
+        .iter()
+        .zip(ordered_statuses.iter())
+        .map(|(node_id, status)| TriggerParentStatus {
+            node_id: node_id.clone(),
+            status: crate::status_string(status),
+        })
+        .collect::<Vec<_>>();
+    let usable_inputs = ordered_statuses
+        .iter()
+        .filter(|status| matches!(status, NodeStatus::Success | NodeStatus::Cached))
+        .count();
+
+    match config.mode {
+        ReduceExecutionMode::AllSuccess => {
+            let trigger_evaluation =
+                trigger_evaluation_for_dependencies(node, dependencies, &ordered_statuses);
+            if !trigger_evaluation.satisfied {
+                return Ok(ReducePreflightDecision {
+                    trigger_evaluation: trigger_evaluation.clone(),
+                    action: ReducePreflightAction::Fail(dependency_trigger_failure(
+                        node,
+                        &trigger_evaluation,
+                    )),
+                });
+            }
+            let action = if usable_inputs > 0 {
+                ReducePreflightAction::Run
+            } else {
+                match config.empty_policy {
+                    ReduceEmptyPolicy::Allow => ReducePreflightAction::Run,
+                    ReduceEmptyPolicy::Skip => ReducePreflightAction::Skip,
+                    ReduceEmptyPolicy::Forbid => ReducePreflightAction::Fail(
+                        reduce_empty_collection_failure(node, &trigger_evaluation),
+                    ),
+                }
+            };
+            Ok(ReducePreflightDecision { trigger_evaluation, action })
+        }
+        ReduceExecutionMode::Partial => {
+            let reason = if usable_inputs > 0 {
+                "reduce partial mode accepts terminal upstreams when at least one usable input exists"
+            } else {
+                match config.empty_policy {
+                    ReduceEmptyPolicy::Allow => {
+                        "reduce empty policy allows execution when no usable upstream outputs exist"
+                    }
+                    ReduceEmptyPolicy::Skip => {
+                        "reduce empty policy skips execution when no usable upstream outputs exist"
+                    }
+                    ReduceEmptyPolicy::Forbid => {
+                        "reduce empty policy forbids execution when no usable upstream outputs exist"
+                    }
+                }
+            };
+            let trigger_evaluation = TriggerEvaluation {
+                trigger_rule: "reduce_partial".to_string(),
+                satisfied: usable_inputs > 0 || config.empty_policy == ReduceEmptyPolicy::Allow,
+                reason: reason.to_string(),
+                parent_statuses,
+            };
+            let action = if usable_inputs > 0 || config.empty_policy == ReduceEmptyPolicy::Allow {
+                ReducePreflightAction::Run
+            } else if config.empty_policy == ReduceEmptyPolicy::Skip {
+                ReducePreflightAction::Skip
+            } else {
+                ReducePreflightAction::Fail(reduce_empty_collection_failure(
+                    node,
+                    &trigger_evaluation,
+                ))
+            };
+            Ok(ReducePreflightDecision { trigger_evaluation, action })
+        }
+    }
 }
 
 fn invalidated_downstream_nodes(graph: &Graph, selected_nodes: &[String]) -> Vec<String> {
@@ -1668,26 +1800,40 @@ pub fn execute(
                 }
             }
 
-            if let Some(deps) = dep_map.get(node_id) {
-                let dependencies = deps.iter().cloned().collect::<Vec<_>>();
-                let parent_statuses = dependencies
-                    .iter()
-                    .filter_map(|dependency| status_map.get(dependency).cloned())
-                    .collect::<Vec<_>>();
-                if parent_statuses.len() == dependencies.len() {
-                    let trigger_evaluation =
-                        trigger_evaluation_for_dependencies(&node, &dependencies, &parent_statuses);
-                    trigger_evaluations.insert(node_id.clone(), trigger_evaluation.clone());
-                    if !trigger_evaluation.satisfied {
-                        let trigger_rule = node.trigger_rule.clone();
-                        let failure = dependency_trigger_failure(&node, &trigger_evaluation);
+            let dependencies = upstream_nodes(&dep_map, node_id);
+            let parent_status_map = dependencies
+                .iter()
+                .filter_map(|dependency| {
+                    status_map.get(dependency).cloned().map(|status| (dependency.clone(), status))
+                })
+                .collect::<HashMap<_, _>>();
+            if node.semantic_kind == SemanticNodeKind::Reduce
+                && parent_status_map.len() == dependencies.len()
+            {
+                let decision = match reduce_preflight_decision(&node, &dependencies, &parent_status_map)
+                {
+                    Ok(decision) => decision,
+                    Err(failure) => {
                         preflight_failures.push((
                             node_id.clone(),
                             node,
                             failure,
                             "DependencyFailed".to_string(),
-                            Some(trigger_evaluation),
+                            None,
                         ));
+                        continue;
+                    }
+                };
+                match decision.action {
+                    ReducePreflightAction::Run => {
+                        trigger_evaluations
+                            .insert(node_id.clone(), decision.trigger_evaluation.clone());
+                    }
+                    ReducePreflightAction::Skip => {
+                        skipped.push((node_id.clone(), "empty_reduce_collection".to_string()));
+                        continue;
+                    }
+                    ReducePreflightAction::Fail(failure) => {
                         engine_record::append_indexed_event(
                             &mut run_log,
                             &mut run_log_index,
@@ -1695,13 +1841,52 @@ pub fn execute(
                                 "event": "node_blocked",
                                 "ts": ctx.clock.now_unix_ms(),
                                 "node_id": node_id,
-                                "reason": "blocked_by_trigger_rule",
+                                "reason": "blocked_by_reduce_policy",
                                 "blocking_nodes": dependencies,
-                                "trigger_rule": trigger_rule,
+                                "trigger_rule": decision.trigger_evaluation.trigger_rule,
                             }),
                         )?;
+                        preflight_failures.push((
+                            node_id.clone(),
+                            node,
+                            failure,
+                            "DependencyFailed".to_string(),
+                            Some(decision.trigger_evaluation),
+                        ));
                         continue;
                     }
+                }
+            } else if !dependencies.is_empty() && parent_status_map.len() == dependencies.len() {
+                let parent_statuses = dependencies
+                    .iter()
+                    .filter_map(|dependency| parent_status_map.get(dependency).cloned())
+                    .collect::<Vec<_>>();
+                let trigger_evaluation =
+                    trigger_evaluation_for_dependencies(&node, &dependencies, &parent_statuses);
+                trigger_evaluations.insert(node_id.clone(), trigger_evaluation.clone());
+                if !trigger_evaluation.satisfied {
+                    let trigger_rule = node.trigger_rule.clone();
+                    let failure = dependency_trigger_failure(&node, &trigger_evaluation);
+                    preflight_failures.push((
+                        node_id.clone(),
+                        node,
+                        failure,
+                        "DependencyFailed".to_string(),
+                        Some(trigger_evaluation),
+                    ));
+                    engine_record::append_indexed_event(
+                        &mut run_log,
+                        &mut run_log_index,
+                        serde_json::json!({
+                            "event": "node_blocked",
+                            "ts": ctx.clock.now_unix_ms(),
+                            "node_id": node_id,
+                            "reason": "blocked_by_trigger_rule",
+                            "blocking_nodes": dependencies,
+                            "trigger_rule": trigger_rule,
+                        }),
+                    )?;
+                    continue;
                 }
             }
             let resolved_params = ctx.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
@@ -1838,8 +2023,9 @@ pub fn execute(
             let inputs_index = sacred_execution::run_materialize_inputs(
                 &ctx,
                 graph,
-                node_id,
+                &node,
                 options.materialize_inputs,
+                &status_map,
             )?;
             let base_fp = base_fps.get(&node.id).cloned().unwrap_or_default();
             let node_fp = node_fingerprint_with_inputs(&base_fp, &inputs_index)?;

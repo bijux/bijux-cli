@@ -80,10 +80,11 @@ pub(crate) fn run_write_trace(
 pub(crate) fn run_materialize_inputs(
     ctx: &RunContext,
     graph: &Graph,
-    node_id: &str,
+    node: &Node,
     mode: crate::MaterializeMode,
+    parent_statuses: &HashMap<String, NodeStatus>,
 ) -> Result<InputsIndex, RuntimeError> {
-    materialize_inputs(ctx, graph, node_id, mode)
+    materialize_inputs(ctx, graph, node, mode, parent_statuses)
 }
 
 #[allow(clippy::too_many_arguments)]

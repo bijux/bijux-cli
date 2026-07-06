@@ -292,13 +292,14 @@ pub use bijux_dag_artifacts::ContainerImageReferencePolicy;
 use bijux_dag_artifacts::{
     artifact_size_bytes, sha256_artifact_path, write_inputs_index, write_outputs_index,
     AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace, DeclaredOutputArtifact,
-    FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeLifecycleTransition,
-    NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir,
-    RunDirLayout, RunOutputFile, RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
+    FailureClass, FailureInfo, InputCollection, InputCollectionItem, InputFile, InputsIndex,
+    NodeCounts, NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex,
+    ReplayProvenance, Resources as TraceResources, RunDir, RunDirLayout, RunOutputFile,
+    RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
-    Severity,
+    SemanticNodeKind, Severity,
 };
 pub use cache::{
     cache_entry_has_required_proof, cache_entry_manifest_version_supported,
@@ -703,6 +704,38 @@ struct MapExecutionItemSummary {
 struct MapExecutionOutputSummary {
     output_name: String,
     item_path: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ReduceExecutionMode {
+    AllSuccess,
+    Partial,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ReduceEmptyPolicy {
+    Forbid,
+    Allow,
+    Skip,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct ReduceExecutionConfig {
+    pub mode: ReduceExecutionMode,
+    pub empty_policy: ReduceEmptyPolicy,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+struct ReduceExecutionSummary {
+    schema_version: String,
+    reduce_node_id: String,
+    mode: String,
+    empty_policy: String,
+    usable_input_count: usize,
+    failed_input_count: usize,
+    skipped_input_count: usize,
+    cancelled_input_count: usize,
+    collection: InputCollection,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2082,6 +2115,97 @@ fn map_execution_version() -> String {
     "map-execution/v0.1".to_string()
 }
 
+fn reduce_collection_manifest_name() -> &'static str {
+    "reduce.collection.json"
+}
+
+fn reduce_execution_summary_path(ctx: &RunContext, node_id: &str) -> PathBuf {
+    ctx.run_dir.node_dir(node_id).join("reduce.execution.json")
+}
+
+fn reduce_execution_version() -> String {
+    "reduce-execution/v0.1".to_string()
+}
+
+fn reduce_mode_label(mode: ReduceExecutionMode) -> &'static str {
+    match mode {
+        ReduceExecutionMode::AllSuccess => "all_success",
+        ReduceExecutionMode::Partial => "partial",
+    }
+}
+
+fn reduce_empty_policy_label(policy: ReduceEmptyPolicy) -> &'static str {
+    match policy {
+        ReduceEmptyPolicy::Forbid => "forbid",
+        ReduceEmptyPolicy::Allow => "allow",
+        ReduceEmptyPolicy::Skip => "skip",
+    }
+}
+
+pub(crate) fn reduce_execution_config(node: &Node) -> Result<ReduceExecutionConfig, FailureInfo> {
+    let reduce = match &node.params {
+        bijux_dag_core::ParamValue::Object(params) => match params.get("reduce") {
+            Some(bijux_dag_core::ParamValue::Object(reduce)) => Some(reduce),
+            Some(_) => {
+                return Err(FailureInfo::new(
+                    FailureClass::User,
+                    "User",
+                    "REDUCE_CONFIG_INVALID",
+                    format!("reduce params on node {} must be an object", node.id),
+                    Some(serde_json::json!({ "node_id": node.id })),
+                ));
+            }
+            None => None,
+        },
+        _ => None,
+    };
+
+    let mode = match reduce.and_then(|value| value.get("mode")) {
+        None => ReduceExecutionMode::AllSuccess,
+        Some(bijux_dag_core::ParamValue::Literal(Value::String(value)))
+            if value == "all_success" =>
+        {
+            ReduceExecutionMode::AllSuccess
+        }
+        Some(bijux_dag_core::ParamValue::Literal(Value::String(value))) if value == "partial" => {
+            ReduceExecutionMode::Partial
+        }
+        Some(_) => {
+            return Err(FailureInfo::new(
+                FailureClass::User,
+                "User",
+                "REDUCE_MODE_INVALID",
+                format!("reduce.mode on node {} must be 'all_success' or 'partial'", node.id),
+                Some(serde_json::json!({ "node_id": node.id })),
+            ));
+        }
+    };
+
+    let empty_policy = match reduce.and_then(|value| value.get("empty")) {
+        None => ReduceEmptyPolicy::Forbid,
+        Some(bijux_dag_core::ParamValue::Literal(Value::String(value))) if value == "forbid" => {
+            ReduceEmptyPolicy::Forbid
+        }
+        Some(bijux_dag_core::ParamValue::Literal(Value::String(value))) if value == "allow" => {
+            ReduceEmptyPolicy::Allow
+        }
+        Some(bijux_dag_core::ParamValue::Literal(Value::String(value))) if value == "skip" => {
+            ReduceEmptyPolicy::Skip
+        }
+        Some(_) => {
+            return Err(FailureInfo::new(
+                FailureClass::User,
+                "User",
+                "REDUCE_EMPTY_POLICY_INVALID",
+                format!("reduce.empty on node {} must be 'forbid', 'allow', or 'skip'", node.id),
+                Some(serde_json::json!({ "node_id": node.id })),
+            ));
+        }
+    };
+
+    Ok(ReduceExecutionConfig { mode, empty_policy })
+}
+
 fn map_input_port(node: &Node, params: &Value) -> Result<String, FailureInfo> {
     if let Some(input) = params
         .get("map")
@@ -3057,14 +3181,17 @@ pub fn adapter_registry_dump() -> serde_json::Value {
 fn materialize_inputs(
     ctx: &RunContext,
     graph: &Graph,
-    node_id: &str,
+    node: &Node,
     mode: MaterializeMode,
+    parent_statuses: &HashMap<String, NodeStatus>,
 ) -> Result<InputsIndex, RuntimeError> {
+    let node_id = &node.id;
     let inputs_dir = ctx.run_dir.node_inputs_dir(node_id);
     recreate_dir(ctx.fs.as_ref(), &inputs_dir)?;
     let mut files = Vec::new();
+    let mut materialized_inputs = BTreeMap::<(String, String, String), (String, String)>::new();
     for edge in &graph.edges {
-        if edge.to.node_id != node_id {
+        if edge.to.node_id != *node_id {
             continue;
         }
         let from_node = graph
@@ -3099,6 +3226,14 @@ fn materialize_inputs(
             let rel = dst_path.strip_prefix(&inputs_dir).unwrap_or(&dst_path);
             let rel_str = rel.to_string_lossy().to_string();
             let from_fp = node_fingerprint_from_ctx(ctx, &edge.from.node_id);
+            materialized_inputs.insert(
+                (
+                    edge.to.port.clone(),
+                    edge.from.node_id.clone(),
+                    edge.from.port.clone(),
+                ),
+                (rel_str.clone(), source_sha256.clone()),
+            );
             files.push(InputFile {
                 local_path: rel_str,
                 source_sha256,
@@ -3110,13 +3245,146 @@ fn materialize_inputs(
         }
     }
     files.sort_by(|a, b| a.local_path.cmp(&b.local_path));
-    let index = InputsIndex { collections: Vec::new(), files };
+    let mut collections = Vec::new();
+    if node.semantic_kind == SemanticNodeKind::Reduce {
+        let summary = build_reduce_summary(graph, node, parent_statuses, &materialized_inputs)?;
+        write_reduce_collection_manifest(ctx, node_id, &summary.collection)?;
+        write_reduce_summary(ctx, node_id, &summary)?;
+        collections.push(summary.collection);
+    }
+    let index = InputsIndex { collections, files };
     write_inputs_index(&inputs_dir, &index)?;
     Ok(index)
 }
 
 fn cache_dir_from_env() -> Option<PathBuf> {
     std::env::var("BIJUX_DAG_CACHE_DIR").ok().map(PathBuf::from)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct ReduceDependencyBinding {
+    input_port: String,
+    source_node_id: String,
+    source_output_name: String,
+}
+
+fn reduce_dependency_bindings(graph: &Graph, node: &Node) -> Vec<ReduceDependencyBinding> {
+    let input_positions = node
+        .inputs
+        .iter()
+        .enumerate()
+        .map(|(index, input)| (input.clone(), index))
+        .collect::<BTreeMap<_, _>>();
+    let mut bindings = graph
+        .edges
+        .iter()
+        .filter(|edge| edge.to.node_id == node.id)
+        .map(|edge| ReduceDependencyBinding {
+            input_port: edge.to.port.clone(),
+            source_node_id: edge.from.node_id.clone(),
+            source_output_name: edge.from.port.clone(),
+        })
+        .collect::<Vec<_>>();
+    bindings.sort_by(|left, right| {
+        input_positions
+            .get(&left.input_port)
+            .unwrap_or(&usize::MAX)
+            .cmp(input_positions.get(&right.input_port).unwrap_or(&usize::MAX))
+            .then_with(|| left.input_port.cmp(&right.input_port))
+            .then_with(|| left.source_node_id.cmp(&right.source_node_id))
+            .then_with(|| left.source_output_name.cmp(&right.source_output_name))
+    });
+    bindings
+}
+
+fn write_reduce_collection_manifest(
+    ctx: &RunContext,
+    node_id: &str,
+    collection: &InputCollection,
+) -> Result<(), RuntimeError> {
+    let bytes = serde_json::to_vec_pretty(collection)?;
+    let path = ctx.run_dir.node_inputs_dir(node_id).join(reduce_collection_manifest_name());
+    ctx.fs.write(&path, &bytes)?;
+    Ok(())
+}
+
+fn write_reduce_summary(
+    ctx: &RunContext,
+    node_id: &str,
+    summary: &ReduceExecutionSummary,
+) -> Result<(), RuntimeError> {
+    let bytes = serde_json::to_vec_pretty(summary)?;
+    ctx.fs.write(&reduce_execution_summary_path(ctx, node_id), &bytes)?;
+    Ok(())
+}
+
+fn build_reduce_summary(
+    graph: &Graph,
+    node: &Node,
+    parent_statuses: &HashMap<String, NodeStatus>,
+    materialized_inputs: &BTreeMap<(String, String, String), (String, String)>,
+) -> Result<ReduceExecutionSummary, RuntimeError> {
+    let config = reduce_execution_config(node).map_err(|failure| RuntimeError::Executor(
+        failure.message.clone(),
+    ))?;
+    let mut usable_input_count = 0usize;
+    let mut failed_input_count = 0usize;
+    let mut skipped_input_count = 0usize;
+    let mut cancelled_input_count = 0usize;
+    let mut items = Vec::new();
+
+    for binding in reduce_dependency_bindings(graph, node) {
+        let status = parent_statuses.get(&binding.source_node_id).cloned().ok_or_else(|| {
+            RuntimeError::Executor(format!(
+                "missing terminal status for reduce dependency {} -> {}",
+                binding.source_node_id, node.id
+            ))
+        })?;
+        let key = (
+            binding.input_port.clone(),
+            binding.source_node_id.clone(),
+            binding.source_output_name.clone(),
+        );
+        let (local_path, source_sha256) = materialized_inputs
+            .get(&key)
+            .cloned()
+            .map(|(path, sha)| (Some(path), Some(sha)))
+            .unwrap_or((None, None));
+        match status {
+            NodeStatus::Success | NodeStatus::Cached => usable_input_count += 1,
+            NodeStatus::Failed => failed_input_count += 1,
+            NodeStatus::Skipped => skipped_input_count += 1,
+            NodeStatus::Cancelled => cancelled_input_count += 1,
+        }
+        items.push(InputCollectionItem {
+            input_port: binding.input_port,
+            source_node_id: binding.source_node_id,
+            source_output_name: binding.source_output_name,
+            status: status_string(&status),
+            local_path,
+            source_sha256,
+        });
+    }
+
+    let collection = InputCollection {
+        name: "reduce_inputs".to_string(),
+        semantic_kind: "reduce".to_string(),
+        manifest_path: reduce_collection_manifest_name().to_string(),
+        mode: Some(reduce_mode_label(config.mode).to_string()),
+        empty_policy: Some(reduce_empty_policy_label(config.empty_policy).to_string()),
+        items,
+    };
+    Ok(ReduceExecutionSummary {
+        schema_version: reduce_execution_version(),
+        reduce_node_id: node.id.clone(),
+        mode: reduce_mode_label(config.mode).to_string(),
+        empty_policy: reduce_empty_policy_label(config.empty_policy).to_string(),
+        usable_input_count,
+        failed_input_count,
+        skipped_input_count,
+        cancelled_input_count,
+        collection,
+    })
 }
 
 #[derive(Debug, Clone)]
@@ -3934,14 +4202,25 @@ fn node_fingerprint_with_inputs(
     base_fp: &str,
     inputs: &InputsIndex,
 ) -> Result<String, RuntimeError> {
-    let value = serde_json::json!({
-        "base": base_fp,
-        "inputs": &inputs.files,
-    });
+    let value = if inputs.collections.is_empty() {
+        serde_json::json!({
+            "base": base_fp,
+            "inputs": &inputs.files,
+        })
+    } else {
+        serde_json::json!({
+            "base": base_fp,
+            "inputs": &inputs.files,
+            "collections": &inputs.collections,
+        })
+    };
     Ok(sha256_bytes(&serde_json::to_vec_pretty(&value)?))
 }
 
 fn input_lineage_fingerprint(inputs: &InputsIndex) -> Result<String, RuntimeError> {
+    if inputs.collections.is_empty() {
+        return Ok(sha256_bytes(&serde_json::to_vec(&inputs.files)?));
+    }
     Ok(sha256_bytes(&serde_json::to_vec(inputs)?))
 }
 
