@@ -457,6 +457,77 @@ fn runtime_releases_named_resource_capacity_after_terminal_state() {
 }
 
 #[test]
+fn runtime_requeues_parallelism_blocked_roots_after_worker_completion() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"alpha","kind":"const","outputs":[{"name":"out","path":"alpha/out"}],"params":{"value":"a"}},
+            {"id":"beta","kind":"const","outputs":[{"name":"out","path":"beta/out"}],"params":{"value":"b"}},
+            {"id":"gamma","kind":"const","outputs":[{"name":"out","path":"gamma/out"}],"params":{"value":"c"}}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig {
+                jobs: 1,
+                scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
+                    max_parallelism: 3,
+                    cpu_budget: Some(3),
+                    ..bijux_dag_runtime::SchedulerPolicy::default()
+                },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("runtime run");
+
+    let events = read_run_events(&run_dir);
+    let scheduler_decisions = events
+        .iter()
+        .filter(|event| event["event"] == "scheduler_decision")
+        .collect::<Vec<_>>();
+    assert_eq!(scheduler_decisions.len(), 3);
+    assert_eq!(scheduler_decisions[0]["batch"], serde_json::json!(["alpha"]));
+    assert_eq!(
+        scheduler_decisions[0]["blocked_reasons"],
+        serde_json::json!({
+            "beta": "blocked_by_parallelism",
+            "gamma": "blocked_by_parallelism"
+        })
+    );
+    assert_eq!(scheduler_decisions[1]["batch"], serde_json::json!(["beta"]));
+    assert_eq!(
+        scheduler_decisions[1]["blocked_reasons"],
+        serde_json::json!({
+            "gamma": "blocked_by_parallelism"
+        })
+    );
+    assert_eq!(scheduler_decisions[2]["batch"], serde_json::json!(["gamma"]));
+
+    let started_nodes = events
+        .iter()
+        .filter(|event| event["event"] == "node_started")
+        .map(|event| event["node_id"].as_str().expect("node id").to_string())
+        .collect::<Vec<_>>();
+    assert_eq!(started_nodes, vec!["alpha", "beta", "gamma"]);
+
+    let finished_success = events
+        .iter()
+        .filter(|event| event["event"] == "node_finished" && event["status"] == "success")
+        .map(|event| event["node_id"].as_str().expect("node id").to_string())
+        .collect::<Vec<_>>();
+    assert_eq!(finished_success, vec!["alpha", "beta", "gamma"]);
+}
+
+#[test]
 fn runtime_events_explain_ready_and_scheduler_blocking_reasons() {
     let graph = parse_graph_strict(
         r#"{
