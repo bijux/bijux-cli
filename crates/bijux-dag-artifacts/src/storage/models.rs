@@ -612,7 +612,7 @@ pub struct InputCollection {
     pub mode: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub empty_policy: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub items: Vec<InputCollectionItem>,
 }
 

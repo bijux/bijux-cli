@@ -99,6 +99,28 @@ fn inputs_index_preserves_semantic_collection_metadata() {
 }
 
 #[test]
+fn inputs_index_keeps_empty_collection_items_explicit() {
+    let dir = tempfile::tempdir().unwrap();
+    let index = InputsIndex {
+        collections: vec![InputCollection {
+            name: "reduce_inputs".to_string(),
+            semantic_kind: "reduce".to_string(),
+            manifest_path: "reduce.collection.json".to_string(),
+            mode: Some("all_success".to_string()),
+            empty_policy: Some("allow".to_string()),
+            items: vec![],
+        }],
+        files: vec![],
+    };
+
+    write_inputs_index(dir.path(), &index).unwrap();
+    let raw = fs::read_to_string(dir.path().join("index.json")).unwrap();
+    assert!(raw.contains("\"items\": []"));
+    let parsed: InputsIndex = serde_json::from_str(&raw).unwrap();
+    assert!(parsed.collections[0].items.is_empty());
+}
+
+#[test]
 fn schema_descriptor_validation_rejects_empty_fields() {
     let descriptor = ArtifactSchemaDescriptor {
         name: String::new(),
