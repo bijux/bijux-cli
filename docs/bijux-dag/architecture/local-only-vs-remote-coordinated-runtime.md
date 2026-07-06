@@ -24,6 +24,11 @@ explicitly modeled remote coordination surfaces.
 
 - worker pools, heartbeats, leases, remote logs, and status streams are typed
   contracts and simulated proofs
+- remote worker payloads are typed runtime envelopes that carry graph, node,
+  params, verified input artifacts, workspace paths, policy, and execution
+  fingerprints
+- a modeled remote worker can execute `const` and `shell` payloads and returns
+  the shared `NodeResult` schema used by local execution
 - remote coordination supports reasoning about duplicate events, partitioned
   status delivery, lease recovery, and artifact handoff semantics
 - these surfaces do not upgrade the runtime into a distributed scheduler
@@ -33,7 +38,9 @@ explicitly modeled remote coordination surfaces.
 When docs or commands mention remote or distributed execution, interpret them
 as modeled coordination boundaries unless the release boundary explicitly says
 otherwise. The current product promise remains a local controller runtime with
-future-facing distributed semantics under test.
+future-facing distributed semantics under test. The controller still owns
+scheduler state, retry policy, and run mutation; the modeled worker lane is a
+typed execution contract, not a separate production scheduler service.
 
 ## Primary proof
 
