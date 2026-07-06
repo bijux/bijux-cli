@@ -27,6 +27,7 @@
       "path": "n1/out.txt",
       "kind": "file",
       "media_type": "application/octet-stream",
+      "size_bytes": 3,
       "sha256": "abc"
     }
   ],
