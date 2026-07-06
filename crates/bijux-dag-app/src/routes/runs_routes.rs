@@ -56,6 +56,37 @@ fn collect_node_traces(run_dir: &Path) -> Result<Value, ExitCode> {
     Ok(serde_json::to_value(traces).unwrap_or(Value::Null))
 }
 
+fn format_runs_history_human(report: &Value) -> String {
+    let mut lines = Vec::new();
+    let rows = report.get("runs").and_then(Value::as_array).cloned().unwrap_or_default();
+    for row in rows {
+        let run_id = row.get("run_id").and_then(Value::as_str).unwrap_or("unknown");
+        let lifecycle_state =
+            row.get("lifecycle_state").and_then(Value::as_str).unwrap_or("historical");
+        let status = row.get("status").and_then(Value::as_str).unwrap_or("unknown");
+        let graph_name = row.get("graph_name").and_then(Value::as_str).unwrap_or("-");
+        let output_location = row.get("output_location").and_then(Value::as_str).unwrap_or("-");
+        let parent_run_id = row.get("parent_run_id").and_then(Value::as_str).unwrap_or("-");
+        let child_count = row
+            .get("lineage")
+            .and_then(|value| value.get("child_run_ids"))
+            .and_then(Value::as_array)
+            .map_or(0, std::vec::Vec::len);
+        lines.push(format!(
+            "{run_id} status={status} lifecycle={lifecycle_state} graph={graph_name} output={output_location} parent={parent_run_id} children={child_count}"
+        ));
+    }
+    if let Some(page) = report.get("page") {
+        lines.push(format!(
+            "page offset={} limit={} total={}",
+            page.get("offset").unwrap_or(&Value::Null),
+            page.get("limit").unwrap_or(&Value::Null),
+            page.get("total").unwrap_or(&Value::Null),
+        ));
+    }
+    lines.join("\n")
+}
+
 fn diagnostics_bundle_payload(run_dir: &Path, redact: bool) -> Result<Value, ExitCode> {
     let manifest = read_optional_json(&run_dir.join("manifest.json"));
     let graph_snapshot = if run_dir.join("graph.snapshot.json").exists() {
@@ -161,13 +192,14 @@ pub(crate) fn handle_runs_command(
             println!("{}", format_inspect_human(&summary));
             Ok(ExitCode::SUCCESS)
         }
-        RunsCommands::History { root, status, source, offset, limit, select } => {
+        RunsCommands::History { root, status, graph, source, offset, limit, select } => {
             let selectors = parse_selector_expressions(select)?;
             let pagination = limit.map(|value| (offset.unwrap_or(0), value));
             let report = inspect_service::run_history_query_for_root(
                 root,
                 status.as_deref(),
                 source.as_deref(),
+                graph.as_deref(),
                 pagination,
                 Some(selectors.as_slice()),
             )?;
@@ -181,7 +213,7 @@ pub(crate) fn handle_runs_command(
                     ExitCode::SUCCESS,
                 );
             }
-            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            println!("{}", format_runs_history_human(&report));
             Ok(ExitCode::SUCCESS)
         }
         RunsCommands::IdExplain { run_id, root } => {
@@ -561,6 +593,7 @@ mod tests {
             &RunsCommands::History {
                 root: tmp.path().to_path_buf(),
                 status: Some("success".to_string()),
+                graph: None,
                 source: Some("imported".to_string()),
                 offset: Some(0),
                 limit: Some(10),

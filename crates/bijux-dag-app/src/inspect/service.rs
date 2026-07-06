@@ -1,7 +1,7 @@
 use crate::routes::selector_grammar::SelectorExpression;
 use crate::run_views::{
     doctor_run, explain_failure, explain_run_id, inspect_summary, resolve_run_dir, run_timeline,
-    run_tree, runs_history, runs_history_query_with_selectors, write_run_history_index,
+    run_tree, runs_history, runs_history_query_with_filters, write_run_history_index,
 };
 use serde_json::Value;
 use std::path::Path;
@@ -40,11 +40,19 @@ pub(crate) fn run_history_query_for_root(
     root: &Path,
     status_filter: Option<&str>,
     source_filter: Option<&str>,
+    graph_filter: Option<&str>,
     pagination: Option<(usize, usize)>,
     selectors: Option<&[SelectorExpression]>,
 ) -> Result<Value, ExitCode> {
-    runs_history_query_with_selectors(root, status_filter, source_filter, pagination, selectors)
-        .map_err(|_| ExitCode::from(3))
+    runs_history_query_with_filters(
+        root,
+        status_filter,
+        source_filter,
+        graph_filter,
+        pagination,
+        selectors,
+    )
+    .map_err(|_| ExitCode::from(3))
 }
 
 pub(crate) fn rebuild_run_history_index_for_root(

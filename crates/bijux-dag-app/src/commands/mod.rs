@@ -1236,6 +1236,8 @@ pub(crate) enum RunsCommands {
         #[arg(long)]
         status: Option<String>,
         #[arg(long)]
+        graph: Option<String>,
+        #[arg(long)]
         source: Option<String>,
         #[arg(long)]
         offset: Option<usize>,
