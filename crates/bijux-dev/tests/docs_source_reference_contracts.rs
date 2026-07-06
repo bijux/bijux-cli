@@ -223,3 +223,33 @@ fn dag_crate_contract_source_references_resolve() {
         failures.join("\n")
     );
 }
+
+#[test]
+fn package_changelog_source_references_resolve() {
+    let root = repo_root();
+    let markdown_files = [
+        root.join("crates/bijux-cli/CHANGELOG.md"),
+        root.join("crates/bijux-cli-python/CHANGELOG.md"),
+    ];
+    let mut failures = Vec::new();
+
+    for doc in markdown_files {
+        let text =
+            fs::read_to_string(&doc).unwrap_or_else(|err| panic!("failed to read {}: {err}", doc.display()));
+        for (line, reference) in extract_inline_code_references(&text) {
+            if !looks_like_path_reference(&reference) {
+                continue;
+            }
+            if !reference_resolves(&doc, &root, &reference) {
+                let rel = doc.strip_prefix(&root).expect("repo-relative doc path");
+                failures.push(format!("{}:{} `{}`", rel.display(), line, reference));
+            }
+        }
+    }
+
+    assert!(
+        failures.is_empty(),
+        "package changelogs contain stale source references:\n{}",
+        failures.join("\n")
+    );
+}
