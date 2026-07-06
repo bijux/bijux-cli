@@ -14,14 +14,16 @@ claiming implemented production backends for Kubernetes or HPC.
 
 ## Scope
 
-This model covers remote execution identity fields, artifact and observability
-handoff requirements, and explicit execution-mode status classification
-exercised by `crates/bijux-dag-runtime/tests/remote_execution_contracts.rs`.
+This model covers remote execution identity fields, typed worker payloads,
+artifact and observability handoff requirements, explicit execution-mode
+status classification, and node-result payload parity exercised by
+`crates/bijux-dag-runtime/tests/remote_execution_contracts.rs`.
 
 ## Execution-mode status
 
 - `local`: implemented
 - `container`: implemented local execution mode
+- `remote-worker`: simulated worker execution mode
 - `kubernetes`: not implemented
 - `hpc`: not implemented
 
@@ -29,6 +31,45 @@ exercised by `crates/bijux-dag-runtime/tests/remote_execution_contracts.rs`.
 
 Container execution is a local engine-mediated lane. It does not imply remote
 workers, Kubernetes scheduling, or HPC submission.
+
+## Remote worker payload schema
+
+A modeled remote worker payload must carry:
+
+- remote execution identity with `run_id`, `node_id`, `attempt_id`, and
+  `backend_id`
+- the graph and concrete node being executed
+- resolved node params as JSON
+- remote workspace paths for the worker-owned run directory root and optional
+  cache directory
+- policy and absolute-path execution settings
+- planner contract version
+- execution fingerprint set:
+  `node_fingerprint`, `node_definition_fingerprint`,
+  `declared_environment_fingerprint`, `params_fingerprint`,
+  `execution_fingerprint`, `evidence_fingerprint`, and
+  `execution_contract_fingerprint`
+- optional input artifacts, each with a normalized relative path, payload
+  bytes, and a SHA-256 digest that must match the bytes delivered to the
+  worker
+
+## Worker execution semantics
+
+- the modeled worker currently executes `const` and `shell` payloads
+- `container` remains a local engine-mediated lane, not a remote worker
+  promise
+- external adapter kinds are rejected explicitly instead of being treated as
+  silently supported
+- adapter execution faults are surfaced through the shared `NodeResult`
+  failure shape rather than a separate remote-only error body
+
+## Result surface parity
+
+Remote worker execution returns a `RemoteNodeExecutionResult` envelope whose
+`node_result` field is the same serialized `NodeResult` type local execution
+produces. Remote and local lanes therefore share the same durable node-result
+schema for status, logs, outputs, evidence, failure details, attempts, and
+container metadata.
 
 ## Remote identity and handoff rules
 
@@ -49,6 +90,8 @@ execution.
 ## Related tests
 
 - `crates/bijux-dag-runtime/tests/remote_execution_contracts.rs`
+- `crates/bijux-dag-runtime/tests/distributed_contracts.rs`
+- `crates/bijux-dag-runtime/tests/runtime_execution_module_entrypoints_contracts.rs`
 
 ## Versioning and change policy
 
