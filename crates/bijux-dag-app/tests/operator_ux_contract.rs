@@ -76,6 +76,54 @@ fn write_run_fixture(base: &std::path::Path, run_id: &str) -> std::path::PathBuf
         .expect("trace b"),
     )
     .expect("write trace b");
+    fs::write(
+        run.join("observability.timeline.json"),
+        serde_json::to_vec_pretty(&json!({
+            "schema_version":"v0.1",
+            "entries":[
+                {
+                    "unix_ms":1000u64,
+                    "category":"run",
+                    "label":"run_started",
+                    "node_id": null,
+                    "source_event":"run_started"
+                },
+                {
+                    "unix_ms":1001u64,
+                    "category":"ready",
+                    "label":"node_ready",
+                    "node_id":"a",
+                    "source_event":"node_ready"
+                },
+                {
+                    "unix_ms":1050u64,
+                    "category":"cache_hit",
+                    "label":"node_cached",
+                    "node_id":"a",
+                    "status":"cached",
+                    "source_event":"node_finished"
+                },
+                {
+                    "unix_ms":1099u64,
+                    "category":"failure",
+                    "label":"node_failed",
+                    "node_id":"b",
+                    "status":"failed",
+                    "reason":"execution_failed",
+                    "source_event":"node_finished"
+                },
+                {
+                    "unix_ms":1100u64,
+                    "category":"run",
+                    "label":"run_completed",
+                    "node_id": null,
+                    "source_event":"run_finished"
+                }
+            ]
+        }))
+        .expect("timeline json"),
+    )
+    .expect("write timeline");
     run
 }
 
@@ -103,13 +151,16 @@ fn operator_tree_timeline_and_failure_explain_work_from_explicit_run_dir() {
     let tree = run_tree(&run).expect("tree");
     assert_eq!(tree["nodes"].as_array().expect("nodes").len(), 2);
     let timeline = run_timeline(&run).expect("timeline");
-    assert_eq!(timeline["events"].as_array().expect("events").len(), 2);
+    assert_eq!(timeline["source"], "observability_timeline");
+    assert_eq!(timeline["events"].as_array().expect("events").len(), 5);
     let events = timeline["events"].as_array().expect("events");
-    assert_eq!(events[0]["node_id"], "a");
-    assert_eq!(events[0]["cache_hit"], true);
-    assert_eq!(events[0]["event_kind"], "cache_hit");
-    assert_eq!(events[1]["attempt"], 2);
-    assert_eq!(events[1]["event_kind"], "retry");
+    assert_eq!(events[0]["label"], "run_started");
+    assert_eq!(events[2]["node_id"], "a");
+    assert_eq!(events[2]["label"], "node_cached");
+    assert_eq!(events[2]["status"], "cached");
+    assert_eq!(events[3]["node_id"], "b");
+    assert_eq!(events[3]["label"], "node_failed");
+    assert_eq!(events[3]["reason"], "execution_failed");
     let explain = explain_failure(&run).expect("explain");
     assert_eq!(explain["root_failure"], "b");
     assert_eq!(explain["root_failure_class"], "execution");
@@ -203,10 +254,25 @@ fn operator_timing_summary_is_trace_coherent() {
     assert!(finished >= started);
     let timeline = run_timeline(&run).expect("timeline");
     let events = timeline["events"].as_array().unwrap();
-    let min_start = events.iter().filter_map(|e| e["started_unix_ms"].as_u64()).min().unwrap();
-    let max_finish = events.iter().filter_map(|e| e["finished_unix_ms"].as_u64()).max().unwrap();
-    assert!(min_start >= started);
-    assert!(max_finish <= finished);
+    let min_unix_ms = events.iter().filter_map(|e| e["unix_ms"].as_u64()).min().unwrap();
+    let max_unix_ms = events.iter().filter_map(|e| e["unix_ms"].as_u64()).max().unwrap();
+    assert!(min_unix_ms >= started);
+    assert!(max_unix_ms <= finished);
+}
+
+#[test]
+fn operator_timeline_falls_back_to_node_traces_for_older_runs() {
+    let tmp = tempfile::tempdir().expect("tmpdir");
+    let run = write_run_fixture(tmp.path(), "run-fallback");
+    fs::remove_file(run.join("observability.timeline.json")).expect("remove timeline");
+
+    let timeline = run_timeline(&run).expect("timeline");
+    assert_eq!(timeline["source"], "node_traces");
+    let events = timeline["events"].as_array().expect("events");
+    assert_eq!(events.len(), 2);
+    assert_eq!(events[0]["label"], "node_cached");
+    assert_eq!(events[0]["source_event"], "trace_projection");
+    assert_eq!(events[1]["label"], "node_failed");
 }
 
 #[test]
