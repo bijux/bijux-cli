@@ -195,11 +195,9 @@ fn runs_history_json_filters_by_graph_and_surfaces_lineage_output_and_lifecycle(
     assert_eq!(row["graph_name"], "training-pipeline");
     assert_eq!(row["graph_fingerprint"], "graph-train");
     assert!(row["run_dir"].as_str().is_some_and(|value| value.ends_with("/run-child")));
-    assert!(
-        row["output_location"]
-            .as_str()
-            .is_some_and(|value| value.ends_with("/run-child/outputs"))
-    );
+    assert!(row["output_location"]
+        .as_str()
+        .is_some_and(|value| value.ends_with("/run-child/outputs")));
     assert_eq!(row["lineage"]["parent_run_id"], "run-parent");
 }
 
@@ -232,10 +230,8 @@ fn runs_history_json_orders_recent_runs_and_surfaces_child_lineage() {
         false,
     );
 
-    let payload = run_json(
-        &["runs", "history", "--json", "--root", &output_path_string(&runs_root)],
-        &root,
-    );
+    let payload =
+        run_json(&["runs", "history", "--json", "--root", &output_path_string(&runs_root)], &root);
 
     let rows = payload["data"]["runs"].as_array().expect("history rows");
     assert_eq!(rows[0]["run_id"], "run-child");

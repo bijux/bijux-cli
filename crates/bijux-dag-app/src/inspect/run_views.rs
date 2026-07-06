@@ -979,11 +979,8 @@ mod tests {
         .expect("write snapshot");
         std::fs::write(active.join("outputs").join("index.json"), "{\"files\":[]}")
             .expect("outputs");
-        std::fs::write(
-            active.join(".run-incomplete.json"),
-            r#"{"reason":"run not finalized"}"#,
-        )
-        .expect("incomplete marker");
+        std::fs::write(active.join(".run-incomplete.json"), r#"{"reason":"run not finalized"}"#)
+            .expect("incomplete marker");
 
         let historical = temp.path().join("run-parent");
         std::fs::create_dir_all(historical.join("outputs")).expect("mkdir outputs");
@@ -1031,10 +1028,7 @@ mod tests {
         assert_eq!(rows[0]["run_id"], "run-active");
         assert_eq!(rows[0]["lifecycle_state"], "active");
         assert_eq!(rows[0]["graph_fingerprint"], "graph-train");
-        assert_eq!(
-            rows[0]["output_location"],
-            json!(active.join("outputs").display().to_string())
-        );
+        assert_eq!(rows[0]["output_location"], json!(active.join("outputs").display().to_string()));
     }
 
     #[test]
