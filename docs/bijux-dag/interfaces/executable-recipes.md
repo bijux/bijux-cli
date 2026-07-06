@@ -4,7 +4,7 @@ audience: mixed
 type: reference
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-30
+last_reviewed: 2026-07-06
 ---
 
 # Executable Recipes
@@ -40,7 +40,9 @@ This recipe intentionally spans two lanes:
 ```bash
 bijux-dag validate --json ${GRAPH}
 bijux-dag plan explain --json ${GRAPH}
+bijux-dag show-effective-graph --json ${GRAPH}
 bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id ${RUN_ID}
+bijux-dag show-effective-graph --json --run-dir ${RUN_DIR}
 bijux-dag explain --json ${RUN_DIR}
 bijux-dag runs history --json --root ${RUN_ROOT} --status success --offset 0 --limit 5 --select run:${RUN_ID}
 bijux-dag runs inspect ${RUN_ID} --root ${RUN_ROOT} --json

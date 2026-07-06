@@ -60,18 +60,22 @@ The following operator-oriented routes stay callable by explicit path, but they
 are hidden from the default root help and default command catalog because they
 either widen the contract too far or still need stricter release posture:
 
-- authoring helpers and raw graph internals: `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `canonical-bytes`, `canonical-diff`
+- authoring helpers and raw graph internals: `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `canonical-bytes`, `canonical-diff`, `show-effective-graph`
 - advanced inspection and comparison helpers: `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`
   `node` is the explicit-path deep inspection route for one persisted node and
   surfaces planned fields, artifact indexes, attempts, log tails, cache state,
   failure evidence, and evidence gaps
+  `show-effective-graph` is the explicit graph-structure inspection route and
+  surfaces nodes, edges, roots, leaves, branch paths, joins, resources, output
+  contracts, and selected versus omitted nodes either from graph input or a
+  persisted run snapshot
 - bundle, migration, and environment control helpers: `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary`
 
 ## Full Command Families
 
 - definition: `init`, `validate`, `canonicalize`, `lint`, `graph-lint`, `fingerprint`
 - execution and replay: `run`, `replay`, `prove`, `proof-summary`, `verify`, `fsck`
-- inspect and history: `status`, `explain`, `node`, `runs ...`, `artifact-inspect`
+- inspect and history: `status`, `explain`, `node`, `runs ...`, `artifact-inspect`, `show-effective-graph`
 
 For the explicit node-evidence route, see
 [`node-inspection.md`](./node-inspection.md).
@@ -115,20 +119,37 @@ presented as stable operator APIs. See `LIM-005`, `LIM-006`, `RISK-002`, and
 
 - `--select` and `--exclude` remain the stable partial-planning selectors for
   `plan explain` and replay surfaces.
+- `show-effective-graph <dag>` accepts the same selector grammar for explicit
+  graph inspection before execution.
 - `--to-node <node-id>` is available on `bijux-dag plan explain`,
-  `bijux-dag run`, and the compatibility alias `bijux-dag explain-plan`.
+  `bijux-dag run`, `bijux-dag show-effective-graph`, and the compatibility
+  alias `bijux-dag explain-plan`.
 - `--to-node` selects the named node and its deterministic upstream closure,
   then reports the requested upstream targets in the planning payload.
 - `--from-node <node-id>` is available on `bijux-dag plan explain`,
-  `bijux-dag replay`, and the compatibility alias `bijux-dag explain-plan`.
+  `bijux-dag replay`, `bijux-dag show-effective-graph`, and the compatibility
+  alias `bijux-dag explain-plan`.
 - `--from-node` selects the named node and its deterministic downstream
   closure, then reports the requested downstream roots in the planning payload.
 - `replay --from-node` treats the selected closure as a rerun boundary, so the
   selected nodes reexecute instead of being satisfied by stale replay reuse.
+- `show-effective-graph --run-dir <run-dir>` reuses the persisted selection
+  from `run.snapshot.json` and rejects selector overlays so the inspection
+  matches what the run actually executed.
 - `--to-node` is exclusive with `--select`, `--exclude`, and
   `--dependency-closure`.
 - `--from-node` is exclusive with `--select`, `--exclude`, and
   `--dependency-closure`.
+
+## Graph Inspection Controls
+
+- `bijux-dag show-effective-graph --json <dag>` surfaces the canonical graph
+  plus explicit inspection summaries for nodes, edges, roots, leaves, branch
+  paths, joins, resource claims, output contracts, and selected versus omitted
+  nodes.
+- `bijux-dag show-effective-graph --json --run-dir <run-dir>` replays the same
+  inspection shape from `graph.snapshot.json` and `run.snapshot.json` after
+  execution so structural inspection stays comparable before and after a run.
 
 ## Path Preview Controls
 
