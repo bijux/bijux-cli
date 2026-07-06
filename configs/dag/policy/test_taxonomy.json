@@ -1,24 +1,109 @@
 {
-  "required_prefixes": [
-    "unit_",
-    "contract_",
-    "integration_",
-    "e2e_",
-    "perf_",
-    "compat_",
-    "fault_"
+  "allowed_suffixes": [
+    "_contracts.rs",
+    "_contract.rs",
+    "_matrix.rs",
+    "_parity.rs",
+    "_regressions.rs",
+    "_targets.rs",
+    "_fixtures.rs",
+    "_boundaries.rs",
+    "_property.rs",
+    "_coverage.rs",
+    "_integration.rs",
+    "_scenarios.rs",
+    "_pipeline.rs",
+    "_report.rs",
+    "_compatibility.rs",
+    "_invariants.rs",
+    "_state_machine.rs",
+    "_guardrails.rs",
+    "_conformance.rs",
+    "_law_extra.rs",
+    "_unity.rs",
+    "_suite.rs"
   ],
-  "legacy_allowlist": [
-    "crates/bijux-dag-app/tests/output_contract.rs",
-    "crates/bijux-dag-app/tests/cli_contract.rs",
-    "crates/bijux-dag-artifacts/tests/conformance.rs",
-    "crates/bijux-dag-artifacts/tests/platform_contracts.rs",
-    "crates/bijux-dev-dag/tests/crate_taxonomy_guardrails.rs",
-    "crates/bijux-dev-dag/tests/file_size_guardrails.rs",
-    "crates/bijux-dev-dag/tests/no_cli_in_runtime.rs",
-    "crates/bijux-dev-dag/tests/no_core_io.rs",
-    "crates/bijux-dev-dag/tests/no_runtime_in_core.rs",
-    "crates/bijux-dev-dag/tests/source_layout_guardrails.rs",
-    "crates/bijux-dag-app/tests/fault_resilience_integration.rs"
+  "allowed_exact_names": [
+    "architecture.rs",
+    "integration.rs",
+    "routing.rs",
+    "compat.rs",
+    "conformance.rs",
+    "contract_run_all.rs",
+    "contract_surface.rs",
+    "control_plane_registry.rs",
+    "graph_kernel_determinism.rs",
+    "maintainer_routes.rs",
+    "no_cli_in_runtime.rs",
+    "no_core_io.rs",
+    "no_runtime_in_core.rs",
+    "observability_events.rs",
+    "python_packaging_ownership.rs",
+    "query_interfaces.rs",
+    "schedule_contract_surface.rs",
+    "serde_roundtrip.rs",
+    "snapshot_shapes.rs",
+    "source_layout_guardrails.rs",
+    "state_machine_transitions.rs",
+    "task_contract_modes.rs",
+    "validation_contracts_21_40.rs",
+    "bridge_bindings.rs"
+  ],
+  "descriptive_path_segments": [
+    "/tests/architecture/",
+    "/tests/integration/",
+    "/tests/maintainer/",
+    "/tests/routing/",
+    "/tests/support/"
+  ],
+  "shellout_allowed_suffixes": [
+    "_contract.rs",
+    "_contracts.rs",
+    "_boundaries.rs",
+    "_integration.rs",
+    "_pipeline.rs",
+    "_report.rs",
+    "_scenarios.rs"
+  ],
+  "shellout_allowed_path_segments": [
+    "/tests/e2e/",
+    "/tests/integration/",
+    "/tests/maintainer/e2e/",
+    "/tests/support/"
+  ],
+  "required_families": [
+    {
+      "name": "contract",
+      "suffix": "_contract.rs"
+    },
+    {
+      "name": "contracts",
+      "suffix": "_contracts.rs"
+    },
+    {
+      "name": "matrix",
+      "suffix": "_matrix.rs"
+    },
+    {
+      "name": "parity",
+      "suffix": "_parity.rs"
+    },
+    {
+      "name": "regressions",
+      "suffix": "_regressions.rs"
+    },
+    {
+      "name": "boundaries",
+      "suffix": "_boundaries.rs"
+    },
+    {
+      "name": "integration",
+      "path_segment": "/tests/integration/"
+    },
+    {
+      "name": "e2e",
+      "prefix": "e2e_",
+      "path_segment": "/tests/e2e/"
+    }
   ]
 }

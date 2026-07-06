@@ -27,6 +27,7 @@ flowchart TD
 - classify changes by affected command family and policy impact
 - keep command behavior and docs updated together
 - require explicit evidence for compatibility-sensitive changes
+- keep `configs/dag/policy/test_taxonomy.json` aligned with the actual test-suite structure instead of accumulating legacy allowlists
 - track temporary exceptions with expiry and owner
 
 ## Review Checklist
@@ -41,6 +42,7 @@ flowchart TD
 - `crates/bijux-dev/src/commands/mod.rs`
 - `crates/bijux-dev/src/suites/mod.rs`
 - `crates/bijux-dev/src/policy/mod.rs`
+- `configs/dag/policy/test_taxonomy.json`
 
 ## Next Reads
 

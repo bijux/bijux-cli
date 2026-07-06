@@ -2,6 +2,13 @@
 
 This document is generated from runtime adapter descriptors and backend contract references.
 
+## Scope
+
+This contract defines the registered adapter identities, conformance scenarios,
+external adapter handshake rules, and modeled backend behavior that must stay
+aligned across runtime execution, app inspection surfaces, and generated
+adapter metadata.
+
 ## Registered adapters
 - `const` `0.1`: kinds=["const"], origin=BuiltIn, schema=v0.1, timeout=true, cancel=false, cache=FingerprintExact
 - `container` `0.1`: kinds=["container"], origin=BuiltIn, schema=v0.1, timeout=true, cancel=false, cache=FingerprintExact
@@ -62,3 +69,18 @@ This document is generated from runtime adapter descriptors and backend contract
 ## Fake batch executor
 - submit=`submit(run_id,node_id) -> job_id`, poll=`snapshot(job_id) -> status`, cancel=`cancel(job_id, diagnostic)`
 - states: queued, running, completed, failed, cancelled
+
+## Related tests
+
+- `crates/bijux-dag-app/tests/adapter_command_contract.rs`
+- `crates/bijux-dag-runtime/tests/adapter_backend_contracts.rs`
+- `crates/bijux-dag-runtime/tests/adapter_reference_contracts.rs`
+- `crates/bijux-dag-runtime/tests/adapter_runtime_contracts.rs`
+- `crates/bijux-dag-runtime/tests/adapter_sdk_contract.rs`
+
+## Versioning and change policy
+
+Registered adapter identities, conformance scenario semantics, and external
+adapter handshake rules are stable contract surfaces. Any incompatible change
+requires updating this document, refreshing the generated adapter descriptors,
+and extending the linked runtime and app contract tests in the same change.

@@ -42,6 +42,10 @@ flowchart TB
 - pair every limitation note with the owning code area
 - remove limitation entries only when evidence is merged and verified
 
+Latency-related limitation edits should be checked against
+`bijux-dev-dag performance-evidence-report` before changing user-facing
+expectations.
+
 ## Next Reads
 
 - [Risk Register](risk-register.md)

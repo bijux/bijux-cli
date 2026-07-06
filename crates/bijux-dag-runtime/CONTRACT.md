@@ -29,3 +29,7 @@ Responsibility: Execution engine, scheduler behavior, policy enforcement, replay
 
 ## Effect boundary
 Runtime must isolate subprocess creation behind explicit boundary helpers and avoid hidden ambient reads.
+
+## Related schemas
+
+- `configs/dag/schema/runtime_config.schema.json`

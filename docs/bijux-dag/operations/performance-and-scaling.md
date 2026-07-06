@@ -34,6 +34,13 @@ flowchart LR
 - verify output equivalence and replay fidelity after tuning
 - reject optimization changes that hide classification precision
 
+## Evidence Route
+
+Before changing performance language here, run
+`bijux-dev-dag performance-evidence-report` and review
+`evidence/perf/metadata.json` so the page stays tied to maintained benchmark
+scenarios.
+
 ## Code Anchors
 
 - `crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs`

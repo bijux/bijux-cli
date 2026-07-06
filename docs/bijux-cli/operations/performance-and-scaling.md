@@ -31,6 +31,12 @@ flowchart LR
 - rendering very large structured payloads
 - delegated command invocation overhead
 
+## Evidence Route
+
+When performance wording changes on this page, refresh maintainer evidence first
+with `bijux-dev-dag performance-evidence-report` and confirm the current
+scenario metadata in `evidence/perf/metadata.json`.
+
 ## Code Anchors
 
 - `crates/bijux-cli/src/routing/parser.rs`

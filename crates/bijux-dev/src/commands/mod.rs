@@ -3228,7 +3228,7 @@ fn run_repo_manifests_guard() -> Result<(), String> {
         "bijux-dag-runtime",
         "bijux-dag-app",
         "bijux-dag-cli",
-        "bijux-dev-dag",
+        "bijux-dev",
     ] {
         let manifest = root.join("crates").join(crate_name).join("Cargo.toml");
         let text = fs::read_to_string(&manifest).map_err(|err| err.to_string())?;

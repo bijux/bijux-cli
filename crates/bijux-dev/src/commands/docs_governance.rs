@@ -45,16 +45,15 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
     let root = repo_root()?;
     let docs_root = root.join("docs");
     let allowed_dirs = [
+        "assets",
+        "automation",
+        "bijux-cli",
+        "bijux-core",
+        "bijux-dag",
+        "bijux-dev",
+        "overrides",
+        "reports",
         "spec",
-        "architecture",
-        "user",
-        "dev",
-        "reference",
-        "tracking",
-        "generated",
-        "_tracking",
-        "adr",
-        "operations",
     ];
 
     for entry in fs::read_dir(&docs_root).map_err(|err| err.to_string())? {
@@ -82,22 +81,15 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
     }
 
     for rel in [
-        "docs/spec/DOCS_GOVERNANCE.md",
-        "docs/tracking/DOC_OWNERSHIP.json",
-        "docs/tracking/DOCS_PRUNING_CHECKLIST.md",
+        "docs/index.md",
+        "docs/bijux-core/governance/documentation-standards.md",
+        "docs/bijux-core/governance/index.md",
+        "docs/bijux-dev/governance/documentation-standard.md",
+        "docs/bijux-dev/operations/docs-operations.md",
     ] {
         if !root.join(rel).exists() {
             return Err(format!("missing docs governance artifact: {rel}"));
         }
-    }
-
-    let owners: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("docs/tracking/DOC_OWNERSHIP.json"))
-            .map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
-    if owners.get("owners").and_then(Value::as_array).is_none_or(|items| items.is_empty()) {
-        return Err("docs ownership metadata has no owners entries".to_string());
     }
 
     for forbidden in ["production-grade", "world-class"] {
@@ -588,8 +580,8 @@ pub(super) fn run_docs_schema_reference_guard() -> Result<(), String> {
             if !token.contains("configs/dag/schema/") {
                 continue;
             }
-            let clean =
-                token.trim_matches(|c: char| matches!(c, ')' | '(' | '[' | ']' | ',' | ';' | '"'));
+            let clean = token
+                .trim_matches(|c: char| matches!(c, ')' | '(' | '[' | ']' | ',' | ';' | '"' | '`'));
             let path = if clean.contains("configs/dag/schema/") {
                 let idx = clean.find("configs/dag/schema/").unwrap_or(0);
                 &clean[idx..]
@@ -616,21 +608,18 @@ pub(super) fn run_docs_schema_reference_guard() -> Result<(), String> {
 
 pub(super) fn run_docs_contract_reference_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let crate_names = [
-        "bijux-dag-core",
-        "bijux-dag-artifacts",
-        "bijux-dag-runtime",
-        "bijux-dag-app",
-        "bijux-dag-cli",
-        "bijux-dag-testkit",
-        "bijux-dev-dag",
-    ];
     let mut violations = Vec::new();
+    let crate_docs = [
+        ("bijux-dag-core", "docs/bijux-dag/packages/bijux-dag-core.md"),
+        ("bijux-dag-artifacts", "docs/bijux-dag/packages/bijux-dag-artifacts.md"),
+        ("bijux-dag-runtime", "docs/bijux-dag/packages/bijux-dag-runtime.md"),
+        ("bijux-dag-app", "docs/bijux-dag/packages/bijux-dag-app.md"),
+        ("bijux-dag-cli", "docs/bijux-dag/packages/bijux-dag-cli.md"),
+        ("bijux-dag-testkit", "docs/bijux-dag/packages/bijux-dag-testkit.md"),
+        ("bijux-dev", "docs/bijux-dev/packages/bijux-dev.md"),
+    ];
 
-    let docs_index = fs::read_to_string(root.join("docs/reference/DOCS_INDEX.md"))
-        .map_err(|err| err.to_string())?;
-
-    for crate_name in crate_names {
+    for (crate_name, doc_rel) in crate_docs {
         let crate_dir = root.join("crates").join(crate_name);
         if !crate_dir.join("README.md").exists() {
             violations.push(format!("{crate_name} missing README.md"));
@@ -638,9 +627,14 @@ pub(super) fn run_docs_contract_reference_guard() -> Result<(), String> {
         if !crate_dir.join("CONTRACT.md").exists() {
             violations.push(format!("{crate_name} missing CONTRACT.md"));
         }
-        if !docs_index.contains(crate_name) {
-            violations
-                .push(format!("docs/reference/DOCS_INDEX.md missing crate mention: {crate_name}"));
+        let doc_path = root.join(doc_rel);
+        if !doc_path.exists() {
+            violations.push(format!("missing package handbook page: {doc_rel}"));
+            continue;
+        }
+        let doc_text = fs::read_to_string(&doc_path).map_err(|err| err.to_string())?;
+        if !doc_text.contains(crate_name) {
+            violations.push(format!("{doc_rel} missing crate mention: {crate_name}"));
         }
     }
 
@@ -703,26 +697,32 @@ pub(super) fn run_docs_index_generate() -> Result<(), String> {
 
 pub(super) fn run_docs_coverage_report() -> Result<(), String> {
     let root = repo_root()?;
-    let crate_names = [
-        "bijux-dag-core",
-        "bijux-dag-artifacts",
-        "bijux-dag-runtime",
-        "bijux-dag-app",
-        "bijux-dag-cli",
-        "bijux-dag-testkit",
-        "bijux-dev-dag",
+    let crate_docs = [
+        ("bijux-dag-core", "docs/bijux-dag/packages/bijux-dag-core.md"),
+        ("bijux-dag-artifacts", "docs/bijux-dag/packages/bijux-dag-artifacts.md"),
+        ("bijux-dag-runtime", "docs/bijux-dag/packages/bijux-dag-runtime.md"),
+        ("bijux-dag-app", "docs/bijux-dag/packages/bijux-dag-app.md"),
+        ("bijux-dag-cli", "docs/bijux-dag/packages/bijux-dag-cli.md"),
+        ("bijux-dag-testkit", "docs/bijux-dag/packages/bijux-dag-testkit.md"),
+        ("bijux-dev", "docs/bijux-dev/packages/bijux-dev.md"),
     ];
 
     let mut missing = Vec::new();
-    for crate_name in crate_names {
+    for (crate_name, doc_rel) in crate_docs {
         if !root.join("crates").join(crate_name).join("CONTRACT.md").exists() {
             missing.push(format!("missing contract doc for {crate_name}"));
         }
+        if !root.join(doc_rel).exists() {
+            missing.push(format!("missing package handbook page for {crate_name}: {doc_rel}"));
+        }
     }
 
-    let command_taxonomy = root.join("docs/reference/COMMAND_TAXONOMY.md");
-    if !command_taxonomy.exists() {
-        missing.push("missing CLI command taxonomy doc".to_string());
+    for rel in
+        ["docs/bijux-cli/interfaces/cli-surface.md", "docs/bijux-dag/interfaces/cli-surface.md"]
+    {
+        if !root.join(rel).exists() {
+            missing.push(format!("missing command surface doc: {rel}"));
+        }
     }
 
     println!(

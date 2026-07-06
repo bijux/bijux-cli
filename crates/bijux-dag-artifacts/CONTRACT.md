@@ -25,3 +25,10 @@ It is explicitly a `format + IO` crate.
 - Runtime must use artifact persistence through this crate's stable APIs.
 - Runtime must not reimplement manifest/index write semantics internally.
 - This crate must not depend on app or CLI orchestration layers.
+
+## Related schemas
+
+- `configs/dag/schema/inputs_index.schema.json`
+- `configs/dag/schema/node_trace.schema.json`
+- `configs/dag/schema/outputs_index.schema.json`
+- `configs/dag/schema/run_manifest.schema.json`

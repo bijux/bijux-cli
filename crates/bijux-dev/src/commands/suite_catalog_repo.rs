@@ -244,7 +244,7 @@ pub(super) const REPO_SUITES: &[SuiteDef] = &[
     },
     SuiteDef {
         id: "contract-command-ownership",
-        description: "public commands must be covered by exactly one CLI contract section entry",
+        description: "governed commands must be covered by exactly one command-surface section entry",
         domain: "governance",
         slow: false,
         internal: false,

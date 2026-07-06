@@ -34,6 +34,16 @@ Allowed utility dependencies:
 ## Validation model
 Validation diagnostics must carry stable IDs and severities and remain documented in `docs/spec/VALIDATION_RULES.md`.
 
+## Related schemas
+
+- `configs/dag/schema/dag.schema.json`
+- `configs/dag/schema/extension_descriptor.schema.json`
+- `configs/dag/schema/graph_canonical_diff.schema.json`
+- `configs/dag/schema/graph_fingerprint_explain.schema.json`
+- `configs/dag/schema/migration_report.schema.json`
+- `configs/dag/schema/planner_explain.schema.json`
+- `configs/dag/schema/policy_config.schema.json`
+
 ## Architectural guardrails
 - Domain types should stay independent from compile-orchestration conveniences.
 - New algorithms belong in focused modules, not in `src/lib.rs`.
