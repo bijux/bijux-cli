@@ -11,6 +11,7 @@ use std::time::{Duration, Instant};
 pub struct SchedulerPolicy {
     pub max_parallelism: usize,
     pub cpu_budget: Option<u32>,
+    pub memory_budget_mb: Option<u32>,
     pub fairness: SchedulerFairness,
     pub queue_isolation: QueueIsolationPolicy,
     pub bounded_executor_capacity: usize,
@@ -339,6 +340,7 @@ impl Default for SchedulerPolicy {
         Self {
             max_parallelism: 1,
             cpu_budget: None,
+            memory_budget_mb: None,
             fairness: SchedulerFairness::Deterministic,
             queue_isolation: QueueIsolationPolicy::SingleQueue,
             bounded_executor_capacity: 64,
@@ -417,7 +419,7 @@ pub enum SchedulerPriorityModel {
 #[serde(rename_all = "snake_case")]
 pub enum ReadyTieBreak {
     LexicographicNodeId,
-    PriorityCpuFitThenNodeId,
+    PriorityCpuMemoryFitThenNodeId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -433,7 +435,7 @@ pub fn scheduler_contract_profile() -> SchedulerContractProfile {
         canonical_unit: SchedulerUnit::Node,
         model: SchedulerModel::EventDriven,
         priority_model: SchedulerPriorityModel::StaticHints,
-        ready_tie_break: ReadyTieBreak::PriorityCpuFitThenNodeId,
+        ready_tie_break: ReadyTieBreak::PriorityCpuMemoryFitThenNodeId,
     }
 }
 
@@ -717,6 +719,7 @@ struct ReadyCandidate {
     node_id: String,
     priority: u8,
     cpu: u32,
+    memory_mb: u32,
 }
 
 fn preflight_decision(
@@ -770,7 +773,10 @@ impl Scheduler for DeterministicScheduler {
             .cpu_budget
             .or(options.cpu_budget)
             .unwrap_or(options.jobs.max(1) as u32);
+        let memory_budget_mb =
+            options.scheduler_policy.memory_budget_mb.or(options.memory_budget_mb);
         let mut used_cpu = 0u32;
+        let mut used_memory_mb = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
         let mut blocked_reasons = BTreeMap::new();
@@ -780,6 +786,7 @@ impl Scheduler for DeterministicScheduler {
             .map(|node_id| ReadyCandidate {
                 priority: node_priority(graph, &node_id),
                 cpu: node_cpu(graph, &node_id),
+                memory_mb: node_memory_mb(graph, &node_id),
                 node_id,
             })
             .collect::<Vec<_>>();
@@ -787,6 +794,7 @@ impl Scheduler for DeterministicScheduler {
             b.priority
                 .cmp(&a.priority)
                 .then_with(|| a.cpu.cmp(&b.cpu))
+                .then_with(|| a.memory_mb.cmp(&b.memory_mb))
                 .then_with(|| a.node_id.cmp(&b.node_id))
         });
         let ready_candidates =
@@ -805,7 +813,14 @@ impl Scheduler for DeterministicScheduler {
                 blocked_reasons.insert(candidate.node_id.clone(), "blocked_by_cpu".to_string());
                 continue;
             }
+            if memory_budget_mb.is_some_and(|budget| used_memory_mb + candidate.memory_mb > budget)
+            {
+                blocked.push(candidate.node_id.clone());
+                blocked_reasons.insert(candidate.node_id.clone(), "blocked_by_memory".to_string());
+                continue;
+            }
             used_cpu += candidate.cpu;
+            used_memory_mb += candidate.memory_mb;
             let _ = ready_queue.take(&candidate.node_id);
             batch.push(candidate.node_id.clone());
         }
@@ -823,7 +838,7 @@ impl Scheduler for DeterministicScheduler {
             blocked_by_budget: blocked,
             blocked_reasons,
             decision_reason,
-            tie_break_reason: Some("priority_cpu_fit_then_node_id".to_string()),
+            tie_break_reason: Some("priority_cpu_memory_fit_then_node_id".to_string()),
             timed_out: false,
             cancelled: false,
         }
@@ -849,7 +864,10 @@ impl Scheduler for ThroughputScheduler {
             .cpu_budget
             .or(options.cpu_budget)
             .unwrap_or(options.jobs.max(1) as u32);
+        let memory_budget_mb =
+            options.scheduler_policy.memory_budget_mb.or(options.memory_budget_mb);
         let mut used_cpu = 0u32;
+        let mut used_memory_mb = 0u32;
         let mut batch = Vec::new();
         let mut blocked = Vec::new();
         let mut blocked_reasons = BTreeMap::new();
@@ -863,12 +881,19 @@ impl Scheduler for ThroughputScheduler {
                 None => break,
             };
             let cpu = node_cpu(graph, &id);
+            let memory_mb = node_memory_mb(graph, &id);
             if used_cpu + cpu > cpu_budget {
                 blocked_reasons.insert(id.clone(), "blocked_by_cpu".to_string());
                 blocked.push(id);
                 continue;
             }
+            if memory_budget_mb.is_some_and(|budget| used_memory_mb + memory_mb > budget) {
+                blocked_reasons.insert(id.clone(), "blocked_by_memory".to_string());
+                blocked.push(id);
+                continue;
+            }
             used_cpu += cpu;
+            used_memory_mb += memory_mb;
             batch.push(id);
         }
         for id in blocked.clone() {
@@ -2303,6 +2328,16 @@ fn node_cpu(graph: &Graph, node_id: &str) -> u32 {
         .find(|n| n.id == node_id)
         .and_then(|n| n.resources.as_ref().map(|r| r.cpu))
         .unwrap_or(1)
+        .max(1)
+}
+
+fn node_memory_mb(graph: &Graph, node_id: &str) -> u32 {
+    graph
+        .nodes
+        .iter()
+        .find(|n| n.id == node_id)
+        .and_then(|n| n.resources.as_ref().map(|r| r.mem_mb))
+        .unwrap_or(256)
         .max(1)
 }
 
