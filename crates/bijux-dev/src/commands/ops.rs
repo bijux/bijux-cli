@@ -4959,7 +4959,7 @@ fn evaluate_release_artifacts_runnable(root: &Path) -> Result<Value, String> {
         "bijux-dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json",
         "bijux-dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}",
         "bijux-dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}",
-        "bijux-dag status --json ${RUN_DIR}",
+        "bijux-dag explain --json ${RUN_DIR}",
     ] {
         if !policy.contains(required_cmd) {
             violations.push(format!("release binary verification doc missing `{required_cmd}`"));
@@ -5105,9 +5105,12 @@ fn evaluate_executable_docs_recipes(root: &Path) -> Result<Value, String> {
                 continue;
             };
             total_commands += 1;
-            if !(command.starts_with("bijux ") || command.starts_with("python -m ")) {
+            if !(command.starts_with("bijux ")
+                || command.starts_with("bijux-")
+                || command.starts_with("python -m "))
+            {
                 violations.push(format!(
-                    "recipe command must start with `bijux` or `python -m`: {command}"
+                    "recipe command must start with `bijux`, `bijux-*`, or `python -m`: {command}"
                 ));
             }
             if !body.contains(command) {

@@ -8,7 +8,7 @@
       "required_commands": [
         "bijux-dag validate --json evidence/authoring/examples/hello.dag.json",
         "bijux-dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}",
-        "bijux-dag status --json ${RUN_DIR}"
+        "bijux-dag explain --json ${RUN_DIR}"
       ]
     },
     {
@@ -18,7 +18,7 @@
       "required_commands": [
         "bijux-dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json",
         "bijux-dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}",
-        "bijux-dag status --json ${RUN_DIR}"
+        "bijux-dag explain --json ${RUN_DIR}"
       ]
     }
   ]
