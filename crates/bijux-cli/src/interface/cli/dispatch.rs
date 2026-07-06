@@ -12,7 +12,7 @@ use serde_json::json;
 use crate::contracts::known_bijux_tools;
 use crate::contracts::OutputFormat;
 use crate::interface::cli::handlers::install as install_handler;
-use crate::interface::cli::help::render_command_help;
+use crate::interface::cli::help::{render_command_help, render_known_tool_help};
 use crate::interface::cli::parser::parse_intent;
 use crate::routing::model::{alias_rewrites, built_in_route_paths};
 use crate::shared::output::render_value;
@@ -239,20 +239,22 @@ fn run_app_inner(argv: &[String], telemetry: &TelemetrySpan) -> Result<AppRunRes
             }
         };
         let path_refs: Vec<&str> = path.iter().map(String::as_str).collect();
-        if delegation::is_known_bijux_tool_route(&path) {
-            let mut delegated_argv = vec!["bijux".to_string()];
-            delegated_argv.extend(path.clone());
-            delegated_argv.push("--help".to_string());
-            if let Some(delegated) = delegation::try_delegate_known_bijux_tool(&delegated_argv) {
-                let surface = delegation::delegated_command_surface(&delegated_argv)
-                    .unwrap_or_else(|| path.join(" "));
-                let (target, target_truncated) = bounded_command(&surface);
-                telemetry.record(
-                    "dispatch.delegated.help",
-                    json!({"target": target, "target_truncated": target_truncated, "exit_code": delegated.exit_code}),
-                );
-                return Ok(delegated);
-            }
+        if let Some(rendered) = render_known_tool_help(&path_refs) {
+            let topic = path.join(" ");
+            let (topic_bounded, topic_truncated) = bounded_command(&topic);
+            telemetry.record(
+                "dispatch.help.rendered",
+                json!({
+                    "topic": topic_bounded,
+                    "topic_truncated": topic_truncated,
+                    "exit_code": 0,
+                }),
+            );
+            return Ok(AppRunResult {
+                exit_code: 0,
+                stdout: format!("{}\n", rendered.trim_end()),
+                stderr: String::new(),
+            });
         }
         if !is_known_help_topic(&path) {
             return Ok(unknown_help_topic_result(&path_refs.join(" "), telemetry));

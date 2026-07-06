@@ -462,9 +462,22 @@ fn root_help_surfaces_official_apps_and_plugin_inventory_sections() {
     assert!(stdout.contains("Installed plugins:"));
     assert!(stdout.contains("Diagnostics:"));
     assert!(stdout.contains("bijux apps list"));
-    assert!(stdout.contains("bijux dag --help"));
+    assert!(stdout.contains("bijux-dag --help"));
     assert!(stdout.contains("bijux doctor"));
     assert!(stdout.contains("bijux apps doctor"));
+}
+
+#[test]
+fn official_app_help_topics_explain_routed_namespaces_and_public_binaries() {
+    let out = run(&["help", "dag"]);
+    assert_eq!(out.status.code(), Some(0));
+    assert!(out.stderr.is_empty());
+    let stdout = String::from_utf8(out.stdout).expect("utf-8");
+    assert!(stdout.contains("Official app help: Bijux DAG"));
+    assert!(stdout.contains("root route: bijux dag <command> ..."));
+    assert!(stdout.contains("product binary: bijux-dag"));
+    assert!(stdout.contains("cargo install bijux-dag-cli"));
+    assert!(stdout.contains("bijux-dag --help"));
 }
 
 #[test]

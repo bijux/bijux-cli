@@ -125,23 +125,23 @@ fn official_control_routes_delegate_to_control_binaries_for_every_reserved_names
 }
 
 #[test]
-fn help_routes_delegate_for_runtime_and_control_product_surfaces() {
+fn help_routes_render_local_guidance_for_runtime_and_control_product_surfaces() {
     let root = temp_dir("help");
-    let bin_dir = root.join("bin");
-    fs::create_dir_all(&bin_dir).expect("mkdir bin");
-    write_all_stubs(&bin_dir);
 
-    let runtime = run_with_env(&root, &["help", "atlas"], &[("PATH", &bin_dir)]);
+    let runtime = run_with_env(&root, &["help", "atlas"], &[]);
     assert_eq!(runtime.status.code(), Some(0));
     let runtime_stdout = String::from_utf8(runtime.stdout).expect("utf-8");
-    assert!(runtime_stdout.contains("stub:bijux-atlas"));
-    assert!(runtime_stdout.contains("args:--help"));
+    assert!(runtime_stdout.contains("Official app help: Bijux Atlas"));
+    assert!(runtime_stdout.contains("root route: bijux atlas <command> ..."));
+    assert!(runtime_stdout.contains("product binary: bijux-atlas"));
+    assert!(runtime_stdout.contains("bijux-atlas --help"));
 
-    let control = run_with_env(&root, &["help", "dev", "atlas"], &[("PATH", &bin_dir)]);
+    let control = run_with_env(&root, &["help", "dev", "atlas"], &[]);
     assert_eq!(control.status.code(), Some(0));
     let control_stdout = String::from_utf8(control.stdout).expect("utf-8");
-    assert!(control_stdout.contains("stub:bijux-dev-atlas"));
-    assert!(control_stdout.contains("args:--help"));
+    assert!(control_stdout.contains("Official app help: Bijux Atlas"));
+    assert!(control_stdout.contains("root route: bijux dev atlas <command> ..."));
+    assert!(control_stdout.contains("product binary: bijux-dev-atlas"));
 }
 
 #[test]
