@@ -581,7 +581,7 @@ fn copy_reader_to_writer<R: Read, W: Write>(
     timeout: &TimeoutBudget,
     max_bytes: Option<u64>,
 ) -> Result<TransferProgress, FailureInfo> {
-    let mut buffer = [0_u8; COPY_BUFFER_BYTES];
+    let mut buffer = vec![0_u8; COPY_BUFFER_BYTES];
     let mut copied = 0_u64;
 
     loop {
@@ -646,7 +646,7 @@ fn checksum_source(
 ) -> Result<(u64, String), FailureInfo> {
     let mut reader = BufReader::new(open_input_file(source_path)?);
     let mut digest = Sha256::new();
-    let mut buffer = [0_u8; COPY_BUFFER_BYTES];
+    let mut buffer = vec![0_u8; COPY_BUFFER_BYTES];
     let mut bytes = 0_u64;
 
     loop {

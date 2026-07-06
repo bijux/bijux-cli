@@ -2366,10 +2366,10 @@ fn write_item_inputs_index(
         .into_iter()
         .map(|mut file| {
             if file.local_path == local_path {
-                file.source_sha256 = item_sha256.clone();
-                file.source_node_id = source_node_id.clone();
-                file.source_node_fingerprint = source_node_fingerprint.clone();
-                file.source_output_name = source_output_name.clone();
+                file.source_sha256.clone_from(&item_sha256);
+                file.source_node_id.clone_from(&source_node_id);
+                file.source_node_fingerprint.clone_from(&source_node_fingerprint);
+                file.source_output_name.clone_from(&source_output_name);
                 file.materialization_mode = "copy".to_string();
                 updated = true;
             }

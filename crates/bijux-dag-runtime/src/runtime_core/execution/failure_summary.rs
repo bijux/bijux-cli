@@ -130,7 +130,7 @@ fn read_node_traces(
     Ok(traces)
 }
 
-fn sorted_failures<'a>(traces: &'a BTreeMap<String, NodeTrace>) -> Vec<(&'a str, &'a NodeTrace)> {
+fn sorted_failures(traces: &BTreeMap<String, NodeTrace>) -> Vec<(&str, &NodeTrace)> {
     let mut failures = traces
         .iter()
         .filter(|(_, trace)| trace.status == "failed")
