@@ -1,4 +1,5 @@
 //! Built-in adapter surface.
+#![allow(unused_imports)]
 
 pub mod const_adapter;
 pub mod container_adapter;

@@ -9,26 +9,22 @@
 
 #[path = "adapters/adapter.rs"]
 mod adapter;
-#[doc(hidden)]
 #[path = "adapters/api.rs"]
-pub mod adapter_api;
-#[doc(hidden)]
+mod adapter_api;
 #[path = "adapters/conformance.rs"]
-pub mod adapter_conformance;
+mod adapter_conformance;
 #[cfg(test)]
 #[path = "internal/testing/adapter_contract_tests.rs"]
 mod adapter_contract_tests;
 #[path = "adapters/sdk.rs"]
 mod adapter_sdk;
-#[doc(hidden)]
-pub mod adapters;
+mod adapters;
 #[path = "internal/analysis/adaptive_scheduler.rs"]
 mod adaptive_scheduler;
 #[path = "internal/workflow/ai_operator_assist.rs"]
 mod ai_operator_assist;
-#[doc(hidden)]
 #[path = "internal/control/api.rs"]
-pub mod api;
+mod api;
 mod artifacts;
 #[path = "adapters/async_adapter.rs"]
 mod async_adapter;
@@ -41,15 +37,12 @@ mod backend;
 mod backend_cluster;
 #[path = "backend/runtime/batch_execution.rs"]
 mod batch_execution;
-#[doc(hidden)]
-pub mod builtins;
-#[doc(hidden)]
-pub mod cache;
+mod builtins;
+mod cache;
 #[path = "internal/control/clock.rs"]
 mod clock;
-#[doc(hidden)]
 #[path = "internal/control/config.rs"]
-pub mod config;
+mod config;
 #[path = "backend/runtime/container_execution.rs"]
 mod container_execution;
 #[path = "diagnostics/runtime/control_plane.rs"]
@@ -72,14 +65,12 @@ mod distribution_readiness;
 #[path = "runtime_core/execution/engine.rs"]
 mod engine;
 mod error;
-#[doc(hidden)]
 #[path = "runtime_core/execution/flow.rs"]
-pub mod execution;
+mod execution;
 #[path = "backend/runtime/execution_backend.rs"]
 mod execution_backend;
-#[doc(hidden)]
 #[path = "runtime_core/execution/context.rs"]
-pub mod execution_context;
+mod execution_context;
 #[path = "runtime_core/planning/execution_plan.rs"]
 mod execution_plan;
 #[path = "internal/ext/extension_catalog.rs"]
@@ -103,9 +94,8 @@ mod http_adapter;
 #[path = "backend/distributed/infrastructure.rs"]
 mod infrastructure;
 mod internal;
-#[doc(hidden)]
 #[path = "runtime_core/governance/invariants.rs"]
-pub mod invariants;
+mod invariants;
 #[cfg(test)]
 #[path = "internal/testing/invariants_tests.rs"]
 mod invariants_tests;
@@ -135,9 +125,8 @@ mod kubernetes_execution;
 mod local_executor;
 #[path = "backend/runtime/local_worker_pool.rs"]
 mod local_worker_pool;
-#[doc(hidden)]
 #[path = "runtime_core/execution/node_result.rs"]
-pub mod node_result;
+mod node_result;
 #[path = "diagnostics/runtime/observability.rs"]
 mod observability;
 #[path = "diagnostics/runtime/observability_deep.rs"]
@@ -154,8 +143,7 @@ mod performance_capacity;
 mod planner;
 #[path = "runtime_core/planning/planner_analysis.rs"]
 mod planner_analysis;
-#[doc(hidden)]
-pub mod policy;
+mod policy;
 #[path = "adapters/python.rs"]
 mod python_adapter;
 #[path = "artifacts/storage/recovery.rs"]
@@ -167,9 +155,8 @@ mod remote_execution_model;
 #[path = "backend/runtime/remote_executor.rs"]
 mod remote_executor;
 mod replay;
-#[doc(hidden)]
 #[path = "runtime_core/execution/run_context.rs"]
-pub mod run_context;
+mod run_context;
 #[path = "runtime_core/execution/run_state.rs"]
 mod run_state;
 #[path = "internal/control/runtime.rs"]
@@ -179,8 +166,7 @@ mod runtime;
 mod runtime_boundary_tests;
 #[path = "internal/control/runtime_controls.rs"]
 mod runtime_controls;
-#[doc(hidden)]
-pub mod runtime_core;
+mod runtime_core;
 #[cfg(test)]
 #[path = "internal/testing/runtime_policy_trace_tests.rs"]
 mod runtime_policy_trace_tests;
@@ -196,28 +182,24 @@ mod scheduler_workload;
 mod secrets_security;
 #[path = "internal/identity/security_env.rs"]
 mod security_env;
-#[doc(hidden)]
 #[path = "internal/control/selectors.rs"]
-pub mod selectors;
+mod selectors;
 #[path = "artifacts/storage/semantic_lineage.rs"]
 mod semantic_lineage;
-#[doc(hidden)]
 #[path = "internal/control/services.rs"]
-pub mod services;
+mod services;
 pub mod simulated_platform;
 #[path = "backend/runtime/slurm_execution.rs"]
 mod slurm_execution;
-#[doc(hidden)]
 #[path = "runtime_core/execution/state_machine.rs"]
-pub mod state_machine;
+mod state_machine;
 #[cfg(test)]
 #[path = "internal/testing/state_machine_tests.rs"]
 mod state_machine_tests;
 #[path = "artifacts/storage/store.rs"]
 mod store;
-#[doc(hidden)]
 #[path = "backend/runtime/subprocess.rs"]
-pub mod subprocess;
+mod subprocess;
 #[path = "internal/identity/supply_chain_trust.rs"]
 mod supply_chain_trust;
 #[path = "internal/control/task_contract.rs"]
@@ -229,9 +211,8 @@ mod tenancy;
 #[cfg(test)]
 #[path = "internal/testing/test_support.rs"]
 mod test_support;
-#[doc(hidden)]
 #[path = "artifacts/storage/trace.rs"]
-pub mod trace;
+mod trace;
 #[path = "artifacts/storage/upgrade_compatibility.rs"]
 mod upgrade_compatibility;
 #[path = "internal/workflow/workflow_product.rs"]
