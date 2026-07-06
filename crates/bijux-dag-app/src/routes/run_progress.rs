@@ -3,7 +3,7 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
 use std::io::{self, IsTerminal, Read, Seek, SeekFrom, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
@@ -88,10 +88,10 @@ impl CompactRunProgressState {
         started_at: Instant,
     ) -> Option<CompactRunProgressSnapshot> {
         self.refresh_selected_node_count(staging_path);
-        self.refresh_checkpoint(staging_path);
         for event in cursor.read_new_events(&staging_path.join("run.log.jsonl")) {
             self.apply_event(&event);
         }
+        self.refresh_checkpoint(staging_path);
         if !self.started
             && self.checkpoint_active_nodes.is_none()
             && self.terminal_statuses.is_empty()
@@ -243,10 +243,15 @@ impl CompactRunProgressState {
 }
 
 impl CompactRunProgressMonitor {
-    pub(crate) fn start(staging_path: &Path, fallback_total_nodes: usize) -> Self {
+    pub(crate) fn start(
+        staging_path: &Path,
+        final_path: &Path,
+        fallback_total_nodes: usize,
+    ) -> Self {
         let stop_requested = Arc::new(AtomicBool::new(false));
         let worker_stop = Arc::clone(&stop_requested);
         let staging_path = staging_path.to_path_buf();
+        let final_path = final_path.to_path_buf();
         let worker = thread::spawn(move || {
             let interactive = io::stderr().is_terminal();
             let mut renderer = ProgressLineRenderer::new(io::stderr(), interactive);
@@ -254,8 +259,9 @@ impl CompactRunProgressMonitor {
             let mut cursor = ProgressEventCursor::default();
             let started_at = Instant::now();
             loop {
+                let run_dir_path = active_progress_run_dir(&staging_path, &final_path);
                 if let Some(snapshot) =
-                    state.refresh_from_staging_dir(&mut cursor, &staging_path, started_at)
+                    state.refresh_from_staging_dir(&mut cursor, run_dir_path.as_path(), started_at)
                 {
                     let _ = renderer.render(&snapshot);
                 }
@@ -264,7 +270,9 @@ impl CompactRunProgressMonitor {
                 }
                 thread::sleep(COMPACT_PROGRESS_POLL_INTERVAL);
             }
-            if let Some(snapshot) = state.refresh_from_staging_dir(&mut cursor, &staging_path, started_at)
+            let run_dir_path = active_progress_run_dir(&staging_path, &final_path);
+            if let Some(snapshot) =
+                state.refresh_from_staging_dir(&mut cursor, run_dir_path.as_path(), started_at)
             {
                 let _ = renderer.render(&snapshot);
             }
@@ -365,6 +373,16 @@ fn format_failure(failure: Option<&CompactRunProgressFailure>) -> String {
     rendered
 }
 
+fn active_progress_run_dir(staging_path: &Path, final_path: &Path) -> PathBuf {
+    if staging_path.exists() {
+        return staging_path.to_path_buf();
+    }
+    if final_path.exists() {
+        return final_path.to_path_buf();
+    }
+    staging_path.to_path_buf()
+}
+
 impl ProgressEventCursor {
     fn read_new_events(&mut self, run_log_path: &Path) -> Vec<Value> {
         let Ok(mut file) = File::open(run_log_path) else {
@@ -404,11 +422,20 @@ impl ProgressEventCursor {
                 events.push(value);
             }
         }
-        if !raw.ends_with('\n') && self.pending_fragment.is_empty() {
-            self.pending_fragment = raw
-                .rsplit_once('\n')
-                .map(|(_, tail)| tail.to_string())
-                .unwrap_or(raw);
+        let parsed_terminal_fragment = if !self.pending_fragment.is_empty() {
+            if let Ok(value) = serde_json::from_str::<Value>(&self.pending_fragment) {
+                events.push(value);
+                self.pending_fragment.clear();
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+        if !raw.ends_with('\n') && self.pending_fragment.is_empty() && !parsed_terminal_fragment {
+            self.pending_fragment =
+                raw.rsplit_once('\n').map(|(_, tail)| tail.to_string()).unwrap_or(raw);
         }
         events
     }
@@ -457,9 +484,9 @@ impl<W: Write> ProgressLineRenderer<W> {
 #[cfg(test)]
 mod tests {
     use super::{
-        format_compact_run_progress, CompactRunProgressFailure, CompactRunProgressMonitor,
-        CompactRunProgressSnapshot, CompactRunProgressState, ProgressEventCursor,
-        ProgressLineRenderer,
+        active_progress_run_dir, format_compact_run_progress, CompactRunProgressFailure,
+        CompactRunProgressMonitor, CompactRunProgressSnapshot, CompactRunProgressState,
+        ProgressEventCursor, ProgressLineRenderer,
     };
     use serde_json::json;
     use std::fs;
@@ -483,7 +510,7 @@ mod tests {
                 "labels":[],
                 "parent_run_id":null,
                 "requested_selectors":[],
-                "selected_nodes":["extract","train","publish"],
+                "selected_nodes":["extract","train","publish","evaluate"],
                 "dependency_closure_enabled":false,
                 "replay_source_run_id":null
             }))
@@ -522,11 +549,10 @@ mod tests {
         let mut state = CompactRunProgressState::new(8);
         let mut cursor = ProgressEventCursor::default();
         let started_at = Instant::now() - Duration::from_secs(65);
-        let snapshot = state
-            .refresh_from_staging_dir(&mut cursor, dir.path(), started_at)
-            .expect("snapshot");
+        let snapshot =
+            state.refresh_from_staging_dir(&mut cursor, dir.path(), started_at).expect("snapshot");
 
-        assert_eq!(snapshot.total_nodes, 3);
+        assert_eq!(snapshot.total_nodes, 4);
         assert_eq!(snapshot.completed_nodes, 2);
         assert_eq!(snapshot.ready_count, 1);
         assert_eq!(snapshot.running_count, 1);
@@ -608,6 +634,33 @@ mod tests {
     }
 
     #[test]
+    fn compact_progress_cursor_reads_last_event_without_trailing_newline() {
+        let dir = tempfile::tempdir().expect("tmp");
+        fs::write(
+            dir.path().join("run.log.jsonl"),
+            "{\"event\":\"node_finished\",\"node_id\":\"train\",\"status\":\"failed\"}",
+        )
+        .expect("write run log");
+
+        let mut state = CompactRunProgressState::new(1);
+        let mut cursor = ProgressEventCursor::default();
+        let snapshot = state
+            .refresh_from_staging_dir(&mut cursor, dir.path(), Instant::now())
+            .expect("snapshot");
+
+        assert_eq!(snapshot.failed_count, 1);
+        assert_eq!(
+            snapshot.latest_failure,
+            Some(CompactRunProgressFailure {
+                node_id: "train".to_string(),
+                status: "failed".to_string(),
+                reason: None,
+                failure_code: None,
+            })
+        );
+    }
+
+    #[test]
     fn compact_progress_renderer_deduplicates_noninteractive_lines() {
         let snapshot = CompactRunProgressSnapshot {
             elapsed: Duration::from_secs(2),
@@ -641,7 +694,17 @@ mod tests {
     #[test]
     fn compact_progress_monitor_finishes_without_staging_files() {
         let dir = tempfile::tempdir().expect("tmp");
-        let monitor = CompactRunProgressMonitor::start(dir.path(), 1);
+        let monitor = CompactRunProgressMonitor::start(dir.path(), dir.path(), 1);
         monitor.finish();
+    }
+
+    #[test]
+    fn compact_progress_prefers_final_run_dir_after_promotion() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let staging_path = dir.path().join("run.tmp");
+        let final_path = dir.path().join("run-final");
+        fs::create_dir_all(&final_path).expect("final path");
+
+        assert_eq!(active_progress_run_dir(&staging_path, &final_path), final_path);
     }
 }

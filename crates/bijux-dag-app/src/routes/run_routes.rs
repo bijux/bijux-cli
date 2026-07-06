@@ -9,10 +9,10 @@ use crate::graph_helpers::{
 use crate::routes::plan_routes::{
     concise_plan_lines, plan_explain_payload, resolve_plan_preview_layout,
 };
-use crate::routes::run_progress::CompactRunProgressMonitor;
 use crate::routes::policy_surface::{cache_surface_payload, policy_surface_payload};
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::routes::resource_capacity_args::parse_resource_capacities;
+use crate::routes::run_progress::CompactRunProgressMonitor;
 use crate::run_data::map_materialize_mode;
 use crate::runtime_inputs::{bind_runtime_inputs, missing_required_graph_inputs};
 use crate::{
@@ -153,7 +153,11 @@ fn maybe_start_compact_progress_monitor(
         return None;
     }
     let layout = preview_layout?;
-    Some(CompactRunProgressMonitor::start(&layout.staging_path, fallback_total_nodes))
+    Some(CompactRunProgressMonitor::start(
+        &layout.staging_path,
+        &layout.final_path,
+        fallback_total_nodes,
+    ))
 }
 
 fn emit_run_execution_error(
@@ -525,22 +529,18 @@ mod tests {
         let quiet_cli = DagCli { json: false, quiet: true, command: Commands::Version };
         let json_cli = DagCli { json: true, quiet: false, command: Commands::Version };
 
-        assert!(
-            maybe_start_compact_progress_monitor(&quiet_cli, &request, layout.as_ref(), 3)
-                .is_none()
-        );
+        assert!(maybe_start_compact_progress_monitor(&quiet_cli, &request, layout.as_ref(), 3)
+            .is_none());
         assert!(
             maybe_start_compact_progress_monitor(&json_cli, &request, layout.as_ref(), 3).is_none()
         );
-        assert!(
-            maybe_start_compact_progress_monitor(
-                &DagCli { json: false, quiet: false, command: Commands::Version },
-                &RunRouteRequest { preflight_only: true, ..request },
-                layout.as_ref(),
-                3,
-            )
-            .is_none()
-        );
+        assert!(maybe_start_compact_progress_monitor(
+            &DagCli { json: false, quiet: false, command: Commands::Version },
+            &RunRouteRequest { preflight_only: true, ..request },
+            layout.as_ref(),
+            3,
+        )
+        .is_none());
     }
 
     #[test]
