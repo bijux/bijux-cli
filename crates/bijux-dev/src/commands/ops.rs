@@ -3199,9 +3199,9 @@ pub(super) fn run_operator_ux_guard() -> Result<(), String> {
     let required = [
         "docs/spec/OPERATOR_UX_CONTRACT.md",
         "docs/spec/OPERATOR_INSPECTION_CONTRACT.md",
-        "docs/user/OPERATOR_COMMAND_INDEX.md",
-        "docs/user/OPERATOR_INSPECTION_GUIDE.md",
-        "docs/reference/COMMAND_TAXONOMY.md",
+        "docs/bijux-dag/interfaces/operator-command-index.md",
+        "docs/bijux-dag/interfaces/operator-inspection-guide.md",
+        "docs/bijux-dag/interfaces/command-taxonomy.md",
         "crates/bijux-dag-app/tests/operator_ux_contract.rs",
         "evidence/operator/scenarios/inspection_only.json",
         "configs/dag/schema/operator/run_list.schema.json",
@@ -3224,7 +3224,7 @@ pub(super) fn run_operator_ux_guard() -> Result<(), String> {
             missing.join(", ")
         ));
     }
-    let index = fs::read_to_string(root.join("docs/user/OPERATOR_COMMAND_INDEX.md"))
+    let index = fs::read_to_string(root.join("docs/bijux-dag/interfaces/operator-command-index.md"))
         .map_err(|err| err.to_string())?;
     for command in [
         "dag runs list",
