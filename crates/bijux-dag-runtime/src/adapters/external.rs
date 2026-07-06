@@ -125,15 +125,17 @@ impl Adapter for ExternalAdapter {
             cmd.env(key, value);
         }
         crate::apply_temp_env(&mut cmd, &exec.run_dir.node_temp_dir(&node.id));
-        let output = match crate::command_output_with_controls(
+        let output = crate::command_output_with_controls(
             &mut cmd,
             node.timeout_ms.or_else(|| ctx.params.get("timeout_ms").and_then(|v| v.as_u64())),
             Some(exec.cancellation_requested.as_ref()),
-        ) {
-            Ok(output) => output,
-            Err(RuntimeError::Executor(message)) if message.contains("timed out") => {
-                exec.fs.write(&stdout_path, b"")?;
-                exec.fs.write(&stderr_path, message.as_bytes())?;
+        )?;
+
+        exec.fs.write(&stdout_path, output.stdout())?;
+        exec.fs.write(&stderr_path, output.stderr())?;
+        let output = match output {
+            crate::ControlledCommandResult::Exited(output) => output,
+            crate::ControlledCommandResult::TimedOut(output) => {
                 let quarantined_outputs_dir =
                     quarantine_partial_outputs(exec, &outputs_dir, &node_dir, "timeout")?;
                 return Ok(NodeResult {
@@ -146,10 +148,11 @@ impl Adapter for ExternalAdapter {
                         bijux_dag_artifacts::FailureClass::Timeout,
                         "Timeout",
                         "EXEC_TIMEOUT",
-                        message,
+                        "execution timed out after configured node timeout",
                         Some(json!({
                             "timeout_class": "external_adapter_process",
                             "quarantined_outputs_dir": quarantined_outputs_dir,
+                            "exit_code": output.status.code(),
                         })),
                     )),
                     attempts: 1,
@@ -158,11 +161,32 @@ impl Adapter for ExternalAdapter {
                     adapter_binary_sha256: self.binary_hash.clone(),
                 });
             }
-            Err(error) => return Err(error),
+            crate::ControlledCommandResult::Cancelled(output) => {
+                let quarantined_outputs_dir =
+                    quarantine_partial_outputs(exec, &outputs_dir, &node_dir, "cancelled")?;
+                return Ok(NodeResult {
+                    status: crate::NodeStatus::Cancelled,
+                    stdout_path: stdout_path.display().to_string(),
+                    stderr_path: stderr_path.display().to_string(),
+                    outputs_dir: outputs_dir.display().to_string(),
+                    output_evidence: Vec::new(),
+                    failure: Some(crate::FailureInfo::new(
+                        bijux_dag_artifacts::FailureClass::Execution,
+                        "Execution",
+                        "EXEC_CANCELLED",
+                        "execution cancelled by operator",
+                        Some(json!({
+                            "quarantined_outputs_dir": quarantined_outputs_dir,
+                            "exit_code": output.status.code(),
+                        })),
+                    )),
+                    attempts: 1,
+                    attempt_events: Vec::new(),
+                    container_meta: None,
+                    adapter_binary_sha256: self.binary_hash.clone(),
+                });
+            }
         };
-
-        exec.fs.write(&stdout_path, &output.stdout)?;
-        exec.fs.write(&stderr_path, &output.stderr)?;
         let success = output.status.success();
         if !success {
             return Ok(NodeResult {

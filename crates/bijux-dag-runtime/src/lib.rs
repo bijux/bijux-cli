@@ -492,7 +492,7 @@ pub use state_machine::{
     NodeLifecycleState, RunLifecycleState,
 };
 use std::collections::{BTreeMap, HashMap};
-use std::io::{self as std_io, Write};
+use std::io::{self as std_io, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Output, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -647,6 +647,34 @@ pub struct AttemptEvent {
     pub scheduled_backoff_ms: Option<u64>,
 }
 
+#[derive(Debug)]
+pub(crate) enum ControlledCommandResult {
+    Exited(Output),
+    TimedOut(Output),
+    Cancelled(Output),
+}
+
+impl ControlledCommandResult {
+    pub(crate) fn stdout(&self) -> &[u8] {
+        match self {
+            Self::Exited(output) | Self::TimedOut(output) | Self::Cancelled(output) => &output.stdout,
+        }
+    }
+
+    pub(crate) fn stderr(&self) -> &[u8] {
+        match self {
+            Self::Exited(output) | Self::TimedOut(output) | Self::Cancelled(output) => &output.stderr,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ControlledCommandOutcomeKind {
+    Exited,
+    TimedOut,
+    Cancelled,
+}
+
 #[derive(Clone)]
 pub struct ConstAdapter;
 
@@ -774,29 +802,73 @@ impl Adapter for ShellAdapter {
             Some(exec.cancellation_requested.as_ref()),
         )?;
 
-        exec.fs.write(&stdout_path, &output.stdout)?;
-        exec.fs.write(&stderr_path, &output.stderr)?;
-        let success = output.status.success();
-        let exit_code = output.status.code();
-        if !success {
-            return Ok(NodeResult {
-                status: NodeStatus::Failed,
-                stdout_path: stdout_path.display().to_string(),
-                stderr_path: stderr_path.display().to_string(),
-                outputs_dir: outputs_dir.display().to_string(),
-                output_evidence: Vec::new(),
-                failure: Some(FailureInfo::new(
-                    FailureClass::Execution,
-                    "Execution",
-                    "EXEC_FAIL",
-                    "command failed",
-                    Some(serde_json::json!({ "exit_code": exit_code })),
-                )),
-                attempts: 1,
-                attempt_events: Vec::new(),
-                container_meta: None,
-                adapter_binary_sha256: None,
-            });
+        exec.fs.write(&stdout_path, output.stdout())?;
+        exec.fs.write(&stderr_path, output.stderr())?;
+        match output {
+            ControlledCommandResult::TimedOut(output) => {
+                return Ok(NodeResult {
+                    status: NodeStatus::Failed,
+                    stdout_path: stdout_path.display().to_string(),
+                    stderr_path: stderr_path.display().to_string(),
+                    outputs_dir: outputs_dir.display().to_string(),
+                    output_evidence: Vec::new(),
+                    failure: Some(FailureInfo::new(
+                        FailureClass::Timeout,
+                        "Timeout",
+                        "EXEC_TIMEOUT",
+                        "execution timed out after configured node timeout",
+                        Some(serde_json::json!({ "exit_code": output.status.code() })),
+                    )),
+                    attempts: 1,
+                    attempt_events: Vec::new(),
+                    container_meta: None,
+                    adapter_binary_sha256: None,
+                });
+            }
+            ControlledCommandResult::Cancelled(output) => {
+                return Ok(NodeResult {
+                    status: NodeStatus::Cancelled,
+                    stdout_path: stdout_path.display().to_string(),
+                    stderr_path: stderr_path.display().to_string(),
+                    outputs_dir: outputs_dir.display().to_string(),
+                    output_evidence: Vec::new(),
+                    failure: Some(FailureInfo::new(
+                        FailureClass::Execution,
+                        "Execution",
+                        "EXEC_CANCELLED",
+                        "execution cancelled by operator",
+                        Some(serde_json::json!({ "exit_code": output.status.code() })),
+                    )),
+                    attempts: 1,
+                    attempt_events: Vec::new(),
+                    container_meta: None,
+                    adapter_binary_sha256: None,
+                });
+            }
+            ControlledCommandResult::Exited(output) => {
+                let success = output.status.success();
+                let exit_code = output.status.code();
+                if !success {
+                    return Ok(NodeResult {
+                        status: NodeStatus::Failed,
+                        stdout_path: stdout_path.display().to_string(),
+                        stderr_path: stderr_path.display().to_string(),
+                        outputs_dir: outputs_dir.display().to_string(),
+                        output_evidence: Vec::new(),
+                        failure: Some(FailureInfo::new(
+                            FailureClass::Execution,
+                            "Execution",
+                            "EXEC_FAIL",
+                            "command failed",
+                            Some(serde_json::json!({ "exit_code": exit_code })),
+                        )),
+                        attempts: 1,
+                        attempt_events: Vec::new(),
+                        container_meta: None,
+                        adapter_binary_sha256: None,
+                    });
+                }
+            }
         }
 
         let output_report = inspect_declared_outputs(&outputs_dir, &node.outputs);
@@ -1041,35 +1113,96 @@ impl Adapter for ContainerAdapter {
             effective_node_timeout_ms(node, params),
             Some(exec.cancellation_requested.as_ref()),
         )?;
-        exec.fs.write(&stdout_path, &output.stdout)?;
-        exec.fs.write(&stderr_path, &output.stderr)?;
-        let success = output.status.success();
-        let exit_code = output.status.code();
-        if !success {
-            return Ok(NodeResult {
-                status: NodeStatus::Failed,
-                stdout_path: stdout_path.display().to_string(),
-                stderr_path: stderr_path.display().to_string(),
-                outputs_dir: outputs_dir.display().to_string(),
-                output_evidence: Vec::new(),
-                failure: Some(FailureInfo::new(
-                    FailureClass::Execution,
-                    "Execution",
-                    "EXEC_FAIL",
-                    "container command failed",
-                    Some(serde_json::json!({ "exit_code": exit_code })),
-                )),
-                attempts: 1,
-                attempt_events: Vec::new(),
-                container_meta: Some(container_trace(
-                    spec,
-                    engine,
-                    exit_code,
-                    Some(engine_version.clone()),
-                )),
-                adapter_binary_sha256: None,
-            });
-        }
+        exec.fs.write(&stdout_path, output.stdout())?;
+        exec.fs.write(&stderr_path, output.stderr())?;
+        let timeout_failure = || {
+            FailureInfo::new(
+                FailureClass::Timeout,
+                "Timeout",
+                "EXEC_TIMEOUT",
+                "container execution timed out after configured node timeout",
+                None,
+            )
+        };
+        let cancelled_failure = || {
+            FailureInfo::new(
+                FailureClass::Execution,
+                "Execution",
+                "EXEC_CANCELLED",
+                "execution cancelled by operator",
+                None,
+            )
+        };
+        let exit_code = match output {
+            ControlledCommandResult::TimedOut(output) => {
+                return Ok(NodeResult {
+                    status: NodeStatus::Failed,
+                    stdout_path: stdout_path.display().to_string(),
+                    stderr_path: stderr_path.display().to_string(),
+                    outputs_dir: outputs_dir.display().to_string(),
+                    output_evidence: Vec::new(),
+                    failure: Some(timeout_failure()),
+                    attempts: 1,
+                    attempt_events: Vec::new(),
+                    container_meta: Some(container_trace(
+                        spec,
+                        engine,
+                        output.status.code(),
+                        Some(engine_version.clone()),
+                    )),
+                    adapter_binary_sha256: None,
+                });
+            }
+            ControlledCommandResult::Cancelled(output) => {
+                return Ok(NodeResult {
+                    status: NodeStatus::Cancelled,
+                    stdout_path: stdout_path.display().to_string(),
+                    stderr_path: stderr_path.display().to_string(),
+                    outputs_dir: outputs_dir.display().to_string(),
+                    output_evidence: Vec::new(),
+                    failure: Some(cancelled_failure()),
+                    attempts: 1,
+                    attempt_events: Vec::new(),
+                    container_meta: Some(container_trace(
+                        spec,
+                        engine,
+                        output.status.code(),
+                        Some(engine_version.clone()),
+                    )),
+                    adapter_binary_sha256: None,
+                });
+            }
+            ControlledCommandResult::Exited(output) => {
+                let success = output.status.success();
+                let exit_code = output.status.code();
+                if !success {
+                    return Ok(NodeResult {
+                        status: NodeStatus::Failed,
+                        stdout_path: stdout_path.display().to_string(),
+                        stderr_path: stderr_path.display().to_string(),
+                        outputs_dir: outputs_dir.display().to_string(),
+                        output_evidence: Vec::new(),
+                        failure: Some(FailureInfo::new(
+                            FailureClass::Execution,
+                            "Execution",
+                            "EXEC_FAIL",
+                            "container command failed",
+                            Some(serde_json::json!({ "exit_code": exit_code })),
+                        )),
+                        attempts: 1,
+                        attempt_events: Vec::new(),
+                        container_meta: Some(container_trace(
+                            spec,
+                            engine,
+                            exit_code,
+                            Some(engine_version.clone()),
+                        )),
+                        adapter_binary_sha256: None,
+                    });
+                }
+                exit_code
+            }
+        };
 
         let output_report = inspect_declared_outputs(&outputs_dir, &node.outputs);
         if let Some(failure) = output_report.failure {
@@ -3140,7 +3273,7 @@ pub(crate) fn shaped_environment(
 pub(crate) fn command_output_with_timeout(
     cmd: &mut std::process::Command,
     timeout_ms: Option<u64>,
-) -> Result<Output, RuntimeError> {
+) -> Result<ControlledCommandResult, RuntimeError> {
     command_output_with_controls(cmd, timeout_ms, None)
 }
 
@@ -3178,48 +3311,76 @@ pub(crate) fn command_output_with_controls(
     cmd: &mut std::process::Command,
     timeout_ms: Option<u64>,
     cancellation_requested: Option<&AtomicBool>,
-) -> Result<Output, RuntimeError> {
+) -> Result<ControlledCommandResult, RuntimeError> {
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
-    let Some(limit_ms) = timeout_ms else {
-        let mut child = cmd.spawn().map_err(RuntimeError::Io)?;
-        loop {
-            if let Some(_status) = child.try_wait().map_err(RuntimeError::Io)? {
-                return child.wait_with_output().map_err(RuntimeError::Io);
-            }
-            if cancellation_requested.is_some_and(|requested| requested.load(Ordering::SeqCst)) {
-                terminate_child_best_effort(&mut child);
-                return Err(RuntimeError::Executor("execution cancelled by operator".to_string()));
-            }
-            std::thread::sleep(Duration::from_millis(10));
-        }
-    };
     let mut child = cmd.spawn().map_err(RuntimeError::Io)?;
-    let start = std::time::Instant::now();
-    loop {
-        if let Some(_status) = child.try_wait().map_err(RuntimeError::Io)? {
-            return child.wait_with_output().map_err(RuntimeError::Io);
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| RuntimeError::Executor("failed to capture process stdout".to_string()))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| RuntimeError::Executor("failed to capture process stderr".to_string()))?;
+    let stdout_reader = spawn_output_reader(stdout);
+    let stderr_reader = spawn_output_reader(stderr);
+    let timeout_limit = timeout_ms.map(|limit| (limit, std::time::Instant::now()));
+    let (status, outcome_kind) = loop {
+        if let Some(status) = child.try_wait().map_err(RuntimeError::Io)? {
+            break (status, ControlledCommandOutcomeKind::Exited);
         }
         if cancellation_requested.is_some_and(|requested| requested.load(Ordering::SeqCst)) {
-            terminate_child_best_effort(&mut child);
-            return Err(RuntimeError::Executor("execution cancelled by operator".to_string()));
+            let status = terminate_child_best_effort(&mut child).map_err(RuntimeError::Io)?;
+            break (status, ControlledCommandOutcomeKind::Cancelled);
         }
-        if start.elapsed().as_millis() > limit_ms as u128 {
-            terminate_child_best_effort(&mut child);
-            return Err(RuntimeError::Executor(format!("execution timed out after {limit_ms}ms")));
+        if timeout_limit
+            .is_some_and(|(limit_ms, started)| started.elapsed().as_millis() > limit_ms as u128)
+        {
+            let status = terminate_child_best_effort(&mut child).map_err(RuntimeError::Io)?;
+            break (status, ControlledCommandOutcomeKind::TimedOut);
         }
         std::thread::sleep(Duration::from_millis(10));
-    }
+    };
+    let stdout = join_output_reader(stdout_reader, "stdout")?;
+    let stderr = join_output_reader(stderr_reader, "stderr")?;
+    let output = Output { status, stdout, stderr };
+    Ok(match outcome_kind {
+        ControlledCommandOutcomeKind::Exited => ControlledCommandResult::Exited(output),
+        ControlledCommandOutcomeKind::Cancelled => ControlledCommandResult::Cancelled(output),
+        ControlledCommandOutcomeKind::TimedOut => ControlledCommandResult::TimedOut(output),
+    })
 }
 
-fn terminate_child_best_effort(child: &mut std::process::Child) {
+fn spawn_output_reader<T>(mut stream: T) -> std::thread::JoinHandle<std_io::Result<Vec<u8>>>
+where
+    T: Read + Send + 'static,
+{
+    std::thread::spawn(move || {
+        let mut buffer = Vec::new();
+        stream.read_to_end(&mut buffer)?;
+        Ok(buffer)
+    })
+}
+
+fn join_output_reader(
+    reader: std::thread::JoinHandle<std_io::Result<Vec<u8>>>,
+    stream_name: &str,
+) -> Result<Vec<u8>, RuntimeError> {
+    reader
+        .join()
+        .map_err(|_| RuntimeError::Executor(format!("failed to join {stream_name} capture thread")))?
+        .map_err(RuntimeError::Io)
+}
+
+fn terminate_child_best_effort(child: &mut std::process::Child) -> std_io::Result<std::process::ExitStatus> {
     #[cfg(unix)]
     {
         let pid = child.id();
         kill_child_descendants_best_effort(pid);
     }
     let _ = child.kill();
-    let _ = child.wait();
+    child.wait()
 }
 
 #[cfg(unix)]

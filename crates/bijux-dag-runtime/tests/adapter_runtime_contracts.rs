@@ -21,7 +21,9 @@ use bijux_dag_runtime::{
     validate_output_schema_compatibility, Runtime, RuntimeConfig,
 };
 use serde_json::Value;
+use std::ffi::OsString;
 use std::fs;
+use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 
 fn process_env_lock() -> std::sync::MutexGuard<'static, ()> {
@@ -56,6 +58,94 @@ fn read_trace(run_dir: &std::path::Path) -> Value {
         &fs::read_to_string(run_dir.join("nodes").join("shell").join("trace.json")).expect("trace"),
     )
     .expect("trace json")
+}
+
+fn read_node_trace(run_dir: &Path, node_id: &str) -> Value {
+    serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join(node_id).join("trace.json")).expect("trace"),
+    )
+    .expect("trace json")
+}
+
+fn write_executable(path: &Path, contents: &str) {
+    fs::write(path, contents).expect("write executable");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = fs::metadata(path).expect("meta").permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(path, perms).expect("chmod");
+    }
+}
+
+struct PathGuard(Option<OsString>);
+
+impl Drop for PathGuard {
+    fn drop(&mut self) {
+        if let Some(previous) = self.0.take() {
+            std::env::set_var("PATH", previous);
+        } else {
+            std::env::remove_var("PATH");
+        }
+    }
+}
+
+fn prepend_path(dir: &Path) -> PathGuard {
+    let previous = std::env::var_os("PATH");
+    let mut entries = vec![dir.display().to_string()];
+    if let Some(value) = &previous {
+        entries.push(value.to_string_lossy().to_string());
+    }
+    std::env::set_var("PATH", entries.join(":"));
+    PathGuard(previous)
+}
+
+fn container_graph(
+    effects: &[&str],
+    timeout_ms: Option<u64>,
+    image: &str,
+    container_command: &str,
+) -> Graph {
+    let effects =
+        effects.iter().map(|effect| format!("\"{effect}\"")).collect::<Vec<_>>().join(",");
+    let timeout = timeout_ms
+        .map(|value| format!(",\"timeout_ms\":{value}"))
+        .unwrap_or_default();
+    parse_graph_strict(&format!(
+        r#"{{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {{
+              "id":"upstream",
+              "kind":"shell",
+              "outputs":[{{"name":"seed","path":"seed.txt"}}],
+              "params":{{"argv":["/bin/sh","-c","printf 'seed-data' > ../outputs/seed.txt"]}},
+              "effects":["filesystem"]
+            }},
+            {{
+              "id":"container",
+              "kind":"container",
+              "inputs":["seed"],
+              "outputs":[
+                {{"name":"result","path":"result.txt"}},
+                {{"name":"network","path":"network.txt"}},
+                {{"name":"workdir","path":"workdir.txt"}}
+              ],
+              "effects":[{effects}],
+              "container":{{
+                "image":"{image}",
+                "argv":["/bin/sh","-c","{container_command}"],
+                "workdir":"{{work_dir}}/scratch",
+                "engine":"docker"
+              }}{timeout}
+            }}
+          ],
+          "edges":[
+            {{"from":{{"node_id":"upstream","port":"seed"}},"to":{{"node_id":"container","port":"seed"}}}}
+          ]
+        }}"#
+    ))
+    .expect("graph")
 }
 
 fn external_graph(kind: &str, timeout_ms: Option<u64>) -> Graph {
@@ -367,6 +457,265 @@ exit 1
     )
     .expect("gpu args");
     assert_eq!(gpu_args, "--gpus=1");
+}
+
+#[test]
+fn container_adapter_materializes_inputs_collects_outputs_and_records_identity() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let bin_dir = dir.path().join("bin");
+    fs::create_dir_all(&bin_dir).expect("bin dir");
+    let docker = bin_dir.join("docker");
+    write_executable(
+        &docker,
+        r#"#!/bin/sh
+if [ "$1" = "--version" ]; then
+  echo "docker fake 1.0"
+  exit 0
+fi
+if [ "$1" = "image" ] && [ "$2" = "inspect" ]; then
+  echo "sha256:feedface"
+  exit 0
+fi
+if [ "$1" = "run" ]; then
+  shift
+  inputs_dir=""
+  outputs_dir=""
+  workdir=""
+  network_mode="default"
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --network)
+        network_mode="$2"
+        shift 2
+        ;;
+      --workdir)
+        workdir="$2"
+        shift 2
+        ;;
+      -v)
+        mount="$2"
+        host_path=$(printf '%s' "$mount" | cut -d: -f1)
+        container_path=$(printf '%s' "$mount" | cut -d: -f2)
+        if [ "$container_path" = "/bijux/node/inputs" ]; then
+          inputs_dir="$host_path"
+        elif [ "$container_path" = "/bijux/node/outputs" ]; then
+          outputs_dir="$host_path"
+        fi
+        shift 2
+        ;;
+      -e)
+        shift 2
+        ;;
+      --rm)
+        shift
+        ;;
+      -*)
+        shift
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+  cat "$inputs_dir/upstream/seed" > "$outputs_dir/result.txt"
+  printf '%s' "$network_mode" > "$outputs_dir/network.txt"
+  printf '%s' "$workdir" > "$outputs_dir/workdir.txt"
+  printf 'container-stdout'
+  printf 'container-stderr' >&2
+  exit 0
+fi
+exit 1
+"#,
+    );
+    let _path_guard = prepend_path(&bin_dir);
+
+    let graph = container_graph(
+        &["filesystem"],
+        None,
+        "example.local/runner:latest",
+        "cat /bijux/node/inputs/upstream/seed > /bijux/node/outputs/result.txt",
+    );
+    let runtime = Runtime::new();
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+
+    assert_eq!(
+        fs::read_to_string(
+            run_dir.join("nodes").join("container").join("outputs").join("result.txt")
+        )
+        .expect("result"),
+        "seed-data"
+    );
+    assert_eq!(
+        fs::read_to_string(
+            run_dir.join("nodes").join("container").join("outputs").join("network.txt")
+        )
+        .expect("network mode"),
+        "none"
+    );
+    assert_eq!(
+        fs::read_to_string(
+            run_dir.join("nodes").join("container").join("outputs").join("workdir.txt")
+        )
+        .expect("workdir"),
+        "/bijux/node/work/scratch"
+    );
+    assert_eq!(
+        fs::read_to_string(run_dir.join("nodes").join("container").join("stdout.log"))
+            .expect("stdout"),
+        "container-stdout"
+    );
+    assert_eq!(
+        fs::read_to_string(run_dir.join("nodes").join("container").join("stderr.log"))
+            .expect("stderr"),
+        "container-stderr"
+    );
+    let trace = read_node_trace(&run_dir, "container");
+    assert_eq!(trace["status"], "success");
+    assert_eq!(trace["container"]["image"], "example.local/runner:latest");
+    assert_eq!(trace["container"]["image_digest"], "sha256:feedface");
+    assert_eq!(trace["container"]["engine"], "docker");
+    assert_eq!(trace["container"]["engine_version"], "docker fake 1.0");
+}
+
+#[test]
+fn container_adapter_omits_no_network_flag_when_network_effect_is_declared() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let bin_dir = dir.path().join("bin");
+    fs::create_dir_all(&bin_dir).expect("bin dir");
+    let docker = bin_dir.join("docker");
+    write_executable(
+        &docker,
+        r#"#!/bin/sh
+if [ "$1" = "--version" ]; then
+  echo "docker fake 1.0"
+  exit 0
+fi
+if [ "$1" = "image" ] && [ "$2" = "inspect" ]; then
+  echo "sha256:feedface"
+  exit 0
+fi
+if [ "$1" = "run" ]; then
+  shift
+  outputs_dir=""
+  network_mode="default"
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --network)
+        network_mode="$2"
+        shift 2
+        ;;
+      -v)
+        mount="$2"
+        host_path=$(printf '%s' "$mount" | cut -d: -f1)
+        container_path=$(printf '%s' "$mount" | cut -d: -f2)
+        if [ "$container_path" = "/bijux/node/outputs" ]; then
+          outputs_dir="$host_path"
+        fi
+        shift 2
+        ;;
+      -e)
+        shift 2
+        ;;
+      --rm)
+        shift
+        ;;
+      --workdir)
+        shift 2
+        ;;
+      -*)
+        shift
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+  printf '%s' "$network_mode" > "$outputs_dir/network.txt"
+  printf 'ok' > "$outputs_dir/result.txt"
+  printf '/bijux/node/work/scratch' > "$outputs_dir/workdir.txt"
+  exit 0
+fi
+exit 1
+"#,
+    );
+    let _path_guard = prepend_path(&bin_dir);
+
+    let graph = container_graph(
+        &["filesystem", "network"],
+        None,
+        "example.local/runner:latest",
+        "true",
+    );
+    let runtime = Runtime::new();
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+
+    assert_eq!(
+        fs::read_to_string(
+            run_dir.join("nodes").join("container").join("outputs").join("network.txt")
+        )
+        .expect("network mode"),
+        "default"
+    );
+}
+
+#[test]
+fn container_adapter_preserves_streams_and_identity_on_timeout() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let bin_dir = dir.path().join("bin");
+    fs::create_dir_all(&bin_dir).expect("bin dir");
+    let docker = bin_dir.join("docker");
+    write_executable(
+        &docker,
+        r#"#!/bin/sh
+if [ "$1" = "--version" ]; then
+  echo "docker fake 1.0"
+  exit 0
+fi
+if [ "$1" = "image" ] && [ "$2" = "inspect" ]; then
+  echo "sha256:feedface"
+  exit 0
+fi
+if [ "$1" = "run" ]; then
+  shift
+  trap 'exit 143' TERM
+  printf 'partial-stdout'
+  printf 'partial-stderr' >&2
+  sleep 1
+  exit 0
+fi
+exit 1
+"#,
+    );
+    let _path_guard = prepend_path(&bin_dir);
+
+    let graph = container_graph(
+        &["filesystem"],
+        Some(50),
+        "example.local/runner:latest",
+        "sleep 1",
+    );
+    let runtime = Runtime::new();
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+
+    assert_eq!(
+        fs::read_to_string(run_dir.join("nodes").join("container").join("stdout.log"))
+            .expect("stdout"),
+        "partial-stdout"
+    );
+    let stderr =
+        fs::read_to_string(run_dir.join("nodes").join("container").join("stderr.log"))
+            .expect("stderr");
+    assert!(stderr.starts_with("partial-stderr"));
+    let trace = read_node_trace(&run_dir, "container");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "EXEC_TIMEOUT");
+    assert_eq!(trace["failure"]["class"], "timeout");
+    assert_eq!(trace["container"]["image"], "example.local/runner:latest");
+    assert_eq!(trace["container"]["image_digest"], "sha256:feedface");
+    assert_eq!(trace["container"]["engine_version"], "docker fake 1.0");
 }
 
 #[test]
