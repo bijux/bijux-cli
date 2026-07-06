@@ -34,6 +34,7 @@ flowchart TD
 
 ```bash
 bijux-dag explain ./runs/failed-20260406-01
+bijux-dag explain ./runs/failed-20260406-01 --node publish
 bijux-dag runs explain-failure failed-20260406-01 --root ./runs
 bijux-dag runs inspect failed-20260406-01 --root ./runs
 bijux-dag replay ./runs/failed-20260406-01 --out ./runs/replay-failed
@@ -45,6 +46,12 @@ from the blast radius it created. The report identifies the first causal
 failure, surfaces its class/code/message/reason, lists propagated failures
 separately from propagated skips or cancellations, and groups downstream
 affected nodes by terminal status.
+
+Use `dag explain <run_dir> --node <node_id>` when the recovery question is why
+one node never ran. The node explanation classifies dependency blocking,
+trigger-rule blocking, branch skips, selector exclusions, resource blocking,
+cache reuse, and policy denial from persisted run evidence. That path remains
+useful even when the blocked node never produced `nodes/<node_id>/trace.json`.
 
 ## Code Anchors
 
