@@ -191,6 +191,10 @@ impl RunDirLayout {
     pub fn node_temp_dir(&self, node_id: &str) -> PathBuf {
         self.node_work_dir(node_id).join("temp")
     }
+
+    pub fn stop_request_path(&self) -> PathBuf {
+        self.staging_path.join("run.stop-request.json")
+    }
 }
 
 impl RunDir {
@@ -289,6 +293,10 @@ impl RunDir {
 
     pub fn provenance_path(&self) -> PathBuf {
         self.staging_path.join("provenance.json")
+    }
+
+    pub fn stop_request_path(&self) -> PathBuf {
+        self.staging_path.join("run.stop-request.json")
     }
 
     pub fn node_outputs_index_path(&self, node_id: &str) -> PathBuf {
@@ -658,6 +666,16 @@ mod tests {
                 .join("temp")
         );
         assert!(!layout.staging_path.exists());
+    }
+
+    #[test]
+    fn run_dir_layout_exposes_stop_request_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let layout = RunDirLayout::preview(dir.path(), Some("run-stop")).unwrap();
+        assert_eq!(
+            layout.stop_request_path(),
+            dir.path().join("run.tmp-stop").join("run.stop-request.json")
+        );
     }
 
     #[test]

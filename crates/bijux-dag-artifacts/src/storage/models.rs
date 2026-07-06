@@ -134,6 +134,17 @@ pub struct RunMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RunStopRequest {
+    #[serde(default = "default_run_stop_request_version")]
+    pub schema_version: String,
+    pub run_id: String,
+    pub requested_unix_ms: u128,
+    pub source: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RunSummary {
     pub total_nodes: u32,
     pub success: u32,
@@ -211,6 +222,7 @@ impl Default for RunDirSchemaIndex {
                 "observability.root-causes.json".to_string(),
                 "observability.metrics.json".to_string(),
                 "run.audit.json".to_string(),
+                "run.stop-request.json".to_string(),
             ],
         }
     }
@@ -526,6 +538,10 @@ pub struct InputFile {
 
 fn default_manifest_version() -> String {
     "run-manifest/v0.1".to_string()
+}
+
+fn default_run_stop_request_version() -> String {
+    "run-stop-request/v0.1".to_string()
 }
 
 fn default_planner_contract_version() -> String {
