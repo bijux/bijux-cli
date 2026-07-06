@@ -784,6 +784,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             absolute_path_policy,
             preflight_only,
             explain_scheduling,
+            progress,
         } => routes::run_routes::handle_run_command(
             &cli,
             routes::run_routes::RunRouteRequest {
@@ -819,6 +820,7 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 absolute_path_policy: *absolute_path_policy,
                 preflight_only: *preflight_only,
                 explain_scheduling: *explain_scheduling,
+                progress: *progress,
             },
         ),
         Commands::RunBundle { run_dir, out, redact } => {

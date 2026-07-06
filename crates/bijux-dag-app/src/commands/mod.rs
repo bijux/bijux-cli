@@ -344,6 +344,8 @@ pub(crate) enum Commands {
         preflight_only: bool,
         #[arg(long)]
         explain_scheduling: bool,
+        #[arg(long, value_enum, default_value_t = RunProgressArg::Off)]
+        progress: RunProgressArg,
     },
     #[command(name = "run-bundle", alias = "bundle")]
     RunBundle {
@@ -1593,4 +1595,10 @@ pub(crate) enum RunTimeoutBehaviorArg {
 pub(crate) enum ResumeFailureModeArg {
     RerunIncomplete,
     RejectIncomplete,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub(crate) enum RunProgressArg {
+    Off,
+    Compact,
 }

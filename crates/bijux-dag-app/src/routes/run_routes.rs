@@ -1,6 +1,6 @@
 use crate::commands::{
     AbsolutePathPolicyArg, CacheModeArg, DagCli, MaterializeModeArg, ResumeFailureModeArg,
-    RunTimeoutBehaviorArg,
+    RunProgressArg, RunTimeoutBehaviorArg,
 };
 use crate::graph_helpers::{
     parse_selectors, resolve_downstream_run_selection, resolve_upstream_run_selection,
@@ -58,6 +58,7 @@ pub(crate) struct RunRouteRequest<'a> {
     pub absolute_path_policy: AbsolutePathPolicyArg,
     pub preflight_only: bool,
     pub explain_scheduling: bool,
+    pub progress: RunProgressArg,
 }
 
 fn cache_preflight(cache_mode: CacheModeArg, cache_dir: &Option<PathBuf>) -> serde_json::Value {
@@ -438,7 +439,7 @@ mod tests {
     };
     use crate::commands::{
         AbsolutePathPolicyArg, CacheModeArg, Commands, DagCli, MaterializeModeArg,
-        ResumeFailureModeArg, RunTimeoutBehaviorArg,
+        ResumeFailureModeArg, RunProgressArg, RunTimeoutBehaviorArg,
     };
     use crate::ExitCode;
     use serde_json::json;
@@ -528,6 +529,7 @@ mod tests {
                 absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
                 preflight_only: true,
                 explain_scheduling: false,
+                progress: RunProgressArg::Off,
             },
         )
         .expect("run preflight");
@@ -590,6 +592,7 @@ mod tests {
                 absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
                 preflight_only: true,
                 explain_scheduling: false,
+                progress: RunProgressArg::Off,
             },
         )
         .expect("run preflight");
@@ -633,6 +636,7 @@ mod tests {
             absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
             preflight_only: false,
             explain_scheduling: false,
+            progress: RunProgressArg::Off,
         };
         let selectors = bijux_dag_runtime::SelectorSet {
             include: vec![bijux_dag_runtime::Selector::Id("train".to_string())],
