@@ -1,4 +1,4 @@
-use crate::Graph;
+use crate::{resources, Graph};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -172,7 +172,6 @@ pub fn build_resource_requirements(graph: &Graph) -> Vec<ResourceRequirementV1> 
             let mut scratch_mb = 1024;
             let mut walltime_ms = node.timeout_ms.unwrap_or(3_600_000);
             let mut network_required = false;
-            let mut accelerator = None;
             for tag in &node.tags {
                 if let Some(value) = tag.strip_prefix("disk_mb:") {
                     if let Ok(parsed) = value.parse::<u32>() {
@@ -186,10 +185,6 @@ pub fn build_resource_requirements(graph: &Graph) -> Vec<ResourceRequirementV1> 
                     if let Ok(parsed) = value.parse::<u64>() {
                         walltime_ms = parsed;
                     }
-                } else if let Some(value) = tag.strip_prefix("accelerator:") {
-                    if !value.trim().is_empty() {
-                        accelerator = Some(value.trim().to_string());
-                    }
                 } else if tag == "network" {
                     network_required = true;
                 }
@@ -202,7 +197,7 @@ pub fn build_resource_requirements(graph: &Graph) -> Vec<ResourceRequirementV1> 
                 scratch_mb,
                 network_required,
                 walltime_ms,
-                accelerator,
+                accelerator: resources::node_accelerator(node),
             }
         })
         .collect()
@@ -328,9 +323,9 @@ fn infer_requested_pool(node: &crate::Node) -> ExecutionPoolV1 {
     if node.tags.iter().any(|tag| tag == "offline") {
         return ExecutionPoolV1::Offline;
     }
-    if node.tags.iter().any(|tag| {
-        tag == "gpu" || tag.strip_prefix("accelerator:").is_some_and(|value| value == "gpu")
-    }) {
+    if resources::node_gpu_devices(node) > 0
+        || resources::node_accelerator(node).as_deref() == Some("gpu")
+    {
         return ExecutionPoolV1::Gpu;
     }
     if node.resources.as_ref().is_some_and(|resource| resource.mem_mb >= 65_536) {
@@ -496,7 +491,7 @@ pub fn build_capacity_what_if_report(
     };
     let estimated_execution_class = if input.average_node_runtime_ms > 120_000 {
         "long-running".to_string()
-    } else if graph.nodes.iter().any(|node| node.tags.iter().any(|tag| tag == "gpu")) {
+    } else if graph.nodes.iter().any(|node| resources::node_gpu_devices(node) > 0) {
         "accelerated".to_string()
     } else {
         "standard".to_string()
@@ -577,7 +572,7 @@ mod tests {
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: Some(6_000),
-                resources: Some(Resources { cpu: 4, mem_mb: 4096 }),
+                resources: Some(Resources { cpu: 4, mem_mb: 4096, gpu_devices: 0 }),
                 tags: vec![
                     "disk_mb:1024".to_string(),
                     "scratch_mb:2048".to_string(),

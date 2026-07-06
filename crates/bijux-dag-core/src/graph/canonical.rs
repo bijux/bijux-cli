@@ -67,7 +67,7 @@ impl Graph {
                 branch.decisions.sort();
             }
             if let Some(resources) = &node.resources {
-                if resources.cpu == 0 && resources.mem_mb == 0 {
+                if resources.cpu == 0 && resources.mem_mb == 0 && resources.gpu_devices == 0 {
                     node.resources = None;
                 }
             }

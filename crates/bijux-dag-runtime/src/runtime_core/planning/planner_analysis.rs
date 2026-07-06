@@ -8,7 +8,7 @@ use crate::{
     RuntimeConfig, Selector, SelectorSet,
 };
 use bijux_dag_artifacts::RunDirLayout;
-use bijux_dag_core::{Graph, Node};
+use bijux_dag_core::{resources, Graph, Node};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -991,18 +991,7 @@ fn estimate_execution_cost(plan: &ExecutionPlan) -> PlannerExecutionCostEstimate
 fn node_resource_demand(node: &Node) -> (u64, u64, u64) {
     let cpu = node.resources.as_ref().map(|resources| resources.cpu as u64).unwrap_or(1);
     let memory = node.resources.as_ref().map(|resources| resources.mem_mb as u64).unwrap_or(256);
-    let gpu = node
-        .tags
-        .iter()
-        .filter_map(|tag| {
-            if tag == "gpu" || tag == "accelerator:gpu" {
-                Some(1)
-            } else {
-                tag.strip_prefix("gpu:").and_then(|value| value.parse::<u64>().ok())
-            }
-        })
-        .max()
-        .unwrap_or(0);
+    let gpu = u64::from(resources::node_gpu_devices(node));
     (cpu, memory, gpu)
 }
 

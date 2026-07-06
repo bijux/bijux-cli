@@ -79,7 +79,7 @@ fn serde_roundtrip_graph_meta_model() {
 
 #[test]
 fn serde_roundtrip_resources_model() {
-    let resources = Resources { cpu: 2, mem_mb: 128 };
+    let resources = Resources { cpu: 2, mem_mb: 128, gpu_devices: 0 };
     let encoded = serde_json::to_string(&resources).unwrap();
     let decoded: Resources = serde_json::from_str(&encoded).unwrap();
     assert_eq!(decoded.cpu, resources.cpu);

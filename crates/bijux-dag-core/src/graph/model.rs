@@ -425,6 +425,8 @@ pub struct PortRef {
 pub struct Resources {
     pub cpu: u32,
     pub mem_mb: u32,
+    #[serde(default)]
+    pub gpu_devices: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

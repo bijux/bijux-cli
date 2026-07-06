@@ -653,10 +653,16 @@ pub fn build_resource_hints_report(
                 .map(|tag| tag.trim_start_matches("pool:").to_string())
                 .or_else(|| graph_hints.pool.clone());
             let gpu = node
-                .tags
-                .iter()
-                .find(|tag| tag.starts_with("gpu:"))
-                .and_then(|tag| tag.trim_start_matches("gpu:").parse::<u32>().ok())
+                .resources
+                .as_ref()
+                .filter(|resources| resources.gpu_devices > 0)
+                .map(|resources| resources.gpu_devices)
+                .or_else(|| {
+                    node.tags
+                        .iter()
+                        .find(|tag| tag.starts_with("gpu:"))
+                        .and_then(|tag| tag.trim_start_matches("gpu:").parse::<u32>().ok())
+                })
                 .unwrap_or(graph_hints.gpu);
 
             NodeResourceHintsV1 {
@@ -1006,7 +1012,7 @@ mod tests {
             )
             .build();
         let mut graph = graph;
-        graph.nodes[1].resources = Some(Resources { cpu: 64, mem_mb: 131_072 });
+        graph.nodes[1].resources = Some(Resources { cpu: 64, mem_mb: 131_072, gpu_devices: 0 });
         let capabilities = PlanPreflightCapabilitiesV1 {
             shell_available: false,
             container_available: true,
@@ -1085,7 +1091,8 @@ mod tests {
             )
             .build();
         let mut graph = graph;
-        graph.nodes[0].resources = Some(crate::Resources { cpu: 16, mem_mb: 32768 });
+        graph.nodes[0].resources =
+            Some(crate::Resources { cpu: 16, mem_mb: 32768, gpu_devices: 0 });
         let report = build_resource_hints_report(
             &graph,
             GraphResourceHintsV1 {

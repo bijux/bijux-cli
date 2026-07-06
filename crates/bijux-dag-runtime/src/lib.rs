@@ -1348,7 +1348,11 @@ fn write_trace(
         adapter_version: adapter_version.to_string(),
         adapter_outputs_schema_version: adapter_outputs_schema_version.to_string(),
         adapter_binary_sha256,
-        resources: node.resources.as_ref().map(|r| TraceResources { cpu: r.cpu, mem_mb: r.mem_mb }),
+        resources: node.resources.as_ref().map(|r| TraceResources {
+            cpu: r.cpu,
+            mem_mb: r.mem_mb,
+            gpu_devices: r.gpu_devices,
+        }),
         inputs_index,
         resolved_params: ctx.resolved_params.get(node_id).cloned(),
         outputs,
