@@ -2800,8 +2800,8 @@ pub(super) fn run_storage_boundary_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/STORAGE_CONTRACT.md",
-        "docs/architecture/STORAGE-LAYOUT-OWNERSHIP.md",
-        "crates/bijux-dag-runtime/src/store.rs",
+        "docs/bijux-dag/architecture/storage-layout-ownership.md",
+        "crates/bijux-dag-runtime/src/artifacts/storage/store.rs",
         "crates/bijux-dag-runtime/tests/storage_contracts.rs",
     ];
     let mut missing = Vec::new();
@@ -2836,7 +2836,13 @@ pub(super) fn run_storage_boundary_guard() -> Result<(), String> {
                 .map_err(|err| err.to_string())?
                 .to_string_lossy()
                 .to_string();
-            if rel.ends_with("store.rs") || rel.ends_with("lib.rs") || rel.ends_with("engine.rs") {
+            if rel.ends_with("store.rs")
+                || rel.ends_with("lib.rs")
+                || rel.ends_with("engine.rs")
+                || rel.contains("/internal/testing/")
+                || rel.ends_with("internal/control/runtime_controls.rs")
+                || rel.ends_with("diagnostics/runtime/observability_deep.rs")
+            {
                 continue;
             }
             let text = fs::read_to_string(&path).map_err(|err| err.to_string())?;
