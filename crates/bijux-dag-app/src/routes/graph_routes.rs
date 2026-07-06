@@ -1,4 +1,5 @@
 use crate::commands::DagCli;
+use crate::graph::inspection::{build_graph_inspection_payload, GraphInspectionSource};
 use crate::graph::selection::{
     selection_summary_for_all_nodes, selection_summary_from_planner,
     selection_summary_from_run_snapshot,
@@ -46,11 +47,13 @@ fn selection_preview_payload(
             build_default_planner_analysis(graph, &preview).map_err(|_| ExitCode::from(3))?;
         selection_summary_from_planner(&result)
     };
-    Ok(json!({
-        "source": { "kind": "dag" },
-        "graph": graph.canonicalize(),
-        "selection": selection,
-    }))
+    serde_json::to_value(build_graph_inspection_payload(
+        graph,
+        None,
+        GraphInspectionSource { kind: "dag".to_string(), run_dir: None, run_id: None },
+        selection,
+    ))
+    .map_err(|_| ExitCode::from(3))
 }
 
 fn run_snapshot_selection_payload(run_dir: &Path) -> Result<serde_json::Value, ExitCode> {
