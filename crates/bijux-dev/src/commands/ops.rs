@@ -3323,7 +3323,7 @@ pub(super) fn run_versioning_compatibility_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required_docs = [
         "docs/spec/VERSIONING_MODEL.md",
-        "docs/reference/COMPATIBILITY_MATRIX.md",
+        "docs/bijux-dag/interfaces/compatibility-matrix.md",
         "docs/spec/SCHEMA_EVOLUTION_RULEBOOK.md",
         "docs/spec/RUN_DIR_EVOLUTION_RULEBOOK.md",
         "docs/spec/EXPORT_BUNDLE_EVOLUTION_RULEBOOK.md",
@@ -3350,7 +3350,7 @@ pub(super) fn run_versioning_compatibility_guard() -> Result<(), String> {
         return Err(format!("versioning compatibility surfaces missing: {}", missing.join(", ")));
     }
 
-    let matrix = fs::read_to_string(root.join("docs/reference/COMPATIBILITY_MATRIX.md"))
+    let matrix = fs::read_to_string(root.join("docs/bijux-dag/interfaces/compatibility-matrix.md"))
         .map_err(|err| err.to_string())?;
     for token in ["graph schema", "run-dir format", "export bundle"] {
         if !matrix.to_lowercase().contains(token) {
