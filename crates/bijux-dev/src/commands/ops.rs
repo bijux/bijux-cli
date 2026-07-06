@@ -2656,8 +2656,8 @@ pub(super) fn run_concurrency_model_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/CONCURRENCY_MODEL.md",
-        "docs/architecture/RUNTIME-CONCURRENCY-BOUNDARIES.md",
-        "docs/tracking/CONCURRENCY_FLAKE_LEDGER.md",
+        "docs/bijux-dag/architecture/runtime-concurrency-boundaries.md",
+        "docs/tracking/concurrency-flake-ledger.md",
         "crates/bijux-dag-runtime/tests/concurrency_contracts.rs",
     ];
     let mut missing = Vec::new();
