@@ -109,7 +109,7 @@ The root `doctor` surface now acts as the operator-facing runtime diagnostic ent
 - `bijux doctor paths`: resolved state files plus read/write diagnostics
 - `bijux doctor python`: Python bridge interpreter, import, and console-script diagnostics
 - `bijux doctor routing`: canonical built-in routes, aliases, and namespace inventory
-- `bijux doctor shims`: legacy `bijux-<app>` PATH shim detection
+- `bijux doctor shims`: deprecated alias-binary detection without flagging declared product binaries such as `bijux-dag`
 - `bijux doctor <app>`: focused official app discovery and runtime diagnostics
 
 ## Layered Configuration

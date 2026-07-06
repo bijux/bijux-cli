@@ -4,7 +4,7 @@ audience: mixed
 type: guide
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-29
+last_reviewed: 2026-07-06
 ---
 
 # Examples
@@ -29,7 +29,7 @@ bijux config explain cli.log_level
 ## App Routing
 
 ```bash
-bijux dag --help
+bijux-dag --help
 bijux apps which dag
 bijux doctor dag
 ```
