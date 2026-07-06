@@ -1339,6 +1339,10 @@ pub fn execute(
     let mut ready_queue = sacred_execution::ready_queue_from_dependencies(&dependency_counter);
     let mut scheduler = crate::build_scheduler(&options.scheduler_policy);
     let scheduler_hook = crate::NoopSchedulerEventHook;
+    let local_worker_capacity =
+        options.jobs.max(1).min(options.scheduler_policy.max_parallelism.max(1));
+    let mut local_workers =
+        crate::LocalWorkerPool::<Result<NodeResult, RuntimeError>>::new(local_worker_capacity);
     let mut loop_index: u64 = 0;
     let mut branch_pruned_nodes = BTreeSet::new();
     let mut lifecycle_timestamps = graph
@@ -1529,7 +1533,6 @@ pub fn execute(
         }
         let forced_batch = batch.len() == 1;
 
-        let mut handles = Vec::new();
         let mut skipped: Vec<(String, String)> = Vec::new();
         let mut cached: Vec<(String, Node, CacheProof)> = Vec::new();
         let mut to_start: Vec<(String, Node, Value)> = Vec::new();
@@ -2092,6 +2095,7 @@ pub fn execute(
             }
         }
 
+        let mut submitted_nodes = HashMap::<String, Node>::new();
         for (node_id, node, params) in &to_start {
             let adapter = runtime.adapter_for_kind(&node.kind)?;
             let ctx_clone = RunContext {
@@ -2121,36 +2125,51 @@ pub fn execute(
             let params_for_thread = params.clone();
             let graph_for_thread = graph.clone();
             let retry = node.retry.clone();
-            handles.push((
-                node_id_clone,
-                node.clone(),
-                std::thread::spawn(move || {
-                    let started = ctx_clone.clock.now_unix_ms();
-                    let result = sacred_execution::run_retry_logic(
-                        adapter.as_ref(),
+            local_workers
+                .submit(
+                    node_id_clone.clone(),
+                    Box::new(move || {
+                        let started = ctx_clone.clock.now_unix_ms();
+                        let result = sacred_execution::run_retry_logic(
+                            adapter.as_ref(),
                         &graph_for_thread,
                         &node_for_thread,
                         &params_for_thread,
                         &ctx_clone,
-                        &retry,
-                    );
-                    let finished = ctx_clone.clock.now_unix_ms();
-                    (started, finished, result)
-                }),
-            ));
+                            &retry,
+                        );
+                        let finished = ctx_clone.clock.now_unix_ms();
+                        crate::LocalWorkerExecution {
+                            started_unix_ms: started,
+                            finished_unix_ms: finished,
+                            result,
+                        }
+                    }),
+                )
+                .map_err(RuntimeError::Executor)?;
+            submitted_nodes.insert(node_id_clone, node.clone());
+        }
+        if cancel.load(Ordering::SeqCst) {
+            local_workers.request_cancellation();
         }
 
         type ResultItem = (String, Node, u128, u128, Result<NodeResult, RuntimeError>);
         let mut results: Vec<ResultItem> = Vec::new();
-        for (node_id, node, handle) in handles {
-            let res = handle.join().unwrap_or_else(|_| {
-                (
-                    ctx.clock.now_unix_ms(),
-                    ctx.clock.now_unix_ms(),
-                    Err(RuntimeError::Executor("thread panicked".to_string())),
-                )
-            });
-            results.push((node_id, node, res.0, res.1, res.2));
+        for _ in 0..actual_started_ids.len() {
+            if cancel.load(Ordering::SeqCst) {
+                local_workers.request_cancellation();
+            }
+            let completion = local_workers.wait_for_completion().map_err(RuntimeError::Executor)?;
+            let node = submitted_nodes
+                .remove(&completion.node_id)
+                .ok_or_else(|| RuntimeError::Executor("missing worker completion node".to_string()))?;
+            results.push((
+                completion.node_id,
+                node,
+                completion.started_unix_ms,
+                completion.finished_unix_ms,
+                completion.result,
+            ));
         }
         results.sort_by(|a, b| a.0.cmp(&b.0));
         for (node_id, node, started, finished, res) in results {
