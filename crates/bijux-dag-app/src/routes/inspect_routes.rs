@@ -1,4 +1,7 @@
 use crate::commands::DagCli;
+use crate::node_execution_explanation::{
+    explain_node_execution, format_node_execution_explanation_human, NodeExecutionExplanation,
+};
 use crate::routes::path_resolution::{
     manifest_path, node_attempts_path, node_inputs_index_path, node_outputs_index_path,
     node_resolved_params_path, node_stderr_path, node_stdout_path, node_trace_path,
@@ -86,6 +89,7 @@ struct NodeInspectionPayload {
     logs: NodeLogsInspection,
     cache: NodeCacheInspection,
     failure: NodeFailureInspection,
+    execution_explanation: NodeExecutionExplanation,
     fingerprint: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     evidence_gaps: Vec<String>,
@@ -202,6 +206,7 @@ fn node_inspection_payload(
     require_run_directory(run_dir)?;
     let snapshot = load_snapshot(run_dir)?;
     let trace: NodeTrace = read_required_json_file(&node_trace_path(run_dir, node_id))?;
+    let trace_json = serde_json::to_value(&trace).map_err(|_| ExitCode::from(3))?;
     let planned = snapshot
         .graph
         .nodes
@@ -298,6 +303,8 @@ fn node_inspection_payload(
         transition_cause: trace.transition_cause.clone(),
         lifecycle_state: trace.lifecycle_state.clone(),
     };
+    let execution_explanation =
+        explain_node_execution(run_dir, &snapshot.graph, node_id, Some(&trace_json));
 
     Ok(NodeInspectionPayload {
         run_dir: run_dir.display().to_string(),
@@ -314,6 +321,7 @@ fn node_inspection_payload(
         logs,
         cache,
         failure,
+        execution_explanation,
         fingerprint: snapshot.graph.node_fingerprint(&planned).ok(),
         evidence_gaps,
     })
@@ -365,7 +373,7 @@ fn format_node_inspection_human(payload: &NodeInspectionPayload) -> String {
         payload.evidence_gaps.join("; ")
     };
     format!(
-        "node: {}\nstatus: {}\nplanned_kind: {}\nplanned_inputs: {}\nplanned_outputs: {:?}\nresolved_params: {}\ninput_artifact_count: {}\noutput_artifact_count: {}\nterminal_attempt: {}\nattempts:\n{}\ncache_status: configured={} observed={}\nfailure_info: {}\nstdout_path: {}\nstderr_path: {}\nstdout_tail:\n{}\nstderr_tail:\n{}\nevidence_gaps: {}",
+        "node: {}\nstatus: {}\nplanned_kind: {}\nplanned_inputs: {}\nplanned_outputs: {:?}\nresolved_params: {}\ninput_artifact_count: {}\noutput_artifact_count: {}\nterminal_attempt: {}\nattempts:\n{}\ncache_status: configured={} observed={}\nfailure_info: {}\nexecution_explanation: {}\nstdout_path: {}\nstderr_path: {}\nstdout_tail:\n{}\nstderr_tail:\n{}\nevidence_gaps: {}",
         payload.node_id,
         payload.status,
         payload.planned.kind.as_str(),
@@ -379,6 +387,7 @@ fn format_node_inspection_human(payload: &NodeInspectionPayload) -> String {
         render_cache_policy(&payload.cache.configured),
         payload.cache.observed_result,
         failure_summary,
+        format_node_execution_explanation_human(&payload.execution_explanation),
         payload.logs.stdout.as_ref().map(|log| log.path.as_str()).unwrap_or("-"),
         payload.logs.stderr.as_ref().map(|log| log.path.as_str()).unwrap_or("-"),
         stdout_tail,
@@ -393,7 +402,8 @@ fn explain_node_payload(
     node: &Node,
     node_id: &str,
     deps: Vec<String>,
-    trace: &str,
+    trace: Option<&str>,
+    execution_explanation: &NodeExecutionExplanation,
     outputs_index: Option<&str>,
     resolved_params: Option<&str>,
 ) -> Value {
@@ -415,7 +425,8 @@ fn explain_node_payload(
         "env_allowlist": node.env_allowlist.clone(),
         "outputs_index": outputs_index.and_then(parse_optional_json),
         "resolved_params": resolved_params.and_then(parse_optional_json),
-        "trace": parse_optional_json(trace),
+        "execution_explanation": execution_explanation,
+        "trace": trace.and_then(parse_optional_json),
         "fingerprint": graph.node_fingerprint(node).ok(),
     })
 }
@@ -429,7 +440,11 @@ pub(crate) fn handle_explain_command(
     let manifest = read_file(&manifest_path(run_dir))?;
     if let Some(node_id) = node.as_ref() {
         let snapshot = load_snapshot(run_dir)?;
-        let trace = read_file(&node_trace_path(run_dir, node_id))?;
+        let trace = read_file(&node_trace_path(run_dir, node_id)).ok();
+        let trace_json = trace
+            .as_deref()
+            .map(|raw| serde_json::from_str::<Value>(raw).map_err(|_| ExitCode::from(3)))
+            .transpose()?;
         let node_info =
             snapshot.graph.nodes.iter().find(|n| n.id == *node_id).ok_or(ExitCode::from(3))?;
         let deps = snapshot
@@ -440,8 +455,9 @@ pub(crate) fn handle_explain_command(
             .map(|e| e.from.node_id.clone())
             .collect::<Vec<_>>();
         let outputs_index = read_file(&node_outputs_index_path(run_dir, node_id)).ok();
-        let resolved_params =
-            read_file(&run_dir.join("nodes").join(node_id).join("resolved_params.json")).ok();
+        let resolved_params = read_file(&node_resolved_params_path(run_dir, node_id)).ok();
+        let execution_explanation =
+            explain_node_execution(run_dir, &snapshot.graph, node_id, trace_json.as_ref());
         if cli.json {
             let data = explain_node_payload(
                 &manifest,
@@ -449,7 +465,8 @@ pub(crate) fn handle_explain_command(
                 node_info,
                 node_id,
                 deps,
-                &trace,
+                trace.as_deref(),
+                &execution_explanation,
                 outputs_index.as_deref(),
                 resolved_params.as_deref(),
             );
@@ -469,6 +486,10 @@ pub(crate) fn handle_explain_command(
             println!("effects: {:?}", node_info.effects);
             println!("cache: {}", render_cache_policy(&node_info.cache));
             println!("env_allowlist: {:?}", node_info.env_allowlist);
+            println!(
+                "execution_explanation: {}",
+                format_node_execution_explanation_human(&execution_explanation)
+            );
             if let Some(r) = resolved_params {
                 println!("resolved_params:\n{}", r);
             }
@@ -476,7 +497,11 @@ pub(crate) fn handle_explain_command(
                 println!("outputs_index:\n{}", o);
             }
             println!("fingerprint: {:?}", snapshot.graph.node_fingerprint(node_info).ok());
-            println!("trace:\n{}", trace);
+            if let Some(trace) = trace {
+                println!("trace:\n{}", trace);
+            } else {
+                println!("trace: <missing>");
+            }
         }
     } else if cli.json {
         let m: serde_json::Value = read_manifest_json(run_dir).unwrap_or_default();
@@ -676,10 +701,12 @@ mod tests {
         render_cache_policy, status_next_action,
     };
     use crate::commands::{Commands, DagCli};
+    use crate::node_execution_explanation::explain_node_execution;
     use crate::read_file;
     use crate::run_data::load_snapshot;
     use crate::ExitCode;
     use serde_json::json;
+    use serde_json::Value;
     use std::fs;
     use std::path::Path;
 
@@ -927,6 +954,9 @@ mod tests {
         let snapshot = load_snapshot(run.path()).expect("snapshot");
         let node =
             snapshot.graph.nodes.iter().find(|node| node.id == "extract").expect("extract node");
+        let trace_json = serde_json::from_str::<Value>(&trace).expect("trace json");
+        let execution_explanation =
+            explain_node_execution(run.path(), &snapshot.graph, "extract", Some(&trace_json));
 
         let payload = explain_node_payload(
             &manifest,
@@ -934,7 +964,8 @@ mod tests {
             node,
             "extract",
             Vec::new(),
-            &trace,
+            Some(&trace),
+            &execution_explanation,
             Some(&outputs_index),
             None,
         );
