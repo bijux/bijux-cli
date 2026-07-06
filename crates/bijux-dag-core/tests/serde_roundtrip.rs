@@ -195,13 +195,14 @@ fn serde_roundtrip_param_value_model() {
 
 #[test]
 fn serde_roundtrip_node_kind_model() {
-    let cases = vec!["const", "shell", "python", "container", "custom"];
+    let cases = vec!["const", "shell", "python", "http", "container", "custom"];
     for text in cases {
         let node_kind: NodeKind = serde_json::from_str(&format!("\"{}\"", text)).unwrap();
         let encoded = serde_json::to_string(&node_kind).unwrap();
         assert_eq!(encoded, format!("\"{}\"", text));
         match text {
             "python" => assert!(matches!(node_kind, NodeKind::Python)),
+            "http" => assert!(matches!(node_kind, NodeKind::Http)),
             "custom" => match node_kind {
                 NodeKind::External(name) => assert_eq!(name, "custom"),
                 _ => panic!("expected external node kind"),

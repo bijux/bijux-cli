@@ -86,6 +86,7 @@ impl NodeTypeRegistry {
                 "const".to_string(),
                 "shell".to_string(),
                 "python".to_string(),
+                "http".to_string(),
                 "container".to_string(),
             ],
         }

@@ -338,6 +338,7 @@ fn infer_requested_pool(node: &crate::Node) -> ExecutionPoolV1 {
         crate::NodeKind::Container => ExecutionPoolV1::Container,
         crate::NodeKind::Python => ExecutionPoolV1::Shell,
         crate::NodeKind::Shell => ExecutionPoolV1::Shell,
+        crate::NodeKind::Http => ExecutionPoolV1::Local,
         _ => ExecutionPoolV1::Local,
     }
 }
@@ -382,6 +383,15 @@ pub fn builtin_adapter_capability_registry() -> Vec<AdapterCapabilityDescriptorV
             effects: vec!["filesystem".to_string(), "env".to_string()],
             cacheable: true,
             sandbox_profile: "process".to_string(),
+            side_effect_class: "writes_run".to_string(),
+        },
+        AdapterCapabilityDescriptorV1 {
+            adapter_kind: "http".to_string(),
+            input_contract: "http-request".to_string(),
+            output_contract: "http-response-artifact".to_string(),
+            effects: vec!["filesystem".to_string(), "network".to_string()],
+            cacheable: true,
+            sandbox_profile: "runtime".to_string(),
             side_effect_class: "writes_run".to_string(),
         },
         AdapterCapabilityDescriptorV1 {
@@ -665,10 +675,14 @@ mod tests {
     fn g123_adapter_capabilities_are_machine_readable_for_planner_runnability() {
         let shell = adapter_capability_for_kind("shell").expect("shell capability");
         let python = adapter_capability_for_kind("python").expect("python capability");
+        let http = adapter_capability_for_kind("http").expect("http capability");
         assert_eq!(shell.sandbox_profile, "process");
         assert_eq!(python.sandbox_profile, "process");
+        assert_eq!(http.sandbox_profile, "runtime");
         assert!(planner_runnable_from_capabilities("shell", false));
         assert!(planner_runnable_from_capabilities("python", false));
+        assert!(planner_runnable_from_capabilities("http", false));
+        assert!(planner_runnable_from_capabilities("http", true));
         assert!(!planner_runnable_from_capabilities("python", true));
         assert!(!planner_runnable_from_capabilities("shell", true));
         assert!(planner_runnable_from_capabilities("container", true));

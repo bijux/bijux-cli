@@ -480,7 +480,10 @@ pub fn can_runtime_execute_plan_without_raw_graph() -> bool {
 }
 
 pub fn node_kind_supported(kind: &NodeKind) -> bool {
-    matches!(kind, NodeKind::Const | NodeKind::Shell | NodeKind::Python | NodeKind::Container)
+    matches!(
+        kind,
+        NodeKind::Const | NodeKind::Shell | NodeKind::Python | NodeKind::Http | NodeKind::Container
+    )
 }
 
 fn planned_branch_contract(branch: &BranchSpec) -> PlannedBranchContract {

@@ -18,7 +18,8 @@ fn validation_error_and_warning_coverage() {
     let expected_error_codes = [
         "E1001", "E1002", "E1003", "E1004", "E1005", "E1007", "E1008", "E1009", "E1010", "E1011",
         "E1020", "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030",
-        "E1031", "E1032", "E1035", "E1039", "E1040", "E1041",
+        "E1031", "E1032", "E1035", "E1039", "E1040", "E1041", "E1042", "E1043", "E1044", "E1045",
+        "E1046",
     ];
 
     for code in expected_error_codes {
@@ -642,6 +643,102 @@ fn graph_for_code(code: &str) -> Graph {
                     "module".to_string(),
                     bijux_dag_core::ParamValue::Literal(serde_json::json!("demo_module")),
                 )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1042" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Http;
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Literal(serde_json::json!("bad"));
+            g
+        }
+        "E1043" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Http;
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "url".to_string(),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("https://example.test")),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1044" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Http;
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "method".to_string(),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("GET")),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1045" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Http;
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "method".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("GET")),
+                    ),
+                    (
+                        "url".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!(
+                            "https://example.test"
+                        )),
+                    ),
+                    (
+                        "headers".to_string(),
+                        bijux_dag_core::ParamValue::Object(
+                            [(
+                                "authorization".to_string(),
+                                bijux_dag_core::ParamValue::Literal(serde_json::json!(true)),
+                            )]
+                            .into_iter()
+                            .collect(),
+                        ),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1046" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Http;
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network];
+            g.nodes[0].outputs.clear();
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "method".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("GET")),
+                    ),
+                    (
+                        "url".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!(
+                            "https://example.test"
+                        )),
+                    ),
+                ]
                 .into_iter()
                 .collect(),
             );

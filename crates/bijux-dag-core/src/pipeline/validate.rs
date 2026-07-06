@@ -56,6 +56,11 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1039", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1040", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1041", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1042", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1043", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1044", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1045", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1046", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -105,6 +110,20 @@ fn node_param_literal_string<'a>(node: &'a Node, key: &str) -> Option<&'a str> {
         ParamValue::Literal(serde_json::Value::String(text)) => Some(text.as_str()),
         _ => None,
     })
+}
+
+fn node_param_object_field<'a>(
+    node: &'a Node,
+    key: &str,
+) -> Option<&'a std::collections::BTreeMap<String, ParamValue>> {
+    node_param_object(node).and_then(|params| params.get(key)).and_then(|value| match value {
+        ParamValue::Object(map) => Some(map),
+        _ => None,
+    })
+}
+
+fn param_value_is_literal_string(value: &ParamValue) -> bool {
+    matches!(value, ParamValue::Literal(serde_json::Value::String(_)))
 }
 
 fn is_normalized_relative_path(path: &str) -> bool {
@@ -266,6 +285,96 @@ impl Graph {
                         format!("/nodes/{}/params/function", node.id),
                         Some("Provide a non-empty function string for python nodes".to_string()),
                     ),
+                }
+            }
+            if node.kind == crate::NodeKind::Http && node.effects.is_empty() {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("missing effects for http node: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Declare effects for http nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Http && !node.effects.contains(&Effect::Filesystem) {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("http node missing filesystem effect: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Include filesystem effect for http nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Http && !node.effects.contains(&Effect::Network) {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("http node missing network effect: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Include network effect for http nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Http && !matches!(node.params, ParamValue::Object(_)) {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1042",
+                    format!("http node params must be an object: {}", node.id),
+                    format!("/nodes/{}/params", node.id),
+                    Some("Declare method, url, headers, and body inside params".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Http {
+                match node_param_literal_string(node, "method") {
+                    Some(method) if !method.trim().is_empty() => {}
+                    _ => emit_rule(
+                        &mut diagnostics,
+                        "E1043",
+                        format!("http node missing method: {}", node.id),
+                        format!("/nodes/{}/params/method", node.id),
+                        Some("Provide a non-empty HTTP method string".to_string()),
+                    ),
+                }
+                match node_param_literal_string(node, "url") {
+                    Some(url) if url.starts_with("http://") || url.starts_with("https://") => {}
+                    _ => emit_rule(
+                        &mut diagnostics,
+                        "E1044",
+                        format!("http node missing or invalid url: {}", node.id),
+                        format!("/nodes/{}/params/url", node.id),
+                        Some("Provide an absolute http:// or https:// URL".to_string()),
+                    ),
+                }
+                if let Some(headers) = node_param_object_field(node, "headers") {
+                    if headers.values().any(|value| !param_value_is_literal_string(value)) {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1045",
+                            format!("http node headers must be string literals: {}", node.id),
+                            format!("/nodes/{}/params/headers", node.id),
+                            Some(
+                                "Provide request headers as an object of string values".to_string(),
+                            ),
+                        );
+                    }
+                } else if node_param_object(node)
+                    .is_some_and(|params| params.contains_key("headers"))
+                {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1045",
+                        format!("http node headers must be an object: {}", node.id),
+                        format!("/nodes/{}/params/headers", node.id),
+                        Some("Provide request headers as an object of string values".to_string()),
+                    );
+                }
+                if node.outputs.is_empty() {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1046",
+                        format!("http node requires at least one declared output: {}", node.id),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some("Declare an output to capture the HTTP response".to_string()),
+                    );
                 }
             }
             if node.kind == crate::NodeKind::Container && node.container.is_none() {
