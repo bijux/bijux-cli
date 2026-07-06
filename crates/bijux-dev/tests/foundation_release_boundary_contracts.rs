@@ -234,6 +234,59 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         ],
         "docs/spec/RELEASE_BINARY_VERIFICATION.md",
     );
+
+    let support_matrix = read_repo_file("docs/bijux-dag/interfaces/support-matrix.md");
+    assert_contains_all(
+        &support_matrix,
+        &[
+            "| `commands` | stable | visible CLI | route inventory for stable and non-stable command discovery |",
+            "| `capabilities` | internal | `BIJUX_DAG_ENABLE_INTERNAL=1` | maintainer-only support probe outside the public operator lane |",
+        ],
+        "docs/bijux-dag/interfaces/support-matrix.md",
+    );
+
+    let first_hour = read_repo_file("docs/bijux-dag/operations/first-hour-with-bijux-dag.md");
+    assert_contains_all(
+        &first_hour,
+        &[
+            "cargo run -p bijux-dag-cli --bin bijux-dag -- commands",
+            "Maintainer-only probes such as `capabilities` remain outside this first-hour",
+        ],
+        "docs/bijux-dag/operations/first-hour-with-bijux-dag.md",
+    );
+    assert!(
+        !first_hour.contains("cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json"),
+        "first-hour doc must not present `capabilities --json` as part of the public operator lane"
+    );
+
+    let ci = read_repo_file("docs/bijux-dag/operations/ci-integration.md");
+    assert_contains_all(
+        &ci,
+        &[
+            "cargo run -p bijux-dag-cli --bin bijux-dag -- commands",
+            "BIJUX_DAG_ENABLE_INTERNAL=1 cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json",
+            "not part of the public operator boundary",
+        ],
+        "docs/bijux-dag/operations/ci-integration.md",
+    );
+}
+
+#[test]
+fn dag_operator_reference_docs_use_public_binary_examples() {
+    for path in [
+        "docs/bijux-dag/interfaces/command-taxonomy.md",
+        "docs/bijux-dag/interfaces/configuration-surface.md",
+        "docs/bijux-dag/interfaces/node-inspection.md",
+        "docs/bijux-dag/interfaces/operator-command-index.md",
+        "docs/bijux-dag/interfaces/operator-inspection-guide.md",
+        "docs/bijux-dag/operations/failure-recovery.md",
+    ] {
+        let content = read_repo_file(path);
+        assert!(
+            !content.contains("`dag "),
+            "{path} must use `bijux-dag ...` in public command examples"
+        );
+    }
 }
 
 #[test]
