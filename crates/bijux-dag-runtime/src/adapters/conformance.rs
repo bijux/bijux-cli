@@ -144,7 +144,8 @@ pub fn build_adapter_conformance_suite(
         || descriptor.id == "container"
         || descriptor.id == "python"
         || matches!(descriptor.origin, AdapterOrigin::External);
-    let request_backed = process_backed || descriptor.id == "http";
+    let request_backed =
+        process_backed || matches!(descriptor.id.as_str(), "http" | "file_transform");
     let schema_compatibility = validate_output_schema_compatibility(
         descriptor.cache_compatibility.clone(),
         &descriptor.produces_outputs_schema_version,
@@ -204,7 +205,7 @@ pub fn build_adapter_conformance_suite(
             descriptor.supports_timeout,
             !descriptor.supports_timeout,
             if descriptor.supports_timeout {
-                "runtime kills timed-out adapter processes and records timeout failures"
+                "runtime enforces declared timeout budgets and records timeout failures"
             } else {
                 "adapter descriptor does not declare timeout support"
             },

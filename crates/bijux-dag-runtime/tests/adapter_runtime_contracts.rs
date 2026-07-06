@@ -1972,6 +1972,10 @@ fn adapter_conformance_suite_covers_shell_hardening_and_output_contract_scenario
             && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
     }));
     assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario.scenario == "failure"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+    }));
+    assert!(file_transform_scenarios.iter().any(|scenario| {
         scenario.scenario == "cache_output"
             && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
     }));
