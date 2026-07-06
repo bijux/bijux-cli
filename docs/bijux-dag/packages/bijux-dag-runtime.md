@@ -17,8 +17,10 @@ Use this page when the question is about what happens after a graph has already
 been accepted as valid.
 
 The intended Rust import lanes are the crate root, `stable`, and `prelude`.
-Hidden compatibility modules remain available for repository-owned coverage, and
-the `experimental` lane is opt-in behind `experimental-public-api`.
+At the module level, the public lanes are intentionally limited to `stable`,
+`prelude`, `experimental`, and `simulated_platform`. Hidden compatibility
+helpers remain available for repository-owned coverage, and the `experimental`
+lane is opt-in behind `experimental-public-api`.
 
 ## Responsibility Map
 

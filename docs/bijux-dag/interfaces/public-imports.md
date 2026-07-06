@@ -15,6 +15,11 @@ Using crate-root exports, `stable`, or `prelude` keeps downstream code aligned
 with the intentional public surface instead of tying it to internal module
 layout.
 
+For `bijux-dag-runtime`, the only module-level public lanes are `stable`,
+`prelude`, `experimental`, and `simulated_platform`. Compatibility-heavy
+backend, governance, and evidence helpers remain repository-owned and are
+hidden from the default docs surface.
+
 ## Import Map
 
 ```mermaid
@@ -32,6 +37,8 @@ flowchart LR
 - `bijux_dag_runtime::prelude::{Runtime, RuntimeConfig, build_plan}`
 - `bijux_dag_artifacts::prelude::{RunDir, verify_run_dir, write_outputs_index}`
 - `bijux_dag_app::prelude::{dag_command, dag_run}` for CLI wiring integrations
+- `bijux_dag_runtime::simulated_platform::{...}` only when a maintainer workflow
+  intentionally needs modeled platform or control-plane contracts
 
 ## Experimental Imports
 

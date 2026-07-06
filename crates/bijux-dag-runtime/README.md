@@ -35,6 +35,16 @@ This crate does not own:
 
 Use these rules when reviewing runtime fingerprint drift or provenance output.
 
+## Public Rust surface
+
+- prefer focused crate-root imports for a small number of runtime types or functions
+- use `bijux_dag_runtime::stable` for the explicit long-lived compatibility lane
+- use `bijux_dag_runtime::prelude` for common planning and execution workflows
+- use `bijux_dag_runtime::simulated_platform` only for deliberate modeled-platform
+  and control-plane evidence work
+- treat backend-heavy compatibility helpers as repository-owned support surface,
+  not as the primary docs-facing import lane
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

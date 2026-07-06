@@ -15,6 +15,12 @@ needs graph, runtime, or artifact behavior.
 The boundary is straightforward: depend on crate-root exports, `stable`, or
 `prelude`, not on hidden compatibility modules.
 
+For the runtime crate in particular, visible module-level imports are limited to
+`stable`, `prelude`, `experimental`, and `simulated_platform`. Modeled backend,
+governance, and evidence-oriented helper exports may remain available for
+repository-owned code, but they are intentionally hidden from the default docs
+surface.
+
 ## API Map
 
 ```mermaid
@@ -39,6 +45,8 @@ flowchart LR
 - `stable`: explicit long-lived surface for Rust integrations that want a named compatibility lane
 - `prelude`: common workflow imports for parse/plan/run/read orchestration
 - `experimental`: opt-in lane behind the crate-local `experimental-public-api` feature
+- `simulated_platform`: explicit modeled-platform lane for maintainer and
+  evidence workflows only
 
 ## Code Anchors
 
