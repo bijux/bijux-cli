@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-06
 ---
 
 # CLI Surface
@@ -94,6 +94,17 @@ presented as stable operator APIs. See `LIM-005`, `LIM-006`, `RISK-002`, and
 - `--json`: machine-readable output mode
 - `--quiet`: reduced human-oriented output noise
 
+## Resource Capacity Controls
+
+- `bijux-dag run` and `bijux-dag replay` accept
+  `--resource-capacity <name=count>` to declare named runtime capacities for
+  graph nodes that claim `resources.named_resources`.
+- Repeat `--resource-capacity` for multiple capacities such as
+  `license.render=2` and `database_slot=1`.
+- Execution fails before work starts if a selected node claims a named resource
+  with no configured runtime capacity or if the node requests more than the
+  configured capacity.
+
 ## Selection Controls
 
 - `--select` and `--exclude` remain the stable partial-planning selectors for
@@ -133,6 +144,10 @@ for node-local directories and container workdirs:
   literal absolute container `workdir` is accepted or rejected during planning
   and execution.
 - `bijux-dag run --preflight-only --json` and
+  `bijux-dag run --explain-scheduling --json` include the same `run_layout`
+  and `path_previews` contract that `plan explain` uses, including resolved
+  argv tokens for command-bearing nodes and the selected
+  `execution_cost_estimate`.
 
 ## Plan Diff Controls
 
@@ -153,9 +168,6 @@ for node-local directories and container workdirs:
 - A matching execution fingerprint is not treated as sufficient proof on its
   own; execution-affecting planner drift still fails equivalence and is exposed
   explicitly in `non_equivalence_causes`.
-  `bijux-dag run --explain-scheduling --json` include the same `run_layout` and
-  `path_previews` contract that `plan explain` uses, including resolved argv
-  tokens for command-bearing nodes and the selected execution-cost estimate.
 
 ## Code Anchors
 

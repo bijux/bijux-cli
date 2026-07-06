@@ -41,6 +41,8 @@ const RESUME_RUN_HELP: &str =
     "resume an existing run directory by run id, reusing only nodes whose persisted outputs still match their recorded evidence";
 const RESUME_FAILURE_MODE_HELP: &str =
     "choose whether nodes that cannot be safely reused are rerun or rejected during resume";
+const RESOURCE_CAPACITY_HELP: &str =
+    "declare a named runtime capacity as <name=count>; repeat for resources such as license tokens or database slots";
 const REPLAY_SANDBOX_HELP: &str =
     "forbid replay outputs from being written inside the source run directory; this is a write-boundary check, not a process sandbox";
 const ROOT_HELP_BOUNDARY_HELP: &str =
@@ -270,7 +272,12 @@ pub(crate) enum Commands {
         memory_budget_mb: Option<u32>,
         #[arg(long)]
         gpu_device_budget: Option<u32>,
-        #[arg(long = "resource-capacity", action = clap::ArgAction::Append)]
+        #[arg(
+            long = "resource-capacity",
+            action = clap::ArgAction::Append,
+            value_name = "name=count",
+            help = RESOURCE_CAPACITY_HELP
+        )]
         resource_capacity: Vec<String>,
         #[arg(long)]
         node_timeout_ms: Option<u64>,
@@ -343,7 +350,12 @@ pub(crate) enum Commands {
         memory_budget_mb: Option<u32>,
         #[arg(long)]
         gpu_device_budget: Option<u32>,
-        #[arg(long = "resource-capacity", action = clap::ArgAction::Append)]
+        #[arg(
+            long = "resource-capacity",
+            action = clap::ArgAction::Append,
+            value_name = "name=count",
+            help = RESOURCE_CAPACITY_HELP
+        )]
         resource_capacity: Vec<String>,
         #[arg(long, help = DENY_NETWORK_HELP)]
         deny_network: bool,

@@ -477,6 +477,7 @@ fn dag_run_help_surface_contract() {
         "--hermetic",
         "--deny-network",
         "--clean-env",
+        "--resource-capacity",
         "--preflight-only",
         "--explain-scheduling",
         "run",
@@ -488,6 +489,7 @@ fn dag_run_help_surface_contract() {
         "does not firewall sockets",
         "deny declared clock effects",
         "does not virtualize wall clock access",
+        "declare a named runtime capacity as <name=count>",
         "curated bijux environment",
         "best-effort local policy profile",
         "does not claim syscall sandboxing or host filesystem isolation",
@@ -830,15 +832,23 @@ fn dag_replay_help_surface_contract() {
 
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
-    for token in
-        ["--out", "--run-id", "--reuse-cache", "--sandbox", "--hermetic", "--from-node", "replay"]
-    {
+    for token in [
+        "--out",
+        "--run-id",
+        "--reuse-cache",
+        "--sandbox",
+        "--hermetic",
+        "--resource-capacity",
+        "--from-node",
+        "replay",
+    ] {
         assert!(text.contains(token));
     }
     for detail in [
         "write-boundary check, not a process sandbox",
         "deny declared network effects",
         "deny declared clock effects",
+        "declare a named runtime capacity as <name=count>",
         "best-effort local policy profile",
     ] {
         assert!(text.contains(detail), "missing replay help detail: {detail}");
