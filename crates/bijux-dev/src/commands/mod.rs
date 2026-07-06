@@ -2758,26 +2758,34 @@ fn workspace_dependency_edges() -> Result<BTreeSet<(String, String)>, String> {
 
 fn run_workspace_manifest_policy_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let cli_manifest = fs::read_to_string(root.join("crates/bijux-dag-cli/Cargo.toml"))
-        .map_err(|err| err.to_string())?;
-    if cli_manifest.contains("bijux-dag-runtime") || cli_manifest.contains("bijux-dag-core") {
+    let cli_deps = manifest_dependency_keys(&root.join("crates/bijux-dag-cli/Cargo.toml"))?;
+    if cli_deps.contains("bijux-dag-runtime") || cli_deps.contains("bijux-dag-core") {
         return Err(
             "bijux-dag-cli must stay thin and only depend on bijux-dag-app plus cli wiring dependencies"
                 .into(),
         );
     }
 
-    let app_manifest = fs::read_to_string(root.join("crates/bijux-dag-app/Cargo.toml"))
-        .map_err(|err| err.to_string())?;
-    if !app_manifest.contains("bijux_dag_runtime")
-        || !app_manifest.contains("bijux_dag_core")
-        || !app_manifest.contains("bijux_dag_artifacts")
+    let app_deps = manifest_dependency_keys(&root.join("crates/bijux-dag-app/Cargo.toml"))?;
+    if !app_deps.contains("bijux-dag-runtime")
+        || !app_deps.contains("bijux-dag-core")
+        || !app_deps.contains("bijux-dag-artifacts")
     {
         return Err(
             "bijux-dag-app must depend on runtime/core/artifacts orchestration surfaces".into()
         );
     }
     Ok(())
+}
+
+fn manifest_dependency_keys(path: &Path) -> Result<BTreeSet<String>, String> {
+    let manifest = fs::read_to_string(path).map_err(|err| err.to_string())?;
+    let value: toml::Value = toml::from_str(&manifest).map_err(|err| err.to_string())?;
+    Ok(value
+        .get("dependencies")
+        .and_then(toml::Value::as_table)
+        .map(|table| table.keys().cloned().collect())
+        .unwrap_or_default())
 }
 
 #[derive(Debug, Deserialize)]
