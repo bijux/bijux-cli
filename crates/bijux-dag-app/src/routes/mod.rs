@@ -27,6 +27,7 @@ pub(crate) mod replay_routes;
 pub(crate) mod resource_capacity_args;
 pub(crate) mod response;
 pub(crate) mod run_lookup;
+pub(crate) mod run_progress;
 pub(crate) mod run_routes;
 pub(crate) mod runs_routes;
 pub(crate) mod runtime_routes;
