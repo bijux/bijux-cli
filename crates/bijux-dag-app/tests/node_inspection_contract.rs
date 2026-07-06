@@ -226,6 +226,71 @@ fn write_node_fixture(root: &Path) -> PathBuf {
     run_dir
 }
 
+fn write_blocked_node_fixture(root: &Path) -> PathBuf {
+    let run_dir = root.join("run-blocked-node");
+    fs::create_dir_all(run_dir.join("nodes").join("publish")).expect("mkdir publish");
+
+    fs::write(
+        run_dir.join("manifest.json"),
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "manifest_version":"run-manifest/v0.1",
+            "run_id":"run-blocked-node",
+            "created_unix_ms":1,
+            "started_unix_ms":1,
+            "finished_unix_ms":1,
+            "graph_snapshot":"graph.snapshot.json",
+            "status":"running",
+            "spec":"bijux-dag/v0.1",
+            "graph_fingerprint":"graph-blocked-node",
+            "tool_version":"0.4.0",
+            "jobs":1,
+            "adapters":[],
+            "outputs":[],
+            "node_counts":{"success":0,"failed":0,"skipped":0,"cached":0},
+            "policy":{"deny_network":true,"deny_env":true,"deny_clock":true,"clean_env":true}
+        }))
+        .expect("manifest"),
+    )
+    .expect("write manifest");
+    fs::write(
+        run_dir.join("graph.snapshot.json"),
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "graph":{
+                "spec":"bijux-dag/v0.1",
+                "meta":{"name":"inspect-blocked-node","owners":[],"tags":[]},
+                "inputs":{},
+                "nodes":[
+                    {
+                        "id":"publish",
+                        "kind":"shell",
+                        "outputs":[{"name":"out","path":"publish/out","kind":"file","required":true,"media_type":"text/plain"}],
+                        "params":{"argv":["/bin/sh","-c","echo blocked > {outputs.out}"]},
+                        "cache":{"enabled":true},
+                        "effects":["filesystem"]
+                    }
+                ],
+                "edges":[]
+            },
+            "graph_fingerprint":"graph-blocked-node"
+        }))
+        .expect("snapshot"),
+    )
+    .expect("write snapshot");
+    fs::write(
+        run_dir.join("run-log.index.json"),
+        serde_json::to_vec_pretty(&vec![serde_json::json!({
+            "event":"node_blocked",
+            "ts":3u64,
+            "node_id":"publish",
+            "reason":"blocked_by_cpu"
+        })])
+        .expect("events"),
+    )
+    .expect("write run-log index");
+
+    run_dir
+}
+
 #[test]
 fn node_command_json_surfaces_planned_runtime_and_log_evidence() {
     let root = repo_root();
@@ -249,6 +314,9 @@ fn node_command_json_surfaces_planned_runtime_and_log_evidence() {
     assert_eq!(payload["data"]["logs"]["stderr"]["tail"][0], "terminal stderr");
     assert_eq!(payload["data"]["cache"]["observed_result"], "evaluated_without_reuse");
     assert_eq!(payload["data"]["failure"]["failure"]["code"], "EXEC_FAIL");
+    assert_eq!(payload["data"]["execution_explanation"]["classification"], "executed");
+    assert_eq!(payload["data"]["execution_explanation"]["executed"], true);
+    assert_eq!(payload["data"]["execution_explanation"]["reason"], "EXEC_FAIL");
     assert!(payload["data"].get("evidence_gaps").is_none());
 }
 
@@ -271,7 +339,47 @@ fn node_command_human_output_surfaces_attempts_cache_and_failure() {
     assert!(stdout.contains("attempt=2 status=Failed backoff_ms=-"));
     assert!(stdout.contains("cache_status: configured=enabled observed=evaluated_without_reuse"));
     assert!(stdout.contains("failure_info: {\"class\":\"execution\""));
+    assert!(stdout.contains("execution_explanation: executed=true classification=executed"));
     assert!(stdout.contains("stdout_path: nodes/extract/stdout.log"));
     assert!(stdout.contains("stderr_path: nodes/extract/stderr.log"));
     assert!(stdout.contains("terminal stderr"));
+}
+
+#[test]
+fn explain_node_json_reports_resource_block_when_trace_is_missing() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tmp");
+    let run_dir = write_blocked_node_fixture(temp.path());
+
+    let payload = run_json(
+        &["explain", &output_path_string(&run_dir), "--node", "publish", "--json"],
+        &root,
+    );
+
+    assert_eq!(payload["command"], "dag.explain");
+    assert_eq!(payload["data"]["node"], "publish");
+    assert!(payload["data"]["trace"].is_null());
+    assert_eq!(payload["data"]["execution_explanation"]["classification"], "resource_blocked");
+    assert_eq!(payload["data"]["execution_explanation"]["executed"], false);
+    assert_eq!(payload["data"]["execution_explanation"]["reason"], "blocked_by_cpu");
+    assert_eq!(
+        payload["data"]["execution_explanation"]["evidence_sources"],
+        serde_json::json!(["run-log.index.json"])
+    );
+}
+
+#[test]
+fn explain_node_human_reports_missing_trace_and_block_reason() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tmp");
+    let run_dir = write_blocked_node_fixture(temp.path());
+
+    let (code, stdout, stderr) =
+        run_dag(&["explain", &output_path_string(&run_dir), "--node", "publish"], &root);
+
+    assert_eq!(code, 0, "command failed: {stderr}");
+    assert!(stdout.contains("node: publish"));
+    assert!(stdout.contains("execution_explanation: executed=false classification=resource_blocked"));
+    assert!(stdout.contains("reason=blocked_by_cpu"));
+    assert!(stdout.contains("trace: <missing>"));
 }
