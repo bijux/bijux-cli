@@ -345,10 +345,13 @@ fn remote_worker_adapter(kind: &NodeKind) -> Result<Box<dyn Adapter>, String> {
     match kind {
         NodeKind::Const => Ok(Box::new(ConstAdapter)),
         NodeKind::Http => Ok(Box::new(crate::http_adapter::HttpRequestAdapter)),
+        NodeKind::FileTransform => {
+            Ok(Box::new(crate::file_transform_adapter::FileTransformAdapter))
+        }
         NodeKind::Shell => Ok(Box::new(ShellAdapter)),
         NodeKind::Python => Ok(Box::new(crate::python_adapter::PythonFunctionAdapter)),
         NodeKind::Container => Err(
-            "remote worker model currently supports const and shell payloads; container remains local-only"
+            "remote worker model currently supports non-container built-in adapters; container remains local-only"
                 .to_string(),
         ),
         NodeKind::External(kind) => Err(format!(

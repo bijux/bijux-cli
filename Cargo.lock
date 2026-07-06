@@ -209,6 +209,7 @@ dependencies = [
  "chrono-tz",
  "croner",
  "ctrlc",
+ "flate2",
  "hex",
  "reqwest",
  "serde",

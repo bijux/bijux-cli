@@ -309,6 +309,7 @@ fn kubernetes_workspace_transfer(node: &Node) -> KubernetesWorkspaceTransfer {
             | NodeKind::Shell
             | NodeKind::Python
             | NodeKind::Http
+            | NodeKind::FileTransform
             | NodeKind::External(_) => KubernetesWorkspaceTransferMode::StagedArtifacts,
         },
         mounts: vec![
@@ -366,6 +367,9 @@ fn kubernetes_backend_adapter(kind: &NodeKind) -> Result<Box<dyn crate::adapter:
     match kind {
         NodeKind::Const => Ok(Box::new(ConstAdapter)),
         NodeKind::Http => Ok(Box::new(crate::http_adapter::HttpRequestAdapter)),
+        NodeKind::FileTransform => {
+            Ok(Box::new(crate::file_transform_adapter::FileTransformAdapter))
+        }
         NodeKind::Shell => Ok(Box::new(ShellAdapter)),
         NodeKind::Python => Ok(Box::new(crate::python_adapter::PythonFunctionAdapter)),
         NodeKind::Container => Ok(Box::new(ContainerAdapter)),

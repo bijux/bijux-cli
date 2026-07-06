@@ -276,17 +276,25 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
 }
 
 fn node_kind_supported(kind: &str) -> bool {
-    matches!(kind, "const" | "http" | "shell" | "python" | "container")
+    matches!(kind, "const" | "http" | "file_transform" | "shell" | "python" | "container")
 }
 
 fn runtime_resource_capability_supported(kind: &NodeKind) -> bool {
-    matches!(kind, NodeKind::Http | NodeKind::Shell | NodeKind::Python | NodeKind::Container)
+    matches!(
+        kind,
+        NodeKind::Http
+            | NodeKind::FileTransform
+            | NodeKind::Shell
+            | NodeKind::Python
+            | NodeKind::Container
+    )
 }
 
 fn planner_runnable_from_runtime_capabilities(kind: &str, requires_network: bool) -> bool {
     match kind {
         "const" => !requires_network,
         "http" => true,
+        "file_transform" => !requires_network,
         "shell" => !requires_network,
         "python" => !requires_network,
         "container" => true,

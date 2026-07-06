@@ -90,6 +90,8 @@ mod external_adapter;
 mod failure_summary;
 #[path = "backend/distributed/federated_scheduling.rs"]
 mod federated_scheduling;
+#[path = "adapters/file_transform.rs"]
+mod file_transform_adapter;
 #[path = "internal/ext/formal_verification.rs"]
 mod formal_verification;
 #[path = "backend/distributed/geo_federation.rs"]
@@ -338,6 +340,7 @@ pub use extension_catalog::{
 pub use external_adapter::{
     probe_external_adapters, ExternalAdapterHandshakeReport, ExternalAdapterHandshakeStatus,
 };
+use file_transform_adapter::FileTransformAdapter;
 pub use formal_verification::{
     artifact_integrity_holds, build_counterexample, invariant_catalog_default,
     lineage_invariants_hold, machine_checkable_invariants, policy_invariants_hold,
@@ -1568,6 +1571,7 @@ impl Runtime {
     pub fn new() -> Self {
         let registry_result = build_registry(vec![
             Arc::new(ConstAdapter),
+            Arc::new(FileTransformAdapter),
             Arc::new(HttpRequestAdapter),
             Arc::new(ShellAdapter),
             Arc::new(PythonFunctionAdapter),
@@ -2269,6 +2273,11 @@ fn command_fingerprint(
             "kind": "shell",
             "argv": params.get("argv").cloned().unwrap_or(Value::Null),
         }))
+    } else if matches!(node.kind, NodeKind::FileTransform) {
+        Some(serde_json::json!({
+            "kind": "file_transform",
+            "params": params,
+        }))
     } else if matches!(node.kind, NodeKind::Python) {
         Some(serde_json::json!({
             "kind": "python",
@@ -2349,6 +2358,7 @@ pub struct AdapterAdmissionReport {
 pub fn registered_adapters() -> Vec<AdapterInfo> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
+        Arc::new(FileTransformAdapter),
         Arc::new(HttpRequestAdapter),
         Arc::new(ShellAdapter),
         Arc::new(PythonFunctionAdapter),
@@ -2361,6 +2371,7 @@ pub fn registered_adapters() -> Vec<AdapterInfo> {
 pub fn registered_adapter_descriptors() -> Vec<adapter::AdapterDescriptor> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
+        Arc::new(FileTransformAdapter),
         Arc::new(HttpRequestAdapter),
         Arc::new(ShellAdapter),
         Arc::new(PythonFunctionAdapter),
