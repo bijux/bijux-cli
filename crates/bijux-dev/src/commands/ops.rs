@@ -3164,7 +3164,7 @@ pub(super) fn run_batch_execution_boundary_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/BATCH_EXECUTION_MODEL.md",
-        "docs/architecture/LOCAL-VS-BATCH-EXECUTION-CONSTRAINTS.md",
+        "docs/bijux-dag/architecture/local-vs-batch-execution-constraints.md",
         "crates/bijux-dag-runtime/tests/batch_execution_contracts.rs",
         "crates/bijux-dag-runtime/tests/batch_backend_simulation_contracts.rs",
     ];
