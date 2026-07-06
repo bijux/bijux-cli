@@ -195,6 +195,8 @@ mod semantic_lineage;
 #[path = "internal/control/services.rs"]
 pub mod services;
 pub mod simulated_platform;
+#[path = "backend/runtime/slurm_execution.rs"]
+mod slurm_execution;
 #[doc(hidden)]
 #[path = "runtime_core/execution/state_machine.rs"]
 pub mod state_machine;
@@ -500,6 +502,11 @@ pub use semantic_lineage::{
 };
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+pub use slurm_execution::{
+    build_slurm_execution_request, build_slurm_scheduler_request,
+    map_slurm_job_status_to_node_status, validate_slurm_execution_request,
+    validate_slurm_scheduler_request, SlurmExecutionRequest, SlurmJobStatus, SlurmSchedulerRequest,
+};
 pub use state_machine::{
     failure_propagation_is_deterministic, node_transition_allowed, run_transition_allowed,
     NodeLifecycleState, RunLifecycleState,
