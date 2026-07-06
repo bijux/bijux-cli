@@ -54,6 +54,7 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
         "overrides",
         "reports",
         "spec",
+        "tracking",
     ];
 
     for entry in fs::read_dir(&docs_root).map_err(|err| err.to_string())? {
@@ -539,14 +540,14 @@ pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
     }
 
     for required in [
-        "docs/spec/CURRENT_IMPLEMENTED_CAPABILITIES.md",
-        "docs/spec/MODELED_AND_FUTURE_SURFACES.md",
-        "docs/spec/SPEC_TO_CODE_AND_TEST_OWNERSHIP.md",
-        "docs/reports/foundation/DOCS_ROOT_INVENTORY_REPORT.md",
-        "docs/reports/foundation/FOUNDATION_FINAL_REPORT.md",
-        "docs/reports/foundation/REPOSITORY_PROOF_STATEMENT.md",
-        "docs/reports/foundation/archive/RENOVATION_BURNDOWN_REPORT.md",
-        "docs/adr/20260309-DOCUMENTATION-GOVERNANCE-ALIGNMENT.md",
+        "docs/bijux-core/foundation/current-implemented-capabilities.md",
+        "docs/bijux-dag/foundation/modeled-and-future-surfaces.md",
+        "docs/bijux-core/governance/spec-to-code-and-test-ownership.md",
+        "docs/reports/foundation/docs-root-inventory-report.md",
+        "docs/reports/foundation/foundation-final-report.md",
+        "docs/reports/foundation/repository-proof-statement.md",
+        "docs/tracking/renovation-burndown-report.md",
+        "docs/bijux-core/governance/documentation-governance-alignment.md",
     ] {
         if !root.join(required).exists() {
             return Err(format!("missing docs config reduction authority: {required}"));
