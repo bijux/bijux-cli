@@ -36,9 +36,9 @@ fn selection_preview_payload(
         let (upstream_selection_targets, _) = resolve_upstream_run_selection(graph, to_node)?;
         let (downstream_selection_roots, _) = resolve_downstream_run_selection(graph, from_node)?;
         let preview = PlanPreviewConfig {
-            selectors,
             upstream_selection_targets,
             downstream_selection_roots,
+            selectors,
             dependency_closure,
             ..PlanPreviewConfig::default()
         };
