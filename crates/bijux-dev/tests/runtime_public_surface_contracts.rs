@@ -51,10 +51,17 @@ fn modeled_and_future_backend_exports_stay_hidden_from_runtime_root_docs() {
         "backend::fake",
         "backend_cluster",
         "batch_execution",
+        "extension_catalog",
+        "formal_verification",
         "kubernetes_execution",
+        "observability_deep",
+        "recovery",
         "remote_execution_model",
         "remote_executor",
+        "task_contract",
+        "task_types",
         "slurm_execution",
+        "upgrade_compatibility",
     ];
 
     for source in expected_hidden {

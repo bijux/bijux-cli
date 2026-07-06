@@ -311,6 +311,7 @@ pub use execution_backend::{
 };
 pub use execution_context::{ExecutionContext, NodeExecutionContext};
 pub use execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
+#[doc(hidden)]
 pub use extension_catalog::{
     compute_platform_maturity, detect_extension_compatibility_issues,
     extension_discovery_inventory, extension_failure_isolated, extension_point_status_report,
@@ -326,6 +327,7 @@ pub use external_adapter::{
     probe_external_adapters, ExternalAdapterHandshakeReport, ExternalAdapterHandshakeStatus,
 };
 use file_transform_adapter::FileTransformAdapter;
+#[doc(hidden)]
 pub use formal_verification::{
     artifact_integrity_holds, build_counterexample, invariant_catalog_default,
     lineage_invariants_hold, machine_checkable_invariants, policy_invariants_hold,
@@ -372,6 +374,7 @@ pub use observability::{
     SchedulerMetrics, SpanKind, StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan,
     REQUIRED_RUNTIME_EVENT_NAMES,
 };
+#[doc(hidden)]
 pub use observability_deep::{
     build_diagnostics, build_topology_overlay, detect_metric_drift, observability_contract_status,
     redact_event_details, render_timeline_text, root_cause_graph, sample_events, AlertRule,
@@ -408,6 +411,7 @@ pub use planner_analysis::{
 };
 pub use policy::policy_allows_effects;
 use python_adapter::PythonFunctionAdapter;
+#[doc(hidden)]
 pub use recovery::{
     check_run_consistency, detect_stuck_run, evaluate_pause_state, reconcile_orphaned_node,
     should_quarantine_run, validate_and_repair_run_metadata, BranchRecoveryMode,
@@ -533,6 +537,7 @@ use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::time::Duration;
 pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
 use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
+#[doc(hidden)]
 pub use task_contract::{
     build_task_contract, default_forced_cleanup, validate_task_contracts, BackoffStrategy,
     ForcedCancellationCleanup, IdempotencyMode, NodeProvenance, OutputMaterializationPolicy,
@@ -540,6 +545,7 @@ pub use task_contract::{
     TaskInputDescriptor, TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope,
     TimeoutPolicy,
 };
+#[doc(hidden)]
 pub use task_types::{
     check_replay_adapter_compatibility, compatibility_matrix_report,
     compatibility_score_for_contract, compute_task_contract_fingerprint,
@@ -551,6 +557,7 @@ pub use task_types::{
     TaskContractDiagnostic, TaskContractFingerprint, TaskTypeRegistry, TypeCoercionRule,
     VersionedTypeRule,
 };
+#[doc(hidden)]
 pub use upgrade_compatibility::{
     build_compatibility_dashboard, classify_compatibility, evaluate_release_gate,
     simulate_migration_impact, validate_upgrade_path, CompatibilityAcceptanceSuite,
