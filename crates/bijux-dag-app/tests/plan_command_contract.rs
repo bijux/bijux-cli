@@ -450,3 +450,134 @@ fn schedule_submit_supports_json_output() {
     let code = run_with_internal_lane(&matches);
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
+
+#[test]
+fn schedule_queue_status_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-registry.json");
+    let ledger = dir.path().join("schedule-ledger.json");
+    let out = dir.path().join("queue-state.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "manual-ops",
+              "dag_name": "atlas.manual-ops",
+              "dag_version_policy": "run-latest",
+              "trigger": "Manual",
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            }
+          ]
+        }"#,
+    )
+    .expect("write registry");
+    fs::write(
+        &ledger,
+        r#"{
+          "entries": [
+            {
+              "schedule_id": "manual-ops",
+              "dag_name": "atlas.manual-ops",
+              "dag_version_policy": "run-latest",
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "graph_inputs": {},
+              "requested_unix_ms": 170000,
+              "created_unix_ms": 170000,
+              "run_id": "sched-manual-ops-existing",
+              "trigger_kind": "manual",
+              "dedupe_key": "manual:manual-ops:manual-000",
+              "status": "Pending"
+            }
+          ]
+        }"#,
+    )
+    .expect("write ledger");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "schedule",
+            "queue",
+            "status",
+            registry.to_string_lossy().as_ref(),
+            "--ledger",
+            ledger.to_string_lossy().as_ref(),
+            "--out",
+            out.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = run_with_internal_lane(&matches);
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_queue_update_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let ledger = dir.path().join("schedule-ledger.json");
+    let updates = dir.path().join("submission-status-updates.json");
+    let out = dir.path().join("schedule-ledger-updated.json");
+    fs::write(
+        &ledger,
+        r#"{
+          "entries": [
+            {
+              "schedule_id": "manual-ops",
+              "dag_name": "atlas.manual-ops",
+              "dag_version_policy": "run-latest",
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "graph_inputs": {},
+              "requested_unix_ms": 170000,
+              "created_unix_ms": 170000,
+              "run_id": "sched-manual-ops-existing",
+              "trigger_kind": "manual",
+              "dedupe_key": "manual:manual-ops:manual-000",
+              "status": "Pending"
+            }
+          ]
+        }"#,
+    )
+    .expect("write ledger");
+    fs::write(
+        &updates,
+        r#"{
+          "updates": [
+            {
+              "run_id": "sched-manual-ops-existing",
+              "status": "Completed",
+              "updated_unix_ms": 180000
+            }
+          ]
+        }"#,
+    )
+    .expect("write updates");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "schedule",
+            "queue",
+            "update",
+            ledger.to_string_lossy().as_ref(),
+            updates.to_string_lossy().as_ref(),
+            "--out",
+            out.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = run_with_internal_lane(&matches);
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
