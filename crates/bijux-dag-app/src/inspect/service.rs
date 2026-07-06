@@ -1,6 +1,7 @@
 use crate::routes::selector_grammar::SelectorExpression;
+use crate::run_failure_summary::explain_failure;
 use crate::run_views::{
-    doctor_run, explain_failure, explain_run_id, inspect_summary, resolve_run_dir, run_timeline,
+    doctor_run, explain_run_id, inspect_summary, resolve_run_dir, run_timeline,
     run_timeline_with_query, run_tree, runs_history, runs_history_query_with_filters,
     write_run_history_index, RunTimelineQuery,
 };

@@ -66,6 +66,8 @@ mod run_cmd;
 mod run_comparison;
 #[path = "read/run_data.rs"]
 mod run_data;
+#[path = "inspect/run_failure_summary.rs"]
+mod run_failure_summary;
 #[path = "inspect/run_views.rs"]
 mod run_views;
 #[path = "read/runtime_inputs.rs"]
@@ -83,8 +85,9 @@ pub use config_surface::{
 };
 pub use integrity_service::inspect_artifact;
 pub use run_comparison::runs_compare;
+pub use run_failure_summary::explain_failure;
 pub use run_views::{
-    doctor_run, explain_failure, explain_run_id, format_inspect_human, format_run_completion_human,
+    doctor_run, explain_run_id, format_inspect_human, format_run_completion_human,
     format_show_human, inspect_summary, list_runs, resolve_run_dir, run_completion_summary,
     run_timeline, run_tree, runs_failures, runs_flakes, runs_history, runs_history_query,
     runs_summary, runs_trend,

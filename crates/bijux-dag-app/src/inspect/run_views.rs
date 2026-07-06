@@ -687,36 +687,6 @@ fn trace_timeline_reason(trace: &Value) -> Option<String> {
         })
 }
 
-pub fn explain_failure(run_dir: &Path) -> Result<Value, std::io::Error> {
-    let traces = read_node_traces(run_dir)?;
-    let mut failed = Vec::new();
-    let mut failure_classes = serde_json::Map::new();
-    let mut skipped = Vec::new();
-    for (node_id, trace) in traces {
-        match trace.get("status").and_then(Value::as_str).unwrap_or("unknown") {
-            "failed" => {
-                if let Some(class) = trace_failure_class(&trace) {
-                    failure_classes.insert(node_id.clone(), Value::String(class));
-                }
-                failed.push(node_id);
-            }
-            "skipped" => skipped.push(node_id),
-            _ => {}
-        }
-    }
-    let root = failed.first().cloned();
-    Ok(json!({
-        "root_failure": root,
-        "root_failure_class": root
-            .as_ref()
-            .and_then(|node_id| failure_classes.get(node_id).cloned())
-            .unwrap_or(Value::Null),
-        "failed_nodes": failed,
-        "failure_classes": failure_classes,
-        "propagated_or_skipped_nodes": skipped
-    }))
-}
-
 pub fn doctor_run(run_dir: &Path) -> Value {
     let mut findings = Vec::new();
     if !run_dir.join("manifest.json").exists() {
