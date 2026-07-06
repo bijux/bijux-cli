@@ -40,8 +40,22 @@ fn simple_const_graph() -> String {
     .to_string()
 }
 
+fn reduce_collection_command(output_name: &str, empty_value: Option<&str>) -> String {
+    let empty_expr = empty_value
+        .map(|value| format!("'{value}'"))
+        .unwrap_or_else(|| "''".to_string());
+    format!(
+        "python3 -c \"import json, pathlib; manifest=json.load(open('../inputs/reduce.collection.json')); values=[]; \
+base=pathlib.Path('../inputs'); collect=lambda rel: sorted((base / rel).rglob('value.txt')) if (base / rel).is_dir() else [base / rel]; \
+paths=[]; [paths.extend(collect(item['local_path'])) for item in manifest['items'] if item.get('local_path')]; \
+values=[path.read_text() for path in paths]; \
+output=','.join(values) if values else {empty_expr}; \
+(pathlib.Path('../outputs') / '{output_name}').write_text(output)\""
+    )
+}
+
 fn semantic_map_reduce_graph() -> String {
-    r#"{
+    serde_json::to_string_pretty(&serde_json::json!({
       "spec": "bijux-dag/v0.1",
       "nodes": [
         {
@@ -76,7 +90,7 @@ fn semantic_map_reduce_graph() -> String {
             "argv": [
               "/bin/sh",
               "-c",
-              "first=1; for file in $(find ../inputs/map/mapped/items -name value.txt | sort); do if [ \"$first\" -eq 0 ]; then printf ',' >> ../outputs/reduce.txt; fi; cat \"$file\" >> ../outputs/reduce.txt; first=0; done"
+              reduce_collection_command("reduce.txt", None)
             ]
           }
         }
@@ -85,8 +99,8 @@ fn semantic_map_reduce_graph() -> String {
         {"from": {"node_id": "seed", "port": "out"}, "to": {"node_id": "map", "port": "in"}},
         {"from": {"node_id": "map", "port": "out"}, "to": {"node_id": "reduce", "port": "mapped"}}
       ]
-    }"#
-    .to_string()
+    }))
+    .expect("serialize graph")
 }
 
 fn semantic_map_failure_graph() -> String {
@@ -120,6 +134,93 @@ fn semantic_map_failure_graph() -> String {
       ]
     }"#
     .to_string()
+}
+
+fn reduce_partial_graph() -> String {
+    serde_json::to_string_pretty(&serde_json::json!({
+      "spec": "bijux-dag/v0.1",
+      "nodes": [
+        {
+          "id": "left",
+          "kind": "shell",
+          "outputs": [{"name": "out", "path": "left.txt"}],
+          "effects": ["filesystem"],
+          "params": {
+            "argv": ["/bin/sh", "-c", "printf alpha > ../outputs/left.txt"]
+          }
+        },
+        {
+          "id": "right",
+          "kind": "shell",
+          "outputs": [{"name": "out", "path": "right.txt"}],
+          "effects": ["filesystem"],
+          "params": {
+            "argv": ["/bin/sh", "-c", "printf broken >&2; exit 9"]
+          }
+        },
+        {
+          "id": "reduce",
+          "kind": "shell",
+          "semantic_kind": "reduce",
+          "inputs": ["left", "right"],
+          "outputs": [{"name": "out", "path": "reduce.txt"}],
+          "effects": ["filesystem"],
+          "params": {
+            "reduce": {"mode": "partial"},
+            "argv": ["/bin/sh", "-c", reduce_collection_command("reduce.txt", None)]
+          }
+        }
+      ],
+      "edges": [
+        {"from": {"node_id": "left", "port": "out"}, "to": {"node_id": "reduce", "port": "left"}},
+        {"from": {"node_id": "right", "port": "out"}, "to": {"node_id": "reduce", "port": "right"}}
+      ]
+    }))
+    .expect("serialize graph")
+}
+
+fn reduce_empty_allow_graph() -> String {
+    serde_json::to_string_pretty(&serde_json::json!({
+      "spec": "bijux-dag/v0.1",
+      "nodes": [
+        {
+          "id": "reduce",
+          "kind": "shell",
+          "semantic_kind": "reduce",
+          "inputs": [],
+          "outputs": [{"name": "out", "path": "reduce.txt"}],
+          "effects": ["filesystem"],
+          "params": {
+            "reduce": {"empty": "allow"},
+            "argv": ["/bin/sh", "-c", reduce_collection_command("reduce.txt", Some("empty"))]
+          }
+        }
+      ],
+      "edges": []
+    }))
+    .expect("serialize graph")
+}
+
+fn reduce_empty_skip_graph() -> String {
+    serde_json::to_string_pretty(&serde_json::json!({
+      "spec": "bijux-dag/v0.1",
+      "nodes": [
+        {
+          "id": "reduce",
+          "kind": "shell",
+          "semantic_kind": "reduce",
+          "inputs": [],
+          "outputs": [{"name": "out", "path": "reduce.txt"}],
+          "effects": ["filesystem"],
+          "params": {
+            "reduce": {"empty": "skip"},
+            "argv": ["/bin/sh", "-c", reduce_collection_command("reduce.txt", Some("unused"))]
+          }
+        }
+      ],
+      "edges": []
+    }))
+    .expect("serialize graph")
 }
 
 fn read_counts(manifest: &Path) -> (u32, u32, u32, u32) {
@@ -187,6 +288,22 @@ fn runtime_executes_semantic_map_node_and_reduce_consumes_directory_outputs() {
             .expect("reduce output");
     assert_eq!(reduce_output, "alpha,beta");
 
+    let reduce_inputs: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("reduce").join("inputs").join("index.json"))
+            .expect("reduce inputs index"),
+    )
+    .expect("parse reduce inputs index");
+    assert_eq!(reduce_inputs["collections"][0]["semantic_kind"], "reduce");
+    assert_eq!(reduce_inputs["collections"][0]["items"][0]["status"], "success");
+
+    let reduce_summary: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("reduce").join("reduce.execution.json"))
+            .expect("reduce summary"),
+    )
+    .expect("parse reduce summary");
+    assert_eq!(reduce_summary["usable_input_count"], 1);
+    assert_eq!(reduce_summary["failed_input_count"], 0);
+
     let map_summary: Value = serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join("map").join("map.execution.json"))
             .expect("map summary"),
@@ -249,6 +366,79 @@ fn runtime_aggregates_semantic_map_item_failures_without_hiding_successful_outpu
         .collect::<Vec<_>>();
     item_values.sort();
     assert_eq!(item_values, vec!["later".to_string(), "ok".to_string()]);
+}
+
+#[test]
+fn runtime_executes_partial_reduce_after_failed_upstream_and_records_manifest_statuses() {
+    let graph = parse_graph_strict(&reduce_partial_graph()).expect("parse graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("runtime run");
+
+    let reduce_output =
+        fs::read_to_string(run_dir.join("nodes").join("reduce").join("outputs").join("reduce.txt"))
+            .expect("reduce output");
+    assert_eq!(reduce_output, "alpha");
+
+    let reduce_trace: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("reduce").join("trace.json")).expect("trace"),
+    )
+    .expect("trace parse");
+    assert_eq!(reduce_trace["status"], "success");
+    assert_eq!(reduce_trace["trigger_evaluation"]["trigger_rule"], "reduce_partial");
+
+    let reduce_summary: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("reduce").join("reduce.execution.json"))
+            .expect("reduce summary"),
+    )
+    .expect("parse reduce summary");
+    assert_eq!(reduce_summary["usable_input_count"], 1);
+    assert_eq!(reduce_summary["failed_input_count"], 1);
+    assert!(reduce_summary["collection"]["items"]
+        .as_array()
+        .expect("items array")
+        .iter()
+        .any(|item| item["source_node_id"] == "right" && item["status"] == "failed"));
+}
+
+#[test]
+fn runtime_allows_empty_reduce_collection_when_configured() {
+    let graph = parse_graph_strict(&reduce_empty_allow_graph()).expect("parse graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("runtime run");
+
+    let reduce_output =
+        fs::read_to_string(run_dir.join("nodes").join("reduce").join("outputs").join("reduce.txt"))
+            .expect("reduce output");
+    assert_eq!(reduce_output, "empty");
+
+    let reduce_summary: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("reduce").join("reduce.execution.json"))
+            .expect("reduce summary"),
+    )
+    .expect("parse reduce summary");
+    assert_eq!(reduce_summary["usable_input_count"], 0);
+    assert_eq!(reduce_summary["empty_policy"], "allow");
+}
+
+#[test]
+fn runtime_skips_empty_reduce_collection_when_configured() {
+    let graph = parse_graph_strict(&reduce_empty_skip_graph()).expect("parse graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("runtime run");
+
+    let reduce_trace: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("reduce").join("trace.json")).expect("trace"),
+    )
+    .expect("trace parse");
+    assert_eq!(reduce_trace["status"], "skipped");
+    assert_eq!(reduce_trace["skip_reason"]["reason"], "empty_reduce_collection");
+    assert!(!run_dir.join("nodes").join("reduce").join("outputs").join("reduce.txt").exists());
 }
 
 #[test]
