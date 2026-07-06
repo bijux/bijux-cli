@@ -6,11 +6,58 @@
     "lineage.snapshot.json",
     "manifest.finalized.json",
     "manifest.json",
+    "nodes/map/attempts.json",
+    "nodes/map/attempts/1/stderr.log",
+    "nodes/map/attempts/1/stdout.log",
     "nodes/map/inputs/index.json",
     "nodes/map/inputs/seed/in",
+    "nodes/map/map.execution.json",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/attempts/1/stderr.log",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/attempts/1/stdout.log",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/inputs/index.json",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/inputs/seed/in",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/outputs/index.json",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/outputs/mapped/value.txt",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/stderr.log",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/stdout.log",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/attempts/1/stderr.log",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/attempts/1/stdout.log",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/inputs/index.json",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/inputs/seed/in",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/outputs/index.json",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/outputs/mapped/value.txt",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/stderr.log",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/stdout.log",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/attempts/1/stderr.log",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/attempts/1/stdout.log",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/inputs/index.json",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/inputs/seed/in",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/outputs/index.json",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/outputs/mapped/value.txt",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/stderr.log",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/stdout.log",
+    "nodes/map/outputs/index.json",
+    "nodes/map/outputs/mapped/items/position-000000-902cf2b4/value.txt",
+    "nodes/map/outputs/mapped/items/position-000001-aca89214/value.txt",
+    "nodes/map/outputs/mapped/items/position-000002-ca44c452/value.txt",
     "nodes/map/resolved_params.json",
+    "nodes/map/stderr.log",
+    "nodes/map/stdout.log",
     "nodes/map/trace.json",
+    "nodes/reduce/attempts.json",
+    "nodes/reduce/attempts/1/stderr.log",
+    "nodes/reduce/attempts/1/stdout.log",
+    "nodes/reduce/inputs/index.json",
+    "nodes/reduce/inputs/map/mapped/items/position-000000-902cf2b4/value.txt",
+    "nodes/reduce/inputs/map/mapped/items/position-000001-aca89214/value.txt",
+    "nodes/reduce/inputs/map/mapped/items/position-000002-ca44c452/value.txt",
+    "nodes/reduce/inputs/reduce.collection.json",
+    "nodes/reduce/outputs/index.json",
+    "nodes/reduce/outputs/reduce.txt",
+    "nodes/reduce/reduce.execution.json",
     "nodes/reduce/resolved_params.json",
+    "nodes/reduce/stderr.log",
+    "nodes/reduce/stdout.log",
     "nodes/reduce/trace.json",
     "nodes/seed/attempts.json",
     "nodes/seed/attempts/1/stderr.log",
@@ -122,7 +169,7 @@
             "argv": [
               "/bin/sh",
               "-c",
-              "first=1; for file in $(find ../inputs/map/mapped/items -name value.txt | sort); do if [ \"$first\" -eq 0 ]; then printf ',' >> ../outputs/reduce.txt; fi; cat \"$file\" >> ../outputs/reduce.txt; first=0; done"
+              "python3 -c \"import json, pathlib; manifest=json.load(open('../inputs/reduce.collection.json')); values=[]; base=pathlib.Path('../inputs'); collect=lambda rel: sorted((base / rel).rglob('value.txt')) if (base / rel).is_dir() else [base / rel]; paths=[]; [paths.extend(collect(item['local_path'])) for item in manifest['items'] if item.get('local_path')]; values=[path.read_text() for path in paths]; (pathlib.Path('../outputs') / 'reduce.txt').write_text(','.join(values))\""
             ]
           },
           "resources": null,
@@ -148,11 +195,13 @@
               "path": "seed/out.json"
             }
           ],
-          "params": [
-            "alpha",
-            "beta",
-            "gamma"
-          ],
+          "params": {
+            "value": [
+              "alpha",
+              "beta",
+              "gamma"
+            ]
+          },
           "resources": null,
           "retry": {
             "backoff_ms": 0,
@@ -165,7 +214,7 @@
       "nondeterminism_allowed": false,
       "spec": "bijux-dag/v0.1"
     },
-    "graph_fingerprint": "4f10bb5130568c000fb2b643ec2a46155a31acf04b8953dc4edb8b351b7db66a"
+    "graph_fingerprint": "6454877ead8e9efd7d688f52558bc1ba1ac201f5d883857c29e5848d413d2c47"
   },
   "manifest": {
     "adapters": [
@@ -212,29 +261,49 @@
       }
     ],
     "created_unix_ms": 0,
-    "evidence_fingerprint": "4c865e4d7d065b426e162c490e6c08a8b6f6aa68bb753c943f311068ef40e416",
-    "execution_fingerprint": "6a7bf2c33cbbaf3ebcd71e8f32f65dd729527dc75ca90b60950315d4e7969eaa",
+    "evidence_fingerprint": "987d3e66ef0d4e1f4a0a8c6765d613d817d784f6c7fff5384514773c9025ce4b",
+    "execution_fingerprint": "9d8a223bb60407d9dd22305c7d601fe8378ae1cd42c87793cac3e27c315d736f",
     "finished_unix_ms": 0,
-    "graph_fingerprint": "4f10bb5130568c000fb2b643ec2a46155a31acf04b8953dc4edb8b351b7db66a",
+    "graph_fingerprint": "6454877ead8e9efd7d688f52558bc1ba1ac201f5d883857c29e5848d413d2c47",
     "graph_snapshot": "graph.snapshot.json",
     "jobs": 1,
     "manifest_version": "run-manifest/v0.1",
     "node_counts": {
       "cached": 0,
-      "failed": 2,
+      "failed": 0,
       "skipped": 0,
-      "success": 1
+      "success": 3
     },
     "outputs": [
+      {
+        "kind": "directory",
+        "media_type": "application/vnd.bijux.directory",
+        "name": "out",
+        "node_fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
+        "node_id": "map",
+        "path": "mapped",
+        "sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27",
+        "size_bytes": 14
+      },
       {
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "out",
-        "node_fingerprint": "3a1730689921bc1768abbce5bb3b4c2a9cf375be1f847a9a7b3c116e735f25a0",
+        "node_fingerprint": "6fc084c557a46859ab08ee55e0b8c17e13785130ed8d0f3cf3f88add75f7b1c8",
+        "node_id": "reduce",
+        "path": "reduce.txt",
+        "sha256": "5eb44ddd90abcf863056fcc7b344424553a7c159909118b850196bb51598cad1",
+        "size_bytes": 16
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
         "node_id": "seed",
         "path": "seed/out.json",
-        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
-        "size_bytes": 4
+        "sha256": "279e88d971aa53cd1482808e8c25b869a8d55b6377aed1813f70294548a61453",
+        "size_bytes": 34
       }
     ],
     "planner_contract_version": "bijux-dag-planner/v1",
@@ -255,14 +324,14 @@
     },
     "run_summary": {
       "cached": 0,
-      "failed": 2,
+      "failed": 0,
       "skipped": 0,
-      "success": 1,
+      "success": 3,
       "total_nodes": 3
     },
     "spec": "bijux-dag/v0.1",
     "started_unix_ms": 0,
-    "status": "failed",
+    "status": "success",
     "tool_version": "0.0.0+snapshot"
   },
   "node_indexes": {
@@ -272,10 +341,71 @@
           {
             "local_path": "seed/in",
             "materialization_mode": "copy",
-            "source_node_fingerprint": "3a1730689921bc1768abbce5bb3b4c2a9cf375be1f847a9a7b3c116e735f25a0",
+            "source_node_fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
             "source_node_id": "seed",
             "source_output_name": "out",
-            "source_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+            "source_sha256": "279e88d971aa53cd1482808e8c25b869a8d55b6377aed1813f70294548a61453"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "kind": "directory",
+            "media_type": "application/vnd.bijux.directory",
+            "name": "out",
+            "node_fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
+            "node_id": "map",
+            "path": "mapped",
+            "sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27",
+            "size_bytes": 14
+          }
+        ]
+      }
+    },
+    "reduce": {
+      "inputs": {
+        "collections": [
+          {
+            "empty_policy": "forbid",
+            "items": [
+              {
+                "input_port": "mapped",
+                "local_path": "map/mapped",
+                "source_node_id": "map",
+                "source_output_name": "out",
+                "source_sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27",
+                "status": "success"
+              }
+            ],
+            "manifest_path": "reduce.collection.json",
+            "mode": "all_success",
+            "name": "reduce_inputs",
+            "semantic_kind": "reduce"
+          }
+        ],
+        "files": [
+          {
+            "local_path": "map/mapped",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
+            "source_node_id": "map",
+            "source_output_name": "out",
+            "source_sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
+            "node_fingerprint": "6fc084c557a46859ab08ee55e0b8c17e13785130ed8d0f3cf3f88add75f7b1c8",
+            "node_id": "reduce",
+            "path": "reduce.txt",
+            "sha256": "5eb44ddd90abcf863056fcc7b344424553a7c159909118b850196bb51598cad1",
+            "size_bytes": 16
           }
         ]
       }
@@ -290,17 +420,21 @@
             "kind": "file",
             "media_type": "application/octet-stream",
             "name": "out",
-            "node_fingerprint": "3a1730689921bc1768abbce5bb3b4c2a9cf375be1f847a9a7b3c116e735f25a0",
+            "node_fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
             "node_id": "seed",
             "path": "seed/out.json",
-            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
-            "size_bytes": 4
+            "sha256": "279e88d971aa53cd1482808e8c25b869a8d55b6377aed1813f70294548a61453",
+            "size_bytes": 34
           }
         ]
       }
     }
   },
-  "node_outputs": {},
+  "node_outputs": {
+    "reduce": {
+      "outputs/reduce.txt": "alpha,beta,gamma"
+    }
+  },
   "node_traces": {
     "map": {
       "adapter_id": "shell",
@@ -309,27 +443,21 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "ecf8258cdae9abeab08fa9d9e0e43650210761dc2cd3703b2216bfbaf6ce1ffd",
+        "cache_key": "2cacf23a56108c562fdf7fc07ec2c1ead63e8d081f684d6461a77b96db133774",
         "command_fingerprint": "024ee9192a1fe78fe59d30efb97b56a62af2ff1d77aad70c6a6f5e6033b4028a",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "7496500f8b68ee65f1424fc4b2bad8b7853745c4519fe15935e6bd25e1d6f037",
+        "input_lineage_fingerprint": "48fad35e186810a6ee438711828f033170ee24121cd2fb977ddb4e33052c90eb",
         "node_definition_fingerprint": "52ff8543cbdba6dce1626dd3c61e620bebaeb507500477dc643c8cad37e62c82",
         "params_fingerprint": "eecc96e630cfd1596b724dacb2608e6bcb05eb2feacc85d03a17a179047d17c4",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
       },
-      "evidence_fingerprint": "4c865e4d7d065b426e162c490e6c08a8b6f6aa68bb753c943f311068ef40e416",
-      "execution_fingerprint": "6a7bf2c33cbbaf3ebcd71e8f32f65dd729527dc75ca90b60950315d4e7969eaa",
-      "failure": {
-        "class": "execution",
-        "code": "INTERNAL",
-        "kind": "Execution",
-        "message": "executor error: map input for map must be a json array"
-      },
-      "fingerprint": "bed3209fcbe8fa68da472a686712f10910f5fb34baa95b01809633f6e589b3e5",
+      "evidence_fingerprint": "987d3e66ef0d4e1f4a0a8c6765d613d817d784f6c7fff5384514773c9025ce4b",
+      "execution_fingerprint": "9d8a223bb60407d9dd22305c7d601fe8378ae1cd42c87793cac3e27c315d736f",
+      "fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "failed",
+      "lifecycle_state": "success",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
@@ -350,9 +478,9 @@
           "unix_ms": 0
         },
         {
-          "cause": "execution_failed",
+          "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "failed",
+          "to_state": "success",
           "unix_ms": 0
         }
       ],
@@ -363,9 +491,10 @@
           "media_type": "application/vnd.bijux.directory",
           "name": "out",
           "path": "mapped",
-          "present": false,
+          "present": true,
           "required": true,
-          "size_bytes": null
+          "sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27",
+          "size_bytes": 14
         }
       ],
       "planner_contract_version": "bijux-dag-planner/v1",
@@ -381,8 +510,8 @@
         ]
       },
       "started_unix_ms": 0,
-      "status": "failed",
-      "transition_cause": "ExecutionFailed",
+      "status": "success",
+      "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
           {
@@ -402,36 +531,21 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "1b5454d03cb7dcc249f43679c81e55de1e54774309585f10180258d635bfd82f",
-        "command_fingerprint": "9e0df5391a90c24b5fe81556312d1bdf8c2ebbd5c365e4602508f86e6be5b2f0",
+        "cache_key": "6785ad39a6bef3dcbc4ca6da227f43ae5e06540f6831fde2ae842209a130887b",
+        "command_fingerprint": "19d7a8f5039e189e1193a1833adc86afe9b147609011595a7419515eb91e1be2",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "602e35a92eec4bc0a2ec6ae113f07bfc6933322fb69fe8dee416e5a67217e2a2",
-        "node_definition_fingerprint": "bbfa1bedbcade26e4c726bd115ab081d3cf6c63258e593bfaced94f2f2a5493e",
-        "params_fingerprint": "79fc76a97b5789911969f1d371e4d7ea7f7bb69a232df2b5362361a9cf90e36f",
+        "input_lineage_fingerprint": "d3f89ad4d54a933e9f04889a4ea26390c6421966eaf75b4999d3fd21b955f316",
+        "node_definition_fingerprint": "2f7097af928a8e4b6eba9c0a8f5bf5a614d82678afe9aff3e86eec07d1925fec",
+        "params_fingerprint": "7d343d5ae4a5db28b914a581ce68db2408654244e78312e38dbe0bef091ae6dd",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
       },
-      "evidence_fingerprint": "4c865e4d7d065b426e162c490e6c08a8b6f6aa68bb753c943f311068ef40e416",
-      "execution_fingerprint": "6a7bf2c33cbbaf3ebcd71e8f32f65dd729527dc75ca90b60950315d4e7969eaa",
-      "failure": {
-        "class": "execution",
-        "code": "UPSTREAM_FAILED",
-        "details": {
-          "parent_statuses": [
-            {
-              "node_id": "map",
-              "status": "failed"
-            }
-          ],
-          "reason": "requires every upstream to complete in success or cached status",
-          "trigger_rule": "all_success"
-        },
-        "kind": "Dependency",
-        "message": "upstream dependencies did not satisfy trigger rule AllSuccess"
-      },
-      "fingerprint": "fa801014e2424747e96a7391e4c47b4dc8557f9b01fbebdc057d6121e6ba4cab",
+      "evidence_fingerprint": "987d3e66ef0d4e1f4a0a8c6765d613d817d784f6c7fff5384514773c9025ce4b",
+      "execution_fingerprint": "9d8a223bb60407d9dd22305c7d601fe8378ae1cd42c87793cac3e27c315d736f",
+      "fingerprint": "6fc084c557a46859ab08ee55e0b8c17e13785130ed8d0f3cf3f88add75f7b1c8",
       "finished_unix_ms": 0,
-      "lifecycle_state": "failed",
+      "inputs_index": "inputs/index.json",
+      "lifecycle_state": "success",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
@@ -446,9 +560,15 @@
           "unix_ms": 0
         },
         {
-          "cause": "dependency_failed",
+          "cause": "execution_started",
           "from_state": "queued",
-          "to_state": "failed",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "success",
           "unix_ms": 0
         }
       ],
@@ -459,9 +579,10 @@
           "media_type": "application/octet-stream",
           "name": "out",
           "path": "reduce.txt",
-          "present": false,
+          "present": true,
           "required": true,
-          "size_bytes": null
+          "sha256": "5eb44ddd90abcf863056fcc7b344424553a7c159909118b850196bb51598cad1",
+          "size_bytes": 16
         }
       ],
       "planner_contract_version": "bijux-dag-planner/v1",
@@ -473,21 +594,21 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "first=1; for file in $(find ../inputs/map/mapped/items -name value.txt | sort); do if [ \"$first\" -eq 0 ]; then printf ',' >> ../outputs/reduce.txt; fi; cat \"$file\" >> ../outputs/reduce.txt; first=0; done"
+          "python3 -c \"import json, pathlib; manifest=json.load(open('../inputs/reduce.collection.json')); values=[]; base=pathlib.Path('../inputs'); collect=lambda rel: sorted((base / rel).rglob('value.txt')) if (base / rel).is_dir() else [base / rel]; paths=[]; [paths.extend(collect(item['local_path'])) for item in manifest['items'] if item.get('local_path')]; values=[path.read_text() for path in paths]; (pathlib.Path('../outputs') / 'reduce.txt').write_text(','.join(values))\""
         ]
       },
       "started_unix_ms": 0,
-      "status": "failed",
-      "transition_cause": "DependencyFailed",
+      "status": "success",
+      "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
           {
             "node_id": "map",
-            "status": "failed"
+            "status": "success"
           }
         ],
         "reason": "requires every upstream to complete in success or cached status",
-        "satisfied": false,
+        "satisfied": true,
         "trigger_rule": "all_success"
       }
     },
@@ -498,17 +619,17 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "4ad7a7bf78b59096eaca56850c2dfe66ba6493ae4f4ea0f97bf67b8fe68e50aa",
+        "cache_key": "d47984e4353cb66df06f0e47bb70448f2dd7763d7364ad63ece7e226ccbfaa67",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "602e35a92eec4bc0a2ec6ae113f07bfc6933322fb69fe8dee416e5a67217e2a2",
-        "node_definition_fingerprint": "b84c4dd83e0151c63b5337b43fda3469bf40c689acb4578db9d7a88510c0be0b",
-        "params_fingerprint": "a3e185260009ab5be7bb16f3bed296075f27322fb87d99209710a28ef3e8d99e",
+        "input_lineage_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "node_definition_fingerprint": "0f9a6412db2247b48b99ef9a02d9c25ebb9c005a5157f41149d455cc0df09575",
+        "params_fingerprint": "6d14646521fef412d070533c88db88a17bdadda616605a59a9ab0e7d09244f1b",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
       },
-      "evidence_fingerprint": "4c865e4d7d065b426e162c490e6c08a8b6f6aa68bb753c943f311068ef40e416",
-      "execution_fingerprint": "6a7bf2c33cbbaf3ebcd71e8f32f65dd729527dc75ca90b60950315d4e7969eaa",
-      "fingerprint": "3a1730689921bc1768abbce5bb3b4c2a9cf375be1f847a9a7b3c116e735f25a0",
+      "evidence_fingerprint": "987d3e66ef0d4e1f4a0a8c6765d613d817d784f6c7fff5384514773c9025ce4b",
+      "execution_fingerprint": "9d8a223bb60407d9dd22305c7d601fe8378ae1cd42c87793cac3e27c315d736f",
+      "fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
       "lifecycle_state": "success",
@@ -547,8 +668,8 @@
           "path": "seed/out.json",
           "present": true,
           "required": true,
-          "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
-          "size_bytes": 4
+          "sha256": "279e88d971aa53cd1482808e8c25b869a8d55b6377aed1813f70294548a61453",
+          "size_bytes": 34
         }
       ],
       "planner_contract_version": "bijux-dag-planner/v1",
@@ -556,11 +677,13 @@
         "node_action": "reexecuted",
         "source_run_id": null
       },
-      "resolved_params": [
-        "alpha",
-        "beta",
-        "gamma"
-      ],
+      "resolved_params": {
+        "value": [
+          "alpha",
+          "beta",
+          "gamma"
+        ]
+      },
       "started_unix_ms": 0,
       "status": "success",
       "transition_cause": "ExecutionSucceeded"
@@ -569,14 +692,34 @@
   "outputs_index": {
     "files": [
       {
+        "kind": "directory",
+        "media_type": "application/vnd.bijux.directory",
+        "name": "out",
+        "node_fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
+        "node_id": "map",
+        "path": "nodes/map/outputs/mapped",
+        "sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27",
+        "size_bytes": 14
+      },
+      {
         "kind": "file",
         "media_type": "application/octet-stream",
         "name": "out",
-        "node_fingerprint": "3a1730689921bc1768abbce5bb3b4c2a9cf375be1f847a9a7b3c116e735f25a0",
+        "node_fingerprint": "6fc084c557a46859ab08ee55e0b8c17e13785130ed8d0f3cf3f88add75f7b1c8",
+        "node_id": "reduce",
+        "path": "nodes/reduce/outputs/reduce.txt",
+        "sha256": "5eb44ddd90abcf863056fcc7b344424553a7c159909118b850196bb51598cad1",
+        "size_bytes": 16
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
         "node_id": "seed",
         "path": "nodes/seed/outputs/seed/out.json",
-        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
-        "size_bytes": 4
+        "sha256": "279e88d971aa53cd1482808e8c25b869a8d55b6377aed1813f70294548a61453",
+        "size_bytes": 34
       }
     ]
   },
@@ -700,11 +843,24 @@
       "ts": 0
     },
     {
-      "event": "node_finished",
-      "failure_code": "INTERNAL",
+      "attempt": 1,
+      "event": "node_attempt_started",
       "node_id": "map",
-      "reason": "execution_failed",
-      "status": "failed",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "map",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "failure_code": null,
+      "node_id": "map",
+      "reason": null,
+      "status": "success",
       "ts": 0
     },
     {
@@ -737,21 +893,8 @@
       "ts": 0
     },
     {
-      "blocking_nodes": [
-        "map"
-      ],
-      "event": "node_blocked",
+      "event": "cache_miss",
       "node_id": "reduce",
-      "reason": "blocked_by_trigger_rule",
-      "trigger_rule": "all_success",
-      "ts": 0
-    },
-    {
-      "event": "node_finished",
-      "failure_code": "UPSTREAM_FAILED",
-      "node_id": "reduce",
-      "reason": "upstream_failed",
-      "status": "failed",
       "ts": 0
     },
     {
@@ -761,8 +904,34 @@
       "ts": 0
     },
     {
+      "event": "node_started",
+      "node_id": "reduce",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_started",
+      "node_id": "reduce",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "reduce",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "failure_code": null,
+      "node_id": "reduce",
+      "reason": null,
+      "status": "success",
+      "ts": 0
+    },
+    {
       "event": "run_finished",
-      "status": "failed",
+      "status": "success",
       "ts": 0
     }
   ]

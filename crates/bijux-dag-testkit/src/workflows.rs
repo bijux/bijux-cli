@@ -177,9 +177,24 @@ pub fn graph_map_reduce_fixture() -> Graph {
         .build()
 }
 
+fn reduce_collection_command(output_name: &str) -> String {
+    format!(
+        "python3 -c \"import json, pathlib; manifest=json.load(open('../inputs/reduce.collection.json')); values=[]; \
+base=pathlib.Path('../inputs'); collect=lambda rel: sorted((base / rel).rglob('value.txt')) if (base / rel).is_dir() else [base / rel]; \
+paths=[]; [paths.extend(collect(item['local_path'])) for item in manifest['items'] if item.get('local_path')]; \
+values=[path.read_text() for path in paths]; \
+(pathlib.Path('../outputs') / '{output_name}').write_text(','.join(values))\""
+    )
+}
+
 pub fn graph_semantic_map_reduce_fixture() -> Graph {
     DagFixture::new()
-        .const_node("seed", json!(["alpha", "beta", "gamma"]))
+        .node(
+            NodeBuilder::new("seed", NodeKind::Const)
+                .output("out", "seed/out.json")
+                .param_literal(json!({"value": ["alpha", "beta", "gamma"]}))
+                .build(),
+        )
         .node(
             {
                 let mut node = NodeBuilder::new("map", NodeKind::Shell)
@@ -209,7 +224,7 @@ pub fn graph_semantic_map_reduce_fixture() -> Graph {
                     "argv": [
                         "/bin/sh",
                         "-c",
-                        "first=1; for file in $(find ../inputs/map/mapped/items -name value.txt | sort); do if [ \"$first\" -eq 0 ]; then printf ',' >> ../outputs/reduce.txt; fi; cat \"$file\" >> ../outputs/reduce.txt; first=0; done"
+                        reduce_collection_command("reduce.txt")
                     ]
                 }))
                 .build(),
