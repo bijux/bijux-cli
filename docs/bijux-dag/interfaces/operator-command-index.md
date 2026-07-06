@@ -20,7 +20,9 @@ verify, compare, or diagnose it.
 - `dag runs summary`: aggregate retained history into one repository-local
   overview
 - `dag runs compare`: compare two retained runs across status, retries, cache
-  hits, artifacts, and timing
+  hits, artifacts, timing, graph and execution fingerprints, graph inputs,
+  selected nodes, node statuses, output hashes, and the first meaningful
+  retained-evidence divergence
 - `dag runs trend`: render one analytics point per retained run
 - `dag runs failures`: aggregate failed node kinds across retained runs
 - `dag runs flakes`: identify graph fingerprints with mixed retained outcomes

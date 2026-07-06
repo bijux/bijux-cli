@@ -82,6 +82,30 @@ The history rows now report:
 Use the JSON form when another tool needs stable fields, and use the default
 human form when an operator needs a compact recent-run status list.
 
+## Compare Two Retained Runs
+
+When two completed runs need a quick evidence-backed comparison before a deeper
+artifact diff, use `runs compare` against the retained run ids:
+
+```bash
+bijux-dag runs compare run-20260405-77 run-20260406-01 --root ./runs --json
+```
+
+The comparison report keeps the retained-run surface explicit:
+
+- top-level status, retry, cache-hit, artifact-count, and timing summaries for
+  both runs
+- graph fingerprint and execution fingerprint equality
+- graph input values
+- selected nodes from `run.snapshot.json`
+- per-node terminal statuses
+- per-node output hashes from retained node output indexes
+- the first meaningful divergence that can be proven from retained evidence
+
+Use `runs compare` when the question is "where did these two retained runs first
+drift?" Use `diff` when the question is "how do these run directories differ in
+detail across artifacts, policy, provenance, or one specific node?"
+
 ## Stop an Active Run
 
 When a live run should stop launching new work, record a durable stop request

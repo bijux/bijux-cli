@@ -54,6 +54,11 @@ flowchart LR
 - inspect evidence: `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`
 - operate locally: `cache ...`, `doctor`, `version`, `commands`, `completions`
 
+Within `runs ...`, `runs compare` is the retained-run attribution surface: it
+compares fingerprints, graph inputs, selected nodes, node statuses, output
+hashes, and the first meaningful divergence without claiming a deeper
+directory-wide diff than the retained evidence supports.
+
 ## Hidden Experimental Routes
 
 The following operator-oriented routes stay callable by explicit path, but they
