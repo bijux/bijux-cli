@@ -146,6 +146,61 @@ fn http_graph(
     .to_string()
 }
 
+fn file_transform_graph(
+    seeds: &[(&str, &str, &str)],
+    params: Value,
+    outputs: &[Value],
+    timeout_ms: Option<u64>,
+) -> String {
+    let mut nodes = seeds
+        .iter()
+        .map(|(node_id, output_name, contents)| {
+            let command =
+                format!("cat <<'BIJUX_EOF' > ../outputs/{output_name}.txt\n{contents}\nBIJUX_EOF");
+            serde_json::json!({
+                "id": node_id,
+                "kind": "shell",
+                "outputs": [{"name": output_name, "path": format!("{output_name}.txt")}],
+                "params": {"argv": ["/bin/sh", "-c", command]},
+                "effects": ["filesystem"],
+            })
+        })
+        .collect::<Vec<_>>();
+    let inputs = seeds
+        .iter()
+        .map(|(_, output_name, _)| Value::String((*output_name).to_string()))
+        .collect::<Vec<_>>();
+    let mut file_node = serde_json::json!({
+        "id":"file_transform",
+        "kind":"file_transform",
+        "inputs": inputs,
+        "outputs": outputs,
+        "params": params,
+        "effects": ["filesystem"],
+    });
+    if let Some(timeout_ms) = timeout_ms {
+        file_node["timeout_ms"] = serde_json::json!(timeout_ms);
+    }
+    nodes.push(file_node);
+
+    let edges = seeds
+        .iter()
+        .map(|(node_id, output_name, _)| {
+            serde_json::json!({
+                "from": {"node_id": node_id, "port": output_name},
+                "to": {"node_id": "file_transform", "port": output_name},
+            })
+        })
+        .collect::<Vec<_>>();
+
+    serde_json::json!({
+        "spec":"bijux-dag/v0.1",
+        "nodes": nodes,
+        "edges": edges,
+    })
+    .to_string()
+}
+
 fn read_trace(run_dir: &std::path::Path) -> Value {
     serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join("shell").join("trace.json")).expect("trace"),
@@ -158,6 +213,14 @@ fn read_node_trace(run_dir: &Path, node_id: &str) -> Value {
         &fs::read_to_string(run_dir.join("nodes").join(node_id).join("trace.json")).expect("trace"),
     )
     .expect("trace json")
+}
+
+fn read_operation_summary(run_dir: &Path, node_id: &str) -> Value {
+    serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join(node_id).join("operation-summary.json"))
+            .expect("operation summary"),
+    )
+    .expect("summary json")
 }
 
 fn write_executable(path: &Path, contents: &str) {
@@ -450,6 +513,24 @@ fn http_adapter_descriptor_exposes_timeout_cache_and_protocol_contracts() {
     );
     assert!(http.required_effects.filesystem);
     assert!(http.required_effects.network);
+}
+
+#[test]
+fn file_transform_adapter_descriptor_exposes_timeout_cache_and_protocol_contracts() {
+    let descriptors = registered_adapter_descriptors();
+    let file_transform = descriptors
+        .iter()
+        .find(|descriptor| descriptor.id == "file_transform")
+        .expect("file_transform descriptor");
+    assert_eq!(file_transform.protocol_version, "bijux-dag-adapter/v1");
+    assert!(file_transform.supports_timeout);
+    assert!(!file_transform.supports_cancel);
+    assert_eq!(
+        file_transform.cache_compatibility,
+        bijux_dag_runtime::CacheCompatibilityMode::FingerprintExact
+    );
+    assert!(file_transform.required_effects.filesystem);
+    assert!(!file_transform.required_effects.network);
 }
 
 #[test]
@@ -1042,6 +1123,177 @@ fn http_adapter_network_policy_denial_is_structured() {
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "POLICY_DENIED");
     assert_eq!(trace["failure"]["details"]["effect"], "network");
+}
+
+#[test]
+fn file_transform_copy_writes_output_and_structured_summary() {
+    let graph = parse_graph_strict(&file_transform_graph(
+        &[("seed", "source", "copy payload")],
+        serde_json::json!({
+            "operation": "copy",
+            "source": "seed/source",
+        }),
+        &[serde_json::json!({"name":"copied","path":"copied.txt"})],
+        None,
+    ))
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let copied = fs::read_to_string(
+        run_dir.join("nodes").join("file_transform").join("outputs").join("copied.txt"),
+    )
+    .expect("copied output");
+    assert_eq!(copied, "copy payload\n");
+
+    let summary = read_operation_summary(&run_dir, "file_transform");
+    assert_eq!(summary["operation"], "copy");
+    assert_eq!(summary["sources"], serde_json::json!(["seed/source"]));
+    assert_eq!(summary["outputs"][0]["path"], "copied.txt");
+    assert!(summary["outputs"][0]["sha256"].as_str().is_some());
+}
+
+#[test]
+fn file_transform_concatenate_preserves_source_order() {
+    let graph = parse_graph_strict(&file_transform_graph(
+        &[("left_seed", "left", "left"), ("right_seed", "right", "right")],
+        serde_json::json!({
+            "operation": "concatenate",
+            "sources": ["left_seed/left", "right_seed/right"],
+        }),
+        &[serde_json::json!({"name":"joined","path":"joined.txt"})],
+        None,
+    ))
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let joined = fs::read_to_string(
+        run_dir.join("nodes").join("file_transform").join("outputs").join("joined.txt"),
+    )
+    .expect("joined output");
+    assert_eq!(joined, "left\nright\n");
+}
+
+#[test]
+fn file_transform_split_materializes_chunks_in_declared_order() {
+    let graph = parse_graph_strict(&file_transform_graph(
+        &[("seed", "source", "abcdefghi")],
+        serde_json::json!({
+            "operation": "split",
+            "source": "seed/source",
+            "chunk_bytes": 4,
+        }),
+        &[
+            serde_json::json!({"name":"chunk_a","path":"chunk-a.txt"}),
+            serde_json::json!({"name":"chunk_b","path":"chunk-b.txt"}),
+            serde_json::json!({"name":"chunk_c","path":"chunk-c.txt"}),
+        ],
+        None,
+    ))
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let outputs_dir = run_dir.join("nodes").join("file_transform").join("outputs");
+    assert_eq!(fs::read_to_string(outputs_dir.join("chunk-a.txt")).expect("chunk a"), "abcd");
+    assert_eq!(fs::read_to_string(outputs_dir.join("chunk-b.txt")).expect("chunk b"), "efgh");
+    assert_eq!(fs::read_to_string(outputs_dir.join("chunk-c.txt")).expect("chunk c"), "i\n");
+
+    let summary = read_operation_summary(&run_dir, "file_transform");
+    assert_eq!(summary["chunk_bytes"], 4);
+    assert_eq!(summary["outputs"][0]["source_offset"], 0);
+    assert_eq!(summary["outputs"][1]["source_offset"], 4);
+    assert_eq!(summary["outputs"][2]["source_offset"], 8);
+}
+
+#[test]
+fn file_transform_gzip_roundtrip_preserves_source_bytes() {
+    let graph = parse_graph_strict(
+        &serde_json::json!({
+            "spec":"bijux-dag/v0.1",
+            "nodes":[
+                {
+                    "id":"seed",
+                    "kind":"shell",
+                    "outputs":[{"name":"source","path":"source.txt"}],
+                    "params":{"argv":["/bin/sh","-c","cat <<'BIJUX_EOF' > ../outputs/source.txt\ncompressed payload\nBIJUX_EOF"]},
+                    "effects":["filesystem"]
+                },
+                {
+                    "id":"compress",
+                    "kind":"file_transform",
+                    "inputs":["source"],
+                    "outputs":[{"name":"archive","path":"archive.txt.gz"}],
+                    "params":{"operation":"gzip_compress","source":"seed/source"},
+                    "effects":["filesystem"]
+                },
+                {
+                    "id":"decompress",
+                    "kind":"file_transform",
+                    "inputs":["archive"],
+                    "outputs":[{"name":"plain","path":"plain.txt"}],
+                    "params":{"operation":"gzip_decompress","source":"compress/archive"},
+                    "effects":["filesystem"]
+                }
+            ],
+            "edges":[
+                {"from":{"node_id":"seed","port":"source"},"to":{"node_id":"compress","port":"source"}},
+                {"from":{"node_id":"compress","port":"archive"},"to":{"node_id":"decompress","port":"archive"}}
+            ]
+        })
+        .to_string(),
+    )
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let plain = fs::read_to_string(
+        run_dir.join("nodes").join("decompress").join("outputs").join("plain.txt"),
+    )
+    .expect("plain output");
+    assert_eq!(plain, "compressed payload\n");
+}
+
+#[test]
+fn file_transform_checksum_emits_structured_json_artifact() {
+    let graph = parse_graph_strict(&file_transform_graph(
+        &[("seed", "source", "checksum payload")],
+        serde_json::json!({
+            "operation": "checksum",
+            "source": "seed/source",
+            "checksum_algorithm": "sha256",
+        }),
+        &[serde_json::json!({
+            "name":"digest",
+            "path":"digest.json",
+            "media_type":"application/json"
+        })],
+        None,
+    ))
+    .expect("graph");
+
+    let runtime = Runtime::new();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let digest: Value = serde_json::from_str(
+        &fs::read_to_string(
+            run_dir.join("nodes").join("file_transform").join("outputs").join("digest.json"),
+        )
+        .expect("digest output"),
+    )
+    .expect("digest json");
+    let expected_sha256 = {
+        use sha2::Digest as _;
+        hex::encode(sha2::Sha256::digest(b"checksum payload\n"))
+    };
+    assert_eq!(digest["operation"], "checksum");
+    assert_eq!(digest["algorithm"], "sha256");
+    assert_eq!(digest["sha256"], expected_sha256);
 }
 
 #[test]
@@ -1707,11 +1959,26 @@ fn adapter_output_schema_compatibility_reports_exact_mismatch() {
 #[test]
 fn adapter_conformance_suite_covers_shell_hardening_and_output_contract_scenarios() {
     let suites = adapter_conformance_suite().expect("suite");
+    let file_transform =
+        suites.iter().find(|suite| suite.adapter_id == "file_transform").expect("file_transform");
     let http = suites.iter().find(|suite| suite.adapter_id == "http").expect("http");
     let shell = suites.iter().find(|suite| suite.adapter_id == "shell").expect("shell");
     let python = suites.iter().find(|suite| suite.adapter_id == "python").expect("python");
+    let file_transform_scenarios = &file_transform.scenarios;
     let http_scenarios = &http.scenarios;
     let python_scenarios = &python.scenarios;
+    assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario.scenario == "success"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+    }));
+    assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario.scenario == "cache_output"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+    }));
+    assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario.scenario == "missing_executable"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Skip
+    }));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "argv_contract"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "timeout"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "undeclared_output"));
