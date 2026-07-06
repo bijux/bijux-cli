@@ -2280,7 +2280,7 @@ pub(super) fn run_runtime_semantics_guard() -> Result<(), String> {
     let root = repo_root()?;
     for rel in [
         "docs/spec/RUNTIME_SEMANTICS_CONTRACT.md",
-        "crates/bijux-dag-runtime/src/runtime_semantics.rs",
+        "crates/bijux-dag-runtime/src/runtime_core/governance/semantics.rs",
         "crates/bijux-dag-runtime/tests/runtime_semantics_contracts.rs",
         "crates/bijux-dag-runtime/tests/engine_correctness_contracts.rs",
     ] {
@@ -2296,7 +2296,7 @@ pub(super) fn run_test_trust_foundation_guard() -> Result<(), String> {
     for rel in [
         "docs/spec/TEST_TRUST_CONTRACT.md",
         "docs/spec/TEST_PHILOSOPHY.md",
-        "docs/architecture/test_trust_audit.md",
+        "docs/bijux-core/architecture/test-trust-audit.md",
         "crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json",
     ] {
         if !root.join(rel).exists() {
@@ -4054,7 +4054,7 @@ pub(super) fn run_sacred_execution_flow_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/SACRED_EXECUTION_FLOW.md",
-        "docs/architecture/RUNTIME-EXECUTION-FLOW.md",
+        "docs/bijux-dag/architecture/runtime-execution-flow.md",
         "docs/reports/foundation/SACRED_EXECUTION_HARDENING_REPORT.md",
         "crates/bijux-dag-runtime/src/runtime_core/governance/sacred_execution.rs",
         "crates/bijux-dag-runtime/src/runtime_core/execution/context.rs",
@@ -4110,14 +4110,14 @@ pub(super) fn run_sacred_execution_flow_guard() -> Result<(), String> {
 pub(super) fn run_crate_boundary_foundation_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
-        "docs/spec/CRATE_RESPONSIBILITY_STATEMENTS.md",
-        "docs/spec/CRATE_BOUNDARY_CONTRACT.md",
-        "docs/architecture/crate_boundary_adr.md",
-        "docs/architecture/CRATE_SERVICE_INTERFACES.md",
+        "docs/bijux-core/foundation/package-boundary.md",
+        "docs/bijux-core/packages/index.md",
+        "docs/bijux-dag/foundation/ownership-boundary.md",
+        "docs/bijux-dag/architecture/integration-seams.md",
         "configs/dag/policy/forbidden_dependencies.json",
         "crates/bijux-dag-app/tests/crate_boundary_contract.rs",
-        "crates/bijux-dag-runtime/src/services.rs",
-        "crates/bijux-dag-artifacts/src/services.rs",
+        "crates/bijux-dag-runtime/src/internal/control/services.rs",
+        "crates/bijux-dag-artifacts/src/storage/services.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
