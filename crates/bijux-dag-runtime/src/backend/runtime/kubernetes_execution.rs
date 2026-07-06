@@ -3,17 +3,23 @@ use crate::backend_cluster::{
     K8sResourceMapping, NodeExecutionContract,
 };
 use crate::remote_execution_model::{
-    validate_remote_execution_payload, RemoteNodeExecutionPayload,
+    execute_modeled_payload, validate_remote_execution_payload, RemoteNodeExecutionPayload,
+    RemoteNodeExecutionResult,
 };
-use crate::{FailureClass, NodeResult, NodeStatus};
+use crate::{ContainerAdapter, ConstAdapter, FailureClass, NodeResult, NodeStatus, ShellAdapter};
 use bijux_dag_core::{Node, NodeKind};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::BTreeMap;
+use std::fs;
+use std::sync::{Arc, Mutex};
 
 const DEFAULT_CPU_UNITS: u32 = 1;
 const DEFAULT_MEMORY_MIB: u32 = 256;
 const DEFAULT_TIMEOUT_SECONDS: u32 = 60;
 const DEFAULT_CANCEL_GRACE_SECONDS: u32 = 30;
+const KUBERNETES_SCHEDULER_ID: &str = "kubernetes";
+const KUBERNETES_STATUS_MAPPING_ID: &str = "kubernetes-pod-phase";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KubernetesExecutionRequest {
@@ -78,6 +84,7 @@ pub struct KubernetesJobRecord {
     pub metadata: crate::BatchJobMetadata,
     pub lifecycle: Vec<KubernetesPodLifecycleEvent>,
     pub terminal_status: KubernetesPodStatus,
+    pub workspace: KubernetesWorkspaceTransfer,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -95,6 +102,16 @@ pub struct KubernetesPodStatus {
     pub reason: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KubernetesExecutionResult {
+    pub identity: crate::RemoteExecutionIdentity,
+    pub job: KubernetesJobRecord,
+    pub pod_status: KubernetesPodStatus,
+    pub node_status: NodeStatus,
+    pub node_result: NodeResult,
+    pub logs: KubernetesLogCapture,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum KubernetesPodPhase {
@@ -103,6 +120,20 @@ pub enum KubernetesPodPhase {
     Succeeded,
     Failed,
     Unknown,
+}
+
+pub trait KubernetesBackendExecutor: Send + Sync {
+    fn execute_job(
+        &self,
+        request: KubernetesExecutionRequest,
+    ) -> Result<KubernetesExecutionResult, String>;
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MockKubernetesBackend {
+    next_job_id: Arc<Mutex<u64>>,
+    requests: Arc<Mutex<Vec<KubernetesExecutionRequest>>>,
+    jobs: Arc<Mutex<BTreeMap<String, KubernetesJobRecord>>>,
 }
 
 pub fn validate_kubernetes_execution_request(
@@ -209,6 +240,55 @@ pub fn kubernetes_pod_status_from_node_result(result: &NodeResult) -> Kubernetes
     }
 }
 
+impl MockKubernetesBackend {
+    pub fn submitted_requests(&self) -> Vec<KubernetesExecutionRequest> {
+        self.requests.lock().expect("kubernetes request lock poisoned").clone()
+    }
+
+    pub fn job_record(&self, job_id: &str) -> Option<KubernetesJobRecord> {
+        self.jobs.lock().expect("kubernetes job lock poisoned").get(job_id).cloned()
+    }
+
+    fn allocate_job_id(&self) -> String {
+        let mut next_job_id =
+            self.next_job_id.lock().expect("kubernetes job counter lock poisoned");
+        *next_job_id = next_job_id.saturating_add(1);
+        format!("k8s-{}", *next_job_id)
+    }
+}
+
+impl KubernetesBackendExecutor for MockKubernetesBackend {
+    fn execute_job(
+        &self,
+        request: KubernetesExecutionRequest,
+    ) -> Result<KubernetesExecutionResult, String> {
+        validate_kubernetes_execution_request(&request)?;
+        self.requests.lock().expect("kubernetes request lock poisoned").push(request.clone());
+
+        let adapter = kubernetes_backend_adapter(&request.payload.node.kind)?;
+        let remote_result = execute_modeled_payload(request.payload.clone(), adapter)?;
+        let job_id = self.allocate_job_id();
+        let pod_status = kubernetes_pod_status_from_node_result(&remote_result.node_result);
+        let node_status = map_kubernetes_pod_status_to_node_status(&pod_status);
+        let job = build_kubernetes_job_record(&job_id, &request, &remote_result, &pod_status);
+        let logs = capture_logs(&remote_result.node_result)?;
+
+        self.jobs
+            .lock()
+            .expect("kubernetes job lock poisoned")
+            .insert(job_id, job.clone());
+
+        Ok(KubernetesExecutionResult {
+            identity: remote_result.identity,
+            job,
+            pod_status,
+            node_status,
+            node_result: remote_result.node_result,
+            logs,
+        })
+    }
+}
+
 fn kubernetes_node_execution_contract(node: &Node, params: &Value) -> NodeExecutionContract {
     let resources = node.resources.as_ref();
     let cpu_units =
@@ -282,6 +362,96 @@ fn effective_timeout_seconds(node: &Node, params: &Value) -> u32 {
             timeout_seconds.max(1)
         })
         .unwrap_or(DEFAULT_TIMEOUT_SECONDS)
+}
+
+fn kubernetes_backend_adapter(kind: &NodeKind) -> Result<Box<dyn crate::adapter::Adapter>, String> {
+    match kind {
+        NodeKind::Const => Ok(Box::new(ConstAdapter)),
+        NodeKind::Shell => Ok(Box::new(ShellAdapter)),
+        NodeKind::Container => Ok(Box::new(ContainerAdapter)),
+        NodeKind::External(kind) => Err(format!(
+            "kubernetes backend model does not yet execute external adapter kind '{kind}'"
+        )),
+    }
+}
+
+fn build_kubernetes_job_record(
+    job_id: &str,
+    request: &KubernetesExecutionRequest,
+    remote_result: &RemoteNodeExecutionResult,
+    terminal_status: &KubernetesPodStatus,
+) -> KubernetesJobRecord {
+    let metadata = crate::BatchJobMetadata {
+        scheduler_id: KUBERNETES_SCHEDULER_ID.to_string(),
+        submission_time_unix_ms: remote_result.started_unix_ms,
+        run_id: request.payload.identity.run_id.clone(),
+        node_id: request.payload.identity.node_id.clone(),
+        attempt_id: request.payload.identity.attempt_id.clone(),
+        resource_request: render_kubernetes_resource_request(request),
+        status_mapping: KUBERNETES_STATUS_MAPPING_ID.to_string(),
+    };
+    let lifecycle = vec![
+        KubernetesPodLifecycleEvent {
+            job_id: job_id.to_string(),
+            status: KubernetesPodStatus {
+                phase: KubernetesPodPhase::Pending,
+                reason: None,
+            },
+            unix_ms: metadata.submission_time_unix_ms,
+        },
+        KubernetesPodLifecycleEvent {
+            job_id: job_id.to_string(),
+            status: KubernetesPodStatus {
+                phase: KubernetesPodPhase::Running,
+                reason: None,
+            },
+            unix_ms: remote_result.started_unix_ms,
+        },
+        KubernetesPodLifecycleEvent {
+            job_id: job_id.to_string(),
+            status: terminal_status.clone(),
+            unix_ms: remote_result.finished_unix_ms,
+        },
+    ];
+    KubernetesJobRecord {
+        job_id: job_id.to_string(),
+        metadata,
+        lifecycle,
+        terminal_status: terminal_status.clone(),
+        workspace: request.workspace.clone(),
+    }
+}
+
+fn render_kubernetes_resource_request(request: &KubernetesExecutionRequest) -> String {
+    let image = request.workload.image.as_deref().unwrap_or("runtime-adapter");
+    let transfer_mode = match request.workspace.mode {
+        KubernetesWorkspaceTransferMode::MountedWorkdir => "mounted_workdir",
+        KubernetesWorkspaceTransferMode::StagedArtifacts => "staged_artifacts",
+    };
+    format!(
+        "namespace={},request_cpu_millis={},request_mem_mib={},limit_cpu_millis={},limit_mem_mib={},active_deadline_seconds={},retry_backoff_seconds={},transfer_mode={transfer_mode},image={image}",
+        request.namespace,
+        request.resources.requests.cpu_millis,
+        request.resources.requests.memory_mib,
+        request.resources.limits.cpu_millis,
+        request.resources.limits.memory_mib,
+        request.policy.active_deadline_seconds,
+        request.policy.retry_backoff_seconds,
+    )
+}
+
+fn capture_logs(result: &NodeResult) -> Result<KubernetesLogCapture, String> {
+    Ok(KubernetesLogCapture {
+        stdout_path: result.stdout_path.clone(),
+        stderr_path: result.stderr_path.clone(),
+        stdout: read_log(&result.stdout_path)?,
+        stderr: read_log(&result.stderr_path)?,
+    })
+}
+
+fn read_log(path: &str) -> Result<String, String> {
+    let bytes = fs::read(path).map_err(|error| format!("read kubernetes log '{path}': {error}"))?;
+    Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
 #[cfg(test)]

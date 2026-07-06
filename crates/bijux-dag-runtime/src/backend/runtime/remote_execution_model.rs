@@ -1,8 +1,9 @@
+use crate::adapter::Adapter;
 use crate::clock::SystemClock;
 use crate::io::{Fs, StdFs};
 use crate::store::ArtifactStore;
 use crate::{
-    failed_node_result_from_runtime_error, AbsolutePathPolicy, Adapter, ConstAdapter, NodeResult,
+    failed_node_result_from_runtime_error, AbsolutePathPolicy, ConstAdapter, NodeResult,
     PolicyConfig, RunContext, ShellAdapter,
 };
 use bijux_dag_artifacts::{is_normalized_relative_path, RunDir};
@@ -234,84 +235,89 @@ impl RemoteWorkerExecutor for MockRemoteWorker {
         payload: RemoteNodeExecutionPayload,
     ) -> Result<RemoteNodeExecutionResult, String> {
         validate_remote_execution_payload(&payload)?;
-        let run_dir = RunDir::create_with_id(&payload.workspace.out_base, &payload.identity.run_id)
-            .map_err(|error| format!("create remote run dir: {error}"))?;
-        let run_dir = Arc::new(run_dir);
-        let fs: Arc<dyn Fs> = Arc::new(StdFs);
-        materialize_remote_inputs(
-            fs.as_ref(),
-            run_dir.as_ref(),
-            &payload.node.id,
-            &payload.input_artifacts,
-        )?;
-
-        let node_id = payload.node.id.clone();
-        let mut graph_fingerprint = HashMap::new();
-        graph_fingerprint.insert(node_id.clone(), payload.fingerprints.node_fingerprint.clone());
-
-        let mut node_definition_fingerprints = HashMap::new();
-        node_definition_fingerprints
-            .insert(node_id.clone(), payload.fingerprints.node_definition_fingerprint.clone());
-
-        let mut declared_environment_fingerprints = HashMap::new();
-        declared_environment_fingerprints
-            .insert(node_id.clone(), payload.fingerprints.declared_environment_fingerprint.clone());
-
-        let mut params_fingerprints = HashMap::new();
-        params_fingerprints
-            .insert(node_id.clone(), payload.fingerprints.params_fingerprint.clone());
-
-        let mut command_fingerprints = HashMap::new();
-        command_fingerprints
-            .insert(node_id.clone(), payload.fingerprints.command_fingerprint.clone());
-
-        let mut resolved_params = HashMap::new();
-        resolved_params.insert(node_id.clone(), payload.params.clone());
-
-        let ctx = RunContext {
-            run_dir: Arc::clone(&run_dir),
-            graph_fingerprint: Arc::new(Mutex::new(graph_fingerprint)),
-            node_definition_fingerprints: Arc::new(node_definition_fingerprints),
-            declared_environment_fingerprints: Arc::new(declared_environment_fingerprints),
-            params_fingerprints: Arc::new(params_fingerprints),
-            command_fingerprints: Arc::new(command_fingerprints),
-            planner_contract_version: payload.planner_contract_version.clone(),
-            execution_fingerprint: payload.fingerprints.execution_fingerprint.clone(),
-            evidence_fingerprint: payload.fingerprints.evidence_fingerprint.clone(),
-            execution_contract_fingerprint: payload
-                .fingerprints
-                .execution_contract_fingerprint
-                .clone(),
-            resolved_params,
-            effective_cache_dir: payload.workspace.cache_dir.as_ref().map(PathBuf::from),
-            fs: Arc::clone(&fs),
-            clock: Arc::new(SystemClock),
-            store: ArtifactStore::new(Arc::clone(&run_dir), Arc::clone(&fs)),
-            policy: payload.policy.clone(),
-            absolute_path_policy: payload.absolute_path_policy,
-            cancellation_requested: Arc::new(AtomicBool::new(false)),
-        };
-
         let adapter = remote_worker_adapter(&payload.node.kind)?;
-        let node_ctx = crate::NodeCtx {
-            graph: &payload.graph,
-            node: &payload.node,
-            exec: &ctx,
-            params: &payload.params,
-        };
-        let started_unix_ms = ctx.clock.now_unix_ms();
-        let node_result = match adapter.execute(&node_ctx) {
-            Ok(result) => result,
-            Err(error) => failed_node_result_from_runtime_error(&ctx, &payload.node, error),
-        };
-        let finished_unix_ms = ctx.clock.now_unix_ms();
-        Ok(RemoteNodeExecutionResult {
-            identity: payload.identity,
-            node_result,
-            started_unix_ms,
-            finished_unix_ms,
-        })
+        execute_modeled_payload(payload, adapter)
     }
+}
+
+pub(crate) fn execute_modeled_payload(
+    payload: RemoteNodeExecutionPayload,
+    adapter: Box<dyn Adapter>,
+) -> Result<RemoteNodeExecutionResult, String> {
+    let run_dir = RunDir::create_with_id(&payload.workspace.out_base, &payload.identity.run_id)
+        .map_err(|error| format!("create remote run dir: {error}"))?;
+    let run_dir = Arc::new(run_dir);
+    let fs: Arc<dyn Fs> = Arc::new(StdFs);
+    materialize_remote_inputs(
+        fs.as_ref(),
+        run_dir.as_ref(),
+        &payload.node.id,
+        &payload.input_artifacts,
+    )?;
+
+    let node_id = payload.node.id.clone();
+    let mut graph_fingerprint = HashMap::new();
+    graph_fingerprint.insert(node_id.clone(), payload.fingerprints.node_fingerprint.clone());
+
+    let mut node_definition_fingerprints = HashMap::new();
+    node_definition_fingerprints
+        .insert(node_id.clone(), payload.fingerprints.node_definition_fingerprint.clone());
+
+    let mut declared_environment_fingerprints = HashMap::new();
+    declared_environment_fingerprints
+        .insert(node_id.clone(), payload.fingerprints.declared_environment_fingerprint.clone());
+
+    let mut params_fingerprints = HashMap::new();
+    params_fingerprints.insert(node_id.clone(), payload.fingerprints.params_fingerprint.clone());
+
+    let mut command_fingerprints = HashMap::new();
+    command_fingerprints.insert(node_id.clone(), payload.fingerprints.command_fingerprint.clone());
+
+    let mut resolved_params = HashMap::new();
+    resolved_params.insert(node_id.clone(), payload.params.clone());
+
+    let ctx = RunContext {
+        run_dir: Arc::clone(&run_dir),
+        graph_fingerprint: Arc::new(Mutex::new(graph_fingerprint)),
+        node_definition_fingerprints: Arc::new(node_definition_fingerprints),
+        declared_environment_fingerprints: Arc::new(declared_environment_fingerprints),
+        params_fingerprints: Arc::new(params_fingerprints),
+        command_fingerprints: Arc::new(command_fingerprints),
+        planner_contract_version: payload.planner_contract_version.clone(),
+        execution_fingerprint: payload.fingerprints.execution_fingerprint.clone(),
+        evidence_fingerprint: payload.fingerprints.evidence_fingerprint.clone(),
+        execution_contract_fingerprint: payload
+            .fingerprints
+            .execution_contract_fingerprint
+            .clone(),
+        resolved_params,
+        effective_cache_dir: payload.workspace.cache_dir.as_ref().map(PathBuf::from),
+        fs: Arc::clone(&fs),
+        clock: Arc::new(SystemClock),
+        store: ArtifactStore::new(Arc::clone(&run_dir), Arc::clone(&fs)),
+        policy: payload.policy.clone(),
+        absolute_path_policy: payload.absolute_path_policy,
+        cancellation_requested: Arc::new(AtomicBool::new(false)),
+    };
+
+    let node_ctx = crate::NodeCtx {
+        graph: &payload.graph,
+        node: &payload.node,
+        exec: &ctx,
+        params: &payload.params,
+    };
+    let started_unix_ms = ctx.clock.now_unix_ms();
+    let node_result = match adapter.execute(&node_ctx) {
+        Ok(result) => result,
+        Err(error) => failed_node_result_from_runtime_error(&ctx, &payload.node, error),
+    };
+    let finished_unix_ms = ctx.clock.now_unix_ms();
+    Ok(RemoteNodeExecutionResult {
+        identity: payload.identity,
+        node_result,
+        started_unix_ms,
+        finished_unix_ms,
+    })
 }
 
 fn materialize_remote_inputs(

@@ -360,10 +360,11 @@ pub use local_worker_pool::{
 pub use kubernetes_execution::{
     build_kubernetes_execution_request, kubernetes_pod_status_from_node_result,
     map_kubernetes_pod_status_to_node_status, validate_kubernetes_execution_request,
-    KubernetesExecutionRequest, KubernetesJobRecord, KubernetesLogCapture,
-    KubernetesPodLifecycleEvent, KubernetesPodPhase, KubernetesPodStatus,
-    KubernetesVolumeMount, KubernetesWorkloadDescriptor, KubernetesWorkloadKind,
-    KubernetesWorkspaceTransfer, KubernetesWorkspaceTransferMode,
+    KubernetesBackendExecutor, KubernetesExecutionRequest, KubernetesExecutionResult,
+    KubernetesJobRecord, KubernetesLogCapture, KubernetesPodLifecycleEvent, KubernetesPodPhase,
+    KubernetesPodStatus, KubernetesVolumeMount, KubernetesWorkloadDescriptor,
+    KubernetesWorkloadKind, KubernetesWorkspaceTransfer, KubernetesWorkspaceTransferMode,
+    MockKubernetesBackend,
 };
 pub use observability::{
     category_from_runtime_event_name, current_process_memory_bytes,
