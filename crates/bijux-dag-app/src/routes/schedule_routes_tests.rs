@@ -557,6 +557,28 @@ fn write_submission_status_updates_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, updates)
 }
 
+fn write_priority_dispatch_policy_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let policy = dir.path().join("priority-dispatch-policy.json");
+    fs::write(
+        &policy,
+        r#"{
+          "weights": {
+            "critical_weight": 100,
+            "high_weight": 75,
+            "standard_weight": 50,
+            "low_weight": 25
+          },
+          "starvation": {
+            "max_ticks_without_dispatch": 3,
+            "priority_boost_after_ticks": 1
+          }
+        }"#,
+    )
+    .expect("write dispatch policy");
+    (dir, policy)
+}
+
 #[test]
 fn schedule_validate_returns_success_for_valid_registry() {
     let (_tmp, registry) = write_registry_fixture();
@@ -663,6 +685,35 @@ fn schedule_queue_status_writes_reconstructed_state() {
     assert_eq!(queues[0]["available_slots"], 3);
     assert_eq!(queues[0]["tenants"][0]["tenant"], "atlas");
     assert_eq!(queues[0]["tenants"][0]["active_runs"], 1);
+    assert_eq!(queues[0]["runs"][0]["starvation_ticks"], 0);
+}
+
+#[test]
+fn schedule_queue_dispatch_writes_updated_ledger() {
+    let (_tmp_ledger, ledger) = write_submission_ledger_fixture();
+    let (_tmp_policy, policy) = write_priority_dispatch_policy_fixture();
+    let out_dir = tempfile::tempdir().expect("tmp");
+    let out = out_dir.path().join("dispatched-ledger.json");
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Queue {
+            command: ScheduleQueueCommands::Dispatch {
+                ledger,
+                max_dispatches: 1,
+                policy: Some(policy),
+                out: Some(out.clone()),
+            },
+        },
+    )
+    .expect("schedule queue dispatch");
+    assert_eq!(code, ExitCode::SUCCESS);
+
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&out).expect("read dispatched ledger"))
+            .expect("parse dispatched ledger");
+    assert_eq!(written["entries"][0]["status"], "Running");
+    assert_eq!(written["entries"][0]["starvation_ticks"], 0);
 }
 
 #[test]
