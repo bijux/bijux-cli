@@ -3,6 +3,7 @@ use crate::ExitCode;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SelectorField {
     Run,
+    Graph,
     Node,
     NodePrefix,
     State,
@@ -30,6 +31,7 @@ pub(crate) fn parse_selector_expression(raw: &str) -> Result<SelectorExpression,
     }
     let field = match key.as_str() {
         "run" => SelectorField::Run,
+        "graph" => SelectorField::Graph,
         "node" => SelectorField::Node,
         "node-prefix" => SelectorField::NodePrefix,
         "state" => SelectorField::State,
@@ -72,6 +74,10 @@ mod tests {
         assert_eq!(
             parse_selector_expression("run:run-1").expect("run"),
             SelectorExpression { field: SelectorField::Run, value: "run-1".to_string() }
+        );
+        assert_eq!(
+            parse_selector_expression("graph:workflow-a").expect("graph"),
+            SelectorExpression { field: SelectorField::Graph, value: "workflow-a".to_string() }
         );
         assert_eq!(
             parse_selector_expression("node:align").expect("node"),

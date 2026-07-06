@@ -13,11 +13,17 @@
         "required": [
           "run_id",
           "status",
+          "lifecycle_state",
           "created_unix_ms",
+          "graph_name",
+          "graph_fingerprint",
           "parent_run_id",
           "source_run_id",
           "submission_source",
-          "trigger_source"
+          "trigger_source",
+          "run_dir",
+          "output_location",
+          "lineage"
         ],
         "additionalProperties": true
       }

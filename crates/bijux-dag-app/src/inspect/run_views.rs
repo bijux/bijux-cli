@@ -181,13 +181,24 @@ pub fn runs_history_query(
     source_filter: Option<&str>,
     pagination: Option<(usize, usize)>,
 ) -> Result<Value, std::io::Error> {
-    runs_history_query_with_selectors(root, status_filter, source_filter, pagination, None)
+    runs_history_query_with_filters(root, status_filter, source_filter, None, pagination, None)
 }
 
 pub(crate) fn runs_history_query_with_selectors(
     root: &Path,
     status_filter: Option<&str>,
     source_filter: Option<&str>,
+    pagination: Option<(usize, usize)>,
+    selectors: Option<&[SelectorExpression]>,
+) -> Result<Value, std::io::Error> {
+    runs_history_query_with_filters(root, status_filter, source_filter, None, pagination, selectors)
+}
+
+pub(crate) fn runs_history_query_with_filters(
+    root: &Path,
+    status_filter: Option<&str>,
+    source_filter: Option<&str>,
+    graph_filter: Option<&str>,
     pagination: Option<(usize, usize)>,
     selectors: Option<&[SelectorExpression]>,
 ) -> Result<Value, std::io::Error> {
@@ -200,6 +211,9 @@ pub(crate) fn runs_history_query_with_selectors(
         rows.retain(|row| {
             row.get("submission_source").and_then(Value::as_str) == Some(filter_source)
         });
+    }
+    if let Some(filter_graph) = graph_filter {
+        rows.retain(|row| row_matches_graph(row, filter_graph));
     }
     if let Some(selector_filters) = selectors {
         rows.retain(|row| {
@@ -232,21 +246,161 @@ fn build_history_rows(root: &Path) -> Result<Vec<Value>, std::io::Error> {
     let mut rows = Vec::new();
     for run_id in run_ids {
         let run_dir = resolve_run_dir(root, &run_id);
-        let manifest = read_json(&run_dir.join("manifest.json"))?;
-        let metadata = manifest.get("run_metadata").cloned().unwrap_or_else(|| json!({}));
-        let labels = metadata.get("labels").and_then(Value::as_array).cloned().unwrap_or_default();
-        rows.push(json!({
-            "run_id": manifest.get("run_id").cloned().unwrap_or(json!(run_id)),
-            "status": manifest.get("status").cloned().unwrap_or(Value::Null),
-            "created_unix_ms": manifest.get("created_unix_ms").cloned().unwrap_or(Value::Null),
-            "parent_run_id": metadata.get("parent_run_id").cloned().unwrap_or(Value::Null),
-            "source_run_id": metadata.get("source_run_id").cloned().unwrap_or(Value::Null),
-            "submission_source": metadata.get("submission_source").cloned().unwrap_or(Value::Null),
-            "trigger_source": metadata.get("trigger_source").cloned().unwrap_or(Value::Null),
-            "labels": labels
-        }));
+        rows.push(build_history_row(&run_dir, &run_id)?);
     }
+    let child_map = build_history_child_map(&rows);
+    for row in &mut rows {
+        let Some(object) = row.as_object_mut() else {
+            continue;
+        };
+        let run_id = object.get("run_id").and_then(Value::as_str).unwrap_or_default();
+        let child_run_ids = child_map.get(run_id).cloned().unwrap_or_default();
+        object.insert(
+            "lineage".to_string(),
+            json!({
+                "parent_run_id": object.get("parent_run_id").cloned().unwrap_or(Value::Null),
+                "source_run_id": object.get("source_run_id").cloned().unwrap_or(Value::Null),
+                "child_run_ids": child_run_ids,
+            }),
+        );
+    }
+    rows.sort_by(|left, right| {
+        let right_created = right.get("created_unix_ms").and_then(Value::as_u64).unwrap_or(0);
+        let left_created = left.get("created_unix_ms").and_then(Value::as_u64).unwrap_or(0);
+        right_created.cmp(&left_created).then_with(|| {
+            left.get("run_id")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .cmp(right.get("run_id").and_then(Value::as_str).unwrap_or_default())
+        })
+    });
     Ok(rows)
+}
+
+fn build_history_row(run_dir: &Path, default_run_id: &str) -> Result<Value, std::io::Error> {
+    let manifest = read_json(&run_dir.join("manifest.json")).ok();
+    let graph_snapshot = snapshot_path(run_dir).and_then(|path| read_json(&path).ok());
+    let runtime_snapshot = read_json(&run_dir.join("run.snapshot.json")).ok();
+    let metadata = manifest
+        .as_ref()
+        .and_then(|value| value.get("run_metadata"))
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    let labels = metadata
+        .get("labels")
+        .and_then(Value::as_array)
+        .cloned()
+        .or_else(|| {
+            runtime_snapshot
+                .as_ref()
+                .and_then(|value| value.get("labels"))
+                .and_then(Value::as_array)
+                .cloned()
+        })
+        .unwrap_or_default();
+    let marker_present = run_dir.join(".run-incomplete.json").exists();
+    let finished_present = manifest
+        .as_ref()
+        .and_then(|value| value.get("finished_unix_ms"))
+        .is_some_and(|value| !value.is_null());
+    let lifecycle_state = if marker_present && !finished_present { "active" } else { "historical" };
+    let graph_name = graph_snapshot.as_ref().and_then(history_graph_name).unwrap_or(Value::Null);
+    let graph_fingerprint = manifest
+        .as_ref()
+        .and_then(|value| value.get("graph_fingerprint").cloned())
+        .or_else(|| graph_snapshot.as_ref().and_then(history_graph_fingerprint))
+        .unwrap_or(Value::Null);
+    let run_id = manifest
+        .as_ref()
+        .and_then(|value| value.get("run_id").cloned())
+        .or_else(|| runtime_snapshot.as_ref().and_then(|value| value.get("run_id").cloned()))
+        .unwrap_or_else(|| json!(default_run_id));
+    let status = manifest
+        .as_ref()
+        .and_then(|value| value.get("status").cloned())
+        .or_else(|| (marker_present || runtime_snapshot.is_some()).then_some(json!("running")))
+        .unwrap_or(Value::Null);
+    let created_unix_ms = manifest
+        .as_ref()
+        .and_then(|value| value.get("created_unix_ms").cloned())
+        .unwrap_or(Value::Null);
+    let submission_source = metadata
+        .get("submission_source")
+        .cloned()
+        .or_else(|| {
+            runtime_snapshot.as_ref().and_then(|value| value.get("submission_source").cloned())
+        })
+        .unwrap_or(Value::Null);
+    let trigger_source = metadata
+        .get("trigger_source")
+        .cloned()
+        .or_else(|| {
+            runtime_snapshot.as_ref().and_then(|value| value.get("trigger_source").cloned())
+        })
+        .unwrap_or(Value::Null);
+    let parent_run_id = metadata
+        .get("parent_run_id")
+        .cloned()
+        .or_else(|| runtime_snapshot.as_ref().and_then(|value| value.get("parent_run_id").cloned()))
+        .unwrap_or(Value::Null);
+    let source_run_id = metadata
+        .get("source_run_id")
+        .cloned()
+        .or_else(|| {
+            runtime_snapshot.as_ref().and_then(|value| value.get("replay_source_run_id").cloned())
+        })
+        .unwrap_or(Value::Null);
+
+    Ok(json!({
+        "run_id": run_id,
+        "status": status,
+        "lifecycle_state": lifecycle_state,
+        "created_unix_ms": created_unix_ms,
+        "graph_name": graph_name,
+        "graph_fingerprint": graph_fingerprint,
+        "parent_run_id": parent_run_id,
+        "source_run_id": source_run_id,
+        "submission_source": submission_source,
+        "trigger_source": trigger_source,
+        "run_dir": run_dir.display().to_string(),
+        "output_location": run_dir.join("outputs").display().to_string(),
+        "labels": labels
+    }))
+}
+
+fn build_history_child_map(rows: &[Value]) -> std::collections::BTreeMap<String, Vec<String>> {
+    let mut children = std::collections::BTreeMap::<String, Vec<String>>::new();
+    for row in rows {
+        let Some(child_run_id) = row.get("run_id").and_then(Value::as_str) else {
+            continue;
+        };
+        let Some(parent_run_id) = row.get("parent_run_id").and_then(Value::as_str) else {
+            continue;
+        };
+        children.entry(parent_run_id.to_string()).or_default().push(child_run_id.to_string());
+    }
+    for child_ids in children.values_mut() {
+        child_ids.sort();
+    }
+    children
+}
+
+fn history_graph_name(snapshot: &Value) -> Option<Value> {
+    snapshot
+        .get("graph")
+        .and_then(|value| value.get("meta"))
+        .and_then(|value| value.get("name"))
+        .cloned()
+        .or_else(|| snapshot.get("meta").and_then(|value| value.get("name")).cloned())
+}
+
+fn history_graph_fingerprint(snapshot: &Value) -> Option<Value> {
+    snapshot.get("graph_fingerprint").cloned()
+}
+
+fn row_matches_graph(row: &Value, filter_graph: &str) -> bool {
+    row.get("graph_name").and_then(Value::as_str) == Some(filter_graph)
+        || row.get("graph_fingerprint").and_then(Value::as_str) == Some(filter_graph)
 }
 
 fn load_index_rows(root: &Path) -> Option<Vec<Value>> {
@@ -281,6 +435,7 @@ fn selector_matches_row(selector: &SelectorExpression, row: &Value) -> bool {
         SelectorField::Run => {
             row.get("run_id").and_then(Value::as_str) == Some(selector.value.as_str())
         }
+        SelectorField::Graph => row_matches_graph(row, selector.value.as_str()),
         SelectorField::State => {
             row.get("status").and_then(Value::as_str) == Some(selector.value.as_str())
         }

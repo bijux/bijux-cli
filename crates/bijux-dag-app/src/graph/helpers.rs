@@ -38,6 +38,7 @@ pub(crate) fn parse_selector(raw: &str) -> Result<Selector, ExitCode> {
         SelectorField::Tag => Ok(Selector::Tag(selector.value)),
         SelectorField::Kind => Ok(Selector::Kind(selector.value)),
         SelectorField::Run
+        | SelectorField::Graph
         | SelectorField::State
         | SelectorField::Artifact
         | SelectorField::Branch
