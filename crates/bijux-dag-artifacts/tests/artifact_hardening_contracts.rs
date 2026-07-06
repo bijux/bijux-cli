@@ -46,6 +46,8 @@ fn sample_manifest(run_id: &str) -> Manifest {
             deny_env: true,
             deny_clock: true,
             clean_env: true,
+            container_image_reference_policy:
+                bijux_dag_artifacts::ContainerImageReferencePolicy::RequireDigest,
         },
         cache_mode: None,
         cache_dir: None,

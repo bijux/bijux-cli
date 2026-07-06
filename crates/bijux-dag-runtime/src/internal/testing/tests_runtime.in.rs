@@ -2234,6 +2234,7 @@ exit 1
                 deny_env: true,
                 deny_clock: true,
                 clean_env: true,
+                ..PolicyConfig::default()
             },
             ..RuntimeConfig::default()
         };

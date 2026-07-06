@@ -47,7 +47,7 @@ fn sample_manifest() -> Manifest {
           "adapters":[],
           "outputs":[],
           "node_counts":{"success":1,"failed":0,"skipped":0,"cached":0},
-          "policy":{"deny_network":true,"deny_env":true,"deny_clock":true,"clean_env":true}
+          "policy":{"deny_network":true,"deny_env":true,"deny_clock":true,"clean_env":true,"container_image_reference_policy":"require_digest"}
         }"#,
     )
     .expect("manifest")

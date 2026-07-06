@@ -627,6 +627,8 @@ fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
             deny_env: false,
             deny_clock: false,
             clean_env: false,
+            container_image_reference_policy:
+                bijux_dag_artifacts::ContainerImageReferencePolicy::RequireDigest,
         },
         cache_mode: None,
         cache_dir: None,

@@ -144,6 +144,7 @@ pub(crate) fn handle_replay_command(
             deny_env: deny_env_effective,
             deny_clock: deny_clock_effective,
             clean_env: clean_env_effective,
+            ..bijux_dag_runtime::PolicyConfig::default()
         },
     );
     if dry_run {
@@ -290,6 +291,7 @@ mod tests {
                 deny_env: false,
                 deny_clock: true,
                 clean_env: true,
+                ..bijux_dag_runtime::PolicyConfig::default()
             },
         );
 

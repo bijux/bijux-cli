@@ -51,6 +51,8 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
             deny_env: false,
             deny_clock: false,
             clean_env: false,
+            container_image_reference_policy:
+                bijux_dag_artifacts::ContainerImageReferencePolicy::RequireDigest,
         },
         cache_mode: None,
         cache_dir: None,

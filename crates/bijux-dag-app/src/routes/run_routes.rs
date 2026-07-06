@@ -230,7 +230,13 @@ pub(crate) fn handle_run_command(
         cache_dir.clone(),
         remote_cache_dir,
         absolute_path_policy,
-        bijux_dag_runtime::PolicyConfig { deny_network, deny_env, deny_clock, clean_env },
+        bijux_dag_runtime::PolicyConfig {
+            deny_network,
+            deny_env,
+            deny_clock,
+            clean_env,
+            ..bijux_dag_runtime::PolicyConfig::default()
+        },
         upstream_selection_targets.clone(),
         downstream_selection_roots.clone(),
     );
@@ -271,6 +277,17 @@ pub(crate) fn handle_run_command(
                 "deny_env": options.policy.deny_env,
                 "deny_clock": options.policy.deny_clock,
                 "clean_env": options.policy.clean_env,
+                "container_image_reference_policy": match options
+                    .policy
+                    .container_image_reference_policy
+                {
+                    bijux_dag_runtime::ContainerImageReferencePolicy::RequireDigest => {
+                        "require_digest"
+                    }
+                    bijux_dag_runtime::ContainerImageReferencePolicy::AllowUnpinned => {
+                        "allow_unpinned"
+                    }
+                },
             },
             "policy_surface": policy_surface_payload(&graph, &options, req.hermetic)?,
             "input_summary": runtime_inputs.human_summary,
@@ -637,6 +654,7 @@ mod tests {
                 deny_env: false,
                 deny_clock: true,
                 clean_env: true,
+                ..bijux_dag_runtime::PolicyConfig::default()
             },
             vec!["report".to_string()],
             Vec::new(),

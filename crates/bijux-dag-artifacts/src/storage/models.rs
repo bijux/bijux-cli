@@ -356,12 +356,25 @@ fn is_zero(value: &u32) -> bool {
     *value == 0
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ContainerImageReferencePolicy {
+    RequireDigest,
+    AllowUnpinned,
+}
+
+pub fn default_container_image_reference_policy() -> ContainerImageReferencePolicy {
+    ContainerImageReferencePolicy::RequireDigest
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PolicyInfo {
     pub deny_network: bool,
     pub deny_env: bool,
     pub deny_clock: bool,
     pub clean_env: bool,
+    #[serde(default = "default_container_image_reference_policy")]
+    pub container_image_reference_policy: ContainerImageReferencePolicy,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

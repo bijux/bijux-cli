@@ -1082,6 +1082,7 @@ pub fn execute(
             deny_env: options.policy.deny_env,
             deny_clock: options.policy.deny_clock,
             clean_env: options.policy.clean_env,
+            container_image_reference_policy: options.policy.container_image_reference_policy,
         },
         cache_mode: cache_mode_string(&options.cache_mode),
         cache_dir: effective_cache_dir.as_ref().map(|p| p.display().to_string()),
@@ -1131,6 +1132,7 @@ pub fn execute(
             deny_env: options.policy.deny_env,
             deny_clock: options.policy.deny_clock,
             clean_env: options.policy.clean_env,
+            container_image_reference_policy: options.policy.container_image_reference_policy,
         },
         time_source: "system_clock".to_string(),
     };

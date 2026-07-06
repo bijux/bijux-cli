@@ -271,15 +271,17 @@ pub use batch_execution::{
     heartbeat_stale, restart_recovery_supported, retry_attempt, validate_batch_metadata,
     BatchAttemptState, BatchHeartbeat, BatchJobMetadata, BatchLifecycleEvent, BatchModeReport,
 };
+pub use bijux_dag_artifacts::ContainerImageReferencePolicy;
 use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
 };
 use bijux_dag_artifacts::{
     artifact_size_bytes, sha256_artifact_path, write_inputs_index, write_outputs_index,
-    AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace, DeclaredOutputArtifact,
-    FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeLifecycleTransition,
-    NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir,
-    RunOutputFile, RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
+    AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace,
+    DeclaredOutputArtifact, FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts,
+    NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
+    Resources as TraceResources, RunDir, RunOutputFile, RunOutputsIndex, TraceOutputArtifact,
+    TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
@@ -1373,11 +1375,18 @@ pub struct PolicyConfig {
     pub deny_env: bool,
     pub deny_clock: bool,
     pub clean_env: bool,
+    pub container_image_reference_policy: ContainerImageReferencePolicy,
 }
 
 impl Default for PolicyConfig {
     fn default() -> Self {
-        Self { deny_network: false, deny_env: false, deny_clock: false, clean_env: true }
+        Self {
+            deny_network: false,
+            deny_env: false,
+            deny_clock: false,
+            clean_env: true,
+            container_image_reference_policy: ContainerImageReferencePolicy::RequireDigest,
+        }
     }
 }
 
@@ -2015,6 +2024,9 @@ pub(crate) fn policy_fingerprint(policy: &PolicyConfig) -> String {
         "deny_env": policy.deny_env,
         "deny_clock": policy.deny_clock,
         "clean_env": policy.clean_env,
+        "container_image_reference_policy": container_image_reference_policy_label(
+            policy.container_image_reference_policy
+        ),
     });
     sha256_bytes(payload.to_string().as_bytes())
 }
@@ -2045,6 +2057,15 @@ fn materialize_mode_label(mode: MaterializeMode) -> &'static str {
         MaterializeMode::Copy => "copy",
         MaterializeMode::Hardlink => "hardlink",
         MaterializeMode::Symlink => "symlink",
+    }
+}
+
+fn container_image_reference_policy_label(
+    policy: ContainerImageReferencePolicy,
+) -> &'static str {
+    match policy {
+        ContainerImageReferencePolicy::RequireDigest => "require_digest",
+        ContainerImageReferencePolicy::AllowUnpinned => "allow_unpinned",
     }
 }
 

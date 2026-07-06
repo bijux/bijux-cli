@@ -757,6 +757,7 @@ mod tests {
                 deny_env: true,
                 deny_clock: true,
                 clean_env: true,
+                container_image_reference_policy: ContainerImageReferencePolicy::RequireDigest,
             },
             time_source: "system_clock".to_string(),
         };

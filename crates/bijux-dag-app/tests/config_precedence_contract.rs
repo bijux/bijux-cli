@@ -50,6 +50,8 @@ fn policy_modes_are_observably_different() {
             deny_env: true,
             deny_clock: true,
             clean_env: true,
+            container_image_reference_policy:
+                bijux_dag_runtime::ContainerImageReferencePolicy::RequireDigest,
             allowed_env: vec!["PATH".into()],
         }),
         ..PartialRuntimeSurfaceConfig::default()
@@ -60,6 +62,8 @@ fn policy_modes_are_observably_different() {
             deny_env: false,
             deny_clock: false,
             clean_env: false,
+            container_image_reference_policy:
+                bijux_dag_runtime::ContainerImageReferencePolicy::AllowUnpinned,
             allowed_env: vec!["PATH".into(), "HOME".into()],
         }),
         ..PartialRuntimeSurfaceConfig::default()

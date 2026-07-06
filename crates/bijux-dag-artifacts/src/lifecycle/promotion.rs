@@ -210,6 +210,7 @@ mod tests {
                 deny_env: true,
                 deny_clock: true,
                 clean_env: true,
+                container_image_reference_policy: crate::ContainerImageReferencePolicy::RequireDigest,
             },
             cache_mode: None,
             cache_dir: None,
