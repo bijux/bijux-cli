@@ -464,25 +464,32 @@ fn validate_risk_register_content(content: &str) -> Result<(), String> {
 
 pub(super) fn run_naming_governance_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let required_docs = [
-        "docs/spec/NAMING_GUIDELINES.md",
-        "docs/spec/TERMINOLOGY_GLOSSARY.md",
-        "docs/spec/NAMING_PHILOSOPHY.md",
-        "docs/spec/NAMING_REVIEW_POLICY.md",
-        "docs/reference/NAMING_AUDIT.md",
-        "configs/dag/policy/naming_rules.json",
-    ];
+    let policy_path = root.join("configs/dag/policy/naming_rules.json");
+    if !policy_path.exists() {
+        return Err(
+            "missing naming governance artifact: configs/dag/policy/naming_rules.json".to_string()
+        );
+    }
+
+    let policy: Value =
+        serde_json::from_str(&fs::read_to_string(&policy_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+    let required_docs = policy
+        .get("required_docs")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "naming_rules.json missing required_docs".to_string())?;
+    if required_docs.is_empty() {
+        return Err("naming_rules.json required_docs must not be empty".to_string());
+    }
     for rel in required_docs {
+        let Some(rel) = rel.as_str() else {
+            return Err("naming_rules.json required_docs must contain only strings".to_string());
+        };
         if !root.join(rel).exists() {
             return Err(format!("missing naming governance artifact: {rel}"));
         }
     }
 
-    let policy: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/dag/policy/naming_rules.json"))
-            .map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
     let banned_terms = policy
         .get("runtime_module_banned_terms")
         .and_then(Value::as_array)

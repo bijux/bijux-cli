@@ -4301,8 +4301,8 @@ pub(super) fn run_ambient_env_guard() -> Result<(), String> {
 pub(super) fn run_foundation_verification_guard() -> Result<(), String> {
     let root = repo_root()?;
     for rel in [
-        "docs/spec/CONTROL_PLANE_FOUNDATION.md",
-        "docs/spec/WORKSPACE_CONTRACT.md",
+        "docs/bijux-core/foundation/package-boundary.md",
+        "docs/bijux-core/foundation/module-surface-lanes.md",
         "crates/bijux-dev/src/commands/mod.rs",
         "crates/bijux-dev/src/suites/repo.rs",
     ] {

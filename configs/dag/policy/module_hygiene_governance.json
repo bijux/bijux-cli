@@ -8,7 +8,7 @@
     "module_hygiene_drift_is_release_gate": true
   },
   "ownership_classification_policy": {
-    "owner_map_source": "configs/policy/crate_ownership.json",
+    "owner_map_source": "contracts/foundation/module_surface_lanes.v1.json",
     "required_for_new_top_level_module": true
   },
   "large_module_policy": {

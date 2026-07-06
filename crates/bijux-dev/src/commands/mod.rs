@@ -2780,26 +2780,100 @@ fn run_workspace_manifest_policy_guard() -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Debug, Deserialize)]
+struct ModuleSurfaceContract {
+    schema_version: String,
+    crates: Vec<ModuleSurfaceCrate>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ModuleSurfaceCrate {
+    #[serde(rename = "crate")]
+    crate_name: String,
+    stable_public_modules: Vec<String>,
+    experimental_public_modules: Vec<String>,
+    simulated_public_modules: Vec<String>,
+}
+
+fn load_module_surface_contract(root: &Path) -> Result<ModuleSurfaceContract, String> {
+    let path = root.join("contracts/foundation/module_surface_lanes.v1.json");
+    let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    serde_json::from_str(&content).map_err(|err| err.to_string())
+}
+
+fn expected_public_modules(crate_entry: &ModuleSurfaceCrate) -> BTreeSet<String> {
+    crate_entry
+        .stable_public_modules
+        .iter()
+        .chain(crate_entry.experimental_public_modules.iter())
+        .chain(crate_entry.simulated_public_modules.iter())
+        .cloned()
+        .collect()
+}
+
+fn crate_package_doc_rel(crate_name: &str) -> Option<&'static str> {
+    match crate_name {
+        "bijux-cli" => Some("docs/bijux-cli/packages/bijux-cli.md"),
+        "bijux-cli-python" => Some("docs/bijux-cli/packages/bijux-cli-python.md"),
+        "bijux-dag-core" => Some("docs/bijux-dag/packages/bijux-dag-core.md"),
+        "bijux-dag-artifacts" => Some("docs/bijux-dag/packages/bijux-dag-artifacts.md"),
+        "bijux-dag-runtime" => Some("docs/bijux-dag/packages/bijux-dag-runtime.md"),
+        "bijux-dag-app" => Some("docs/bijux-dag/packages/bijux-dag-app.md"),
+        "bijux-dag-cli" => Some("docs/bijux-dag/packages/bijux-dag-cli.md"),
+        "bijux-dag-testkit" => Some("docs/bijux-dag/packages/bijux-dag-testkit.md"),
+        "bijux-dev" => Some("docs/bijux-dev/packages/bijux-dev.md"),
+        _ => None,
+    }
+}
+
+fn crate_api_doc_rel(crate_name: &str) -> Option<&'static str> {
+    match crate_name {
+        "bijux-cli" => Some("docs/bijux-cli/interfaces/api-surface.md"),
+        "bijux-dag-core" | "bijux-dag-artifacts" | "bijux-dag-runtime" | "bijux-dag-app" => {
+            Some("docs/bijux-dag/interfaces/api-surface.md")
+        }
+        _ => None,
+    }
+}
+
 fn run_public_export_docs_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let policy_text = fs::read_to_string(root.join("configs/dag/policy/crate_ownership.json"))
-        .map_err(|err| err.to_string())?;
-    let policy: CrateOwnershipPolicy =
-        serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
-    let docs = fs::read_to_string(root.join("docs/spec/CRATE_API_POLICY.md"))
-        .map_err(|err| err.to_string())?;
+    let contract = load_module_surface_contract(&root)?;
+    if contract.schema_version != "foundation-module-surface-lanes/v1" {
+        return Err("module surface contract schema drift".to_string());
+    }
     let mut missing = Vec::new();
 
-    for crate_entry in policy.crates {
-        let lib_rs = root.join(&crate_entry.path).join("src/lib.rs");
+    for crate_entry in contract.crates {
+        let lib_rs = root.join("crates").join(&crate_entry.crate_name).join("src/lib.rs");
         let actual = public_modules_from_lib(&lib_rs)?;
         if actual.is_empty() {
             continue;
         }
-        if !docs.contains(&crate_entry.name) {
+        let Some(package_doc_rel) = crate_package_doc_rel(&crate_entry.crate_name) else {
             missing.push(format!(
-                "{} has public exports but no crate mention in docs/spec/CRATE_API_POLICY.md",
-                crate_entry.name
+                "{} has public exports but no package documentation mapping",
+                crate_entry.crate_name
+            ));
+            continue;
+        };
+        let package_doc =
+            fs::read_to_string(root.join(package_doc_rel)).map_err(|err| err.to_string())?;
+        if !package_doc.contains(&crate_entry.crate_name) {
+            missing.push(format!(
+                "{} package doc does not mention its crate name: {}",
+                crate_entry.crate_name, package_doc_rel
+            ));
+        }
+
+        let Some(api_doc_rel) = crate_api_doc_rel(&crate_entry.crate_name) else {
+            continue;
+        };
+        let api_doc = fs::read_to_string(root.join(api_doc_rel)).map_err(|err| err.to_string())?;
+        if !api_doc.contains(&crate_entry.crate_name) {
+            missing.push(format!(
+                "{} API doc does not mention its crate name: {}",
+                crate_entry.crate_name, api_doc_rel
             ));
         }
     }
@@ -2813,23 +2887,26 @@ fn run_public_export_docs_guard() -> Result<(), String> {
 
 fn run_crate_ownership_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let policy_text = fs::read_to_string(root.join("configs/dag/policy/crate_ownership.json"))
-        .map_err(|err| err.to_string())?;
-    let policy: CrateOwnershipPolicy =
-        serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
+    let contract = load_module_surface_contract(&root)?;
+    if contract.schema_version != "foundation-module-surface-lanes/v1" {
+        return Err("module surface contract schema drift".to_string());
+    }
     let mut violations = Vec::new();
 
-    for crate_entry in policy.crates {
-        if crate_entry.domains.is_empty() {
-            violations.push(format!("{} has no declared domains", crate_entry.name));
-        }
-        let lib_rs = root.join(&crate_entry.path).join("src/lib.rs");
+    for crate_entry in contract.crates {
+        let lib_rs = root.join("crates").join(&crate_entry.crate_name).join("src/lib.rs");
         let actual = public_modules_from_lib(&lib_rs)?;
-        let allowed: BTreeSet<String> = crate_entry.public_modules.into_iter().collect();
+        let allowed = expected_public_modules(&crate_entry);
         for module in actual.difference(&allowed) {
             violations.push(format!(
                 "{} exports undeclared public module `{}`",
-                crate_entry.name, module
+                crate_entry.crate_name, module
+            ));
+        }
+        for module in allowed.difference(&actual) {
+            violations.push(format!(
+                "{} is missing declared public module `{}`",
+                crate_entry.crate_name, module
             ));
         }
     }
@@ -2847,17 +2924,26 @@ fn public_modules_from_lib(path: &Path) -> Result<BTreeSet<String>, String> {
     }
     let content = fs::read_to_string(path).map_err(|err| err.to_string())?;
     let mut modules = BTreeSet::new();
+    let mut depth = 0usize;
     for line in content.lines() {
-        let trimmed = line.trim();
-        if !trimmed.starts_with("pub mod ") {
-            continue;
+        if depth == 0 {
+            let trimmed = line.trim();
+            if trimmed.starts_with("pub mod ") {
+                let raw = trimmed.trim_start_matches("pub mod ").trim();
+                let name = raw
+                    .trim_end_matches(';')
+                    .split_whitespace()
+                    .next()
+                    .unwrap_or_default()
+                    .to_string();
+                if !name.is_empty() {
+                    modules.insert(name);
+                }
+            }
         }
-        let raw = trimmed.trim_start_matches("pub mod ").trim();
-        let name =
-            raw.trim_end_matches(';').split_whitespace().next().unwrap_or_default().to_string();
-        if !name.is_empty() {
-            modules.insert(name);
-        }
+        let opens = line.matches('{').count();
+        let closes = line.matches('}').count();
+        depth = depth.saturating_add(opens).saturating_sub(closes);
     }
     Ok(modules)
 }
@@ -2992,12 +3078,16 @@ fn run_schema_contracts_guard() -> Result<(), String> {
 fn run_repo_docs_guard() -> Result<(), String> {
     let root = repo_root()?;
     for rel in [
-        "docs/spec/WORKSPACE_CONTRACT.md",
-        "docs/spec/BOUNDARY_RULES.md",
-        "docs/spec/CRATE_OWNERSHIP.md",
-        "docs/spec/EVIDENCE_MODEL.md",
-        "docs/spec/GLOSSARY.md",
-        "docs/spec/CRATE_API_POLICY.md",
+        "docs/bijux-core/foundation/documentation-system.md",
+        "docs/bijux-core/foundation/domain-language.md",
+        "docs/bijux-core/foundation/module-surface-lanes.md",
+        "docs/bijux-core/foundation/package-boundary.md",
+        "docs/bijux-core/governance/package-ownership.md",
+        "docs/bijux-core/operations/artifact-governance.md",
+        "docs/bijux-cli/interfaces/api-surface.md",
+        "docs/bijux-dag/interfaces/api-surface.md",
+        "docs/bijux-dag/interfaces/public-imports.md",
+        "docs/bijux-dev/operations/repository-gates.md",
         "docs/spec/ADAPTER_CONTRACT.md",
     ] {
         if !root.join(rel).exists() {
@@ -3110,18 +3200,24 @@ fn run_repo_manifests_guard() -> Result<(), String> {
 
 fn run_repo_api_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let docs = fs::read_to_string(root.join("docs/spec/CRATE_API_POLICY.md"))
+    let dag_docs = fs::read_to_string(root.join("docs/bijux-dag/interfaces/api-surface.md"))
         .map_err(|err| err.to_string())?;
-    for crate_name in [
-        "bijux-dag-core",
-        "bijux-dag-artifacts",
-        "bijux-dag-runtime",
-        "bijux-dag-app",
-        "bijux-dag-cli",
-    ] {
-        if !docs.contains(crate_name) {
-            return Err(format!("crate api policy missing coverage mention for {crate_name}"));
+    for crate_name in
+        ["bijux-dag-core", "bijux-dag-artifacts", "bijux-dag-runtime", "bijux-dag-app"]
+    {
+        if !dag_docs.contains(crate_name) {
+            return Err(format!("dag api surface docs missing coverage mention for {crate_name}"));
         }
+    }
+    let cli_docs = fs::read_to_string(root.join("docs/bijux-cli/interfaces/api-surface.md"))
+        .map_err(|err| err.to_string())?;
+    if !cli_docs.contains("bijux-cli") {
+        return Err("cli api surface docs missing coverage mention for bijux-cli".to_string());
+    }
+    let dag_cli_docs = fs::read_to_string(root.join("docs/bijux-dag/packages/bijux-dag-cli.md"))
+        .map_err(|err| err.to_string())?;
+    if !dag_cli_docs.contains("bijux-dag-cli") {
+        return Err("dag package docs missing coverage mention for bijux-dag-cli".to_string());
     }
     Ok(())
 }

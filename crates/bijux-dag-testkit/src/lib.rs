@@ -1,7 +1,7 @@
 //! Shared test helpers for workspace crates.
 
 pub mod fake_adapter;
-pub mod iteration10_scenarios;
+pub mod product_scenarios;
 pub mod workflows;
 
 use bijux_dag_artifacts::{Manifest, NodeTrace};
@@ -17,6 +17,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub use fake_adapter::{FakeAdapterExecution, FakeAdapterHarness, FakeAdapterScenario};
+pub use product_scenarios::*;
 pub use workflows::{
     collect_run_dir_snapshot, fixture_path_string, fixture_snapshot_path,
     graph_branch_join_fixture, graph_map_reduce_fixture, update_or_assert_snapshot,

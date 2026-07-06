@@ -115,7 +115,7 @@
       "crate": "bijux-dag-testkit",
       "default_internal_lane": "private",
       "stable_public_modules": ["fake_adapter", "workflows"],
-      "experimental_public_modules": ["iteration10_scenarios"],
+      "experimental_public_modules": ["product_scenarios"],
       "simulated_public_modules": []
     },
     {
