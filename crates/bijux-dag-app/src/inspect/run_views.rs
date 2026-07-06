@@ -1,6 +1,7 @@
 use crate::routes::run_lookup::RunWorkspacePaths;
 use crate::routes::selector_grammar::{SelectorExpression, SelectorField};
 use bijux_dag_artifacts::FailureInfo;
+use bijux_dag_runtime::TimelineExport;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -519,33 +520,72 @@ pub fn run_tree(run_dir: &Path) -> Result<Value, std::io::Error> {
 }
 
 pub fn run_timeline(run_dir: &Path) -> Result<Value, std::io::Error> {
+    if let Ok(payload) = fs::read_to_string(run_dir.join("observability.timeline.json")) {
+        if let Ok(mut timeline) = serde_json::from_str::<TimelineExport>(&payload) {
+            timeline.entries.sort_by_key(|entry| entry.unix_ms);
+            let events = timeline
+                .entries
+                .into_iter()
+                .map(|entry| {
+                    json!({
+                        "unix_ms": entry.unix_ms,
+                        "category": entry.category,
+                        "label": entry.label,
+                        "node_id": entry.node_id,
+                        "status": entry.status,
+                        "reason": entry.reason,
+                        "source_event": entry.source_event,
+                    })
+                })
+                .collect::<Vec<_>>();
+            return Ok(json!({"events": events, "source": "observability_timeline"}));
+        }
+    }
+
     let traces = read_node_traces(run_dir)?;
     let mut events = Vec::new();
     for (node_id, trace) in traces {
-        let start = trace.get("started_unix_ms").cloned().unwrap_or(Value::Null);
-        let finish = trace.get("finished_unix_ms").cloned().unwrap_or(Value::Null);
-        let status = trace.get("status").cloned().unwrap_or(Value::Null);
-        let attempt = trace.get("attempt").and_then(Value::as_u64).unwrap_or(1);
+        let start = trace.get("started_unix_ms").and_then(Value::as_u64);
+        let finish = trace.get("finished_unix_ms").and_then(Value::as_u64);
+        let status = trace.get("status").and_then(Value::as_str).unwrap_or("unknown");
         let cache_hit = trace.get("cache_hit").and_then(Value::as_bool).unwrap_or(false);
-        let event_kind = if cache_hit {
-            "cache_hit"
-        } else if attempt > 1 {
-            "retry"
+        let label = if cache_hit || status == "cached" {
+            "node_cached"
         } else {
-            "execution"
+            match status {
+                "failed" => "node_failed",
+                "skipped" => "node_skipped",
+                "cancelled" => "node_cancelled",
+                "success" => "node_completed",
+                _ => "node_completed",
+            }
+        };
+        let category = if cache_hit || status == "cached" {
+            "cache_hit"
+        } else {
+            match status {
+                "failed" => "failure",
+                "skipped" => "skip",
+                "cancelled" => "cancel",
+                _ => "complete",
+            }
         };
         events.push(json!({
+            "unix_ms": finish.or(start),
+            "category": category,
+            "label": label,
             "node_id": node_id,
-            "started_unix_ms": start,
-            "finished_unix_ms": finish,
             "status": status,
-            "attempt": attempt,
-            "cache_hit": cache_hit,
-            "event_kind": event_kind
+            "reason": trace
+                .get("skip_reason")
+                .and_then(|value| value.get("reason"))
+                .cloned()
+                .unwrap_or(Value::Null),
+            "source_event": "trace_projection",
         }));
     }
-    events.sort_by_key(|e| e.get("started_unix_ms").and_then(Value::as_u64).unwrap_or(0));
-    Ok(json!({"events": events}))
+    events.sort_by_key(|event| event.get("unix_ms").and_then(Value::as_u64).unwrap_or(0));
+    Ok(json!({"events": events, "source": "node_traces"}))
 }
 
 pub fn explain_failure(run_dir: &Path) -> Result<Value, std::io::Error> {
