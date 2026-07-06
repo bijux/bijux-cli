@@ -4,10 +4,11 @@ use bijux_dag_runtime::{
     advance_backfill_operation, apply_backfill_throttling, apply_submission_status_updates,
     build_schedule_queue_state, cancel_backfill_operation, compile_backfill_operation,
     compile_submission_request, deduplicate_trigger_events, detect_cron_conflicts,
-    dry_run_schedule, evaluate_schedule_submissions, evaluate_sla_metrics, materialize_next_runs,
-    pause_backfill_operation, resume_backfill_operation, validate_schedule_registry,
-    weighted_priority_tie_break_order, BackfillAdvanceRequest, BackfillOperation,
-    BackfillThrottlingPolicy, PriorityClass, ScheduleEvaluationInputs, ScheduleRegistry,
+    dispatch_schedule_queue_runs, dry_run_schedule, evaluate_schedule_submissions,
+    evaluate_sla_metrics, materialize_next_runs, pause_backfill_operation,
+    resume_backfill_operation, validate_schedule_registry, weighted_priority_tie_break_order,
+    BackfillAdvanceRequest, BackfillOperation, BackfillThrottlingPolicy, PriorityClass,
+    ScheduleEvaluationInputs, SchedulePriorityDispatchPolicy, ScheduleRegistry,
     ScheduleSubmissionLedger, ScheduleSubmissionStatusUpdateBatch, ScheduledSubmission,
     WeightedPriorityPolicy,
 };
@@ -404,6 +405,35 @@ fn handle_schedule_queue_command(
             println!("{}", serde_json::to_string_pretty(&queue_state).unwrap());
             if let Some(path) = out {
                 println!("written_queue_state={}", path.display());
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleQueueCommands::Dispatch { ledger, max_dispatches, policy, out } => {
+            let mut ledger: ScheduleSubmissionLedger = parse_json_file(ledger)?;
+            let policy = if let Some(policy_path) = policy {
+                parse_json_file(policy_path)?
+            } else {
+                SchedulePriorityDispatchPolicy::default()
+            };
+            let report = dispatch_schedule_queue_runs(&mut ledger, *max_dispatches, &policy);
+            maybe_write_submission_ledger(out, &ledger)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.queue.dispatch",
+                    true,
+                    json!({
+                        "dispatch_report": report,
+                        "updated_ledger": ledger,
+                        "written_ledger": out,
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            if let Some(path) = out {
+                println!("written_ledger={}", path.display());
             }
             Ok(ExitCode::SUCCESS)
         }

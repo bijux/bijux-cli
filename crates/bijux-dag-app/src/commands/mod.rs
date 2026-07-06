@@ -712,6 +712,15 @@ pub(crate) enum ScheduleQueueCommands {
         #[arg(long, help = "write the queue state json to this path")]
         out: Option<PathBuf>,
     },
+    Dispatch {
+        ledger: PathBuf,
+        #[arg(long, default_value_t = 1)]
+        max_dispatches: usize,
+        #[arg(long, help = "json file containing queue priority dispatch policy")]
+        policy: Option<PathBuf>,
+        #[arg(long, help = "write the updated submission ledger json to this path")]
+        out: Option<PathBuf>,
+    },
     Update {
         ledger: PathBuf,
         #[arg(help = "json file containing submission status updates")]
