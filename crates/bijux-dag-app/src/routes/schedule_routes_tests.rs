@@ -1,5 +1,7 @@
 use super::handle_schedule_command;
-use crate::commands::{Commands, DagCli, ScheduleBackfillCommands, ScheduleCommands};
+use crate::commands::{
+    Commands, DagCli, ScheduleBackfillCommands, ScheduleCommands, ScheduleQueueCommands,
+};
 use crate::ExitCode;
 use std::fs;
 use std::path::PathBuf;
@@ -497,6 +499,8 @@ fn write_submission_ledger_fixture() -> (tempfile::TempDir, PathBuf) {
               "schedule_id": "manual-ops",
               "dag_name": "atlas.manual-ops",
               "dag_version_policy": "run-latest",
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
               "graph_inputs": {
                 "requested_at": 170000,
                 "manual_region": "us-east-1"
@@ -532,6 +536,25 @@ fn write_backfill_advance_request_fixture() -> (tempfile::TempDir, PathBuf) {
     )
     .expect("write advance request");
     (dir, request)
+}
+
+fn write_submission_status_updates_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let updates = dir.path().join("submission-status-updates.json");
+    fs::write(
+        &updates,
+        r#"{
+          "updates": [
+            {
+              "run_id": "sched-manual-ops-existing",
+              "status": "Completed",
+              "updated_unix_ms": 180000
+            }
+          ]
+        }"#,
+    )
+    .expect("write status updates");
+    (dir, updates)
 }
 
 #[test]
@@ -608,6 +631,60 @@ fn schedule_submit_rejects_invalid_trigger_mapping_and_keeps_ledger_clean() {
         serde_json::from_str(&fs::read_to_string(&out).expect("read written ledger"))
             .expect("parse written ledger");
     assert_eq!(written["entries"].as_array().expect("ledger entries").len(), 0);
+}
+
+#[test]
+fn schedule_queue_status_writes_reconstructed_state() {
+    let (_tmp_registry, registry) = write_submission_registry_fixture();
+    let (_tmp_ledger, ledger) = write_submission_ledger_fixture();
+    let out_dir = tempfile::tempdir().expect("tmp");
+    let out = out_dir.path().join("queue-state.json");
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Queue {
+            command: ScheduleQueueCommands::Status {
+                registry,
+                ledger: Some(ledger),
+                out: Some(out.clone()),
+            },
+        },
+    )
+    .expect("schedule queue status");
+    assert_eq!(code, ExitCode::SUCCESS);
+
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&out).expect("read queue state"))
+            .expect("parse queue state");
+    let queues = written["queues"].as_array().expect("queues");
+    assert_eq!(queues.len(), 1);
+    assert_eq!(queues[0]["queue_name"], "catalog");
+    assert_eq!(queues[0]["active_runs"], 1);
+    assert_eq!(queues[0]["available_slots"], 3);
+    assert_eq!(queues[0]["tenants"][0]["tenant"], "atlas");
+    assert_eq!(queues[0]["tenants"][0]["active_runs"], 1);
+}
+
+#[test]
+fn schedule_queue_update_writes_updated_ledger() {
+    let (_tmp_ledger, ledger) = write_submission_ledger_fixture();
+    let (_tmp_updates, updates) = write_submission_status_updates_fixture();
+    let out_dir = tempfile::tempdir().expect("tmp");
+    let out = out_dir.path().join("updated-ledger.json");
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Queue {
+            command: ScheduleQueueCommands::Update { ledger, updates, out: Some(out.clone()) },
+        },
+    )
+    .expect("schedule queue update");
+    assert_eq!(code, ExitCode::SUCCESS);
+
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&out).expect("read updated ledger"))
+            .expect("parse updated ledger");
+    assert_eq!(written["entries"][0]["status"], "Completed");
 }
 
 #[test]

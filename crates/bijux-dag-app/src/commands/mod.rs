@@ -704,6 +704,24 @@ pub(crate) enum ScheduleBackfillCommands {
 }
 
 #[derive(Subcommand)]
+pub(crate) enum ScheduleQueueCommands {
+    Status {
+        registry: PathBuf,
+        #[arg(long, help = "existing submission ledger json used to reconstruct queue state")]
+        ledger: Option<PathBuf>,
+        #[arg(long, help = "write the queue state json to this path")]
+        out: Option<PathBuf>,
+    },
+    Update {
+        ledger: PathBuf,
+        #[arg(help = "json file containing submission status updates")]
+        updates: PathBuf,
+        #[arg(long, help = "write the updated submission ledger json to this path")]
+        out: Option<PathBuf>,
+    },
+}
+
+#[derive(Subcommand)]
 pub(crate) enum ScheduleCommands {
     Validate {
         registry: PathBuf,
@@ -757,6 +775,10 @@ pub(crate) enum ScheduleCommands {
     },
     Throttle {
         simulation: PathBuf,
+    },
+    Queue {
+        #[command(subcommand)]
+        command: ScheduleQueueCommands,
     },
     Backfill {
         #[command(subcommand)]

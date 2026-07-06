@@ -1,13 +1,15 @@
-use crate::commands::{DagCli, ScheduleBackfillCommands, ScheduleCommands};
+use crate::commands::{DagCli, ScheduleBackfillCommands, ScheduleCommands, ScheduleQueueCommands};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::{
-    advance_backfill_operation, apply_backfill_throttling, cancel_backfill_operation,
-    compile_backfill_operation, compile_submission_request, deduplicate_trigger_events,
-    detect_cron_conflicts, dry_run_schedule, evaluate_schedule_submissions, evaluate_sla_metrics,
-    materialize_next_runs, pause_backfill_operation, resume_backfill_operation,
-    validate_schedule_registry, weighted_priority_tie_break_order, BackfillAdvanceRequest,
-    BackfillOperation, BackfillThrottlingPolicy, PriorityClass, ScheduleEvaluationInputs,
-    ScheduleRegistry, ScheduleSubmissionLedger, ScheduledSubmission, WeightedPriorityPolicy,
+    advance_backfill_operation, apply_backfill_throttling, apply_submission_status_updates,
+    build_schedule_queue_state, cancel_backfill_operation, compile_backfill_operation,
+    compile_submission_request, deduplicate_trigger_events, detect_cron_conflicts,
+    dry_run_schedule, evaluate_schedule_submissions, evaluate_sla_metrics, materialize_next_runs,
+    pause_backfill_operation, resume_backfill_operation, validate_schedule_registry,
+    weighted_priority_tie_break_order, BackfillAdvanceRequest, BackfillOperation,
+    BackfillThrottlingPolicy, PriorityClass, ScheduleEvaluationInputs, ScheduleRegistry,
+    ScheduleSubmissionLedger, ScheduleSubmissionStatusUpdateBatch, ScheduledSubmission,
+    WeightedPriorityPolicy,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -339,8 +341,19 @@ pub(crate) fn handle_schedule_command(
             );
             Ok(ExitCode::SUCCESS)
         }
+        ScheduleCommands::Queue { command } => handle_schedule_queue_command(cli, command),
         ScheduleCommands::Backfill { command } => handle_schedule_backfill_command(cli, command),
     }
+}
+
+fn maybe_write_submission_ledger(
+    out: &Option<std::path::PathBuf>,
+    ledger: &ScheduleSubmissionLedger,
+) -> Result<(), ExitCode> {
+    if let Some(path) = out {
+        write_pretty_json(path, ledger)?;
+    }
+    Ok(())
 }
 
 fn parse_backfill_operation(path: &std::path::Path) -> Result<BackfillOperation, ExitCode> {
@@ -355,6 +368,71 @@ fn maybe_write_backfill_operation(
         write_pretty_json(path, operation)?;
     }
     Ok(())
+}
+
+fn handle_schedule_queue_command(
+    cli: &DagCli,
+    command: &ScheduleQueueCommands,
+) -> Result<ExitCode, ExitCode> {
+    match command {
+        ScheduleQueueCommands::Status { registry, ledger, out } => {
+            let registry = parse_schedule_registry(registry)?;
+            validate_schedule_registry(&registry).map_err(|_| ExitCode::from(3))?;
+            let ledger = if let Some(ledger_path) = ledger {
+                parse_json_file(ledger_path)?
+            } else {
+                ScheduleSubmissionLedger::default()
+            };
+            let queue_state =
+                build_schedule_queue_state(&registry, &ledger).map_err(|_| ExitCode::from(3))?;
+            if let Some(path) = out {
+                write_pretty_json(path, &queue_state)?;
+            }
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.queue.status",
+                    true,
+                    json!({
+                        "queue_state": queue_state,
+                        "written_state": out,
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&queue_state).unwrap());
+            if let Some(path) = out {
+                println!("written_queue_state={}", path.display());
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleQueueCommands::Update { ledger, updates, out } => {
+            let mut ledger: ScheduleSubmissionLedger = parse_json_file(ledger)?;
+            let updates: ScheduleSubmissionStatusUpdateBatch = parse_json_file(updates)?;
+            apply_submission_status_updates(&mut ledger, &updates.updates)
+                .map_err(|_| ExitCode::from(3))?;
+            maybe_write_submission_ledger(out, &ledger)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.queue.update",
+                    true,
+                    json!({
+                        "updated_ledger": ledger,
+                        "written_ledger": out,
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&ledger).unwrap());
+            if let Some(path) = out {
+                println!("written_ledger={}", path.display());
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+    }
 }
 
 fn handle_schedule_backfill_command(
