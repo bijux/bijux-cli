@@ -56,10 +56,7 @@ fn execution_engine_contract_and_attempt_schema_track_backend_surface() {
     }
 
     for token in ["node_id", "attempt", "backend_kind", "status", "exit_code", "EngineOutcome"] {
-        assert!(
-            attempt_schema.contains(token),
-            "attempt trace schema missing token: {token}"
-        );
+        assert!(attempt_schema.contains(token), "attempt trace schema missing token: {token}");
     }
 }
 

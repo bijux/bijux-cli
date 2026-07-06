@@ -231,9 +231,8 @@ pub(super) fn run_error_code_docs_tests_guard() -> Result<(), String> {
     let mut violations = Vec::new();
     if !docs_error_contract.contains("Public error code additions require docs plus test coverage")
     {
-        violations.push(
-            "docs/spec/ERROR_CONTRACT.md missing public code governance rule".to_string(),
-        );
+        violations
+            .push("docs/spec/ERROR_CONTRACT.md missing public code governance rule".to_string());
     }
     for code in &registry.codes {
         if !docs_error_ref.contains(&code.category) {
@@ -243,9 +242,10 @@ pub(super) fn run_error_code_docs_tests_guard() -> Result<(), String> {
             ));
         }
         if !docs_error_ref.contains(&code.code) {
-            violations.push(
-                format!("docs/bijux-dag/interfaces/error-codes.md missing public code {}", code.code),
-            );
+            violations.push(format!(
+                "docs/bijux-dag/interfaces/error-codes.md missing public code {}",
+                code.code
+            ));
         }
     }
 

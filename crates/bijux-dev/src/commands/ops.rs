@@ -3219,8 +3219,9 @@ pub(super) fn run_operator_ux_guard() -> Result<(), String> {
             missing.join(", ")
         ));
     }
-    let index = fs::read_to_string(root.join("docs/bijux-dag/interfaces/operator-command-index.md"))
-        .map_err(|err| err.to_string())?;
+    let index =
+        fs::read_to_string(root.join("docs/bijux-dag/interfaces/operator-command-index.md"))
+            .map_err(|err| err.to_string())?;
     for command in [
         "dag runs list",
         "dag runs show",
@@ -3256,10 +3257,8 @@ pub(super) fn run_operator_ux_guard() -> Result<(), String> {
 
 pub(super) fn run_authoring_ux_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let required_docs = [
-        "docs/spec/AUTHORING_UX_CONTRACT.md",
-        "docs/bijux-dag/interfaces/authoring-guide.md",
-    ];
+    let required_docs =
+        ["docs/spec/AUTHORING_UX_CONTRACT.md", "docs/bijux-dag/interfaces/authoring-guide.md"];
     let required_examples = [
         "evidence/authoring/patterns/minimal.json",
         "evidence/authoring/patterns/medium.json",
@@ -3777,9 +3776,10 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
 
     let quickstart =
         fs::read_to_string(root.join("docs/bijux-dag/operations/first-hour-with-bijux-dag.md"))
-        .map_err(|err| err.to_string())?;
-    let install = fs::read_to_string(root.join("docs/bijux-dag/operations/installation-and-setup.md"))
-        .map_err(|err| err.to_string())?;
+            .map_err(|err| err.to_string())?;
+    let install =
+        fs::read_to_string(root.join("docs/bijux-dag/operations/installation-and-setup.md"))
+            .map_err(|err| err.to_string())?;
     for required_cmd in [
         "cargo build -p bijux-dag-cli --release",
         "cargo run -p bijux-dag-cli --bin bijux-dag -- version",
@@ -4497,18 +4497,12 @@ fn ambient_env_var_keys(line: &str) -> Vec<&str> {
             let idx = offset + found;
             if needle == "env::var(\""
                 && idx >= 5
-                && line
-                    .get(idx - 5..idx)
-                    .is_some_and(|prefix| prefix == "std::")
+                && line.get(idx - 5..idx).is_some_and(|prefix| prefix == "std::")
             {
                 offset = idx + needle.len();
                 continue;
             }
-            if idx > 0
-                && line[..idx]
-                    .chars()
-                    .next_back()
-                    .is_some_and(|ch| matches!(ch, '"' | '\''))
+            if idx > 0 && line[..idx].chars().next_back().is_some_and(|ch| matches!(ch, '"' | '\''))
             {
                 offset = idx + needle.len();
                 continue;
