@@ -10,6 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
+use bijux_dag_artifacts::{write_json_atomic_durable, RunStopRequest};
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::cancellation_is_terminal;
 use bijux_dag_runtime::{Runtime, RuntimeConfig};
@@ -131,4 +132,76 @@ fn operator_cancellation_preserves_completed_nodes_and_marks_remaining_nodes_can
     assert_eq!(publish["skip_reason"]["reason"], "cancelled");
     assert_eq!(publish["lifecycle_state"], "cancelled");
     assert_eq!(publish["transition_cause"], "CancelRequested");
+}
+
+#[test]
+fn stop_request_file_cancels_running_run_and_records_operator_request_cause() {
+    let _guard = cancellation_test_lock().lock().expect("cancellation test lock");
+    let out = tempfile::tempdir().expect("temp");
+    let run_id = "stoppable";
+    let staging_dir = out.path().join("run.tmp-stoppable");
+    let stop_request_path = staging_dir.join("run.stop-request.json");
+    let run_root = out.path().to_path_buf();
+    let graph_json = operator_cancellation_graph();
+
+    let runner = thread::spawn(move || {
+        let graph = parse_graph_strict(&graph_json).expect("parse graph");
+        Runtime::new().run(
+            &graph,
+            &run_root,
+            RuntimeConfig { jobs: 1, run_id: Some(run_id.to_string()), ..RuntimeConfig::default() },
+        )
+    });
+
+    for _ in 0..200 {
+        if staging_dir.join("nodes").join("prepare").join("trace.json").exists() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    assert!(
+        staging_dir.join("nodes").join("prepare").join("trace.json").exists(),
+        "prepare trace not created in time"
+    );
+
+    let request = RunStopRequest {
+        schema_version: "run-stop-request/v0.1".to_string(),
+        run_id: run_id.to_string(),
+        requested_unix_ms: 42,
+        source: "cli".to_string(),
+        reason: None,
+    };
+    write_json_atomic_durable(
+        &stop_request_path,
+        &serde_json::to_value(&request).expect("request json"),
+    )
+    .expect("write stop request");
+
+    let run_path = runner.join().expect("runner thread").expect("cancelled run");
+    assert_eq!(run_path, out.path().join("run-stoppable"));
+
+    let manifest: Value = serde_json::from_str(
+        &fs::read_to_string(run_path.join("manifest.json")).expect("manifest"),
+    )
+    .expect("parse manifest");
+    assert_eq!(manifest["status"], "cancelled");
+    assert_eq!(manifest["run_cancellation_cause"], "operator_request");
+    assert_eq!(manifest["node_counts"]["success"], 1);
+    assert_eq!(manifest["node_counts"]["cancelled"], 2);
+    assert!(run_path.join("run.stop-request.json").exists());
+
+    let execute = read_node_trace(&run_path, "execute");
+    assert_eq!(execute["status"], "cancelled");
+    assert_eq!(execute["failure"]["code"], "EXEC_CANCELLED");
+
+    let publish = read_node_trace(&run_path, "publish");
+    assert_eq!(publish["status"], "cancelled");
+    assert!(!run_path.join("nodes").join("publish").join("outputs").join("publish.txt").exists());
+
+    let audit: Value =
+        serde_json::from_str(&fs::read_to_string(run_path.join("run.audit.json")).expect("audit"))
+            .expect("parse audit");
+    assert!(audit.as_array().expect("audit array").iter().any(|entry| {
+        entry["action"] == "cancel" && entry["source"] == "cli" && entry["ts"] == 42
+    }));
 }

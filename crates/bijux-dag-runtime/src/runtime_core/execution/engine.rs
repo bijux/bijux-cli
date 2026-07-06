@@ -22,7 +22,7 @@ use bijux_dag_artifacts::{
     finalize_run_manifest_with_mode, write_incomplete_run_marker, write_provenance,
     write_run_outputs_index, write_run_schema_index, FailureClass, FailureInfo, InputsIndex,
     Manifest, NodeCounts, Provenance, ReplayProvenance, RunDir, RunDirLayout, RunDirSchemaIndex,
-    RunFinalizationMode, RunMetadata, TriggerEvaluation, TriggerParentStatus,
+    RunFinalizationMode, RunMetadata, RunStopRequest, TriggerEvaluation, TriggerParentStatus,
 };
 use bijux_dag_core::{
     evaluate_trigger_rule, Effect, Graph, Node, NodeKind, SemanticNodeKind, TriggerRule,
@@ -31,7 +31,11 @@ use bijux_dag_core::{
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
-use std::sync::{atomic::Ordering, Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Default)]
@@ -45,6 +49,54 @@ struct NodeLifecycleTimestamps {
 struct BranchResolution {
     decision: String,
     used_default: bool,
+}
+
+struct StopRequestWatcher {
+    request: Arc<Mutex<Option<RunStopRequest>>>,
+    shutdown: Arc<AtomicBool>,
+    handle: Option<JoinHandle<()>>,
+}
+
+impl StopRequestWatcher {
+    fn spawn(stop_request_path: PathBuf, cancel: Arc<AtomicBool>) -> Self {
+        let request = Arc::new(Mutex::new(None));
+        let shutdown = Arc::new(AtomicBool::new(false));
+        let request_slot = Arc::clone(&request);
+        let shutdown_flag = Arc::clone(&shutdown);
+        let handle = std::thread::spawn(move || {
+            while !shutdown_flag.load(Ordering::SeqCst) && !cancel.load(Ordering::SeqCst) {
+                if let Some(stop_request) = read_stop_request_file(&stop_request_path) {
+                    cancel.store(true, Ordering::SeqCst);
+                    if let Ok(mut slot) = request_slot.lock() {
+                        if slot.is_none() {
+                            *slot = Some(stop_request);
+                        }
+                    }
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(25));
+            }
+        });
+        Self { request, shutdown, handle: Some(handle) }
+    }
+
+    fn observed_request(&self) -> Option<RunStopRequest> {
+        self.request.lock().ok().and_then(|slot| slot.clone())
+    }
+}
+
+impl Drop for StopRequestWatcher {
+    fn drop(&mut self) {
+        self.shutdown.store(true, Ordering::SeqCst);
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
+    }
+}
+
+fn read_stop_request_file(path: &Path) -> Option<RunStopRequest> {
+    let raw = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&raw).ok()
 }
 
 fn resolve_branch_decision(
@@ -1087,6 +1139,8 @@ pub fn execute(
     let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
     crate::install_runtime_cancellation_handler();
     crate::register_runtime_cancellation_flag(&cancel);
+    let stop_request_watcher =
+        StopRequestWatcher::spawn(run_dir.stop_request_path(), Arc::clone(&cancel));
 
     let run_dir_arc = Arc::new(run_dir.clone());
     let store = crate::store::ArtifactStore::new(Arc::clone(&run_dir_arc), Arc::clone(&runtime.fs));
@@ -2634,12 +2688,37 @@ pub fn execute(
     }
 
     if cancel.load(Ordering::SeqCst) {
+        let stop_request = stop_request_watcher.observed_request();
+        if let Some(request) = stop_request.as_ref() {
+            engine_record::append_indexed_event(
+                &mut run_log,
+                &mut run_log_index,
+                serde_json::json!({
+                    "event": "run_cancel_requested",
+                    "ts": request.requested_unix_ms,
+                    "run_id": manifest.run_id.clone(),
+                    "source": request.source.clone(),
+                }),
+            )?;
+        }
         run_audit_events.push(serde_json::json!({
             "action": "cancel",
-            "ts": ctx.clock.now_unix_ms(),
+            "ts": stop_request
+                .as_ref()
+                .map(|request| request.requested_unix_ms)
+                .unwrap_or_else(|| ctx.clock.now_unix_ms()),
             "run_id": manifest.run_id.clone(),
+            "source": stop_request
+                .as_ref()
+                .map(|request| request.source.clone())
+                .unwrap_or_else(|| "signal".to_string()),
+            "reason": stop_request.as_ref().and_then(|request| request.reason.clone()),
         }));
-        manifest.run_cancellation_cause = Some("operator_interrupt".to_string());
+        manifest.run_cancellation_cause = Some(if stop_request.is_some() {
+            "operator_request".to_string()
+        } else {
+            "operator_interrupt".to_string()
+        });
         for node in &graph.nodes {
             if !status_map.contains_key(&node.id) {
                 status_map.insert(node.id.clone(), NodeStatus::Cancelled);
