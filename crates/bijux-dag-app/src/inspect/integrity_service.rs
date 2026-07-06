@@ -6,8 +6,9 @@ use bijux_dag_artifacts::{
 };
 use bijux_dag_core::Effect;
 use bijux_dag_runtime::{
-    invariants, reconstruct_timeline_from_events, verify_event_log_completeness, EventRecord,
-    NodeStatus, TimelineExport,
+    reconstruct_timeline_from_events, run_summary_invariant_ok, terminal_run_has_terminal_node,
+    trace_time_order_ok, verify_event_log_completeness, EventRecord, NodeStatus, RunNodeCounts,
+    TimelineExport,
 };
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -352,7 +353,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
             if deep {
                 let started = val.get("started_unix_ms").and_then(Value::as_u64).unwrap_or(0);
                 let finished = val.get("finished_unix_ms").and_then(Value::as_u64).unwrap_or(0);
-                if !invariants::trace_time_order_ok(started, finished) {
+                if !trace_time_order_ok(started, finished) {
                     invariant_violations.push(format!("INV-TRACE-TIME-001 violation in {node_id}"));
                 }
             }
@@ -385,20 +386,18 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
         }
     }
 
-    let manifest_counts = invariants::RunNodeCounts {
+    let manifest_counts = RunNodeCounts {
         success: manifest.node_counts.success,
         failed: manifest.node_counts.failed,
         skipped: manifest.node_counts.skipped,
         cached: manifest.node_counts.cached,
         cancelled: manifest.node_counts.cancelled,
     };
-    if !invariants::run_summary_invariant_ok(manifest_counts, &observed_statuses) {
+    if !run_summary_invariant_ok(manifest_counts, &observed_statuses) {
         invariant_violations
             .push("INV-RUN-COUNTS-001 manifest totals do not match node traces".to_string());
     }
-    if manifest.status == "completed"
-        && !invariants::terminal_run_has_terminal_node(&observed_statuses)
-    {
+    if manifest.status == "completed" && !terminal_run_has_terminal_node(&observed_statuses) {
         invariant_violations
             .push("INV-RUN-TERMINAL-001 completed run has no terminal node statuses".to_string());
     }
