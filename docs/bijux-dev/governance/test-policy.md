@@ -36,10 +36,12 @@ flowchart LR
 - `make test-all-rs` is the full Rust verification lane and includes the governed ignored DAG portfolios
 - flaky ignored tests are forbidden in DAG release-facing coverage
 - slow ignored tests must stay explicitly governed and outside the required release lane
+- ignored Rust tests outside the governed DAG slow portfolios are forbidden
 
 ## Code Anchors
 
 - `crates/bijux-dev/tests/`
+- `crates/bijux-dev/tests/ignored_test_hygiene_contracts.rs`
 - `crates/bijux-dev/src/suites/test.rs`
 - `makes/rust.mk`
 

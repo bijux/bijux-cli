@@ -82,7 +82,6 @@ fn crate_src_path_depth_is_bounded() {
 }
 
 #[test]
-#[ignore = "legacy workspace hygiene token list enforces historical directory naming"]
 fn workspace_hygiene_forbids_legacy_root_directories_and_tokens() {
     let crate_root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let workspace_root = crate_root.join("..").join("..");
@@ -105,11 +104,9 @@ fn workspace_hygiene_forbids_legacy_root_directories_and_tokens() {
         for legacy_marker in ["join(\"scripts\")", "join(\"scripts/", "\"scripts/"] {
             assert!(!text.contains(legacy_marker), "legacy token found in {}", file.display());
         }
-        assert!(
-            !text.contains("packages/bijux-cli-py"),
-            "legacy token found in {}",
-            file.display()
-        );
+        for legacy_marker in ["join(\"packages\")", "join(\"packages/", "\"packages/"] {
+            assert!(!text.contains(legacy_marker), "legacy token found in {}", file.display());
+        }
     }
 }
 

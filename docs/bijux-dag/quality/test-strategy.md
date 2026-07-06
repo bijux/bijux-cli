@@ -50,7 +50,8 @@ The release-facing quality debt behind these coverage areas is tracked in
 slow ignored DAG app tests are governed explicitly in
 `configs/dag/policy/release_test_lane_governance.json` and are excluded from
 the required release lane until they can run fast enough without reducing trust
-coverage.
+coverage. All other ignored Rust tests are forbidden by the workspace hygiene
+contract in `crates/bijux-dev/tests/ignored_test_hygiene_contracts.rs`.
 
 ## Code Anchors
 
