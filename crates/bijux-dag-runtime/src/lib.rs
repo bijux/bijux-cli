@@ -52,6 +52,8 @@ mod clock;
 pub mod config;
 #[path = "backend/runtime/container_execution.rs"]
 mod container_execution;
+#[path = "backend/runtime/kubernetes_execution.rs"]
+mod kubernetes_execution;
 #[path = "diagnostics/runtime/control_plane.rs"]
 mod control_plane;
 #[path = "diagnostics/runtime/control_plane_api.rs"]
@@ -354,6 +356,14 @@ pub use local_executor::LocalExecutor;
 pub use local_worker_pool::{
     LocalWorkerAssignment, LocalWorkerCompletion, LocalWorkerExecution, LocalWorkerPool,
     LocalWorkerState, LocalWorkerStatus,
+};
+pub use kubernetes_execution::{
+    build_kubernetes_execution_request, kubernetes_pod_status_from_node_result,
+    map_kubernetes_pod_status_to_node_status, validate_kubernetes_execution_request,
+    KubernetesExecutionRequest, KubernetesJobRecord, KubernetesLogCapture,
+    KubernetesPodLifecycleEvent, KubernetesPodPhase, KubernetesPodStatus,
+    KubernetesVolumeMount, KubernetesWorkloadDescriptor, KubernetesWorkloadKind,
+    KubernetesWorkspaceTransfer, KubernetesWorkspaceTransferMode,
 };
 pub use observability::{
     category_from_runtime_event_name, current_process_memory_bytes,
