@@ -32,8 +32,10 @@ The commands derive analytics from finalized run evidence under the selected
 run root:
 
 - `manifest.json`
-- `outputs.index.json`
+- `run.snapshot.json`
+- `outputs/index.json`
 - `nodes/*/trace.json`
+- `nodes/*/outputs/index.json`
 
 When present, graph identity is derived from `manifest.json` and may fall back
 to recorded snapshot material already stored in the run directory.
@@ -64,7 +66,9 @@ The schema lockstep surface is:
 - `summary`: aggregate run count, retry count, cache-use signals, artifact
   totals, and status distribution
 - `compare`: compare two named runs across status, retries, cache hits,
-  artifacts, and timing
+  artifacts, timing, graph fingerprint, execution fingerprint, graph input
+  values, selected nodes, node statuses, output hashes, and the first
+  meaningful divergence that can be proven from retained evidence
 - `trend`: emit one ordered point per visible run with retry, cache, artifact,
   and status fields
 - `failures`: aggregate failed node kinds across retained run traces

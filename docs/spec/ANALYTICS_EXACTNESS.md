@@ -30,8 +30,14 @@ This document defines the exactness boundary for:
   for parseable retained evidence
 - graph-flake detection is exact only for retained runs whose graph fingerprint
   and status can be read from governed evidence
-- compare reports exact field equality or difference for the two named runs, but
-  corrupt fields remain `null` rather than guessed
+- compare reports exact field equality or difference for the two named runs
+  only when both compared sides are parseable for that field
+- compare reports graph fingerprint, execution fingerprint, input values,
+  selected nodes, node statuses, and output hashes as `null`-backed fields when
+  retained evidence is missing or corrupt rather than guessing replacement
+  values
+- compare reports the first meaningful divergence only when a difference can be
+  proven from parseable retained evidence in dimension order
 
 ## Conservative degradation
 
@@ -39,7 +45,10 @@ Malformed JSON in manifests or traces must not be repaired implicitly during an
 analytics query. Instead, the analytics surface degrades conservatively:
 
 - corrupt manifests become `null`-backed summary fields
-- corrupt traces do not invent retries, cache hits, or failure kinds
+- corrupt run snapshots do not invent selected-node evidence
+- corrupt traces do not invent retries, cache hits, failure kinds, or node
+  statuses
+- corrupt node output indexes do not invent output-hash differences
 - missing evidence yields `unknown`, `null`, or zero-derived fields where the
   implementation cannot prove a stronger statement
 
