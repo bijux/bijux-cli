@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-06
 ---
 
 # Common Workflows
@@ -42,6 +42,17 @@ bijux-dag runs inspect run-20260406-01 --root ./runs/proposed
 bijux-dag replay ./runs/proposed/run-20260406-01 --out ./runs/replay
 bijux-dag diff ./runs/reference/run-20260405-77 ./runs/proposed/run-20260406-01 --mode semantic --explain
 ```
+
+## Stop a Live Run
+
+When a proposed run is active and should stop dispatching additional nodes:
+
+```bash
+bijux-dag runs stop run-20260406-01 --root ./runs/proposed
+```
+
+Use `--json` when another tool needs the recorded stop request path or current
+stop state.
 
 ## Code Anchors
 

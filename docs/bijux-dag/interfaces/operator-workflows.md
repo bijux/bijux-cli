@@ -82,6 +82,20 @@ The history rows now report:
 Use the JSON form when another tool needs stable fields, and use the default
 human form when an operator needs a compact recent-run status list.
 
+## Stop an Active Run
+
+When a live run should stop launching new work, record a durable stop request
+against its run id:
+
+```bash
+bijux-dag runs stop run-20260406-01 --root ./runs
+bijux-dag runs stop run-20260406-01 --root ./runs --json
+```
+
+The stop request is written into the active run staging directory, the runtime
+observes it during execution, and the finalized manifest records
+`run_cancellation_cause = "operator_request"` when the stop succeeds.
+
 ## Preview Resolved Paths Before Execution
 
 When a graph uses `{run_dir}`, `{work_dir}`, `{inputs_dir}`, `{outputs_dir}`, or
