@@ -20,6 +20,7 @@ fn build_replay_runtime_options(
     jobs: usize,
     cpu_budget: Option<u32>,
     memory_budget_mb: Option<u32>,
+    gpu_device_budget: Option<u32>,
     run_id: Option<String>,
     source_run_id: Option<String>,
     cache_mode: CacheMode,
@@ -34,6 +35,7 @@ fn build_replay_runtime_options(
         jobs,
         cpu_budget,
         memory_budget_mb,
+        gpu_device_budget,
         run_timeout_ms: None,
         node_timeout_ms: None,
         materialize_inputs: map_materialize_mode(materialize_inputs),
@@ -65,6 +67,7 @@ pub(crate) fn handle_replay_command(
     run_id: Option<String>,
     cpu_budget: Option<u32>,
     memory_budget_mb: Option<u32>,
+    gpu_device_budget: Option<u32>,
     deny_network: bool,
     deny_env: bool,
     deny_clock: bool,
@@ -117,6 +120,7 @@ pub(crate) fn handle_replay_command(
         jobs,
         cpu_budget,
         memory_budget_mb,
+        gpu_device_budget,
         run_id,
         source_run_id.clone(),
         cache_mode.clone(),
@@ -258,6 +262,7 @@ mod tests {
             2,
             Some(8),
             Some(2048),
+            Some(2),
             Some("replay-run".to_string()),
             Some("source-run".to_string()),
             crate::CacheMode::ReadWrite,
@@ -277,6 +282,7 @@ mod tests {
         assert_eq!(options.jobs, 2);
         assert_eq!(options.cpu_budget, Some(8));
         assert_eq!(options.memory_budget_mb, Some(2048));
+        assert_eq!(options.gpu_device_budget, Some(2));
         assert_eq!(options.run_id.as_deref(), Some("replay-run"));
         assert_eq!(options.parent_run_id.as_deref(), Some("source-run"));
         assert!(options.partial_rerun_dependency_closure);

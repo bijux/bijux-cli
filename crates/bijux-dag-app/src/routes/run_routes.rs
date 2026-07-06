@@ -36,6 +36,7 @@ pub(crate) struct RunRouteRequest<'a> {
     pub jobs: usize,
     pub cpu_budget: Option<u32>,
     pub memory_budget_mb: Option<u32>,
+    pub gpu_device_budget: Option<u32>,
     pub node_timeout_ms: Option<u64>,
     pub run_timeout_ms: Option<u64>,
     pub run_timeout_behavior: RunTimeoutBehaviorArg,
@@ -88,6 +89,7 @@ fn build_run_runtime_options(
         jobs: req.jobs,
         cpu_budget: req.cpu_budget,
         memory_budget_mb: req.memory_budget_mb,
+        gpu_device_budget: req.gpu_device_budget,
         run_timeout_ms: req.run_timeout_ms,
         run_timeout_behavior: match req.run_timeout_behavior {
             RunTimeoutBehaviorArg::FinishRunning => RunTimeoutBehavior::FinishRunning,
@@ -478,6 +480,7 @@ mod tests {
                 jobs: 1,
                 cpu_budget: None,
                 memory_budget_mb: None,
+                gpu_device_budget: None,
                 node_timeout_ms: None,
                 run_timeout_ms: None,
                 run_timeout_behavior: RunTimeoutBehaviorArg::FinishRunning,
@@ -538,6 +541,7 @@ mod tests {
                 jobs: 1,
                 cpu_budget: None,
                 memory_budget_mb: None,
+                gpu_device_budget: None,
                 node_timeout_ms: None,
                 run_timeout_ms: None,
                 run_timeout_behavior: RunTimeoutBehaviorArg::FinishRunning,
@@ -579,6 +583,7 @@ mod tests {
             jobs: 3,
             cpu_budget: Some(4),
             memory_budget_mb: Some(4096),
+            gpu_device_budget: Some(2),
             node_timeout_ms: Some(10),
             run_timeout_ms: Some(20),
             run_timeout_behavior: RunTimeoutBehaviorArg::CancelRunning,
@@ -625,6 +630,7 @@ mod tests {
         assert_eq!(options.jobs, 3);
         assert_eq!(options.cpu_budget, Some(4));
         assert_eq!(options.memory_budget_mb, Some(4096));
+        assert_eq!(options.gpu_device_budget, Some(2));
         assert_eq!(
             options.run_timeout_behavior,
             bijux_dag_runtime::RunTimeoutBehavior::CancelRunning
