@@ -1,4 +1,5 @@
 use crate::commands::{AbsolutePathPolicyArg, DagCli, PlanCommands};
+use crate::graph::selection::selection_summary_from_planner;
 use crate::graph_helpers::{
     parse_selectors, resolve_downstream_run_selection, resolve_upstream_run_selection,
     validate_partial_selection_surface,
@@ -132,52 +133,19 @@ pub(crate) fn plan_explain_payload(
     absolute_path_policy: AbsolutePathPolicy,
 ) -> serde_json::Value {
     let report = explain_plan(result);
-    let mut selected_nodes = result
-        .annotations
-        .iter()
-        .filter(|annotation| annotation.selected)
-        .map(|annotation| annotation.node_id.clone())
-        .collect::<Vec<_>>();
-    let mut omitted_nodes = result
-        .annotations
-        .iter()
-        .filter(|annotation| !annotation.selected)
-        .map(|annotation| {
-            json!({
-                "node_id": annotation.node_id,
-                "reason": annotation.reason,
-            })
-        })
-        .collect::<Vec<_>>();
-    selected_nodes.sort();
-    omitted_nodes.sort_by(|left, right| {
-        left["node_id"]
-            .as_str()
-            .unwrap_or_default()
-            .cmp(right["node_id"].as_str().unwrap_or_default())
-    });
+    let selection = selection_summary_from_planner(result);
     json!({
         "planner_contract_version": result.plan.planner_contract_version,
         "plan_fingerprint": report.plan_fingerprint,
         "run_layout": preview_layout,
         "absolute_path_policy": absolute_path_policy,
         "selection": {
-            "requested_selectors": result.plan.requested_selectors,
-            "upstream_targets": result
-                .plan
-                .requested_selectors
-                .iter()
-                .filter_map(|value| value.strip_prefix("to-node:"))
-                .collect::<Vec<_>>(),
-            "downstream_roots": result
-                .plan
-                .requested_selectors
-                .iter()
-                .filter_map(|value| value.strip_prefix("from-node:"))
-                .collect::<Vec<_>>(),
-            "dependency_closure_enabled": result.plan.dependency_closure_enabled,
-            "selected_nodes": selected_nodes,
-            "omitted_nodes": omitted_nodes,
+            "requested_selectors": selection.requested_selectors,
+            "upstream_targets": selection.upstream_targets,
+            "downstream_roots": selection.downstream_roots,
+            "dependency_closure_enabled": selection.dependency_closure_enabled,
+            "selected_nodes": selection.selected_nodes,
+            "omitted_nodes": selection.omitted_nodes,
         },
         "phases": report.phases,
         "ordering": result.plan.order,
