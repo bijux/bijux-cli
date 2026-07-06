@@ -70,6 +70,9 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1053", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1054", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1055", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1056", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1057", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1058", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -119,6 +122,13 @@ fn node_param_literal_string<'a>(node: &'a Node, key: &str) -> Option<&'a str> {
         ParamValue::Literal(serde_json::Value::String(text)) => Some(text.as_str()),
         _ => None,
     })
+}
+
+fn param_value_literal_string(value: &ParamValue) -> Option<&str> {
+    match value {
+        ParamValue::Literal(serde_json::Value::String(text)) => Some(text.as_str()),
+        _ => None,
+    }
 }
 
 fn node_param_object_field<'a>(
@@ -866,6 +876,77 @@ impl Graph {
                     );
                 }
                 _ => {}
+            }
+            if node.semantic_kind == SemanticNodeKind::Map {
+                if node.outputs.is_empty() {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1056",
+                        format!("map node requires one or more declared outputs: {}", node.id),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some(
+                            "Declare directory outputs that will collect per-item map results"
+                                .to_string(),
+                        ),
+                    );
+                }
+                if node.outputs.iter().any(|output| output.expects_file()) {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1057",
+                        format!("map node outputs must be directory outputs: {}", node.id),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some(
+                            "Use output kind directory so each mapped item has an isolated artifact root"
+                                .to_string(),
+                        ),
+                    );
+                }
+                if node.inputs.is_empty() {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1058",
+                        format!("map node requires at least one declared input: {}", node.id),
+                        format!("/nodes/{}/inputs", node.id),
+                        Some(
+                            "Bind a JSON array input that the runtime can expand deterministically"
+                                .to_string(),
+                        ),
+                    );
+                } else if node.inputs.len() > 1 {
+                    match node_param_object_field(node, "map")
+                        .and_then(|map| map.get("input"))
+                        .and_then(param_value_literal_string)
+                    {
+                        Some(input) if node.inputs.iter().any(|candidate| candidate == input) => {}
+                        Some(input) => emit_rule(
+                            &mut diagnostics,
+                            "E1058",
+                            format!(
+                                "map.input '{}' is not a declared input on node {}",
+                                input, node.id
+                            ),
+                            format!("/nodes/{}/params/map/input", node.id),
+                            Some(
+                                "Choose one of the declared inputs as the array source for semantic map expansion"
+                                    .to_string(),
+                            ),
+                        ),
+                        None => emit_rule(
+                            &mut diagnostics,
+                            "E1058",
+                            format!(
+                                "map node with multiple inputs must declare params.map.input: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/map/input", node.id),
+                            Some(
+                                "Set params.map.input to the input port that carries the JSON array"
+                                    .to_string(),
+                            ),
+                        ),
+                    }
+                }
             }
             node_map.insert(node.id.as_str(), node);
         }
