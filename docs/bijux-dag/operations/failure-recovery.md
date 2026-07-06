@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-07
 ---
 
 # Failure Recovery
@@ -41,17 +41,18 @@ bijux-dag replay ./runs/failed-20260406-01 --out ./runs/replay-failed
 bijux-dag diff ./runs/good-20260405-77 ./runs/recovered-20260406-02 --mode semantic --explain
 ```
 
-`dag runs explain-failure` is the fastest way to separate the primary fault
+`bijux-dag runs explain-failure` is the fastest way to separate the primary fault
 from the blast radius it created. The report identifies the first causal
 failure, surfaces its class/code/message/reason, lists propagated failures
 separately from propagated skips or cancellations, and groups downstream
 affected nodes by terminal status.
 
-Use `dag explain <run_dir> --node <node_id>` when the recovery question is why
-one node never ran. The node explanation classifies dependency blocking,
-trigger-rule blocking, branch skips, selector exclusions, resource blocking,
-cache reuse, and policy denial from persisted run evidence. That path remains
-useful even when the blocked node never produced `nodes/<node_id>/trace.json`.
+Use `bijux-dag explain <run_dir> --node <node_id>` when the recovery question
+is why one node never ran. The node explanation classifies dependency
+blocking, trigger-rule blocking, branch skips, selector exclusions, resource
+blocking, cache reuse, and policy denial from persisted run evidence. That
+path remains useful even when the blocked node never produced
+`nodes/<node_id>/trace.json`.
 
 ## Code Anchors
 

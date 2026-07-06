@@ -4,16 +4,16 @@ audience: operators
 type: reference
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # Node Inspection
 
-Use `dag node` when the run already exists and one node needs a deeper evidence
-read than `dag runs show`, `dag runs timeline`, or `dag runs explain-failure`
-provide.
+Use `bijux-dag node` when the run already exists and one node needs a deeper
+evidence read than `bijux-dag runs show`, `bijux-dag runs timeline`, or
+`bijux-dag runs explain-failure` provide.
 
-`dag node` is an explicit-path inspection helper. It remains outside the
+`bijux-dag node` is an explicit-path inspection helper. It remains outside the
 default `bijux-dag --help` surface for `v0.4.0`, but it is repository-tested
 and intended for focused operator diagnostics.
 
@@ -49,8 +49,8 @@ bijux-dag explain <run_dir> --node <node_id>
 - pass an explicit run directory instead of relying on ambient workspace state
 - treat `evidence_gaps` as a real diagnostic signal, not just missing
   decoration
-- use `dag explain <run_dir> --node <node_id>` when the operator question is
+- use `bijux-dag explain <run_dir> --node <node_id>` when the operator question is
   why a node never ran because scheduler, selector, branch, trigger-rule, or
   upstream evidence can exist even when `trace.json` does not
-- use `dag trace-node` only when raw trace payload debugging is the goal rather
+- use `bijux-dag trace-node` only when raw trace payload debugging is the goal rather
   than operator inspection

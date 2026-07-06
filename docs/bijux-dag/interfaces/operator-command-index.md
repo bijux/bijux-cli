@@ -4,7 +4,7 @@ audience: operators
 type: reference
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # Operator Command Index
@@ -14,26 +14,26 @@ verify, compare, or diagnose it.
 
 ## Run inspection commands
 
-- `dag runs list`: enumerate available runs under an explicit root
-- `dag runs show`: show compact status and timing for one run
-- `dag runs inspect`: derive the structured inspection summary for one run
-- `dag runs summary`: aggregate retained history into one repository-local
+- `bijux-dag runs list`: enumerate available runs under an explicit root
+- `bijux-dag runs show`: show compact status and timing for one run
+- `bijux-dag runs inspect`: derive the structured inspection summary for one run
+- `bijux-dag runs summary`: aggregate retained history into one repository-local
   overview
-- `dag runs compare`: compare two retained runs across status, retries, cache
+- `bijux-dag runs compare`: compare two retained runs across status, retries, cache
   hits, artifacts, timing, graph and execution fingerprints, graph inputs,
   selected nodes, node statuses, output hashes, and the first meaningful
   retained-evidence divergence
-- `dag runs trend`: render one analytics point per retained run
-- `dag runs failures`: aggregate failed node kinds across retained runs
-- `dag runs flakes`: identify graph fingerprints with mixed retained outcomes
-- `dag runs tree`: render node structure from run evidence
-- `dag runs timeline`: render ordered execution events from
+- `bijux-dag runs trend`: render one analytics point per retained run
+- `bijux-dag runs failures`: aggregate failed node kinds across retained runs
+- `bijux-dag runs flakes`: identify graph fingerprints with mixed retained outcomes
+- `bijux-dag runs tree`: render node structure from run evidence
+- `bijux-dag runs timeline`: render ordered execution events from
   `observability.timeline.json`, with node-trace projection only as a
   compatibility fallback; supports `--node`, `--event`, `--since-unix-ms`,
   `--until-unix-ms`, and `--json`
-- `dag runs diff`: compare two run directories
-- `dag runs verify`: verify run integrity and compatibility
-- `dag runs doctor`: diagnose corrupt or incomplete run evidence
-- `dag runs explain-failure`: identify the first causal failure, surface its
+- `bijux-dag runs diff`: compare two run directories
+- `bijux-dag runs verify`: verify run integrity and compatibility
+- `bijux-dag runs doctor`: diagnose corrupt or incomplete run evidence
+- `bijux-dag runs explain-failure`: identify the first causal failure, surface its
   class/code/message/reason, separate propagated failures from propagated
   skips, and group downstream affected nodes by terminal status

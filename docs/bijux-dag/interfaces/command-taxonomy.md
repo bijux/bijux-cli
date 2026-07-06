@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # Command Taxonomy
@@ -17,24 +17,24 @@ The DAG command surface is grouped by operator intent, not crate layout.
 - execute: run and replay workflows
 - inspect: list, show, inspect, tree, timeline, diff, verify, doctor, and
   explain runs
-- operate: manage cache, config, policy, and environment controls
+- operate: manage cache and inspect public command inventory
 
 ## Operator inspection lane
 
 The operator inspection lane is the stable home for:
 
-- `dag runs list`
-- `dag runs show`
-- `dag runs inspect`
-- `dag runs summary`
-- `dag runs compare`
-- `dag runs trend`
-- `dag runs failures`
-- `dag runs flakes`
-- `dag runs tree`
-- `dag runs timeline`
+- `bijux-dag runs list`
+- `bijux-dag runs show`
+- `bijux-dag runs inspect`
+- `bijux-dag runs summary`
+- `bijux-dag runs compare`
+- `bijux-dag runs trend`
+- `bijux-dag runs failures`
+- `bijux-dag runs flakes`
+- `bijux-dag runs tree`
+- `bijux-dag runs timeline`
   with `--node`, `--event`, `--since-unix-ms`, and `--until-unix-ms`
-- `dag runs diff`
-- `dag runs verify`
-- `dag runs doctor`
-- `dag runs explain-failure`
+- `bijux-dag runs diff`
+- `bijux-dag runs verify`
+- `bijux-dag runs doctor`
+- `bijux-dag runs explain-failure`

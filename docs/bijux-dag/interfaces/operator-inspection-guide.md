@@ -4,7 +4,7 @@ audience: operators
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # Operator Inspection Guide
@@ -14,16 +14,16 @@ to deeper explanation only as needed.
 
 ## Recommended sequence
 
-1. `dag runs list`
-2. `dag runs show`
-3. `dag runs inspect`
-4. `dag runs timeline`
-5. `dag runs explain-failure`
-6. `dag runs doctor`
+1. `bijux-dag runs list`
+2. `bijux-dag runs show`
+3. `bijux-dag runs inspect`
+4. `bijux-dag runs timeline`
+5. `bijux-dag runs explain-failure`
+6. `bijux-dag runs doctor`
 
-Use `dag runs timeline --node <node-id> --event <event-name>` when the question
-is about one failure or branch of the run, and add `--since-unix-ms` or
-`--until-unix-ms` when narrowing to a precise time window.
+Use `bijux-dag runs timeline --node <node-id> --event <event-name>` when the
+question is about one failure or branch of the run, and add `--since-unix-ms`
+or `--until-unix-ms` when narrowing to a precise time window.
 
 ## Core inspection principles
 

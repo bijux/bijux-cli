@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-07
 ---
 
 # Configuration Surface
@@ -29,7 +29,7 @@ flowchart LR
 
 - command flags (`jobs`, `cache`, `cache-dir`, `materialize-inputs`, policy toggles)
 - workflow input flags (`run --input key=value`, `run --inputs-file`)
-- config command surfaces (`config ...`, `policy ...`)
+- explicit-path config command surfaces (`bijux-dag config ...`, `bijux-dag policy ...`)
 - environment and path resolution inputs where applicable
 
 ## Effective Config Inspection
@@ -37,8 +37,8 @@ flowchart LR
 Use the explicit inspection commands when the operator needs the resolved
 configuration without starting execution:
 
-- `dag config show-effective`
-- `dag policy show-effective`
+- `bijux-dag config show-effective`
+- `bijux-dag policy show-effective`
 
 The canonical merge order is `CLI > explicit config file > environment > defaults`.
 Malformed config files and unknown fields are blocking errors, not warnings.
