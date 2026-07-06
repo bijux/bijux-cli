@@ -103,3 +103,31 @@ fn upstream_target_flags_parse_on_plan_and_run_surfaces() {
         .expect("run parse");
     assert_eq!(dag_run(&run_matches).expect_err("missing graph"), std::process::ExitCode::from(3));
 }
+
+#[test]
+fn graph_inspection_selector_flags_parse_for_dag_inputs() {
+    let matches = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "show-effective-graph",
+            "./graph.json",
+            "--select",
+            "id:publish",
+            "--dependency-closure",
+        ])
+        .expect("graph inspection parse");
+    assert_eq!(dag_run(&matches).expect_err("missing graph"), std::process::ExitCode::from(3));
+}
+
+#[test]
+fn graph_inspection_rejects_run_dir_with_selector_overlay() {
+    let result = dag_command().try_get_matches_from([
+        "bijux-dag",
+        "show-effective-graph",
+        "--run-dir",
+        "./runs/run-123",
+        "--select",
+        "id:publish",
+    ]);
+    assert!(result.is_err());
+}
