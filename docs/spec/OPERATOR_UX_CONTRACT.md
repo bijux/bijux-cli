@@ -39,6 +39,13 @@ The governed operator inspection lanes are:
 - timeline inspection must expose timestamps and causes in human output
 - timeline inspection filters must remain available for node, event, and
   inclusive time windows
+- failure explanation must identify the first causal failure rather than only
+  list every failed or skipped node
+- failure explanation must separate propagated failed nodes from propagated
+  skipped or cancelled nodes
+- failure explanation must group downstream affected nodes by terminal status
+- failure explanation must surface failure class, code, message, and stable
+  reason for the primary failure
 - integrity state must distinguish healthy, incomplete, corrupt, and
   unsupported runs
 - explicit `--root` input must be sufficient without ambient repository state
