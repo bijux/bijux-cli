@@ -13,7 +13,7 @@ use thiserror as _;
 use bijux_dag_runtime::{
     LocalWorkerExecution, LocalWorkerPool, LocalWorkerState,
 };
-use std::sync::{Arc, Barrier};
+use std::sync::{mpsc, Arc, Barrier};
 
 #[test]
 fn local_worker_pool_enforces_fixed_capacity_before_completion() {
@@ -77,5 +77,43 @@ fn local_worker_pool_reports_completion_identity_and_releases_worker() {
     assert_eq!(completion.finished_unix_ms, 20);
     assert_eq!(completion.result, "ok");
     assert_eq!(pool.available_workers(), 1);
+    assert_eq!(pool.status()[0].state, LocalWorkerState::Idle);
+}
+
+#[test]
+fn local_worker_pool_blocks_new_submissions_after_cancellation_request() {
+    let mut pool = LocalWorkerPool::<&'static str>::new(1);
+    let (release_tx, release_rx) = mpsc::channel();
+
+    pool.submit(
+        "running".to_string(),
+        Box::new(move || {
+            release_rx.recv().expect("release running worker");
+            LocalWorkerExecution { started_unix_ms: 4, finished_unix_ms: 9, result: "done" }
+        }),
+    )
+    .expect("submit running worker");
+
+    pool.request_cancellation();
+    assert_eq!(
+        pool.status()[0].state,
+        LocalWorkerState::CancelRequested { node_id: "running".to_string() }
+    );
+
+    let error = pool
+        .submit(
+            "blocked".to_string(),
+            Box::new(|| LocalWorkerExecution {
+                started_unix_ms: 10,
+                finished_unix_ms: 11,
+                result: "blocked",
+            }),
+        )
+        .expect_err("cancellation closes submissions");
+    assert!(error.contains("closed to new submissions"));
+
+    release_tx.send(()).expect("release completion");
+    let completion = pool.wait_for_completion().expect("completion after cancellation");
+    assert_eq!(completion.node_id, "running");
     assert_eq!(pool.status()[0].state, LocalWorkerState::Idle);
 }

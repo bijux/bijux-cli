@@ -11,7 +11,8 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    ExecutionContext, LocalExecutor, NodeExecutionContext, NodeResult, NodeStatus, RunContext,
+    ExecutionContext, LocalExecutor, LocalWorkerExecution, LocalWorkerPool, NodeExecutionContext,
+    NodeResult, NodeStatus, RunContext,
 };
 
 #[test]
@@ -22,6 +23,23 @@ fn execution_facade_exports_local_executor_surface() {
     assert_eq!(exec.queue_depth(), 2);
     assert_eq!(exec.start_next().as_deref(), Some("a"));
     exec.mark_finished();
+}
+
+#[test]
+fn execution_facade_exports_local_worker_pool_surface() {
+    let mut pool = LocalWorkerPool::<&'static str>::new(1);
+    pool.submit(
+        "alpha".to_string(),
+        Box::new(|| LocalWorkerExecution {
+            started_unix_ms: 1,
+            finished_unix_ms: 2,
+            result: "ok",
+        }),
+    )
+    .expect("submit alpha");
+    let completion = pool.wait_for_completion().expect("completion");
+    assert_eq!(completion.node_id, "alpha");
+    assert_eq!(pool.available_workers(), 1);
 }
 
 #[test]
