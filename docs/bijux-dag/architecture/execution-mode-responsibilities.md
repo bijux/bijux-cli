@@ -18,7 +18,9 @@ claims.
 - local execution: implemented runtime path
 - container execution: implemented local engine-backed path with explicit
   constraints
-- kubernetes execution: modeled contract surface, not implemented
+- kubernetes execution: modeled runtime lane with simulated Job and pod
+  semantics, resource and deadline mapping, workspace transfer contracts, and
+  pod phase mapping
 - hpc execution: modeled runtime lane with simulated SLURM scheduler semantics,
   job identity capture, terminal status mapping, and log capture
 
@@ -34,6 +36,8 @@ claims.
 - `crates/bijux-dag-runtime/tests/adapter_runtime_contracts.rs`
 - `crates/bijux-dag-runtime/tests/container_execution_contracts.rs`
 - `crates/bijux-dag-runtime/tests/remote_execution_contracts.rs`
+- `crates/bijux-dag-runtime/tests/kubernetes_execution_contracts.rs`
+- `crates/bijux-dag-runtime/tests/kubernetes_backend_contracts.rs`
 - `crates/bijux-dag-runtime/tests/slurm_execution_contracts.rs`
 - `crates/bijux-dag-runtime/tests/slurm_backend_contracts.rs`
 - `docs/spec/CONTAINER_EXECUTION_CONTRACT.md`

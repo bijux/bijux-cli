@@ -18,6 +18,7 @@ behavior.
 - simulated platform namespaces behind explicit opt-in
 - modeled distributed and federated execution boundaries
 - modeled remote worker execution
+- modeled Kubernetes execution through the shared runtime lane
 - modeled SLURM execution through the shared runtime lane
 - internal release, performance, and governance routes that exist for
   repository verification rather than public operator compatibility
@@ -25,7 +26,7 @@ behavior.
 ## Future Surfaces
 
 - public enterprise and federation APIs
-- Kubernetes execution beyond the current documented contract
+- Kubernetes execution claims beyond the current documented simulated backend
 - SLURM execution claims beyond the current documented simulated backend
 
 ## Documentation Rule
