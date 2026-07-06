@@ -86,6 +86,8 @@ mod execution_plan;
 mod extension_catalog;
 #[path = "adapters/external.rs"]
 mod external_adapter;
+#[path = "runtime_core/execution/failure_summary.rs"]
+mod failure_summary;
 #[path = "backend/distributed/federated_scheduling.rs"]
 mod federated_scheduling;
 #[path = "internal/ext/formal_verification.rs"]

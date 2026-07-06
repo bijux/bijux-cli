@@ -1,12 +1,13 @@
+use crate::failure_summary::build_run_failure_summary;
 use crate::{
     bind_path_variables_in_value, build_run_outputs_index, cache_dir_from_env, cache_mode_string,
     canonicalize_event_records, category_from_runtime_event_name, collect_outputs_summary,
     current_process_memory_bytes, node_fingerprint_from_ctx, node_fingerprint_with_inputs,
     reconstruct_timeline_from_events, registered_adapters, sacred_execution,
-    serialize_timeline_export, set_node_fingerprint, summarize_failure_root_causes, CacheProof,
-    EffectSet, EventRecord, ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry,
-    NodeMetrics, NodePathBindings, NodeResult, NodeStatus, ReplayNodeAction, RunAttempt,
-    RunContext, RunId, RunSnapshot, Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook,
+    serialize_timeline_export, set_node_fingerprint, CacheProof, EffectSet, EventRecord,
+    ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodePathBindings,
+    NodeResult, NodeStatus, ReplayNodeAction, RunAttempt, RunContext, RunId, RunSnapshot, Runtime,
+    RuntimeConfig, RuntimeError, SchedulerEventHook,
 };
 #[path = "engine_dispatch.rs"]
 mod engine_dispatch;
@@ -2949,10 +2950,11 @@ pub fn execute(
     ctx.fs
         .write(&timeline_path, &timeline_payload)
         .map_err(|err| RuntimeError::Executor(format!("timeline export write failed: {err}")))?;
-    let root_causes = summarize_failure_root_causes(&structured_events);
+    let root_causes =
+        build_run_failure_summary(ctx.fs.as_ref(), ctx.run_dir.staging_path(), graph)?;
     ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.root-causes.json"),
-        &serde_json::to_vec_pretty(&serde_json::json!({ "roots": root_causes }))?,
+        &serde_json::to_vec_pretty(&root_causes)?,
     )?;
     ctx.fs.write(
         &ctx.run_dir.staging_path().join("observability.events.json"),
