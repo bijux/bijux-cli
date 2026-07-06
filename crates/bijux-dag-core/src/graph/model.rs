@@ -427,6 +427,8 @@ pub struct Resources {
     pub mem_mb: u32,
     #[serde(default)]
     pub gpu_devices: u32,
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub named_resources: std::collections::BTreeMap<String, u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

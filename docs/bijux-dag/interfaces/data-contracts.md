@@ -175,6 +175,9 @@ The path-variable contract is intentionally narrow:
 ### Execution Policy Fields
 
 - `resources` currently supports `cpu` and `mem_mb`.
+- `resources.named_resources` supports named capacities such as license tokens,
+  database slots, or other runtime-scoped resource classes that should be
+  scheduled explicitly instead of hidden in adapter-specific params.
 - `retry` currently supports `max_attempts` and `backoff_ms`.
 - `cache.enabled = false` requires a non-empty `cache.reason` so cache opt-out is
   auditable.

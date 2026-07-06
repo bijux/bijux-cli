@@ -121,3 +121,35 @@ fn node_io_contract_marks_wildcard_env_patterns_as_optional_matches() {
     assert_eq!(contract.env_bindings[1].name, "PREFIX_*");
     assert!(!contract.env_bindings[1].required);
 }
+
+#[test]
+fn graph_resources_preserve_named_resource_requests() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"licensed",
+              "kind":"shell",
+              "inputs":[],
+              "outputs":[{"name":"out","path":"licensed/out"}],
+              "params":{"argv":["echo","licensed"]},
+              "resources":{
+                "cpu":1,
+                "mem_mb":256,
+                "named_resources":{
+                  "database_slot":2,
+                  "license.render":1
+                }
+              }
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("parse graph");
+
+    let resources = graph.nodes[0].resources.as_ref().expect("resources");
+    assert_eq!(resources.named_resources.get("database_slot"), Some(&2));
+    assert_eq!(resources.named_resources.get("license.render"), Some(&1));
+}

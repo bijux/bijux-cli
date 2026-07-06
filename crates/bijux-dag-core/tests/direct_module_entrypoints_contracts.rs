@@ -186,7 +186,12 @@ fn compile_module_applies_defaults_without_contract_wrapper() {
     );
     let defaults = GraphDefaults {
         retry: Some(bijux_dag_core::RetryPolicy { max_attempts: 3, backoff_ms: 10 }),
-        resources: Some(bijux_dag_core::Resources { cpu: 1, mem_mb: 64, gpu_devices: 0 }),
+        resources: Some(bijux_dag_core::Resources {
+            cpu: 1,
+            mem_mb: 64,
+            gpu_devices: 0,
+            named_resources: std::collections::BTreeMap::new(),
+        }),
     };
     let compiled = compile_graph_with_defaults(&graph, &defaults).expect("compile with defaults");
     let node = compiled

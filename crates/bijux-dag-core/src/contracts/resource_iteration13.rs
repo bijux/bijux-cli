@@ -572,7 +572,12 @@ mod tests {
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: Some(6_000),
-                resources: Some(Resources { cpu: 4, mem_mb: 4096, gpu_devices: 0 }),
+                resources: Some(Resources {
+                    cpu: 4,
+                    mem_mb: 4096,
+                    gpu_devices: 0,
+                    named_resources: std::collections::BTreeMap::new(),
+                }),
                 tags: vec![
                     "disk_mb:1024".to_string(),
                     "scratch_mb:2048".to_string(),

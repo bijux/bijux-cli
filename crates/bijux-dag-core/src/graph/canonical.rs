@@ -20,6 +20,13 @@ impl Graph {
                 output.name = normalize_identity_text(&output.name);
                 output.path = normalize_rel_path(&output.path);
             }
+            if let Some(resources) = &mut node.resources {
+                resources.named_resources = resources
+                    .named_resources
+                    .iter()
+                    .map(|(name, amount)| (normalize_identity_text(name), *amount))
+                    .collect();
+            }
             node.env_allowlist =
                 node.env_allowlist.iter().map(|entry| normalize_identity_text(entry)).collect();
             node.tags = node.tags.iter().map(|entry| normalize_identity_text(entry)).collect();
@@ -67,7 +74,11 @@ impl Graph {
                 branch.decisions.sort();
             }
             if let Some(resources) = &node.resources {
-                if resources.cpu == 0 && resources.mem_mb == 0 && resources.gpu_devices == 0 {
+                if resources.cpu == 0
+                    && resources.mem_mb == 0
+                    && resources.gpu_devices == 0
+                    && resources.named_resources.is_empty()
+                {
                     node.resources = None;
                 }
             }

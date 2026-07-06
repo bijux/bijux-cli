@@ -1,5 +1,6 @@
 use crate::{Node, Resources, RetryPolicy};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GraphDefaults {
@@ -32,6 +33,20 @@ pub fn node_accelerator(node: &Node) -> Option<String> {
             }
         })
         .or_else(|| (node_gpu_devices(node) > 0).then(|| "gpu".to_string()))
+}
+
+pub fn node_named_resources(node: &Node) -> BTreeMap<String, u32> {
+    node.resources
+        .as_ref()
+        .map(|resources| {
+            resources
+                .named_resources
+                .iter()
+                .filter(|(_, amount)| **amount > 0)
+                .map(|(name, amount)| (name.clone(), *amount))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 fn gpu_devices_from_tags(tags: &[String]) -> u32 {

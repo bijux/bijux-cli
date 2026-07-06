@@ -1012,7 +1012,12 @@ mod tests {
             )
             .build();
         let mut graph = graph;
-        graph.nodes[1].resources = Some(Resources { cpu: 64, mem_mb: 131_072, gpu_devices: 0 });
+        graph.nodes[1].resources = Some(Resources {
+            cpu: 64,
+            mem_mb: 131_072,
+            gpu_devices: 0,
+            named_resources: std::collections::BTreeMap::new(),
+        });
         let capabilities = PlanPreflightCapabilitiesV1 {
             shell_available: false,
             container_available: true,
@@ -1092,7 +1097,12 @@ mod tests {
             .build();
         let mut graph = graph;
         graph.nodes[0].resources =
-            Some(crate::Resources { cpu: 16, mem_mb: 32768, gpu_devices: 0 });
+            Some(crate::Resources {
+                cpu: 16,
+                mem_mb: 32768,
+                gpu_devices: 0,
+                named_resources: std::collections::BTreeMap::new(),
+            });
         let report = build_resource_hints_report(
             &graph,
             GraphResourceHintsV1 {
