@@ -69,7 +69,8 @@ use evidence_registry::{
     run_evidence_registry_orphans, run_evidence_registry_rebuild, run_evidence_registry_verify,
 };
 use file_catalog::{
-    collect_all_files, collect_files_with_extension, newest_run, two_latest_runs, wildcard_match,
+    collect_all_files, collect_files_with_extension, newest_run, repository_files_with_extension,
+    two_latest_runs, wildcard_match,
 };
 use model::{CommandContext, CommandEffect, SuiteDef};
 use ops::*;

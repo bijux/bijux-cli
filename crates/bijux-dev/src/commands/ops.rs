@@ -272,17 +272,12 @@ pub(super) fn run_evidence_metadata_validate() -> Result<(), String> {
         })
         .collect::<Result<_, _>>()?;
 
-    let mut files = Vec::new();
-    collect_all_files(&root, &mut files)?;
-    for file in files {
+    for file in repository_files_with_extension(&root, "json")? {
         let rel = file
             .strip_prefix(&root)
             .map_err(|err| err.to_string())?
             .to_string_lossy()
             .replace('\\', "/");
-        if !rel.ends_with(".json") {
-            continue;
-        }
         let in_governed_root = governed_roots.iter().any(|governed_root| {
             rel == *governed_root || rel.starts_with(&format!("{governed_root}/"))
         });
