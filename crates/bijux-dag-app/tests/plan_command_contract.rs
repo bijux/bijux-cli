@@ -523,6 +523,72 @@ fn schedule_queue_status_supports_json_output() {
 }
 
 #[test]
+fn schedule_queue_dispatch_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let ledger = dir.path().join("schedule-ledger.json");
+    let policy = dir.path().join("priority-dispatch-policy.json");
+    let out = dir.path().join("schedule-ledger-dispatched.json");
+    fs::write(
+        &ledger,
+        r#"{
+          "entries": [
+            {
+              "schedule_id": "manual-ops",
+              "dag_name": "atlas.manual-ops",
+              "dag_version_policy": "run-latest",
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "graph_inputs": {},
+              "requested_unix_ms": 170000,
+              "created_unix_ms": 170000,
+              "run_id": "sched-manual-ops-existing",
+              "trigger_kind": "manual",
+              "dedupe_key": "manual:manual-ops:manual-000",
+              "status": "Pending"
+            }
+          ]
+        }"#,
+    )
+    .expect("write ledger");
+    fs::write(
+        &policy,
+        r#"{
+          "weights": {
+            "critical_weight": 100,
+            "high_weight": 75,
+            "standard_weight": 50,
+            "low_weight": 25
+          },
+          "starvation": {
+            "max_ticks_without_dispatch": 3,
+            "priority_boost_after_ticks": 1
+          }
+        }"#,
+    )
+    .expect("write policy");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "schedule",
+            "queue",
+            "dispatch",
+            ledger.to_string_lossy().as_ref(),
+            "--max-dispatches",
+            "1",
+            "--policy",
+            policy.to_string_lossy().as_ref(),
+            "--out",
+            out.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = run_with_internal_lane(&matches);
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
 fn schedule_queue_update_supports_json_output() {
     let dir = tempfile::tempdir().expect("tmp");
     let ledger = dir.path().join("schedule-ledger.json");
