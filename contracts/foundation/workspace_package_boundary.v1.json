@@ -1,0 +1,72 @@
+{
+  "schema_version": "foundation-workspace-package-boundary/v1",
+  "release": "v0.4.0",
+  "owner": "bijux-core",
+  "packages": [
+    {
+      "crate": "bijux-cli",
+      "product_family": "bijux-cli",
+      "release_status": "public",
+      "purpose": "Operator-facing command runtime for automation, plugin routing, interactive workflows, and structured output."
+    },
+    {
+      "crate": "bijux-cli-python",
+      "product_family": "bijux-cli",
+      "release_status": "private",
+      "purpose": "Python packaging bridge for the bijux command runtime.",
+      "private_reason": "repository-internal distribution support"
+    },
+    {
+      "crate": "bijux-dag-core",
+      "product_family": "bijux-dag",
+      "release_status": "public",
+      "purpose": "Deterministic DAG kernel for graph parsing, validation, canonicalization, planning, and identity."
+    },
+    {
+      "crate": "bijux-dag-artifacts",
+      "product_family": "bijux-dag",
+      "release_status": "public",
+      "purpose": "Artifact identity, persistence, and integrity primitives for DAG run evidence."
+    },
+    {
+      "crate": "bijux-dag-runtime",
+      "product_family": "bijux-dag",
+      "release_status": "public",
+      "purpose": "Execution kernel, scheduler policy, replay decisions, and runtime state transitions for DAG runs."
+    },
+    {
+      "crate": "bijux-dag-app",
+      "product_family": "bijux-dag",
+      "release_status": "public",
+      "purpose": "DAG command orchestration, inspection, replay, and verification response shaping."
+    },
+    {
+      "crate": "bijux-dag-cli",
+      "product_family": "bijux-dag",
+      "release_status": "public",
+      "purpose": "Thin bijux-dag executable wrapper over the DAG application surface."
+    },
+    {
+      "crate": "bijux-dag-testkit",
+      "product_family": "bijux-dag",
+      "release_status": "private",
+      "purpose": "Shared deterministic fixtures, fake adapters, and DAG assertions for repository tests.",
+      "private_reason": "repository-internal test support"
+    },
+    {
+      "crate": "bijux-dev",
+      "product_family": "maintainer",
+      "release_status": "private",
+      "purpose": "Maintainer control plane for release governance, repository evidence, and diagnostics.",
+      "private_reason": "repository-internal maintainer tooling"
+    }
+  ],
+  "crates_io_publish_order": [
+    "bijux-dag-core",
+    "bijux-dag-artifacts",
+    "bijux-dag-runtime",
+    "bijux-dag-app",
+    "bijux-dag-cli",
+    "bijux-cli"
+  ]
+}
