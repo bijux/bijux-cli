@@ -202,7 +202,7 @@ fn doctor_shims_reports_legacy_app_shims_on_path() {
     let temp = TempDir::new().expect("tempdir");
     let shim_bin = temp.path().join("shim-bin");
     std::fs::create_dir_all(&shim_bin).expect("shim bin");
-    let shim = shim_bin.join("bijux-dag");
+    let shim = shim_bin.join("bijux-workflow");
     std::fs::write(&shim, "#!/bin/sh\n").expect("shim");
     #[cfg(unix)]
     {

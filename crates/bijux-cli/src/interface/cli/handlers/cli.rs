@@ -185,7 +185,10 @@ fn default_doctor_remediation(area: &str, message: &str) -> String {
         "apps" => {
             "run `bijux apps doctor` and resolve mount metadata or runtime entrypoints".to_string()
         }
-        "shims" => "remove legacy shim wrappers and prefer `bijux <app> ...` routes".to_string(),
+        "shims" => {
+            "remove deprecated alias binaries and keep declared product binaries on PATH"
+                .to_string()
+        }
         "python" => "install a supported Python runtime and validate `bijux_cli_py` import parity"
             .to_string(),
         "routing" => "inspect route inventory and clear namespace collisions".to_string(),
@@ -490,8 +493,8 @@ fn shim_doctor_report() -> Value {
     let path_value = env::var("PATH").unwrap_or_default();
     let mut legacy_app_shims = Vec::<Value>::new();
     for tool in crate::contracts::known_bijux_tools() {
-        let mut shim_names = vec![format!("bijux-{}", tool.namespace)];
-        shim_names.extend(tool.aliases.iter().map(|alias| format!("bijux-{alias}")));
+        let mut shim_names =
+            tool.aliases.iter().map(|alias| format!("bijux-{alias}")).collect::<Vec<_>>();
         shim_names.sort();
         shim_names.dedup();
         for shim_name in shim_names {
@@ -514,10 +517,10 @@ fn shim_doctor_report() -> Value {
         issues.push(doctor_issue(
             "shims",
             "warning",
-            "legacy app shim binaries were found on PATH",
+            "deprecated app alias binaries were found on PATH",
         ));
         suggestions.push(
-            "Prefer `bijux <app> ...` routes and remove `bijux-<app>` compatibility shims from PATH."
+            "Remove deprecated alias binaries such as `bijux-workflow`. Keep declared product binaries on PATH, or route through `bijux <app> ...`."
                 .to_string(),
         );
     }
@@ -547,7 +550,7 @@ fn shim_doctor_report() -> Value {
         "severity": severity,
         "lifecycle_policy": {
             "shim_support": "deprecated",
-            "preferred_invocation": "bijux <app> ...",
+            "preferred_invocation": "declared product binaries or bijux <app> routes",
             "shadowing_policy": "refused",
             "policy_status": policy_status,
         },
