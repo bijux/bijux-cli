@@ -235,3 +235,63 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         "docs/spec/RELEASE_BINARY_VERIFICATION.md",
     );
 }
+
+#[test]
+fn dag_registry_and_root_cli_docs_preserve_public_binary_identity() {
+    let registry: serde_json::Value = serde_json::from_str(&read_repo_file(
+        "contracts/official_product_namespace_registry.json",
+    ))
+    .expect("official product registry json");
+    let dag = registry["entries"]
+        .as_array()
+        .expect("registry entries")
+        .iter()
+        .find(|entry| entry["namespace"] == "dag")
+        .expect("dag registry entry");
+    assert_eq!(dag["runtime_binary"], "bijux-dag");
+    assert_eq!(dag["runtime_package"], "bijux-dag-cli");
+
+    let examples = read_repo_file("docs/bijux-cli/interfaces/examples.md");
+    assert_contains_all(&examples, &["bijux-dag --help", "bijux apps which dag"], "examples.md");
+    assert!(
+        !examples.contains("bijux dag --help"),
+        "root CLI examples must not present `bijux dag --help` as the public DAG operator surface"
+    );
+
+    let migration = read_repo_file("docs/bijux-cli/operations/migration-guide.md");
+    assert_contains_all(
+        &migration,
+        &[
+            "use `bijux-dag ...` for the public DAG command surface",
+            "use `bijux dag ...` when you intentionally want root-managed app routing",
+            "`bijux-workflow`",
+        ],
+        "migration-guide.md",
+    );
+    assert!(
+        !migration.contains("`bijux-dag ...` -> `bijux dag ...`"),
+        "migration guide must not rewrite the public DAG binary into the routed root namespace"
+    );
+}
+
+#[test]
+fn root_cli_help_for_dag_points_back_to_the_public_binary() {
+    let output = Command::new("cargo")
+        .args(["run", "-q", "-p", "bijux-cli", "--", "help", "dag"])
+        .current_dir(repo_root())
+        .output()
+        .expect("run bijux help dag");
+    assert!(output.status.success(), "bijux help dag failed");
+    let stdout = String::from_utf8(output.stdout).expect("help output must be utf8");
+    assert_contains_all(
+        &stdout,
+        &[
+            "Official app help: Bijux DAG",
+            "root route: bijux dag <command> ...",
+            "product binary: bijux-dag",
+            "cargo install bijux-dag-cli",
+            "bijux-dag --help",
+        ],
+        "bijux help dag",
+    );
+}
