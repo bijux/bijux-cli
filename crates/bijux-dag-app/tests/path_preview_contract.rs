@@ -295,3 +295,78 @@ fn plan_explain_json_reports_execution_cost_estimate() {
     );
     assert_eq!(payload["data"]["execution_cost_estimate"]["retry_exposure"]["max_attempts"], 3);
 }
+
+#[test]
+fn plan_explain_json_reports_resource_bottlenecks_under_preview_budgets() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let graph = tmp.path().join("resource-aware.dag.json");
+    std::fs::write(
+        &graph,
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"root","kind":"const","outputs":[{"name":"out","path":"root/out"}],"params":{"value":1}},
+            {
+              "id":"left",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"out","path":"left/out"}],
+              "params":{"argv":["echo","left"],"estimated_duration_ms":10000},
+              "resources":{"cpu":1,"mem_mb":64,"named_resources":{"database_slot":1}}
+            },
+            {
+              "id":"right",
+              "kind":"shell",
+              "inputs":["in"],
+              "outputs":[{"name":"out","path":"right/out"}],
+              "params":{"argv":["echo","right"],"estimated_duration_ms":10000},
+              "resources":{"cpu":1,"mem_mb":64,"named_resources":{"database_slot":1}}
+            },
+            {
+              "id":"join",
+              "kind":"shell",
+              "inputs":["left","right"],
+              "outputs":[{"name":"out","path":"join/out"}],
+              "params":{"argv":["echo","join"]}
+            }
+          ],
+          "edges":[
+            {"from":{"node_id":"root","port":"out"},"to":{"node_id":"left","port":"in"}},
+            {"from":{"node_id":"root","port":"out"},"to":{"node_id":"right","port":"in"}},
+            {"from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"left"}},
+            {"from":{"node_id":"right","port":"out"},"to":{"node_id":"join","port":"right"}}
+          ]
+        }"#,
+    )
+    .expect("write graph");
+
+    let payload = run_json(
+        &[
+            "plan",
+            "explain",
+            "--json",
+            "--jobs",
+            "2",
+            "--resource-capacity",
+            "database_slot=1",
+            &output_path_string(&graph),
+        ],
+        &root,
+    );
+
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["scheduling_simulation"]["run_bound"],
+        "resource_bound"
+    );
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["scheduling_simulation"]["bottlenecks"][0]
+            ["resource"],
+        "named_resource:database_slot"
+    );
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["scheduling_simulation"]["blocked_nodes"][0]
+            ["node_id"],
+        "right"
+    );
+}

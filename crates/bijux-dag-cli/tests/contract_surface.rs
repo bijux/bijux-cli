@@ -864,6 +864,10 @@ fn dag_plan_explain_help_mentions_downstream_selector() {
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(text.contains("bijux-dag plan explain"));
     assert!(text.contains("--from-node"));
+    assert!(text.contains("--jobs"));
+    assert!(text.contains("--cpu-budget"));
+    assert!(text.contains("--resource-capacity"));
+    assert!(text.contains("declare a named runtime capacity as <name=count>"));
 }
 
 #[test]
