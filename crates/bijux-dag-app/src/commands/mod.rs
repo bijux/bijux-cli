@@ -267,6 +267,8 @@ pub(crate) enum Commands {
         #[arg(long)]
         cpu_budget: Option<u32>,
         #[arg(long)]
+        memory_budget_mb: Option<u32>,
+        #[arg(long)]
         node_timeout_ms: Option<u64>,
         #[arg(long)]
         run_timeout_ms: Option<u64>,
@@ -333,6 +335,8 @@ pub(crate) enum Commands {
         run_id: Option<String>,
         #[arg(long)]
         cpu_budget: Option<u32>,
+        #[arg(long)]
+        memory_budget_mb: Option<u32>,
         #[arg(long, help = DENY_NETWORK_HELP)]
         deny_network: bool,
         #[arg(long, help = DENY_ENV_HELP)]

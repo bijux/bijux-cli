@@ -35,6 +35,7 @@ pub(crate) struct RunRouteRequest<'a> {
     pub latest: Option<PathBuf>,
     pub jobs: usize,
     pub cpu_budget: Option<u32>,
+    pub memory_budget_mb: Option<u32>,
     pub node_timeout_ms: Option<u64>,
     pub run_timeout_ms: Option<u64>,
     pub run_timeout_behavior: RunTimeoutBehaviorArg,
@@ -86,6 +87,7 @@ fn build_run_runtime_options(
     RuntimeConfig {
         jobs: req.jobs,
         cpu_budget: req.cpu_budget,
+        memory_budget_mb: req.memory_budget_mb,
         run_timeout_ms: req.run_timeout_ms,
         run_timeout_behavior: match req.run_timeout_behavior {
             RunTimeoutBehaviorArg::FinishRunning => RunTimeoutBehavior::FinishRunning,
@@ -475,6 +477,7 @@ mod tests {
                 latest: None,
                 jobs: 1,
                 cpu_budget: None,
+                memory_budget_mb: None,
                 node_timeout_ms: None,
                 run_timeout_ms: None,
                 run_timeout_behavior: RunTimeoutBehaviorArg::FinishRunning,
@@ -534,6 +537,7 @@ mod tests {
                 latest: None,
                 jobs: 1,
                 cpu_budget: None,
+                memory_budget_mb: None,
                 node_timeout_ms: None,
                 run_timeout_ms: None,
                 run_timeout_behavior: RunTimeoutBehaviorArg::FinishRunning,
@@ -574,6 +578,7 @@ mod tests {
             latest: None,
             jobs: 3,
             cpu_budget: Some(4),
+            memory_budget_mb: Some(4096),
             node_timeout_ms: Some(10),
             run_timeout_ms: Some(20),
             run_timeout_behavior: RunTimeoutBehaviorArg::CancelRunning,
@@ -619,6 +624,7 @@ mod tests {
 
         assert_eq!(options.jobs, 3);
         assert_eq!(options.cpu_budget, Some(4));
+        assert_eq!(options.memory_budget_mb, Some(4096));
         assert_eq!(
             options.run_timeout_behavior,
             bijux_dag_runtime::RunTimeoutBehavior::CancelRunning
