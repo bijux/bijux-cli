@@ -1223,6 +1223,14 @@ fn validate_impossible_run_requirements(graph: &Graph) -> Result<(), String> {
                     node.id, resources.cpu, resources.mem_mb
                 ));
             }
+            for (name, amount) in &resources.named_resources {
+                if name.trim().is_empty() || *amount == 0 {
+                    return Err(format!(
+                        "node '{}' has impossible named resource requirement ('{}'={})",
+                        node.id, name, amount
+                    ));
+                }
+            }
         }
     }
     Ok(())

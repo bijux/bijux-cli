@@ -1312,6 +1312,7 @@ impl Runtime {
         let _contracts = validate_task_contracts(graph, &options)?;
         let plan = build_plan(graph, &options);
         validate_gpu_runtime_capacity(&plan, &options)?;
+        validate_named_resource_runtime_capacity(&plan, &options)?;
         engine::execute(self, graph, plan, out_dir, options)
     }
 }
@@ -1368,6 +1369,61 @@ fn validate_gpu_runtime_capacity(
         .join(", ");
     Err(RuntimeError::Executor(format!(
         "selected nodes require more gpu devices than runtime gpu_device_budget={gpu_device_budget}: {requested}"
+    )))
+}
+
+fn validate_named_resource_runtime_capacity(
+    plan: &ExecutionPlan,
+    options: &RuntimeConfig,
+) -> Result<(), RuntimeError> {
+    let mut capacities = options.named_resource_capacities.clone();
+    for (name, amount) in &options.scheduler_policy.named_resource_capacities {
+        capacities.insert(name.clone(), *amount);
+    }
+
+    let mut missing = BTreeMap::<String, Vec<String>>::new();
+    let mut oversized = Vec::new();
+    for node in &plan.nodes {
+        for (name, requested) in bijux_dag_core::resources::node_named_resources(node) {
+            match capacities.get(&name).copied().filter(|capacity| *capacity > 0) {
+                Some(capacity) if requested > capacity => {
+                    oversized.push((node.id.clone(), name, requested, capacity));
+                }
+                Some(_) => {}
+                None => {
+                    missing
+                        .entry(name)
+                        .or_default()
+                        .push(format!("{}={requested}", node.id));
+                }
+            }
+        }
+    }
+
+    if !missing.is_empty() {
+        let requested = missing
+            .into_iter()
+            .map(|(name, nodes)| format!("{name}({})", nodes.join(", ")))
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(RuntimeError::Executor(format!(
+            "selected nodes require named resources without runtime capacity: {requested}"
+        )));
+    }
+
+    if oversized.is_empty() {
+        return Ok(());
+    }
+
+    let requested = oversized
+        .into_iter()
+        .map(|(node_id, name, requested, capacity)| {
+            format!("{node_id}:{name}={requested} exceeds capacity {capacity}")
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    Err(RuntimeError::Executor(format!(
+        "selected nodes require more named resources than runtime capacities allow: {requested}"
     )))
 }
 

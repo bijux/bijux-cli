@@ -361,6 +361,20 @@ pub fn validate_task_contracts(
                     node.id
                 )));
             }
+            for (name, amount) in &resources.named_resources {
+                if name.trim().is_empty() {
+                    return Err(RuntimeError::Executor(format!(
+                        "node '{}' has invalid resource contract; named resource must not be empty",
+                        node.id
+                    )));
+                }
+                if *amount == 0 {
+                    return Err(RuntimeError::Executor(format!(
+                        "node '{}' has invalid resource contract; named resource '{}' must be positive",
+                        node.id, name
+                    )));
+                }
+            }
         }
         contracts.push(contract);
     }

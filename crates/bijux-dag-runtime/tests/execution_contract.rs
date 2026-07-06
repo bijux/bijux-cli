@@ -319,6 +319,76 @@ fn runtime_rejects_gpu_nodes_that_exceed_runtime_budget() {
 }
 
 #[test]
+fn runtime_rejects_named_resources_without_runtime_capacity() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"licensed",
+              "kind":"const",
+              "outputs":[{"name":"out","path":"licensed/out"}],
+              "resources":{"cpu":1,"mem_mb":64,"named_resources":{"license.render":1}},
+              "params":{"value":1}
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let error = runtime
+        .run(&graph, temp.path(), RuntimeConfig::default())
+        .expect_err("named resource capacity should be required")
+        .to_string();
+
+    assert!(error.contains("named resources without runtime capacity"));
+    assert!(error.contains("license.render(licensed=1)"));
+}
+
+#[test]
+fn runtime_rejects_named_resources_that_exceed_runtime_capacity() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"licensed",
+              "kind":"const",
+              "outputs":[{"name":"out","path":"licensed/out"}],
+              "resources":{"cpu":1,"mem_mb":64,"named_resources":{"license.render":2}},
+              "params":{"value":1}
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let error = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig {
+                named_resource_capacities: std::collections::BTreeMap::from([(
+                    "license.render".to_string(),
+                    1,
+                )]),
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect_err("oversized named resource request should fail")
+        .to_string();
+
+    assert!(error.contains("more named resources than runtime capacities allow"));
+    assert!(error.contains("licensed:license.render=2 exceeds capacity 1"));
+}
+
+#[test]
 fn runtime_events_explain_ready_and_scheduler_blocking_reasons() {
     let graph = parse_graph_strict(
         r#"{

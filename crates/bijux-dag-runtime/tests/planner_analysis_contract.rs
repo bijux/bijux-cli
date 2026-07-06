@@ -588,6 +588,35 @@ fn planner_rejects_unsupported_runtime_capability_during_lowering() {
 }
 
 #[test]
+fn planner_rejects_impossible_named_resource_requirements() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"licensed",
+              "kind":"const",
+              "outputs":[{"name":"out","path":"licensed/out"}],
+              "resources":{"cpu":1,"mem_mb":64,"named_resources":{"license.render":0}},
+              "params":{"value":1}
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph should parse");
+
+    let err = build_planner_analysis(
+        &graph,
+        &RuntimeConfig::default(),
+        &SelectorSet::default(),
+        &PlannerGuardrails { allow_semantic_optimizations: true },
+    )
+    .expect_err("planner must reject impossible named resource requirements");
+    assert!(err.contains("impossible named resource requirement"));
+}
+
+#[test]
 fn planner_reports_path_previews_when_run_root_is_known() {
     let graph = parse_graph_strict(
         r#"{
