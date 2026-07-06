@@ -214,4 +214,10 @@ fn runtime_isolation_reports_container_network_runtime_enforcement() {
         .iter()
         .any(|guard| guard["guard"] == "deny-network"
             && guard["enforcement_mode"] == "container_runtime_flag"));
+    assert!(container["guards"]
+        .as_array()
+        .expect("guards")
+        .iter()
+        .any(|guard| guard["guard"] == "container-image-reference"
+            && guard["enforcement_mode"] == "reference_digest_gate"));
 }

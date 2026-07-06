@@ -253,7 +253,7 @@ pub fn build_policy_enforcement_report(
 ) -> Result<PolicyEnforcementReport, RuntimeError> {
     let mut surfaces = validate_task_contracts(graph, options)?
         .into_iter()
-        .map(|contract| policy_enforcement_surface(&contract.isolation_mode))
+        .map(|contract| policy_enforcement_surface(&contract.isolation_mode, options))
         .collect::<Vec<_>>();
     surfaces.sort_by(|left, right| left.executor_surface.cmp(&right.executor_surface));
     surfaces.dedup_by(|left, right| {
@@ -265,6 +265,7 @@ pub fn build_policy_enforcement_report(
 
 fn policy_enforcement_surface(
     isolation_mode: &TaskIsolationMode,
+    options: &RuntimeConfig,
 ) -> PolicyEnforcementSurfaceReport {
     match isolation_mode {
         TaskIsolationMode::InProcess => PolicyEnforcementSurfaceReport {
@@ -312,6 +313,9 @@ fn policy_enforcement_surface(
                         "container networking controls do not claim full host sandboxing".to_string(),
                     ],
                 },
+                container_image_reference_guard(
+                    options.policy.container_image_reference_policy,
+                ),
                 effect_gate_guard("deny-env", "environment"),
                 effect_gate_guard("deny-clock", "clock"),
                 clean_env_guard(),
@@ -334,6 +338,33 @@ fn policy_enforcement_surface(
             limitations: vec![
                 "runtime policy is enforced before adapter handoff, then adapter behavior owns the remaining boundary".to_string(),
                 "remote adapters may provide stronger isolation, but this runtime does not claim it without adapter-specific evidence".to_string(),
+            ],
+        },
+    }
+}
+
+fn container_image_reference_guard(
+    policy: crate::ContainerImageReferencePolicy,
+) -> PolicyGuardSemanticsReport {
+    match policy {
+        crate::ContainerImageReferencePolicy::RequireDigest => PolicyGuardSemanticsReport {
+            guard: "container-image-reference".to_string(),
+            enforcement_mode: "reference_digest_gate".to_string(),
+            guarantee:
+                "refuses container nodes whose image reference is not pinned with an @sha256 digest before execution starts".to_string(),
+            limitations: vec![
+                "validates the declared image reference, not registry signatures or publisher trust".to_string(),
+                "trace evidence still depends on the selected engine reporting image identity".to_string(),
+            ],
+        },
+        crate::ContainerImageReferencePolicy::AllowUnpinned => PolicyGuardSemanticsReport {
+            guard: "container-image-reference".to_string(),
+            enforcement_mode: "operator_override".to_string(),
+            guarantee:
+                "permits unpinned container image references for this execution profile".to_string(),
+            limitations: vec![
+                "mutable tags weaken replay identity guarantees compared with digest-pinned references".to_string(),
+                "trace evidence still depends on the selected engine reporting image identity".to_string(),
             ],
         },
     }
@@ -969,6 +1000,61 @@ mod tests {
         assert_eq!(container.isolation_claim, "container_runtime_boundary");
         assert!(container.guards.iter().any(|guard| {
             guard.guard == "deny-network" && guard.enforcement_mode == "container_runtime_flag"
+        }));
+        assert!(container.guards.iter().any(|guard| {
+            guard.guard == "container-image-reference"
+                && guard.enforcement_mode == "reference_digest_gate"
+        }));
+    }
+
+    #[test]
+    fn policy_enforcement_report_reflects_unpinned_container_override() {
+        let mut graph = graph_fixture();
+        graph.nodes.push(Node {
+            id: "container1".to_string(),
+            kind: NodeKind::Container,
+            semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+            inputs: Vec::new(),
+            outputs: vec![FileOutput::new("out".to_string(), "c/out".to_string())],
+            params: ParamValue::default(),
+            container: Some(bijux_dag_core::ContainerSpec {
+                image: "alpine:3.19".to_string(),
+                argv: vec!["echo".to_string(), "ok".to_string()],
+                env_allowlist: Vec::new(),
+                workdir: None,
+                engine: "docker".to_string(),
+            }),
+            timeout_ms: None,
+            resources: None,
+            tags: Vec::new(),
+            retry: Default::default(),
+            cache: Default::default(),
+            effects: vec![bijux_dag_core::Effect::Filesystem],
+            env_allowlist: Vec::new(),
+            group: None,
+            trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+            branch: None,
+        });
+        let report = build_policy_enforcement_report(
+            &graph,
+            &RuntimeConfig {
+                policy: crate::PolicyConfig {
+                    container_image_reference_policy:
+                        crate::ContainerImageReferencePolicy::AllowUnpinned,
+                    ..crate::PolicyConfig::default()
+                },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("policy report");
+        let container = report
+            .surfaces
+            .iter()
+            .find(|surface| surface.executor_surface == "container-engine")
+            .expect("container surface");
+        assert!(container.guards.iter().any(|guard| {
+            guard.guard == "container-image-reference"
+                && guard.enforcement_mode == "operator_override"
         }));
     }
 

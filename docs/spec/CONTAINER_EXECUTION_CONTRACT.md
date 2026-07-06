@@ -47,6 +47,8 @@ Image literals are validated as image names, not shell options.
 ## Environment and runtime rules
 
 - container environment isolation is governed by allowlist and denylist rules
+- stable execution requires digest-pinned image references by default; tag-only
+  references are rejected unless the operator explicitly allows unpinned images
 - timeout termination must preserve partial stdout and stderr for operator
   inspection
 - node traces must record the declared image reference and any discovered image

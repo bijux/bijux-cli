@@ -1076,7 +1076,20 @@ inputs: vec!["in".to_string()],
         let diags = graph.validate_with_warnings();
         assert!(!diags.iter().any(|d| d.severity == Severity::Error), "{:?}", diags);
         graph.resolve_graph().unwrap();
-        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let final_path = runtime
+            .run(
+                &graph,
+                dir.path(),
+                RuntimeConfig {
+                    policy: PolicyConfig {
+                        container_image_reference_policy:
+                            ContainerImageReferencePolicy::AllowUnpinned,
+                        ..PolicyConfig::default()
+                    },
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
         let out =
             fs::read_to_string(final_path.join("nodes").join("b").join("outputs").join("out_b"))
                 .unwrap();
@@ -1102,7 +1115,20 @@ inputs: vec!["in".to_string()],
             ]),
         )]);
         let runtime = Runtime::new();
-        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let final_path = runtime
+            .run(
+                &graph,
+                dir.path(),
+                RuntimeConfig {
+                    policy: PolicyConfig {
+                        container_image_reference_policy:
+                            ContainerImageReferencePolicy::AllowUnpinned,
+                        ..PolicyConfig::default()
+                    },
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
         let trace =
             fs::read_to_string(final_path.join("nodes").join("b").join("trace.json")).unwrap();
         assert!(trace.contains("\"attempt\": 2"));
@@ -1129,7 +1155,20 @@ inputs: vec!["in".to_string()],
         )]);
 
         let runtime = Runtime::new();
-        let final_path = runtime.run(&graph, dir.path(), RuntimeConfig::default()).unwrap();
+        let final_path = runtime
+            .run(
+                &graph,
+                dir.path(),
+                RuntimeConfig {
+                    policy: PolicyConfig {
+                        container_image_reference_policy:
+                            ContainerImageReferencePolicy::AllowUnpinned,
+                        ..PolicyConfig::default()
+                    },
+                    ..RuntimeConfig::default()
+                },
+            )
+            .unwrap();
         let trace =
             fs::read_to_string(final_path.join("nodes").join("b").join("trace.json")).unwrap();
 

@@ -423,7 +423,7 @@ exit 1
               "resources":{"cpu":1,"mem_mb":64,"gpu_devices":1},
               "effects":["filesystem"],
               "container":{
-                "image":"example.local/runner:latest",
+                "image":"example.local/runner@sha256:feedface",
                 "argv":["/bin/true"],
                 "engine":"docker"
               },
@@ -531,7 +531,7 @@ exit 1
     let graph = container_graph(
         &["filesystem"],
         None,
-        "example.local/runner:latest",
+        "example.local/runner@sha256:feedface",
         "cat /bijux/node/inputs/upstream/seed > /bijux/node/outputs/result.txt",
     );
     let runtime = Runtime::new();
@@ -570,10 +570,115 @@ exit 1
     );
     let trace = read_node_trace(&run_dir, "container");
     assert_eq!(trace["status"], "success");
-    assert_eq!(trace["container"]["image"], "example.local/runner:latest");
+    assert_eq!(trace["container"]["image"], "example.local/runner@sha256:feedface");
     assert_eq!(trace["container"]["image_digest"], "sha256:feedface");
     assert_eq!(trace["container"]["engine"], "docker");
     assert_eq!(trace["container"]["engine_version"], "docker fake 1.0");
+}
+
+#[test]
+fn container_adapter_rejects_unpinned_image_reference_by_default() {
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let graph = container_graph(&["filesystem"], None, "example.local/runner:latest", "true");
+    let runtime = Runtime::new();
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+
+    let trace = read_node_trace(&run_dir, "container");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["class"], "policy");
+    assert_eq!(trace["failure"]["code"], "POLICY_CONTAINER_IMAGE_REFERENCE_DENIED");
+    assert_eq!(trace["failure"]["details"]["image"], "example.local/runner:latest");
+    assert_eq!(
+        trace["failure"]["details"]["container_image_reference_policy"],
+        "require_digest"
+    );
+}
+
+#[test]
+fn container_adapter_allows_unpinned_image_reference_with_explicit_override() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let bin_dir = dir.path().join("bin");
+    fs::create_dir_all(&bin_dir).expect("bin dir");
+    let docker = bin_dir.join("docker");
+    write_executable(
+        &docker,
+        r#"#!/bin/sh
+if [ "$1" = "--version" ]; then
+  echo "docker fake 1.0"
+  exit 0
+fi
+if [ "$1" = "image" ] && [ "$2" = "inspect" ]; then
+  echo "sha256:feedface"
+  exit 0
+fi
+if [ "$1" = "run" ]; then
+  shift
+  outputs_dir=""
+  network_mode="default"
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --network)
+        network_mode="$2"
+        shift 2
+        ;;
+      -v)
+        mount="$2"
+        host_path=$(printf '%s' "$mount" | cut -d: -f1)
+        container_path=$(printf '%s' "$mount" | cut -d: -f2)
+        if [ "$container_path" = "/bijux/node/outputs" ]; then
+          outputs_dir="$host_path"
+        fi
+        shift 2
+        ;;
+      -e)
+        shift 2
+        ;;
+      --rm)
+        shift
+        ;;
+      --workdir)
+        shift 2
+        ;;
+      -*)
+        shift
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+  printf 'ok' > "$outputs_dir/result.txt"
+  printf '%s' "$network_mode" > "$outputs_dir/network.txt"
+  printf '/bijux/node/work/scratch' > "$outputs_dir/workdir.txt"
+  exit 0
+fi
+exit 1
+"#,
+    );
+    let _path_guard = prepend_path(&bin_dir);
+
+    let graph = container_graph(&["filesystem"], None, "example.local/runner:latest", "true");
+    let runtime = Runtime::new();
+    let run_dir = runtime
+        .run(
+            &graph,
+            dir.path(),
+            RuntimeConfig {
+                policy: bijux_dag_runtime::PolicyConfig {
+                    container_image_reference_policy:
+                        bijux_dag_runtime::ContainerImageReferencePolicy::AllowUnpinned,
+                    ..bijux_dag_runtime::PolicyConfig::default()
+                },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("run");
+
+    let trace = read_node_trace(&run_dir, "container");
+    assert_eq!(trace["status"], "success");
+    assert_eq!(trace["container"]["image"], "example.local/runner:latest");
+    assert_eq!(trace["container"]["image_digest"], "sha256:feedface");
 }
 
 #[test]
@@ -640,8 +745,12 @@ exit 1
     );
     let _path_guard = prepend_path(&bin_dir);
 
-    let graph =
-        container_graph(&["filesystem", "network"], None, "example.local/runner:latest", "true");
+    let graph = container_graph(
+        &["filesystem", "network"],
+        None,
+        "example.local/runner@sha256:feedface",
+        "true",
+    );
     let runtime = Runtime::new();
     let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
 
@@ -686,7 +795,7 @@ exit 1
     let _path_guard = prepend_path(&bin_dir);
 
     let graph =
-        container_graph(&["filesystem"], Some(50), "example.local/runner:latest", "sleep 1");
+        container_graph(&["filesystem"], Some(50), "example.local/runner@sha256:feedface", "sleep 1");
     let runtime = Runtime::new();
     let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
 
@@ -702,7 +811,7 @@ exit 1
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "EXEC_TIMEOUT");
     assert_eq!(trace["failure"]["class"], "timeout");
-    assert_eq!(trace["container"]["image"], "example.local/runner:latest");
+    assert_eq!(trace["container"]["image"], "example.local/runner@sha256:feedface");
     assert_eq!(trace["container"]["image_digest"], "sha256:feedface");
     assert_eq!(trace["container"]["engine_version"], "docker fake 1.0");
 }

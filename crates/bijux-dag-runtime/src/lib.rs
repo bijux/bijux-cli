@@ -952,6 +952,25 @@ impl Adapter for ContainerAdapter {
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
 
         let engine = spec.engine.as_str();
+        if let Err(failure) = enforce_container_image_reference_policy(
+            spec.image.as_str(),
+            exec.policy.container_image_reference_policy,
+        ) {
+            exec.fs.write(&stdout_path, b"")?;
+            exec.fs.write(&stderr_path, failure.message.as_bytes())?;
+            return Ok(NodeResult {
+                status: NodeStatus::Failed,
+                stdout_path: stdout_path.display().to_string(),
+                stderr_path: stderr_path.display().to_string(),
+                outputs_dir: outputs_dir.display().to_string(),
+                output_evidence: Vec::new(),
+                failure: Some(failure),
+                attempts: 1,
+                attempt_events: Vec::new(),
+                container_meta: Some(container_trace(spec, engine, None, None)),
+                adapter_binary_sha256: None,
+            });
+        }
         let engine_version = match container_execution::container_engine_discovery(engine) {
             Ok(version) => version,
             Err(message) => {
@@ -3421,6 +3440,32 @@ fn kill_child_descendants_best_effort(pid: u32) {
 
 fn effective_node_timeout_ms(node: &Node, params: &Value) -> Option<u64> {
     node.timeout_ms.or_else(|| params.get("timeout_ms").and_then(|v| v.as_u64()))
+}
+
+fn enforce_container_image_reference_policy(
+    image_reference: &str,
+    policy: ContainerImageReferencePolicy,
+) -> Result<(), FailureInfo> {
+    if matches!(policy, ContainerImageReferencePolicy::AllowUnpinned)
+        || container_image_reference_has_digest(image_reference)
+    {
+        return Ok(());
+    }
+
+    Err(FailureInfo::new(
+        FailureClass::Policy,
+        "Policy",
+        "POLICY_CONTAINER_IMAGE_REFERENCE_DENIED",
+        "container image reference must include an @sha256 digest under the active policy",
+        Some(serde_json::json!({
+            "image": image_reference,
+            "container_image_reference_policy": container_image_reference_policy_label(policy),
+        })),
+    ))
+}
+
+fn container_image_reference_has_digest(image_reference: &str) -> bool {
+    image_reference.contains("@sha256:")
 }
 
 fn container_trace(
