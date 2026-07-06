@@ -63,7 +63,9 @@ Operations, or Contract Governance once the command family is clear.
 ## Code Anchors
 
 - `contracts/foundation/maintainer_command_surface.v1.json`
-- `crates/bijux-dev/src/cli.rs`
+- `crates/bijux-dev/src/commands/cli.rs`
+- `crates/bijux-dev/src/commands/cli_control_command.rs`
+- `crates/bijux-dev/src/commands/cli_release_command.rs`
 - `crates/bijux-dev/src/commands/mod.rs`
 - `crates/bijux-dev/src/bin/bijux-dev-cli.rs`
 - `crates/bijux-dev/src/main.rs`

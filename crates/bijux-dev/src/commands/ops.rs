@@ -4620,8 +4620,19 @@ pub(super) fn run_foundation_review_guard() -> Result<(), String> {
 
 pub(super) fn run_control_plane_surfaces_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let commands = fs::read_to_string(root.join("crates/bijux-dev/src/commands/mod.rs"))
-        .map_err(|err| err.to_string())?;
+    let commands = [
+        "crates/bijux-dev/src/commands/cli.rs",
+        "crates/bijux-dev/src/commands/cli_control_command.rs",
+        "crates/bijux-dev/src/commands/cli_release_command.rs",
+        "crates/bijux-dev/src/commands/mod.rs",
+    ]
+    .into_iter()
+    .map(|path| {
+        fs::read_to_string(root.join(path))
+            .map_err(|err| format!("failed to read control-plane source {path}: {err}"))
+    })
+    .collect::<Result<Vec<_>, _>>()?
+    .join("\n");
     for required in [
         "enum RepoCommand",
         "enum ReleaseCommand",
