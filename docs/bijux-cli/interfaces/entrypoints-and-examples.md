@@ -16,7 +16,7 @@ Rust callers, plus short examples that map directly to current behavior.
 
 ```mermaid
 flowchart TD
-    shell["shell invocation"] --> bin["src/bin/bijux.rs"]
+    shell["shell invocation"] --> bin["crates/bijux-cli/src/bin/bijux.rs"]
     rust["rust caller"] --> api["api::runtime::run_app"]
     interactive["interactive user"] --> repl["api::repl and repl commands"]
     bin --> dispatch["dispatch and handlers"]
@@ -26,7 +26,7 @@ flowchart TD
 
 ## Entrypoints
 
-- process binary: `bijux` via `src/bin/bijux.rs`
+- process binary: `bijux` via `crates/bijux-cli/src/bin/bijux.rs`
 - Rust runtime API: `api::runtime::run_app` and `run_cli_from_env`
 - parser API: `api::parser::parse_intent`
 - REPL API: `api::repl::*`

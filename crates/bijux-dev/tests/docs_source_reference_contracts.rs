@@ -63,6 +63,12 @@ fn looks_like_path_reference(candidate: &str) -> bool {
     if candidate.contains(' ') || candidate.contains("://") || candidate.starts_with('#') {
         return false;
     }
+    if candidate.starts_with("artifacts/")
+        || candidate.starts_with("./artifacts/")
+        || candidate.starts_with("../artifacts/")
+    {
+        return false;
+    }
 
     let exact_root_files = [
         "Cargo.toml",
@@ -101,6 +107,20 @@ fn looks_like_path_reference(candidate: &str) -> bool {
     path_prefixes.iter().any(|prefix| candidate.starts_with(prefix))
 }
 
+fn resolution_roots(doc: &Path, repo_root: &Path) -> Vec<PathBuf> {
+    let mut roots = vec![doc.parent().expect("markdown parent").to_path_buf(), repo_root.to_path_buf()];
+    let repo_relative = doc.strip_prefix(repo_root).expect("repo-relative doc path");
+
+    if repo_relative.starts_with("docs/bijux-cli") {
+        roots.push(repo_root.join("crates/bijux-cli"));
+    }
+    if repo_relative.starts_with("docs/bijux-dev") {
+        roots.push(repo_root.join("crates/bijux-dev"));
+    }
+
+    roots
+}
+
 fn reference_resolves(doc: &Path, repo_root: &Path, reference: &str) -> bool {
     let path_text = reference.split_once('#').map_or(reference, |(path, _)| path).trim_end_matches('/');
     if path_text.is_empty()
@@ -113,8 +133,7 @@ fn reference_resolves(doc: &Path, repo_root: &Path, reference: &str) -> bool {
         return false;
     }
 
-    let relative = doc.parent().expect("markdown parent").join(path_text);
-    relative.exists() || repo_root.join(path_text).exists()
+    resolution_roots(doc, repo_root).into_iter().any(|root| root.join(path_text).exists())
 }
 
 #[test]
@@ -140,6 +159,33 @@ fn workspace_handbook_source_references_resolve() {
     assert!(
         failures.is_empty(),
         "workspace handbook contains stale source references:\n{}",
+        failures.join("\n")
+    );
+}
+
+#[test]
+fn cli_handbook_source_references_resolve() {
+    let root = repo_root();
+    let markdown_files = collect_markdown_files(&root.join("docs/bijux-cli"));
+    let mut failures = Vec::new();
+
+    for doc in markdown_files {
+        let text =
+            fs::read_to_string(&doc).unwrap_or_else(|err| panic!("failed to read {}: {err}", doc.display()));
+        for (line, reference) in extract_inline_code_references(&text) {
+            if !looks_like_path_reference(&reference) {
+                continue;
+            }
+            if !reference_resolves(&doc, &root, &reference) {
+                let rel = doc.strip_prefix(&root).expect("repo-relative doc path");
+                failures.push(format!("{}:{} `{}`", rel.display(), line, reference));
+            }
+        }
+    }
+
+    assert!(
+        failures.is_empty(),
+        "CLI handbook contains stale source references:\n{}",
         failures.join("\n")
     );
 }
