@@ -194,10 +194,8 @@ fn runs_history_json_filters_by_graph_and_surfaces_lineage_output_and_lifecycle(
     assert_eq!(row["lifecycle_state"], "active");
     assert_eq!(row["graph_name"], "training-pipeline");
     assert_eq!(row["graph_fingerprint"], "graph-train");
-    assert!(row["run_dir"].as_str().is_some_and(|value| value.ends_with("/run-child")));
-    assert!(row["output_location"]
-        .as_str()
-        .is_some_and(|value| value.ends_with("/run-child/outputs")));
+    assert_eq!(row["run_dir"], "run-child");
+    assert_eq!(row["output_location"], "run-child/outputs");
     assert_eq!(row["lineage"]["parent_run_id"], "run-parent");
 }
 

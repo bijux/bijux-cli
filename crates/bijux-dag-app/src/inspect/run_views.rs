@@ -249,7 +249,7 @@ fn build_history_rows(root: &Path) -> Result<Vec<Value>, std::io::Error> {
     let mut rows = Vec::new();
     for run_id in run_ids {
         let run_dir = resolve_run_dir(root, &run_id);
-        rows.push(build_history_row(&run_dir, &run_id)?);
+        rows.push(build_history_row(root, &run_dir, &run_id)?);
     }
     let child_map = build_history_child_map(&rows);
     for row in &mut rows {
@@ -280,7 +280,11 @@ fn build_history_rows(root: &Path) -> Result<Vec<Value>, std::io::Error> {
     Ok(rows)
 }
 
-fn build_history_row(run_dir: &Path, default_run_id: &str) -> Result<Value, std::io::Error> {
+fn build_history_row(
+    root: &Path,
+    run_dir: &Path,
+    default_run_id: &str,
+) -> Result<Value, std::io::Error> {
     let manifest = read_json(&run_dir.join("manifest.json")).ok();
     let graph_snapshot = snapshot_path(run_dir).and_then(|path| read_json(&path).ok());
     let runtime_snapshot = read_json(&run_dir.join("run.snapshot.json")).ok();
@@ -353,6 +357,17 @@ fn build_history_row(run_dir: &Path, default_run_id: &str) -> Result<Value, std:
             runtime_snapshot.as_ref().and_then(|value| value.get("replay_source_run_id").cloned())
         })
         .unwrap_or(Value::Null);
+    let run_dir_display = run_dir
+        .strip_prefix(root)
+        .unwrap_or(run_dir)
+        .display()
+        .to_string();
+    let output_location_display = run_dir
+        .strip_prefix(root)
+        .map(|relative| relative.join("outputs"))
+        .unwrap_or_else(|_| run_dir.join("outputs"))
+        .display()
+        .to_string();
 
     Ok(json!({
         "run_id": run_id,
@@ -365,8 +380,8 @@ fn build_history_row(run_dir: &Path, default_run_id: &str) -> Result<Value, std:
         "source_run_id": source_run_id,
         "submission_source": submission_source,
         "trigger_source": trigger_source,
-        "run_dir": run_dir.display().to_string(),
-        "output_location": run_dir.join("outputs").display().to_string(),
+        "run_dir": run_dir_display,
+        "output_location": output_location_display,
         "labels": labels
     }))
 }
@@ -1031,7 +1046,8 @@ mod tests {
         assert_eq!(rows[0]["run_id"], "run-active");
         assert_eq!(rows[0]["lifecycle_state"], "active");
         assert_eq!(rows[0]["graph_fingerprint"], "graph-train");
-        assert_eq!(rows[0]["output_location"], json!(active.join("outputs").display().to_string()));
+        assert_eq!(rows[0]["run_dir"], json!("run-active"));
+        assert_eq!(rows[0]["output_location"], json!("run-active/outputs"));
     }
 
     #[test]
