@@ -138,6 +138,55 @@ fn task_contract_supports_all_isolation_modes() {
 }
 
 #[test]
+fn python_nodes_use_subprocess_task_isolation() {
+    let graph = Graph {
+        spec: "bijux-dag/v0.1".to_string(),
+        meta: None,
+        inputs: Default::default(),
+        nondeterminism_allowed: false,
+        subgraphs: Default::default(),
+        subgraph_instances: Vec::new(),
+        nodes: vec![bijux_dag_core::Node {
+            id: "python_mode".to_string(),
+            kind: NodeKind::Python,
+            semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+            inputs: vec![],
+            outputs: vec![bijux_dag_core::FileOutput::new(
+                "out".to_string(),
+                "python_mode/out.json".to_string(),
+            )],
+            params: bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "module".to_string(),
+                        bijux_dag_core::ParamValue::Literal(json!("demo_python_adapter")),
+                    ),
+                    ("function".to_string(), bijux_dag_core::ParamValue::Literal(json!("emit"))),
+                ]
+                .into_iter()
+                .collect(),
+            ),
+            container: None,
+            timeout_ms: None,
+            resources: None,
+            tags: vec![],
+            retry: Default::default(),
+            cache: Default::default(),
+            effects: vec![bijux_dag_core::Effect::Filesystem],
+            env_allowlist: vec![],
+            group: None,
+            trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+            branch: None,
+        }],
+        edges: vec![],
+    };
+
+    let contracts = validate_task_contracts(&graph, &RuntimeConfig::default()).unwrap();
+    assert_eq!(contracts.len(), 1);
+    assert_eq!(contracts[0].isolation_mode, TaskIsolationMode::Subprocess);
+}
+
+#[test]
 fn task_result_envelope_json_shape_is_stable() {
     let graph = fixture("linear.dag.json");
     let node = graph.nodes.first().unwrap().clone();

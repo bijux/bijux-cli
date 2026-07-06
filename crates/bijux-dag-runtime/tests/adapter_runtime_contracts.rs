@@ -53,6 +53,50 @@ fn shell_graph(command: &str, effects: &[&str]) -> String {
     )
 }
 
+fn python_graph(
+    module: &str,
+    function: &str,
+    payload: Value,
+    outputs: &[(&str, &str)],
+    effects: &[&str],
+    env_allowlist: &[&str],
+    timeout_ms: Option<u64>,
+) -> String {
+    let effect_values: Vec<Value> =
+        effects.iter().map(|effect| Value::String((*effect).to_string())).collect();
+    let env_values: Vec<Value> =
+        env_allowlist.iter().map(|key| Value::String((*key).to_string())).collect();
+    let output_values = outputs
+        .iter()
+        .map(|(name, path)| serde_json::json!({"name": name, "path": path, "media_type":"application/json"}))
+        .collect::<Vec<_>>();
+    let mut params = serde_json::Map::new();
+    params.insert("module".to_string(), Value::String(module.to_string()));
+    params.insert("function".to_string(), Value::String(function.to_string()));
+    if let Value::Object(entries) = payload {
+        for (key, value) in entries {
+            params.insert(key, value);
+        }
+    }
+    let mut node = serde_json::json!({
+        "id":"python",
+        "kind":"python",
+        "outputs": output_values,
+        "params": Value::Object(params),
+        "effects": effect_values,
+        "env_allowlist": env_values,
+    });
+    if let Some(timeout_ms) = timeout_ms {
+        node["timeout_ms"] = serde_json::json!(timeout_ms);
+    }
+    serde_json::json!({
+        "spec":"bijux-dag/v0.1",
+        "nodes":[node],
+        "edges":[]
+    })
+    .to_string()
+}
+
 fn read_trace(run_dir: &std::path::Path) -> Value {
     serde_json::from_str(
         &fs::read_to_string(run_dir.join("nodes").join("shell").join("trace.json")).expect("trace"),
@@ -76,6 +120,10 @@ fn write_executable(path: &Path, contents: &str) {
         perms.set_mode(0o755);
         fs::set_permissions(path, perms).expect("chmod");
     }
+}
+
+fn write_python_module(path: &Path, contents: &str) {
+    fs::write(path, contents).expect("write python module");
 }
 
 struct PathGuard(Option<OsString>);
@@ -188,6 +236,20 @@ fn adapter_descriptors_expose_timeout_cache_and_protocol_contracts() {
     assert!(!shell.supports_cancel);
     assert_eq!(
         shell.cache_compatibility,
+        bijux_dag_runtime::CacheCompatibilityMode::FingerprintExact
+    );
+}
+
+#[test]
+fn python_adapter_descriptor_exposes_timeout_cache_and_protocol_contracts() {
+    let descriptors = registered_adapter_descriptors();
+    let python =
+        descriptors.iter().find(|descriptor| descriptor.id == "python").expect("python descriptor");
+    assert_eq!(python.protocol_version, "bijux-dag-adapter/v1");
+    assert!(python.supports_timeout);
+    assert!(!python.supports_cancel);
+    assert_eq!(
+        python.cache_compatibility,
         bijux_dag_runtime::CacheCompatibilityMode::FingerprintExact
     );
 }
@@ -444,6 +506,149 @@ fn shell_adapter_timeout_preserves_partial_stdout_and_stderr() {
     assert_eq!(trace["status"], "failed");
     assert_eq!(trace["failure"]["code"], "EXEC_TIMEOUT");
     assert_eq!(trace["failure"]["class"], "timeout");
+}
+
+#[test]
+fn python_adapter_writes_json_output_from_function_result() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let module_dir = dir.path().join("python");
+    fs::create_dir_all(&module_dir).expect("mkdir");
+    write_python_module(
+        &module_dir.join("demo_python_adapter.py"),
+        "def emit(payload):\n    return {\"value\": payload[\"value\"], \"kind\": \"python\"}\n",
+    );
+    std::env::set_var("PYTHONPATH", &module_dir);
+
+    let graph = parse_graph_strict(&python_graph(
+        "demo_python_adapter",
+        "emit",
+        serde_json::json!({"value": {"left": 1, "right": 2}}),
+        &[("result", "result.json")],
+        &["filesystem", "env"],
+        &["PYTHONPATH"],
+        None,
+    ))
+    .expect("graph");
+    let runtime = Runtime::new();
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let payload: Value = serde_json::from_str(
+        &fs::read_to_string(
+            run_dir.join("nodes").join("python").join("outputs").join("result.json"),
+        )
+        .expect("output"),
+    )
+    .expect("json output");
+    assert_eq!(payload["kind"], "python");
+    assert_eq!(payload["value"]["left"], 1);
+    let trace = read_node_trace(&run_dir, "python");
+    assert_eq!(trace["status"], "success");
+    std::env::remove_var("PYTHONPATH");
+}
+
+#[test]
+fn python_adapter_maps_named_result_object_to_multiple_outputs() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let module_dir = dir.path().join("python");
+    fs::create_dir_all(&module_dir).expect("mkdir");
+    write_python_module(
+        &module_dir.join("split_python_adapter.py"),
+        "def split(payload):\n    return {\"left\": payload[\"left\"], \"right\": payload[\"right\"]}\n",
+    );
+    std::env::set_var("PYTHONPATH", &module_dir);
+
+    let graph = parse_graph_strict(&python_graph(
+        "split_python_adapter",
+        "split",
+        serde_json::json!({"left": 1, "right": 2}),
+        &[("left", "left.json"), ("right", "right.json")],
+        &["filesystem", "env"],
+        &["PYTHONPATH"],
+        None,
+    ))
+    .expect("graph");
+    let runtime = Runtime::new();
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let left: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("python").join("outputs").join("left.json"))
+            .expect("left output"),
+    )
+    .expect("left json");
+    let right: Value = serde_json::from_str(
+        &fs::read_to_string(
+            run_dir.join("nodes").join("python").join("outputs").join("right.json"),
+        )
+        .expect("right output"),
+    )
+    .expect("right json");
+    assert_eq!(left, serde_json::json!(1));
+    assert_eq!(right, serde_json::json!(2));
+    std::env::remove_var("PYTHONPATH");
+}
+
+#[test]
+fn python_adapter_structures_function_exceptions() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let module_dir = dir.path().join("python");
+    fs::create_dir_all(&module_dir).expect("mkdir");
+    write_python_module(
+        &module_dir.join("failing_python_adapter.py"),
+        "def explode(payload):\n    raise ValueError(f\"bad {payload['value']}\")\n",
+    );
+    std::env::set_var("PYTHONPATH", &module_dir);
+
+    let graph = parse_graph_strict(&python_graph(
+        "failing_python_adapter",
+        "explode",
+        serde_json::json!({"value": "payload"}),
+        &[("result", "result.json")],
+        &["filesystem", "env"],
+        &["PYTHONPATH"],
+        None,
+    ))
+    .expect("graph");
+    let runtime = Runtime::new();
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let trace = read_node_trace(&run_dir, "python");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "PYTHON_EXCEPTION");
+    assert_eq!(trace["failure"]["class"], "execution");
+    assert_eq!(trace["failure"]["details"]["phase"], "call_function");
+    assert_eq!(trace["failure"]["details"]["exception_type"], "ValueError");
+    std::env::remove_var("PYTHONPATH");
+}
+
+#[test]
+fn python_adapter_timeout_is_reported_structurally() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let module_dir = dir.path().join("python");
+    fs::create_dir_all(&module_dir).expect("mkdir");
+    write_python_module(
+        &module_dir.join("slow_python_adapter.py"),
+        "import time\n\ndef sleep_then_emit(payload):\n    time.sleep(1)\n    return payload\n",
+    );
+    std::env::set_var("PYTHONPATH", &module_dir);
+
+    let graph = parse_graph_strict(&python_graph(
+        "slow_python_adapter",
+        "sleep_then_emit",
+        serde_json::json!({"value": "payload"}),
+        &[("result", "result.json")],
+        &["filesystem", "env"],
+        &["PYTHONPATH"],
+        Some(50),
+    ))
+    .expect("graph");
+    let runtime = Runtime::new();
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    let trace = read_node_trace(&run_dir, "python");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "EXEC_TIMEOUT");
+    assert_eq!(trace["failure"]["class"], "timeout");
+    std::env::remove_var("PYTHONPATH");
 }
 
 #[test]
@@ -1110,6 +1315,8 @@ fn adapter_output_schema_compatibility_reports_exact_mismatch() {
 fn adapter_conformance_suite_covers_shell_hardening_and_output_contract_scenarios() {
     let suites = adapter_conformance_suite().expect("suite");
     let shell = suites.iter().find(|suite| suite.adapter_id == "shell").expect("shell");
+    let python = suites.iter().find(|suite| suite.adapter_id == "python").expect("python");
+    let python_scenarios = &python.scenarios;
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "argv_contract"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "timeout"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "undeclared_output"));
@@ -1117,4 +1324,21 @@ fn adapter_conformance_suite_covers_shell_hardening_and_output_contract_scenario
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "missing_executable"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "cache_output"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "non_utf8_output"));
+    assert!(python_scenarios.iter().any(|scenario| scenario.scenario == "timeout"));
+    assert!(python_scenarios.iter().any(|scenario| {
+        scenario.scenario == "failure"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+    }));
+    assert!(python_scenarios.iter().any(|scenario| {
+        scenario.scenario == "env_policy"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+    }));
+    assert!(python_scenarios.iter().any(|scenario| {
+        scenario.scenario == "workdir_isolation"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+    }));
+    assert!(python_scenarios.iter().any(|scenario| {
+        scenario.scenario == "missing_executable"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+    }));
 }
