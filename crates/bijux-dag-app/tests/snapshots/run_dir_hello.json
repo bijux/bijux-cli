@@ -186,6 +186,7 @@
     "planner_fingerprint": "f54b2b75b6ecd4f69ae09cbe009e3b5dcabfc88aa44b3a5e0bcaa27745ed85b7",
     "policy": {
       "clean_env": true,
+      "container_image_reference_policy": "require_digest",
       "deny_clock": false,
       "deny_env": false,
       "deny_network": false
@@ -274,13 +275,13 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "4288a9105f1f5b14cd16e9de62b70eb5ae8d84f10b69ed88385e6653c0baa6e1",
+        "cache_key": "7e3689ed930942a7888a76ec831422bfb147325b8f177386447b32c5a7d920a4",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
         "input_lineage_fingerprint": "602e35a92eec4bc0a2ec6ae113f07bfc6933322fb69fe8dee416e5a67217e2a2",
         "node_definition_fingerprint": "e87c71d279ce994acde0ad2ca76c81eb55f6b8a726c0b13d33d32f6fa9915358",
         "params_fingerprint": "5e99d76e946ff987af1402a9ef575fb4fbf3d2bc668d8be30ad48aac48cc3878",
-        "policy_fingerprint": "75f5bd0e2ebb55cf6dea7eeda632ebf1d04a4715e887bc52b1dbecdb40770924"
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
       },
       "evidence_fingerprint": "a0c2b8052f242fee706012ed591f54e9677bbe975f10f59a62f78b2cbf3336d2",
       "execution_fingerprint": "f0c1c3999bcd1fc14e0277e00964399f985cc115dbc8ad3a3495c6e7177a39ea",
@@ -346,14 +347,14 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "5fde59d5741af45204fea246b44167c524e1ae85f9bf310d4aa5c7dad2d22721",
+        "cache_key": "747cffa708735fd7929aa4d73e6ace9b80bd7e3c92b0534d1073d6638a720f49",
         "command_fingerprint": "d0281e0435ef37936951fc4dec4675ab92884b0d1b17cdd76d92920398a4b05a",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
         "input_lineage_fingerprint": "4229d8b7406bd1a427ce6aea05398fd7fd67450108ad607511afaa600d9fdc18",
         "node_definition_fingerprint": "8c46109faf9fdb30f97c65904f24862ba18386a1eb10ae3cd17c9108d37ef7ba",
         "params_fingerprint": "ccc96dd5f48b6069261e9315fe5e3babfd412a3b6878ae7f39c35d9ebb432377",
-        "policy_fingerprint": "75f5bd0e2ebb55cf6dea7eeda632ebf1d04a4715e887bc52b1dbecdb40770924"
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
       },
       "evidence_fingerprint": "a0c2b8052f242fee706012ed591f54e9677bbe975f10f59a62f78b2cbf3336d2",
       "execution_fingerprint": "f0c1c3999bcd1fc14e0277e00964399f985cc115dbc8ad3a3495c6e7177a39ea",
