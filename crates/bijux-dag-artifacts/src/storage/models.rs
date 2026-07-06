@@ -342,6 +342,56 @@ pub struct SkipReason {
     pub reason: String,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FailureAffectedGroups {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub failed: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub skipped: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub cancelled: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FailureCauseRecord {
+    pub node_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub failure_class: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub failure_code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub finished_unix_ms: Option<u128>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FailurePropagationRecord {
+    pub node_id: String,
+    pub status: String,
+    pub reason: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub blocking_nodes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RunFailureSummary {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub roots: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub primary_failure: Option<FailureCauseRecord>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub propagated_failures: Vec<FailurePropagationRecord>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub propagated_skips: Vec<FailurePropagationRecord>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub downstream_affected_nodes: Vec<String>,
+    #[serde(default)]
+    pub downstream_affected_groups: FailureAffectedGroups,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct NodeCounts {
     pub success: u32,
