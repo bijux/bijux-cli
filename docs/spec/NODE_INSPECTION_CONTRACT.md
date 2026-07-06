@@ -33,6 +33,8 @@ Node inspection must expose:
 - configured cache policy together with the observed cache result derived from
   trace evidence
 - failure, skip, transition-cause, and lifecycle-state evidence when present
+- execution explanation derived from persisted trace, event, and dependency
+  evidence
 
 ## Honesty rules
 
@@ -46,6 +48,10 @@ Node inspection must expose:
 ## Related tests
 
 - `crates/bijux-dag-app/tests/node_inspection_contract.rs`
+
+## Related contracts
+
+- [Node Execution Explanation Contract](NODE_EXECUTION_EXPLANATION_CONTRACT.md)
 
 ## Versioning and change policy
 
