@@ -25,7 +25,9 @@ verify, compare, or diagnose it.
 - `dag runs failures`: aggregate failed node kinds across retained runs
 - `dag runs flakes`: identify graph fingerprints with mixed retained outcomes
 - `dag runs tree`: render node structure from run evidence
-- `dag runs timeline`: render ordered execution events from node traces
+- `dag runs timeline`: render ordered execution events from
+  `observability.timeline.json`, with node-trace projection only as a
+  compatibility fallback
 - `dag runs diff`: compare two run directories
 - `dag runs verify`: verify run integrity and compatibility
 - `dag runs doctor`: diagnose corrupt or incomplete run evidence

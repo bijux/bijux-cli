@@ -25,6 +25,10 @@ classification exercised by `crates/bijux-dag-app/tests/operator_ux_contract.rs`
   silently treated as healthy
 - corrupt manifests or missing evidence must surface corrupt or incomplete
   integrity states
+- timeline inspection must prefer `observability.timeline.json` when it exists
+  and fall back to node-trace projection only for older or incomplete runs
+- timeline inspection must preserve ordered event timestamps together with
+  lifecycle labels, node identity, and any available terminal reason
 - timing summaries must remain bounded by node trace timestamps
 
 ## Related tests

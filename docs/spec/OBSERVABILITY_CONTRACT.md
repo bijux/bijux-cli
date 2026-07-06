@@ -45,7 +45,16 @@ present and passing.
 ## Timeline and completeness behavior
 
 - `reconstruct_timeline_from_events` must produce a stable `TimelineExport`
-- reconstructed timeline categories derive from the runtime `EventCategory`
+- reconstruction must sort runtime events into one ordered per-run stream before
+  export
+- timeline entries must preserve `unix_ms`, `node_id`, normalized `category`,
+  normalized `label`, and optional `status`, `reason`, and `source_event`
+- normalized labels must surface the durable lifecycle milestones:
+  `run_started`, `node_ready`, `node_scheduled`, `node_started`,
+  `node_completed`, `node_failed`, `node_skipped`, `node_cached`,
+  `node_cancelled`, and `run_completed`
+- timeout and cancellation control-plane events must remain visible as
+  `run_timed_out` and `run_cancel_requested`
 - `verify_event_log_completeness` must report missing required names, field
   gaps, timestamp monotonicity, and timeline drift
 
