@@ -1,15 +1,18 @@
 use crate::commands::{DagCli, RunsCommands};
 use crate::inspect_service;
+use crate::routes::run_lookup::{read_manifest_json, RunWorkspacePaths};
 use crate::routes::selector_grammar::parse_selector_expressions;
 use crate::{
     emit_json, format_inspect_human, format_show_human, list_runs, print_human_diff, read_file,
     replay_service, resolve_run_dir, runs_compare, runs_failures, runs_flakes, runs_summary,
     runs_trend, verify_run, ExitCode,
 };
+use bijux_dag_artifacts::{write_json_atomic_durable, RunStopRequest};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 fn read_optional_json(path: &Path) -> Value {
     read_file(path)
@@ -140,6 +143,65 @@ fn diagnostics_bundle_payload(run_dir: &Path, redact: bool) -> Result<Value, Exi
     Ok(if redact { redact_value(&payload) } else { payload })
 }
 
+fn now_unix_ms() -> u128 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |duration| duration.as_millis())
+}
+
+fn read_stop_request(path: &Path) -> Result<RunStopRequest, ExitCode> {
+    let raw = read_file(path)?;
+    serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
+}
+
+fn record_stop_request(root: &Path, run_id: &str) -> Result<Value, ExitCode> {
+    let paths = RunWorkspacePaths::for_run(root, run_id)?;
+    if let Some(active_run_dir) = paths.active_run_path() {
+        let request_path = active_run_dir.join("run.stop-request.json");
+        if request_path.exists() {
+            let request = read_stop_request(&request_path)?;
+            return Ok(serde_json::json!({
+                "run_id": paths.normalized_run_id,
+                "requested": false,
+                "state": "already_requested",
+                "run_dir": active_run_dir,
+                "request_path": request_path,
+                "request": request,
+            }));
+        }
+
+        let request = RunStopRequest {
+            schema_version: "run-stop-request/v0.1".to_string(),
+            run_id: paths.normalized_run_id.clone(),
+            requested_unix_ms: now_unix_ms(),
+            source: "cli".to_string(),
+            reason: None,
+        };
+        let request_value = serde_json::to_value(&request).map_err(|_| ExitCode::from(3))?;
+        write_json_atomic_durable(&request_path, &request_value).map_err(|_| ExitCode::from(3))?;
+        return Ok(serde_json::json!({
+            "run_id": paths.normalized_run_id,
+            "requested": true,
+            "state": "requested",
+            "run_dir": active_run_dir,
+            "request_path": request_path,
+            "request": request,
+        }));
+    }
+
+    if let Some(run_dir) = paths.stable_run_path() {
+        let manifest = read_manifest_json(&run_dir)?;
+        let status = manifest.get("status").and_then(Value::as_str).unwrap_or("unknown");
+        return Ok(serde_json::json!({
+            "run_id": paths.normalized_run_id,
+            "requested": false,
+            "state": "already_finished",
+            "status": status,
+            "run_dir": run_dir,
+        }));
+    }
+
+    Err(ExitCode::from(3))
+}
+
 pub(crate) fn handle_runs_command(
     cli: &DagCli,
     command: &RunsCommands,
@@ -252,6 +314,49 @@ pub(crate) fn handle_runs_command(
                 );
             }
             println!("{}", serde_json::to_string_pretty(&timeline).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        RunsCommands::Stop { run_id, root } => {
+            let report = record_stop_request(root, run_id)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runs.stop",
+                    true,
+                    report,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            match report.get("state").and_then(Value::as_str).unwrap_or("requested") {
+                "requested" => {
+                    println!(
+                        "stop request recorded for run {}",
+                        report.get("run_id").and_then(Value::as_str).unwrap_or(run_id)
+                    );
+                    println!(
+                        "request file: {}",
+                        report.get("request_path").and_then(Value::as_str).unwrap_or("-")
+                    );
+                }
+                "already_requested" => {
+                    println!(
+                        "stop request already recorded for run {}",
+                        report.get("run_id").and_then(Value::as_str).unwrap_or(run_id)
+                    );
+                    println!(
+                        "request file: {}",
+                        report.get("request_path").and_then(Value::as_str).unwrap_or("-")
+                    );
+                }
+                _ => {
+                    println!(
+                        "run {} is already finished with status {}",
+                        report.get("run_id").and_then(Value::as_str).unwrap_or(run_id),
+                        report.get("status").and_then(Value::as_str).unwrap_or("unknown")
+                    );
+                }
+            }
             Ok(ExitCode::SUCCESS)
         }
         RunsCommands::Diff { run_a, run_b, mode, node, explain } => {
@@ -476,6 +581,7 @@ mod tests {
     use super::handle_runs_command;
     use crate::commands::{Commands, DagCli, RunsCommands};
     use crate::ExitCode;
+    use bijux_dag_artifacts::RunStopRequest;
     use serde_json::json;
     use std::fs;
     use std::path::Path;
@@ -529,6 +635,29 @@ mod tests {
         .expect("write trace");
     }
 
+    fn write_active_run(root: &Path, run_id: &str) -> std::path::PathBuf {
+        let normalized = run_id.strip_prefix("run-").unwrap_or(run_id);
+        let run = root.join(format!("run.tmp-{normalized}"));
+        fs::create_dir_all(run.join("nodes/prepare")).expect("mkdir nodes");
+        fs::write(
+            run.join("manifest.json"),
+            serde_json::to_vec_pretty(&json!({
+                "run_id": normalized,
+                "status": "running",
+                "run_dir_format": "run-dir/v0.1",
+                "graph_fingerprint": "g-active",
+                "created_unix_ms": 1,
+                "started_unix_ms": 1,
+                "finished_unix_ms": 1,
+                "node_counts": {"success": 0, "failed": 0, "skipped": 0, "cached": 0, "cancelled": 0},
+                "run_metadata": {"submission_source": "manual", "trigger_source": "cli", "operator": "ops"}
+            }))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
+        run
+    }
+
     #[test]
     fn runs_routes_support_listing_and_summary_flows() {
         let tmp = tempfile::tempdir().expect("tmp");
@@ -580,6 +709,60 @@ mod tests {
         )
         .expect("inspect");
         assert_eq!(inspect, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runs_stop_records_request_for_active_run() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let active_run = write_active_run(tmp.path(), "run-stoppable");
+        let cli = quiet_json_cli();
+
+        let result = handle_runs_command(
+            &cli,
+            &RunsCommands::Stop {
+                run_id: "run-stoppable".to_string(),
+                root: tmp.path().to_path_buf(),
+            },
+        )
+        .expect("stop");
+        assert_eq!(result, ExitCode::SUCCESS);
+
+        let request: RunStopRequest = serde_json::from_str(
+            &fs::read_to_string(active_run.join("run.stop-request.json")).expect("read request"),
+        )
+        .expect("parse request");
+        assert_eq!(request.run_id, "stoppable");
+        assert_eq!(request.source, "cli");
+        assert!(request.reason.is_none());
+    }
+
+    #[test]
+    fn runs_stop_is_idempotent_for_active_run() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let active_run = write_active_run(tmp.path(), "run-stoppable");
+        let cli = quiet_json_cli();
+
+        handle_runs_command(
+            &cli,
+            &RunsCommands::Stop {
+                run_id: "run-stoppable".to_string(),
+                root: tmp.path().to_path_buf(),
+            },
+        )
+        .expect("initial stop");
+        let first_request =
+            fs::read_to_string(active_run.join("run.stop-request.json")).expect("first request");
+
+        let result = handle_runs_command(
+            &cli,
+            &RunsCommands::Stop { run_id: "stoppable".to_string(), root: tmp.path().to_path_buf() },
+        )
+        .expect("repeated stop");
+        assert_eq!(result, ExitCode::SUCCESS);
+
+        let second_request =
+            fs::read_to_string(active_run.join("run.stop-request.json")).expect("second request");
+        assert_eq!(first_request, second_request);
     }
 
     #[test]

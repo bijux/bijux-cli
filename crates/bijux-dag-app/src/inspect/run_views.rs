@@ -1,3 +1,4 @@
+use crate::routes::run_lookup::RunWorkspacePaths;
 use crate::routes::selector_grammar::{SelectorExpression, SelectorField};
 use bijux_dag_artifacts::FailureInfo;
 use serde_json::{json, Value};
@@ -8,7 +9,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 const RUN_HISTORY_INDEX_FILE: &str = ".bijux-run-history-index.json";
 
 pub fn resolve_run_dir(root: &Path, run_id: &str) -> PathBuf {
-    root.join(run_id)
+    RunWorkspacePaths::for_run(root, run_id)
+        .map(|paths| paths.preferred_read_path())
+        .unwrap_or_else(|_| root.join(run_id))
 }
 
 pub fn list_runs(root: &Path) -> Result<Vec<String>, std::io::Error> {

@@ -1261,6 +1261,11 @@ pub(crate) enum RunsCommands {
         #[arg(long)]
         root: PathBuf,
     },
+    Stop {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
     Diff {
         run_a: PathBuf,
         run_b: PathBuf,
