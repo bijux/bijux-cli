@@ -52,6 +52,10 @@ fn build_replay_runtime_options(
         downstream_selection_roots,
         selectors,
         partial_rerun_dependency_closure: dependency_closure,
+        scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
+            max_parallelism: jobs.max(1),
+            ..bijux_dag_runtime::SchedulerPolicy::default()
+        },
         ..RuntimeConfig::default()
     }
 }
@@ -290,6 +294,7 @@ mod tests {
         );
 
         assert_eq!(options.jobs, 2);
+        assert_eq!(options.scheduler_policy.max_parallelism, 2);
         assert_eq!(options.cpu_budget, Some(8));
         assert_eq!(options.memory_budget_mb, Some(2048));
         assert_eq!(options.gpu_device_budget, Some(2));

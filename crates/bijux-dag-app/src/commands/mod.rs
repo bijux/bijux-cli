@@ -230,6 +230,21 @@ pub(crate) enum Commands {
         cache_dir: Option<PathBuf>,
         #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
         absolute_path_policy: AbsolutePathPolicyArg,
+        #[arg(long, default_value_t = 1)]
+        jobs: usize,
+        #[arg(long)]
+        cpu_budget: Option<u32>,
+        #[arg(long)]
+        memory_budget_mb: Option<u32>,
+        #[arg(long)]
+        gpu_device_budget: Option<u32>,
+        #[arg(
+            long = "resource-capacity",
+            action = clap::ArgAction::Append,
+            value_name = "name=count",
+            help = RESOURCE_CAPACITY_HELP
+        )]
+        resource_capacity: Vec<String>,
         #[arg(long = "from-node", action = clap::ArgAction::Append)]
         from_node: Vec<String>,
         #[arg(long = "to-node", action = clap::ArgAction::Append)]
@@ -571,6 +586,21 @@ pub(crate) enum PlanCommands {
         cache_dir: Option<PathBuf>,
         #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
         absolute_path_policy: AbsolutePathPolicyArg,
+        #[arg(long, default_value_t = 1)]
+        jobs: usize,
+        #[arg(long)]
+        cpu_budget: Option<u32>,
+        #[arg(long)]
+        memory_budget_mb: Option<u32>,
+        #[arg(long)]
+        gpu_device_budget: Option<u32>,
+        #[arg(
+            long = "resource-capacity",
+            action = clap::ArgAction::Append,
+            value_name = "name=count",
+            help = RESOURCE_CAPACITY_HELP
+        )]
+        resource_capacity: Vec<String>,
         #[arg(long = "from-node", action = clap::ArgAction::Append)]
         from_node: Vec<String>,
         #[arg(long = "to-node", action = clap::ArgAction::Append)]

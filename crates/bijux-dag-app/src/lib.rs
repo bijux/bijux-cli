@@ -525,6 +525,11 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             run_id,
             cache_dir,
             absolute_path_policy,
+            jobs,
+            cpu_budget,
+            memory_budget_mb,
+            gpu_device_budget,
+            resource_capacity,
             from_node,
             to_node,
         } => {
@@ -538,11 +543,18 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 out.as_deref(),
                 run_id.as_deref(),
             )?;
+            let named_resource_capacities =
+                routes::resource_capacity_args::parse_resource_capacities(resource_capacity)?;
             let preview = routes::plan_routes::PlanPreviewConfig {
                 run_root: out.clone(),
                 run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
                 cache_dir: cache_dir.clone(),
                 absolute_path_policy: (*absolute_path_policy).into(),
+                jobs: *jobs,
+                cpu_budget: *cpu_budget,
+                memory_budget_mb: *memory_budget_mb,
+                gpu_device_budget: *gpu_device_budget,
+                named_resource_capacities,
                 upstream_selection_targets,
                 downstream_selection_roots,
                 selectors: bijux_dag_runtime::SelectorSet::default(),

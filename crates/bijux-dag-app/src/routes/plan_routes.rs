@@ -4,6 +4,7 @@ use crate::graph_helpers::{
     validate_partial_selection_surface,
 };
 use crate::routes::preconditions::require_safe_path;
+use crate::routes::resource_capacity_args::parse_resource_capacities;
 use crate::{emit_json, load_graphs_or_emit, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::RunDirLayout;
 use bijux_dag_runtime::{
@@ -20,6 +21,11 @@ pub(crate) struct PlanPreviewConfig {
     pub run_id: Option<String>,
     pub cache_dir: Option<PathBuf>,
     pub absolute_path_policy: AbsolutePathPolicy,
+    pub jobs: usize,
+    pub cpu_budget: Option<u32>,
+    pub memory_budget_mb: Option<u32>,
+    pub gpu_device_budget: Option<u32>,
+    pub named_resource_capacities: std::collections::BTreeMap<String, u32>,
     pub upstream_selection_targets: Vec<String>,
     pub downstream_selection_roots: Vec<String>,
     pub selectors: SelectorSet,
@@ -33,6 +39,11 @@ impl Default for PlanPreviewConfig {
             run_id: None,
             cache_dir: None,
             absolute_path_policy: AbsolutePathPolicy::AllowLiteral,
+            jobs: 1,
+            cpu_budget: None,
+            memory_budget_mb: None,
+            gpu_device_budget: None,
+            named_resource_capacities: std::collections::BTreeMap::new(),
             upstream_selection_targets: Vec::new(),
             downstream_selection_roots: Vec::new(),
             selectors: SelectorSet::default(),
@@ -52,6 +63,15 @@ impl From<AbsolutePathPolicyArg> for AbsolutePathPolicy {
 
 pub(crate) fn default_analysis_runtime_config(preview: &PlanPreviewConfig) -> RuntimeConfig {
     RuntimeConfig {
+        jobs: preview.jobs,
+        cpu_budget: preview.cpu_budget,
+        memory_budget_mb: preview.memory_budget_mb,
+        gpu_device_budget: preview.gpu_device_budget,
+        named_resource_capacities: preview.named_resource_capacities.clone(),
+        scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
+            max_parallelism: preview.jobs.max(1),
+            ..bijux_dag_runtime::SchedulerPolicy::default()
+        },
         run_root: preview.run_root.clone(),
         run_id: preview.run_id.clone(),
         cache_dir: preview.cache_dir.clone(),
@@ -228,6 +248,11 @@ pub(crate) fn handle_plan_command(
             run_id,
             cache_dir,
             absolute_path_policy,
+            jobs,
+            cpu_budget,
+            memory_budget_mb,
+            gpu_device_budget,
+            resource_capacity,
             from_node,
             to_node,
             select,
@@ -251,12 +276,18 @@ pub(crate) fn handle_plan_command(
                 } else {
                     SelectorSet::default()
                 };
+            let named_resource_capacities = parse_resource_capacities(resource_capacity)?;
             let preview_layout = resolve_plan_preview_layout(out.as_deref(), run_id.as_deref())?;
             let preview = PlanPreviewConfig {
                 run_root: out.clone(),
                 run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
                 cache_dir: cache_dir.clone(),
                 absolute_path_policy: (*absolute_path_policy).into(),
+                jobs: *jobs,
+                cpu_budget: *cpu_budget,
+                memory_budget_mb: *memory_budget_mb,
+                gpu_device_budget: *gpu_device_budget,
+                named_resource_capacities,
                 upstream_selection_targets,
                 downstream_selection_roots,
                 selectors,

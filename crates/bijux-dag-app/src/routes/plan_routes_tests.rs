@@ -15,6 +15,11 @@ fn explain_command(dag: PathBuf) -> PlanCommands {
         run_id: None,
         cache_dir: None,
         absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
+        jobs: 1,
+        cpu_budget: None,
+        memory_budget_mb: None,
+        gpu_device_budget: None,
+        resource_capacity: Vec::new(),
         from_node: Vec::new(),
         to_node: Vec::new(),
         select: Vec::new(),
@@ -431,6 +436,11 @@ fn plan_explain_payload_reports_previewed_path_bindings() {
         run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
         cache_dir: Some(cache_dir),
         absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+        jobs: 1,
+        cpu_budget: None,
+        memory_budget_mb: None,
+        gpu_device_budget: None,
+        named_resource_capacities: std::collections::BTreeMap::new(),
         upstream_selection_targets: Vec::new(),
         downstream_selection_roots: Vec::new(),
         selectors: bijux_dag_runtime::SelectorSet::default(),
@@ -476,6 +486,11 @@ fn plan_explain_rejects_literal_container_workdir_when_policy_denies_it() {
             run_id: Some("container-preview".to_string()),
             cache_dir: None,
             absolute_path_policy: AbsolutePathPolicyArg::DenyLiteral,
+            jobs: 1,
+            cpu_budget: None,
+            memory_budget_mb: None,
+            gpu_device_budget: None,
+            resource_capacity: Vec::new(),
             from_node: Vec::new(),
             to_node: Vec::new(),
             select: Vec::new(),
@@ -650,6 +665,11 @@ fn plan_explain_payload_surfaces_selector_and_omission_summary() {
         run_id: None,
         cache_dir: None,
         absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+        jobs: 1,
+        cpu_budget: None,
+        memory_budget_mb: None,
+        gpu_device_budget: None,
+        named_resource_capacities: std::collections::BTreeMap::new(),
         upstream_selection_targets: Vec::new(),
         downstream_selection_roots: Vec::new(),
         selectors: bijux_dag_runtime::SelectorSet {
@@ -682,6 +702,11 @@ fn plan_explain_payload_surfaces_downstream_roots_and_closure_reasons() {
         run_id: None,
         cache_dir: None,
         absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+        jobs: 1,
+        cpu_budget: None,
+        memory_budget_mb: None,
+        gpu_device_budget: None,
+        named_resource_capacities: std::collections::BTreeMap::new(),
         upstream_selection_targets: Vec::new(),
         downstream_selection_roots: vec!["a".to_string()],
         selectors: bijux_dag_runtime::SelectorSet::default(),
@@ -711,6 +736,11 @@ fn plan_explain_payload_surfaces_upstream_targets_and_closure_reasons() {
         run_id: None,
         cache_dir: None,
         absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+        jobs: 1,
+        cpu_budget: None,
+        memory_budget_mb: None,
+        gpu_device_budget: None,
+        named_resource_capacities: std::collections::BTreeMap::new(),
         upstream_selection_targets: vec!["b".to_string()],
         downstream_selection_roots: Vec::new(),
         selectors: bijux_dag_runtime::SelectorSet::default(),
@@ -769,6 +799,40 @@ fn plan_explain_payload_surfaces_execution_cost_estimate() {
 }
 
 #[test]
+fn plan_preview_config_preserves_runtime_budget_inputs() {
+    let preview = super::PlanPreviewConfig {
+        run_root: Some(PathBuf::from("/tmp/runs")),
+        run_id: Some("planned-run".to_string()),
+        cache_dir: Some(PathBuf::from("/tmp/cache")),
+        absolute_path_policy: bijux_dag_runtime::AbsolutePathPolicy::AllowLiteral,
+        jobs: 3,
+        cpu_budget: Some(6),
+        memory_budget_mb: Some(4096),
+        gpu_device_budget: Some(2),
+        named_resource_capacities: std::collections::BTreeMap::from([
+            ("database_slot".to_string(), 2),
+            ("license.render".to_string(), 1),
+        ]),
+        upstream_selection_targets: vec!["publish".to_string()],
+        downstream_selection_roots: Vec::new(),
+        selectors: bijux_dag_runtime::SelectorSet::default(),
+        dependency_closure: true,
+    };
+
+    let config = super::default_analysis_runtime_config(&preview);
+
+    assert_eq!(config.jobs, 3);
+    assert_eq!(config.scheduler_policy.max_parallelism, 3);
+    assert_eq!(config.cpu_budget, Some(6));
+    assert_eq!(config.memory_budget_mb, Some(4096));
+    assert_eq!(config.gpu_device_budget, Some(2));
+    assert_eq!(config.named_resource_capacities.get("database_slot"), Some(&2));
+    assert_eq!(config.named_resource_capacities.get("license.render"), Some(&1));
+    assert_eq!(config.upstream_selection_targets, vec!["publish".to_string()]);
+    assert!(config.partial_rerun_dependency_closure);
+}
+
+#[test]
 fn plan_explain_accepts_composed_graph_fragments() {
     let dir = tempfile::tempdir().expect("tmp");
     let foundation = dir.path().join("foundation.json");
@@ -801,6 +865,11 @@ fn plan_explain_accepts_composed_graph_fragments() {
             run_id: None,
             cache_dir: None,
             absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
+            jobs: 1,
+            cpu_budget: None,
+            memory_budget_mb: None,
+            gpu_device_budget: None,
+            resource_capacity: Vec::new(),
             from_node: Vec::new(),
             to_node: Vec::new(),
             select: Vec::new(),

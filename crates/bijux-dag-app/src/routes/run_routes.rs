@@ -126,6 +126,10 @@ fn build_run_runtime_options(
         upstream_selection_targets,
         downstream_selection_roots,
         partial_rerun_dependency_closure: req.dependency_closure,
+        scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
+            max_parallelism: req.jobs.max(1),
+            ..bijux_dag_runtime::SchedulerPolicy::default()
+        },
         ..RuntimeConfig::default()
     }
 }
@@ -639,6 +643,7 @@ mod tests {
         );
 
         assert_eq!(options.jobs, 3);
+        assert_eq!(options.scheduler_policy.max_parallelism, 3);
         assert_eq!(options.cpu_budget, Some(4));
         assert_eq!(options.memory_budget_mb, Some(4096));
         assert_eq!(options.gpu_device_budget, Some(2));
