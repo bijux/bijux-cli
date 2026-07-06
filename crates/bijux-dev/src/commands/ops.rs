@@ -3599,8 +3599,8 @@ pub(super) fn run_distributed_coordination_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/DISTRIBUTED_COORDINATION_MODEL.md",
-        "docs/architecture/CONTROLLER_BACKEND_ARTIFACT_BOUNDARY.md",
-        "docs/architecture/LOCAL_ONLY_VS_REMOTE_COORDINATED_RUNTIME.md",
+        "docs/bijux-dag/architecture/controller-backend-artifact-boundary.md",
+        "docs/bijux-dag/architecture/local-only-vs-remote-coordinated-runtime.md",
         "crates/bijux-dag-runtime/tests/distributed_event_reconciliation_contracts.rs",
     ];
     let mut missing = Vec::new();
