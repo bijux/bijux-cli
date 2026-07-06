@@ -136,6 +136,60 @@ fn write_temp_downstream_dag() -> String {
     path.to_string_lossy().into_owned()
 }
 
+fn write_temp_named_resource_dag() -> String {
+    let path = std::env::temp_dir().join(format!(
+        "bijux-dag-cli-named-resource-{}.json",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("time")
+            .as_nanos()
+    ));
+    let content = r#"{
+  "spec": "bijux-dag/v0.1",
+  "meta": {"name":"named-resource-preview","owners":[],"tags":[]},
+  "nodes": [
+    {
+      "id": "root",
+      "kind": "const",
+      "outputs": [{"name": "out", "path": "root/out.json"}],
+      "params": {"value": 1}
+    },
+    {
+      "id": "left",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "left/out.json"}],
+      "params": {"argv": ["echo", "left"], "estimated_duration_ms": 10000},
+      "resources": {"cpu": 1, "mem_mb": 64, "named_resources": {"database_slot": 1}}
+    },
+    {
+      "id": "right",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "right/out.json"}],
+      "params": {"argv": ["echo", "right"], "estimated_duration_ms": 10000},
+      "resources": {"cpu": 1, "mem_mb": 64, "named_resources": {"database_slot": 1}}
+    },
+    {
+      "id": "join",
+      "kind": "shell",
+      "inputs": ["left", "right"],
+      "outputs": [{"name": "out", "path": "join/out.json"}],
+      "params": {"argv": ["echo", "join"]}
+    }
+  ],
+  "edges": [
+    {"from": {"node_id": "root", "port": "out"}, "to": {"node_id": "left", "port": "in"}},
+    {"from": {"node_id": "root", "port": "out"}, "to": {"node_id": "right", "port": "in"}},
+    {"from": {"node_id": "left", "port": "out"}, "to": {"node_id": "join", "port": "left"}},
+    {"from": {"node_id": "right", "port": "out"}, "to": {"node_id": "join", "port": "right"}}
+  ]
+}
+"#;
+    std::fs::write(&path, content).expect("write named resource dag");
+    path.to_string_lossy().into_owned()
+}
+
 fn write_temp_dag_fragments() -> (tempfile::TempDir, String, String) {
     let dir = tempfile::tempdir().expect("tmp");
     let foundation = dir.path().join("foundation.json");
@@ -619,6 +673,35 @@ fn dag_explain_plan_alias_surfaces_downstream_selection() {
             {"node_id":"sidecar","reason":"not_selected_by_from_node"},
             {"node_id":"source","reason":"not_selected_by_from_node"}
         ])
+    );
+}
+
+#[test]
+fn dag_explain_plan_alias_surfaces_resource_aware_preview_budgets() {
+    let dag = write_temp_named_resource_dag();
+    let output = dag_command()
+        .args([
+            "--json",
+            "explain-plan",
+            "--jobs",
+            "2",
+            "--resource-capacity",
+            "database_slot=1",
+            &dag,
+        ])
+        .output()
+        .expect("explain plan resource preview");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("explain plan payload");
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["scheduling_simulation"]["run_bound"],
+        "resource_bound"
+    );
+    assert_eq!(
+        payload["data"]["execution_cost_estimate"]["scheduling_simulation"]["bottlenecks"][0]
+            ["resource"],
+        "named_resource:database_slot"
     );
 }
 
