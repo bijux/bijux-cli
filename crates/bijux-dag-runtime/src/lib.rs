@@ -294,7 +294,7 @@ use bijux_dag_artifacts::{
     AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace, DeclaredOutputArtifact,
     FailureClass, FailureInfo, InputFile, InputsIndex, NodeCounts, NodeLifecycleTransition,
     NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance, Resources as TraceResources, RunDir,
-    RunOutputFile, RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
+    RunDirLayout, RunOutputFile, RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
@@ -673,6 +673,36 @@ pub struct NodeResult {
     pub attempt_events: Vec<AttemptEvent>,
     pub container_meta: Option<bijux_dag_artifacts::ContainerTrace>,
     pub adapter_binary_sha256: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+struct MapExecutionSummary {
+    schema_version: String,
+    map_node_id: String,
+    input_port: String,
+    item_count: usize,
+    successful_item_count: usize,
+    failed_item_count: usize,
+    cancelled_item_count: usize,
+    items: Vec<MapExecutionItemSummary>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+struct MapExecutionItemSummary {
+    item_id: String,
+    item_sha256: String,
+    status: String,
+    run_dir: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    outputs: Vec<MapExecutionOutputSummary>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    failure: Option<FailureInfo>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+struct MapExecutionOutputSummary {
+    output_name: String,
+    item_path: String,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2044,6 +2074,544 @@ fn node_cpu(graph: &Graph, node_id: &str) -> u32 {
         .max(1)
 }
 
+fn map_execution_summary_path(ctx: &RunContext, node_id: &str) -> PathBuf {
+    ctx.run_dir.node_dir(node_id).join("map.execution.json")
+}
+
+fn map_execution_version() -> String {
+    "map-execution/v0.1".to_string()
+}
+
+fn map_input_port(node: &Node, params: &Value) -> Result<String, FailureInfo> {
+    if let Some(input) = params
+        .get("map")
+        .and_then(|value| value.get("input"))
+        .and_then(Value::as_str)
+    {
+        if node.inputs.iter().any(|candidate| candidate == input) {
+            return Ok(input.to_string());
+        }
+        return Err(FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "MAP_INPUT_INVALID",
+            format!("map input '{}' is not declared on node {}", input, node.id),
+            Some(serde_json::json!({
+                "node_id": node.id,
+                "input": input,
+                "declared_inputs": node.inputs,
+            })),
+        ));
+    }
+
+    match node.inputs.as_slice() {
+        [input] => Ok(input.clone()),
+        [] => Err(FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "MAP_INPUT_MISSING",
+            format!("map node {} requires at least one declared input", node.id),
+            Some(serde_json::json!({ "node_id": node.id })),
+        )),
+        _ => Err(FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "MAP_INPUT_AMBIGUOUS",
+            format!(
+                "map node {} requires params.map.input when more than one input is declared",
+                node.id
+            ),
+            Some(serde_json::json!({
+                "node_id": node.id,
+                "declared_inputs": node.inputs,
+            })),
+        )),
+    }
+}
+
+fn map_input_binding(
+    graph: &Graph,
+    node_id: &str,
+    input_port: &str,
+) -> Result<(String, String), FailureInfo> {
+    let edge = graph
+        .edges
+        .iter()
+        .find(|edge| edge.to.node_id == node_id && edge.to.port == input_port)
+        .ok_or_else(|| {
+            FailureInfo::new(
+                FailureClass::User,
+                "User",
+                "MAP_INPUT_UNBOUND",
+                format!("map input {}.{} is not bound to an upstream output", node_id, input_port),
+                Some(serde_json::json!({
+                    "node_id": node_id,
+                    "input_port": input_port,
+                })),
+            )
+        })?;
+    Ok((edge.from.node_id.clone(), edge.from.port.clone()))
+}
+
+fn load_map_items(
+    ctx: &RunContext,
+    graph: &Graph,
+    node: &Node,
+    input_port: &str,
+) -> Result<Vec<Value>, FailureInfo> {
+    let (source_node_id, _) = map_input_binding(graph, &node.id, input_port)?;
+    let item_path = ctx.run_dir.node_inputs_dir(&node.id).join(&source_node_id).join(input_port);
+    let raw = ctx.fs.read_to_string(&item_path).map_err(|error| {
+        FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "MAP_INPUT_UNREADABLE",
+            format!("map input could not be read from {}: {}", item_path.display(), error),
+            Some(serde_json::json!({
+                "node_id": node.id,
+                "input_port": input_port,
+                "source_node_id": source_node_id,
+            })),
+        )
+    })?;
+    let payload = serde_json::from_str::<Value>(&raw).map_err(|error| {
+        FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "MAP_INPUT_INVALID",
+            format!("map input for {} must be valid json array: {}", node.id, error),
+            Some(serde_json::json!({
+                "node_id": node.id,
+                "input_port": input_port,
+                "source_node_id": source_node_id,
+            })),
+        )
+    })?;
+    payload.as_array().cloned().ok_or_else(|| {
+        FailureInfo::new(
+            FailureClass::User,
+            "User",
+            "MAP_INPUT_INVALID",
+            format!("map input for {} must be a json array", node.id),
+            Some(serde_json::json!({
+                "node_id": node.id,
+                "input_port": input_port,
+                "source_node_id": source_node_id,
+            })),
+        )
+    })
+}
+
+fn read_inputs_index(ctx: &RunContext, node_id: &str) -> Result<InputsIndex, RuntimeError> {
+    let raw = ctx.fs.read_to_string(&ctx.run_dir.node_inputs_index_path(node_id))?;
+    serde_json::from_str(&raw).map_err(RuntimeError::from)
+}
+
+fn map_item_identity(index: usize, item: &Value) -> Result<(String, String), RuntimeError> {
+    let item_bytes = serde_json::to_vec(item)?;
+    let item_sha256 = sha256_bytes(&item_bytes);
+    Ok((format!("position-{index:06}-{}", &item_sha256[..8]), item_sha256))
+}
+
+fn write_item_inputs_index(
+    ctx: &RunContext,
+    graph: &Graph,
+    node: &Node,
+    input_port: &str,
+    item_run_dir: &RunDir,
+    item_value: &Value,
+) -> Result<InputsIndex, RuntimeError> {
+    let parent_inputs_dir = ctx.run_dir.node_inputs_dir(&node.id);
+    let item_inputs_dir = item_run_dir.node_inputs_dir(&node.id);
+    copy_dir_all(ctx.fs.as_ref(), &parent_inputs_dir, &item_inputs_dir)?;
+
+    let parent_index = read_inputs_index(ctx, &node.id)?;
+    let (source_node_id, source_output_name) = map_input_binding(graph, &node.id, input_port)
+        .map_err(|failure| RuntimeError::Executor(failure.message))?;
+    let item_input_path = item_inputs_dir.join(&source_node_id).join(input_port);
+    if let Some(parent) = item_input_path.parent() {
+        ctx.fs.create_dir_all(parent)?;
+    }
+    let item_bytes = serde_json::to_vec_pretty(item_value)?;
+    ctx.fs.write(&item_input_path, &item_bytes)?;
+    let item_sha256 = sha256_bytes(&item_bytes);
+    let source_node_fingerprint = node_fingerprint_from_ctx(ctx, &source_node_id);
+    let local_path = format!("{source_node_id}/{input_port}");
+
+    let mut updated = false;
+    let mut files = parent_index
+        .files
+        .into_iter()
+        .map(|mut file| {
+            if file.local_path == local_path {
+                file.source_sha256 = item_sha256.clone();
+                file.source_node_id = source_node_id.clone();
+                file.source_node_fingerprint = source_node_fingerprint.clone();
+                file.source_output_name = source_output_name.clone();
+                file.materialization_mode = "copy".to_string();
+                updated = true;
+            }
+            file
+        })
+        .collect::<Vec<_>>();
+    if !updated {
+        files.push(InputFile {
+            local_path,
+            source_sha256: item_sha256,
+            source_node_id,
+            source_node_fingerprint,
+            source_output_name,
+            materialization_mode: "copy".to_string(),
+        });
+    }
+    files.sort_by(|left, right| left.local_path.cmp(&right.local_path));
+    let index = InputsIndex { files };
+    write_inputs_index(&item_inputs_dir, &index)?;
+    Ok(index)
+}
+
+fn write_map_summary(
+    ctx: &RunContext,
+    node_id: &str,
+    summary: &MapExecutionSummary,
+) -> Result<(), RuntimeError> {
+    let bytes = serde_json::to_vec_pretty(summary)?;
+    ctx.fs.write(&map_execution_summary_path(ctx, node_id), &bytes)?;
+    Ok(())
+}
+
+fn aggregate_map_item_outputs(
+    fs: &dyn Fs,
+    node: &Node,
+    parent_outputs_dir: &Path,
+    item_node_outputs_dir: &Path,
+    item_id: &str,
+) -> Result<Vec<MapExecutionOutputSummary>, RuntimeError> {
+    let mut outputs = Vec::new();
+    for output in &node.outputs {
+        if output.expects_file() {
+            return Err(RuntimeError::Executor(format!(
+                "map node {} output {} must be a directory output",
+                node.id, output.name
+            )));
+        }
+        let item_output_path = item_node_outputs_dir.join(&output.path);
+        let aggregate_root = parent_outputs_dir.join(&output.path);
+        let aggregate_item_path = aggregate_root.join("items").join(item_id);
+        fs.create_dir_all(&aggregate_root)?;
+        copy_dir_all(fs, &item_output_path, &aggregate_item_path)?;
+        outputs.push(MapExecutionOutputSummary {
+            output_name: output.name.clone(),
+            item_path: format!("{}/items/{}", output.path, item_id),
+        });
+    }
+    Ok(outputs)
+}
+
+fn execute_map_node(
+    adapter: &dyn Adapter,
+    graph: &Graph,
+    node: &Node,
+    params: &Value,
+    ctx: &RunContext,
+    retry: &RetryPolicy,
+) -> Result<NodeResult, RuntimeError> {
+    prepare_node_execution_dirs(ctx, &node.id)?;
+    let started = ctx.clock.now_unix_ms();
+    let stdout_path = ctx.run_dir.node_stdout_path(&node.id);
+    let stderr_path = ctx.run_dir.node_stderr_path(&node.id);
+    let parent_outputs_dir = ctx.run_dir.node_outputs_dir(&node.id);
+
+    let input_port = match map_input_port(node, params) {
+        Ok(input_port) => input_port,
+        Err(failure) => {
+            let message = failure.message.clone();
+            let mut result = node_failure_result(
+                ctx.fs.as_ref(),
+                &stdout_path,
+                &stderr_path,
+                &parent_outputs_dir,
+                NodeStatus::Failed,
+                failure,
+                message.as_bytes(),
+            )?;
+            let finished = ctx.clock.now_unix_ms();
+            let (attempt_stdout_path, attempt_stderr_path) = persist_attempt_logs(
+                ctx,
+                &node.id,
+                1,
+                &result.stdout_path,
+                &result.stderr_path,
+            )?;
+            result.attempts = 1;
+            result.attempt_events = vec![AttemptEvent {
+                attempt: 1,
+                started_unix_ms: started,
+                finished_unix_ms: finished,
+                status: result.status.clone(),
+                stdout_path: Some(attempt_stdout_path),
+                stderr_path: Some(attempt_stderr_path),
+                failure: result.failure.clone(),
+                scheduled_backoff_ms: None,
+            }];
+            return Ok(result);
+        }
+    };
+
+    let items = load_map_items(ctx, graph, node, &input_port)
+        .map_err(|failure| RuntimeError::Executor(failure.message))?;
+    for output in &node.outputs {
+        ctx.fs.create_dir_all(&parent_outputs_dir.join(&output.path))?;
+    }
+
+    let map_runs_dir = ctx.run_dir.node_dir(&node.id).join("mapped_items");
+    ctx.fs.create_dir_all(&map_runs_dir)?;
+    let resolved = graph.resolve_graph()?;
+    let base_node_definition_fp = node_definition_fingerprint_from_ctx(ctx, &node.id);
+    let base_declared_env_fp = declared_environment_fingerprint_from_ctx(ctx, &node.id);
+    let base_fp = sha256_bytes(format!("{base_node_definition_fp}:{base_declared_env_fp}").as_bytes());
+
+    let mut summaries = Vec::new();
+    let mut successful_item_count = 0usize;
+    let mut failed_item_count = 0usize;
+    let mut cancelled_item_count = 0usize;
+
+    for (index, item) in items.into_iter().enumerate() {
+        let (item_id, item_sha256) = map_item_identity(index, &item)?;
+        let item_layout = RunDirLayout::preview(&map_runs_dir, Some(&item_id)).map_err(|error| {
+            RuntimeError::Executor(format!("invalid map item identity {}: {}", item_id, error))
+        })?;
+        let item_run_dir = RunDir::create_with_id(&map_runs_dir, &item_id)?;
+        let item_inputs = write_item_inputs_index(ctx, graph, node, &input_port, &item_run_dir, &item)?;
+        let params_template =
+            resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
+        let item_bindings =
+            NodePathBindings::for_host(&item_layout, &node.id, ctx.effective_cache_dir.as_deref());
+        let item_params = bind_path_variables_in_value(&params_template, &item_bindings)
+            .map_err(RuntimeError::Executor)?;
+        let item_params_fingerprint = params_fingerprint(&item_params)?;
+        let item_command_fingerprint = command_fingerprint(graph, node, &item_params)?;
+        let item_fp = node_fingerprint_with_inputs(&base_fp, &item_inputs)?;
+        let item_run_dir_arc = Arc::new(item_run_dir.clone());
+        let item_ctx = RunContext {
+            run_dir: Arc::clone(&item_run_dir_arc),
+            graph_fingerprint: Arc::new(Mutex::new(HashMap::from([(
+                node.id.clone(),
+                item_fp,
+            )]))),
+            node_definition_fingerprints: Arc::new(HashMap::from([(
+                node.id.clone(),
+                base_node_definition_fp.clone(),
+            )])),
+            declared_environment_fingerprints: Arc::new(HashMap::from([(
+                node.id.clone(),
+                base_declared_env_fp.clone(),
+            )])),
+            params_fingerprints: Arc::new(HashMap::from([(
+                node.id.clone(),
+                item_params_fingerprint,
+            )])),
+            command_fingerprints: Arc::new(HashMap::from([(
+                node.id.clone(),
+                item_command_fingerprint,
+            )])),
+            planner_contract_version: ctx.planner_contract_version.clone(),
+            execution_fingerprint: ctx.execution_fingerprint.clone(),
+            evidence_fingerprint: ctx.evidence_fingerprint.clone(),
+            execution_contract_fingerprint: ctx.execution_contract_fingerprint.clone(),
+            resolved_params: HashMap::from([(node.id.clone(), item_params.clone())]),
+            effective_cache_dir: ctx.effective_cache_dir.clone(),
+            fs: Arc::clone(&ctx.fs),
+            clock: Arc::clone(&ctx.clock),
+            store: RuntimeArtifactStore::new(item_run_dir_arc, Arc::clone(&ctx.fs)),
+            policy: ctx.policy.clone(),
+            absolute_path_policy: ctx.absolute_path_policy,
+            cancellation_requested: Arc::clone(&ctx.cancellation_requested),
+        };
+        let mut item_node = node.clone();
+        item_node.semantic_kind = bijux_dag_core::SemanticNodeKind::Task;
+        let item_result =
+            execute_with_retries(adapter, graph, &item_node, &item_params, &item_ctx, retry)?;
+        let item_final_dir = item_run_dir.finalize()?;
+        let item_outputs_dir = item_final_dir.join("nodes").join(&node.id).join("outputs");
+        let outputs = if item_result.status == NodeStatus::Success {
+            successful_item_count += 1;
+            aggregate_map_item_outputs(
+                ctx.fs.as_ref(),
+                node,
+                &parent_outputs_dir,
+                &item_outputs_dir,
+                &item_id,
+            )?
+        } else {
+            if item_result.status == NodeStatus::Cancelled {
+                cancelled_item_count += 1;
+            } else {
+                failed_item_count += 1;
+            }
+            Vec::new()
+        };
+        summaries.push(MapExecutionItemSummary {
+            item_id,
+            item_sha256,
+            status: status_string(&item_result.status),
+            run_dir: item_final_dir
+                .strip_prefix(ctx.run_dir.node_dir(&node.id))
+                .unwrap_or(item_final_dir.as_path())
+                .to_string_lossy()
+                .replace('\\', "/"),
+            outputs,
+            failure: item_result.failure.clone(),
+        });
+    }
+
+    summaries.sort_by(|left, right| left.item_id.cmp(&right.item_id));
+    let status = if failed_item_count > 0 {
+        NodeStatus::Failed
+    } else if cancelled_item_count > 0 {
+        NodeStatus::Cancelled
+    } else {
+        NodeStatus::Success
+    };
+    let failure = match status {
+        NodeStatus::Failed => Some(FailureInfo::new(
+            FailureClass::Execution,
+            "Execution",
+            "MAP_ITEMS_FAILED",
+            format!(
+                "map node {} failed for {} of {} items",
+                node.id,
+                failed_item_count,
+                summaries.len()
+            ),
+            Some(serde_json::json!({
+                "failed_items": summaries
+                    .iter()
+                    .filter(|item| item.status == "failed")
+                    .map(|item| serde_json::json!({
+                        "item_id": item.item_id,
+                        "failure": item.failure,
+                    }))
+                    .collect::<Vec<_>>(),
+            })),
+        )),
+        NodeStatus::Cancelled => Some(FailureInfo::new(
+            FailureClass::Execution,
+            "Execution",
+            "MAP_ITEMS_CANCELLED",
+            format!(
+                "map node {} cancelled while processing {} items",
+                node.id,
+                summaries.len()
+            ),
+            Some(serde_json::json!({
+                "cancelled_items": cancelled_item_count,
+            })),
+        )),
+        _ => None,
+    };
+    let summary = MapExecutionSummary {
+        schema_version: map_execution_version(),
+        map_node_id: node.id.clone(),
+        input_port,
+        item_count: summaries.len(),
+        successful_item_count,
+        failed_item_count,
+        cancelled_item_count,
+        items: summaries,
+    };
+    write_map_summary(ctx, &node.id, &summary)?;
+
+    let finished = ctx.clock.now_unix_ms();
+    let output_report = inspect_declared_outputs(&parent_outputs_dir, &node.outputs);
+    if let Some(output_failure) = output_report.failure {
+        let message = output_failure.message.clone();
+        let mut result = node_failure_result(
+            ctx.fs.as_ref(),
+            &stdout_path,
+            &stderr_path,
+            &parent_outputs_dir,
+            NodeStatus::Failed,
+            output_failure,
+            message.as_bytes(),
+        )?;
+        let (attempt_stdout_path, attempt_stderr_path) = persist_attempt_logs(
+            ctx,
+            &node.id,
+            1,
+            &result.stdout_path,
+            &result.stderr_path,
+        )?;
+        result.attempts = 1;
+        result.attempt_events = vec![AttemptEvent {
+            attempt: 1,
+            started_unix_ms: started,
+            finished_unix_ms: finished,
+            status: result.status.clone(),
+            stdout_path: Some(attempt_stdout_path),
+            stderr_path: Some(attempt_stderr_path),
+            failure: result.failure.clone(),
+            scheduled_backoff_ms: None,
+        }];
+        return Ok(result);
+    }
+
+    let stdout = format!(
+        "mapped {} items for {} (success={}, failed={}, cancelled={})\n",
+        summary.item_count,
+        summary.map_node_id,
+        summary.successful_item_count,
+        summary.failed_item_count,
+        summary.cancelled_item_count,
+    );
+    let stderr = if matches!(status, NodeStatus::Failed | NodeStatus::Cancelled) {
+        summary
+            .items
+            .iter()
+            .filter_map(|item| {
+                item.failure
+                    .as_ref()
+                    .map(|failure| format!("{}: {} ({})", item.item_id, failure.message, failure.code))
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    } else {
+        String::new()
+    };
+    ctx.fs.write(&stdout_path, stdout.as_bytes())?;
+    ctx.fs.write(&stderr_path, stderr.as_bytes())?;
+    let fp = node_fingerprint_from_ctx(ctx, &node.id);
+    write_outputs_index(&parent_outputs_dir, &node.id, &fp, &output_report.present_outputs)?;
+    let (attempt_stdout_path, attempt_stderr_path) = persist_attempt_logs(
+        ctx,
+        &node.id,
+        1,
+        &stdout_path.display().to_string(),
+        &stderr_path.display().to_string(),
+    )?;
+    Ok(NodeResult {
+        status: status.clone(),
+        stdout_path: stdout_path.display().to_string(),
+        stderr_path: stderr_path.display().to_string(),
+        outputs_dir: parent_outputs_dir.display().to_string(),
+        output_evidence: output_report.output_evidence,
+        failure: failure.clone(),
+        attempts: 1,
+        attempt_events: vec![AttemptEvent {
+            attempt: 1,
+            started_unix_ms: started,
+            finished_unix_ms: finished,
+            status: status.clone(),
+            stdout_path: Some(attempt_stdout_path),
+            stderr_path: Some(attempt_stderr_path),
+            failure,
+            scheduled_backoff_ms: None,
+        }],
+        container_meta: None,
+        adapter_binary_sha256: adapter.binary_hash(),
+    })
+}
+
 fn execute_with_retries(
     adapter: &dyn Adapter,
     graph: &Graph,
@@ -2052,6 +2620,9 @@ fn execute_with_retries(
     ctx: &RunContext,
     retry: &RetryPolicy,
 ) -> Result<NodeResult, RuntimeError> {
+    if node.semantic_kind == bijux_dag_core::SemanticNodeKind::Map {
+        return execute_map_node(adapter, graph, node, params, ctx, retry);
+    }
     let mut attempt = 0u32;
     let max = retry.max_attempts;
     let mut attempt_events = Vec::new();
