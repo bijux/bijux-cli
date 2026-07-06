@@ -505,7 +505,9 @@ use sha2::{Digest, Sha256};
 pub use slurm_execution::{
     build_slurm_execution_request, build_slurm_scheduler_request,
     map_slurm_job_status_to_node_status, validate_slurm_execution_request,
-    validate_slurm_scheduler_request, SlurmExecutionRequest, SlurmJobStatus, SlurmSchedulerRequest,
+    validate_slurm_scheduler_request, MockSlurmBackend, SlurmBackendExecutor,
+    SlurmExecutionRequest, SlurmExecutionResult, SlurmJobLifecycleEvent, SlurmJobRecord,
+    SlurmJobStatus, SlurmLogCapture, SlurmSchedulerRequest,
 };
 pub use state_machine::{
     failure_propagation_is_deterministic, node_transition_allowed, run_transition_allowed,

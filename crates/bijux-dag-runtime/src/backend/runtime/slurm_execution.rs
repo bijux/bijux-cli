@@ -2,16 +2,22 @@ use crate::backend_cluster::{
     map_node_to_hpc_queue_partition, map_timeout_to_hpc_walltime, HpcNodeExecutionContract,
 };
 use crate::remote_execution_model::{
-    validate_remote_execution_payload, RemoteNodeExecutionPayload,
+    validate_remote_execution_payload, MockRemoteWorker, RemoteNodeExecutionPayload,
+    RemoteNodeExecutionResult, RemoteWorkerExecutor,
 };
-use crate::NodeStatus;
+use crate::{BatchJobMetadata, FailureClass, NodeResult, NodeStatus};
 use bijux_dag_core::Node;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::BTreeMap;
+use std::fs;
+use std::sync::{Arc, Mutex};
 
 const DEFAULT_CPU_CORES: u32 = 1;
 const DEFAULT_MEMORY_MIB: u32 = 256;
 const DEFAULT_TIMEOUT_SECONDS: u32 = 60;
+const SLURM_SCHEDULER_ID: &str = "slurm";
+const SLURM_STATUS_MAPPING_ID: &str = "slurm-default";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SlurmSchedulerRequest {
@@ -30,6 +36,39 @@ pub struct SlurmExecutionRequest {
     pub scheduler: SlurmSchedulerRequest,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SlurmJobLifecycleEvent {
+    pub job_id: String,
+    pub status: SlurmJobStatus,
+    pub unix_ms: u128,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SlurmJobRecord {
+    pub job_id: String,
+    pub metadata: BatchJobMetadata,
+    pub lifecycle: Vec<SlurmJobLifecycleEvent>,
+    pub terminal_status: SlurmJobStatus,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SlurmLogCapture {
+    pub stdout_path: String,
+    pub stderr_path: String,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SlurmExecutionResult {
+    pub identity: crate::RemoteExecutionIdentity,
+    pub job: SlurmJobRecord,
+    pub scheduler_status: SlurmJobStatus,
+    pub node_status: NodeStatus,
+    pub node_result: NodeResult,
+    pub logs: SlurmLogCapture,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SlurmJobStatus {
@@ -40,6 +79,17 @@ pub enum SlurmJobStatus {
     Cancelled,
     Timeout,
     Preempted,
+}
+
+pub trait SlurmBackendExecutor: Send + Sync {
+    fn execute_job(&self, request: SlurmExecutionRequest) -> Result<SlurmExecutionResult, String>;
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MockSlurmBackend {
+    next_job_id: Arc<Mutex<u64>>,
+    requests: Arc<Mutex<Vec<SlurmExecutionRequest>>>,
+    jobs: Arc<Mutex<BTreeMap<String, SlurmJobRecord>>>,
 }
 
 pub fn validate_slurm_scheduler_request(request: &SlurmSchedulerRequest) -> Result<(), String> {
@@ -135,6 +185,68 @@ pub fn map_slurm_job_status_to_node_status(status: SlurmJobStatus) -> NodeStatus
     }
 }
 
+pub fn slurm_job_status_from_node_result(result: &NodeResult) -> SlurmJobStatus {
+    match result.status {
+        NodeStatus::Success => SlurmJobStatus::Completed,
+        NodeStatus::Cancelled => SlurmJobStatus::Cancelled,
+        NodeStatus::Failed => match result.failure.as_ref().map(|failure| failure.operator_class())
+        {
+            Some(FailureClass::Timeout) => SlurmJobStatus::Timeout,
+            Some(FailureClass::Infrastructure)
+                if result
+                    .failure
+                    .as_ref()
+                    .is_some_and(|failure| failure.code == "SLURM_PREEMPTED") =>
+            {
+                SlurmJobStatus::Preempted
+            }
+            _ => SlurmJobStatus::Failed,
+        },
+        NodeStatus::Skipped | NodeStatus::Cached => SlurmJobStatus::Failed,
+    }
+}
+
+impl MockSlurmBackend {
+    pub fn submitted_requests(&self) -> Vec<SlurmExecutionRequest> {
+        self.requests.lock().expect("slurm request lock poisoned").clone()
+    }
+
+    pub fn job_record(&self, job_id: &str) -> Option<SlurmJobRecord> {
+        self.jobs.lock().expect("slurm job lock poisoned").get(job_id).cloned()
+    }
+
+    fn allocate_job_id(&self) -> String {
+        let mut next_job_id = self.next_job_id.lock().expect("slurm job counter lock poisoned");
+        *next_job_id = next_job_id.saturating_add(1);
+        format!("slurm-{}", *next_job_id)
+    }
+}
+
+impl SlurmBackendExecutor for MockSlurmBackend {
+    fn execute_job(&self, request: SlurmExecutionRequest) -> Result<SlurmExecutionResult, String> {
+        validate_slurm_execution_request(&request)?;
+        self.requests.lock().expect("slurm request lock poisoned").push(request.clone());
+
+        let remote_result = MockRemoteWorker.execute_payload(request.payload.clone())?;
+        let job_id = self.allocate_job_id();
+        let scheduler_status = slurm_job_status_from_node_result(&remote_result.node_result);
+        let node_status = map_slurm_job_status_to_node_status(scheduler_status);
+        let job = build_slurm_job_record(&job_id, &request, &remote_result, scheduler_status);
+        let logs = capture_logs(&remote_result.node_result)?;
+
+        self.jobs.lock().expect("slurm job lock poisoned").insert(job_id, job.clone());
+
+        Ok(SlurmExecutionResult {
+            identity: remote_result.identity,
+            job,
+            scheduler_status,
+            node_status,
+            node_result: remote_result.node_result,
+            logs,
+        })
+    }
+}
+
 fn slurm_tag_value(tags: &[String], key: &str) -> Option<String> {
     tags.iter().find_map(|tag| {
         let value = tag.strip_prefix(key)?.strip_prefix(':')?.trim();
@@ -151,6 +263,64 @@ fn effective_timeout_seconds(node: &Node, params: &Value) -> u32 {
             timeout_seconds.max(1)
         })
         .unwrap_or(DEFAULT_TIMEOUT_SECONDS)
+}
+
+fn build_slurm_job_record(
+    job_id: &str,
+    request: &SlurmExecutionRequest,
+    remote_result: &RemoteNodeExecutionResult,
+    terminal_status: SlurmJobStatus,
+) -> SlurmJobRecord {
+    let metadata = BatchJobMetadata {
+        scheduler_id: SLURM_SCHEDULER_ID.to_string(),
+        submission_time_unix_ms: remote_result.started_unix_ms,
+        run_id: request.payload.identity.run_id.clone(),
+        node_id: request.payload.identity.node_id.clone(),
+        attempt_id: request.payload.identity.attempt_id.clone(),
+        resource_request: render_slurm_resource_request(&request.scheduler),
+        status_mapping: SLURM_STATUS_MAPPING_ID.to_string(),
+    };
+    let lifecycle = vec![
+        SlurmJobLifecycleEvent {
+            job_id: job_id.to_string(),
+            status: SlurmJobStatus::Submitted,
+            unix_ms: metadata.submission_time_unix_ms,
+        },
+        SlurmJobLifecycleEvent {
+            job_id: job_id.to_string(),
+            status: SlurmJobStatus::Running,
+            unix_ms: remote_result.started_unix_ms,
+        },
+        SlurmJobLifecycleEvent {
+            job_id: job_id.to_string(),
+            status: terminal_status,
+            unix_ms: remote_result.finished_unix_ms,
+        },
+    ];
+    SlurmJobRecord { job_id: job_id.to_string(), metadata, lifecycle, terminal_status }
+}
+
+fn render_slurm_resource_request(request: &SlurmSchedulerRequest) -> String {
+    let account =
+        request.account.as_ref().map_or_else(|| "none".to_string(), |account| account.clone());
+    format!(
+        "cpu={},mem_mib={},walltime={},queue={},partition={},account={account}",
+        request.cpu_cores, request.memory_mib, request.walltime, request.queue, request.partition
+    )
+}
+
+fn capture_logs(result: &NodeResult) -> Result<SlurmLogCapture, String> {
+    Ok(SlurmLogCapture {
+        stdout_path: result.stdout_path.clone(),
+        stderr_path: result.stderr_path.clone(),
+        stdout: read_log(&result.stdout_path)?,
+        stderr: read_log(&result.stderr_path)?,
+    })
+}
+
+fn read_log(path: &str) -> Result<String, String> {
+    let bytes = fs::read(path).map_err(|error| format!("read slurm log '{path}': {error}"))?;
+    Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
 #[cfg(test)]
@@ -257,5 +427,28 @@ mod tests {
             map_slurm_job_status_to_node_status(SlurmJobStatus::Preempted),
             NodeStatus::Failed
         );
+    }
+
+    #[test]
+    fn terminal_status_is_inferred_from_timeout_failure_boundary() {
+        let node_result = NodeResult {
+            status: NodeStatus::Failed,
+            stdout_path: String::new(),
+            stderr_path: String::new(),
+            outputs_dir: String::new(),
+            output_evidence: Vec::new(),
+            failure: Some(crate::FailureInfo::new(
+                FailureClass::Timeout,
+                "Timeout",
+                "EXEC_TIMEOUT",
+                "timed out",
+                None,
+            )),
+            attempts: 1,
+            attempt_events: Vec::new(),
+            container_meta: None,
+            adapter_binary_sha256: None,
+        };
+        assert_eq!(slurm_job_status_from_node_result(&node_result), SlurmJobStatus::Timeout);
     }
 }
