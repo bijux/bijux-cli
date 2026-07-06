@@ -1,3 +1,6 @@
+use crate::remote_execution_model::{
+    MockRemoteWorker, RemoteNodeExecutionPayload, RemoteNodeExecutionResult, RemoteWorkerExecutor,
+};
 use crate::remote_executor::{
     RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter,
 };
@@ -399,11 +402,16 @@ pub fn worker_pool_satisfies_capability_request(
 #[derive(Default, Clone)]
 pub struct MockRemoteBackend {
     submissions: Arc<Mutex<Vec<DistributedExecutionRequest>>>,
+    payload_executions: Arc<Mutex<Vec<RemoteNodeExecutionPayload>>>,
 }
 
 impl MockRemoteBackend {
     pub fn submissions(&self) -> Vec<DistributedExecutionRequest> {
         self.submissions.lock().map(|g| g.clone()).unwrap_or_default()
+    }
+
+    pub fn payload_executions(&self) -> Vec<RemoteNodeExecutionPayload> {
+        self.payload_executions.lock().map(|g| g.clone()).unwrap_or_default()
     }
 
     pub fn submit_distributed(
@@ -425,6 +433,17 @@ impl MockRemoteBackend {
             finished_unix_ms: 0,
             provenance: BTreeMap::new(),
         })
+    }
+
+    pub fn execute_remote_payload(
+        &self,
+        payload: RemoteNodeExecutionPayload,
+    ) -> Result<RemoteNodeExecutionResult, String> {
+        self.payload_executions
+            .lock()
+            .map_err(|_| "payload execution lock poisoned".to_string())?
+            .push(payload.clone());
+        MockRemoteWorker.execute_payload(payload)
     }
 }
 
