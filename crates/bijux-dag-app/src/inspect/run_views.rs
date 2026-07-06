@@ -357,11 +357,7 @@ fn build_history_row(
             runtime_snapshot.as_ref().and_then(|value| value.get("replay_source_run_id").cloned())
         })
         .unwrap_or(Value::Null);
-    let run_dir_display = run_dir
-        .strip_prefix(root)
-        .unwrap_or(run_dir)
-        .display()
-        .to_string();
+    let run_dir_display = run_dir.strip_prefix(root).unwrap_or(run_dir).display().to_string();
     let output_location_display = run_dir
         .strip_prefix(root)
         .map(|relative| relative.join("outputs"))
