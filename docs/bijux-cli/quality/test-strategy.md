@@ -41,7 +41,7 @@ flowchart TB
 - `crates/bijux-cli/tests/routing/`
 - `crates/bijux-cli/tests/integration/`
 - `crates/bijux-cli/tests/architecture/`
-- `makes/*.mk`
+- `makes/`
 
 ## Test Strategy Rules
 

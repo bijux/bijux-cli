@@ -47,7 +47,7 @@ who owns the behavior.
 
 ## Code Anchors
 
-- `crates/bijux-cli/CONTRACT.md`
+- `crates/bijux-cli/src/lib.rs`
 - `crates/bijux-dag-app/CONTRACT.md`
 - `crates/bijux-dev/CONTRACT.md`
 - `docs/bijux-cli/index.md`

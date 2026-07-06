@@ -56,7 +56,7 @@ integrations rely on across versions.
 - `crates/bijux-dag-core/src/analysis/fingerprint.rs`
 - `crates/bijux-dag-runtime/src/replay/`
 - `crates/bijux-dag-artifacts/src/storage/models.rs`
-- `crates/bijux-dag-app/tests/*contract*.rs`
+- `crates/bijux-dag-app/tests/`
 
 ## Next Reads
 

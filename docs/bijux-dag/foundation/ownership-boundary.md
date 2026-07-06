@@ -35,8 +35,8 @@ flowchart LR
 ## Boundary Tests
 
 - app crate boundary checks: `crates/bijux-dag-app/tests/crate_boundary_contract.rs`
-- runtime boundaries: `crates/bijux-dag-runtime/tests/runtime_*_contracts.rs`
-- core purity and identity behavior: `crates/bijux-dag-core/tests/*contract*.rs`
+- runtime boundaries: `crates/bijux-dag-runtime/tests/`
+- core purity and identity behavior: `crates/bijux-dag-core/tests/`
 
 ## Code Anchors
 

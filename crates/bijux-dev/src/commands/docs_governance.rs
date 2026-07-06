@@ -178,11 +178,7 @@ pub(super) fn run_docs_link_check() -> Result<(), String> {
             let start = cap.0 + 2;
             if let Some(end_rel) = content[start..].find(')') {
                 let link = &content[start..start + end_rel];
-                if link.starts_with("http://")
-                    || link.starts_with("https://")
-                    || link.starts_with("mailto:")
-                    || link.starts_with('#')
-                {
+                if should_skip_markdown_link(link) {
                     continue;
                 }
                 let resolved = file.parent().unwrap_or(Path::new(".")).join(link);
@@ -205,6 +201,15 @@ pub(super) fn run_docs_link_check() -> Result<(), String> {
     } else {
         Err(violations.join(", "))
     }
+}
+
+fn should_skip_markdown_link(link: &str) -> bool {
+    link.starts_with("http://")
+        || link.starts_with("https://")
+        || link.starts_with("mailto:")
+        || link.starts_with('#')
+        || link.contains("{{")
+        || link.contains("}}")
 }
 
 fn extract_inline_code_spans(content: &str) -> Vec<(usize, String)> {
@@ -1007,11 +1012,7 @@ fn collect_inbound_counts(
                 let close = open + close_rel;
                 let link = content[open..close].trim();
                 cursor = close + 1;
-                if link.starts_with("http://")
-                    || link.starts_with("https://")
-                    || link.starts_with("mailto:")
-                    || link.starts_with('#')
-                {
+                if should_skip_markdown_link(link) {
                     continue;
                 }
                 let link_no_anchor = link.split('#').next().unwrap_or(link).trim();
@@ -1076,8 +1077,9 @@ fn collect_source_files_with_extension(
 mod tests {
     use super::{
         broken_inline_code_anchors, extract_inline_code_spans, repo_code_anchor_candidate,
-        validate_known_limitations_content, validate_risk_register_content,
-        KNOWN_LIMITATIONS_REL_PATH, REQUIRED_RISK_IDS, RISK_REGISTER_REL_PATH,
+        should_skip_markdown_link, validate_known_limitations_content,
+        validate_risk_register_content, KNOWN_LIMITATIONS_REL_PATH, REQUIRED_RISK_IDS,
+        RISK_REGISTER_REL_PATH,
     };
     use std::fs;
     use std::path::Path;
@@ -1133,6 +1135,14 @@ also good `docs/index.md`\n";
             violations,
             vec!["docs/guide.md:2: broken code anchor crates/demo/src/missing.rs".to_string()]
         );
+    }
+
+    #[test]
+    fn markdown_link_skip_rules_allow_template_placeholders() {
+        assert!(should_skip_markdown_link("https://bijux.io"));
+        assert!(should_skip_markdown_link("{{ docs_url }}"));
+        assert!(should_skip_markdown_link("#section"));
+        assert!(!should_skip_markdown_link("../guide.md"));
     }
 
     #[test]
