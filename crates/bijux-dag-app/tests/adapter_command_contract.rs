@@ -159,10 +159,13 @@ fn adapters_conformance_json_reports_scenario_matrix() {
         .any(|scenario| scenario["scenario"] == "success" && scenario["status"] == "pass"));
     assert!(file_transform_scenarios
         .iter()
+        .any(|scenario| scenario["scenario"] == "failure" && scenario["status"] == "pass"));
+    assert!(file_transform_scenarios
+        .iter()
         .any(|scenario| scenario["scenario"] == "cache_output" && scenario["status"] == "pass"));
-    assert!(file_transform_scenarios.iter().any(
-        |scenario| scenario["scenario"] == "missing_executable" && scenario["status"] == "skip"
-    ));
+    assert!(file_transform_scenarios.iter().any(|scenario| scenario["scenario"]
+        == "missing_executable"
+        && scenario["status"] == "skip"));
     assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "timeout"));
     assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "cache_output"));
     let http_scenarios = http["scenarios"].as_array().expect("http scenarios");
