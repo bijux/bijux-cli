@@ -255,6 +255,70 @@ fn finalized_run_removes_incomplete_marker_and_keeps_completion_marker() {
 }
 
 #[test]
+fn runtime_rejects_selected_gpu_nodes_without_gpu_device_budget() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"train",
+              "kind":"const",
+              "outputs":[{"name":"out","path":"train/out"}],
+              "resources":{"cpu":1,"mem_mb":64,"gpu_devices":1},
+              "params":{"value":1}
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let error = runtime
+        .run(&graph, temp.path(), RuntimeConfig::default())
+        .expect_err("gpu budget should be required")
+        .to_string();
+
+    assert!(error.contains("gpu_device_budget is unset"));
+    assert!(error.contains("train=1"));
+}
+
+#[test]
+fn runtime_rejects_gpu_nodes_that_exceed_runtime_budget() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"train",
+              "kind":"const",
+              "outputs":[{"name":"out","path":"train/out"}],
+              "resources":{"cpu":1,"mem_mb":64,"gpu_devices":2},
+              "params":{"value":1}
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let error = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig { gpu_device_budget: Some(1), ..RuntimeConfig::default() },
+        )
+        .expect_err("oversized gpu request should fail")
+        .to_string();
+
+    assert!(error.contains("gpu_device_budget=1"));
+    assert!(error.contains("train=2"));
+}
+
+#[test]
 fn runtime_events_explain_ready_and_scheduler_blocking_reasons() {
     let graph = parse_graph_strict(
         r#"{

@@ -1108,6 +1108,7 @@ pub struct RuntimeConfig {
     pub jobs: usize,
     pub cpu_budget: Option<u32>,
     pub memory_budget_mb: Option<u32>,
+    pub gpu_device_budget: Option<u32>,
     pub run_timeout_ms: Option<u64>,
     pub run_timeout_behavior: RunTimeoutBehavior,
     pub node_timeout_ms: Option<u64>,
@@ -1141,6 +1142,7 @@ impl Default for RuntimeConfig {
             jobs: 1,
             cpu_budget: None,
             memory_budget_mb: None,
+            gpu_device_budget: None,
             run_timeout_ms: None,
             run_timeout_behavior: RunTimeoutBehavior::FinishRunning,
             node_timeout_ms: None,
@@ -1273,6 +1275,7 @@ impl Runtime {
             .map_err(RuntimeError::Executor)?;
         let _contracts = validate_task_contracts(graph, &options)?;
         let plan = build_plan(graph, &options);
+        validate_gpu_runtime_capacity(&plan, &options)?;
         engine::execute(self, graph, plan, out_dir, options)
     }
 }
@@ -1281,6 +1284,57 @@ impl Default for Runtime {
     fn default() -> Self {
         Self::new()
     }
+}
+
+fn validate_gpu_runtime_capacity(
+    plan: &ExecutionPlan,
+    options: &RuntimeConfig,
+) -> Result<(), RuntimeError> {
+    let gpu_device_budget = options
+        .scheduler_policy
+        .gpu_device_budget
+        .or(options.gpu_device_budget);
+    let mut required_nodes = Vec::new();
+    let mut oversized_nodes = Vec::new();
+
+    for node in &plan.nodes {
+        let requested = bijux_dag_core::resources::node_gpu_devices(node);
+        if requested == 0 {
+            continue;
+        }
+        required_nodes.push((node.id.clone(), requested));
+        if gpu_device_budget.is_some_and(|budget| requested > budget) {
+            oversized_nodes.push((node.id.clone(), requested));
+        }
+    }
+
+    if required_nodes.is_empty() {
+        return Ok(());
+    }
+
+    let Some(gpu_device_budget) = gpu_device_budget.filter(|budget| *budget > 0) else {
+        let requested = required_nodes
+            .iter()
+            .map(|(node_id, requested)| format!("{node_id}={requested}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(RuntimeError::Executor(format!(
+            "selected nodes require gpu devices ({requested}), but runtime gpu_device_budget is unset"
+        )));
+    };
+
+    if oversized_nodes.is_empty() {
+        return Ok(());
+    }
+
+    let requested = oversized_nodes
+        .iter()
+        .map(|(node_id, requested)| format!("{node_id}={requested}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    Err(RuntimeError::Executor(format!(
+        "selected nodes require more gpu devices than runtime gpu_device_budget={gpu_device_budget}: {requested}"
+    )))
 }
 
 #[allow(clippy::too_many_arguments)]
