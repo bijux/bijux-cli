@@ -229,10 +229,12 @@ pub use adapter_sdk::{
     AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest,
 };
 pub use async_adapter::AsyncAdapter;
+#[doc(hidden)]
 pub use backend::fake::{
     fake_batch_backend_reference, fake_batch_executor_contract, FakeBatchExecutor,
     FakeBatchExecutorContract, FakeBatchJobRecord, FakeBatchJobStatus,
 };
+#[doc(hidden)]
 pub use backend_cluster::{
     artifact_collection_state, backend_ready_for_admission, canonical_k8s_terminal_events,
     capture_hpc_scheduler_version, classify_hpc_failure, classify_k8s_failure,
@@ -261,6 +263,7 @@ pub use backend_cluster::{
     RemoteArtifactStagingProtocol, SlurmAdapterDesignContractReport, SlurmExecutorContract,
     WorkdirSemantics, WorkdirVolumeKind,
 };
+#[doc(hidden)]
 pub use batch_execution::{
     cancel_batch_attempt, duplicate_status_delivery_detected, execution_mode_report,
     heartbeat_stale, restart_recovery_supported, retry_attempt, validate_batch_metadata,
@@ -344,6 +347,7 @@ pub use invariants::{
     INVARIANT_REGISTRY,
 };
 use io::{Fs, StdFs};
+#[doc(hidden)]
 pub use kubernetes_execution::{
     build_kubernetes_execution_request, kubernetes_pod_status_from_node_result,
     map_kubernetes_pod_status_to_node_status, validate_kubernetes_execution_request,
@@ -415,6 +419,7 @@ pub use recovery::{
     SchedulerRecoveryRule, StuckRunPolicy,
 };
 use registry::{build_registry, AdapterRegistry};
+#[doc(hidden)]
 pub use remote_execution_model::{
     execution_mode_status, remote_handoff_valid, remote_input_artifact_digest_matches,
     serialize_node_result_payload, validate_remote_execution_fingerprint_set,
@@ -425,6 +430,7 @@ pub use remote_execution_model::{
     RemoteNodeExecutionPayload, RemoteNodeExecutionResult, RemoteObservabilityHandoff,
     RemoteWorkerExecutor,
 };
+#[doc(hidden)]
 pub use remote_executor::{
     RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter,
 };
@@ -506,6 +512,7 @@ pub use semantic_lineage::{
 };
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+#[doc(hidden)]
 pub use slurm_execution::{
     build_slurm_execution_request, build_slurm_scheduler_request,
     map_slurm_job_status_to_node_status, validate_slurm_execution_request,
