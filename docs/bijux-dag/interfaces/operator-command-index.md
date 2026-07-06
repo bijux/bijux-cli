@@ -27,7 +27,8 @@ verify, compare, or diagnose it.
 - `dag runs tree`: render node structure from run evidence
 - `dag runs timeline`: render ordered execution events from
   `observability.timeline.json`, with node-trace projection only as a
-  compatibility fallback
+  compatibility fallback; supports `--node`, `--event`, `--since-unix-ms`,
+  `--until-unix-ms`, and `--json`
 - `dag runs diff`: compare two run directories
 - `dag runs verify`: verify run integrity and compatibility
 - `dag runs doctor`: diagnose corrupt or incomplete run evidence

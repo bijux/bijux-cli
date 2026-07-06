@@ -33,6 +33,7 @@ The operator inspection lane is the stable home for:
 - `dag runs flakes`
 - `dag runs tree`
 - `dag runs timeline`
+  with `--node`, `--event`, `--since-unix-ms`, and `--until-unix-ms`
 - `dag runs diff`
 - `dag runs verify`
 - `dag runs doctor`
