@@ -11,9 +11,9 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_runtime::{
-    build_slurm_execution_request, AbsolutePathPolicy, MockSlurmBackend, PolicyConfig,
+    build_slurm_execution_request, AbsolutePathPolicy, MockSlurmBackend, NodeStatus, PolicyConfig,
     RemoteExecutionFingerprintSet, RemoteExecutionIdentity, RemoteExecutionWorkspace,
-    RemoteNodeExecutionPayload, SlurmBackendExecutor, SlurmJobStatus, NodeStatus,
+    RemoteNodeExecutionPayload, SlurmBackendExecutor, SlurmJobStatus,
 };
 
 #[test]
