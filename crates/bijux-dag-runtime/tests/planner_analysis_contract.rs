@@ -314,12 +314,12 @@ fn planner_scheduling_simulation_reports_named_resource_bottlenecks() {
     );
     assert!(estimate.critical_path.total_duration_ms >= 10000);
     assert_eq!(estimate.scheduling_simulation.scheduled_waves, 4);
-    assert!(estimate.scheduling_simulation.simulated_makespan_ms >= 20000);
+    assert!(estimate.scheduling_simulation.projected_makespan_ms >= 20000);
     assert_eq!(
         estimate.scheduling_simulation.resource_delay_ms,
         estimate
             .scheduling_simulation
-            .simulated_makespan_ms
+            .projected_makespan_ms
             .saturating_sub(estimate.critical_path.total_duration_ms)
     );
     assert_eq!(

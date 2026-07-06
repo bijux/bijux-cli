@@ -79,7 +79,7 @@ pub struct PlannerResourceBottleneck {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PlannerSchedulingSimulation {
     pub scheduled_waves: usize,
-    pub simulated_makespan_ms: u64,
+    pub projected_makespan_ms: u64,
     pub resource_delay_ms: u64,
     pub run_bound: PlannerSchedulingBound,
     pub bottlenecks: Vec<PlannerResourceBottleneck>,
@@ -1297,7 +1297,7 @@ fn scheduling_simulation(
     if selected_nodes.is_empty() {
         return PlannerSchedulingSimulation {
             scheduled_waves: 0,
-            simulated_makespan_ms: 0,
+            projected_makespan_ms: 0,
             resource_delay_ms: 0,
             run_bound: PlannerSchedulingBound::DependencyBound,
             bottlenecks: Vec::new(),
@@ -1313,7 +1313,7 @@ fn scheduling_simulation(
     let mut ready_queue = ReadyQueue::from_indegree(indegree);
     let mut scheduler = crate::build_scheduler(&options.scheduler_policy);
     let mut scheduled_waves = 0usize;
-    let mut simulated_makespan_ms = 0u64;
+    let mut projected_makespan_ms = 0u64;
     let mut blocked_nodes = BTreeMap::<String, PlannerBlockedNodeAccumulator>::new();
     let mut bottlenecks = BTreeMap::<String, PlannerResourceBottleneckAccumulator>::new();
 
@@ -1336,7 +1336,7 @@ fn scheduling_simulation(
             .map(|node| node_duration_estimate(node).duration_ms)
             .max()
             .unwrap_or(0);
-        simulated_makespan_ms += wave_duration_ms;
+        projected_makespan_ms += wave_duration_ms;
 
         for node_id in &decision.blocked_by_budget {
             let reason = decision
@@ -1372,7 +1372,7 @@ fn scheduling_simulation(
     }
 
     let resource_delay_ms =
-        simulated_makespan_ms.saturating_sub(topology_critical_path_duration_ms);
+        projected_makespan_ms.saturating_sub(topology_critical_path_duration_ms);
     let run_bound = if resource_delay_ms > 0 {
         PlannerSchedulingBound::ResourceBound
     } else {
@@ -1407,7 +1407,7 @@ fn scheduling_simulation(
 
     PlannerSchedulingSimulation {
         scheduled_waves,
-        simulated_makespan_ms,
+        projected_makespan_ms,
         resource_delay_ms,
         run_bound,
         bottlenecks,
