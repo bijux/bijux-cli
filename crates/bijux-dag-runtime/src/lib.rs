@@ -613,6 +613,7 @@ pub mod experimental {
     }
 }
 
+/// Runtime-level failure classification for planning, execution, and artifact work.
 #[derive(Debug, thiserror::Error)]
 pub enum RuntimeError {
     #[error("graph error: {0}")]
@@ -627,6 +628,7 @@ pub enum RuntimeError {
     Executor(String),
 }
 
+/// Terminal status reported for a node after execution or cache reuse.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub enum NodeStatus {
     Success,
@@ -636,6 +638,7 @@ pub enum NodeStatus {
     Cancelled,
 }
 
+/// Execution-scoped state shared across node adapter invocations for one run.
 pub struct RunContext {
     pub run_dir: Arc<RunDir>,
     pub graph_fingerprint: Arc<Mutex<HashMap<String, String>>>,
@@ -657,6 +660,7 @@ pub struct RunContext {
     pub cancellation_requested: Arc<std::sync::atomic::AtomicBool>,
 }
 
+/// Artifact, status, and failure evidence recorded for one node execution result.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NodeResult {
     pub status: NodeStatus,
@@ -733,6 +737,7 @@ struct ReduceExecutionSummary {
     collection: InputCollection,
 }
 
+/// Timestamped attempt evidence for a retried or single-shot node execution.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AttemptEvent {
     pub attempt: u32,
@@ -781,6 +786,7 @@ enum ControlledCommandOutcomeKind {
     Cancelled,
 }
 
+/// Built-in adapter that writes constant JSON payloads into declared outputs.
 #[derive(Clone)]
 pub struct ConstAdapter;
 
@@ -847,6 +853,7 @@ impl Adapter for ConstAdapter {
     }
 }
 
+/// Built-in adapter that executes local shell commands inside the run boundary.
 #[derive(Clone)]
 pub struct ShellAdapter;
 
@@ -1119,6 +1126,7 @@ impl Adapter for ShellAdapter {
     }
 }
 
+/// Built-in adapter that executes container workloads through a supported engine.
 #[derive(Clone)]
 pub struct ContainerAdapter;
 
@@ -1476,6 +1484,7 @@ impl Adapter for ContainerAdapter {
     }
 }
 
+/// Cache read and write policy for runtime execution.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CacheMode {
     Off,
@@ -1483,6 +1492,7 @@ pub enum CacheMode {
     ReadWrite,
 }
 
+/// Behavior to apply when a whole-run timeout is reached.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RunTimeoutBehavior {
@@ -1505,6 +1515,7 @@ fn cache_hit_proof(cache_read: CacheRead) -> Result<Option<CacheProof>, RuntimeE
     }
 }
 
+/// Runtime configuration for planning, selection, caching, policy, and scheduling.
 #[derive(Clone)]
 pub struct RuntimeConfig {
     pub jobs: usize,
@@ -1576,12 +1587,14 @@ impl Default for RuntimeConfig {
     }
 }
 
+/// Include and exclude selectors applied before execution begins.
 #[derive(Debug, Clone, Default)]
 pub struct SelectorSet {
     pub include: Vec<Selector>,
     pub exclude: Vec<Selector>,
 }
 
+/// Node selection rule used for partial execution and rerun workflows.
 #[derive(Debug, Clone)]
 pub enum Selector {
     Id(String),
@@ -1590,6 +1603,7 @@ pub enum Selector {
     Kind(String),
 }
 
+/// Input materialization strategy for upstream artifacts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MaterializeMode {
     Copy,
@@ -1597,6 +1611,7 @@ pub enum MaterializeMode {
     Symlink,
 }
 
+/// Policy flags that constrain ambient effects during runtime execution.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PolicyConfig {
     pub deny_network: bool,
@@ -1618,6 +1633,7 @@ impl Default for PolicyConfig {
     }
 }
 
+/// Runtime entrypoint for executing validated graphs against registered adapters.
 pub struct Runtime {
     registry: AdapterRegistry,
     fs: Arc<dyn Fs>,
@@ -1626,6 +1642,7 @@ pub struct Runtime {
 }
 
 impl Runtime {
+    /// Builds a runtime with the default adapter registry, filesystem, and clock.
     pub fn new() -> Self {
         let registry_result = build_registry(vec![
             Arc::new(ConstAdapter),
@@ -1671,6 +1688,7 @@ impl Runtime {
             .unwrap_or_else(|_| "unknown".to_string())
     }
 
+    /// Executes a validated graph with the supplied runtime configuration.
     pub fn run(
         &self,
         graph: &Graph,
@@ -3013,6 +3031,7 @@ fn cache_key_input_for_run(
     })
 }
 
+/// Admission record for one graph node against the currently registered adapters.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub struct AdapterAdmissionEntry {
     pub node_id: String,
@@ -3023,12 +3042,14 @@ pub struct AdapterAdmissionEntry {
     pub reasons: Vec<String>,
 }
 
+/// Summary of whether every node in a graph can be admitted by the runtime.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub struct AdapterAdmissionReport {
     pub supported: bool,
     pub entries: Vec<AdapterAdmissionEntry>,
 }
 
+/// Lists the currently registered adapter records from the default runtime registry.
 pub fn registered_adapters() -> Vec<AdapterInfo> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
@@ -3042,6 +3063,7 @@ pub fn registered_adapters() -> Vec<AdapterInfo> {
     registry.list()
 }
 
+/// Lists adapter descriptors that define the public runtime adapter contract surface.
 pub fn registered_adapter_descriptors() -> Vec<adapter::AdapterDescriptor> {
     let registry = build_registry(vec![
         Arc::new(ConstAdapter),
@@ -3055,6 +3077,7 @@ pub fn registered_adapter_descriptors() -> Vec<adapter::AdapterDescriptor> {
     registry.descriptors()
 }
 
+/// Builds conformance results for every registered adapter descriptor.
 pub fn adapter_conformance_suite() -> Result<Vec<AdapterConformanceSuiteReport>, RuntimeError> {
     let mut descriptors = registered_adapter_descriptors();
     for handshake in probe_external_adapters()? {
@@ -3069,6 +3092,7 @@ pub fn adapter_conformance_suite() -> Result<Vec<AdapterConformanceSuiteReport>,
         .collect())
 }
 
+/// Builds the checked-in adapter reference document payload from live descriptors.
 pub fn registered_adapter_reference_document() -> AdapterReferenceDocument {
     let mut descriptors = registered_adapter_descriptors();
     descriptors.sort_by(|left, right| (&left.id, &left.version).cmp(&(&right.id, &right.version)));
@@ -3082,6 +3106,7 @@ pub fn registered_adapter_reference_document() -> AdapterReferenceDocument {
     }
 }
 
+/// Evaluates whether each node in a graph is supported by the current adapter registry.
 pub fn adapter_admission_matrix(graph: &Graph) -> AdapterAdmissionReport {
     let descriptors = registered_adapter_descriptors();
     let mut by_kind = std::collections::BTreeMap::new();
@@ -3149,6 +3174,7 @@ pub fn adapter_admission_matrix(graph: &Graph) -> AdapterAdmissionReport {
     AdapterAdmissionReport { supported, entries }
 }
 
+/// Serializes the default adapter registry into a JSON inventory report.
 pub fn adapter_registry_dump() -> serde_json::Value {
     let adapters = registered_adapters();
     serde_json::json!({
