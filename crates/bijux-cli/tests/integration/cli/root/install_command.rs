@@ -70,6 +70,21 @@ fn json_dry_run_reports_registry_backed_product_aliases() {
 }
 
 #[test]
+fn dag_dry_run_uses_the_published_cargo_package_name() {
+    let out = run(&["install", "dag", "--dry-run", "--format", "json", "--no-pretty"], &[]);
+    assert_eq!(out.status.code(), Some(0));
+    assert!(out.stderr.is_empty());
+    let payload: Value = serde_json::from_slice(&out.stdout).expect("json");
+    assert_eq!(payload["target"], "dag");
+    assert_eq!(payload["package"], "bijux-dag-cli");
+    assert_eq!(payload["executable"], "bijux-dag");
+    assert_eq!(
+        payload["command"],
+        serde_json::json!(["cargo", "install", "--locked", "bijux-dag-cli"])
+    );
+}
+
+#[test]
 fn install_executes_cargo_for_runtime_aliases() {
     let root = temp_dir("stub-cargo");
     let bin_dir = root.join("bin");

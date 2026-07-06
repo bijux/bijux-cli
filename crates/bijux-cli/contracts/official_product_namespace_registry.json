@@ -39,7 +39,7 @@
       "aliases": ["workflow"],
       "runtime_binary": "bijux-dag",
       "control_binary": "bijux-dev-dag",
-      "runtime_package": "bijux-dag",
+      "runtime_package": "bijux-dag-cli",
       "control_package": "bijux-dev-dag",
       "repository": "bijux-dag",
       "status": "declared",
