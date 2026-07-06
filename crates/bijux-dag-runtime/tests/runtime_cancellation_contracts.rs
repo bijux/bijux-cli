@@ -82,6 +82,16 @@ fn read_node_trace(run_dir: &std::path::Path, node_id: &str) -> Value {
     .expect("parse trace")
 }
 
+fn read_timeline(run_dir: &std::path::Path) -> Vec<Value> {
+    serde_json::from_str::<Value>(
+        &fs::read_to_string(run_dir.join("observability.timeline.json")).expect("timeline"),
+    )
+    .expect("parse timeline")["entries"]
+        .as_array()
+        .expect("timeline entries")
+        .clone()
+}
+
 #[test]
 fn cancellation_requires_terminal_node_state() {
     assert!(cancellation_is_terminal(true, true));
@@ -132,6 +142,18 @@ fn operator_cancellation_preserves_completed_nodes_and_marks_remaining_nodes_can
     assert_eq!(publish["skip_reason"]["reason"], "cancelled");
     assert_eq!(publish["lifecycle_state"], "cancelled");
     assert_eq!(publish["transition_cause"], "CancelRequested");
+
+    let timeline = read_timeline(&run_path);
+    assert!(timeline.iter().any(|entry| {
+        entry["label"] == "node_cancelled"
+            && entry["node_id"] == "execute"
+            && entry["source_event"] == "node_finished"
+    }));
+    assert!(timeline.iter().any(|entry| {
+        entry["label"] == "node_cancelled"
+            && entry["node_id"] == "publish"
+            && entry["source_event"] == "node_skipped"
+    }));
 }
 
 #[test]
@@ -204,4 +226,19 @@ fn stop_request_file_cancels_running_run_and_records_operator_request_cause() {
     assert!(audit.as_array().expect("audit array").iter().any(|entry| {
         entry["action"] == "cancel" && entry["source"] == "cli" && entry["ts"] == 42
     }));
+
+    let timeline = read_timeline(&run_path);
+    let cancel_idx = timeline
+        .iter()
+        .position(|entry| entry["label"] == "run_cancel_requested")
+        .expect("cancel request timeline entry");
+    let publish_idx = timeline
+        .iter()
+        .position(|entry| {
+            entry["label"] == "node_cancelled"
+                && entry["node_id"] == "publish"
+                && entry["source_event"] == "node_skipped"
+        })
+        .expect("publish cancellation timeline entry");
+    assert!(cancel_idx < publish_idx);
 }

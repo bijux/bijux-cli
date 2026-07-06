@@ -281,6 +281,16 @@ fn read_failure_propagation(run_dir: &std::path::Path) -> Vec<Value> {
     .expect("parse failure propagation")
 }
 
+fn read_timeline(run_dir: &std::path::Path) -> Vec<Value> {
+    serde_json::from_str::<Value>(
+        &fs::read_to_string(run_dir.join("observability.timeline.json")).expect("timeline"),
+    )
+    .expect("parse timeline")["entries"]
+        .as_array()
+        .expect("timeline entries")
+        .clone()
+}
+
 #[test]
 fn runtime_clean_env_defaults_to_stripped_environment() {
     let _env_lock = process_env_lock();
@@ -1249,6 +1259,13 @@ fn runtime_fail_fast_marks_unscheduled_nodes_as_aborted_failures() {
     assert!(propagation
         .iter()
         .any(|entry| entry["node_id"] == "b" && entry["cause"] == "execution_aborted"));
+
+    let timeline = read_timeline(&run_path);
+    assert!(timeline.iter().any(|entry| {
+        entry["node_id"] == "b"
+            && entry["label"] == "node_failed"
+            && entry["reason"] == "execution_aborted"
+    }));
 }
 
 #[test]
@@ -1300,6 +1317,21 @@ fn runtime_marks_timed_out_runs_incomplete_when_deadline_is_exceeded() {
     assert!(propagation
         .iter()
         .any(|entry| entry["node_id"] == "b" && entry["cause"] == "timeout_exceeded"));
+
+    let timeline = read_timeline(&run_path);
+    let timeout_idx = timeline
+        .iter()
+        .position(|entry| entry["label"] == "run_timed_out")
+        .expect("run timeout timeline entry");
+    let failed_idx = timeline
+        .iter()
+        .position(|entry| {
+            entry["node_id"] == "b"
+                && entry["label"] == "node_failed"
+                && entry["reason"] == "timeout_exceeded"
+        })
+        .expect("timed out node timeline entry");
+    assert!(timeout_idx < failed_idx);
 }
 
 #[test]
