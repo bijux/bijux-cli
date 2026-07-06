@@ -36,8 +36,7 @@ fn payload_with_backend(backend_id: &str) -> RemoteNodeExecutionPayload {
     )
     .expect("parse graph");
     let node = graph.nodes[0].clone();
-    let params: Value =
-        json!({"argv": ["/bin/sh", "-c", "printf value > ../outputs/value.txt"], "timeout_ms": 125000});
+    let params: Value = json!({"argv": ["/bin/sh", "-c", "printf value > ../outputs/value.txt"], "timeout_ms": 125000});
     RemoteNodeExecutionPayload {
         identity: RemoteExecutionIdentity {
             run_id: "run-1".to_string(),
