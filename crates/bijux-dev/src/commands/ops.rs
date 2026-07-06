@@ -2732,7 +2732,7 @@ pub(super) fn run_backend_contract_guard() -> Result<(), String> {
         "docs/spec/EXECUTION_ENGINE_CONTRACT.md",
         "docs/spec/ATTEMPT_TRACE_SCHEMA_V0.1.md",
         "docs/reports/foundation/BACKEND_HARDENING_REPORT.md",
-        "docs/architecture/ENGINE-BACKEND-RESPONSIBILITIES.md",
+        "docs/bijux-dag/architecture/engine-backend-responsibilities.md",
         "crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs",
         "crates/bijux-dag-runtime/tests/execution_backend_contract.rs",
         "crates/bijux-dev/tests/backend_hardening_contracts.rs",
