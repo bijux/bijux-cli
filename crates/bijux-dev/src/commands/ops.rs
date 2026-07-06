@@ -3652,8 +3652,8 @@ pub(super) fn run_formal_invariants_guard() -> Result<(), String> {
     let required = [
         "docs/spec/FORMAL_INVARIANTS.md",
         "docs/tracking/INVARIANT_COVERAGE.md",
-        "crates/bijux-dag-runtime/src/invariants.rs",
-        "crates/bijux-dag-runtime/src/invariants_tests.rs",
+        "crates/bijux-dag-runtime/src/runtime_core/governance/invariants.rs",
+        "crates/bijux-dag-runtime/src/internal/testing/invariants_tests.rs",
         "crates/bijux-dag-runtime/tests/formal_invariant_property_contracts.rs",
     ];
     let mut missing = Vec::new();
@@ -3702,8 +3702,10 @@ pub(super) fn run_formal_invariants_guard() -> Result<(), String> {
 
 pub(super) fn run_invariants_report() -> Result<(), String> {
     let root = repo_root()?;
-    let registry_src = fs::read_to_string(root.join("crates/bijux-dag-runtime/src/invariants.rs"))
-        .map_err(|err| err.to_string())?;
+    let registry_src = fs::read_to_string(
+        root.join("crates/bijux-dag-runtime/src/runtime_core/governance/invariants.rs"),
+    )
+    .map_err(|err| err.to_string())?;
     let coverage = fs::read_to_string(root.join("docs/tracking/INVARIANT_COVERAGE.md"))
         .map_err(|err| err.to_string())?;
 
