@@ -3078,8 +3078,8 @@ pub(super) fn run_security_model_guard() -> Result<(), String> {
         "crates/bijux-dag-runtime/tests/security_model_contracts.rs",
         "crates/bijux-dag-runtime/tests/security_policy_contracts.rs",
         "crates/bijux-dag-runtime/tests/secrets_security_contracts.rs",
-        "crates/bijux-dag-runtime/src/security_env.rs",
-        "crates/bijux-dag-runtime/src/path_authorization.rs",
+        "crates/bijux-dag-runtime/src/internal/identity/security_env.rs",
+        "crates/bijux-dag-runtime/src/artifacts/storage/path_authorization.rs",
     ];
     let mut missing = Vec::new();
     for rel in required {
