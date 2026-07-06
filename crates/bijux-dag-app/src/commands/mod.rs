@@ -270,6 +270,8 @@ pub(crate) enum Commands {
         memory_budget_mb: Option<u32>,
         #[arg(long)]
         gpu_device_budget: Option<u32>,
+        #[arg(long = "resource-capacity", action = clap::ArgAction::Append)]
+        resource_capacity: Vec<String>,
         #[arg(long)]
         node_timeout_ms: Option<u64>,
         #[arg(long)]
@@ -341,6 +343,8 @@ pub(crate) enum Commands {
         memory_budget_mb: Option<u32>,
         #[arg(long)]
         gpu_device_budget: Option<u32>,
+        #[arg(long = "resource-capacity", action = clap::ArgAction::Append)]
+        resource_capacity: Vec<String>,
         #[arg(long, help = DENY_NETWORK_HELP)]
         deny_network: bool,
         #[arg(long, help = DENY_ENV_HELP)]

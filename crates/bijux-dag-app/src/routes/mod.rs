@@ -20,6 +20,7 @@ pub(crate) mod plan_routes;
 pub(crate) mod policy_surface;
 pub(crate) mod preconditions;
 pub(crate) mod prove_verify_routes;
+pub(crate) mod resource_capacity_args;
 pub(crate) mod release_routes;
 pub(crate) mod renderer;
 pub(crate) mod replay_routes;

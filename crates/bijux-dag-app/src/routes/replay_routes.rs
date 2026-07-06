@@ -7,6 +7,7 @@ use crate::routes::policy_surface::{
     cache_surface_payload, policy_surface_payload, replay_sandbox_scope_payload,
 };
 use crate::routes::preconditions::{require_run_directory, require_safe_path};
+use crate::routes::resource_capacity_args::parse_resource_capacities;
 use crate::run_data::{load_snapshot, map_materialize_mode};
 use crate::{
     build_run_proof_bundle, emit_json, read_run_id, selector_cli_string, CacheMode, ExitCode,
@@ -21,6 +22,7 @@ fn build_replay_runtime_options(
     cpu_budget: Option<u32>,
     memory_budget_mb: Option<u32>,
     gpu_device_budget: Option<u32>,
+    named_resource_capacities: std::collections::BTreeMap<String, u32>,
     run_id: Option<String>,
     source_run_id: Option<String>,
     cache_mode: CacheMode,
@@ -36,6 +38,7 @@ fn build_replay_runtime_options(
         cpu_budget,
         memory_budget_mb,
         gpu_device_budget,
+        named_resource_capacities,
         run_timeout_ms: None,
         node_timeout_ms: None,
         materialize_inputs: map_materialize_mode(materialize_inputs),
@@ -68,6 +71,7 @@ pub(crate) fn handle_replay_command(
     cpu_budget: Option<u32>,
     memory_budget_mb: Option<u32>,
     gpu_device_budget: Option<u32>,
+    resource_capacity: &[String],
     deny_network: bool,
     deny_env: bool,
     deny_clock: bool,
@@ -85,6 +89,7 @@ pub(crate) fn handle_replay_command(
     let snapshot = load_snapshot(run_dir)?;
     let source_run_id = read_run_id(run_dir).ok();
     let runtime = Runtime::new();
+    let named_resource_capacities = parse_resource_capacities(resource_capacity)?;
     let cache_mode = match cache {
         CacheModeArg::Off => {
             if reuse_cache {
@@ -121,6 +126,7 @@ pub(crate) fn handle_replay_command(
         cpu_budget,
         memory_budget_mb,
         gpu_device_budget,
+        named_resource_capacities,
         run_id,
         source_run_id.clone(),
         cache_mode.clone(),
@@ -263,6 +269,10 @@ mod tests {
             Some(8),
             Some(2048),
             Some(2),
+            std::collections::BTreeMap::from([
+                ("database_slot".to_string(), 2),
+                ("license.render".to_string(), 1),
+            ]),
             Some("replay-run".to_string()),
             Some("source-run".to_string()),
             crate::CacheMode::ReadWrite,
@@ -283,6 +293,8 @@ mod tests {
         assert_eq!(options.cpu_budget, Some(8));
         assert_eq!(options.memory_budget_mb, Some(2048));
         assert_eq!(options.gpu_device_budget, Some(2));
+        assert_eq!(options.named_resource_capacities.get("database_slot"), Some(&2));
+        assert_eq!(options.named_resource_capacities.get("license.render"), Some(&1));
         assert_eq!(options.run_id.as_deref(), Some("replay-run"));
         assert_eq!(options.parent_run_id.as_deref(), Some("source-run"));
         assert!(options.partial_rerun_dependency_closure);

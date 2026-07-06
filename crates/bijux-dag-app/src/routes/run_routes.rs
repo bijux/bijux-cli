@@ -11,6 +11,7 @@ use crate::routes::plan_routes::{
 };
 use crate::routes::policy_surface::{cache_surface_payload, policy_surface_payload};
 use crate::routes::preconditions::{require_file, require_safe_path};
+use crate::routes::resource_capacity_args::parse_resource_capacities;
 use crate::run_data::map_materialize_mode;
 use crate::runtime_inputs::{bind_runtime_inputs, missing_required_graph_inputs};
 use crate::{
@@ -37,6 +38,7 @@ pub(crate) struct RunRouteRequest<'a> {
     pub cpu_budget: Option<u32>,
     pub memory_budget_mb: Option<u32>,
     pub gpu_device_budget: Option<u32>,
+    pub resource_capacity: &'a Vec<String>,
     pub node_timeout_ms: Option<u64>,
     pub run_timeout_ms: Option<u64>,
     pub run_timeout_behavior: RunTimeoutBehaviorArg,
@@ -76,6 +78,7 @@ fn cache_preflight(cache_mode: CacheModeArg, cache_dir: &Option<PathBuf>) -> ser
 
 fn build_run_runtime_options(
     req: &RunRouteRequest<'_>,
+    named_resource_capacities: std::collections::BTreeMap<String, u32>,
     preview_layout: Option<&bijux_dag_artifacts::RunDirLayout>,
     selectors: bijux_dag_runtime::SelectorSet,
     cache_dir: Option<PathBuf>,
@@ -90,6 +93,7 @@ fn build_run_runtime_options(
         cpu_budget: req.cpu_budget,
         memory_budget_mb: req.memory_budget_mb,
         gpu_device_budget: req.gpu_device_budget,
+        named_resource_capacities,
         run_timeout_ms: req.run_timeout_ms,
         run_timeout_behavior: match req.run_timeout_behavior {
             RunTimeoutBehaviorArg::FinishRunning => RunTimeoutBehavior::FinishRunning,
@@ -188,6 +192,7 @@ pub(crate) fn handle_run_command(
         );
     }
     let runtime = Runtime::new();
+    let named_resource_capacities = parse_resource_capacities(req.resource_capacity)?;
     let (deny_network, deny_clock, clean_env) =
         effective_policy_flags(req.deny_network, req.deny_clock, req.clean_env, req.hermetic);
     let deny_env = req.deny_env;
@@ -215,6 +220,7 @@ pub(crate) fn handle_run_command(
     let absolute_path_policy = req.absolute_path_policy.into();
     let options = build_run_runtime_options(
         &req,
+        named_resource_capacities,
         preview_layout.as_ref(),
         selectors,
         cache_dir.clone(),
@@ -481,6 +487,7 @@ mod tests {
                 cpu_budget: None,
                 memory_budget_mb: None,
                 gpu_device_budget: None,
+                resource_capacity: &Vec::new(),
                 node_timeout_ms: None,
                 run_timeout_ms: None,
                 run_timeout_behavior: RunTimeoutBehaviorArg::FinishRunning,
@@ -542,6 +549,7 @@ mod tests {
                 cpu_budget: None,
                 memory_budget_mb: None,
                 gpu_device_budget: None,
+                resource_capacity: &Vec::new(),
                 node_timeout_ms: None,
                 run_timeout_ms: None,
                 run_timeout_behavior: RunTimeoutBehaviorArg::FinishRunning,
@@ -584,6 +592,7 @@ mod tests {
             cpu_budget: Some(4),
             memory_budget_mb: Some(4096),
             gpu_device_budget: Some(2),
+            resource_capacity: &vec!["database_slot=2".to_string(), "license.render=1".to_string()],
             node_timeout_ms: Some(10),
             run_timeout_ms: Some(20),
             run_timeout_behavior: RunTimeoutBehaviorArg::CancelRunning,
@@ -612,6 +621,8 @@ mod tests {
             .expect("layout");
         let options = build_run_runtime_options(
             &request,
+            super::parse_resource_capacities(request.resource_capacity)
+                .expect("resource capacities"),
             layout.as_ref(),
             selectors.clone(),
             request.cache_dir.clone(),
@@ -631,6 +642,8 @@ mod tests {
         assert_eq!(options.cpu_budget, Some(4));
         assert_eq!(options.memory_budget_mb, Some(4096));
         assert_eq!(options.gpu_device_budget, Some(2));
+        assert_eq!(options.named_resource_capacities.get("database_slot"), Some(&2));
+        assert_eq!(options.named_resource_capacities.get("license.render"), Some(&1));
         assert_eq!(
             options.run_timeout_behavior,
             bijux_dag_runtime::RunTimeoutBehavior::CancelRunning
