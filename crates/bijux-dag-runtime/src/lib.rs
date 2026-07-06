@@ -410,8 +410,14 @@ pub use recovery::{
 };
 use registry::{build_registry, AdapterRegistry};
 pub use remote_execution_model::{
-    execution_mode_status, remote_handoff_valid, validate_remote_identity, ExecutionModeStatus,
-    RemoteArtifactHandoff, RemoteExecutionIdentity, RemoteObservabilityHandoff,
+    execution_mode_status, remote_handoff_valid, remote_input_artifact_digest_matches,
+    serialize_node_result_payload, validate_remote_execution_fingerprint_set,
+    validate_remote_execution_payload, validate_remote_execution_workspace,
+    validate_remote_identity, validate_remote_input_artifact, ExecutionModeStatus,
+    MockRemoteWorker, RemoteArtifactHandoff, RemoteExecutionFingerprintSet,
+    RemoteExecutionIdentity, RemoteExecutionWorkspace, RemoteInputArtifact,
+    RemoteNodeExecutionPayload, RemoteNodeExecutionResult, RemoteObservabilityHandoff,
+    RemoteWorkerExecutor,
 };
 pub use remote_executor::{
     RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter,
@@ -624,7 +630,7 @@ pub struct RunContext {
     pub cancellation_requested: Arc<std::sync::atomic::AtomicBool>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NodeResult {
     pub status: NodeStatus,
     pub stdout_path: String,
@@ -1393,7 +1399,7 @@ pub enum MaterializeMode {
     Symlink,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PolicyConfig {
     pub deny_network: bool,
     pub deny_env: bool,
@@ -1949,7 +1955,7 @@ fn execute_with_retries(
     }
 }
 
-fn failed_node_result_from_runtime_error(
+pub(crate) fn failed_node_result_from_runtime_error(
     ctx: &RunContext,
     node: &Node,
     error: RuntimeError,
