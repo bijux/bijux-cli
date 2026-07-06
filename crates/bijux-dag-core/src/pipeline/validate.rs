@@ -998,10 +998,7 @@ impl Graph {
                                 node.id
                             ),
                             format!("/nodes/{}/params/reduce/allow_empty_collection", node.id),
-                            Some(
-                                "Use params.reduce.empty with forbid, allow, or skip"
-                                    .to_string(),
-                            ),
+                            Some("Use params.reduce.empty with forbid, allow, or skip".to_string()),
                         );
                     }
                     if let Some(mode) = reduce.get("mode").and_then(param_value_literal_string) {
@@ -1033,10 +1030,7 @@ impl Graph {
                                     empty_policy, node.id
                                 ),
                                 format!("/nodes/{}/params/reduce/empty", node.id),
-                                Some(
-                                    "Choose reduce.empty=forbid, allow, or skip"
-                                        .to_string(),
-                                ),
+                                Some("Choose reduce.empty=forbid, allow, or skip".to_string()),
                             );
                         }
                     }

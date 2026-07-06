@@ -384,10 +384,9 @@ fn resume_fingerprint_matches(
                 ))
             })?
         }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => InputsIndex {
-            collections: vec![],
-            files: vec![],
-        },
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            InputsIndex { collections: vec![], files: vec![] }
+        }
         Err(error) => {
             return Err(RuntimeError::Executor(format!(
                 "failed to inspect persisted inputs index for {}: {}",
@@ -1810,20 +1809,20 @@ pub fn execute(
             if node.semantic_kind == SemanticNodeKind::Reduce
                 && parent_status_map.len() == dependencies.len()
             {
-                let decision = match reduce_preflight_decision(&node, &dependencies, &parent_status_map)
-                {
-                    Ok(decision) => decision,
-                    Err(failure) => {
-                        preflight_failures.push((
-                            node_id.clone(),
-                            node,
-                            failure,
-                            "DependencyFailed".to_string(),
-                            None,
-                        ));
-                        continue;
-                    }
-                };
+                let decision =
+                    match reduce_preflight_decision(&node, &dependencies, &parent_status_map) {
+                        Ok(decision) => decision,
+                        Err(failure) => {
+                            preflight_failures.push((
+                                node_id.clone(),
+                                node,
+                                failure,
+                                "DependencyFailed".to_string(),
+                                None,
+                            ));
+                            continue;
+                        }
+                    };
                 match decision.action {
                     ReducePreflightAction::Run => {
                         trigger_evaluations

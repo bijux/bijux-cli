@@ -41,9 +41,8 @@ fn simple_const_graph() -> String {
 }
 
 fn reduce_collection_command(output_name: &str, empty_value: Option<&str>) -> String {
-    let empty_expr = empty_value
-        .map(|value| format!("'{value}'"))
-        .unwrap_or_else(|| "''".to_string());
+    let empty_expr =
+        empty_value.map(|value| format!("'{value}'")).unwrap_or_else(|| "''".to_string());
     format!(
         "python3 -c \"import json, pathlib; manifest=json.load(open('../inputs/reduce.collection.json')); values=[]; \
 base=pathlib.Path('../inputs'); collect=lambda rel: sorted((base / rel).rglob('value.txt')) if (base / rel).is_dir() else [base / rel]; \
@@ -331,10 +330,9 @@ fn runtime_aggregates_semantic_map_item_failures_without_hiding_successful_outpu
 
     let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("runtime run");
 
-    let manifest: Value = serde_json::from_str(
-        &fs::read_to_string(run_dir.join("manifest.json")).expect("manifest"),
-    )
-    .expect("manifest parse");
+    let manifest: Value =
+        serde_json::from_str(&fs::read_to_string(run_dir.join("manifest.json")).expect("manifest"))
+            .expect("manifest parse");
     assert_eq!(manifest["status"], "failed");
 
     let trace: Value = serde_json::from_str(
@@ -382,7 +380,8 @@ fn runtime_executes_partial_reduce_after_failed_upstream_and_records_manifest_st
     assert_eq!(reduce_output, "alpha");
 
     let reduce_trace: Value = serde_json::from_str(
-        &fs::read_to_string(run_dir.join("nodes").join("reduce").join("trace.json")).expect("trace"),
+        &fs::read_to_string(run_dir.join("nodes").join("reduce").join("trace.json"))
+            .expect("trace"),
     )
     .expect("trace parse");
     assert_eq!(reduce_trace["status"], "success");
@@ -433,7 +432,8 @@ fn runtime_skips_empty_reduce_collection_when_configured() {
     let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("runtime run");
 
     let reduce_trace: Value = serde_json::from_str(
-        &fs::read_to_string(run_dir.join("nodes").join("reduce").join("trace.json")).expect("trace"),
+        &fs::read_to_string(run_dir.join("nodes").join("reduce").join("trace.json"))
+            .expect("trace"),
     )
     .expect("trace parse");
     assert_eq!(reduce_trace["status"], "skipped");

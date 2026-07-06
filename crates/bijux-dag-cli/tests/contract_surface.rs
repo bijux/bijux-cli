@@ -615,8 +615,10 @@ fn dag_commands_human_output_marks_non_stable_routes_as_opt_in() {
     let all_output = dag_command().args(["commands", "--all"]).output().expect("commands --all");
     assert!(all_output.status.success());
     let all_text = String::from_utf8_lossy(&all_output.stdout);
-    assert!(all_text.contains("capabilities [config | internal | opt-in via BIJUX_DAG_ENABLE_INTERNAL]"));
-    assert!(all_text.contains("enterprise [config | simulated | opt-in via BIJUX_DAG_ENABLE_SIMULATED]"));
+    assert!(all_text
+        .contains("capabilities [config | internal | opt-in via BIJUX_DAG_ENABLE_INTERNAL]"));
+    assert!(all_text
+        .contains("enterprise [config | simulated | opt-in via BIJUX_DAG_ENABLE_SIMULATED]"));
     assert!(all_text.contains("trace-node [inspect | experimental | explicit-path]"));
 }
 

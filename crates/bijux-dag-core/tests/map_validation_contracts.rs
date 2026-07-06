@@ -136,12 +136,9 @@ fn semantic_map_accepts_directory_outputs_with_declared_array_input_binding() {
                         (
                             "map".to_string(),
                             ParamValue::Object(
-                                [(
-                                    "input".to_string(),
-                                    ParamValue::Literal(json!("left")),
-                                )]
-                                .into_iter()
-                                .collect(),
+                                [("input".to_string(), ParamValue::Literal(json!("left")))]
+                                    .into_iter()
+                                    .collect(),
                             ),
                         ),
                     ]
@@ -170,5 +167,7 @@ fn semantic_map_accepts_directory_outputs_with_declared_array_input_binding() {
     };
 
     let diagnostics = validate_graph(&graph);
-    assert!(!diagnostics.iter().any(|diag| matches!(diag.code.as_str(), "E1056" | "E1057" | "E1058")));
+    assert!(!diagnostics
+        .iter()
+        .any(|diag| matches!(diag.code.as_str(), "E1056" | "E1057" | "E1058")));
 }

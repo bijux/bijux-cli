@@ -1401,10 +1401,7 @@ fn run_ci() -> Result<(), String> {
     run_missing_workspace_dependency_checks()?;
     run_status("cargo", &["test", "--workspace"])?;
     run_golden()?;
-    run_status(
-        "cargo",
-        &["run", "-p", "bijux-dag-cli", "--bin", "bijux-dag", "--", "compat"],
-    )?;
+    run_status("cargo", &["run", "-p", "bijux-dag-cli", "--bin", "bijux-dag", "--", "compat"])?;
 
     let root = repo_root()?;
     let scratch = std::env::temp_dir().join(format!("bijux-dag-ci-{}", now_secs()));

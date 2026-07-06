@@ -185,10 +185,8 @@ fn default_doctor_remediation(area: &str, message: &str) -> String {
         "apps" => {
             "run `bijux apps doctor` and resolve mount metadata or runtime entrypoints".to_string()
         }
-        "shims" => {
-            "remove deprecated alias binaries and keep declared product binaries on PATH"
-                .to_string()
-        }
+        "shims" => "remove deprecated alias binaries and keep declared product binaries on PATH"
+            .to_string(),
         "python" => "install a supported Python runtime and validate `bijux_cli_py` import parity"
             .to_string(),
         "routing" => "inspect route inventory and clear namespace collisions".to_string(),

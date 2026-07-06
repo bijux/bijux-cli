@@ -3771,8 +3771,7 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
         .map_err(|err| err.to_string())?;
     if !commands_src.contains("Capabilities") {
         return Err(
-            "dag capabilities command is required for maintainer-only support probes"
-                .to_string(),
+            "dag capabilities command is required for maintainer-only support probes".to_string()
         );
     }
 
@@ -5419,11 +5418,7 @@ fn evaluate_limitations_visibility(root: &Path) -> Result<Value, String> {
             format!("command `{id}` failed to spawn `{program}` from contract: {err}")
         })?;
         if !command_output.status.success() {
-            violations.push(format!(
-                "command `{id}` failed: {} {}",
-                program,
-                argv.join(" ")
-            ));
+            violations.push(format!("command `{id}` failed: {} {}", program, argv.join(" ")));
             continue;
         }
         let output = String::from_utf8(command_output.stdout)

@@ -293,9 +293,9 @@ use bijux_dag_artifacts::{
     artifact_size_bytes, sha256_artifact_path, write_inputs_index, write_outputs_index,
     AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace, DeclaredOutputArtifact,
     FailureClass, FailureInfo, InputCollection, InputCollectionItem, InputFile, InputsIndex,
-    NodeCounts, NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex,
-    ReplayProvenance, Resources as TraceResources, RunDir, RunDirLayout, RunOutputFile,
-    RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
+    NodeCounts, NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
+    Resources as TraceResources, RunDir, RunDirLayout, RunOutputFile, RunOutputsIndex,
+    TraceOutputArtifact, TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
@@ -2207,10 +2207,8 @@ pub(crate) fn reduce_execution_config(node: &Node) -> Result<ReduceExecutionConf
 }
 
 fn map_input_port(node: &Node, params: &Value) -> Result<String, FailureInfo> {
-    if let Some(input) = params
-        .get("map")
-        .and_then(|value| value.get("input"))
-        .and_then(Value::as_str)
+    if let Some(input) =
+        params.get("map").and_then(|value| value.get("input")).and_then(Value::as_str)
     {
         if node.inputs.iter().any(|candidate| candidate == input) {
             return Ok(input.to_string());
@@ -2460,13 +2458,8 @@ fn execute_map_node(
                 message.as_bytes(),
             )?;
             let finished = ctx.clock.now_unix_ms();
-            let (attempt_stdout_path, attempt_stderr_path) = persist_attempt_logs(
-                ctx,
-                &node.id,
-                1,
-                &result.stdout_path,
-                &result.stderr_path,
-            )?;
+            let (attempt_stdout_path, attempt_stderr_path) =
+                persist_attempt_logs(ctx, &node.id, 1, &result.stdout_path, &result.stderr_path)?;
             result.attempts = 1;
             result.attempt_events = vec![AttemptEvent {
                 attempt: 1,
@@ -2493,7 +2486,8 @@ fn execute_map_node(
     let resolved = graph.resolve_graph()?;
     let base_node_definition_fp = node_definition_fingerprint_from_ctx(ctx, &node.id);
     let base_declared_env_fp = declared_environment_fingerprint_from_ctx(ctx, &node.id);
-    let base_fp = sha256_bytes(format!("{base_node_definition_fp}:{base_declared_env_fp}").as_bytes());
+    let base_fp =
+        sha256_bytes(format!("{base_node_definition_fp}:{base_declared_env_fp}").as_bytes());
 
     let mut summaries = Vec::new();
     let mut successful_item_count = 0usize;
@@ -2502,11 +2496,13 @@ fn execute_map_node(
 
     for (index, item) in items.into_iter().enumerate() {
         let (item_id, item_sha256) = map_item_identity(index, &item)?;
-        let item_layout = RunDirLayout::preview(&map_runs_dir, Some(&item_id)).map_err(|error| {
-            RuntimeError::Executor(format!("invalid map item identity {}: {}", item_id, error))
-        })?;
+        let item_layout =
+            RunDirLayout::preview(&map_runs_dir, Some(&item_id)).map_err(|error| {
+                RuntimeError::Executor(format!("invalid map item identity {}: {}", item_id, error))
+            })?;
         let item_run_dir = RunDir::create_with_id(&map_runs_dir, &item_id)?;
-        let item_inputs = write_item_inputs_index(ctx, graph, node, &input_port, &item_run_dir, &item)?;
+        let item_inputs =
+            write_item_inputs_index(ctx, graph, node, &input_port, &item_run_dir, &item)?;
         let params_template =
             resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
         let item_bindings =
@@ -2519,10 +2515,7 @@ fn execute_map_node(
         let item_run_dir_arc = Arc::new(item_run_dir.clone());
         let item_ctx = RunContext {
             run_dir: Arc::clone(&item_run_dir_arc),
-            graph_fingerprint: Arc::new(Mutex::new(HashMap::from([(
-                node.id.clone(),
-                item_fp,
-            )]))),
+            graph_fingerprint: Arc::new(Mutex::new(HashMap::from([(node.id.clone(), item_fp)]))),
             node_definition_fingerprints: Arc::new(HashMap::from([(
                 node.id.clone(),
                 base_node_definition_fp.clone(),
@@ -2623,11 +2616,7 @@ fn execute_map_node(
             FailureClass::Execution,
             "Execution",
             "MAP_ITEMS_CANCELLED",
-            format!(
-                "map node {} cancelled while processing {} items",
-                node.id,
-                summaries.len()
-            ),
+            format!("map node {} cancelled while processing {} items", node.id, summaries.len()),
             Some(serde_json::json!({
                 "cancelled_items": cancelled_item_count,
             })),
@@ -2659,13 +2648,8 @@ fn execute_map_node(
             output_failure,
             message.as_bytes(),
         )?;
-        let (attempt_stdout_path, attempt_stderr_path) = persist_attempt_logs(
-            ctx,
-            &node.id,
-            1,
-            &result.stdout_path,
-            &result.stderr_path,
-        )?;
+        let (attempt_stdout_path, attempt_stderr_path) =
+            persist_attempt_logs(ctx, &node.id, 1, &result.stdout_path, &result.stderr_path)?;
         result.attempts = 1;
         result.attempt_events = vec![AttemptEvent {
             attempt: 1,
@@ -2693,9 +2677,9 @@ fn execute_map_node(
             .items
             .iter()
             .filter_map(|item| {
-                item.failure
-                    .as_ref()
-                    .map(|failure| format!("{}: {} ({})", item.item_id, failure.message, failure.code))
+                item.failure.as_ref().map(|failure| {
+                    format!("{}: {} ({})", item.item_id, failure.message, failure.code)
+                })
             })
             .collect::<Vec<_>>()
             .join("\n")
@@ -3227,11 +3211,7 @@ fn materialize_inputs(
             let rel_str = rel.to_string_lossy().to_string();
             let from_fp = node_fingerprint_from_ctx(ctx, &edge.from.node_id);
             materialized_inputs.insert(
-                (
-                    edge.to.port.clone(),
-                    edge.from.node_id.clone(),
-                    edge.from.port.clone(),
-                ),
+                (edge.to.port.clone(), edge.from.node_id.clone(), edge.from.port.clone()),
                 (rel_str.clone(), source_sha256.clone()),
             );
             files.push(InputFile {
@@ -3324,9 +3304,8 @@ fn build_reduce_summary(
     parent_statuses: &HashMap<String, NodeStatus>,
     materialized_inputs: &BTreeMap<(String, String, String), (String, String)>,
 ) -> Result<ReduceExecutionSummary, RuntimeError> {
-    let config = reduce_execution_config(node).map_err(|failure| RuntimeError::Executor(
-        failure.message.clone(),
-    ))?;
+    let config = reduce_execution_config(node)
+        .map_err(|failure| RuntimeError::Executor(failure.message.clone()))?;
     let mut usable_input_count = 0usize;
     let mut failed_input_count = 0usize;
     let mut skipped_input_count = 0usize;

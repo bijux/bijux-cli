@@ -110,8 +110,10 @@ mod tests {
         write_executable(&shim_bin.join("bijux-workflow"), b"#!/bin/sh\n");
         let path_value = std::env::join_paths([&shim_bin]).expect("join path");
 
-        let discovered =
-            discover_named_path_binaries(path_value.to_str().expect("utf-8 path"), "bijux-workflow");
+        let discovered = discover_named_path_binaries(
+            path_value.to_str().expect("utf-8 path"),
+            "bijux-workflow",
+        );
         assert_eq!(discovered.len(), 1);
         assert!(discovered[0].ends_with("bijux-workflow"));
     }

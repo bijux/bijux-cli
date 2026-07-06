@@ -214,11 +214,8 @@ fn delegate_to_resolved_command(
 }
 
 fn install_commands_for_known_tool(tool: &KnownBijuxTool, control_plane: bool) -> Vec<String> {
-    let package_name = if control_plane {
-        tool.control_package_name
-    } else {
-        tool.runtime_package_name
-    };
+    let package_name =
+        if control_plane { tool.control_package_name } else { tool.runtime_package_name };
     match tool.language {
         "python" => vec![format!("pip install {package_name}")],
         _ => vec![format!("cargo install {package_name}")],

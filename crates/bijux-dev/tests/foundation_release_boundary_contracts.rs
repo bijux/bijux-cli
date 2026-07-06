@@ -291,10 +291,9 @@ fn dag_operator_reference_docs_use_public_binary_examples() {
 
 #[test]
 fn dag_registry_and_root_cli_docs_preserve_public_binary_identity() {
-    let registry: serde_json::Value = serde_json::from_str(&read_repo_file(
-        "contracts/official_product_namespace_registry.json",
-    ))
-    .expect("official product registry json");
+    let registry: serde_json::Value =
+        serde_json::from_str(&read_repo_file("contracts/official_product_namespace_registry.json"))
+            .expect("official product registry json");
     let dag = registry["entries"]
         .as_array()
         .expect("registry entries")

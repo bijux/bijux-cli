@@ -1029,7 +1029,9 @@ fn graph_for_code(code: &str) -> Graph {
                         bijux_dag_core::ParamValue::Object(
                             [(
                                 "mode".to_string(),
-                                bijux_dag_core::ParamValue::Literal(serde_json::json!("best_effort")),
+                                bijux_dag_core::ParamValue::Literal(serde_json::json!(
+                                    "best_effort"
+                                )),
                             )]
                             .into_iter()
                             .collect(),

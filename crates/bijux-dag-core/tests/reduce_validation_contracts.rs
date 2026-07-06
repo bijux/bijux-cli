@@ -1,6 +1,6 @@
 use bijux_dag_core::{
-    validate_graph, FileOutput, Graph, Node, NodeKind, ParamValue, SemanticNodeKind, SPEC_VERSION,
-    TriggerRule,
+    validate_graph, FileOutput, Graph, Node, NodeKind, ParamValue, SemanticNodeKind, TriggerRule,
+    SPEC_VERSION,
 };
 use serde_json::json;
 
@@ -27,12 +27,7 @@ fn reduce_node(outputs: Vec<FileOutput>, params: ParamValue, trigger_rule: Trigg
 }
 
 fn reduce_params(items: Vec<(&str, ParamValue)>) -> ParamValue {
-    ParamValue::Object(
-        items
-            .into_iter()
-            .map(|(key, value)| (key.to_string(), value))
-            .collect(),
-    )
+    ParamValue::Object(items.into_iter().map(|(key, value)| (key.to_string(), value)).collect())
 }
 
 fn reduce_runtime_params(entries: Vec<(&str, ParamValue)>) -> ParamValue {
@@ -46,10 +41,7 @@ fn reduce_runtime_params(entries: Vec<(&str, ParamValue)>) -> ParamValue {
             ]),
         )]
         .into_iter()
-        .chain([(
-            "reduce".to_string(),
-            reduce_params(entries),
-        )])
+        .chain([("reduce".to_string(), reduce_params(entries))])
         .collect(),
     )
 }
@@ -129,7 +121,7 @@ fn semantic_reduce_accepts_partial_mode_and_explicit_empty_policy() {
     };
 
     let diagnostics = validate_graph(&graph);
-    assert!(!diagnostics.iter().any(|diag| {
-        matches!(diag.code.as_str(), "E1059" | "E1060" | "E1061" | "E1062")
-    }));
+    assert!(!diagnostics
+        .iter()
+        .any(|diag| { matches!(diag.code.as_str(), "E1059" | "E1060" | "E1061" | "E1062") }));
 }
