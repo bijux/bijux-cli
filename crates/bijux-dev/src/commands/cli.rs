@@ -1,7 +1,6 @@
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 use std::path::PathBuf;
 
-pub(super) const CLI_COMMAND_FREEZE_BASELINE: usize = 29;
 pub(super) const ADAPTER_KIND_FREEZE_BASELINE: usize = 3;
 
 #[derive(Parser)]
@@ -555,3 +554,12 @@ pub(super) enum ApiCommand {
 }
 
 include!("cli_release_command.rs");
+
+pub(super) fn root_command_names() -> Vec<String> {
+    let mut commands = Cli::command()
+        .get_subcommands()
+        .map(|command| command.get_name().to_string())
+        .collect::<Vec<_>>();
+    commands.push("help".to_string());
+    commands
+}

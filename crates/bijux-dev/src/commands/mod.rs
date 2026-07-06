@@ -1,4 +1,4 @@
-use clap::{CommandFactory, Parser};
+use clap::Parser;
 use serde::Deserialize;
 use serde_json::json;
 use serde_json::Value;
@@ -84,8 +84,8 @@ use suite_dispatch::{run_suite_explain, run_suite_group, run_suite_list};
 mod cli;
 
 use cli::{
-    ApiCommand, Cli, CommandLine, ControlCommand, DagCommand, ReleaseCommand, RepoCommand,
-    ScheduleCommand, VerifyCommand, ADAPTER_KIND_FREEZE_BASELINE, CLI_COMMAND_FREEZE_BASELINE,
+    root_command_names, ApiCommand, Cli, CommandLine, ControlCommand, DagCommand, ReleaseCommand,
+    RepoCommand, ScheduleCommand, VerifyCommand, ADAPTER_KIND_FREEZE_BASELINE,
 };
 
 #[derive(Debug, Deserialize)]
@@ -2949,15 +2949,42 @@ fn public_modules_from_lib(path: &Path) -> Result<BTreeSet<String>, String> {
 }
 
 fn run_cli_command_freeze() -> Result<(), String> {
-    let count = Cli::command().get_subcommands().count();
-    if count > CLI_COMMAND_FREEZE_BASELINE {
-        Err(format!(
-            "cli command freeze violated: {} > baseline {}",
-            count, CLI_COMMAND_FREEZE_BASELINE
-        ))
-    } else {
-        Ok(())
+    #[derive(Debug, Deserialize)]
+    struct MaintainerCommandSurfaceContract {
+        schema_version: String,
+        binary: String,
+        visible_root_commands: Vec<String>,
     }
+
+    let root = repo_root()?;
+    let path = root.join("contracts/foundation/maintainer_command_surface.v1.json");
+    let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let contract: MaintainerCommandSurfaceContract =
+        serde_json::from_str(&content).map_err(|err| err.to_string())?;
+    if contract.schema_version != "foundation-maintainer-command-surface/v1" {
+        return Err("maintainer command surface contract schema drift".to_string());
+    }
+    if contract.binary != "bijux-dev-dag" {
+        return Err("maintainer command surface contract binary drift".to_string());
+    }
+
+    let actual = root_command_names();
+    if actual == contract.visible_root_commands {
+        return Ok(());
+    }
+
+    let expected = contract.visible_root_commands;
+    let actual_set = actual.iter().cloned().collect::<BTreeSet<_>>();
+    let expected_set = expected.iter().cloned().collect::<BTreeSet<_>>();
+    let missing = expected_set.difference(&actual_set).cloned().collect::<Vec<_>>();
+    let unexpected = actual_set.difference(&expected_set).cloned().collect::<Vec<_>>();
+    let order_drift = actual != expected;
+
+    Err(format!(
+        "cli command freeze violated: missing={missing:?}, unexpected={unexpected:?}, order_drift={order_drift}, actual_count={}, expected_count={}",
+        actual.len(),
+        expected.len()
+    ))
 }
 
 fn run_adapter_kind_freeze() -> Result<(), String> {

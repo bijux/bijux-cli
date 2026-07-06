@@ -11,6 +11,8 @@ last_reviewed: 2026-04-06
 
 This page explains the command entrypoints that power repository proof work.
 
+Source contract: `contracts/foundation/maintainer_command_surface.v1.json`.
+
 `bijux-dev-cli` carries the general repository workflow. `bijux-dev-dag` carries
 the DAG-specific verification and release surfaces that sit beside it.
 
@@ -31,6 +33,21 @@ flowchart LR
 - release commands for readiness and compatibility workflows
 - documentation and governance commands for handbook integrity
 
+## `bijux-dev-dag` Root Surface
+
+The visible root inventory is intentionally governed rather than left to drift.
+Use the contract file above as the source of truth when adding, removing, or
+renaming a root command.
+
+| Family | Root commands |
+| --- | --- |
+| workspace checks | `fmt`, `lint`, `security`, `sanity`, `checks`, `tests`, `contracts`, `docs`, `verify-tools`, `resolve-check`, `ci`, `foundation`, `foundation-hardening`, `compat` |
+| repository governance | `repo`, `verify`, `dep-guard`, `crate-graph`, `docs-index`, `drift-dashboard`, `repo-trust-summary`, `foundation-review-report` |
+| DAG verification | `dag`, `golden`, `artifact-verify`, `storage-health`, `run-dir-audit`, `fault-summary`, `unsafe-audit`, `error-codes` |
+| release and evidence | `release`, `release-artifact-verify`, `comparison-evidence-report`, `performance-evidence-report`, `backend-registry-report`, `compatibility-report`, `cache-coverage-report` |
+| execution and policy diagnostics | `doctor`, `config-dump`, `policy-audit`, `execution-modes-report`, `distributed-semantics-report`, `invariants-report`, `observability-report` |
+| benchmarks and utilities | `artifacts-clean`, `env-summary`, `benchmark-baseline`, `benchmark-compare`, `resource-profile-summary`, `resource-budget-check`, `resource-trend-append`, `e2e-matrix`, `api`, `schedule`, `help` |
+
 ## Command Design Rules
 
 - commands must return actionable diagnostics
@@ -45,6 +62,7 @@ Operations, or Contract Governance once the command family is clear.
 
 ## Code Anchors
 
+- `contracts/foundation/maintainer_command_surface.v1.json`
 - `crates/bijux-dev/src/cli.rs`
 - `crates/bijux-dev/src/commands/mod.rs`
 - `crates/bijux-dev/src/bin/bijux-dev-cli.rs`

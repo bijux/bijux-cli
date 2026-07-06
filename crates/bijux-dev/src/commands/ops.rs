@@ -4301,8 +4301,10 @@ pub(super) fn run_ambient_env_guard() -> Result<(), String> {
 pub(super) fn run_foundation_verification_guard() -> Result<(), String> {
     let root = repo_root()?;
     for rel in [
+        "contracts/foundation/maintainer_command_surface.v1.json",
         "docs/bijux-core/foundation/package-boundary.md",
         "docs/bijux-core/foundation/module-surface-lanes.md",
+        "docs/bijux-dev/operations/command-surface.md",
         "crates/bijux-dev/src/commands/mod.rs",
         "crates/bijux-dev/src/suites/repo.rs",
     ] {
@@ -4404,17 +4406,17 @@ pub(super) fn run_control_plane_surfaces_guard() -> Result<(), String> {
             return Err(format!("missing control-plane command surface: {required}"));
         }
     }
-    let foundation = fs::read_to_string(root.join("docs/spec/CONTROL_PLANE_FOUNDATION.md"))
+    let foundation = fs::read_to_string(root.join("docs/bijux-dev/operations/command-surface.md"))
         .map_err(|err| err.to_string())?;
     for required in [
-        "repo verification",
-        "docs verification",
-        "naming verification",
-        "crate boundary verification",
-        "fixture verification",
-        "artifact contract verification",
-        "release verification",
-        "ci verification",
+        "contracts/foundation/maintainer_command_surface.v1.json",
+        "`bijux-dev-dag` Root Surface",
+        "`repo`",
+        "`release`",
+        "`verify`",
+        "`dag`",
+        "`foundation`",
+        "`help`",
     ] {
         if !foundation.contains(required) {
             return Err(format!(

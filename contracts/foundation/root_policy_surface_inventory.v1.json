@@ -50,6 +50,14 @@
       ]
     },
     {
+      "path": "contracts/foundation/maintainer_command_surface.v1.json",
+      "gates_behavior": "defines the visible bijux-dev-dag root command inventory and freezes maintainer command-surface drift",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_maintainer_command_surface_contracts.rs"
+      ]
+    },
+    {
       "path": "contracts/foundation/module_surface_lanes.v1.json",
       "gates_behavior": "classifies stable, experimental, simulated, and private module surfaces",
       "owning_crate": "bijux-dev",

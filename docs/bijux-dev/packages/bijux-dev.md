@@ -22,7 +22,7 @@ automation, or maintainer-only workflows.
 | Surface | Ownership |
 | --- | --- |
 | maintainer automation | `bijux-dev-cli` flows, diagnostics, inventories, support tooling |
-| governance control plane | repository evidence, suite orchestration, release verification, report assembly |
+| governance control plane | repository evidence, suite orchestration, release verification, report assembly, and the governed `bijux-dev-dag` root command surface |
 | repository policy support | docs gates, contract enforcement, and maintainer-only reporting surfaces |
 | boundary | does not own end-user CLI runtime semantics or DAG execution semantics |
 
@@ -46,6 +46,7 @@ automation, or maintainer-only workflows.
 
 - `crates/bijux-dev/README.md`
 - `crates/bijux-dev/CONTRACT.md`
+- `contracts/foundation/maintainer_command_surface.v1.json`
 - `crates/bijux-dev/src/bin`
 - `crates/bijux-dev/tests`
 
