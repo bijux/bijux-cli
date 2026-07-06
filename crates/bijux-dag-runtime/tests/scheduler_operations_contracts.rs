@@ -14,19 +14,21 @@ use thiserror as _;
 
 use bijux_dag_core::{parse_graph_strict, GraphInputSpec};
 use bijux_dag_runtime::{
-    advance_backfill_operation, apply_backfill_throttling, build_plan, build_scheduler,
-    cancel_backfill_operation, compile_backfill_operation, compile_submission_request,
-    deduplicate_trigger_events, deterministic_tick_order, evaluate_schedule_submissions,
-    evaluate_sla_metrics, materialize_next_runs, pause_backfill_operation,
-    resume_backfill_operation, run_batches, scheduler_debug_event_log, scheduler_invariants_hold,
-    trace_event_count_by_category, BackfillAdvanceRequest, BackfillFailurePolicy,
+    advance_backfill_operation, apply_backfill_throttling, apply_submission_status_updates,
+    build_plan, build_schedule_queue_state, build_scheduler, cancel_backfill_operation,
+    compile_backfill_operation, compile_submission_request, deduplicate_trigger_events,
+    deterministic_tick_order, evaluate_schedule_submissions, evaluate_sla_metrics,
+    materialize_next_runs, pause_backfill_operation, resume_backfill_operation, run_batches,
+    scheduler_debug_event_log, scheduler_invariants_hold, trace_event_count_by_category,
+    validate_schedule_registry, BackfillAdvanceRequest, BackfillFailurePolicy,
     BackfillLifecycleStatus, BackfillRequest, BackfillRunStatus, BackfillStatusUpdate,
     BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCompletionRecord,
     DependencyCounter, ManualSubmissionRequest, PriorityClass, QueueIdentity, ReadyNode,
     ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig, ScheduleDefinition,
     ScheduleEvaluationInputs, ScheduleEventRecord, ScheduleInputSource, ScheduleRegistry,
     ScheduleSubmissionLedger, ScheduleSubmissionLedgerEntry, ScheduleSubmissionStatus,
-    ScheduledSubmission, Selector, SelectorSet, SignalRecord, SubmissionTriggerKind, TriggerSpec,
+    ScheduleSubmissionStatusUpdate, ScheduledSubmission, Selector, SelectorSet, SignalRecord,
+    SubmissionTriggerKind, TriggerSpec,
 };
 use std::collections::{BTreeMap, VecDeque};
 use std::fs;
@@ -923,6 +925,11 @@ fn schedule_submit_prevents_duplicates_from_existing_ledger_and_current_tick() {
             schedule_id: "manual-ops".to_string(),
             dag_name: "atlas.manual-ops".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            queue: QueueIdentity {
+                queue_name: "catalog".to_string(),
+                tenant: Some("atlas".to_string()),
+            },
+            priority: PriorityClass::High,
             graph_inputs: BTreeMap::new(),
             requested_unix_ms: 175_000,
             created_unix_ms: 170_000,
@@ -973,6 +980,8 @@ fn schedule_submit_cron_catch_up_respects_existing_submissions_and_cap() {
             schedule_id: "cron-minute".to_string(),
             dag_name: "atlas.cron-minute".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+            priority: PriorityClass::Standard,
             graph_inputs: BTreeMap::new(),
             requested_unix_ms: 2 * 60_000,
             created_unix_ms: 2 * 60_000,
@@ -990,7 +999,65 @@ fn schedule_submit_cron_catch_up_respects_existing_submissions_and_cap() {
         .map(|request| request.requested_unix_ms)
         .collect::<Vec<_>>();
 
-    assert_eq!(scheduled_slots, vec![3 * 60_000, 4 * 60_000]);
+    assert_eq!(scheduled_slots, vec![3 * 60_000]);
+    assert_eq!(report.queue_suppressions.len(), 1);
+}
+
+#[test]
+fn schedule_submit_tenant_caps_are_scoped_per_queue() {
+    let registry = ScheduleRegistry {
+        definitions: vec![
+            schedule_definition("catalog-alpha", TriggerSpec::Manual),
+            schedule_definition("catalog-beta", TriggerSpec::Manual),
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(index, mut definition)| {
+            definition.queue = QueueIdentity {
+                queue_name: if index == 0 { "alpha".to_string() } else { "beta".to_string() },
+                tenant: Some("atlas".to_string()),
+            };
+            definition.concurrency.per_queue = Some(2);
+            definition.concurrency.per_tenant = Some(1);
+            definition
+        })
+        .collect(),
+    };
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: 200_000,
+        manual_requests: vec![ManualSubmissionRequest {
+            request_id: "manual-001".to_string(),
+            schedule_id: "catalog-beta".to_string(),
+            requested_unix_ms: 190_000,
+            arguments: BTreeMap::new(),
+        }],
+        ..ScheduleEvaluationInputs::default()
+    };
+    let existing = ScheduleSubmissionLedger {
+        entries: vec![ScheduleSubmissionLedgerEntry {
+            schedule_id: "catalog-alpha".to_string(),
+            dag_name: "atlas.catalog-alpha".to_string(),
+            dag_version_policy: "run-latest".to_string(),
+            queue: QueueIdentity {
+                queue_name: "alpha".to_string(),
+                tenant: Some("atlas".to_string()),
+            },
+            priority: PriorityClass::Standard,
+            graph_inputs: BTreeMap::new(),
+            requested_unix_ms: 180_000,
+            created_unix_ms: 180_000,
+            run_id: "sched-catalog-alpha-existing".to_string(),
+            trigger_kind: SubmissionTriggerKind::Manual,
+            dedupe_key: "manual:catalog-alpha:manual-000".to_string(),
+            status: ScheduleSubmissionStatus::Running,
+        }],
+    };
+
+    let report = evaluate_schedule_submissions(&registry, &inputs, &existing);
+
+    assert_eq!(report.generated_requests.len(), 1);
+    assert_eq!(report.generated_requests[0].schedule_id, "catalog-beta");
+    assert!(report.queue_suppressions.is_empty());
 }
 
 #[test]
@@ -1010,7 +1077,7 @@ fn schedule_submit_cron_catch_up_honors_ranges_lists_and_steps() {
             priority: PriorityClass::Standard,
             concurrency: ConcurrencyPolicyLayers {
                 per_dag: Some(1),
-                per_queue: Some(2),
+                per_queue: Some(5),
                 per_tenant: None,
                 per_node_group: None,
             },
@@ -1031,6 +1098,8 @@ fn schedule_submit_cron_catch_up_honors_ranges_lists_and_steps() {
             schedule_id: "weekday-window".to_string(),
             dag_name: "atlas.weekday-window".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+            priority: PriorityClass::Standard,
             graph_inputs: BTreeMap::new(),
             requested_unix_ms: u128::try_from(last_requested.timestamp_millis())
                 .expect("positive timestamp"),
@@ -1080,7 +1149,7 @@ fn schedule_submit_cron_catch_up_preserves_dst_fallback_duplicates() {
             priority: PriorityClass::Standard,
             concurrency: ConcurrencyPolicyLayers {
                 per_dag: Some(1),
-                per_queue: Some(2),
+                per_queue: Some(5),
                 per_tenant: None,
                 per_node_group: None,
             },
@@ -1102,6 +1171,8 @@ fn schedule_submit_cron_catch_up_preserves_dst_fallback_duplicates() {
             schedule_id: "dst-fallback".to_string(),
             dag_name: "atlas.dst-fallback".to_string(),
             dag_version_policy: "run-latest".to_string(),
+            queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+            priority: PriorityClass::Standard,
             graph_inputs: BTreeMap::new(),
             requested_unix_ms: u128::try_from(last_requested.timestamp_millis())
                 .expect("positive timestamp"),
@@ -1133,6 +1204,254 @@ fn schedule_submit_cron_catch_up_preserves_dst_fallback_duplicates() {
     );
 }
 
+#[test]
+fn schedule_queue_state_reports_active_runs_and_available_slots() {
+    let mut definition = schedule_definition("catalog-sync", TriggerSpec::Manual);
+    definition.queue.tenant = Some("atlas".to_string());
+    definition.concurrency.per_queue = Some(2);
+    definition.concurrency.per_tenant = Some(2);
+    let registry = ScheduleRegistry { definitions: vec![definition] };
+    let ledger = ScheduleSubmissionLedger {
+        entries: vec![
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "catalog-sync".to_string(),
+                dag_name: "atlas.catalog-sync".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity {
+                    queue_name: "default".to_string(),
+                    tenant: Some("atlas".to_string()),
+                },
+                priority: PriorityClass::High,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 101,
+                created_unix_ms: 101,
+                run_id: "sched-atlas-pending".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:catalog-sync:atlas-pending".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+            },
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "catalog-sync".to_string(),
+                dag_name: "atlas.catalog-sync".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity {
+                    queue_name: "default".to_string(),
+                    tenant: Some("atlas".to_string()),
+                },
+                priority: PriorityClass::Standard,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 102,
+                created_unix_ms: 102,
+                run_id: "sched-atlas-running".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:catalog-sync:atlas-running".to_string(),
+                status: ScheduleSubmissionStatus::Running,
+            },
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "catalog-sync".to_string(),
+                dag_name: "atlas.catalog-sync".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity {
+                    queue_name: "default".to_string(),
+                    tenant: Some("zeus".to_string()),
+                },
+                priority: PriorityClass::Low,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 103,
+                created_unix_ms: 103,
+                run_id: "sched-zeus-running".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:catalog-sync:zeus-running".to_string(),
+                status: ScheduleSubmissionStatus::Running,
+            },
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "catalog-sync".to_string(),
+                dag_name: "atlas.catalog-sync".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity {
+                    queue_name: "default".to_string(),
+                    tenant: Some("zeus".to_string()),
+                },
+                priority: PriorityClass::Low,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 104,
+                created_unix_ms: 104,
+                run_id: "sched-zeus-completed".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:catalog-sync:zeus-completed".to_string(),
+                status: ScheduleSubmissionStatus::Completed,
+            },
+        ],
+    };
+
+    let state = build_schedule_queue_state(&registry, &ledger).expect("queue state");
+
+    assert_eq!(state.queues.len(), 1);
+    let queue = &state.queues[0];
+    assert_eq!(queue.queue_name, "default");
+    assert_eq!(queue.per_queue_cap, 2);
+    assert_eq!(queue.active_runs, 3);
+    assert_eq!(queue.available_slots, 0);
+    assert_eq!(queue.runs.len(), 3);
+    assert_eq!(queue.runs[0].run_id, "sched-atlas-pending");
+    assert_eq!(queue.tenants.len(), 2);
+    assert_eq!(queue.tenants[0].tenant, "atlas");
+    assert_eq!(queue.tenants[0].active_runs, 2);
+    assert_eq!(queue.tenants[0].available_slots, Some(0));
+    assert_eq!(queue.tenants[1].tenant, "zeus");
+    assert_eq!(queue.tenants[1].active_runs, 1);
+    assert_eq!(queue.tenants[1].available_slots, Some(1));
+}
+
+#[test]
+fn schedule_submission_status_updates_change_active_queue_state() {
+    let registry = ScheduleRegistry {
+        definitions: vec![schedule_definition("catalog-sync", TriggerSpec::Manual)],
+    };
+    let mut ledger = ScheduleSubmissionLedger {
+        entries: vec![
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "catalog-sync".to_string(),
+                dag_name: "atlas.catalog-sync".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity {
+                    queue_name: "default".to_string(),
+                    tenant: Some("atlas".to_string()),
+                },
+                priority: PriorityClass::Standard,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 101,
+                created_unix_ms: 101,
+                run_id: "sched-atlas-pending".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:catalog-sync:atlas-pending".to_string(),
+                status: ScheduleSubmissionStatus::Pending,
+            },
+            ScheduleSubmissionLedgerEntry {
+                schedule_id: "catalog-sync".to_string(),
+                dag_name: "atlas.catalog-sync".to_string(),
+                dag_version_policy: "run-latest".to_string(),
+                queue: QueueIdentity {
+                    queue_name: "default".to_string(),
+                    tenant: Some("atlas".to_string()),
+                },
+                priority: PriorityClass::High,
+                graph_inputs: BTreeMap::new(),
+                requested_unix_ms: 102,
+                created_unix_ms: 102,
+                run_id: "sched-atlas-running".to_string(),
+                trigger_kind: SubmissionTriggerKind::Manual,
+                dedupe_key: "manual:catalog-sync:atlas-running".to_string(),
+                status: ScheduleSubmissionStatus::Running,
+            },
+        ],
+    };
+
+    apply_submission_status_updates(
+        &mut ledger,
+        &[
+            ScheduleSubmissionStatusUpdate {
+                run_id: "sched-atlas-running".to_string(),
+                status: ScheduleSubmissionStatus::Completed,
+                updated_unix_ms: 300,
+            },
+            ScheduleSubmissionStatusUpdate {
+                run_id: "sched-atlas-pending".to_string(),
+                status: ScheduleSubmissionStatus::Running,
+                updated_unix_ms: 200,
+            },
+        ],
+    )
+    .expect("apply status updates");
+
+    let state = build_schedule_queue_state(&registry, &ledger).expect("queue state");
+
+    assert_eq!(state.queues[0].active_runs, 1);
+    assert_eq!(state.queues[0].tenants[0].active_runs, 1);
+    assert_eq!(ledger.entries[0].run_id, "sched-atlas-pending");
+    assert_eq!(ledger.entries[0].status, ScheduleSubmissionStatus::Running);
+    assert_eq!(ledger.entries[1].run_id, "sched-atlas-running");
+    assert_eq!(ledger.entries[1].status, ScheduleSubmissionStatus::Completed);
+}
+
+#[test]
+fn schedule_submission_status_updates_reject_invalid_transitions() {
+    let mut ledger = ScheduleSubmissionLedger {
+        entries: vec![ScheduleSubmissionLedgerEntry {
+            schedule_id: "catalog-sync".to_string(),
+            dag_name: "atlas.catalog-sync".to_string(),
+            dag_version_policy: "run-latest".to_string(),
+            queue: QueueIdentity {
+                queue_name: "default".to_string(),
+                tenant: Some("atlas".to_string()),
+            },
+            priority: PriorityClass::Standard,
+            graph_inputs: BTreeMap::new(),
+            requested_unix_ms: 101,
+            created_unix_ms: 101,
+            run_id: "sched-atlas-completed".to_string(),
+            trigger_kind: SubmissionTriggerKind::Manual,
+            dedupe_key: "manual:catalog-sync:atlas-completed".to_string(),
+            status: ScheduleSubmissionStatus::Completed,
+        }],
+    };
+
+    let error = apply_submission_status_updates(
+        &mut ledger,
+        &[ScheduleSubmissionStatusUpdate {
+            run_id: "sched-atlas-completed".to_string(),
+            status: ScheduleSubmissionStatus::Running,
+            updated_unix_ms: 200,
+        }],
+    )
+    .unwrap_err();
+
+    assert!(error.contains("cannot transition"));
+}
+
+#[test]
+fn schedule_validate_rejects_conflicting_queue_caps_for_same_queue() {
+    let mut primary = schedule_definition("catalog-primary", TriggerSpec::Manual);
+    primary.queue = QueueIdentity { queue_name: "catalog".to_string(), tenant: None };
+    primary.concurrency.per_queue = Some(2);
+    let mut replica = schedule_definition("catalog-replica", TriggerSpec::Manual);
+    replica.queue = QueueIdentity { queue_name: "catalog".to_string(), tenant: None };
+    replica.concurrency.per_queue = Some(4);
+
+    let error =
+        validate_schedule_registry(&ScheduleRegistry { definitions: vec![primary, replica] })
+            .unwrap_err();
+
+    assert!(error.contains("conflicting per_queue caps"));
+}
+
+#[test]
+fn schedule_submission_ledger_defaults_legacy_queue_fields() {
+    let ledger: ScheduleSubmissionLedger = serde_json::from_str(
+        r#"{
+          "entries": [
+            {
+              "schedule_id": "catalog-sync",
+              "dag_name": "atlas.catalog-sync",
+              "dag_version_policy": "run-latest",
+              "graph_inputs": {},
+              "requested_unix_ms": 101,
+              "created_unix_ms": 101,
+              "run_id": "sched-legacy",
+              "trigger_kind": "manual",
+              "dedupe_key": "manual:catalog-sync:legacy",
+              "status": "Pending"
+            }
+          ]
+        }"#,
+    )
+    .expect("parse legacy ledger");
+
+    assert_eq!(ledger.entries[0].queue.queue_name, "default");
+    assert_eq!(ledger.entries[0].queue.tenant, None);
+    assert_eq!(ledger.entries[0].priority, PriorityClass::Standard);
+}
+
 fn schedule_definition(id: &str, trigger: TriggerSpec) -> ScheduleDefinition {
     ScheduleDefinition {
         id: id.to_string(),
@@ -1145,7 +1464,7 @@ fn schedule_definition(id: &str, trigger: TriggerSpec) -> ScheduleDefinition {
         priority: PriorityClass::Standard,
         concurrency: ConcurrencyPolicyLayers {
             per_dag: Some(1),
-            per_queue: Some(2),
+            per_queue: Some(10),
             per_tenant: None,
             per_node_group: None,
         },

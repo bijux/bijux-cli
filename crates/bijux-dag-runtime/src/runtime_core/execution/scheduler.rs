@@ -33,6 +33,7 @@ pub enum TriggerSpec {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct QueueIdentity {
+    #[serde(default = "default_queue_name")]
     pub queue_name: String,
     pub tenant: Option<String>,
 }
@@ -239,6 +240,8 @@ pub struct ExecutionSubmissionRequest {
     pub schedule_id: String,
     pub dag_name: String,
     pub dag_version_policy: String,
+    pub queue: QueueIdentity,
+    pub priority: PriorityClass,
     #[serde(default)]
     pub graph_inputs: BTreeMap<String, Value>,
     pub requested_unix_ms: u128,
@@ -310,6 +313,10 @@ pub struct ScheduleSubmissionLedgerEntry {
     pub schedule_id: String,
     pub dag_name: String,
     pub dag_version_policy: String,
+    #[serde(default = "default_queue_identity")]
+    pub queue: QueueIdentity,
+    #[serde(default = "default_priority_class")]
+    pub priority: PriorityClass,
     #[serde(default)]
     pub graph_inputs: BTreeMap<String, Value>,
     pub requested_unix_ms: u128,
@@ -326,6 +333,56 @@ pub struct ScheduleSubmissionLedger {
     pub entries: Vec<ScheduleSubmissionLedgerEntry>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleSubmissionStatusUpdate {
+    pub run_id: String,
+    pub status: ScheduleSubmissionStatus,
+    pub updated_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct ScheduleSubmissionStatusUpdateBatch {
+    #[serde(default)]
+    pub updates: Vec<ScheduleSubmissionStatusUpdate>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleQueueRunRecord {
+    pub schedule_id: String,
+    pub dag_name: String,
+    pub run_id: String,
+    pub priority: PriorityClass,
+    pub status: ScheduleSubmissionStatus,
+    pub requested_unix_ms: u128,
+    pub created_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleQueueTenantState {
+    pub tenant: String,
+    pub per_tenant_cap: Option<u32>,
+    pub active_runs: usize,
+    pub available_slots: Option<usize>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleQueueStateEntry {
+    pub queue_name: String,
+    pub per_queue_cap: u32,
+    pub active_runs: usize,
+    pub available_slots: usize,
+    #[serde(default)]
+    pub tenants: Vec<ScheduleQueueTenantState>,
+    #[serde(default)]
+    pub runs: Vec<ScheduleQueueRunRecord>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct ScheduleQueueState {
+    #[serde(default)]
+    pub queues: Vec<ScheduleQueueStateEntry>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct ScheduleEvaluationReport {
     #[serde(default)]
@@ -334,6 +391,8 @@ pub struct ScheduleEvaluationReport {
     pub recorded_submissions: Vec<ScheduleSubmissionLedgerEntry>,
     #[serde(default)]
     pub duplicate_suppressions: Vec<ScheduleAuditRecord>,
+    #[serde(default)]
+    pub queue_suppressions: Vec<ScheduleAuditRecord>,
     #[serde(default)]
     pub audits: Vec<ScheduleAuditRecord>,
 }
@@ -352,6 +411,18 @@ impl Default for SchedulerPolicy {
             prefer_throughput_scheduler: false,
         }
     }
+}
+
+fn default_queue_name() -> String {
+    "default".to_string()
+}
+
+fn default_queue_identity() -> QueueIdentity {
+    QueueIdentity { queue_name: default_queue_name(), tenant: None }
+}
+
+fn default_priority_class() -> PriorityClass {
+    PriorityClass::Standard
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1073,7 +1144,99 @@ pub fn validate_schedule_registry(registry: &ScheduleRegistry) -> Result<(), Str
         }
         validate_schedule_policy_combination(definition)?;
     }
+    validate_queue_policy_consistency(registry)?;
     Ok(())
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct QueueCapacityPolicy {
+    per_queue: u32,
+    per_tenant: Option<u32>,
+}
+
+fn validate_queue_policy_consistency(registry: &ScheduleRegistry) -> Result<(), String> {
+    let mut queue_caps = BTreeMap::<String, u32>::new();
+    let mut tenant_caps = BTreeMap::<String, u32>::new();
+    for definition in &registry.definitions {
+        let queue_name = definition.queue.queue_name.clone();
+        let per_queue = definition.concurrency.per_queue.expect("validated by schedule policy");
+        match queue_caps.get(&queue_name) {
+            Some(existing) if *existing != per_queue => {
+                return Err(format!(
+                    "queue '{}' has conflicting per_queue caps ({existing} vs {per_queue})",
+                    queue_name
+                ));
+            }
+            Some(_) => {}
+            None => {
+                queue_caps.insert(queue_name, per_queue);
+            }
+        }
+
+        if let (Some(tenant), Some(per_tenant)) =
+            (definition.queue.tenant.as_ref(), definition.concurrency.per_tenant)
+        {
+            match tenant_caps.get(tenant) {
+                Some(existing) if *existing != per_tenant => {
+                    return Err(format!(
+                        "tenant '{}' has conflicting per_tenant caps ({existing} vs {per_tenant})",
+                        tenant
+                    ));
+                }
+                Some(_) => {}
+                None => {
+                    tenant_caps.insert(tenant.clone(), per_tenant);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn queue_capacity_policies(
+    registry: &ScheduleRegistry,
+) -> Result<BTreeMap<String, QueueCapacityPolicy>, String> {
+    validate_queue_policy_consistency(registry)?;
+    let mut policies = BTreeMap::<String, QueueCapacityPolicy>::new();
+    for definition in &registry.definitions {
+        let queue_name = definition.queue.queue_name.clone();
+        let per_queue = definition.concurrency.per_queue.expect("validated by schedule policy");
+        let per_tenant = definition.queue.tenant.as_ref().and(definition.concurrency.per_tenant);
+        match policies.get(&queue_name) {
+            Some(existing)
+                if existing.per_queue != per_queue || existing.per_tenant != per_tenant =>
+            {
+                return Err(format!(
+                    "queue '{}' has conflicting capacity policy declarations",
+                    queue_name
+                ));
+            }
+            Some(_) => {}
+            None => {
+                policies.insert(queue_name, QueueCapacityPolicy { per_queue, per_tenant });
+            }
+        }
+    }
+    Ok(policies)
+}
+
+fn submission_status_is_active(status: &ScheduleSubmissionStatus) -> bool {
+    matches!(status, ScheduleSubmissionStatus::Pending | ScheduleSubmissionStatus::Running)
+}
+
+fn schedule_submission_status_can_transition(
+    from: &ScheduleSubmissionStatus,
+    to: &ScheduleSubmissionStatus,
+) -> bool {
+    matches!(
+        (from, to),
+        (ScheduleSubmissionStatus::Pending, ScheduleSubmissionStatus::Pending)
+            | (ScheduleSubmissionStatus::Pending, ScheduleSubmissionStatus::Running)
+            | (ScheduleSubmissionStatus::Pending, ScheduleSubmissionStatus::Completed)
+            | (ScheduleSubmissionStatus::Running, ScheduleSubmissionStatus::Running)
+            | (ScheduleSubmissionStatus::Running, ScheduleSubmissionStatus::Completed)
+            | (ScheduleSubmissionStatus::Completed, ScheduleSubmissionStatus::Completed)
+    )
 }
 
 pub fn validate_schedule_policy_combination(definition: &ScheduleDefinition) -> Result<(), String> {
@@ -1470,6 +1633,8 @@ pub fn advance_backfill_operation(
     let schedule_id = operation.schedule_id.clone();
     let dag_name = operation.dag_name.clone();
     let dag_version_policy = operation.dag_version_policy.clone();
+    let queue = operation.queue.clone();
+    let priority = operation.priority.clone();
     let input_contract = operation.input_contract.clone();
     let input_bindings = operation.input_bindings.clone();
     let window_start_unix_ms = operation.request.window_start_unix_ms;
@@ -1487,6 +1652,8 @@ pub fn advance_backfill_operation(
                 &schedule_id,
                 &dag_name,
                 &dag_version_policy,
+                &queue,
+                &priority,
                 &input_contract,
                 &input_bindings,
                 window_start_unix_ms,
@@ -1557,6 +1724,48 @@ pub fn evaluate_schedule_submissions(
     let mut generated_requests = Vec::new();
     let mut recorded_submissions = existing.entries.clone();
     let mut duplicate_suppressions = Vec::new();
+    let mut queue_suppressions = Vec::new();
+    let queue_policies = match queue_capacity_policies(registry) {
+        Ok(policies) => policies,
+        Err(error) => {
+            audits.push(ScheduleAuditRecord {
+                schedule_id: "<registry>".to_string(),
+                evaluated_unix_ms: inputs.now_unix_ms,
+                decision: "queue_policy_invalid".to_string(),
+                reason: Some(error),
+            });
+            return ScheduleEvaluationReport {
+                generated_requests,
+                recorded_submissions,
+                duplicate_suppressions,
+                queue_suppressions,
+                audits,
+            };
+        }
+    };
+    let mut queue_active = existing
+        .entries
+        .iter()
+        .filter(|entry| submission_status_is_active(&entry.status))
+        .fold(BTreeMap::<String, usize>::new(), |mut counts, entry| {
+            *counts.entry(entry.queue.queue_name.clone()).or_default() += 1;
+            counts
+        });
+    let mut tenant_active = existing
+        .entries
+        .iter()
+        .filter(|entry| submission_status_is_active(&entry.status))
+        .filter_map(|entry| {
+            entry
+                .queue
+                .tenant
+                .clone()
+                .map(|tenant| ((entry.queue.queue_name.clone(), tenant), 1usize))
+        })
+        .fold(BTreeMap::<(String, String), usize>::new(), |mut counts, (tenant, count)| {
+            *counts.entry(tenant).or_default() += count;
+            counts
+        });
 
     for request in candidates {
         if !seen_keys.insert(request.dedupe_key.clone()) {
@@ -1570,6 +1779,53 @@ pub fn evaluate_schedule_submissions(
             audits.push(audit);
             continue;
         }
+
+        let Some(policy) = queue_policies.get(&request.queue.queue_name) else {
+            audits.push(ScheduleAuditRecord {
+                schedule_id: request.schedule_id.clone(),
+                evaluated_unix_ms: inputs.now_unix_ms,
+                decision: "queue_policy_missing".to_string(),
+                reason: Some(format!("queue '{}'", request.queue.queue_name)),
+            });
+            continue;
+        };
+        let queue_inflight =
+            queue_active.get(&request.queue.queue_name).copied().unwrap_or_default();
+        if queue_inflight >= policy.per_queue as usize {
+            let audit = ScheduleAuditRecord {
+                schedule_id: request.schedule_id.clone(),
+                evaluated_unix_ms: inputs.now_unix_ms,
+                decision: "queue_suppressed".to_string(),
+                reason: Some(format!(
+                    "queue '{}' is at capacity {}/{}",
+                    request.queue.queue_name, queue_inflight, policy.per_queue
+                )),
+            };
+            queue_suppressions.push(audit.clone());
+            audits.push(audit);
+            continue;
+        }
+        if let (Some(tenant), Some(per_tenant)) = (request.queue.tenant.as_ref(), policy.per_tenant)
+        {
+            let tenant_key = (request.queue.queue_name.clone(), tenant.clone());
+            let tenant_inflight = tenant_active.get(&tenant_key).copied().unwrap_or_default();
+            if tenant_inflight >= per_tenant as usize {
+                let audit = ScheduleAuditRecord {
+                    schedule_id: request.schedule_id.clone(),
+                    evaluated_unix_ms: inputs.now_unix_ms,
+                    decision: "queue_suppressed".to_string(),
+                    reason: Some(format!(
+                        "tenant '{}' is at capacity {}/{}",
+                        tenant, tenant_inflight, per_tenant
+                    )),
+                };
+                queue_suppressions.push(audit.clone());
+                audits.push(audit);
+                continue;
+            }
+            *tenant_active.entry(tenant_key).or_default() += 1;
+        }
+        *queue_active.entry(request.queue.queue_name.clone()).or_default() += 1;
 
         audits.push(ScheduleAuditRecord {
             schedule_id: request.schedule_id.clone(),
@@ -1598,6 +1854,7 @@ pub fn evaluate_schedule_submissions(
         generated_requests,
         recorded_submissions,
         duplicate_suppressions,
+        queue_suppressions,
         audits,
     }
 }
@@ -1608,6 +1865,8 @@ impl ScheduleSubmissionLedgerEntry {
             schedule_id: request.schedule_id.clone(),
             dag_name: request.dag_name.clone(),
             dag_version_policy: request.dag_version_policy.clone(),
+            queue: request.queue.clone(),
+            priority: request.priority.clone(),
             graph_inputs: request.graph_inputs.clone(),
             requested_unix_ms: request.requested_unix_ms,
             created_unix_ms,
@@ -1617,6 +1876,110 @@ impl ScheduleSubmissionLedgerEntry {
             status: ScheduleSubmissionStatus::Pending,
         }
     }
+}
+
+pub fn apply_submission_status_updates(
+    ledger: &mut ScheduleSubmissionLedger,
+    updates: &[ScheduleSubmissionStatusUpdate],
+) -> Result<(), String> {
+    let mut ordered = updates.to_vec();
+    ordered.sort_by(|left, right| {
+        left.updated_unix_ms
+            .cmp(&right.updated_unix_ms)
+            .then_with(|| left.run_id.cmp(&right.run_id))
+    });
+    for update in ordered {
+        let entry =
+            ledger.entries.iter_mut().find(|entry| entry.run_id == update.run_id).ok_or_else(
+                || format!("submission ledger is missing run_id '{}'", update.run_id),
+            )?;
+        if !schedule_submission_status_can_transition(&entry.status, &update.status) {
+            return Err(format!(
+                "submission '{}' cannot transition from {:?} to {:?}",
+                update.run_id, entry.status, update.status
+            ));
+        }
+        entry.status = update.status;
+    }
+    ledger.entries.sort_by(|left, right| {
+        left.created_unix_ms
+            .cmp(&right.created_unix_ms)
+            .then_with(|| left.schedule_id.cmp(&right.schedule_id))
+            .then_with(|| left.run_id.cmp(&right.run_id))
+            .then_with(|| left.dedupe_key.cmp(&right.dedupe_key))
+    });
+    Ok(())
+}
+
+pub fn build_schedule_queue_state(
+    registry: &ScheduleRegistry,
+    ledger: &ScheduleSubmissionLedger,
+) -> Result<ScheduleQueueState, String> {
+    let policies = queue_capacity_policies(registry)?;
+    let mut queue_runs = BTreeMap::<String, Vec<ScheduleQueueRunRecord>>::new();
+    let mut queue_counts = BTreeMap::<String, usize>::new();
+    let mut tenant_counts = BTreeMap::<(String, String), usize>::new();
+
+    for entry in &ledger.entries {
+        if !submission_status_is_active(&entry.status) {
+            continue;
+        }
+        *queue_counts.entry(entry.queue.queue_name.clone()).or_default() += 1;
+        if let Some(tenant) = entry.queue.tenant.as_ref() {
+            *tenant_counts.entry((entry.queue.queue_name.clone(), tenant.clone())).or_default() +=
+                1;
+        }
+        queue_runs.entry(entry.queue.queue_name.clone()).or_default().push(
+            ScheduleQueueRunRecord {
+                schedule_id: entry.schedule_id.clone(),
+                dag_name: entry.dag_name.clone(),
+                run_id: entry.run_id.clone(),
+                priority: entry.priority.clone(),
+                status: entry.status.clone(),
+                requested_unix_ms: entry.requested_unix_ms,
+                created_unix_ms: entry.created_unix_ms,
+            },
+        );
+    }
+
+    let mut queues = policies
+        .into_iter()
+        .map(|(queue_name, policy)| {
+            let mut runs = queue_runs.remove(&queue_name).unwrap_or_default();
+            runs.sort_by(|left, right| {
+                left.created_unix_ms
+                    .cmp(&right.created_unix_ms)
+                    .then_with(|| left.schedule_id.cmp(&right.schedule_id))
+                    .then_with(|| left.run_id.cmp(&right.run_id))
+            });
+            let active_runs = queue_counts.get(&queue_name).copied().unwrap_or_default();
+            let available_slots =
+                policy.per_queue as usize - active_runs.min(policy.per_queue as usize);
+            let mut tenants = tenant_counts
+                .iter()
+                .filter(|((candidate_queue, _), _)| candidate_queue == &queue_name)
+                .map(|((_, tenant), active_runs)| ScheduleQueueTenantState {
+                    tenant: tenant.clone(),
+                    per_tenant_cap: policy.per_tenant,
+                    active_runs: *active_runs,
+                    available_slots: policy
+                        .per_tenant
+                        .map(|cap| cap as usize - (*active_runs).min(cap as usize)),
+                })
+                .collect::<Vec<_>>();
+            tenants.sort_by(|left, right| left.tenant.cmp(&right.tenant));
+            ScheduleQueueStateEntry {
+                queue_name,
+                per_queue_cap: policy.per_queue,
+                active_runs,
+                available_slots,
+                tenants,
+                runs,
+            }
+        })
+        .collect::<Vec<_>>();
+    queues.sort_by(|left, right| left.queue_name.cmp(&right.queue_name));
+    Ok(ScheduleQueueState { queues })
 }
 
 fn candidate_submissions_for_definition(
@@ -1853,6 +2216,8 @@ fn build_submission_request(
         schedule_id: definition.id.clone(),
         dag_name: definition.dag_name.clone(),
         dag_version_policy: definition.dag_version_policy.clone(),
+        queue: definition.queue.clone(),
+        priority: definition.priority.clone(),
         graph_inputs,
         requested_unix_ms: candidate.requested_unix_ms,
         run_id: deterministic_schedule_run_id(&definition.id, &candidate.dedupe_key),
@@ -1865,6 +2230,8 @@ fn build_backfill_submission_request(
     schedule_id: &str,
     dag_name: &str,
     dag_version_policy: &str,
+    queue: &QueueIdentity,
+    priority: &PriorityClass,
     input_contract: &BTreeMap<String, GraphInputSpec>,
     input_bindings: &BTreeMap<String, ScheduleInputSource>,
     window_start_unix_ms: u128,
@@ -1890,6 +2257,8 @@ fn build_backfill_submission_request(
         schedule_id: schedule_id.to_string(),
         dag_name: dag_name.to_string(),
         dag_version_policy: dag_version_policy.to_string(),
+        queue: queue.clone(),
+        priority: priority.clone(),
         graph_inputs,
         requested_unix_ms: run.requested_unix_ms,
         run_id: run.run_id.clone(),
