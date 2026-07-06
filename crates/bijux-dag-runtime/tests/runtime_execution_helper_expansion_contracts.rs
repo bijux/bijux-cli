@@ -265,6 +265,7 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
         max_parallelism: 1,
         cpu_budget: Some(1),
         memory_budget_mb: None,
+        gpu_device_budget: None,
         fairness: SchedulerFairness::Deterministic,
         queue_isolation: QueueIsolationPolicy::SingleQueue,
         bounded_executor_capacity: 1,
