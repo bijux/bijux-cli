@@ -1,7 +1,8 @@
 use crate::routes::selector_grammar::SelectorExpression;
 use crate::run_views::{
     doctor_run, explain_failure, explain_run_id, inspect_summary, resolve_run_dir, run_timeline,
-    run_tree, runs_history, runs_history_query_with_filters, write_run_history_index,
+    run_timeline_with_query, run_tree, runs_history, runs_history_query_with_filters,
+    write_run_history_index, RunTimelineQuery,
 };
 use serde_json::Value;
 use std::path::Path;
@@ -20,6 +21,15 @@ pub(crate) fn run_tree_for_id(root: &Path, run_id: &str) -> Result<Value, ExitCo
 pub(crate) fn run_timeline_for_id(root: &Path, run_id: &str) -> Result<Value, ExitCode> {
     let run_dir = resolve_run_dir(root, run_id);
     run_timeline(&run_dir).map_err(|_| ExitCode::from(3))
+}
+
+pub(crate) fn run_timeline_for_id_with_query(
+    root: &Path,
+    run_id: &str,
+    query: &RunTimelineQuery,
+) -> Result<Value, ExitCode> {
+    let run_dir = resolve_run_dir(root, run_id);
+    run_timeline_with_query(&run_dir, query).map_err(|_| ExitCode::from(3))
 }
 
 pub(crate) fn doctor_for_run_id(root: &Path, run_id: &str) -> Value {

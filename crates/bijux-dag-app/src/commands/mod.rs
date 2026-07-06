@@ -1314,6 +1314,14 @@ pub(crate) enum RunsCommands {
         run_id: String,
         #[arg(long)]
         root: PathBuf,
+        #[arg(long)]
+        node: Option<String>,
+        #[arg(long)]
+        event: Option<String>,
+        #[arg(long)]
+        since_unix_ms: Option<u128>,
+        #[arg(long)]
+        until_unix_ms: Option<u128>,
     },
     Stop {
         run_id: String,

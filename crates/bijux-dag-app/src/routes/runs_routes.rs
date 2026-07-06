@@ -2,6 +2,7 @@ use crate::commands::{DagCli, RunsCommands};
 use crate::inspect_service;
 use crate::routes::run_lookup::{read_manifest_json, RunWorkspacePaths};
 use crate::routes::selector_grammar::parse_selector_expressions;
+use crate::run_views::RunTimelineQuery;
 use crate::{
     emit_json, format_inspect_human, format_show_human, list_runs, print_human_diff, read_file,
     replay_service, resolve_run_dir, runs_compare, runs_failures, runs_flakes, runs_summary,
@@ -87,6 +88,73 @@ fn format_runs_history_human(report: &Value) -> String {
             page.get("total").unwrap_or(&Value::Null),
         ));
     }
+    lines.join("\n")
+}
+
+fn format_run_timeline_human(report: &Value) -> String {
+    let mut lines = vec![
+        format!("source: {}", report.get("source").and_then(Value::as_str).unwrap_or("unknown")),
+        format!(
+            "matched: {}/{} events",
+            report.get("matched_event_count").and_then(Value::as_u64).unwrap_or(0),
+            report.get("total_event_count").and_then(Value::as_u64).unwrap_or(0),
+        ),
+    ];
+
+    if let Some(filters) = report.get("filters").and_then(Value::as_object) {
+        let mut active_filters = Vec::new();
+        if let Some(node) = filters.get("node").and_then(Value::as_str) {
+            active_filters.push(format!("node={node}"));
+        }
+        if let Some(event) = filters.get("event").and_then(Value::as_str) {
+            active_filters.push(format!("event={event}"));
+        }
+        if let Some(since_unix_ms) = filters.get("since_unix_ms").and_then(Value::as_u64) {
+            active_filters.push(format!("since_unix_ms={since_unix_ms}"));
+        }
+        if let Some(until_unix_ms) = filters.get("until_unix_ms").and_then(Value::as_u64) {
+            active_filters.push(format!("until_unix_ms={until_unix_ms}"));
+        }
+        if !active_filters.is_empty() {
+            lines.push(format!("filters: {}", active_filters.join(" ")));
+        }
+    }
+
+    let events = report.get("events").and_then(Value::as_array).cloned().unwrap_or_default();
+    if events.is_empty() {
+        lines.push("no matching events".to_string());
+        return lines.join("\n");
+    }
+
+    for event in events {
+        let mut segments = Vec::new();
+        segments.push(format!(
+            "timestamp_unix_ms={}",
+            event.get("unix_ms").cloned().unwrap_or(Value::Null)
+        ));
+        segments.push(format!(
+            "event={}",
+            event.get("label").and_then(Value::as_str).unwrap_or("unknown")
+        ));
+        segments.push(format!(
+            "category={}",
+            event.get("category").and_then(Value::as_str).unwrap_or("unknown")
+        ));
+        if let Some(node_id) = event.get("node_id").and_then(Value::as_str) {
+            segments.push(format!("node={node_id}"));
+        }
+        if let Some(status) = event.get("status").and_then(Value::as_str) {
+            segments.push(format!("status={status}"));
+        }
+        if let Some(reason) = event.get("reason").and_then(Value::as_str) {
+            segments.push(format!("cause={reason}"));
+        }
+        if let Some(source_event) = event.get("source_event").and_then(Value::as_str) {
+            segments.push(format!("source_event={source_event}"));
+        }
+        lines.push(segments.join(" "));
+    }
+
     lines.join("\n")
 }
 
@@ -301,8 +369,14 @@ pub(crate) fn handle_runs_command(
             println!("{}", serde_json::to_string_pretty(&tree).unwrap());
             Ok(ExitCode::SUCCESS)
         }
-        RunsCommands::Timeline { run_id, root } => {
-            let timeline = inspect_service::run_timeline_for_id(root, run_id)?;
+        RunsCommands::Timeline { run_id, root, node, event, since_unix_ms, until_unix_ms } => {
+            let query = RunTimelineQuery {
+                node: node.clone(),
+                event: event.clone(),
+                since_unix_ms: *since_unix_ms,
+                until_unix_ms: *until_unix_ms,
+            };
+            let timeline = inspect_service::run_timeline_for_id_with_query(root, run_id, &query)?;
             if cli.json {
                 return emit_json(
                     cli,
@@ -313,7 +387,7 @@ pub(crate) fn handle_runs_command(
                     ExitCode::SUCCESS,
                 );
             }
-            println!("{}", serde_json::to_string_pretty(&timeline).unwrap());
+            println!("{}", format_run_timeline_human(&timeline));
             Ok(ExitCode::SUCCESS)
         }
         RunsCommands::Stop { run_id, root } => {
@@ -580,6 +654,8 @@ pub(crate) fn handle_runs_command(
 mod tests {
     use super::handle_runs_command;
     use crate::commands::{Commands, DagCli, RunsCommands};
+    use crate::inspect_service;
+    use crate::run_views::RunTimelineQuery;
     use crate::ExitCode;
     use bijux_dag_artifacts::RunStopRequest;
     use serde_json::json;
@@ -633,6 +709,36 @@ mod tests {
             .expect("trace"),
         )
         .expect("write trace");
+    }
+
+    fn write_timeline_run(root: &Path, run_id: &str) {
+        write_run(root, run_id, false);
+        fs::write(
+            root.join(run_id).join("observability.timeline.json"),
+            serde_json::to_vec_pretty(&json!({
+                "schema_version": "v0.1",
+                "entries": [
+                    {
+                        "unix_ms": 100u64,
+                        "category": "run",
+                        "label": "run_started",
+                        "node_id": null,
+                        "source_event": "run_started"
+                    },
+                    {
+                        "unix_ms": 130u64,
+                        "category": "failure",
+                        "label": "node_failed",
+                        "node_id": "n1",
+                        "status": "failed",
+                        "reason": "execution_failed",
+                        "source_event": "node_finished"
+                    }
+                ]
+            }))
+            .expect("timeline"),
+        )
+        .expect("write timeline");
     }
 
     fn write_active_run(root: &Path, run_id: &str) -> std::path::PathBuf {
@@ -689,6 +795,10 @@ mod tests {
             &RunsCommands::Timeline {
                 run_id: "run-tree".to_string(),
                 root: tmp.path().to_path_buf(),
+                node: None,
+                event: None,
+                since_unix_ms: None,
+                until_unix_ms: None,
             },
         )
         .expect("timeline");
@@ -800,11 +910,40 @@ mod tests {
                 &RunsCommands::Timeline {
                     run_id: "run-bad".to_string(),
                     root: tmp.path().to_path_buf(),
+                    node: None,
+                    event: None,
+                    since_unix_ms: None,
+                    until_unix_ms: None,
                 },
             )
         });
         assert!(result.is_ok(), "timeline flow should not panic");
         assert!(result.expect("result").is_ok());
+    }
+
+    #[test]
+    fn runs_timeline_human_output_surfaces_filters_timestamp_and_cause() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        write_timeline_run(tmp.path(), "run-timeline");
+        let report = inspect_service::run_timeline_for_id_with_query(
+            tmp.path(),
+            "run-timeline",
+            &RunTimelineQuery {
+                node: Some("n1".to_string()),
+                event: Some("node_failed".to_string()),
+                since_unix_ms: Some(120),
+                until_unix_ms: Some(140),
+            },
+        )
+        .expect("timeline");
+
+        let rendered = super::format_run_timeline_human(&report);
+        assert!(rendered.contains("matched: 1/2 events"));
+        assert!(rendered
+            .contains("filters: node=n1 event=node_failed since_unix_ms=120 until_unix_ms=140"));
+        assert!(rendered.contains("timestamp_unix_ms=130"));
+        assert!(rendered.contains("cause=execution_failed"));
+        assert!(rendered.contains("source_event=node_finished"));
     }
 
     #[test]
