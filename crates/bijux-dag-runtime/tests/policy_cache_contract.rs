@@ -659,6 +659,7 @@ fn runtime_cache_reuses_entries_across_operator_only_config_changes() {
                     cpu_budget: Some(8),
                     memory_budget_mb: None,
                     gpu_device_budget: None,
+                    named_resource_capacities: std::collections::BTreeMap::new(),
                     fairness: SchedulerFairness::ThroughputPreferred,
                     queue_isolation: QueueIsolationPolicy::GroupIsolated,
                     bounded_executor_capacity: 8,

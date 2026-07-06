@@ -266,6 +266,7 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
         cpu_budget: Some(1),
         memory_budget_mb: None,
         gpu_device_budget: None,
+        named_resource_capacities: std::collections::BTreeMap::new(),
         fairness: SchedulerFairness::Deterministic,
         queue_isolation: QueueIsolationPolicy::SingleQueue,
         bounded_executor_capacity: 1,
