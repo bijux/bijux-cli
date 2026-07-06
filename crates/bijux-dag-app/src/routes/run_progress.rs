@@ -2,9 +2,14 @@ use bijux_dag_runtime::{ExecutionCheckpoint, RunSnapshot};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{self, IsTerminal, Read, Seek, SeekFrom, Write};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
+
+const COMPACT_PROGRESS_POLL_INTERVAL: Duration = Duration::from_millis(100);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct CompactRunProgressFailure {
@@ -37,6 +42,11 @@ pub(crate) struct CompactRunProgressSnapshot {
 pub(crate) struct ProgressEventCursor {
     offset: u64,
     pending_fragment: String,
+}
+
+pub(crate) struct CompactRunProgressMonitor {
+    stop_requested: Arc<AtomicBool>,
+    worker: Option<JoinHandle<()>>,
 }
 
 #[derive(Debug)]
@@ -232,6 +242,45 @@ impl CompactRunProgressState {
     }
 }
 
+impl CompactRunProgressMonitor {
+    pub(crate) fn start(staging_path: &Path, fallback_total_nodes: usize) -> Self {
+        let stop_requested = Arc::new(AtomicBool::new(false));
+        let worker_stop = Arc::clone(&stop_requested);
+        let staging_path = staging_path.to_path_buf();
+        let worker = thread::spawn(move || {
+            let interactive = io::stderr().is_terminal();
+            let mut renderer = ProgressLineRenderer::new(io::stderr(), interactive);
+            let mut state = CompactRunProgressState::new(fallback_total_nodes);
+            let mut cursor = ProgressEventCursor::default();
+            let started_at = Instant::now();
+            loop {
+                if let Some(snapshot) =
+                    state.refresh_from_staging_dir(&mut cursor, &staging_path, started_at)
+                {
+                    let _ = renderer.render(&snapshot);
+                }
+                if worker_stop.load(Ordering::Relaxed) {
+                    break;
+                }
+                thread::sleep(COMPACT_PROGRESS_POLL_INTERVAL);
+            }
+            if let Some(snapshot) = state.refresh_from_staging_dir(&mut cursor, &staging_path, started_at)
+            {
+                let _ = renderer.render(&snapshot);
+            }
+            let _ = renderer.finish();
+        });
+        Self { stop_requested, worker: Some(worker) }
+    }
+
+    pub(crate) fn finish(mut self) {
+        self.stop_requested.store(true, Ordering::Relaxed);
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+    }
+}
+
 pub(crate) fn format_compact_run_progress(snapshot: &CompactRunProgressSnapshot) -> String {
     format!(
         "progress elapsed={} done={}/{} ready={} running={} success={} failed={} skipped={} cached={} cancelled={} blocked={} cache_hits={} active=[{}] latest_failure={}",
@@ -365,11 +414,52 @@ impl ProgressEventCursor {
     }
 }
 
+struct ProgressLineRenderer<W: Write> {
+    writer: W,
+    interactive: bool,
+    last_rendered_line: Option<String>,
+    last_line_len: usize,
+}
+
+impl<W: Write> ProgressLineRenderer<W> {
+    fn new(writer: W, interactive: bool) -> Self {
+        Self { writer, interactive, last_rendered_line: None, last_line_len: 0 }
+    }
+
+    fn render(&mut self, snapshot: &CompactRunProgressSnapshot) -> io::Result<()> {
+        let line = format_compact_run_progress(snapshot);
+        if self.last_rendered_line.as_deref() == Some(line.as_str()) {
+            return Ok(());
+        }
+        if self.interactive {
+            write!(self.writer, "\r{line}")?;
+            if self.last_line_len > line.len() {
+                write!(self.writer, "{}", " ".repeat(self.last_line_len - line.len()))?;
+            }
+            self.writer.flush()?;
+        } else {
+            writeln!(self.writer, "{line}")?;
+        }
+        self.last_line_len = line.len();
+        self.last_rendered_line = Some(line);
+        Ok(())
+    }
+
+    fn finish(&mut self) -> io::Result<()> {
+        if self.interactive && self.last_rendered_line.is_some() {
+            writeln!(self.writer)?;
+            self.writer.flush()?;
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        format_compact_run_progress, CompactRunProgressFailure, CompactRunProgressSnapshot,
-        CompactRunProgressState, ProgressEventCursor,
+        format_compact_run_progress, CompactRunProgressFailure, CompactRunProgressMonitor,
+        CompactRunProgressSnapshot, CompactRunProgressState, ProgressEventCursor,
+        ProgressLineRenderer,
     };
     use serde_json::json;
     use std::fs;
@@ -515,5 +605,43 @@ mod tests {
         assert!(rendered.contains("done=5/9"));
         assert!(rendered.contains("active=[extract, train, publish, +1 more]"));
         assert!(rendered.contains("latest_failure=score:failed/timeout[TIMEOUT]"));
+    }
+
+    #[test]
+    fn compact_progress_renderer_deduplicates_noninteractive_lines() {
+        let snapshot = CompactRunProgressSnapshot {
+            elapsed: Duration::from_secs(2),
+            total_nodes: 3,
+            completed_nodes: 1,
+            ready_count: 1,
+            running_count: 1,
+            blocked_count: 0,
+            success_count: 1,
+            failed_count: 0,
+            skipped_count: 0,
+            cached_count: 0,
+            cancelled_count: 0,
+            cache_hits: 0,
+            active_nodes: vec!["train".to_string()],
+            latest_failure: None,
+            finished: false,
+        };
+        let mut output = Vec::new();
+        let mut renderer = ProgressLineRenderer::new(&mut output, false);
+
+        renderer.render(&snapshot).expect("first render");
+        renderer.render(&snapshot).expect("deduplicated render");
+        renderer.finish().expect("finish");
+
+        let text = String::from_utf8(output).expect("utf8");
+        assert_eq!(text.lines().count(), 1);
+        assert!(text.contains("progress elapsed=00:02"));
+    }
+
+    #[test]
+    fn compact_progress_monitor_finishes_without_staging_files() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let monitor = CompactRunProgressMonitor::start(dir.path(), 1);
+        monitor.finish();
     }
 }
