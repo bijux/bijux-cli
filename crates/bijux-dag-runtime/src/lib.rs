@@ -2265,7 +2265,7 @@ fn write_item_inputs_index(
         });
     }
     files.sort_by(|left, right| left.local_path.cmp(&right.local_path));
-    let index = InputsIndex { files };
+    let index = InputsIndex { collections: Vec::new(), files };
     write_inputs_index(&item_inputs_dir, &index)?;
     Ok(index)
 }
@@ -3110,7 +3110,7 @@ fn materialize_inputs(
         }
     }
     files.sort_by(|a, b| a.local_path.cmp(&b.local_path));
-    let index = InputsIndex { files };
+    let index = InputsIndex { collections: Vec::new(), files };
     write_inputs_index(&inputs_dir, &index)?;
     Ok(index)
 }
@@ -3951,7 +3951,10 @@ fn input_lineage_fingerprint_from_run(
 ) -> Result<String, RuntimeError> {
     let index_path = ctx.run_dir.node_inputs_dir(node_id).join("index.json");
     if ctx.fs.metadata(&index_path).is_err() {
-        return input_lineage_fingerprint(&InputsIndex { files: Vec::new() });
+        return input_lineage_fingerprint(&InputsIndex {
+            collections: Vec::new(),
+            files: Vec::new(),
+        });
     }
     let raw = ctx.fs.read_to_string(&index_path)?;
     let index: InputsIndex = serde_json::from_str(&raw)?;

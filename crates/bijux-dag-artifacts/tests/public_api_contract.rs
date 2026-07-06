@@ -24,6 +24,7 @@ fn prelude_covers_artifact_write_and_validation_flow() {
     write_inputs_index(
         dir.path(),
         &InputsIndex {
+            collections: Vec::new(),
             files: vec![InputFile {
                 local_path: "producer/input".to_string(),
                 source_sha256: sha256_hex(b"payload"),

@@ -762,7 +762,7 @@ mod tests {
             time_source: "system_clock".to_string(),
         };
         let run_outputs = RunOutputsIndex { files: Vec::new() };
-        let inputs = InputsIndex { files: Vec::new() };
+        let inputs = InputsIndex { collections: Vec::new(), files: Vec::new() };
 
         write_provenance(run.provenance_path(), &provenance).unwrap();
         write_run_outputs_index(&outputs_dir, &run_outputs).unwrap();

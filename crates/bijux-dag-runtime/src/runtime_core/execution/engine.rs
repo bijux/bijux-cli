@@ -383,7 +383,10 @@ fn resume_fingerprint_matches(
                 ))
             })?
         }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => InputsIndex { files: vec![] },
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => InputsIndex {
+            collections: vec![],
+            files: vec![],
+        },
         Err(error) => {
             return Err(RuntimeError::Executor(format!(
                 "failed to inspect persisted inputs index for {}: {}",

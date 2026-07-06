@@ -582,6 +582,8 @@ pub struct ContainerTrace {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct InputsIndex {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub collections: Vec<InputCollection>,
     pub files: Vec<InputFile>,
 }
 
@@ -599,6 +601,31 @@ pub struct InputFile {
     pub source_output_name: String,
     #[serde(default = "default_input_materialization_mode")]
     pub materialization_mode: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InputCollection {
+    pub name: String,
+    pub semantic_kind: String,
+    pub manifest_path: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub empty_policy: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub items: Vec<InputCollectionItem>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InputCollectionItem {
+    pub input_port: String,
+    pub source_node_id: String,
+    pub source_output_name: String,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub local_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_sha256: Option<String>,
 }
 
 fn default_manifest_version() -> String {

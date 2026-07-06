@@ -12,7 +12,8 @@ use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
 };
 use bijux_dag_artifacts::{
-    write_outputs_index, DeclaredOutputArtifact, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex,
+    write_inputs_index, write_outputs_index, DeclaredOutputArtifact, InputCollection,
+    InputCollectionItem, InputsIndex, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex,
 };
 use bijux_dag_testkit as _;
 use hex as _;
@@ -54,6 +55,47 @@ fn outputs_index_is_stable_under_repeated_writes() {
     assert_eq!(parsed.files.len(), 2);
     assert_eq!(parsed.files[0].path, "a.txt");
     assert_eq!(parsed.files[1].path, "b.txt");
+}
+
+#[test]
+fn inputs_index_preserves_semantic_collection_metadata() {
+    let dir = tempfile::tempdir().unwrap();
+    let index = InputsIndex {
+        collections: vec![InputCollection {
+            name: "reduce_inputs".to_string(),
+            semantic_kind: "reduce".to_string(),
+            manifest_path: "reduce.collection.json".to_string(),
+            mode: Some("partial".to_string()),
+            empty_policy: Some("allow".to_string()),
+            items: vec![
+                InputCollectionItem {
+                    input_port: "left".to_string(),
+                    source_node_id: "map_a".to_string(),
+                    source_output_name: "out".to_string(),
+                    status: "success".to_string(),
+                    local_path: Some("map_a/left".to_string()),
+                    source_sha256: Some(format!("{:064x}", 1)),
+                },
+                InputCollectionItem {
+                    input_port: "right".to_string(),
+                    source_node_id: "map_b".to_string(),
+                    source_output_name: "out".to_string(),
+                    status: "failed".to_string(),
+                    local_path: None,
+                    source_sha256: None,
+                },
+            ],
+        }],
+        files: vec![],
+    };
+
+    write_inputs_index(dir.path(), &index).unwrap();
+    let raw = fs::read_to_string(dir.path().join("index.json")).unwrap();
+    let parsed: InputsIndex = serde_json::from_str(&raw).unwrap();
+    assert_eq!(parsed.collections.len(), 1);
+    assert_eq!(parsed.collections[0].semantic_kind, "reduce");
+    assert_eq!(parsed.collections[0].items[0].status, "success");
+    assert_eq!(parsed.collections[0].items[1].status, "failed");
 }
 
 #[test]
