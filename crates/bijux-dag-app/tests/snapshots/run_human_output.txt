@@ -1,1 +1,10 @@
+run_summary_status: "success"
+run_summary_duration_ms: <DURATION_MS>
+run_summary_node_counts: {"cached":0,"failed":0,"skipped":0,"success":2}
+run_summary_failed_nodes: []
+run_summary_cache_hits: 0
+run_summary_artifact_count: 2
+run_summary_promoted_artifact_count: 0
+run_summary_next_action: "successful runs should be inspected before replay, diff, or promotion"
+run_summary_next_command: "bijux-dag runs inspect fixed --root <TMP>/runs"
 run dir: <TMP>/runs/run-fixed

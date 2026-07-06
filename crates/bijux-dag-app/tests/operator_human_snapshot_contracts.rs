@@ -71,6 +71,21 @@ fn normalize_paths(text: &str, tmp_root: &Path) -> String {
     text.replace(&*tmp_root.to_string_lossy(), "<TMP>")
 }
 
+fn normalize_run_human_output(text: &str, tmp_root: &Path) -> String {
+    normalize_paths(text, tmp_root)
+        .lines()
+        .map(|line| {
+            if line.starts_with("run_summary_duration_ms: ") {
+                "run_summary_duration_ms: <DURATION_MS>".to_string()
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n"
+}
+
 #[test]
 #[ignore = "slow"]
 fn validate_human_output_snapshot_is_stable() {
@@ -106,7 +121,7 @@ fn run_human_output_snapshot_is_stable() {
             "run-fixed",
         ],
     );
-    let normalized = normalize_paths(&out, tmp.path());
+    let normalized = normalize_run_human_output(&out, tmp.path());
     assert_eq!(normalized, include_str!("snapshots/run_human_output.txt"));
 }
 
@@ -136,11 +151,7 @@ fn history_human_output_snapshot_is_stable() {
     write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
     let history =
         run_human(&root, &["runs", "history", "--root", out_dir.to_string_lossy().as_ref()]);
-    let mut payload: serde_json::Value =
-        serde_json::from_str(&history).expect("history payload should be json");
-    payload["runs"][0]["created_unix_ms"] = serde_json::json!(0);
-    let rendered = serde_json::to_string_pretty(&payload).expect("render normalized history");
-    assert_eq!(format!("{rendered}\n"), include_str!("snapshots/history_human_output.txt"));
+    assert_eq!(history, include_str!("snapshots/history_human_output.txt"));
 }
 
 #[test]
