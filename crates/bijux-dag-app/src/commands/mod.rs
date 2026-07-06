@@ -215,8 +215,20 @@ pub(crate) enum Commands {
         dag: PathBuf,
     },
     ShowEffectiveGraph {
-        #[arg(required = true)]
+        #[arg(required_unless_present = "run_dir", conflicts_with = "run_dir")]
         dags: Vec<PathBuf>,
+        #[arg(long)]
+        run_dir: Option<PathBuf>,
+        #[arg(long = "select", action = clap::ArgAction::Append, conflicts_with = "run_dir")]
+        select: Vec<String>,
+        #[arg(long = "exclude", action = clap::ArgAction::Append, conflicts_with = "run_dir")]
+        exclude: Vec<String>,
+        #[arg(long = "from-node", action = clap::ArgAction::Append, conflicts_with = "run_dir")]
+        from_node: Vec<String>,
+        #[arg(long = "to-node", action = clap::ArgAction::Append, conflicts_with = "run_dir")]
+        to_node: Vec<String>,
+        #[arg(long, conflicts_with = "run_dir")]
+        dependency_closure: bool,
     },
     #[command(name = "explain-plan", alias = "show-effective-plan")]
     ExplainPlan {

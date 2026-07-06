@@ -1,5 +1,7 @@
-use bijux_dag_runtime::PlannerBuildResult;
+use bijux_dag_core::Graph;
+use bijux_dag_runtime::{PlannerBuildResult, RunSnapshot};
 use serde::Serialize;
+use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub(crate) struct OmittedNodeSummary {
@@ -52,6 +54,55 @@ pub(crate) fn selection_summary_from_planner(result: &PlannerBuildResult) -> Sel
             .filter_map(|value| value.strip_prefix("from-node:").map(str::to_string))
             .collect(),
         dependency_closure_enabled: result.plan.dependency_closure_enabled,
+        selected_nodes,
+        omitted_nodes,
+    }
+}
+
+pub(crate) fn selection_summary_for_all_nodes(graph: &Graph) -> SelectionSummary {
+    let mut selected_nodes = graph.nodes.iter().map(|node| node.id.clone()).collect::<Vec<_>>();
+    selected_nodes.sort();
+    SelectionSummary {
+        requested_selectors: Vec::new(),
+        upstream_targets: Vec::new(),
+        downstream_roots: Vec::new(),
+        dependency_closure_enabled: false,
+        selected_nodes,
+        omitted_nodes: Vec::new(),
+    }
+}
+
+pub(crate) fn selection_summary_from_run_snapshot(
+    graph: &Graph,
+    snapshot: &RunSnapshot,
+) -> SelectionSummary {
+    let selected = snapshot.selected_nodes.iter().cloned().collect::<BTreeSet<_>>();
+    let mut selected_nodes = selected.iter().cloned().collect::<Vec<_>>();
+    let mut omitted_nodes = graph
+        .nodes
+        .iter()
+        .filter(|node| !selected.contains(&node.id))
+        .map(|node| OmittedNodeSummary {
+            node_id: node.id.clone(),
+            reason: "omitted_from_run_snapshot".to_string(),
+        })
+        .collect::<Vec<_>>();
+    selected_nodes.sort();
+    omitted_nodes.sort_by(|left, right| left.node_id.cmp(&right.node_id));
+
+    SelectionSummary {
+        requested_selectors: snapshot.requested_selectors.clone(),
+        upstream_targets: snapshot
+            .requested_selectors
+            .iter()
+            .filter_map(|value| value.strip_prefix("to-node:").map(str::to_string))
+            .collect(),
+        downstream_roots: snapshot
+            .requested_selectors
+            .iter()
+            .filter_map(|value| value.strip_prefix("from-node:").map(str::to_string))
+            .collect(),
+        dependency_closure_enabled: snapshot.dependency_closure_enabled,
         selected_nodes,
         omitted_nodes,
     }

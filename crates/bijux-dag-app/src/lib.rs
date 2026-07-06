@@ -502,23 +502,24 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::ShowEffectiveGraph { dags } => {
-            let graph = load_graphs_or_emit(&cli, "dag.show-effective-graph", dags)?;
-            let canonical = graph.canonicalize();
-            let payload = serde_json::to_value(&canonical).map_err(|_| ExitCode::from(3))?;
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.show-effective-graph",
-                    true,
-                    payload,
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
-            }
-            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            Ok(ExitCode::SUCCESS)
-        }
+        Commands::ShowEffectiveGraph {
+            dags,
+            run_dir,
+            select,
+            exclude,
+            from_node,
+            to_node,
+            dependency_closure,
+        } => routes::graph_routes::handle_show_effective_graph_command(
+            &cli,
+            dags,
+            run_dir,
+            select,
+            exclude,
+            from_node,
+            to_node,
+            *dependency_closure,
+        ),
         Commands::ExplainPlan {
             dags,
             out,
