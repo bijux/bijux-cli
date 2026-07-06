@@ -96,7 +96,7 @@ presented as stable operator APIs. See `LIM-005`, `LIM-006`, `RISK-002`, and
 
 ## Resource Capacity Controls
 
-- `bijux-dag run` and `bijux-dag replay` accept
+- `bijux-dag plan explain`, `bijux-dag run`, and `bijux-dag replay` accept
   `--resource-capacity <name=count>` to declare named runtime capacities for
   graph nodes that claim `resources.named_resources`.
 - Repeat `--resource-capacity` for multiple capacities such as
@@ -132,9 +132,13 @@ for node-local directories and container workdirs:
 - `bijux-dag plan explain <dag> --out <run-root>` computes a preview run layout
   and includes resolved path previews, resolved command argv arrays, and an
   `execution_cost_estimate` summary in JSON output. The estimate includes a
-  weighted `critical_path` object; if a node declares
+  weighted `critical_path` object plus a `scheduling_simulation` summary; if a
+  node declares
   `params.estimated_duration_ms`, that value is used, otherwise the planner
   falls back to unit duration for that node.
+- `plan explain` also accepts `--jobs`, `--cpu-budget`, `--memory-budget-mb`,
+  `--gpu-device-budget`, and repeated `--resource-capacity` flags so the
+  preview can model the same budget surface that `run` and `replay` use.
 - `bijux-dag show-effective-plan <dag> --out <run-root>` exposes the same
   payload through the compatibility alias route.
 - `--run-id` makes the previewed run layout stable instead of auto-generated.
@@ -146,8 +150,9 @@ for node-local directories and container workdirs:
 - `bijux-dag run --preflight-only --json` and
   `bijux-dag run --explain-scheduling --json` include the same `run_layout`
   and `path_previews` contract that `plan explain` uses, including resolved
-  argv tokens for command-bearing nodes and the selected
-  `execution_cost_estimate`.
+  argv tokens for command-bearing nodes, the selected
+  `execution_cost_estimate`, and the resource-aware `scheduling_simulation`
+  report.
 
 ## Plan Diff Controls
 

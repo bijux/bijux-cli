@@ -116,7 +116,8 @@ The JSON payload reports:
 - `path_previews`: the resolved path expressions per node
 - `execution_cost_estimate`: the selected node count, root set, critical path
   length, weighted `critical_path` details, topology-limited parallelism,
-  resource demand, cache exposure, and timeout/retry exposure
+  resource demand, `scheduling_simulation` bottlenecks, cache exposure, and
+  timeout/retry exposure
 - `absolute_path_policy`: the policy used for literal absolute container
   workdirs
 
@@ -139,6 +140,28 @@ operator questions up front:
 - where the dependency bottleneck is
 - whether resource demand, non-cacheable nodes, or aggressive timeout/retry
   settings make the run more expensive than it first looks
+
+When you also care about runtime budgets, add the same flags the execution
+surface uses to the preview itself:
+
+```bash
+bijux-dag plan explain ./pipelines/main.dag.json \
+  --json \
+  --jobs 4 \
+  --cpu-budget 4 \
+  --memory-budget-mb 8192 \
+  --resource-capacity database_slot=1
+```
+
+The resulting `execution_cost_estimate.scheduling_simulation` section answers a
+different question from the pure dependency `critical_path`:
+
+- `run_bound`: whether the previewed run remains dependency-bound or becomes
+  resource-bound under the selected budgets
+- `resource_delay_ms`: how much longer the simulated run takes than the
+  dependency-only critical path
+- `bottlenecks`: which resource caps forced ready nodes to wait
+- `blocked_nodes`: which nodes waited, for how long, and why
 
 When a node carries `params.estimated_duration_ms`, the planner uses that value
 to weight the reported `critical_path`. Nodes without an estimate fall back to
