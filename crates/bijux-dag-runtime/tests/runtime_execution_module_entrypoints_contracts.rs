@@ -10,10 +10,14 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
+use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
-    ExecutionContext, LocalExecutor, LocalWorkerExecution, LocalWorkerPool, NodeExecutionContext,
-    NodeResult, NodeStatus, RunContext,
+    AbsolutePathPolicy, ExecutionContext, LocalExecutor, LocalWorkerExecution, LocalWorkerPool,
+    MockRemoteWorker, NodeExecutionContext, NodeResult, NodeStatus, PolicyConfig,
+    RemoteExecutionFingerprintSet, RemoteExecutionIdentity, RemoteExecutionWorkspace,
+    RemoteNodeExecutionPayload, RemoteWorkerExecutor, RunContext, serialize_node_result_payload,
 };
+use serde_json::json;
 
 #[test]
 fn execution_facade_exports_local_executor_surface() {
@@ -51,4 +55,59 @@ fn node_result_surface_exports_runtime_node_status() {
     let status_alias: NodeStatus = status;
     assert!(matches!(status_alias, NodeStatus::Cached));
     let _ = std::mem::size_of::<NodeResult>();
+}
+
+#[test]
+fn execution_facade_exports_remote_worker_payload_surface() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {
+              "id": "const-node",
+              "kind": "const",
+              "outputs": [{"name": "value", "path": "value.txt"}],
+              "params": {"value": "hello"}
+            }
+          ],
+          "edges": []
+        }"#,
+    )
+    .expect("graph");
+    let node = graph.nodes[0].clone();
+    let payload = RemoteNodeExecutionPayload {
+        identity: RemoteExecutionIdentity {
+            run_id: "entrypoint-run".to_string(),
+            node_id: node.id.clone(),
+            attempt_id: "1".to_string(),
+            backend_id: "remote-worker".to_string(),
+        },
+        graph,
+        node,
+        params: json!({"value": "hello"}),
+        input_artifacts: Vec::new(),
+        workspace: RemoteExecutionWorkspace {
+            out_base: temp.path().display().to_string(),
+            cache_dir: None,
+        },
+        policy: PolicyConfig::default(),
+        absolute_path_policy: AbsolutePathPolicy::AllowLiteral,
+        planner_contract_version: "bijux-dag-planner/v1".to_string(),
+        fingerprints: RemoteExecutionFingerprintSet {
+            node_fingerprint: "node-fp".to_string(),
+            node_definition_fingerprint: "node-def-fp".to_string(),
+            declared_environment_fingerprint: "env-fp".to_string(),
+            params_fingerprint: "params-fp".to_string(),
+            command_fingerprint: Some("command-fp".to_string()),
+            execution_fingerprint: "execution-fp".to_string(),
+            evidence_fingerprint: "evidence-fp".to_string(),
+            execution_contract_fingerprint: "execution-contract-fp".to_string(),
+        },
+    };
+
+    let result = MockRemoteWorker.execute_payload(payload).expect("execute remote payload");
+    assert_eq!(result.node_result.status, NodeStatus::Success);
+    let serialized = serialize_node_result_payload(&result.node_result).expect("serialize result");
+    assert!(serialized["outputs_dir"].is_string());
 }
