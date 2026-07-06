@@ -389,6 +389,74 @@ fn runtime_rejects_named_resources_that_exceed_runtime_capacity() {
 }
 
 #[test]
+fn runtime_releases_named_resource_capacity_after_terminal_state() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","resources":{"cpu":1,"mem_mb":64,"named_resources":{"database_slot":1}},"outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {"id":"b","kind":"const","resources":{"cpu":1,"mem_mb":64,"named_resources":{"database_slot":1}},"outputs":[{"name":"out","path":"b/out"}],"params":{"value":2}}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("temp dir");
+
+    let run_dir = runtime
+        .run(
+            &graph,
+            temp.path(),
+            RuntimeConfig {
+                jobs: 2,
+                named_resource_capacities: std::collections::BTreeMap::from([(
+                    "database_slot".to_string(),
+                    1,
+                )]),
+                scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
+                    max_parallelism: 2,
+                    cpu_budget: Some(2),
+                    named_resource_capacities: std::collections::BTreeMap::from([(
+                        "database_slot".to_string(),
+                        1,
+                    )]),
+                    ..bijux_dag_runtime::SchedulerPolicy::default()
+                },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("runtime run");
+
+    let (success, failed, skipped, cached) = read_counts(&run_dir.join("manifest.json"));
+    assert_eq!((success, failed, skipped, cached), (2, 0, 0, 0));
+
+    let events = read_run_events(&run_dir);
+    let blocked_index = events
+        .iter()
+        .position(|event| {
+            event["event"] == "scheduler_decision"
+                && event["blocked_reasons"]["b"] == "blocked_by_named_resource:database_slot"
+        })
+        .expect("named resource blocking decision");
+    let holder_finished_index = events
+        .iter()
+        .position(|event| {
+            event["event"] == "node_finished"
+                && event["node_id"] == "a"
+                && event["status"] == "success"
+        })
+        .expect("holder finished");
+    let released_start_index = events
+        .iter()
+        .position(|event| event["event"] == "node_started" && event["node_id"] == "b")
+        .expect("released node started");
+
+    assert!(blocked_index < holder_finished_index);
+    assert!(holder_finished_index < released_start_index);
+}
+
+#[test]
 fn runtime_events_explain_ready_and_scheduler_blocking_reasons() {
     let graph = parse_graph_strict(
         r#"{
