@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -7,6 +8,7 @@ struct ReleaseValidationSuite {
     format: String,
     local_entrypoint: String,
     ci_entrypoint: String,
+    package_boundary_contract: String,
     release_tree: ReleaseTreeContract,
     public_dag_crates: Vec<String>,
     commands: Vec<String>,
@@ -17,6 +19,20 @@ struct ReleaseTreeContract {
     script: String,
     candidate_ref: String,
     version_source: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct WorkspacePackageBoundary {
+    packages: Vec<PackageBoundaryEntry>,
+    crates_io_publish_order: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PackageBoundaryEntry {
+    #[serde(rename = "crate")]
+    crate_name: String,
+    product_family: String,
+    release_status: String,
 }
 
 fn repo_root() -> PathBuf {
@@ -33,6 +49,29 @@ fn read_suite() -> ReleaseValidationSuite {
     serde_json::from_str(&raw).unwrap_or_else(|err| panic!("parse suite failed: {err}"))
 }
 
+fn read_workspace_package_boundary(path: &str) -> WorkspacePackageBoundary {
+    let absolute = repo_root().join(path);
+    let raw = fs::read_to_string(&absolute)
+        .unwrap_or_else(|err| panic!("read {} failed: {err}", absolute.display()));
+    serde_json::from_str(&raw)
+        .unwrap_or_else(|err| panic!("parse {} failed: {err}", absolute.display()))
+}
+
+fn public_dag_crates_from_boundary(boundary: &WorkspacePackageBoundary) -> Vec<String> {
+    let dag_public_crates = boundary
+        .packages
+        .iter()
+        .filter(|entry| entry.product_family == "bijux-dag" && entry.release_status == "public")
+        .map(|entry| entry.crate_name.as_str())
+        .collect::<BTreeSet<_>>();
+    boundary
+        .crates_io_publish_order
+        .iter()
+        .filter(|crate_name| dag_public_crates.contains(crate_name.as_str()))
+        .cloned()
+        .collect()
+}
+
 fn read_public_dag_manifest(crate_name: &str) -> String {
     let path = repo_root().join("crates").join(crate_name).join("Cargo.toml");
     fs::read_to_string(&path).unwrap_or_else(|err| panic!("read {} failed: {err}", path.display()))
@@ -47,22 +86,18 @@ fn read_repo_file(path: &str) -> String {
 #[test]
 fn release_validation_suite_is_current() {
     let suite = read_suite();
+    let boundary = read_workspace_package_boundary(&suite.package_boundary_contract);
     assert_eq!(suite.format, "release-validation-suite/v1");
     assert_eq!(suite.local_entrypoint, "make release-validate-rs");
     assert_eq!(suite.ci_entrypoint, "make gh-release-validate");
+    assert_eq!(
+        suite.package_boundary_contract,
+        "contracts/foundation/workspace_package_boundary.v1.json"
+    );
     assert_eq!(suite.release_tree.script, ".github/scripts/prepare_release_tree.py");
     assert_eq!(suite.release_tree.candidate_ref, "HEAD");
     assert_eq!(suite.release_tree.version_source, "workspace.package.version");
-    assert_eq!(
-        suite.public_dag_crates,
-        vec![
-            "bijux-dag-core",
-            "bijux-dag-artifacts",
-            "bijux-dag-runtime",
-            "bijux-dag-app",
-            "bijux-dag-cli",
-        ]
-    );
+    assert_eq!(suite.public_dag_crates, public_dag_crates_from_boundary(&boundary));
 }
 
 #[test]

@@ -2,6 +2,7 @@
   "format": "release-validation-suite/v1",
   "local_entrypoint": "make release-validate-rs",
   "ci_entrypoint": "make gh-release-validate",
+  "package_boundary_contract": "contracts/foundation/workspace_package_boundary.v1.json",
   "release_tree": {
     "script": ".github/scripts/prepare_release_tree.py",
     "candidate_ref": "HEAD",
