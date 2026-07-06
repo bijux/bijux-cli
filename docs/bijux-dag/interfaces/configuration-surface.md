@@ -32,6 +32,17 @@ flowchart LR
 - config command surfaces (`config ...`, `policy ...`)
 - environment and path resolution inputs where applicable
 
+## Effective Config Inspection
+
+Use the explicit inspection commands when the operator needs the resolved
+configuration without starting execution:
+
+- `dag config show-effective`
+- `dag policy show-effective`
+
+The canonical merge order is `CLI > explicit config file > environment > defaults`.
+Malformed config files and unknown fields are blocking errors, not warnings.
+
 ### Input Materialization Modes
 
 `run --materialize-inputs` and `replay --materialize-inputs` currently support:
@@ -124,6 +135,7 @@ as "hermetic".
 
 ## Next Reads
 
+- [Config Precedence Contract](../../spec/CONFIG_PRECEDENCE_CONTRACT.md)
 - [State and Persistence](../architecture/state-and-persistence.md)
 - [Common Workflows](../operations/common-workflows.md)
 - [Change Validation](../quality/change-validation.md)
