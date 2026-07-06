@@ -4427,38 +4427,59 @@ pub(super) fn run_config_policy_determinism_guard() -> Result<(), String> {
 
 pub(super) fn run_ambient_env_guard() -> Result<(), String> {
     let root = repo_root()?;
+    let policy: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/dag/policy/ambient_env_allowlist.json"))
+            .map_err(|err| err.to_string())?,
+    )
+    .map_err(|err| err.to_string())?;
+    let rules = policy
+        .get("rules")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "ambient env allowlist missing rules array".to_string())?;
     let mut files = Vec::new();
     collect_files_with_extension(&root.join("crates"), "rs", &mut files)?;
     let mut violations = Vec::new();
-    let allow_env_keys = [
-        "BIJUX_DAG_CACHE_DIR",
-        "BIJUX_DAG_ADAPTERS_DIR",
-        "BIJUX_DAG_JOBS",
-        "BIJUX_DAG_CACHE_MODE",
-        "BIJUX_DAG_MATERIALIZE_INPUTS",
-        "BIJUX_DAG_POLICY_JSON",
-    ];
     for file in files {
         let rel = file
             .strip_prefix(&root)
             .map_err(|err| err.to_string())?
             .to_string_lossy()
             .replace('\\', "/");
+        let mut allow_env_keys = BTreeSet::new();
+        for rule in rules {
+            let Some(path_glob) = rule.get("path_glob").and_then(Value::as_str) else {
+                continue;
+            };
+            if !wildcard_match(path_glob, &rel) {
+                continue;
+            }
+            for key in rule
+                .get("allowed_env_keys")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+            {
+                allow_env_keys.insert(key.to_string());
+            }
+        }
         let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
         if !(content.contains("std::env::var(") || content.contains("env::var(")) {
             continue;
         }
         for line in content.lines() {
-            if !(line.contains("std::env::var(\"") || line.contains("env::var(\"")) {
-                continue;
-            }
             if rel.contains("/tests/") || rel.ends_with(".in.rs") {
                 continue;
             }
-            if allow_env_keys.iter().any(|key| line.contains(key)) {
-                continue;
+            for key in ambient_env_var_keys(line) {
+                if allow_env_keys.contains(key) {
+                    continue;
+                }
+                violations.push(format!(
+                    "{rel}: disallowed ambient env read `{}` via {key}",
+                    line.trim()
+                ));
             }
-            violations.push(format!("{rel}: disallowed ambient env read `{}`", line.trim()));
         }
     }
     if violations.is_empty() {
@@ -4466,6 +4487,46 @@ pub(super) fn run_ambient_env_guard() -> Result<(), String> {
     } else {
         Err(violations.join(", "))
     }
+}
+
+fn ambient_env_var_keys(line: &str) -> Vec<&str> {
+    let mut keys = Vec::new();
+    for needle in ["std::env::var(\"", "env::var(\""] {
+        let mut offset = 0;
+        while let Some(found) = line[offset..].find(needle) {
+            let idx = offset + found;
+            if needle == "env::var(\""
+                && idx >= 5
+                && line
+                    .get(idx - 5..idx)
+                    .is_some_and(|prefix| prefix == "std::")
+            {
+                offset = idx + needle.len();
+                continue;
+            }
+            if idx > 0
+                && line[..idx]
+                    .chars()
+                    .next_back()
+                    .is_some_and(|ch| matches!(ch, '"' | '\''))
+            {
+                offset = idx + needle.len();
+                continue;
+            }
+            let start = idx + needle.len();
+            let rest = &line[start..];
+            let Some(end) = rest.find('"') else {
+                offset = idx + needle.len();
+                continue;
+            };
+            let key = &rest[..end];
+            if key.chars().all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || ch == '_') {
+                keys.push(key);
+            }
+            offset = start + end + 1;
+        }
+    }
+    keys
 }
 
 pub(super) fn run_foundation_verification_guard() -> Result<(), String> {
