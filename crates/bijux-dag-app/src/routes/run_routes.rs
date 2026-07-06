@@ -9,6 +9,7 @@ use crate::graph_helpers::{
 use crate::routes::plan_routes::{
     concise_plan_lines, plan_explain_payload, resolve_plan_preview_layout,
 };
+use crate::routes::run_progress::CompactRunProgressMonitor;
 use crate::routes::policy_surface::{cache_surface_payload, policy_surface_payload};
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::routes::resource_capacity_args::parse_resource_capacities;
@@ -140,6 +141,19 @@ fn load_resume_summary(run_dir: &Path) -> Option<bijux_dag_runtime::ResumeSummar
     let raw = fs::read_to_string(attempts_path).ok()?;
     let attempts = serde_json::from_str::<Vec<bijux_dag_runtime::RunAttempt>>(&raw).ok()?;
     attempts.last()?.resume_summary.clone()
+}
+
+fn maybe_start_compact_progress_monitor(
+    cli: &DagCli,
+    req: &RunRouteRequest<'_>,
+    preview_layout: Option<&bijux_dag_artifacts::RunDirLayout>,
+    fallback_total_nodes: usize,
+) -> Option<CompactRunProgressMonitor> {
+    if cli.json || cli.quiet || req.preflight_only || req.progress != RunProgressArg::Compact {
+        return None;
+    }
+    let layout = preview_layout?;
+    Some(CompactRunProgressMonitor::start(&layout.staging_path, fallback_total_nodes))
 }
 
 fn emit_run_execution_error(
@@ -323,7 +337,13 @@ pub(crate) fn handle_run_command(
         println!("{}", serde_json::to_string_pretty(&payload).unwrap());
         return Ok(ExitCode::SUCCESS);
     }
-    let run_path = match runtime.run(&graph, req.out, options) {
+    let progress_monitor =
+        maybe_start_compact_progress_monitor(cli, &req, preview_layout.as_ref(), graph.nodes.len());
+    let run_result = runtime.run(&graph, req.out, options);
+    if let Some(progress_monitor) = progress_monitor {
+        progress_monitor.finish();
+    }
+    let run_path = match run_result {
         Ok(path) => path,
         Err(error) => {
             let resume_summary = preview_layout
@@ -435,7 +455,8 @@ fn effective_policy_flags(
 mod tests {
     use super::{
         build_run_runtime_options, cache_preflight, effective_policy_flags, emit_run_input_error,
-        handle_run_command, load_resume_summary, RunRouteRequest,
+        handle_run_command, load_resume_summary, maybe_start_compact_progress_monitor,
+        RunRouteRequest,
     };
     use crate::commands::{
         AbsolutePathPolicyArg, CacheModeArg, Commands, DagCli, MaterializeModeArg,
@@ -458,6 +479,68 @@ mod tests {
     #[test]
     fn cache_preflight_reports_disabled_when_cache_is_off() {
         assert_eq!(cache_preflight(CacheModeArg::Off, &None)["status"], "disabled");
+    }
+
+    #[test]
+    fn compact_progress_monitor_stays_disabled_for_quiet_json_and_preflight_modes() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let layout = super::resolve_plan_preview_layout(Some(dir.path()), Some("progress-run"))
+            .expect("layout");
+        let request = RunRouteRequest {
+            dags: &[],
+            out: dir.path(),
+            input: &Vec::new(),
+            inputs_file: None,
+            run_id: Some("progress-run".to_string()),
+            resume_run: None,
+            resume_failure_mode: ResumeFailureModeArg::RerunIncomplete,
+            latest: None,
+            jobs: 1,
+            cpu_budget: None,
+            memory_budget_mb: None,
+            gpu_device_budget: None,
+            resource_capacity: &Vec::new(),
+            node_timeout_ms: None,
+            run_timeout_ms: None,
+            run_timeout_behavior: RunTimeoutBehaviorArg::FinishRunning,
+            deny_network: false,
+            deny_env: false,
+            deny_clock: false,
+            clean_env: false,
+            hermetic: false,
+            select: &Vec::new(),
+            exclude: &Vec::new(),
+            to_node: &Vec::new(),
+            dependency_closure: false,
+            materialize_inputs: MaterializeModeArg::Copy,
+            cache: CacheModeArg::Off,
+            cache_dir: None,
+            remote_cache_dir: None,
+            absolute_path_policy: AbsolutePathPolicyArg::AllowLiteral,
+            preflight_only: false,
+            explain_scheduling: false,
+            progress: RunProgressArg::Compact,
+        };
+
+        let quiet_cli = DagCli { json: false, quiet: true, command: Commands::Version };
+        let json_cli = DagCli { json: true, quiet: false, command: Commands::Version };
+
+        assert!(
+            maybe_start_compact_progress_monitor(&quiet_cli, &request, layout.as_ref(), 3)
+                .is_none()
+        );
+        assert!(
+            maybe_start_compact_progress_monitor(&json_cli, &request, layout.as_ref(), 3).is_none()
+        );
+        assert!(
+            maybe_start_compact_progress_monitor(
+                &DagCli { json: false, quiet: false, command: Commands::Version },
+                &RunRouteRequest { preflight_only: true, ..request },
+                layout.as_ref(),
+                3,
+            )
+            .is_none()
+        );
     }
 
     #[test]
