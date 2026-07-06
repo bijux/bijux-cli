@@ -3155,8 +3155,14 @@ fn run_root_directory_guard() -> Result<(), String> {
         "CHANGELOG.md",
         "CONTRIBUTING.md",
         "LICENSE",
+        "NOTICE",
+        "SECURITY.md",
         ".gitignore",
+        "audit-allowlist.toml",
+        "mkdocs.shared.yml",
+        "mkdocs.yml",
         "rust-toolchain.toml",
+        "rustfmt.toml",
         "Makefile",
     ];
     let mut violations = Vec::new();
