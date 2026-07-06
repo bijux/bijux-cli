@@ -521,7 +521,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "const1",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -585,7 +587,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "echo",
+      "reason": null,
       "status": "success",
       "ts": 0
     },

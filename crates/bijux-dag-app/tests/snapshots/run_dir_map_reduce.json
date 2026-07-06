@@ -1153,7 +1153,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "seed",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -1263,7 +1265,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "map_left",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -1325,7 +1329,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "map_mid",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -1376,7 +1382,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "map_right",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -1442,7 +1450,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "reduce",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
