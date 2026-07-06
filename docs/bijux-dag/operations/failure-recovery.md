@@ -40,6 +40,12 @@ bijux-dag replay ./runs/failed-20260406-01 --out ./runs/replay-failed
 bijux-dag diff ./runs/good-20260405-77 ./runs/recovered-20260406-02 --mode semantic --explain
 ```
 
+`dag runs explain-failure` is the fastest way to separate the primary fault
+from the blast radius it created. The report identifies the first causal
+failure, surfaces its class/code/message/reason, lists propagated failures
+separately from propagated skips or cancellations, and groups downstream
+affected nodes by terminal status.
+
 ## Code Anchors
 
 - `crates/bijux-dag-app/src/routes/inspect_routes.rs`

@@ -34,4 +34,6 @@ verify, compare, or diagnose it.
 - `dag runs diff`: compare two run directories
 - `dag runs verify`: verify run integrity and compatibility
 - `dag runs doctor`: diagnose corrupt or incomplete run evidence
-- `dag runs explain-failure`: explain the root failure boundary
+- `dag runs explain-failure`: identify the first causal failure, surface its
+  class/code/message/reason, separate propagated failures from propagated
+  skips, and group downstream affected nodes by terminal status
