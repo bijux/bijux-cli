@@ -1103,6 +1103,11 @@
           "key": "BIJUX_PYPI_PLAN_COMMAND",
           "type": "string",
           "value": "make gh-release-plan-pypi"
+        },
+        {
+          "key": "BIJUX_PYPI_RUST_TOOLCHAIN",
+          "type": "string",
+          "value": "1.86.0"
         }
       ],
       "dependabot": {
