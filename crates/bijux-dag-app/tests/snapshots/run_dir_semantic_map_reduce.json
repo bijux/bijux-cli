@@ -457,17 +457,17 @@
       "fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -480,7 +480,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
@@ -545,17 +545,17 @@
       "fingerprint": "6fc084c557a46859ab08ee55e0b8c17e13785130ed8d0f3cf3f88add75f7b1c8",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -568,7 +568,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
@@ -632,17 +632,17 @@
       "fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -655,7 +655,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],

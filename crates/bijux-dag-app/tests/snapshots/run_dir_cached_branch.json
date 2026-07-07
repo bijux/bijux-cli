@@ -304,6 +304,28 @@
         ]
       },
       {
+        "adapter_id": "file_transform",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
+        "adapter_id": "http",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem",
+          "network"
+        ]
+      },
+      {
+        "adapter_id": "python",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
         "adapter_id": "shell",
         "adapter_version": "0.1",
         "effects": [
@@ -562,11 +584,11 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "21a66b388c6b56e06baf6c309757fdf9f24a294813d0ecc1dda733f7a90885f2",
+        "cache_key": "51b112943167ade32abe5ce17184fbc1557d4d3a3174ac189253702af6accebc",
         "command_fingerprint": "282f2003ab8f43c180bf8f76a686fde8754bd4cb250586ea6febc6afefddd002",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "961f03582067397be73de6e5d17c34994e3bb159bcd9222a6ea4f39302614755",
+        "input_lineage_fingerprint": "5080154f45eae9e027ddddc2f056d461fd5f97e759bbeb9717027ea0fab1d0b9",
         "node_definition_fingerprint": "c01805a378ece3ad94e017368d0cb4d8c810eaf775fa59398644976d39f499b4",
         "params_fingerprint": "89cdb44e0e0b7b8b0e75c3e8353d334706d0b696609ad6de75c88143faa564b2",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
@@ -576,17 +598,17 @@
       "fingerprint": "6571805ff766bb0434d7b7613c454850129b31e4647e30bce3c676a048dd1799",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -599,7 +621,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
@@ -650,11 +672,11 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "6ac99e0f072c238b2894d25e6ad234edf903544ce34fbcf929c6e0435399d392",
+        "cache_key": "5b7e7688d87f1dcd2b23e3b918a326e094c85b40c5b66275ab3a4eb113dc8e84",
         "command_fingerprint": "06acc67b6a434637b9051422e5b4fabab9f0d2d69bde64ec5a9468de2b8df9a5",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "ecfa25dec10e2bb29dc22b3b1e2a338446a3149ef191975c14f175702c6025b1",
+        "input_lineage_fingerprint": "99bb4f85e9060552f74a63a6b6d0684099795d0864d4e0bacdc1e451aab24717",
         "node_definition_fingerprint": "55f25d62c50266d43b208c8c3a06e9bb44f2977b2e9ccd1eec2f35f5846d0154",
         "params_fingerprint": "e8c4b11f95cc4f67727cf2d4d74c8b23b6e68f902db02912bff9010e6208c773",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
@@ -664,17 +686,17 @@
       "fingerprint": "23519b86d467307f1fb52cd61e8d556078aa2530baef942559abf81092970129",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -687,7 +709,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
@@ -738,11 +760,11 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "11f1434ba5c1b0c1d66f14babc0416fc77a42ff50b3e56b5e76b3ca58867e382",
+        "cache_key": "5849d26d5ba5508e41f414516e4eadf4aa630bf2d387dd76d2eaf4ad0045189d",
         "command_fingerprint": "09fef70c83d4d23f5a163e654d00a190eb87a5b7d7fb92209f3389514fade771",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "beb795211ba46b02820f84f8d9d6e42fc3539fcad613c74b3479b91d70f19b09",
+        "input_lineage_fingerprint": "21b333816b56fd25eb845c8b2b0d948cffc60fcbc34d09ce9d022a552fce0148",
         "node_definition_fingerprint": "3c48f894fd11e944d2eea2d3b1dcef6b1a59b753d6d089b0c06eeefda24db41b",
         "params_fingerprint": "2a52e20d1c6fb0093fe261cfce81ae2184b692b8d4d6f8ee18312301e348b47f",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
@@ -752,17 +774,17 @@
       "fingerprint": "75c87ef2e08293588884844c7736e87f2c383ce84e8783ae7770185c22d37b9e",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -775,7 +797,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
@@ -830,10 +852,10 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "cba0626d6bf298b5c4e92052a54b714bbe62ed2ce5da22b6d16dac427265311d",
+        "cache_key": "07f72456c6dfb3ec7cd89278796999ccaed18fa9a8fb893ad278a0b48b85e0cd",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "602e35a92eec4bc0a2ec6ae113f07bfc6933322fb69fe8dee416e5a67217e2a2",
+        "input_lineage_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
         "node_definition_fingerprint": "37e6751d656284c1d260ab7e0ef855f6de56b891b19aaed0eaab1794ed8eb473",
         "params_fingerprint": "5a1613d88fd28b394c92990176b54f994980c7a13c0d4ecc2f1bde92f7eb23aa",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
@@ -843,17 +865,17 @@
       "fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -866,7 +888,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
@@ -902,10 +924,10 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "2e64d5386606967073ff8ab60a01363e808354525cc280b7607a72ac87eb4df9",
+        "cache_key": "56751a3c908d8741819477ea801d094d9bd3462d5803ab80a6d04199f9e04035",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "602e35a92eec4bc0a2ec6ae113f07bfc6933322fb69fe8dee416e5a67217e2a2",
+        "input_lineage_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
         "node_definition_fingerprint": "02278c51af07cfcefbf01dea903f9a9833fb0aafbb2c21959a568ab19cb28e4e",
         "params_fingerprint": "59098a13ed4bfccdd642b1e07a982b0d132335b3231b67fcaeac6467e59ea015",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
@@ -915,17 +937,17 @@
       "fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -938,7 +960,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],

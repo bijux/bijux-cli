@@ -329,6 +329,28 @@
         ]
       },
       {
+        "adapter_id": "file_transform",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
+        "adapter_id": "http",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem",
+          "network"
+        ]
+      },
+      {
+        "adapter_id": "python",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
         "adapter_id": "shell",
         "adapter_version": "0.1",
         "effects": [
@@ -601,11 +623,11 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "ebb4e0e99a4be1219dd008f0ec237bfd86f49857e54f2a2cdf25ca976a0931fb",
+        "cache_key": "5741d27804086b8a1aacbaf091ea85510a9ca5a0ea955ddf0cbc97b7ce3877c7",
         "command_fingerprint": "830d3734694c67d0809919fad86a002d83a228bdac14c84be5794949bfe4e727",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "90f748de345d23789d1933770f6fc0974934a254bce902349aff12c2108e1e3e",
+        "input_lineage_fingerprint": "d46b92edf713b168c88482170a2489563e0a9b62fa53491062b4141563db64c7",
         "node_definition_fingerprint": "9c76fec4f5f66138bf4761caf02ee8bd061b8602a0425cf1621722bc1b747a1e",
         "params_fingerprint": "8378d812cf30ede401b989495ac61e5df499ac5319cecf74fe1cf318a043e1c8",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
@@ -615,17 +637,17 @@
       "fingerprint": "5a1e16ba11915a6e9b9d4de055a342a65e37a0ffd1df36415d3f407a020aa8e9",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -638,7 +660,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
@@ -689,11 +711,11 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "28fc6db7e802524bf935fc275aec8ec57865483f161aec18fc1d86cc8a950157",
+        "cache_key": "2201df136c3cc7d273bcf0ba59ed048ae2ffc21c3d7ea410d4c2cca0604bbb44",
         "command_fingerprint": "103b269b78b1c43182300807fa900360d8266957d17b948bf78f5f3e7cb9f60c",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "90f748de345d23789d1933770f6fc0974934a254bce902349aff12c2108e1e3e",
+        "input_lineage_fingerprint": "d46b92edf713b168c88482170a2489563e0a9b62fa53491062b4141563db64c7",
         "node_definition_fingerprint": "2d00483ce90ceeb2a022209724b0815ca916e38d199411d496182575e0972568",
         "params_fingerprint": "2ac005c615e82698bf50bc541965f6910bd6ea6a8922d55cf3ae7a9ed146b4e2",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
@@ -703,17 +725,17 @@
       "fingerprint": "20685590ae61b4f403e6d1e199e592f1d83fcb82aecd205832b0d2aec9a97ab5",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -726,7 +748,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
@@ -777,11 +799,11 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "d339e380bfa0f7d391f1c6fecf2b3654185ffebfa7f026b6c3085dd3fd0f8eb4",
+        "cache_key": "3d975292d1a785e1b6e8c9c7b27fe8770220765acd3cd1aaeeade006be29a3bd",
         "command_fingerprint": "ef12bc45a057b47bf06e8d56b990459d527a2edf9addbd9df8918820b234b990",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "90f748de345d23789d1933770f6fc0974934a254bce902349aff12c2108e1e3e",
+        "input_lineage_fingerprint": "d46b92edf713b168c88482170a2489563e0a9b62fa53491062b4141563db64c7",
         "node_definition_fingerprint": "8ad0209c636c35813bc241be9aa0f8a007c477431a7c74613a176a98d05ea184",
         "params_fingerprint": "ec41a9274eb4931b4f499eedc72b0a35131e6fd5efaf07f1dbdba6ceb6bd99f3",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
@@ -791,17 +813,17 @@
       "fingerprint": "786ebca4aff27b24d99331e17da0da7eaab96d79317cb834f6ae81d4399c4ec8",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -814,7 +836,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
@@ -865,11 +887,11 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "f7a3fbe34b580cc9aa0d17d80aebc3cecffb7fb9b706b41ccb9989bd15a57e38",
+        "cache_key": "b2f79d1b60e1a48389d1c04b2f41bccd914984444c9aeab3ba7e5496776da049",
         "command_fingerprint": "843fde852ef3bf111ebb9966cb5fb837303672adf4e0596b24ea42edec84a7c9",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "272f355b5c709ddd2211e3cfa3e29240ff48b2002a82ed6e19dcf7324730f229",
+        "input_lineage_fingerprint": "4e87641eec5672fcf97acdca487e5d2274b8df6afa1aec72da556cfc3292858e",
         "node_definition_fingerprint": "8dc3116486736342a6c5555b729521c4ea00eb50436e96020c958dfe125e99f9",
         "params_fingerprint": "7b44db8e2c1a8afc2ce3dcec091d5fa0d736a4b2233fc2cdb1863c41fc1f5c11",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
@@ -879,17 +901,17 @@
       "fingerprint": "8bb0b123c969ff978b66cad5ca80bd301afcb86505091aca841d53e51c7dbd17",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -902,7 +924,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
@@ -961,10 +983,10 @@
       "attempt": 1,
       "cache_identity": {
         "backend_class": "local",
-        "cache_key": "ad524d251a07b2b2b802441ffd693a052b73253694fa508cfb23fd62b3c1bf44",
+        "cache_key": "6b8d14f3ebf475de927fbb957c5552bbde2fd60ff463c7472707fcdf0da0c9d3",
         "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
-        "input_lineage_fingerprint": "602e35a92eec4bc0a2ec6ae113f07bfc6933322fb69fe8dee416e5a67217e2a2",
+        "input_lineage_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
         "node_definition_fingerprint": "a7aa0f80a0a32de813bec5f64433bc6567623848ce7d322d23ac2c5d666d1769",
         "params_fingerprint": "1ef7a7f832aa621bd3593c3548e6d9bdc35e72c736930ced4e8e337b7b091012",
         "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
@@ -974,17 +996,17 @@
       "fingerprint": "1659ade2266e23851ec402a41ec2dd93e12f59a9c76335286d6a752e6ea285ae",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
-      "lifecycle_state": "success",
+      "lifecycle_state": "succeeded",
       "lifecycle_transitions": [
         {
           "cause": "scheduler_eligible",
           "from_state": "pending",
-          "to_state": "eligible",
+          "to_state": "ready",
           "unix_ms": 0
         },
         {
           "cause": "scheduler_queued",
-          "from_state": "eligible",
+          "from_state": "ready",
           "to_state": "queued",
           "unix_ms": 0
         },
@@ -997,7 +1019,7 @@
         {
           "cause": "execution_succeeded",
           "from_state": "running",
-          "to_state": "success",
+          "to_state": "succeeded",
           "unix_ms": 0
         }
       ],
