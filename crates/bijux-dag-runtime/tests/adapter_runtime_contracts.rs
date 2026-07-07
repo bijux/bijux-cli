@@ -616,6 +616,42 @@ fn shell_adapter_failure_records_exit_code() {
 }
 
 #[test]
+fn shell_adapter_limits_trace_tail_for_large_logs() {
+    let graph = parse_graph_strict(&shell_graph(
+        "printf 'ready' > ../outputs/value.txt; i=1; while [ $i -le 2500 ]; do printf 'stdout-%04d\\n' $i; printf 'stderr-%04d\\n' $i >&2; i=$((i + 1)); done",
+        &["filesystem"],
+    ))
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("run");
+
+    let stdout =
+        fs::read_to_string(run_dir.join("nodes").join("shell").join("stdout.log")).expect("stdout");
+    let stderr =
+        fs::read_to_string(run_dir.join("nodes").join("shell").join("stderr.log")).expect("stderr");
+    let attempt_stdout = fs::read_to_string(
+        run_dir.join("nodes").join("shell").join("attempts").join("1").join("stdout.log"),
+    )
+    .expect("attempt stdout");
+    let attempt_stderr = fs::read_to_string(
+        run_dir.join("nodes").join("shell").join("attempts").join("1").join("stderr.log"),
+    )
+    .expect("attempt stderr");
+
+    assert_eq!(attempt_stdout, stdout);
+    assert_eq!(attempt_stderr, stderr);
+
+    let trace = read_trace(&run_dir);
+    assert_eq!(trace["stdout"]["size_bytes"].as_u64(), Some(stdout.len() as u64));
+    assert_eq!(trace["stderr"]["size_bytes"].as_u64(), Some(stderr.len() as u64));
+    assert_eq!(trace["stdout"]["tail_lines"][0], "stdout-2481");
+    assert_eq!(trace["stdout"]["tail_lines"][19], "stdout-2500");
+    assert_eq!(trace["stderr"]["tail_lines"][0], "stderr-2481");
+    assert_eq!(trace["stderr"]["tail_lines"][19], "stderr-2500");
+}
+
+#[test]
 fn shell_adapter_env_policy_denial_is_structured() {
     let graph = parse_graph_strict(&shell_graph("env", &["filesystem", "env"])).expect("graph");
     let runtime = Runtime::new();
