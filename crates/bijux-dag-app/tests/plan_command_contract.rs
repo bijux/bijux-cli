@@ -452,6 +452,119 @@ fn schedule_submit_supports_json_output() {
 }
 
 #[test]
+fn schedule_submit_supports_dependency_trigger_conditions() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-dependency-registry.json");
+    let inputs = dir.path().join("schedule-dependency-inputs.json");
+    let out = dir.path().join("schedule-ledger-updated.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "dependency-on-success",
+              "dag_name": "atlas.publish-success",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Dependency": {
+                  "dag_name": "atlas.ingest",
+                  "on_status": "success"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            },
+            {
+              "id": "dependency-on-failure",
+              "dag_name": "atlas.publish-failure",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Dependency": {
+                  "dag_name": "atlas.ingest",
+                  "on_status": "failure"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            },
+            {
+              "id": "dependency-on-terminal",
+              "dag_name": "atlas.publish-terminal",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Dependency": {
+                  "dag_name": "atlas.ingest",
+                  "on_status": "any_terminal"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            }
+          ]
+        }"#,
+    )
+    .expect("write registry");
+    fs::write(
+        &inputs,
+        r#"{
+          "now_unix_ms": 220000,
+          "dependencies": [
+            {
+              "upstream_run_id": "atlas-run-success",
+              "dag_name": "atlas.ingest",
+              "status": "SUCCEEDED",
+              "finished_unix_ms": 210000
+            },
+            {
+              "upstream_run_id": "atlas-run-failure",
+              "dag_name": "atlas.ingest",
+              "status": "timed out",
+              "finished_unix_ms": 211000
+            }
+          ]
+        }"#,
+    )
+    .expect("write inputs");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "schedule",
+            "submit",
+            registry.to_string_lossy().as_ref(),
+            inputs.to_string_lossy().as_ref(),
+            "--out",
+            out.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = run_with_internal_lane(&matches);
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
 fn schedule_queue_status_supports_json_output() {
     let dir = tempfile::tempdir().expect("tmp");
     let registry = dir.path().join("schedule-registry.json");
