@@ -573,6 +573,14 @@ fn shell_adapter_writes_declared_output_and_captures_streams() {
         fs::read_to_string(run_dir.join("nodes").join("shell").join("stderr.log")).expect("stderr"),
         "warn"
     );
+    let trace = read_trace(&run_dir);
+    assert_eq!(trace["exit_code"], 0);
+    assert_eq!(trace["stdout"]["path"], "nodes/shell/stdout.log");
+    assert_eq!(trace["stdout"]["size_bytes"], 2);
+    assert_eq!(trace["stdout"]["tail_lines"], serde_json::json!(["ok"]));
+    assert_eq!(trace["stderr"]["path"], "nodes/shell/stderr.log");
+    assert_eq!(trace["stderr"]["size_bytes"], 4);
+    assert_eq!(trace["stderr"]["tail_lines"], serde_json::json!(["warn"]));
 }
 
 #[test]
@@ -600,9 +608,11 @@ fn shell_adapter_failure_records_exit_code() {
     let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("run");
     let trace = read_trace(&run_dir);
     assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["exit_code"], 7);
     assert_eq!(trace["failure"]["code"], "EXEC_FAIL");
     assert_eq!(trace["failure"]["class"], "execution");
     assert_eq!(trace["failure"]["details"]["exit_code"], 7);
+    assert_eq!(trace["stderr"]["tail_lines"], serde_json::json!(["boom"]));
 }
 
 #[test]
@@ -1793,8 +1803,11 @@ exit 1
     assert!(stderr.starts_with("partial-stderr"));
     let trace = read_node_trace(&run_dir, "container");
     assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["exit_code"], 143);
     assert_eq!(trace["failure"]["code"], "EXEC_TIMEOUT");
     assert_eq!(trace["failure"]["class"], "timeout");
+    assert_eq!(trace["stdout"]["tail_lines"], serde_json::json!(["partial-stdout"]));
+    assert_eq!(trace["stderr"]["path"], "nodes/container/stderr.log");
     assert_eq!(trace["container"]["image"], "example.local/runner@sha256:feedface");
     assert_eq!(trace["container"]["image_digest"], "sha256:feedface");
     assert_eq!(trace["container"]["engine_version"], "docker fake 1.0");
