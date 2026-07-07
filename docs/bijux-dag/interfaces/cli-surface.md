@@ -111,6 +111,9 @@ surfaces cover registry validation, submission evaluation, explicit schedule
 pause and resume control, queue state inspection, priority-aware queue
 dispatch, queue ledger updates, and durable backfill control.
 
+For one repository-backed proof of that lane, use
+[Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md).
+
 These routes still exist for explicit maintainer workflows and contract tests.
 They can be inventoried with `bijux-dag commands --all`, but execution now
 requires `BIJUX_DAG_ENABLE_SIMULATED=1` for modeled platform namespaces and

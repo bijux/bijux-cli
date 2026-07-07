@@ -65,6 +65,7 @@ status, use [Package Boundary](../bijux-core/foundation/package-boundary.md).
 <a class="md-button" href="operations/guides/container-packaging-workflow.md">Run the container workflow</a>
 <a class="md-button" href="operations/guides/data-pipeline-workflow.md">Run the data pipeline workflow</a>
 <a class="md-button" href="operations/guides/file-processing-workflow.md">Run the file processing workflow</a>
+<a class="md-button" href="operations/guides/scheduled-catalog-refresh-workflow.md">Run the scheduled workflow</a>
 <a class="md-button" href="interfaces/operator-workflows.md">Open operator workflows</a>
 <a class="md-button" href="packages/index.md">Open the package map</a>
 </div>
@@ -95,6 +96,10 @@ flowchart LR
 - open [Compliance-Gated Bulletin Workflow](operations/guides/compliance-gated-bulletin-workflow.md)
   when you need proof that retry evidence, failure attribution, focused replay,
   and strict post-repair verification all work on one real run sequence
+- open [Scheduled Catalog Refresh Workflow](operations/guides/scheduled-catalog-refresh-workflow.md)
+  when you need proof that the current internal schedule lane computes one cron
+  slot, emits one durable submission, and carries that run id into retained
+  DAG evidence without claiming a public scheduler service
 - open [Operator Workflows](interfaces/operator-workflows.md) when the question
   is how to validate, run, replay, inspect, or compare
 - open [CLI Surface](interfaces/cli-surface.md) when the question is command

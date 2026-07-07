@@ -36,6 +36,7 @@ flowchart TD
 - failure-recovery workflow for retry evidence, focused replay repair, and strict verification
 - file-processing workflow for cache, lineage, rerun, and promotion proof
 - data-pipeline workflow for cache reuse, changed-input attribution, and retained-run comparison
+- internal schedule workflow for cron preview, deterministic submission, queue dispatch, and explicit run linkage
 
 ## Canonical Command Path
 
@@ -95,6 +96,11 @@ root approval failure from propagated fallout, and repairs the failed tail with
 `replay --from-node`, use
 [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md).
 
+For one repository-backed schedule workflow that stays explicit about the
+internal boundary while still proving cron preview, same-slot suppression,
+queue dispatch, and ledger-to-run identity continuity, use
+[Scheduled Catalog Refresh Workflow](guides/scheduled-catalog-refresh-workflow.md).
+
 ## Reading Rule
 
 Use this page when the DAG commands are already familiar but the correct
@@ -107,5 +113,6 @@ operator sequence is still unclear.
 - [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
+- [Scheduled Catalog Refresh Workflow](guides/scheduled-catalog-refresh-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Review Checklist](../quality/review-checklist.md)

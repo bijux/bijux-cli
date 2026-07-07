@@ -44,6 +44,7 @@ effects begin.
 - open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) when you want the repository example that binds a graph-owned label into a real container command surface
 - open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) when you want the repository example that binds a graph-owned enum input into a real branch decision surface
 - open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) when you want the repository example that binds graph-owned path inputs into retry and recovery behavior at a real replay boundary
+- open [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md) when you want the repository example that binds a schedule-owned timestamp into a typed graph input contract and retained publication output
 
 ## Code Anchors
 

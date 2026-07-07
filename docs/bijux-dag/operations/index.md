@@ -48,6 +48,7 @@ flowchart LR
 - [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
 - [File Processing Workflow](guides/file-processing-workflow.md)
 - [First Hour With Bijux Dag](guides/first-hour-with-bijux-dag.md)
+- [Scheduled Catalog Refresh Workflow](guides/scheduled-catalog-refresh-workflow.md)
 - [Trust Boundaries](reference/trust-boundaries.md)
 - [Performance and Scaling](performance-and-scaling.md)
 - [Release and Versioning](release-and-versioning.md)

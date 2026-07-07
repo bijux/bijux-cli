@@ -430,6 +430,11 @@ bijux-dag schedule submit ./ops/schedule-registry.json \
   --out ./artifacts/schedule-ledger.json
 ```
 
+For a repository-backed workflow that keeps the internal boundary explicit
+while proving cron preview, same-slot suppression, queue dispatch, and
+ledger-to-run identity continuity, use
+[Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md).
+
 The schedule-input binding contract is:
 
 - trigger-derived values are normalized against the declared graph input types
@@ -711,6 +716,7 @@ sequence turns a run into something you can defend with evidence.
 - [Common Workflows](../operations/common-workflows.md)
 - [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
 - [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)
+- [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md)
 - [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
 - [Failure Recovery](../operations/failure-recovery.md)
 - [Review Checklist](../quality/review-checklist.md)
