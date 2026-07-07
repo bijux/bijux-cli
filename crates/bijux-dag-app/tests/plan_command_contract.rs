@@ -449,6 +449,92 @@ fn schedule_submit_supports_json_output() {
 
     let code = run_with_internal_lane(&matches);
     assert_eq!(code, std::process::ExitCode::SUCCESS);
+
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&out).expect("read ledger"))
+            .expect("parse ledger");
+    let entries = written["entries"].as_array().expect("ledger entries");
+    assert_eq!(entries[0]["event_lineage"], serde_json::Value::Null);
+}
+
+#[test]
+fn schedule_submit_persists_event_lineage_for_event_triggers() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-event-registry.json");
+    let inputs = dir.path().join("schedule-event-inputs.json");
+    let out = dir.path().join("schedule-event-ledger.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "event-ingest",
+              "dag_name": "atlas.event-ingest",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Event": {
+                  "event_type": "dataset.ready",
+                  "source": "catalog"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            }
+          ]
+        }"#,
+    )
+    .expect("write registry");
+    fs::write(
+        &inputs,
+        r#"{
+          "now_unix_ms": 200000,
+          "events": [
+            {
+              "event_id": "evt-001",
+              "event_type": "dataset.ready",
+              "source": "catalog",
+              "occurred_unix_ms": 176000,
+              "payload": {
+                "tenant": "atlas",
+                "batch": 7
+              }
+            }
+          ]
+        }"#,
+    )
+    .expect("write inputs");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "schedule",
+            "submit",
+            registry.to_string_lossy().as_ref(),
+            inputs.to_string_lossy().as_ref(),
+            "--out",
+            out.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = run_with_internal_lane(&matches);
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&out).expect("read ledger"))
+            .expect("parse ledger");
+    let entry = &written["entries"].as_array().expect("ledger entries")[0];
+    assert_eq!(entry["event_lineage"]["event_id"], "evt-001");
+    assert_eq!(entry["event_lineage"]["event_type"], "dataset.ready");
+    assert_eq!(entry["event_lineage"]["source"], "catalog");
+    assert_eq!(entry["event_lineage"]["occurred_unix_ms"], 176000u64);
 }
 
 #[test]
