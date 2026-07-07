@@ -47,6 +47,10 @@ route is a public promise.
   work: `validate`, `plan`, `run`, `replay`, `runs`, `artifact`,
   `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`,
   `version`, `commands`, and `completions`.
+- local container-backed DAG nodes are part of that stable operator surface
+  when a supported engine such as Docker is available on `PATH`; the runtime
+  records engine and image identity and fails clearly when the engine is
+  unavailable.
 - Experimental DAG routes remain callable by explicit path, but they are not
   part of the stable compatibility lane.
 - Simulated and maintainer-only DAG namespaces require
@@ -201,9 +205,37 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- run \
   --input "report_title=Regional Revenue Attainment"
 ```
 
+Run a real container-backed packaging workflow against the repository release
+note example:
+
+```bash
+SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/release-note-source/weekly-update.md"
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
+  evidence/dag/authoring/examples/release-note-bundle.dag.json
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- run --json \
+  evidence/dag/authoring/examples/release-note-bundle.dag.json \
+  --out artifacts/release-note-bundle-runs \
+  --run-id release-note-bundle \
+  --input "source_note=${SOURCE_NOTE}" \
+  --input "bundle_label=Release Brief"
+```
+
+Inspect the retained container trace and outputs:
+
+```bash
+cat artifacts/release-note-bundle-runs/run-release-note-bundle/nodes/package_bundle/trace.json
+cat artifacts/release-note-bundle-runs/run-release-note-bundle/nodes/package_bundle/outputs/bundle/release-note.txt
+```
+
 For the warm-cache run, changed-input comparison, and retained-run attribution
 path, use
 [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md).
+
+For the container prerequisites, retained output layout, and missing-engine
+failure behavior, use
+[`docs/bijux-dag/operations/guides/container-packaging-workflow.md`](docs/bijux-dag/operations/guides/container-packaging-workflow.md).
 
 ## Documentation
 
@@ -213,6 +245,12 @@ path, use
 | [CLI handbook](https://bijux.io/bijux-core/bijux-cli/) | the `bijux` runtime, app and plugin routing, config behavior, diagnostics, and Python packaging |
 | [DAG handbook](https://bijux.io/bijux-core/bijux-dag/) | DAG validation, planning, execution, replay, artifacts, compatibility, and operator workflows |
 | [Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/) | repository gates, release verification, docs operations, governance, and evidence collection |
+
+Representative DAG workflow guides:
+
+- [`docs/bijux-dag/operations/guides/file-processing-workflow.md`](docs/bijux-dag/operations/guides/file-processing-workflow.md) for a host-shell artifact workflow
+- [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md) for changed-input attribution and retained-run comparison
+- [`docs/bijux-dag/operations/guides/container-packaging-workflow.md`](docs/bijux-dag/operations/guides/container-packaging-workflow.md) for mounted container inputs, retained outputs, and recorded image identity
 
 If you are reading code and need the owning package before the owning command,
 start with:
