@@ -111,6 +111,25 @@ The canonical publication boundary lives in
 [`docs/bijux-core/foundation/package-boundary.md`](docs/bijux-core/foundation/package-boundary.md)
 and `contracts/foundation/workspace_package_boundary.v1.json`.
 
+## Public Rust Import Lanes
+
+The public DAG crates publish an intentional Rust docs surface.
+
+- browse `bijux_dag_core::stable` for the long-lived graph authoring,
+  validation, and planning lane
+- browse `bijux_dag_artifacts::stable` for the long-lived artifact identity,
+  persistence, and integrity lane
+- browse `bijux_dag_runtime::stable` for the long-lived execution, replay, and
+  scheduling lane
+- browse `bijux_dag_app::stable` for the long-lived command-orchestration and
+  response-shaping lane
+- use each crate's `prelude` module for common workflows
+- use focused crate-root imports only when you already know the exact item you
+  need
+- broad compatibility re-exports remain callable for Rust consumers, but they
+  stay hidden from the primary docs.rs lane so the published API surface reads
+  like a product boundary instead of an internal module dump
+
 ## Repository Layout
 
 - [`crates/bijux-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli): Rust runtime crate behind the `bijux` executable.
