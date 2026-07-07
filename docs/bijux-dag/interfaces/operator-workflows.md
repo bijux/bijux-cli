@@ -82,6 +82,30 @@ The history rows now report:
 Use the JSON form when another tool needs stable fields, and use the default
 human form when an operator needs a compact recent-run status list.
 
+## Interpret Failure Fallout
+
+When a run fails, inspect the fallout before deciding whether downstream nodes
+were correctly blocked, intentionally skipped, or actually broken on their own.
+
+```bash
+bijux-dag runs explain-failure run-20260406-01 --root ./runs
+bijux-dag explain ./runs/run-20260406-01 --node publish
+```
+
+The runtime exposes three stable failure propagation behaviors:
+
+- `fail_fast`: stop new dispatch after the first failure and treat the
+  undispatched remainder as aborted fallout
+- `continue_independent`: allow downstream nodes to run when their trigger
+  rules still evaluate true from completed upstream states
+- `isolate_branch`: keep unrelated subgraphs running but mark descendants of
+  the failed node as skipped with `reason = "isolated_branch_failure"`
+
+Use the failure summary first to find the causal node, then use node-level
+explain output to confirm whether a downstream skip came from branch isolation,
+trigger-rule blocking, or another boundary such as selector or policy
+exclusion.
+
 ## Compare Two Retained Runs
 
 When two completed runs need a quick evidence-backed comparison before a deeper

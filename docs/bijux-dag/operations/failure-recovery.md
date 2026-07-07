@@ -47,12 +47,37 @@ failure, surfaces its class/code/message/reason, lists propagated failures
 separately from propagated skips or cancellations, and groups downstream
 affected nodes by terminal status.
 
+When the run uses branch isolation, descendants skipped because of an upstream
+failure are reported with `reason = "isolated_branch_failure"` instead of being
+collapsed into a generic dependency failure. The same classification is written
+to `failure-propagation.json` together with the blocking ancestor set and the
+active propagation mode.
+
 Use `bijux-dag explain <run_dir> --node <node_id>` when the recovery question
 is why one node never ran. The node explanation classifies dependency
 blocking, trigger-rule blocking, branch skips, selector exclusions, resource
 blocking, cache reuse, and policy denial from persisted run evidence. That
 path remains useful even when the blocked node never produced
 `nodes/<node_id>/trace.json`.
+
+## Propagation Modes During Recovery
+
+Operators should interpret downstream fallout through the configured failure
+propagation mode before deciding whether the workflow design or the failing
+node is at fault.
+
+- `fail_fast` stops new dispatch after the first failure, so remaining work is
+  expected to end as aborted fallout rather than evidence of independent faults
+- `continue_independent` lets joins and other downstream nodes keep running
+  when their trigger rules still evaluate true from terminal upstream states
+- `isolate_branch` keeps unrelated subgraphs running but skips every
+  descendant of the failed node, even when a permissive trigger rule such as
+  `all_done` could otherwise release a downstream join
+
+Replay preserves the recorded propagation decision. If a descendant was skipped
+because of branch isolation in the parent run, the replayed evidence should
+show the same skip classification unless the operator intentionally changed the
+graph or policy.
 
 ## Code Anchors
 
