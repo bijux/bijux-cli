@@ -49,6 +49,10 @@ struct IgnoredTestCase {
     name: String,
 }
 
+fn is_allowed_ignore_reason(reason: &str) -> bool {
+    matches!(reason, "slow" | "experimental" | "internal")
+}
+
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -170,9 +174,9 @@ fn ignored_dag_portfolios_stay_outside_required_release_lane() {
             "ignored portfolio {} must remain outside the required release lane",
             portfolio.path
         );
-        assert_eq!(
-            portfolio.ignore_reason, "slow",
-            "ignored portfolio {} must keep an explicit slow quarantine reason",
+        assert!(
+            is_allowed_ignore_reason(&portfolio.ignore_reason),
+            "ignored portfolio {} must keep an explicit governed quarantine reason",
             portfolio.path
         );
         assert!(

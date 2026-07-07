@@ -52,8 +52,7 @@ fn output_path_string(path: &Path) -> String {
 }
 
 #[test]
-#[ignore = "slow"]
-fn e2e_minimal_parse_validate_run_inspect_replay() {
+fn e2e_minimal_validate_run_and_replay() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
     let out_dir = temp.path().join("runs");
@@ -66,15 +65,31 @@ fn e2e_minimal_parse_validate_run_inspect_replay() {
     let _ = run_json(&["validate", "--json", &graph_s], &root);
     let run = run_json(&["run", "--json", &graph_s, "--out", &out_s], &root);
     let run_dir = extract_run_dir(&run);
+    let _ =
+        run_json(&["replay", "--json", &output_path_string(&run_dir), "--out", &out_s], &root);
+}
+
+#[test]
+#[ignore = "experimental"]
+fn e2e_status_and_node_inspection_for_minimal_run() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("create runs");
+
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+    let graph_s = output_path_string(&graph);
+    let out_s = output_path_string(&out_dir);
+
+    let run = run_json(&["run", "--json", &graph_s, "--out", &out_s], &root);
+    let run_dir = extract_run_dir(&run);
     let run_dir_s = output_path_string(&run_dir);
 
     let _ = run_json(&["status", "--json", &run_dir_s], &root);
     let _ = run_json(&["node", "--json", &run_dir_s, "--id", "echo"], &root);
-    let _ = run_json(&["replay", "--json", &run_dir_s, "--out", &out_s], &root);
 }
 
 #[test]
-#[ignore = "slow"]
 fn e2e_diamond_outputs_and_manifest_totals() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -104,7 +119,6 @@ fn e2e_diamond_outputs_and_manifest_totals() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn e2e_failure_downstream_behavior() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -121,7 +135,6 @@ fn e2e_failure_downstream_behavior() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn e2e_retry_accounting_present() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -150,7 +163,6 @@ fn e2e_retry_accounting_present() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn e2e_timeout_error_classification() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -174,7 +186,6 @@ fn e2e_timeout_error_classification() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn e2e_missing_outputs_failure_handling() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -196,7 +207,6 @@ fn e2e_missing_outputs_failure_handling() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn e2e_cache_hit_second_run_and_invalidation() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -277,8 +287,7 @@ fn e2e_cache_hit_second_run_and_invalidation() {
 }
 
 #[test]
-#[ignore = "slow"]
-fn e2e_replay_semantic_comparison_and_import_export() {
+fn e2e_replay_diff_semantic_comparison() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
     let graph_path = root.join("evidence/authoring/examples/hello.dag.json");
@@ -320,7 +329,28 @@ fn e2e_replay_semantic_comparison_and_import_export() {
         &root,
     );
     assert!(diff["data"]["replay_equivalence"].is_object());
+}
 
+#[test]
+#[ignore = "experimental"]
+fn e2e_import_export_round_trip_for_run_bundle() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let graph_path = root.join("evidence/authoring/examples/hello.dag.json");
+    let out_dir = temp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("create runs");
+
+    let run = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph_path),
+            "--out",
+            &output_path_string(&out_dir),
+        ],
+        &root,
+    );
+    let run_dir = extract_run_dir(&run);
     let export_path = temp.path().join("bundle-with-files.json");
     let _ = run_json(
         &[
@@ -350,7 +380,6 @@ fn e2e_replay_semantic_comparison_and_import_export() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn e2e_selection_policy_compat_validation_and_no_partial_run_dir() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
@@ -397,7 +426,6 @@ fn e2e_selection_policy_compat_validation_and_no_partial_run_dir() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn e2e_container_and_real_world_orchestration() {
     let root = repo_root();
     let docker_available = Command::new("docker")

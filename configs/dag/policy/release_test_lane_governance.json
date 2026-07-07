@@ -49,25 +49,29 @@
       ]
     },
     {
-      "portfolio_id": "dag-app-e2e-workflows",
+      "portfolio_id": "dag-app-e2e-explicit-inspection",
       "crate": "bijux-dag-app",
       "path": "crates/bijux-dag-app/tests/e2e_integration_scenarios.rs",
       "execution_lane": "full",
-      "ignore_reason": "slow",
+      "ignore_reason": "experimental",
       "outside_required_release_lane": true,
-      "rationale": "The slow end-to-end workflow scenarios remain part of full verification because they exercise critical multi-command operator paths that exceed the required release-lane budget.",
+      "rationale": "The remaining ignored end-to-end inspection checks exercise explicit-path experimental routes that stay outside the stable operator compatibility lane.",
       "full_lane_command": "cargo nextest run -p bijux-dag-app --test e2e_integration_scenarios --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
       "tests": [
-        "e2e_minimal_parse_validate_run_inspect_replay",
-        "e2e_diamond_outputs_and_manifest_totals",
-        "e2e_failure_downstream_behavior",
-        "e2e_retry_accounting_present",
-        "e2e_timeout_error_classification",
-        "e2e_missing_outputs_failure_handling",
-        "e2e_cache_hit_second_run_and_invalidation",
-        "e2e_replay_semantic_comparison_and_import_export",
-        "e2e_selection_policy_compat_validation_and_no_partial_run_dir",
-        "e2e_container_and_real_world_orchestration"
+        "e2e_status_and_node_inspection_for_minimal_run"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-e2e-bundle-round-trip",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/e2e_integration_scenarios.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Run-bundle export and import remain repository-tested experimental routes, so their end-to-end coverage stays in the governed full lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test e2e_integration_scenarios --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "e2e_import_export_round_trip_for_run_bundle"
       ]
     },
     {

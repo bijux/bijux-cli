@@ -99,6 +99,10 @@ fn governed_ignored_tests(governance: ReleaseTestLaneGovernance) -> BTreeSet<Ign
         .collect()
 }
 
+fn is_allowed_ignore_reason(reason: &str) -> bool {
+    matches!(reason, "slow" | "experimental" | "internal")
+}
+
 #[test]
 fn workspace_ignored_tests_match_governed_dag_portfolios() {
     let root = repo_root();
@@ -115,7 +119,7 @@ fn workspace_ignored_tests_match_governed_dag_portfolios() {
 fn governed_dag_ignored_tests_remain_slow_only() {
     let governed = governed_ignored_tests(read_governance());
     assert!(
-        governed.iter().all(|test| test.reason == "slow"),
-        "ignored Rust tests must keep the explicit slow quarantine reason: {governed:#?}"
+        governed.iter().all(|test| is_allowed_ignore_reason(&test.reason)),
+        "ignored Rust tests must keep an explicit governed quarantine reason: {governed:#?}"
     );
 }
