@@ -15,6 +15,7 @@ fn tutorial_examples_parse_as_stable_contracts() {
     let examples = [
         "../../evidence/authoring/examples/hello.dag.json",
         "../../evidence/authoring/examples/etl-constant-to-shell.dag.json",
+        "../../evidence/authoring/examples/audience-branch-bulletin.dag.json",
         "../../evidence/authoring/examples/cached-branched-report.dag.json",
         "../../evidence/authoring/examples/file-processing-report.dag.json",
         "../../evidence/authoring/examples/release-note-bundle.dag.json",
@@ -175,4 +176,53 @@ fn release_note_bundle_example_uses_path_input_and_pinned_container_image() {
     )));
     assert!(contract.outputs.iter().any(|output| output.media_type == "text/plain" && output.promotable));
     assert!(contract.outputs.iter().any(|output| output.media_type == "application/json"));
+}
+
+#[test]
+fn audience_branch_bulletin_example_declares_typed_branch_inputs_and_join_contract() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../evidence/authoring/examples/audience-branch-bulletin.dag.json");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+    let graph = parse_graph_strict(&text)
+        .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
+
+    let source_note = &graph.input_schema()["source_note"];
+    assert_eq!(source_note["type"], "path");
+    assert_eq!(source_note["required"], true);
+
+    let audience_mode = &graph.input_schema()["audience_mode"];
+    assert_eq!(audience_mode["type"], "enum");
+    assert_eq!(audience_mode["default"], "executive");
+    assert_eq!(
+        audience_mode["values"].as_array().expect("enum values"),
+        &vec![serde_json::json!("executive"), serde_json::json!("technical")]
+    );
+
+    let choose_node = graph
+        .nodes
+        .iter()
+        .find(|node| node.id == "choose_audience_lane")
+        .expect("choose_audience_lane node");
+    assert_eq!(choose_node.semantic_kind, bijux_dag_core::SemanticNodeKind::Branch);
+    let branch = choose_node.branch.as_ref().expect("branch contract");
+    assert_eq!(branch.decision_output, "decision");
+    assert_eq!(branch.decisions, vec!["executive".to_string(), "technical".to_string()]);
+
+    let choose_contract =
+        node_io_contract(&graph, "choose_audience_lane").expect("choose_audience_lane contract");
+    assert!(choose_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "audience_mode"
+    )));
+
+    let publish_node =
+        graph.nodes.iter().find(|node| node.id == "publish_bulletin").expect("publish_bulletin node");
+    assert_eq!(publish_node.trigger_rule, bijux_dag_core::TriggerRule::NoneFailed);
+
+    let publish_contract =
+        node_io_contract(&graph, "publish_bulletin").expect("publish_bulletin contract");
+    assert_eq!(publish_contract.outputs.len(), 2);
+    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "text/markdown" && output.promotable));
+    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "application/json"));
 }
