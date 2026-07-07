@@ -715,10 +715,7 @@ fn record_isolated_branch_descendants(
     isolated_branch_failures: &mut BTreeMap<String, BTreeSet<String>>,
 ) {
     for descendant in downstream_nodes(graph, failed_node_id) {
-        isolated_branch_failures
-            .entry(descendant)
-            .or_default()
-            .insert(failed_node_id.to_string());
+        isolated_branch_failures.entry(descendant).or_default().insert(failed_node_id.to_string());
     }
 }
 
@@ -1829,7 +1826,11 @@ pub fn execute(
                 continue;
             }
             if branch_pruned_nodes.contains(node_id) {
-                skipped.push((node_id.clone(), "branch_decision_not_selected".to_string(), Vec::new()));
+                skipped.push((
+                    node_id.clone(),
+                    "branch_decision_not_selected".to_string(),
+                    Vec::new(),
+                ));
                 continue;
             }
             if let Some(reason) = plan.filter_reasons.get(node_id) {
@@ -2238,18 +2239,16 @@ pub fn execute(
                         evaluation
                             .parent_statuses
                             .iter()
-                            .filter(|parent| !matches!(parent.status.as_str(), "success" | "cached"))
+                            .filter(|parent| {
+                                !matches!(parent.status.as_str(), "success" | "cached")
+                            })
                             .map(|parent| parent.node_id.clone())
                             .collect::<Vec<_>>()
                     })
                     .unwrap_or_default(),
             ));
             if matches!(options.failure_propagation, crate::FailurePropagationMode::IsolateBranch) {
-                record_isolated_branch_descendants(
-                    graph,
-                    node_id,
-                    &mut isolated_branch_failures,
-                );
+                record_isolated_branch_descendants(graph, node_id, &mut isolated_branch_failures);
             }
             crate::append_event(
                 &mut run_log,
