@@ -143,6 +143,45 @@ pub(crate) fn handle_replay_command(
     validate_downstream_selection_surface(from_node, select, exclude, dependency_closure)?;
     let (downstream_selection_roots, downstream_selected_nodes) =
         resolve_downstream_run_selection(&snapshot.graph, from_node)?;
+    let boundary_verification = if downstream_selection_roots.is_empty() {
+        None
+    } else {
+        let source_run_id = source_run_id.as_deref().ok_or(ExitCode::from(3))?;
+        let report = crate::replay_service::verify_replay_boundary_inputs(
+            &run_dir,
+            source_run_id,
+            &downstream_selection_roots,
+        )?;
+        if !report.verified {
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.replay",
+                    false,
+                    json!({
+                        "message": "upstream artifact verification failed for the requested replay boundary",
+                        "upstream_artifact_verification": report,
+                    }),
+                    Vec::new(),
+                    ExitCode::from(3),
+                );
+            }
+            eprintln!("upstream artifact verification failed for the requested replay boundary");
+            for error in &report.errors {
+                eprintln!("error: {error}");
+            }
+            for check in &report.checks {
+                for note in &check.notes {
+                    eprintln!(
+                        "input {} <- {}:{}: {}",
+                        check.boundary_node_id, check.source_node_id, check.source_output_name, note
+                    );
+                }
+            }
+            return Err(ExitCode::from(3));
+        }
+        Some(report)
+    };
     let selectors = if downstream_selection_roots.is_empty() {
         parse_selectors(select, exclude)?
     } else {
@@ -191,6 +230,9 @@ pub(crate) fn handle_replay_command(
             run_dir: None,
             dry_run_plan: Some(plan.clone()),
             replay_proof: None,
+            upstream_artifact_verification: boundary_verification.map(|report| {
+                serde_json::to_value(report).expect("boundary verification should serialize")
+            }),
             cache_surface: Some(cache_surface_payload(&options)),
             policy_surface: Some(policy_surface_payload(&snapshot.graph, &options, hermetic)?),
             sandbox_scope: Some(replay_sandbox_scope_payload(sandbox)),
@@ -246,6 +288,9 @@ pub(crate) fn handle_replay_command(
         run_dir: Some(run_path.clone()),
         dry_run_plan: None,
         replay_proof,
+        upstream_artifact_verification: boundary_verification.map(|report| {
+            serde_json::to_value(report).expect("boundary verification should serialize")
+        }),
         cache_surface: Some(cache_surface_payload(&options)),
         policy_surface: Some(policy_surface_payload(&snapshot.graph, &options, hermetic)?),
         sandbox_scope: Some(replay_sandbox_scope_payload(sandbox)),

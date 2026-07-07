@@ -214,3 +214,62 @@ fn replay_accepts_source_run_id_with_explicit_run_root() {
     assert_eq!(replay["ok"], true);
     assert_eq!(replay["data"]["dry_run_plan"]["source_run_id"], "source-by-id");
 }
+
+#[test]
+fn replay_rejects_corrupt_upstream_artifact_at_rerun_boundary() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = root.join("crates/bijux-dag-core/tests/snapshots/selective_replay.dag.json");
+
+    let source = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "boundary-source",
+        ],
+        &root,
+    );
+    let source_run = run_dir_from_response(&source);
+    fs::write(source_run.join("nodes/source/outputs/source/out"), "corrupt")
+        .expect("corrupt source");
+
+    let (code, stdout, stderr) = run_dag(
+        &[
+            "replay",
+            "--json",
+            "--source-run-id",
+            "boundary-source",
+            "--source-run-root",
+            &output_path_string(&out_dir),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "boundary-replay",
+            "--from-node",
+            "branch_a",
+        ],
+        &root,
+    );
+    assert_eq!(code, 3, "stdout={stdout} stderr={stderr}");
+    let payload: Value = serde_json::from_str(&stdout).expect("parse replay rejection");
+    assert_eq!(payload["ok"], false);
+    assert_eq!(
+        payload["data"]["message"],
+        "upstream artifact verification failed for the requested replay boundary"
+    );
+    assert_eq!(
+        payload["data"]["upstream_artifact_verification"]["verified"],
+        false
+    );
+    assert!(
+        payload["data"]["upstream_artifact_verification"]["checks"]
+            .as_array()
+            .is_some_and(|checks| checks.iter().any(|check| check["verified"] == false))
+    );
+}

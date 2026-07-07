@@ -1,8 +1,8 @@
 use crate::commands::DiffModeArg;
 use crate::diff::{build_run_diff, RunDiff};
 use bijux_dag_artifacts::lineage::ArtifactLineageSnapshot;
-use bijux_dag_artifacts::OutputsIndex;
-use serde::Deserialize;
+use bijux_dag_artifacts::{sha256_artifact_path, InputsIndex, OutputsIndex};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
@@ -53,6 +53,170 @@ pub(crate) fn load_run_material(run_dir: &Path) -> Result<RunMaterial, ExitCode>
         run_outputs,
         provenance,
         lineage,
+    })
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ReplayBoundaryArtifactCheck {
+    pub boundary_node_id: String,
+    pub source_node_id: String,
+    pub source_output_name: String,
+    pub source_node_fingerprint: String,
+    pub recorded_sha256: String,
+    pub source_output_path: String,
+    pub materialized_input_path: String,
+    pub verified: bool,
+    pub notes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ReplayBoundaryVerificationReport {
+    pub source_run_id: String,
+    pub boundary_nodes: Vec<String>,
+    pub boundary_nodes_without_upstream_artifacts: Vec<String>,
+    pub verified: bool,
+    pub errors: Vec<String>,
+    pub checks: Vec<ReplayBoundaryArtifactCheck>,
+}
+
+pub(crate) fn verify_replay_boundary_inputs(
+    run_dir: &Path,
+    source_run_id: &str,
+    boundary_nodes: &[String],
+) -> Result<ReplayBoundaryVerificationReport, ExitCode> {
+    let material = load_run_material(run_dir)?;
+    let mut boundary_nodes = boundary_nodes.to_vec();
+    boundary_nodes.sort();
+    boundary_nodes.dedup();
+
+    let mut boundary_nodes_without_upstream_artifacts = Vec::new();
+    let mut errors = Vec::new();
+    let mut checks = Vec::new();
+
+    for boundary_node_id in &boundary_nodes {
+        let inputs_index_path = run_dir.join("nodes").join(boundary_node_id).join("inputs").join("index.json");
+        if !inputs_index_path.exists() {
+            errors.push(format!(
+                "boundary node {} is missing inputs/index.json in source run {}",
+                boundary_node_id, source_run_id
+            ));
+            continue;
+        }
+        let inputs_index: InputsIndex = read_typed_json(&inputs_index_path)?;
+        if inputs_index.files.is_empty() {
+            boundary_nodes_without_upstream_artifacts.push(boundary_node_id.clone());
+        }
+        for input in inputs_index.files {
+            let mut notes = Vec::new();
+            let source_trace = material.node_traces.get(&input.source_node_id);
+            let source_status = source_trace
+                .and_then(|trace| trace.get("status"))
+                .and_then(Value::as_str);
+            if !matches!(source_status, Some("success" | "cached")) {
+                notes.push(format!(
+                    "source node {} is not terminally reusable in source run {}",
+                    input.source_node_id, source_run_id
+                ));
+            }
+            let trace_fingerprint = source_trace
+                .and_then(|trace| trace.get("fingerprint"))
+                .and_then(Value::as_str);
+            if trace_fingerprint != Some(input.source_node_fingerprint.as_str()) {
+                notes.push(format!(
+                    "source node fingerprint drift detected for {}",
+                    input.source_node_id
+                ));
+            }
+
+            let mut source_output_path = run_dir
+                .join("nodes")
+                .join(&input.source_node_id)
+                .join("outputs")
+                .join(&input.source_output_name);
+            let materialized_input_path = run_dir
+                .join("nodes")
+                .join(boundary_node_id)
+                .join("inputs")
+                .join(&input.local_path);
+
+            match material.node_outputs.get(&input.source_node_id) {
+                Some(index) => {
+                    let source_output = index.files.iter().find(|file| file.name == input.source_output_name);
+                    match source_output {
+                        Some(file) => {
+                            if file.node_fingerprint != input.source_node_fingerprint {
+                                notes.push(format!(
+                                    "output index fingerprint drift detected for {}:{}",
+                                    input.source_node_id, input.source_output_name
+                                ));
+                            }
+                            if file.sha256 != input.source_sha256 {
+                                notes.push(format!(
+                                    "recorded source artifact hash drift detected for {}:{}",
+                                    input.source_node_id, input.source_output_name
+                                ));
+                            }
+                            let persisted_source_path =
+                                run_dir.join("nodes").join(&input.source_node_id).join("outputs").join(&file.path);
+                            source_output_path = persisted_source_path.clone();
+                            match sha256_artifact_path(&persisted_source_path) {
+                                Ok(actual_sha256) if actual_sha256 != file.sha256 => notes.push(format!(
+                                    "persisted source artifact hash mismatch for {}:{}",
+                                    input.source_node_id, input.source_output_name
+                                )),
+                                Ok(_) => {}
+                                Err(_) => notes.push(format!(
+                                    "persisted source artifact is unreadable for {}:{}",
+                                    input.source_node_id, input.source_output_name
+                                )),
+                            }
+                        }
+                        None => notes.push(format!(
+                            "source output {} is missing from node outputs index for {}",
+                            input.source_output_name, input.source_node_id
+                        )),
+                    }
+                }
+                None => notes.push(format!(
+                    "source node outputs index is missing for {}",
+                    input.source_node_id
+                )),
+            }
+
+            match sha256_artifact_path(&materialized_input_path) {
+                Ok(actual_sha256) if actual_sha256 != input.source_sha256 => notes.push(format!(
+                    "materialized input hash mismatch for {} <- {}:{}",
+                    boundary_node_id, input.source_node_id, input.source_output_name
+                )),
+                Ok(_) => {}
+                Err(_) => notes.push(format!(
+                    "materialized input is unreadable for {} <- {}:{}",
+                    boundary_node_id, input.source_node_id, input.source_output_name
+                )),
+            }
+
+            checks.push(ReplayBoundaryArtifactCheck {
+                boundary_node_id: boundary_node_id.clone(),
+                source_node_id: input.source_node_id,
+                source_output_name: input.source_output_name,
+                source_node_fingerprint: input.source_node_fingerprint,
+                recorded_sha256: input.source_sha256,
+                source_output_path: source_output_path.display().to_string(),
+                materialized_input_path: materialized_input_path.display().to_string(),
+                verified: notes.is_empty(),
+                notes,
+            });
+        }
+    }
+
+    let verified = errors.is_empty() && checks.iter().all(|check| check.verified);
+    Ok(ReplayBoundaryVerificationReport {
+        source_run_id: source_run_id.to_string(),
+        boundary_nodes,
+        boundary_nodes_without_upstream_artifacts,
+        verified,
+        errors,
+        checks,
     })
 }
 
