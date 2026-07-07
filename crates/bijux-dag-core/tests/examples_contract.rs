@@ -17,6 +17,7 @@ fn tutorial_examples_parse_as_stable_contracts() {
         "../../evidence/authoring/examples/etl-constant-to-shell.dag.json",
         "../../evidence/authoring/examples/cached-branched-report.dag.json",
         "../../evidence/authoring/examples/file-processing-report.dag.json",
+        "../../evidence/authoring/examples/release-note-bundle.dag.json",
         "../../evidence/authoring/examples/regional-sales-pipeline.dag.json",
         "../../evidence/authoring/examples/multi-output-artifact.dag.json",
         "../../evidence/authoring/examples/replay-heavy-branching.dag.json",
@@ -139,4 +140,34 @@ fn regional_sales_pipeline_example_uses_path_inputs_and_promotable_final_table()
         &binding.source,
         ParamBindingSource::GraphInput { input_name } if input_name == "report_title"
     )));
+}
+
+#[test]
+fn release_note_bundle_example_uses_path_input_and_pinned_container_image() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../evidence/authoring/examples/release-note-bundle.dag.json");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+    let graph = parse_graph_strict(&text)
+        .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
+
+    let source_note = &graph.input_schema()["source_note"];
+    assert_eq!(source_note["type"], "path");
+    assert_eq!(source_note["required"], true);
+
+    let bundle_label = &graph.input_schema()["bundle_label"];
+    assert_eq!(bundle_label["type"], "string");
+    assert_eq!(bundle_label["default"], "Weekly Release Note");
+
+    let package_node =
+        graph.nodes.iter().find(|node| node.id == "package_bundle").expect("package_bundle node");
+    let container = package_node.container.as_ref().expect("container spec");
+    assert_eq!(container.engine, "docker");
+    assert!(container.image.contains("@sha256:"));
+    assert_eq!(container.workdir.as_deref(), Some("{work_dir}/scratch"));
+
+    let contract = node_io_contract(&graph, "package_bundle").expect("package_bundle contract");
+    assert_eq!(contract.outputs.len(), 2);
+    assert!(contract.outputs.iter().any(|output| output.media_type == "text/plain" && output.promotable));
+    assert!(contract.outputs.iter().any(|output| output.media_type == "application/json"));
 }
