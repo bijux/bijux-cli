@@ -24,14 +24,13 @@ last_reviewed: 2026-07-04
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-dag docs](https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli) [![bijux-dag docs.rs](https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` is the shared runtime backbone of the Bijux repository family. It
-brings together the `bijux` command runtime, the DAG execution system, and the
-repository machinery that keeps both products governed, testable, and
-releasable from one source tree.
+`bijux-core` is the shared source tree for the `bijux` command runtime, the
+`bijux-dag` graph execution system, and the repository-owned support surfaces
+that keep both products releasable from one audited workspace.
 
-Start here when you need fast orientation: which handbook owns the current
-question, which package family carries the implementation, and which
-repository-level surfaces sit above the product handbooks.
+Start here when you need orientation before reading code: which handbook owns
+the question, which package family holds the implementation, and which
+repository-level rules sit above the product handbooks.
 
 <div class="bijux-callout"><strong>Start with the surface you care about.</strong>
 Repository docs explain workspace rules and release boundaries. CLI docs own
@@ -66,7 +65,7 @@ flowchart LR
 ## Start Here
 
 - open [Repository Handbook](bijux-core/index.md) when the issue spans CLI,
-  DAG, and maintainer ownership or touches release policy
+  DAG, and maintainer ownership or touches repository policy
 - open [CLI Handbook](bijux-cli/index.md) for the `bijux` command product and
   its Python bridge
 - open [DAG Handbook](bijux-dag/index.md) for graph truth, runtime policy,
@@ -82,6 +81,14 @@ flowchart LR
 | [CLI Handbook](bijux-cli/index.md) | [`bijux-cli`](bijux-cli/packages/bijux-cli.md), [`bijux-cli-python`](bijux-cli/packages/bijux-cli-python.md) | the issue is command behavior, runtime routing, REPL semantics, or Python distribution |
 | [DAG Handbook](bijux-dag/index.md) | [`bijux-dag-core`](bijux-dag/packages/bijux-dag-core.md), [`bijux-dag-runtime`](bijux-dag/packages/bijux-dag-runtime.md), [`bijux-dag-app`](bijux-dag/packages/bijux-dag-app.md), [`bijux-dag-cli`](bijux-dag/packages/bijux-dag-cli.md), [`bijux-dag-artifacts`](bijux-dag/packages/bijux-dag-artifacts.md), [`bijux-dag-testkit`](bijux-dag/packages/bijux-dag-testkit.md) | the issue is graph, execution, replay, artifacts, or DAG command behavior |
 | [Maintainer Handbook](bijux-dev/index.md) | [`bijux-dev`](bijux-dev/packages/bijux-dev.md) | the issue is repository diagnostics, release proof, or control-plane automation |
+
+## What Ships Today
+
+| Surface | Public delivery | Summary |
+| --- | --- | --- |
+| `bijux` | Rust crate, PyPI distribution, release bundles | command runtime for config, history, memory, plugins, mounted apps, REPL, and diagnostics |
+| `bijux-dag` | Rust crates and release bundles | deterministic DAG validation, execution, replay, artifact inspection, and evidence-backed comparison |
+| `bijux-dev` | repository-internal only | maintainer diagnostics, contracts, evidence, and release workflows |
 
 ## Reading Rule
 
