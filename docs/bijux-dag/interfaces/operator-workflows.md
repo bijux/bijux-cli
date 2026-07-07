@@ -28,10 +28,10 @@ flowchart LR
 ## Baseline Workflow
 
 1. validate graph definition and canonical form
-2. execute run and collect run id
-3. explain run and inspect artifact evidence
-4. replay for reproducibility classification
-5. diff against baseline for scoped drift attribution
+2. preview or execute the run and collect the run id
+3. explain the run and inspect artifact evidence
+4. replay when reproducibility or targeted rerun matters
+5. compare or diff against a baseline for attribution
 
 ## Example Sequence
 
@@ -43,6 +43,10 @@ bijux-dag runs inspect run-20260406-01 --root ./runs
 bijux-dag replay ./runs/run-20260406-01 --out ./runs/replay
 bijux-dag diff ./runs/run-20260405-77 ./runs/run-20260406-01 --mode semantic --explain
 ```
+
+If you need the same run-directory layout and scheduling estimate before any
+work starts, use `plan explain` or `run --preflight-only --explain-scheduling`
+before step 2.
 
 After `bijux-dag run`, the command now prints a compact post-run summary in
 human mode and exposes the same structure under `data.summary` in JSON mode.
@@ -270,6 +274,10 @@ The downstream rerun contract is:
   second compare command
 - `--from-node` is exclusive with `--select`, `--exclude`, and
   `--dependency-closure`
+
+When the source run is easier to identify by id than by path, prefer
+`--source-run-id` with `--source-run-root` over manually reconstructing the run
+directory path.
 
 ## Compare Two Graph Versions Before Running
 

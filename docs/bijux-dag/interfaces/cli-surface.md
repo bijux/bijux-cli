@@ -14,7 +14,7 @@ by crate layout.
 
 The useful split is not the full command count. It is whether the operator is
 defining work, running it, inspecting evidence, comparing outcomes, or managing
-the environment around it.
+the local execution environment around it.
 
 For `v0.4.0`, the public CLI contract is the visible root help surface from
 `bijux-dag --help`. That surface is intentionally smaller than the full routed
@@ -59,33 +59,43 @@ compares fingerprints, graph inputs, selected nodes, node statuses, output
 hashes, and the first meaningful divergence without claiming a deeper
 directory-wide diff than the retained evidence supports.
 
+If you want the concrete operator path through those groups, read
+[Operator Workflows](./operator-workflows.md).
+
 ## Hidden Experimental Routes
 
 The following operator-oriented routes stay callable by explicit path, but they
 are hidden from the default root help and default command catalog because they
 either widen the contract too far or still need stricter release posture:
 
-- authoring helpers and raw graph internals: `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `canonical-bytes`, `canonical-diff`, `show-effective-graph`
-- advanced inspection and comparison helpers: `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`
-  `node` is the explicit-path deep inspection route for one persisted node and
-  surfaces planned fields, artifact indexes, attempts, log tails, cache state,
-  failure evidence, and evidence gaps
-  `show-effective-graph` is the explicit graph-structure inspection route and
-  surfaces nodes, edges, roots, leaves, branch paths, joins, resources, output
-  contracts, and selected versus omitted nodes either from graph input or a
-  persisted run snapshot
-- bundle, migration, and environment control helpers: `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary`
+- authoring helpers and raw graph internals:
+  `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`,
+  `canonical-bytes`, `canonical-diff`, `show-effective-graph`
+- advanced inspection and comparison helpers:
+  `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`
+- bundle, migration, and environment control helpers:
+  `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`,
+  `prove`, `proof-summary`
+
+`node` is the explicit-path deep inspection route for one persisted node and
+surfaces planned fields, artifact indexes, attempts, log tails, cache state,
+failure evidence, and evidence gaps.
+
+`show-effective-graph` is the explicit graph-structure inspection route and
+surfaces nodes, edges, roots, leaves, branch paths, joins, resources, output
+contracts, and selected versus omitted nodes either from graph input or a
+persisted run snapshot.
 
 ## Full Command Families
 
 - definition: `init`, `validate`, `canonicalize`, `lint`, `graph-lint`, `fingerprint`
 - execution and replay: `run`, `replay`, `prove`, `proof-summary`, `verify`, `fsck`
 - inspect and history: `status`, `explain`, `node`, `runs ...`, `artifact-inspect`, `show-effective-graph`
+- comparison: `diff`, `why-rerun`, `why-cache-missed`, `trace-artifact`
+- operations: `cache ...`, `adapters ...`, `export`, `import`, `config ...`, `policy ...`
 
 For the explicit node-evidence route, see
 [`node-inspection.md`](./node-inspection.md).
-- comparison: `diff`, `why-rerun`, `why-cache-missed`, `trace-artifact`
-- operations: `cache ...`, `adapters ...`, `export`, `import`, `config ...`, `policy ...`
 
 ## Hidden Simulation And Maintainer Namespaces
 
@@ -241,4 +251,4 @@ before you inspect one concrete route or crate.
 
 - [Operator Workflows](operator-workflows.md)
 - [Entrypoints and Examples](entrypoints-and-examples.md)
-- [Compatibility Commitments](compatibility-commitments.md)
+- [Release Boundary](../foundation/release-boundary.md)
