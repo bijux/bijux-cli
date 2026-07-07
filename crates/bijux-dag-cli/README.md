@@ -35,6 +35,11 @@ image identity in the retained trace. When the engine is missing, the run
 fails as an infrastructure error rather than silently degrading to another
 execution mode.
 
+Branch-backed workflows are also part of the stable local execution surface.
+When a DAG uses a branch node, retained runs record the selected decision, the
+skipped lane, and the join-node trigger evaluation so operators can inspect the
+execution path directly from run evidence.
+
 ## What This Crate Owns
 
 - the `bijux-dag` binary entrypoint
@@ -57,6 +62,9 @@ crate is usually `bijux-dag-app`.
   demonstrates a host-shell artifact workflow with replay and promotion.
 - [Data Pipeline Workflow](../../docs/bijux-dag/operations/guides/data-pipeline-workflow.md)
   demonstrates retained-run comparison and changed-input attribution.
+- [Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md)
+  demonstrates retained branch decisions, skipped lanes, join-trigger evidence,
+  and replay stability.
 - [Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md)
   demonstrates mounted container inputs, retained outputs, and recorded image
   identity.

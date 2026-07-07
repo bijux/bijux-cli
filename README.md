@@ -47,6 +47,9 @@ route is a public promise.
   work: `validate`, `plan`, `run`, `replay`, `runs`, `artifact`,
   `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`,
   `version`, `commands`, and `completions`.
+- branch-backed DAG workflows are part of that stable local operator surface;
+  retained runs record the selected branch decision, the skipped lane, and the
+  join-node trigger outcome.
 - local container-backed DAG nodes are part of that stable operator surface
   when a supported engine such as Docker is available on `PATH`; the runtime
   records engine and image identity and fails clearly when the engine is
@@ -229,6 +232,30 @@ cat artifacts/release-note-bundle-runs/run-release-note-bundle/nodes/package_bun
 cat artifacts/release-note-bundle-runs/run-release-note-bundle/nodes/package_bundle/outputs/bundle/release-note.txt
 ```
 
+Run a real branch-backed publishing workflow against the repository audience
+bulletin example:
+
+```bash
+SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/audience-branch-source/team-update.md"
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
+  evidence/dag/authoring/examples/audience-branch-bulletin.dag.json
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- run --json \
+  evidence/dag/authoring/examples/audience-branch-bulletin.dag.json \
+  --out artifacts/audience-branch-runs \
+  --run-id audience-branch-technical \
+  --input "source_note=${SOURCE_NOTE}" \
+  --input "audience_mode=technical"
+```
+
+Inspect the retained branch and join evidence:
+
+```bash
+cat artifacts/audience-branch-runs/run-audience-branch-technical/nodes/choose_audience_lane/trace.json
+cat artifacts/audience-branch-runs/run-audience-branch-technical/nodes/publish_bulletin/outputs/publish/selection.json
+```
+
 For the warm-cache run, changed-input comparison, and retained-run attribution
 path, use
 [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md).
@@ -236,6 +263,10 @@ path, use
 For the container prerequisites, retained output layout, and missing-engine
 failure behavior, use
 [`docs/bijux-dag/operations/guides/container-packaging-workflow.md`](docs/bijux-dag/operations/guides/container-packaging-workflow.md).
+
+For retained branch decisions, skipped-lane evidence, join-trigger behavior,
+and replay stability, use
+[`docs/bijux-dag/operations/guides/branching-bulletin-workflow.md`](docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).
 
 ## Documentation
 
@@ -250,6 +281,7 @@ Representative DAG workflow guides:
 
 - [`docs/bijux-dag/operations/guides/file-processing-workflow.md`](docs/bijux-dag/operations/guides/file-processing-workflow.md) for a host-shell artifact workflow
 - [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md) for changed-input attribution and retained-run comparison
+- [`docs/bijux-dag/operations/guides/branching-bulletin-workflow.md`](docs/bijux-dag/operations/guides/branching-bulletin-workflow.md) for retained branch decisions, skipped lanes, and replay stability
 - [`docs/bijux-dag/operations/guides/container-packaging-workflow.md`](docs/bijux-dag/operations/guides/container-packaging-workflow.md) for mounted container inputs, retained outputs, and recorded image identity
 
 If you are reading code and need the owning package before the owning command,
