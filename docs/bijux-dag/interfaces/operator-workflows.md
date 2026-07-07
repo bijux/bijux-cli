@@ -106,6 +106,21 @@ explain output to confirm whether a downstream skip came from branch isolation,
 trigger-rule blocking, or another boundary such as selector or policy
 exclusion.
 
+## Inspect Retry Decisions
+
+When the question is "why did this node retry?" or "why did it stop retrying?",
+read the attempt evidence before changing the graph or the runtime policy.
+
+- `nodes/<node_id>/attempts.json` records the retry decision reason per attempt
+- `run.log.jsonl` and `observability.timeline.json` record `node_retry_scheduled`
+  and `node_retry_exhausted` with the same durable retry reason
+- `bijux-dag runtime retry --dag <graph> --node-id <node> --attempt <n> --failure-class <class>`
+  reports the configured retry decision surface, and `--exit-code <code>` lets
+  operators ask about exit-code-specific retry rules explicitly
+
+Use this surface when a timeout, a policy denial, or one exit code should be
+treated differently from the broad failure class that contained it.
+
 ## Compare Two Retained Runs
 
 When two completed runs need a quick evidence-backed comparison before a deeper

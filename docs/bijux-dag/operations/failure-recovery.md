@@ -60,6 +60,12 @@ blocking, cache reuse, and policy denial from persisted run evidence. That
 path remains useful even when the blocked node never produced
 `nodes/<node_id>/trace.json`.
 
+When a node did retry or the runtime vetoed a retry, inspect
+`nodes/<node_id>/attempts.json` and the retry events in `run.log.jsonl`. Each
+attempt now records a durable retry decision reason, so operators can separate
+budget exhaustion, timeout-policy vetoes, exit-code matches, class matches, and
+non-retriable policy failures without reconstructing the control path by hand.
+
 ## Propagation Modes During Recovery
 
 Operators should interpret downstream fallout through the configured failure
@@ -78,6 +84,20 @@ Replay preserves the recorded propagation decision. If a descendant was skipped
 because of branch isolation in the parent run, the replayed evidence should
 show the same skip classification unless the operator intentionally changed the
 graph or policy.
+
+## Retry Classification During Recovery
+
+Retry evidence should be read with the same precedence the runtime used during
+execution.
+
+- policy-denied nodes do not retry, even when a node declares policy failures
+  as retryable
+- timeout failures follow `timeout_retry_policy`, so `never` is a durable veto
+  and `always` can schedule a retry even when timeout is absent from the class
+  allowlist
+- execution failures can become retryable through explicit
+  `retryable_exit_codes` when a broad failure-class allowlist would be too
+  coarse
 
 ## Code Anchors
 
