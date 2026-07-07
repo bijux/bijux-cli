@@ -24,6 +24,7 @@ mod file_catalog;
 mod model;
 mod ops;
 mod perf_evidence;
+mod release_validation_suite;
 mod reporting;
 mod shared_io;
 mod suite_dispatch;
@@ -78,6 +79,7 @@ use perf_evidence::{
     run_perf_evidence_policy_verify, run_perf_evidence_summary, run_perf_release_set,
     run_performance_evidence_guard, run_performance_evidence_report,
 };
+use release_validation_suite::run_release_suite_explain;
 use reporting::run_command_reported;
 use shared_io::{read_json_value, write_pretty_json};
 use suite_dispatch::{run_suite_explain, run_suite_group, run_suite_list};
@@ -303,7 +305,7 @@ fn run(cli: Cli) -> Result<(), String> {
             ),
             ReleaseCommand::List => run_suite_list(&context, "release", RELEASE_SUITES),
             ReleaseCommand::Explain { suite } => {
-                run_suite_explain(&context, "release", &suite, RELEASE_SUITES)
+                run_release_suite_explain(&context, &suite, RELEASE_SUITES)
             }
         },
         CommandLine::Repo { command } => match command {
