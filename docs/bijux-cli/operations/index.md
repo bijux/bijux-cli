@@ -47,10 +47,10 @@ flowchart LR
 - [Observability and Diagnostics](observability-and-diagnostics.md)
 - [Performance and Scaling](performance-and-scaling.md)
 - [Failure Recovery](failure-recovery.md)
-- [Migration Guide](migration-guide.md)
+- [Migration Guide](reference/migration-guide.md)
 - [Release and Versioning](release-and-versioning.md)
 - [Security and Safety](security-and-safety.md)
-- [Deployment Boundaries](deployment-boundaries.md)
+- [Deployment Boundaries](reference/deployment-boundaries.md)
 
 ## Reading Rule
 

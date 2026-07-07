@@ -95,7 +95,7 @@ persisted run snapshot.
 - operations: `cache ...`, `adapters ...`, `export`, `import`, `config ...`, `policy ...`
 
 For the explicit node-evidence route, see
-[`node-inspection.md`](./node-inspection.md).
+[`node-inspection.md`](./reference/node-inspection.md).
 
 ## Hidden Simulation And Maintainer Namespaces
 

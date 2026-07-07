@@ -14,8 +14,8 @@ integration path through the root `bijux` runtime.
 
 ## Example Assets
 
-- `evidence/authoring/examples/app-integration/mock-official-app.mount.json`
-- `evidence/authoring/examples/app-integration/mock-plugin.manifest.json`
+- `evidence/dag/authoring/examples/app-integration/mock-official-app.mount.json`
+- `evidence/dag/authoring/examples/app-integration/mock-plugin.manifest.json`
 
 ## Root CLI Flow
 

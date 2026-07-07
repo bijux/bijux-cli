@@ -34,6 +34,42 @@ sequenceDiagram
 - release-tree stamping and release-note generation
 - coordination between CI health and publish decisions
 
+## Release Notes Minimum Template
+
+Every release summary should stay evidence-backed and operator-readable.
+
+```md
+# Release <version>
+
+## Summary
+
+- explain what changed in one or two concrete bullets
+
+## Public Behavior Changes
+
+- name operator-visible command, API, schema, or artifact changes
+- link the handbook, contract, or migration page for each change
+
+## Compatibility Notes
+
+- state whether the release is fully compatible, conditionally compatible, or intentionally breaking
+- name the affected surface and required operator response
+
+## Migration Steps
+
+- list the exact commands, config changes, or rollout actions operators must perform
+- say explicitly when no migration is required
+
+## Known Limitations
+
+- link limitations that still apply after the release
+- explain whether the release changes the workaround or target audience
+
+## Evidence
+
+- list the release reports, validation artifacts, or benchmark evidence behind the notes
+```
+
 ## Release Rule
 
 Never document a release path without naming the workflow file or make target
@@ -43,5 +79,4 @@ that actually carries it.
 
 - [Automation Surfaces](automation-surfaces.md)
 - [Artifact Governance](artifact-governance.md)
-- [Release Notes Template](release-notes-template.md)
 - [Core Release and Versioning](../governance/release-and-versioning.md)

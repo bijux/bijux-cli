@@ -18,7 +18,7 @@ visible artifacts.
 1. Build the CLI with `cargo build -p bijux-dag-cli --release`.
 2. Check the binary with `cargo run -p bijux-dag-cli --bin bijux-dag -- version`.
 3. Inspect the stable support surface with `cargo run -p bijux-dag-cli --bin bijux-dag -- commands`.
-4. Validate `evidence/authoring/examples/minimal_consumer.dag.json`.
+4. Validate `evidence/dag/authoring/examples/minimal_consumer.dag.json`.
 5. Run the same fixture into a local `artifacts/` output root.
 6. Inspect the resulting run with `bijux-dag explain` and `bijux-dag verify`.
 
@@ -29,9 +29,9 @@ cargo build -p bijux-dag-cli --release
 cargo run -p bijux-dag-cli --bin bijux-dag -- version
 cargo run -p bijux-dag-cli --bin bijux-dag -- commands
 cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
-  evidence/authoring/examples/minimal_consumer.dag.json
+  evidence/dag/authoring/examples/minimal_consumer.dag.json
 cargo run -p bijux-dag-cli --bin bijux-dag -- run \
-  evidence/authoring/examples/minimal_consumer.dag.json \
+  evidence/dag/authoring/examples/minimal_consumer.dag.json \
   --out artifacts/runs
 ```
 
@@ -63,5 +63,5 @@ operator contract and require `BIJUX_DAG_ENABLE_INTERNAL=1`.
 
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Installation And Setup](installation-and-setup.md)
-- [Trust Boundaries](trust-boundaries.md)
-- [Support Matrix](../interfaces/support-matrix.md)
+- [Trust Boundaries](../reference/trust-boundaries.md)
+- [Support Matrix](../../interfaces/reference/support-matrix.md)

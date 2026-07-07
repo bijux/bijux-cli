@@ -4,7 +4,7 @@ audience: mixed
 type: foundation
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-07
 ---
 
 # Domain Language
@@ -44,6 +44,6 @@ iteration.
 
 ## Next Reads
 
-- [Documentation System](documentation-system.md)
+- [Package Map](package-map.md)
 - [Change Principles](change-principles.md)
 - [Repository Scope](repository-scope.md)

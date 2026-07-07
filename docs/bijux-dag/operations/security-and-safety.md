@@ -74,5 +74,6 @@ The release posture for these execution-boundary risks is tracked directly in
 ## Next Reads
 
 - [Deployment Boundaries](deployment-boundaries.md)
+- [Trust Boundaries](reference/trust-boundaries.md)
 - [Risk Register](../quality/risk-register.md)
 - [Artifact Contracts](../interfaces/artifact-contracts.md)

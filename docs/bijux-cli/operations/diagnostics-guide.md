@@ -29,7 +29,7 @@ Current bundle contents:
 
 - `doctor.json`
 - `docs.json`
-- `generated-config-reference.md`
+- `config/generated-reference.md`
 
 ## When To Use It
 

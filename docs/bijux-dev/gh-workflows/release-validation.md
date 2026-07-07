@@ -43,5 +43,5 @@ suite from a clean tree prepared from committed `HEAD`.
 ## Next Reads
 
 - [ci](ci.md)
-- [Release Validation Suite](../operations/release-validation-suite.md)
+- [Release Operations](../operations/release-operations.md#release-validation-suite)
 - [CI Targets](../makes/ci-targets.md)

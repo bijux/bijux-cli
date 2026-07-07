@@ -41,6 +41,9 @@ flowchart LR
 ## Boundary and Governance Pages
 
 - [Deployment Boundaries](deployment-boundaries.md)
+- [CI Integration](guides/ci-integration.md)
+- [First Hour With Bijux Dag](guides/first-hour-with-bijux-dag.md)
+- [Trust Boundaries](reference/trust-boundaries.md)
 - [Performance and Scaling](performance-and-scaling.md)
 - [Release and Versioning](release-and-versioning.md)
 - [Security and Safety](security-and-safety.md)

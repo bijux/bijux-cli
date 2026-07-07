@@ -39,5 +39,5 @@ Use `--include-secrets` only when the caller explicitly needs raw values.
 ## Generated Reference
 
 The checked-in reference lives at
-[`generated-config-reference.md`](generated-config-reference.md) and is derived
+[`generated-reference.md`](generated-reference.md) and is derived
 from the same schema registry the runtime exposes.

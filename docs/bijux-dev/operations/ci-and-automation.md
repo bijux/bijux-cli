@@ -64,5 +64,5 @@ the mismatch is narrowed to one workflow or gate family.
 - [makes](../makes/ci-targets.md)
 - [Repository Gates](repository-gates.md)
 - [Release Operations](release-operations.md)
-- [Release Validation Suite](release-validation-suite.md)
+- [Release Operations](release-operations.md#release-validation-suite)
 - [Change Control](../governance/change-control.md)

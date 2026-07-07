@@ -4,15 +4,14 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-07
 ---
 
 # Core Foundation
 
-The foundation section explains why `bijux-core` exists in this shape before it
-explains how the workspace is operated. Start here when you need the split,
-the vocabulary, and the ownership model to make sense before you read deeper
-architecture or operations pages.
+The foundation section explains what `bijux-core` publishes, what stays
+private, how the repository is laid out, and which terms stay durable across
+all four handbooks.
 
 ```mermaid
 flowchart LR
@@ -22,7 +21,7 @@ flowchart LR
     foundation --> rules["which repository rules should not drift"]
 ```
 
-## Pages In This Section
+## What This Section Covers
 
 - [Platform Overview](platform-overview.md)
 - [Repository Scope](repository-scope.md)
@@ -31,11 +30,11 @@ flowchart LR
 - [Package Boundary](package-boundary.md)
 - [Ownership Model](ownership-model.md)
 - [Domain Language](domain-language.md)
-- [Documentation System](documentation-system.md)
 - [Change Principles](change-principles.md)
 - [Decision Rules](decision-rules.md)
 
 ## Reading Rule
 
-Use Foundation first when the question is still about shape and ownership. Move
-to Architecture or Operations once the repository split is already clear.
+Use Foundation first when the question is still about scope, package
+publication, layout, and ownership. Move to Architecture or Operations once
+the repository split is already clear.

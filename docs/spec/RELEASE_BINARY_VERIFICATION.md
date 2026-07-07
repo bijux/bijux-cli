@@ -30,10 +30,10 @@ bijux --json doctor
 bijux --json cli paths
 bijux-dag version --json
 BIJUX_DAG_ENABLE_INTERNAL=1 bijux-dag capabilities --json
-bijux-dag validate --json evidence/authoring/examples/hello.dag.json
-bijux-dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}
-bijux-dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json
-bijux-dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}
+bijux-dag validate --json evidence/dag/authoring/examples/hello.dag.json
+bijux-dag run --json evidence/dag/authoring/examples/hello.dag.json --out ${RUN_ROOT}
+bijux-dag validate --json evidence/dag/authoring/examples/etl-constant-to-shell.dag.json
+bijux-dag run --json evidence/dag/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}
 bijux-dag explain --json ${RUN_DIR}
 ```
 

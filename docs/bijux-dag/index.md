@@ -17,6 +17,12 @@ Use this handbook when the question is about DAG behavior itself: what gets
 validated, what gets executed, what evidence is written, and which crate owns
 the answer once the route is clear.
 
+The public `v0.4.0` product boundary is intentionally local-first. Stable DAG
+commands cover local validation, planning, execution, replay, inspection,
+cache work, and verification. Simulated namespaces and maintainer-only routes
+remain documented because they exist in the repository, but they are not being
+presented as shipped production backends or public platform APIs.
+
 The current public crate family is:
 
 - `bijux-dag-core` for graph truth and planner inputs
@@ -53,7 +59,7 @@ For the canonical operator-surface source, use
 status, use [Package Boundary](../bijux-core/foundation/package-boundary.md).
 
 <div class="bijux-quicklinks">
-<a class="md-button md-button--primary" href="operations/first-hour-with-bijux-dag.md">Start with the first hour guide</a>
+<a class="md-button md-button--primary" href="operations/guides/first-hour-with-bijux-dag.md">Start with the first hour guide</a>
 <a class="md-button" href="interfaces/operator-workflows.md">Open operator workflows</a>
 <a class="md-button" href="packages/index.md">Open the package map</a>
 </div>
@@ -70,7 +76,7 @@ flowchart LR
 
 ## Start Here
 
-- open [First Hour With Bijux Dag](operations/first-hour-with-bijux-dag.md)
+- open [First Hour With Bijux Dag](operations/guides/first-hour-with-bijux-dag.md)
   when you want a concrete local path from install to a verified run
 - open [Operator Workflows](interfaces/operator-workflows.md) when the question
   is how to validate, run, replay, inspect, or compare

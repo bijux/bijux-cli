@@ -15,25 +15,45 @@
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-dag docs](https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli) [![bijux-dag docs.rs](https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` is the shared source tree for two public Bijux products:
+`bijux-core` is the shared workspace for two public Bijux products:
 
-- `bijux`, a command runtime for automation, interactive workflows, plugins,
-  mounted apps, and structured diagnostics
-- `bijux-dag`, a deterministic graph runner with validation, execution,
+- `bijux`, the root command runtime for apps, plugins, configuration,
+  diagnostics, and interactive workflows
+- `bijux-dag`, the local-first DAG system for validation, planning, execution,
   replay, artifact inspection, and evidence-backed comparison
 
-The repository also carries the internal support crates that keep those
-products testable, documented, and releasable from one audited workspace.
+The repository also carries the internal crates that keep those products
+packaged, tested, documented, and released from one reviewable tree.
 
-## What Ships From This Repository
+## What Ships Today
 
 | Surface | Delivery form | What it is for |
 | --- | --- | --- |
-| `bijux` | Rust crate, Python distribution, release bundles | operator-facing command runtime with config, history, memory, plugins, REPL, and diagnostics |
-| `bijux-dag` | Rust crates and release bundles | local DAG authoring, planning, execution, replay, diff, and artifact verification |
+| `bijux` | Rust crate, Python distribution, release bundles | operator-facing command runtime with apps, plugins, config, history, memory, REPL, and diagnostics |
+| `bijux-dag` | Rust crates and release bundles | local DAG validation, planning, execution, replay, diff, artifact inspection, and verification |
 | `bijux-dev` | repository-internal crate and binaries | maintainer diagnostics, contracts, inventories, and release proof |
 
 The current workspace release line is `0.4.0`.
+
+## Stable Product Boundary
+
+`v0.4.0` ships a usable local product surface today, but not every repository
+route is a public promise.
+
+- `bijux` supports the visible root command surface shown by `bijux --help`,
+  including runtime health, app and plugin routing, layered config, history,
+  memory, and REPL workflows.
+- `bijux-dag` supports the visible `bijux-dag --help` surface for local DAG
+  work: `validate`, `plan`, `run`, `replay`, `runs`, `artifact`,
+  `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`,
+  `version`, `commands`, and `completions`.
+- Experimental DAG routes remain callable by explicit path, but they are not
+  part of the stable compatibility lane.
+- Simulated and maintainer-only DAG namespaces require
+  `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`.
+- Cluster-backed Kubernetes or HPC execution, public remote workers, and
+  public enterprise or federation APIs are not part of the `v0.4.0` public
+  product boundary.
 
 ## Package Families
 
@@ -54,7 +74,7 @@ Within those families, the workspace currently contains:
 - repository-internal support crates: `bijux-cli-python`, `bijux-dag-testkit`,
   `bijux-dev`
 
-The canonical package-boundary reference lives in
+The canonical publication boundary lives in
 [`docs/bijux-core/foundation/package-boundary.md`](docs/bijux-core/foundation/package-boundary.md)
 and `contracts/foundation/workspace_package_boundary.v1.json`.
 
@@ -72,33 +92,20 @@ and `contracts/foundation/workspace_package_boundary.v1.json`.
 - [`docs/`](https://github.com/bijux/bijux-core/tree/main/docs): canonical handbook set for repository, CLI, DAG, and maintainer surfaces.
 - [`makes/`](https://github.com/bijux/bijux-core/tree/main/makes): make modules for root workflows, Rust/Python validation, DAG commands, docs, and release automation.
 
-## Command Surfaces
+## Repository Layout
 
-The operator-facing DAG contract is the visible `bijux-dag --help` surface.
-That default surface covers validation, planning, execution, replay, run
-inspection, artifact inspection, diff, verify, doctor, cache, and command
-discovery. Repository-owned experimental routes remain callable by explicit
-path, while modeled-platform and maintainer namespaces require
-`BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`.
-
-Use the DAG handbook for the current route inventory and release boundary:
-
-- [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
-- [`docs/bijux-dag/interfaces/cli-surface.md`](docs/bijux-dag/interfaces/cli-surface.md)
-- [`docs/bijux-dag/foundation/release-boundary.md`](docs/bijux-dag/foundation/release-boundary.md)
-
-### `bijux-dag` v0.4.0 Surface Truth Table
-
-| Class | `v0.4.0` meaning | Representative surfaces |
-| --- | --- | --- |
-| stable | supported visible `bijux-dag --help` surface for local DAG authoring, execution, replay, and evidence inspection | `validate`, `plan`, `run`, `replay`, `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`, `version`, `commands`, `completions` |
-| experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
-| simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
-| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
-| future | not a `v0.4.0` product promise | cluster-backed kubernetes execution, cluster-backed slurm or hpc execution, public remote workers, public enterprise or federation APIs, full scheduler service |
-
-The canonical machine-readable release boundary is
-`contracts/foundation/dag_release_truth_table.v1.json`.
+- [`crates/`](https://github.com/bijux/bijux-core/tree/main/crates) contains
+  the Rust package boundaries for public products and internal support crates.
+- [`docs/`](https://github.com/bijux/bijux-core/tree/main/docs) contains the
+  published handbooks for repository, CLI, DAG, and maintainer surfaces.
+- [`contracts/`](https://github.com/bijux/bijux-core/tree/main/contracts)
+  contains machine-checkable compatibility, schema, and release-boundary
+  contracts.
+- [`makes/`](https://github.com/bijux/bijux-core/tree/main/makes) contains the
+  repository make modules used by local workflows and CI.
+- [`evidence/dag/`](https://github.com/bijux/bijux-core/tree/main/evidence/dag)
+  contains governed DAG fixtures, scenarios, and proof material used across
+  docs, tests, and release verification.
 
 ## Quick Start
 
@@ -133,23 +140,21 @@ Try a local DAG flow against a repository fixture:
 
 ```bash
 cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
-  evidence/authoring/examples/minimal_consumer.dag.json
+  evidence/dag/authoring/examples/minimal_consumer.dag.json
 
 cargo run -p bijux-dag-cli --bin bijux-dag -- run \
-  evidence/authoring/examples/minimal_consumer.dag.json \
+  evidence/dag/authoring/examples/minimal_consumer.dag.json \
   --out artifacts/runs
 ```
 
 ## Documentation
 
-- repository handbook:
-  [bijux-core handbook](https://bijux.io/bijux-core/bijux-core/)
-- CLI handbook:
-  [bijux-cli handbook](https://bijux.io/bijux-core/bijux-cli/)
-- DAG handbook:
-  [bijux-dag handbook](https://bijux.io/bijux-core/bijux-dag/)
-- maintainer handbook:
-  [bijux-dev handbook](https://bijux.io/bijux-core/bijux-dev/)
+| Handbook | Use it for |
+| --- | --- |
+| [Repository handbook](https://bijux.io/bijux-core/bijux-core/) | workspace scope, package ownership, release policy, shared architecture, and repository operations |
+| [CLI handbook](https://bijux.io/bijux-core/bijux-cli/) | the `bijux` runtime, app and plugin routing, config behavior, diagnostics, and Python packaging |
+| [DAG handbook](https://bijux.io/bijux-core/bijux-dag/) | DAG validation, planning, execution, replay, artifacts, compatibility, and operator workflows |
+| [Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/) | repository gates, release verification, docs operations, governance, and evidence collection |
 
 If you are reading code and need the owning package before the owning command,
 start with:
@@ -167,9 +172,9 @@ make dag-test
 make dag-contracts
 ```
 
-This repository keeps public product code and release proof together so that
-behavior, contracts, documentation, and evidence can drift only through
-reviewed changes in the same tree.
+This repository keeps public product code, contracts, documentation, and
+release proof together so drift becomes a reviewable code change rather than an
+undocumented side channel.
 
 ## License
 

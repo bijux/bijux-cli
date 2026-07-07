@@ -4,23 +4,36 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-07
 ---
 
 # CLI Handbook
 
-`bijux-cli` is the operator-facing runtime for the `bijux` command surface. It
-owns command normalization, runtime policy resolution, route execution,
-structured output, exit behavior, and plugin routing boundaries.
+`bijux` is the root Bijux command runtime. It owns the visible command surface
+for runtime health, official app routing, plugins, layered config, history,
+memory, REPL behavior, and structured output.
 
-Use this handbook when the question is about command behavior, route ownership,
-plugin boundaries, REPL behavior, or the Python bridge that distributes the
-same runtime.
+Use this handbook when the question is about what `bijux` does at the command
+line or how the Python distribution reaches the same runtime contract.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="packages/bijux-cli.md">Open the runtime package</a>
 <a class="md-button" href="packages/bijux-cli-python.md">Open the Python bridge package</a>
 </div>
+
+## Visible Command Surface
+
+The root `bijux --help` surface currently exposes these top-level command
+groups:
+
+- runtime and diagnostics: `status`, `audit`, `docs`, `doctor`, `version`,
+  `install`, `explain`
+- app routing: `apps`
+- configuration and extension points: `config`, `plugins`
+- interaction and local state: `repl`, `completion`, `history`, `memory`
+
+Official apps such as `atlas`, `dag`, `dna`, `gnss`, `rag`, `rar`, and `vex`
+mount through the runtime rather than redefining the runtime contract.
 
 ## Package Map
 
@@ -49,8 +62,9 @@ flowchart LR
 ## Read This Handbook When
 
 - the question is about `bijux` command behavior, flags, output, or exit codes
-- plugin lifecycle, route ownership, or route conflicts are in scope
+- plugin or mounted-app routing boundaries are in scope
 - CLI and REPL behavior must stay aligned
+- Python packaging must stay faithful to the native runtime
 - a documentation claim needs to be verified against source and tests
 
 ## Main Paths

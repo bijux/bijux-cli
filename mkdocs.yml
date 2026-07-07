@@ -61,9 +61,9 @@ nav:
               - Repository Scope: bijux-core/foundation/repository-scope.md
               - Workspace Layout: bijux-core/foundation/workspace-layout.md
               - Package Map: bijux-core/foundation/package-map.md
+              - Package Boundary: bijux-core/foundation/package-boundary.md
               - Ownership Model: bijux-core/foundation/ownership-model.md
               - Domain Language: bijux-core/foundation/domain-language.md
-              - Documentation System: bijux-core/foundation/documentation-system.md
               - Change Principles: bijux-core/foundation/change-principles.md
               - Decision Rules: bijux-core/foundation/decision-rules.md
           - Architecture:
@@ -168,9 +168,9 @@ nav:
           - Foundation:
               - Foundation: bijux-dag/foundation/index.md
               - Package Overview: bijux-dag/foundation/package-overview.md
+              - Release Boundary: bijux-dag/foundation/release-boundary.md
               - Scope and Non-Goals: bijux-dag/foundation/scope-and-non-goals.md
               - Ownership Boundary: bijux-dag/foundation/ownership-boundary.md
-              - Repository Fit: bijux-dag/foundation/repository-fit.md
               - Capability Map: bijux-dag/foundation/capability-map.md
               - Domain Language: bijux-dag/foundation/domain-language.md
               - Lifecycle Overview: bijux-dag/foundation/lifecycle-overview.md
@@ -271,7 +271,7 @@ nav:
               - release-crates: bijux-dev/gh-workflows/release-crates.md
               - release-pypi: bijux-dev/gh-workflows/release-pypi.md
               - release-github: bijux-dev/gh-workflows/release-github.md
-              - bijux-canon: bijux-dev/gh-workflows/bijux-canon.md
+              - bijux-canon: bijux-dev/gh-workflows/reference/bijux-canon.md
           - Packages:
               - Packages: bijux-dev/packages/index.md
               - bijux-dev: bijux-dev/packages/bijux-dev.md

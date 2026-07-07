@@ -4,7 +4,7 @@ audience: mixed
 type: foundation
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-07
 ---
 
 # Workspace Layout
@@ -49,5 +49,5 @@ question is where a new surface belongs.
 ## Next Reads
 
 - [Package Map](package-map.md)
-- [Documentation System](documentation-system.md)
+- [Package Boundary](package-boundary.md)
 - [Core Architecture](../architecture/workspace-topology.md)

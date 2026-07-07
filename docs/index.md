@@ -24,18 +24,21 @@ last_reviewed: 2026-07-04
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-dag docs](https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli) [![bijux-dag docs.rs](https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` is the shared source tree for the `bijux` command runtime, the
-`bijux-dag` graph execution system, and the repository-owned support surfaces
-that keep both products releasable from one audited workspace.
+`bijux-core` publishes two product families from one repository:
 
-Start here when you need orientation before reading code: which handbook owns
-the question, which package family holds the implementation, and which
-repository-level rules sit above the product handbooks.
+- `bijux`, the root command runtime for apps, plugins, config, diagnostics,
+  and interactive workflows
+- `bijux-dag`, the local-first DAG system for validation, planning, execution,
+  replay, artifact inspection, and verification
+
+The same repository also carries the private maintainer surfaces that keep
+those products releasable and testable without splitting the proof from the
+implementation.
 
 <div class="bijux-callout"><strong>Start with the surface you care about.</strong>
-Repository docs explain workspace rules and release boundaries. CLI docs own
-the <code>bijux</code> command product. DAG docs own graph truth, execution,
-replay, and artifacts. Maintainer docs own repository gates, diagnostics, and
+Repository docs explain shared ownership, publication boundaries, and release
+policy. CLI docs own the <code>bijux</code> runtime. DAG docs own
+<code>bijux-dag</code>. Maintainer docs own repository gates, diagnostics, and
 release proof.</div>
 
 <div class="bijux-panel-grid">
@@ -52,6 +55,17 @@ release proof.</div>
 <a class="md-button" href="bijux-dev/">Open the maintainer handbook</a>
 </div>
 
+## What Is Public Today
+
+| Surface | Public contract |
+| --- | --- |
+| `bijux` | the visible `bijux --help` command surface and its Rust and Python distribution paths |
+| `bijux-dag` | the visible `bijux-dag --help` surface for local DAG validation, planning, execution, replay, inspection, cache work, and verification |
+| maintainer tooling | repository-internal only; documented here for contributors, not shipped as end-user product API |
+
+The DAG handbook also calls out what remains experimental, simulated, or
+maintainer-only so local product claims do not drift into platform promises.
+
 ## Handbook Map
 
 ```mermaid
@@ -64,14 +78,14 @@ flowchart LR
 
 ## Start Here
 
-- open [Repository Handbook](bijux-core/index.md) when the issue spans CLI,
-  DAG, and maintainer ownership or touches repository policy
-- open [CLI Handbook](bijux-cli/index.md) for the `bijux` command product and
-  its Python bridge
-- open [DAG Handbook](bijux-dag/index.md) for graph truth, runtime policy,
-  artifacts, replay, and DAG command behavior
-- open [Maintainer Handbook](bijux-dev/index.md) for repository gates,
-  diagnostics, docs verification, and release proof
+- open [Repository Handbook](bijux-core/index.md) for cross-package
+  architecture, release policy, publication boundaries, and shared workflows
+- open [CLI Handbook](bijux-cli/index.md) for the `bijux` runtime, official
+  app mounting, plugin routing, layered config, and the Python bridge
+- open [DAG Handbook](bijux-dag/index.md) for local DAG execution, replay,
+  evidence, compatibility, and the supported `bijux-dag` surface
+- open [Maintainer Handbook](bijux-dev/index.md) for repository gates, docs
+  checks, release verification, diagnostics, and governance operations
 
 ## Package Flow
 
@@ -92,7 +106,6 @@ flowchart LR
 
 ## Reading Rule
 
-Start from the handbook that owns the question, then move into its package
-pages when you need the exact implementation boundary. If two branches seem to
-own the same behavior, verify the split from the
-[Repository Handbook](bijux-core/index.md).
+Start with the handbook that owns the user-visible behavior. Move to package
+pages only when you need the exact implementation boundary or publication
+status.

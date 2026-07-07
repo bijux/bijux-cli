@@ -47,6 +47,6 @@ flowchart LR
 
 ## Next Reads
 
-- [Repository Fit](repository-fit.md)
+- [Release Boundary](release-boundary.md)
 - [Dependency Direction](../architecture/dependency-direction.md)
 - [Review Checklist](../quality/review-checklist.md)

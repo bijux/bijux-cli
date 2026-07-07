@@ -54,4 +54,4 @@ flowchart LR
 
 - [Dependencies and Adjacencies](dependencies-and-adjacencies.md)
 - [Integration Seams](../architecture/integration-seams.md)
-- [Deployment Boundaries](../operations/deployment-boundaries.md)
+- [Deployment Boundaries](../operations/reference/deployment-boundaries.md)

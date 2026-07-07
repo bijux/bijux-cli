@@ -4,7 +4,7 @@ audience: maintainers
 type: section-index
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-07
 ---
 
 # Dev Operations
@@ -39,7 +39,6 @@ flowchart LR
 - [CI and Automation](ci-and-automation.md)
 - [Incident Response](incident-response.md)
 - [Release Operations](release-operations.md)
-- [Release Validation Suite](release-validation-suite.md)
 
 ## Related Maintainer Sections
 

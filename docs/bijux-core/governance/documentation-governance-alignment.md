@@ -23,9 +23,8 @@ maintainer verification aligned.
 
 ## Durable Authority Set
 
-- capability boundary: `docs/bijux-core/foundation/current-implemented-capabilities.md`
-- modeled and future boundary:
-  `docs/bijux-dag/foundation/modeled-and-future-surfaces.md`
+- repository capability boundary: `docs/bijux-core/foundation/platform-overview.md`
+- DAG release boundary: `docs/bijux-dag/foundation/release-boundary.md`
 - ownership discipline:
   `docs/bijux-core/governance/spec-to-code-and-test-ownership.md`
 

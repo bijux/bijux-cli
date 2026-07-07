@@ -1,5 +1,5 @@
 ---
-title: Ci Integration
+title: CI Integration
 audience: operators
 type: operations
 status: canonical
@@ -26,8 +26,8 @@ but that probe is not part of the public operator boundary.
 
 ## Fixture bootstrap
 
-- use `evidence/authoring/examples/minimal_consumer.dag.json` as the minimum
-  validation fixture
+- use `evidence/dag/authoring/examples/minimal_consumer.dag.json` as the
+  minimum validation fixture
 - keep run outputs under a repository-owned `artifacts/` root
 - treat non-zero exits from `validate`, `run`, `verify`, or `doctor` as CI
   failures

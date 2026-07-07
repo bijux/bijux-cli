@@ -4,14 +4,14 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-07
 ---
 
 # DAG Foundation
 
-The foundation section defines DAG intent and limits before architecture or
-command details. Start here when you need the mission, boundaries, vocabulary,
-and lifecycle model to make sense before reading execution or interface pages.
+The foundation section defines what `bijux-dag` is for, what it actually ships
+today, which limits still apply, and how the DAG crate family divides
+responsibility.
 
 ## Section Map
 
@@ -41,11 +41,10 @@ flowchart LR
 
 ## Pages In This Section
 
-- [Package Overview](package-overview.md)
 - [Release Boundary](release-boundary.md)
+- [Package Overview](package-overview.md)
 - [Scope and Non-Goals](scope-and-non-goals.md)
 - [Ownership Boundary](ownership-boundary.md)
-- [Repository Fit](repository-fit.md)
 - [Capability Map](capability-map.md)
 - [Domain Language](domain-language.md)
 - [Lifecycle Overview](lifecycle-overview.md)
