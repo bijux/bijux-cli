@@ -4,7 +4,7 @@ audience: mixed
 type: spec
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # Scheduler State Transitions
@@ -69,10 +69,17 @@ Sequence numbers must stay monotonic within one scheduler state history.
 `FailurePropagationMode` decides whether failed work releases downstream nodes.
 
 - `FailFast` preserves failure isolation and releases nothing
-- `IsolateBranch` allows downstream readiness when branch isolation semantics
-  permit it
-- `ContinueIndependent` and `QuorumLikeFuture` remain explicit modes so future
-  behavior cannot silently collapse into `FailFast`
+- `IsolateBranch` keeps unrelated work schedulable but marks every descendant
+  of the failed node for a later `NodeSkipped` transition with
+  `skip_reason.reason = "isolated_branch_failure"`
+- `ContinueIndependent` keeps downstream eligibility tied to trigger rules and
+  terminal upstream states instead of skipping the entire failed branch
+- `QuorumLikeFuture` remains explicit so future quorum semantics cannot silently
+  collapse into another mode
+
+Each propagated skip must remain inspectable through both node traces and
+`failure-propagation.json`, including the blocking ancestor set and the active
+propagation mode.
 
 ## Timeline and checkpoint relationship
 

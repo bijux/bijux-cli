@@ -4,7 +4,7 @@ audience: mixed
 type: spec
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # Scheduler Contract
@@ -66,13 +66,32 @@ dispatched.
 
 Failure handling is a scheduler contract, not an incidental executor detail.
 
-- `FailurePropagationMode::FailFast` blocks downstream readiness after failure
-- `FailurePropagationMode::IsolateBranch` may release downstream work when the
-  workflow semantics allow it
+- `FailurePropagationMode::FailFast` stops new dispatch after the first node
+  failure and records undispatched remainder as aborted propagation
+- `FailurePropagationMode::IsolateBranch` lets unrelated subgraphs continue but
+  skips every descendant of the failed node with
+  `skip_reason.reason = "isolated_branch_failure"`, even when a permissive
+  trigger rule such as `all_done` would otherwise release the join
+- `FailurePropagationMode::ContinueIndependent` keeps evaluating trigger rules
+  from terminal upstream states, so joins and other downstream nodes may still
+  run when their workflow semantics allow it
 - `queue_retry` records that a node is awaiting replay eligibility
 - `requeue_retries` moves queued retry nodes back into the ready frontier
 - cached and skipped completions satisfy downstream readiness exactly like their
   declared runtime semantics require
+
+## Failure evidence contract
+
+Failure propagation decisions must stay inspectable after the run ends.
+
+- `failure-propagation.json` records typed propagation entries with node status,
+  reason, blocking nodes, and propagation mode
+- skipped descendants created by branch isolation use the durable reason
+  `isolated_branch_failure`
+- replay preserves the recorded propagation decision instead of reclassifying
+  the skipped descendant during inspection
+- node trace `transition_cause` stays aligned with the propagation reason so
+  downstream evidence remains stable across human and JSON views
 
 ## Observability proof
 
