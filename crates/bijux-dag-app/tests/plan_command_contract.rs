@@ -647,3 +647,117 @@ fn schedule_queue_update_supports_json_output() {
     let code = run_with_internal_lane(&matches);
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
+
+#[test]
+fn schedule_control_status_supports_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-registry.json");
+    let overrides = dir.path().join("schedule-overrides.json");
+    let out = dir.path().join("schedule-control-status.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "manual-ops",
+              "dag_name": "atlas.manual-ops",
+              "dag_version_policy": "run-latest",
+              "trigger": "Manual",
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            }
+          ]
+        }"#,
+    )
+    .expect("write registry");
+    fs::write(
+        &overrides,
+        r#"{
+          "records": [
+            {
+              "schedule_id": "manual-ops",
+              "operator": "atlas-ops",
+              "action": "pause",
+              "reason": "hold",
+              "created_unix_ms": 180000
+            }
+          ]
+        }"#,
+    )
+    .expect("write overrides");
+
+    let matches = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "schedule",
+            "control",
+            "status",
+            registry.to_string_lossy().as_ref(),
+            "--overrides",
+            overrides.to_string_lossy().as_ref(),
+            "--out",
+            out.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+
+    let code = run_with_internal_lane(&matches);
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+#[test]
+fn schedule_control_pause_and_resume_support_json_output() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let overrides = dir.path().join("schedule-overrides.json");
+
+    let pause = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "schedule",
+            "control",
+            "pause",
+            overrides.to_string_lossy().as_ref(),
+            "--schedule-id",
+            "manual-ops",
+            "--operator",
+            "atlas-ops",
+            "--at-unix-ms",
+            "180000",
+            "--reason",
+            "hold",
+            "--out",
+            overrides.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+    assert_eq!(run_with_internal_lane(&pause), std::process::ExitCode::SUCCESS);
+
+    let resume = dag_command()
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "schedule",
+            "control",
+            "resume",
+            overrides.to_string_lossy().as_ref(),
+            "--schedule-id",
+            "manual-ops",
+            "--operator",
+            "atlas-ops",
+            "--at-unix-ms",
+            "190000",
+            "--reason",
+            "clear",
+            "--out",
+            overrides.to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+    assert_eq!(run_with_internal_lane(&resume), std::process::ExitCode::SUCCESS);
+}
