@@ -1,9 +1,12 @@
 //! Execution, replay, scheduling, and policy surfaces for Bijux DAG runs.
 //!
-//! Prefer the crate root for focused imports, [`stable`] for the explicit
-//! long-lived runtime surface, and [`prelude`] for the common execution
-//! workflow. The `experimental-public-api` feature enables opt-in runtime
-//! contract material that is intentionally excluded from the default docs lane.
+//! Prefer [`stable`] when browsing the long-lived runtime surface, [`prelude`]
+//! for common execution workflows, and crate-root imports only when you
+//! already know the exact item you need. Broad compatibility re-exports remain
+//! callable for focused imports, but they are intentionally hidden from the
+//! default docs lane. The `experimental-public-api` feature enables opt-in
+//! runtime contract material that is intentionally excluded from the default
+//! docs lane.
 //!
 #![allow(dead_code)]
 
@@ -218,16 +221,20 @@ mod upgrade_compatibility;
 #[path = "internal/workflow/workflow_product.rs"]
 mod workflow_product;
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
+#[doc(hidden)]
 pub use adapter::{AdapterDescriptor, CacheCompatibilityMode};
+#[doc(hidden)]
 pub use adapter_conformance::{
     build_adapter_conformance_suite, generate_adapter_reference_markdown,
     validate_output_schema_compatibility, AdapterConformanceSuiteReport,
     AdapterOutputSchemaCompatibilityReport, AdapterReferenceDocument, AdapterScenarioResult,
     AdapterScenarioStatus,
 };
+#[doc(hidden)]
 pub use adapter_sdk::{
     AdapterCapabilities, AdapterContext, AdapterPlugin, BackendPlugin, PluginManifest,
 };
+#[doc(hidden)]
 pub use async_adapter::AsyncAdapter;
 #[doc(hidden)]
 pub use backend::fake::{
@@ -272,6 +279,7 @@ pub use batch_execution::{
 use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
 };
+#[doc(hidden)]
 pub use bijux_dag_artifacts::ContainerImageReferencePolicy;
 use bijux_dag_artifacts::{
     artifact_size_bytes, sha256_artifact_path, write_inputs_index, write_outputs_index,
@@ -285,6 +293,7 @@ use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
     SemanticNodeKind, Severity,
 };
+#[doc(hidden)]
 pub use cache::{
     cache_entry_has_required_proof, cache_entry_manifest_version_supported,
     cache_explainability_proof_from_meta, cache_key_explanation, cache_key_input_from_meta,
@@ -292,24 +301,29 @@ pub use cache::{
     CacheManifestOutput, CACHE_ENTRY_MANIFEST_VERSION, CACHE_METADATA_VERSION,
 };
 use clock::{Clock, SystemClock};
+#[doc(hidden)]
 pub use container_execution::{
     container_engine_discovery, container_env_isolated, container_gpu_runtime_args,
     container_network_policy_args, container_volume_contract, map_local_path_to_container,
     supported_container_engines, validate_container_contract, validate_container_mount_contract,
     validate_container_relative_path, ContainerExecutionContract, ContainerMount,
 };
+#[doc(hidden)]
 pub use coordination::{
     merge_timeout_and_exit_events, thread_safety_audit, RunSummaryCounters,
     RuntimeCoordinationSnapshot, RuntimeCoordinationState, ThreadSafetyAuditRecord,
     TraceWriteRecord,
 };
+#[doc(hidden)]
 pub use execution_backend::{
     backend_registry, bind_backend_or_error, execute_with_backend, BackendBindingRequest,
     BackendCapabilities, BackendContext, BackendError, BackendKind, BackendLifecycleResult,
     EngineOutcome, ExecutionAttemptRecord, ExecutionBackend, ExecutionBackendCapabilityDescriptor,
     FakeBackend, ProcessLikeBackend,
 };
+#[doc(hidden)]
 pub use execution_context::{ExecutionContext, NodeExecutionContext};
+#[doc(hidden)]
 pub use execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
 #[doc(hidden)]
 pub use extension_catalog::{
@@ -323,6 +337,7 @@ pub use extension_catalog::{
     PluginBoundaryKind, PluginConformanceSuiteResult, PluginIsolationPolicy, PluginLifecycleState,
     PluginLoadingMode, PluginMetadata, PluginTrustPolicy,
 };
+#[doc(hidden)]
 pub use external_adapter::{
     probe_external_adapters, ExternalAdapterHandshakeReport, ExternalAdapterHandshakeStatus,
 };
@@ -339,11 +354,13 @@ pub use formal_verification::{
     VerificationMaturityLabel, VerifiedCoreScope,
 };
 use http_adapter::HttpRequestAdapter;
+#[doc(hidden)]
 pub use infrastructure::{
     negotiate_backend_capabilities, BackendCapabilities as InfrastructureBackendCapabilities,
     BackendCapabilityRequirement, BackendExecutionCompletion, BackendExecutionRequest,
     CapabilityDecision, ExecutorBackend,
 };
+#[doc(hidden)]
 pub use invariants::{
     run_summary_invariant_ok, terminal_run_has_terminal_node, trace_time_order_ok, RunNodeCounts,
     INVARIANT_REGISTRY,
@@ -359,11 +376,14 @@ pub use kubernetes_execution::{
     KubernetesWorkloadKind, KubernetesWorkspaceTransfer, KubernetesWorkspaceTransferMode,
     MockKubernetesBackend,
 };
+#[doc(hidden)]
 pub use local_executor::LocalExecutor;
+#[doc(hidden)]
 pub use local_worker_pool::{
     LocalWorkerAssignment, LocalWorkerCompletion, LocalWorkerExecution, LocalWorkerPool,
     LocalWorkerState, LocalWorkerStatus,
 };
+#[doc(hidden)]
 pub use observability::{
     canonicalize_event_records, category_from_runtime_event_name, current_process_memory_bytes,
     event_contains_sensitive_material, event_names_emitted_once, reconstruct_timeline_from_events,
@@ -383,13 +403,16 @@ pub use observability_deep::{
     FailureCauseCode, MetricsExportFormat, ObservabilityContractStatus, RedactionPolicy,
     ReplaySpanLink, SamplingPolicy, TimelineTextSummary, TopologyOverlay, TopologyOverlayNode,
 };
+#[doc(hidden)]
 pub use path_authorization::{authorize_input_path, authorize_output_path};
+#[doc(hidden)]
 pub use path_resolution::AbsolutePathPolicy;
 pub(crate) use path_resolution::{
     bind_path_variables_in_value, collect_container_argv_path_usages,
     collect_container_workdir_usage, collect_resolved_path_usages, resolve_container_argv,
     resolve_container_workdir, NodePathBindings, ResolvedPathUsage,
 };
+#[doc(hidden)]
 pub use performance_capacity::{
     build_cost_model, build_performance_maturity_report, compile_environment_profiles,
     derive_autoscaling_hint, detect_performance_regression, forecast_storage_growth,
@@ -397,7 +420,9 @@ pub use performance_capacity::{
     CapacityModel, EnvironmentScaleProfile, PerformanceGate, PerformanceMaturityReport,
     SchedulerScalabilityResult, StorageCostModel, StorageGrowthForecast, SyntheticDagProfile,
 };
+#[doc(hidden)]
 pub use planner::build_plan;
+#[doc(hidden)]
 pub use planner_analysis::{
     build_backfill_plan, build_planner_analysis, build_replay_plan_annotations,
     compare_plan_equivalence, compute_downstream_run_closure, compute_partial_run_closure,
@@ -409,6 +434,7 @@ pub use planner_analysis::{
     PlannerPhase, PlannerPlanDiff, PlannerPriorityInheritance, PlannerResourceBottleneck,
     PlannerSchedulingBound, PlannerSchedulingSimulation,
 };
+#[doc(hidden)]
 pub use policy::policy_allows_effects;
 use python_adapter::PythonFunctionAdapter;
 #[doc(hidden)]
@@ -438,6 +464,7 @@ pub use remote_execution_model::{
 pub use remote_executor::{
     RemoteExecutionReceipt, RemoteExecutionRequest, RemoteExecutorSubmitter,
 };
+#[doc(hidden)]
 pub use run_state::{
     imported_run_distinguishable, node_transition_invariant_id, run_transition_invariant_id,
     terminal_transition_audit_events, validate_node_transition, validate_run_transition,
@@ -447,6 +474,7 @@ pub use run_state::{
     StateConsistencyReport, TransitionAuditEvent, TransitionCause, INV_NODE_TERMINAL_NO_REVERT,
     INV_RUN_FAILED_CAUSAL_FAILURE,
 };
+#[doc(hidden)]
 pub use runtime_controls::{
     audit_dispatch_discipline, audit_run_event_log, build_cancellation_audit_report,
     build_execution_isolation_report, build_heartbeat_audit_report,
@@ -458,7 +486,9 @@ pub use runtime_controls::{
     PolicyEnforcementReport, PolicyEnforcementSurfaceReport, PolicyGuardSemanticsReport,
     RetryDecisionReport, TimeoutAuditReport, TransitionAuditReport,
 };
+#[doc(hidden)]
 pub use runtime_semantics::*;
+#[doc(hidden)]
 pub use scheduler::{
     advance_backfill_operation, apply_submission_status_updates, build_schedule_override_status,
     build_schedule_queue_state, build_scheduler, cancel_backfill_operation,
@@ -488,6 +518,7 @@ pub use scheduler::{
     SchedulerPolicy, SchedulerPriorityModel, SchedulerState, SchedulerUnit, SignalRecord,
     SubmissionTriggerKind, ThroughputScheduler, TriggerSpec,
 };
+#[doc(hidden)]
 pub use scheduler_workload::{
     apply_backfill_throttling, compute_partition_backfill_batches, deduplicate_trigger_events,
     detect_cron_conflicts, evaluate_sla_metrics, is_suppressed_by_calendar, materialize_next_runs,
@@ -500,6 +531,7 @@ pub use scheduler_workload::{
     SchedulerSlaMetrics, SchedulingSimulationSuite, ServiceClass, SlaPolicy,
     StarvationPreventionPolicy, TriggerDedupDecision, WeightedPriorityPolicy,
 };
+#[doc(hidden)]
 pub use secrets_security::{
     incident_response_actions, leak_conformance_check, redact_secret_payload, secret_readiness,
     secret_scope_allows, secure_cleanup_required, secure_mode_effective, select_secret_version,
@@ -510,10 +542,12 @@ pub use secrets_security::{
     SecretVersionSelection, SecureExecutionMode, SecureTeardownPolicy, SecureWorkspaceRule,
     SensitiveArtifactClass, SensitiveArtifactRestriction,
 };
+#[doc(hidden)]
 pub use security_env::{
     declared_environment, effective_env_allowlist, is_allowed_env_key, is_denied_env_key,
     missing_required_env_keys, shape_environment,
 };
+#[doc(hidden)]
 pub use semantic_lineage::{
     detect_lineage_conflicts, export_lineage_format, lineage_quality_score,
     policy_hook_allows_operation, recommended_replay_set, summarize_lineage,
@@ -533,6 +567,7 @@ pub use slurm_execution::{
     SlurmExecutionRequest, SlurmExecutionResult, SlurmJobLifecycleEvent, SlurmJobRecord,
     SlurmJobStatus, SlurmLogCapture, SlurmSchedulerRequest,
 };
+#[doc(hidden)]
 pub use state_machine::{
     failure_propagation_is_deterministic, node_transition_allowed, run_transition_allowed,
     NodeLifecycleState, RunLifecycleState,
@@ -544,6 +579,7 @@ use std::process::{Output, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::time::Duration;
+#[doc(hidden)]
 pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
 use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
 #[doc(hidden)]

@@ -60,13 +60,15 @@ Node traces persist lifecycle evidence separately from terminal `status`.
 
 ## Public Rust Surface
 
-- prefer focused crate-root imports for a small number of runtime types or functions
-- use `bijux_dag_runtime::stable` for the explicit long-lived compatibility lane
+- browse docs.rs through `bijux_dag_runtime::stable` for the long-lived
+  runtime compatibility lane
 - use `bijux_dag_runtime::prelude` for common planning and execution workflows
+- use focused crate-root imports only when you already know the exact runtime
+  item you need
 - use `bijux_dag_runtime::simulated_platform` only for deliberate modeled-platform
   and control-plane evidence work
-- treat backend-heavy compatibility helpers as repository-owned support surface,
-  not as the primary docs-facing import lane
+- backend-heavy compatibility helpers remain callable for repository-owned
+  support work, but stay hidden from the primary docs.rs lane
 
 ## Source Layout
 

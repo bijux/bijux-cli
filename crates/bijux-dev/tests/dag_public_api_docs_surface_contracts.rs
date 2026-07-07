@@ -49,6 +49,18 @@ fn root_use_decls(relative_path: &str) -> Vec<RootUseDecl> {
     decls
 }
 
+fn assert_all_root_use_decls_hidden(crate_name: &str, relative_path: &str) {
+    let decls = root_use_decls(relative_path);
+    let visible: Vec<&str> =
+        decls.iter().filter(|decl| !decl.doc_hidden).map(|decl| decl.source.as_str()).collect();
+
+    assert!(
+        visible.is_empty(),
+        "{crate_name} must hide broad crate-root re-export groups from the primary docs lane; still visible: {}",
+        visible.join(", ")
+    );
+}
+
 #[test]
 fn public_dag_crates_expose_curated_docs_lanes() {
     let crates = [
@@ -77,33 +89,6 @@ fn public_dag_crates_expose_curated_docs_lanes() {
 }
 
 #[test]
-fn runtime_modeled_and_future_exports_stay_hidden_from_root_docs() {
-    let decls = root_use_decls("crates/bijux-dag-runtime/src/lib.rs");
-    let expected_hidden = [
-        "backend::fake",
-        "backend_cluster",
-        "batch_execution",
-        "extension_catalog",
-        "formal_verification",
-        "kubernetes_execution",
-        "observability_deep",
-        "recovery",
-        "remote_execution_model",
-        "remote_executor",
-        "slurm_execution",
-        "task_contract",
-        "task_types",
-        "upgrade_compatibility",
-    ];
-
-    for source in expected_hidden {
-        let decl = decls
-            .iter()
-            .find(|decl| decl.source == source)
-            .unwrap_or_else(|| panic!("expected runtime root export group `{source}`"));
-        assert!(
-            decl.doc_hidden,
-            "runtime root export group `{source}` must stay hidden from the visible docs surface"
-        );
-    }
+fn runtime_root_reexports_stay_hidden_from_primary_docs_lane() {
+    assert_all_root_use_decls_hidden("bijux-dag-runtime", "crates/bijux-dag-runtime/src/lib.rs");
 }
