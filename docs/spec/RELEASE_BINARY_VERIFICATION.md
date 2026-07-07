@@ -23,6 +23,11 @@ stable operator commands from the `v0.4.0` release boundary. That maintainer
 probe now requires `BIJUX_DAG_ENABLE_INTERNAL=1` so the release recipe matches
 the executable boundary enforced by the binary.
 
+The release-boundary source of truth for this distinction is
+[`contracts/foundation/dag_release_truth_table.v1.json`](../../contracts/foundation/dag_release_truth_table.v1.json)
+plus the handbook page
+[`docs/bijux-dag/foundation/release-boundary.md`](../bijux-dag/foundation/release-boundary.md).
+
 ## Required Command Surface
 
 ```bash
