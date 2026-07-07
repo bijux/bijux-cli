@@ -241,6 +241,14 @@ pub struct ScheduleAuditRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScheduleEventLineage {
+    pub event_id: String,
+    pub event_type: String,
+    pub source: String,
+    pub occurred_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ScheduleDryRunPreview {
     pub schedule_id: String,
     pub next_fire_unix_ms: Option<u128>,
@@ -260,6 +268,8 @@ pub struct ExecutionSubmissionRequest {
     pub run_id: String,
     pub trigger_kind: SubmissionTriggerKind,
     pub dedupe_key: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub event_lineage: Option<ScheduleEventLineage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -336,6 +346,8 @@ pub struct ScheduleSubmissionLedgerEntry {
     pub run_id: String,
     pub trigger_kind: SubmissionTriggerKind,
     pub dedupe_key: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub event_lineage: Option<ScheduleEventLineage>,
     pub status: ScheduleSubmissionStatus,
     #[serde(default)]
     pub starvation_ticks: u32,
@@ -1621,7 +1633,7 @@ struct SubmissionCandidate {
 enum SubmissionContext {
     Manual { arguments: BTreeMap<String, Value> },
     Cron,
-    Event { payload: Option<Value> },
+    Event { record: ScheduleEventRecord },
     Dependency { upstream_run_id: String, status: String },
     Signal { payload: Option<Value> },
     Backfill { window_start_unix_ms: u128, window_end_unix_ms: u128, partition_key: Option<String> },
@@ -1654,7 +1666,15 @@ fn compile_submission_candidate(
             requested_unix_ms,
             trigger_kind: SubmissionTriggerKind::Event,
             dedupe_key: format!("event:{}:compile", definition.id),
-            context: SubmissionContext::Event { payload: None },
+            context: SubmissionContext::Event {
+                record: ScheduleEventRecord {
+                    event_id: String::new(),
+                    event_type: String::new(),
+                    source: String::new(),
+                    occurred_unix_ms: requested_unix_ms,
+                    payload: None,
+                },
+            },
         },
         TriggerSpec::Dependency { .. } => SubmissionCandidate {
             requested_unix_ms,
@@ -2118,6 +2138,7 @@ impl ScheduleSubmissionLedgerEntry {
             run_id: request.run_id.clone(),
             trigger_kind: request.trigger_kind.clone(),
             dedupe_key: request.dedupe_key.clone(),
+            event_lineage: request.event_lineage.clone(),
             status: ScheduleSubmissionStatus::Pending,
             starvation_ticks: 0,
         }
@@ -2449,7 +2470,7 @@ fn event_submission_candidates(
             requested_unix_ms: event.occurred_unix_ms,
             trigger_kind: SubmissionTriggerKind::Event,
             dedupe_key: format!("event:{}:{}", definition.id, event.event_id),
-            context: SubmissionContext::Event { payload: event.payload },
+            context: SubmissionContext::Event { record: event },
         })
         .collect()
 }
@@ -2558,6 +2579,7 @@ fn build_submission_request(
         run_id: deterministic_schedule_run_id(&definition.id, &candidate.dedupe_key),
         trigger_kind: candidate.trigger_kind.clone(),
         dedupe_key: candidate.dedupe_key.clone(),
+        event_lineage: event_lineage(candidate),
     })
 }
 
@@ -2599,6 +2621,19 @@ fn build_backfill_submission_request(
         run_id: run.run_id.clone(),
         trigger_kind: SubmissionTriggerKind::Backfill,
         dedupe_key: run.dedupe_key.clone(),
+        event_lineage: None,
+    })
+}
+
+fn event_lineage(candidate: &SubmissionCandidate) -> Option<ScheduleEventLineage> {
+    let SubmissionContext::Event { record } = &candidate.context else {
+        return None;
+    };
+    Some(ScheduleEventLineage {
+        event_id: record.event_id.clone(),
+        event_type: record.event_type.clone(),
+        source: record.source.clone(),
+        occurred_unix_ms: record.occurred_unix_ms,
     })
 }
 
@@ -2679,7 +2714,7 @@ fn resolve_schedule_input_source(
             })
         }
         ScheduleInputSource::EventPayload { pointer } => {
-            let SubmissionContext::Event { payload } = &candidate.context else {
+            let SubmissionContext::Event { record } = &candidate.context else {
                 return Err(format!(
                     "schedule '{schedule_id}' binds graph input '{input_name}' from event payload on a non-event trigger"
                 ));
@@ -2688,7 +2723,7 @@ fn resolve_schedule_input_source(
                 schedule_id,
                 input_name,
                 "event payload",
-                payload.as_ref(),
+                record.payload.as_ref(),
                 pointer.as_deref(),
             )
         }

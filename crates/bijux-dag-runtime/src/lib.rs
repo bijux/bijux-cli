@@ -478,7 +478,7 @@ pub use scheduler::{
     NoopSchedulerEventHook, PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyQueue,
     ReadyTieBreak, ScheduleAuditRecord, ScheduleDefinition, ScheduleDispatchRecord,
     ScheduleDispatchReport, ScheduleDryRunPreview, ScheduleEvaluationInputs,
-    ScheduleEvaluationReport, ScheduleEventRecord, ScheduleInputSource,
+    ScheduleEvaluationReport, ScheduleEventLineage, ScheduleEventRecord, ScheduleInputSource,
     SchedulePriorityDispatchPolicy, ScheduleQueueRunRecord, ScheduleQueueState,
     ScheduleQueueStateEntry, ScheduleQueueTenantState, ScheduleRegistry, ScheduleSubmissionLedger,
     ScheduleSubmissionLedgerEntry, ScheduleSubmissionStatus, ScheduleSubmissionStatusUpdate,
