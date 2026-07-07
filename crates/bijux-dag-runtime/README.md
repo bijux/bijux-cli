@@ -58,6 +58,19 @@ Node traces persist lifecycle evidence separately from terminal `status`.
   cache hit, timeout, cancellation, or queued-but-never-started node remains
   inspectable after the run finishes
 
+## Subprocess cleanup contract
+
+- On Unix hosts, controlled shell, external, python, and container-engine
+  commands run in a dedicated subprocess group.
+- When a node times out or an operator cancellation arrives, the runtime sends
+  `TERM` and then `KILL` to that subprocess group so child and grandchild
+  helpers do not keep running after the node finishes.
+- If the runtime has to fall back because group signaling cannot complete
+  cleanly, it records that degradation in the captured node `stderr` instead of
+  silently claiming full cleanup.
+- On non-Unix hosts, subprocess termination remains best-effort leader
+  termination rather than a full process-tree guarantee.
+
 ## Public Rust Surface
 
 - browse docs.rs through `bijux_dag_runtime::stable` for the long-lived
