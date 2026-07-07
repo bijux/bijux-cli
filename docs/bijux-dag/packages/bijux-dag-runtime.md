@@ -29,6 +29,7 @@ lane is opt-in behind `experimental-public-api`.
 | execution engine | planning, scheduler behavior, backend invocation, replay semantics |
 | runtime policy | policy evaluation, trace emission, error classification, capability checks |
 | local container execution | engine detection, mounted input and output layout, stdout/stderr capture, and recorded image identity |
+| branch execution | selected-lane pruning, skipped-node recording, trigger-rule evaluation, and replay equivalence checks |
 | runtime artifacts | manifests, verification, cache lineage, and proof material |
 | runtime identity | build-stamped version identity and deterministic runtime fingerprints |
 | boundary | does not own authoritative DAG schema or user-facing CLI routing |
@@ -61,6 +62,7 @@ lane is opt-in behind `experimental-public-api`.
 - open [`bijux-dag-core`](./bijux-dag-core.md) for graph truth and planning inputs
 - open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and response shaping
 - open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) for the repository-backed execution path that exercises retained container identity and engine-unavailable failure handling
+- open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) for the repository-backed execution path that exercises branch decisions, join-trigger behavior, and replay stability
 
 ## Code Anchors
 

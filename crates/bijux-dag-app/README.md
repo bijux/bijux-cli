@@ -19,6 +19,8 @@ release-boundary routing, and shapes the typed responses that the CLI renders.
   migration, and diagnostics
 - run summaries and failure explanations that surface container engine
   availability, failed node classes, and retained trace locations
+- branch-facing command flows that surface selected decisions, skipped lanes,
+  join trigger outcomes, and replay proof summaries
 - route gating between stable, experimental, simulated, and internal surfaces
 
 ## What It Does Not Own
@@ -55,6 +57,11 @@ For the repository-backed example that shows how the app surface reports a real
 container run, retained outputs, and a missing-engine infrastructure failure,
 use
 [Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md).
+
+For the repository-backed example that shows how the app surface reports a real
+branch decision, a skipped lane, and replay stability at the publication
+boundary, use
+[Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).
 
 ## Related links
 

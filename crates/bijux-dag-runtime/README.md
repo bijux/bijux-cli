@@ -20,6 +20,8 @@ classification, cache behavior, and trace emission.
   backends
 - container engine detection, mounted input and output layout, stdout/stderr
   capture, and retained container identity
+- branch pruning, skipped-lane recording, trigger-rule evaluation, and replay
+  equivalence over selected execution paths
 
 Choose this crate when you need to execute validated DAG graphs or integrate
 with Bijux runtime policies from Rust.
@@ -77,6 +79,10 @@ For the repository-backed example that exercises mounted container inputs,
 retained outputs, recorded image digest, and clear engine-unavailable failure
 behavior, use
 [Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md).
+
+For the repository-backed example that exercises branch decisions, join trigger
+evaluation, skipped-lane evidence, and replay stability, use
+[Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).
 
 ## Related links
 

@@ -35,6 +35,7 @@ visible `bijux-dag --help` release contract.
 | response shaping | render flows, response models, diagnostics views, command-specific output contracts |
 | app-level services | read, write, replay, inspect, graph, cache, migration, and export/import orchestration |
 | container-facing operator surface | run summaries, failure reasons, and retained response shapes for container-backed nodes |
+| branch-facing operator surface | retained branch decisions, skipped-lane explanations, join-trigger summaries, and replay proof output |
 | boundary | does not own kernel semantics, runtime scheduler internals, or artifact storage authority |
 
 ## Source Layout
@@ -54,6 +55,7 @@ visible `bijux-dag --help` release contract.
 - open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question crosses from response shaping into execution policy
 - open [`bijux-dag-cli`](./bijux-dag-cli.md) when the concern is process wiring rather than app orchestration
 - open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) for a repository-backed example of the app surface reporting a real container run and a missing-engine failure
+- open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) for a repository-backed example of the app surface reporting a real branch decision and replay-stable publication path
 
 ## Code Anchors
 

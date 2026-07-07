@@ -17,6 +17,8 @@ identity, reference resolution, and planner lowering.
 - planner-lowering helpers used by runtime and app layers
 - command-template and graph-input resolution rules that let shell and
   container nodes bind stable params without runtime guesswork
+- branch contracts, conditional-edge validation, and trigger-rule constraints
+  that keep selected and skipped lanes deterministic
 
 Choose this crate when you need a pure Rust dependency for DAG authoring,
 inspection, validation, or identity work without pulling in runtime execution
@@ -50,6 +52,10 @@ or command-layer concerns.
 For the repository-backed authoring example that binds a graph-owned label into
 a real container command surface, use
 [`evidence/dag/authoring/examples/release-note-bundle.dag.json`](../../evidence/dag/authoring/examples/release-note-bundle.dag.json).
+
+For the repository-backed authoring example that binds a graph-owned enum input
+into a real branch decision surface, use
+[`evidence/dag/authoring/examples/audience-branch-bulletin.dag.json`](../../evidence/dag/authoring/examples/audience-branch-bulletin.dag.json).
 
 ## Related links
 
