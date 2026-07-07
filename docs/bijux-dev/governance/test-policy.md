@@ -4,7 +4,7 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-07
 ---
 
 # Test Policy
@@ -35,8 +35,8 @@ flowchart LR
 - the required Rust release lane is `make test-release-rs`, and `make test` delegates to it before Python tests
 - `make test-all-rs` is the full Rust verification lane and includes the governed ignored DAG portfolios
 - flaky ignored tests are forbidden in DAG release-facing coverage
-- slow ignored tests must stay explicitly governed and outside the required release lane
-- ignored Rust tests outside the governed DAG slow portfolios are forbidden
+- ignored DAG tests must carry an explicit nonstable quarantine reason of `experimental` or `internal`
+- ignored Rust tests outside the governed DAG nonstable portfolios are forbidden
 
 ## Code Anchors
 

@@ -4,7 +4,7 @@ audience: maintainers
 type: quality
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-07
 ---
 
 # Test Strategy
@@ -35,7 +35,7 @@ flowchart TB
 - contract tests for replay/diff schema lockstep and semantics
 - regression snapshots for human-readable explain surfaces
 - `make test-release-rs` as the required Rust release lane for stable DAG behavior
-- `make test-all-rs` as the governed full lane for slow ignored DAG portfolios
+- `make test-all-rs` as the governed full lane for ignored experimental and internal DAG portfolios
 
 ## Required Coverage Areas
 
@@ -47,11 +47,12 @@ flowchart TB
 
 The release-facing quality debt behind these coverage areas is tracked in
 `RISK-005` and `RISK-010` in [Risk Register](risk-register.md). The remaining
-slow ignored DAG app tests are governed explicitly in
-`configs/dag/policy/release_test_lane_governance.json` and are excluded from
-the required release lane until they can run fast enough without reducing trust
-coverage. All other ignored Rust tests are forbidden by the workspace hygiene
-contract in `crates/bijux-dev/tests/ignored_test_hygiene_contracts.rs`.
+ignored DAG app tests are governed explicitly in
+`configs/dag/policy/release_test_lane_governance.json`. They now exist only for
+experimental and internal command surfaces; stable release behavior must stay
+in the required release lane without ignored coverage. All other ignored Rust
+tests are forbidden by the workspace hygiene contract in
+`crates/bijux-dev/tests/ignored_test_hygiene_contracts.rs`.
 
 ## Code Anchors
 

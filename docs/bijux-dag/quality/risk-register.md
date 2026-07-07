@@ -4,7 +4,7 @@ audience: maintainers
 type: quality
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-07
 ---
 
 # Risk Register
@@ -111,10 +111,10 @@ flowchart LR
 
 - severity: `high`
 - affected component: DAG CLI and app contract tests, release validation lanes, and maintainer quality reporting
-- current status: `mitigating`; the mixed-backend CLI ignore has been removed, the required Rust release lane is explicit, and the remaining slow DAG app ignores are quarantined in governed full-lane records
+- current status: `mitigating`; the mixed-backend CLI ignore has been removed, stable replay and end-to-end evidence now runs in the required lane, and the remaining DAG app ignores are quarantined only for experimental or internal routes
 - risk: release confidence can look stronger than it is if ignored or flaky tests are the only evidence for a stable surface or if unstable tests silently age without remediation
-- mitigation: keep `make test-release-rs` as the required CI and release lane, preserve explicit `maintenance ignored-dag-tests` and flaky-test reporting, and keep every remaining slow ignore declared in `configs/dag/policy/release_test_lane_governance.json` until it is either fixed or removed from the stable release evidence chain
-- release decision: ship only while the required release lane stays green without ignored tests and every slow ignored DAG test remains explicitly governed in the full verification lane
+- mitigation: keep `make test-release-rs` as the required CI and release lane, preserve explicit `maintenance ignored-dag-tests` and flaky-test reporting, and keep every remaining ignore declared in `configs/dag/policy/release_test_lane_governance.json` with a nonstable surface class until it is either promoted or removed
+- release decision: ship only while the required release lane stays green without ignored stable coverage and every remaining ignored DAG test remains explicitly governed as experimental or internal evidence in the full verification lane
 
 ## Record Rules
 

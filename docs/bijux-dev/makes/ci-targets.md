@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-07
 ---
 
 # CI Targets
@@ -27,7 +27,7 @@ hosted verification stay aligned.
 - `make gh-test` runs the required Rust release lane through `make test-release-rs`
 - `make gh-release-validate` runs the committed-`HEAD` release-candidate suite through `make release-validate-rs`
 - `make test-release-rs` uses the `ci` nextest profile and is the required release-candidate Rust lane
-- `make test-all-rs` is the full Rust verification lane and includes governed ignored DAG tests
+- `make test-all-rs` is the full Rust verification lane and includes governed ignored experimental and internal DAG portfolios
 
 ## Frozen Commit Gates
 

@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-07
 ---
 
 # ci
@@ -24,7 +24,7 @@ repository.
 - `Lint` runs `make gh-lint`
 - `Security` installs pinned Rust security tools and runs `make gh-security`
 - `Tests` runs the Python-version matrix through `make gh-test`
-- `make gh-test` routes Rust through `make test-release-rs`, which uses the `ci` nextest profile and excludes governed slow-lane DAG coverage from the required release lane
+- `make gh-test` routes Rust through `make test-release-rs`, which uses the `ci` nextest profile and excludes governed experimental and internal DAG portfolios from the required release lane
 - release-candidate package, publish, doc, and smoke validation run in `release-validation.yml` through `make gh-release-validate`
 
 ## Next Reads

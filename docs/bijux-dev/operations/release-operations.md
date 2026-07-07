@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-07
 ---
 
 # Release Operations
@@ -51,7 +51,7 @@ Canonical package status and publish order are defined by
 - required release-lane tests and maintainer verification commands are green
 - `make release-validate-rs` is green before any release recommendation
 - `make test-release-rs` is green before any release recommendation
-- `make test-all-rs` is green whenever DAG release-sensitive slow-lane coverage changed or ignored-test governance changed
+- `make test-all-rs` is green whenever DAG experimental or internal ignored coverage changed or ignored-test governance changed
 - compatibility notes are prepared for changed public behavior
 - documentation tree and MkDocs navigation are synchronized
 - release owner and rollback owner are explicitly assigned
