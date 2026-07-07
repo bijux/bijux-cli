@@ -22,6 +22,33 @@
     "resources": {"type": ["object", "null"]},
     "inputs_index": {"type": ["string", "null"]},
     "resolved_params": {},
+    "exit_code": {"type": ["integer", "null"]},
+    "stdout": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["path", "size_bytes", "tail_lines"],
+      "properties": {
+        "path": {"type": "string"},
+        "size_bytes": {"type": "integer"},
+        "tail_lines": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "stderr": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["path", "size_bytes", "tail_lines"],
+      "properties": {
+        "path": {"type": "string"},
+        "size_bytes": {"type": "integer"},
+        "tail_lines": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
     "outputs": {
       "type": "array",
       "items": {

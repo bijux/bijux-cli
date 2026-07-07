@@ -285,9 +285,9 @@ use bijux_dag_artifacts::{
     artifact_size_bytes, sha256_artifact_path, write_inputs_index, write_outputs_index,
     AdapterInfo, ArtifactError, CacheIdentity, CacheProof, ContainerTrace, DeclaredOutputArtifact,
     FailureClass, FailureInfo, InputCollection, InputCollectionItem, InputFile, InputsIndex,
-    NodeCounts, NodeLifecycleTransition, NodeTrace, OutputSummary, OutputsIndex, ReplayProvenance,
-    Resources as TraceResources, RunDir, RunDirLayout, RunOutputFile, RunOutputsIndex,
-    TraceOutputArtifact, TriggerEvaluation,
+    NodeCounts, NodeLifecycleTransition, NodeLogEvidence, NodeTrace, OutputSummary, OutputsIndex,
+    ReplayProvenance, Resources as TraceResources, RunDir, RunDirLayout, RunOutputFile,
+    RunOutputsIndex, TraceOutputArtifact, TriggerEvaluation,
 };
 use bijux_dag_core::{
     Effect, FileOutput, Graph, GraphError, Node, NodeKind, OutputKind, OutputSpec, RetryPolicy,
@@ -573,7 +573,7 @@ pub use state_machine::{
     NodeLifecycleState, RunLifecycleState,
 };
 use std::collections::{BTreeMap, HashMap};
-use std::io::{self as std_io, Read, Write};
+use std::io::{self as std_io, Read, Seek, SeekFrom, Write};
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
@@ -1931,6 +1931,17 @@ fn write_trace(
         adapter_version,
         adapter_outputs_schema_version,
     )?);
+    let exit_code = terminal_exit_code(node, &status, failure.as_ref(), container_meta.as_ref());
+    let stdout = collect_node_log_evidence(
+        ctx.fs.as_ref(),
+        &ctx.run_dir,
+        &ctx.run_dir.node_stdout_path(node_id),
+    );
+    let stderr = collect_node_log_evidence(
+        ctx.fs.as_ref(),
+        &ctx.run_dir,
+        &ctx.run_dir.node_stderr_path(node_id),
+    );
     let trace = NodeTrace {
         node_id: node_id.to_string(),
         status: status_string(&status),
@@ -1952,6 +1963,9 @@ fn write_trace(
         }),
         inputs_index,
         resolved_params: ctx.resolved_params.get(node_id).cloned(),
+        exit_code,
+        stdout,
+        stderr,
         outputs,
         container: container_meta,
         cache_proof,
@@ -1968,6 +1982,85 @@ fn write_trace(
     let data = serde_json::to_vec_pretty(&trace)?;
     ctx.store.write_trace(node_id, &data)?;
     Ok(())
+}
+
+const NODE_LOG_TAIL_LINE_LIMIT: usize = 20;
+const NODE_LOG_TAIL_READ_BYTES: u64 = 16 * 1024;
+
+fn terminal_exit_code(
+    node: &Node,
+    status: &NodeStatus,
+    failure: Option<&FailureInfo>,
+    container_meta: Option<&ContainerTrace>,
+) -> Option<i32> {
+    if let Some(exit_code) = failure.and_then(failure_exit_code) {
+        return Some(exit_code);
+    }
+    if let Some(exit_code) = container_meta.and_then(|trace| trace.exit_code) {
+        return Some(exit_code);
+    }
+    if supports_terminal_exit_code(node) && matches!(status, NodeStatus::Success) {
+        return Some(0);
+    }
+    None
+}
+
+fn supports_terminal_exit_code(node: &Node) -> bool {
+    matches!(
+        node.kind,
+        NodeKind::Shell | NodeKind::Python | NodeKind::Container | NodeKind::External(_)
+    )
+}
+
+fn failure_exit_code(failure: &FailureInfo) -> Option<i32> {
+    failure
+        .details
+        .as_ref()
+        .and_then(|details| details.get("exit_code"))
+        .and_then(Value::as_i64)
+        .and_then(|code| i32::try_from(code).ok())
+}
+
+fn collect_node_log_evidence(
+    fs: &dyn Fs,
+    run_dir: &RunDir,
+    path: &Path,
+) -> Option<NodeLogEvidence> {
+    let size_bytes = fs.metadata(path).ok()?.len();
+    let tail_lines =
+        read_log_tail_lines(path, NODE_LOG_TAIL_LINE_LIMIT, NODE_LOG_TAIL_READ_BYTES).ok()?;
+    Some(NodeLogEvidence { path: run_relative_path(run_dir, path), size_bytes, tail_lines })
+}
+
+fn run_relative_path(run_dir: &RunDir, path: &Path) -> String {
+    path.strip_prefix(run_dir.staging_path())
+        .unwrap_or(path)
+        .display()
+        .to_string()
+        .replace('\\', "/")
+}
+
+fn read_log_tail_lines(
+    path: &Path,
+    max_lines: usize,
+    max_bytes: u64,
+) -> std_io::Result<Vec<String>> {
+    let mut file = std::fs::File::open(path)?;
+    let file_len = file.metadata()?.len();
+    let start = file_len.saturating_sub(max_bytes);
+    file.seek(SeekFrom::Start(start))?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+
+    let content = String::from_utf8_lossy(&buffer);
+    let mut lines = content.lines().map(ToString::to_string).collect::<Vec<_>>();
+    if start > 0 && !content.starts_with('\n') && !lines.is_empty() {
+        lines.remove(0);
+    }
+    if lines.len() > max_lines {
+        lines = lines.split_off(lines.len() - max_lines);
+    }
+    Ok(lines)
 }
 
 fn status_string(status: &NodeStatus) -> String {

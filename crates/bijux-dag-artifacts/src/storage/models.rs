@@ -69,6 +69,12 @@ pub struct NodeTrace {
     pub inputs_index: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolved_params: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exit_code: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stdout: Option<NodeLogEvidence>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stderr: Option<NodeLogEvidence>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub outputs: Vec<TraceOutputArtifact>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -93,6 +99,14 @@ pub struct NodeTrace {
     pub lifecycle_transitions: Vec<NodeLifecycleTransition>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub replay_provenance: Option<ReplayProvenance>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NodeLogEvidence {
+    pub path: String,
+    pub size_bytes: u64,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tail_lines: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

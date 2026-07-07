@@ -3,7 +3,7 @@
   "schemas": {
     "configs/schema/dag.schema.json": "cea97fa25beb7c7fde769461c3e62cb1695ed626561249110f4145cca1381e09",
     "configs/schema/run_manifest.schema.json": "4f63aac61e2147ba35f4a8f753c31376de194227f2ca0620729c9b7ace81b54f",
-    "configs/schema/node_trace.schema.json": "d7bdccdcd0a4f23f6ad853b5ad8dd3b3cbb65b01990ed0c6e0d64246fb604838",
+    "configs/schema/node_trace.schema.json": "32b67a371873873a534b4f55010c7be9505714a98b2c645cb301c36a8939f668",
     "configs/schema/outputs_index.schema.json": "e592b75ecb70dba3894f6b9c0f2d0ce83628406560582b33ef0788ce4f505d6b"
   }
 }
