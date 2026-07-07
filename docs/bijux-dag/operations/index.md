@@ -42,6 +42,7 @@ flowchart LR
 
 - [Deployment Boundaries](deployment-boundaries.md)
 - [CI Integration](guides/ci-integration.md)
+- [Container Packaging Workflow](guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
 - [File Processing Workflow](guides/file-processing-workflow.md)
 - [First Hour With Bijux Dag](guides/first-hour-with-bijux-dag.md)

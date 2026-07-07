@@ -73,6 +73,20 @@ bijux-dag runs compare regional-sales-warm regional-sales-updated \
   --json
 ```
 
+For a real container-backed packaging workflow, validate and run the release
+note example with one path input and one graph-owned label:
+
+```bash
+SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/release-note-source/weekly-update.md"
+bijux-dag validate evidence/dag/authoring/examples/release-note-bundle.dag.json
+bijux-dag run --json evidence/dag/authoring/examples/release-note-bundle.dag.json \
+  --out ./artifacts/release-note-bundle-runs \
+  --run-id release-note-bundle \
+  --input "source_note=${SOURCE_NOTE}" \
+  --input "bundle_label=Release Brief"
+cat ./artifacts/release-note-bundle-runs/run-release-note-bundle/nodes/package_bundle/trace.json
+```
+
 ## Rust Entrypoint Example
 
 ```rust
@@ -93,6 +107,7 @@ println!("spec={}", graph.spec);
 
 - [CLI Surface](cli-surface.md)
 - [Operator Workflows](operator-workflows.md)
+- [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](../operations/guides/data-pipeline-workflow.md)
 - [File Processing Workflow](../operations/guides/file-processing-workflow.md)
 - [Local Development](../operations/local-development.md)

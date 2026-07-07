@@ -86,6 +86,23 @@ The history rows now report:
 Use the JSON form when another tool needs stable fields, and use the default
 human form when an operator needs a compact recent-run status list.
 
+## Run A Container-Backed Node Deliberately
+
+When the graph includes a container node, treat the container engine as an
+explicit runtime dependency instead of assuming the graph will silently fall
+back to a host shell.
+
+- validate the graph first so input and path contracts fail before runtime work
+- run the graph with the intended engine available on `PATH`
+- inspect the retained node trace to confirm engine version and image digest
+- treat `CONTAINER_ENGINE_UNAVAILABLE` as an environment failure, not a graph
+  authoring failure
+
+For the repository-backed workflow that proves mounted inputs, retained
+outputs, stdout/stderr capture, and recorded image identity on a real container
+step, use
+[Container Packaging Workflow](../operations/guides/container-packaging-workflow.md).
+
 ## Interpret Failure Fallout
 
 When a run fails, inspect the fallout before deciding whether downstream nodes
@@ -671,5 +688,6 @@ sequence turns a run into something you can defend with evidence.
 ## Next Reads
 
 - [Common Workflows](../operations/common-workflows.md)
+- [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
 - [Failure Recovery](../operations/failure-recovery.md)
 - [Review Checklist](../quality/review-checklist.md)

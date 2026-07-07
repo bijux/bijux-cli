@@ -31,6 +31,7 @@ flowchart TD
 - execution workflow for run creation and status tracking
 - reproducibility workflow for replay confirmation
 - change-attribution workflow for semantic diff explanations
+- container-packaging workflow for mounted inputs, retained outputs, and engine identity
 - file-processing workflow for cache, lineage, rerun, and promotion proof
 - data-pipeline workflow for cache reuse, changed-input attribution, and retained-run comparison
 
@@ -78,6 +79,11 @@ For a structured analytics-style workflow that changes one explicit graph input
 and then compares retained runs to identify the affected stages, use
 [Data Pipeline Workflow](guides/data-pipeline-workflow.md).
 
+For a real local container execution path that mounts upstream inputs, writes
+retained outputs, records image identity, and fails clearly when Docker is not
+available, use
+[Container Packaging Workflow](guides/container-packaging-workflow.md).
+
 ## Reading Rule
 
 Use this page when the DAG commands are already familiar but the correct
@@ -86,6 +92,7 @@ operator sequence is still unclear.
 ## Next Reads
 
 - [Failure Recovery](failure-recovery.md)
+- [Container Packaging Workflow](guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Review Checklist](../quality/review-checklist.md)
