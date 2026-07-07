@@ -1488,6 +1488,7 @@ pub fn execute(
     let graph_fingerprint = Arc::new(Mutex::new(base_fps.clone()));
     let ctx = RunContext {
         run_dir: Arc::clone(&run_dir_arc),
+        replay_source_run_dir: options.replay_source_run_dir.clone(),
         graph_fingerprint: Arc::clone(&graph_fingerprint),
         node_definition_fingerprints: Arc::new(node_definition_fingerprints),
         declared_environment_fingerprints: Arc::new(declared_environment_fingerprints),
@@ -2539,6 +2540,7 @@ pub fn execute(
             let adapter = runtime.adapter_for_kind(&node.kind)?;
             let ctx_clone = RunContext {
                 run_dir: Arc::clone(&ctx.run_dir),
+                replay_source_run_dir: ctx.replay_source_run_dir.clone(),
                 graph_fingerprint: ctx.graph_fingerprint.clone(),
                 node_definition_fingerprints: Arc::clone(&ctx.node_definition_fingerprints),
                 declared_environment_fingerprints: Arc::clone(

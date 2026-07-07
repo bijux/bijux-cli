@@ -652,6 +652,7 @@ pub enum NodeStatus {
 /// Execution-scoped state shared across node adapter invocations for one run.
 pub struct RunContext {
     pub run_dir: Arc<RunDir>,
+    pub replay_source_run_dir: Option<PathBuf>,
     pub graph_fingerprint: Arc<Mutex<HashMap<String, String>>>,
     pub node_definition_fingerprints: Arc<HashMap<String, String>>,
     pub declared_environment_fingerprints: Arc<HashMap<String, String>>,
@@ -1549,6 +1550,7 @@ pub struct RuntimeConfig {
     pub resume_run_id: Option<String>,
     pub resume_failure_mode: ResumeFailureMode,
     pub parent_run_id: Option<String>,
+    pub replay_source_run_dir: Option<PathBuf>,
     pub submission_source: String,
     pub trigger_source: String,
     pub operator: String,
@@ -1584,6 +1586,7 @@ impl Default for RuntimeConfig {
             resume_run_id: None,
             resume_failure_mode: ResumeFailureMode::RerunIncomplete,
             parent_run_id: None,
+            replay_source_run_dir: None,
             submission_source: "manual".to_string(),
             trigger_source: "cli".to_string(),
             operator: "unknown".to_string(),
@@ -2498,6 +2501,7 @@ fn execute_map_node(
         let item_run_dir_arc = Arc::new(item_run_dir.clone());
         let item_ctx = RunContext {
             run_dir: Arc::clone(&item_run_dir_arc),
+            replay_source_run_dir: ctx.replay_source_run_dir.clone(),
             graph_fingerprint: Arc::new(Mutex::new(HashMap::from([(node.id.clone(), item_fp)]))),
             node_definition_fingerprints: Arc::new(HashMap::from([(
                 node.id.clone(),
@@ -3202,7 +3206,22 @@ fn materialize_inputs(
             .iter()
             .find(|o| o.name == edge.from.port)
             .ok_or_else(|| RuntimeError::Executor("missing output port".to_string()))?;
-        let src_path = ctx.run_dir.node_outputs_dir(&edge.from.node_id).join(&out.path);
+        let mut src_path = ctx.run_dir.node_outputs_dir(&edge.from.node_id).join(&out.path);
+        let mut from_fp = node_fingerprint_from_ctx(ctx, &edge.from.node_id);
+        if ctx.fs.metadata(&src_path).is_err() {
+            if let Some(source_run_dir) = ctx.replay_source_run_dir.as_deref() {
+                let replay_src_path =
+                    source_run_dir.join("nodes").join(&edge.from.node_id).join("outputs").join(&out.path);
+                if ctx.fs.metadata(&replay_src_path).is_ok() {
+                    src_path = replay_src_path;
+                    if from_fp.is_empty() {
+                        from_fp =
+                            replay_source_node_fingerprint(ctx.fs.as_ref(), source_run_dir, &edge.from.node_id)
+                                .unwrap_or_default();
+                    }
+                }
+            }
+        }
         let dst_dir = inputs_dir.join(&edge.from.node_id);
         ctx.fs.create_dir_all(&dst_dir)?;
         let dst_path = dst_dir.join(&edge.to.port);
@@ -3223,7 +3242,6 @@ fn materialize_inputs(
             }
             let rel = dst_path.strip_prefix(&inputs_dir).unwrap_or(&dst_path);
             let rel_str = rel.to_string_lossy().to_string();
-            let from_fp = node_fingerprint_from_ctx(ctx, &edge.from.node_id);
             materialized_inputs.insert(
                 (edge.to.port.clone(), edge.from.node_id.clone(), edge.from.port.clone()),
                 (rel_str.clone(), source_sha256.clone()),
@@ -3249,6 +3267,13 @@ fn materialize_inputs(
     let index = InputsIndex { collections, files };
     write_inputs_index(&inputs_dir, &index)?;
     Ok(index)
+}
+
+fn replay_source_node_fingerprint(fs: &dyn Fs, source_run_dir: &Path, node_id: &str) -> Option<String> {
+    let trace_path = source_run_dir.join("nodes").join(node_id).join("trace.json");
+    let bytes = fs.read(&trace_path).ok()?;
+    let trace: Value = serde_json::from_slice(&bytes).ok()?;
+    trace.get("fingerprint").and_then(Value::as_str).map(str::to_string)
 }
 
 fn cache_dir_from_env() -> Option<PathBuf> {

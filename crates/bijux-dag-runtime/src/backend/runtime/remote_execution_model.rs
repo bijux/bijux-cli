@@ -280,6 +280,7 @@ pub(crate) fn execute_modeled_payload(
 
     let ctx = RunContext {
         run_dir: Arc::clone(&run_dir),
+        replay_source_run_dir: None,
         graph_fingerprint: Arc::new(Mutex::new(graph_fingerprint)),
         node_definition_fingerprints: Arc::new(node_definition_fingerprints),
         declared_environment_fingerprints: Arc::new(declared_environment_fingerprints),
@@ -430,6 +431,7 @@ mod tests {
         graph_fingerprint.insert(node.id.clone(), "node-fp".to_string());
         let ctx = RunContext {
             run_dir: Arc::clone(&run_dir),
+            replay_source_run_dir: None,
             graph_fingerprint: Arc::new(Mutex::new(graph_fingerprint)),
             node_definition_fingerprints: Arc::new(HashMap::from([(
                 node.id.clone(),

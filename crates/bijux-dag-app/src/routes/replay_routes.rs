@@ -25,6 +25,7 @@ fn build_replay_runtime_options(
     named_resource_capacities: std::collections::BTreeMap<String, u32>,
     run_id: Option<String>,
     source_run_id: Option<String>,
+    source_run_dir: Option<PathBuf>,
     cache_mode: CacheMode,
     remote_cache_dir: Option<PathBuf>,
     downstream_selection_roots: Vec<String>,
@@ -47,6 +48,7 @@ fn build_replay_runtime_options(
         remote_cache_dir,
         run_id,
         parent_run_id: source_run_id,
+        replay_source_run_dir: source_run_dir,
         latest_symlink: None,
         policy,
         downstream_selection_roots,
@@ -200,6 +202,7 @@ pub(crate) fn handle_replay_command(
         named_resource_capacities,
         run_id,
         source_run_id.clone(),
+        Some(run_dir.clone()),
         cache_mode.clone(),
         remote_cache_dir,
         downstream_selection_roots.clone(),
@@ -374,6 +377,7 @@ mod tests {
             ]),
             Some("replay-run".to_string()),
             Some("source-run".to_string()),
+            Some(PathBuf::from("/tmp/source-run")),
             crate::CacheMode::ReadWrite,
             Some(PathBuf::from("/tmp/remote-cache")),
             vec!["transform".to_string()],
@@ -393,6 +397,7 @@ mod tests {
         assert_eq!(options.scheduler_policy.max_parallelism, 2);
         assert_eq!(options.cpu_budget, Some(8));
         assert_eq!(options.memory_budget_mb, Some(2048));
+        assert_eq!(options.replay_source_run_dir, Some(PathBuf::from("/tmp/source-run")));
         assert_eq!(options.gpu_device_budget, Some(2));
         assert_eq!(options.named_resource_capacities.get("database_slot"), Some(&2));
         assert_eq!(options.named_resource_capacities.get("license.render"), Some(&1));
