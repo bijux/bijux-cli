@@ -51,12 +51,20 @@ Node traces persist lifecycle evidence separately from terminal `status`.
 
 - terminal `status` stays the coarse completion lane such as `success`,
   `failed`, `cached`, or `cancelled`
+- process-backed nodes also record `exit_code` when the backend exposes one
 - `lifecycle_state` records the final execution interpretation using the stable
   runtime vocabulary: `pending`, `ready`, `queued`, `running`, `succeeded`,
   `failed`, `skipped`, `cached`, `cancelled`, and `timed_out`
 - `lifecycle_transitions` records the validated path through those states so a
   cache hit, timeout, cancellation, or queued-but-never-started node remains
   inspectable after the run finishes
+- `stdout` and `stderr` trace fields record the retained terminal log path,
+  byte size, and a bounded tail excerpt from the terminal attempt
+- `nodes/<node_id>/attempts/<attempt>/stdout.log` and `stderr.log` preserve
+  per-attempt copies when the runtime records attempt history
+- runtime capture streams process output into spill files before it is copied
+  into retained node evidence, so large logs stay on disk instead of being
+  buffered fully in memory during execution
 
 ## Subprocess cleanup contract
 

@@ -58,6 +58,9 @@ route is a public promise.
   as a subprocess group so background child and grandchild helpers do not keep
   running after the node finishes; non-Unix hosts still rely on best-effort
   termination.
+- retained DAG node evidence now includes terminal stdout/stderr files,
+  per-attempt log copies, process exit code when exposed, and bounded
+  stdout/stderr tail metadata in `trace.json`.
 - Experimental DAG routes remain callable by explicit path, but they are not
   part of the stable compatibility lane. Inventory them deliberately with
   `bijux-dag commands --lane experimental`.

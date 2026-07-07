@@ -19,6 +19,8 @@ release-boundary routing, and shapes the typed responses that the CLI renders.
   migration, and diagnostics
 - run summaries and failure explanations that surface container engine
   availability, failed node classes, and retained trace locations
+- node inspection that surfaces retained terminal log paths, byte sizes,
+  bounded tail excerpts, and process exit codes when the runtime recorded them
 - branch-facing command flows that surface selected decisions, skipped lanes,
   join trigger outcomes, and replay proof summaries
 - route gating between stable, experimental, simulated, and internal surfaces

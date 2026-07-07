@@ -37,7 +37,9 @@ bijux-dag explain <run_dir> --node <node_id>
 - resolved params when `resolved_params.json` exists
 - input and output artifact indexes when they exist
 - terminal attempt number and per-attempt status history
-- terminal stdout and stderr paths plus tail excerpts
+- terminal exit code when the runtime exposed one
+- terminal stdout and stderr path, byte size, and bounded tail excerpts from
+  structured trace evidence when available
 - configured cache policy and observed cache result
 - failure and lifecycle evidence from the node trace
 - execution explanation with classification, reason, summary, and any blocking
@@ -49,6 +51,8 @@ bijux-dag explain <run_dir> --node <node_id>
 - pass an explicit run directory instead of relying on ambient workspace state
 - treat `evidence_gaps` as a real diagnostic signal, not just missing
   decoration
+- newer runs prefer the structured `stdout` and `stderr` fields in
+  `trace.json`; older runs fall back to retained node log files
 - use `bijux-dag explain <run_dir> --node <node_id>` when the operator question is
   why a node never ran because scheduler, selector, branch, trigger-rule, or
   upstream evidence can exist even when `trace.json` does not
