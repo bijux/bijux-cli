@@ -1353,6 +1353,9 @@ mod tests {
             }))
             .expect("graph"),
             graph_fingerprint: "fp-1".to_string(),
+            source_graph: None,
+            source_graph_fingerprint: None,
+            dynamic_expansions: Vec::new(),
         };
         let plan = replay_dry_run_plan(
             &run_dir,
@@ -1424,6 +1427,9 @@ mod tests {
             }))
             .expect("graph"),
             graph_fingerprint: "fp-1".to_string(),
+            source_graph: None,
+            source_graph_fingerprint: None,
+            dynamic_expansions: Vec::new(),
         };
         let plan = replay_dry_run_plan(
             &run_dir,
