@@ -322,7 +322,10 @@ fn timeout_retry_policy_can_disable_timeout_retries() {
     assert_eq!(trace["failure"]["class"], "timeout");
 
     let attempts = read_attempts(&run_path, "worker");
-    assert_eq!(attempts[0]["retry_decision"]["reason"], "timeout_retry_policy_denies_timeout_retry");
+    assert_eq!(
+        attempts[0]["retry_decision"]["reason"],
+        "timeout_retry_policy_denies_timeout_retry"
+    );
     assert!(attempts[0].get("scheduled_backoff_ms").is_none());
 }
 
@@ -338,7 +341,10 @@ fn timeout_retry_policy_can_force_timeout_retries() {
     assert_eq!(trace["attempt"], 2);
 
     let attempts = read_attempts(&run_path, "worker");
-    assert_eq!(attempts[0]["retry_decision"]["reason"], "timeout_retry_policy_allows_timeout_retry");
+    assert_eq!(
+        attempts[0]["retry_decision"]["reason"],
+        "timeout_retry_policy_allows_timeout_retry"
+    );
     assert_eq!(attempts[0]["scheduled_backoff_ms"], 10);
 }
 

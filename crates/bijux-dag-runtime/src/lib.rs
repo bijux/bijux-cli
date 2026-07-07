@@ -547,14 +547,14 @@ pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, Stora
 use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
 #[doc(hidden)]
 pub use task_contract::{
-    build_task_contract, default_forced_cleanup, validate_task_contracts, BackoffStrategy,
-    ForcedCancellationCleanup, IdempotencyMode, NodeProvenance, OutputMaterializationPolicy,
-    RetryDecision, RetryFailureObservation, RetryPolicyV2, RuntimeState, SideEffectClassification,
-    TaskContract, TaskFailureReason, TaskInputDescriptor, TaskIsolationMode,
-    TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy, TimeoutRetryPolicy,
-    build_retry_policy, evaluate_retry_decision, retry_backoff_ms as contract_retry_backoff_ms,
-    retry_jitter_ms as contract_retry_jitter_ms, retry_observation, retry_observation_from_failure,
-    retry_wait_ms as contract_retry_wait_ms,
+    build_retry_policy, build_task_contract, default_forced_cleanup, evaluate_retry_decision,
+    retry_backoff_ms as contract_retry_backoff_ms, retry_jitter_ms as contract_retry_jitter_ms,
+    retry_observation, retry_observation_from_failure, retry_wait_ms as contract_retry_wait_ms,
+    validate_task_contracts, BackoffStrategy, ForcedCancellationCleanup, IdempotencyMode,
+    NodeProvenance, OutputMaterializationPolicy, RetryDecision, RetryFailureObservation,
+    RetryPolicyV2, RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason,
+    TaskInputDescriptor, TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope,
+    TimeoutPolicy, TimeoutRetryPolicy,
 };
 #[doc(hidden)]
 pub use task_types::{
@@ -2739,8 +2739,7 @@ fn execute_with_retries(
                 )
             })
         });
-        let retry_allowed =
-            retry_decision.as_ref().is_some_and(|decision| decision.retry_allowed);
+        let retry_allowed = retry_decision.as_ref().is_some_and(|decision| decision.retry_allowed);
         let scheduled_backoff_ms = retry_decision
             .as_ref()
             .filter(|decision| decision.retry_allowed)

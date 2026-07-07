@@ -336,12 +336,7 @@ pub fn retry_backoff_ms(policy: &RetryPolicyV2, attempt: u32) -> u64 {
     }
 }
 
-pub fn retry_jitter_ms(
-    node_id: &str,
-    attempt: u32,
-    failure_class: &str,
-    jitter_ms: u64,
-) -> u64 {
+pub fn retry_jitter_ms(node_id: &str, attempt: u32, failure_class: &str, jitter_ms: u64) -> u64 {
     if jitter_ms == 0 {
         return 0;
     }
@@ -355,7 +350,12 @@ pub fn retry_jitter_ms(
     hasher.finish() % jitter_ms.saturating_add(1)
 }
 
-pub fn retry_wait_ms(node_id: &str, policy: &RetryPolicyV2, attempt: u32, failure_class: &str) -> u64 {
+pub fn retry_wait_ms(
+    node_id: &str,
+    policy: &RetryPolicyV2,
+    attempt: u32,
+    failure_class: &str,
+) -> u64 {
     retry_backoff_ms(policy, attempt).saturating_add(retry_jitter_ms(
         node_id,
         attempt,
@@ -372,10 +372,7 @@ pub fn evaluate_retry_decision(
 ) -> RetryDecision {
     let normalized_class = normalize_retry_failure_class(&observation.failure_class);
     if normalized_class == "policy"
-        || observation
-            .failure_code
-            .as_deref()
-            .is_some_and(|code| code.starts_with("POLICY_"))
+        || observation.failure_code.as_deref().is_some_and(|code| code.starts_with("POLICY_"))
     {
         return RetryDecision {
             retryable: false,
@@ -391,9 +388,8 @@ pub fn evaluate_retry_decision(
         .map(retryable_failure_class_name)
         .collect::<BTreeSet<_>>();
     let class_retryable = retryable_classes.contains(normalized_class.as_str());
-    let matched_exit_code = observation
-        .exit_code
-        .filter(|exit_code| policy.retryable_exit_codes.contains(exit_code));
+    let matched_exit_code =
+        observation.exit_code.filter(|exit_code| policy.retryable_exit_codes.contains(exit_code));
 
     let (retryable, reason) = if normalized_class == "timeout" {
         match policy.timeout_retry_policy {
@@ -435,12 +431,7 @@ pub fn evaluate_retry_decision(
     }
 
     let _ = node_id;
-    RetryDecision {
-        retryable: true,
-        retry_allowed: true,
-        reason,
-        matched_exit_code,
-    }
+    RetryDecision { retryable: true, retry_allowed: true, reason, matched_exit_code }
 }
 
 fn build_timeout_policy(node: &Node, options: &RuntimeConfig) -> TimeoutPolicy {

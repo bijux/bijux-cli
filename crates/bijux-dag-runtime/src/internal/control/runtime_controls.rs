@@ -5,8 +5,8 @@ use crate::simulated_platform::{
     WorkerHeartbeat,
 };
 use crate::{
-    cancel_batch_attempt, default_forced_cleanup, duplicate_status_delivery_detected,
-    contract_retry_backoff_ms, evaluate_retry_decision, retry_observation,
+    cancel_batch_attempt, contract_retry_backoff_ms, default_forced_cleanup,
+    duplicate_status_delivery_detected, evaluate_retry_decision, retry_observation,
     validate_task_contracts, BackoffStrategy, BatchAttemptState, BatchLifecycleEvent,
     ForcedCancellationCleanup, Graph, InterruptionClass, ManualInterventionRecord, NodeState,
     NodeTransition, OperatorRetryPolicy, ResumePolicy, RetryPolicyV2, RunPausePolicy, RunState,
@@ -1146,9 +1146,9 @@ mod tests {
             ),
             (
                 "retryable_exit_codes".to_string(),
-                bijux_dag_core::ParamValue::Array(vec![
-                    bijux_dag_core::ParamValue::Literal(serde_json::json!(75)),
-                ]),
+                bijux_dag_core::ParamValue::Array(vec![bijux_dag_core::ParamValue::Literal(
+                    serde_json::json!(75),
+                )]),
             ),
         ]));
 

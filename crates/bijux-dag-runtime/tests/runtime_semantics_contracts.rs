@@ -130,8 +130,12 @@ fn retry_decision_vetoes_policy_failures_and_respects_timeout_override() {
     assert!(!policy_failure.retryable);
     assert_eq!(policy_failure.reason, "policy_failures_are_non_retryable");
 
-    let timeout_failure =
-        evaluate_retry_decision("worker", &policy, 1, &retry_observation("timeout", None, Some(137)));
+    let timeout_failure = evaluate_retry_decision(
+        "worker",
+        &policy,
+        1,
+        &retry_observation("timeout", None, Some(137)),
+    );
     assert!(!timeout_failure.retryable);
     assert_eq!(timeout_failure.reason, "timeout_retry_policy_denies_timeout_retry");
 }
