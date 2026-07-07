@@ -131,8 +131,7 @@ impl Adapter for ExternalAdapter {
             Some(exec.cancellation_requested.as_ref()),
         )?;
 
-        exec.fs.write(&stdout_path, output.stdout())?;
-        exec.fs.write(&stderr_path, output.stderr())?;
+        output.persist_streams(exec.fs.as_ref(), &stdout_path, &stderr_path)?;
         let output = match output {
             crate::ControlledCommandResult::Exited(output) => output,
             crate::ControlledCommandResult::TimedOut(output) => {

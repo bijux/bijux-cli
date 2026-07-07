@@ -366,6 +366,8 @@ fn python_failure_from_stderr(stderr: &[u8], exit_code: Option<i32>) -> Option<F
     ))
 }
 
+const PYTHON_FAILURE_STDERR_READ_BYTES: u64 = 256 * 1024;
+
 impl Adapter for PythonFunctionAdapter {
     fn id(&self) -> AdapterId {
         AdapterId { id: "python".to_string(), version: "0.1".to_string() }
@@ -458,8 +460,7 @@ impl Adapter for PythonFunctionAdapter {
             Some(exec.cancellation_requested.as_ref()),
         )?;
 
-        exec.fs.write(&stdout_path, output.stdout())?;
-        exec.fs.write(&stderr_path, output.stderr())?;
+        output.persist_streams(exec.fs.as_ref(), &stdout_path, &stderr_path)?;
         match output {
             ControlledCommandResult::TimedOut(output) => {
                 return Ok(NodeResult {
@@ -509,7 +510,8 @@ impl Adapter for PythonFunctionAdapter {
             }
             ControlledCommandResult::Exited(output) => {
                 if !output.status.success() {
-                    let failure = python_failure_from_stderr(&output.stderr, output.status.code())
+                    let stderr = output.read_tail_bytes(PYTHON_FAILURE_STDERR_READ_BYTES)?;
+                    let failure = python_failure_from_stderr(&stderr, output.status.code())
                         .unwrap_or_else(|| {
                             python_failure(
                                 "EXEC_FAIL",

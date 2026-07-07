@@ -577,8 +577,8 @@ use std::io::{self as std_io, Read, Seek, SeekFrom, Write};
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{Output, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::process::Stdio;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock, Weak};
 use std::time::Duration;
 #[doc(hidden)]
@@ -809,26 +809,79 @@ pub struct AttemptEvent {
 
 #[derive(Debug)]
 pub(crate) enum ControlledCommandResult {
-    Exited(Output),
-    TimedOut(Output),
-    Cancelled(Output),
+    Exited(ControlledCommandOutput),
+    TimedOut(ControlledCommandOutput),
+    Cancelled(ControlledCommandOutput),
 }
 
 impl ControlledCommandResult {
-    pub(crate) fn stdout(&self) -> &[u8] {
+    fn output(&self) -> &ControlledCommandOutput {
         match self {
-            Self::Exited(output) | Self::TimedOut(output) | Self::Cancelled(output) => {
-                &output.stdout
-            }
+            Self::Exited(output) | Self::TimedOut(output) | Self::Cancelled(output) => output,
         }
     }
 
-    pub(crate) fn stderr(&self) -> &[u8] {
-        match self {
-            Self::Exited(output) | Self::TimedOut(output) | Self::Cancelled(output) => {
-                &output.stderr
-            }
+    pub(crate) fn persist_streams(
+        &self,
+        fs: &dyn Fs,
+        stdout_path: &Path,
+        stderr_path: &Path,
+    ) -> Result<(), RuntimeError> {
+        let output = self.output();
+        output.stdout.copy_to(fs, stdout_path)?;
+        output.stderr.copy_to(fs, stderr_path)?;
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct ControlledCommandOutput {
+    status: std::process::ExitStatus,
+    stdout: ControlledCommandStream,
+    stderr: ControlledCommandStream,
+}
+
+impl ControlledCommandOutput {
+    fn read_tail_bytes(&self, max_bytes: u64) -> Result<Vec<u8>, RuntimeError> {
+        self.stderr.read_tail_bytes(max_bytes).map_err(RuntimeError::Io)
+    }
+}
+
+#[derive(Debug)]
+struct ControlledCommandStream {
+    path: PathBuf,
+}
+
+impl ControlledCommandStream {
+    fn copy_to(&self, fs: &dyn Fs, destination: &Path) -> Result<(), RuntimeError> {
+        fs.copy(&self.path, destination).map(|_| ()).map_err(RuntimeError::Io)
+    }
+
+    fn read_tail_bytes(&self, max_bytes: u64) -> std_io::Result<Vec<u8>> {
+        read_file_tail_bytes(&self.path, max_bytes)
+    }
+
+    fn append_cleanup_diagnostics(&self, cleanup_diagnostics: &[String]) -> std_io::Result<()> {
+        if cleanup_diagnostics.is_empty() {
+            return Ok(());
         }
+
+        let mut file = std::fs::OpenOptions::new().append(true).open(&self.path)?;
+        if file.metadata()?.len() > 0 {
+            file.write_all(b"\n")?;
+        }
+        for diagnostic in cleanup_diagnostics {
+            file.write_all(b"[bijux cleanup] ")?;
+            file.write_all(diagnostic.as_bytes())?;
+            file.write_all(b"\n")?;
+        }
+        Ok(())
+    }
+}
+
+impl Drop for ControlledCommandStream {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
     }
 }
 
@@ -1089,8 +1142,7 @@ impl Adapter for ShellAdapter {
             Err(error) => return Err(error),
         };
 
-        exec.fs.write(&stdout_path, output.stdout())?;
-        exec.fs.write(&stderr_path, output.stderr())?;
+        output.persist_streams(exec.fs.as_ref(), &stdout_path, &stderr_path)?;
         match output {
             ControlledCommandResult::TimedOut(output) => {
                 return Ok(NodeResult {
@@ -1420,8 +1472,7 @@ impl Adapter for ContainerAdapter {
             effective_node_timeout_ms(node, params),
             Some(exec.cancellation_requested.as_ref()),
         )?;
-        exec.fs.write(&stdout_path, output.stdout())?;
-        exec.fs.write(&stderr_path, output.stderr())?;
+        output.persist_streams(exec.fs.as_ref(), &stdout_path, &stderr_path)?;
         let timeout_failure = || {
             FailureInfo::new(
                 FailureClass::Timeout,
@@ -2214,10 +2265,20 @@ fn persist_attempt_logs(
     let attempt_stdout_path = ctx.run_dir.node_attempt_stdout_path(node_id, attempt);
     let attempt_stderr_path = ctx.run_dir.node_attempt_stderr_path(node_id, attempt);
     ctx.fs.create_dir_all(&attempt_dir)?;
-    let stdout_bytes = ctx.fs.read(Path::new(stdout_path)).unwrap_or_default();
-    let stderr_bytes = ctx.fs.read(Path::new(stderr_path)).unwrap_or_default();
-    ctx.fs.write(&attempt_stdout_path, &stdout_bytes)?;
-    ctx.fs.write(&attempt_stderr_path, &stderr_bytes)?;
+    match ctx.fs.copy(Path::new(stdout_path), &attempt_stdout_path) {
+        Ok(_) => {}
+        Err(error) if error.kind() == std_io::ErrorKind::NotFound => {
+            ctx.fs.write(&attempt_stdout_path, b"")?;
+        }
+        Err(error) => return Err(RuntimeError::Io(error)),
+    }
+    match ctx.fs.copy(Path::new(stderr_path), &attempt_stderr_path) {
+        Ok(_) => {}
+        Err(error) if error.kind() == std_io::ErrorKind::NotFound => {
+            ctx.fs.write(&attempt_stderr_path, b"")?;
+        }
+        Err(error) => return Err(RuntimeError::Io(error)),
+    }
     Ok((
         attempt_log_relative_path(attempt, "stdout.log"),
         attempt_log_relative_path(attempt, "stderr.log"),
@@ -4568,8 +4629,8 @@ pub(crate) fn command_output_with_controls(
         .stderr
         .take()
         .ok_or_else(|| RuntimeError::Executor("failed to capture process stderr".to_string()))?;
-    let stdout_reader = spawn_output_reader(stdout);
-    let stderr_reader = spawn_output_reader(stderr);
+    let stdout_reader = spawn_output_reader(stdout, "stdout")?;
+    let stderr_reader = spawn_output_reader(stderr, "stderr")?;
     let timeout_limit = timeout_ms.map(|limit| (limit, std::time::Instant::now()));
     let (termination, outcome_kind) = loop {
         if let Some(status) = child.try_wait().map_err(RuntimeError::Io)? {
@@ -4591,9 +4652,11 @@ pub(crate) fn command_output_with_controls(
         std::thread::sleep(Duration::from_millis(10));
     };
     let stdout = join_output_reader(stdout_reader, "stdout")?;
-    let mut stderr = join_output_reader(stderr_reader, "stderr")?;
-    append_cleanup_diagnostics(&mut stderr, &termination.cleanup_diagnostics);
-    let output = Output { status: termination.status, stdout, stderr };
+    let stderr = join_output_reader(stderr_reader, "stderr")?;
+    stderr
+        .append_cleanup_diagnostics(&termination.cleanup_diagnostics)
+        .map_err(RuntimeError::Io)?;
+    let output = ControlledCommandOutput { status: termination.status, stdout, stderr };
     Ok(match outcome_kind {
         ControlledCommandOutcomeKind::Exited => ControlledCommandResult::Exited(output),
         ControlledCommandOutcomeKind::Cancelled => ControlledCommandResult::Cancelled(output),
@@ -4608,27 +4671,38 @@ fn configure_controlled_subprocess(cmd: &mut std::process::Command) {
     }
 }
 
-fn spawn_output_reader<T>(mut stream: T) -> std::thread::JoinHandle<std_io::Result<Vec<u8>>>
+struct ControlledCommandReader {
+    path: PathBuf,
+    handle: std::thread::JoinHandle<std_io::Result<()>>,
+}
+
+fn spawn_output_reader<T>(
+    mut stream: T,
+    stream_name: &str,
+) -> std_io::Result<ControlledCommandReader>
 where
     T: Read + Send + 'static,
 {
-    std::thread::spawn(move || {
-        let mut buffer = Vec::new();
-        stream.read_to_end(&mut buffer)?;
-        Ok(buffer)
-    })
+    let (mut file, path) = create_capture_file(stream_name)?;
+    let handle = std::thread::spawn(move || {
+        std_io::copy(&mut stream, &mut file)?;
+        Ok(())
+    });
+    Ok(ControlledCommandReader { path, handle })
 }
 
 fn join_output_reader(
-    reader: std::thread::JoinHandle<std_io::Result<Vec<u8>>>,
+    reader: ControlledCommandReader,
     stream_name: &str,
-) -> Result<Vec<u8>, RuntimeError> {
+) -> Result<ControlledCommandStream, RuntimeError> {
     reader
+        .handle
         .join()
         .map_err(|_| {
             RuntimeError::Executor(format!("failed to join {stream_name} capture thread"))
         })?
-        .map_err(RuntimeError::Io)
+        .map_err(RuntimeError::Io)?;
+    Ok(ControlledCommandStream { path: reader.path })
 }
 
 fn terminate_child_best_effort(
@@ -4715,19 +4789,40 @@ fn wait_for_child_exit(
     }
 }
 
-fn append_cleanup_diagnostics(stderr: &mut Vec<u8>, cleanup_diagnostics: &[String]) {
-    if cleanup_diagnostics.is_empty() {
-        return;
+fn create_capture_file(stream_name: &str) -> std_io::Result<(std::fs::File, PathBuf)> {
+    static CAPTURE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+    for _ in 0..32 {
+        let sequence = CAPTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "bijux-dag-{stream_name}-{}-{timestamp}-{sequence}.log",
+            std::process::id()
+        ));
+        match std::fs::OpenOptions::new().create_new(true).read(true).write(true).open(&path) {
+            Ok(file) => return Ok((file, path)),
+            Err(error) if error.kind() == std_io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(error),
+        }
     }
 
-    if !stderr.is_empty() && !stderr.ends_with(b"\n") {
-        stderr.push(b'\n');
-    }
-    for diagnostic in cleanup_diagnostics {
-        stderr.extend_from_slice(b"[bijux cleanup] ");
-        stderr.extend_from_slice(diagnostic.as_bytes());
-        stderr.push(b'\n');
-    }
+    Err(std_io::Error::new(
+        std_io::ErrorKind::AlreadyExists,
+        format!("failed to allocate unique capture path for {stream_name}"),
+    ))
+}
+
+fn read_file_tail_bytes(path: &Path, max_bytes: u64) -> std_io::Result<Vec<u8>> {
+    let mut file = std::fs::File::open(path)?;
+    let file_len = file.metadata()?.len();
+    let start = file_len.saturating_sub(max_bytes);
+    file.seek(SeekFrom::Start(start))?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+    Ok(buffer)
 }
 
 #[cfg(unix)]
