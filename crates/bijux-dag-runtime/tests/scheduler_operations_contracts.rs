@@ -15,21 +15,24 @@ use thiserror as _;
 use bijux_dag_core::{parse_graph_strict, GraphInputSpec};
 use bijux_dag_runtime::{
     advance_backfill_operation, apply_backfill_throttling, apply_submission_status_updates,
-    build_plan, build_schedule_queue_state, build_scheduler, cancel_backfill_operation,
-    compile_backfill_operation, compile_submission_request, deduplicate_trigger_events,
-    deterministic_tick_order, dispatch_schedule_queue_runs, evaluate_schedule_submissions,
-    evaluate_sla_metrics, materialize_next_runs, pause_backfill_operation,
-    resume_backfill_operation, run_batches, scheduler_debug_event_log, scheduler_invariants_hold,
-    trace_event_count_by_category, validate_schedule_registry, BackfillAdvanceRequest,
-    BackfillFailurePolicy, BackfillLifecycleStatus, BackfillRequest, BackfillRunStatus,
-    BackfillStatusUpdate, BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers,
-    DependencyCompletionRecord, DependencyCounter, ManualSubmissionRequest, PriorityClass,
-    QueueIdentity, ReadyNode, ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig,
-    ScheduleDefinition, ScheduleEvaluationInputs, ScheduleEventRecord, ScheduleInputSource,
-    SchedulePriorityDispatchPolicy, ScheduleRegistry, ScheduleSubmissionLedger,
-    ScheduleSubmissionLedgerEntry, ScheduleSubmissionStatus, ScheduleSubmissionStatusUpdate,
-    ScheduledSubmission, Selector, SelectorSet, SignalRecord, StarvationPreventionPolicy,
-    SubmissionTriggerKind, TriggerSpec, WeightedPriorityPolicy,
+    build_plan, build_schedule_override_status, build_schedule_queue_state, build_scheduler,
+    cancel_backfill_operation, compile_backfill_operation, compile_submission_request,
+    deduplicate_trigger_events, deterministic_tick_order, dispatch_schedule_queue_runs,
+    evaluate_schedule_submissions, evaluate_schedule_submissions_with_overrides,
+    evaluate_sla_metrics, materialize_next_runs, pause_backfill_operation, pause_schedule,
+    record_schedule_override, resume_backfill_operation, resume_schedule, run_batches,
+    scheduler_debug_event_log, scheduler_invariants_hold, trace_event_count_by_category,
+    validate_schedule_registry, BackfillAdvanceRequest, BackfillFailurePolicy,
+    BackfillLifecycleStatus, BackfillRequest, BackfillRunStatus, BackfillStatusUpdate,
+    BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCompletionRecord,
+    DependencyCounter, ManualSubmissionRequest, PriorityClass, QueueIdentity, ReadyNode,
+    ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig, ScheduleDefinition,
+    ScheduleEvaluationInputs, ScheduleEventRecord, ScheduleInputSource, ScheduleOverrideAction,
+    ScheduleOverrideRecord, ScheduleOverrideState, SchedulePriorityDispatchPolicy,
+    ScheduleRegistry, ScheduleSubmissionLedger, ScheduleSubmissionLedgerEntry,
+    ScheduleSubmissionStatus, ScheduleSubmissionStatusUpdate, ScheduledSubmission, Selector,
+    SelectorSet, SignalRecord, StarvationPreventionPolicy, SubmissionTriggerKind, TriggerSpec,
+    WeightedPriorityPolicy,
 };
 use std::collections::{BTreeMap, VecDeque};
 use std::fs;
@@ -638,6 +641,134 @@ fn schedule_submit_evaluates_manual_cron_event_dependency_and_signal_triggers() 
     assert!(report.duplicate_suppressions.is_empty());
     assert_eq!(report.recorded_submissions.len(), 5);
     assert!(report.generated_requests.iter().all(|request| request.run_id.starts_with("sched-")));
+}
+
+#[test]
+fn schedule_submit_suppresses_paused_schedule_until_explicit_resume() {
+    let registry = ScheduleRegistry {
+        definitions: vec![schedule_definition("manual-ops", TriggerSpec::Manual)],
+    };
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: 200_000,
+        manual_requests: vec![ManualSubmissionRequest {
+            request_id: "manual-001".to_string(),
+            schedule_id: "manual-ops".to_string(),
+            requested_unix_ms: 175_000,
+            arguments: BTreeMap::new(),
+        }],
+        ..ScheduleEvaluationInputs::default()
+    };
+    let mut overrides = ScheduleOverrideState::default();
+    pause_schedule(
+        &mut overrides,
+        "manual-ops",
+        "atlas-ops",
+        180_000,
+        Some("hold while downstream validation is degraded".to_string()),
+    )
+    .expect("pause schedule");
+
+    let paused = evaluate_schedule_submissions_with_overrides(
+        &registry,
+        &inputs,
+        &ScheduleSubmissionLedger::default(),
+        &overrides,
+    );
+    assert!(paused.generated_requests.is_empty());
+    assert_eq!(paused.paused_suppressions.len(), 1);
+
+    resume_schedule(
+        &mut overrides,
+        "manual-ops",
+        "atlas-ops",
+        190_000,
+        Some("validation recovered".to_string()),
+    )
+    .expect("resume schedule");
+
+    let resumed = evaluate_schedule_submissions_with_overrides(
+        &registry,
+        &inputs,
+        &ScheduleSubmissionLedger::default(),
+        &overrides,
+    );
+    assert_eq!(resumed.generated_requests.len(), 1);
+    assert!(resumed.paused_suppressions.is_empty());
+}
+
+#[test]
+fn schedule_override_status_reflects_latest_operator_action() {
+    let registry = ScheduleRegistry {
+        definitions: vec![
+            schedule_definition("manual-ops", TriggerSpec::Manual),
+            schedule_definition("event-ingest", TriggerSpec::Manual),
+        ],
+    };
+    let mut overrides = ScheduleOverrideState::default();
+    record_schedule_override(
+        &mut overrides,
+        ScheduleOverrideRecord {
+            schedule_id: "manual-ops".to_string(),
+            operator: "atlas-ops".to_string(),
+            action: ScheduleOverrideAction::Pause,
+            reason: Some("hold".to_string()),
+            created_unix_ms: 180_000,
+        },
+    )
+    .expect("record pause");
+    record_schedule_override(
+        &mut overrides,
+        ScheduleOverrideRecord {
+            schedule_id: "manual-ops".to_string(),
+            operator: "atlas-ops".to_string(),
+            action: ScheduleOverrideAction::Resume,
+            reason: Some("clear".to_string()),
+            created_unix_ms: 190_000,
+        },
+    )
+    .expect("record resume");
+
+    let statuses = build_schedule_override_status(&registry, &overrides);
+    let by_schedule = statuses
+        .iter()
+        .map(|status| (status.schedule_id.as_str(), status))
+        .collect::<BTreeMap<_, _>>();
+
+    assert_eq!(by_schedule["manual-ops"].paused, false);
+    assert_eq!(by_schedule["manual-ops"].operator.as_deref(), Some("atlas-ops"));
+    assert_eq!(by_schedule["manual-ops"].reason.as_deref(), Some("clear"));
+    assert_eq!(by_schedule["manual-ops"].updated_unix_ms, Some(190_000));
+    assert_eq!(by_schedule["event-ingest"].paused, false);
+    assert_eq!(by_schedule["event-ingest"].updated_unix_ms, None);
+}
+
+#[test]
+fn schedule_override_status_ignores_override_file_order_for_equal_timestamps() {
+    let registry = ScheduleRegistry {
+        definitions: vec![schedule_definition("manual-ops", TriggerSpec::Manual)],
+    };
+    let overrides = ScheduleOverrideState {
+        records: vec![
+            ScheduleOverrideRecord {
+                schedule_id: "manual-ops".to_string(),
+                operator: "atlas-ops".to_string(),
+                action: ScheduleOverrideAction::Resume,
+                reason: Some("clear".to_string()),
+                created_unix_ms: 190_000,
+            },
+            ScheduleOverrideRecord {
+                schedule_id: "manual-ops".to_string(),
+                operator: "atlas-ops".to_string(),
+                action: ScheduleOverrideAction::Pause,
+                reason: Some("hold".to_string()),
+                created_unix_ms: 190_000,
+            },
+        ],
+    };
+
+    let statuses = build_schedule_override_status(&registry, &overrides);
+    assert_eq!(statuses[0].paused, false);
+    assert_eq!(statuses[0].reason.as_deref(), Some("clear"));
 }
 
 #[test]
