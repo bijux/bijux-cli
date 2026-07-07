@@ -118,3 +118,102 @@ fn explain_failure_separates_primary_failure_from_propagated_impact() {
     assert_eq!(report["downstream_affected_groups"]["failed"], json!(["report"]));
     assert_eq!(report["downstream_affected_groups"]["skipped"], json!(["publish"]));
 }
+
+#[test]
+fn explain_failure_treats_isolated_branch_skips_as_propagated_impact() {
+    let tmp = tempfile::tempdir().expect("tmpdir");
+    let run_dir = tmp.path().join("run-isolated-branch");
+    fs::create_dir_all(run_dir.join("nodes").join("fail")).expect("fail dir");
+    fs::create_dir_all(run_dir.join("nodes").join("join")).expect("join dir");
+    fs::create_dir_all(run_dir.join("nodes").join("publish")).expect("publish dir");
+    fs::write(
+        run_dir.join("graph.snapshot.json"),
+        serde_json::to_vec_pretty(&json!({
+            "graph": {
+                "spec": "bijux-dag/v0.1",
+                "nodes": [
+                    {"id":"fail","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{}},
+                    {"id":"join","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{}},
+                    {"id":"publish","kind":"shell","inputs":[],"outputs":[{"name":"out","path":"out"}],"params":{}}
+                ],
+                "edges": [
+                    {"from":{"node_id":"fail","port":"out"},"to":{"node_id":"join","port":"in"}},
+                    {"from":{"node_id":"join","port":"out"},"to":{"node_id":"publish","port":"in"}}
+                ]
+            },
+            "graph_fingerprint": "graph-fingerprint"
+        }))
+        .expect("snapshot"),
+    )
+    .expect("write snapshot");
+    fs::write(
+        run_dir.join("nodes").join("fail").join("trace.json"),
+        serde_json::to_vec_pretty(&json!({
+            "node_id":"fail",
+            "status":"failed",
+            "started_unix_ms":10,
+            "finished_unix_ms":20,
+            "attempt":1,
+            "fingerprint":"fp-fail",
+            "adapter_id":"shell",
+            "adapter_version":"1",
+            "adapter_outputs_schema_version":"v1",
+            "outputs":[],
+            "failure":{"kind":"Execution","code":"EXEC_FAIL","message":"failed branch exited 1"},
+            "transition_cause":"ExecutionFailed",
+            "lifecycle_transitions":[]
+        }))
+        .expect("fail trace"),
+    )
+    .expect("write fail trace");
+    fs::write(
+        run_dir.join("nodes").join("join").join("trace.json"),
+        serde_json::to_vec_pretty(&json!({
+            "node_id":"join",
+            "status":"skipped",
+            "started_unix_ms":21,
+            "finished_unix_ms":21,
+            "attempt":1,
+            "fingerprint":"fp-join",
+            "adapter_id":"shell",
+            "adapter_version":"1",
+            "adapter_outputs_schema_version":"v1",
+            "outputs":[],
+            "skip_reason":{"reason":"isolated_branch_failure"},
+            "transition_cause":"DependencyFailed",
+            "lifecycle_transitions":[]
+        }))
+        .expect("join trace"),
+    )
+    .expect("write join trace");
+    fs::write(
+        run_dir.join("nodes").join("publish").join("trace.json"),
+        serde_json::to_vec_pretty(&json!({
+            "node_id":"publish",
+            "status":"skipped",
+            "started_unix_ms":22,
+            "finished_unix_ms":22,
+            "attempt":1,
+            "fingerprint":"fp-publish",
+            "adapter_id":"shell",
+            "adapter_version":"1",
+            "adapter_outputs_schema_version":"v1",
+            "outputs":[],
+            "skip_reason":{"reason":"isolated_branch_failure"},
+            "transition_cause":"DependencyFailed",
+            "lifecycle_transitions":[]
+        }))
+        .expect("publish trace"),
+    )
+    .expect("write publish trace");
+
+    let report = explain_failure(&run_dir).expect("report");
+    assert_eq!(report["roots"], json!(["fail:execution_failed"]));
+    assert_eq!(report["propagated_skips"][0]["node_id"], "join");
+    assert_eq!(report["propagated_skips"][0]["reason"], "isolated_branch_failure");
+    assert_eq!(report["propagated_skips"][0]["blocking_nodes"], json!(["fail"]));
+    assert_eq!(report["propagated_skips"][1]["node_id"], "publish");
+    assert_eq!(report["propagated_skips"][1]["reason"], "isolated_branch_failure");
+    assert_eq!(report["propagated_skips"][1]["blocking_nodes"], json!(["join"]));
+    assert_eq!(report["downstream_affected_groups"]["skipped"], json!(["join", "publish"]));
+}
