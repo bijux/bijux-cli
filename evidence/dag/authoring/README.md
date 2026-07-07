@@ -24,4 +24,5 @@ Representative examples:
 - `examples/regional-sales-pipeline.dag.json`: structured data workflow with changed-input attribution.
 - `examples/audience-branch-bulletin.dag.json`: branch-backed bulletin workflow with retained branch decisions, skipped lanes, and replay stability.
 - `examples/compliance-gated-bulletin.dag.json`: approval-gated bulletin workflow with retry evidence, repairable approval failure, and focused replay.
+- `examples/scheduled-catalog-refresh.dag.json`: schedule-ready bulletin workflow with a required scheduled timestamp, retained request capture, and promotable publication output.
 - `examples/release-note-bundle.dag.json`: container-backed packaging workflow with mounted inputs, retained outputs, and recorded container identity.
