@@ -65,6 +65,7 @@ fn task_contract_supports_all_isolation_modes() {
         group: None,
         trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     });
     graph.nodes.push(bijux_dag_core::Node {
         id: "container_mode".to_string(),
@@ -98,6 +99,7 @@ fn task_contract_supports_all_isolation_modes() {
         group: None,
         trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     });
     graph.nodes.push(bijux_dag_core::Node {
         id: "external_mode".to_string(),
@@ -125,6 +127,7 @@ fn task_contract_supports_all_isolation_modes() {
         group: None,
         trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     });
 
     let options = RuntimeConfig::default();
@@ -177,6 +180,7 @@ fn python_nodes_use_subprocess_task_isolation() {
             group: None,
             trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
             branch: None,
+            dynamic: None,
         }],
         edges: vec![],
     };
@@ -226,6 +230,7 @@ fn http_nodes_use_in_process_task_isolation() {
             group: None,
             trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
             branch: None,
+            dynamic: None,
         }],
         edges: vec![],
     };
@@ -275,6 +280,7 @@ fn file_transform_nodes_use_in_process_task_isolation() {
             group: None,
             trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
             branch: None,
+            dynamic: None,
         }],
         edges: vec![],
     };

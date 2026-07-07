@@ -465,6 +465,7 @@ fn external_graph(kind: &str, timeout_ms: Option<u64>) -> Graph {
             group: None,
             trigger_rule: TriggerRule::AllSuccess,
             branch: None,
+            dynamic: None,
         }],
         edges: vec![],
     }

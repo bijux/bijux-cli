@@ -364,6 +364,7 @@ fn const_node(id: &str) -> Node {
         group: None,
         trigger_rule: TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     }
 }
 
@@ -393,6 +394,7 @@ fn shell_node(id: &str) -> Node {
         group: None,
         trigger_rule: TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     }
 }
 

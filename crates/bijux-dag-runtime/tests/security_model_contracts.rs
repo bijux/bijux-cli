@@ -101,6 +101,7 @@ fn effective_env_allowlist_merges_node_and_container_bindings() {
         group: None,
         trigger_rule: TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     };
 
     assert_eq!(

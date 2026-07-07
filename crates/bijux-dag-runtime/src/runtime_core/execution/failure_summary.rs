@@ -524,6 +524,7 @@ mod tests {
             group: None,
             trigger_rule: TriggerRule::default(),
             branch: None,
+            dynamic: None,
         }
     }
 }

@@ -427,6 +427,7 @@ mod tests {
                     group: None,
                     trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
                     branch: None,
+                    dynamic: None,
                 },
                 Node {
                     id: "b".to_string(),
@@ -446,6 +447,7 @@ mod tests {
                     group: None,
                     trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
                     branch: None,
+                    dynamic: None,
                 },
             ],
             edges: vec![],

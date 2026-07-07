@@ -873,6 +873,7 @@ mod tests {
                     group: None,
                     trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
                     branch: None,
+                    dynamic: None,
                 },
                 Node {
                     id: "shell1".to_string(),
@@ -899,6 +900,7 @@ mod tests {
                     group: None,
                     trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
                     branch: None,
+                    dynamic: None,
                 },
             ],
             edges: vec![Edge {
@@ -965,6 +967,7 @@ mod tests {
             group: None,
             trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
             branch: None,
+            dynamic: None,
         });
         let report = build_policy_enforcement_report(&graph, &RuntimeConfig::default())
             .expect("policy report");
@@ -1010,6 +1013,7 @@ mod tests {
             group: None,
             trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
             branch: None,
+            dynamic: None,
         });
         let report = build_policy_enforcement_report(
             &graph,
