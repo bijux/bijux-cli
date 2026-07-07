@@ -36,6 +36,7 @@ flowchart TD
 - failure-recovery workflow for retry evidence, focused replay repair, and strict verification
 - file-processing workflow for cache, lineage, rerun, and promotion proof
 - data-pipeline workflow for cache reuse, changed-input attribution, and retained-run comparison
+- cache-behavior workflow for selective invalidation, corruption refusal, and cache-miss explanation
 - internal schedule workflow for cron preview, deterministic submission, queue dispatch, and explicit run linkage
 - internal backfill workflow for historical partition fanout, retryable failed partitions, and aggregate summary reporting
 
@@ -83,6 +84,11 @@ For a structured analytics-style workflow that changes one explicit graph input
 and then compares retained runs to identify the affected stages, use
 [Data Pipeline Workflow](guides/data-pipeline-workflow.md).
 
+For one repository-backed cache integrity workflow that proves warm reuse,
+changed-input invalidation, corruption refusal, and explicit
+`why-cache-missed` evidence on the same retained run family, use
+[Cache Behavior Workflow](guides/cache-behavior-workflow.md).
+
 For a real local container execution path that mounts upstream inputs, writes
 retained outputs, records image identity, and fails clearly when Docker is not
 available, use
@@ -118,6 +124,7 @@ operator sequence is still unclear.
 - [Branching Bulletin Workflow](guides/branching-bulletin-workflow.md)
 - [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](guides/container-packaging-workflow.md)
+- [Cache Behavior Workflow](guides/cache-behavior-workflow.md)
 - [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
 - [Historical Catalog Backfill Workflow](guides/historical-catalog-backfill-workflow.md)
 - [Scheduled Catalog Refresh Workflow](guides/scheduled-catalog-refresh-workflow.md)
