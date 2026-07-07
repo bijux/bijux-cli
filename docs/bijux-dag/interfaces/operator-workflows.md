@@ -343,6 +343,8 @@ The schedule-input binding contract is:
   status
 - invalid or missing bindings suppress submission instead of creating a run
   request with partial graph input state
+- event-triggered submissions record event-to-run lineage in the durable
+  submission ledger through `event_lineage`
 
 ## Trigger One DAG When Another DAG Completes
 
@@ -383,6 +385,21 @@ The dependency-trigger contract is:
   downstream graph input contract
 - dedupe is keyed by schedule id, upstream run id, and trigger condition so
   alias status spellings do not create duplicate downstream submissions
+
+## Preserve Event-To-Run Lineage For External Triggers
+
+When scheduled work comes from an external event, the durable submission ledger
+retains the triggering event identity alongside the generated run id instead of
+relying on the dedupe key alone.
+
+The event lineage contract is:
+
+- event-triggered schedules deduplicate by schedule id plus `event_id`
+- the emitted submission request and durable ledger entry retain
+  `event_id`, `event_type`, `source`, and `occurred_unix_ms`
+- payload binding into graph inputs does not erase the original event identity
+- repeated delivery of the same event id does not create a second run or a
+  second lineage record
 
 ## Pause Scheduled Submission Creation Without Deleting The Schedule
 
