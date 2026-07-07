@@ -273,3 +273,66 @@ fn replay_rejects_corrupt_upstream_artifact_at_rerun_boundary() {
             .is_some_and(|checks| checks.iter().any(|check| check["verified"] == false))
     );
 }
+
+#[test]
+fn replay_reports_node_scoped_diff_for_single_rerun_root() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = root.join("crates/bijux-dag-core/tests/snapshots/selective_replay.dag.json");
+
+    let source = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "node-diff-source",
+        ],
+        &root,
+    );
+    let source_run = run_dir_from_response(&source);
+    let trace_path = source_run.join("nodes/branch_a/trace.json");
+    let mut trace: Value =
+        serde_json::from_str(&fs::read_to_string(&trace_path).expect("read trace"))
+            .expect("parse trace");
+    trace["status"] = Value::String("failed".to_string());
+    fs::write(&trace_path, serde_json::to_vec_pretty(&trace).expect("encode trace"))
+        .expect("write trace");
+
+    let replay = run_json(
+        &[
+            "replay",
+            "--json",
+            "--source-run-id",
+            "node-diff-source",
+            "--source-run-root",
+            &output_path_string(&out_dir),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "node-diff-replay",
+            "--from-node",
+            "branch_a",
+        ],
+        &root,
+    );
+    assert_eq!(replay["ok"], true);
+    assert_eq!(replay["data"]["node_rerun_diff"]["node_id"], "branch_a");
+    assert_eq!(
+        replay["data"]["node_rerun_diff"]["summary"]["node"],
+        "branch_a"
+    );
+    assert_eq!(
+        replay["data"]["node_rerun_diff"]["summary"]["equivalent"],
+        false
+    );
+    assert!(
+        replay["data"]["node_rerun_diff"]["causal_chain"]
+            .as_array()
+            .is_some_and(|chain| chain.len() > 1)
+    );
+}

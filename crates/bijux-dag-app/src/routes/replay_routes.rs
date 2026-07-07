@@ -187,6 +187,8 @@ pub(crate) fn handle_replay_command(
     } else {
         bijux_dag_runtime::SelectorSet::default()
     };
+    let rerun_node_id =
+        (downstream_selection_roots.len() == 1).then(|| downstream_selection_roots[0].clone());
     let options = build_replay_runtime_options(
         jobs,
         cpu_budget,
@@ -233,6 +235,7 @@ pub(crate) fn handle_replay_command(
             upstream_artifact_verification: boundary_verification.map(|report| {
                 serde_json::to_value(report).expect("boundary verification should serialize")
             }),
+            node_rerun_diff: None,
             cache_surface: Some(cache_surface_payload(&options)),
             policy_surface: Some(policy_surface_payload(&snapshot.graph, &options, hermetic)?),
             sandbox_scope: Some(replay_sandbox_scope_payload(sandbox)),
@@ -284,6 +287,10 @@ pub(crate) fn handle_replay_command(
     } else {
         None
     };
+    let node_rerun_diff = rerun_node_id
+        .as_deref()
+        .map(|node_id| crate::replay_service::node_rerun_diff_report(&run_dir, &run_path, node_id))
+        .transpose()?;
     let response = ReplayCommandResponse {
         run_dir: Some(run_path.clone()),
         dry_run_plan: None,
@@ -291,6 +298,7 @@ pub(crate) fn handle_replay_command(
         upstream_artifact_verification: boundary_verification.map(|report| {
             serde_json::to_value(report).expect("boundary verification should serialize")
         }),
+        node_rerun_diff,
         cache_surface: Some(cache_surface_payload(&options)),
         policy_surface: Some(policy_surface_payload(&snapshot.graph, &options, hermetic)?),
         sandbox_scope: Some(replay_sandbox_scope_payload(sandbox)),
@@ -307,6 +315,19 @@ pub(crate) fn handle_replay_command(
     }
     if !cli.quiet {
         println!("run dir: {}", run_path.display());
+        if let Some(diff) = &response.node_rerun_diff {
+            println!(
+                "rerun_node: {}",
+                diff.get("node_id").and_then(Value::as_str).unwrap_or("unknown")
+            );
+            println!(
+                "rerun_node_equivalent: {}",
+                diff.get("summary")
+                    .and_then(|summary| summary.get("equivalent"))
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false)
+            );
+        }
         if let Some(proof) = &response.replay_proof {
             println!(
                 "replay_proof_fidelity: {}",

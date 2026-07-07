@@ -220,6 +220,31 @@ pub(crate) fn verify_replay_boundary_inputs(
     })
 }
 
+pub(crate) fn node_rerun_diff_report(
+    run_a: &Path,
+    run_b: &Path,
+    node_id: &str,
+) -> Result<Value, ExitCode> {
+    let material_a = load_run_material(run_a)?;
+    let material_b = load_run_material(run_b)?;
+    let diff = build_run_diff(
+        material_a.manifest.clone(),
+        material_b.manifest.clone(),
+        material_a.graph_fingerprint.clone(),
+        material_b.graph_fingerprint.clone(),
+        &material_a.node_traces,
+        &material_b.node_traces,
+        &material_a.node_outputs,
+        &material_b.node_outputs,
+    );
+    Ok(json!({
+        "node_id": node_id,
+        "summary": summary_payload(&material_a, &material_b, &diff, Some(node_id)),
+        "artifact": artifact_payload(run_a, run_b, &material_a, &material_b, Some(node_id))?,
+        "causal_chain": build_causal_chain(&material_a, &material_b, &diff, Some(node_id)),
+    }))
+}
+
 pub(crate) fn run_diff_from_dirs(run_a: &Path, run_b: &Path) -> Result<RunDiff, ExitCode> {
     let material_a = load_run_material(run_a)?;
     let material_b = load_run_material(run_b)?;
