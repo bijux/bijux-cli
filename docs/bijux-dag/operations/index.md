@@ -41,6 +41,7 @@ flowchart LR
 ## Boundary and Governance Pages
 
 - [Deployment Boundaries](deployment-boundaries.md)
+- [Branching Bulletin Workflow](guides/branching-bulletin-workflow.md)
 - [CI Integration](guides/ci-integration.md)
 - [Container Packaging Workflow](guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](guides/data-pipeline-workflow.md)

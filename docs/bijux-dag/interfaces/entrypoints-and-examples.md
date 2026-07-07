@@ -87,6 +87,20 @@ bijux-dag run --json evidence/dag/authoring/examples/release-note-bundle.dag.jso
 cat ./artifacts/release-note-bundle-runs/run-release-note-bundle/nodes/package_bundle/trace.json
 ```
 
+For a real branch-backed workflow, validate and run the audience-routing
+example with one path input and one enum branch selector:
+
+```bash
+SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/audience-branch-source/team-update.md"
+bijux-dag validate evidence/dag/authoring/examples/audience-branch-bulletin.dag.json
+bijux-dag run --json evidence/dag/authoring/examples/audience-branch-bulletin.dag.json \
+  --out ./artifacts/audience-branch-runs \
+  --run-id audience-branch-technical \
+  --input "source_note=${SOURCE_NOTE}" \
+  --input "audience_mode=technical"
+cat ./artifacts/audience-branch-runs/run-audience-branch-technical/nodes/choose_audience_lane/trace.json
+```
+
 ## Rust Entrypoint Example
 
 ```rust
@@ -107,6 +121,7 @@ println!("spec={}", graph.spec);
 
 - [CLI Surface](cli-surface.md)
 - [Operator Workflows](operator-workflows.md)
+- [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
 - [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](../operations/guides/data-pipeline-workflow.md)
 - [File Processing Workflow](../operations/guides/file-processing-workflow.md)

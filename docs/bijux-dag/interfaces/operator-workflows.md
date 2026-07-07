@@ -103,6 +103,23 @@ outputs, stdout/stderr capture, and recorded image identity on a real container
 step, use
 [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md).
 
+## Run A Branched Workflow Deliberately
+
+When a graph uses `semantic_kind = "branch"`, the branch node is not only
+authoring metadata. The retained run should tell you which decision was taken,
+which lane ran, and why the other lane did not.
+
+- inspect the branch node trace for `branch_decision`
+- inspect the skipped lane for `skip_reason.reason = "branch_decision_not_selected"`
+- inspect the join node trace to confirm the intended trigger rule admitted the
+  selected branch outcome
+- use replay proof when you need to confirm the same branch decision remains
+  equivalent across a replay boundary
+
+For the repository-backed workflow that demonstrates branch routing, retained
+skip evidence, join-trigger behavior, and replay stability, use
+[Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md).
+
 ## Interpret Failure Fallout
 
 When a run fails, inspect the fallout before deciding whether downstream nodes
@@ -688,6 +705,7 @@ sequence turns a run into something you can defend with evidence.
 ## Next Reads
 
 - [Common Workflows](../operations/common-workflows.md)
+- [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
 - [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
 - [Failure Recovery](../operations/failure-recovery.md)
 - [Review Checklist](../quality/review-checklist.md)
