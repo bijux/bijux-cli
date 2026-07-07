@@ -1755,14 +1755,7 @@ impl Runtime {
         if diags.iter().any(|d| d.severity == Severity::Error) {
             return Err(GraphError::ValidationFailed.into());
         }
-        let ambient_env = std::env::vars().collect();
-        security_env::validate_graph_environment_bindings(graph, &ambient_env)
-            .map_err(RuntimeError::Executor)?;
-        let _contracts = validate_task_contracts(graph, &options)?;
-        let plan = build_plan(graph, &options);
-        validate_gpu_runtime_capacity(&plan, &options)?;
-        validate_named_resource_runtime_capacity(&plan, &options)?;
-        engine::execute(self, graph, plan, out_dir, options)
+        engine::execute(self, graph, out_dir, options)
     }
 }
 

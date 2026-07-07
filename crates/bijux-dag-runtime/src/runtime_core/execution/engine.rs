@@ -28,8 +28,9 @@ use bijux_dag_artifacts::{
     TriggerEvaluation, TriggerParentStatus,
 };
 use bijux_dag_core::{
-    evaluate_trigger_rule, Effect, Graph, Node, NodeKind, SemanticNodeKind, TriggerRule,
-    UpstreamTerminalOutcome, SPEC_VERSION,
+    apply_dynamic_expansion, AppliedDynamicExpansion, evaluate_trigger_rule,
+    parse_dynamic_expansion_document, DynamicExpansionRecord, Effect, Graph, GraphError, Node,
+    NodeKind, SemanticNodeKind, TriggerRule, UpstreamTerminalOutcome, SPEC_VERSION,
 };
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -52,6 +53,14 @@ struct NodeLifecycleTimestamps {
 struct BranchResolution {
     decision: String,
     used_default: bool,
+}
+
+#[derive(Debug, Clone)]
+struct PreparedExecutionGraph {
+    graph: Graph,
+    graph_fingerprint: String,
+    source_graph_fingerprint: String,
+    dynamic_expansions: Vec<DynamicExpansionRecord>,
 }
 
 struct StopRequestWatcher {
@@ -100,6 +109,262 @@ impl Drop for StopRequestWatcher {
 fn read_stop_request_file(path: &Path) -> Option<RunStopRequest> {
     let raw = std::fs::read_to_string(path).ok()?;
     serde_json::from_str(&raw).ok()
+}
+
+fn run_layout_from_dir(run_dir: &RunDir) -> RunDirLayout {
+    let run_id = run_dir
+        .final_path()
+        .file_name()
+        .map(|value| value.to_string_lossy().to_string())
+        .unwrap_or_default()
+        .strip_prefix("run-")
+        .unwrap_or_default()
+        .to_string();
+    RunDirLayout {
+        run_id,
+        staging_path: run_dir.staging_path().to_path_buf(),
+        final_path: run_dir.final_path().to_path_buf(),
+    }
+}
+
+fn next_dynamic_controller_id(graph: &Graph) -> Option<String> {
+    graph
+        .nodes
+        .iter()
+        .filter(|node| node.semantic_kind == SemanticNodeKind::Dynamic && node.dynamic.is_some())
+        .map(|node| node.id.clone())
+        .min()
+}
+
+fn ensure_dynamic_controller_policy(
+    runtime: &Runtime,
+    node: &Node,
+    options: &RuntimeConfig,
+) -> Result<(), RuntimeError> {
+    if options.policy.deny_network && node.effects.contains(&Effect::Network) {
+        return Err(RuntimeError::Executor(format!(
+            "dynamic controller {} requires network access but runtime policy denies it",
+            node.id
+        )));
+    }
+    if options.policy.deny_env && node.effects.contains(&Effect::Env) {
+        return Err(RuntimeError::Executor(format!(
+            "dynamic controller {} requires environment access but runtime policy denies it",
+            node.id
+        )));
+    }
+    if options.policy.deny_clock && node.effects.contains(&Effect::Clock) {
+        return Err(RuntimeError::Executor(format!(
+            "dynamic controller {} requires clock access but runtime policy denies it",
+            node.id
+        )));
+    }
+
+    let adapter = runtime.adapter_for_kind(&node.kind)?;
+    let required = adapter.required_effects();
+    let declared = EffectSet::from_effects(&node.effects);
+    if (required.filesystem && !declared.filesystem)
+        || (required.env && !declared.env)
+        || (required.network && !declared.network)
+        || (required.clock && !declared.clock)
+    {
+        return Err(RuntimeError::Executor(format!(
+            "dynamic controller {} is missing required declared effects",
+            node.id
+        )));
+    }
+
+    Ok(())
+}
+
+fn execute_dynamic_controller(
+    runtime: &Runtime,
+    graph: &Graph,
+    node: &Node,
+    run_dir: &RunDir,
+    options: &RuntimeConfig,
+) -> Result<AppliedDynamicExpansion, RuntimeError> {
+    ensure_dynamic_controller_policy(runtime, node, options)?;
+
+    let effective_cache_dir = options.cache_dir.clone().or_else(cache_dir_from_env);
+    let layout = run_layout_from_dir(run_dir);
+    let resolved = graph.resolve_graph()?;
+    let raw_params = resolved.resolved_params.get(&node.id).cloned().unwrap_or(Value::Null);
+    let bindings = NodePathBindings::for_host(&layout, &node.id, effective_cache_dir.as_deref());
+    let bound_params =
+        bind_path_variables_in_value(&raw_params, &bindings).map_err(RuntimeError::Executor)?;
+    let ambient_env: BTreeMap<String, String> = std::env::vars().collect();
+    let node_definition_fingerprint = graph.node_fingerprint_with_params(node, &raw_params)?;
+    let declared_env = crate::declared_environment(
+        &ambient_env,
+        options.policy.clean_env,
+        &crate::effective_env_allowlist(node),
+        &[],
+    );
+    let declared_env_fingerprint = crate::sha256_bytes(&serde_json::to_vec(&declared_env)?);
+    let params_fingerprint = crate::params_fingerprint(&raw_params)?;
+    let command_fingerprint = crate::command_fingerprint(graph, node, &raw_params)?;
+    let base_fingerprint = crate::sha256_bytes(
+        format!("{node_definition_fingerprint}:{declared_env_fingerprint}").as_bytes(),
+    );
+    let run_dir_arc = Arc::new(run_dir.clone());
+    let ctx = RunContext {
+        run_dir: Arc::clone(&run_dir_arc),
+        replay_source_run_dir: None,
+        graph_fingerprint: Arc::new(Mutex::new(HashMap::from([(
+            node.id.clone(),
+            base_fingerprint.clone(),
+        )]))),
+        node_definition_fingerprints: Arc::new(HashMap::from([(
+            node.id.clone(),
+            node_definition_fingerprint,
+        )])),
+        declared_environment_fingerprints: Arc::new(HashMap::from([(
+            node.id.clone(),
+            declared_env_fingerprint,
+        )])),
+        params_fingerprints: Arc::new(HashMap::from([(node.id.clone(), params_fingerprint)])),
+        command_fingerprints: Arc::new(HashMap::from([(
+            node.id.clone(),
+            command_fingerprint,
+        )])),
+        planner_contract_version: "bijux-dag-dynamic-expansion/v0.1".to_string(),
+        execution_fingerprint: "dynamic-expansion".to_string(),
+        evidence_fingerprint: "dynamic-expansion".to_string(),
+        execution_contract_fingerprint: crate::execution_contract_fingerprint(options),
+        resolved_params: HashMap::from([(node.id.clone(), bound_params.clone())]),
+        effective_cache_dir: effective_cache_dir.clone(),
+        fs: Arc::clone(&runtime.fs),
+        clock: Arc::clone(&runtime.clock),
+        store: crate::store::ArtifactStore::new(run_dir_arc, Arc::clone(&runtime.fs)),
+        policy: options.policy.clone(),
+        absolute_path_policy: options.absolute_path_policy,
+        cancellation_requested: Arc::new(AtomicBool::new(false)),
+    };
+    let parent_statuses = HashMap::new();
+    let inputs_index = sacred_execution::run_materialize_inputs(
+        &ctx,
+        graph,
+        node,
+        options.materialize_inputs,
+        &parent_statuses,
+    )?;
+    let node_fingerprint = node_fingerprint_with_inputs(&base_fingerprint, &inputs_index)?;
+    set_node_fingerprint(&ctx, &node.id, node_fingerprint.clone());
+    let (adapter_id, adapter_version) = runtime.adapter_meta_for_kind(&node.kind);
+    let adapter_schema = runtime.adapter_schema_for_kind(&node.kind);
+    let cache_read = sacred_execution::run_cache_lookup(
+        options,
+        node,
+        &node_fingerprint,
+        &ctx,
+        Arc::clone(&ctx.fs),
+        &adapter_id,
+        &adapter_version,
+        &adapter_schema,
+    )?;
+    if !cache_read.hit {
+        let adapter = runtime.adapter_for_kind(&node.kind)?;
+        let result =
+            crate::execute_with_retries(adapter.as_ref(), graph, node, &bound_params, &ctx, &node.retry)?;
+        match result.status {
+            NodeStatus::Success | NodeStatus::Cached => {
+                sacred_execution::run_cache_write(
+                    options,
+                    node,
+                    &node_fingerprint,
+                    &ctx,
+                    Arc::clone(&ctx.fs),
+                    &adapter_id,
+                    &adapter_version,
+                    &adapter_schema,
+                )?;
+            }
+            NodeStatus::Failed | NodeStatus::Cancelled | NodeStatus::Skipped => {
+                let failure_message = result
+                    .failure
+                    .as_ref()
+                    .map(|failure| format!("{} ({})", failure.message, failure.code))
+                    .unwrap_or_else(|| crate::status_string(&result.status));
+                return Err(RuntimeError::Executor(format!(
+                    "dynamic controller {} did not produce an expansion: {}",
+                    node.id, failure_message
+                )));
+            }
+        }
+    }
+
+    let dynamic = node.dynamic.as_ref().ok_or_else(|| {
+        RuntimeError::Executor(format!(
+            "dynamic controller {} is missing its expansion contract",
+            node.id
+        ))
+    })?;
+    let output = node
+        .outputs
+        .iter()
+        .find(|output| output.name == dynamic.expansion_output)
+        .ok_or_else(|| {
+            RuntimeError::Executor(format!(
+                "dynamic controller {} is missing declared expansion output {}",
+                node.id, dynamic.expansion_output
+            ))
+        })?;
+    let output_path = run_dir.node_outputs_dir(&node.id).join(&output.path);
+    let raw_document = runtime.fs.read_to_string(&output_path).map_err(|error| {
+        RuntimeError::Executor(format!(
+            "failed to read dynamic expansion output for {}: {}",
+            node.id, error
+        ))
+    })?;
+    let document = parse_dynamic_expansion_document(&raw_document).map_err(|error| {
+        RuntimeError::Executor(format!(
+            "dynamic controller {} produced an invalid expansion document: {}",
+            node.id, error
+        ))
+    })?;
+    apply_dynamic_expansion(graph, &node.id, document).map_err(|error| {
+        RuntimeError::Executor(format!(
+            "dynamic controller {} produced an unusable expansion: {}",
+            node.id, error
+        ))
+    })
+}
+
+fn prepare_execution_graph(
+    runtime: &Runtime,
+    source_graph: &Graph,
+    run_dir: &RunDir,
+    options: &RuntimeConfig,
+) -> Result<PreparedExecutionGraph, RuntimeError> {
+    let source_graph_fingerprint = source_graph.graph_fingerprint()?;
+    let mut graph = source_graph.clone();
+    let mut dynamic_expansions = Vec::new();
+
+    while let Some(controller_id) = next_dynamic_controller_id(&graph) {
+        let controller = graph
+            .nodes
+            .iter()
+            .find(|node| node.id == controller_id)
+            .cloned()
+            .ok_or_else(|| {
+                RuntimeError::Executor(format!(
+                    "dynamic controller {} disappeared before execution",
+                    controller_id
+                ))
+            })?;
+        let applied = execute_dynamic_controller(runtime, &graph, &controller, run_dir, options)?;
+        graph = applied.graph;
+        dynamic_expansions.push(applied.record);
+    }
+
+    let graph_fingerprint = graph.graph_fingerprint()?;
+    Ok(PreparedExecutionGraph {
+        graph,
+        graph_fingerprint,
+        source_graph_fingerprint,
+        dynamic_expansions,
+    })
 }
 
 fn resolve_branch_decision(
@@ -1288,8 +1553,7 @@ fn record_failed_node(
 
 pub fn execute(
     runtime: &Runtime,
-    graph: &Graph,
-    plan: crate::ExecutionPlan,
+    source_graph: &Graph,
     out_dir: impl AsRef<Path>,
     options: RuntimeConfig,
 ) -> Result<PathBuf, RuntimeError> {
@@ -1315,11 +1579,39 @@ pub fn execute(
     } else {
         RunDir::create(&out_dir)?
     };
-    let graph_fp = graph.graph_fingerprint()?;
-    let graph_json = serde_json::json!({
-        "graph": graph.canonicalize(),
-        "graph_fingerprint": graph_fp,
-    });
+    let prepared_graph = prepare_execution_graph(runtime, source_graph, &run_dir, &options)?;
+    let graph = &prepared_graph.graph;
+    let plan = crate::build_plan(graph, &options);
+    crate::validate_gpu_runtime_capacity(&plan, &options)?;
+    crate::validate_named_resource_runtime_capacity(&plan, &options)?;
+    let graph_diagnostics = graph.validate_with_warnings();
+    if graph_diagnostics.iter().any(|diagnostic| diagnostic.severity == bijux_dag_core::Severity::Error)
+    {
+        return Err(GraphError::ValidationFailed.into());
+    }
+    let ambient_env = std::env::vars().collect();
+    crate::security_env::validate_graph_environment_bindings(graph, &ambient_env)
+        .map_err(RuntimeError::Executor)?;
+    let _contracts = crate::validate_task_contracts(graph, &options)?;
+    let graph_fp = prepared_graph.graph_fingerprint.clone();
+    let mut graph_json = serde_json::Map::from_iter([
+        ("graph".to_string(), serde_json::to_value(graph.canonicalize())?),
+        ("graph_fingerprint".to_string(), Value::String(graph_fp.clone())),
+    ]);
+    if !prepared_graph.dynamic_expansions.is_empty() {
+        graph_json.insert(
+            "source_graph".to_string(),
+            serde_json::to_value(source_graph.canonicalize())?,
+        );
+        graph_json.insert(
+            "source_graph_fingerprint".to_string(),
+            Value::String(prepared_graph.source_graph_fingerprint.clone()),
+        );
+        graph_json.insert(
+            "dynamic_expansions".to_string(),
+            serde_json::to_value(&prepared_graph.dynamic_expansions)?,
+        );
+    }
     run_dir.write_graph_snapshot(&serde_json::to_string_pretty(&graph_json)?)?;
 
     let run_id = requested_run_id.clone().unwrap_or_else(|| {
