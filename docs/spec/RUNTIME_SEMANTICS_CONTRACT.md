@@ -21,6 +21,20 @@ authoritative source for these semantic helper functions.
 - replay equivalence decisions
 - audit event categorization and counting
 
+## Retry decision contract
+
+Retry eligibility is a stable runtime semantic surface rather than an adapter
+detail.
+
+- policy failures are never retryable, even if a node declares policy failure
+  classes in its retry params
+- timeout retries are controlled by `timeout_retry_policy`, which supports
+  `by_failure_class`, `always`, and `never`
+- exit-code-specific retries are controlled by `retryable_exit_codes`
+- retry reason is persisted in attempt evidence and retry lifecycle events so a
+  later inspection can explain why the runtime scheduled or vetoed another
+  attempt
+
 ## Related tests
 
 - `crates/bijux-dag-runtime/tests/runtime_semantics_contracts.rs`

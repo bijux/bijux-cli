@@ -179,6 +179,11 @@ The path-variable contract is intentionally narrow:
   database slots, or other runtime-scoped resource classes that should be
   scheduled explicitly instead of hidden in adapter-specific params.
 - `retry` currently supports `max_attempts` and `backoff_ms`.
+- retry params may additionally declare `retryable_failure_classes`,
+  `retryable_exit_codes`, `retry_backoff_strategy`, `retry_jitter_ms`, and
+  `timeout_retry_policy`.
+- `timeout_retry_policy` supports `by_failure_class`, `always`, and `never`.
+- policy-denied nodes are never retried, regardless of retry params.
 - `cache.enabled = false` requires a non-empty `cache.reason` so cache opt-out is
   auditable.
 - `env_allowlist` is only valid when the node declares the `env` effect.
