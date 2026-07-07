@@ -33,6 +33,16 @@ fn run_json_with_env(args: &[&str], cwd: &Path, envs: &[(&str, &str)]) -> Value 
     serde_json::from_str(&stdout).expect("parse json envelope")
 }
 
+fn run_json_with_env_allow_failure(
+    args: &[&str],
+    cwd: &Path,
+    envs: &[(&str, &str)],
+) -> (i32, Value, String) {
+    let (code, stdout, stderr) = support::run_dag_command_with_env(args, cwd, envs);
+    let payload = serde_json::from_str(&stdout).expect("parse json envelope");
+    (code, payload, stderr)
+}
+
 fn run_dir_from_response(payload: &Value) -> PathBuf {
     PathBuf::from(payload["data"]["run_dir"].as_str().expect("run dir"))
 }
@@ -133,9 +143,13 @@ if [ "$1" = "run" ]; then
         ;;
     esac
   done
+  shift
+  label=""
+  for arg in "$@"; do
+    label="$arg"
+  done
   metadata="$inputs_dir/prepare_note/metadata"
   source="$inputs_dir/prepare_note/source"
-  label=$(sed -n 's/^bundle_label=//p' "$metadata")
   source_bytes=$(sed -n 's/^source_bytes=//p' "$metadata")
   mkdir -p "$outputs_dir/bundle"
   {
@@ -256,5 +270,67 @@ fn release_note_bundle_workflow_executes_through_container_and_records_identity(
             .as_str()
             .is_some_and(|image| image.contains("@sha256:")),
         "expected the retained trace to keep the pinned image reference"
+    );
+}
+
+#[test]
+fn release_note_bundle_workflow_reports_missing_container_engine_clearly() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let note = copy_source_note(&root, &temp.path().join("inputs"));
+    let runs_dir = temp.path().join("runs");
+    let bin_dir = temp.path().join("bin");
+    fs::create_dir_all(&runs_dir).expect("runs dir");
+    fs::create_dir_all(&bin_dir).expect("bin dir");
+
+    let graph = workflow_graph(&root);
+    let source_arg = format!("source_note={}", output_path_string(&note));
+    let label_arg = "bundle_label=Release Brief".to_string();
+
+    let (code, payload, stderr) = run_json_with_env_allow_failure(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&runs_dir),
+            "--run-id",
+            "release-note-bundle-missing-engine",
+            "--input",
+            &source_arg,
+            "--input",
+            &label_arg,
+        ],
+        &root,
+        &[("PATH", "/usr/bin:/bin")],
+    );
+    assert!(code == 0 || code == 3, "unexpected command code: {code} stderr={stderr}");
+
+    let run_dir = run_dir_from_response(&payload);
+    let manifest = read_manifest(&run_dir);
+    assert_eq!(manifest["status"], "failed");
+
+    let summary = &payload["data"]["summary"];
+    assert_eq!(summary["status"], "failed");
+    assert_eq!(summary["failed_node_reasons"][0]["class"], "infrastructure");
+    assert_eq!(summary["failed_node_reasons"][0]["node_id"], "package_bundle");
+    assert!(
+        summary["failed_node_reasons"][0]["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("container engine unavailable: docker")),
+        "expected run summary to surface the missing engine clearly"
+    );
+
+    let trace = read_trace(&run_dir, "package_bundle");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["class"], "infrastructure");
+    assert_eq!(trace["failure"]["code"], "CONTAINER_ENGINE_UNAVAILABLE");
+    assert_eq!(trace["container"]["engine"], "docker");
+    assert!(trace["container"]["engine_version"].is_null());
+    assert!(trace["container"]["image_digest"].is_null());
+    assert_eq!(
+        fs::read_to_string(run_dir.join("nodes").join("package_bundle").join("stderr.log"))
+            .expect("stderr"),
+        "container engine unavailable: docker"
     );
 }

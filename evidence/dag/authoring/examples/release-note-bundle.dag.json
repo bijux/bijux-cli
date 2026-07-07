@@ -35,11 +35,10 @@
       ],
       "params": {
         "source_note": { "graph_input": "source_note" },
-        "bundle_label": { "graph_input": "bundle_label" },
         "argv": [
           "/bin/sh",
           "-c",
-          "python3 - <<'PY'\nimport pathlib\n\nsource_note = pathlib.Path(\"{params.source_note}\")\nif not source_note.is_file():\n    raise SystemExit(\"source_note is not a file: \" + str(source_note))\n\ntext = source_note.read_text(encoding=\"utf-8\").strip()\nif not text:\n    raise SystemExit(\"source_note is empty: \" + str(source_note))\n\nout_dir = pathlib.Path(\"../outputs/prepared\")\nout_dir.mkdir(parents=True, exist_ok=True)\n(out_dir / \"source.txt\").write_text(text + \"\\n\", encoding=\"utf-8\")\nmetadata = [\n    \"bundle_label={params.bundle_label}\",\n    \"source_path=\" + str(source_note.resolve()),\n    \"source_bytes=\" + str(len(text.encode(\"utf-8\")))\n]\n(out_dir / \"metadata.txt\").write_text(\"\\n\".join(metadata) + \"\\n\", encoding=\"utf-8\")\nPY"
+          "set -eu\nSOURCE_NOTE=\"{params.source_note}\"\nif [ ! -f \"$SOURCE_NOTE\" ]; then\n  echo \"source_note is not a file: $SOURCE_NOTE\" >&2\n  exit 1\nfi\nif [ ! -s \"$SOURCE_NOTE\" ]; then\n  echo \"source_note is empty: $SOURCE_NOTE\" >&2\n  exit 1\nfi\nmkdir -p ../outputs/prepared\ncat \"$SOURCE_NOTE\" > ../outputs/prepared/source.txt\nSOURCE_DIR=$(cd \"$(dirname \"$SOURCE_NOTE\")\" && pwd)\nSOURCE_PATH=\"$SOURCE_DIR/$(basename \"$SOURCE_NOTE\")\"\nSOURCE_BYTES=$(wc -c < \"$SOURCE_NOTE\" | tr -d '[:space:]')\n{\n  printf 'source_path=%s\\n' \"$SOURCE_PATH\"\n  printf 'source_bytes=%s\\n' \"$SOURCE_BYTES\"\n} > ../outputs/prepared/metadata.txt\n"
         ]
       },
       "resources": { "cpu": 1, "mem_mb": 128 },
@@ -49,6 +48,9 @@
       "id": "package_bundle",
       "kind": "container",
       "inputs": ["source", "metadata"],
+      "params": {
+        "bundle_label": { "graph_input": "bundle_label" }
+      },
       "outputs": [
         {
           "name": "release_note",
@@ -68,7 +70,9 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "set -eu\nSOURCE=/bijux/node/inputs/prepare_note/source\nMETADATA=/bijux/node/inputs/prepare_note/metadata\nLABEL=$(sed -n 's/^bundle_label=//p' \"$METADATA\")\nSOURCE_BYTES=$(sed -n 's/^source_bytes=//p' \"$METADATA\")\nmkdir -p /bijux/node/outputs/bundle\n{\n  printf '%s\\n' \"$LABEL\"\n  cat \"$SOURCE\"\n} > /bijux/node/outputs/bundle/release-note.txt\ncat > /bijux/node/outputs/bundle/container-summary.json <<EOF\n{\n  \"bundle_label\": \"$LABEL\",\n  \"source_bytes\": $SOURCE_BYTES,\n  \"container_workdir\": \"$(pwd)\"\n}\nEOF\nprintf 'container-package-stdout'\nprintf 'container-package-stderr' >&2\n"
+          "set -eu\nLABEL=\"$1\"\nSOURCE=/bijux/node/inputs/prepare_note/source\nMETADATA=/bijux/node/inputs/prepare_note/metadata\nSOURCE_BYTES=$(sed -n 's/^source_bytes=//p' \"$METADATA\")\nmkdir -p /bijux/node/outputs/bundle\n{\n  printf '%s\\n' \"$LABEL\"\n  cat \"$SOURCE\"\n} > /bijux/node/outputs/bundle/release-note.txt\ncat > /bijux/node/outputs/bundle/container-summary.json <<EOF\n{\n  \"bundle_label\": \"$LABEL\",\n  \"source_bytes\": $SOURCE_BYTES,\n  \"container_workdir\": \"$(pwd)\"\n}\nEOF\nprintf 'container-package-stdout'\nprintf 'container-package-stderr' >&2\n",
+          "release-note-bundle",
+          "{params.bundle_label}"
         ],
         "workdir": "{work_dir}/scratch",
         "engine": "docker"

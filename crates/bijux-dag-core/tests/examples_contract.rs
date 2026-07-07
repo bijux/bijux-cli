@@ -165,9 +165,14 @@ fn release_note_bundle_example_uses_path_input_and_pinned_container_image() {
     assert_eq!(container.engine, "docker");
     assert!(container.image.contains("@sha256:"));
     assert_eq!(container.workdir.as_deref(), Some("{work_dir}/scratch"));
+    assert_eq!(container.argv.last().map(String::as_str), Some("{params.bundle_label}"));
 
     let contract = node_io_contract(&graph, "package_bundle").expect("package_bundle contract");
     assert_eq!(contract.outputs.len(), 2);
+    assert!(contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "bundle_label"
+    )));
     assert!(contract.outputs.iter().any(|output| output.media_type == "text/plain" && output.promotable));
     assert!(contract.outputs.iter().any(|output| output.media_type == "application/json"));
 }
