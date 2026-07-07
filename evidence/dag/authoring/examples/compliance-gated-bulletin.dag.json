@@ -43,7 +43,7 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "python3 - <<'PY'\nimport json\nimport pathlib\n\nsource_note = pathlib.Path(\"{params.source_note}\")\nif not source_note.is_file():\n    raise SystemExit(\"source_note is not a file: \" + str(source_note))\n\ntext = source_note.read_text().strip()\nif not text:\n    raise SystemExit(\"source_note is empty: \" + str(source_note))\n\nlines = [line.rstrip() for line in text.splitlines() if line.strip()]\nout_dir = pathlib.Path(\"../outputs/prepare\")\nout_dir.mkdir(parents=True, exist_ok=True)\npayload = {\n    \"title\": \"{params.bulletin_title}\",\n    \"source_name\": source_note.name,\n    \"summary\": lines[0],\n    \"detail_lines\": lines[1:]\n}\n(out_dir / \"bulletin.json\").write_text(json.dumps(payload, indent=2) + \"\\n\")\nPY"
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nsource_note = pathlib.Path(\"{params.source_note}\")\nif not source_note.is_file():\n    raise SystemExit(\"source_note is not a file: \" + str(source_note))\n\ntext = source_note.read_text().strip()\nif not text:\n    raise SystemExit(\"source_note is empty: \" + str(source_note))\n\nlines = [line.rstrip() for line in text.splitlines() if line.strip()]\nout_dir = pathlib.Path(\"../outputs/prepare\")\nout_dir.mkdir(parents=True, exist_ok=True)\npayload = dict(\n    title=\"{params.bulletin_title}\",\n    source_name=source_note.name,\n    summary=lines[0],\n    detail_lines=lines[1:],\n)\n(out_dir / \"bulletin.json\").write_text(json.dumps(payload, indent=2) + \"\\n\")\nPY"
         ]
       },
       "resources": { "cpu": 1, "mem_mb": 128 },
