@@ -60,6 +60,7 @@ status, use [Package Boundary](../bijux-core/foundation/package-boundary.md).
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/guides/first-hour-with-bijux-dag.md">Start with the first hour guide</a>
+<a class="md-button" href="operations/guides/file-processing-workflow.md">Run the file processing workflow</a>
 <a class="md-button" href="interfaces/operator-workflows.md">Open operator workflows</a>
 <a class="md-button" href="packages/index.md">Open the package map</a>
 </div>

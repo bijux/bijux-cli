@@ -31,6 +31,7 @@ flowchart TD
 - execution workflow for run creation and status tracking
 - reproducibility workflow for replay confirmation
 - change-attribution workflow for semantic diff explanations
+- file-processing workflow for cache, lineage, rerun, and promotion proof
 
 ## Canonical Command Path
 
@@ -65,6 +66,12 @@ stop state.
 - run completed with expected fidelity level
 - required artifact evidence present and verifiable
 - drift either absent or explicitly approved
+
+## Concrete Repository Example
+
+For one end-to-end local workflow that validates real input files, renders a
+promotable report, proves warm-cache reuse, and exercises focused replay, use
+[File Processing Workflow](guides/file-processing-workflow.md).
 
 ## Reading Rule
 

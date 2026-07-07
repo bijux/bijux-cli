@@ -42,6 +42,7 @@ flowchart LR
 
 - [Deployment Boundaries](deployment-boundaries.md)
 - [CI Integration](guides/ci-integration.md)
+- [File Processing Workflow](guides/file-processing-workflow.md)
 - [First Hour With Bijux Dag](guides/first-hour-with-bijux-dag.md)
 - [Trust Boundaries](reference/trust-boundaries.md)
 - [Performance and Scaling](performance-and-scaling.md)
