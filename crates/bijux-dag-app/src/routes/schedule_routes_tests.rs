@@ -1,6 +1,7 @@
 use super::handle_schedule_command;
 use crate::commands::{
-    Commands, DagCli, ScheduleBackfillCommands, ScheduleCommands, ScheduleQueueCommands,
+    Commands, DagCli, ScheduleBackfillCommands, ScheduleCommands, ScheduleControlCommands,
+    ScheduleQueueCommands,
 };
 use crate::ExitCode;
 use std::fs;
@@ -579,6 +580,27 @@ fn write_priority_dispatch_policy_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, policy)
 }
 
+fn write_schedule_override_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let overrides = dir.path().join("schedule-overrides.json");
+    fs::write(
+        &overrides,
+        r#"{
+          "records": [
+            {
+              "schedule_id": "manual-ops",
+              "operator": "atlas-ops",
+              "action": "pause",
+              "reason": "hold while downstream validation is degraded",
+              "created_unix_ms": 180000
+            }
+          ]
+        }"#,
+    )
+    .expect("write overrides");
+    (dir, overrides)
+}
+
 #[test]
 fn schedule_validate_returns_success_for_valid_registry() {
     let (_tmp, registry) = write_registry_fixture();
@@ -602,6 +624,7 @@ fn schedule_submit_returns_success_and_can_write_updated_ledger() {
             registry,
             inputs,
             ledger: Some(ledger),
+            overrides: None,
             out: Some(out.clone()),
         },
     )
@@ -644,7 +667,13 @@ fn schedule_submit_rejects_invalid_trigger_mapping_and_keeps_ledger_clean() {
     let cli = quiet_json_cli();
     let code = handle_schedule_command(
         &cli,
-        &ScheduleCommands::Submit { registry, inputs, ledger: None, out: Some(out.clone()) },
+        &ScheduleCommands::Submit {
+            registry,
+            inputs,
+            ledger: None,
+            overrides: None,
+            out: Some(out.clone()),
+        },
     )
     .expect("schedule submit");
     assert_eq!(code, ExitCode::SUCCESS);
@@ -653,6 +682,34 @@ fn schedule_submit_rejects_invalid_trigger_mapping_and_keeps_ledger_clean() {
         serde_json::from_str(&fs::read_to_string(&out).expect("read written ledger"))
             .expect("parse written ledger");
     assert_eq!(written["entries"].as_array().expect("ledger entries").len(), 0);
+}
+
+#[test]
+fn schedule_submit_respects_paused_schedule_overrides() {
+    let (_tmp_registry, registry) = write_submission_registry_fixture();
+    let (_tmp_inputs, inputs) = write_submission_inputs_fixture();
+    let (_tmp_overrides, overrides) = write_schedule_override_fixture();
+    let out_dir = tempfile::tempdir().expect("tmp");
+    let out = out_dir.path().join("paused-ledger.json");
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Submit {
+            registry,
+            inputs,
+            ledger: None,
+            overrides: Some(overrides),
+            out: Some(out.clone()),
+        },
+    )
+    .expect("schedule submit with overrides");
+    assert_eq!(code, ExitCode::SUCCESS);
+
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&out).expect("read paused ledger"))
+            .expect("parse paused ledger");
+    let entries = written["entries"].as_array().expect("ledger entries");
+    assert!(entries.iter().all(|entry| entry["schedule_id"] != "manual-ops"));
 }
 
 #[test]
@@ -686,6 +743,84 @@ fn schedule_queue_status_writes_reconstructed_state() {
     assert_eq!(queues[0]["tenants"][0]["tenant"], "atlas");
     assert_eq!(queues[0]["tenants"][0]["active_runs"], 1);
     assert_eq!(queues[0]["runs"][0]["starvation_ticks"], 0);
+}
+
+#[test]
+fn schedule_control_status_reports_paused_schedule() {
+    let (_tmp_registry, registry) = write_submission_registry_fixture();
+    let (_tmp_overrides, overrides) = write_schedule_override_fixture();
+    let out_dir = tempfile::tempdir().expect("tmp");
+    let out = out_dir.path().join("schedule-control-status.json");
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Control {
+            command: ScheduleControlCommands::Status {
+                registry,
+                overrides: Some(overrides),
+                out: Some(out.clone()),
+            },
+        },
+    )
+    .expect("schedule control status");
+    assert_eq!(code, ExitCode::SUCCESS);
+
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&out).expect("read control status"))
+            .expect("parse control status");
+    let statuses = written.as_array().expect("schedule status");
+    let manual =
+        statuses.iter().find(|entry| entry["schedule_id"] == "manual-ops").expect("manual status");
+    assert_eq!(manual["paused"], true);
+    assert_eq!(manual["operator"], "atlas-ops");
+}
+
+#[test]
+fn schedule_control_pause_and_resume_write_override_log() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let overrides = dir.path().join("schedule-overrides.json");
+    let cli = quiet_json_cli();
+
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Control {
+            command: ScheduleControlCommands::Pause {
+                overrides: overrides.clone(),
+                schedule_id: "manual-ops".to_string(),
+                operator: "atlas-ops".to_string(),
+                at_unix_ms: 180000,
+                reason: Some("hold".to_string()),
+                out: Some(overrides.clone()),
+            },
+        },
+    )
+    .expect("schedule control pause");
+    assert_eq!(code, ExitCode::SUCCESS);
+
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Control {
+            command: ScheduleControlCommands::Resume {
+                overrides: overrides.clone(),
+                schedule_id: "manual-ops".to_string(),
+                operator: "atlas-ops".to_string(),
+                at_unix_ms: 190000,
+                reason: Some("clear".to_string()),
+                out: Some(overrides.clone()),
+            },
+        },
+    )
+    .expect("schedule control resume");
+    assert_eq!(code, ExitCode::SUCCESS);
+
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&overrides).expect("read overrides"))
+            .expect("parse overrides");
+    let records = written["records"].as_array().expect("override records");
+    assert_eq!(records.len(), 2);
+    assert_eq!(records[0]["action"], "pause");
+    assert_eq!(records[1]["action"], "resume");
+    assert_eq!(records[1]["operator"], "atlas-ops");
 }
 
 #[test]
