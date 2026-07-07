@@ -237,6 +237,8 @@ before a submission request is issued.
 
 - `input_contract` declares the allowed graph inputs and their types
 - `input_bindings` maps each declared input to a trigger source
+- dependency triggers declare `trigger.Dependency.on_status` as
+  `success`, `failure`, or `any_terminal`
 - bound values are normalized with the same graph-input materialization rules
   used by direct runtime inputs
 - a schedule that cannot produce a required bound input is rejected before
@@ -256,6 +258,13 @@ The supported binding sources are:
 
 Payload bindings may target either the whole payload or a JSON Pointer inside
 the payload. Pointer values must be empty or begin with `/`.
+
+Dependency trigger conditions use the following terminal outcome classes:
+
+- `success`: successful upstream completions
+- `failure`: terminal non-success completions such as failed, cancelled, or
+  timed-out runs
+- `any_terminal`: either successful or failure terminal outcomes
 
 ### Example
 
