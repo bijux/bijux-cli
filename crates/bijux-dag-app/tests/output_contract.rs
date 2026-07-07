@@ -30,7 +30,6 @@ fn examples_file(file_name: &str) -> String {
 }
 
 #[test]
-#[ignore = "slow"]
 fn app_text_validate_output_contract() {
     let output =
         support::run_dag_command(&["validate", &examples_file("hello.dag.json")], &repo_root());
@@ -41,7 +40,6 @@ fn app_text_validate_output_contract() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn app_json_validate_output_contract() {
     let output = support::run_dag_command(
         &["validate", "--json", &examples_file("hello.dag.json")],

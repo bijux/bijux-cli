@@ -22,6 +22,14 @@ fn repo_root() -> PathBuf {
 }
 
 fn dag_command(root: &Path) -> Command {
+    if let Some(path) = std::env::var_os("BIJUX_DAG_BIN") {
+        let path = PathBuf::from(path);
+        if path.exists() {
+            let mut command = Command::new(path);
+            command.current_dir(root);
+            return command;
+        }
+    }
     let cargo_bin = std::env::var("CARGO")
         .ok()
         .or_else(|| option_env!("CARGO").map(ToOwned::to_owned))
@@ -93,7 +101,6 @@ fn capability_query_output_schema_lockstep() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn verify_output_schema_lockstep() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");

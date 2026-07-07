@@ -110,55 +110,32 @@
       ]
     },
     {
-      "portfolio_id": "dag-app-human-output-snapshots",
+      "portfolio_id": "dag-app-prove-human-snapshot",
       "crate": "bijux-dag-app",
       "path": "crates/bijux-dag-app/tests/operator_human_snapshot_contracts.rs",
       "execution_lane": "full",
       "ignore_reason": "slow",
       "outside_required_release_lane": true,
-      "rationale": "Human snapshot contracts lock stable operator phrasing, but the snapshot corpus is intentionally scheduled in the full lane because it is slower and broader than the required release lane.",
+      "rationale": "The human-readable prove snapshot covers an experimental command surface, so it stays in the governed full lane instead of the required stable release lane.",
       "full_lane_command": "cargo nextest run -p bijux-dag-app --test operator_human_snapshot_contracts --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
       "tests": [
-        "validate_human_output_snapshot_is_stable",
-        "plan_human_output_snapshot_is_stable",
-        "run_human_output_snapshot_is_stable",
-        "history_human_output_snapshot_is_stable",
-        "replay_human_output_snapshot_is_stable",
-        "diff_human_output_snapshot_is_stable",
-        "prove_human_output_snapshot_is_stable",
-        "verify_human_output_snapshot_is_stable",
-        "artifact_inspect_human_output_snapshot_is_stable"
+        "prove_human_output_snapshot_is_stable"
       ]
     },
     {
-      "portfolio_id": "dag-app-operator-schema-lockstep",
+      "portfolio_id": "dag-app-nonstable-schema-lockstep",
       "crate": "bijux-dag-app",
       "path": "crates/bijux-dag-app/tests/operator_schema_lockstep_contracts.rs",
       "execution_lane": "full",
       "ignore_reason": "slow",
       "outside_required_release_lane": true,
-      "rationale": "Operator schema lockstep checks remain release-sensitive, but they still run in the governed full lane because each assertion exercises slower command and schema materialization paths.",
+      "rationale": "Schema lockstep checks for internal and experimental commands stay in the governed full lane so the required release lane can stay focused on the stable operator contract.",
       "full_lane_command": "cargo nextest run -p bijux-dag-app --test operator_schema_lockstep_contracts --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
       "tests": [
         "capability_query_output_schema_lockstep",
-        "verify_output_schema_lockstep",
         "prove_output_schema_lockstep",
         "export_summary_schema_lockstep",
         "import_summary_schema_lockstep"
-      ]
-    },
-    {
-      "portfolio_id": "dag-app-validate-output-contracts",
-      "crate": "bijux-dag-app",
-      "path": "crates/bijux-dag-app/tests/output_contract.rs",
-      "execution_lane": "full",
-      "ignore_reason": "slow",
-      "outside_required_release_lane": true,
-      "rationale": "Validate output contracts remain full-lane evidence because the text and JSON paths still cost more than the required release lane budget allows.",
-      "full_lane_command": "cargo nextest run -p bijux-dag-app --test output_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
-      "tests": [
-        "app_text_validate_output_contract",
-        "app_json_validate_output_contract"
       ]
     },
     {
