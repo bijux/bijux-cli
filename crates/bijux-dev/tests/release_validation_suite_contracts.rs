@@ -1,24 +1,51 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct ReleaseValidationSuite {
     format: String,
     local_entrypoint: String,
     ci_entrypoint: String,
+    maintainer_entrypoint: String,
     package_boundary_contract: String,
+    documentation: ReleaseValidationDocumentation,
     release_tree: ReleaseTreeContract,
+    verify_flow: Vec<String>,
     public_dag_crates: Vec<String>,
     commands: Vec<String>,
+    artifacts: Vec<ReleaseValidationArtifact>,
+    failure_ownership: Vec<ReleaseFailureOwnership>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct ReleaseTreeContract {
     script: String,
     candidate_ref: String,
     version_source: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct ReleaseValidationDocumentation {
+    operator_handbook: String,
+    workflow_handbook: String,
+    release_operations: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct ReleaseValidationArtifact {
+    path: String,
+    purpose: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct ReleaseFailureOwnership {
+    failure_class: String,
+    owner: String,
+    action: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -83,6 +110,33 @@ fn read_repo_file(path: &str) -> String {
         .unwrap_or_else(|err| panic!("read {} failed: {err}", absolute.display()))
 }
 
+fn run_release_explain_verify() -> Value {
+    let output = Command::new("cargo")
+        .args([
+            "run",
+            "-q",
+            "-p",
+            "bijux-dev",
+            "--bin",
+            "bijux-dev-dag",
+            "--",
+            "--json",
+            "release",
+            "explain",
+            "--suite",
+            "verify",
+        ])
+        .current_dir(repo_root())
+        .output()
+        .expect("run release explain");
+    assert!(
+        output.status.success(),
+        "release explain failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).expect("parse release explain json")
+}
+
 #[test]
 fn release_validation_suite_is_current() {
     let suite = read_suite();
@@ -91,13 +145,39 @@ fn release_validation_suite_is_current() {
     assert_eq!(suite.local_entrypoint, "make release-validate-rs");
     assert_eq!(suite.ci_entrypoint, "make gh-release-validate");
     assert_eq!(
+        suite.maintainer_entrypoint,
+        "cargo run -q -p bijux-dev --bin bijux-dev-cli -- release verify"
+    );
+    assert_eq!(
         suite.package_boundary_contract,
         "contracts/foundation/workspace_package_boundary.v1.json"
+    );
+    assert_eq!(
+        suite.documentation.operator_handbook,
+        "docs/bijux-dev/operations/release-validation-suite.md"
+    );
+    assert_eq!(
+        suite.documentation.workflow_handbook,
+        "docs/bijux-dev/gh-workflows/release-validation.md"
+    );
+    assert_eq!(
+        suite.documentation.release_operations,
+        "docs/bijux-dev/operations/release-operations.md"
     );
     assert_eq!(suite.release_tree.script, ".github/scripts/prepare_release_tree.py");
     assert_eq!(suite.release_tree.candidate_ref, "HEAD");
     assert_eq!(suite.release_tree.version_source, "workspace.package.version");
+    assert_eq!(
+        suite.verify_flow,
+        vec![
+            "release.validation-suite".to_string(),
+            "release.readiness".to_string(),
+            "release.compatibility-matrix".to_string(),
+        ]
+    );
     assert_eq!(suite.public_dag_crates, public_dag_crates_from_boundary(&boundary));
+    assert_eq!(suite.artifacts.len(), 5, "expected governed release artifact inventory");
+    assert_eq!(suite.failure_ownership.len(), 3, "expected actionable failure ownership inventory");
 }
 
 #[test]
@@ -215,7 +295,52 @@ fn release_validation_suite_entrypoints_are_wired_into_make_and_ci() {
         "release validation operations doc must name the canonical local entrypoint"
     );
     assert!(
+        operations_doc.contains("make gh-release-validate"),
+        "release validation operations doc must name the canonical CI entrypoint"
+    );
+    assert!(
+        operations_doc.contains("cargo run -q -p bijux-dev --bin bijux-dev-cli -- release verify"),
+        "release validation operations doc must name the maintainer command surface"
+    );
+    assert!(
         workflow_doc.contains("make gh-release-validate"),
         "release validation workflow doc must name the canonical CI entrypoint"
+    );
+}
+
+#[test]
+fn release_validation_suite_explain_output_matches_governed_contract() {
+    let suite = read_suite();
+    let explain = run_release_explain_verify();
+    let explain_data = &explain["data"];
+
+    assert_eq!(explain["command"], "release.explain");
+    assert_eq!(explain["status"], "ok");
+    assert_eq!(explain_data["command_surface"]["local_entrypoint"], suite.local_entrypoint);
+    assert_eq!(explain_data["command_surface"]["ci_entrypoint"], suite.ci_entrypoint);
+    assert_eq!(
+        explain_data["command_surface"]["maintainer_entrypoint"],
+        suite.maintainer_entrypoint
+    );
+    assert_eq!(explain_data["docs"]["operator_handbook"], suite.documentation.operator_handbook);
+    assert_eq!(explain_data["docs"]["workflow_handbook"], suite.documentation.workflow_handbook);
+    assert_eq!(explain_data["docs"]["release_operations"], suite.documentation.release_operations);
+    assert_eq!(explain_data["package_boundary_contract"], suite.package_boundary_contract);
+    assert_eq!(explain_data["flow"], serde_json::to_value(&suite.verify_flow).expect("flow value"));
+    assert_eq!(
+        explain_data["commands"],
+        serde_json::to_value(&suite.commands).expect("commands value")
+    );
+    assert_eq!(
+        explain_data["public_dag_crates"],
+        serde_json::to_value(&suite.public_dag_crates).expect("crate value")
+    );
+    assert_eq!(
+        explain_data["artifacts"],
+        serde_json::to_value(&suite.artifacts).expect("artifact value")
+    );
+    assert_eq!(
+        explain_data["failure_ownership"],
+        serde_json::to_value(&suite.failure_ownership).expect("failure value")
     );
 }
