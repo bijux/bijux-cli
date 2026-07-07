@@ -818,6 +818,10 @@ fn schedule_submit_returns_success_and_can_write_updated_ledger() {
         .expect("event ledger entry");
     assert_eq!(event_entry["graph_inputs"]["event_tenant"], "atlas");
     assert_eq!(event_entry["graph_inputs"]["event_payload"]["batch"], 7);
+    assert_eq!(event_entry["event_lineage"]["event_id"], "evt-001");
+    assert_eq!(event_entry["event_lineage"]["event_type"], "dataset.ready");
+    assert_eq!(event_entry["event_lineage"]["source"], "catalog");
+    assert_eq!(event_entry["event_lineage"]["occurred_unix_ms"], 176000u64);
 
     let signal_entry = entries
         .iter()
