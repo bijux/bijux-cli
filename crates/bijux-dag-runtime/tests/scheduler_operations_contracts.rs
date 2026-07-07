@@ -25,14 +25,14 @@ use bijux_dag_runtime::{
     validate_schedule_registry, BackfillAdvanceRequest, BackfillFailurePolicy,
     BackfillLifecycleStatus, BackfillRequest, BackfillRunStatus, BackfillStatusUpdate,
     BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCompletionRecord,
-    DependencyCounter, ManualSubmissionRequest, PriorityClass, QueueIdentity, ReadyNode,
-    ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig, ScheduleDefinition,
-    ScheduleEvaluationInputs, ScheduleEventRecord, ScheduleInputSource, ScheduleOverrideAction,
-    ScheduleOverrideRecord, ScheduleOverrideState, SchedulePriorityDispatchPolicy,
-    ScheduleRegistry, ScheduleSubmissionLedger, ScheduleSubmissionLedgerEntry,
-    ScheduleSubmissionStatus, ScheduleSubmissionStatusUpdate, ScheduledSubmission, Selector,
-    SelectorSet, SignalRecord, StarvationPreventionPolicy, SubmissionTriggerKind, TriggerSpec,
-    WeightedPriorityPolicy,
+    DependencyCounter, DependencyTriggerCondition, ManualSubmissionRequest, PriorityClass,
+    QueueIdentity, ReadyNode, ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig,
+    ScheduleDefinition, ScheduleEvaluationInputs, ScheduleEventRecord, ScheduleInputSource,
+    ScheduleOverrideAction, ScheduleOverrideRecord, ScheduleOverrideState,
+    SchedulePriorityDispatchPolicy, ScheduleRegistry, ScheduleSubmissionLedger,
+    ScheduleSubmissionLedgerEntry, ScheduleSubmissionStatus, ScheduleSubmissionStatusUpdate,
+    ScheduledSubmission, Selector, SelectorSet, SignalRecord, StarvationPreventionPolicy,
+    SubmissionTriggerKind, TriggerSpec, WeightedPriorityPolicy,
 };
 use std::collections::{BTreeMap, VecDeque};
 use std::fs;
@@ -577,7 +577,7 @@ fn schedule_submit_evaluates_manual_cron_event_dependency_and_signal_triggers() 
                 "dependency-publish",
                 TriggerSpec::Dependency {
                     dag_name: "atlas.ingest".to_string(),
-                    on_status: "success".to_string(),
+                    on_status: DependencyTriggerCondition::Success,
                 },
             ),
             schedule_definition(
@@ -641,6 +641,146 @@ fn schedule_submit_evaluates_manual_cron_event_dependency_and_signal_triggers() 
     assert!(report.duplicate_suppressions.is_empty());
     assert_eq!(report.recorded_submissions.len(), 5);
     assert!(report.generated_requests.iter().all(|request| request.run_id.starts_with("sched-")));
+}
+
+#[test]
+fn schedule_submit_matches_dependency_success_failure_and_any_terminal_conditions() {
+    let registry = ScheduleRegistry {
+        definitions: vec![
+            schedule_definition(
+                "dependency-on-success",
+                TriggerSpec::Dependency {
+                    dag_name: "atlas.ingest".to_string(),
+                    on_status: DependencyTriggerCondition::Success,
+                },
+            ),
+            schedule_definition(
+                "dependency-on-failure",
+                TriggerSpec::Dependency {
+                    dag_name: "atlas.ingest".to_string(),
+                    on_status: DependencyTriggerCondition::Failure,
+                },
+            ),
+            schedule_definition(
+                "dependency-on-terminal",
+                TriggerSpec::Dependency {
+                    dag_name: "atlas.ingest".to_string(),
+                    on_status: DependencyTriggerCondition::AnyTerminal,
+                },
+            ),
+        ],
+    };
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: 220_000,
+        dependencies: vec![
+            DependencyCompletionRecord {
+                upstream_run_id: "atlas-run-success".to_string(),
+                dag_name: "atlas.ingest".to_string(),
+                status: "SUCCEEDED".to_string(),
+                finished_unix_ms: 210_000,
+            },
+            DependencyCompletionRecord {
+                upstream_run_id: "atlas-run-failure".to_string(),
+                dag_name: "atlas.ingest".to_string(),
+                status: "timed out".to_string(),
+                finished_unix_ms: 211_000,
+            },
+        ],
+        ..ScheduleEvaluationInputs::default()
+    };
+
+    let report =
+        evaluate_schedule_submissions(&registry, &inputs, &ScheduleSubmissionLedger::default());
+    let by_schedule = report
+        .generated_requests
+        .iter()
+        .map(|request| (request.schedule_id.as_str(), request))
+        .collect::<BTreeMap<_, _>>();
+
+    assert_eq!(report.generated_requests.len(), 4);
+    assert_eq!(
+        by_schedule["dependency-on-success"].graph_inputs,
+        BTreeMap::<String, serde_json::Value>::new()
+    );
+    assert_eq!(by_schedule["dependency-on-success"].requested_unix_ms, 210_000);
+    assert_eq!(by_schedule["dependency-on-failure"].requested_unix_ms, 211_000);
+    let terminal_timestamps = report
+        .generated_requests
+        .iter()
+        .filter(|request| request.schedule_id == "dependency-on-terminal")
+        .map(|request| request.requested_unix_ms)
+        .collect::<Vec<_>>();
+    assert_eq!(terminal_timestamps, vec![210_000, 211_000]);
+}
+
+#[test]
+fn schedule_submit_deduplicates_dependency_aliases_by_trigger_condition() {
+    let registry = ScheduleRegistry {
+        definitions: vec![
+            schedule_definition(
+                "dependency-on-failure",
+                TriggerSpec::Dependency {
+                    dag_name: "atlas.ingest".to_string(),
+                    on_status: DependencyTriggerCondition::Failure,
+                },
+            ),
+            schedule_definition(
+                "dependency-on-terminal",
+                TriggerSpec::Dependency {
+                    dag_name: "atlas.ingest".to_string(),
+                    on_status: DependencyTriggerCondition::AnyTerminal,
+                },
+            ),
+        ],
+    };
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: 220_000,
+        dependencies: vec![
+            DependencyCompletionRecord {
+                upstream_run_id: "atlas-run-7".to_string(),
+                dag_name: "atlas.ingest".to_string(),
+                status: "failed".to_string(),
+                finished_unix_ms: 210_000,
+            },
+            DependencyCompletionRecord {
+                upstream_run_id: "atlas-run-7".to_string(),
+                dag_name: "atlas.ingest".to_string(),
+                status: "failure".to_string(),
+                finished_unix_ms: 210_000,
+            },
+            DependencyCompletionRecord {
+                upstream_run_id: "atlas-run-8".to_string(),
+                dag_name: "atlas.ingest".to_string(),
+                status: "cancelled".to_string(),
+                finished_unix_ms: 211_000,
+            },
+            DependencyCompletionRecord {
+                upstream_run_id: "atlas-run-8".to_string(),
+                dag_name: "atlas.ingest".to_string(),
+                status: "timeout".to_string(),
+                finished_unix_ms: 211_000,
+            },
+        ],
+        ..ScheduleEvaluationInputs::default()
+    };
+
+    let report =
+        evaluate_schedule_submissions(&registry, &inputs, &ScheduleSubmissionLedger::default());
+
+    let failure_requests = report
+        .generated_requests
+        .iter()
+        .filter(|request| request.schedule_id == "dependency-on-failure")
+        .collect::<Vec<_>>();
+    let terminal_requests = report
+        .generated_requests
+        .iter()
+        .filter(|request| request.schedule_id == "dependency-on-terminal")
+        .collect::<Vec<_>>();
+
+    assert_eq!(failure_requests.len(), 2);
+    assert_eq!(terminal_requests.len(), 2);
+    assert_eq!(report.duplicate_suppressions.len(), 4);
 }
 
 #[test]
@@ -818,7 +958,7 @@ fn schedule_submit_binds_trigger_values_into_typed_graph_inputs() {
                     "dependency-publish",
                     TriggerSpec::Dependency {
                         dag_name: "atlas.ingest".to_string(),
-                        on_status: "success".to_string(),
+                        on_status: DependencyTriggerCondition::Success,
                     },
                 )
             },
