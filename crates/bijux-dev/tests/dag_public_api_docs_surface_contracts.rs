@@ -11,10 +11,14 @@ struct RootUseDecl {
     doc_hidden: bool,
 }
 
-fn runtime_root_use_decls() -> Vec<RootUseDecl> {
-    let path = repo_root().join("crates/bijux-dag-runtime/src/lib.rs");
-    let source = fs::read_to_string(&path)
-        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+fn read_crate_lib(relative_path: &str) -> String {
+    let path = repo_root().join(relative_path);
+    fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()))
+}
+
+fn root_use_decls(relative_path: &str) -> Vec<RootUseDecl> {
+    let source = read_crate_lib(relative_path);
     let mut decls = Vec::new();
     let mut depth = 0usize;
     let mut next_doc_hidden = false;
@@ -46,8 +50,35 @@ fn runtime_root_use_decls() -> Vec<RootUseDecl> {
 }
 
 #[test]
-fn modeled_and_future_backend_exports_stay_hidden_from_runtime_root_docs() {
-    let decls = runtime_root_use_decls();
+fn public_dag_crates_expose_curated_docs_lanes() {
+    let crates = [
+        ("bijux-dag-core", "crates/bijux-dag-core/src/lib.rs"),
+        ("bijux-dag-artifacts", "crates/bijux-dag-artifacts/src/lib.rs"),
+        ("bijux-dag-runtime", "crates/bijux-dag-runtime/src/lib.rs"),
+        ("bijux-dag-app", "crates/bijux-dag-app/src/lib.rs"),
+    ];
+
+    for (crate_name, relative_path) in crates {
+        let source = read_crate_lib(relative_path);
+        assert!(
+            source.contains("pub mod stable {"),
+            "{crate_name} must expose a visible stable docs lane"
+        );
+        assert!(
+            source.contains("pub mod prelude {"),
+            "{crate_name} must expose a visible prelude docs lane"
+        );
+        assert!(
+            source.contains("#[cfg(feature = \"experimental-public-api\")]")
+                && source.contains("pub mod experimental {"),
+            "{crate_name} must gate experimental docs lanes behind the experimental-public-api feature"
+        );
+    }
+}
+
+#[test]
+fn runtime_modeled_and_future_exports_stay_hidden_from_root_docs() {
+    let decls = root_use_decls("crates/bijux-dag-runtime/src/lib.rs");
     let expected_hidden = [
         "backend::fake",
         "backend_cluster",
@@ -59,9 +90,9 @@ fn modeled_and_future_backend_exports_stay_hidden_from_runtime_root_docs() {
         "recovery",
         "remote_execution_model",
         "remote_executor",
+        "slurm_execution",
         "task_contract",
         "task_types",
-        "slurm_execution",
         "upgrade_compatibility",
     ];
 
