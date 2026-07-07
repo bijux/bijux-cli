@@ -1,6 +1,7 @@
 use crate::execution_plan::ExecutionPlan;
 use crate::scheduler_workload::{
-    priority_class_weight, StarvationPreventionPolicy, WeightedPriorityPolicy,
+    priority_class_weight, ScheduleOverrideAction, ScheduleOverrideRecord, ScheduleOverrideState,
+    ScheduleOverrideStatus, StarvationPreventionPolicy, WeightedPriorityPolicy,
 };
 use crate::RuntimeConfig;
 use bijux_dag_core::{materialize_graph_input_value, resources, Graph, GraphInputSpec};
@@ -435,6 +436,8 @@ pub struct ScheduleEvaluationReport {
     pub recorded_submissions: Vec<ScheduleSubmissionLedgerEntry>,
     #[serde(default)]
     pub duplicate_suppressions: Vec<ScheduleAuditRecord>,
+    #[serde(default)]
+    pub paused_suppressions: Vec<ScheduleAuditRecord>,
     #[serde(default)]
     pub queue_suppressions: Vec<ScheduleAuditRecord>,
     #[serde(default)]
@@ -1283,6 +1286,132 @@ fn schedule_submission_status_can_transition(
     )
 }
 
+fn latest_schedule_overrides(
+    overrides: &ScheduleOverrideState,
+) -> BTreeMap<String, ScheduleOverrideRecord> {
+    let mut latest = BTreeMap::<String, ScheduleOverrideRecord>::new();
+    for record in &overrides.records {
+        match latest.get(&record.schedule_id) {
+            Some(existing) if compare_schedule_override_precedence(existing, record).is_gt() => {}
+            _ => {
+                latest.insert(record.schedule_id.clone(), record.clone());
+            }
+        }
+    }
+    latest
+}
+
+fn compare_schedule_override_precedence(
+    left: &ScheduleOverrideRecord,
+    right: &ScheduleOverrideRecord,
+) -> std::cmp::Ordering {
+    left.created_unix_ms
+        .cmp(&right.created_unix_ms)
+        .then_with(|| left.operator.cmp(&right.operator))
+        .then_with(|| match (&left.action, &right.action) {
+            (ScheduleOverrideAction::Pause, ScheduleOverrideAction::Resume) => {
+                std::cmp::Ordering::Less
+            }
+            (ScheduleOverrideAction::Resume, ScheduleOverrideAction::Pause) => {
+                std::cmp::Ordering::Greater
+            }
+            _ => std::cmp::Ordering::Equal,
+        })
+}
+
+fn schedule_is_paused(schedule_id: &str, overrides: &ScheduleOverrideState) -> bool {
+    matches!(
+        latest_schedule_overrides(overrides).get(schedule_id).map(|record| &record.action),
+        Some(ScheduleOverrideAction::Pause)
+    )
+}
+
+pub fn record_schedule_override(
+    overrides: &mut ScheduleOverrideState,
+    record: ScheduleOverrideRecord,
+) -> Result<(), String> {
+    if record.schedule_id.trim().is_empty() {
+        return Err("schedule override must declare schedule_id".to_string());
+    }
+    if record.operator.trim().is_empty() {
+        return Err(format!("schedule override '{}' must declare operator", record.schedule_id));
+    }
+    if record.reason.as_deref().is_some_and(|reason| reason.trim().is_empty()) {
+        return Err(format!("schedule override '{}' reason must not be blank", record.schedule_id));
+    }
+    overrides.records.push(record);
+    overrides.records.sort_by(|left, right| {
+        left.schedule_id
+            .cmp(&right.schedule_id)
+            .then_with(|| compare_schedule_override_precedence(left, right))
+    });
+    Ok(())
+}
+
+pub fn pause_schedule(
+    overrides: &mut ScheduleOverrideState,
+    schedule_id: &str,
+    operator: &str,
+    at_unix_ms: u128,
+    reason: Option<String>,
+) -> Result<(), String> {
+    record_schedule_override(
+        overrides,
+        ScheduleOverrideRecord {
+            schedule_id: schedule_id.to_string(),
+            operator: operator.to_string(),
+            action: ScheduleOverrideAction::Pause,
+            reason,
+            created_unix_ms: at_unix_ms,
+        },
+    )
+}
+
+pub fn resume_schedule(
+    overrides: &mut ScheduleOverrideState,
+    schedule_id: &str,
+    operator: &str,
+    at_unix_ms: u128,
+    reason: Option<String>,
+) -> Result<(), String> {
+    record_schedule_override(
+        overrides,
+        ScheduleOverrideRecord {
+            schedule_id: schedule_id.to_string(),
+            operator: operator.to_string(),
+            action: ScheduleOverrideAction::Resume,
+            reason,
+            created_unix_ms: at_unix_ms,
+        },
+    )
+}
+
+pub fn build_schedule_override_status(
+    registry: &ScheduleRegistry,
+    overrides: &ScheduleOverrideState,
+) -> Vec<ScheduleOverrideStatus> {
+    let latest = latest_schedule_overrides(overrides);
+    let mut statuses = registry
+        .definitions
+        .iter()
+        .map(|definition| {
+            let record = latest.get(&definition.id);
+            ScheduleOverrideStatus {
+                schedule_id: definition.id.clone(),
+                paused: matches!(
+                    record.map(|entry| &entry.action),
+                    Some(ScheduleOverrideAction::Pause)
+                ),
+                operator: record.map(|entry| entry.operator.clone()),
+                reason: record.and_then(|entry| entry.reason.clone()),
+                updated_unix_ms: record.map(|entry| entry.created_unix_ms),
+            }
+        })
+        .collect::<Vec<_>>();
+    statuses.sort_by(|left, right| left.schedule_id.cmp(&right.schedule_id));
+    statuses
+}
+
 fn starvation_guard_applies(starvation_ticks: u32, policy: &StarvationPreventionPolicy) -> bool {
     starvation_ticks >= policy.max_ticks_without_dispatch
 }
@@ -1767,6 +1896,20 @@ pub fn evaluate_schedule_submissions(
     inputs: &ScheduleEvaluationInputs,
     existing: &ScheduleSubmissionLedger,
 ) -> ScheduleEvaluationReport {
+    evaluate_schedule_submissions_with_overrides(
+        registry,
+        inputs,
+        existing,
+        &ScheduleOverrideState::default(),
+    )
+}
+
+pub fn evaluate_schedule_submissions_with_overrides(
+    registry: &ScheduleRegistry,
+    inputs: &ScheduleEvaluationInputs,
+    existing: &ScheduleSubmissionLedger,
+    overrides: &ScheduleOverrideState,
+) -> ScheduleEvaluationReport {
     let mut definitions = registry.definitions.iter().collect::<Vec<_>>();
     definitions.sort_by(|left, right| left.id.cmp(&right.id));
 
@@ -1798,6 +1941,7 @@ pub fn evaluate_schedule_submissions(
     let mut generated_requests = Vec::new();
     let mut recorded_submissions = existing.entries.clone();
     let mut duplicate_suppressions = Vec::new();
+    let mut paused_suppressions = Vec::new();
     let mut queue_suppressions = Vec::new();
     let queue_policies = match queue_capacity_policies(registry) {
         Ok(policies) => policies,
@@ -1812,6 +1956,7 @@ pub fn evaluate_schedule_submissions(
                 generated_requests,
                 recorded_submissions,
                 duplicate_suppressions,
+                paused_suppressions,
                 queue_suppressions,
                 audits,
             };
@@ -1842,6 +1987,17 @@ pub fn evaluate_schedule_submissions(
         });
 
     for request in candidates {
+        if schedule_is_paused(&request.schedule_id, overrides) {
+            let audit = ScheduleAuditRecord {
+                schedule_id: request.schedule_id.clone(),
+                evaluated_unix_ms: inputs.now_unix_ms,
+                decision: "paused_suppressed".to_string(),
+                reason: Some("schedule is paused".to_string()),
+            };
+            paused_suppressions.push(audit.clone());
+            audits.push(audit);
+            continue;
+        }
         if !seen_keys.insert(request.dedupe_key.clone()) {
             let audit = ScheduleAuditRecord {
                 schedule_id: request.schedule_id.clone(),
@@ -1928,6 +2084,7 @@ pub fn evaluate_schedule_submissions(
         generated_requests,
         recorded_submissions,
         duplicate_suppressions,
+        paused_suppressions,
         queue_suppressions,
         audits,
     }

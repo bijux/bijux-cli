@@ -136,12 +136,34 @@ pub struct ScheduleSuppressionAnnotation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ScheduleOverrideAction {
+    Pause,
+    Resume,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScheduleOverrideRecord {
     pub schedule_id: String,
     pub operator: String,
-    pub action: String,
-    pub reason: String,
+    pub action: ScheduleOverrideAction,
+    pub reason: Option<String>,
     pub created_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct ScheduleOverrideState {
+    #[serde(default)]
+    pub records: Vec<ScheduleOverrideRecord>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScheduleOverrideStatus {
+    pub schedule_id: String,
+    pub paused: bool,
+    pub operator: Option<String>,
+    pub reason: Option<String>,
+    pub updated_unix_ms: Option<u128>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
