@@ -332,6 +332,40 @@ fn write_invalid_timezone_registry_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, registry)
 }
 
+fn write_invalid_dependency_registry_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-registry-invalid-dependency.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "dependency-invalid",
+              "dag_name": "atlas.publish",
+              "dag_version_policy": "run-latest",
+              "trigger": {
+                "Dependency": {
+                  "dag_name": "atlas.ingest",
+                  "on_status": "deferred"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            }
+          ]
+        }"#,
+    )
+    .expect("write invalid dependency registry");
+    (dir, registry)
+}
+
 fn write_ordering_simulation_fixture() -> (tempfile::TempDir, PathBuf) {
     let dir = tempfile::tempdir().expect("tmp");
     let simulation = dir.path().join("schedule-order.json");
@@ -462,6 +496,131 @@ fn write_submission_inputs_fixture() -> (tempfile::TempDir, PathBuf) {
         }"#,
     )
     .expect("write submit inputs");
+    (dir, inputs)
+}
+
+fn write_dependency_submission_registry_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let registry = dir.path().join("schedule-dependency-registry.json");
+    fs::write(
+        &registry,
+        r#"{
+          "definitions": [
+            {
+              "id": "dependency-on-success",
+              "dag_name": "atlas.publish-success",
+              "dag_version_policy": "run-latest",
+              "input_contract": {
+                "dependency_run_id": {"type": "string", "required": true},
+                "dependency_status": {"type": "string", "required": true}
+              },
+              "input_bindings": {
+                "dependency_run_id": {"source": "dependency_upstream_run_id"},
+                "dependency_status": {"source": "dependency_status"}
+              },
+              "trigger": {
+                "Dependency": {
+                  "dag_name": "atlas.ingest",
+                  "on_status": "success"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            },
+            {
+              "id": "dependency-on-failure",
+              "dag_name": "atlas.publish-failure",
+              "dag_version_policy": "run-latest",
+              "input_contract": {
+                "dependency_run_id": {"type": "string", "required": true},
+                "dependency_status": {"type": "string", "required": true}
+              },
+              "input_bindings": {
+                "dependency_run_id": {"source": "dependency_upstream_run_id"},
+                "dependency_status": {"source": "dependency_status"}
+              },
+              "trigger": {
+                "Dependency": {
+                  "dag_name": "atlas.ingest",
+                  "on_status": "failure"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            },
+            {
+              "id": "dependency-on-terminal",
+              "dag_name": "atlas.publish-terminal",
+              "dag_version_policy": "run-latest",
+              "input_contract": {
+                "dependency_run_id": {"type": "string", "required": true},
+                "dependency_status": {"type": "string", "required": true}
+              },
+              "input_bindings": {
+                "dependency_run_id": {"source": "dependency_upstream_run_id"},
+                "dependency_status": {"source": "dependency_status"}
+              },
+              "trigger": {
+                "Dependency": {
+                  "dag_name": "atlas.ingest",
+                  "on_status": "any_terminal"
+                }
+              },
+              "queue": {"queue_name": "catalog", "tenant": "atlas"},
+              "priority": "High",
+              "concurrency": {
+                "per_dag": 2,
+                "per_queue": 4,
+                "per_tenant": 4,
+                "per_node_group": null
+              },
+              "catch_up": {"enabled": false, "max_catch_up_runs": 0}
+            }
+          ]
+        }"#,
+    )
+    .expect("write dependency registry");
+    (dir, registry)
+}
+
+fn write_dependency_submission_inputs_fixture() -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("tmp");
+    let inputs = dir.path().join("schedule-dependency-inputs.json");
+    fs::write(
+        &inputs,
+        r#"{
+          "now_unix_ms": 220000,
+          "dependencies": [
+            {
+              "upstream_run_id": "atlas-run-success",
+              "dag_name": "atlas.ingest",
+              "status": "SUCCEEDED",
+              "finished_unix_ms": 210000
+            },
+            {
+              "upstream_run_id": "atlas-run-failure",
+              "dag_name": "atlas.ingest",
+              "status": "timed out",
+              "finished_unix_ms": 211000
+            }
+          ]
+        }"#,
+    )
+    .expect("write dependency inputs");
     (dir, inputs)
 }
 
@@ -611,6 +770,15 @@ fn schedule_validate_returns_success_for_valid_registry() {
 }
 
 #[test]
+fn schedule_validate_rejects_unknown_dependency_trigger_condition() {
+    let (_tmp, registry) = write_invalid_dependency_registry_fixture();
+    let cli = quiet_json_cli();
+    let err = handle_schedule_command(&cli, &ScheduleCommands::Validate { registry })
+        .expect_err("invalid dependency registry must fail");
+    assert_eq!(err, ExitCode::from(3));
+}
+
+#[test]
 fn schedule_submit_returns_success_and_can_write_updated_ledger() {
     let (_tmp_registry, registry) = write_submission_registry_fixture();
     let (_tmp_inputs, inputs) = write_submission_inputs_fixture();
@@ -656,6 +824,53 @@ fn schedule_submit_returns_success_and_can_write_updated_ledger() {
         .find(|entry| entry["schedule_id"] == "signal-refresh")
         .expect("signal ledger entry");
     assert_eq!(signal_entry["graph_inputs"]["signal_tenant"], "atlas");
+}
+
+#[test]
+fn schedule_submit_writes_dependency_triggered_entries() {
+    let (_tmp_registry, registry) = write_dependency_submission_registry_fixture();
+    let (_tmp_inputs, inputs) = write_dependency_submission_inputs_fixture();
+    let out_dir = tempfile::tempdir().expect("tmp");
+    let out = out_dir.path().join("dependency-ledger.json");
+    let cli = quiet_json_cli();
+    let code = handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Submit {
+            registry,
+            inputs,
+            ledger: None,
+            overrides: None,
+            out: Some(out.clone()),
+        },
+    )
+    .expect("dependency schedule submit");
+    assert_eq!(code, ExitCode::SUCCESS);
+
+    let written: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&out).expect("read dependency ledger"))
+            .expect("parse dependency ledger");
+    let entries = written["entries"].as_array().expect("ledger entries");
+    assert_eq!(entries.len(), 4);
+
+    let success_entry = entries
+        .iter()
+        .find(|entry| entry["schedule_id"] == "dependency-on-success")
+        .expect("success dependency entry");
+    assert_eq!(success_entry["graph_inputs"]["dependency_run_id"], "atlas-run-success");
+    assert_eq!(success_entry["graph_inputs"]["dependency_status"], "succeeded");
+
+    let failure_entry = entries
+        .iter()
+        .find(|entry| entry["schedule_id"] == "dependency-on-failure")
+        .expect("failure dependency entry");
+    assert_eq!(failure_entry["graph_inputs"]["dependency_run_id"], "atlas-run-failure");
+    assert_eq!(failure_entry["graph_inputs"]["dependency_status"], "timed_out");
+
+    let terminal_entries = entries
+        .iter()
+        .filter(|entry| entry["schedule_id"] == "dependency-on-terminal")
+        .collect::<Vec<_>>();
+    assert_eq!(terminal_entries.len(), 2);
 }
 
 #[test]
