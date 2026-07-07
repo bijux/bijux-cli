@@ -66,6 +66,28 @@ route is a public promise.
   public enterprise or federation APIs are not part of the `v0.4.0` public
   product boundary.
 
+### `bijux-dag` v0.4.0 Surface Truth Table
+
+The canonical release-boundary contract for `bijux-dag` lives in
+[`contracts/foundation/dag_release_truth_table.v1.json`](contracts/foundation/dag_release_truth_table.v1.json).
+Use that file and the DAG handbook
+[`docs/bijux-dag/foundation/release-boundary.md`](docs/bijux-dag/foundation/release-boundary.md)
+when the release question is whether a route is stable, experimental,
+simulated, internal, or still future work.
+
+| Class | `v0.4.0` meaning | Representative surfaces |
+| --- | --- | --- |
+| stable | supported visible `bijux-dag --help` surface for local DAG authoring, execution, replay, and evidence inspection | `validate`, `plan`, `run`, `replay`, `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`, `version`, `commands`, `completions` |
+| experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
+| simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
+| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
+| future | not a `v0.4.0` product promise | cluster-backed kubernetes execution, cluster-backed slurm or hpc execution, public remote workers, public enterprise or federation APIs, full scheduler service |
+
+Build operator procedures on the stable row. Use `bijux-dag commands --all`
+only when you intentionally need repository-owned non-stable routes, and only
+set `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` for
+deliberate modeled or maintainer workflows.
+
 ## Package Families
 
 <!-- bijux-core-package-map:generated:start -->
