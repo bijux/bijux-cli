@@ -82,15 +82,19 @@ started just because it was scheduled for cache lookup.
 The persisted lifecycle states are:
 
 - `pending`
-- `eligible`
+- `ready`
 - `queued`
 - `running`
-- `success`
+- `succeeded`
 - `failed`
 - `skipped`
 - `cached`
 - `cancelled`
 - `timed_out`
+
+`ready` means the node satisfied dependency and selector checks. `queued`
+means the scheduler admitted that ready node into the bounded worker queue but
+execution has not started yet.
 
 ## Retry Attempt Evidence
 
