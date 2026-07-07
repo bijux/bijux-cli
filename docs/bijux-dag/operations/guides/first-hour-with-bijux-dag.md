@@ -14,6 +14,7 @@ its version and stable command surface, validate a small DAG, and run it with
 visible artifacts.
 
 For the first practical workflow after this bootstrap path, continue with
+[Data Pipeline Workflow](data-pipeline-workflow.md) or
 [File Processing Workflow](file-processing-workflow.md).
 
 ## First-hour sequence
@@ -65,6 +66,7 @@ operator contract and require `BIJUX_DAG_ENABLE_INTERNAL=1`.
 ## Next reads
 
 - [File Processing Workflow](file-processing-workflow.md)
+- [Data Pipeline Workflow](data-pipeline-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Installation And Setup](installation-and-setup.md)
 - [Trust Boundaries](../reference/trust-boundaries.md)

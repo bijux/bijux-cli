@@ -32,6 +32,7 @@ flowchart TD
 - reproducibility workflow for replay confirmation
 - change-attribution workflow for semantic diff explanations
 - file-processing workflow for cache, lineage, rerun, and promotion proof
+- data-pipeline workflow for cache reuse, changed-input attribution, and retained-run comparison
 
 ## Canonical Command Path
 
@@ -73,6 +74,10 @@ For one end-to-end local workflow that validates real input files, renders a
 promotable report, proves warm-cache reuse, and exercises focused replay, use
 [File Processing Workflow](guides/file-processing-workflow.md).
 
+For a structured analytics-style workflow that changes one explicit graph input
+and then compares retained runs to identify the affected stages, use
+[Data Pipeline Workflow](guides/data-pipeline-workflow.md).
+
 ## Reading Rule
 
 Use this page when the DAG commands are already familiar but the correct
@@ -81,5 +86,6 @@ operator sequence is still unclear.
 ## Next Reads
 
 - [Failure Recovery](failure-recovery.md)
+- [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Review Checklist](../quality/review-checklist.md)

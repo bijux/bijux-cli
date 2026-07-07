@@ -4,7 +4,7 @@ audience: operators
 type: section-index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-07
 ---
 
 # DAG Operations
@@ -42,6 +42,7 @@ flowchart LR
 
 - [Deployment Boundaries](deployment-boundaries.md)
 - [CI Integration](guides/ci-integration.md)
+- [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
 - [File Processing Workflow](guides/file-processing-workflow.md)
 - [First Hour With Bijux Dag](guides/first-hour-with-bijux-dag.md)
 - [Trust Boundaries](reference/trust-boundaries.md)

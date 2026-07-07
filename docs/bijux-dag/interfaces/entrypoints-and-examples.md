@@ -52,6 +52,27 @@ bijux-dag diff \
   --mode semantic --explain
 ```
 
+For a structured data workflow with changed-input attribution, use the regional
+sales example. The retained-run comparison below assumes the warm and updated
+runs from the dedicated workflow guide already exist:
+
+```bash
+ORDERS_CSV="$(pwd)/evidence/dag/authoring/examples/regional-sales-source/orders.csv"
+TARGETS_JSON="$(pwd)/evidence/dag/authoring/examples/regional-sales-source/targets.json"
+bijux-dag validate evidence/dag/authoring/examples/regional-sales-pipeline.dag.json
+bijux-dag run evidence/dag/authoring/examples/regional-sales-pipeline.dag.json \
+  --out ./artifacts/regional-sales-runs \
+  --run-id regional-sales-cold \
+  --cache readwrite \
+  --cache-dir ./artifacts/regional-sales-cache \
+  --input "orders_csv=${ORDERS_CSV}" \
+  --input "targets_json=${TARGETS_JSON}" \
+  --input "report_title=Regional Revenue Attainment"
+bijux-dag runs compare regional-sales-warm regional-sales-updated \
+  --root ./artifacts/regional-sales-runs \
+  --json
+```
+
 ## Rust Entrypoint Example
 
 ```rust
@@ -72,5 +93,6 @@ println!("spec={}", graph.spec);
 
 - [CLI Surface](cli-surface.md)
 - [Operator Workflows](operator-workflows.md)
+- [Data Pipeline Workflow](../operations/guides/data-pipeline-workflow.md)
 - [File Processing Workflow](../operations/guides/file-processing-workflow.md)
 - [Local Development](../operations/local-development.md)

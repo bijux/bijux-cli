@@ -181,6 +181,30 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- artifact promote \
   --json
 ```
 
+Run a structured data pipeline against the repository regional sales example:
+
+```bash
+ORDERS_CSV="$(pwd)/evidence/dag/authoring/examples/regional-sales-source/orders.csv"
+TARGETS_JSON="$(pwd)/evidence/dag/authoring/examples/regional-sales-source/targets.json"
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
+  evidence/dag/authoring/examples/regional-sales-pipeline.dag.json
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- run \
+  evidence/dag/authoring/examples/regional-sales-pipeline.dag.json \
+  --out artifacts/regional-sales-runs \
+  --run-id regional-sales-cold \
+  --cache readwrite \
+  --cache-dir artifacts/regional-sales-cache \
+  --input "orders_csv=${ORDERS_CSV}" \
+  --input "targets_json=${TARGETS_JSON}" \
+  --input "report_title=Regional Revenue Attainment"
+```
+
+For the warm-cache run, changed-input comparison, and retained-run attribution
+path, use
+[`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md).
+
 ## Documentation
 
 | Handbook | Use it for |
