@@ -35,7 +35,7 @@ flowchart LR
 
 | Execution surface | What DAG enforces | What operators must still assume |
 | --- | --- | --- |
-| Local shell subprocess | Declared-effect policy gates and curated environment shaping. `--hermetic` forces `--deny-network`, `--deny-clock`, and `--clean-env`. | The process still runs on the host. There is no socket firewall, no clock virtualization, and no arbitrary filesystem-read sandbox. |
+| Local shell subprocess | Declared-effect policy gates, curated environment shaping, and Unix subprocess-group termination on timeout or cancellation. `--hermetic` forces `--deny-network`, `--deny-clock`, and `--clean-env`. | The process still runs on the host. There is no socket firewall, no clock virtualization, and no arbitrary filesystem-read sandbox. Non-Unix hosts still rely on best-effort process termination. |
 | Container engine | Declared-effect policy gates plus engine-level no-network mode when the container runtime can honor it. | Isolation depends on the selected engine and runtime host. This is not a VM boundary and does not imply complete filesystem or clock isolation. |
 | Replay `--sandbox` | Source-run write protection: replay outputs cannot be written into the original run directory. | Replay still executes as a normal process. `--sandbox` does not create a process sandbox or network jail. |
 
@@ -55,6 +55,22 @@ enforcement surface so operators can see whether a requested control is:
 The release posture for these execution-boundary risks is tracked directly in
 `RISK-001` and `RISK-006` in
 [Risk Register](../quality/risk-register.md).
+
+## Timeout And Cancellation Cleanup
+
+When a local shell node times out or an operator cancels a run, DAG now treats
+process cleanup as part of the execution contract instead of a background
+best-effort detail.
+
+- On Unix hosts, the runtime places each controlled subprocess in its own
+  process group and terminates that group on timeout or cancellation.
+- This closes the common orphan-helper failure mode where a parent shell exits
+  but a background child or grandchild keeps running on the host.
+- If the runtime cannot complete subprocess-group signaling cleanly, it records
+  the degradation in node `stderr` so operators can see that cleanup fell back
+  to a weaker path.
+- This is a cleanup guarantee, not a sandbox claim. It does not create network,
+  filesystem-read, or clock isolation.
 
 ## Security Control Areas
 
