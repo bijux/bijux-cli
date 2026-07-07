@@ -102,7 +102,9 @@ flowchart TD
   break within the `v0.4.x` line even when the visible operator surface stays
   compatible.
 - workaround: build production automation on the visible `bijux-dag --help`
-  surface and documented stable crate-root APIs only.
+  surface and documented stable crate-root APIs only. Use
+  `bijux-dag commands --lane experimental` only when you intentionally accept
+  repository-owned, non-stable helper routes.
 - planned fix: either promote individual routes with explicit docs, tests, and
   compatibility commitments or keep them outside the public operator boundary.
 - release target: no stability guarantee in `v0.4.x`; promotion requires
@@ -121,7 +123,9 @@ flowchart TD
   ships a production scheduler, enterprise control plane, or distributed
   execution fabric.
 - workaround: treat these namespaces as repository-owned modeling and evidence
-  surfaces only; use the visible operator contract for real DAG workflows.
+  surfaces only; use `bijux-dag commands --lane simulated` and
+  `BIJUX_DAG_ENABLE_SIMULATED=1` only for deliberate modeling work, and use the
+  visible operator contract for real DAG workflows.
 - planned fix: either quarantine these modeled namespaces further or implement
   real backend semantics, tests, and release docs before any promotion.
 - release target: remain non-public throughout `v0.4.x`; any promotion requires

@@ -20,10 +20,10 @@ and the handbook page
 | Surface | Status | Access path | Notes |
 | --- | --- | --- | --- |
 | `validate`, `plan`, `run`, `replay`, `verify`, `doctor`, `version` | stable | visible CLI | primary operator surface |
-| `commands` | stable | visible CLI | route inventory for stable and non-stable command discovery |
+| `commands` | stable | visible CLI | route inventory for the stable surface plus deliberate `--lane experimental`, `--lane simulated`, and `--lane internal` discovery |
 | `capabilities` | internal | `BIJUX_DAG_ENABLE_INTERNAL=1` | maintainer-only support probe outside the public operator lane |
 | `prove`, `export`, `import`, `migrate inspect` | experimental | explicit-path routes | supported with narrower expectations |
-| control-plane, governance, incident, lab, federation, enterprise | simulated or internal | gated routes | repository proof and modeling surfaces |
+| control-plane, governance, incident, lab, federation, enterprise | simulated or internal | `commands --lane simulated` plus opt-in env for execution | repository proof and modeling surfaces |
 | Kubernetes, HPC, public remote scheduler service | future | not part of first-hour adoption | not a `v0.4.0` product promise |
 
 ## Primary proof
