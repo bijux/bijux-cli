@@ -61,6 +61,7 @@ status, use [Package Boundary](../bijux-core/foundation/package-boundary.md).
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/guides/first-hour-with-bijux-dag.md">Start with the first hour guide</a>
 <a class="md-button" href="operations/guides/branching-bulletin-workflow.md">Run the branch workflow</a>
+<a class="md-button" href="operations/guides/cache-behavior-workflow.md">Run the cache workflow</a>
 <a class="md-button" href="operations/guides/compliance-gated-bulletin-workflow.md">Run the recovery workflow</a>
 <a class="md-button" href="operations/guides/container-packaging-workflow.md">Run the container workflow</a>
 <a class="md-button" href="operations/guides/data-pipeline-workflow.md">Run the data pipeline workflow</a>
@@ -88,6 +89,9 @@ flowchart LR
 - open [Data Pipeline Workflow](operations/guides/data-pipeline-workflow.md)
   when you want retained-run comparison and changed-input attribution on a real
   structured workflow
+- open [Cache Behavior Workflow](operations/guides/cache-behavior-workflow.md)
+  when you need proof that warm reuse, selective invalidation, corruption
+  refusal, and cache-miss explanation all work on one real retained workflow
 - open [Container Packaging Workflow](operations/guides/container-packaging-workflow.md)
   when you need proof that container nodes receive mounted inputs, write
   retained outputs, and record engine identity

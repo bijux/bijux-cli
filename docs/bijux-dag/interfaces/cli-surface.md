@@ -86,6 +86,11 @@ surfaces nodes, edges, roots, leaves, branch paths, joins, resources, output
 contracts, and selected versus omitted nodes either from graph input or a
 persisted run snapshot.
 
+For one repository-backed example that uses the stable `cache verify` route
+plus the explicit-path `why-cache-missed` route to explain changed-input misses
+and corruption refusal on the same retained workflow, use
+[Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md).
+
 ## Full Command Families
 
 - definition: `init`, `validate`, `canonicalize`, `lint`, `graph-lint`, `fingerprint`

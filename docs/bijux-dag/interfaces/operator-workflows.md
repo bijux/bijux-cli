@@ -187,6 +187,45 @@ Use `runs compare` when the question is "where did these two retained runs first
 drift?" Use `diff` when the question is "how do these run directories differ in
 detail across artifacts, policy, provenance, or one specific node?"
 
+## Diagnose Cache Reuse And Refusal
+
+When a node reruns unexpectedly or a prior cache hit now looks unsafe, inspect
+the cache evidence before changing the graph or deleting cache blindly.
+
+Use the stable verification surface first:
+
+```bash
+bijux-dag --json cache verify --cache-dir ./.bijux/cache
+```
+
+That route answers whether the local cache currently contains corrupt or
+otherwise ineligible entries.
+
+When the question is why one specific node did not reuse cache, use the
+explicit-path diagnostic route:
+
+```bash
+bijux-dag --json why-cache-missed \
+  --run-dir ./runs/run-20260406-01 \
+  --node transform \
+  --cache-dir ./.bijux/cache
+```
+
+`why-cache-missed` remains outside the stable `bijux-dag --help` contract in
+`v0.4.0`, but it is repository-tested and intended for explicit diagnostic use.
+
+The explanation payload can distinguish between at least three materially
+different cases:
+
+- the node really missed because inputs, params, or command identity changed
+- the node remained eligible but no exact entry existed
+- the runtime refused reuse because the exact entry failed integrity checks
+
+For one repository-backed workflow that demonstrates warm reuse, selective
+input invalidation, corruption refusal, and both explanation paths on the same
+retained run family, use
+[Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md).
+
 ## Stop an Active Run
 
 When a live run should stop launching new work, record a durable stop request

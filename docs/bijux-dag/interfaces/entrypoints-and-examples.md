@@ -73,6 +73,23 @@ bijux-dag runs compare regional-sales-warm regional-sales-updated \
   --json
 ```
 
+For the same repository workflow when the question is cache behavior rather
+than retained-run comparison, use the cache guide surfaces directly:
+
+```bash
+bijux-dag --json why-cache-missed \
+  --run-dir ./artifacts/regional-sales-runs/run-regional-sales-updated \
+  --node clean_orders \
+  --cache-dir ./artifacts/regional-sales-cache
+
+bijux-dag --json cache verify \
+  --cache-dir ./artifacts/regional-sales-cache
+```
+
+That path stays honest about the current release boundary: `cache verify` is on
+the stable operator surface, while `why-cache-missed` is repository-tested but
+still an explicit-path experimental diagnostic route in `v0.4.0`.
+
 For a real container-backed packaging workflow, validate and run the release
 note example with one path input and one graph-owned label:
 
@@ -153,6 +170,7 @@ println!("spec={}", graph.spec);
 - [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
 - [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
+- [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md)
 - [Data Pipeline Workflow](../operations/guides/data-pipeline-workflow.md)
 - [File Processing Workflow](../operations/guides/file-processing-workflow.md)
 - [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md)
