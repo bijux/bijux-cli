@@ -80,6 +80,11 @@ retained outputs, recorded image digest, and clear engine-unavailable failure
 behavior, use
 [Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md).
 
+For the repository-backed example that exercises full-workflow cache hits,
+selective invalidation, corruption refusal, and proof-backed cache rejection on
+one retained workflow family, use
+[Cache Behavior Workflow](../../docs/bijux-dag/operations/guides/cache-behavior-workflow.md).
+
 For the repository-backed example that exercises branch decisions, join trigger
 evaluation, skipped-lane evidence, and replay stability, use
 [Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).

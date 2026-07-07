@@ -54,6 +54,11 @@ release-boundary routing, and shapes the typed responses that the CLI renders.
 ## Representative Workflow
 
 For the repository-backed example that shows how the app surface reports a real
+cache verification and diagnostic sequence, including changed-input cache
+misses and corruption-based reuse refusal, use
+[Cache Behavior Workflow](../../docs/bijux-dag/operations/guides/cache-behavior-workflow.md).
+
+For the repository-backed example that shows how the app surface reports a real
 container run, retained outputs, and a missing-engine infrastructure failure,
 use
 [Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md).

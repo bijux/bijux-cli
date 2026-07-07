@@ -55,6 +55,7 @@ visible `bijux-dag --help` release contract.
 - open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question crosses from response shaping into execution policy
 - open [`bijux-dag-cli`](./bijux-dag-cli.md) when the concern is process wiring rather than app orchestration
 - open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) for a repository-backed example of the app surface reporting a real container run and a missing-engine failure
+- open [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md) for a repository-backed example of the app surface reporting changed-input cache misses and corruption-based reuse refusal through explicit diagnostics
 - open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) for a repository-backed example of the app surface reporting a real branch decision and replay-stable publication path
 - open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) for a repository-backed example of the app surface reporting retry evidence, causal failure attribution, and a repaired replay boundary
 - open [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md) for a repository-backed example of the app surface reporting backfill fanout, aggregate summary counts, and failed-partition retry state

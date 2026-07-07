@@ -50,10 +50,14 @@ first. For example:
 
 - `bijux-dag replay` may still require `bijux-dag-runtime` when the real
   question is reuse policy or artifact verification
+- `bijux-dag cache verify` may still require `bijux-dag-runtime` when the real
+  question is cache proof eligibility and corruption refusal
 - `bijux-dag run` may still require `bijux-dag-artifacts` when the real
   question is persisted evidence shape
 - `bijux-dag explain` may still require `bijux-dag-app` when the real question
   is response shaping and inspection UX
+- `bijux-dag why-cache-missed` may still require `bijux-dag-app` when the real
+  question is explanation taxonomy and diagnostic output shape
 
 If a change crosses two rows in the table, treat it as an explicit
 cross-package boundary change and validate both sides.
