@@ -1,9 +1,12 @@
 //! Deterministic graph authoring, validation, and planning for Bijux DAG.
 //!
-//! Prefer the crate root for focused imports, [`stable`] for an explicit
-//! compatibility surface, and [`prelude`] for parse/validate/plan workflows.
-//! The `experimental-public-api` feature enables research and compatibility
-//! contracts that are intentionally excluded from the default docs surface.
+//! Prefer [`stable`] when browsing the long-lived graph surface, [`prelude`]
+//! for parse, validate, and plan workflows, and crate-root imports only when
+//! you already know the exact item you need. Broad compatibility re-exports
+//! remain callable for focused imports, but they are intentionally hidden from
+//! the default docs surface. The `experimental-public-api` feature enables
+//! research and compatibility contracts that are intentionally excluded from
+//! the default docs surface.
 //!
 #![allow(
     clippy::cast_possible_truncation,
@@ -114,23 +117,32 @@ pub mod trigger_rules;
 #[path = "pipeline/validate.rs"]
 pub mod validate;
 
+#[doc(hidden)]
 pub use builder::{
     dry_run_preview, lint_graph, simulate_graph, DagBuilder, DagDryRunPreview, DagLintFinding,
     DagUnitHarness, NodeBuilder,
 };
+#[doc(hidden)]
 pub use canonical::{canonical_json, canonicalize_graph};
+#[doc(hidden)]
 pub use compile::{
     compile_graph, compile_graph_contract, compile_graph_strict, compile_graph_with_defaults,
     negotiate_spec_version, CompatibilityDecision, DagCompilePlanHints, DagCompileResult,
 };
+#[doc(hidden)]
 pub use composition::{compose_graphs, GraphCompositionError};
+#[doc(hidden)]
 pub use contract::{DagSnapshot, GraphContract, GraphExecutionPolicy};
+#[doc(hidden)]
 pub use edge::{EdgeDependencyKind, TypedEdge};
+#[doc(hidden)]
 pub use error::GraphError;
+#[doc(hidden)]
 pub use input::{
     materialize_graph_input_value, validate_graph_input_value, GraphInputKind, GraphInputSpec,
     GraphInputViolation,
 };
+#[doc(hidden)]
 pub use model::{
     cache_behavior_enabled, cache_behavior_is_default, default_media_type_for_kind,
     edge_kind_is_default, env_allowlist_pattern_is_exact, is_known_path_variable,
@@ -141,11 +153,14 @@ pub use model::{
     PortRef, RefSpec, ResolvedGraph, Resources, RetryPolicy, SemanticNodeKind, Severity,
     SubgraphDefinition, SubgraphInstance, TriggerRule, ValidationDiagnostic, PATH_VARIABLE_NAMES,
 };
+#[doc(hidden)]
 pub use node::{
     derive_interface, node_input_bindings, node_io_contract, NodeEnvBinding, NodeInputBinding,
     NodeInputSource, NodeIoContract, NodeOutputContract, NodeParamBinding, ParamBindingSource,
 };
+#[doc(hidden)]
 pub use parse::parse_graph_strict;
+#[doc(hidden)]
 pub use planner::{
     can_runtime_execute_plan_without_raw_graph, graph_lowering_boundary_note,
     lower_graph_to_execution_plan, map_planner_error_to_graph_error, node_kind_supported,
@@ -154,10 +169,15 @@ pub use planner::{
     BranchPathAnalysis, ExecutionPlan, PlanOptions, PlannedBranchContract, PlannedEdge,
     PlannedNode, PlannerDiagnostic, PlannerError, PlannerSeverity, PLANNER_CONTRACT_VERSION,
 };
+#[doc(hidden)]
 pub use resolve::resolve_graph;
+#[doc(hidden)]
 pub use resources::GraphDefaults;
+#[doc(hidden)]
 pub use topology::deterministic_topology_order;
+#[doc(hidden)]
 pub use trigger_rules::{evaluate_trigger_rule, TriggerRuleEvaluation, UpstreamTerminalOutcome};
+#[doc(hidden)]
 pub use validate::{
     validate_graph, validate_schema, validate_semantics, validate_topology,
     validation_rule_registry, ValidationDomain,

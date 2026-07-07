@@ -89,6 +89,11 @@ fn public_dag_crates_expose_curated_docs_lanes() {
 }
 
 #[test]
+fn core_root_reexports_stay_hidden_from_primary_docs_lane() {
+    assert_all_root_use_decls_hidden("bijux-dag-core", "crates/bijux-dag-core/src/lib.rs");
+}
+
+#[test]
 fn runtime_root_reexports_stay_hidden_from_primary_docs_lane() {
     assert_all_root_use_decls_hidden("bijux-dag-runtime", "crates/bijux-dag-runtime/src/lib.rs");
 }

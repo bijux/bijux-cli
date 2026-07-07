@@ -30,6 +30,17 @@ or command-layer concerns.
 - command parsing, rendering, or CLI routing
 - filesystem, process, or wall-clock side effects
 
+## Public Rust Surface
+
+- browse docs.rs through `bijux_dag_core::stable` for the long-lived graph
+  compatibility lane
+- use `bijux_dag_core::prelude` for parse, validate, canonicalize, and plan
+  workflows
+- use focused crate-root imports only when you already know the exact graph
+  item you need
+- broad compatibility re-exports remain callable for repository-owned support
+  work, but stay hidden from the primary docs.rs lane
+
 ## Source Layout
 
 - `src/graph`: graph model, parsing, and semantic validation
