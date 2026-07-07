@@ -46,7 +46,7 @@ fn run_json(root: &Path, args: &[&str]) -> (i32, serde_json::Value, String) {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_describe_json_contains_descriptor_fields() {
     let root = repo_root();
     let (code, payload, stderr) = run_json(&root, &["--json", "adapters", "describe"]);
@@ -83,7 +83,7 @@ fn adapters_describe_json_contains_descriptor_fields() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_admit_json_reports_unsupported_nodes() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmpdir");
@@ -105,7 +105,7 @@ fn adapters_admit_json_reports_unsupported_nodes() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_doctor_reports_external_handshake_rejections_with_reasons() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmpdir");
@@ -138,7 +138,7 @@ fn adapters_doctor_reports_external_handshake_rejections_with_reasons() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_conformance_json_reports_scenario_matrix() {
     let root = repo_root();
     let (code, payload, stderr) = run_json(&root, &["--json", "adapters", "conformance"]);
@@ -189,7 +189,7 @@ fn adapters_conformance_json_reports_scenario_matrix() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_cache_compat_json_rejects_schema_drift() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmpdir");
@@ -220,7 +220,7 @@ fn adapters_cache_compat_json_rejects_schema_drift() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_reference_prints_generated_markdown_contract() {
     let root = repo_root();
     let output =

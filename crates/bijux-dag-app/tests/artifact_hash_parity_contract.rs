@@ -21,7 +21,7 @@ use bijux_dag_app::{dag_command, dag_run};
 mod support;
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn hash_artifact_cli_output_matches_internal_sha256() {
     let dir = tempfile::tempdir().expect("tmp");
     let file = dir.path().join("artifact.bin");

@@ -30,6 +30,7 @@ struct GovernanceRules {
     forbid_flaky_ignored_tests: bool,
     release_lane_may_not_depend_on_ignored_tests: bool,
     ignored_tests_require_quarantine_record: bool,
+    ignored_tests_must_be_nonstable: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -37,6 +38,7 @@ struct IgnoredTestPortfolio {
     path: String,
     execution_lane: String,
     ignore_reason: String,
+    surface_class: String,
     outside_required_release_lane: bool,
     full_lane_command: String,
     tests: Vec<String>,
@@ -49,8 +51,8 @@ struct IgnoredTestCase {
     name: String,
 }
 
-fn is_allowed_ignore_reason(reason: &str) -> bool {
-    matches!(reason, "slow" | "experimental" | "internal")
+fn is_nonstable_reason(reason: &str) -> bool {
+    matches!(reason, "experimental" | "internal")
 }
 
 fn repo_root() -> PathBuf {
@@ -117,7 +119,7 @@ fn collect_ignored_tests(root: &Path) -> Vec<IgnoredTestCase> {
 #[test]
 fn release_test_lane_governance_is_current() {
     let governance = read_governance();
-    assert_eq!(governance.format, "release-test-lane-governance/v1");
+    assert_eq!(governance.format, "release-test-lane-governance/v2");
     assert_eq!(governance.required_release_lane.make_target, "test-release-rs");
     assert_eq!(governance.required_release_lane.ci_entrypoint, "make gh-test");
     assert_eq!(governance.required_release_lane.nextest_profile, "ci");
@@ -126,6 +128,7 @@ fn release_test_lane_governance_is_current() {
     assert!(governance.rules.forbid_flaky_ignored_tests);
     assert!(governance.rules.release_lane_may_not_depend_on_ignored_tests);
     assert!(governance.rules.ignored_tests_require_quarantine_record);
+    assert!(governance.rules.ignored_tests_must_be_nonstable);
 }
 
 #[test]
@@ -175,13 +178,23 @@ fn ignored_dag_portfolios_stay_outside_required_release_lane() {
             portfolio.path
         );
         assert!(
-            is_allowed_ignore_reason(&portfolio.ignore_reason),
-            "ignored portfolio {} must keep an explicit governed quarantine reason",
+            is_nonstable_reason(&portfolio.ignore_reason),
+            "ignored portfolio {} must keep an explicit nonstable quarantine reason",
+            portfolio.path
+        );
+        assert_eq!(
+            portfolio.ignore_reason, portfolio.surface_class,
+            "ignored portfolio {} must keep matching ignore reason and surface class",
             portfolio.path
         );
         assert!(
             portfolio.full_lane_command.contains("--run-ignored only"),
             "ignored portfolio {} must document an explicit full-lane command",
+            portfolio.path
+        );
+        assert!(
+            !portfolio.tests.is_empty(),
+            "ignored portfolio {} must declare at least one test",
             portfolio.path
         );
     }

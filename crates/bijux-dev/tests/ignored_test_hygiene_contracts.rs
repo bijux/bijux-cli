@@ -12,6 +12,7 @@ struct ReleaseTestLaneGovernance {
 struct IgnoredTestPortfolio {
     path: String,
     ignore_reason: String,
+    surface_class: String,
     tests: Vec<String>,
 }
 
@@ -90,6 +91,11 @@ fn governed_ignored_tests(governance: ReleaseTestLaneGovernance) -> BTreeSet<Ign
         .portfolios
         .into_iter()
         .flat_map(|portfolio| {
+            assert_eq!(
+                portfolio.ignore_reason, portfolio.surface_class,
+                "governed ignored portfolio {} must keep matching ignore reason and surface class",
+                portfolio.path
+            );
             portfolio.tests.into_iter().map(move |name| IgnoredTestCase {
                 path: portfolio.path.clone(),
                 reason: portfolio.ignore_reason.clone(),
@@ -99,8 +105,8 @@ fn governed_ignored_tests(governance: ReleaseTestLaneGovernance) -> BTreeSet<Ign
         .collect()
 }
 
-fn is_allowed_ignore_reason(reason: &str) -> bool {
-    matches!(reason, "slow" | "experimental" | "internal")
+fn is_nonstable_reason(reason: &str) -> bool {
+    matches!(reason, "experimental" | "internal")
 }
 
 #[test]
@@ -111,15 +117,15 @@ fn workspace_ignored_tests_match_governed_dag_portfolios() {
 
     assert_eq!(
         actual, governed,
-        "ignored Rust tests must be limited to the governed DAG slow portfolios"
+        "ignored Rust tests must be limited to the governed DAG nonstable portfolios"
     );
 }
 
 #[test]
-fn governed_dag_ignored_tests_remain_slow_only() {
+fn governed_dag_ignored_tests_keep_nonstable_reasons() {
     let governed = governed_ignored_tests(read_governance());
     assert!(
-        governed.iter().all(|test| is_allowed_ignore_reason(&test.reason)),
-        "ignored Rust tests must keep an explicit governed quarantine reason: {governed:#?}"
+        governed.iter().all(|test| is_nonstable_reason(&test.reason)),
+        "ignored Rust tests must keep explicit experimental or internal quarantine reasons: {governed:#?}"
     );
 }

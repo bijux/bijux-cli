@@ -85,7 +85,7 @@ fn prove_reports_incomplete_for_corrupt_run() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn prove_reports_backend_origin_and_unsigned_trust_boundary() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");

@@ -201,7 +201,7 @@ fn diff_human_output_snapshot_is_stable() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn prove_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");

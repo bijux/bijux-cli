@@ -30,7 +30,7 @@ fn examples_file(file_name: &str) -> String {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn json_error_output_contains_structured_fields() {
     let output = support::run_dag_command(
         &["lint", "--strict", "--json", &examples_file("hello.dag.json")],

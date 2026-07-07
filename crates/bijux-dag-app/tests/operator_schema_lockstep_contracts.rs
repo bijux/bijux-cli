@@ -89,7 +89,7 @@ fn required_fields(schema_rel: &str) -> Vec<String> {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "internal"]
 fn capability_query_output_schema_lockstep() {
     let root = repo_root();
     let payload =
@@ -131,7 +131,7 @@ fn verify_output_schema_lockstep() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn prove_output_schema_lockstep() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -162,7 +162,7 @@ fn prove_output_schema_lockstep() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn export_summary_schema_lockstep() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -200,7 +200,7 @@ fn export_summary_schema_lockstep() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn import_summary_schema_lockstep() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
