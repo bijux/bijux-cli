@@ -191,3 +191,72 @@ fn replay_prove_reports_diverged_on_corrupt_source_pair() {
     assert_eq!(proved["data"]["replay_proof"]["fidelity_level"], "diverged");
     assert_eq!(proved["data"]["replay_proof"]["safety_level"], "risky");
 }
+
+#[test]
+fn replay_node_rerun_surfaces_boundary_verification_and_focused_diff() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = root.join("crates/bijux-dag-core/tests/snapshots/selective_replay.dag.json");
+
+    let source = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "focused-rerun-source",
+        ],
+        &root,
+    );
+    assert_eq!(source["ok"], true);
+
+    let dry = run_json(
+        &[
+            "replay",
+            "--json",
+            "--source-run-id",
+            "focused-rerun-source",
+            "--source-run-root",
+            &output_path_string(&out_dir),
+            "--out",
+            &output_path_string(&out_dir),
+            "--dry-run",
+            "--from-node",
+            "branch_a",
+        ],
+        &root,
+    );
+    assert_eq!(dry["ok"], true);
+    assert!(dry["data"]["upstream_artifact_verification"].is_object());
+    assert_eq!(
+        dry["data"]["upstream_artifact_verification"]["boundary_nodes"],
+        serde_json::json!(["branch_a"])
+    );
+    assert!(dry["data"]["node_rerun_diff"].is_null());
+
+    let replay = run_json(
+        &[
+            "replay",
+            "--json",
+            "--source-run-id",
+            "focused-rerun-source",
+            "--source-run-root",
+            &output_path_string(&out_dir),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "focused-rerun-child",
+            "--from-node",
+            "branch_a",
+        ],
+        &root,
+    );
+    assert_eq!(replay["ok"], true);
+    assert!(replay["data"]["upstream_artifact_verification"].is_object());
+    assert_eq!(replay["data"]["node_rerun_diff"]["node_id"], "branch_a");
+    assert!(replay["data"]["node_rerun_diff"]["summary"].is_object());
+}
