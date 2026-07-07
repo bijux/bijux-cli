@@ -1,9 +1,12 @@
 //! Application orchestration and response shaping for the `bijux-dag` command surface.
 //!
-//! Prefer the crate root for focused imports, [`stable`] for the explicit app
-//! lane, and [`prelude`] for command embedding helpers. The
-//! `experimental-public-api` feature enables repository-owned contract helpers
-//! that are intentionally excluded from the default docs lane.
+//! Prefer [`stable`] when browsing the long-lived app surface, [`prelude`] for
+//! command embedding helpers, and crate-root imports only when you already
+//! know the exact item you need. Broad compatibility re-exports remain
+//! callable for focused imports, but they are intentionally hidden from the
+//! default docs lane. The `experimental-public-api` feature enables
+//! repository-owned contract helpers that are intentionally excluded from the
+//! default docs lane.
 //!
 #![allow(dead_code)]
 
@@ -80,14 +83,19 @@ mod status_cmd;
 mod validate_cmd;
 mod write;
 
+#[doc(hidden)]
 pub use config_surface::{
     config_fingerprint, default_runtime_config, normalize_runtime_config, policy_evaluation_trace,
     resolve_effective_config, CacheModeSurface, MaterializeInputsSurface,
     PartialRuntimeSurfaceConfig, PolicySurfaceConfig, RuntimeSurfaceConfig,
 };
+#[doc(hidden)]
 pub use integrity_service::inspect_artifact;
+#[doc(hidden)]
 pub use run_comparison::runs_compare;
+#[doc(hidden)]
 pub use run_failure_summary::explain_failure;
+#[doc(hidden)]
 pub use run_views::{
     doctor_run, explain_run_id, format_inspect_human, format_run_completion_human,
     format_show_human, inspect_summary, list_runs, resolve_run_dir, run_completion_summary,

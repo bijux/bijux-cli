@@ -30,6 +30,16 @@ release-boundary routing, and shapes the typed responses that the CLI renders.
 - artifact storage implementations
 - maintainer-only governance workflows
 
+## Public Rust Surface
+
+- browse docs.rs through `bijux_dag_app::stable` for the long-lived command
+  application lane
+- use `bijux_dag_app::prelude` for command embedding helpers
+- use focused crate-root imports only when you already know the exact app item
+  you need
+- broad compatibility re-exports remain callable for repository-owned support
+  work, but stay hidden from the primary docs.rs lane
+
 ## Source Layout
 
 - `src/commands`: Clap model, release-boundary help shaping, and command policy
