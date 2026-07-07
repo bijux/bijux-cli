@@ -574,6 +574,8 @@ pub use state_machine::{
 };
 use std::collections::{BTreeMap, HashMap};
 use std::io::{self as std_io, Read, Write};
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Output, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -835,6 +837,18 @@ enum ControlledCommandOutcomeKind {
     Exited,
     TimedOut,
     Cancelled,
+}
+
+#[derive(Debug)]
+struct ControlledCommandTermination {
+    status: std::process::ExitStatus,
+    cleanup_diagnostics: Vec<String>,
+}
+
+impl ControlledCommandTermination {
+    fn new(status: std::process::ExitStatus) -> Self {
+        Self { status, cleanup_diagnostics: Vec::new() }
+    }
 }
 
 /// Built-in adapter that writes constant JSON payloads into declared outputs.
@@ -4451,6 +4465,7 @@ pub(crate) fn command_output_with_controls(
 ) -> Result<ControlledCommandResult, RuntimeError> {
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
+    configure_controlled_subprocess(cmd);
     let mut child = cmd.spawn().map_err(RuntimeError::Io)?;
     let stdout = child
         .stdout
@@ -4463,30 +4478,41 @@ pub(crate) fn command_output_with_controls(
     let stdout_reader = spawn_output_reader(stdout);
     let stderr_reader = spawn_output_reader(stderr);
     let timeout_limit = timeout_ms.map(|limit| (limit, std::time::Instant::now()));
-    let (status, outcome_kind) = loop {
+    let (termination, outcome_kind) = loop {
         if let Some(status) = child.try_wait().map_err(RuntimeError::Io)? {
-            break (status, ControlledCommandOutcomeKind::Exited);
+            break (
+                ControlledCommandTermination::new(status),
+                ControlledCommandOutcomeKind::Exited,
+            );
         }
         if cancellation_requested.is_some_and(|requested| requested.load(Ordering::SeqCst)) {
-            let status = terminate_child_best_effort(&mut child).map_err(RuntimeError::Io)?;
-            break (status, ControlledCommandOutcomeKind::Cancelled);
+            let termination = terminate_child_best_effort(&mut child).map_err(RuntimeError::Io)?;
+            break (termination, ControlledCommandOutcomeKind::Cancelled);
         }
         if timeout_limit
             .is_some_and(|(limit_ms, started)| started.elapsed().as_millis() > limit_ms as u128)
         {
-            let status = terminate_child_best_effort(&mut child).map_err(RuntimeError::Io)?;
-            break (status, ControlledCommandOutcomeKind::TimedOut);
+            let termination = terminate_child_best_effort(&mut child).map_err(RuntimeError::Io)?;
+            break (termination, ControlledCommandOutcomeKind::TimedOut);
         }
         std::thread::sleep(Duration::from_millis(10));
     };
     let stdout = join_output_reader(stdout_reader, "stdout")?;
-    let stderr = join_output_reader(stderr_reader, "stderr")?;
-    let output = Output { status, stdout, stderr };
+    let mut stderr = join_output_reader(stderr_reader, "stderr")?;
+    append_cleanup_diagnostics(&mut stderr, &termination.cleanup_diagnostics);
+    let output = Output { status: termination.status, stdout, stderr };
     Ok(match outcome_kind {
         ControlledCommandOutcomeKind::Exited => ControlledCommandResult::Exited(output),
         ControlledCommandOutcomeKind::Cancelled => ControlledCommandResult::Cancelled(output),
         ControlledCommandOutcomeKind::TimedOut => ControlledCommandResult::TimedOut(output),
     })
+}
+
+fn configure_controlled_subprocess(cmd: &mut std::process::Command) {
+    #[cfg(unix)]
+    {
+        cmd.process_group(0);
+    }
 }
 
 fn spawn_output_reader<T>(mut stream: T) -> std::thread::JoinHandle<std_io::Result<Vec<u8>>>
@@ -4514,21 +4540,106 @@ fn join_output_reader(
 
 fn terminate_child_best_effort(
     child: &mut std::process::Child,
-) -> std_io::Result<std::process::ExitStatus> {
+) -> std_io::Result<ControlledCommandTermination> {
+    if let Some(status) = child.try_wait()? {
+        return Ok(ControlledCommandTermination::new(status));
+    }
+
     #[cfg(unix)]
     {
-        let pid = child.id();
-        kill_child_descendants_best_effort(pid);
+        return terminate_process_group_best_effort(child);
     }
-    let _ = child.kill();
-    child.wait()
+
+    #[cfg(not(unix))]
+    {
+        let _ = child.kill();
+        Ok(ControlledCommandTermination::new(child.wait()?))
+    }
 }
 
 #[cfg(unix)]
-fn kill_child_descendants_best_effort(pid: u32) {
-    let parent = pid.to_string();
-    let _ = std::process::Command::new("pkill").args(["-TERM", "-P", &parent]).status();
-    let _ = std::process::Command::new("pkill").args(["-KILL", "-P", &parent]).status();
+fn terminate_process_group_best_effort(
+    child: &mut std::process::Child,
+) -> std_io::Result<ControlledCommandTermination> {
+    const SIGNAL_GRACE_PERIOD: Duration = Duration::from_millis(250);
+
+    let process_group_id = child.id();
+    let mut termination = ControlledCommandTermination::new(unreachable_exit_status());
+
+    if let Err(error) = signal_process_group(process_group_id, "TERM") {
+        termination.cleanup_diagnostics.push(format!(
+            "failed to send SIGTERM to subprocess group {process_group_id}: {error}"
+        ));
+    }
+    if let Some(status) = wait_for_child_exit(child, SIGNAL_GRACE_PERIOD)? {
+        termination.status = status;
+        return Ok(termination);
+    }
+
+    if let Err(error) = signal_process_group(process_group_id, "KILL") {
+        termination.cleanup_diagnostics.push(format!(
+            "failed to send SIGKILL to subprocess group {process_group_id}: {error}"
+        ));
+    }
+    if let Some(status) = wait_for_child_exit(child, SIGNAL_GRACE_PERIOD)? {
+        termination.status = status;
+        return Ok(termination);
+    }
+
+    if let Err(error) = child.kill() {
+        termination
+            .cleanup_diagnostics
+            .push(format!("failed to kill subprocess leader {process_group_id}: {error}"));
+    }
+    termination.status = child.wait()?;
+    Ok(termination)
+}
+
+#[cfg(unix)]
+fn signal_process_group(process_group_id: u32, signal: &str) -> std_io::Result<()> {
+    let target = format!("-{process_group_id}");
+    let status =
+        std::process::Command::new("kill").args([format!("-{signal}"), target]).status()?;
+    if status.success() {
+        return Ok(());
+    }
+    Err(std_io::Error::other(format!("kill exited with status {status}")))
+}
+
+fn wait_for_child_exit(
+    child: &mut std::process::Child,
+    grace_period: Duration,
+) -> std_io::Result<Option<std::process::ExitStatus>> {
+    let deadline = std::time::Instant::now() + grace_period;
+    loop {
+        if let Some(status) = child.try_wait()? {
+            return Ok(Some(status));
+        }
+        if std::time::Instant::now() >= deadline {
+            return Ok(None);
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+fn append_cleanup_diagnostics(stderr: &mut Vec<u8>, cleanup_diagnostics: &[String]) {
+    if cleanup_diagnostics.is_empty() {
+        return;
+    }
+
+    if !stderr.is_empty() && !stderr.ends_with(b"\n") {
+        stderr.push(b'\n');
+    }
+    for diagnostic in cleanup_diagnostics {
+        stderr.extend_from_slice(b"[bijux cleanup] ");
+        stderr.extend_from_slice(diagnostic.as_bytes());
+        stderr.push(b'\n');
+    }
+}
+
+#[cfg(unix)]
+fn unreachable_exit_status() -> std::process::ExitStatus {
+    std::os::unix::process::ExitStatusExt::from_raw(0)
 }
 
 pub(crate) fn effective_node_timeout_ms(node: &Node, params: &Value) -> Option<u64> {
@@ -4784,6 +4895,82 @@ mod cache_read_contract_tests {
         std::env::set_current_dir(&original_dir).expect("restore original directory");
 
         assert_eq!(original_fingerprint, moved_fingerprint);
+    }
+}
+
+#[cfg(test)]
+mod controlled_command_cleanup_contract_tests {
+    use super::*;
+    use std::sync::{Arc, Mutex, OnceLock};
+
+    fn cleanup_test_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    #[cfg(unix)]
+    fn nested_background_marker_command(marker_path: &Path) -> std::process::Command {
+        let mut cmd = std::process::Command::new("/bin/sh");
+        cmd.arg("-c")
+            .arg("( /bin/sh -c 'sleep 1; printf orphan > \"$MARKER_PATH\"' & wait ) & sleep 5");
+        cmd.env("MARKER_PATH", marker_path);
+        cmd
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn timeout_kills_nested_background_descendants() {
+        let _guard = cleanup_test_lock().lock().expect("cleanup test lock");
+        let temp_dir = tempfile::tempdir().expect("temp dir");
+        let marker_path = temp_dir.path().join("orphan.txt");
+        let mut cmd = nested_background_marker_command(&marker_path);
+
+        let output = command_output_with_timeout(&mut cmd, Some(100)).expect("timeout result");
+        assert!(matches!(output, ControlledCommandResult::TimedOut(_)));
+
+        std::thread::sleep(Duration::from_millis(1_500));
+        assert!(!marker_path.exists(), "timed out subprocess group left a descendant running");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn cancellation_kills_nested_background_descendants() {
+        let _guard = cleanup_test_lock().lock().expect("cleanup test lock");
+        let temp_dir = tempfile::tempdir().expect("temp dir");
+        let marker_path = temp_dir.path().join("orphan.txt");
+        let mut cmd = nested_background_marker_command(&marker_path);
+        let cancellation_requested = Arc::new(AtomicBool::new(false));
+        let trigger = Arc::clone(&cancellation_requested);
+        let notifier = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(100));
+            trigger.store(true, Ordering::SeqCst);
+        });
+
+        let output =
+            command_output_with_controls(&mut cmd, None, Some(cancellation_requested.as_ref()))
+                .expect("cancelled result");
+        notifier.join().expect("cancellation notifier");
+        assert!(matches!(output, ControlledCommandResult::Cancelled(_)));
+
+        std::thread::sleep(Duration::from_millis(1_500));
+        assert!(!marker_path.exists(), "cancelled subprocess group left a descendant running");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn termination_is_harmless_after_process_exits() {
+        let _guard = cleanup_test_lock().lock().expect("cleanup test lock");
+        let mut child = std::process::Command::new("/bin/sh")
+            .arg("-c")
+            .arg("exit 0")
+            .spawn()
+            .expect("spawn child");
+
+        std::thread::sleep(Duration::from_millis(50));
+        let termination = terminate_child_best_effort(&mut child).expect("terminate exited child");
+
+        assert!(termination.status.success());
+        assert!(termination.cleanup_diagnostics.is_empty());
     }
 }
 
