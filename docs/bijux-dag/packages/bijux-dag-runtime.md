@@ -45,6 +45,17 @@ lane is opt-in behind `experimental-public-api`.
 - unrelated ambient Git repositories are not allowed to rewrite replay or cache
   identity
 
+## Lifecycle Evidence Contract
+
+- node traces keep coarse terminal `status` separate from `lifecycle_state`
+- the stable lifecycle vocabulary is `pending`, `ready`, `queued`, `running`,
+  `succeeded`, `failed`, `skipped`, `cached`, `cancelled`, and `timed_out`
+- `queued` is the scheduler handoff state after dependency readiness and before
+  adapter execution starts
+- `lifecycle_transitions` records the validated path through those states so
+  cached reuse, timeout, cancellation, and pre-start failure paths remain
+  inspectable after the run completes
+
 ## Source Layout
 
 - `crates/bijux-dag-runtime/src/runtime_core`

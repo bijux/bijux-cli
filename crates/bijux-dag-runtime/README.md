@@ -45,6 +45,19 @@ with Bijux runtime policies from Rust.
 
 Use these rules when reviewing runtime fingerprint drift or provenance output.
 
+## Persisted lifecycle evidence
+
+Node traces persist lifecycle evidence separately from terminal `status`.
+
+- terminal `status` stays the coarse completion lane such as `success`,
+  `failed`, `cached`, or `cancelled`
+- `lifecycle_state` records the final execution interpretation using the stable
+  runtime vocabulary: `pending`, `ready`, `queued`, `running`, `succeeded`,
+  `failed`, `skipped`, `cached`, `cancelled`, and `timed_out`
+- `lifecycle_transitions` records the validated path through those states so a
+  cache hit, timeout, cancellation, or queued-but-never-started node remains
+  inspectable after the run finishes
+
 ## Public Rust Surface
 
 - prefer focused crate-root imports for a small number of runtime types or functions
