@@ -4,7 +4,7 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-07
 ---
 
 # bijux-dag-testkit
@@ -23,7 +23,7 @@ or shared assertions rather than production runtime behavior.
 
 | Surface | Ownership |
 | --- | --- |
-| shared fixtures | reusable graph and runtime test material |
+| shared fixtures | reusable graph, run, and artifact test material |
 | helpers | builders and assertions used across DAG suites |
 | release status | private workspace support crate |
 | boundary | does not own production command routing, runtime policy, crates.io publication policy, or release governance |
@@ -31,10 +31,13 @@ or shared assertions rather than production runtime behavior.
 ## Source Layout
 
 - `crates/bijux-dag-testkit/src/lib.rs`
+- `crates/bijux-dag-testkit/src/workflows.rs`
+- `crates/bijux-dag-testkit/src/product_scenarios.rs`
+- `crates/bijux-dag-testkit/src/fake_adapter.rs`
 
 ## Open Next
 
-- open the [DAG Handbook](../../index.md) when the testing question belongs to the wider DAG stack
+- open the [DAG Handbook](../index.md) when the testing question belongs to the wider DAG stack
 - open [`bijux-dag-core`](./bijux-dag-core.md) or [`bijux-dag-runtime`](./bijux-dag-runtime.md) when a fixture needs to map back to owned behavior
 - open the [Maintainer Handbook](../../bijux-dev/index.md) when the concern is repository-level verification policy
 

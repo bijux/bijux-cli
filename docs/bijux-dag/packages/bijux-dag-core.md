@@ -4,7 +4,7 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-07
 ---
 
 # bijux-dag-core
@@ -21,8 +21,8 @@ effects begin.
 | Surface | Ownership |
 | --- | --- |
 | graph model | nodes, edges, resources, metadata, and canonical graph state |
-| compile path | parse, validate, resolve, and build-contract wrappers |
-| deterministic analysis | fingerprints, semantics, and topology |
+| compile path | parse, validate, resolve, build-contract wrappers, and planner inputs |
+| deterministic analysis | fingerprints, semantics, topology, and graph equivalence inputs |
 | boundary | no scheduler orchestration, CLI routing, or persistence side effects |
 
 ## Source Layout
@@ -36,7 +36,7 @@ effects begin.
 
 ## Open Next
 
-- open the [DAG Handbook](../../index.md) for cross-package architecture and operator-facing context
+- open the [DAG Handbook](../index.md) for cross-package architecture and operator-facing context
 - open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question moves from graph truth to execution policy
 - open the [Repository Handbook](../../bijux-core/index.md) when the concern crosses into CLI or maintainer policy
 

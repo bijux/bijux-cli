@@ -4,14 +4,14 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-07
 ---
 
 # bijux-dag-runtime
 
 `bijux-dag-runtime` owns execution-time behavior for DAG runs: planning,
-scheduler policy, adapter invocation boundaries, artifact writing, replay, and
-runtime diagnostics.
+scheduler policy, adapter invocation boundaries, artifact writing, replay,
+cache policy, and runtime diagnostics.
 
 Use this page when the question is about what happens after a graph has already
 been accepted as valid.
@@ -56,7 +56,7 @@ lane is opt-in behind `experimental-public-api`.
 
 ## Open Next
 
-- open the [DAG Handbook](../../index.md) for the full DAG system map
+- open the [DAG Handbook](../index.md) for the full DAG system map
 - open [`bijux-dag-core`](./bijux-dag-core.md) for graph truth and planning inputs
 - open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and response shaping
 
@@ -65,6 +65,7 @@ lane is opt-in behind `experimental-public-api`.
 - `crates/bijux-dag-runtime/README.md`
 - `crates/bijux-dag-runtime/CONTRACT.md`
 - `crates/bijux-dag-runtime/src/lib.rs`
+- `crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs`
 - `crates/bijux-dag-runtime/src/policy/evaluator.rs`
 - `crates/bijux-dag-runtime/src/replay/verifier.rs`
 
@@ -72,4 +73,5 @@ lane is opt-in behind `experimental-public-api`.
 
 - runtime policy should stay explicit, testable, and separate from graph definition
 - artifact and replay rules should be inspectable rather than hidden behind execution helpers
+- cache, replay, and rerun reuse rules should stay auditable at crate boundaries
 - package ownership should remain focused on execution-time behavior only

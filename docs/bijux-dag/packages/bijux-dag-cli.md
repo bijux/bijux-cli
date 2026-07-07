@@ -4,7 +4,7 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-07
 ---
 
 # bijux-dag-cli
@@ -28,7 +28,7 @@ stable public behavior.
 | Surface | Ownership |
 | --- | --- |
 | process entrypoint | binary startup, argv handoff, and error mapping |
-| runtime shell | thin executable wrapper for user-facing invocation |
+| runtime shell | thin executable wrapper for user-facing invocation and shell completions wiring |
 | boundary | does not own graph semantics, execution policy, or artifact storage |
 
 ## Source Layout
@@ -38,7 +38,7 @@ stable public behavior.
 ## Open Next
 
 - open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and user-facing response shaping
-- open the [DAG Handbook](../../index.md) for the wider system map and operator guidance
+- open the [DAG Handbook](../index.md) for the wider system map and operator guidance
 - open the [Repository Handbook](../../bijux-core/index.md) when process behavior intersects shared release policy
 
 ## Code Anchors
@@ -51,6 +51,6 @@ stable public behavior.
 
 - the binary should stay thin enough that DAG behavior remains owned elsewhere
 - user-facing startup and exit behavior should still be explicit and testable
-- hidden experimental routes must stay intentionally outside the default root help surface until they are promoted
-- hidden maintainer namespaces must stay intentionally outside the public root help surface
+- repository-owned experimental routes must stay intentionally outside the default root help surface until they are promoted
+- modeled-platform and maintainer namespaces must stay intentionally outside the public root help surface
 - process-level concerns should not pull runtime or artifact logic into the entrypoint

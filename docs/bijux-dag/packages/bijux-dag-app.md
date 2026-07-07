@@ -4,14 +4,14 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-07
 ---
 
 # bijux-dag-app
 
-`bijux-dag-app` is the application orchestration layer for `bijux-dag`
-surfaces. It translates command inputs into services, coordinates reads and
-writes, and shapes user-facing responses.
+`bijux-dag-app` is the application layer behind `bijux-dag`. It translates
+command intent into service calls across the DAG crates, coordinates reads and
+writes, and shapes the typed responses that the CLI renders.
 
 Use this page when the issue is about command behavior or output shape rather
 than graph truth or execution internals.
@@ -20,10 +20,10 @@ The intended Rust import lanes are the crate root, `stable`, and `prelude`.
 Hidden compatibility helpers remain repository-owned, and the `experimental`
 lane is opt-in behind `experimental-public-api`.
 
-This crate also houses hidden experimental operator routes plus hidden
-simulation and maintainer routes that stay in the repository for coverage and
-evidence work. Experimental routes stay on explicit paths, while simulated and
-maintainer lanes require `BIJUX_DAG_ENABLE_SIMULATED=1` or
+This crate also houses repository-owned experimental operator routes plus
+modeled-platform and maintainer routes that stay in the repository for
+coverage and evidence work. Experimental routes stay on explicit paths, while
+simulated and maintainer lanes require `BIJUX_DAG_ENABLE_SIMULATED=1` or
 `BIJUX_DAG_ENABLE_INTERNAL=1`. Those paths are intentionally kept outside the
 visible `bijux-dag --help` release contract.
 
@@ -31,9 +31,9 @@ visible `bijux-dag --help` release contract.
 
 | Surface | Ownership |
 | --- | --- |
-| command orchestration | argument-to-service routing, workflow dispatch, output selection |
+| command orchestration | argument-to-service routing, workflow dispatch, output selection, and public-versus-hidden route guardrails |
 | response shaping | render flows, response models, diagnostics views, command-specific output contracts |
-| app-level services | read, write, replay, inspect, graph, cache, and export/import orchestration |
+| app-level services | read, write, replay, inspect, graph, cache, migration, and export/import orchestration |
 | boundary | does not own kernel semantics, runtime scheduler internals, or artifact storage authority |
 
 ## Source Layout
@@ -49,7 +49,7 @@ visible `bijux-dag --help` release contract.
 
 ## Open Next
 
-- open the [DAG Handbook](../../index.md) for the package-wide architecture and interfaces
+- open the [DAG Handbook](../index.md) for the package-wide architecture and interfaces
 - open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question crosses from response shaping into execution policy
 - open [`bijux-dag-cli`](./bijux-dag-cli.md) when the concern is process wiring rather than app orchestration
 
@@ -58,6 +58,7 @@ visible `bijux-dag --help` release contract.
 - `crates/bijux-dag-app/README.md`
 - `crates/bijux-dag-app/CONTRACT.md`
 - `crates/bijux-dag-app/src/lib.rs`
+- `crates/bijux-dag-app/src/commands/mod.rs`
 - `crates/bijux-dag-app/src/routes/run_routes.rs`
 - `crates/bijux-dag-app/src/inspect/service.rs`
 
@@ -65,6 +66,6 @@ visible `bijux-dag --help` release contract.
 
 - command routing should stay thin enough to explain and thick enough to keep user-facing contracts coherent
 - orchestration should delegate kernel and runtime work instead of re-implementing it
-- hidden experimental routes must not quietly expand the visible operator contract
-- hidden maintainer routes must not blur the public operator-facing contract
+- repository-owned experimental routes must not quietly expand the visible operator contract
+- modeled-platform and maintainer routes must not blur the public operator-facing contract
 - output contracts should remain explicit and test-backed
