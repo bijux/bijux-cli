@@ -4,23 +4,28 @@
 planning, scheduling, adapter invocation boundaries, policy checks, replay
 classification, cache behavior, and trace emission.
 
-## What this crate provides
+## Release Status
 
-- Execution planning and node orchestration.
-- Policy evaluation and runtime diagnostics.
-- Replay, diff, cache, and artifact integration behavior.
-- Adapter boundaries for local and external execution backends.
+- public crate on the `v0.4.0` DAG release line
+- execution-time layer for the public local DAG product
+- contains modeled platform support lanes, but those are not public operator
+  promises by default
+
+## What This Crate Owns
+
+- execution planning and node orchestration
+- policy evaluation and runtime diagnostics
+- replay, diff, cache, and artifact integration behavior
+- adapter boundaries for local and external execution backends
 
 Choose this crate when you need to execute validated DAG graphs or integrate
 with Bijux runtime policies from Rust.
 
-## Deliberate boundaries
+## What It Does Not Own
 
-This crate does not own:
-
-- authoritative graph schema and validation rules,
-- top-level command parsing or output presentation,
-- release-governance and maintainer report composition.
+- authoritative graph schema and validation rules
+- top-level command parsing or output presentation
+- release-governance and maintainer report composition
 
 ## Runtime identity rules
 
@@ -35,7 +40,7 @@ This crate does not own:
 
 Use these rules when reviewing runtime fingerprint drift or provenance output.
 
-## Public Rust surface
+## Public Rust Surface
 
 - prefer focused crate-root imports for a small number of runtime types or functions
 - use `bijux_dag_runtime::stable` for the explicit long-lived compatibility lane
@@ -45,7 +50,7 @@ Use these rules when reviewing runtime fingerprint drift or provenance output.
 - treat backend-heavy compatibility helpers as repository-owned support surface,
   not as the primary docs-facing import lane
 
-## Source layout
+## Source Layout
 
 - `src/runtime_core`: planning, execution, governance, and state transitions
 - `src/adapters`: built-in and external adapter boundaries
@@ -54,7 +59,7 @@ Use these rules when reviewing runtime fingerprint drift or provenance output.
   behavior around persisted evidence and reuse
 - `src/diagnostics`: runtime-facing diagnostic helpers
 
-## Reach for another crate when
+## Reach For Another Crate When
 
 - you need deterministic graph truth before runtime side effects:
   `bijux-dag-core`

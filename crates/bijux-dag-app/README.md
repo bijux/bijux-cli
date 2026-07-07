@@ -1,32 +1,32 @@
 # bijux-dag-app
 
 `bijux-dag-app` is the application layer behind the `bijux-dag` command
-surface. It translates user intent into calls across the DAG core, runtime, and
-artifact crates, then shapes the resulting typed responses.
+surface. It translates command intent into calls across the DAG crates, owns
+release-boundary routing, and shapes the typed responses that the CLI renders.
 
-## What this crate provides
+## Release Status
 
-- Command orchestration and request validation at the app boundary.
-- Typed response models and render helpers.
-- User-facing flows for inspect, replay, cache, graph inspection, migration,
-  and diagnostics.
+- public crate on the `v0.4.0` DAG release line
+- owns the command application layer, not the thin binary wrapper
+- contains repository-owned experimental and opt-in routes, but those routes
+  are not automatically part of the stable operator contract
 
-Depend on this crate when you need to embed or test the `bijux-dag` command
-application logic without taking on the thin binary wrapper.
+## What This Crate Owns
 
-The visible `bijux-dag --help` surface is the public operator contract. Hidden
-simulation and maintainer namespaces are still routed here for repository-owned
-coverage, but they are not release-grade public API.
+- command orchestration and request validation at the app boundary
+- typed response models and render helpers
+- user-facing flows for inspection, replay, cache work, graph inspection,
+  migration, and diagnostics
+- route gating between stable, experimental, simulated, and internal surfaces
 
-## Deliberate boundaries
+## What It Does Not Own
 
-This crate does not own:
+- graph semantics or canonical validation rules
+- scheduler and runtime execution internals
+- artifact storage implementations
+- maintainer-only governance workflows
 
-- graph semantics or canonical validation rules,
-- scheduler and runtime execution internals,
-- artifact storage implementations or maintainer-only governance workflows.
-
-## Source layout
+## Source Layout
 
 - `src/commands`: Clap model, release-boundary help shaping, and command policy
 - `src/routes`: command-to-service routing and public-versus-hidden route gates
@@ -36,7 +36,7 @@ This crate does not own:
 - `src/cache`, `src/read`, `src/write`, `src/explain`, `src/format`: support
   modules for app-layer workflows
 
-## Reach for another crate when
+## Reach For Another Crate When
 
 - you need deterministic graph truth or planner primitives:
   `bijux-dag-core`

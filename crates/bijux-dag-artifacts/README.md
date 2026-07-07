@@ -3,25 +3,30 @@
 `bijux-dag-artifacts` owns artifact identity, persistence, integrity, and
 lifecycle helpers for DAG runs.
 
-## What this crate provides
+## Release Status
 
-- Run-manifest, node-trace, outputs-index, and storage-layout models.
-- Artifact hashing, proof, and schema validation helpers.
-- Filesystem-backed storage and layout helpers.
-- Retention, promotion, and lineage policy primitives.
+- public crate on the `v0.4.0` DAG release line
+- durable evidence boundary for manifests, traces, indexes, and artifact
+  lineage
 
-Depend on this crate when you need to read, write, validate, or transport DAG
-run artifacts without taking on the runtime or command orchestration layers.
+## What This Crate Owns
 
-## Deliberate boundaries
+- run-manifest, node-trace, outputs-index, and storage-layout models
+- artifact hashing, proof, and schema validation helpers
+- filesystem-backed storage and layout helpers
+- retention, promotion, and lineage policy primitives
 
-This crate does not own:
+Use this crate when you need to read, write, validate, or transport DAG run
+artifacts without taking on runtime execution or command orchestration.
 
-- graph semantics or planner logic,
-- scheduler and execution policy behavior,
-- CLI command routing or maintainer governance flows.
+## What It Does Not Own
 
-## Source layout
+- graph semantics or planner logic
+- scheduler and execution policy behavior
+- CLI command routing
+- maintainer governance flows
+
+## Source Layout
 
 - `src/storage`: persisted run and artifact models
 - `src/layout`: run-directory layout and artifact path rules
@@ -29,7 +34,7 @@ This crate does not own:
 - `src/lifecycle`: retention, promotion, and lineage helpers
 - `src/io`: filesystem read and write helpers
 
-## Reach for another crate when
+## Reach For Another Crate When
 
 - you need execution-time policy or replay classification:
   `bijux-dag-runtime`

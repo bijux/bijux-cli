@@ -12,30 +12,31 @@
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli-python docs](https://img.shields.io/badge/docs-bijux--cli--python-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli-python/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli) [![bijux-dag docs.rs](https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-cli` is the Python distribution for installing and launching the Bijux
-command runtime.
+`bijux-cli-python` is the Python distribution for installing and launching the
+`bijux` command runtime.
 
-This package provides:
+It is the PyPI boundary for the public `bijux` product. The Python package
+does not redefine runtime behavior; it packages, launches, and validates the
+same command contract owned by the Rust `bijux-cli` crate.
 
-- the `bijux` console entrypoint,
-- a native Rust bridge module (`bijux_cli_py._native`) when available,
-- a Python facade fallback for portability and compatibility checks,
-- a lightweight `bijux_cli_py.app_sdk` helper for mounted Python apps.
+## Release Status
 
-It ships on the `v0.4.0` release line alongside the Rust `bijux-cli` crate and
-the public `bijux-dag` Rust crate family.
+- public PyPI distribution on the `v0.4.0` release line
+- companion surface to the Rust `bijux-cli` crate
+- not a separate command product from `bijux`
 
-## What This Package Is
+## What This Package Owns
 
-- A packaging and bridge layer for the `bijux` runtime.
-- The canonical PyPI surface for `bijux-cli`.
-- A compatibility boundary between Python callers and the Rust runtime.
+- the `bijux` console entrypoint for Python installs
+- the optional native Rust bridge module (`bijux_cli_py._native`)
+- a Python fallback facade for compatibility and portability checks
+- `bijux_cli_py.app_sdk` for mounted Python apps
 
-## What This Package Is Not
+## What It Does Not Own
 
-- It does not define independent runtime semantics.
-- It does not publish maintainer control-plane commands.
-- It does not replace repository-level governance docs.
+- independent runtime semantics
+- maintainer control-plane commands
+- repository-level governance and release policy
 
 ## Source Layout
 
@@ -95,7 +96,7 @@ Then publish the app package with a standard `pyproject.toml`, expose the
 callable through your module, and place the generated manifest under
 `.bijux/apps/<namespace>.mount.json` or a managed discovery path.
 
-## Source of Truth
+## Related Surfaces
 
 - Runtime crate: [`crates/bijux-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli)
 - Python bridge crate: [`crates/bijux-cli-python`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli-python)

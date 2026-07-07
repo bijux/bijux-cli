@@ -3,30 +3,30 @@
 `bijux-dag-testkit` centralizes deterministic test fixtures, builders, and
 assertion helpers shared across the DAG workspace.
 
-This crate is repository-internal test support. It is maintained for workspace
-crates and top-level suites, but it is not part of the public `v0.4.0` crates.io
-release boundary.
+## Release Status
 
-## What this crate provides
+- repository-internal support crate
+- not part of the public `v0.4.0` crates.io release boundary
+- intended for workspace crates and top-level suites
 
-- Canonical DAG fixture builders.
-- Shared run-artifact and replay assertions.
-- Reusable helpers for contract, integration, regression, and fake-adapter
-  suites.
+## What This Crate Owns
+
+- canonical DAG fixture builders
+- shared run-artifact and replay assertions
+- reusable helpers for contract, integration, regression, and fake-adapter
+  suites
 
 Use this crate in workspace tests when you need stable DAG inputs and shared
 assertions without duplicating fixtures across crates.
 
-## Deliberate boundaries
+## What It Does Not Own
 
-This crate is test-only support. It does not own:
+- production command routing
+- runtime state machines
+- crates.io publication policy
+- release-governance decisions
 
-- production command routing,
-- runtime state machines,
-- crates.io publication policy,
-- release-governance decisions.
-
-## Source layout
+## Source Layout
 
 - `src/workflows.rs`: reusable workflow fixtures
 - `src/product_scenarios.rs`: cross-crate scenario builders

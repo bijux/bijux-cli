@@ -4,26 +4,29 @@
 It owns graph truth: parsing, validation, canonicalization, topology,
 identity, reference resolution, and planner lowering.
 
-## What this crate provides
+## Release Status
 
-- Strict graph parsing and validation with stable diagnostics.
-- Deterministic graph canonicalization and topology ordering.
-- Graph and node fingerprinting primitives.
-- Planner-lowering helpers used by runtime and app layers.
+- public crate on the `v0.4.0` DAG release line
+- pure kernel layer for DAG authoring, validation, and identity work
+
+## What This Crate Owns
+
+- strict graph parsing and validation with stable diagnostics
+- deterministic graph canonicalization and topology ordering
+- graph and node fingerprinting primitives
+- planner-lowering helpers used by runtime and app layers
 
 Choose this crate when you need a pure Rust dependency for DAG authoring,
-inspection, validation, or identity work without pulling in runtime execution or
-command-layer concerns.
+inspection, validation, or identity work without pulling in runtime execution
+or command-layer concerns.
 
-## Deliberate boundaries
+## What It Does Not Own
 
-This crate stays pure and deterministic. It does not own:
+- adapter implementations or runtime scheduling
+- command parsing, rendering, or CLI routing
+- filesystem, process, or wall-clock side effects
 
-- adapter implementations or runtime scheduling,
-- command parsing, rendering, or CLI routing,
-- filesystem, process, or wall-clock side effects.
-
-## Source layout
+## Source Layout
 
 - `src/graph`: graph model, parsing, and semantic validation
 - `src/pipeline`: compile-path helpers and validation entrypoints
@@ -31,7 +34,7 @@ This crate stays pure and deterministic. It does not own:
 - `src/planner`: planner-lowering primitives
 - `src/build` and `src/contracts`: build-facing wrappers and typed contracts
 
-## Reach for another crate when
+## Reach For Another Crate When
 
 - you need actual run execution or replay behavior:
   `bijux-dag-runtime`
