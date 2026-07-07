@@ -42,11 +42,19 @@ The stable `v0.4.0` release contract covers:
 - cache verification and maintenance
 - machine-readable CLI JSON output
 
+Use `bijux-dag commands` to inspect the stable operator surface itself.
+Inventory non-stable routes only by deliberate lane:
+`bijux-dag commands --lane experimental`,
+`bijux-dag commands --lane simulated`, or
+`bijux-dag commands --lane internal`.
+
 ## Reading Rules
 
 - build operator procedures on the stable row only
-- use `bijux-dag commands --all` when you intentionally need repository-owned
-  non-stable routes
+- use `bijux-dag commands --lane experimental` when you intentionally need
+  repository-tested but non-stable operator helpers
+- use `bijux-dag commands --lane simulated` or `bijux-dag commands --lane internal`
+  only for deliberate modeled or maintainer workflows
 - set `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` only for
   deliberate maintainer or contract workflows
 - do not treat simulated namespaces as production backends

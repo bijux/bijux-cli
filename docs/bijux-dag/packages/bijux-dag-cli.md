@@ -18,10 +18,12 @@ binary-level integration rather than DAG semantics themselves.
 
 The supported operator contract is the visible `bijux-dag --help` surface.
 That visible root surface stays intentionally concise for `v0.4.0`. Hidden
-experimental routes remain executable by explicit path. Simulation namespaces
-and maintainer namespaces require `BIJUX_DAG_ENABLE_SIMULATED=1` or
-`BIJUX_DAG_ENABLE_INTERNAL=1`, and `bijux-dag-cli` does not advertise them as
-stable public behavior.
+experimental routes remain executable by explicit path and are inventoryable
+through `bijux-dag commands --lane experimental`. Simulation namespaces and
+maintainer namespaces require `BIJUX_DAG_ENABLE_SIMULATED=1` or
+`BIJUX_DAG_ENABLE_INTERNAL=1`, plus deliberate inventory through
+`bijux-dag commands --lane simulated` or `bijux-dag commands --lane internal`.
+`bijux-dag-cli` does not advertise them as stable public behavior.
 
 ## Responsibility Map
 
@@ -41,9 +43,12 @@ stable public behavior.
 - open the [DAG Handbook](../index.md) for the wider system map and operator guidance
 - open [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md) for a repository-backed cache verification and explicit-path diagnostic sequence that still runs through the published `bijux-dag` binary
 - open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) for a repository-backed recovery path that stays entirely on the public `bijux-dag` command surface
-- open [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md) for a repository-backed internal backfill path that stays callable through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`
-- open [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md) for a repository-backed internal schedule path that stays callable through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`
 - open the [Repository Handbook](../../bijux-core/index.md) when process behavior intersects shared release policy
+
+## Internal Evidence Lanes
+
+- open [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md) only when you intentionally need the repository-backed internal backfill lane through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`
+- open [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md) only when you intentionally need the repository-backed internal schedule lane through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`
 
 ## Code Anchors
 

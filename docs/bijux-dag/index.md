@@ -39,19 +39,21 @@ stamped from build metadata. Running the same compiled binary from a different
 working directory is not supposed to rewrite DAG evidence identity.
 
 The supported operator boundary is the visible `bijux-dag --help` surface.
-Repository-owned experimental routes remain callable by explicit path.
-Modeled-platform namespaces and maintainer namespaces require
-`BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` and are not
-part of the stable operator compatibility lane.
+Repository-owned experimental routes remain callable by explicit path and are
+inventoryable through `bijux-dag commands --lane experimental`. Modeled-platform
+namespaces and maintainer namespaces require `BIJUX_DAG_ENABLE_SIMULATED=1` or
+`BIJUX_DAG_ENABLE_INTERNAL=1`, plus deliberate lane inventory through
+`bijux-dag commands --lane simulated` or `bijux-dag commands --lane internal`.
+None of those lanes are part of the stable operator compatibility lane.
 
 ## v0.4.0 Surface Truth Table
 
 | Class | `v0.4.0` meaning | Representative surfaces |
 | --- | --- | --- |
 | stable | supported visible `bijux-dag --help` surface for local DAG authoring, execution, replay, and evidence inspection | `validate`, `plan`, `run`, `replay`, `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`, `version`, `commands`, `completions` |
-| experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
-| simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
-| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
+| experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | explicit-path operator helpers such as `init`, `status`, `export`, `migrate`, `prove`, and `trace-artifact`; use `bijux-dag commands --lane experimental` for the current inventory |
+| simulated | modeled platform namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | modeled control-plane and organizational route families; use `bijux-dag commands --lane simulated` only when you intentionally need repository-owned modeling surfaces |
+| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | maintainer verification, schedule, runtime, release, and capability lanes; use `bijux-dag commands --lane internal` only for deliberate repository maintenance work |
 | future | not a `v0.4.0` product promise | cluster-backed kubernetes execution, cluster-backed slurm or hpc execution, public remote workers, public enterprise or federation APIs, full scheduler service |
 
 For the canonical operator-surface source, use
@@ -66,8 +68,6 @@ status, use [Package Boundary](../bijux-core/foundation/package-boundary.md).
 <a class="md-button" href="operations/guides/container-packaging-workflow.md">Run the container workflow</a>
 <a class="md-button" href="operations/guides/data-pipeline-workflow.md">Run the data pipeline workflow</a>
 <a class="md-button" href="operations/guides/file-processing-workflow.md">Run the file processing workflow</a>
-<a class="md-button" href="operations/guides/historical-catalog-backfill-workflow.md">Run the backfill workflow</a>
-<a class="md-button" href="operations/guides/scheduled-catalog-refresh-workflow.md">Run the scheduled workflow</a>
 <a class="md-button" href="interfaces/operator-workflows.md">Open operator workflows</a>
 <a class="md-button" href="packages/index.md">Open the package map</a>
 </div>
@@ -101,15 +101,6 @@ flowchart LR
 - open [Compliance-Gated Bulletin Workflow](operations/guides/compliance-gated-bulletin-workflow.md)
   when you need proof that retry evidence, failure attribution, focused replay,
   and strict post-repair verification all work on one real run sequence
-- open [Historical Catalog Backfill Workflow](operations/guides/historical-catalog-backfill-workflow.md)
-  when you need proof that the current internal backfill lane expands one
-  historical window into partitioned run requests, summarizes that durable
-  state, and re-queues failed partitions without claiming a public scheduler
-  service
-- open [Scheduled Catalog Refresh Workflow](operations/guides/scheduled-catalog-refresh-workflow.md)
-  when you need proof that the current internal schedule lane computes one cron
-  slot, emits one durable submission, and carries that run id into retained
-  DAG evidence without claiming a public scheduler service
 - open [Operator Workflows](interfaces/operator-workflows.md) when the question
   is how to validate, run, replay, inspect, or compare
 - open [CLI Surface](interfaces/cli-surface.md) when the question is command
@@ -140,6 +131,18 @@ The public workflow is intentionally local and evidence-driven:
 
 That spine is reflected across the operator docs, the crate split, and the
 stable CLI surface.
+
+## Internal Evidence Lanes
+
+These references stay in the handbook because they are real repository-backed
+evidence, but they remain outside the stable `v0.4.0` operator contract.
+
+- open [Historical Catalog Backfill Workflow](operations/guides/historical-catalog-backfill-workflow.md)
+  when you intentionally need the current internal backfill lane for partition
+  fanout, durable summary state, and failed-partition retry evidence
+- open [Scheduled Catalog Refresh Workflow](operations/guides/scheduled-catalog-refresh-workflow.md)
+  when you intentionally need the current internal schedule lane for cron
+  preview, durable submission, queue dispatch, and run-id handoff evidence
 
 ## Code Anchors
 

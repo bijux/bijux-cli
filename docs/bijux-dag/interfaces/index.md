@@ -59,6 +59,7 @@ flowchart LR
 
 Use this section when the question is about what operators, tools, or other
 crates can depend on. Move back to Architecture when the next question is about
-engine structure instead of public contracts. For the full internal command
-inventory, use `bijux-dag commands --all` rather than treating hidden
-maintainer routes as public API.
+engine structure instead of public contracts. For deliberate non-stable command
+inventory, use `bijux-dag commands --lane experimental`,
+`bijux-dag commands --lane simulated`, or `bijux-dag commands --lane internal`
+rather than treating hidden routes as public API.
