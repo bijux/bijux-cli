@@ -44,6 +44,11 @@ fn resolve_bijux_dag_binary() -> PathBuf {
     static BIN_PATH: OnceLock<PathBuf> = OnceLock::new();
     BIN_PATH
         .get_or_init(|| {
+            if let Some(path) = std::env::var_os("BIJUX_DAG_BIN").map(PathBuf::from) {
+                if path.exists() {
+                    return path;
+                }
+            }
             let workspace_root = repo_root();
             let target_root = workspace_root.join("artifacts").join("test-bin-target");
             let status = Command::new("cargo")

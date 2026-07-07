@@ -32,6 +32,8 @@ RS_RELEASE_PACKAGE_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/package.txt
 RS_RELEASE_PUBLISH_DRY_RUN_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/publish-dry-run.txt
 RS_RELEASE_SMOKE_REPORT ?= $(RS_RELEASE_VALIDATION_DIR)/smoke.txt
 RS_DEV_CLI_BIN ?= $(RS_TARGET_DIR)/debug/bijux-dev-cli
+RS_DAG_BIN ?= $(RS_TARGET_DIR)/debug/bijux-dag
+RS_RELEASE_DAG_BIN ?= $(RS_RELEASE_VALIDATION_TARGET_DIR)/debug/bijux-dag
 RS_RELEASE_BUNDLE_DIR ?= $(RS_ARTIFACT_ROOT)/build
 DAG_RELEASE_PACKAGE ?= bijux-dag-cli
 DAG_RELEASE_BIN ?= bijux-dag
@@ -107,11 +109,13 @@ lint-rs: ## Run Rust clippy checks with -D warnings
 test-rs: ## Run the Rust fast suite and skip known tests over 10 seconds
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli"
+	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli && cargo build -p bijux-dag-cli --bin bijux-dag"
 	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
+	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dag-cli --bin bijux-dag
 	@status=0; \
 	filter_expr="$${NEXTEST_FILTER_EXPR:-$(NEXTEST_SLOW_EXCLUDE_EXPR)}"; \
 	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
+	BIJUX_DAG_BIN="$(RS_DAG_BIN)" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
 	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
@@ -134,11 +138,13 @@ test-rs: ## Run the Rust fast suite and skip known tests over 10 seconds
 test-release-rs: ## Run the required Rust release-candidate lane
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli"
+	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli && cargo build -p bijux-dag-cli --bin bijux-dag"
 	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
+	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dag-cli --bin bijux-dag
 	@status=0; \
 	filter_expr="$${NEXTEST_FILTER_EXPR:-$(NEXTEST_SLOW_EXCLUDE_EXPR)}"; \
 	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
+	BIJUX_DAG_BIN="$(RS_DAG_BIN)" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
 	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
@@ -161,10 +167,12 @@ test-release-rs: ## Run the required Rust release-candidate lane
 test-all-rs: ## Run the full Rust suite, including ignored tests
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(dir $(RS_TEST_ALL_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli"
+	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli && cargo build -p bijux-dag-cli --bin bijux-dag"
 	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
+	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dag-cli --bin bijux-dag
 	@status=0; \
 	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
+	BIJUX_DAG_BIN="$(RS_DAG_BIN)" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
 	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
 	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
@@ -228,7 +236,9 @@ test-release-workspace-rs: prepare-release-tree-rs ## Run release-candidate work
 	@printf '%s\n' "run: cargo test --workspace --all-targets --all-features --locked"
 	@set -o pipefail; \
 	cd "$(RS_RELEASE_TREE_DIR)"; \
+	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" cargo build -p bijux-dag-cli --bin bijux-dag; \
 	$(RS_BUILD_GIT_SHA_ENV) \
+	BIJUX_DAG_BIN="$(RS_RELEASE_DAG_BIN)" \
 	CARGO_TARGET_DIR="$(RS_RELEASE_VALIDATION_TARGET_DIR)" \
 	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
 	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
@@ -309,10 +319,12 @@ coverage-rs: ## Run Rust coverage with llvm-cov and emit reports
 	$(call rs_require_tool,cargo-llvm-cov)
 	$(call rs_require_tool,cargo-nextest)
 	@mkdir -p "$(RS_COVERAGE_DIR)" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli"
+	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli && cargo build -p bijux-dag-cli --bin bijux-dag"
 	@CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
+	@CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" cargo build -p bijux-dag-cli --bin bijux-dag
 	@status=0; \
 	BIJUX_DEV_CLI_BIN="$(RS_COVERAGE_TARGET_DIR)/debug/bijux-dev-cli" \
+	BIJUX_DAG_BIN="$(RS_COVERAGE_TARGET_DIR)/debug/bijux-dag" \
 	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
 	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
 	CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
