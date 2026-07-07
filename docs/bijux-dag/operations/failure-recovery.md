@@ -73,6 +73,13 @@ attempt now records a durable retry decision reason, so operators can separate
 budget exhaustion, timeout-policy vetoes, exit-code matches, class matches, and
 non-retriable policy failures without reconstructing the control path by hand.
 
+## Concrete Repository Workflow
+
+For a repository-backed recovery path that shows one transient retry, one retry
+budget exhaustion run, one approval-gate repair, and a strict verification step
+after targeted replay, use
+[Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md).
+
 ## Propagation Modes During Recovery
 
 Operators should interpret downstream fallout through the configured failure
@@ -120,6 +127,7 @@ execution.
 
 ## Next Reads
 
+- [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md)
 - [Observability and Diagnostics](observability-and-diagnostics.md)
 - [Risk Register](../quality/risk-register.md)
 - [Known Limitations](../quality/known-limitations.md)

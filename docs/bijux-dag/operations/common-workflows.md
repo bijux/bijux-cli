@@ -33,6 +33,7 @@ flowchart TD
 - change-attribution workflow for semantic diff explanations
 - branch-routing workflow for retained skip reasons and join-trigger evidence
 - container-packaging workflow for mounted inputs, retained outputs, and engine identity
+- failure-recovery workflow for retry evidence, focused replay repair, and strict verification
 - file-processing workflow for cache, lineage, rerun, and promotion proof
 - data-pipeline workflow for cache reuse, changed-input attribution, and retained-run comparison
 
@@ -89,6 +90,11 @@ For one real conditional workflow that records the selected branch, retains the
 unselected lane as a skip, and proves join behavior plus replay stability, use
 [Branching Bulletin Workflow](guides/branching-bulletin-workflow.md).
 
+For one real recovery workflow that retries a transient node, separates the
+root approval failure from propagated fallout, and repairs the failed tail with
+`replay --from-node`, use
+[Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md).
+
 ## Reading Rule
 
 Use this page when the DAG commands are already familiar but the correct
@@ -98,6 +104,7 @@ operator sequence is still unclear.
 
 - [Failure Recovery](failure-recovery.md)
 - [Branching Bulletin Workflow](guides/branching-bulletin-workflow.md)
+- [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)

@@ -61,6 +61,7 @@ status, use [Package Boundary](../bijux-core/foundation/package-boundary.md).
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/guides/first-hour-with-bijux-dag.md">Start with the first hour guide</a>
 <a class="md-button" href="operations/guides/branching-bulletin-workflow.md">Run the branch workflow</a>
+<a class="md-button" href="operations/guides/compliance-gated-bulletin-workflow.md">Run the recovery workflow</a>
 <a class="md-button" href="operations/guides/container-packaging-workflow.md">Run the container workflow</a>
 <a class="md-button" href="operations/guides/data-pipeline-workflow.md">Run the data pipeline workflow</a>
 <a class="md-button" href="operations/guides/file-processing-workflow.md">Run the file processing workflow</a>
@@ -91,6 +92,9 @@ flowchart LR
 - open [Branching Bulletin Workflow](operations/guides/branching-bulletin-workflow.md)
   when you need proof that branch decisions, skipped lanes, join rules, and
   replay stability are visible in retained run evidence
+- open [Compliance-Gated Bulletin Workflow](operations/guides/compliance-gated-bulletin-workflow.md)
+  when you need proof that retry evidence, failure attribution, focused replay,
+  and strict post-repair verification all work on one real run sequence
 - open [Operator Workflows](interfaces/operator-workflows.md) when the question
   is how to validate, run, replay, inspect, or compare
 - open [CLI Surface](interfaces/cli-surface.md) when the question is command

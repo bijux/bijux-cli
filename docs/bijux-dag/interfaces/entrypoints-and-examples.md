@@ -101,6 +101,35 @@ bijux-dag run --json evidence/dag/authoring/examples/audience-branch-bulletin.da
 cat ./artifacts/audience-branch-runs/run-audience-branch-technical/nodes/choose_audience_lane/trace.json
 ```
 
+For a real failure-recovery workflow, validate the compliance-gated bulletin
+example, allow one transient retry, and repair only the failed publication
+boundary after approval changes:
+
+```bash
+SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/compliance-gated-source/team-update.md"
+cat > ./artifacts/compliance-gated-retry-plan.json <<'EOF'
+{"fail_until_attempt":1,"gate_policy":"manual-approval","expected_reviewer_group":"release-managers"}
+EOF
+cat > ./artifacts/compliance-gated-publication-gate.json <<'EOF'
+{"approved":false,"reviewer":"","reviewer_group":"release-managers"}
+EOF
+bijux-dag validate evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json
+bijux-dag run --json evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json \
+  --out ./artifacts/compliance-gated-runs \
+  --run-id compliance-gated-source \
+  --input "source_note=${SOURCE_NOTE}" \
+  --input "retry_plan=$(pwd)/artifacts/compliance-gated-retry-plan.json" \
+  --input "publication_gate=$(pwd)/artifacts/compliance-gated-publication-gate.json"
+cat > ./artifacts/compliance-gated-publication-gate.json <<'EOF'
+{"approved":true,"reviewer":"A. Reviewer","reviewer_group":"release-managers"}
+EOF
+bijux-dag replay --json --source-run-id compliance-gated-source \
+  --source-run-root ./artifacts/compliance-gated-runs \
+  --out ./artifacts/compliance-gated-runs \
+  --run-id compliance-gated-repaired \
+  --from-node validate_publication_gate
+```
+
 ## Rust Entrypoint Example
 
 ```rust
@@ -122,6 +151,7 @@ println!("spec={}", graph.spec);
 - [CLI Surface](cli-surface.md)
 - [Operator Workflows](operator-workflows.md)
 - [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
+- [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](../operations/guides/data-pipeline-workflow.md)
 - [File Processing Workflow](../operations/guides/file-processing-workflow.md)

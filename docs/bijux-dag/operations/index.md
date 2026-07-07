@@ -43,6 +43,7 @@ flowchart LR
 - [Deployment Boundaries](deployment-boundaries.md)
 - [Branching Bulletin Workflow](guides/branching-bulletin-workflow.md)
 - [CI Integration](guides/ci-integration.md)
+- [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
 - [File Processing Workflow](guides/file-processing-workflow.md)

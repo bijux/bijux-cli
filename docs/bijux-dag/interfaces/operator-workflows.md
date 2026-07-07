@@ -144,6 +144,10 @@ explain output to confirm whether a downstream skip came from branch isolation,
 trigger-rule blocking, or another boundary such as selector or policy
 exclusion.
 
+For a repository-backed recovery sequence that shows a transient retry, a
+separate retry exhaustion run, and a repaired approval boundary replay, use
+[Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md).
+
 ## Inspect Retry Decisions
 
 When the question is "why did this node retry?" or "why did it stop retrying?",
@@ -706,6 +710,7 @@ sequence turns a run into something you can defend with evidence.
 
 - [Common Workflows](../operations/common-workflows.md)
 - [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
+- [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
 - [Failure Recovery](../operations/failure-recovery.md)
 - [Review Checklist](../quality/review-checklist.md)
