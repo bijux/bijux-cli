@@ -11,13 +11,14 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
-use bijux_dag_runtime::{Runtime, RuntimeConfig};
+use bijux_dag_runtime::{PolicyConfig, Runtime, RuntimeConfig};
 use serde_json::{json, Value};
 use std::fs;
 
 fn retry_success_graph(backoff_ms: u64) -> String {
     json!({
         "spec": "bijux-dag/v0.1",
+        "nondeterminism_allowed": true,
         "nodes": [
             {
                 "id": "worker",
@@ -82,6 +83,88 @@ fn retry_ineligible_user_failure_graph(backoff_ms: u64) -> String {
                         "/bin/sh",
                         "-c",
                         "printf 'completed without declared output'"
+                    ]
+                }
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
+fn retryable_exit_code_graph(backoff_ms: u64) -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "worker",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "worker.txt"}],
+                "retry": {"max_attempts": 1, "backoff_ms": backoff_ms},
+                "effects": ["filesystem"],
+                "params": {
+                    "retryable_failure_classes": ["timeout"],
+                    "retryable_exit_codes": [75],
+                    "argv": [
+                        "/bin/sh",
+                        "-c",
+                        "if [ ! -f marker ]; then touch marker; echo temporary >&2; exit 75; fi; printf '%s' ok > ../outputs/worker.txt"
+                    ]
+                }
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
+fn timeout_retry_graph(timeout_retry_policy: &str) -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "worker",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [],
+                "retry": {"max_attempts": 1, "backoff_ms": 10},
+                "effects": ["filesystem"],
+                "timeout_ms": 5,
+                "params": {
+                    "timeout_retry_policy": timeout_retry_policy,
+                    "retryable_failure_classes": [],
+                    "argv": [
+                        "/bin/sh",
+                        "-c",
+                        "sleep 1"
+                    ]
+                }
+            }
+        ],
+        "edges": []
+    })
+    .to_string()
+}
+
+fn policy_denial_retry_graph(backoff_ms: u64) -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nondeterminism_allowed": true,
+        "nodes": [
+            {
+                "id": "worker",
+                "kind": "shell",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "worker.txt"}],
+                "retry": {"max_attempts": 2, "backoff_ms": backoff_ms},
+                "effects": ["filesystem", "network"],
+                "params": {
+                    "retryable_failure_classes": ["policy"],
+                    "argv": [
+                        "/bin/sh",
+                        "-c",
+                        "printf '%s' ok > ../outputs/worker.txt"
                     ]
                 }
             }
@@ -203,4 +286,88 @@ fn retry_stops_when_failure_class_is_not_retry_eligible() {
     assert!(!run_log.contains("\"event\":\"node_retry_scheduled\""));
     assert!(run_log.contains("\"event\":\"node_retry_exhausted\""));
     assert!(run_log.contains("\"failure_code\":\"OUTPUT_MISSING\""));
+}
+
+#[test]
+fn retry_can_be_enabled_by_explicit_exit_code_rule() {
+    let graph = parse_graph_strict(&retryable_exit_code_graph(15)).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("retry run");
+
+    let trace = read_node_trace(&run_path, "worker");
+    assert_eq!(trace["status"], "success");
+    assert_eq!(trace["attempt"], 2);
+
+    let attempts = read_attempts(&run_path, "worker");
+    assert_eq!(attempts[0]["retry_decision"]["reason"], "retryable_exit_code_matched");
+    assert_eq!(attempts[0]["retry_decision"]["matched_exit_code"], 75);
+    assert_eq!(attempts[0]["scheduled_backoff_ms"], 15);
+
+    let run_log = fs::read_to_string(run_path.join("run.log.jsonl")).expect("run log");
+    assert!(run_log.contains("\"retry_reason\":\"retryable_exit_code_matched\""));
+    assert!(run_log.contains("\"matched_exit_code\":75"));
+}
+
+#[test]
+fn timeout_retry_policy_can_disable_timeout_retries() {
+    let graph = parse_graph_strict(&timeout_retry_graph("never")).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run");
+
+    let trace = read_node_trace(&run_path, "worker");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["attempt"], 1);
+    assert_eq!(trace["failure"]["class"], "timeout");
+
+    let attempts = read_attempts(&run_path, "worker");
+    assert_eq!(attempts[0]["retry_decision"]["reason"], "timeout_retry_policy_denies_timeout_retry");
+    assert!(attempts[0].get("scheduled_backoff_ms").is_none());
+}
+
+#[test]
+fn timeout_retry_policy_can_force_timeout_retries() {
+    let graph = parse_graph_strict(&timeout_retry_graph("always")).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("run");
+
+    let trace = read_node_trace(&run_path, "worker");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["attempt"], 2);
+
+    let attempts = read_attempts(&run_path, "worker");
+    assert_eq!(attempts[0]["retry_decision"]["reason"], "timeout_retry_policy_allows_timeout_retry");
+    assert_eq!(attempts[0]["scheduled_backoff_ms"], 10);
+}
+
+#[test]
+fn policy_failures_never_retry_even_when_policy_class_is_declared_retryable() {
+    let graph = parse_graph_strict(&policy_denial_retry_graph(20)).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                policy: PolicyConfig { deny_network: true, ..PolicyConfig::default() },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("run");
+
+    let trace = read_node_trace(&run_path, "worker");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["attempt"], 1);
+    assert_eq!(trace["failure"]["class"], "policy");
+
+    let attempts = read_attempts(&run_path, "worker");
+    assert_eq!(attempts[0]["retry_decision"]["reason"], "policy_failures_are_non_retryable");
+    assert!(attempts[0].get("scheduled_backoff_ms").is_none());
+
+    let run_log = fs::read_to_string(run_path.join("run.log.jsonl")).expect("run log");
+    assert!(!run_log.contains("\"event\":\"node_retry_scheduled\""));
+    assert!(run_log.contains("\"retry_reason\":\"policy_failures_are_non_retryable\""));
 }
