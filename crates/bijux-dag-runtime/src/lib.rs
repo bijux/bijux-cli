@@ -549,9 +549,12 @@ use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheSto
 pub use task_contract::{
     build_task_contract, default_forced_cleanup, validate_task_contracts, BackoffStrategy,
     ForcedCancellationCleanup, IdempotencyMode, NodeProvenance, OutputMaterializationPolicy,
-    RetryPolicyV2, RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason,
-    TaskInputDescriptor, TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope,
-    TimeoutPolicy,
+    RetryDecision, RetryFailureObservation, RetryPolicyV2, RuntimeState, SideEffectClassification,
+    TaskContract, TaskFailureReason, TaskInputDescriptor, TaskIsolationMode,
+    TaskOutputDescriptor, TaskResultEnvelope, TimeoutPolicy, TimeoutRetryPolicy,
+    build_retry_policy, evaluate_retry_decision, retry_backoff_ms as contract_retry_backoff_ms,
+    retry_jitter_ms as contract_retry_jitter_ms, retry_observation, retry_observation_from_failure,
+    retry_wait_ms as contract_retry_wait_ms,
 };
 #[doc(hidden)]
 pub use task_types::{

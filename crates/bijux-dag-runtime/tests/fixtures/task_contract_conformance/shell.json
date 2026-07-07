@@ -20,7 +20,9 @@
     "backoff_strategy": "Linear",
     "backoff_ms": 10,
     "jitter_ms": 0,
-    "retryable_failure_classes": ["ExecutionTransient"]
+    "timeout_retry_policy": "ByFailureClass",
+    "retryable_failure_classes": ["ExecutionTransient"],
+    "retryable_exit_codes": []
   },
   "timeout_policy": {
     "queue_timeout_ms": null,

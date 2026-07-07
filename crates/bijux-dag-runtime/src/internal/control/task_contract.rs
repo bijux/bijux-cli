@@ -1,6 +1,7 @@
-use crate::{MaterializeMode, PolicyConfig, RuntimeConfig, RuntimeError};
+use crate::{FailureInfo, MaterializeMode, PolicyConfig, RuntimeConfig, RuntimeError};
 use bijux_dag_core::{Effect, Graph, Node, NodeKind};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
@@ -44,13 +45,40 @@ pub enum BackoffStrategy {
     Exponential,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum TimeoutRetryPolicy {
+    ByFailureClass,
+    Always,
+    Never,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetryPolicyV2 {
     pub max_attempts: u32,
     pub backoff_strategy: BackoffStrategy,
     pub backoff_ms: u64,
     pub jitter_ms: u64,
+    pub timeout_retry_policy: TimeoutRetryPolicy,
     pub retryable_failure_classes: Vec<RetryableFailureClass>,
+    pub retryable_exit_codes: Vec<i32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RetryFailureObservation {
+    pub failure_class: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failure_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exit_code: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RetryDecision {
+    pub retryable: bool,
+    pub retry_allowed: bool,
+    pub reason: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub matched_exit_code: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -220,12 +248,18 @@ fn isolation_mode_for_node(node: &Node) -> TaskIsolationMode {
     }
 }
 
-fn build_retry_policy(node: &Node) -> RetryPolicyV2 {
+pub fn build_retry_policy(node: &Node) -> RetryPolicyV2 {
     let strategy = match param_literal_str(node, "retry_backoff_strategy").unwrap_or("linear") {
         "fixed" => BackoffStrategy::Fixed,
         "exponential" => BackoffStrategy::Exponential,
         _ => BackoffStrategy::Linear,
     };
+    let timeout_retry_policy =
+        match param_literal_str(node, "timeout_retry_policy").unwrap_or("by_failure_class") {
+            "always" => TimeoutRetryPolicy::Always,
+            "never" => TimeoutRetryPolicy::Never,
+            _ => TimeoutRetryPolicy::ByFailureClass,
+        };
     let retryable_failure_classes = param_literal_string_vec(node, "retryable_failure_classes")
         .map(|values| {
             values
@@ -249,12 +283,163 @@ fn build_retry_policy(node: &Node) -> RetryPolicyV2 {
         .unwrap_or_else(|| {
             vec![RetryableFailureClass::ExecutionTransient, RetryableFailureClass::TimeoutTransient]
         });
+    let retryable_exit_codes =
+        param_literal_i32_vec(node, "retryable_exit_codes").unwrap_or_default();
     RetryPolicyV2 {
         max_attempts: node.retry.max_attempts,
         backoff_strategy: strategy,
         backoff_ms: node.retry.backoff_ms,
         jitter_ms: param_literal_u64(node, "retry_jitter_ms").unwrap_or(0),
+        timeout_retry_policy,
         retryable_failure_classes,
+        retryable_exit_codes,
+    }
+}
+
+pub fn retry_observation_from_failure(failure: &FailureInfo) -> RetryFailureObservation {
+    RetryFailureObservation {
+        failure_class: failure.operator_class().as_str().to_string(),
+        failure_code: Some(failure.code.clone()),
+        exit_code: failure
+            .details
+            .as_ref()
+            .and_then(|details| details.get("exit_code"))
+            .and_then(|value| value.as_i64())
+            .and_then(|value| i32::try_from(value).ok()),
+    }
+}
+
+pub fn retry_observation(
+    failure_class: impl Into<String>,
+    failure_code: Option<&str>,
+    exit_code: Option<i32>,
+) -> RetryFailureObservation {
+    RetryFailureObservation {
+        failure_class: failure_class.into(),
+        failure_code: failure_code.map(ToString::to_string),
+        exit_code,
+    }
+}
+
+pub fn retry_backoff_ms(policy: &RetryPolicyV2, attempt: u32) -> u64 {
+    if attempt == 0 {
+        return 0;
+    }
+    match policy.backoff_strategy {
+        BackoffStrategy::Fixed => policy.backoff_ms,
+        BackoffStrategy::Linear => policy.backoff_ms.saturating_mul(attempt as u64),
+        BackoffStrategy::Exponential => {
+            let ordinal = attempt.saturating_sub(1) as u64;
+            let multiplier = 1u64.checked_shl(ordinal.min(20) as u32).unwrap_or(u64::MAX);
+            policy.backoff_ms.saturating_mul(multiplier)
+        }
+    }
+}
+
+pub fn retry_jitter_ms(
+    node_id: &str,
+    attempt: u32,
+    failure_class: &str,
+    jitter_ms: u64,
+) -> u64 {
+    if jitter_ms == 0 {
+        return 0;
+    }
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    let mut hasher = DefaultHasher::new();
+    node_id.hash(&mut hasher);
+    attempt.hash(&mut hasher);
+    failure_class.hash(&mut hasher);
+    hasher.finish() % jitter_ms.saturating_add(1)
+}
+
+pub fn retry_wait_ms(node_id: &str, policy: &RetryPolicyV2, attempt: u32, failure_class: &str) -> u64 {
+    retry_backoff_ms(policy, attempt).saturating_add(retry_jitter_ms(
+        node_id,
+        attempt,
+        failure_class,
+        policy.jitter_ms,
+    ))
+}
+
+pub fn evaluate_retry_decision(
+    node_id: &str,
+    policy: &RetryPolicyV2,
+    attempt: u32,
+    observation: &RetryFailureObservation,
+) -> RetryDecision {
+    let normalized_class = normalize_retry_failure_class(&observation.failure_class);
+    if normalized_class == "policy"
+        || observation
+            .failure_code
+            .as_deref()
+            .is_some_and(|code| code.starts_with("POLICY_"))
+    {
+        return RetryDecision {
+            retryable: false,
+            retry_allowed: false,
+            reason: "policy_failures_are_non_retryable".to_string(),
+            matched_exit_code: None,
+        };
+    }
+
+    let retryable_classes = policy
+        .retryable_failure_classes
+        .iter()
+        .map(retryable_failure_class_name)
+        .collect::<BTreeSet<_>>();
+    let class_retryable = retryable_classes.contains(normalized_class.as_str());
+    let matched_exit_code = observation
+        .exit_code
+        .filter(|exit_code| policy.retryable_exit_codes.contains(exit_code));
+
+    let (retryable, reason) = if normalized_class == "timeout" {
+        match policy.timeout_retry_policy {
+            TimeoutRetryPolicy::Never => {
+                (false, "timeout_retry_policy_denies_timeout_retry".to_string())
+            }
+            TimeoutRetryPolicy::Always => {
+                (true, "timeout_retry_policy_allows_timeout_retry".to_string())
+            }
+            TimeoutRetryPolicy::ByFailureClass if matched_exit_code.is_some() => {
+                (true, "retryable_exit_code_matched".to_string())
+            }
+            TimeoutRetryPolicy::ByFailureClass if class_retryable => {
+                (true, "retryable_failure_class_matched".to_string())
+            }
+            TimeoutRetryPolicy::ByFailureClass => {
+                (false, "timeout_failure_is_not_retry_eligible".to_string())
+            }
+        }
+    } else if matched_exit_code.is_some() {
+        (true, "retryable_exit_code_matched".to_string())
+    } else if class_retryable {
+        (true, "retryable_failure_class_matched".to_string())
+    } else {
+        (false, "failure_is_not_retry_eligible".to_string())
+    };
+
+    if !retryable {
+        return RetryDecision { retryable, retry_allowed: false, reason, matched_exit_code };
+    }
+
+    if attempt > policy.max_attempts {
+        return RetryDecision {
+            retryable: true,
+            retry_allowed: false,
+            reason: "retry_budget_exhausted".to_string(),
+            matched_exit_code,
+        };
+    }
+
+    let _ = node_id;
+    RetryDecision {
+        retryable: true,
+        retry_allowed: true,
+        reason,
+        matched_exit_code,
     }
 }
 
@@ -447,5 +632,58 @@ fn param_literal_string_vec(node: &Node, key: &str) -> Option<Vec<String>> {
             _ => None,
         },
         _ => None,
+    }
+}
+
+fn param_literal_i32_vec(node: &Node, key: &str) -> Option<Vec<i32>> {
+    match &node.params {
+        bijux_dag_core::ParamValue::Object(map) => match map.get(key) {
+            Some(bijux_dag_core::ParamValue::Literal(value)) => value.as_array().map(|items| {
+                items
+                    .iter()
+                    .filter_map(|item| item.as_i64().and_then(|value| i32::try_from(value).ok()))
+                    .collect::<Vec<_>>()
+            }),
+            Some(bijux_dag_core::ParamValue::Array(items)) => Some(
+                items
+                    .iter()
+                    .filter_map(|item| match item {
+                        bijux_dag_core::ParamValue::Literal(value) => {
+                            value.as_i64().and_then(|value| i32::try_from(value).ok())
+                        }
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn normalize_retry_failure_class(value: &str) -> String {
+    let normalized = value
+        .chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .flat_map(|ch| ch.to_lowercase())
+        .collect::<String>();
+    match normalized.as_str() {
+        "execution" | "executiontransient" => "execution".to_string(),
+        "timeout" | "timeouttransient" => "timeout".to_string(),
+        "policy" | "policytransient" => "policy".to_string(),
+        "user" => "user".to_string(),
+        "infrastructure" => "infrastructure".to_string(),
+        _ => normalized,
+    }
+}
+
+fn retryable_failure_class_name(value: &RetryableFailureClass) -> &'static str {
+    match value {
+        RetryableFailureClass::ExecutionTransient => "execution",
+        RetryableFailureClass::TimeoutTransient => "timeout",
+        RetryableFailureClass::ArtifactTransient => "artifact",
+        RetryableFailureClass::PolicyTransient => "policy",
+        RetryableFailureClass::User => "user",
+        RetryableFailureClass::Infrastructure => "infrastructure",
     }
 }
