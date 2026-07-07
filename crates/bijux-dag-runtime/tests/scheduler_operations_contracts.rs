@@ -27,8 +27,8 @@ use bijux_dag_runtime::{
     BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCompletionRecord,
     DependencyCounter, DependencyTriggerCondition, ManualSubmissionRequest, PriorityClass,
     QueueIdentity, ReadyNode, ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig,
-    ScheduleDefinition, ScheduleEvaluationInputs, ScheduleEventRecord, ScheduleInputSource,
-    ScheduleOverrideAction, ScheduleOverrideRecord, ScheduleOverrideState,
+    ScheduleDefinition, ScheduleEvaluationInputs, ScheduleEventLineage, ScheduleEventRecord,
+    ScheduleInputSource, ScheduleOverrideAction, ScheduleOverrideRecord, ScheduleOverrideState,
     SchedulePriorityDispatchPolicy, ScheduleRegistry, ScheduleSubmissionLedger,
     ScheduleSubmissionLedgerEntry, ScheduleSubmissionStatus, ScheduleSubmissionStatusUpdate,
     ScheduledSubmission, Selector, SelectorSet, SignalRecord, StarvationPreventionPolicy,
@@ -641,6 +641,92 @@ fn schedule_submit_evaluates_manual_cron_event_dependency_and_signal_triggers() 
     assert!(report.duplicate_suppressions.is_empty());
     assert_eq!(report.recorded_submissions.len(), 5);
     assert!(report.generated_requests.iter().all(|request| request.run_id.starts_with("sched-")));
+
+    let event_request = report
+        .generated_requests
+        .iter()
+        .find(|request| request.schedule_id == "event-ingest")
+        .expect("event request");
+    assert_eq!(
+        event_request.event_lineage,
+        Some(ScheduleEventLineage {
+            event_id: "evt-001".to_string(),
+            event_type: "dataset.ready".to_string(),
+            source: "catalog".to_string(),
+            occurred_unix_ms: 176_000,
+        })
+    );
+
+    let event_submission = report
+        .recorded_submissions
+        .iter()
+        .find(|entry| entry.schedule_id == "event-ingest")
+        .expect("event ledger entry");
+    assert_eq!(event_submission.event_lineage, event_request.event_lineage);
+}
+
+#[test]
+fn schedule_submit_preserves_event_lineage_when_deduplicating_existing_event() {
+    let registry = ScheduleRegistry {
+        definitions: vec![schedule_definition(
+            "event-ingest",
+            TriggerSpec::Event {
+                event_type: "dataset.ready".to_string(),
+                source: "catalog".to_string(),
+            },
+        )],
+    };
+    let inputs = ScheduleEvaluationInputs {
+        now_unix_ms: 200_000,
+        events: vec![ScheduleEventRecord {
+            event_id: "evt-001".to_string(),
+            event_type: "dataset.ready".to_string(),
+            source: "catalog".to_string(),
+            occurred_unix_ms: 176_000,
+            payload: Some(serde_json::json!({"tenant":"atlas"})),
+        }],
+        ..ScheduleEvaluationInputs::default()
+    };
+    let existing = ScheduleSubmissionLedger {
+        entries: vec![ScheduleSubmissionLedgerEntry {
+            schedule_id: "event-ingest".to_string(),
+            dag_name: "atlas.event-ingest".to_string(),
+            dag_version_policy: "run-latest".to_string(),
+            queue: QueueIdentity {
+                queue_name: "catalog".to_string(),
+                tenant: Some("atlas".to_string()),
+            },
+            priority: PriorityClass::High,
+            graph_inputs: BTreeMap::new(),
+            requested_unix_ms: 176_000,
+            created_unix_ms: 176_000,
+            run_id: "sched-event-ingest-existing".to_string(),
+            trigger_kind: SubmissionTriggerKind::Event,
+            dedupe_key: "event:event-ingest:evt-001".to_string(),
+            event_lineage: Some(ScheduleEventLineage {
+                event_id: "evt-001".to_string(),
+                event_type: "dataset.ready".to_string(),
+                source: "catalog".to_string(),
+                occurred_unix_ms: 176_000,
+            }),
+            status: ScheduleSubmissionStatus::Pending,
+            starvation_ticks: 0,
+        }],
+    };
+
+    let report = evaluate_schedule_submissions(&registry, &inputs, &existing);
+    assert!(report.generated_requests.is_empty());
+    assert_eq!(report.duplicate_suppressions.len(), 1);
+    assert_eq!(report.recorded_submissions.len(), 1);
+    assert_eq!(
+        report.recorded_submissions[0].event_lineage,
+        Some(ScheduleEventLineage {
+            event_id: "evt-001".to_string(),
+            event_type: "dataset.ready".to_string(),
+            source: "catalog".to_string(),
+            occurred_unix_ms: 176_000,
+        })
+    );
 }
 
 #[test]
@@ -1208,6 +1294,7 @@ fn schedule_submit_prevents_duplicates_from_existing_ledger_and_current_tick() {
             run_id: "sched-manual-ops-existing".to_string(),
             trigger_kind: SubmissionTriggerKind::Manual,
             dedupe_key: "manual:manual-ops:manual-001".to_string(),
+            event_lineage: None,
             status: ScheduleSubmissionStatus::Pending,
             starvation_ticks: 0,
         }],
@@ -1261,6 +1348,7 @@ fn schedule_submit_cron_catch_up_respects_existing_submissions_and_cap() {
             run_id: "sched-cron-minute-existing".to_string(),
             trigger_kind: SubmissionTriggerKind::Cron,
             dedupe_key: "cron:cron-minute:120000".to_string(),
+            event_lineage: None,
             status: ScheduleSubmissionStatus::Pending,
             starvation_ticks: 0,
         }],
@@ -1323,6 +1411,7 @@ fn schedule_submit_tenant_caps_are_scoped_per_queue() {
             run_id: "sched-catalog-alpha-existing".to_string(),
             trigger_kind: SubmissionTriggerKind::Manual,
             dedupe_key: "manual:catalog-alpha:manual-000".to_string(),
+            event_lineage: None,
             status: ScheduleSubmissionStatus::Running,
             starvation_ticks: 0,
         }],
@@ -1386,6 +1475,7 @@ fn schedule_submit_cron_catch_up_honors_ranges_lists_and_steps() {
                 "cron:weekday-window:{}",
                 u128::try_from(last_requested.timestamp_millis()).expect("positive timestamp")
             ),
+            event_lineage: None,
             status: ScheduleSubmissionStatus::Pending,
             starvation_ticks: 0,
         }],
@@ -1460,6 +1550,7 @@ fn schedule_submit_cron_catch_up_preserves_dst_fallback_duplicates() {
                 "cron:dst-fallback:{}",
                 u128::try_from(last_requested.timestamp_millis()).expect("positive timestamp")
             ),
+            event_lineage: None,
             status: ScheduleSubmissionStatus::Pending,
             starvation_ticks: 0,
         }],
@@ -1505,6 +1596,7 @@ fn schedule_queue_state_reports_active_runs_and_available_slots() {
                 run_id: "sched-atlas-pending".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:atlas-pending".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 0,
             },
@@ -1523,6 +1615,7 @@ fn schedule_queue_state_reports_active_runs_and_available_slots() {
                 run_id: "sched-atlas-running".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:atlas-running".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Running,
                 starvation_ticks: 0,
             },
@@ -1541,6 +1634,7 @@ fn schedule_queue_state_reports_active_runs_and_available_slots() {
                 run_id: "sched-zeus-running".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:zeus-running".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Running,
                 starvation_ticks: 0,
             },
@@ -1559,6 +1653,7 @@ fn schedule_queue_state_reports_active_runs_and_available_slots() {
                 run_id: "sched-zeus-completed".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:zeus-completed".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Completed,
                 starvation_ticks: 0,
             },
@@ -1601,6 +1696,7 @@ fn schedule_queue_dispatch_respects_priority_classes() {
                 run_id: "run-low".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:low:001".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 0,
             },
@@ -1616,6 +1712,7 @@ fn schedule_queue_dispatch_respects_priority_classes() {
                 run_id: "run-critical".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:critical:001".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 0,
             },
@@ -1631,6 +1728,7 @@ fn schedule_queue_dispatch_respects_priority_classes() {
                 run_id: "run-standard".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:standard:001".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 0,
             },
@@ -1646,6 +1744,7 @@ fn schedule_queue_dispatch_respects_priority_classes() {
                 run_id: "run-high".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:high:001".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 0,
             },
@@ -1678,6 +1777,7 @@ fn schedule_queue_dispatch_breaks_equal_priority_deterministically() {
                 run_id: "run-b".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:beta:001".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 0,
             },
@@ -1693,6 +1793,7 @@ fn schedule_queue_dispatch_breaks_equal_priority_deterministically() {
                 run_id: "run-a".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:alpha:001".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 0,
             },
@@ -1708,6 +1809,7 @@ fn schedule_queue_dispatch_breaks_equal_priority_deterministically() {
                 run_id: "run-c".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:alpha:002".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 0,
             },
@@ -1739,6 +1841,7 @@ fn schedule_queue_dispatch_promotes_starved_runs() {
                 run_id: "run-critical".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:critical:002".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 0,
             },
@@ -1754,6 +1857,7 @@ fn schedule_queue_dispatch_promotes_starved_runs() {
                 run_id: "run-low".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:low:002".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 3,
             },
@@ -1807,6 +1911,7 @@ fn schedule_submission_status_updates_change_active_queue_state() {
                 run_id: "sched-atlas-pending".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:atlas-pending".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Pending,
                 starvation_ticks: 0,
             },
@@ -1825,6 +1930,7 @@ fn schedule_submission_status_updates_change_active_queue_state() {
                 run_id: "sched-atlas-running".to_string(),
                 trigger_kind: SubmissionTriggerKind::Manual,
                 dedupe_key: "manual:catalog-sync:atlas-running".to_string(),
+                event_lineage: None,
                 status: ScheduleSubmissionStatus::Running,
                 starvation_ticks: 0,
             },
@@ -1876,6 +1982,7 @@ fn schedule_submission_status_updates_reject_invalid_transitions() {
             run_id: "sched-atlas-completed".to_string(),
             trigger_kind: SubmissionTriggerKind::Manual,
             dedupe_key: "manual:catalog-sync:atlas-completed".to_string(),
+            event_lineage: None,
             status: ScheduleSubmissionStatus::Completed,
             starvation_ticks: 0,
         }],
