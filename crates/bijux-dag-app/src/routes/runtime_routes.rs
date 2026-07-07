@@ -191,6 +191,7 @@ fn read_json_value(path: &Path) -> Result<Value, ExitCode> {
 fn parse_node_state_str(status: &str) -> Option<NodeState> {
     match status {
         "success" => Some(NodeState::Success),
+        "succeeded" => Some(NodeState::Success),
         "failed" => Some(NodeState::Failed),
         "skipped" => Some(NodeState::Skipped),
         "cached" => Some(NodeState::Cached),
@@ -198,6 +199,7 @@ fn parse_node_state_str(status: &str) -> Option<NodeState> {
         "timed_out" => Some(NodeState::TimedOut),
         "queued" => Some(NodeState::Queued),
         "running" => Some(NodeState::Running),
+        "ready" => Some(NodeState::Eligible),
         "eligible" => Some(NodeState::Eligible),
         "pending" => Some(NodeState::Pending),
         _ => None,
@@ -1157,9 +1159,10 @@ pub(crate) fn handle_runtime_command(
 
 #[cfg(test)]
 mod tests {
-    use super::handle_runtime_command;
+    use super::{handle_runtime_command, parse_node_state_str};
     use crate::commands::{Commands, DagCli, RuntimeCommands};
     use crate::ExitCode;
+    use bijux_dag_runtime::NodeState;
     use serde_json::Value;
     use std::fs;
     use std::path::PathBuf;
@@ -1927,5 +1930,13 @@ mod tests {
         )
         .expect("events");
         assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_routes_accept_stable_and_legacy_lifecycle_state_names() {
+        assert_eq!(parse_node_state_str("ready"), Some(NodeState::Eligible));
+        assert_eq!(parse_node_state_str("eligible"), Some(NodeState::Eligible));
+        assert_eq!(parse_node_state_str("succeeded"), Some(NodeState::Success));
+        assert_eq!(parse_node_state_str("success"), Some(NodeState::Success));
     }
 }
