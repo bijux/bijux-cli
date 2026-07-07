@@ -2000,7 +2000,7 @@ pub(crate) fn transition_cause_for_skip_reason(reason: &str) -> &'static str {
         | "excluded_by_selector"
         | "not_selected_by_dependency_closure" => "SelectionFiltered",
         "branch_decision_not_selected" => "BranchDecisionFiltered",
-        "upstream_failed" => "DependencyFailed",
+        "upstream_failed" | "isolated_branch_failure" => "DependencyFailed",
         "cancelled" => "CancelRequested",
         _ => "SelectionFiltered",
     }

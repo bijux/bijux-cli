@@ -22,9 +22,10 @@ mod engine_observe;
 mod engine_record;
 use bijux_dag_artifacts::{
     finalize_run_manifest_with_mode, write_incomplete_run_marker, write_provenance,
-    write_run_outputs_index, write_run_schema_index, FailureClass, FailureInfo, InputsIndex,
-    Manifest, NodeCounts, Provenance, ReplayProvenance, RunDir, RunDirLayout, RunDirSchemaIndex,
-    RunFinalizationMode, RunMetadata, RunStopRequest, TriggerEvaluation, TriggerParentStatus,
+    write_run_outputs_index, write_run_schema_index, FailureClass, FailureInfo,
+    FailurePropagationRecord, InputsIndex, Manifest, NodeCounts, Provenance, ReplayProvenance,
+    RunDir, RunDirLayout, RunDirSchemaIndex, RunFinalizationMode, RunMetadata, RunStopRequest,
+    TriggerEvaluation, TriggerParentStatus,
 };
 use bijux_dag_core::{
     evaluate_trigger_rule, Effect, Graph, Node, NodeKind, SemanticNodeKind, TriggerRule,
@@ -688,6 +689,55 @@ fn upstream_nodes(dep_map: &HashMap<String, BTreeSet<String>>, node_id: &str) ->
     upstreams
 }
 
+fn downstream_nodes(graph: &Graph, node_id: &str) -> Vec<String> {
+    let mut adjacency = HashMap::<&str, Vec<&str>>::new();
+    for edge in &graph.edges {
+        adjacency.entry(edge.from.node_id.as_str()).or_default().push(edge.to.node_id.as_str());
+    }
+
+    let mut visited = BTreeSet::<String>::new();
+    let mut pending = adjacency.get(node_id).cloned().unwrap_or_default();
+    while let Some(candidate) = pending.pop() {
+        if !visited.insert(candidate.to_string()) {
+            continue;
+        }
+        if let Some(children) = adjacency.get(candidate) {
+            pending.extend(children.iter().copied());
+        }
+    }
+
+    visited.into_iter().collect()
+}
+
+fn record_isolated_branch_descendants(
+    graph: &Graph,
+    failed_node_id: &str,
+    isolated_branch_failures: &mut BTreeMap<String, BTreeSet<String>>,
+) {
+    for descendant in downstream_nodes(graph, failed_node_id) {
+        isolated_branch_failures
+            .entry(descendant)
+            .or_default()
+            .insert(failed_node_id.to_string());
+    }
+}
+
+fn failure_propagation_record(
+    node_id: &str,
+    status: &str,
+    reason: &str,
+    propagation_mode: Option<&str>,
+    blocking_nodes: Vec<String>,
+) -> FailurePropagationRecord {
+    FailurePropagationRecord {
+        node_id: node_id.to_string(),
+        status: status.to_string(),
+        reason: reason.to_string(),
+        propagation_mode: propagation_mode.map(str::to_string),
+        blocking_nodes,
+    }
+}
+
 fn upstream_terminal_outcome(status: &NodeStatus) -> UpstreamTerminalOutcome {
     match status {
         NodeStatus::Success => UpstreamTerminalOutcome::Success,
@@ -1058,11 +1108,12 @@ fn record_skipped_node(
     graph: &Graph,
     run_log: &mut std::fs::File,
     run_log_index: &mut Vec<serde_json::Value>,
-    failure_propagation_records: &mut Vec<serde_json::Value>,
+    failure_propagation_records: &mut Vec<FailurePropagationRecord>,
     status_map: &mut HashMap<String, NodeStatus>,
     options: &RuntimeConfig,
     node_id: &str,
     reason: &str,
+    blocking_nodes: &[String],
     run_started_unix_ms: u128,
     lifecycle_timestamps: &HashMap<String, NodeLifecycleTimestamps>,
 ) -> Result<(), RuntimeError> {
@@ -1118,11 +1169,13 @@ fn record_skipped_node(
             source_run_id: options.parent_run_id.clone(),
         }),
     )?;
-    failure_propagation_records.push(serde_json::json!({
-        "node_id": node_id,
-        "status": crate::status_string(&node_status),
-        "cause": crate::transition_cause_for_skip_reason(reason).to_lowercase(),
-    }));
+    failure_propagation_records.push(failure_propagation_record(
+        node_id,
+        &crate::status_string(&node_status),
+        reason,
+        Some(crate::failure_mode_name(&options.failure_propagation)),
+        blocking_nodes.to_vec(),
+    ));
     engine_record::append_indexed_event(
         run_log,
         run_log_index,
@@ -1154,7 +1207,7 @@ fn record_failed_node(
     graph: &Graph,
     run_log: &mut std::fs::File,
     run_log_index: &mut Vec<serde_json::Value>,
-    failure_propagation_records: &mut Vec<serde_json::Value>,
+    failure_propagation_records: &mut Vec<FailurePropagationRecord>,
     status_map: &mut HashMap<String, NodeStatus>,
     options: &RuntimeConfig,
     node: &Node,
@@ -1169,6 +1222,17 @@ fn record_failed_node(
     let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
     let aschema = runtime.adapter_schema_for_kind(&node.kind);
     let finished_unix_ms = ctx.clock.now_unix_ms();
+    let blocking_nodes = trigger_evaluation
+        .as_ref()
+        .map(|evaluation| {
+            evaluation
+                .parent_statuses
+                .iter()
+                .filter(|parent| !matches!(parent.status.as_str(), "success" | "cached"))
+                .map(|parent| parent.node_id.clone())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
     let (lifecycle_state, lifecycle_transitions) = build_lifecycle_trace(
         run_started_unix_ms,
         lifecycle_timestamps.get(&node.id),
@@ -1192,7 +1256,7 @@ fn record_failed_node(
         &aschema,
         None,
         runtime.adapter_for_kind(&node.kind).ok().and_then(|adapter| adapter.binary_hash()),
-        trigger_evaluation,
+        trigger_evaluation.clone(),
         None,
         None,
         Some(transition_cause.to_string()),
@@ -1203,11 +1267,13 @@ fn record_failed_node(
             source_run_id: options.parent_run_id.clone(),
         }),
     )?;
-    failure_propagation_records.push(serde_json::json!({
-        "node_id": node.id,
-        "status": "failed",
-        "cause": crate::failure_propagation_cause(Some(&failure)),
-    }));
+    failure_propagation_records.push(failure_propagation_record(
+        &node.id,
+        "failed",
+        crate::failure_propagation_cause(Some(&failure)),
+        Some(crate::failure_mode_name(&options.failure_propagation)),
+        blocking_nodes,
+    ));
     engine_record::append_indexed_event(
         run_log,
         run_log_index,
@@ -1361,7 +1427,8 @@ pub fn execute(
     let mut run_log = store.open_run_log()?;
     let mut run_log_index: Vec<serde_json::Value> = Vec::new();
     let mut run_audit_events: Vec<serde_json::Value> = Vec::new();
-    let mut failure_propagation_records: Vec<serde_json::Value> = Vec::new();
+    let mut failure_propagation_records: Vec<FailurePropagationRecord> = Vec::new();
+    let mut isolated_branch_failures = BTreeMap::<String, BTreeSet<String>>::new();
     let mut node_metric_rows: Vec<NodeMetrics> = Vec::new();
     let mut metrics_registry = InMemoryMetricsRegistry::default();
     engine_record::append_indexed_event(
@@ -1745,7 +1812,7 @@ pub fn execute(
         }
         let forced_batch = batch.len() == 1;
 
-        let mut skipped: Vec<(String, String)> = Vec::new();
+        let mut skipped: Vec<(String, String, Vec<String>)> = Vec::new();
         let mut cached: Vec<(String, Node, CacheProof)> = Vec::new();
         let mut to_start: Vec<(String, Node, Value)> = Vec::new();
         let mut preflight_failures: Vec<(
@@ -1762,11 +1829,25 @@ pub fn execute(
                 continue;
             }
             if branch_pruned_nodes.contains(node_id) {
-                skipped.push((node_id.clone(), "branch_decision_not_selected".to_string()));
+                skipped.push((node_id.clone(), "branch_decision_not_selected".to_string(), Vec::new()));
                 continue;
             }
             if let Some(reason) = plan.filter_reasons.get(node_id) {
-                skipped.push((node_id.clone(), reason.clone()));
+                skipped.push((node_id.clone(), reason.clone(), Vec::new()));
+                continue;
+            }
+            if matches!(options.failure_propagation, crate::FailurePropagationMode::IsolateBranch) {
+                if let Some(blocking_nodes) = isolated_branch_failures.get(node_id) {
+                    skipped.push((
+                        node_id.clone(),
+                        "isolated_branch_failure".to_string(),
+                        blocking_nodes.iter().cloned().collect(),
+                    ));
+                    continue;
+                }
+            }
+            if cancel.load(Ordering::SeqCst) {
+                skipped.push((node_id.clone(), "cancelled".to_string(), Vec::new()));
                 continue;
             }
             let node = graph
@@ -1775,10 +1856,6 @@ pub fn execute(
                 .find(|n| n.id == *node_id)
                 .ok_or_else(|| RuntimeError::Executor("missing node".to_string()))?
                 .clone();
-            if cancel.load(Ordering::SeqCst) {
-                skipped.push((node_id.clone(), "cancelled".to_string()));
-                continue;
-            }
             if let Some(limit) = options.run_timeout_ms {
                 if start.elapsed() >= Duration::from_millis(limit) {
                     run_timed_out = true;
@@ -1829,7 +1906,11 @@ pub fn execute(
                             .insert(node_id.clone(), decision.trigger_evaluation.clone());
                     }
                     ReducePreflightAction::Skip => {
-                        skipped.push((node_id.clone(), "empty_reduce_collection".to_string()));
+                        skipped.push((
+                            node_id.clone(),
+                            "empty_reduce_collection".to_string(),
+                            Vec::new(),
+                        ));
                         continue;
                     }
                     ReducePreflightAction::Fail(failure) => {
@@ -2086,7 +2167,7 @@ pub fn execute(
         }
 
         skipped.sort_by(|a, b| a.0.cmp(&b.0));
-        for (node_id, reason) in &skipped {
+        for (node_id, reason, blocking_nodes) in &skipped {
             record_skipped_node(
                 runtime,
                 &ctx,
@@ -2098,6 +2179,7 @@ pub fn execute(
                 &options,
                 node_id,
                 reason,
+                blocking_nodes,
                 started_unix_ms,
                 &lifecycle_timestamps,
             )?;
@@ -2145,11 +2227,30 @@ pub fn execute(
                     source_run_id: options.parent_run_id.clone(),
                 }),
             )?;
-            failure_propagation_records.push(serde_json::json!({
-                "node_id": node_id,
-                "status": "failed",
-                "cause": crate::failure_propagation_cause(Some(failure)),
-            }));
+            failure_propagation_records.push(failure_propagation_record(
+                node_id,
+                "failed",
+                crate::failure_propagation_cause(Some(failure)),
+                Some(crate::failure_mode_name(&options.failure_propagation)),
+                trigger_evaluation
+                    .as_ref()
+                    .map(|evaluation| {
+                        evaluation
+                            .parent_statuses
+                            .iter()
+                            .filter(|parent| !matches!(parent.status.as_str(), "success" | "cached"))
+                            .map(|parent| parent.node_id.clone())
+                            .collect::<Vec<_>>()
+                    })
+                    .unwrap_or_default(),
+            ));
+            if matches!(options.failure_propagation, crate::FailurePropagationMode::IsolateBranch) {
+                record_isolated_branch_descendants(
+                    graph,
+                    node_id,
+                    &mut isolated_branch_failures,
+                );
+            }
             crate::append_event(
                 &mut run_log,
                 serde_json::json!({
@@ -2349,11 +2450,23 @@ pub fn execute(
                 }),
             )?;
             if status == NodeStatus::Failed {
-                failure_propagation_records.push(serde_json::json!({
-                    "node_id": node_id,
-                    "status": "failed",
-                    "cause": crate::failure_propagation_cause(failure.as_ref()),
-                }));
+                failure_propagation_records.push(failure_propagation_record(
+                    node_id,
+                    "failed",
+                    crate::failure_propagation_cause(failure.as_ref()),
+                    Some(crate::failure_mode_name(&options.failure_propagation)),
+                    Vec::new(),
+                ));
+                if matches!(
+                    options.failure_propagation,
+                    crate::FailurePropagationMode::IsolateBranch
+                ) {
+                    record_isolated_branch_descendants(
+                        graph,
+                        node_id,
+                        &mut isolated_branch_failures,
+                    );
+                }
             } else {
                 let node_fp = node_fingerprint_from_ctx(&ctx, &node.id);
                 sacred_execution::run_cache_write(
@@ -2678,18 +2791,32 @@ pub fn execute(
                     }));
                     if result.status == NodeStatus::Failed {
                         status_map.insert(node_id.clone(), NodeStatus::Failed);
-                        failure_propagation_records.push(serde_json::json!({
-                            "node_id": node_id,
-                            "status": "failed",
-                            "cause": crate::failure_propagation_cause(result.failure.as_ref()),
-                        }));
+                        failure_propagation_records.push(failure_propagation_record(
+                            &node_id,
+                            "failed",
+                            crate::failure_propagation_cause(result.failure.as_ref()),
+                            Some(crate::failure_mode_name(&options.failure_propagation)),
+                            Vec::new(),
+                        ));
+                        if matches!(
+                            options.failure_propagation,
+                            crate::FailurePropagationMode::IsolateBranch
+                        ) {
+                            record_isolated_branch_descendants(
+                                graph,
+                                &node_id,
+                                &mut isolated_branch_failures,
+                            );
+                        }
                     } else if result.status == NodeStatus::Cancelled {
                         status_map.insert(node_id.clone(), NodeStatus::Cancelled);
-                        failure_propagation_records.push(serde_json::json!({
-                            "node_id": node_id,
-                            "status": "cancelled",
-                            "cause": "cancel_requested",
-                        }));
+                        failure_propagation_records.push(failure_propagation_record(
+                            &node_id,
+                            "cancelled",
+                            "cancel_requested",
+                            Some(crate::failure_mode_name(&options.failure_propagation)),
+                            Vec::new(),
+                        ));
                     } else {
                         status_map.insert(node_id.clone(), result.status.clone());
                         let (aid, aver) = runtime.adapter_meta_for_kind(&node.kind);
@@ -2774,11 +2901,23 @@ pub fn execute(
                             source_run_id: options.parent_run_id.clone(),
                         }),
                     )?;
-                    failure_propagation_records.push(serde_json::json!({
-                        "node_id": node_id,
-                        "status": "failed",
-                        "cause": crate::failure_propagation_cause(Some(&failure)),
-                    }));
+                    failure_propagation_records.push(failure_propagation_record(
+                        &node_id,
+                        "failed",
+                        crate::failure_propagation_cause(Some(&failure)),
+                        Some(crate::failure_mode_name(&options.failure_propagation)),
+                        Vec::new(),
+                    ));
+                    if matches!(
+                        options.failure_propagation,
+                        crate::FailurePropagationMode::IsolateBranch
+                    ) {
+                        record_isolated_branch_descendants(
+                            graph,
+                            &node_id,
+                            &mut isolated_branch_failures,
+                        );
+                    }
                     crate::append_event(
                         &mut run_log,
                         serde_json::json!({
@@ -2834,6 +2973,7 @@ pub fn execute(
                 &options,
                 node_id,
                 "branch_decision_not_selected",
+                &[],
                 started_unix_ms,
                 &lifecycle_timestamps,
             )?;
@@ -2993,6 +3133,7 @@ pub fn execute(
                     &options,
                     &node.id,
                     "cancelled",
+                    &[],
                     started_unix_ms,
                     &lifecycle_timestamps,
                 )?;
