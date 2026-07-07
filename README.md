@@ -222,6 +222,27 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- run \
   --input "report_title=Regional Revenue Attainment"
 ```
 
+Inspect cache behavior on the same retained workflow family:
+
+```bash
+cargo run -p bijux-dag-cli --bin bijux-dag -- runs compare \
+  regional-sales-warm regional-sales-updated \
+  --root artifacts/regional-sales-runs \
+  --json
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- --json why-cache-missed \
+  --run-dir artifacts/regional-sales-runs/run-regional-sales-updated \
+  --node clean_orders \
+  --cache-dir artifacts/regional-sales-cache
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- --json cache verify \
+  --cache-dir artifacts/regional-sales-cache
+```
+
+`cache verify` is on the stable operator surface. `why-cache-missed` is
+repository-tested and callable by explicit path, but it is still outside the
+default `bijux-dag --help` contract in `v0.4.0`.
+
 Run a real container-backed packaging workflow against the repository release
 note example:
 
@@ -325,6 +346,11 @@ For the warm-cache run, changed-input comparison, and retained-run attribution
 path, use
 [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md).
 
+For the full cache story on that same regional sales workflow, including
+warm-cache reuse, selective invalidation, corruption refusal, and explicit
+cache-miss explanation, use
+[`docs/bijux-dag/operations/guides/cache-behavior-workflow.md`](docs/bijux-dag/operations/guides/cache-behavior-workflow.md).
+
 For the container prerequisites, retained output layout, and missing-engine
 failure behavior, use
 [`docs/bijux-dag/operations/guides/container-packaging-workflow.md`](docs/bijux-dag/operations/guides/container-packaging-workflow.md).
@@ -349,6 +375,7 @@ and strict post-repair verification, use
 Representative DAG workflow guides:
 
 - [`docs/bijux-dag/operations/guides/file-processing-workflow.md`](docs/bijux-dag/operations/guides/file-processing-workflow.md) for a host-shell artifact workflow
+- [`docs/bijux-dag/operations/guides/cache-behavior-workflow.md`](docs/bijux-dag/operations/guides/cache-behavior-workflow.md) for selective invalidation, corruption refusal, and cache-miss explanation on a retained workflow family
 - [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md) for changed-input attribution and retained-run comparison
 - [`docs/bijux-dag/operations/guides/branching-bulletin-workflow.md`](docs/bijux-dag/operations/guides/branching-bulletin-workflow.md) for retained branch decisions, skipped lanes, and replay stability
 - [`docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md`](docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md) for transient retry evidence, focused replay repair, and strict verification after recovery
