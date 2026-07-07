@@ -26,11 +26,19 @@ pub struct SchedulerPolicy {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum DependencyTriggerCondition {
+    Success,
+    Failure,
+    AnyTerminal,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TriggerSpec {
     Manual,
     Cron { expression: String, timezone: String },
     Event { event_type: String, source: String },
-    Dependency { dag_name: String, on_status: String },
+    Dependency { dag_name: String, on_status: DependencyTriggerCondition },
     Signal { signal_name: String, payload_schema: Option<String> },
     Backfill(BackfillRequest),
 }
@@ -1619,6 +1627,12 @@ enum SubmissionContext {
     Backfill { window_start_unix_ms: u128, window_end_unix_ms: u128, partition_key: Option<String> },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DependencyCompletionOutcome {
+    Success,
+    Failure,
+}
+
 fn compile_submission_candidate(
     definition: &ScheduleDefinition,
     requested_unix_ms: u128,
@@ -2444,15 +2458,14 @@ fn dependency_submission_candidates(
     definition: &ScheduleDefinition,
     inputs: &ScheduleEvaluationInputs,
     expected_dag_name: &str,
-    expected_status: &str,
+    expected_status: &DependencyTriggerCondition,
 ) -> Vec<SubmissionCandidate> {
-    let expected_status = normalize_schedule_status(expected_status);
     let mut completions = inputs
         .dependencies
         .iter()
         .filter(|completion| {
             completion.dag_name == expected_dag_name
-                && normalize_schedule_status(&completion.status) == expected_status
+                && dependency_trigger_condition_matches(expected_status, &completion.status)
         })
         .cloned()
         .collect::<Vec<_>>();
@@ -2471,7 +2484,7 @@ fn dependency_submission_candidates(
                 "dependency:{}:{}:{}",
                 definition.id,
                 completion.upstream_run_id,
-                normalize_schedule_status(&completion.status)
+                dependency_trigger_condition_key(expected_status)
             ),
             context: SubmissionContext::Dependency {
                 upstream_run_id: completion.upstream_run_id,
@@ -3047,6 +3060,38 @@ fn record_backfill_audit(
 
 fn normalize_schedule_status(status: &str) -> String {
     status.trim().to_ascii_lowercase().replace(['-', ' '], "_")
+}
+
+fn classify_dependency_completion_status(status: &str) -> Option<DependencyCompletionOutcome> {
+    match normalize_schedule_status(status).as_str() {
+        "success" | "succeeded" => Some(DependencyCompletionOutcome::Success),
+        "failed" | "failure" | "error" | "cancelled" | "canceled" | "timed_out" | "timeout" => {
+            Some(DependencyCompletionOutcome::Failure)
+        }
+        _ => None,
+    }
+}
+
+fn dependency_trigger_condition_matches(
+    condition: &DependencyTriggerCondition,
+    status: &str,
+) -> bool {
+    let Some(outcome) = classify_dependency_completion_status(status) else {
+        return false;
+    };
+    match condition {
+        DependencyTriggerCondition::Success => outcome == DependencyCompletionOutcome::Success,
+        DependencyTriggerCondition::Failure => outcome == DependencyCompletionOutcome::Failure,
+        DependencyTriggerCondition::AnyTerminal => true,
+    }
+}
+
+fn dependency_trigger_condition_key(condition: &DependencyTriggerCondition) -> &'static str {
+    match condition {
+        DependencyTriggerCondition::Success => "success",
+        DependencyTriggerCondition::Failure => "failure",
+        DependencyTriggerCondition::AnyTerminal => "any_terminal",
+    }
 }
 
 fn submission_trigger_kind_name(kind: &SubmissionTriggerKind) -> &'static str {
