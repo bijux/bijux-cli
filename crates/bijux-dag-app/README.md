@@ -68,6 +68,11 @@ failure from propagated skips, replays only the failed approval boundary, and
 verifies the repaired run strictly, use
 [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
 
+For the repository-backed example that shows how the app surface reports
+internal schedule preview, same-slot suppression, queue dispatch, explicit
+ledger completion, and one run id carried through to the final manifest, use
+[Scheduled Catalog Refresh Workflow](../../docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md).
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

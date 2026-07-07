@@ -89,6 +89,11 @@ boundary input rematerialization, and post-repair verification on a failed run,
 use
 [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
 
+For the repository-backed example that exercises cron preview, deterministic
+schedule run ids, queue dispatch, explicit ledger completion, and the handoff
+from scheduled submission into a retained DAG run, use
+[Scheduled Catalog Refresh Workflow](../../docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md).
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

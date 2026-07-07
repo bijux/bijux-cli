@@ -61,6 +61,11 @@ For the repository-backed authoring example that binds graph-owned path inputs
 into a retryable compliance gate and a repairable publication boundary, use
 [`evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json`](../../evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json).
 
+For the repository-backed authoring example that binds a schedule-owned
+timestamp into a required integer graph input and a promotable publication
+output, use
+[`evidence/dag/authoring/examples/scheduled-catalog-refresh.dag.json`](../../evidence/dag/authoring/examples/scheduled-catalog-refresh.dag.json).
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

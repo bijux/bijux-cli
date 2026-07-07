@@ -58,6 +58,9 @@ route is a public promise.
   part of the stable compatibility lane.
 - Simulated and maintainer-only DAG namespaces require
   `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`.
+- The current internal schedule lane is repository-tested for cron preview,
+  durable submission, queue dispatch, and queue-to-run linkage, but it remains
+  outside the stable `v0.4.0` public operator contract.
 - Cluster-backed Kubernetes or HPC execution, public remote workers, and
   public enterprise or federation APIs are not part of the `v0.4.0` public
   product boundary.
@@ -142,6 +145,11 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- --help
 cargo run -p bijux-dag-cli --bin bijux-dag -- validate --help
 cargo run -p bijux-dag-cli --bin bijux-dag -- commands --all
 ```
+
+For the repository-backed internal schedule workflow that proves cron preview,
+same-slot suppression, queue dispatch, and explicit run linkage without
+claiming a public scheduler service, use
+[`docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md`](docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md).
 
 Run a real DAG workflow against the repository file-processing example:
 
