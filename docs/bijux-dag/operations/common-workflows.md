@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # Common Workflows
@@ -37,6 +37,7 @@ flowchart TD
 - file-processing workflow for cache, lineage, rerun, and promotion proof
 - data-pipeline workflow for cache reuse, changed-input attribution, and retained-run comparison
 - internal schedule workflow for cron preview, deterministic submission, queue dispatch, and explicit run linkage
+- internal backfill workflow for historical partition fanout, retryable failed partitions, and aggregate summary reporting
 
 ## Canonical Command Path
 
@@ -101,6 +102,11 @@ internal boundary while still proving cron preview, same-slot suppression,
 queue dispatch, and ledger-to-run identity continuity, use
 [Scheduled Catalog Refresh Workflow](guides/scheduled-catalog-refresh-workflow.md).
 
+For one repository-backed backfill workflow that stays explicit about the
+internal boundary while proving partition fanout, failed-partition retry, and
+aggregate state summaries, use
+[Historical Catalog Backfill Workflow](guides/historical-catalog-backfill-workflow.md).
+
 ## Reading Rule
 
 Use this page when the DAG commands are already familiar but the correct
@@ -113,6 +119,7 @@ operator sequence is still unclear.
 - [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
+- [Historical Catalog Backfill Workflow](guides/historical-catalog-backfill-workflow.md)
 - [Scheduled Catalog Refresh Workflow](guides/scheduled-catalog-refresh-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Review Checklist](../quality/review-checklist.md)

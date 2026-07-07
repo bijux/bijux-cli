@@ -155,5 +155,6 @@ println!("spec={}", graph.spec);
 - [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](../operations/guides/data-pipeline-workflow.md)
 - [File Processing Workflow](../operations/guides/file-processing-workflow.md)
+- [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md)
 - [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md)
 - [Local Development](../operations/local-development.md)

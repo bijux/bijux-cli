@@ -40,6 +40,7 @@ stable public behavior.
 - open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and user-facing response shaping
 - open the [DAG Handbook](../index.md) for the wider system map and operator guidance
 - open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) for a repository-backed recovery path that stays entirely on the public `bijux-dag` command surface
+- open [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md) for a repository-backed internal backfill path that stays callable through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`
 - open [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md) for a repository-backed internal schedule path that stays callable through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`
 - open the [Repository Handbook](../../bijux-core/index.md) when process behavior intersects shared release policy
 

@@ -637,6 +637,13 @@ bijux-dag schedule backfill advance \
   --out ./artifacts/backfill-state.json
 ```
 
+Inspect the aggregate state without reading every run record by hand:
+
+```bash
+bijux-dag schedule backfill summary ./artifacts/backfill-state.json \
+  --out ./artifacts/backfill-summary.json
+```
+
 Pause, resume, or cancel the same durable state file when operator control is
 needed:
 
@@ -656,6 +663,15 @@ bijux-dag schedule backfill cancel ./artifacts/backfill-state.json \
   --out ./artifacts/backfill-state.json
 ```
 
+When failure policy pauses the operation after a failed partition, re-queue the
+failed runs explicitly:
+
+```bash
+bijux-dag schedule backfill retry-failed ./artifacts/backfill-state.json \
+  --at-unix-ms 1762389300000 \
+  --out ./artifacts/backfill-state.json
+```
+
 The backfill control contract is:
 
 - time-window expansion is deterministic and advances in one-minute request
@@ -665,8 +681,15 @@ The backfill control contract is:
 - the advance request applies live-load throttling before dispatching new runs
 - failure policy controls whether a failed backfill run continues, pauses, or
   cancels remaining queued work
+- `retry-failed` preserves the previous failed run id, increments the attempt
+  count, and re-queues only failed runs
+- `summary` derives lifecycle counts and retry totals from the durable state
+  file
 - pause and cancel stop new dispatches without pretending that already
   submitted runs were never issued
+
+For the repository-backed proof of that path, use
+[Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md).
 
 ## Run Only The Prerequisites For A Target Node
 
@@ -716,6 +739,7 @@ sequence turns a run into something you can defend with evidence.
 - [Common Workflows](../operations/common-workflows.md)
 - [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
 - [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)
+- [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md)
 - [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md)
 - [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
 - [Failure Recovery](../operations/failure-recovery.md)
