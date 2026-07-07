@@ -29,6 +29,10 @@ hosted verification stay aligned.
 - `make test-release-rs` uses the `ci` nextest profile and is the required release-candidate Rust lane
 - `make test-all-rs` is the full Rust verification lane and includes governed ignored experimental and internal DAG portfolios
 
+Use [Release Validation Suite](../operations/release-validation-suite.md) for
+the exact release-candidate command inventory and artifact outputs behind
+`make gh-release-validate`.
+
 ## Frozen Commit Gates
 
 - `TEST_ALL_FROZEN_REF=<ref> make test-all-frozen` starts the full Rust verification lane from a detached checkout of `<ref>`
@@ -45,6 +49,7 @@ to the make layer and keep the workflow file thin.
 
 ## Next Reads
 
+- [Release Validation Suite](../operations/release-validation-suite.md)
 - [Release Surfaces](release-surfaces.md)
 - [gh-workflows](../gh-workflows/index.md)
 - [CI and Automation](../operations/ci-and-automation.md)

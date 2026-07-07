@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-07
 ---
 
 # Release Surfaces
@@ -38,13 +38,14 @@ able to explain why a publish job ran before it describes how the publish job
 executed.
 
 The release validation suite documented in
-[Release Operations](../operations/release-operations.md#release-validation-suite)
-is the required gate between candidate selection and publication. It must run
-against a clean tree prepared from committed `HEAD`, not against ambient local
-worktree state.
+[Release Validation Suite](../operations/release-validation-suite.md) is the
+required gate between candidate selection and publication. It must run against
+a clean tree prepared from committed `HEAD`, not against ambient local worktree
+state.
 
 ## Next Reads
 
 - [CI Targets](ci-targets.md)
 - [gh-workflows](../gh-workflows/index.md)
+- [Release Validation Suite](../operations/release-validation-suite.md)
 - [Release Operations](../operations/release-operations.md)

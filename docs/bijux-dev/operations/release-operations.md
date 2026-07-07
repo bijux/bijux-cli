@@ -75,32 +75,14 @@ make docs-check
 
 ## Release Validation Suite
 
-The release validation suite runs against a clean tree prepared from committed
-`HEAD`, not the live worktree. That keeps unrelated local edits out of release
-evidence and makes local verification match the publish surface checked by CI.
+Use [Release Validation Suite](release-validation-suite.md) for the canonical
+release-candidate gate. That page owns the exact command inventory, execution
+model, artifact outputs, and failure ownership for `make release-validate-rs`,
+`make gh-release-validate`, and `cargo run -q -p bijux-dev --bin bijux-dev-cli -- release verify`.
 
-### Validation Commands
-
-- `make release-validate-rs`
-- `cargo run -q -p bijux-dev --bin bijux-dev-cli -- release verify`
-
-### Validation Coverage
-
-- `cargo fmt --all -- --check`
-- `cargo clippy --workspace --all-targets --all-features --locked -- -D warnings`
-- `cargo test --workspace --all-targets --all-features --locked`
-- `cargo doc --workspace --all-features --no-deps`
-- `cargo package --list` for the public DAG crate family
-- `cargo publish --dry-run --locked` for the public DAG crate family
-- `cargo test -p bijux-dag-cli --test smoke_pipeline --locked -- --nocapture`
-
-### Validation Outputs
-
-- clean release tree: `artifacts/rust/release-validation/<run-id>/workspace/`
-- shared target dir: `artifacts/rust/release-validation/<run-id>/target/`
-- command logs: `artifacts/rust/release-validation/<run-id>/`
-- release readiness report: `artifacts/release/readiness_report.json`
-- compatibility matrix: `artifacts/release/compatibility_matrix.json`
+At the release-operations level, the important rule is sequence: release
+validation happens before tag creation and before any publish command is trusted
+as release evidence.
 
 ## Reading Rule
 
@@ -117,6 +99,7 @@ by unresolved behavior.
 
 ## Next Reads
 
+- [Release Validation Suite](release-validation-suite.md)
 - [Core Release and Versioning](../../bijux-core/governance/release-and-versioning.md)
 - [Contract Governance](../governance/contract-governance.md)
 - [Known Limitations](../governance/known-limitations.md)

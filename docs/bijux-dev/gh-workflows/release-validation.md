@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-07
 ---
 
 # release-validation
@@ -34,6 +34,10 @@ suite for `bijux-core`.
 `make release-validate-rs`, which executes the exact local release validation
 suite from a clean tree prepared from committed `HEAD`.
 
+For the authoritative command inventory, artifact outputs, and release-candidate
+failure ownership, use
+[Release Validation Suite](../operations/release-validation-suite.md).
+
 ## Failure Ownership
 
 - formatter, clippy, test, doc, package, or publish failures belong to the release candidate itself
@@ -43,5 +47,5 @@ suite from a clean tree prepared from committed `HEAD`.
 ## Next Reads
 
 - [ci](ci.md)
-- [Release Operations](../operations/release-operations.md#release-validation-suite)
+- [Release Validation Suite](../operations/release-validation-suite.md)
 - [CI Targets](../makes/ci-targets.md)
