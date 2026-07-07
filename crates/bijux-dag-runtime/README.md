@@ -16,7 +16,10 @@ classification, cache behavior, and trace emission.
 - execution planning and node orchestration
 - policy evaluation and runtime diagnostics
 - replay, diff, cache, and artifact integration behavior
-- adapter boundaries for local and external execution backends
+- adapter boundaries for local shell, local container, and external execution
+  backends
+- container engine detection, mounted input and output layout, stdout/stderr
+  capture, and retained container identity
 
 Choose this crate when you need to execute validated DAG graphs or integrate
 with Bijux runtime policies from Rust.
@@ -67,6 +70,13 @@ Use these rules when reviewing runtime fingerprint drift or provenance output.
   `bijux-dag-app`
 - you need only persisted artifact helpers without execution policy:
   `bijux-dag-artifacts`
+
+## Representative Workflow
+
+For the repository-backed example that exercises mounted container inputs,
+retained outputs, recorded image digest, and clear engine-unavailable failure
+behavior, use
+[Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md).
 
 ## Related links
 

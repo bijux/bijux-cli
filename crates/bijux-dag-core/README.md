@@ -15,6 +15,8 @@ identity, reference resolution, and planner lowering.
 - deterministic graph canonicalization and topology ordering
 - graph and node fingerprinting primitives
 - planner-lowering helpers used by runtime and app layers
+- command-template and graph-input resolution rules that let shell and
+  container nodes bind stable params without runtime guesswork
 
 Choose this crate when you need a pure Rust dependency for DAG authoring,
 inspection, validation, or identity work without pulling in runtime execution
@@ -42,6 +44,12 @@ or command-layer concerns.
   `bijux-dag-app`
 - you need persisted evidence models:
   `bijux-dag-artifacts`
+
+## Representative Example
+
+For the repository-backed authoring example that binds a graph-owned label into
+a real container command surface, use
+[`evidence/dag/authoring/examples/release-note-bundle.dag.json`](../../evidence/dag/authoring/examples/release-note-bundle.dag.json).
 
 ## Related links
 

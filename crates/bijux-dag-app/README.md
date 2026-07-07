@@ -17,6 +17,8 @@ release-boundary routing, and shapes the typed responses that the CLI renders.
 - typed response models and render helpers
 - user-facing flows for inspection, replay, cache work, graph inspection,
   migration, and diagnostics
+- run summaries and failure explanations that surface container engine
+  availability, failed node classes, and retained trace locations
 - route gating between stable, experimental, simulated, and internal surfaces
 
 ## What It Does Not Own
@@ -46,6 +48,13 @@ release-boundary routing, and shapes the typed responses that the CLI renders.
   `bijux-dag-artifacts`
 - you only need the executable boundary:
   `bijux-dag-cli`
+
+## Representative Workflow
+
+For the repository-backed example that shows how the app surface reports a real
+container run, retained outputs, and a missing-engine infrastructure failure,
+use
+[Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md).
 
 ## Related links
 
