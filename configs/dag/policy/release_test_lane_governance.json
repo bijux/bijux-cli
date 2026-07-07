@@ -156,21 +156,29 @@
       ]
     },
     {
-      "portfolio_id": "dag-app-replay-diff-hardening",
+      "portfolio_id": "dag-app-replay-imported-bundle-round-trip",
       "crate": "bijux-dag-app",
       "path": "crates/bijux-dag-app/tests/replay_diff_hardening_contract.rs",
       "execution_lane": "full",
-      "ignore_reason": "slow",
+      "ignore_reason": "experimental",
       "outside_required_release_lane": true,
-      "rationale": "Replay and diff hardening remains release-critical full-lane evidence because the current semantic and snapshot matrix is too slow for required CI while still too important to drop.",
+      "rationale": "Replay bundle import and export stay outside the stable operator lane because the bundle routes remain explicit-path experimental surfaces.",
       "full_lane_command": "cargo nextest run -p bijux-dag-app --test replay_diff_hardening_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
       "tests": [
-        "replay_proof_schema_lockstep_and_mismatch_grouping",
-        "replay_exactness_covers_minimal_diamond_and_cache_oriented_graphs",
-        "replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported",
-        "replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity",
-        "replay_diff_and_explain_schemas_are_lockstep_and_semantic",
-        "explain_failure_schema_lockstep_and_human_readable_snapshots_are_stable"
+        "replay_imported_bundle_round_trip_is_supported"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-experimental-comparison-surfaces",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/replay_diff_hardening_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Canonical graph diff and artifact-trace schema checks remain governed full-lane evidence for explicit-path experimental comparison routes.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test replay_diff_hardening_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "canonical_diff_and_artifact_trace_schemas_are_lockstep"
       ]
     }
   ]
