@@ -679,6 +679,11 @@ pub(crate) enum ScheduleBackfillCommands {
     Status {
         state: PathBuf,
     },
+    Summary {
+        state: PathBuf,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
     Advance {
         state: PathBuf,
         request: PathBuf,
@@ -695,6 +700,14 @@ pub(crate) enum ScheduleBackfillCommands {
         out: Option<PathBuf>,
     },
     Resume {
+        state: PathBuf,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    #[command(name = "retry-failed")]
+    RetryFailed {
         state: PathBuf,
         #[arg(long)]
         at_unix_ms: u128,

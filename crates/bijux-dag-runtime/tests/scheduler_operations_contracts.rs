@@ -20,15 +20,16 @@ use bijux_dag_runtime::{
     deduplicate_trigger_events, deterministic_tick_order, dispatch_schedule_queue_runs,
     evaluate_schedule_submissions, evaluate_schedule_submissions_with_overrides,
     evaluate_sla_metrics, materialize_next_runs, pause_backfill_operation, pause_schedule,
-    record_schedule_override, resume_backfill_operation, resume_schedule, run_batches,
-    scheduler_debug_event_log, scheduler_invariants_hold, trace_event_count_by_category,
-    validate_schedule_registry, BackfillAdvanceRequest, BackfillFailurePolicy,
-    BackfillLifecycleStatus, BackfillRequest, BackfillRunStatus, BackfillStatusUpdate,
-    BackfillThrottlingPolicy, CatchUpPolicy, ConcurrencyPolicyLayers, DependencyCompletionRecord,
-    DependencyCounter, DependencyTriggerCondition, ManualSubmissionRequest, PriorityClass,
-    QueueIdentity, ReadyNode, ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig,
-    ScheduleDefinition, ScheduleEvaluationInputs, ScheduleEventLineage, ScheduleEventRecord,
-    ScheduleInputSource, ScheduleOverrideAction, ScheduleOverrideRecord, ScheduleOverrideState,
+    record_schedule_override, resume_backfill_operation, resume_schedule,
+    retry_failed_backfill_runs, run_batches, scheduler_debug_event_log, scheduler_invariants_hold,
+    summarize_backfill_operation, trace_event_count_by_category, validate_schedule_registry,
+    BackfillAdvanceRequest, BackfillFailurePolicy, BackfillLifecycleStatus, BackfillRequest,
+    BackfillRunStatus, BackfillStatusUpdate, BackfillThrottlingPolicy, CatchUpPolicy,
+    ConcurrencyPolicyLayers, DependencyCompletionRecord, DependencyCounter,
+    DependencyTriggerCondition, ManualSubmissionRequest, PriorityClass, QueueIdentity, ReadyNode,
+    ReadyQueue, RunBatchPolicy, RuntimeAuditEvent, RuntimeConfig, ScheduleDefinition,
+    ScheduleEvaluationInputs, ScheduleEventLineage, ScheduleEventRecord, ScheduleInputSource,
+    ScheduleOverrideAction, ScheduleOverrideRecord, ScheduleOverrideState,
     SchedulePriorityDispatchPolicy, ScheduleRegistry, ScheduleSubmissionLedger,
     ScheduleSubmissionLedgerEntry, ScheduleSubmissionStatus, ScheduleSubmissionStatusUpdate,
     ScheduledSubmission, Selector, SelectorSet, SignalRecord, StarvationPreventionPolicy,
@@ -312,6 +313,139 @@ fn scheduler_backfill_failure_policy_pauses_or_cancels_remaining_work() {
             .filter(|run| matches!(run.status, BackfillRunStatus::Queued))
             .count()
             == 0
+    );
+}
+
+#[test]
+fn scheduler_backfill_retry_requeues_failed_partition_with_attempt_history() {
+    let schedule = schedule_definition(
+        "historical-catalog",
+        TriggerSpec::Backfill(BackfillRequest {
+            window_start_unix_ms: 1_000,
+            window_end_unix_ms: 61_000,
+            partition_by: Some("dataset".to_string()),
+            partition_keys: vec!["sample-a".to_string()],
+            max_parallelism: 1,
+            failure_policy: BackfillFailurePolicy::Pause,
+        }),
+    );
+    let operation =
+        compile_backfill_operation(&schedule, Some("catalog-backfill"), 500).expect("operation");
+    let dispatched = advance_backfill_operation(
+        &operation,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 1_500,
+            pending_live_runs: 0,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: Vec::new(),
+        },
+    )
+    .expect("dispatch");
+    let failed_run_id = dispatched.dispatched_requests[0].run_id.clone();
+    let failed = advance_backfill_operation(
+        &dispatched.operation,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 2_000,
+            pending_live_runs: 0,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: vec![BackfillStatusUpdate {
+                run_id: failed_run_id.clone(),
+                status: BackfillRunStatus::Failed,
+                updated_unix_ms: 1_900,
+            }],
+        },
+    )
+    .expect("fail operation");
+    assert_eq!(failed.operation.lifecycle, BackfillLifecycleStatus::Paused);
+
+    let mut retried = failed.operation;
+    let retried_count = retry_failed_backfill_runs(&mut retried, 2_100).expect("retry");
+    assert_eq!(retried_count, 1);
+    assert_eq!(retried.lifecycle, BackfillLifecycleStatus::Active);
+    assert_eq!(retried.lifecycle_reason, None);
+
+    let retried_run = retried
+        .runs
+        .iter()
+        .find(|run| run.partition_key.as_deref() == Some("sample-a"))
+        .expect("retried partition");
+    assert_eq!(retried_run.status, BackfillRunStatus::Queued);
+    assert_eq!(retried_run.attempt, 2);
+    assert_eq!(retried_run.previous_run_ids, vec![failed_run_id.clone()]);
+    assert_ne!(retried_run.run_id, failed_run_id);
+
+    let resumed = advance_backfill_operation(
+        &retried,
+        &BackfillAdvanceRequest {
+            now_unix_ms: 2_200,
+            pending_live_runs: 0,
+            throttling_policy: BackfillThrottlingPolicy {
+                max_backfill_submissions_per_tick: 10,
+                reserve_live_capacity_percent: 0,
+            },
+            status_updates: Vec::new(),
+        },
+    )
+    .expect("resume dispatch");
+    assert_eq!(resumed.dispatched_requests.len(), 1);
+    assert_eq!(resumed.dispatched_requests[0].requested_unix_ms, 1_000);
+    assert_eq!(resumed.dispatched_requests[0].run_id, retried_run.run_id);
+}
+
+#[test]
+fn scheduler_backfill_summary_reports_partition_statuses_and_retry_totals() {
+    let schedule = schedule_definition(
+        "historical-catalog",
+        TriggerSpec::Backfill(BackfillRequest {
+            window_start_unix_ms: 1_000,
+            window_end_unix_ms: 121_000,
+            partition_by: Some("dataset".to_string()),
+            partition_keys: vec!["sample-a".to_string()],
+            max_parallelism: 1,
+            failure_policy: BackfillFailurePolicy::Continue,
+        }),
+    );
+    let mut operation =
+        compile_backfill_operation(&schedule, Some("catalog-backfill"), 500).expect("operation");
+
+    operation.runs[0].status = BackfillRunStatus::Completed;
+    operation.runs[1].status = BackfillRunStatus::Running;
+    operation.runs[1].attempt = 3;
+    operation.runs[1].previous_run_ids = vec![
+        "sched-historical-catalog-old-1".to_string(),
+        "sched-historical-catalog-old-2".to_string(),
+    ];
+    operation.runs[2].status = BackfillRunStatus::Cancelled;
+    operation.lifecycle = BackfillLifecycleStatus::Paused;
+    operation.lifecycle_reason = Some("operator review".to_string());
+
+    let summary = summarize_backfill_operation(&operation);
+    assert_eq!(summary.backfill_id, "catalog-backfill");
+    assert_eq!(summary.schedule_id, "historical-catalog");
+    assert_eq!(summary.lifecycle, BackfillLifecycleStatus::Paused);
+    assert_eq!(summary.lifecycle_reason.as_deref(), Some("operator review"));
+    assert_eq!(summary.total_runs, 3);
+    assert_eq!(summary.queued_runs, 0);
+    assert_eq!(summary.submitted_runs, 0);
+    assert_eq!(summary.running_runs, 1);
+    assert_eq!(summary.completed_runs, 1);
+    assert_eq!(summary.failed_runs, 0);
+    assert_eq!(summary.cancelled_runs, 1);
+    assert_eq!(summary.total_retry_attempts, 2);
+    assert_eq!(summary.partitions.len(), 3);
+    assert_eq!(summary.partitions[1].attempt, 3);
+    assert_eq!(
+        summary.partitions[1].previous_run_ids,
+        vec![
+            "sched-historical-catalog-old-1".to_string(),
+            "sched-historical-catalog-old-2".to_string()
+        ]
     );
 }
 

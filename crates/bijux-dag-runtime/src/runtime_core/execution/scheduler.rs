@@ -117,6 +117,10 @@ pub struct BackfillRunRecord {
     pub partition_key: Option<String>,
     pub dedupe_key: String,
     pub run_id: String,
+    #[serde(default = "default_backfill_attempt")]
+    pub attempt: u32,
+    #[serde(default)]
+    pub previous_run_ids: Vec<String>,
     pub status: BackfillRunStatus,
     pub updated_unix_ms: u128,
 }
@@ -180,6 +184,36 @@ pub struct BackfillAdvanceReport {
     pub active_runs: usize,
     pub queued_runs: usize,
     pub allowed_dispatches: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BackfillPartitionSummary {
+    pub requested_unix_ms: u128,
+    pub partition_key: Option<String>,
+    pub status: BackfillRunStatus,
+    pub attempt: u32,
+    pub run_id: String,
+    #[serde(default)]
+    pub previous_run_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BackfillOperationSummary {
+    pub backfill_id: String,
+    pub schedule_id: String,
+    pub dag_name: String,
+    pub lifecycle: BackfillLifecycleStatus,
+    pub lifecycle_reason: Option<String>,
+    pub total_runs: usize,
+    pub queued_runs: usize,
+    pub submitted_runs: usize,
+    pub running_runs: usize,
+    pub completed_runs: usize,
+    pub failed_runs: usize,
+    pub cancelled_runs: usize,
+    pub total_retry_attempts: u32,
+    #[serde(default)]
+    pub partitions: Vec<BackfillPartitionSummary>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -490,6 +524,10 @@ fn default_queue_identity() -> QueueIdentity {
 
 fn default_priority_class() -> PriorityClass {
     PriorityClass::Standard
+}
+
+fn default_backfill_attempt() -> u32 {
+    1
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1826,6 +1864,112 @@ pub fn cancel_backfill_operation(
     }
 }
 
+pub fn retry_failed_backfill_runs(
+    operation: &mut BackfillOperation,
+    at_unix_ms: u128,
+) -> Result<usize, String> {
+    if matches!(operation.lifecycle, BackfillLifecycleStatus::Cancelled) {
+        return Err(format!(
+            "backfill '{}' is cancelled and cannot retry failed runs",
+            operation.backfill_id
+        ));
+    }
+
+    let mut retried = 0usize;
+    let mut audit_details = Vec::new();
+    for run in &mut operation.runs {
+        if run.status != BackfillRunStatus::Failed {
+            continue;
+        }
+        let previous_run_id = run.run_id.clone();
+        run.previous_run_ids.push(previous_run_id.clone());
+        run.attempt = run.attempt.saturating_add(1);
+        run.run_id = deterministic_backfill_retry_run_id(
+            &operation.schedule_id,
+            &run.dedupe_key,
+            run.attempt,
+        );
+        run.status = BackfillRunStatus::Queued;
+        run.updated_unix_ms = at_unix_ms;
+        retried += 1;
+        audit_details.push(format!(
+            "queued retry attempt {} for partition run '{}' as '{}'",
+            run.attempt, previous_run_id, run.run_id
+        ));
+    }
+
+    if retried == 0 {
+        return Ok(0);
+    }
+
+    operation.updated_unix_ms = at_unix_ms;
+    operation.lifecycle_reason = None;
+    if !matches!(operation.lifecycle, BackfillLifecycleStatus::Active) {
+        operation.lifecycle = BackfillLifecycleStatus::Active;
+    }
+    for detail in audit_details {
+        record_backfill_audit(operation, at_unix_ms, "retried_failed_run", detail);
+    }
+    Ok(retried)
+}
+
+pub fn summarize_backfill_operation(operation: &BackfillOperation) -> BackfillOperationSummary {
+    let mut partitions = operation
+        .runs
+        .iter()
+        .map(|run| BackfillPartitionSummary {
+            requested_unix_ms: run.requested_unix_ms,
+            partition_key: run.partition_key.clone(),
+            status: run.status.clone(),
+            attempt: run.attempt,
+            run_id: run.run_id.clone(),
+            previous_run_ids: run.previous_run_ids.clone(),
+        })
+        .collect::<Vec<_>>();
+    partitions.sort_by(|left, right| {
+        left.requested_unix_ms
+            .cmp(&right.requested_unix_ms)
+            .then_with(|| left.partition_key.cmp(&right.partition_key))
+            .then_with(|| left.run_id.cmp(&right.run_id))
+    });
+
+    let mut queued_runs = 0usize;
+    let mut submitted_runs = 0usize;
+    let mut running_runs = 0usize;
+    let mut completed_runs = 0usize;
+    let mut failed_runs = 0usize;
+    let mut cancelled_runs = 0usize;
+    let mut total_retry_attempts = 0u32;
+    for run in &operation.runs {
+        total_retry_attempts = total_retry_attempts.saturating_add(run.attempt.saturating_sub(1));
+        match run.status {
+            BackfillRunStatus::Queued => queued_runs += 1,
+            BackfillRunStatus::Submitted => submitted_runs += 1,
+            BackfillRunStatus::Running => running_runs += 1,
+            BackfillRunStatus::Completed => completed_runs += 1,
+            BackfillRunStatus::Failed => failed_runs += 1,
+            BackfillRunStatus::Cancelled => cancelled_runs += 1,
+        }
+    }
+
+    BackfillOperationSummary {
+        backfill_id: operation.backfill_id.clone(),
+        schedule_id: operation.schedule_id.clone(),
+        dag_name: operation.dag_name.clone(),
+        lifecycle: operation.lifecycle.clone(),
+        lifecycle_reason: operation.lifecycle_reason.clone(),
+        total_runs: operation.runs.len(),
+        queued_runs,
+        submitted_runs,
+        running_runs,
+        completed_runs,
+        failed_runs,
+        cancelled_runs,
+        total_retry_attempts,
+        partitions,
+    }
+}
+
 pub fn advance_backfill_operation(
     operation: &BackfillOperation,
     request: &BackfillAdvanceRequest,
@@ -2933,6 +3077,14 @@ fn deterministic_backfill_id(schedule_id: &str, backfill: &BackfillRequest) -> S
     deterministic_schedule_run_id(schedule_id, &dedupe_key)
 }
 
+fn deterministic_backfill_retry_run_id(
+    schedule_id: &str,
+    dedupe_key: &str,
+    attempt: u32,
+) -> String {
+    deterministic_schedule_run_id(schedule_id, &format!("{dedupe_key}:attempt:{attempt}"))
+}
+
 fn plan_backfill_runs(
     definition: &ScheduleDefinition,
     backfill: &BackfillRequest,
@@ -2957,6 +3109,8 @@ fn plan_backfill_runs(
                 requested_unix_ms,
                 partition_key: partition_key.clone(),
                 run_id: deterministic_schedule_run_id(&definition.id, &dedupe_key),
+                attempt: default_backfill_attempt(),
+                previous_run_ids: Vec::new(),
                 dedupe_key,
                 status: BackfillRunStatus::Queued,
                 updated_unix_ms: planned_unix_ms,

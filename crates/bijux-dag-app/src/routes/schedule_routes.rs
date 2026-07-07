@@ -10,11 +10,11 @@ use bijux_dag_runtime::{
     detect_cron_conflicts, dispatch_schedule_queue_runs, dry_run_schedule,
     evaluate_schedule_submissions_with_overrides, evaluate_sla_metrics, materialize_next_runs,
     pause_backfill_operation, pause_schedule, resume_backfill_operation, resume_schedule,
-    validate_schedule_registry, weighted_priority_tie_break_order, BackfillAdvanceRequest,
-    BackfillOperation, BackfillThrottlingPolicy, PriorityClass, ScheduleEvaluationInputs,
-    ScheduleOverrideState, SchedulePriorityDispatchPolicy, ScheduleRegistry,
-    ScheduleSubmissionLedger, ScheduleSubmissionStatusUpdateBatch, ScheduledSubmission,
-    WeightedPriorityPolicy,
+    retry_failed_backfill_runs, summarize_backfill_operation, validate_schedule_registry,
+    weighted_priority_tie_break_order, BackfillAdvanceRequest, BackfillOperation,
+    BackfillThrottlingPolicy, PriorityClass, ScheduleEvaluationInputs, ScheduleOverrideState,
+    SchedulePriorityDispatchPolicy, ScheduleRegistry, ScheduleSubmissionLedger,
+    ScheduleSubmissionStatusUpdateBatch, ScheduledSubmission, WeightedPriorityPolicy,
 };
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -409,6 +409,17 @@ fn maybe_write_backfill_operation(
     Ok(())
 }
 
+fn maybe_write_backfill_summary(
+    out: &Option<std::path::PathBuf>,
+    operation: &BackfillOperation,
+) -> Result<(), ExitCode> {
+    if let Some(path) = out {
+        let summary = summarize_backfill_operation(operation);
+        write_pretty_json(path, &summary)?;
+    }
+    Ok(())
+}
+
 fn handle_schedule_queue_command(
     cli: &DagCli,
     command: &ScheduleQueueCommands,
@@ -649,6 +660,23 @@ fn handle_schedule_backfill_command(
             println!("{}", serde_json::to_string_pretty(&operation).unwrap());
             Ok(ExitCode::SUCCESS)
         }
+        ScheduleBackfillCommands::Summary { state, out } => {
+            let operation = parse_backfill_operation(state)?;
+            let summary = summarize_backfill_operation(&operation);
+            maybe_write_backfill_summary(out, &operation)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.backfill.summary",
+                    true,
+                    serde_json::to_value(&summary).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&summary).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
         ScheduleBackfillCommands::Advance { state, request, out } => {
             let operation = parse_backfill_operation(state)?;
             let request: BackfillAdvanceRequest = parse_json_file(request)?;
@@ -695,6 +723,24 @@ fn handle_schedule_backfill_command(
                 return emit_json(
                     cli,
                     "dag.schedule.backfill.resume",
+                    true,
+                    serde_json::to_value(&operation).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&operation).unwrap());
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleBackfillCommands::RetryFailed { state, at_unix_ms, out } => {
+            let mut operation = parse_backfill_operation(state)?;
+            retry_failed_backfill_runs(&mut operation, *at_unix_ms)
+                .map_err(|_| ExitCode::from(3))?;
+            maybe_write_backfill_operation(out, &operation)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.backfill.retry-failed",
                     true,
                     serde_json::to_value(&operation).map_err(|_| ExitCode::from(3))?,
                     Vec::new(),

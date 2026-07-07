@@ -1330,3 +1330,160 @@ fn schedule_backfill_lifecycle_commands_update_state_and_dispatches() {
         .iter()
         .any(|run| run["status"] == "cancelled"));
 }
+
+#[test]
+fn schedule_backfill_summary_reports_aggregate_operation_state() {
+    let (_tmp, registry) = write_backfill_registry_fixture();
+    let state_dir = tempfile::tempdir().expect("tmp");
+    let state = state_dir.path().join("backfill-state.json");
+    let summary = state_dir.path().join("backfill-summary.json");
+    let cli = quiet_json_cli();
+
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Plan {
+                registry,
+                schedule_id: "historical-catalog".to_string(),
+                planned_unix_ms: 500,
+                backfill_id: Some("catalog-history".to_string()),
+                out: Some(state.clone()),
+            },
+        },
+    )
+    .expect("plan state");
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Summary { state, out: Some(summary.clone()) },
+        },
+    )
+    .expect("summary state");
+
+    let summary_payload: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&summary).expect("read summary"))
+            .expect("parse summary");
+    assert_eq!(summary_payload["backfill_id"], "catalog-history");
+    assert_eq!(summary_payload["total_runs"], 6);
+    assert_eq!(summary_payload["queued_runs"], 6);
+    assert_eq!(summary_payload["failed_runs"], 0);
+    assert_eq!(summary_payload["total_retry_attempts"], 0);
+    assert_eq!(summary_payload["partitions"].as_array().expect("partitions").len(), 6);
+}
+
+#[test]
+fn schedule_backfill_retry_failed_requeues_partition_with_attempt_history() {
+    let (_tmp_registry, registry) = write_backfill_registry_fixture();
+    let state_dir = tempfile::tempdir().expect("tmp");
+    let state = state_dir.path().join("backfill-state.json");
+    let dispatched = state_dir.path().join("backfill-dispatched.json");
+    let failed_request = state_dir.path().join("backfill-failed-request.json");
+    let failed_state = state_dir.path().join("backfill-failed.json");
+    let retried_state = state_dir.path().join("backfill-retried.json");
+    let (_tmp_request, request) = write_backfill_advance_request_fixture();
+    let cli = quiet_json_cli();
+
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Plan {
+                registry,
+                schedule_id: "historical-catalog".to_string(),
+                planned_unix_ms: 500,
+                backfill_id: Some("catalog-history".to_string()),
+                out: Some(state.clone()),
+            },
+        },
+    )
+    .expect("plan state");
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Advance {
+                state: state.clone(),
+                request,
+                out: Some(dispatched.clone()),
+            },
+        },
+    )
+    .expect("dispatch state");
+
+    let dispatched_payload: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&dispatched).expect("read dispatched"))
+            .expect("parse dispatched");
+    let failed_run_id = dispatched_payload["runs"]
+        .as_array()
+        .expect("runs")
+        .iter()
+        .find(|run| run["status"] == "submitted" && run["partition_key"] == "sample-a")
+        .and_then(|run| run["run_id"].as_str())
+        .expect("failed run id")
+        .to_string();
+
+    fs::write(
+        &failed_request,
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "now_unix_ms": 2800,
+            "pending_live_runs": 0,
+            "throttling_policy": {
+                "max_backfill_submissions_per_tick": 4,
+                "reserve_live_capacity_percent": 0
+            },
+            "status_updates": [
+                {
+                    "run_id": failed_run_id,
+                    "status": "failed",
+                    "updated_unix_ms": 2700
+                }
+            ]
+        }))
+        .expect("failed request"),
+    )
+    .expect("write failed request");
+
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::Advance {
+                state: dispatched.clone(),
+                request: failed_request,
+                out: Some(failed_state.clone()),
+            },
+        },
+    )
+    .expect("fail state");
+    let failed_payload: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&failed_state).expect("read failed state"))
+            .expect("parse failed state");
+    assert_eq!(failed_payload["lifecycle"], "paused");
+
+    handle_schedule_command(
+        &cli,
+        &ScheduleCommands::Backfill {
+            command: ScheduleBackfillCommands::RetryFailed {
+                state: failed_state.clone(),
+                at_unix_ms: 3_000,
+                out: Some(retried_state.clone()),
+            },
+        },
+    )
+    .expect("retry failed state");
+    let retried_payload: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&retried_state).expect("read retried state"))
+            .expect("parse retried state");
+    assert_eq!(retried_payload["lifecycle"], "active");
+
+    let retried_run = retried_payload["runs"]
+        .as_array()
+        .expect("runs")
+        .iter()
+        .find(|run| run["partition_key"] == "sample-a" && run["requested_unix_ms"] == 1000)
+        .expect("retried partition");
+    assert_eq!(retried_run["status"], "queued");
+    assert_eq!(retried_run["attempt"], 2);
+    assert_eq!(
+        retried_run["previous_run_ids"].as_array().expect("previous run ids")[0],
+        serde_json::json!(failed_run_id)
+    );
+    assert_ne!(retried_run["run_id"], retried_run["previous_run_ids"][0]);
+}
