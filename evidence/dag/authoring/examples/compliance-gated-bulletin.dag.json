@@ -1,0 +1,153 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "compliance-gated-bulletin",
+    "description": "Prepare a bulletin, retry a transient compliance lookup, and require explicit approval before publication.",
+    "owners": ["platform"],
+    "tags": ["authoring", "retry", "recovery", "approval"]
+  },
+  "inputs": {
+    "source_note": {
+      "type": "path",
+      "required": true
+    },
+    "retry_plan": {
+      "type": "path",
+      "required": true
+    },
+    "publication_gate": {
+      "type": "path",
+      "required": true
+    },
+    "bulletin_title": {
+      "type": "string",
+      "default": "Compliance Review Bulletin"
+    }
+  },
+  "nodes": [
+    {
+      "id": "prepare_bulletin_input",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "bulletin",
+          "path": "prepare/bulletin.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "source_note": { "graph_input": "source_note" },
+        "bulletin_title": { "graph_input": "bulletin_title" },
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nsource_note = pathlib.Path(\"{params.source_note}\")\nif not source_note.is_file():\n    raise SystemExit(\"source_note is not a file: \" + str(source_note))\n\ntext = source_note.read_text().strip()\nif not text:\n    raise SystemExit(\"source_note is empty: \" + str(source_note))\n\nlines = [line.rstrip() for line in text.splitlines() if line.strip()]\nout_dir = pathlib.Path(\"../outputs/prepare\")\nout_dir.mkdir(parents=True, exist_ok=True)\npayload = {\n    \"title\": \"{params.bulletin_title}\",\n    \"source_name\": source_note.name,\n    \"summary\": lines[0],\n    \"detail_lines\": lines[1:]\n}\n(out_dir / \"bulletin.json\").write_text(json.dumps(payload, indent=2) + \"\\n\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "fetch_compliance_gate",
+      "kind": "shell",
+      "inputs": ["bulletin"],
+      "outputs": [
+        {
+          "name": "gate",
+          "path": "gate/gate_snapshot.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "retry": {
+        "max_attempts": 2,
+        "backoff_ms": 10
+      },
+      "params": {
+        "retry_plan": { "graph_input": "retry_plan" },
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nplan_path = pathlib.Path(\"{params.retry_plan}\")\nif not plan_path.is_file():\n    raise SystemExit(\"retry_plan is not a file: \" + str(plan_path))\n\nplan = json.loads(plan_path.read_text())\nstate_dir = plan_path.parent / \".compliance-gate-state\"\nstate_dir.mkdir(parents=True, exist_ok=True)\nattempt_path = state_dir / \"fetch-attempts.txt\"\nattempt = int(attempt_path.read_text()) + 1 if attempt_path.exists() else 1\nattempt_path.write_text(str(attempt))\nfail_until = int(plan.get(\"fail_until_attempt\", 0))\nif attempt <= fail_until:\n    raise SystemExit(f\"transient compliance gate lookup failed on attempt {attempt}\")\n\nbulletin = json.loads(pathlib.Path(\"../inputs/prepare_bulletin_input/bulletin\").read_text())\nout_dir = pathlib.Path(\"../outputs/gate\")\nout_dir.mkdir(parents=True, exist_ok=True)\npayload = {\n    \"attempt\": attempt,\n    \"gate_policy\": plan.get(\"gate_policy\", \"manual-approval\"),\n    \"expected_reviewer_group\": plan.get(\"expected_reviewer_group\", \"release-managers\"),\n    \"bulletin_summary\": bulletin[\"summary\"]\n}\n(out_dir / \"gate_snapshot.json\").write_text(json.dumps(payload, indent=2) + \"\\n\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "validate_publication_gate",
+      "kind": "shell",
+      "inputs": ["gate"],
+      "outputs": [
+        {
+          "name": "approval",
+          "path": "approval/approval.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "publication_gate": { "graph_input": "publication_gate" },
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\ngate = json.loads(pathlib.Path(\"../inputs/fetch_compliance_gate/gate\").read_text())\napproval_path = pathlib.Path(\"{params.publication_gate}\")\nif not approval_path.is_file():\n    raise SystemExit(\"publication_gate is not a file: \" + str(approval_path))\n\napproval = json.loads(approval_path.read_text())\nif not approval.get(\"approved\"):\n    raise SystemExit(\"publication gate is not approved\")\nreviewer = approval.get(\"reviewer\", \"\").strip()\nif not reviewer:\n    raise SystemExit(\"publication gate reviewer is missing\")\nreviewer_group = approval.get(\"reviewer_group\", \"\").strip()\nexpected_group = gate[\"expected_reviewer_group\"]\nif reviewer_group != expected_group:\n    raise SystemExit(\n        f\"publication gate reviewer_group mismatch: expected {expected_group}, got {reviewer_group or 'missing'}\"\n    )\n\nout_dir = pathlib.Path(\"../outputs/approval\")\nout_dir.mkdir(parents=True, exist_ok=True)\npayload = {\n    \"approved\": True,\n    \"reviewer\": reviewer,\n    \"reviewer_group\": reviewer_group,\n    \"gate_policy\": gate[\"gate_policy\"],\n    \"gate_attempt\": gate[\"attempt\"]\n}\n(out_dir / \"approval.json\").write_text(json.dumps(payload, indent=2) + \"\\n\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "publish_bulletin",
+      "kind": "shell",
+      "inputs": ["bulletin", "approval"],
+      "outputs": [
+        {
+          "name": "bulletin",
+          "path": "publish/bulletin.md",
+          "media_type": "text/markdown",
+          "promotable": true
+        },
+        {
+          "name": "publication_record",
+          "path": "publish/publication.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nbulletin = json.loads(pathlib.Path(\"../inputs/prepare_bulletin_input/bulletin\").read_text())\napproval = json.loads(pathlib.Path(\"../inputs/validate_publication_gate/approval\").read_text())\nlines = [\n    \"# \" + bulletin[\"title\"],\n    \"\",\n    \"Source note: \" + bulletin[\"source_name\"],\n    \"Summary: \" + bulletin[\"summary\"],\n    \"Approved by: \" + approval[\"reviewer\"],\n    \"Reviewer group: \" + approval[\"reviewer_group\"],\n    \"Gate lookup attempt: \" + str(approval[\"gate_attempt\"]),\n]\nif bulletin[\"detail_lines\"]:\n    lines.extend([\"\", \"## Detail\"])\n    lines.extend(\"- \" + line for line in bulletin[\"detail_lines\"])\n\nout_dir = pathlib.Path(\"../outputs/publish\")\nout_dir.mkdir(parents=True, exist_ok=True)\n(out_dir / \"bulletin.md\").write_text(\"\\n\".join(lines) + \"\\n\")\n(out_dir / \"publication.json\").write_text(json.dumps({\n    \"approved_by\": approval[\"reviewer\"],\n    \"gate_lookup_attempt\": approval[\"gate_attempt\"],\n    \"source_name\": bulletin[\"source_name\"]\n}, indent=2) + \"\\n\")\nPY"
+        ]
+      },
+      "cache": {
+        "enabled": false,
+        "reason": "publication should be regenerated at the approval boundary"
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    {
+      "from": { "node_id": "prepare_bulletin_input", "port": "bulletin" },
+      "to": { "node_id": "fetch_compliance_gate", "port": "bulletin" }
+    },
+    {
+      "from": { "node_id": "fetch_compliance_gate", "port": "gate" },
+      "to": { "node_id": "validate_publication_gate", "port": "gate" }
+    },
+    {
+      "from": { "node_id": "prepare_bulletin_input", "port": "bulletin" },
+      "to": { "node_id": "publish_bulletin", "port": "bulletin" }
+    },
+    {
+      "from": { "node_id": "validate_publication_gate", "port": "approval" },
+      "to": { "node_id": "publish_bulletin", "port": "approval" }
+    }
+  ]
+}
