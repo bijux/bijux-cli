@@ -263,15 +263,10 @@ fn replay_rejects_corrupt_upstream_artifact_at_rerun_boundary() {
         payload["data"]["message"],
         "upstream artifact verification failed for the requested replay boundary"
     );
-    assert_eq!(
-        payload["data"]["upstream_artifact_verification"]["verified"],
-        false
-    );
-    assert!(
-        payload["data"]["upstream_artifact_verification"]["checks"]
-            .as_array()
-            .is_some_and(|checks| checks.iter().any(|check| check["verified"] == false))
-    );
+    assert_eq!(payload["data"]["upstream_artifact_verification"]["verified"], false);
+    assert!(payload["data"]["upstream_artifact_verification"]["checks"]
+        .as_array()
+        .is_some_and(|checks| checks.iter().any(|check| check["verified"] == false)));
 }
 
 #[test]
@@ -322,17 +317,9 @@ fn replay_reports_node_scoped_diff_for_single_rerun_root() {
     );
     assert_eq!(replay["ok"], true);
     assert_eq!(replay["data"]["node_rerun_diff"]["node_id"], "branch_a");
-    assert_eq!(
-        replay["data"]["node_rerun_diff"]["summary"]["node"],
-        "branch_a"
-    );
-    assert_eq!(
-        replay["data"]["node_rerun_diff"]["summary"]["equivalent"],
-        false
-    );
-    assert!(
-        replay["data"]["node_rerun_diff"]["causal_chain"]
-            .as_array()
-            .is_some_and(|chain| chain.len() > 1)
-    );
+    assert_eq!(replay["data"]["node_rerun_diff"]["summary"]["node"], "branch_a");
+    assert_eq!(replay["data"]["node_rerun_diff"]["summary"]["equivalent"], false);
+    assert!(replay["data"]["node_rerun_diff"]["causal_chain"]
+        .as_array()
+        .is_some_and(|chain| chain.len() > 1));
 }

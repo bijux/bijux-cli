@@ -94,7 +94,8 @@ pub(crate) fn verify_replay_boundary_inputs(
     let mut checks = Vec::new();
 
     for boundary_node_id in &boundary_nodes {
-        let inputs_index_path = run_dir.join("nodes").join(boundary_node_id).join("inputs").join("index.json");
+        let inputs_index_path =
+            run_dir.join("nodes").join(boundary_node_id).join("inputs").join("index.json");
         if !inputs_index_path.exists() {
             errors.push(format!(
                 "boundary node {} is missing inputs/index.json in source run {}",
@@ -109,18 +110,16 @@ pub(crate) fn verify_replay_boundary_inputs(
         for input in inputs_index.files {
             let mut notes = Vec::new();
             let source_trace = material.node_traces.get(&input.source_node_id);
-            let source_status = source_trace
-                .and_then(|trace| trace.get("status"))
-                .and_then(Value::as_str);
+            let source_status =
+                source_trace.and_then(|trace| trace.get("status")).and_then(Value::as_str);
             if !matches!(source_status, Some("success" | "cached")) {
                 notes.push(format!(
                     "source node {} is not terminally reusable in source run {}",
                     input.source_node_id, source_run_id
                 ));
             }
-            let trace_fingerprint = source_trace
-                .and_then(|trace| trace.get("fingerprint"))
-                .and_then(Value::as_str);
+            let trace_fingerprint =
+                source_trace.and_then(|trace| trace.get("fingerprint")).and_then(Value::as_str);
             if trace_fingerprint != Some(input.source_node_fingerprint.as_str()) {
                 notes.push(format!(
                     "source node fingerprint drift detected for {}",
@@ -133,15 +132,13 @@ pub(crate) fn verify_replay_boundary_inputs(
                 .join(&input.source_node_id)
                 .join("outputs")
                 .join(&input.source_output_name);
-            let materialized_input_path = run_dir
-                .join("nodes")
-                .join(boundary_node_id)
-                .join("inputs")
-                .join(&input.local_path);
+            let materialized_input_path =
+                run_dir.join("nodes").join(boundary_node_id).join("inputs").join(&input.local_path);
 
             match material.node_outputs.get(&input.source_node_id) {
                 Some(index) => {
-                    let source_output = index.files.iter().find(|file| file.name == input.source_output_name);
+                    let source_output =
+                        index.files.iter().find(|file| file.name == input.source_output_name);
                     match source_output {
                         Some(file) => {
                             if file.node_fingerprint != input.source_node_fingerprint {
@@ -156,14 +153,19 @@ pub(crate) fn verify_replay_boundary_inputs(
                                     input.source_node_id, input.source_output_name
                                 ));
                             }
-                            let persisted_source_path =
-                                run_dir.join("nodes").join(&input.source_node_id).join("outputs").join(&file.path);
+                            let persisted_source_path = run_dir
+                                .join("nodes")
+                                .join(&input.source_node_id)
+                                .join("outputs")
+                                .join(&file.path);
                             source_output_path = persisted_source_path.clone();
                             match sha256_artifact_path(&persisted_source_path) {
-                                Ok(actual_sha256) if actual_sha256 != file.sha256 => notes.push(format!(
-                                    "persisted source artifact hash mismatch for {}:{}",
-                                    input.source_node_id, input.source_output_name
-                                )),
+                                Ok(actual_sha256) if actual_sha256 != file.sha256 => {
+                                    notes.push(format!(
+                                        "persisted source artifact hash mismatch for {}:{}",
+                                        input.source_node_id, input.source_output_name
+                                    ))
+                                }
                                 Ok(_) => {}
                                 Err(_) => notes.push(format!(
                                     "persisted source artifact is unreadable for {}:{}",

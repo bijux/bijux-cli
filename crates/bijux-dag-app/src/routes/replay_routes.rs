@@ -174,7 +174,10 @@ pub(crate) fn handle_replay_command(
                 for note in &check.notes {
                     eprintln!(
                         "input {} <- {}:{}: {}",
-                        check.boundary_node_id, check.source_node_id, check.source_output_name, note
+                        check.boundary_node_id,
+                        check.source_node_id,
+                        check.source_output_name,
+                        note
                     );
                 }
             }
