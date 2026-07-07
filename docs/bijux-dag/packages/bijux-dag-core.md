@@ -43,6 +43,7 @@ effects begin.
 - open the [Repository Handbook](../../bijux-core/index.md) when the concern crosses into CLI or maintainer policy
 - open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) when you want the repository example that binds a graph-owned label into a real container command surface
 - open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) when you want the repository example that binds a graph-owned enum input into a real branch decision surface
+- open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) when you want the repository example that binds graph-owned path inputs into retry and recovery behavior at a real replay boundary
 
 ## Code Anchors
 

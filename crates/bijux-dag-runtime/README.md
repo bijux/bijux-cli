@@ -84,6 +84,11 @@ For the repository-backed example that exercises branch decisions, join trigger
 evaluation, skipped-lane evidence, and replay stability, use
 [Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).
 
+For the repository-backed example that exercises retry accounting, replay
+boundary input rematerialization, and post-repair verification on a failed run,
+use
+[Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

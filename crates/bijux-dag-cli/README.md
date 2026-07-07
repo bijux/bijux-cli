@@ -65,6 +65,9 @@ crate is usually `bijux-dag-app`.
 - [Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md)
   demonstrates retained branch decisions, skipped lanes, join-trigger evidence,
   and replay stability.
+- [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md)
+  demonstrates transient retry evidence, focused replay repair, and strict
+  verification after recovery.
 - [Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md)
   demonstrates mounted container inputs, retained outputs, and recorded image
   identity.

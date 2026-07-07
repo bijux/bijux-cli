@@ -63,6 +63,11 @@ branch decision, a skipped lane, and replay stability at the publication
 boundary, use
 [Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).
 
+For the repository-backed example that shows how the app surface separates root
+failure from propagated skips, replays only the failed approval boundary, and
+verifies the repaired run strictly, use
+[Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

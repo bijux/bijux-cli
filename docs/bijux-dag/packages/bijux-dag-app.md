@@ -56,6 +56,7 @@ visible `bijux-dag --help` release contract.
 - open [`bijux-dag-cli`](./bijux-dag-cli.md) when the concern is process wiring rather than app orchestration
 - open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) for a repository-backed example of the app surface reporting a real container run and a missing-engine failure
 - open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) for a repository-backed example of the app surface reporting a real branch decision and replay-stable publication path
+- open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) for a repository-backed example of the app surface reporting retry evidence, causal failure attribution, and a repaired replay boundary
 
 ## Code Anchors
 

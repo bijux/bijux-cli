@@ -63,6 +63,7 @@ lane is opt-in behind `experimental-public-api`.
 - open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and response shaping
 - open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) for the repository-backed execution path that exercises retained container identity and engine-unavailable failure handling
 - open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) for the repository-backed execution path that exercises branch decisions, join-trigger behavior, and replay stability
+- open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) for the repository-backed execution path that exercises retry evidence, source-run input rematerialization, and strict verification after repair
 
 ## Code Anchors
 

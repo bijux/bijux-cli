@@ -57,6 +57,10 @@ For the repository-backed authoring example that binds a graph-owned enum input
 into a real branch decision surface, use
 [`evidence/dag/authoring/examples/audience-branch-bulletin.dag.json`](../../evidence/dag/authoring/examples/audience-branch-bulletin.dag.json).
 
+For the repository-backed authoring example that binds graph-owned path inputs
+into a retryable compliance gate and a repairable publication boundary, use
+[`evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json`](../../evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json).
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

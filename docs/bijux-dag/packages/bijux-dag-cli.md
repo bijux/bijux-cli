@@ -39,6 +39,7 @@ stable public behavior.
 
 - open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and user-facing response shaping
 - open the [DAG Handbook](../index.md) for the wider system map and operator guidance
+- open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) for a repository-backed recovery path that stays entirely on the public `bijux-dag` command surface
 - open the [Repository Handbook](../../bijux-core/index.md) when process behavior intersects shared release policy
 
 ## Code Anchors
