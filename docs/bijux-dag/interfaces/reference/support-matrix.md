@@ -12,6 +12,11 @@ last_reviewed: 2026-07-07
 This matrix summarizes which `bijux-dag` surfaces are stable, experimental,
 simulated, or future-facing in `v0.4.0`.
 
+The contract source for this matrix is
+[`contracts/foundation/dag_release_truth_table.v1.json`](../../../../contracts/foundation/dag_release_truth_table.v1.json)
+and the handbook page
+[`docs/bijux-dag/foundation/release-boundary.md`](../../foundation/release-boundary.md).
+
 | Surface | Status | Access path | Notes |
 | --- | --- | --- | --- |
 | `validate`, `plan`, `run`, `replay`, `verify`, `doctor`, `version` | stable | visible CLI | primary operator surface |

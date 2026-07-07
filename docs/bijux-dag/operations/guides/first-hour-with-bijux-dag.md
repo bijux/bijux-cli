@@ -63,6 +63,12 @@ deployment, external scheduler integration, or promoted remote coordination.
 Maintainer-only probes such as `capabilities` remain outside this first-hour
 operator contract and require `BIJUX_DAG_ENABLE_INTERNAL=1`.
 
+For the full `v0.4.0` release-boundary classification behind that distinction,
+use
+[`contracts/foundation/dag_release_truth_table.v1.json`](../../../../contracts/foundation/dag_release_truth_table.v1.json)
+and
+[`docs/bijux-dag/foundation/release-boundary.md`](../../foundation/release-boundary.md).
+
 ## Next reads
 
 - [File Processing Workflow](file-processing-workflow.md)

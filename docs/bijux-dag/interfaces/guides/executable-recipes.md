@@ -17,6 +17,11 @@ The stable examples on this page stay on the visible `bijux-dag --help`
 surface. When a recipe intentionally reaches into explicit-path experimental
 routes, the text calls that out rather than implying stable support.
 
+The release-boundary source of truth for those classifications is
+[`contracts/foundation/dag_release_truth_table.v1.json`](../../../../contracts/foundation/dag_release_truth_table.v1.json)
+plus the handbook page
+[`docs/bijux-dag/foundation/release-boundary.md`](../../foundation/release-boundary.md).
+
 ## Variables
 
 - `${GRAPH}`: deterministic graph fixture path
