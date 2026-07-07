@@ -304,6 +304,14 @@ completions, and signal payloads:
       }
     }
   ],
+  "dependencies": [
+    {
+      "upstream_run_id": "atlas-run-7",
+      "dag_name": "atlas.ingest",
+      "status": "succeeded",
+      "finished_unix_ms": 1762387290000
+    }
+  ],
   "signals": [
     {
       "signal_id": "sig-001",
@@ -335,6 +343,46 @@ The schedule-input binding contract is:
   status
 - invalid or missing bindings suppress submission instead of creating a run
   request with partial graph input state
+
+## Trigger One DAG When Another DAG Completes
+
+When one workflow should launch only after another reaches a terminal outcome,
+declare an explicit dependency trigger in the schedule registry instead of
+polling run history out of band.
+
+```json
+{
+  "id": "publish-after-ingest",
+  "dag_name": "atlas.publish",
+  "dag_version_policy": "run-latest",
+  "input_contract": {
+    "dependency_run_id": { "type": "string", "required": true },
+    "dependency_status": { "type": "string", "required": true }
+  },
+  "input_bindings": {
+    "dependency_run_id": { "source": "dependency_upstream_run_id" },
+    "dependency_status": { "source": "dependency_status" }
+  },
+  "trigger": {
+    "Dependency": {
+      "dag_name": "atlas.ingest",
+      "on_status": "any_terminal"
+    }
+  }
+}
+```
+
+The dependency-trigger contract is:
+
+- `on_status` is explicit and supports `success`, `failure`, or `any_terminal`
+- `success` matches successful upstream completions
+- `failure` matches terminal non-success completions such as failed, cancelled,
+  or timed-out runs
+- `any_terminal` matches either successful or failure terminal outcomes
+- `dependency_upstream_run_id` binds the completed upstream run id into the
+  downstream graph input contract
+- dedupe is keyed by schedule id, upstream run id, and trigger condition so
+  alias status spellings do not create duplicate downstream submissions
 
 ## Pause Scheduled Submission Creation Without Deleting The Schedule
 
