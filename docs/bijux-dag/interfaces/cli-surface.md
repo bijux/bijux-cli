@@ -97,9 +97,9 @@ surface in `v0.4.0`:
 - internal capability probes: `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof`
 
 Inside the internal `schedule` namespace, the current maintained control
-surfaces cover registry validation, submission evaluation, queue state
-inspection, priority-aware queue dispatch, queue ledger updates, and durable
-backfill control.
+surfaces cover registry validation, submission evaluation, explicit schedule
+pause and resume control, queue state inspection, priority-aware queue
+dispatch, queue ledger updates, and durable backfill control.
 
 These routes still exist for explicit maintainer workflows and contract tests.
 They can be inventoried with `bijux-dag commands --all`, but execution now

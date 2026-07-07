@@ -336,6 +336,63 @@ The schedule-input binding contract is:
 - invalid or missing bindings suppress submission instead of creating a run
   request with partial graph input state
 
+## Pause Scheduled Submission Creation Without Deleting The Schedule
+
+When the schedule definition should stay in the registry but new submissions
+must stop, record an explicit schedule control override instead of removing the
+definition or editing the submission ledger by hand.
+
+Pause one schedule by appending a durable override record:
+
+```bash
+bijux-dag schedule control pause ./artifacts/schedule-overrides.json \
+  --schedule-id manual-ops \
+  --operator atlas-ops \
+  --at-unix-ms 1762387440000 \
+  --reason "hold while downstream validation is degraded" \
+  --out ./artifacts/schedule-overrides.json
+```
+
+Inspect the current pause status for every schedule in the registry:
+
+```bash
+bijux-dag schedule control status ./ops/schedule-registry.json \
+  --overrides ./artifacts/schedule-overrides.json \
+  --out ./artifacts/schedule-control-status.json
+```
+
+Then evaluate submissions against the same override log:
+
+```bash
+bijux-dag schedule submit ./ops/schedule-registry.json \
+  ./ops/schedule-inputs.json \
+  --overrides ./artifacts/schedule-overrides.json \
+  --out ./artifacts/schedule-ledger.json
+```
+
+Resume the schedule only when new submissions should become eligible again:
+
+```bash
+bijux-dag schedule control resume ./artifacts/schedule-overrides.json \
+  --schedule-id manual-ops \
+  --operator atlas-ops \
+  --at-unix-ms 1762388400000 \
+  --reason "validation recovered" \
+  --out ./artifacts/schedule-overrides.json
+```
+
+The schedule-control contract is:
+
+- the override file is a durable append-only operator log, not derived output
+- the latest record for one `schedule_id` determines whether that schedule is
+  paused or active
+- a paused schedule creates no new submissions during `schedule submit`
+- pause does not delete the schedule definition and does not rewrite existing
+  ledger entries
+- operator identity and control timestamp are recorded on every pause or resume
+- resume is explicit; the schedule stays paused until a resume record is
+  written
+
 The submission ledger is also the durable queue-state source for scheduled
 work. Each recorded submission preserves its queue identity, priority, dedupe
 key, and status so queue occupancy can be reconstructed after a restart.
