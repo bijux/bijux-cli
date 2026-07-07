@@ -26,6 +26,17 @@ artifacts without taking on runtime execution or command orchestration.
 - CLI command routing
 - maintainer governance flows
 
+## Public Rust Surface
+
+- browse docs.rs through `bijux_dag_artifacts::stable` for the long-lived
+  artifact compatibility lane
+- use `bijux_dag_artifacts::prelude` for common read, write, and validation
+  workflows
+- use focused crate-root imports only when you already know the exact artifact
+  item you need
+- broad compatibility re-exports remain callable for repository-owned support
+  work, but stay hidden from the primary docs.rs lane
+
 ## Source Layout
 
 - `src/storage`: persisted run and artifact models

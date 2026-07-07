@@ -94,6 +94,14 @@ fn core_root_reexports_stay_hidden_from_primary_docs_lane() {
 }
 
 #[test]
+fn artifacts_root_reexports_stay_hidden_from_primary_docs_lane() {
+    assert_all_root_use_decls_hidden(
+        "bijux-dag-artifacts",
+        "crates/bijux-dag-artifacts/src/lib.rs",
+    );
+}
+
+#[test]
 fn runtime_root_reexports_stay_hidden_from_primary_docs_lane() {
     assert_all_root_use_decls_hidden("bijux-dag-runtime", "crates/bijux-dag-runtime/src/lib.rs");
 }

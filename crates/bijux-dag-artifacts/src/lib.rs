@@ -1,9 +1,12 @@
 //! Artifact identity, persistence, integrity, and lifecycle helpers for Bijux DAG.
 //!
-//! Prefer the crate root for focused imports, [`stable`] for the explicit
-//! artifact lane, and [`prelude`] for the common read/write workflow. The
-//! `experimental-public-api` feature exposes opt-in contract helpers that are
-//! excluded from the default docs surface.
+//! Prefer [`stable`] when browsing the long-lived artifact surface,
+//! [`prelude`] for the common read/write workflow, and crate-root imports only
+//! when you already know the exact item you need. Broad compatibility
+//! re-exports remain callable for focused imports, but they are intentionally
+//! hidden from the default docs surface. The `experimental-public-api` feature
+//! exposes opt-in contract helpers that are excluded from the default docs
+//! surface.
 //!
 #![allow(
     clippy::if_not_else,
@@ -63,31 +66,43 @@ pub mod services;
 #[path = "io/store.rs"]
 pub mod store;
 
+#[doc(hidden)]
 pub use hardening::{
     build_cleanup_plan, finalize_run_manifest, finalize_run_manifest_with_mode, verify_run_dir,
     write_incomplete_run_marker, write_json_atomic_durable, ArtifactCleanupPlan, RunDirAuditReport,
     RunFinalizationMode, VerificationMode,
 };
+#[doc(hidden)]
 pub use hash::sha256_hex;
+#[doc(hidden)]
 pub use index::{
     dedup_metrics_for_hashes, normalize_metadata_pairs, ArtifactId, ArtifactPackManifest,
 };
+#[doc(hidden)]
 pub use lineage::{write_lineage_snapshot, ArtifactLineageEdge, ArtifactLineageSnapshot};
+#[doc(hidden)]
 pub use models::*;
+#[doc(hidden)]
 pub use paths::is_normalized_relative_path;
+#[doc(hidden)]
 pub use platform::{
     compact_lineage, explain_lineage_safe_gc, lineage_dependencies, lineage_dependents,
 };
+#[doc(hidden)]
 pub use promotion::{
     append_promotion_record, append_promotion_summary, build_promoted_output_summary,
     promotion_record_path, ArtifactPromotionIndex, ArtifactPromotionRecord, PromotionEnvironment,
     PromotionLineageSummary,
 };
+#[doc(hidden)]
 pub use proof::{ArtifactIntegrityProof, CorruptionDetectionResult, CorruptionRepairPolicy};
+#[doc(hidden)]
 pub use retention::RetentionPolicy;
+#[doc(hidden)]
 pub use schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
 };
+#[doc(hidden)]
 pub use services::{RunArtifactStore, RunArtifactVerifier};
 
 use serde::Serialize;
