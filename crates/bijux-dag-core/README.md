@@ -23,6 +23,23 @@ This crate stays pure and deterministic. It does not own:
 - command parsing, rendering, or CLI routing,
 - filesystem, process, or wall-clock side effects.
 
+## Source layout
+
+- `src/graph`: graph model, parsing, and semantic validation
+- `src/pipeline`: compile-path helpers and validation entrypoints
+- `src/analysis`: fingerprints, equivalence inputs, and deterministic analysis
+- `src/planner`: planner-lowering primitives
+- `src/build` and `src/contracts`: build-facing wrappers and typed contracts
+
+## Reach for another crate when
+
+- you need actual run execution or replay behavior:
+  `bijux-dag-runtime`
+- you need operator-facing command orchestration:
+  `bijux-dag-app`
+- you need persisted evidence models:
+  `bijux-dag-artifacts`
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

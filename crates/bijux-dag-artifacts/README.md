@@ -5,7 +5,7 @@ lifecycle helpers for DAG runs.
 
 ## What this crate provides
 
-- Run-manifest, node-trace, and outputs-index models.
+- Run-manifest, node-trace, outputs-index, and storage-layout models.
 - Artifact hashing, proof, and schema validation helpers.
 - Filesystem-backed storage and layout helpers.
 - Retention, promotion, and lineage policy primitives.
@@ -20,6 +20,23 @@ This crate does not own:
 - graph semantics or planner logic,
 - scheduler and execution policy behavior,
 - CLI command routing or maintainer governance flows.
+
+## Source layout
+
+- `src/storage`: persisted run and artifact models
+- `src/layout`: run-directory layout and artifact path rules
+- `src/integrity`: hashes, proofs, and verification helpers
+- `src/lifecycle`: retention, promotion, and lineage helpers
+- `src/io`: filesystem read and write helpers
+
+## Reach for another crate when
+
+- you need execution-time policy or replay classification:
+  `bijux-dag-runtime`
+- you need command orchestration or human-readable output shaping:
+  `bijux-dag-app`
+- you need graph parsing, validation, or planner lowering:
+  `bijux-dag-core`
 
 ## Related links
 

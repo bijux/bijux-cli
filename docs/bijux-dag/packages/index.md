@@ -19,7 +19,8 @@ Five DAG crates are public release targets in the current workspace:
 repository-internal test support.
 
 The canonical publication boundary lives in
-[Package Boundary](../../bijux-core/foundation/package-boundary.md).
+[Package Boundary](../../bijux-core/foundation/package-boundary.md) and
+`contracts/foundation/workspace_package_boundary.v1.json`.
 
 ## Section Map
 

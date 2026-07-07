@@ -11,7 +11,8 @@ release boundary.
 
 - Canonical DAG fixture builders.
 - Shared run-artifact and replay assertions.
-- Reusable helpers for contract, integration, and regression suites.
+- Reusable helpers for contract, integration, regression, and fake-adapter
+  suites.
 
 Use this crate in workspace tests when you need stable DAG inputs and shared
 assertions without duplicating fixtures across crates.
@@ -24,6 +25,13 @@ This crate is test-only support. It does not own:
 - runtime state machines,
 - crates.io publication policy,
 - release-governance decisions.
+
+## Source layout
+
+- `src/workflows.rs`: reusable workflow fixtures
+- `src/product_scenarios.rs`: cross-crate scenario builders
+- `src/fake_adapter.rs`: deterministic adapter harness support
+- `src/lib.rs`: exported fixture and assertion helpers
 
 ## Related links
 

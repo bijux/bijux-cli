@@ -45,6 +45,24 @@ Use these rules when reviewing runtime fingerprint drift or provenance output.
 - treat backend-heavy compatibility helpers as repository-owned support surface,
   not as the primary docs-facing import lane
 
+## Source layout
+
+- `src/runtime_core`: planning, execution, governance, and state transitions
+- `src/adapters`: built-in and external adapter boundaries
+- `src/backend`: local and distributed backend support
+- `src/artifacts`, `src/cache`, `src/replay`, `src/policy`: core runtime
+  behavior around persisted evidence and reuse
+- `src/diagnostics`: runtime-facing diagnostic helpers
+
+## Reach for another crate when
+
+- you need deterministic graph truth before runtime side effects:
+  `bijux-dag-core`
+- you need command routing or output shaping:
+  `bijux-dag-app`
+- you need only persisted artifact helpers without execution policy:
+  `bijux-dag-artifacts`
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

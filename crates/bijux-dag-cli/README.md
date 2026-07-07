@@ -33,6 +33,16 @@ This crate stays thin. It does not own:
 - runtime execution logic,
 - artifact persistence rules.
 
+## What the binary owns
+
+- process startup and CLI initialization
+- handoff into `bijux-dag-app`
+- exit-code mapping and top-level process behavior
+- shell completion generation for the installed executable
+
+If the question is about route behavior rather than process startup, the owning
+crate is usually `bijux-dag-app`.
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)
