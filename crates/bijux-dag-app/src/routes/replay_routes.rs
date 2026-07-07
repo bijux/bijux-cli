@@ -10,8 +10,8 @@ use crate::routes::preconditions::{require_run_directory, require_safe_path};
 use crate::routes::resource_capacity_args::parse_resource_capacities;
 use crate::run_data::{load_snapshot, map_materialize_mode};
 use crate::{
-    build_run_proof_bundle, emit_json, read_run_id, selector_cli_string, CacheMode, ExitCode,
-    Runtime, RuntimeConfig, Value,
+    build_run_proof_bundle, emit_json, read_run_id, resolve_run_dir, selector_cli_string,
+    CacheMode, ExitCode, Runtime, RuntimeConfig, Value,
 };
 use serde_json::json;
 use std::path::Path;
@@ -60,10 +60,33 @@ fn build_replay_runtime_options(
     }
 }
 
+fn resolve_replay_source_run(
+    run_dir: Option<&Path>,
+    source_run_id: Option<&str>,
+    source_run_root: Option<&Path>,
+    out: &Path,
+) -> Result<PathBuf, ExitCode> {
+    match (run_dir, source_run_id) {
+        (Some(run_dir), None) => {
+            require_run_directory(run_dir)?;
+            Ok(run_dir.to_path_buf())
+        }
+        (None, Some(source_run_id)) => {
+            let root = source_run_root.unwrap_or(out);
+            let resolved = resolve_run_dir(root, source_run_id);
+            require_run_directory(&resolved)?;
+            Ok(resolved)
+        }
+        _ => Err(ExitCode::from(2)),
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn handle_replay_command(
     cli: &DagCli,
-    run_dir: &Path,
+    run_dir: Option<&Path>,
+    source_run_id: Option<&str>,
+    source_run_root: Option<&Path>,
     out: &Path,
     dry_run: bool,
     sandbox: bool,
@@ -88,10 +111,10 @@ pub(crate) fn handle_replay_command(
     materialize_inputs: MaterializeModeArg,
     remote_cache_dir: Option<PathBuf>,
 ) -> Result<ExitCode, ExitCode> {
-    require_run_directory(run_dir)?;
+    let run_dir = resolve_replay_source_run(run_dir, source_run_id, source_run_root, out)?;
     require_safe_path(out)?;
-    let snapshot = load_snapshot(run_dir)?;
-    let source_run_id = read_run_id(run_dir).ok();
+    let snapshot = load_snapshot(&run_dir)?;
+    let source_run_id = read_run_id(&run_dir).ok();
     let runtime = Runtime::new();
     let named_resource_capacities = parse_resource_capacities(resource_capacity)?;
     let cache_mode = match cache {
@@ -151,7 +174,7 @@ pub(crate) fn handle_replay_command(
         let dry_select = selectors.include.iter().map(selector_cli_string).collect::<Vec<_>>();
         let dry_exclude = selectors.exclude.iter().map(selector_cli_string).collect::<Vec<_>>();
         let plan = crate::replay_service::replay_dry_run_plan(
-            run_dir,
+            &run_dir,
             out,
             &snapshot,
             source_run_id.as_deref(),
@@ -185,14 +208,14 @@ pub(crate) fn handle_replay_command(
         println!("{}", serde_json::to_string_pretty(&plan).unwrap());
         return Ok(ExitCode::SUCCESS);
     }
-    if sandbox && out.starts_with(run_dir) {
+    if sandbox && out.starts_with(&run_dir) {
         return Err(ExitCode::from(3));
     }
     let run_path =
         runtime.run(&snapshot.graph, out, options.clone()).map_err(|_| ExitCode::from(3))?;
     let replay_proof = if prove {
-        let diff = crate::replay_service::run_diff_from_dirs(run_dir, &run_path)?;
-        let source_evidence_gaps = crate::replay_service::replay_evidence_gaps(run_dir);
+        let diff = crate::replay_service::run_diff_from_dirs(&run_dir, &run_path)?;
+        let source_evidence_gaps = crate::replay_service::replay_evidence_gaps(&run_dir);
         let replay_evidence_gaps = crate::replay_service::replay_evidence_gaps(&run_path);
         let safety_level = if !source_evidence_gaps.is_empty() || !replay_evidence_gaps.is_empty() {
             "incomplete_evidence".to_string()
@@ -212,7 +235,7 @@ pub(crate) fn handle_replay_command(
             "branch_decision_drift_nodes": diff.replay_equivalence.branch_decision_drift_nodes,
             "source_evidence_gaps": source_evidence_gaps,
             "replay_evidence_gaps": replay_evidence_gaps,
-            "source_run_id": read_run_id(run_dir)?,
+            "source_run_id": read_run_id(&run_dir)?,
             "replay_run_id": read_run_id(&run_path)?,
             "sandbox_mode": if sandbox { "isolated" } else { "standard" }
         }))
@@ -259,8 +282,10 @@ pub(crate) fn handle_replay_command(
 
 #[cfg(test)]
 mod tests {
-    use super::build_replay_runtime_options;
+    use super::{build_replay_runtime_options, resolve_replay_source_run};
     use crate::commands::MaterializeModeArg;
+    use std::fs;
+    use std::path::Path;
     use std::path::PathBuf;
 
     #[test]
@@ -312,6 +337,38 @@ mod tests {
         assert!(matches!(options.cache_mode, crate::CacheMode::ReadWrite));
         assert!(options.policy.deny_network);
         assert!(options.policy.deny_clock);
+    }
+
+    #[test]
+    fn resolve_replay_source_run_accepts_explicit_run_directory() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let run_dir = tmp.path().join("run-explicit");
+        fs::create_dir_all(&run_dir).expect("create run dir");
+        fs::write(run_dir.join("manifest.json"), r#"{"run_id":"explicit"}"#)
+            .expect("write manifest");
+
+        let resolved = resolve_replay_source_run(Some(&run_dir), None, None, tmp.path())
+            .expect("resolve run dir");
+        assert_eq!(resolved, run_dir);
+    }
+
+    #[test]
+    fn resolve_replay_source_run_resolves_run_id_against_source_root() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let run_root = tmp.path().join("runs");
+        let run_dir = run_root.join("run-source-123");
+        fs::create_dir_all(&run_dir).expect("create run dir");
+        fs::write(run_dir.join("manifest.json"), r#"{"run_id":"source-123"}"#)
+            .expect("write manifest");
+
+        let resolved = resolve_replay_source_run(
+            None,
+            Some("source-123"),
+            Some(&run_root),
+            Path::new("/unused/out"),
+        )
+        .expect("resolve source run id");
+        assert_eq!(resolved, run_dir);
     }
 }
 

@@ -175,3 +175,42 @@ fn replay_partial_selection_emits_dry_run_plan_with_selectors() {
         .as_array()
         .is_some_and(|v| v.iter().any(|entry| entry == "id:replay_check")));
 }
+
+#[test]
+fn replay_accepts_source_run_id_with_explicit_run_root() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+
+    let _source = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "source-by-id",
+        ],
+        &root,
+    );
+
+    let replay = run_json(
+        &[
+            "replay",
+            "--json",
+            "--source-run-id",
+            "source-by-id",
+            "--source-run-root",
+            &output_path_string(&out_dir),
+            "--out",
+            &output_path_string(&out_dir),
+            "--dry-run",
+        ],
+        &root,
+    );
+    assert_eq!(replay["ok"], true);
+    assert_eq!(replay["data"]["dry_run_plan"]["source_run_id"], "source-by-id");
+}

@@ -45,6 +45,10 @@ const RESOURCE_CAPACITY_HELP: &str =
     "declare a named runtime capacity as <name=count>; repeat for resources such as license tokens or database slots";
 const REPLAY_SANDBOX_HELP: &str =
     "forbid replay outputs from being written inside the source run directory; this is a write-boundary check, not a process sandbox";
+const REPLAY_SOURCE_RUN_ID_HELP: &str =
+    "resolve the replay source run by run id instead of passing a source run directory path";
+const REPLAY_SOURCE_RUN_ROOT_HELP: &str =
+    "root directory used when resolving --source-run-id; defaults to the replay output root when omitted";
 const ROOT_HELP_BOUNDARY_HELP: &str =
     "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: explicit-path routes such as init, status, export, import, policy, prove, and migrate\n  simulated: control-plane, state-store, dataset, enterprise, fleet, governance, federation, incident, and lab require BIJUX_DAG_ENABLE_SIMULATED=1\n  internal: security, durability, performance, release, runtime, schedule, capabilities, and version-inspect require BIJUX_DAG_ENABLE_INTERNAL=1\n  future: cluster-backed kubernetes, cluster-backed slurm or hpc, public remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands --all` to inventory repository-owned non-stable routes.";
 
@@ -356,7 +360,12 @@ pub(crate) enum Commands {
         redact: bool,
     },
     Replay {
-        run_dir: PathBuf,
+        #[arg(required_unless_present = "source_run_id", conflicts_with = "source_run_id")]
+        run_dir: Option<PathBuf>,
+        #[arg(long, help = REPLAY_SOURCE_RUN_ID_HELP)]
+        source_run_id: Option<String>,
+        #[arg(long, help = REPLAY_SOURCE_RUN_ROOT_HELP)]
+        source_run_root: Option<PathBuf>,
         #[arg(long)]
         out: PathBuf,
         #[arg(long)]

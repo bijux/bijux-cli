@@ -620,6 +620,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         }
         Commands::Replay {
             run_dir,
+            source_run_id,
+            source_run_root,
             out,
             dry_run,
             sandbox,
@@ -645,7 +647,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             remote_cache_dir,
         } => routes::replay_routes::handle_replay_command(
             &cli,
-            run_dir,
+            run_dir.as_deref(),
+            source_run_id.as_deref(),
+            source_run_root.as_deref(),
             out,
             *dry_run,
             *sandbox,

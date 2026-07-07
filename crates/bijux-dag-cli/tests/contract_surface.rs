@@ -942,6 +942,8 @@ fn dag_replay_help_surface_contract() {
         "--reuse-cache",
         "--sandbox",
         "--hermetic",
+        "--source-run-id",
+        "--source-run-root",
         "--resource-capacity",
         "--from-node",
         "replay",
