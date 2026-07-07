@@ -34,6 +34,15 @@ bijux apps which dag
 bijux doctor dag
 ```
 
+When a product ships its own public binary, that binary remains the
+authoritative operator surface. For DAG, the release-boundary source of truth
+is
+[`contracts/foundation/dag_release_truth_table.v1.json`](../../../../contracts/foundation/dag_release_truth_table.v1.json)
+plus the handbook page
+[`docs/bijux-dag/foundation/release-boundary.md`](../../../bijux-dag/foundation/release-boundary.md).
+Use `bijux-dag ...` for stable operator procedures and `bijux dag ...` when
+you intentionally want root-managed discovery or delegation.
+
 ## Plugin Runtime
 
 ```bash

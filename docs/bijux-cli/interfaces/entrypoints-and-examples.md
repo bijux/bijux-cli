@@ -12,6 +12,11 @@ last_reviewed: 2026-04-06
 This page documents the primary invocation entrypoints for users, scripts, and
 Rust callers, plus short examples that map directly to current behavior.
 
+When an official product app also ships its own public binary, prefer that
+binary for operator procedures. For DAG, that means `bijux-dag ...` remains the
+authoritative operator surface, while `bijux dag ...` stays a root-managed
+delegation form.
+
 ## Visual Summary
 
 ```mermaid
@@ -40,6 +45,12 @@ bijux plugins list
 bijux history --limit 20 --sort timestamp
 bijux repl
 ```
+
+For the DAG product boundary itself, use
+[`contracts/foundation/dag_release_truth_table.v1.json`](../../../contracts/foundation/dag_release_truth_table.v1.json)
+and
+[`docs/bijux-dag/foundation/release-boundary.md`](../../bijux-dag/foundation/release-boundary.md)
+instead of inferring stable support from routed root examples.
 
 ## Rust Caller Example
 
