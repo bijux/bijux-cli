@@ -143,6 +143,12 @@ presented as stable operator APIs. See `LIM-005`, `LIM-006`, `RISK-002`, and
   closure, then reports the requested downstream roots in the planning payload.
 - `replay --from-node` treats the selected closure as a rerun boundary, so the
   selected nodes reexecute instead of being satisfied by stale replay reuse.
+- `replay --source-run-id <run-id>` lets operators resolve the replay source
+  from a run id instead of passing a source run directory path directly.
+- `replay --source-run-root <dir>` controls where `--source-run-id` is
+  resolved; when omitted, replay uses the requested output root.
+- `replay --from-node` verifies the recorded upstream artifacts entering the
+  rerun boundary before execution starts.
 - `show-effective-graph --run-dir <run-dir>` reuses the persisted selection
   from `run.snapshot.json` and rejects selector overlays so the inspection
   matches what the run actually executed.

@@ -246,16 +246,28 @@ bijux-dag replay ./runs/run-20260406-01 \
   --json \
   --out ./runs/replay-train \
   --from-node train
+
+bijux-dag replay \
+  --json \
+  --source-run-id 20260406-01 \
+  --source-run-root ./runs \
+  --out ./runs/replay-train \
+  --from-node train
 ```
 
 The downstream rerun contract is:
 
 - the named node is included exactly once, by exact node id
 - every descendant in the graph is included deterministically
+- replay verifies the persisted upstream artifacts that cross into the rerun
+  boundary before execution begins
 - replay reexecutes the selected closure instead of satisfying it from stale
   replay cache reuse
 - nodes outside the closure stay omitted and are reported as outside the
   requested downstream rerun boundary
+- when exactly one rerun root is selected, the replay response includes a
+  focused node diff so the operator can see what changed without running a
+  second compare command
 - `--from-node` is exclusive with `--select`, `--exclude`, and
   `--dependency-closure`
 

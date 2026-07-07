@@ -43,6 +43,24 @@ reason codes.
 
 Operator-facing docs may describe a surface as replayable only when they cite `docs/spec/REPLAY_CONTRACT.md` directly.
 
+## Node rerun boundary
+
+When replay is scoped with `--from-node`, the selected downstream closure
+becomes a rerun boundary instead of a generic selector convenience.
+
+The rerun-boundary contract is:
+
+- source runs may be addressed by run directory or by `--source-run-id` plus a
+  replay source root
+- the boundary node is selected by exact node id and expands to a deterministic
+  downstream closure
+- persisted inputs crossing into that boundary must be verified against the
+  source run's node output indexes, node fingerprints, and artifact hashes
+- replay must refuse execution when the persisted boundary evidence is missing,
+  unreadable, or hash-inconsistent
+- when the rerun boundary contains exactly one selected root, replay must
+  surface a focused node diff that explains what changed for that rerun target
+
 ## What replay cannot prove
 
 Replay does not prove business correctness, intent correctness, or external side

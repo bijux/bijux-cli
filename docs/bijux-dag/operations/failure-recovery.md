@@ -38,6 +38,7 @@ bijux-dag explain ./runs/failed-20260406-01 --node publish
 bijux-dag runs explain-failure failed-20260406-01 --root ./runs
 bijux-dag runs inspect failed-20260406-01 --root ./runs
 bijux-dag replay ./runs/failed-20260406-01 --out ./runs/replay-failed
+bijux-dag replay --source-run-id failed-20260406-01 --source-run-root ./runs --out ./runs/replay-failed --from-node publish
 bijux-dag diff ./runs/good-20260405-77 ./runs/recovered-20260406-02 --mode semantic --explain
 ```
 
@@ -52,6 +53,12 @@ failure are reported with `reason = "isolated_branch_failure"` instead of being
 collapsed into a generic dependency failure. The same classification is written
 to `failure-propagation.json` together with the blocking ancestor set and the
 active propagation mode.
+
+When recovery starts from one suspicious node instead of a whole-run replay,
+prefer `replay --source-run-id ... --from-node <node-id>`. That path verifies
+the persisted upstream artifacts feeding the rerun boundary before execution
+starts and returns a focused node diff for the selected rerun root after the
+child run finishes.
 
 Use `bijux-dag explain <run_dir> --node <node_id>` when the recovery question
 is why one node never ran. The node explanation classifies dependency
