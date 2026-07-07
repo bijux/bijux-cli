@@ -922,7 +922,7 @@ pub(crate) fn handle_runtime_command(
                 Err(ExitCode::from(3))
             }
         }
-        RuntimeCommands::Retry { dag, node_id, attempt, failure_class } => {
+        RuntimeCommands::Retry { dag, node_id, attempt, failure_class, exit_code } => {
             let graph = parse_graph(&read_file(dag)?)?;
             let report = build_retry_decision_report(
                 &graph,
@@ -930,6 +930,7 @@ pub(crate) fn handle_runtime_command(
                 node_id,
                 *attempt,
                 failure_class,
+                *exit_code,
             )
             .map_err(|_| ExitCode::from(3))?;
             if cli.json {
@@ -1266,6 +1267,7 @@ mod tests {
             node_id: "task1".to_string(),
             attempt: 2,
             failure_class: "artifact_transient".to_string(),
+            exit_code: None,
         });
         let code = handle_runtime_command(
             &cli,
@@ -1274,6 +1276,7 @@ mod tests {
                 node_id: "task1".to_string(),
                 attempt: 2,
                 failure_class: "artifact_transient".to_string(),
+                exit_code: None,
             },
         )
         .expect("retry");

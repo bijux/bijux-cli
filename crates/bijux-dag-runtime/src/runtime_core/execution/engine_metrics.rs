@@ -71,7 +71,7 @@ pub fn count_cache_hits(status_map: &std::collections::HashMap<String, NodeStatu
 mod tests {
     use super::{build_run_metrics, build_scheduler_metrics, count_cache_hits};
     use crate::{NodeStatus, RuntimeConfig};
-    use bijux_dag_artifacts::NodeCounts;
+    use bijux_dag_artifacts::{FailurePropagationRecord, NodeCounts};
     use serde_json::json;
     use std::collections::HashMap;
 

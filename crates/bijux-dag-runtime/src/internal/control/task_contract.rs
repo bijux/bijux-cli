@@ -670,6 +670,7 @@ fn normalize_retry_failure_class(value: &str) -> String {
     match normalized.as_str() {
         "execution" | "executiontransient" => "execution".to_string(),
         "timeout" | "timeouttransient" => "timeout".to_string(),
+        "artifact" | "artifacttransient" => "artifact".to_string(),
         "policy" | "policytransient" => "policy".to_string(),
         "user" => "user".to_string(),
         "infrastructure" => "infrastructure".to_string(),

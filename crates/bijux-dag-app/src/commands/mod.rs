@@ -874,6 +874,8 @@ pub(crate) enum RuntimeCommands {
         attempt: u32,
         #[arg(long)]
         failure_class: String,
+        #[arg(long)]
+        exit_code: Option<i32>,
     },
     Timeout {
         dag: PathBuf,

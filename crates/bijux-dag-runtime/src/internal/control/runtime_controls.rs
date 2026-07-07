@@ -6,11 +6,11 @@ use crate::simulated_platform::{
 };
 use crate::{
     cancel_batch_attempt, default_forced_cleanup, duplicate_status_delivery_detected,
-    retry_allowed, validate_task_contracts, BackoffStrategy, BatchAttemptState,
-    BatchLifecycleEvent, ForcedCancellationCleanup, Graph, InterruptionClass,
-    ManualInterventionRecord, NodeState, NodeTransition, OperatorRetryPolicy, ResumePolicy,
-    RetryPolicyV2, RunPausePolicy, RunState, RunTransition, RuntimeConfig, RuntimeError,
-    StateConsistencyReport, TaskIsolationMode,
+    contract_retry_backoff_ms, evaluate_retry_decision, retry_observation,
+    validate_task_contracts, BackoffStrategy, BatchAttemptState, BatchLifecycleEvent,
+    ForcedCancellationCleanup, Graph, InterruptionClass, ManualInterventionRecord, NodeState,
+    NodeTransition, OperatorRetryPolicy, ResumePolicy, RetryPolicyV2, RunPausePolicy, RunState,
+    RunTransition, RuntimeConfig, RuntimeError, StateConsistencyReport, TaskIsolationMode,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -84,11 +84,15 @@ pub struct RetryDecisionReport {
     pub max_attempts: u32,
     pub retryable: bool,
     pub retry_allowed: bool,
+    pub reason: String,
     pub next_attempt: Option<u32>,
     pub backoff_strategy: String,
     pub base_backoff_ms: u64,
     pub deterministic_jitter_ms: u64,
     pub next_wait_ms: Option<u64>,
+    pub timeout_retry_policy: String,
+    pub retryable_exit_codes: Vec<i32>,
+    pub matched_exit_code: Option<i32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -430,6 +434,7 @@ pub fn build_retry_decision_report(
     node_id: &str,
     attempt: u32,
     failure_class: &str,
+    exit_code: Option<i32>,
 ) -> Result<RetryDecisionReport, RuntimeError> {
     let contracts = validate_task_contracts(graph, options)?;
     let contract = contracts
@@ -437,17 +442,13 @@ pub fn build_retry_decision_report(
         .find(|contract| contract.node_id == node_id)
         .ok_or_else(|| RuntimeError::Executor(format!("unknown node '{node_id}'")))?;
 
-    let expected_failure_class = normalize_failure_class(failure_class);
-    let retryable =
-        contract.retry_policy.retryable_failure_classes.iter().any(|class| {
-            normalize_failure_class(&format!("{:?}", class)) == expected_failure_class
-        });
-    let retry_allowed = retryable
-        && retry_allowed(
-            attempt,
-            &retry_policy_semantics(&contract.node_id, &contract.retry_policy),
-        );
-    let base_backoff_ms = backoff_for_attempt(&contract.retry_policy, attempt);
+    let decision = evaluate_retry_decision(
+        &contract.node_id,
+        &contract.retry_policy,
+        attempt,
+        &retry_observation(failure_class, None, exit_code),
+    );
+    let base_backoff_ms = contract_retry_backoff_ms(&contract.retry_policy, attempt);
     let deterministic_jitter_ms = deterministic_jitter(
         &contract.node_id,
         attempt,
@@ -460,14 +461,20 @@ pub fn build_retry_decision_report(
         failure_class: failure_class.to_string(),
         attempt,
         max_attempts: contract.retry_policy.max_attempts,
-        retryable,
-        retry_allowed,
-        next_attempt: retry_allowed.then_some(attempt.saturating_add(1)),
+        retryable: decision.retryable,
+        retry_allowed: decision.retry_allowed,
+        reason: decision.reason,
+        next_attempt: decision.retry_allowed.then_some(attempt.saturating_add(1)),
         backoff_strategy: format!("{:?}", contract.retry_policy.backoff_strategy).to_lowercase(),
         base_backoff_ms,
         deterministic_jitter_ms,
-        next_wait_ms: retry_allowed
+        next_wait_ms: decision
+            .retry_allowed
             .then_some(base_backoff_ms.saturating_add(deterministic_jitter_ms)),
+        timeout_retry_policy: format!("{:?}", contract.retry_policy.timeout_retry_policy)
+            .to_lowercase(),
+        retryable_exit_codes: contract.retry_policy.retryable_exit_codes,
+        matched_exit_code: decision.matched_exit_code,
     })
 }
 
@@ -780,21 +787,6 @@ fn retry_policy_semantics(node_id: &str, policy: &RetryPolicyV2) -> crate::Retry
     }
 }
 
-fn backoff_for_attempt(policy: &RetryPolicyV2, attempt: u32) -> u64 {
-    if attempt == 0 {
-        return 0;
-    }
-    match policy.backoff_strategy {
-        BackoffStrategy::Fixed => policy.backoff_ms,
-        BackoffStrategy::Linear => policy.backoff_ms.saturating_mul(attempt as u64),
-        BackoffStrategy::Exponential => {
-            let ordinal = attempt.saturating_sub(1) as u64;
-            let multiplier = 1u64.checked_shl(ordinal.min(20) as u32).unwrap_or(u64::MAX);
-            policy.backoff_ms.saturating_mul(multiplier)
-        }
-    }
-}
-
 fn deterministic_jitter(node_id: &str, attempt: u32, failure_class: &str, jitter_ms: u64) -> u64 {
     if jitter_ms == 0 {
         return 0;
@@ -808,22 +800,6 @@ fn deterministic_jitter(node_id: &str, attempt: u32, failure_class: &str, jitter
 
 fn duration_exceeds(observed_ms: Option<u64>, limit_ms: Option<u64>) -> bool {
     matches!((observed_ms, limit_ms), (Some(observed), Some(limit)) if observed > limit)
-}
-
-fn normalize_failure_class(value: &str) -> String {
-    let normalized = value
-        .chars()
-        .filter(|ch| ch.is_ascii_alphanumeric())
-        .flat_map(|ch| ch.to_lowercase())
-        .collect::<String>();
-    match normalized.as_str() {
-        "execution" | "executiontransient" => "execution".to_string(),
-        "timeout" | "timeouttransient" => "timeout".to_string(),
-        "policy" | "policytransient" => "policy".to_string(),
-        "user" => "user".to_string(),
-        "infrastructure" => "infrastructure".to_string(),
-        _ => normalized,
-    }
 }
 
 fn recommend_resume_action(
@@ -1113,10 +1089,12 @@ mod tests {
             "shell1",
             2,
             "artifact_transient",
+            None,
         )
         .expect("report");
         assert!(report.retryable);
         assert!(report.retry_allowed);
+        assert_eq!(report.reason, "retryable_failure_class_matched");
         assert_eq!(report.base_backoff_ms, 20);
         assert!(report.deterministic_jitter_ms <= 7);
         assert_eq!(report.next_attempt, Some(3));
@@ -1142,9 +1120,64 @@ mod tests {
             "shell1",
             1,
             "execution_transient",
+            None,
         )
         .expect("report");
         assert_eq!(report.base_backoff_ms, 15);
+    }
+
+    #[test]
+    fn retry_report_explains_exit_code_and_timeout_overrides() {
+        let mut graph = graph_fixture();
+        graph.nodes[1].retry.max_attempts = 2;
+        graph.nodes[1].retry.backoff_ms = 10;
+        graph.nodes[1].params = bijux_dag_core::ParamValue::Object(BTreeMap::from([
+            (
+                "argv".to_string(),
+                bijux_dag_core::ParamValue::Array(vec![
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("true")),
+                ]),
+            ),
+            (
+                "timeout_retry_policy".to_string(),
+                bijux_dag_core::ParamValue::Literal(serde_json::json!("never")),
+            ),
+            (
+                "retryable_exit_codes".to_string(),
+                bijux_dag_core::ParamValue::Array(vec![
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!(75)),
+                ]),
+            ),
+        ]));
+
+        let exit_code_report = super::build_retry_decision_report(
+            &graph,
+            &RuntimeConfig::default(),
+            "shell1",
+            1,
+            "execution",
+            Some(75),
+        )
+        .expect("exit code report");
+        assert!(exit_code_report.retry_allowed);
+        assert_eq!(exit_code_report.reason, "retryable_exit_code_matched");
+        assert_eq!(exit_code_report.matched_exit_code, Some(75));
+        assert_eq!(exit_code_report.retryable_exit_codes, vec![75]);
+
+        let timeout_report = super::build_retry_decision_report(
+            &graph,
+            &RuntimeConfig::default(),
+            "shell1",
+            1,
+            "timeout",
+            Some(124),
+        )
+        .expect("timeout report");
+        assert!(!timeout_report.retryable);
+        assert_eq!(timeout_report.reason, "timeout_retry_policy_denies_timeout_retry");
+        assert_eq!(timeout_report.timeout_retry_policy, "never");
     }
 
     #[test]
