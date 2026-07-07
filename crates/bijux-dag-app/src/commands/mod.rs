@@ -731,6 +731,43 @@ pub(crate) enum ScheduleQueueCommands {
 }
 
 #[derive(Subcommand)]
+pub(crate) enum ScheduleControlCommands {
+    Status {
+        registry: PathBuf,
+        #[arg(long, help = "existing schedule control json used to compute pause status")]
+        overrides: Option<PathBuf>,
+        #[arg(long, help = "write the schedule control status json to this path")]
+        out: Option<PathBuf>,
+    },
+    Pause {
+        overrides: PathBuf,
+        #[arg(long)]
+        schedule_id: String,
+        #[arg(long)]
+        operator: String,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        reason: Option<String>,
+        #[arg(long, help = "write the updated schedule control json to this path")]
+        out: Option<PathBuf>,
+    },
+    Resume {
+        overrides: PathBuf,
+        #[arg(long)]
+        schedule_id: String,
+        #[arg(long)]
+        operator: String,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        reason: Option<String>,
+        #[arg(long, help = "write the updated schedule control json to this path")]
+        out: Option<PathBuf>,
+    },
+}
+
+#[derive(Subcommand)]
 pub(crate) enum ScheduleCommands {
     Validate {
         registry: PathBuf,
@@ -749,6 +786,8 @@ pub(crate) enum ScheduleCommands {
             help = "existing submission ledger json used to suppress duplicate submissions"
         )]
         ledger: Option<PathBuf>,
+        #[arg(long, help = "existing schedule control json used to pause schedules")]
+        overrides: Option<PathBuf>,
         #[arg(long, help = "write the updated submission ledger json to this path")]
         out: Option<PathBuf>,
     },
@@ -788,6 +827,10 @@ pub(crate) enum ScheduleCommands {
     Queue {
         #[command(subcommand)]
         command: ScheduleQueueCommands,
+    },
+    Control {
+        #[command(subcommand)]
+        command: ScheduleControlCommands,
     },
     Backfill {
         #[command(subcommand)]

@@ -1,14 +1,18 @@
-use crate::commands::{DagCli, ScheduleBackfillCommands, ScheduleCommands, ScheduleQueueCommands};
+use crate::commands::{
+    DagCli, ScheduleBackfillCommands, ScheduleCommands, ScheduleControlCommands,
+    ScheduleQueueCommands,
+};
 use crate::{emit_json, read_file, ExitCode};
 use bijux_dag_runtime::{
     advance_backfill_operation, apply_backfill_throttling, apply_submission_status_updates,
-    build_schedule_queue_state, cancel_backfill_operation, compile_backfill_operation,
-    compile_submission_request, deduplicate_trigger_events, detect_cron_conflicts,
-    dispatch_schedule_queue_runs, dry_run_schedule, evaluate_schedule_submissions,
-    evaluate_sla_metrics, materialize_next_runs, pause_backfill_operation,
-    resume_backfill_operation, validate_schedule_registry, weighted_priority_tie_break_order,
-    BackfillAdvanceRequest, BackfillOperation, BackfillThrottlingPolicy, PriorityClass,
-    ScheduleEvaluationInputs, SchedulePriorityDispatchPolicy, ScheduleRegistry,
+    build_schedule_override_status, build_schedule_queue_state, cancel_backfill_operation,
+    compile_backfill_operation, compile_submission_request, deduplicate_trigger_events,
+    detect_cron_conflicts, dispatch_schedule_queue_runs, dry_run_schedule,
+    evaluate_schedule_submissions_with_overrides, evaluate_sla_metrics, materialize_next_runs,
+    pause_backfill_operation, pause_schedule, resume_backfill_operation, resume_schedule,
+    validate_schedule_registry, weighted_priority_tie_break_order, BackfillAdvanceRequest,
+    BackfillOperation, BackfillThrottlingPolicy, PriorityClass, ScheduleEvaluationInputs,
+    ScheduleOverrideState, SchedulePriorityDispatchPolicy, ScheduleRegistry,
     ScheduleSubmissionLedger, ScheduleSubmissionStatusUpdateBatch, ScheduledSubmission,
     WeightedPriorityPolicy,
 };
@@ -66,6 +70,17 @@ fn write_pretty_json<T: serde::Serialize>(
     std::fs::write(path, bytes).map_err(|_| ExitCode::from(3))
 }
 
+fn parse_json_file_or_default<T>(path: &std::path::Path) -> Result<T, ExitCode>
+where
+    T: serde::de::DeserializeOwned + Default,
+{
+    if path.exists() {
+        parse_json_file(path)
+    } else {
+        Ok(T::default())
+    }
+}
+
 pub(crate) fn handle_schedule_command(
     cli: &DagCli,
     command: &ScheduleCommands,
@@ -108,7 +123,7 @@ pub(crate) fn handle_schedule_command(
                 }
             }
         }
-        ScheduleCommands::Submit { registry, inputs, ledger, out } => {
+        ScheduleCommands::Submit { registry, inputs, ledger, overrides, out } => {
             let registry = parse_schedule_registry(registry)?;
             validate_schedule_registry(&registry).map_err(|_| ExitCode::from(3))?;
             let inputs: ScheduleEvaluationInputs = parse_json_file(inputs)?;
@@ -117,7 +132,17 @@ pub(crate) fn handle_schedule_command(
             } else {
                 ScheduleSubmissionLedger::default()
             };
-            let report = evaluate_schedule_submissions(&registry, &inputs, &existing_ledger);
+            let overrides = if let Some(overrides_path) = overrides {
+                parse_json_file_or_default(overrides_path)?
+            } else {
+                ScheduleOverrideState::default()
+            };
+            let report = evaluate_schedule_submissions_with_overrides(
+                &registry,
+                &inputs,
+                &existing_ledger,
+                &overrides,
+            );
             let updated_ledger =
                 ScheduleSubmissionLedger { entries: report.recorded_submissions.clone() };
             if let Some(out_path) = out {
@@ -132,6 +157,7 @@ pub(crate) fn handle_schedule_command(
                         "generated_requests": report.generated_requests,
                         "recorded_submissions": report.recorded_submissions,
                         "duplicate_suppressions": report.duplicate_suppressions,
+                        "paused_suppressions": report.paused_suppressions,
                         "audits": report.audits,
                         "written_ledger": out,
                     }),
@@ -141,6 +167,7 @@ pub(crate) fn handle_schedule_command(
             }
             println!("generated_submissions={}", report.generated_requests.len());
             println!("duplicate_suppressions={}", report.duplicate_suppressions.len());
+            println!("paused_suppressions={}", report.paused_suppressions.len());
             if let Some(out_path) = out {
                 println!("written_ledger={}", out_path.display());
             }
@@ -343,6 +370,7 @@ pub(crate) fn handle_schedule_command(
             Ok(ExitCode::SUCCESS)
         }
         ScheduleCommands::Queue { command } => handle_schedule_queue_command(cli, command),
+        ScheduleCommands::Control { command } => handle_schedule_control_command(cli, command),
         ScheduleCommands::Backfill { command } => handle_schedule_backfill_command(cli, command),
     }
 }
@@ -353,6 +381,16 @@ fn maybe_write_submission_ledger(
 ) -> Result<(), ExitCode> {
     if let Some(path) = out {
         write_pretty_json(path, ledger)?;
+    }
+    Ok(())
+}
+
+fn maybe_write_schedule_overrides(
+    out: &Option<std::path::PathBuf>,
+    overrides: &ScheduleOverrideState,
+) -> Result<(), ExitCode> {
+    if let Some(path) = out {
+        write_pretty_json(path, overrides)?;
     }
     Ok(())
 }
@@ -459,6 +497,101 @@ fn handle_schedule_queue_command(
             println!("{}", serde_json::to_string_pretty(&ledger).unwrap());
             if let Some(path) = out {
                 println!("written_ledger={}", path.display());
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+    }
+}
+
+fn handle_schedule_control_command(
+    cli: &DagCli,
+    command: &ScheduleControlCommands,
+) -> Result<ExitCode, ExitCode> {
+    match command {
+        ScheduleControlCommands::Status { registry, overrides, out } => {
+            let registry = parse_schedule_registry(registry)?;
+            validate_schedule_registry(&registry).map_err(|_| ExitCode::from(3))?;
+            let overrides = if let Some(overrides_path) = overrides {
+                parse_json_file_or_default(overrides_path)?
+            } else {
+                ScheduleOverrideState::default()
+            };
+            let status = build_schedule_override_status(&registry, &overrides);
+            if let Some(path) = out {
+                write_pretty_json(path, &status)?;
+            }
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.control.status",
+                    true,
+                    json!({
+                        "schedule_status": status,
+                        "written_status": out,
+                    }),
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&status).unwrap());
+            if let Some(path) = out {
+                println!("written_status={}", path.display());
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleControlCommands::Pause {
+            overrides,
+            schedule_id,
+            operator,
+            at_unix_ms,
+            reason,
+            out,
+        } => {
+            let mut overrides: ScheduleOverrideState = parse_json_file_or_default(overrides)?;
+            pause_schedule(&mut overrides, schedule_id, operator, *at_unix_ms, reason.clone())
+                .map_err(|_| ExitCode::from(3))?;
+            maybe_write_schedule_overrides(out, &overrides)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.control.pause",
+                    true,
+                    serde_json::to_value(&overrides).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&overrides).unwrap());
+            if let Some(path) = out {
+                println!("written_overrides={}", path.display());
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+        ScheduleControlCommands::Resume {
+            overrides,
+            schedule_id,
+            operator,
+            at_unix_ms,
+            reason,
+            out,
+        } => {
+            let mut overrides: ScheduleOverrideState = parse_json_file_or_default(overrides)?;
+            resume_schedule(&mut overrides, schedule_id, operator, *at_unix_ms, reason.clone())
+                .map_err(|_| ExitCode::from(3))?;
+            maybe_write_schedule_overrides(out, &overrides)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.schedule.control.resume",
+                    true,
+                    serde_json::to_value(&overrides).map_err(|_| ExitCode::from(3))?,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", serde_json::to_string_pretty(&overrides).unwrap());
+            if let Some(path) = out {
+                println!("written_overrides={}", path.display());
             }
             Ok(ExitCode::SUCCESS)
         }
