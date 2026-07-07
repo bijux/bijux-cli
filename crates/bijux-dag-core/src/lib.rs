@@ -42,6 +42,9 @@ pub mod compile;
 #[path = "graph/composition.rs"]
 pub mod composition;
 #[doc(hidden)]
+#[path = "graph/dynamic.rs"]
+pub mod dynamic;
+#[doc(hidden)]
 #[path = "build/contract.rs"]
 pub mod contract;
 #[doc(hidden)]
@@ -132,6 +135,12 @@ pub use compile::{
 #[doc(hidden)]
 pub use composition::{compose_graphs, GraphCompositionError};
 #[doc(hidden)]
+pub use dynamic::{
+    apply_dynamic_expansion, generated_node_id, parse_dynamic_expansion_document,
+    AppliedDynamicExpansion, DynamicExpansionDocument, DynamicExpansionRecord, DynamicSpec,
+    DYNAMIC_EXPANSION_SCHEMA_VERSION,
+};
+#[doc(hidden)]
 pub use contract::{DagSnapshot, GraphContract, GraphExecutionPolicy};
 #[doc(hidden)]
 pub use edge::{EdgeDependencyKind, TypedEdge};
@@ -148,10 +157,11 @@ pub use model::{
     edge_kind_is_default, env_allowlist_pattern_is_exact, is_known_path_variable,
     output_kind_is_default, output_required_default, output_required_is_default,
     semantic_kind_is_default, trigger_rule_is_default, BranchSpec, CacheBehavior, ContainerSpec,
-    Edge, EdgeKind, Effect, FileOutput, Graph, GraphFingerprintExplain, GraphId, GraphMeta, Node,
-    NodeKind, NodeOutputRef, OutputKind, OutputSpec, ParamValue, PathVarBinding, PathVarRef,
-    PortRef, RefSpec, ResolvedGraph, Resources, RetryPolicy, SemanticNodeKind, Severity,
-    SubgraphDefinition, SubgraphInstance, TriggerRule, ValidationDiagnostic, PATH_VARIABLE_NAMES,
+    Edge, EdgeKind, Effect, FileOutput, Graph, GraphFingerprintExplain, GraphId, GraphMeta,
+    Node, NodeKind, NodeOutputRef, OutputKind, OutputSpec, ParamValue, PathVarBinding,
+    PathVarRef, PortRef, RefSpec, ResolvedGraph, Resources, RetryPolicy, SemanticNodeKind,
+    Severity, SubgraphDefinition, SubgraphInstance, TriggerRule, ValidationDiagnostic,
+    PATH_VARIABLE_NAMES,
 };
 #[doc(hidden)]
 pub use node::{

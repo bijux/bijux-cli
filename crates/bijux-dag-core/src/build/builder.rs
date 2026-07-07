@@ -211,6 +211,7 @@ impl NodeBuilder {
             group: self.group,
             trigger_rule: self.trigger_rule,
             branch: self.branch,
+            dynamic: None,
         }
     }
 }

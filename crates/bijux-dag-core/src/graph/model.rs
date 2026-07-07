@@ -1,5 +1,6 @@
 //! Core DAG model surface.
 
+use crate::dynamic::DynamicSpec;
 use crate::input::{materialize_graph_input_value, GraphInputSpec, GraphInputViolation};
 use serde::{de::Error as DeError, Deserialize, Serialize};
 use serde_json::Value;
@@ -127,6 +128,8 @@ pub struct Node {
     pub trigger_rule: TriggerRule,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<BranchSpec>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dynamic: Option<DynamicSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -374,6 +377,7 @@ pub enum SemanticNodeKind {
     Barrier,
     Map,
     Reduce,
+    Dynamic,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
