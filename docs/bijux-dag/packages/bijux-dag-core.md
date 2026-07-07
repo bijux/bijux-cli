@@ -23,6 +23,7 @@ effects begin.
 | graph model | nodes, edges, resources, metadata, and canonical graph state |
 | compile path | parse, validate, resolve, build-contract wrappers, and planner inputs |
 | deterministic analysis | fingerprints, semantics, topology, and graph equivalence inputs |
+| command templates | graph-input and output-reference rules for shell and container command surfaces |
 | boundary | no scheduler orchestration, CLI routing, or persistence side effects |
 
 ## Source Layout
@@ -39,6 +40,7 @@ effects begin.
 - open the [DAG Handbook](../index.md) for cross-package architecture and operator-facing context
 - open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question moves from graph truth to execution policy
 - open the [Repository Handbook](../../bijux-core/index.md) when the concern crosses into CLI or maintainer policy
+- open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) when you want the repository example that binds a graph-owned label into a real container command surface
 
 ## Code Anchors
 

@@ -34,6 +34,7 @@ visible `bijux-dag --help` release contract.
 | command orchestration | argument-to-service routing, workflow dispatch, output selection, and public-versus-hidden route guardrails |
 | response shaping | render flows, response models, diagnostics views, command-specific output contracts |
 | app-level services | read, write, replay, inspect, graph, cache, migration, and export/import orchestration |
+| container-facing operator surface | run summaries, failure reasons, and retained response shapes for container-backed nodes |
 | boundary | does not own kernel semantics, runtime scheduler internals, or artifact storage authority |
 
 ## Source Layout
@@ -52,6 +53,7 @@ visible `bijux-dag --help` release contract.
 - open the [DAG Handbook](../index.md) for the package-wide architecture and interfaces
 - open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question crosses from response shaping into execution policy
 - open [`bijux-dag-cli`](./bijux-dag-cli.md) when the concern is process wiring rather than app orchestration
+- open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) for a repository-backed example of the app surface reporting a real container run and a missing-engine failure
 
 ## Code Anchors
 

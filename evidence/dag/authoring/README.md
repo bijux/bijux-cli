@@ -18,3 +18,8 @@ Subdirectories:
 - `examples/`
 - `patterns/`
 - `negative/`
+
+Representative examples:
+- `examples/file-processing-report.dag.json`: host-shell artifact workflow with promotable output.
+- `examples/regional-sales-pipeline.dag.json`: structured data workflow with changed-input attribution.
+- `examples/release-note-bundle.dag.json`: container-backed packaging workflow with mounted inputs, retained outputs, and recorded container identity.

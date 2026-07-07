@@ -28,6 +28,7 @@ lane is opt-in behind `experimental-public-api`.
 | --- | --- |
 | execution engine | planning, scheduler behavior, backend invocation, replay semantics |
 | runtime policy | policy evaluation, trace emission, error classification, capability checks |
+| local container execution | engine detection, mounted input and output layout, stdout/stderr capture, and recorded image identity |
 | runtime artifacts | manifests, verification, cache lineage, and proof material |
 | runtime identity | build-stamped version identity and deterministic runtime fingerprints |
 | boundary | does not own authoritative DAG schema or user-facing CLI routing |
@@ -59,6 +60,7 @@ lane is opt-in behind `experimental-public-api`.
 - open the [DAG Handbook](../index.md) for the full DAG system map
 - open [`bijux-dag-core`](./bijux-dag-core.md) for graph truth and planning inputs
 - open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and response shaping
+- open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) for the repository-backed execution path that exercises retained container identity and engine-unavailable failure handling
 
 ## Code Anchors
 
