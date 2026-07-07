@@ -436,11 +436,14 @@ fn dag_root_help_lists_top_level_commands() {
     assert!(text
         .contains("Validate, run, replay, explain, and compare reproducible computation graphs"));
     assert!(text.contains("v0.4.0 surface truth table:"));
+    assert!(text.contains("commands --lane experimental"));
+    assert!(text.contains("commands --lane simulated"));
+    assert!(text.contains("commands --lane internal"));
     assert!(text.contains("BIJUX_DAG_ENABLE_SIMULATED=1"));
     assert!(text.contains("BIJUX_DAG_ENABLE_INTERNAL=1"));
-    assert!(text.contains(
-        "Use `bijux-dag commands --all` to inventory repository-owned non-stable routes."
-    ));
+    assert!(text.contains("Use `bijux-dag commands` for the stable operator surface"));
+    assert!(!text.contains("enterprise"));
+    assert!(!text.contains("governance"));
 }
 
 #[test]
@@ -584,21 +587,39 @@ fn dag_commands_json_exposes_group_and_maturity_metadata() {
 }
 
 #[test]
-fn dag_commands_json_can_include_hidden_namespaces_when_requested() {
-    let output =
-        dag_command().args(["--json", "commands", "--all"]).output().expect("commands json all");
+fn dag_commands_json_can_target_experimental_lane_inventory() {
+    let output = dag_command()
+        .args(["--json", "commands", "--lane", "experimental"])
+        .output()
+        .expect("commands json experimental");
     assert!(output.status.success());
     let payload: serde_json::Value =
-        serde_json::from_slice(&output.stdout).expect("commands json all");
+        serde_json::from_slice(&output.stdout).expect("commands json experimental");
     let commands = payload["data"]["commands"].as_array().expect("commands array");
     assert!(commands.iter().any(|entry| entry["path"] == "artifact fetch"
         && entry["lane"] == "experimental"
         && entry["availability"] == "explicit-path"));
+    assert!(commands.iter().any(|entry| entry["path"] == "trace-node"));
+    assert!(!commands.iter().any(|entry| entry["path"] == "lab federation schedule"));
+    assert!(!commands.iter().any(|entry| entry["path"] == "doctor"));
+}
+
+#[test]
+fn dag_commands_json_can_target_simulated_lane_inventory() {
+    let output = dag_command()
+        .args(["--json", "commands", "--lane", "simulated"])
+        .output()
+        .expect("commands json simulated");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("commands json simulated");
+    let commands = payload["data"]["commands"].as_array().expect("commands array");
     assert!(commands.iter().any(|entry| entry["path"] == "lab federation schedule"
         && entry["lane"] == "simulation"
         && entry["availability"] == "opt-in"
         && entry["opt_in_env"] == "BIJUX_DAG_ENABLE_SIMULATED"));
-    assert!(commands.iter().any(|entry| entry["path"] == "trace-node"));
+    assert!(!commands.iter().any(|entry| entry["path"] == "trace-node"));
+    assert!(!commands.iter().any(|entry| entry["path"] == "doctor"));
 }
 
 #[test]
@@ -612,14 +633,33 @@ fn dag_commands_human_output_marks_non_stable_routes_as_opt_in() {
     assert!(!default_text.contains("enterprise"));
     assert!(!default_text.contains("lab federation schedule"));
 
-    let all_output = dag_command().args(["commands", "--all"]).output().expect("commands --all");
-    assert!(all_output.status.success());
-    let all_text = String::from_utf8_lossy(&all_output.stdout);
-    assert!(all_text
-        .contains("capabilities [config | internal | opt-in via BIJUX_DAG_ENABLE_INTERNAL]"));
-    assert!(all_text
+    let experimental_output = dag_command()
+        .args(["commands", "--lane", "experimental"])
+        .output()
+        .expect("commands experimental");
+    assert!(experimental_output.status.success());
+    let experimental_text = String::from_utf8_lossy(&experimental_output.stdout);
+    assert!(experimental_text.contains("trace-node [inspect | experimental | explicit-path]"));
+    assert!(!experimental_text.contains("enterprise"));
+    assert!(!experimental_text.contains("capabilities"));
+
+    let simulated_output = dag_command()
+        .args(["commands", "--lane", "simulated"])
+        .output()
+        .expect("commands simulated");
+    assert!(simulated_output.status.success());
+    let simulated_text = String::from_utf8_lossy(&simulated_output.stdout);
+    assert!(simulated_text
         .contains("enterprise [config | simulated | opt-in via BIJUX_DAG_ENABLE_SIMULATED]"));
-    assert!(all_text.contains("trace-node [inspect | experimental | explicit-path]"));
+    assert!(!simulated_text.contains("trace-node"));
+
+    let internal_output =
+        dag_command().args(["commands", "--lane", "internal"]).output().expect("commands internal");
+    assert!(internal_output.status.success());
+    let internal_text = String::from_utf8_lossy(&internal_output.stdout);
+    assert!(internal_text
+        .contains("capabilities [config | internal | opt-in via BIJUX_DAG_ENABLE_INTERNAL]"));
+    assert!(!internal_text.contains("enterprise"));
 }
 
 #[test]

@@ -1,6 +1,6 @@
 use crate::commands::{
     command_access_for_path, command_path_hidden_from_public_help, lane_label, CommandAvailability,
-    CommandLane, DagCli,
+    CommandCatalogLaneArg, CommandLane, DagCli,
 };
 use crate::{dag_command, emit_json, ExitCode};
 use clap::Command;
@@ -34,6 +34,42 @@ struct CommandCatalogEntry {
     about: Option<String>,
     aliases: Vec<String>,
     subcommands: Vec<CommandCatalogEntry>,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+struct CommandCatalogScope {
+    stable: bool,
+    experimental: bool,
+    simulated: bool,
+    internal: bool,
+}
+
+impl CommandCatalogScope {
+    fn from_requested_lanes(lanes: &[CommandCatalogLaneArg]) -> Self {
+        if lanes.is_empty() {
+            return Self { stable: true, ..Self::default() };
+        }
+
+        let mut scope = Self::default();
+        for lane in lanes {
+            match lane {
+                CommandCatalogLaneArg::Stable => scope.stable = true,
+                CommandCatalogLaneArg::Experimental => scope.experimental = true,
+                CommandCatalogLaneArg::Simulated => scope.simulated = true,
+                CommandCatalogLaneArg::Internal => scope.internal = true,
+            }
+        }
+        scope
+    }
+
+    fn includes(self, lane: CommandLane) -> bool {
+        match lane {
+            CommandLane::Stable => self.stable,
+            CommandLane::Experimental => self.experimental,
+            CommandLane::Simulation => self.simulated,
+            CommandLane::Internal => self.internal,
+        }
+    }
 }
 
 fn command_group(path: &str) -> CommandGroup {
@@ -138,25 +174,27 @@ fn command_group(path: &str) -> CommandGroup {
 fn build_entry(
     prefix: &str,
     command: &Command,
-    include_hidden: bool,
+    scope: CommandCatalogScope,
 ) -> Option<CommandCatalogEntry> {
     let path = if prefix.is_empty() {
         command.get_name().to_string()
     } else {
         format!("{prefix} {}", command.get_name())
     };
-    if !include_hidden && command_path_hidden_from_public_help(&path) {
-        return None;
-    }
     let mut subcommands = command
         .get_subcommands()
-        .filter_map(|sub| build_entry(&path, sub, include_hidden))
+        .filter_map(|sub| build_entry(&path, sub, scope))
         .collect::<Vec<_>>();
     subcommands.sort_by(|left, right| left.path.cmp(&right.path));
     let mut aliases =
         command.get_all_aliases().map(std::string::ToString::to_string).collect::<Vec<_>>();
     aliases.sort();
     let access = command_access_for_path(&path);
+    let include_self = scope.includes(access.lane)
+        && !(access.lane == CommandLane::Stable && command_path_hidden_from_public_help(&path));
+    if !include_self && subcommands.is_empty() {
+        return None;
+    }
     Some(CommandCatalogEntry {
         path: path.clone(),
         group: command_group(&path),
@@ -176,10 +214,10 @@ fn flatten(entry: &CommandCatalogEntry, out: &mut Vec<CommandCatalogEntry>) {
     }
 }
 
-fn command_catalog(include_hidden: bool) -> Vec<CommandCatalogEntry> {
+fn command_catalog(scope: CommandCatalogScope) -> Vec<CommandCatalogEntry> {
     let mut entries = dag_command()
         .get_subcommands()
-        .filter_map(|sub| build_entry("", sub, include_hidden))
+        .filter_map(|sub| build_entry("", sub, scope))
         .collect::<Vec<_>>();
     entries.sort_by(|left, right| left.path.cmp(&right.path));
     entries
@@ -213,9 +251,9 @@ fn availability_label(availability: CommandAvailability) -> &'static str {
 pub(crate) fn handle_command_catalog_command(
     cli: &DagCli,
     groups_only: bool,
-    include_hidden: bool,
+    lanes: &[CommandCatalogLaneArg],
 ) -> Result<ExitCode, ExitCode> {
-    let entries = command_catalog(include_hidden);
+    let entries = command_catalog(CommandCatalogScope::from_requested_lanes(lanes));
     let groups = command_groups(&entries);
     if cli.json {
         let mut flattened = Vec::new();
@@ -273,14 +311,14 @@ pub(crate) fn handle_command_catalog_command(
 
 #[cfg(test)]
 mod tests {
-    use super::{command_catalog, command_groups};
-    use crate::commands::{CommandAvailability, CommandLane};
+    use super::{command_catalog, command_groups, CommandCatalogScope};
+    use crate::commands::{CommandAvailability, CommandCatalogLaneArg, CommandLane};
 
     const SIMULATED_OPT_IN_ENV: &str = "BIJUX_DAG_ENABLE_SIMULATED";
 
     #[test]
     fn command_catalog_exposes_public_surface_by_default() {
-        let entries = command_catalog(false);
+        let entries = command_catalog(CommandCatalogScope::from_requested_lanes(&[]));
         let mut flattened = Vec::new();
         for entry in &entries {
             super::flatten(entry, &mut flattened);
@@ -297,30 +335,48 @@ mod tests {
     }
 
     #[test]
-    fn command_catalog_includes_hidden_namespaces_when_requested() {
-        let entries = command_catalog(true);
+    fn command_catalog_can_target_experimental_inventory_without_simulated_or_internal_routes() {
+        let entries = command_catalog(CommandCatalogScope::from_requested_lanes(&[
+            CommandCatalogLaneArg::Experimental,
+        ]));
         let mut flattened = Vec::new();
         for entry in &entries {
             super::flatten(entry, &mut flattened);
         }
-        assert!(flattened.iter().any(|entry| entry.path == "lab federation schedule"));
         assert!(flattened.iter().any(|entry| entry.path == "trace-node"));
         assert!(flattened.iter().any(|entry| {
             entry.path == "artifact fetch"
                 && entry.lane == CommandLane::Experimental
                 && entry.availability == CommandAvailability::ExplicitPath
         }));
+        assert!(!flattened.iter().any(|entry| entry.path == "governance ownership"));
+        assert!(!flattened.iter().any(|entry| entry.path == "capabilities"));
+    }
+
+    #[test]
+    fn command_catalog_can_target_simulated_inventory_without_other_lanes() {
+        let entries = command_catalog(CommandCatalogScope::from_requested_lanes(&[
+            CommandCatalogLaneArg::Simulated,
+        ]));
+        let mut flattened = Vec::new();
+        for entry in &entries {
+            super::flatten(entry, &mut flattened);
+        }
+        assert!(flattened.iter().any(|entry| entry.path == "lab federation schedule"));
         assert!(flattened.iter().any(|entry| {
             entry.path == "governance ownership"
                 && entry.lane == CommandLane::Simulation
                 && entry.availability == CommandAvailability::OptIn
                 && entry.opt_in_env == Some(SIMULATED_OPT_IN_ENV)
         }));
+        assert!(!flattened.iter().any(|entry| entry.path == "artifact fetch"));
+        assert!(!flattened.iter().any(|entry| entry.path == "doctor"));
     }
 
     #[test]
     fn command_groups_cover_public_taxonomy() {
-        let groups = command_groups(&command_catalog(false));
+        let groups =
+            command_groups(&command_catalog(CommandCatalogScope::from_requested_lanes(&[])));
         assert_eq!(
             groups,
             vec![

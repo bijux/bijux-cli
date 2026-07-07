@@ -50,7 +50,7 @@ const REPLAY_SOURCE_RUN_ID_HELP: &str =
 const REPLAY_SOURCE_RUN_ROOT_HELP: &str =
     "root directory used when resolving --source-run-id; defaults to the replay output root when omitted";
 const ROOT_HELP_BOUNDARY_HELP: &str =
-    "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: explicit-path routes such as init, status, export, import, policy, prove, and migrate\n  simulated: control-plane, state-store, dataset, enterprise, fleet, governance, federation, incident, and lab require BIJUX_DAG_ENABLE_SIMULATED=1\n  internal: security, durability, performance, release, runtime, schedule, capabilities, and version-inspect require BIJUX_DAG_ENABLE_INTERNAL=1\n  future: cluster-backed kubernetes, cluster-backed slurm or hpc, public remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands --all` to inventory repository-owned non-stable routes.";
+    "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: hidden explicit-path routes require deliberate inventory with `bijux-dag commands --lane experimental`\n  simulated: modeled platform namespaces require `bijux-dag commands --lane simulated` to inventory and BIJUX_DAG_ENABLE_SIMULATED=1 to execute\n  internal: maintainer namespaces require `bijux-dag commands --lane internal` to inventory and BIJUX_DAG_ENABLE_INTERNAL=1 to execute\n  future: cluster-backed kubernetes, cluster-backed slurm or hpc, public remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.";
 
 pub(crate) fn root_command_hidden_from_public_help(name: &str) -> bool {
     !PUBLIC_ROOT_COMMANDS.contains(&name)
@@ -96,6 +96,14 @@ pub(crate) struct DagCli {
     pub(crate) quiet: bool,
     #[command(subcommand)]
     pub(crate) command: Commands,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+pub(crate) enum CommandCatalogLaneArg {
+    Stable,
+    Experimental,
+    Simulated,
+    Internal,
 }
 
 #[derive(Subcommand)]
@@ -154,8 +162,8 @@ pub(crate) enum Commands {
     CommandCatalog {
         #[arg(long)]
         groups: bool,
-        #[arg(long)]
-        all: bool,
+        #[arg(long = "lane", value_enum, action = clap::ArgAction::Append)]
+        lanes: Vec<CommandCatalogLaneArg>,
     },
     #[command(name = "control-plane")]
     ControlPlane {

@@ -36,12 +36,14 @@ fn dag_root_help_describes_release_boundary() {
         .contains("Validate, run, replay, explain, and compare reproducible computation graphs"));
     assert!(rendered.contains("v0.4.0 surface truth table:"));
     assert!(rendered.contains("stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands"));
-    assert!(rendered.contains("governance"));
+    assert!(rendered.contains("commands --lane experimental"));
+    assert!(rendered.contains("commands --lane simulated"));
+    assert!(rendered.contains("commands --lane internal"));
     assert!(rendered.contains("BIJUX_DAG_ENABLE_SIMULATED=1"));
     assert!(rendered.contains("BIJUX_DAG_ENABLE_INTERNAL=1"));
-    assert!(rendered.contains(
-        "Use `bijux-dag commands --all` to inventory repository-owned non-stable routes."
-    ));
+    assert!(rendered.contains("Use `bijux-dag commands` for the stable operator surface"));
+    assert!(!rendered.contains("enterprise"));
+    assert!(!rendered.contains("governance"));
     assert!(
         !rendered.contains("Validate, run, replay, and inspect reproducible computation graphs")
     );

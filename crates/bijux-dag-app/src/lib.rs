@@ -885,8 +885,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::CommandCatalog { groups, all } => {
-            routes::command_routes::handle_command_catalog_command(&cli, *groups, *all)
+        Commands::CommandCatalog { groups, lanes } => {
+            routes::command_routes::handle_command_catalog_command(&cli, *groups, lanes)
         }
         Commands::Migrate { command } => {
             let msg = match command {
@@ -1369,8 +1369,10 @@ fn emit_command_access_denial(
     let lane = lane_label(denial.lane);
     let message = denial.message();
     let hint = format!(
-        "set {}=1 to run this {} route intentionally or use `bijux-dag commands --all` to inspect non-stable access modes",
-        denial.opt_in_env, lane
+        "set {}=1 to run this {} route intentionally or use `bijux-dag commands --lane {}` to inspect this non-stable access lane",
+        denial.opt_in_env,
+        lane,
+        lane
     );
     if cli.json {
         return emit_json(

@@ -129,9 +129,12 @@ fn dag_root_help_matches_stable_release_boundary() {
         &[
             "v0.4.0 surface truth table:",
             "stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands",
+            "commands --lane experimental",
+            "commands --lane simulated",
+            "commands --lane internal",
             "BIJUX_DAG_ENABLE_SIMULATED=1",
             "BIJUX_DAG_ENABLE_INTERNAL=1",
-            "Use `bijux-dag commands --all` to inventory repository-owned non-stable routes.",
+            "Use `bijux-dag commands` for the stable operator surface",
         ],
         "bijux-dag --help",
     );
@@ -245,7 +248,8 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         "docs/bijux-dag/interfaces/support-matrix.md",
     );
 
-    let first_hour = read_repo_file("docs/bijux-dag/operations/guides/first-hour-with-bijux-dag.md");
+    let first_hour =
+        read_repo_file("docs/bijux-dag/operations/guides/first-hour-with-bijux-dag.md");
     assert_contains_all(
         &first_hour,
         &[
