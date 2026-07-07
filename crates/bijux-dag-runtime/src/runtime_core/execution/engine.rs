@@ -2228,6 +2228,36 @@ pub fn execute(
                     source_run_id: options.parent_run_id.clone(),
                 }),
             )?;
+            let retry_decision = if failure.operator_class() == FailureClass::Policy {
+                crate::evaluate_retry_decision(
+                    node_id,
+                    &crate::build_retry_policy(node),
+                    1,
+                    &crate::retry_observation_from_failure(failure),
+                )
+            } else {
+                crate::RetryDecision {
+                    retryable: false,
+                    retry_allowed: false,
+                    reason: "pre_execution_failures_are_non_retryable".to_string(),
+                    matched_exit_code: None,
+                }
+            };
+            crate::write_attempt_events(
+                &ctx,
+                node_id,
+                &[crate::AttemptEvent {
+                    attempt: 1,
+                    started_unix_ms: started,
+                    finished_unix_ms: started,
+                    status: NodeStatus::Failed,
+                    stdout_path: None,
+                    stderr_path: None,
+                    failure: Some(failure.clone()),
+                    scheduled_backoff_ms: None,
+                    retry_decision: Some(retry_decision.clone()),
+                }],
+            )?;
             failure_propagation_records.push(failure_propagation_record(
                 node_id,
                 "failed",
@@ -2259,6 +2289,7 @@ pub fn execute(
                     "status": "failed",
                     "reason": crate::failure_propagation_cause(Some(failure)),
                     "failure_code": failure.code,
+                    "retry_reason": retry_decision.reason.clone(),
                 }),
             )?;
             run_log_index.push(serde_json::json!({
@@ -2268,6 +2299,28 @@ pub fn execute(
                 "status": "failed",
                 "reason": crate::failure_propagation_cause(Some(failure)),
                 "failure_code": failure.code,
+                "retry_reason": retry_decision.reason.clone(),
+            }));
+            crate::append_event(
+                &mut run_log,
+                serde_json::json!({
+                    "event": "node_retry_exhausted",
+                    "ts": ctx.clock.now_unix_ms(),
+                    "node_id": node_id,
+                    "attempt": 1,
+                    "status": "failed",
+                    "failure_code": failure.code,
+                    "retry_reason": retry_decision.reason.clone(),
+                }),
+            )?;
+            run_log_index.push(serde_json::json!({
+                "event": "node_retry_exhausted",
+                "ts": ctx.clock.now_unix_ms(),
+                "node_id": node_id,
+                "attempt": 1,
+                "status": "failed",
+                "failure_code": failure.code,
+                "retry_reason": retry_decision.reason.clone(),
             }));
         }
 
@@ -2623,6 +2676,14 @@ pub fn execute(
                                     "attempt": attempt.attempt,
                                     "next_attempt": attempt.attempt + 1,
                                     "backoff_ms": backoff_ms,
+                                    "retry_reason": attempt
+                                        .retry_decision
+                                        .as_ref()
+                                        .map(|decision| decision.reason.clone()),
+                                    "matched_exit_code": attempt
+                                        .retry_decision
+                                        .as_ref()
+                                        .and_then(|decision| decision.matched_exit_code),
                                 }),
                             )?;
                             run_log_index.push(serde_json::json!({
@@ -2632,6 +2693,14 @@ pub fn execute(
                                 "attempt": attempt.attempt,
                                 "next_attempt": attempt.attempt + 1,
                                 "backoff_ms": backoff_ms,
+                                "retry_reason": attempt
+                                    .retry_decision
+                                    .as_ref()
+                                    .map(|decision| decision.reason.clone()),
+                                "matched_exit_code": attempt
+                                    .retry_decision
+                                    .as_ref()
+                                    .and_then(|decision| decision.matched_exit_code),
                             }));
                         }
                     }
@@ -2649,6 +2718,10 @@ pub fn execute(
                                         .failure
                                         .as_ref()
                                         .map(|failure| failure.code.clone()),
+                                    "retry_reason": final_attempt
+                                        .retry_decision
+                                        .as_ref()
+                                        .map(|decision| decision.reason.clone()),
                                 }),
                             )?;
                             run_log_index.push(serde_json::json!({
@@ -2661,6 +2734,10 @@ pub fn execute(
                                     .failure
                                     .as_ref()
                                     .map(|failure| failure.code.clone()),
+                                "retry_reason": final_attempt
+                                    .retry_decision
+                                    .as_ref()
+                                    .map(|decision| decision.reason.clone()),
                             }));
                         }
                     }

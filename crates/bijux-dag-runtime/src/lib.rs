@@ -763,6 +763,8 @@ pub struct AttemptEvent {
     pub failure: Option<FailureInfo>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scheduled_backoff_ms: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retry_decision: Option<RetryDecision>,
 }
 
 #[derive(Debug)]
@@ -2066,50 +2068,6 @@ fn persist_attempt_logs(
     ))
 }
 
-fn retry_backoff_ms(retry: &RetryPolicy, attempt: u32) -> u64 {
-    retry.backoff_ms.saturating_mul(attempt as u64)
-}
-
-fn canonical_failure_class_name(value: &str) -> &str {
-    let normalized = value
-        .chars()
-        .filter(|ch| ch.is_ascii_alphanumeric())
-        .flat_map(|ch| ch.to_lowercase())
-        .collect::<String>();
-    match normalized.as_str() {
-        "execution" | "executiontransient" => "execution",
-        "timeout" | "timeouttransient" => "timeout",
-        "policy" | "policytransient" => "policy",
-        "user" => "user",
-        "infrastructure" => "infrastructure",
-        _ => "",
-    }
-}
-
-fn retryable_failure_class_names(params: &Value) -> Vec<&str> {
-    params
-        .get("retryable_failure_classes")
-        .and_then(Value::as_array)
-        .map(|values| {
-            values
-                .iter()
-                .filter_map(Value::as_str)
-                .map(canonical_failure_class_name)
-                .filter(|value| !value.is_empty())
-                .collect::<Vec<_>>()
-        })
-        .filter(|values| !values.is_empty())
-        .unwrap_or_else(|| vec!["execution", "timeout"])
-}
-
-fn retry_policy_allows_failure(params: &Value, failure: Option<&FailureInfo>) -> bool {
-    let Some(failure) = failure else {
-        return false;
-    };
-    let failure_class = failure.operator_class().as_str();
-    retryable_failure_class_names(params).into_iter().any(|value| value == failure_class)
-}
-
 #[allow(dead_code)]
 fn node_timeout_ms(
     node: &Node,
@@ -2494,6 +2452,7 @@ fn execute_map_node(
                 stderr_path: Some(attempt_stderr_path),
                 failure: result.failure.clone(),
                 scheduled_backoff_ms: None,
+                retry_decision: None,
             }];
             return Ok(result);
         }
@@ -2684,6 +2643,7 @@ fn execute_map_node(
             stderr_path: Some(attempt_stderr_path),
             failure: result.failure.clone(),
             scheduled_backoff_ms: None,
+            retry_decision: None,
         }];
         return Ok(result);
     }
@@ -2738,6 +2698,7 @@ fn execute_map_node(
             stderr_path: Some(attempt_stderr_path),
             failure,
             scheduled_backoff_ms: None,
+            retry_decision: None,
         }],
         container_meta: None,
         adapter_binary_sha256: adapter.binary_hash(),
@@ -2756,7 +2717,7 @@ fn execute_with_retries(
         return execute_map_node(adapter, graph, node, params, ctx, retry);
     }
     let mut attempt = 0u32;
-    let max = retry.max_attempts;
+    let retry_policy = build_retry_policy(node);
     let mut attempt_events = Vec::new();
     loop {
         attempt += 1;
@@ -2768,11 +2729,32 @@ fn execute_with_retries(
             Err(err) => failed_node_result_from_runtime_error(ctx, node, err),
         };
         let finished = ctx.clock.now_unix_ms();
-        let retry_allowed = result.status == NodeStatus::Failed
-            && attempt <= max
-            && retry_policy_allows_failure(params, result.failure.as_ref());
-        let scheduled_backoff_ms =
-            retry_allowed.then_some(retry_backoff_ms(retry, attempt)).filter(|wait| *wait > 0);
+        let retry_decision = result.failure.as_ref().and_then(|failure| {
+            (result.status == NodeStatus::Failed).then(|| {
+                evaluate_retry_decision(
+                    &node.id,
+                    &retry_policy,
+                    attempt,
+                    &retry_observation_from_failure(failure),
+                )
+            })
+        });
+        let retry_allowed =
+            retry_decision.as_ref().is_some_and(|decision| decision.retry_allowed);
+        let scheduled_backoff_ms = retry_decision
+            .as_ref()
+            .filter(|decision| decision.retry_allowed)
+            .and_then(|_| {
+                result.failure.as_ref().map(|failure| {
+                    contract_retry_wait_ms(
+                        &node.id,
+                        &retry_policy,
+                        attempt,
+                        failure.operator_class().as_str(),
+                    )
+                })
+            })
+            .filter(|wait| *wait > 0);
         let (attempt_stdout_path, attempt_stderr_path) =
             persist_attempt_logs(ctx, &node.id, attempt, &result.stdout_path, &result.stderr_path)?;
         attempt_events.push(AttemptEvent {
@@ -2784,17 +2766,18 @@ fn execute_with_retries(
             stderr_path: Some(attempt_stderr_path),
             failure: result.failure.clone(),
             scheduled_backoff_ms,
+            retry_decision: retry_decision.clone(),
         });
         result.attempts = attempt;
         if result.status != NodeStatus::Failed {
             result.attempt_events = attempt_events;
             return Ok(result);
         }
-        if attempt > max || !retry_policy_allows_failure(params, result.failure.as_ref()) {
+        if !retry_allowed {
             result.attempt_events = attempt_events;
             return Ok(result);
         }
-        let wait = retry_backoff_ms(retry, attempt);
+        let wait = scheduled_backoff_ms.unwrap_or(0);
         if wait > 0 {
             std::thread::sleep(Duration::from_millis(wait));
         }
