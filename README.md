@@ -92,7 +92,7 @@ and `contracts/foundation/workspace_package_boundary.v1.json`.
 - [`docs/`](https://github.com/bijux/bijux-core/tree/main/docs): canonical handbook set for repository, CLI, DAG, and maintainer surfaces.
 - [`makes/`](https://github.com/bijux/bijux-core/tree/main/makes): make modules for root workflows, Rust/Python validation, DAG commands, docs, and release automation.
 
-## Repository Layout
+## Workspace Pillars
 
 - [`crates/`](https://github.com/bijux/bijux-core/tree/main/crates) contains
   the Rust package boundaries for public products and internal support crates.
@@ -136,15 +136,49 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- validate --help
 cargo run -p bijux-dag-cli --bin bijux-dag -- commands --all
 ```
 
-Try a local DAG flow against a repository fixture:
+Run a real DAG workflow against the repository file-processing example:
 
 ```bash
+SOURCE_DIR="$(pwd)/evidence/dag/authoring/examples/file-processing-source"
+
 cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
-  evidence/dag/authoring/examples/minimal_consumer.dag.json
+  evidence/dag/authoring/examples/file-processing-report.dag.json
 
 cargo run -p bijux-dag-cli --bin bijux-dag -- run \
-  evidence/dag/authoring/examples/minimal_consumer.dag.json \
-  --out artifacts/runs
+  evidence/dag/authoring/examples/file-processing-report.dag.json \
+  --out artifacts/file-processing-runs \
+  --run-id file-processing-source \
+  --cache readwrite \
+  --cache-dir artifacts/file-processing-cache \
+  --input "source_dir=${SOURCE_DIR}" \
+  --input "report_title=Repository File Processing Report"
+```
+
+Inspect the retained report artifact, lineage, focused replay boundary, and
+promotion path:
+
+```bash
+cargo run -p bijux-dag-cli --bin bijux-dag -- artifact-inspect \
+  artifacts/file-processing-runs/run-file-processing-source \
+  render_report:report.md
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- artifact lineage \
+  artifacts/file-processing-runs/run-file-processing-source \
+  --json
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- replay --json \
+  --source-run-id file-processing-source \
+  --source-run-root artifacts/file-processing-runs \
+  --out artifacts/file-processing-runs \
+  --run-id file-processing-rerun \
+  --from-node render_report
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- artifact promote \
+  artifacts/file-processing-runs/run-file-processing-source \
+  render_report:report.md \
+  --deliverables-root artifacts/file-processing-deliverables \
+  --to release \
+  --json
 ```
 
 ## Documentation
