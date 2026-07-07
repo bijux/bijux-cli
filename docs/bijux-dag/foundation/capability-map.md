@@ -4,17 +4,17 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-07
 ---
 
 # Capability Map
 
-This page explains what the DAG program is responsible for before it talks
-about crate layout.
+This page explains what `bijux-dag` is responsible for before it talks about
+crate layout.
 
-The capability map matters because DAG work spans definition, execution,
-artifacts, and operator-facing decision support. The page should make those
-responsibilities visible before a reader dives into implementation.
+The useful split is not only "which crate owns this?" A new reader often needs
+the higher-level answer first: is the question about graph truth, execution,
+replay, artifacts, or operator decision support?
 
 ## Capability Map
 
@@ -29,11 +29,27 @@ flowchart LR
 
 ## Capability Inventory
 
-- definition validation and canonical identity generation
-- execution planning and node scheduling over DAG dependencies
-- run identity and run-history inspection surfaces
-- artifact lineage, integrity proofs, and portability bundle workflows
-- replay and diff classification for release decisions
+| Capability | What it covers | Primary owning crates |
+| --- | --- | --- |
+| definition truth | parsing, validation, canonicalization, topology, semantic identity, planner lowering | `bijux-dag-core` |
+| execution | run planning, node scheduling, adapter boundaries, policy evaluation, runtime diagnostics | `bijux-dag-runtime` |
+| operator workflows | command orchestration, response shaping, inspect routes, replay UX, diff UX | `bijux-dag-app`, `bijux-dag-cli` |
+| evidence | run manifests, output indexes, trace files, integrity proofs, lifecycle helpers | `bijux-dag-artifacts`, `bijux-dag-runtime` |
+| attribution | replay outcomes, run comparison, first-divergence reporting, cache and rerun explanations | `bijux-dag-runtime`, `bijux-dag-app` |
+
+## Stable Operator Outcomes
+
+The public `bijux-dag` surface is built around a small number of operator
+questions:
+
+- is this graph valid and what will execute
+- what happened during this run
+- can this run be replayed faithfully
+- what changed between two runs or two graph versions
+- which artifact or node proves that conclusion
+
+The handbook pages under [Interfaces](../interfaces/index.md) and
+[Operations](../operations/index.md) are organized around those questions.
 
 ## Code Anchors
 
@@ -45,6 +61,7 @@ flowchart LR
 
 ## Next Reads
 
+- [DAG Packages](../packages/index.md)
 - [Domain Language](domain-language.md)
 - [Module Map](../architecture/module-map.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)

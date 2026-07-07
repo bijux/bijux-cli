@@ -1,24 +1,25 @@
 # DAG Packages
 
-Use this page when the DAG surface is clear but the owning package is not.
+Use this page when the DAG command or behavior is already known but the owning
+crate is not.
 
-The split is practical: `bijux-dag-core` holds graph truth,
-`bijux-dag-runtime` holds execution policy, the app and CLI packages shape the
-user-facing command surface, and the artifact and testkit packages support the
-runtime around that center.
+The package split is deliberate:
 
-For `v0.4.0`, five DAG crates are public release targets:
+- `bijux-dag-core` keeps graph truth deterministic and side-effect free
+- `bijux-dag-runtime` owns execution-time policy and replay behavior
+- `bijux-dag-app` and `bijux-dag-cli` turn that lower stack into the
+  operator-facing command product
+- `bijux-dag-artifacts` owns durable evidence material
+- `bijux-dag-testkit` keeps shared fixtures and assertions out of production
+  crates
+
+Five DAG crates are public release targets in the current workspace:
 `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`,
 `bijux-dag-app`, and `bijux-dag-cli`. `bijux-dag-testkit` remains
-repository-internal support for tests.
+repository-internal test support.
 
-The canonical public/private package contract lives in
-[Package Boundary](../../bijux-core/foundation/package-boundary.md) and
-`contracts/foundation/workspace_package_boundary.v1.json`.
-
-Public release status is not enough by itself. `RISK-008` in
-[Risk Register](../quality/risk-register.md) tracks whether the published crate
-surfaces remain understandable on crates.io and docs.rs.
+The canonical publication boundary lives in
+[Package Boundary](../../bijux-core/foundation/package-boundary.md).
 
 ## Section Map
 
@@ -34,15 +35,24 @@ flowchart LR
 
 | Package | Release status | Owns | Enter Here When |
 | --- | --- | --- | --- |
-| [`bijux-dag-core`](bijux-dag-core.md) | public | Graph truth, planner lowering, deterministic core semantics | the issue is graph model rules, planning invariants, or semantic correctness |
-| [`bijux-dag-runtime`](bijux-dag-runtime.md) | public | Runtime policy, execution flow, replay behavior, diagnostics boundaries | the issue is run behavior, replay parity, lifecycle orchestration, or runtime guarantees |
-| [`bijux-dag-app`](bijux-dag-app.md) | public | Command orchestration, user-facing shaping, app-layer wiring | the issue is orchestration flow, command composition, or top-level request handling |
-| [`bijux-dag-cli`](bijux-dag-cli.md) | public | Thin CLI entrypoint wrapper for DAG command surfaces | the issue is DAG CLI entrypoint wiring or executable boundary behavior |
-| [`bijux-dag-artifacts`](bijux-dag-artifacts.md) | public | Artifact identity, integrity semantics, and artifact lifecycle helpers | the issue is artifact schema, identity, storage contract, or integrity checks |
-| [`bijux-dag-testkit`](bijux-dag-testkit.md) | private | Shared deterministic fixtures and test support surfaces | the issue is shared fixtures, deterministic test inputs, or common test helpers |
+| [`bijux-dag-core`](bijux-dag-core.md) | public | Graph truth, semantic identity, planner lowering, deterministic compilation | the issue is graph rules, fingerprints, topology, or planning inputs |
+| [`bijux-dag-runtime`](bijux-dag-runtime.md) | public | Execution policy, replay behavior, cache behavior, diagnostics boundaries | the issue is run behavior, scheduler policy, replay reuse, or runtime guarantees |
+| [`bijux-dag-app`](bijux-dag-app.md) | public | Command orchestration, request validation, response shaping, inspect and replay UX | the issue is command composition, operator output, or app-layer workflow wiring |
+| [`bijux-dag-cli`](bijux-dag-cli.md) | public | Thin executable boundary for `bijux-dag` | the issue is binary startup, argv handoff, or exit behavior |
+| [`bijux-dag-artifacts`](bijux-dag-artifacts.md) | public | Artifact identity, storage layout, integrity, retention, and lineage helpers | the issue is run evidence shape, hashing, proofs, or artifact lifecycle rules |
+| [`bijux-dag-testkit`](bijux-dag-testkit.md) | private | Shared deterministic fixtures and test support surfaces | the issue is shared fixtures, reusable assertions, or test-only DAG helpers |
 
 ## Reading Rule
 
-Choose the package page by ownership first. If a change touches two rows in
-the table, treat it as an explicit cross-package boundary change and validate
-both contracts.
+Choose the package page by the first durable owner, not by the command you saw
+first. For example:
+
+- `bijux-dag replay` may still require `bijux-dag-runtime` when the real
+  question is reuse policy or artifact verification
+- `bijux-dag run` may still require `bijux-dag-artifacts` when the real
+  question is persisted evidence shape
+- `bijux-dag explain` may still require `bijux-dag-app` when the real question
+  is response shaping and inspection UX
+
+If a change crosses two rows in the table, treat it as an explicit
+cross-package boundary change and validate both sides.

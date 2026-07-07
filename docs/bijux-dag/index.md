@@ -4,30 +4,39 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-07
 ---
 
 # DAG Handbook
 
-`bijux-dag` is the graph execution and evidence subsystem in `bijux-core`. It
-owns deterministic DAG semantics, run and artifact identity, replay
-classification, and diff classification. The `v0.4.0` release makes five DAG
-Rust crates public for the first time: `bijux-dag-core`,
-`bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and
-`bijux-dag-cli`. `bijux-dag-testkit` remains repository-internal test support.
-The canonical public/private package contract lives in
-[Package Boundary](../bijux-core/foundation/package-boundary.md).
+`bijux-dag` is the deterministic graph product in `bijux-core`. It owns graph
+validation, execution planning, local run orchestration, replay, artifact
+identity, evidence inspection, and drift attribution.
+
+Use this handbook when the question is about DAG behavior itself: what gets
+validated, what gets executed, what evidence is written, and which crate owns
+the answer once the route is clear.
+
+The current public crate family is:
+
+- `bijux-dag-core` for graph truth and planner inputs
+- `bijux-dag-artifacts` for run evidence, integrity, and lifecycle helpers
+- `bijux-dag-runtime` for execution policy, replay, cache, and diagnostics
+- `bijux-dag-app` for command orchestration and response shaping
+- `bijux-dag-cli` for the thin `bijux-dag` executable wrapper
+
+`bijux-dag-testkit` remains repository-internal support for deterministic DAG
+fixtures and shared assertions.
 
 Runtime identity in manifests, provenance, replay, and cache fingerprints is
-resolved from build metadata. Changing the shell directory around the compiled
-binary is not supposed to rewrite DAG evidence identity.
+stamped from build metadata. Running the same compiled binary from a different
+working directory is not supposed to rewrite DAG evidence identity.
 
-The public operator contract is the visible `bijux-dag --help` surface. That
-root help stays intentionally concise for `v0.4.0`. Hidden experimental routes
-remain available by explicit path. Simulated and maintainer namespaces remain
-in the repository for internal coverage and evidence work, but they now require
+The supported operator boundary is the visible `bijux-dag --help` surface.
+Repository-owned experimental routes remain callable by explicit path.
+Modeled-platform namespaces and maintainer namespaces require
 `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` and are not
-presented as stable `v0.4.0` operator APIs.
+part of the stable operator compatibility lane.
 
 ## v0.4.0 Surface Truth Table
 
@@ -43,24 +52,34 @@ For the canonical operator-surface source, use
 [Release Boundary](foundation/release-boundary.md). For crate publication
 status, use [Package Boundary](../bijux-core/foundation/package-boundary.md).
 
-Use this handbook when the question is about graph truth, execution policy,
-replay outcomes, artifact behavior, or how the DAG crates divide ownership.
-
 <div class="bijux-quicklinks">
-<a class="md-button md-button--primary" href="packages/bijux-dag-core.md">Open the kernel package</a>
-<a class="md-button" href="packages/bijux-dag-runtime.md">Open the runtime package</a>
-<a class="md-button" href="packages/bijux-dag-app.md">Open the app package</a>
+<a class="md-button md-button--primary" href="operations/first-hour-with-bijux-dag.md">Start with the first hour guide</a>
+<a class="md-button" href="interfaces/operator-workflows.md">Open operator workflows</a>
+<a class="md-button" href="packages/index.md">Open the package map</a>
 </div>
 
-## Package Map
+## Reader Map
 
 ```mermaid
 flowchart LR
-    handbook["DAG handbook"] --> core["core"]
-    handbook --> runtime["runtime"]
-    handbook --> app["app"]
-    handbook --> artifacts["artifacts"]
+    handbook["DAG handbook"] --> operators["operator workflows"]
+    handbook --> interfaces["command and data interfaces"]
+    handbook --> packages["crate ownership"]
+    handbook --> quality["quality and compatibility"]
 ```
+
+## Start Here
+
+- open [First Hour With Bijux Dag](operations/first-hour-with-bijux-dag.md)
+  when you want a concrete local path from install to a verified run
+- open [Operator Workflows](interfaces/operator-workflows.md) when the question
+  is how to validate, run, replay, inspect, or compare
+- open [CLI Surface](interfaces/cli-surface.md) when the question is command
+  discovery or route classification
+- open [Capability Map](foundation/capability-map.md) when you need the product
+  responsibilities before the crate split
+- open [DAG Packages](packages/index.md) when the route is clear but the owning
+  crate is not
 
 ## Package Destinations
 
@@ -70,6 +89,19 @@ flowchart LR
 - [`bijux-dag-cli`](packages/bijux-dag-cli.md) owns the thin executable wrapper
 - [`bijux-dag-artifacts`](packages/bijux-dag-artifacts.md) owns artifact identity, integrity, and lifecycle helpers
 - [`bijux-dag-testkit`](packages/bijux-dag-testkit.md) owns shared deterministic fixtures for repository tests and maintainer suites
+
+## Workflow Spine
+
+The public workflow is intentionally local and evidence-driven:
+
+1. validate the graph
+2. preview or run it
+3. inspect run and artifact evidence
+4. replay when reproducibility matters
+5. diff or compare when attribution matters
+
+That spine is reflected across the operator docs, the crate split, and the
+stable CLI surface.
 
 ## Code Anchors
 
@@ -85,6 +117,7 @@ flowchart LR
 - [Architecture](architecture/index.md)
 - [Interfaces](interfaces/index.md)
 - [Operations](operations/index.md)
+- [Packages](packages/index.md)
 - [Quality](quality/index.md)
 
 ## Related Handbooks
