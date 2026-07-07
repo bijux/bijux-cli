@@ -300,5 +300,6 @@ fn sample_node(id: &str) -> Node {
         group: None,
         trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     }
 }

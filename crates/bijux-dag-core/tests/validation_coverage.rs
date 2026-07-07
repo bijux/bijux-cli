@@ -420,6 +420,7 @@ fn graph_for_code(code: &str) -> Graph {
                 group: None,
                 trigger_rule: TriggerRule::AllSuccess,
                 branch: None,
+                dynamic: None,
             });
             g
         }
@@ -527,6 +528,7 @@ fn graph_for_code(code: &str) -> Graph {
                             default_decision: Some("left".to_string()),
                             decision_output: "decision".to_string(),
                         }),
+                        dynamic: None,
                     },
                     build_node("sink", vec!["in".to_string()], "out"),
                 ],
@@ -575,6 +577,7 @@ fn graph_for_code(code: &str) -> Graph {
                             default_decision: Some("left".to_string()),
                             decision_output: "decision".to_string(),
                         }),
+                        dynamic: None,
                     },
                     build_node("sink", vec!["in".to_string()], "out"),
                 ],
@@ -1139,6 +1142,7 @@ fn build_node(id: &str, mut inputs: Vec<String>, name: &str) -> Node {
         group: None,
         trigger_rule: TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     }
 }
 

@@ -621,6 +621,7 @@ mod tests {
                 group: None,
                 trigger_rule: TriggerRule::AllSuccess,
                 branch: None,
+                dynamic: None,
             }],
             edges: vec![Edge {
                 id: Some("e1".to_string()),

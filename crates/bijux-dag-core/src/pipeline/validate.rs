@@ -77,6 +77,12 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1060", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1061", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1062", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1063", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1064", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1065", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1066", severity: Severity::Error, domain: ValidationDomain::Topology },
+    ValidationRule { id: "E1067", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1068", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -233,6 +239,7 @@ impl Graph {
         let mut node_map: HashMap<&str, &Node> = HashMap::new();
         let mut branch_output_by_node: HashMap<&str, &str> = HashMap::new();
         let mut branch_decisions_by_node: HashMap<&str, BTreeSet<String>> = HashMap::new();
+        let mut dynamic_nodes = BTreeSet::new();
         for node in &self.nodes {
             if !ids.insert(node.id.as_str()) {
                 emit_rule(
@@ -888,6 +895,100 @@ impl Graph {
                 }
                 _ => {}
             }
+            match (&node.semantic_kind, &node.dynamic) {
+                (SemanticNodeKind::Dynamic, None) => {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1063",
+                        format!("dynamic node missing dynamic contract: {}", node.id),
+                        format!("/nodes/{}/dynamic", node.id),
+                        Some(
+                            "Declare dynamic.expansion_output so the runtime can load the generated graph fragment"
+                                .to_string(),
+                        ),
+                    );
+                }
+                (SemanticNodeKind::Dynamic, Some(dynamic)) => {
+                    dynamic_nodes.insert(node.id.clone());
+                    if !node.outputs.iter().any(|output| output.name == dynamic.expansion_output) {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1064",
+                            format!(
+                                "dynamic expansion output '{}' is not declared on node {}",
+                                dynamic.expansion_output, node.id
+                            ),
+                            format!("/nodes/{}/dynamic/expansion_output", node.id),
+                            Some(
+                                "Declare the expansion output as a normal node output so the controller run persists it"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                    if node.outputs.iter().any(|output| {
+                        output.name == dynamic.expansion_output && output.expects_directory()
+                    }) {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1065",
+                            format!(
+                                "dynamic expansion output '{}' on node {} must be a file or value output",
+                                dynamic.expansion_output, node.id
+                            ),
+                            format!("/nodes/{}/outputs", node.id),
+                            Some(
+                                "Write one expansion document file that declares generated nodes and edges"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                    if !node.inputs.is_empty() {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1067",
+                            format!(
+                                "dynamic controller nodes must not declare runtime inputs: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/inputs", node.id),
+                            Some(
+                                "Use graph inputs inside the controller command; dynamic expansion runs before normal node-to-node execution"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                    if node.branch.is_some() {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1068",
+                            format!(
+                                "dynamic controller nodes cannot also declare branch contracts: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/branch", node.id),
+                            Some(
+                                "Keep dynamic expansion and branch routing as separate node responsibilities"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                }
+                (_, Some(_)) => {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1063",
+                        format!(
+                            "dynamic contract is only allowed on semantic_kind=dynamic nodes: {}",
+                            node.id
+                        ),
+                        format!("/nodes/{}/dynamic", node.id),
+                        Some(
+                            "Set semantic_kind=dynamic or remove the dynamic contract".to_string(),
+                        ),
+                    );
+                }
+                _ => {}
+            }
             if node.semantic_kind == SemanticNodeKind::Map {
                 if node.outputs.is_empty() {
                     emit_rule(
@@ -1045,6 +1146,27 @@ impl Graph {
         let mut conditional_edge_counts = HashMap::<(String, String), usize>::new();
         let mut conditional_incoming_targets = BTreeSet::new();
         for edge in &self.edges {
+            if dynamic_nodes.contains(&edge.from.node_id) || dynamic_nodes.contains(&edge.to.node_id)
+            {
+                let controller_node_id = if dynamic_nodes.contains(&edge.from.node_id) {
+                    &edge.from.node_id
+                } else {
+                    &edge.to.node_id
+                };
+                emit_rule(
+                    &mut diagnostics,
+                    "E1066",
+                    format!(
+                        "dynamic controller node {} must not have declared graph edges",
+                        controller_node_id
+                    ),
+                    format!("/edges/{}->{}", edge.from.node_id, edge.to.node_id),
+                    Some(
+                        "Emit connectivity in the generated expansion document instead of wiring the controller node into the static graph"
+                            .to_string(),
+                    ),
+                );
+            }
             let from_node = node_map.get(edge.from.node_id.as_str());
             let to_node = node_map.get(edge.to.node_id.as_str());
             if from_node.is_none() {

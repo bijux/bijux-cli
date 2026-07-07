@@ -30,6 +30,7 @@ fn map_node(inputs: Vec<&str>, output_kind: OutputKind, params: ParamValue) -> N
         group: None,
         trigger_rule: Default::default(),
         branch: None,
+        dynamic: None,
     }
 }
 
@@ -61,6 +62,7 @@ fn semantic_map_requires_directory_outputs_and_explicit_multi_input_binding() {
                 group: None,
                 trigger_rule: Default::default(),
                 branch: None,
+                dynamic: None,
             },
             map_node(
                 vec!["left", "right"],
@@ -121,6 +123,7 @@ fn semantic_map_accepts_directory_outputs_with_declared_array_input_binding() {
                 group: None,
                 trigger_rule: Default::default(),
                 branch: None,
+                dynamic: None,
             },
             Node {
                 params: ParamValue::Object(

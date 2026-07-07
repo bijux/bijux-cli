@@ -39,6 +39,7 @@ fn base_graph() -> Graph {
                 group: None,
                 trigger_rule: TriggerRule::AllSuccess,
                 branch: None,
+                dynamic: None,
             },
             Node {
                 id: "b".to_string(),
@@ -58,6 +59,7 @@ fn base_graph() -> Graph {
                 group: None,
                 trigger_rule: TriggerRule::AllSuccess,
                 branch: None,
+                dynamic: None,
             },
         ],
         edges: vec![Edge {

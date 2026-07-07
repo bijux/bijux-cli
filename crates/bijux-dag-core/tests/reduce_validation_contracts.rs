@@ -23,6 +23,7 @@ fn reduce_node(outputs: Vec<FileOutput>, params: ParamValue, trigger_rule: Trigg
         group: None,
         trigger_rule,
         branch: None,
+        dynamic: None,
     }
 }
 
