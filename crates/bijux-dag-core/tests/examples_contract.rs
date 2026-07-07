@@ -352,6 +352,10 @@ fn historical_catalog_backfill_example_binds_required_backfill_metadata() {
     let graph = parse_graph_strict(&text)
         .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
 
+    let requested_unix_ms = &graph.input_schema()["requested_unix_ms"];
+    assert_eq!(requested_unix_ms["type"], "integer");
+    assert_eq!(requested_unix_ms["required"], true);
+
     let window_start = &graph.input_schema()["backfill_window_start_unix_ms"];
     assert_eq!(window_start["type"], "integer");
     assert_eq!(window_start["required"], true);
@@ -374,6 +378,10 @@ fn historical_catalog_backfill_example_binds_required_backfill_metadata() {
 
     let capture_contract = node_io_contract(&graph, "capture_backfill_context")
         .expect("capture_backfill_context contract");
+    assert!(capture_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "requested_unix_ms"
+    )));
     assert!(capture_contract.param_bindings.iter().any(|binding| matches!(
         &binding.source,
         ParamBindingSource::GraphInput { input_name } if input_name == "backfill_window_start_unix_ms"
