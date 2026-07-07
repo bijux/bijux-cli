@@ -16,6 +16,7 @@ fn tutorial_examples_parse_as_stable_contracts() {
         "../../evidence/authoring/examples/hello.dag.json",
         "../../evidence/authoring/examples/etl-constant-to-shell.dag.json",
         "../../evidence/authoring/examples/audience-branch-bulletin.dag.json",
+        "../../evidence/authoring/examples/compliance-gated-bulletin.dag.json",
         "../../evidence/authoring/examples/cached-branched-report.dag.json",
         "../../evidence/authoring/examples/file-processing-report.dag.json",
         "../../evidence/authoring/examples/release-note-bundle.dag.json",
@@ -219,6 +220,65 @@ fn audience_branch_bulletin_example_declares_typed_branch_inputs_and_join_contra
     let publish_node =
         graph.nodes.iter().find(|node| node.id == "publish_bulletin").expect("publish_bulletin node");
     assert_eq!(publish_node.trigger_rule, bijux_dag_core::TriggerRule::NoneFailed);
+
+    let publish_contract =
+        node_io_contract(&graph, "publish_bulletin").expect("publish_bulletin contract");
+    assert_eq!(publish_contract.outputs.len(), 2);
+    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "text/markdown" && output.promotable));
+    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "application/json"));
+}
+
+#[test]
+fn compliance_gated_bulletin_example_declares_retryable_gate_and_promotable_publication() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../evidence/authoring/examples/compliance-gated-bulletin.dag.json");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+    let graph = parse_graph_strict(&text)
+        .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
+
+    let source_note = &graph.input_schema()["source_note"];
+    assert_eq!(source_note["type"], "path");
+    assert_eq!(source_note["required"], true);
+
+    let retry_plan = &graph.input_schema()["retry_plan"];
+    assert_eq!(retry_plan["type"], "path");
+    assert_eq!(retry_plan["required"], true);
+
+    let publication_gate = &graph.input_schema()["publication_gate"];
+    assert_eq!(publication_gate["type"], "path");
+    assert_eq!(publication_gate["required"], true);
+
+    let bulletin_title = &graph.input_schema()["bulletin_title"];
+    assert_eq!(bulletin_title["type"], "string");
+    assert_eq!(bulletin_title["default"], "Compliance Review Bulletin");
+
+    let gate_node = graph
+        .nodes
+        .iter()
+        .find(|node| node.id == "fetch_compliance_gate")
+        .expect("fetch_compliance_gate node");
+    let retry = &gate_node.retry;
+    assert_eq!(retry.max_attempts, 2);
+    assert_eq!(retry.backoff_ms, 10);
+
+    let gate_contract =
+        node_io_contract(&graph, "fetch_compliance_gate").expect("fetch_compliance_gate contract");
+    assert!(gate_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "retry_plan"
+    )));
+
+    let publish_node = graph
+        .nodes
+        .iter()
+        .find(|node| node.id == "publish_bulletin")
+        .expect("publish_bulletin node");
+    assert!(!publish_node.cache.enabled);
+    assert_eq!(
+        publish_node.cache.reason.as_deref(),
+        Some("publication should be regenerated at the approval boundary")
+    );
 
     let publish_contract =
         node_io_contract(&graph, "publish_bulletin").expect("publish_bulletin contract");
