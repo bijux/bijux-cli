@@ -38,6 +38,7 @@ flowchart LR
 - [Docs Operations](docs-operations.md)
 - [CI and Automation](ci-and-automation.md)
 - [Incident Response](incident-response.md)
+- [Release Validation Suite](release-validation-suite.md)
 - [Release Operations](release-operations.md)
 
 ## Related Maintainer Sections
