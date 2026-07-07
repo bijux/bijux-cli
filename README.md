@@ -256,6 +256,57 @@ cat artifacts/audience-branch-runs/run-audience-branch-technical/nodes/choose_au
 cat artifacts/audience-branch-runs/run-audience-branch-technical/nodes/publish_bulletin/outputs/publish/selection.json
 ```
 
+Run a real failure-recovery workflow against the repository compliance-gated
+bulletin example:
+
+```bash
+SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/compliance-gated-source/team-update.md"
+
+cat > artifacts/compliance-gated-retry-plan.json <<'EOF'
+{"fail_until_attempt":1,"gate_policy":"manual-approval","expected_reviewer_group":"release-managers"}
+EOF
+
+cat > artifacts/compliance-gated-publication-gate.json <<'EOF'
+{"approved":false,"reviewer":"","reviewer_group":"release-managers"}
+EOF
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
+  evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- run --json \
+  evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json \
+  --out artifacts/compliance-gated-runs \
+  --run-id compliance-gated-source \
+  --input "source_note=${SOURCE_NOTE}" \
+  --input "retry_plan=$(pwd)/artifacts/compliance-gated-retry-plan.json" \
+  --input "publication_gate=$(pwd)/artifacts/compliance-gated-publication-gate.json"
+```
+
+Repair only the failed publication boundary after updating approval:
+
+```bash
+cat > artifacts/compliance-gated-publication-gate.json <<'EOF'
+{"approved":true,"reviewer":"A. Reviewer","reviewer_group":"release-managers"}
+EOF
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- replay --json \
+  --source-run-id compliance-gated-source \
+  --source-run-root artifacts/compliance-gated-runs \
+  --out artifacts/compliance-gated-runs \
+  --run-id compliance-gated-repaired \
+  --from-node validate_publication_gate
+```
+
+Inspect retry evidence and verify the repaired run strictly:
+
+```bash
+cat artifacts/compliance-gated-runs/run-compliance-gated-source/nodes/fetch_compliance_gate/attempts.json
+cat artifacts/compliance-gated-runs/run-compliance-gated-repaired/nodes/publish_bulletin/outputs/publish/bulletin.md
+cargo run -p bijux-dag-cli --bin bijux-dag -- verify --json \
+  artifacts/compliance-gated-runs/run-compliance-gated-repaired \
+  --strict
+```
+
 For the warm-cache run, changed-input comparison, and retained-run attribution
 path, use
 [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md).
@@ -267,6 +318,10 @@ failure behavior, use
 For retained branch decisions, skipped-lane evidence, join-trigger behavior,
 and replay stability, use
 [`docs/bijux-dag/operations/guides/branching-bulletin-workflow.md`](docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).
+
+For retry evidence, approval-boundary repair, replay input rematerialization,
+and strict post-repair verification, use
+[`docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md`](docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
 
 ## Documentation
 
@@ -282,6 +337,7 @@ Representative DAG workflow guides:
 - [`docs/bijux-dag/operations/guides/file-processing-workflow.md`](docs/bijux-dag/operations/guides/file-processing-workflow.md) for a host-shell artifact workflow
 - [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md) for changed-input attribution and retained-run comparison
 - [`docs/bijux-dag/operations/guides/branching-bulletin-workflow.md`](docs/bijux-dag/operations/guides/branching-bulletin-workflow.md) for retained branch decisions, skipped lanes, and replay stability
+- [`docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md`](docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md) for transient retry evidence, focused replay repair, and strict verification after recovery
 - [`docs/bijux-dag/operations/guides/container-packaging-workflow.md`](docs/bijux-dag/operations/guides/container-packaging-workflow.md) for mounted container inputs, retained outputs, and recorded image identity
 
 If you are reading code and need the owning package before the owning command,
