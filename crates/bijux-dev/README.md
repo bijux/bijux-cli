@@ -21,6 +21,13 @@ the repository products, not to act as a public runtime dependency.
 - `src/bin`: control-plane support binaries.
 - `tests`: governance and maintainer contract suites.
 
+## Reach For Another Surface When
+
+- you need end-user runtime command semantics: `bijux-cli`
+- you need DAG execution behavior or artifact semantics: `bijux-dag-*`
+- you need repository handbook guidance instead of control-plane code:
+  `docs/bijux-dev/`
+
 ## Non-goals
 
 - End-user runtime command semantics (owned by `bijux-cli`).

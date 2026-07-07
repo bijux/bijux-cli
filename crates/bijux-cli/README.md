@@ -36,6 +36,15 @@ for runtime command semantics shared by the native binary and Python bridge.
 - [`src/routing`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli/src/routing): command catalog, parser, and registry.
 - [`src/shared`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli/src/shared): small cross-cutting helpers.
 
+## Reach For Another Surface When
+
+- you need Python packaging, interpreter diagnostics, or mounted Python app
+  distribution: `bijux-cli-python`
+- you need repository diagnostics, governance reports, or release proof:
+  `bijux-dev`
+- you need DAG graph execution rather than the root runtime:
+  `bijux-dag-*`
+
 ## Runtime Rules
 
 - Commands are parsed and normalized before execution.

@@ -55,7 +55,8 @@ Within those families, the workspace currently contains:
   `bijux-dev`
 
 The canonical package-boundary reference lives in
-[`docs/bijux-core/foundation/package-boundary.md`](docs/bijux-core/foundation/package-boundary.md).
+[`docs/bijux-core/foundation/package-boundary.md`](docs/bijux-core/foundation/package-boundary.md)
+and `contracts/foundation/workspace_package_boundary.v1.json`.
 
 ## Repository Layout
 

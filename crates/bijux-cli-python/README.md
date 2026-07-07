@@ -37,6 +37,20 @@ the public `bijux-dag` Rust crate family.
 - It does not publish maintainer control-plane commands.
 - It does not replace repository-level governance docs.
 
+## Source Layout
+
+- `python/bijux_cli_py`: Python entrypoints, packaging helpers, and mounted-app
+  SDK
+- Rust bridge crate: `crates/bijux-cli-python`
+- runtime implementation: `crates/bijux-cli`
+
+## Reach For Another Surface When
+
+- you need the runtime command semantics themselves: `bijux-cli`
+- you need mounted app authoring guidance and contracts:
+  `crates/bijux-cli-python/docs/MOUNTED_APPS.md`
+- you need repository governance or release automation: `bijux-dev`
+
 ## Quick Usage
 
 ```bash
