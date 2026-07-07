@@ -22,6 +22,8 @@ release-boundary routing, and shapes the typed responses that the CLI renders.
 - branch-facing command flows that surface selected decisions, skipped lanes,
   join trigger outcomes, and replay proof summaries
 - route gating between stable, experimental, simulated, and internal surfaces
+- lane-scoped command discovery for stable, experimental, simulated, and
+  maintainer route inventories
 
 ## What It Does Not Own
 
@@ -83,14 +85,14 @@ failure from propagated skips, replays only the failed approval boundary, and
 verifies the repaired run strictly, use
 [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
 
-For the repository-backed example that shows how the app surface reports
-internal schedule preview, same-slot suppression, queue dispatch, explicit
+For the repository-backed internal evidence lane that shows how the app surface
+reports schedule preview, same-slot suppression, queue dispatch, explicit
 ledger completion, and one run id carried through to the final manifest, use
 [Scheduled Catalog Refresh Workflow](../../docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md).
 
-For the repository-backed example that shows how the app surface reports
-backfill partition fanout, aggregate summary counts, failed-partition retry,
-and explicit run handoff, use
+For the repository-backed internal evidence lane that shows how the app surface
+reports backfill partition fanout, aggregate summary counts, failed-partition
+retry, and explicit run handoff, use
 [Historical Catalog Backfill Workflow](../../docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md).
 
 ## Related links

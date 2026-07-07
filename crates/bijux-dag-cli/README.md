@@ -25,7 +25,10 @@ The supported release boundary is the visible `bijux-dag --help` surface:
 `completions`.
 
 Experimental routes remain available by explicit path for repository-owned
-workflows. Simulated and maintainer namespaces require explicit opt-in through
+workflows, and `bijux-dag commands --lane experimental` is the deliberate
+inventory surface for that lane. Simulated and maintainer namespaces require
+explicit lane inventory through `bijux-dag commands --lane simulated` or
+`bijux-dag commands --lane internal`, plus execution opt-in through
 `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`.
 
 Container-backed nodes are part of the stable local execution surface. When a
@@ -46,6 +49,8 @@ execution path directly from run evidence.
 - thin startup wiring, process initialization, and exit mapping
 - delegation into `bijux-dag-app` for actual command behavior
 - shell completion generation for the installed executable
+- lane-scoped command discovery for stable, experimental, simulated, and
+  maintainer-only route inventories
 
 ## What It Does Not Own
 

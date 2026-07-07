@@ -69,6 +69,9 @@ Node traces persist lifecycle evidence separately from terminal `status`.
   and control-plane evidence work
 - backend-heavy compatibility helpers remain callable for repository-owned
   support work, but stay hidden from the primary docs.rs lane
+- use lane-scoped command discovery in `bijux-dag-app` or `bijux-dag-cli`
+  when you need to inspect experimental, simulated, or internal runtime
+  surfaces without widening the default operator contract
 
 ## Source Layout
 
@@ -109,14 +112,14 @@ boundary input rematerialization, and post-repair verification on a failed run,
 use
 [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
 
-For the repository-backed example that exercises cron preview, deterministic
-schedule run ids, queue dispatch, explicit ledger completion, and the handoff
-from scheduled submission into a retained DAG run, use
+For the repository-backed internal evidence lane that exercises cron preview,
+deterministic schedule run ids, queue dispatch, explicit ledger completion,
+and the handoff from scheduled submission into a retained DAG run, use
 [Scheduled Catalog Refresh Workflow](../../docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md).
 
-For the repository-backed example that exercises deterministic backfill
-fanout, aggregate summary reporting, retried partition state, and explicit
-handoff from backfill requests into retained DAG runs, use
+For the repository-backed internal evidence lane that exercises deterministic
+backfill fanout, aggregate summary reporting, retried partition state, and
+explicit handoff from backfill requests into retained DAG runs, use
 [Historical Catalog Backfill Workflow](../../docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md).
 
 ## Related links
