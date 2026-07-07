@@ -26,6 +26,7 @@ fn tutorial_examples_parse_as_stable_contracts() {
         "../../evidence/authoring/examples/failure-heavy-retry.dag.json",
         "../../evidence/authoring/examples/parameterized-report.dag.json",
         "../../evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
+        "../../evidence/authoring/examples/historical-catalog-backfill.dag.json",
     ];
     for relative in examples {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(relative);
@@ -337,6 +338,68 @@ fn scheduled_catalog_refresh_example_binds_required_schedule_timestamp() {
 
     let publish_contract =
         node_io_contract(&graph, "render_refresh_report").expect("render_refresh_report contract");
+    assert_eq!(publish_contract.outputs.len(), 2);
+    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "text/markdown" && output.promotable));
+    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "application/json"));
+}
+
+#[test]
+fn historical_catalog_backfill_example_binds_required_backfill_metadata() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../evidence/authoring/examples/historical-catalog-backfill.dag.json");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+    let graph = parse_graph_strict(&text)
+        .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
+
+    let window_start = &graph.input_schema()["backfill_window_start_unix_ms"];
+    assert_eq!(window_start["type"], "integer");
+    assert_eq!(window_start["required"], true);
+
+    let window_end = &graph.input_schema()["backfill_window_end_unix_ms"];
+    assert_eq!(window_end["type"], "integer");
+    assert_eq!(window_end["required"], true);
+
+    let partition_key = &graph.input_schema()["backfill_partition_key"];
+    assert_eq!(partition_key["type"], "string");
+    assert_eq!(partition_key["required"], true);
+
+    let catalog_name = &graph.input_schema()["catalog_name"];
+    assert_eq!(catalog_name["type"], "string");
+    assert_eq!(catalog_name["default"], "atlas.catalog");
+
+    let publication_title = &graph.input_schema()["publication_title"];
+    assert_eq!(publication_title["type"], "string");
+    assert_eq!(publication_title["default"], "Historical Catalog Backfill");
+
+    let capture_contract = node_io_contract(&graph, "capture_backfill_context")
+        .expect("capture_backfill_context contract");
+    assert!(capture_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "backfill_window_start_unix_ms"
+    )));
+    assert!(capture_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "backfill_window_end_unix_ms"
+    )));
+    assert!(capture_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "backfill_partition_key"
+    )));
+
+    let publish_node = graph
+        .nodes
+        .iter()
+        .find(|node| node.id == "render_partition_report")
+        .expect("render_partition_report node");
+    assert!(!publish_node.cache.enabled);
+    assert_eq!(
+        publish_node.cache.reason.as_deref(),
+        Some("historical partition publication should be regenerated for every backfill submission attempt")
+    );
+
+    let publish_contract =
+        node_io_contract(&graph, "render_partition_report").expect("render_partition_report contract");
     assert_eq!(publish_contract.outputs.len(), 2);
     assert!(publish_contract.outputs.iter().any(|output| output.media_type == "text/markdown" && output.promotable));
     assert!(publish_contract.outputs.iter().any(|output| output.media_type == "application/json"));

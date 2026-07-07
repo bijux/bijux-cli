@@ -25,4 +25,5 @@ Representative examples:
 - `examples/audience-branch-bulletin.dag.json`: branch-backed bulletin workflow with retained branch decisions, skipped lanes, and replay stability.
 - `examples/compliance-gated-bulletin.dag.json`: approval-gated bulletin workflow with retry evidence, repairable approval failure, and focused replay.
 - `examples/scheduled-catalog-refresh.dag.json`: schedule-ready bulletin workflow with a required scheduled timestamp, retained request capture, and promotable publication output.
+- `examples/historical-catalog-backfill.dag.json`: backfill-ready partition workflow with required window metadata, retained partition capture, and promotable publication output.
 - `examples/release-note-bundle.dag.json`: container-backed packaging workflow with mounted inputs, retained outputs, and recorded container identity.

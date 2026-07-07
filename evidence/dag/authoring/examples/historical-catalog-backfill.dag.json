@@ -1,0 +1,103 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "historical-catalog-backfill",
+    "description": "Render a promotable partition report from backfill-owned time windows and partition metadata.",
+    "owners": ["platform"],
+    "tags": ["authoring", "scheduling", "backfill", "reporting"]
+  },
+  "inputs": {
+    "backfill_window_start_unix_ms": {
+      "type": "integer",
+      "required": true
+    },
+    "backfill_window_end_unix_ms": {
+      "type": "integer",
+      "required": true
+    },
+    "backfill_partition_key": {
+      "type": "string",
+      "required": true
+    },
+    "catalog_name": {
+      "type": "string",
+      "default": "atlas.catalog"
+    },
+    "publication_title": {
+      "type": "string",
+      "default": "Historical Catalog Backfill"
+    }
+  },
+  "nodes": [
+    {
+      "id": "capture_backfill_context",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "request",
+          "path": "backfill/request.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "value": {
+          "backfill_window_start_unix_ms": {
+            "graph_input": "backfill_window_start_unix_ms"
+          },
+          "backfill_window_end_unix_ms": {
+            "graph_input": "backfill_window_end_unix_ms"
+          },
+          "backfill_partition_key": {
+            "graph_input": "backfill_partition_key"
+          },
+          "catalog_name": {
+            "graph_input": "catalog_name"
+          },
+          "publication_title": {
+            "graph_input": "publication_title"
+          }
+        }
+      }
+    },
+    {
+      "id": "render_partition_report",
+      "kind": "shell",
+      "inputs": ["request"],
+      "outputs": [
+        {
+          "name": "report",
+          "path": "publish/report.md",
+          "media_type": "text/markdown",
+          "promotable": true
+        },
+        {
+          "name": "summary",
+          "path": "publish/summary.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport datetime as dt\nimport json\nimport pathlib\n\nrequest = json.loads(pathlib.Path(\"../inputs/capture_backfill_context/request\").read_text())\nwindow_start = dt.datetime.fromtimestamp(request[\"backfill_window_start_unix_ms\"] / 1000, tz=dt.timezone.utc)\nwindow_end = dt.datetime.fromtimestamp(request[\"backfill_window_end_unix_ms\"] / 1000, tz=dt.timezone.utc)\nduration_minutes = int((request[\"backfill_window_end_unix_ms\"] - request[\"backfill_window_start_unix_ms\"]) / 60000)\nreport_lines = [\n    \"# \" + request[\"publication_title\"],\n    \"\",\n    \"Catalog: \" + request[\"catalog_name\"],\n    \"Partition: \" + request[\"backfill_partition_key\"],\n    \"Window start: \" + window_start.isoformat().replace(\"+00:00\", \"Z\"),\n    \"Window end: \" + window_end.isoformat().replace(\"+00:00\", \"Z\"),\n    \"Window minutes: \" + str(duration_minutes),\n]\nout_dir = pathlib.Path(\"../outputs/publish\")\nout_dir.mkdir(parents=True, exist_ok=True)\n(out_dir / \"report.md\").write_text(\"\\n\".join(report_lines) + \"\\n\")\n(out_dir / \"summary.json\").write_text(json.dumps({\n    \"catalog_name\": request[\"catalog_name\"],\n    \"partition_key\": request[\"backfill_partition_key\"],\n    \"backfill_window_start_unix_ms\": request[\"backfill_window_start_unix_ms\"],\n    \"backfill_window_end_unix_ms\": request[\"backfill_window_end_unix_ms\"],\n    \"window_minutes\": duration_minutes,\n    \"publication_title\": request[\"publication_title\"]\n}, indent=2) + \"\\n\")\nPY"
+        ]
+      },
+      "cache": {
+        "enabled": false,
+        "reason": "historical partition publication should be regenerated for every backfill submission attempt"
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    {
+      "from": { "node_id": "capture_backfill_context", "port": "request" },
+      "to": { "node_id": "render_partition_report", "port": "request" }
+    }
+  ]
+}
