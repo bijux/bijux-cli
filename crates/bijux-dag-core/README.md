@@ -66,6 +66,10 @@ timestamp into a required integer graph input and a promotable publication
 output, use
 [`evidence/dag/authoring/examples/scheduled-catalog-refresh.dag.json`](../../evidence/dag/authoring/examples/scheduled-catalog-refresh.dag.json).
 
+For the repository-backed authoring example that binds requested slots plus
+backfill-owned window metadata into a real retained publication surface, use
+[`evidence/dag/authoring/examples/historical-catalog-backfill.dag.json`](../../evidence/dag/authoring/examples/historical-catalog-backfill.dag.json).
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

@@ -68,6 +68,10 @@ crate is usually `bijux-dag-app`.
 - [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md)
   demonstrates transient retry evidence, focused replay repair, and strict
   verification after recovery.
+- [Historical Catalog Backfill Workflow](../../docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md)
+  demonstrates the current internal backfill lane for partition fanout,
+  aggregate summary reporting, failed-partition retry, and explicit handoff
+  into retained DAG runs through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`.
 - [Scheduled Catalog Refresh Workflow](../../docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md)
   demonstrates the current internal schedule lane for cron preview, durable
   submission, queue dispatch, and explicit ledger-to-run linkage through

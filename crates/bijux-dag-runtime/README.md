@@ -94,6 +94,11 @@ schedule run ids, queue dispatch, explicit ledger completion, and the handoff
 from scheduled submission into a retained DAG run, use
 [Scheduled Catalog Refresh Workflow](../../docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md).
 
+For the repository-backed example that exercises deterministic backfill
+fanout, aggregate summary reporting, retried partition state, and explicit
+handoff from backfill requests into retained DAG runs, use
+[Historical Catalog Backfill Workflow](../../docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md).
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

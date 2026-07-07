@@ -59,7 +59,8 @@ route is a public promise.
 - Simulated and maintainer-only DAG namespaces require
   `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`.
 - The current internal schedule lane is repository-tested for cron preview,
-  durable submission, queue dispatch, and queue-to-run linkage, but it remains
+  durable submission, backfill planning, aggregate backfill summary, failed-
+  partition retry, queue dispatch, and queue-to-run linkage, but it remains
   outside the stable `v0.4.0` public operator contract.
 - Cluster-backed Kubernetes or HPC execution, public remote workers, and
   public enterprise or federation APIs are not part of the `v0.4.0` public
@@ -150,6 +151,11 @@ For the repository-backed internal schedule workflow that proves cron preview,
 same-slot suppression, queue dispatch, and explicit run linkage without
 claiming a public scheduler service, use
 [`docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md`](docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md).
+
+For the repository-backed internal backfill workflow that proves partition
+fanout, aggregate summary reporting, failed-partition retry, and explicit
+handoff into retained DAG runs without claiming a public scheduler service, use
+[`docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md`](docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md).
 
 Run a real DAG workflow against the repository file-processing example:
 
