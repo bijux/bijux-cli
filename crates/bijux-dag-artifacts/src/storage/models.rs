@@ -372,6 +372,8 @@ pub struct FailurePropagationRecord {
     pub node_id: String,
     pub status: String,
     pub reason: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub propagation_mode: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub blocking_nodes: Vec<String>,
 }

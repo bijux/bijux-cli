@@ -286,6 +286,7 @@ fn build_propagation_record(
         node_id: node_id.to_string(),
         status: status.to_string(),
         reason: trace.map_or_else(|| "upstream_failed".to_string(), propagation_reason),
+        propagation_mode: None,
         blocking_nodes: blocking_nodes(node_id, upstream, traces),
     }
 }
