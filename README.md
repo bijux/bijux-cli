@@ -55,9 +55,12 @@ route is a public promise.
   records engine and image identity and fails clearly when the engine is
   unavailable.
 - Experimental DAG routes remain callable by explicit path, but they are not
-  part of the stable compatibility lane.
+  part of the stable compatibility lane. Inventory them deliberately with
+  `bijux-dag commands --lane experimental`.
 - Simulated and maintainer-only DAG namespaces require
-  `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`.
+  `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`, and they
+  now require deliberate lane inventory through `bijux-dag commands --lane
+  simulated` or `bijux-dag commands --lane internal`.
 - The current internal schedule lane is repository-tested for cron preview,
   durable submission, backfill planning, aggregate backfill summary, failed-
   partition retry, queue dispatch, and queue-to-run linkage, but it remains
@@ -78,15 +81,18 @@ simulated, internal, or still future work.
 | Class | `v0.4.0` meaning | Representative surfaces |
 | --- | --- | --- |
 | stable | supported visible `bijux-dag --help` surface for local DAG authoring, execution, replay, and evidence inspection | `validate`, `plan`, `run`, `replay`, `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`, `version`, `commands`, `completions` |
-| experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
-| simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
-| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
+| experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | explicit-path operator helpers such as `init`, `status`, `export`, `migrate`, `prove`, and `trace-artifact`; use `bijux-dag commands --lane experimental` for the current inventory |
+| simulated | modeled platform namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | modeled control-plane and organizational route families; use `bijux-dag commands --lane simulated` only when you intentionally need repository-owned modeling surfaces |
+| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | maintainer verification, schedule, runtime, release, and capability lanes; use `bijux-dag commands --lane internal` only for deliberate repository maintenance work |
 | future | not a `v0.4.0` product promise | cluster-backed kubernetes execution, cluster-backed slurm or hpc execution, public remote workers, public enterprise or federation APIs, full scheduler service |
 
-Build operator procedures on the stable row. Use `bijux-dag commands --all`
-only when you intentionally need repository-owned non-stable routes, and only
-set `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` for
-deliberate modeled or maintainer workflows.
+Build operator procedures on the stable row. Use
+`bijux-dag commands --lane experimental` only when you intentionally need
+repository-tested but non-stable operator helpers. Use
+`bijux-dag commands --lane simulated` or `bijux-dag commands --lane internal`
+only for deliberate modeled or maintainer workflows, and only set
+`BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` when you are
+intentionally executing those lanes.
 
 ## Package Families
 
@@ -185,7 +191,8 @@ Inspect product command surfaces:
 cargo run -p bijux-cli --bin bijux -- --help
 cargo run -p bijux-dag-cli --bin bijux-dag -- --help
 cargo run -p bijux-dag-cli --bin bijux-dag -- validate --help
-cargo run -p bijux-dag-cli --bin bijux-dag -- commands --all
+cargo run -p bijux-dag-cli --bin bijux-dag -- commands
+cargo run -p bijux-dag-cli --bin bijux-dag -- commands --lane experimental
 ```
 
 For the repository-backed internal schedule workflow that proves cron preview,
