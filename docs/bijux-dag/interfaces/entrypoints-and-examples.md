@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-07
 ---
 
 # Entrypoints and Examples
@@ -30,12 +30,26 @@ flowchart LR
 ## CLI Entrypoints
 
 ```bash
-bijux-dag validate ./examples/simple.dag.json
-bijux-dag run ./examples/simple.dag.json --out ./runs
-bijux-dag explain ./runs/run-123
-bijux-dag runs inspect run-123 --root ./runs
-bijux-dag replay ./runs/run-123 --out ./runs/replay-123
-bijux-dag diff ./runs/run-122 ./runs/run-123 --mode semantic --explain
+SOURCE_DIR="$(pwd)/evidence/dag/authoring/examples/file-processing-source"
+bijux-dag validate evidence/dag/authoring/examples/file-processing-report.dag.json
+bijux-dag run evidence/dag/authoring/examples/file-processing-report.dag.json \
+  --out ./artifacts/file-processing-runs \
+  --run-id file-processing-source \
+  --cache readwrite \
+  --cache-dir ./artifacts/file-processing-cache \
+  --input "source_dir=${SOURCE_DIR}"
+bijux-dag artifact-inspect \
+  ./artifacts/file-processing-runs/run-file-processing-source \
+  render_report:report.md
+bijux-dag replay --source-run-id file-processing-source \
+  --source-run-root ./artifacts/file-processing-runs \
+  --out ./artifacts/file-processing-runs \
+  --run-id file-processing-rerun \
+  --from-node render_report
+bijux-dag diff \
+  ./artifacts/file-processing-runs/run-file-processing-source \
+  ./artifacts/file-processing-runs/run-file-processing-rerun \
+  --mode semantic --explain
 ```
 
 ## Rust Entrypoint Example
@@ -58,4 +72,5 @@ println!("spec={}", graph.spec);
 
 - [CLI Surface](cli-surface.md)
 - [Operator Workflows](operator-workflows.md)
+- [File Processing Workflow](../operations/guides/file-processing-workflow.md)
 - [Local Development](../operations/local-development.md)

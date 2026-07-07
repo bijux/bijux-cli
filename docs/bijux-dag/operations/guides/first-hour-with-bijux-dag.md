@@ -13,6 +13,9 @@ The first hour should prove that a local operator can build the CLI, inspect
 its version and stable command surface, validate a small DAG, and run it with
 visible artifacts.
 
+For the first practical workflow after this bootstrap path, continue with
+[File Processing Workflow](file-processing-workflow.md).
+
 ## First-hour sequence
 
 1. Build the CLI with `cargo build -p bijux-dag-cli --release`.
@@ -61,6 +64,7 @@ operator contract and require `BIJUX_DAG_ENABLE_INTERNAL=1`.
 
 ## Next reads
 
+- [File Processing Workflow](file-processing-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Installation And Setup](installation-and-setup.md)
 - [Trust Boundaries](../reference/trust-boundaries.md)

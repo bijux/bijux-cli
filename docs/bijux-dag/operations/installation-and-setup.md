@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-07
 ---
 
 # Installation And Setup
@@ -32,12 +32,19 @@ flowchart TD
 ## Recommended Validation Sequence
 
 ```bash
+SOURCE_DIR="$(pwd)/evidence/dag/authoring/examples/file-processing-source"
+
 cargo build -p bijux-dag-cli --release
 cargo run -p bijux-dag-cli --bin bijux-dag -- version
 cargo test -p bijux-dag-core
-bijux-dag validate ./examples/simple.dag.json
-bijux-dag run ./examples/simple.dag.json --out ./runs/bootstrap
-bijux-dag explain ./runs/bootstrap/latest
+bijux-dag validate evidence/dag/authoring/examples/file-processing-report.dag.json
+bijux-dag run evidence/dag/authoring/examples/file-processing-report.dag.json \
+  --out ./artifacts/bootstrap-runs \
+  --run-id bootstrap-file-processing \
+  --input "source_dir=${SOURCE_DIR}"
+bijux-dag artifact-inspect \
+  ./artifacts/bootstrap-runs/run-bootstrap-file-processing \
+  render_report:report.md
 ```
 
 ## Code Anchors
@@ -51,9 +58,11 @@ bijux-dag explain ./runs/bootstrap/latest
 - command not found for `bijux-dag`
 - schema rejection on known-good example graphs
 - run directories missing outputs index or manifest evidence
+- required runtime inputs not provided for the repository workflow examples
 
 ## Next Reads
 
 - [Local Development](local-development.md)
 - [Common Workflows](common-workflows.md)
+- [File Processing Workflow](guides/file-processing-workflow.md)
 - [Failure Recovery](failure-recovery.md)
