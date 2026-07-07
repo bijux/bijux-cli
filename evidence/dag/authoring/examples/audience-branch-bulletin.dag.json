@@ -1,0 +1,175 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "audience-branch-bulletin",
+    "description": "Route one source note through an executive or technical publishing lane, then join the selected branch into one retained bulletin.",
+    "owners": ["platform"],
+    "tags": ["authoring", "branching", "publishing"]
+  },
+  "inputs": {
+    "source_note": {
+      "type": "path",
+      "required": true
+    },
+    "audience_mode": {
+      "type": "enum",
+      "values": ["executive", "technical"],
+      "default": "executive"
+    }
+  },
+  "nodes": [
+    {
+      "id": "prepare_note",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "source",
+          "path": "prepared/source.txt",
+          "media_type": "text/plain"
+        }
+      ],
+      "params": {
+        "source_note": { "graph_input": "source_note" },
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "set -eu\nSOURCE_NOTE=\"{params.source_note}\"\nif [ ! -f \"$SOURCE_NOTE\" ]; then\n  echo \"source_note is not a file: $SOURCE_NOTE\" >&2\n  exit 1\nfi\nif [ ! -s \"$SOURCE_NOTE\" ]; then\n  echo \"source_note is empty: $SOURCE_NOTE\" >&2\n  exit 1\nfi\nmkdir -p ../outputs/prepared\ncat \"$SOURCE_NOTE\" > ../outputs/prepared/source.txt\n"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "choose_audience_lane",
+      "kind": "const",
+      "semantic_kind": "branch",
+      "inputs": ["source"],
+      "outputs": [
+        {
+          "name": "decision",
+          "path": "branch/decision.txt",
+          "media_type": "text/plain"
+        }
+      ],
+      "params": {
+        "value": { "graph_input": "audience_mode" }
+      },
+      "branch": {
+        "decisions": ["executive", "technical"],
+        "decision_output": "decision"
+      }
+    },
+    {
+      "id": "render_executive_bulletin",
+      "kind": "shell",
+      "inputs": ["source", "gate"],
+      "trigger_rule": "any_success",
+      "outputs": [
+        {
+          "name": "bulletin",
+          "path": "executive/bulletin.md",
+          "media_type": "text/markdown"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "set -eu\nmkdir -p ../outputs/executive\n{\n  printf '# Executive Bulletin\\n\\n'\n  printf 'Audience lane: executive\\n\\n'\n  cat ../inputs/prepare_note/source\n} > ../outputs/executive/bulletin.md\n"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "render_technical_bulletin",
+      "kind": "shell",
+      "inputs": ["source", "gate"],
+      "trigger_rule": "any_success",
+      "outputs": [
+        {
+          "name": "bulletin",
+          "path": "technical/bulletin.md",
+          "media_type": "text/markdown"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "set -eu\nmkdir -p ../outputs/technical\n{\n  printf '# Technical Bulletin\\n\\n'\n  printf 'Audience lane: technical\\n\\n'\n  cat ../inputs/prepare_note/source\n} > ../outputs/technical/bulletin.md\n"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "publish_bulletin",
+      "kind": "shell",
+      "inputs": ["executive_bulletin", "technical_bulletin"],
+      "outputs": [
+        {
+          "name": "bulletin",
+          "path": "publish/bulletin.md",
+          "media_type": "text/markdown",
+          "promotable": true
+        },
+        {
+          "name": "selection",
+          "path": "publish/selection.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "set -eu\nmkdir -p ../outputs/publish\nSELECTED=''\nSOURCE=''\nif [ -f ../inputs/render_executive_bulletin/executive_bulletin ]; then\n  SELECTED='executive'\n  SOURCE='../inputs/render_executive_bulletin/executive_bulletin'\nelif [ -f ../inputs/render_technical_bulletin/technical_bulletin ]; then\n  SELECTED='technical'\n  SOURCE='../inputs/render_technical_bulletin/technical_bulletin'\nelse\n  echo 'no selected branch bulletin was materialized' >&2\n  exit 1\nfi\ncat \"$SOURCE\" > ../outputs/publish/bulletin.md\nprintf '{\\n  \"selected_lane\": \"%s\"\\n}\\n' \"$SELECTED\" > ../outputs/publish/selection.json\n"
+        ]
+      },
+      "trigger_rule": "none_failed",
+      "cache": {
+        "enabled": false,
+        "reason": "final published bulletin should always be regenerated from the selected branch output"
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    {
+      "from": { "node_id": "prepare_note", "port": "source" },
+      "to": { "node_id": "choose_audience_lane", "port": "source" }
+    },
+    {
+      "from": { "node_id": "prepare_note", "port": "source" },
+      "to": { "node_id": "render_executive_bulletin", "port": "source" }
+    },
+    {
+      "kind": "conditional",
+      "decision": "executive",
+      "from": { "node_id": "choose_audience_lane", "port": "decision" },
+      "to": { "node_id": "render_executive_bulletin", "port": "gate" }
+    },
+    {
+      "from": { "node_id": "prepare_note", "port": "source" },
+      "to": { "node_id": "render_technical_bulletin", "port": "source" }
+    },
+    {
+      "kind": "conditional",
+      "decision": "technical",
+      "from": { "node_id": "choose_audience_lane", "port": "decision" },
+      "to": { "node_id": "render_technical_bulletin", "port": "gate" }
+    },
+    {
+      "from": { "node_id": "render_executive_bulletin", "port": "bulletin" },
+      "to": { "node_id": "publish_bulletin", "port": "executive_bulletin" }
+    },
+    {
+      "from": { "node_id": "render_technical_bulletin", "port": "bulletin" },
+      "to": { "node_id": "publish_bulletin", "port": "technical_bulletin" }
+    }
+  ]
+}
