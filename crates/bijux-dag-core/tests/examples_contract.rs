@@ -25,6 +25,7 @@ fn tutorial_examples_parse_as_stable_contracts() {
         "../../evidence/authoring/examples/replay-heavy-branching.dag.json",
         "../../evidence/authoring/examples/failure-heavy-retry.dag.json",
         "../../evidence/authoring/examples/parameterized-report.dag.json",
+        "../../evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
     ];
     for relative in examples {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(relative);
@@ -282,6 +283,60 @@ fn compliance_gated_bulletin_example_declares_retryable_gate_and_promotable_publ
 
     let publish_contract =
         node_io_contract(&graph, "publish_bulletin").expect("publish_bulletin contract");
+    assert_eq!(publish_contract.outputs.len(), 2);
+    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "text/markdown" && output.promotable));
+    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "application/json"));
+}
+
+#[test]
+fn scheduled_catalog_refresh_example_binds_required_schedule_timestamp() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../evidence/authoring/examples/scheduled-catalog-refresh.dag.json");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+    let graph = parse_graph_strict(&text)
+        .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
+
+    let scheduled_at = &graph.input_schema()["scheduled_at_unix_ms"];
+    assert_eq!(scheduled_at["type"], "integer");
+    assert_eq!(scheduled_at["required"], true);
+
+    let refresh_label = &graph.input_schema()["refresh_label"];
+    assert_eq!(refresh_label["type"], "string");
+    assert_eq!(refresh_label["default"], "Nightly Catalog Refresh");
+
+    let dataset_name = &graph.input_schema()["dataset_name"];
+    assert_eq!(dataset_name["type"], "string");
+    assert_eq!(dataset_name["default"], "atlas.catalog");
+
+    let capture_contract = node_io_contract(&graph, "capture_schedule_context")
+        .expect("capture_schedule_context contract");
+    assert!(capture_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "scheduled_at_unix_ms"
+    )));
+    assert!(capture_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "refresh_label"
+    )));
+    assert!(capture_contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "dataset_name"
+    )));
+
+    let publish_node = graph
+        .nodes
+        .iter()
+        .find(|node| node.id == "render_refresh_report")
+        .expect("render_refresh_report node");
+    assert!(!publish_node.cache.enabled);
+    assert_eq!(
+        publish_node.cache.reason.as_deref(),
+        Some("scheduled publication should be regenerated for every emitted schedule slot")
+    );
+
+    let publish_contract =
+        node_io_contract(&graph, "render_refresh_report").expect("render_refresh_report contract");
     assert_eq!(publish_contract.outputs.len(), 2);
     assert!(publish_contract.outputs.iter().any(|output| output.media_type == "text/markdown" && output.promotable));
     assert!(publish_contract.outputs.iter().any(|output| output.media_type == "application/json"));
