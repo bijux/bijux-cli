@@ -13,8 +13,9 @@ fn collect_markdown_files(root: &Path) -> Vec<PathBuf> {
 }
 
 fn collect_markdown_files_inner(root: &Path, files: &mut Vec<PathBuf>) {
-    let entries = fs::read_dir(root)
-        .unwrap_or_else(|err| panic!("failed to read markdown directory {}: {err}", root.display()));
+    let entries = fs::read_dir(root).unwrap_or_else(|err| {
+        panic!("failed to read markdown directory {}: {err}", root.display())
+    });
     for entry in entries {
         let entry = entry.expect("markdown directory entry");
         let path = entry.path();
@@ -111,7 +112,8 @@ fn looks_like_path_reference(candidate: &str) -> bool {
 }
 
 fn resolution_roots(doc: &Path, repo_root: &Path) -> Vec<PathBuf> {
-    let mut roots = vec![doc.parent().expect("markdown parent").to_path_buf(), repo_root.to_path_buf()];
+    let mut roots =
+        vec![doc.parent().expect("markdown parent").to_path_buf(), repo_root.to_path_buf()];
     let repo_relative = doc.strip_prefix(repo_root).expect("repo-relative doc path");
 
     if repo_relative.starts_with("docs/bijux-cli") {
@@ -128,7 +130,8 @@ fn resolution_roots(doc: &Path, repo_root: &Path) -> Vec<PathBuf> {
 }
 
 fn reference_resolves(doc: &Path, repo_root: &Path, reference: &str) -> bool {
-    let path_text = reference.split_once('#').map_or(reference, |(path, _)| path).trim_end_matches('/');
+    let path_text =
+        reference.split_once('#').map_or(reference, |(path, _)| path).trim_end_matches('/');
     if path_text.is_empty()
         || path_text.contains('*')
         || path_text.contains('{')
@@ -142,13 +145,16 @@ fn reference_resolves(doc: &Path, repo_root: &Path, reference: &str) -> bool {
     resolution_roots(doc, repo_root).into_iter().any(|root| root.join(path_text).exists())
 }
 
-fn assert_source_references_resolve(markdown_files: impl IntoIterator<Item = PathBuf>, label: &str) {
+fn assert_source_references_resolve(
+    markdown_files: impl IntoIterator<Item = PathBuf>,
+    label: &str,
+) {
     let root = repo_root();
     let mut failures = Vec::new();
 
     for doc in markdown_files {
-        let text =
-            fs::read_to_string(&doc).unwrap_or_else(|err| panic!("failed to read {}: {err}", doc.display()));
+        let text = fs::read_to_string(&doc)
+            .unwrap_or_else(|err| panic!("failed to read {}: {err}", doc.display()));
         for (line, reference) in extract_inline_code_references(&text) {
             if !looks_like_path_reference(&reference) {
                 continue;

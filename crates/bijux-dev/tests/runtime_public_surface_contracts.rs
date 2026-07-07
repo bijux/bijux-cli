@@ -27,9 +27,10 @@ fn runtime_root_use_decls() -> Vec<RootUseDecl> {
         }
         if depth == 0 && trimmed.starts_with("pub use ") {
             let rest = trimmed.trim_start_matches("pub use ");
-            let source = rest
-                .split_once("::{")
-                .map_or_else(|| rest.trim_end_matches(';').to_string(), |(prefix, _)| prefix.to_string());
+            let source = rest.split_once("::{").map_or_else(
+                || rest.trim_end_matches(';').to_string(),
+                |(prefix, _)| prefix.to_string(),
+            );
             decls.push(RootUseDecl { source, doc_hidden: next_doc_hidden });
             next_doc_hidden = false;
         } else if depth == 0 && !trimmed.is_empty() && !trimmed.starts_with("//") {
