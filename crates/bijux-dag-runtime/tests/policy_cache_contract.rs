@@ -10,7 +10,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
-use bijux_dag_artifacts::RunOutputsIndex;
+use bijux_dag_artifacts::{FailurePropagationRecord, RunOutputsIndex};
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{
     registered_adapters, CacheMode, FailurePropagationMode, PolicyConfig, QueueIsolationPolicy,
@@ -161,6 +161,69 @@ fn graph_with_fail_fast_abort() -> String {
     .to_string()
 }
 
+fn graph_with_failure_propagation_merge() -> String {
+    json!({
+        "spec": "bijux-dag/v0.1",
+        "nodes": [
+            {
+                "id": "seed",
+                "kind": "const",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "seed.txt"}],
+                "params": {"value": "seed"}
+            },
+            {
+                "id": "fail",
+                "kind": "shell",
+                "inputs": ["in"],
+                "outputs": [{"name": "value", "path": "fail.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "exit 1"]},
+                "effects": ["filesystem"]
+            },
+            {
+                "id": "ok",
+                "kind": "shell",
+                "inputs": ["in"],
+                "outputs": [{"name": "value", "path": "ok.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "printf '%s' ok > ../outputs/ok.txt"]},
+                "effects": ["filesystem"]
+            },
+            {
+                "id": "join",
+                "kind": "shell",
+                "inputs": ["failed_branch", "healthy_branch"],
+                "outputs": [{"name": "value", "path": "join.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "printf '%s' join > ../outputs/join.txt"]},
+                "effects": ["filesystem"],
+                "trigger_rule": "all_done"
+            },
+            {
+                "id": "publish",
+                "kind": "shell",
+                "inputs": ["joined"],
+                "outputs": [{"name": "value", "path": "publish.txt"}],
+                "params": {"argv": ["/bin/sh", "-c", "printf '%s' publish > ../outputs/publish.txt"]},
+                "effects": ["filesystem"]
+            },
+            {
+                "id": "independent",
+                "kind": "const",
+                "inputs": [],
+                "outputs": [{"name": "value", "path": "independent.txt"}],
+                "params": {"value": "ready"}
+            }
+        ],
+        "edges": [
+            {"from": {"node_id": "seed", "port": "value"}, "to": {"node_id": "fail", "port": "in"}},
+            {"from": {"node_id": "seed", "port": "value"}, "to": {"node_id": "ok", "port": "in"}},
+            {"from": {"node_id": "fail", "port": "value"}, "to": {"node_id": "join", "port": "failed_branch"}},
+            {"from": {"node_id": "ok", "port": "value"}, "to": {"node_id": "join", "port": "healthy_branch"}},
+            {"from": {"node_id": "join", "port": "value"}, "to": {"node_id": "publish", "port": "joined"}}
+        ]
+    })
+    .to_string()
+}
+
 fn graph_with_run_timeout_pending_node() -> String {
     json!({
         "spec": "bijux-dag/v0.1",
@@ -274,7 +337,7 @@ fn read_node_trace(run_dir: &std::path::Path, node_id: &str) -> Value {
     .expect("parse trace")
 }
 
-fn read_failure_propagation(run_dir: &std::path::Path) -> Vec<Value> {
+fn read_failure_propagation(run_dir: &std::path::Path) -> Vec<FailurePropagationRecord> {
     serde_json::from_str(
         &fs::read_to_string(run_dir.join("failure-propagation.json")).expect("failure propagation"),
     )
@@ -398,7 +461,7 @@ fn runtime_rejects_network_effect_when_denied() {
     assert_eq!(trace["failure"]["details"]["effect"], "network");
     assert_eq!(trace["transition_cause"], "PolicyDenied");
     let propagation = read_failure_propagation(&run_path);
-    assert_eq!(propagation[0]["cause"], "policy_denied");
+    assert_eq!(propagation[0].reason, "policy_denied");
 }
 
 #[test]
@@ -501,7 +564,7 @@ fn runtime_missing_output_file_fails_with_missing_output() {
     assert_eq!(trace["failure"]["class"], "user");
     assert_eq!(trace["transition_cause"], "MissingRequiredOutput");
     let propagation = read_failure_propagation(&run_path);
-    assert_eq!(propagation[0]["cause"], "missing_required_output");
+    assert_eq!(propagation[0].reason, "missing_required_output");
 }
 
 #[test]
@@ -1203,7 +1266,16 @@ fn runtime_marks_upstream_blocked_nodes_as_dependency_failures() {
     let graph = parse_graph_strict(&graph_with_failed_upstream_dependency()).expect("parse graph");
     let runtime = Runtime::new();
     let out = tempfile::tempdir().expect("temp");
-    let run_path = runtime.run(&graph, out.path(), RuntimeConfig::default()).expect("failed run");
+    let run_path = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                failure_propagation: FailurePropagationMode::ContinueIndependent,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("failed run");
 
     let downstream = read_node_trace(&run_path, "b");
     assert_eq!(downstream["status"], "failed");
@@ -1213,7 +1285,7 @@ fn runtime_marks_upstream_blocked_nodes_as_dependency_failures() {
     let propagation = read_failure_propagation(&run_path);
     assert!(propagation
         .iter()
-        .any(|entry| entry["node_id"] == "b" && entry["cause"] == "upstream_failed"));
+        .any(|entry| entry.node_id == "b" && entry.reason == "upstream_failed"));
 }
 
 #[test]
@@ -1258,7 +1330,7 @@ fn runtime_fail_fast_marks_unscheduled_nodes_as_aborted_failures() {
     let propagation = read_failure_propagation(&run_path);
     assert!(propagation
         .iter()
-        .any(|entry| entry["node_id"] == "b" && entry["cause"] == "execution_aborted"));
+        .any(|entry| entry.node_id == "b" && entry.reason == "execution_aborted"));
 
     let timeline = read_timeline(&run_path);
     assert!(timeline.iter().any(|entry| {
@@ -1266,6 +1338,125 @@ fn runtime_fail_fast_marks_unscheduled_nodes_as_aborted_failures() {
             && entry["label"] == "node_failed"
             && entry["reason"] == "execution_aborted"
     }));
+}
+
+#[test]
+fn runtime_continue_independent_allows_all_done_join_after_failed_branch() {
+    let graph = parse_graph_strict(&graph_with_failure_propagation_merge()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                failure_propagation: FailurePropagationMode::ContinueIndependent,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("continue-independent run");
+
+    assert_eq!(read_node_status(&run_path, "fail"), "failed");
+    assert_eq!(read_node_status(&run_path, "ok"), "success");
+    assert_eq!(read_node_status(&run_path, "join"), "success");
+    assert_eq!(read_node_status(&run_path, "publish"), "success");
+    assert_eq!(read_node_status(&run_path, "independent"), "success");
+
+    let propagation = read_failure_propagation(&run_path);
+    let failed_join_records =
+        propagation.iter().filter(|entry| entry.node_id == "join" || entry.node_id == "publish");
+    assert_eq!(failed_join_records.count(), 0);
+}
+
+#[test]
+fn runtime_isolate_branch_skips_descendants_and_records_propagation_reason() {
+    let graph = parse_graph_strict(&graph_with_failure_propagation_merge()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let run_path = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                failure_propagation: FailurePropagationMode::IsolateBranch,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("isolate-branch run");
+
+    assert_eq!(read_node_status(&run_path, "fail"), "failed");
+    assert_eq!(read_node_status(&run_path, "ok"), "success");
+    assert_eq!(read_node_status(&run_path, "join"), "skipped");
+    assert_eq!(read_node_status(&run_path, "publish"), "skipped");
+    assert_eq!(read_node_status(&run_path, "independent"), "success");
+
+    let join = read_node_trace(&run_path, "join");
+    assert_eq!(join["skip_reason"]["reason"], "isolated_branch_failure");
+    assert_eq!(join["transition_cause"], "DependencyFailed");
+    let publish = read_node_trace(&run_path, "publish");
+    assert_eq!(publish["skip_reason"]["reason"], "isolated_branch_failure");
+    assert_eq!(publish["transition_cause"], "DependencyFailed");
+
+    let propagation = read_failure_propagation(&run_path);
+    let join_record =
+        propagation.iter().find(|entry| entry.node_id == "join").expect("join propagation");
+    assert_eq!(join_record.status, "skipped");
+    assert_eq!(join_record.reason, "isolated_branch_failure");
+    assert_eq!(join_record.propagation_mode.as_deref(), Some("isolate_branch"));
+    assert_eq!(join_record.blocking_nodes, vec!["fail".to_string()]);
+
+    let publish_record =
+        propagation.iter().find(|entry| entry.node_id == "publish").expect("publish propagation");
+    assert_eq!(publish_record.status, "skipped");
+    assert_eq!(publish_record.reason, "isolated_branch_failure");
+    assert_eq!(publish_record.propagation_mode.as_deref(), Some("isolate_branch"));
+    assert_eq!(publish_record.blocking_nodes, vec!["fail".to_string()]);
+}
+
+#[test]
+fn runtime_replay_preserves_isolated_branch_propagation_decisions() {
+    let graph = parse_graph_strict(&graph_with_failure_propagation_merge()).expect("parse graph");
+    let runtime = Runtime::new();
+    let out = tempfile::tempdir().expect("temp");
+    let original = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                failure_propagation: FailurePropagationMode::IsolateBranch,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("original run");
+    let original_manifest: Value = serde_json::from_str(
+        &fs::read_to_string(original.join("manifest.json")).expect("manifest"),
+    )
+    .expect("parse manifest");
+    let parent_run_id = original_manifest["run_id"].as_str().expect("run id").to_string();
+
+    let replay = runtime
+        .run(
+            &graph,
+            out.path(),
+            RuntimeConfig {
+                parent_run_id: Some(parent_run_id.clone()),
+                failure_propagation: FailurePropagationMode::IsolateBranch,
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("replay run");
+
+    let replay_join = read_node_trace(&replay, "join");
+    assert_eq!(replay_join["status"], "skipped");
+    assert_eq!(replay_join["skip_reason"]["reason"], "isolated_branch_failure");
+    assert_eq!(replay_join["replay_provenance"]["node_action"], "skipped");
+    assert_eq!(replay_join["replay_provenance"]["source_run_id"], parent_run_id);
+
+    let propagation = read_failure_propagation(&replay);
+    let join_record =
+        propagation.iter().find(|entry| entry.node_id == "join").expect("join propagation");
+    assert_eq!(join_record.reason, "isolated_branch_failure");
+    assert_eq!(join_record.propagation_mode.as_deref(), Some("isolate_branch"));
 }
 
 #[test]
@@ -1316,7 +1507,7 @@ fn runtime_marks_timed_out_runs_incomplete_when_deadline_is_exceeded() {
     let propagation = read_failure_propagation(&run_path);
     assert!(propagation
         .iter()
-        .any(|entry| entry["node_id"] == "b" && entry["cause"] == "timeout_exceeded"));
+        .any(|entry| entry.node_id == "b" && entry.reason == "timeout_exceeded"));
 
     let timeline = read_timeline(&run_path);
     let timeout_idx = timeline
