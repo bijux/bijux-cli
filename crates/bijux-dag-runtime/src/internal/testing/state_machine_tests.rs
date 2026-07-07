@@ -7,11 +7,18 @@ use crate::state_machine::{
 fn node_state_machine_has_explicit_legal_edges() {
     use NodeLifecycleState as S;
     assert!(node_transition_allowed(S::Pending, S::Ready));
-    assert!(node_transition_allowed(S::Ready, S::Running));
+    assert!(node_transition_allowed(S::Ready, S::Queued));
+    assert!(node_transition_allowed(S::Queued, S::Running));
     assert!(node_transition_allowed(S::Running, S::Succeeded));
     assert!(node_transition_allowed(S::Running, S::Failed));
     assert!(node_transition_allowed(S::Ready, S::Cached));
+    assert!(node_transition_allowed(S::Queued, S::Cached));
+    assert!(node_transition_allowed(S::Pending, S::Skipped));
     assert!(node_transition_allowed(S::Ready, S::Skipped));
+    assert!(node_transition_allowed(S::Queued, S::Skipped));
+    assert!(node_transition_allowed(S::Pending, S::TimedOut));
+    assert!(node_transition_allowed(S::Ready, S::TimedOut));
+    assert!(node_transition_allowed(S::Queued, S::TimedOut));
     assert!(node_transition_allowed(S::Running, S::TimedOut));
     assert!(node_transition_allowed(S::Running, S::Cancelled));
     assert!(!node_transition_allowed(S::Succeeded, S::Running));
@@ -42,6 +49,7 @@ fn terminal_node_states_have_no_outgoing_transitions() {
     let all = [
         S::Pending,
         S::Ready,
+        S::Queued,
         S::Running,
         S::Succeeded,
         S::Failed,

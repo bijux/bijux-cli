@@ -520,12 +520,12 @@ fn runtime_cache_contract_uses_cached_nodes_when_enabled() {
         serde_json::json!([
             {
                 "from_state": "pending",
-                "to_state": "eligible",
+                "to_state": "ready",
                 "cause": "scheduler_eligible",
                 "unix_ms": trace["lifecycle_transitions"][0]["unix_ms"],
             },
             {
-                "from_state": "eligible",
+                "from_state": "ready",
                 "to_state": "queued",
                 "cause": "scheduler_queued",
                 "unix_ms": trace["lifecycle_transitions"][1]["unix_ms"],

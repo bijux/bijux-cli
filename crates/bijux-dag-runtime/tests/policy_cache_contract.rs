@@ -1314,12 +1314,12 @@ fn runtime_fail_fast_marks_unscheduled_nodes_as_aborted_failures() {
         serde_json::json!([
             {
                 "from_state": "pending",
-                "to_state": "eligible",
+                "to_state": "ready",
                 "cause": "scheduler_eligible",
                 "unix_ms": trace["lifecycle_transitions"][0]["unix_ms"],
             },
             {
-                "from_state": "eligible",
+                "from_state": "ready",
                 "to_state": "cancelled",
                 "cause": "execution_aborted",
                 "unix_ms": trace["lifecycle_transitions"][1]["unix_ms"],
@@ -1491,12 +1491,12 @@ fn runtime_marks_timed_out_runs_incomplete_when_deadline_is_exceeded() {
         serde_json::json!([
             {
                 "from_state": "pending",
-                "to_state": "eligible",
+                "to_state": "ready",
                 "cause": "scheduler_eligible",
                 "unix_ms": trace["lifecycle_transitions"][0]["unix_ms"],
             },
             {
-                "from_state": "eligible",
+                "from_state": "ready",
                 "to_state": "timed_out",
                 "cause": "timeout_exceeded",
                 "unix_ms": trace["lifecycle_transitions"][1]["unix_ms"],

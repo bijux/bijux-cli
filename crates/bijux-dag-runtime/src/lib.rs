@@ -1953,6 +1953,22 @@ pub(crate) fn node_state_string(state: &NodeState) -> String {
     .to_string()
 }
 
+pub(crate) fn trace_lifecycle_state_string(state: &NodeState) -> String {
+    match state {
+        NodeState::Pending => "pending",
+        NodeState::Eligible => "ready",
+        NodeState::Queued => "queued",
+        NodeState::Running => "running",
+        NodeState::Success => "succeeded",
+        NodeState::Failed => "failed",
+        NodeState::Skipped => "skipped",
+        NodeState::Cached => "cached",
+        NodeState::Cancelled => "cancelled",
+        NodeState::TimedOut => "timed_out",
+    }
+    .to_string()
+}
+
 pub(crate) fn transition_cause_string(cause: &TransitionCause) -> String {
     match cause {
         TransitionCause::Submission => "submission",

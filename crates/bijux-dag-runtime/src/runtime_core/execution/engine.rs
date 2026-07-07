@@ -1018,8 +1018,8 @@ fn append_lifecycle_transition(
     })
     .map_err(RuntimeError::Executor)?;
     transitions.push(bijux_dag_artifacts::NodeLifecycleTransition {
-        from_state: crate::node_state_string(&from_state),
-        to_state: crate::node_state_string(&to_state),
+        from_state: crate::trace_lifecycle_state_string(&from_state),
+        to_state: crate::trace_lifecycle_state_string(&to_state),
         cause: crate::transition_cause_string(&cause),
         unix_ms,
     });
@@ -1077,7 +1077,7 @@ fn build_lifecycle_trace(
         finished_unix_ms,
     )?;
 
-    Ok((crate::node_state_string(&terminal_state), transitions))
+    Ok((crate::trace_lifecycle_state_string(&terminal_state), transitions))
 }
 
 fn write_scheduler_invariant_bundle(

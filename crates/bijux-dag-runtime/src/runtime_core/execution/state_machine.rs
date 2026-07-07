@@ -4,6 +4,7 @@
 pub enum NodeLifecycleState {
     Pending,
     Ready,
+    Queued,
     Running,
     Succeeded,
     Failed,
@@ -30,14 +31,22 @@ pub fn node_transition_allowed(from: NodeLifecycleState, to: NodeLifecycleState)
     matches!(
         (from, to),
         (S::Pending, S::Ready)
-            | (S::Ready, S::Running)
+            | (S::Ready, S::Queued)
+            | (S::Queued, S::Running)
             | (S::Running, S::Succeeded)
             | (S::Running, S::Failed)
             | (S::Ready, S::Cached)
+            | (S::Queued, S::Cached)
+            | (S::Pending, S::Skipped)
             | (S::Ready, S::Skipped)
+            | (S::Queued, S::Skipped)
             | (S::Pending, S::Cancelled)
             | (S::Ready, S::Cancelled)
+            | (S::Queued, S::Cancelled)
             | (S::Running, S::Cancelled)
+            | (S::Pending, S::TimedOut)
+            | (S::Ready, S::TimedOut)
+            | (S::Queued, S::TimedOut)
             | (S::Running, S::TimedOut)
     )
 }
