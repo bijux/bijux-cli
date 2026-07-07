@@ -17,6 +17,7 @@ fn tutorial_examples_parse_as_stable_contracts() {
         "../../evidence/authoring/examples/etl-constant-to-shell.dag.json",
         "../../evidence/authoring/examples/cached-branched-report.dag.json",
         "../../evidence/authoring/examples/file-processing-report.dag.json",
+        "../../evidence/authoring/examples/regional-sales-pipeline.dag.json",
         "../../evidence/authoring/examples/multi-output-artifact.dag.json",
         "../../evidence/authoring/examples/replay-heavy-branching.dag.json",
         "../../evidence/authoring/examples/failure-heavy-retry.dag.json",
@@ -101,6 +102,38 @@ fn file_processing_report_example_uses_required_path_inputs_and_promotable_repor
     let contract = node_io_contract(&graph, "render_report").expect("render_report contract");
     assert_eq!(contract.outputs.len(), 1);
     assert_eq!(contract.outputs[0].media_type, "text/markdown");
+    assert!(contract.outputs[0].promotable);
+    assert!(contract.param_bindings.iter().any(|binding| matches!(
+        &binding.source,
+        ParamBindingSource::GraphInput { input_name } if input_name == "report_title"
+    )));
+}
+
+#[test]
+fn regional_sales_pipeline_example_uses_path_inputs_and_promotable_final_table() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../evidence/authoring/examples/regional-sales-pipeline.dag.json");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+    let graph = parse_graph_strict(&text)
+        .unwrap_or_else(|err| panic!("failed to parse {}: {err}", path.display()));
+
+    let orders_csv = &graph.input_schema()["orders_csv"];
+    assert_eq!(orders_csv["type"], "path");
+    assert_eq!(orders_csv["required"], true);
+
+    let targets_json = &graph.input_schema()["targets_json"];
+    assert_eq!(targets_json["type"], "path");
+    assert_eq!(targets_json["required"], true);
+
+    let report_title = &graph.input_schema()["report_title"];
+    assert_eq!(report_title["type"], "string");
+    assert_eq!(report_title["default"], "Regional Revenue Attainment");
+
+    let contract =
+        node_io_contract(&graph, "publish_final_table").expect("publish_final_table contract");
+    assert_eq!(contract.outputs.len(), 1);
+    assert_eq!(contract.outputs[0].media_type, "text/csv");
     assert!(contract.outputs[0].promotable);
     assert!(contract.param_bindings.iter().any(|binding| matches!(
         &binding.source,

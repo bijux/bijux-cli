@@ -1,0 +1,5 @@
+order_id,region,segment,units,unit_price
+A-100,north,enterprise,10,12.50
+A-101,south,mid-market,4,20.00
+A-102,north,mid-market,3,15.00
+A-103,west,enterprise,7,9.00
