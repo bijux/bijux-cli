@@ -139,3 +139,85 @@ fn audience_branch_workflow_selects_one_lane_and_records_join_behavior() {
     assert!(bulletin.contains("Audience lane: technical"));
     assert!(bulletin.contains("published the container-backed release note workflow"));
 }
+
+#[test]
+fn audience_branch_workflow_replay_keeps_the_selected_lane() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let note = copy_source_note(&root, &temp.path().join("inputs"));
+    let runs_dir = temp.path().join("runs");
+    fs::create_dir_all(&runs_dir).expect("runs dir");
+
+    let graph = workflow_graph(&root);
+    let _source = run_json_owned(
+        vec![
+            "run".to_string(),
+            "--json".to_string(),
+            output_path_string(&graph),
+            "--out".to_string(),
+            output_path_string(&runs_dir),
+            "--run-id".to_string(),
+            "audience-branch-source".to_string(),
+            "--input".to_string(),
+            format!("source_note={}", output_path_string(&note)),
+            "--input".to_string(),
+            "audience_mode=executive".to_string(),
+        ],
+        &root,
+    );
+
+    let replay = run_json_owned(
+        vec![
+            "replay".to_string(),
+            "--json".to_string(),
+            "--source-run-id".to_string(),
+            "audience-branch-source".to_string(),
+            "--source-run-root".to_string(),
+            output_path_string(&runs_dir),
+            "--out".to_string(),
+            output_path_string(&runs_dir),
+            "--run-id".to_string(),
+            "audience-branch-replay".to_string(),
+            "--select".to_string(),
+            "id:publish_bulletin".to_string(),
+            "--dependency-closure".to_string(),
+            "--prove".to_string(),
+        ],
+        &root,
+    );
+
+    let replay_run = run_dir_from_response(&replay);
+    let replay_manifest = read_manifest(&replay_run);
+    assert_eq!(replay_manifest["status"], "success");
+    assert_eq!(replay_manifest["run_metadata"]["parent_run_id"], "audience-branch-source");
+    assert_eq!(replay_manifest["run_metadata"]["source_run_id"], "audience-branch-source");
+    assert_eq!(replay["data"]["replay_proof"]["equivalent"], true);
+    assert_eq!(
+        replay["data"]["replay_proof"]["branch_decision_drift_nodes"]
+            .as_array()
+            .expect("branch drift nodes")
+            .len(),
+        0
+    );
+
+    let choose = read_trace(&replay_run, "choose_audience_lane");
+    let executive = read_trace(&replay_run, "render_executive_bulletin");
+    let technical = read_trace(&replay_run, "render_technical_bulletin");
+    let publish = read_trace(&replay_run, "publish_bulletin");
+
+    assert_eq!(choose["branch_decision"], "executive");
+    assert_eq!(executive["status"], "success");
+    assert_eq!(technical["status"], "skipped");
+    assert_eq!(technical["skip_reason"]["reason"], "branch_decision_not_selected");
+    assert_eq!(publish["status"], "success");
+
+    let selection: Value = serde_json::from_str(
+        &fs::read_to_string(selection_path(&replay_run)).expect("replay selection"),
+    )
+    .expect("replay selection json");
+    assert_eq!(selection["selected_lane"], "executive");
+
+    let bulletin = fs::read_to_string(bulletin_path(&replay_run)).expect("replay bulletin");
+    assert!(bulletin.starts_with("# Executive Bulletin\n"));
+    assert!(bulletin.contains("Audience lane: executive"));
+}
