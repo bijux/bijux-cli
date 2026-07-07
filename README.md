@@ -54,6 +54,10 @@ route is a public promise.
   when a supported engine such as Docker is available on `PATH`; the runtime
   records engine and image identity and fails clearly when the engine is
   unavailable.
+- on Unix hosts, timed-out or cancelled local DAG subprocesses are terminated
+  as a subprocess group so background child and grandchild helpers do not keep
+  running after the node finishes; non-Unix hosts still rely on best-effort
+  termination.
 - Experimental DAG routes remain callable by explicit path, but they are not
   part of the stable compatibility lane. Inventory them deliberately with
   `bijux-dag commands --lane experimental`.
