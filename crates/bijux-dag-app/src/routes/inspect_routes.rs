@@ -16,13 +16,16 @@ use bijux_dag_runtime::AttemptEvent;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use std::fs;
+use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
 const NODE_LOG_TAIL_LINE_LIMIT: usize = 20;
+const NODE_LOG_TAIL_READ_BYTES: u64 = 16 * 1024;
 
 #[derive(Debug, Serialize)]
-struct NodeLogTail {
+struct NodeLogInspection {
     path: String,
+    size_bytes: u64,
     tail: Vec<String>,
 }
 
@@ -33,9 +36,9 @@ struct NodeAttemptInspection {
     finished_unix_ms: u128,
     status: Value,
     #[serde(skip_serializing_if = "Option::is_none")]
-    stdout: Option<NodeLogTail>,
+    stdout: Option<NodeLogInspection>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    stderr: Option<NodeLogTail>,
+    stderr: Option<NodeLogInspection>,
     #[serde(skip_serializing_if = "Option::is_none")]
     failure: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -45,9 +48,9 @@ struct NodeAttemptInspection {
 #[derive(Debug, Serialize)]
 struct NodeLogsInspection {
     #[serde(skip_serializing_if = "Option::is_none")]
-    stdout: Option<NodeLogTail>,
+    stdout: Option<NodeLogInspection>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    stderr: Option<NodeLogTail>,
+    stderr: Option<NodeLogInspection>,
 }
 
 #[derive(Debug, Serialize)]
@@ -64,6 +67,8 @@ struct NodeCacheInspection {
 struct NodeFailureInspection {
     #[serde(skip_serializing_if = "Option::is_none")]
     failure: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    exit_code: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     skip_reason: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -153,29 +158,62 @@ fn read_optional_json_file<T: DeserializeOwned>(
     }
 }
 
-fn read_optional_log_tail(
+fn read_optional_log_inspection(
     run_dir: &Path,
     path: &Path,
     label: &str,
     evidence_gaps: &mut Vec<String>,
-) -> Option<NodeLogTail> {
+) -> Option<NodeLogInspection> {
     if !path.exists() {
         evidence_gaps.push(format!("missing {label}: {}", relative_run_path(run_dir, path)));
         return None;
     }
-    let bytes = match fs::read(path) {
-        Ok(bytes) => bytes,
+    let size_bytes = match fs::metadata(path) {
+        Ok(metadata) => metadata.len(),
         Err(_) => {
             evidence_gaps.push(format!("unreadable {label}: {}", relative_run_path(run_dir, path)));
             return None;
         }
     };
-    let content = String::from_utf8_lossy(&bytes);
+    let tail = match read_log_tail_lines(path, NODE_LOG_TAIL_LINE_LIMIT, NODE_LOG_TAIL_READ_BYTES) {
+        Ok(tail) => tail,
+        Err(_) => {
+            evidence_gaps.push(format!("unreadable {label}: {}", relative_run_path(run_dir, path)));
+            return None;
+        }
+    };
+    Some(NodeLogInspection { path: relative_run_path(run_dir, path), size_bytes, tail })
+}
+
+fn read_log_tail_lines(
+    path: &Path,
+    max_lines: usize,
+    max_bytes: u64,
+) -> std::io::Result<Vec<String>> {
+    let mut file = fs::File::open(path)?;
+    let file_len = file.metadata()?.len();
+    let start = file_len.saturating_sub(max_bytes);
+    file.seek(SeekFrom::Start(start))?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+
+    let content = String::from_utf8_lossy(&buffer);
     let mut tail = content.lines().map(ToString::to_string).collect::<Vec<_>>();
-    if tail.len() > NODE_LOG_TAIL_LINE_LIMIT {
-        tail = tail.split_off(tail.len() - NODE_LOG_TAIL_LINE_LIMIT);
+    if start > 0 && !content.starts_with('\n') && !tail.is_empty() {
+        tail.remove(0);
     }
-    Some(NodeLogTail { path: relative_run_path(run_dir, path), tail })
+    if tail.len() > max_lines {
+        tail = tail.split_off(tail.len() - max_lines);
+    }
+    Ok(tail)
+}
+
+fn log_inspection_from_trace(evidence: &bijux_dag_artifacts::NodeLogEvidence) -> NodeLogInspection {
+    NodeLogInspection {
+        path: evidence.path.clone(),
+        size_bytes: evidence.size_bytes,
+        tail: evidence.tail_lines.clone(),
+    }
 }
 
 fn serialize_optional<T: Serialize>(value: Option<T>) -> Option<Value> {
@@ -264,32 +302,46 @@ fn node_inspection_payload(
             .as_ref()
             .map(|path| run_dir.join("nodes").join(node_id).join(path))
             .and_then(|path| {
-                read_optional_log_tail(run_dir, &path, "attempt stdout log", &mut evidence_gaps)
+                read_optional_log_inspection(
+                    run_dir,
+                    &path,
+                    "attempt stdout log",
+                    &mut evidence_gaps,
+                )
             }),
         stderr: attempt
             .stderr_path
             .as_ref()
             .map(|path| run_dir.join("nodes").join(node_id).join(path))
             .and_then(|path| {
-                read_optional_log_tail(run_dir, &path, "attempt stderr log", &mut evidence_gaps)
+                read_optional_log_inspection(
+                    run_dir,
+                    &path,
+                    "attempt stderr log",
+                    &mut evidence_gaps,
+                )
             }),
         failure: serialize_optional(attempt.failure),
         scheduled_backoff_ms: attempt.scheduled_backoff_ms,
     })
     .collect::<Vec<_>>();
     let logs = NodeLogsInspection {
-        stdout: read_optional_log_tail(
-            run_dir,
-            &node_stdout_path(run_dir, node_id),
-            "stdout log",
-            &mut evidence_gaps,
-        ),
-        stderr: read_optional_log_tail(
-            run_dir,
-            &node_stderr_path(run_dir, node_id),
-            "stderr log",
-            &mut evidence_gaps,
-        ),
+        stdout: trace.stdout.as_ref().map(log_inspection_from_trace).or_else(|| {
+            read_optional_log_inspection(
+                run_dir,
+                &node_stdout_path(run_dir, node_id),
+                "stdout log",
+                &mut evidence_gaps,
+            )
+        }),
+        stderr: trace.stderr.as_ref().map(log_inspection_from_trace).or_else(|| {
+            read_optional_log_inspection(
+                run_dir,
+                &node_stderr_path(run_dir, node_id),
+                "stderr log",
+                &mut evidence_gaps,
+            )
+        }),
     };
     let cache = NodeCacheInspection {
         configured: planned.cache.clone(),
@@ -299,6 +351,7 @@ fn node_inspection_payload(
     };
     let failure = NodeFailureInspection {
         failure: serialize_optional(trace.failure.clone()),
+        exit_code: trace.exit_code,
         skip_reason: serialize_optional(trace.skip_reason.clone()),
         transition_cause: trace.transition_cause.clone(),
         lifecycle_state: trace.lifecycle_state.clone(),
@@ -363,17 +416,31 @@ fn format_node_inspection_human(payload: &NodeInspectionPayload) -> String {
         .as_ref()
         .map(|failure| serde_json::to_string(failure).unwrap_or_else(|_| "null".to_string()))
         .unwrap_or_else(|| "null".to_string());
+    let exit_code =
+        payload.failure.exit_code.map(|value| value.to_string()).unwrap_or_else(|| "-".to_string());
     let stdout_tail =
         payload.logs.stdout.as_ref().map(|log| log.tail.join("\n")).unwrap_or_default();
     let stderr_tail =
         payload.logs.stderr.as_ref().map(|log| log.tail.join("\n")).unwrap_or_default();
+    let stdout_size_bytes = payload
+        .logs
+        .stdout
+        .as_ref()
+        .map(|log| log.size_bytes.to_string())
+        .unwrap_or_else(|| "-".to_string());
+    let stderr_size_bytes = payload
+        .logs
+        .stderr
+        .as_ref()
+        .map(|log| log.size_bytes.to_string())
+        .unwrap_or_else(|| "-".to_string());
     let evidence_gaps = if payload.evidence_gaps.is_empty() {
         "[]".to_string()
     } else {
         payload.evidence_gaps.join("; ")
     };
     format!(
-        "node: {}\nstatus: {}\nplanned_kind: {}\nplanned_inputs: {}\nplanned_outputs: {:?}\nresolved_params: {}\ninput_artifact_count: {}\noutput_artifact_count: {}\nterminal_attempt: {}\nattempts:\n{}\ncache_status: configured={} observed={}\nfailure_info: {}\nexecution_explanation: {}\nstdout_path: {}\nstderr_path: {}\nstdout_tail:\n{}\nstderr_tail:\n{}\nevidence_gaps: {}",
+        "node: {}\nstatus: {}\nplanned_kind: {}\nplanned_inputs: {}\nplanned_outputs: {:?}\nresolved_params: {}\ninput_artifact_count: {}\noutput_artifact_count: {}\nterminal_attempt: {}\nattempts:\n{}\ncache_status: configured={} observed={}\nfailure_info: {}\nexit_code: {}\nexecution_explanation: {}\nstdout_path: {}\nstdout_size_bytes: {}\nstderr_path: {}\nstderr_size_bytes: {}\nstdout_tail:\n{}\nstderr_tail:\n{}\nevidence_gaps: {}",
         payload.node_id,
         payload.status,
         payload.planned.kind.as_str(),
@@ -387,9 +454,12 @@ fn format_node_inspection_human(payload: &NodeInspectionPayload) -> String {
         render_cache_policy(&payload.cache.configured),
         payload.cache.observed_result,
         failure_summary,
+        exit_code,
         format_node_execution_explanation_human(&payload.execution_explanation),
         payload.logs.stdout.as_ref().map(|log| log.path.as_str()).unwrap_or("-"),
+        stdout_size_bytes,
         payload.logs.stderr.as_ref().map(|log| log.path.as_str()).unwrap_or("-"),
+        stderr_size_bytes,
         stdout_tail,
         stderr_tail,
         evidence_gaps,
@@ -795,6 +865,17 @@ mod tests {
                 "adapter_outputs_schema_version":"1",
                 "inputs_index":"inputs/index.json",
                 "resolved_params":{"request":{"dataset_uri":"s3://warehouse/catalog","region":"eu-west-1"}},
+                "exit_code":0,
+                "stdout":{
+                    "path":"nodes/extract/stdout.log",
+                    "size_bytes":28,
+                    "tail_lines":["terminal stdout","second line"]
+                },
+                "stderr":{
+                    "path":"nodes/extract/stderr.log",
+                    "size_bytes":16,
+                    "tail_lines":["terminal stderr"]
+                },
                 "outputs":[{
                     "name":"out",
                     "path":"extract/out",
@@ -1009,6 +1090,8 @@ mod tests {
             payload.logs.stdout.as_ref().expect("stdout log").tail,
             vec!["terminal stdout".to_string(), "second line".to_string()]
         );
+        assert_eq!(payload.logs.stdout.as_ref().expect("stdout log").size_bytes, 28);
+        assert_eq!(payload.failure.exit_code, Some(0));
         assert_eq!(payload.cache.observed_result, "disabled");
         assert!(payload.failure.failure.is_none());
         assert!(payload.evidence_gaps.is_empty());
@@ -1093,7 +1176,9 @@ failed_nodes: [\"n1\"]";
         assert!(rendered.contains("output_artifact_count: 1"));
         assert!(rendered.contains("attempt=1 status=Success"));
         assert!(rendered.contains("cache_status: configured=disabled"));
+        assert!(rendered.contains("exit_code: 0"));
         assert!(rendered.contains("stdout_path: nodes/extract/stdout.log"));
+        assert!(rendered.contains("stdout_size_bytes: 28"));
         assert!(rendered.contains("stderr_path: nodes/extract/stderr.log"));
         assert!(rendered.contains("terminal stdout"));
     }
