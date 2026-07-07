@@ -259,6 +259,10 @@ The supported binding sources are:
 Payload bindings may target either the whole payload or a JSON Pointer inside
 the payload. Pointer values must be empty or begin with `/`.
 
+Event-triggered submissions also retain `event_lineage` with the originating
+`event_id`, `event_type`, `source`, and `occurred_unix_ms` in both the
+generated submission request and the durable submission ledger.
+
 Dependency trigger conditions use the following terminal outcome classes:
 
 - `success`: successful upstream completions
