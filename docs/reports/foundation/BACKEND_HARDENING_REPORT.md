@@ -19,6 +19,8 @@ binding, lifecycle sequencing, attempt evidence, and engine/backend ownership.
 ## Current hardening stance
 
 - backend capability mismatch must fail binding before lifecycle work starts
+- declared output targets must be authorized before backend launch so malformed
+  paths never become writable targets
 - cleanup must remain explicit even when prepare, launch, observe, or finalize
   fails
 - undeclared outputs must fail finalization instead of entering durable evidence

@@ -4,7 +4,7 @@ audience: mixed
 type: spec
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-08
 ---
 
 # Backend Contract
@@ -85,6 +85,10 @@ failures without collapsing them into a generic runtime error.
 
 - `BackendContext` owns node id, attempt number, arguments, environment, and
   declared outputs
+- declared output targets must be authorized before backend launch so malformed
+  paths such as `../escape.txt` never become writable targets
+- symlinked existing parent components in declared output paths must be
+  rejected before backend launch
 - undeclared outputs must fail backend finalization rather than being silently
   accepted
 - environment shaping must remain explicit and must not leak ambient state into

@@ -4,7 +4,7 @@ audience: mixed
 type: spec
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-08
 ---
 
 # Storage Contract
@@ -39,8 +39,11 @@ finalized storage files when they do not become new write authorities.
 - writes to run-dir staging paths use explicit helper methods
 - storage-relative paths must reject traversal, absolute paths, and backslash
   escapes
+- declared output targets must be validated before execution starts
 - rooted input and output authorization must reject paths that escape the
   governed input or output tree
+- declared output target authorization must reject `../escape`, absolute paths,
+  and symlinked existing parent escapes before adapters receive a writable path
 - missing `outputs/index.json` is a storage-health anomaly, not a silent success
 - storage validation protects governed write paths; it does not claim a general
   host filesystem sandbox for shell execution
