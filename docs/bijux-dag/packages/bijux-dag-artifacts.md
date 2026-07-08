@@ -15,6 +15,9 @@ helpers, storage layout, integrity proofs, and lifecycle policy helpers.
 Use this page when the question is about what a DAG run leaves behind, how that
 material is identified, and how artifact integrity is verified over time.
 
+For the exact retained filesystem map, open
+[Run Evidence Layout](../interfaces/reference/run-evidence-layout.md).
+
 The intended Rust import lanes are the crate root, `stable`, and `prelude`.
 Hidden compatibility modules remain available for repository-owned coverage, and
 the `experimental` lane is opt-in behind `experimental-public-api`.
@@ -38,6 +41,12 @@ the `experimental` lane is opt-in behind `experimental-public-api`.
 
 ## Open Next
 
+- open [Run Evidence Layout](../interfaces/reference/run-evidence-layout.md)
+  when the question is where manifests, traces, indexes, cache entries, or
+  promotion records live on disk
+- open [Artifact Contracts](../interfaces/artifact-contracts.md) when the
+  question is which evidence surfaces are compatibility-bearing rather than only
+  where they are stored
 - open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when artifact work is tied to execution and replay policy
 - open the [DAG Handbook](../index.md) for the full DAG ownership map
 - open the [Repository Handbook](../../bijux-core/index.md) when artifact contracts affect shared governance

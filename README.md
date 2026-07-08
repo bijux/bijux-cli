@@ -213,6 +213,11 @@ That tutorial covers:
 - warm cache reuse on a second run
 - focused replay and strict verification
 
+For the exact retained file map after that first run, including manifests,
+node traces, input and output indexes, cache-entry layout, and promotion
+records, use
+[`docs/bijux-dag/interfaces/reference/run-evidence-layout.md`](docs/bijux-dag/interfaces/reference/run-evidence-layout.md).
+
 For the repository-backed internal schedule workflow that proves cron preview,
 same-slot suppression, queue dispatch, and explicit run linkage without
 claiming a public scheduler service, use

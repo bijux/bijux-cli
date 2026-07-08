@@ -15,6 +15,7 @@ lifecycle helpers for DAG runs.
 - artifact hashing, proof, and schema validation helpers
 - filesystem-backed storage and layout helpers
 - retention, promotion, and lineage policy primitives
+- the retained run-directory, cache-entry, and promotion-ledger evidence shapes
 
 Use this crate when you need to read, write, validate, or transport DAG run
 artifacts without taking on runtime execution or command orchestration.
@@ -59,4 +60,5 @@ artifacts without taking on runtime execution or command orchestration.
 - [Crate contract](./CONTRACT.md)
 - [Crate changelog](./CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
+- [Run evidence layout](https://bijux.io/bijux-core/bijux-dag/interfaces/reference/run-evidence-layout/)
 - [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-artifacts/)
