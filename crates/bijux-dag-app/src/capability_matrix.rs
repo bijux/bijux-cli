@@ -47,12 +47,13 @@ pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value
         }
         "k8s" | "kubernetes" => {
             let version = bijux_dag_runtime::K8sBackendVersionMetadata {
-                k8s_version: "simulated-v1.30".to_string(),
-                api_server: "simulated-control-plane".to_string(),
-                cluster_uid: "simulated-cluster".to_string(),
+                k8s_version: "runtime-via-kubectl".to_string(),
+                api_server: "configured-at-run-time".to_string(),
+                cluster_uid: "shared-volume-cluster".to_string(),
             };
             let caps = bijux_dag_runtime::k8s_capability_declaration();
-            let mut payload = base_payload("kubernetes", "simulated");
+            let mut payload =
+                base_payload_with_lane("kubernetes", "implemented", LANE_ENFORCED, false);
             payload["capabilities"] = json!({
                 "job_submission": true,
                 "resource_mapping": true,
@@ -60,22 +61,23 @@ pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value
                 "pod_phase_mapping": true,
                 "workspace_transfer": true,
                 "log_capture": true,
+                "container_nodes_only": true,
+                "shared_run_volume_claim": true,
                 "node_selector": caps.supports_node_selector,
                 "node_affinity": caps.supports_node_affinity,
                 "pod_affinity": caps.supports_pod_affinity
             });
             payload["version_metadata"] = json!(version);
             payload["notes"] = json!([
-                "kubernetes job execution is modeled and exercised through the shared runtime lane",
-                "cluster semantics remain simulated rather than control-plane-backed in this repository"
+                "kubernetes job execution is implemented for container nodes through kubectl plus a shared persistent volume claim",
+                "the backend is real but narrow: it does not claim a generic scheduler service, non-container runtime adapters, or network-policy enforcement parity"
             ]);
             Some(payload)
         }
         "slurm" => {
             let version = bijux_dag_runtime::capture_hpc_scheduler_version("slurm", "23.11.5");
             let retry = bijux_dag_runtime::effective_hpc_retry_policy(true, true);
-            let mut payload =
-                base_payload_with_lane("slurm", "implemented", LANE_ENFORCED, false);
+            let mut payload = base_payload_with_lane("slurm", "implemented", LANE_ENFORCED, false);
             payload["capabilities"] = json!({
                 "job_submission": true,
                 "job_id_capture": true,
@@ -166,12 +168,13 @@ mod tests {
         assert_eq!(first, second);
         assert_eq!(first["format"], "capabilities/v1");
         assert_eq!(first["backend"], "kubernetes");
-        assert_eq!(first["status"], "simulated");
-        assert_eq!(first["execution_lane"], "SIMULATED");
+        assert_eq!(first["status"], "implemented");
+        assert_eq!(first["execution_lane"], "ENFORCED");
         assert_eq!(first["production_ready"], false);
         assert_eq!(first["capabilities"]["job_submission"], true);
         assert_eq!(first["capabilities"]["pod_phase_mapping"], true);
         assert_eq!(first["capabilities"]["workspace_transfer"], true);
+        assert_eq!(first["capabilities"]["container_nodes_only"], true);
     }
 
     #[test]
@@ -257,11 +260,15 @@ mod tests {
 
     #[test]
     fn simulated_backends_are_never_reported_as_enforced() {
-        for backend in ["kubernetes", "hpc", "remote"] {
+        for backend in ["hpc", "remote"] {
             let payload = backend_capability_payload(backend).expect("payload");
             assert_eq!(payload["status"], "simulated");
             assert_eq!(payload["execution_lane"], "SIMULATED");
             assert_eq!(payload["production_ready"], false);
         }
+        let kubernetes = backend_capability_payload("kubernetes").expect("payload");
+        assert_eq!(kubernetes["status"], "implemented");
+        assert_eq!(kubernetes["execution_lane"], "ENFORCED");
+        assert_eq!(kubernetes["production_ready"], false);
     }
 }

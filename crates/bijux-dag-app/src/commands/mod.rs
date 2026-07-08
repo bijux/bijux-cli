@@ -52,9 +52,9 @@ const REPLAY_SOURCE_RUN_ROOT_HELP: &str =
 const RUN_PROGRESS_HELP: &str =
     "show live progress for `bijux-dag run`; `compact` renders operator-readable updates on stderr in human mode and streams `dag.run.progress` JSON lines on stdout when `--json` is active";
 const EXECUTION_BACKEND_HELP: &str =
-    "choose the node execution backend; `slurm` submits nodes through sbatch and polls sacct until each job reaches a terminal state";
+    "choose the node execution backend; `kubernetes` runs container nodes as Kubernetes Jobs through kubectl plus a shared persistent volume claim, and `slurm` submits nodes through sbatch and polls sacct until each job reaches a terminal state";
 const ROOT_HELP_BOUNDARY_HELP: &str =
-    "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: hidden explicit-path routes require deliberate inventory with `bijux-dag commands --lane experimental`\n  simulated: modeled platform namespaces require `bijux-dag commands --lane simulated` to inventory and BIJUX_DAG_ENABLE_SIMULATED=1 to execute\n  internal: maintainer namespaces require `bijux-dag commands --lane internal` to inventory and BIJUX_DAG_ENABLE_INTERNAL=1 to execute\n  future: cluster-backed kubernetes, generic hpc beyond the shared-filesystem slurm lane, public remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.";
+    "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: hidden explicit-path routes require deliberate inventory with `bijux-dag commands --lane experimental`\n  simulated: modeled platform namespaces require `bijux-dag commands --lane simulated` to inventory and BIJUX_DAG_ENABLE_SIMULATED=1 to execute\n  internal: maintainer namespaces require `bijux-dag commands --lane internal` to inventory and BIJUX_DAG_ENABLE_INTERNAL=1 to execute\n  future: generic hpc beyond the shared-filesystem slurm lane, public remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.";
 
 pub(crate) fn root_command_hidden_from_public_help(name: &str) -> bool {
     !PUBLIC_ROOT_COMMANDS.contains(&name)
@@ -113,6 +113,7 @@ pub(crate) enum CommandCatalogLaneArg {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
 pub(crate) enum ExecutionBackendArg {
     Local,
+    Kubernetes,
     Slurm,
 }
 
@@ -370,6 +371,12 @@ pub(crate) enum Commands {
         progress: RunProgressArg,
         #[arg(long, value_enum, default_value_t = ExecutionBackendArg::Local, help = EXECUTION_BACKEND_HELP)]
         backend: ExecutionBackendArg,
+        #[arg(long, default_value = "bijux")]
+        kubernetes_namespace: String,
+        #[arg(long)]
+        kubernetes_volume_claim: Option<String>,
+        #[arg(long)]
+        kubernetes_shared_root: Option<PathBuf>,
         #[arg(long, default_value = "general")]
         slurm_queue: String,
         #[arg(long, default_value = "cpu")]

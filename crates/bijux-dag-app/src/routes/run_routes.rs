@@ -62,6 +62,9 @@ pub(crate) struct RunRouteRequest<'a> {
     pub explain_scheduling: bool,
     pub progress: RunProgressArg,
     pub backend: ExecutionBackendArg,
+    pub kubernetes_namespace: String,
+    pub kubernetes_volume_claim: Option<String>,
+    pub kubernetes_shared_root: Option<PathBuf>,
     pub slurm_queue: String,
     pub slurm_partition: String,
 }
@@ -97,11 +100,7 @@ fn build_run_runtime_options(
     let slurm_worker_command = std::env::current_exe()
         .ok()
         .map(|path| {
-            vec![
-                path.display().to_string(),
-                "runtime".to_string(),
-                "execute-payload".to_string(),
-            ]
+            vec![path.display().to_string(), "runtime".to_string(), "execute-payload".to_string()]
         })
         .unwrap_or_default();
     RuntimeConfig {
@@ -148,7 +147,20 @@ fn build_run_runtime_options(
         },
         execution_backend: match req.backend {
             ExecutionBackendArg::Local => bijux_dag_runtime::ExecutionBackendTarget::Local,
+            ExecutionBackendArg::Kubernetes => {
+                bijux_dag_runtime::ExecutionBackendTarget::Kubernetes
+            }
             ExecutionBackendArg::Slurm => bijux_dag_runtime::ExecutionBackendTarget::Slurm,
+        },
+        kubernetes: bijux_dag_runtime::KubernetesRuntimeConfig {
+            default_namespace: req.kubernetes_namespace.clone(),
+            shared_volume_claim: req.kubernetes_volume_claim.clone().unwrap_or_default(),
+            shared_local_root: req.kubernetes_shared_root.clone().unwrap_or_default(),
+            kubectl_command: std::env::var("BIJUX_DAG_KUBECTL").ok(),
+            poll_interval_ms: std::env::var("BIJUX_DAG_KUBERNETES_POLL_INTERVAL_MS")
+                .ok()
+                .and_then(|value| value.parse::<u64>().ok())
+                .unwrap_or(250),
         },
         slurm: bijux_dag_runtime::SlurmRuntimeConfig {
             default_queue: req.slurm_queue.clone(),
@@ -286,6 +298,28 @@ pub(crate) fn handle_run_command(
         );
     }
     let runtime = Runtime::new();
+    if req.backend == ExecutionBackendArg::Kubernetes {
+        if req.kubernetes_volume_claim.as_deref().is_none_or(str::is_empty) {
+            return emit_run_input_error(
+                cli,
+                "kubernetes backend requires --kubernetes-volume-claim",
+                json!({
+                    "error": "kubernetes backend requires --kubernetes-volume-claim",
+                    "error_class": "user",
+                }),
+            );
+        }
+        if req.kubernetes_shared_root.is_none() {
+            return emit_run_input_error(
+                cli,
+                "kubernetes backend requires --kubernetes-shared-root",
+                json!({
+                    "error": "kubernetes backend requires --kubernetes-shared-root",
+                    "error_class": "user",
+                }),
+            );
+        }
+    }
     let named_resource_capacities = parse_resource_capacities(req.resource_capacity)?;
     let (deny_network, deny_clock, clean_env) =
         effective_policy_flags(req.deny_network, req.deny_clock, req.clean_env, req.hermetic);
@@ -596,6 +630,9 @@ mod tests {
             explain_scheduling: false,
             progress: RunProgressArg::Compact,
             backend: ExecutionBackendArg::Local,
+            kubernetes_namespace: "bijux".to_string(),
+            kubernetes_volume_claim: None,
+            kubernetes_shared_root: None,
             slurm_queue: "general".to_string(),
             slurm_partition: "cpu".to_string(),
         };
@@ -690,6 +727,9 @@ mod tests {
                 explain_scheduling: false,
                 progress: RunProgressArg::Off,
                 backend: ExecutionBackendArg::Local,
+                kubernetes_namespace: "bijux".to_string(),
+                kubernetes_volume_claim: None,
+                kubernetes_shared_root: None,
                 slurm_queue: "general".to_string(),
                 slurm_partition: "cpu".to_string(),
             },
@@ -756,6 +796,9 @@ mod tests {
                 explain_scheduling: false,
                 progress: RunProgressArg::Off,
                 backend: ExecutionBackendArg::Local,
+                kubernetes_namespace: "bijux".to_string(),
+                kubernetes_volume_claim: None,
+                kubernetes_shared_root: None,
                 slurm_queue: "general".to_string(),
                 slurm_partition: "cpu".to_string(),
             },
@@ -803,6 +846,9 @@ mod tests {
             explain_scheduling: false,
             progress: RunProgressArg::Off,
             backend: ExecutionBackendArg::Local,
+            kubernetes_namespace: "bijux".to_string(),
+            kubernetes_volume_claim: None,
+            kubernetes_shared_root: None,
             slurm_queue: "general".to_string(),
             slurm_partition: "cpu".to_string(),
         };

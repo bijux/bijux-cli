@@ -56,11 +56,11 @@ mod migrate;
 mod node_execution_explanation;
 #[path = "commands/output_contract.rs"]
 mod output_contract;
-#[path = "commands/reference_docs.rs"]
-mod reference_docs;
 mod read;
 #[path = "read/read_graph.rs"]
 mod read_graph;
+#[path = "commands/reference_docs.rs"]
+mod reference_docs;
 mod repair;
 #[path = "repair/service.rs"]
 mod repair_service;
@@ -802,6 +802,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             explain_scheduling,
             progress,
             backend,
+            kubernetes_namespace,
+            kubernetes_volume_claim,
+            kubernetes_shared_root,
             slurm_queue,
             slurm_partition,
         } => routes::run_routes::handle_run_command(
@@ -841,6 +844,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 explain_scheduling: *explain_scheduling,
                 progress: *progress,
                 backend: *backend,
+                kubernetes_namespace: kubernetes_namespace.clone(),
+                kubernetes_volume_claim: kubernetes_volume_claim.clone(),
+                kubernetes_shared_root: kubernetes_shared_root.clone(),
                 slurm_queue: slurm_queue.clone(),
                 slurm_partition: slurm_partition.clone(),
             },
