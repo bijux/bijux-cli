@@ -52,7 +52,10 @@ unchanged.
 Typical ownership anchors:
 
 - `crates/bijux-cli/` for operator CLI behavior
-- `crates/bijux-dag-*` for DAG runtime, app, CLI, and shared artifacts
+- `crates/bijux-dag-core/`, `crates/bijux-dag-runtime/`,
+  `crates/bijux-dag-app/`, `crates/bijux-dag-cli/`, and
+  `crates/bijux-dag-artifacts/` for DAG runtime, app, CLI, and shared
+  artifacts
 - `contracts/` for shared schemas and durable compatibility surfaces
 - `docs/` for public explanations and generated references
 - root `Makefile`, `makes/`, and `.github/workflows/` for repository operations
