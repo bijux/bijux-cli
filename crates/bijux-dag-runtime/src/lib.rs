@@ -937,6 +937,17 @@ impl Adapter for ConstAdapter {
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
+        if let Err(failure) = preflight_declared_output_targets(&outputs_dir, &node.outputs) {
+            return node_failure_result(
+                exec.fs.as_ref(),
+                &stdout_path,
+                &stderr_path,
+                &outputs_dir,
+                NodeStatus::Failed,
+                failure,
+                b"declared output path preflight failed",
+            );
+        }
 
         let value = params.get("value").cloned().unwrap_or(Value::Null);
         let target = node
@@ -945,7 +956,8 @@ impl Adapter for ConstAdapter {
             .find(|o| o.name == "value")
             .or_else(|| node.outputs.first())
             .ok_or_else(|| RuntimeError::Executor("no outputs declared".to_string()))?;
-        let out_path = outputs_dir.join(&target.path);
+        let out_path = authorized_declared_output_path(&outputs_dir, target)
+            .map_err(|failure| RuntimeError::Executor(failure.message))?;
         if let Some(parent) = out_path.parent() {
             exec.fs.create_dir_all(parent)?;
         }
@@ -1058,6 +1070,36 @@ fn node_failure_result(
     })
 }
 
+pub(crate) fn authorized_declared_output_path(
+    output_root: &Path,
+    output: &FileOutput,
+) -> Result<PathBuf, FailureInfo> {
+    crate::path_authorization::authorize_declared_output_target(output_root, &output.path).map_err(
+        |message| {
+            FailureInfo::new(
+                FailureClass::User,
+                "User",
+                "OUTPUT_PATH_INVALID",
+                message,
+                Some(serde_json::json!({
+                    "output": output.name,
+                    "path": output.path,
+                })),
+            )
+        },
+    )
+}
+
+pub(crate) fn preflight_declared_output_targets(
+    output_root: &Path,
+    outputs: &[FileOutput],
+) -> Result<(), FailureInfo> {
+    for output in outputs {
+        authorized_declared_output_path(output_root, output)?;
+    }
+    Ok(())
+}
+
 impl Adapter for ShellAdapter {
     fn id(&self) -> AdapterId {
         AdapterId { id: "shell".to_string(), version: "0.1".to_string() }
@@ -1087,6 +1129,17 @@ impl Adapter for ShellAdapter {
         exec.fs.create_dir_all(&work_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
+        if let Err(failure) = preflight_declared_output_targets(&outputs_dir, &node.outputs) {
+            return node_failure_result(
+                exec.fs.as_ref(),
+                &stdout_path,
+                &stderr_path,
+                &outputs_dir,
+                NodeStatus::Failed,
+                failure,
+                b"declared output path preflight failed",
+            );
+        }
         let args = match shell_argv(params) {
             Ok(args) => args,
             Err(failure) => {
@@ -1284,6 +1337,17 @@ impl Adapter for ContainerAdapter {
         exec.fs.create_dir_all(&work_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
+        if let Err(failure) = preflight_declared_output_targets(&outputs_dir, &node.outputs) {
+            return node_failure_result(
+                exec.fs.as_ref(),
+                &stdout_path,
+                &stderr_path,
+                &outputs_dir,
+                NodeStatus::Failed,
+                failure,
+                b"declared output path preflight failed",
+            );
+        }
 
         let engine = spec.engine.as_str();
         if let Err(failure) = enforce_container_image_reference_policy(
@@ -2616,8 +2680,10 @@ fn aggregate_map_item_outputs(
                 node.id, output.name
             )));
         }
-        let item_output_path = item_node_outputs_dir.join(&output.path);
-        let aggregate_root = parent_outputs_dir.join(&output.path);
+        let item_output_path = authorized_declared_output_path(item_node_outputs_dir, output)
+            .map_err(|failure| RuntimeError::Executor(failure.message))?;
+        let aggregate_root = authorized_declared_output_path(parent_outputs_dir, output)
+            .map_err(|failure| RuntimeError::Executor(failure.message))?;
         let aggregate_item_path = aggregate_root.join("items").join(item_id);
         fs.create_dir_all(&aggregate_root)?;
         copy_dir_all(fs, &item_output_path, &aggregate_item_path)?;
@@ -2678,7 +2744,9 @@ fn execute_map_node(
     let items = load_map_items(ctx, graph, node, &input_port)
         .map_err(|failure| RuntimeError::Executor(failure.message))?;
     for output in &node.outputs {
-        ctx.fs.create_dir_all(&parent_outputs_dir.join(&output.path))?;
+        let aggregate_root = authorized_declared_output_path(&parent_outputs_dir, output)
+            .map_err(|failure| RuntimeError::Executor(failure.message))?;
+        ctx.fs.create_dir_all(&aggregate_root)?;
     }
 
     let map_runs_dir = ctx.run_dir.node_dir(&node.id).join("mapped_items");
@@ -3420,15 +3488,20 @@ fn materialize_inputs(
             .iter()
             .find(|o| o.name == edge.from.port)
             .ok_or_else(|| RuntimeError::Executor("missing output port".to_string()))?;
-        let mut src_path = ctx.run_dir.node_outputs_dir(&edge.from.node_id).join(&out.path);
+        let mut src_path = authorized_declared_output_path(
+            ctx.run_dir.node_outputs_dir(&edge.from.node_id).as_path(),
+            out,
+        )
+        .map_err(|failure| RuntimeError::Executor(failure.message))?;
         let mut from_fp = node_fingerprint_from_ctx(ctx, &edge.from.node_id);
         if ctx.fs.metadata(&src_path).is_err() {
             if let Some(source_run_dir) = ctx.replay_source_run_dir.as_deref() {
-                let replay_src_path = source_run_dir
+                let replay_outputs_dir = source_run_dir
                     .join("nodes")
                     .join(&edge.from.node_id)
-                    .join("outputs")
-                    .join(&out.path);
+                    .join("outputs");
+                let replay_src_path = authorized_declared_output_path(&replay_outputs_dir, out)
+                    .map_err(|failure| RuntimeError::Executor(failure.message))?;
                 if ctx.fs.metadata(&replay_src_path).is_ok() {
                     src_path = replay_src_path;
                     if from_fp.is_empty() {

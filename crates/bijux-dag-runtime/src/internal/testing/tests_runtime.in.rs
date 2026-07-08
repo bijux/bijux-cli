@@ -1755,6 +1755,50 @@ exit 1
     }
 
     #[test]
+    fn declared_output_preflight_rejects_parent_traversal_before_write() {
+        let dir = tempfile::tempdir().unwrap();
+        let outdir = dir.path().join("outputs");
+        fs::create_dir_all(&outdir).unwrap();
+        let output = FileOutput::new("bad".to_string(), "../escape.txt".to_string());
+
+        let failure =
+            preflight_declared_output_targets(&outdir, std::slice::from_ref(&output)).expect_err(
+                "declared output traversal must fail before any write target is used",
+            );
+        assert_eq!(failure.code, "OUTPUT_PATH_INVALID");
+        assert!(failure.message.contains("normalized and relative"));
+
+        assert!(authorized_declared_output_path(&outdir, &output).is_err());
+        assert!(!dir.path().join("escape.txt").exists());
+    }
+
+    #[test]
+    fn declared_output_preflight_rejects_symlinked_existing_parent() {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+
+            let dir = tempfile::tempdir().unwrap();
+            let outdir = dir.path().join("outputs");
+            let outside = dir.path().join("outside");
+            fs::create_dir_all(&outdir).unwrap();
+            fs::create_dir_all(&outside).unwrap();
+            symlink(&outside, outdir.join("escape")).unwrap();
+            let output = FileOutput::new("bad".to_string(), "escape/result.txt".to_string());
+
+            let failure = preflight_declared_output_targets(
+                &outdir,
+                std::slice::from_ref(&output),
+            )
+            .expect_err("symlinked parent must fail before any output write");
+            assert_eq!(failure.code, "OUTPUT_PATH_INVALID");
+            assert!(failure.message.contains("traverses symlink"));
+
+            assert!(authorized_declared_output_path(&outdir, &output).is_err());
+        }
+    }
+
+    #[test]
     fn output_validation_skips_symlink_loops_during_undeclared_scan() {
         #[cfg(unix)]
         {
