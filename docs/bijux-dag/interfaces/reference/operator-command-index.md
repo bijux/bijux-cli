@@ -40,3 +40,10 @@ verify, compare, or diagnose it.
 - `bijux-dag runs explain-failure`: identify the first causal failure, surface its
   class/code/message/reason, separate propagated failures from propagated
   skips, and group downstream affected nodes by terminal status
+
+## Internal recovery command
+
+- `BIJUX_DAG_ENABLE_INTERNAL=1 bijux-dag runtime repair`: rebuild malformed
+  run metadata, restore exact retained outputs from a still-verified cache
+  entry when possible, and spawn a child repair run only when in-place
+  recovery is insufficient
