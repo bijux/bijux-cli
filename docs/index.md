@@ -65,6 +65,8 @@ release proof.</div>
 
 The DAG handbook also calls out what remains experimental, simulated, or
 maintainer-only so local product claims do not drift into platform promises.
+When the question is what comes after the current `v0.4.0` local boundary, use
+the [Bijux Dag Roadmap](tracking/bijux-dag-roadmap.md).
 
 ## Handbook Map
 
@@ -84,6 +86,8 @@ flowchart LR
   app mounting, plugin routing, layered config, and the Python bridge
 - open [DAG Handbook](bijux-dag/index.md) for local DAG execution, replay,
   evidence, compatibility, and the supported `bijux-dag` surface
+- open [Bijux Dag Roadmap](tracking/bijux-dag-roadmap.md) when the question is
+  which DAG capability lane may come next after the current release boundary
 - open [Maintainer Handbook](bijux-dev/index.md) for repository gates, docs
   checks, release verification, diagnostics, and governance operations
 

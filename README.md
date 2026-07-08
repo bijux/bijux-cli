@@ -84,6 +84,8 @@ Use that file and the DAG handbook
 [`docs/bijux-dag/foundation/release-boundary.md`](docs/bijux-dag/foundation/release-boundary.md)
 when the release question is whether a route is stable, experimental,
 simulated, internal, or still future work.
+For what comes after that boundary, use
+[`docs/tracking/bijux-dag-roadmap.md`](docs/tracking/bijux-dag-roadmap.md).
 
 | Class | `v0.4.0` meaning | Representative surfaces |
 | --- | --- | --- |
@@ -217,6 +219,9 @@ For the exact retained file map after that first run, including manifests,
 node traces, input and output indexes, cache-entry layout, and promotion
 records, use
 [`docs/bijux-dag/interfaces/reference/run-evidence-layout.md`](docs/bijux-dag/interfaces/reference/run-evidence-layout.md).
+
+For the post-`v0.4.0` product direction after those current workflows, use
+[`docs/tracking/bijux-dag-roadmap.md`](docs/tracking/bijux-dag-roadmap.md).
 
 For the actual local security model, including what shell execution, container
 execution, `--clean-env`, `--deny-network`, `--deny-clock`, and replay
