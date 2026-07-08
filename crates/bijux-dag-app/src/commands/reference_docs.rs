@@ -4,6 +4,10 @@ use crate::commands::{
 };
 use crate::dag_command;
 use clap::Command;
+use std::path::Path;
+
+const STABLE_REFERENCE_REL_PATH: &str = "generated-cli-reference.md";
+const NONSTABLE_REFERENCE_REL_PATH: &str = "reference/nonstable-command-inventory.md";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct ReferenceExample {
@@ -131,6 +135,40 @@ only for deliberate access to experimental, simulated, or internal routes.\n\n",
     );
 
     Ok(markdown)
+}
+
+fn write_cli_reference_docs(interfaces_root: &Path) -> Result<(), String> {
+    let stable = render_stable_cli_reference_markdown()?;
+    let nonstable = render_nonstable_command_inventory_markdown()?;
+    let reference_root = interfaces_root.join("reference");
+    std::fs::create_dir_all(&reference_root)
+        .map_err(|err| format!("create {} failed: {err}", reference_root.display()))?;
+    std::fs::write(
+        interfaces_root.join(STABLE_REFERENCE_REL_PATH),
+        format!("{stable}\n"),
+    )
+    .map_err(|err| {
+        format!(
+            "write {} failed: {err}",
+            interfaces_root.join(STABLE_REFERENCE_REL_PATH).display()
+        )
+    })?;
+    std::fs::write(
+        interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH),
+        format!("{nonstable}\n"),
+    )
+    .map_err(|err| {
+        format!(
+            "write {} failed: {err}",
+            interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH).display()
+        )
+    })?;
+    Ok(())
+}
+
+#[doc(hidden)]
+pub fn write_checked_in_cli_reference_docs(repo_root: &Path) -> Result<(), String> {
+    write_cli_reference_docs(&repo_root.join("docs/bijux-dag/interfaces"))
 }
 
 fn render_stable_command(command: &StableCommandDoc, depth: usize, out: &mut String) {
@@ -794,7 +832,8 @@ mod tests {
 
     use super::{
         render_nonstable_command_inventory_markdown, render_stable_cli_reference_markdown,
-        stable_commands, stable_examples_for_path,
+        stable_commands, stable_examples_for_path, write_cli_reference_docs,
+        NONSTABLE_REFERENCE_REL_PATH, STABLE_REFERENCE_REL_PATH,
     };
 
     fn docs_root() -> PathBuf {
@@ -819,32 +858,42 @@ mod tests {
     fn stable_cli_reference_matches_checked_in_generated_reference() {
         let rendered = render_stable_cli_reference_markdown().expect("stable markdown");
         let expected =
-            fs::read_to_string(docs_root().join("generated-cli-reference.md")).expect("doc file");
+            fs::read_to_string(docs_root().join(STABLE_REFERENCE_REL_PATH)).expect("doc file");
         assert_eq!(format!("{rendered}\n"), expected);
     }
 
     #[test]
     fn nonstable_inventory_matches_checked_in_generated_reference() {
         let rendered = render_nonstable_command_inventory_markdown().expect("nonstable markdown");
-        let expected = fs::read_to_string(docs_root().join("reference/nonstable-command-inventory.md"))
-            .expect("inventory doc file");
+        let expected =
+            fs::read_to_string(docs_root().join(NONSTABLE_REFERENCE_REL_PATH)).expect("inventory doc file");
         assert_eq!(format!("{rendered}\n"), expected);
     }
 
     #[test]
-    #[ignore = "maintainer-only refresh path for checked-in CLI reference docs"]
-    fn regenerate_reference_docs() {
-        let stable = render_stable_cli_reference_markdown().expect("stable markdown");
-        let nonstable = render_nonstable_command_inventory_markdown().expect("nonstable markdown");
-        let interfaces_root = docs_root();
-        let reference_root = interfaces_root.join("reference");
-        fs::create_dir_all(&reference_root).expect("mkdir reference");
-        fs::write(interfaces_root.join("generated-cli-reference.md"), format!("{stable}\n"))
-            .expect("write stable reference");
-        fs::write(
-            reference_root.join("nonstable-command-inventory.md"),
-            format!("{nonstable}\n"),
-        )
-        .expect("write nonstable inventory");
+    fn write_cli_reference_docs_materializes_both_reference_files() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let interfaces_root = dir.path().join("interfaces");
+        write_cli_reference_docs(&interfaces_root).expect("write reference docs");
+
+        let stable =
+            fs::read_to_string(interfaces_root.join(STABLE_REFERENCE_REL_PATH)).expect("stable file");
+        let nonstable = fs::read_to_string(interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH))
+            .expect("nonstable file");
+
+        assert_eq!(
+            stable,
+            format!(
+                "{}\n",
+                render_stable_cli_reference_markdown().expect("render stable markdown")
+            )
+        );
+        assert_eq!(
+            nonstable,
+            format!(
+                "{}\n",
+                render_nonstable_command_inventory_markdown().expect("render nonstable markdown")
+            )
+        );
     }
 }

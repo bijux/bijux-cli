@@ -97,6 +97,8 @@ pub use config_surface::{
 #[doc(hidden)]
 pub use integrity_service::inspect_artifact;
 #[doc(hidden)]
+pub use reference_docs::write_checked_in_cli_reference_docs;
+#[doc(hidden)]
 pub use run_comparison::runs_compare;
 #[doc(hidden)]
 pub use run_failure_summary::explain_failure;
