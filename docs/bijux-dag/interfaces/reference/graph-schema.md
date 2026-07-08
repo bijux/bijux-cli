@@ -254,6 +254,263 @@ Current output kinds:
 - `binary`
 - `bundle`
 
+## Execution Policy Fields
+
+The node contract keeps execution policy explicit instead of hiding it inside
+adapter-specific params.
+
+### Timeout
+
+- `timeout_ms` sets an optional per-node timeout in milliseconds
+- omit it when the node should use the runtime default behavior
+
+### Resources
+
+`resources` is the scheduler-visible resource request:
+
+```json
+{
+  "resources": {
+    "cpu": 2,
+    "mem_mb": 1024,
+    "gpu_devices": 1,
+    "named_resources": {
+      "license.render": 1,
+      "database_slot": 2
+    }
+  }
+}
+```
+
+Resource fields:
+
+- `cpu`: required integer when `resources` is present
+- `mem_mb`: required integer when `resources` is present
+- `gpu_devices`: optional integer for container or accelerator-aware work
+- `named_resources`: optional map of named capacities the runtime should
+  schedule explicitly
+
+### Retry
+
+`retry` currently supports two fields:
+
+```json
+{
+  "retry": {
+    "max_attempts": 2,
+    "backoff_ms": 1000
+  }
+}
+```
+
+- `max_attempts`: total execution attempts, including the first one
+- `backoff_ms`: fixed wait before retrying
+
+If `retry` is omitted, the node defaults to no retries.
+
+### Cache
+
+`cache` defaults to enabled:
+
+```json
+{
+  "cache": {
+    "enabled": false,
+    "reason": "publishes externally visible summary"
+  }
+}
+```
+
+Rules:
+
+- `enabled: false` requires a non-empty `reason`
+- `reason` is not valid as free-standing commentary when cache remains enabled
+- cache policy is part of the authored execution contract, not an incidental
+  runtime hint
+
+### Effects And Environment Access
+
+`effects` declares which side effects a node intends to use.
+
+Current effect values:
+
+- `filesystem`
+- `network`
+- `env`
+- `clock`
+
+`env_allowlist` is only valid when the node declares the `env` effect. The
+repository validates the exact allowlist rather than guessing from shell code.
+
+### Container Contract
+
+Container nodes use the `container` object:
+
+```json
+{
+  "container": {
+    "image": "docker.io/library/alpine:3.20@sha256:...",
+    "argv": ["/bin/sh", "-c", "cp /bijux/node/inputs/in /bijux/node/outputs/out"],
+    "env_allowlist": ["REPORT_CHANNEL"],
+    "workdir": "{work_dir}/scratch",
+    "engine": "docker"
+  }
+}
+```
+
+Container fields:
+
+- `image`: container image reference
+- `argv`: container command arguments
+- `env_allowlist`: container-visible environment bindings
+- `workdir`: optional working directory, including path-variable expressions
+- `engine`: currently `docker` or `podman`
+
+## Branches And Trigger Rules
+
+`bijux-dag` models branching directly in the graph contract instead of treating
+it as hidden scheduler state.
+
+A branch node usually declares:
+
+- `semantic_kind: "branch"`
+- a `branch` object with the allowed `decisions`
+- one output whose name matches `branch.decision_output`
+- conditional edges that route on `edge.decision`
+
+```json
+{
+  "id": "choose_audience_lane",
+  "kind": "const",
+  "semantic_kind": "branch",
+  "outputs": [{ "name": "decision", "path": "branch/decision.txt" }],
+  "branch": {
+    "decisions": ["executive", "technical"],
+    "decision_output": "decision"
+  }
+}
+```
+
+Current trigger rules:
+
+- `all_success`
+- `any_success`
+- `all_done`
+- `none_failed`
+
+In the checked-in branch examples, gated branch lanes use `any_success` and the
+downstream join uses `none_failed` to require completion without failed selected
+inputs.
+
+## Reusable Subgraphs
+
+Reusable graph fragments live at the same top level as `nodes` and `edges`:
+
+- `subgraphs` declares the reusable block
+- `subgraph_instances` instantiates it
+
+```json
+{
+  "subgraphs": {
+    "align_block": {
+      "graph": {
+        "spec": "bijux-dag/v0.1",
+        "nodes": [],
+        "edges": []
+      },
+      "outputs": {
+        "aligned": {
+          "node_id": "align",
+          "output_name": "bam"
+        }
+      }
+    }
+  },
+  "subgraph_instances": [
+    {
+      "id": "tumor_align",
+      "subgraph": "align_block",
+      "input_bindings": {
+        "sample_name": { "graph_input": "sample" }
+      }
+    }
+  ]
+}
+```
+
+The reusable form is an authoring convenience. Compilation, validation,
+planning, and graph identity operate on the expanded plain graph.
+
+For the full reuse contract, read
+[Reusable Subgraphs](../guides/reusable-subgraphs.md).
+
+## Advanced Dynamic Controllers
+
+The graph model also includes a `dynamic` node contract for controller nodes
+that expand a graph fragment at runtime.
+
+```json
+{
+  "id": "expand_catalog",
+  "kind": "shell",
+  "semantic_kind": "dynamic",
+  "dynamic": {
+    "expansion_output": "expansion"
+  }
+}
+```
+
+This is a real repository-backed graph field, but it is an advanced surface:
+
+- it is validated by `bijux-dag-core`
+- it participates in graph identity and planning
+- it currently serves controller-style graph expansion rather than the beginner
+  authoring lane
+
+## Validation Errors
+
+Graph failures surface in two layers.
+
+Strict parsing rejects malformed JSON contracts immediately:
+
+- unknown fields
+- malformed reference objects
+- wrong scalar or container shapes for required fields
+
+After parsing, validation returns structured diagnostics:
+
+```json
+{
+  "code": "E1032",
+  "message": "cache-disabled node requires a reason: publish_summary",
+  "path": "/nodes/publish_summary/cache",
+  "hint": "Provide cache.reason when cache.enabled is false",
+  "severity": "Error"
+}
+```
+
+Validation diagnostics always carry:
+
+- `code`
+- `message`
+- `path`
+- `hint`
+- `severity`
+
+Common validation failures:
+
+- reference to an undeclared graph input
+- reference to a missing upstream output
+- invalid path-variable name or invalid `relative_path` suffix
+- output or workdir path traversal
+- `env_allowlist` without the `env` effect
+- invalid branch declarations or conditional-edge decisions
+- unsupported container engine
+- cache disabled without a reason
+
+For operator-facing failure reporting, see
+[Error Codes](error-codes.md).
+
 ## Path Variables
 
 The graph contract exposes five built-in path variables:
@@ -288,9 +545,11 @@ Path-variable suffixes must stay normalized and relative. Traversal like
 ## Code Anchors
 
 - `configs/dag/schema/dag.schema.json`
+- `crates/bijux-dag-core/src/graph/dynamic.rs`
 - `crates/bijux-dag-core/src/graph/input.rs`
 - `crates/bijux-dag-core/src/graph/model.rs`
 - `crates/bijux-dag-core/src/graph/node.rs`
+- `crates/bijux-dag-core/src/pipeline/validate.rs`
 
 ## Reading Rule
 
