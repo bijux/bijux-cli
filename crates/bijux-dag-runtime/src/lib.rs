@@ -374,7 +374,8 @@ pub use kubernetes_execution::{
     KubernetesJobRecord, KubernetesLogCapture, KubernetesPodLifecycleEvent, KubernetesPodPhase,
     KubernetesPodStatus, KubernetesVolumeMount, KubernetesWorkloadDescriptor,
     KubernetesWorkloadKind, KubernetesWorkspaceTransfer, KubernetesWorkspaceTransferMode,
-    MockKubernetesBackend,
+    MockKubernetesBackend, SystemKubernetesBackend, SystemKubernetesBackendConfig,
+    SystemKubernetesPaths,
 };
 #[doc(hidden)]
 pub use local_executor::LocalExecutor;
@@ -454,11 +455,11 @@ pub use remote_execution_model::{
     execute_remote_payload_in_place, execution_mode_status, remote_handoff_valid,
     remote_input_artifact_digest_matches, serialize_node_result_payload,
     validate_remote_execution_fingerprint_set, validate_remote_execution_payload,
-    validate_remote_execution_workspace, validate_remote_identity,
-    validate_remote_input_artifact, ExecutionModeStatus, MockRemoteWorker,
-    RemoteArtifactHandoff, RemoteExecutionFingerprintSet, RemoteExecutionIdentity,
-    RemoteExecutionWorkspace, RemoteInputArtifact, RemoteNodeExecutionPayload,
-    RemoteNodeExecutionResult, RemoteObservabilityHandoff, RemoteWorkerExecutor,
+    validate_remote_execution_workspace, validate_remote_identity, validate_remote_input_artifact,
+    ExecutionModeStatus, MockRemoteWorker, RemoteArtifactHandoff, RemoteExecutionFingerprintSet,
+    RemoteExecutionIdentity, RemoteExecutionWorkspace, RemoteInputArtifact,
+    RemoteNodeExecutionPayload, RemoteNodeExecutionResult, RemoteObservabilityHandoff,
+    RemoteWorkerExecutor,
 };
 #[doc(hidden)]
 pub use remote_executor::{
@@ -636,8 +637,8 @@ pub mod stable {
 pub mod prelude {
     pub use crate::stable::{
         build_plan, build_planner_analysis, build_scheduler, AbsolutePathPolicy, CacheMode,
-        ExecutionBackendTarget, ExecutionContext, NodeExecutionContext, PlannerGuardrails,
-        Runtime, RuntimeConfig, RuntimeError, SchedulerPolicy, SelectorSet, SlurmRuntimeConfig,
+        ExecutionBackendTarget, ExecutionContext, NodeExecutionContext, PlannerGuardrails, Runtime,
+        RuntimeConfig, RuntimeError, SchedulerPolicy, SelectorSet, SlurmRuntimeConfig,
     };
 }
 
@@ -1731,6 +1732,7 @@ pub struct RuntimeConfig {
     pub scheduler_policy: SchedulerPolicy,
     pub failure_propagation: FailurePropagationMode,
     pub execution_backend: ExecutionBackendTarget,
+    pub kubernetes: KubernetesRuntimeConfig,
     pub slurm: SlurmRuntimeConfig,
 }
 
@@ -1740,7 +1742,31 @@ pub struct RuntimeConfig {
 pub enum ExecutionBackendTarget {
     #[default]
     Local,
+    Kubernetes,
     Slurm,
+}
+
+/// Runtime configuration for the Kubernetes Job backend.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct KubernetesRuntimeConfig {
+    pub default_namespace: String,
+    pub shared_volume_claim: String,
+    pub shared_local_root: PathBuf,
+    pub poll_interval_ms: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kubectl_command: Option<String>,
+}
+
+impl Default for KubernetesRuntimeConfig {
+    fn default() -> Self {
+        Self {
+            default_namespace: "bijux".to_string(),
+            shared_volume_claim: String::new(),
+            shared_local_root: PathBuf::new(),
+            poll_interval_ms: 250,
+            kubectl_command: None,
+        }
+    }
 }
 
 /// Runtime configuration for the SLURM backend.
@@ -1805,6 +1831,7 @@ impl Default for RuntimeConfig {
             scheduler_policy: SchedulerPolicy::default(),
             failure_propagation: FailurePropagationMode::ContinueIndependent,
             execution_backend: ExecutionBackendTarget::Local,
+            kubernetes: KubernetesRuntimeConfig::default(),
             slurm: SlurmRuntimeConfig::default(),
         }
     }
@@ -3552,10 +3579,8 @@ fn materialize_inputs(
         let mut from_fp = node_fingerprint_from_ctx(ctx, &edge.from.node_id);
         if ctx.fs.metadata(&src_path).is_err() {
             if let Some(source_run_dir) = ctx.replay_source_run_dir.as_deref() {
-                let replay_outputs_dir = source_run_dir
-                    .join("nodes")
-                    .join(&edge.from.node_id)
-                    .join("outputs");
+                let replay_outputs_dir =
+                    source_run_dir.join("nodes").join(&edge.from.node_id).join("outputs");
                 let replay_src_path = authorized_declared_output_path(&replay_outputs_dir, out)
                     .map_err(|failure| RuntimeError::Executor(failure.message))?;
                 if ctx.fs.metadata(&replay_src_path).is_ok() {

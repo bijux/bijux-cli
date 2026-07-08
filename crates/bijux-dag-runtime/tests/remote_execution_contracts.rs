@@ -204,7 +204,7 @@ fn execution_mode_status_is_explicit_for_container_and_kubernetes() {
     assert_eq!(execution_mode_status("local"), ExecutionModeStatus::Implemented);
     assert_eq!(execution_mode_status("container"), ExecutionModeStatus::Simulated);
     assert_eq!(execution_mode_status("remote-worker"), ExecutionModeStatus::Simulated);
-    assert_eq!(execution_mode_status("kubernetes"), ExecutionModeStatus::Simulated);
+    assert_eq!(execution_mode_status("kubernetes"), ExecutionModeStatus::Implemented);
     assert_eq!(execution_mode_status("hpc"), ExecutionModeStatus::Simulated);
-    assert_eq!(execution_mode_status("slurm"), ExecutionModeStatus::Simulated);
+    assert_eq!(execution_mode_status("slurm"), ExecutionModeStatus::Implemented);
 }

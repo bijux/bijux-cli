@@ -34,7 +34,7 @@ mod tests {
     use super::{validate_backend_contract, BackendContractDeclaration};
 
     #[test]
-    fn backend_contract_accepts_local_implemented_and_modeled_simulated() {
+    fn backend_contract_accepts_implemented_and_simulated_surfaces() {
         validate_backend_contract(&BackendContractDeclaration {
             backend: "local".to_string(),
             required_status: "implemented".to_string(),
@@ -44,6 +44,13 @@ mod tests {
 
         validate_backend_contract(&BackendContractDeclaration {
             backend: "kubernetes".to_string(),
+            required_status: "implemented".to_string(),
+            require_replay: true,
+        })
+        .expect("kubernetes contract");
+
+        validate_backend_contract(&BackendContractDeclaration {
+            backend: "hpc".to_string(),
             required_status: "simulated".to_string(),
             require_replay: true,
         })
