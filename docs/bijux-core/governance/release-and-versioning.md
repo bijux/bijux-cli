@@ -4,17 +4,17 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Release and Versioning
 
-This page explains how release policy keeps published versions tied to verified
-repository state.
+In `bijux-core`, a version is only trustworthy if it points to a verified
+repository state that the public crates, docs, generated references, and
+release notes all describe consistently.
 
-Versioning is only meaningful if it reflects real compatibility and real
-published behavior. That is why this page treats release notes, docs, and
-verification as part of the same release decision.
+That is why release policy here is broader than tagging code. A release is a
+repository claim about what users can now rely on.
 
 ## Release Flow
 
@@ -25,6 +25,15 @@ flowchart TD
     compatibility --> docs["docs and changelog update"]
     docs --> tag["tag and publish"]
 ```
+
+## What A Release Has To Prove
+
+Before a version boundary is credible, the repository should be able to show:
+
+- the candidate commit passed the relevant verification gates
+- the compatibility story matches the actual code and contracts
+- public docs and references describe the shipped behavior honestly
+- the release note surface reflects the same boundary the binaries do
 
 ## Release Rules
 
@@ -39,10 +48,12 @@ flowchart TD
 - additive, compatible behavior follows minor version policy
 - patches must avoid silent contract changes
 
-## Reading Rule
+## Why Patch Releases Need Discipline Too
 
-Use this page when a change may be releasable but the version impact is still
-unclear.
+The easiest way to damage trust is to treat patch versions as if they are free
+to move public meaning quietly. Patch releases may fix bugs, but they should
+not smuggle in contract changes that readers and automation could reasonably
+interpret as compatible stability.
 
 ## Code Anchors
 

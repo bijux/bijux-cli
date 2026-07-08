@@ -4,17 +4,18 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Risk and Exceptions
 
-This page explains how the repository handles risk without quietly lowering its
-standards.
+`bijux-core` allows exceptions because real repositories encounter urgent
+constraints, not because the standards are optional. An exception is acceptable
+only when the repository can say exactly what is being relaxed, why it is being
+relaxed, who owns the debt, and when that relaxation expires.
 
-Exceptions exist for situations where work cannot wait, not as a way to leave
-gaps unexplained. The important part is that the exception stays named, owned,
-and time-bounded.
+The repository becomes unreliable when exceptions are vague, open-ended, or
+treated as background context instead of explicit temporary decisions.
 
 ## Exception Flow
 
@@ -33,6 +34,15 @@ flowchart LR
 - governance and documentation drift risk
 - dependency and supply-chain risk
 
+## What Makes An Exception Legitimate
+
+An exception should exist only when all of these are true:
+
+- the repository cannot wait for the standard path without a concrete cost
+- the scope of the relaxed rule is narrowly defined
+- there is an immediate mitigation, not only a promise of future cleanup
+- a real expiration or revalidation point is named
+
 ## Exception Rules
 
 - every exception needs owner, scope, and expiration date
@@ -49,10 +59,12 @@ Use this structure for every exception request:
 - `mitigation`: immediate controls while exception is active
 - `expiry`: specific date for revalidation or removal
 
-## Reading Rule
+## Bad Exceptions To Avoid
 
-Use this page when a gate really cannot pass yet and the remaining question is
-how to keep that exception explicit instead of normalizing drift.
+- "temporary" exceptions with no expiry
+- exceptions that cover several unrelated surfaces at once
+- exceptions that weaken docs or compatibility truth without saying so
+- exceptions that move the cleanup burden onto a future release without a plan
 
 ## Code Anchors
 
