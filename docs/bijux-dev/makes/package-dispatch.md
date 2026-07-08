@@ -9,22 +9,41 @@ last_reviewed: 2026-04-12
 
 # Package Dispatch
 
-The make surface routes work to package-specific tools without forcing
-maintainers to remember every underlying command.
+Use this page when a root `make` target fails and you need to know which
+underlying package, toolchain, or binary actually owns the work.
 
-## Dispatch Examples
+The make surface exists partly to hide mechanical repetition, but it should not
+hide ownership. A maintainer should be able to predict where a failure lands
+before opening the implementation.
 
-- Rust aggregate targets fan out to workspace `cargo` commands
-- Python targets operate on `crates/bijux-cli-python`
-- DAG targets dispatch through `cargo run -p bijux-dev --bin bijux-dev-dag --`
-- docs targets wrap MkDocs and documentation automation helpers
+## Dispatch Map
+
+| Root target family | What it usually dispatches to |
+| --- | --- |
+| Rust targets | workspace `cargo` commands |
+| Python targets | `crates/bijux-cli-python` packaging and release flows |
+| DAG targets | `cargo run -p bijux-dev --bin bijux-dev-dag -- ...` |
+| docs targets | MkDocs and documentation automation helpers |
+
+## Why Dispatch Exists
+
+- It gives maintainers one predictable shell surface for repeated workflows.
+- It keeps package-local complexity out of the root command line.
+- It still leaves a clear ownership trail when a command fails.
 
 ## Dispatch Rule
 
 The root target should describe the owning package or surface clearly enough
 that a maintainer can predict where failures will land.
 
-## Next Reads
+## What Good Dispatch Looks Like
+
+- a root target name that hints at the owning surface
+- output that still reveals the underlying tool or package
+- documentation that explains the fan-out without forcing maintainers to read
+  every make fragment
+
+## Continue Reading
 
 - [CI Targets](ci-targets.md)
 - [Package Contracts](package-contracts.md)
