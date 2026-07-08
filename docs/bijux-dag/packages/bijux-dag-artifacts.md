@@ -12,6 +12,12 @@ last_reviewed: 2026-07-07
 `bijux-dag-artifacts` owns run evidence material: artifact models, persistence
 helpers, storage layout, integrity proofs, and lifecycle policy helpers.
 
+At the product level, `bijux-dag` v0.4.0 is a local-first DAG runtime for
+reproducible workflows with explicit graph contracts, deterministic execution
+records, verified artifacts, cache explanation, and replayable run bundles.
+This package owns the verified-artifact and persisted-evidence part of that
+promise.
+
 Use this page when the question is about what a DAG run leaves behind, how that
 material is identified, and how artifact integrity is verified over time.
 

@@ -13,6 +13,11 @@ last_reviewed: 2026-07-07
 validation, canonicalization, topology, identity, parameter resolution, and
 planner lowering primitives.
 
+At the product level, `bijux-dag` v0.4.0 is a local-first DAG runtime for
+reproducible workflows with explicit graph contracts, deterministic execution
+records, verified artifacts, cache explanation, and replayable run bundles.
+This package owns the explicit graph-contract boundary inside that promise.
+
 Use this page when the question is about graph truth before runtime side
 effects begin.
 

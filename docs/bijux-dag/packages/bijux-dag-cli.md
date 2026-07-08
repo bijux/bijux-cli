@@ -13,6 +13,11 @@ last_reviewed: 2026-07-07
 wiring, argument handoff, and exit-code mapping, while delegating DAG semantics
 to the application layer.
 
+At the product level, `bijux-dag` v0.4.0 is a local-first DAG runtime for
+reproducible workflows with explicit graph contracts, deterministic execution
+records, verified artifacts, cache explanation, and replayable run bundles.
+This package is the installed binary entrypoint for that promise.
+
 Use this page when the issue is about executable startup, process behavior, or
 binary-level integration rather than DAG semantics themselves.
 

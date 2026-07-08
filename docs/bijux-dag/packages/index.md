@@ -3,6 +3,11 @@
 Use this page when the DAG command or behavior is already known but the owning
 crate is not.
 
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles. The package split
+below shows which crate owns each clause of that promise.
+
 The package split is deliberate:
 
 - `bijux-dag-core` keeps graph truth deterministic and side-effect free
