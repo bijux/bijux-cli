@@ -1,31 +1,52 @@
 ---
 title: Known Limitations
-audience: maintainers
+audience: operators
 type: quality
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-08
 ---
 
 # Known Limitations
 
-Known limitations are release-facing records. They tell operators exactly which
-surfaces are still constrained, what that means in practice, and what they
-should avoid depending on in the current release line.
+Known limitations are the release-facing list of things `bijux-dag v0.4.x`
+does not promise.
+
+This page exists so operators can tell the difference between:
+
+- a stable local capability that is intentionally narrow
+- an experimental or simulated surface that is callable but not stable
+- a future-facing idea that still lacks a release promise
+
+Read this page alongside [Release Boundary](../foundation/release-boundary.md).
+Use the release boundary to decide whether a surface is stable, experimental,
+simulated, internal, or future-facing. Use this page to decide what the
+currently shipped surface still does not guarantee even when it is real.
 
 ## Visual Summary
 
 ```mermaid
 flowchart TD
     limitations[Known limitations]
-    limitations --> performance[performance limits]
-    limitations --> environment[deployment and environment assumptions]
-    limitations --> interfaces[interface rough edges]
-    limitations --> recovery[recovery boundaries]
-    limitations --> extensibility[extensibility constraints]
+    limitations --> local[stable local execution]
+    limitations --> shell[shell isolation]
+    limitations --> container[container]
+    limitations --> scheduling[scheduling]
+    limitations --> remote[remote and distributed]
+    limitations --> api[API stability]
+    limitations --> replay[cache and replay]
 ```
 
 ## Active Limitation Records
+
+## Stable Local Execution Limitations
+
+The stable `v0.4.x` promise is a serious local DAG runtime, not a replicated
+controller service.
+
+## Shell Isolation Limitations
+
+The stable local shell path is useful, but it is not a kernel sandbox.
 
 ### LIM-001 Shell policy denial is not a syscall sandbox
 
@@ -40,8 +61,27 @@ flowchart TD
   containment where stronger guarantees are required.
 - planned fix: add a genuinely sandboxed local execution boundary before
   claiming host-process network, clock, or arbitrary filesystem isolation.
-- release target: not part of `v0.4.x`; no stronger shell isolation guarantee
-  exists until a dedicated sandboxed executor and contract coverage ship.
+- release target: not part of `v0.4.x`; no stronger shell isolation guarantee exists until a dedicated sandboxed executor and contract coverage ship.
+
+### LIM-003 Clock denial does not virtualize time
+
+- stability class: `stable-surface`
+- affected command or API: `bijux-dag run`, `bijux-dag replay`, local shell and container execution
+- limitation: `--deny-clock` prevents declared clock effects from being allowed;
+  it does not freeze, fake, or virtualize wall-clock access inside a process.
+- impact: time-sensitive tools must still be treated as ambient-time consumers
+  unless they are wrapped by a stronger host-level control.
+- workaround: reserve `--deny-clock` for workflows whose nodes declare
+  time access honestly.
+- planned fix: only claim clock isolation after the runtime can inject and
+  enforce an explicit time source across supported execution boundaries.
+- release target: no wall-clock virtualization in `v0.4.x`; future promotion requires runtime and backend enforcement work, not just CLI flags.
+
+## Container Limitations
+
+Container execution can enforce more than local shell execution in some cases,
+but it still does not upgrade `bijux-dag` into a virtual machine or cluster
+platform.
 
 ### LIM-002 Container no-network enforcement depends on the runtime boundary
 
@@ -58,35 +98,20 @@ flowchart TD
 - release target: keep this conditional through `v0.4.x`; broader container
   isolation claims require additional backend enforcement evidence.
 
-### LIM-003 Clock denial does not virtualize time
+## Scheduling Limitations
 
-- stability class: `stable-surface`
-- affected command or API: `bijux-dag run`, `bijux-dag replay`, local shell and container execution
-- limitation: `--deny-clock` prevents declared clock effects from being allowed;
-  it does not freeze, fake, or virtualize wall-clock access inside a process.
-- impact: time-sensitive tools must still be treated as ambient-time consumers
-  unless they are wrapped by a stronger host-level control.
-- workaround: reserve `--deny-clock` for workflows whose nodes declare
-  time access honestly.
-- planned fix: only claim clock isolation after the runtime can inject and
-  enforce an explicit time source across supported execution boundaries.
-- release target: no wall-clock virtualization in `v0.4.x`; future promotion
-  requires runtime and backend enforcement work, not just CLI flags.
+The repository contains schedule and backfill proof lanes, but `v0.4.x` does
+not yet publish a stable scheduler service.
 
-### LIM-004 Replay sandbox protects the source run directory only
+## Remote/Distributed Limitations
 
-- stability class: `stable-surface`
-- affected command or API: `bijux-dag replay --sandbox`
-- limitation: replay sandboxing is a write-boundary rule that blocks writes into
-  the source run directory.
-- impact: the replay process still uses the host process model and does not gain
-  network, clock, or filesystem syscall isolation.
-- workaround: use `--sandbox` to protect evidence integrity, not to model
-  a secure container runtime.
-- planned fix: keep replay evidence protection separate from process-isolation
-  claims until a stronger execution boundary actually exists.
-- release target: `v0.4.x` keeps replay sandboxing scoped to source-run write
-  protection only.
+The repository models remote coordination and future batch backends, but the
+stable runtime remains local.
+
+## API Stability Limitations
+
+The visible `bijux-dag --help` surface and the callable hidden namespaces do
+not carry the same compatibility guarantee.
 
 ### LIM-005 Hidden experimental DAG routes are callable but not stable operator APIs
 
@@ -107,8 +132,7 @@ flowchart TD
   repository-owned, non-stable helper routes.
 - planned fix: either promote individual routes with explicit docs, tests, and
   compatibility commitments or keep them outside the public operator boundary.
-- release target: no stability guarantee in `v0.4.x`; promotion requires
-  explicit contract review in a later release line.
+- release target: no stability guarantee in `v0.4.x`; promotion requires explicit contract review in a later release line.
 
 ### LIM-006 Simulated platform-control namespaces remain repository-owned modeling surfaces
 
@@ -128,11 +152,32 @@ flowchart TD
   visible operator contract for real DAG workflows.
 - planned fix: either quarantine these modeled namespaces further or implement
   real backend semantics, tests, and release docs before any promotion.
-- release target: remain non-public throughout `v0.4.x`; any promotion requires
-  a dedicated future release decision with new evidence and compatibility rules.
+- release target: remain non-public throughout `v0.4.x`; any promotion requires a dedicated future release decision with new evidence and compatibility rules.
+
+## Cache/Replay Limitations
+
+Cache and replay are real stable surfaces in `v0.4.x`, but their guarantees are
+exact and evidence-bound rather than broad portability promises.
+
+### LIM-004 Replay sandbox protects the source run directory only
+
+- stability class: `stable-surface`
+- affected command or API: `bijux-dag replay --sandbox`
+- limitation: replay sandboxing is a write-boundary rule that blocks writes into
+  the source run directory.
+- impact: the replay process still uses the host process model and does not gain
+  network, clock, or filesystem syscall isolation.
+- workaround: use `--sandbox` to protect evidence integrity, not to model
+  a secure container runtime.
+- planned fix: keep replay evidence protection separate from process-isolation
+  claims until a stronger execution boundary actually exists.
+- release target: `v0.4.x` keeps replay sandboxing scoped to source-run write
+  protection only.
 
 ## Record Rules
 
+- every limitation record must live under the section that matches its release
+  boundary
 - every limitation record must keep its stable `LIM-` identifier
 - every limitation record must include affected surface, impact, workaround,
   planned fix, and release target fields
