@@ -4,23 +4,17 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Security and Safety
 
-`bijux-cli` security posture is centered on explicit trust boundaries, safe
-configuration handling, and transparent plugin lifecycle controls.
+Use this page when the question is not whether the CLI is convenient, but
+whether it is safe to trust in the way you are about to use it.
 
-## Visual Summary
-
-```mermaid
-flowchart LR
-    input["user input and manifests"] --> validate["validation and normalization"]
-    validate --> policy["route and namespace policy checks"]
-    policy --> execute["runtime execution"]
-    execute --> diagnostics["security-relevant diagnostics"]
-```
+`bijux-cli` security posture is built around explicit trust boundaries, safe
+configuration handling, and visible plugin lifecycle controls. It is not based
+on pretending extension execution is more isolated than it really is.
 
 ## Safety Boundaries
 
@@ -37,6 +31,15 @@ flowchart LR
 - `crates/bijux-cli/src/features/plugins/operations.rs`
 - `crates/bijux-cli/src/interface/cli/handlers/cli.rs`
 
+## What These Boundaries Protect
+
+| Boundary | Why it matters |
+| --- | --- |
+| plugin trust is explicit | users should not mistake extensibility for isolation |
+| reserved namespaces stay enforced | core and plugin routes must not become ambiguous |
+| config validation stays strict | hostile or malformed values should fail early and visibly |
+| diagnostics remain available | operators need evidence when safety assumptions are under stress |
+
 ## Safety Rules
 
 - do not auto-trust external plugin manifests
@@ -44,7 +47,13 @@ flowchart LR
 - fail explicitly on invalid config and namespace conflicts
 - keep diagnostics available for operator safety triage
 
-## Next Reads
+## Reader Shortcut
+
+If your safety story depends on plugin code behaving well by convention, the
+real trust boundary is human judgment, not enforcement. This page is here to
+keep that fact visible.
+
+## Continue Reading
 
 - [Extensibility Model](../architecture/extensibility-model.md)
 - [Failure Recovery](failure-recovery.md)

@@ -4,24 +4,17 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Performance and Scaling
 
-`bijux-cli` performance work focuses on predictable command latency,
-bounded-memory parsing/rendering, and reliable behavior as plugin/state
-inventories grow.
+Use this page when the CLI feels correct but too slow, too heavy, or too
+fragile under larger local state and plugin inventories.
 
-## Visual Summary
-
-```mermaid
-flowchart LR
-    input["argv and state size"] --> parse["parser and route normalization cost"]
-    parse --> handler["handler and plugin execution cost"]
-    handler --> render["payload rendering cost"]
-    render --> latency["observed command latency"]
-```
+Performance in `bijux-cli` is about predictable latency and bounded behavior,
+not just raw speed. Operators should be able to reason about which surfaces
+scale cleanly and which ones deserve caution as local complexity grows.
 
 ## Performance Hotspots
 
@@ -36,6 +29,16 @@ flowchart LR
 When performance wording changes on this page, refresh maintainer evidence first
 with `bijux-dev-dag performance-evidence-report` and confirm the current
 scenario metadata in `evidence/perf/metadata.json`.
+
+## What To Watch First
+
+| Surface | Why it becomes expensive |
+| --- | --- |
+| parser and route normalization | large argv shapes and suggestion work can add surprising overhead |
+| plugin discovery | install health and manifest loading grow with plugin count |
+| history and memory inspection | local state size directly affects scan and render cost |
+| structured output rendering | large payloads amplify formatting and serialization work |
+| delegated invocations | external command startup can dominate perceived latency |
 
 ## Code Anchors
 
@@ -52,7 +55,13 @@ scenario metadata in `evidence/perf/metadata.json`.
 - avoid unbounded data joins in diagnostics payloads
 - prefer streaming or targeted queries for large state files
 
-## Next Reads
+## Reader Shortcut
+
+If a command becomes slow only when local state, plugins, or payload size
+grows, treat that as a scaling surface, not random noise. The slowdown usually
+belongs to a specific owned hotspot.
+
+## Continue Reading
 
 - [Test Strategy](../quality/test-strategy.md)
 - [Known Limitations](../quality/known-limitations.md)
