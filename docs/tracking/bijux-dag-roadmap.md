@@ -50,8 +50,9 @@ misread and harder to break.
   and environment policy behavior
 
 This lane is intentionally local-first. It does not widen the public product
-claim to remote workers, public scheduling services, Kubernetes execution, or
-enterprise control planes.
+claim beyond the current concrete backend lanes that already ship in `v0.4.0`.
+Remote workers, public scheduling services, broader HPC portability, and
+enterprise control planes still belong to later release decisions.
 
 ## v0.5 Graph Expressiveness
 
