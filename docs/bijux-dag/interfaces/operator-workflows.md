@@ -231,6 +231,10 @@ input invalidation, corruption refusal, and both explanation paths on the same
 retained run family, use
 [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md).
 
+When the question shifts from workflow steps to identity semantics, use
+[Reproducibility Model](reference/reproducibility-model.md) for the retained
+meaning of graph, plan, execution, environment, and artifact identity.
+
 ## Stop an Active Run
 
 When a live run should stop launching new work, record a durable stop request

@@ -99,6 +99,10 @@ plus the explicit-path `why-cache-missed` route to explain changed-input misses
 and corruption refusal on the same retained workflow, use
 [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md).
 
+When the next question is which retained fingerprint, cache-key component, or
+replay-bundle mode explains that output, use
+[Reproducibility Model](reference/reproducibility-model.md).
+
 For the full generated inventory of experimental, simulated, and internal
 routes, use
 [Non-Stable Command Inventory](reference/nonstable-command-inventory.md).

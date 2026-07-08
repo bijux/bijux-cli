@@ -111,6 +111,9 @@ flowchart LR
 - open [Run Evidence Layout](interfaces/reference/run-evidence-layout.md) when
   the question is where manifests, traces, indexes, cache records, or
   promotion records live on disk after a run completes
+- open [Reproducibility Model](interfaces/reference/reproducibility-model.md)
+  when the question is which fingerprint, hash, cache proof, or replay bundle
+  surface actually answers the identity question in front of you
 - open [Security And Isolation Truth](operations/reference/security-isolation-truth.md)
   when the question is which execution-boundary protections are enforced,
   best-effort, or not provided at all
