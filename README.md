@@ -212,6 +212,12 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- commands
 cargo run -p bijux-dag-cli --bin bijux-dag -- commands --lane experimental
 ```
 
+For longer DAG runs, add `--progress compact`. In human mode that keeps a
+single live status line on stderr. With `--json`, it also streams
+`dag.run.progress` events before the final `dag.run` envelope so automation can
+track elapsed time, active nodes, cache hits, and the latest failure while the
+run is still in flight.
+
 For the shortest repository-backed onboarding path from build to cache-aware
 retained run evidence, start with
 [`docs/bijux-dag/operations/guides/first-run-tutorial.md`](docs/bijux-dag/operations/guides/first-run-tutorial.md).
