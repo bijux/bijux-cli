@@ -4,23 +4,17 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Local Development
 
-Local development for `bijux-cli` should combine fast command iteration with
-targeted test evidence on every contract-impacting change.
+Use this page when you are changing `bijux-cli` locally and need a development
+loop that keeps command behavior, tests, and handbook updates moving together.
 
-## Visual Summary
-
-```mermaid
-flowchart LR
-    edit["edit source or docs"] --> run["run focused command checks"]
-    run --> tests["run targeted tests"]
-    tests --> docs["update handbook pages"]
-    docs --> gates["run docs and workspace gates"]
-```
+Local development should feel fast, but not vague. The point is to shorten the
+distance between a code edit and the exact runtime, test, and documentation
+evidence that proves the edit is safe.
 
 ## Local Development Loop
 
@@ -38,6 +32,15 @@ cargo test -p bijux-cli integration::
 make docs-check
 ```
 
+## What A Good Local Loop Produces
+
+| Step | Why it matters |
+| --- | --- |
+| local command run | confirms the edited behavior exists outside the editor |
+| targeted tests | proves the owning contract lane still holds |
+| docs update | keeps readers from learning stale behavior |
+| docs and contract checks | catches publication and structure drift before commit |
+
 ## Code Anchors
 
 - `crates/bijux-cli/tests/routing/`
@@ -51,7 +54,13 @@ make docs-check
 - avoid mixing unrelated behavior and documentation edits in one commit
 - keep commits scoped to one understandable runtime concern
 
-## Next Reads
+## Reader Shortcut
+
+If the only proof for a local change is "it seemed fine when I tried it once,"
+the loop is too weak. A serious CLI edit should leave behind command evidence,
+targeted tests, and updated handbook language.
+
+## Continue Reading
 
 - [Common Workflows](common-workflows.md)
 - [Test Strategy](../quality/test-strategy.md)

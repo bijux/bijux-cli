@@ -4,23 +4,18 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Installation and Setup
 
-Installation should produce one clear runtime binary, stable state paths, and a
-verifiable command surface before workflow automation begins.
+Use this page when you need to install `bijux` and prove that the binary,
+resolved paths, and diagnostics surfaces are trustworthy before any automation
+or daily usage begins.
 
-## Visual Summary
-
-```mermaid
-flowchart TD
-    install["install runtime"] --> verify["verify version and status"]
-    verify --> paths["inspect runtime paths"]
-    paths --> doctor["run doctor and audit"]
-    doctor --> ready["ready for workflows"]
-```
+A good setup result is not just "the command exists on PATH." It means one
+clear runtime binary is active, state locations are visible, and the CLI can
+describe its own health without ambiguity.
 
 ## Setup Checklist
 
@@ -39,6 +34,16 @@ bijux doctor
 bijux audit
 ```
 
+## What These Checks Should Tell You
+
+| Check | What it should confirm |
+| --- | --- |
+| `bijux version` | the invoked binary is the one you expect to trust |
+| `bijux status` | runtime identity, state, and plugin context look sane |
+| `bijux cli paths` | config, state, and plugin directories resolve where you think they do |
+| `bijux doctor` | install, config, bridge, and routing health are coherent |
+| `bijux audit` | the CLI is not already reporting known operational problems |
+
 ## Code Anchors
 
 - `crates/bijux-cli/src/features/install/diagnostics.rs`
@@ -52,7 +57,12 @@ bijux audit
 - keep `status` and `doctor` clean before onboarding automation
 - treat path-shadowing warnings as setup failures until resolved
 
-## Next Reads
+## Reader Shortcut
+
+If `bijux` works only until you ask it where its state lives or which binary is
+active, the installation is not complete. Diagnose setup first, then automate.
+
+## Continue Reading
 
 - [Local Development](local-development.md)
 - [Failure Recovery](failure-recovery.md)
