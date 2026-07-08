@@ -12,7 +12,7 @@ DAG_OUTPUT_PATHS := artifacts/runs artifacts/reports artifacts/target artifacts/
 
 run_or_fail = @echo "--> $(1)"; @$(2) || (echo "--> failed: $(1)" >&2; echo "--> inspect artifacts: $(DAG_OUTPUT_PATHS)" >&2; exit 1)
 
-.PHONY: dag-help dag-check dag-test dag-test-all dag-clippy dag-coverage dag-contracts dag-release
+.PHONY: dag-help dag-demo dag-check dag-test dag-test-all dag-clippy dag-coverage dag-contracts dag-release
 .PHONY: checks checks-fast checks-all contracts-all contract-all release-verify
 .PHONY: docs-governance-lint docs-inventory-generate module-hygiene-drift docs-truth-drift
 .PHONY: evidence-all evidence-verify evidence-battle evidence-authoring evidence-cache evidence-replay
@@ -21,7 +21,10 @@ run_or_fail = @echo "--> $(1)"; @$(2) || (echo "--> failed: $(1)" >&2; echo "-->
 
 # Shared gates first; DAG aliases keep the dedicated operator entrypoints.
 dag-help: ## Show DAG-oriented make targets
-	@printf '%s\n' "DAG targets: dag-check dag-test dag-test-all dag-clippy dag-coverage dag-contracts dag-release"
+	@printf '%s\n' "DAG targets: dag-demo dag-check dag-test dag-test-all dag-clippy dag-coverage dag-contracts dag-release"
+
+dag-demo: ## Run the canonical retained file-processing DAG proof command
+	@"$(ROOT_MK_DIR)/bin/run_file_processing_demo.sh"
 
 dag-check: ## Run shared workspace check gate
 	@CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" cargo check --workspace --all-targets
