@@ -9,26 +9,37 @@ last_reviewed: 2026-04-06
 
 # Repository Fit
 
-`bijux-cli` is one package in `bijux-core`, not the whole platform. This page
-explains where the CLI handbook should stop, and where repository-level,
-DAG-level, or maintainer-only documentation should take over.
+`bijux` lives inside `bijux-core`, but it is not the whole repository. Use this
+page when you need to know where the CLI story ends and where root,
+workflow, or maintainer documentation should take over.
 
-## Visual Summary
+That boundary matters because the repository now carries multiple products and
+maintenance surfaces. Readers should not have to guess whether a statement is
+about the command runtime itself, the DAG stack, or repository governance.
 
-```mermaid
-flowchart LR
-    core["bijux-core root"] --> cli["bijux-cli\ncommand runtime"]
-    core --> dag["bijux-dag\ngraph runtime"]
-    core --> dev["bijux-dev\nmaintainer automation"]
-    cli --> handoff1["routes to known bijux tools"]
-    cli --> handoff2["shared docs and release policies live at root"]
-```
+## What This Handbook Owns
 
-## Why This Boundary Matters
+| Surface | What belongs here |
+| --- | --- |
+| command runtime | argv parsing, route resolution, built-in features, plugin handling, output contracts |
+| CLI product behavior | what `bijux` does directly for users and automation |
+| routed integrations | how the CLI discovers or delegates to known tools without claiming to own them |
 
-- prevents CLI docs from drifting into DAG behavior claims
-- keeps maintainer controls in `bijux-dev` rather than user-facing pages
-- makes cross-package reviews explicit when command routing reaches other tools
+## What Belongs Somewhere Else
+
+| Surface | Where readers should go |
+| --- | --- |
+| DAG semantics and workflow evidence | `docs/bijux-dag/` |
+| repository-wide documentation rules and publication structure | root docs and handbook indexes |
+| maintainer automation, CI governance, and internal release mechanics | `docs/bijux-dev/` |
+
+## Why The Boundary Matters
+
+- It prevents CLI documentation from making claims about DAG behavior it does
+  not own.
+- It keeps maintainer-only control surfaces out of user-facing product pages.
+- It makes route delegation understandable without pretending delegation is the
+  same thing as ownership.
 
 ## Code Anchors
 
@@ -37,20 +48,14 @@ flowchart LR
 - `crates/bijux-cli/src/interface/cli/dispatch/delegation.rs`
 - `contracts/official_product_namespace_registry.json`
 
-## Integration Rules
+## Reader Rules
 
 - CLI pages describe `bijux` runtime behavior and contracts only
 - DAG semantics are documented in the DAG handbook
 - maintainer workflows and CI orchestration are documented in the dev handbook
 - root docs own cross-package scope, layout, and publication rules
 
-## Questions This Page Answers
-
-- where CLI authority begins and ends in the merged repository
-- how adjacent product namespaces are recognized and protected
-- why route delegation is documented as integration, not ownership transfer
-
-## Next Reads
+## Continue Reading
 
 - [Dependencies and Adjacencies](dependencies-and-adjacencies.md)
 - [Integration Seams](../architecture/integration-seams.md)
