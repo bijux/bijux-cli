@@ -83,7 +83,8 @@ fn dag_product_sentence_stays_backed_by_explicit_proof_maps() {
     assert!(entrypoints.contains("the cache-behavior workflow"));
     assert!(entrypoints.contains("the reproducibility model for replay identity"));
 
-    let first_hour = read_repo_file("docs/bijux-dag/operations/guides/first-hour-with-bijux-dag.md");
+    let first_hour =
+        read_repo_file("docs/bijux-dag/operations/guides/first-hour-with-bijux-dag.md");
     assert!(first_hour.contains("That first hour proves the product sentence in order:"));
 
     let first_run = read_repo_file("docs/bijux-dag/operations/guides/first-run-tutorial.md");

@@ -45,9 +45,8 @@ fn dag_root_help_describes_release_boundary() {
     assert!(rendered.contains("Use `bijux-dag commands` for the stable operator surface"));
     assert!(!rendered.contains("enterprise"));
     assert!(!rendered.contains("governance"));
-    assert!(!rendered.contains(
-        "Validate, run, replay, explain, and compare reproducible computation graphs"
-    ));
+    assert!(!rendered
+        .contains("Validate, run, replay, explain, and compare reproducible computation graphs"));
 }
 
 #[test]
