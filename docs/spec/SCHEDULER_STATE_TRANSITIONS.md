@@ -4,7 +4,7 @@ audience: mixed
 type: spec
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-08
 ---
 
 # Scheduler State Transitions
@@ -86,9 +86,13 @@ propagation mode.
 `ExecutionCheckpoint` and scheduler timeline output exist to make transitions
 auditable after the run ends.
 
-- `ready_queue`, `blocked_by_budget`, and `completed_statuses` capture the
-  scheduler snapshot at a loop boundary
+- `ready_queue`, `scheduled`, `blocked_by_budget`, `inflight`,
+  `completed_statuses`, and `decision_reason` capture the scheduler snapshot at
+  a loop boundary
 - `scheduler_debug_event_log` exposes the internal event history
+- `bijux-dag runs scheduler-checkpoint` turns `scheduler.checkpoint.json` into
+  an explicit operator inspection route for ready, scheduled, blocked, inflight,
+  and completed node state
 - `run_dag_scheduler_timeline` turns `observability.timeline.json` into an
   operator-facing scheduler report
 

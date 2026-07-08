@@ -76,6 +76,24 @@ Those supporting files are useful for audit, repair, and inspection, but the
 authoritative run evidence still starts with the manifest, graph snapshot,
 node traces, indexes, event log, and timeline.
 
+### `scheduler.checkpoint.json`
+
+When retained, `scheduler.checkpoint.json` records one scheduler loop boundary.
+
+It is the durable checkpoint surface for:
+
+- the ready queue and ready queue depth
+- the batch scheduled in that loop
+- resource-blocked nodes and their block reasons
+- inflight nodes still owned by the scheduler
+- completed terminal statuses already observed
+- the scheduler decision reason that explains why that loop scheduled or held
+  work
+
+Use `bijux-dag runs scheduler-checkpoint` when the question is "what exact
+scheduler state did this run persist?" without reconstructing it from the
+full timeline by hand.
+
 ## Root evidence files
 
 ### `manifest.json`

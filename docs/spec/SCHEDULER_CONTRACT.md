@@ -4,7 +4,7 @@ audience: mixed
 type: spec
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-08
 ---
 
 # Scheduler Contract
@@ -102,6 +102,12 @@ timeline evidence.
   dispatch, readiness accounting, failure propagation, and budget enforcement
 - `crates/bijux-dag-runtime/tests/runtime_scheduler_determinism_contracts.rs`
   proves stable ordering for equal inputs
+- `scheduler.checkpoint.json` records loop-boundary scheduler state with
+  `ready_queue`, `scheduled`, `blocked_by_budget`, `inflight`,
+  `completed_statuses`, and `decision_reason`
+- `bijux-dag runs scheduler-checkpoint` exposes the retained checkpoint through
+  a stable operator route and reports absent or corrupt checkpoint evidence
+  explicitly
 - `run_dag_scheduler_timeline` exposes scheduler entries from
   `observability.timeline.json`
 - scheduler timeline evidence is filtered to scheduler-relevant categories such

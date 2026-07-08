@@ -4,7 +4,7 @@ audience: mixed
 type: spec
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-08
 ---
 
 # Operator UX Contract
@@ -27,6 +27,7 @@ The governed operator inspection lanes are:
 - `dag runs inspect`
 - `dag runs tree`
 - `dag runs timeline`
+- `dag runs scheduler-checkpoint`
 - `dag runs diff`
 - `dag runs verify`
 - `dag runs doctor`
@@ -39,6 +40,12 @@ The governed operator inspection lanes are:
 - timeline inspection must expose timestamps and causes in human output
 - timeline inspection filters must remain available for node, event, and
   inclusive time windows
+- scheduler checkpoint inspection must surface decision reason, ready nodes,
+  scheduled nodes, resource-blocked nodes, inflight nodes, and completed
+  statuses when checkpoint evidence exists
+- scheduler checkpoint inspection must distinguish retained, absent, and corrupt
+  checkpoint evidence explicitly instead of implying a scheduler state that was
+  not actually recorded
 - failure explanation must identify the first causal failure rather than only
   list every failed or skipped node
 - failure explanation must separate propagated failed nodes from propagated

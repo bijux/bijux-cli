@@ -13,6 +13,7 @@ determinism, state transitions, and operator-facing scheduler evidence.
 - runtime tests: `crates/bijux-dag-runtime/tests/scheduler_contract.rs`
 - determinism tests: `crates/bijux-dag-runtime/tests/runtime_scheduler_determinism_contracts.rs`
 - maintainer guard: `crates/bijux-dev/tests/scheduler_hardening_contracts.rs`
+- stable operator route: `bijux-dag runs scheduler-checkpoint`
 - command surface: `crates/bijux-dev/src/commands/mod.rs` via `run_dag_scheduler_timeline`
 
 ## Current hardening stance
@@ -23,5 +24,8 @@ determinism, state transitions, and operator-facing scheduler evidence.
   failed, and retry-requeue transitions
 - budget blocking must stay explicit through `blocked_by_budget` and
   `blocked_reasons`
+- checkpoint evidence must stay explicit through `ready_queue`, `scheduled`,
+  `inflight`, `completed_statuses`, and `decision_reason`
 - operator-facing scheduler evidence must remain available through
-  `observability.timeline.json` and `run_dag_scheduler_timeline`
+  `scheduler.checkpoint.json`, `bijux-dag runs scheduler-checkpoint`,
+  `observability.timeline.json`, and `run_dag_scheduler_timeline`
