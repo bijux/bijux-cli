@@ -1,7 +1,7 @@
 use crate::routes::run_lookup::RunWorkspacePaths;
 use crate::routes::selector_grammar::{SelectorExpression, SelectorField};
 use bijux_dag_artifacts::FailureInfo;
-use bijux_dag_runtime::TimelineExport;
+use bijux_dag_runtime::{ExecutionCheckpoint, TimelineExport};
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::fs;
@@ -205,6 +205,64 @@ pub fn explain_run_id(root: &Path, run_id: &str) -> Result<Value, std::io::Error
         "parent_run_id": run_metadata.get("parent_run_id").cloned().unwrap_or(Value::Null),
         "source_run_id": run_metadata.get("source_run_id").cloned().unwrap_or(Value::Null),
         "immutability_contract": "run directories are immutable after finalization; aliases must not mutate historical content"
+    }))
+}
+
+pub fn run_scheduler_checkpoint(run_dir: &Path) -> Result<Value, std::io::Error> {
+    let manifest = read_json(&run_dir.join("manifest.json")).unwrap_or(Value::Null);
+    let checkpoint_path = run_dir.join("scheduler.checkpoint.json");
+    let run_id = manifest
+        .get("run_id")
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned)
+        .or_else(|| inferred_run_id(run_dir))
+        .unwrap_or_else(|| "unknown-run".to_string());
+
+    if !checkpoint_path.exists() {
+        return Ok(json!({
+            "run_id": run_id,
+            "run_dir": run_dir.display().to_string(),
+            "checkpoint_path": checkpoint_path.display().to_string(),
+            "inspection_state": "absent",
+            "checkpoint_present": false,
+            "detail": "scheduler checkpoint was not retained for this run"
+        }));
+    }
+
+    let payload = fs::read_to_string(&checkpoint_path)?;
+    let checkpoint: ExecutionCheckpoint = match serde_json::from_str(&payload) {
+        Ok(checkpoint) => checkpoint,
+        Err(error) => {
+            return Ok(json!({
+                "run_id": run_id,
+                "run_dir": run_dir.display().to_string(),
+                "checkpoint_path": checkpoint_path.display().to_string(),
+                "inspection_state": "corrupt",
+                "checkpoint_present": true,
+                "detail": "scheduler checkpoint could not be parsed",
+                "parse_error": error.to_string(),
+            }));
+        }
+    };
+
+    Ok(json!({
+        "run_id": run_id,
+        "run_dir": run_dir.display().to_string(),
+        "checkpoint_path": checkpoint_path.display().to_string(),
+        "inspection_state": "present",
+        "checkpoint_present": true,
+        "loop_index": checkpoint.loop_index,
+        "ready_queue_depth": checkpoint.ready_queue_depth,
+        "ready_queue": checkpoint.ready_queue,
+        "scheduled_batch": checkpoint.scheduled,
+        "inflight_nodes": checkpoint.inflight,
+        "resource_blocked_nodes": checkpoint.blocked_by_budget,
+        "blocked_reasons": checkpoint.blocked_reasons,
+        "completed_statuses": checkpoint.completed_statuses,
+        "decision_reason": checkpoint.decision_reason,
+        "failure_propagation_mode": checkpoint.failure_propagation_mode,
+        "dependency_closure_enabled": checkpoint.dependency_closure_enabled,
+        "generated_unix_ms": checkpoint.generated_unix_ms,
     }))
 }
 
@@ -890,6 +948,13 @@ pub fn format_run_completion_human(summary: &Value) -> String {
         next_action.get("reason").cloned().unwrap_or(Value::Null),
         next_action.get("command").cloned().unwrap_or(Value::Null),
     )
+}
+
+fn inferred_run_id(run_dir: &Path) -> Option<String> {
+    run_dir
+        .file_name()
+        .and_then(|value| value.to_str())
+        .map(|value| value.trim_start_matches("run.tmp-").trim_start_matches("run-").to_string())
 }
 
 fn output_inventory_path(run_dir: &Path) -> Option<PathBuf> {

@@ -1,8 +1,8 @@
 use crate::routes::selector_grammar::SelectorExpression;
 use crate::run_failure_summary::explain_failure;
 use crate::run_views::{
-    doctor_run, explain_run_id, inspect_summary, resolve_run_dir, run_timeline,
-    run_timeline_with_query, run_tree, runs_history, runs_history_query_with_filters,
+    doctor_run, explain_run_id, inspect_summary, resolve_run_dir, run_scheduler_checkpoint,
+    run_timeline, run_timeline_with_query, run_tree, runs_history, runs_history_query_with_filters,
     write_run_history_index, RunTimelineQuery,
 };
 use serde_json::Value;
@@ -41,6 +41,14 @@ pub(crate) fn doctor_for_run_id(root: &Path, run_id: &str) -> Value {
 pub(crate) fn explain_failure_for_run_id(root: &Path, run_id: &str) -> Result<Value, ExitCode> {
     let run_dir = resolve_run_dir(root, run_id);
     explain_failure(&run_dir).map_err(|_| ExitCode::from(3))
+}
+
+pub(crate) fn scheduler_checkpoint_for_run_id(
+    root: &Path,
+    run_id: &str,
+) -> Result<Value, ExitCode> {
+    let run_dir = resolve_run_dir(root, run_id);
+    run_scheduler_checkpoint(&run_dir).map_err(|_| ExitCode::from(3))
 }
 
 pub(crate) fn run_history_for_root(root: &Path) -> Result<Value, ExitCode> {

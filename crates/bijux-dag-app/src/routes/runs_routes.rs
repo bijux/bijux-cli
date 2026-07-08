@@ -158,6 +158,93 @@ fn format_run_timeline_human(report: &Value) -> String {
     lines.join("\n")
 }
 
+fn format_scheduler_checkpoint_human(report: &Value) -> String {
+    let mut lines = vec![
+        format!(
+            "inspection_state: {}",
+            report.get("inspection_state").and_then(Value::as_str).unwrap_or("unknown")
+        ),
+        format!(
+            "checkpoint_path: {}",
+            report.get("checkpoint_path").and_then(Value::as_str).unwrap_or("-")
+        ),
+    ];
+
+    match report.get("inspection_state").and_then(Value::as_str).unwrap_or("unknown") {
+        "present" => {
+            lines.push(format!(
+                "decision_reason: {}",
+                report.get("decision_reason").and_then(Value::as_str).unwrap_or("unknown")
+            ));
+            lines.push(format!(
+                "ready_queue_depth: {}",
+                report.get("ready_queue_depth").cloned().unwrap_or(Value::Null)
+            ));
+            lines.push(format!("ready_queue: {}", render_string_list(report.get("ready_queue"))));
+            lines.push(format!(
+                "scheduled_batch: {}",
+                render_string_list(report.get("scheduled_batch"))
+            ));
+            lines.push(format!(
+                "inflight_nodes: {}",
+                render_string_list(report.get("inflight_nodes"))
+            ));
+            lines.push(format!(
+                "resource_blocked_nodes: {}",
+                render_string_list(report.get("resource_blocked_nodes"))
+            ));
+            lines.push(format!(
+                "completed_statuses: {}",
+                render_string_map(report.get("completed_statuses"))
+            ));
+            lines.push(format!(
+                "blocked_reasons: {}",
+                render_string_map(report.get("blocked_reasons"))
+            ));
+        }
+        _ => {
+            lines.push(format!(
+                "detail: {}",
+                report
+                    .get("detail")
+                    .and_then(Value::as_str)
+                    .unwrap_or("checkpoint details unavailable")
+            ));
+        }
+    }
+
+    lines.join("\n")
+}
+
+fn render_string_list(value: Option<&Value>) -> String {
+    let Some(items) = value.and_then(Value::as_array) else {
+        return "[]".to_string();
+    };
+    if items.is_empty() {
+        return "[]".to_string();
+    }
+    let rendered =
+        items.iter().filter_map(Value::as_str).map(ToOwned::to_owned).collect::<Vec<_>>();
+    if rendered.is_empty() {
+        "[]".to_string()
+    } else {
+        rendered.join(", ")
+    }
+}
+
+fn render_string_map(value: Option<&Value>) -> String {
+    let Some(map) = value.and_then(Value::as_object) else {
+        return "{}".to_string();
+    };
+    if map.is_empty() {
+        return "{}".to_string();
+    }
+    map.iter()
+        .map(|(key, value)| format!("{key}={}", value.as_str().unwrap_or("unknown")))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 fn diagnostics_bundle_payload(run_dir: &Path, redact: bool) -> Result<Value, ExitCode> {
     let manifest = read_optional_json(&run_dir.join("manifest.json"));
     let graph_snapshot = if run_dir.join("graph.snapshot.json").exists() {
@@ -388,6 +475,21 @@ pub(crate) fn handle_runs_command(
                 );
             }
             println!("{}", format_run_timeline_human(&timeline));
+            Ok(ExitCode::SUCCESS)
+        }
+        RunsCommands::SchedulerCheckpoint { run_id, root } => {
+            let report = inspect_service::scheduler_checkpoint_for_run_id(root, run_id)?;
+            if cli.json {
+                return emit_json(
+                    cli,
+                    "dag.runs.scheduler-checkpoint",
+                    true,
+                    report,
+                    Vec::new(),
+                    ExitCode::SUCCESS,
+                );
+            }
+            println!("{}", format_scheduler_checkpoint_human(&report));
             Ok(ExitCode::SUCCESS)
         }
         RunsCommands::Stop { run_id, root } => {
@@ -658,6 +760,7 @@ mod tests {
     use crate::run_views::RunTimelineQuery;
     use crate::ExitCode;
     use bijux_dag_artifacts::RunStopRequest;
+    use bijux_dag_runtime::ExecutionCheckpoint;
     use serde_json::json;
     use std::fs;
     use std::path::Path;
@@ -739,6 +842,35 @@ mod tests {
             .expect("timeline"),
         )
         .expect("write timeline");
+    }
+
+    fn write_scheduler_checkpoint_run(root: &Path, run_id: &str) {
+        write_run(root, run_id, false);
+        let checkpoint = ExecutionCheckpoint {
+            loop_index: 4,
+            ready_queue_depth: 1,
+            ready_queue: vec!["publish".to_string()],
+            inflight: vec!["package".to_string()],
+            scheduled: vec!["package".to_string()],
+            blocked_by_budget: vec!["notify".to_string()],
+            blocked_reasons: std::collections::BTreeMap::from([(
+                "notify".to_string(),
+                "memory budget exhausted".to_string(),
+            )]),
+            completed_statuses: std::collections::BTreeMap::from([(
+                "build".to_string(),
+                "success".to_string(),
+            )]),
+            decision_reason: "ready_batch".to_string(),
+            failure_propagation_mode: "continue_independent".to_string(),
+            dependency_closure_enabled: false,
+            generated_unix_ms: 420,
+        };
+        fs::write(
+            root.join(run_id).join("scheduler.checkpoint.json"),
+            serde_json::to_vec_pretty(&checkpoint).expect("checkpoint"),
+        )
+        .expect("write checkpoint");
     }
 
     fn write_active_run(root: &Path, run_id: &str) -> std::path::PathBuf {
@@ -944,6 +1076,44 @@ mod tests {
         assert!(rendered.contains("timestamp_unix_ms=130"));
         assert!(rendered.contains("cause=execution_failed"));
         assert!(rendered.contains("source_event=node_finished"));
+    }
+
+    #[test]
+    fn runs_scheduler_checkpoint_reports_decisions_and_blocked_nodes() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        write_scheduler_checkpoint_run(tmp.path(), "run-scheduler");
+
+        let report = inspect_service::scheduler_checkpoint_for_run_id(tmp.path(), "run-scheduler")
+            .expect("scheduler checkpoint");
+
+        assert_eq!(report["inspection_state"], "present");
+        assert_eq!(report["decision_reason"], "ready_batch");
+        assert_eq!(report["ready_queue"], json!(["publish"]));
+        assert_eq!(report["scheduled_batch"], json!(["package"]));
+        assert_eq!(report["inflight_nodes"], json!(["package"]));
+        assert_eq!(report["resource_blocked_nodes"], json!(["notify"]));
+        assert_eq!(report["blocked_reasons"]["notify"], "memory budget exhausted");
+    }
+
+    #[test]
+    fn scheduler_checkpoint_human_output_surfaces_decision_reason_and_budget_blocks() {
+        let report = json!({
+            "inspection_state": "present",
+            "checkpoint_path": "/tmp/run-scheduler/scheduler.checkpoint.json",
+            "decision_reason": "ready_batch",
+            "ready_queue_depth": 1,
+            "ready_queue": ["publish"],
+            "scheduled_batch": ["package"],
+            "inflight_nodes": ["package"],
+            "resource_blocked_nodes": ["notify"],
+            "completed_statuses": {"build": "success"},
+            "blocked_reasons": {"notify": "memory budget exhausted"},
+        });
+
+        let rendered = super::format_scheduler_checkpoint_human(&report);
+        assert!(rendered.contains("decision_reason: ready_batch"));
+        assert!(rendered.contains("resource_blocked_nodes: notify"));
+        assert!(rendered.contains("blocked_reasons: notify=memory budget exhausted"));
     }
 
     #[test]

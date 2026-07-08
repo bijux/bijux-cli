@@ -15,6 +15,7 @@ fn operator_commands() -> Vec<&'static str> {
         "runs.id-explain",
         "runs.tree",
         "runs.timeline",
+        "runs.scheduler-checkpoint",
         "runs.diff",
         "runs.verify",
         "runs.doctor",

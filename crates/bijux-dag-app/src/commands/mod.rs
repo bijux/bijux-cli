@@ -1498,6 +1498,12 @@ pub(crate) enum RunsCommands {
         #[arg(long)]
         until_unix_ms: Option<u128>,
     },
+    #[command(name = "scheduler-checkpoint")]
+    SchedulerCheckpoint {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
     Stop {
         run_id: String,
         #[arg(long)]
