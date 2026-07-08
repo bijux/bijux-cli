@@ -56,8 +56,7 @@ The current bundle boundary is:
 - `manifest-only` and `without-artifacts` export bundles preserve structural
   evidence and provenance, but they do not carry the full file payload required
   for artifact-backed replay proof
-- diagnostics bundles exist for inspection and support capture; they are not an
-  importable replay contract
+- diagnostics bundles exist for inspection and support capture; they are not an importable replay contract and must not be treated as replay bundles
 
 ## Node rerun boundary
 
