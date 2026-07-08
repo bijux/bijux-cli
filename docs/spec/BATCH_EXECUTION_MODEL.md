@@ -10,10 +10,10 @@ last_reviewed: 2026-07-06
 # Batch Execution Model
 
 `bijux-dag` models batch job metadata, retry progression, heartbeat freshness,
-and simulated batch backends. The repository now includes modeled Kubernetes
-and SLURM lanes that execute through shared runtime adapters while keeping
-cluster and scheduler semantics explicitly simulated rather than
-control-plane-backed.
+and non-local execution lanes. The repository includes a modeled Kubernetes
+lane plus a shared-filesystem SLURM lane that submits jobs through real
+`sbatch` and `sacct` calls while keeping public scheduler-service claims out of
+scope.
 
 ## Scope
 
@@ -47,10 +47,12 @@ exercised by:
   identity, pod lifecycle, terminal phase mapping, workspace transfer
   contracts, and node logs through the shared runtime lane
 - `kubernetes` is not a cluster-backed `v0.4.0` public operator promise
-- `slurm-backend` is a supported simulated execution backend that captures job
-  identity, scheduler lifecycle, terminal status mapping, and node logs through
-  the shared runtime lane
-- `slurm-backend` is not a cluster-backed `v0.4.0` public operator promise
+- `slurm` is an implemented execution backend that captures job identity,
+  scheduler lifecycle, terminal status mapping, scheduler stdout/stderr, and
+  retained `batch-job.json` evidence through the shared runtime lane
+- `slurm` requires `sbatch`, `sacct`, and a shared run directory that the
+  scheduled worker can reopen; it is not a generic HPC abstraction or a public
+  scheduler service
 - restart recovery is not implemented for the batch model
 
 ## Related tests

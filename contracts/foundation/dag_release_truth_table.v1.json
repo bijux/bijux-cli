@@ -88,7 +88,7 @@
     "summary": "not a v0.4.0 product promise; promotion requires separate implementation, documentation, tests, and compatibility review",
     "capabilities": [
       "kubernetes execution backend",
-      "slurm or hpc execution backend",
+      "generic hpc execution backend beyond the shared-filesystem slurm lane",
       "remote worker execution model",
       "public enterprise, fleet, federation, and governance operator APIs",
       "full scheduler service"

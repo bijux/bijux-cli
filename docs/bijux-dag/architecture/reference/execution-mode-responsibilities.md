@@ -21,8 +21,11 @@ claims.
 - kubernetes execution: modeled runtime lane with simulated Job and pod
   semantics, resource and deadline mapping, workspace transfer contracts, and
   pod phase mapping
-- hpc execution: modeled runtime lane with simulated SLURM scheduler semantics,
-  job identity capture, terminal status mapping, and log capture
+- slurm execution: implemented shared-filesystem runtime lane with `sbatch`
+  submission, `sacct` polling, batch evidence retention, and worker re-entry
+  through the same retained run directory
+- generic hpc execution: modeled runtime lane beyond the concrete shared-
+  filesystem SLURM backend
 
 ## Responsibility split
 

@@ -86,7 +86,7 @@ v0.4.0 surface truth table:
   experimental: hidden explicit-path routes require deliberate inventory with `bijux-dag commands --lane experimental`
   simulated: modeled platform namespaces require `bijux-dag commands --lane simulated` to inventory and BIJUX_DAG_ENABLE_SIMULATED=1 to execute
   internal: maintainer namespaces require `bijux-dag commands --lane internal` to inventory and BIJUX_DAG_ENABLE_INTERNAL=1 to execute
-  future: cluster-backed kubernetes, cluster-backed slurm or hpc, public remote workers, and public scheduler services are not part of v0.4.0
+  future: cluster-backed kubernetes, generic hpc beyond the shared-filesystem slurm lane, public remote workers, and public scheduler services are not part of v0.4.0
 
 Use `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.
 ```
@@ -2068,5 +2068,4 @@ Options:
   -h, --help
           Print help
 ```
-
 
