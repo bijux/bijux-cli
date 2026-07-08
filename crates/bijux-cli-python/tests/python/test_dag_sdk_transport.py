@@ -7,6 +7,7 @@ import pytest
 
 from bijux_cli_py import dag_command_json, dag_post_install_diagnostics, load_dag_graph
 from bijux_cli_py._exceptions import InternalError, ValidationError
+import bijux_cli_py.dag_sdk as dag_sdk_module
 
 
 def _workspace_root() -> Path:
@@ -96,3 +97,67 @@ def test_dag_post_install_diagnostics_reports_runtime_override(
 
     assert diagnostics["runtime_binary"] == str(runtime.resolve())
     assert diagnostics["warnings"] == []
+
+
+def test_validate_dag_graph_forwards_cli_flags(monkeypatch: pytest.MonkeyPatch) -> None:
+    recorded: list[str] = []
+
+    def _capture(argv: list[str]) -> dict[str, object]:
+        recorded.extend(argv)
+        return {"ok": True}
+
+    monkeypatch.setattr(dag_sdk_module, "dag_command_json", _capture)
+
+    result = dag_sdk_module.validate_dag_graph(
+        "graph-a.json",
+        "graph-b.json",
+        strict=True,
+        explain=True,
+        print_fingerprints=True,
+    )
+
+    assert result == {"ok": True}
+    assert recorded == [
+        "validate",
+        "graph-a.json",
+        "graph-b.json",
+        "--strict",
+        "--explain",
+        "--print-fingerprints",
+    ]
+
+
+def test_run_dag_graph_stages_inputs_file_temporarily(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured_path: Path | None = None
+
+    def _capture(argv: list[str]) -> dict[str, object]:
+        nonlocal captured_path
+        inputs_index = argv.index("--inputs-file")
+        captured_path = Path(argv[inputs_index + 1])
+        assert captured_path.exists()
+        payload = json.loads(captured_path.read_text(encoding="utf-8"))
+        assert payload == {"scheduled_at_unix_ms": 42}
+        return {"ok": True}
+
+    monkeypatch.setattr(dag_sdk_module, "dag_command_json", _capture)
+
+    result = dag_sdk_module.run_dag_graph(
+        "graph.json",
+        out="runs",
+        run_id="transport-run",
+        graph_inputs={"scheduled_at_unix_ms": 42},
+    )
+
+    assert result == {"ok": True}
+    assert captured_path is not None
+    assert not captured_path.exists()
+
+
+def test_run_dag_graph_rejects_duplicate_input_sources() -> None:
+    with pytest.raises(ValueError):
+        dag_sdk_module.run_dag_graph(
+            "graph.json",
+            out="runs",
+            graph_inputs={"x": 1},
+            inputs_file="inputs.json",
+        )
