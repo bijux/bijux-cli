@@ -4,7 +4,7 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Security and Secrets
