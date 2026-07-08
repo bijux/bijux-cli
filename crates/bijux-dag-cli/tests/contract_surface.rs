@@ -1263,6 +1263,23 @@ fn capabilities_backend_query_supports_hpc() {
 }
 
 #[test]
+fn capabilities_backend_query_supports_slurm() {
+    let output = dag_command()
+        .env("BIJUX_DAG_ENABLE_INTERNAL", "1")
+        .args(["capabilities", "--backend", "slurm", "--json"])
+        .output()
+        .expect("capabilities slurm backend");
+    assert!(output.status.success());
+    let payload: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("capabilities slurm json");
+    assert_eq!(payload["command"], "dag.capabilities");
+    assert_eq!(payload["data"]["backend"], "slurm");
+    assert_eq!(payload["data"]["status"], "implemented");
+    assert_eq!(payload["data"]["execution_lane"], "ENFORCED");
+    assert_eq!(payload["data"]["production_ready"], false);
+}
+
+#[test]
 fn capabilities_backend_query_supports_remote() {
     let output = dag_command()
         .env("BIJUX_DAG_ENABLE_INTERNAL", "1")

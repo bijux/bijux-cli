@@ -12,12 +12,21 @@ fn execution_lane(status: &str) -> &'static str {
 
 fn base_payload(backend: &str, status: &str) -> serde_json::Value {
     let lane = execution_lane(status);
+    base_payload_with_lane(backend, status, lane, lane == LANE_ENFORCED)
+}
+
+fn base_payload_with_lane(
+    backend: &str,
+    status: &str,
+    lane: &str,
+    production_ready: bool,
+) -> serde_json::Value {
     json!({
         "format": "capabilities/v1",
         "backend": backend,
         "status": status,
         "execution_lane": lane,
-        "production_ready": lane == LANE_ENFORCED
+        "production_ready": production_ready
     })
 }
 
@@ -62,7 +71,30 @@ pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value
             ]);
             Some(payload)
         }
-        "hpc" | "slurm" => {
+        "slurm" => {
+            let version = bijux_dag_runtime::capture_hpc_scheduler_version("slurm", "23.11.5");
+            let retry = bijux_dag_runtime::effective_hpc_retry_policy(true, true);
+            let mut payload =
+                base_payload_with_lane("slurm", "implemented", LANE_ENFORCED, false);
+            payload["capabilities"] = json!({
+                "job_submission": true,
+                "job_id_capture": true,
+                "queue_partition_mapping": true,
+                "walltime_mapping": true,
+                "status_mapping": true,
+                "log_capture": true,
+                "shared_run_directory": true,
+                "result_payload_handoff": true,
+                "scheduler_retry_precedence": retry.effective_retry_owner
+            });
+            payload["version_metadata"] = json!(version);
+            payload["notes"] = json!([
+                "slurm execution submits nodes through sbatch and polls sacct through the stable run surface",
+                "scheduled workers must reopen the same retained run directory on a shared filesystem; this is not a generic hpc abstraction or a public scheduler service"
+            ]);
+            Some(payload)
+        }
+        "hpc" => {
             let version = bijux_dag_runtime::capture_hpc_scheduler_version("slurm", "23.11.5");
             let retry = bijux_dag_runtime::effective_hpc_retry_policy(true, true);
             let mut payload = base_payload("hpc", "simulated");
@@ -77,8 +109,8 @@ pub(crate) fn backend_capability_payload(name: &str) -> Option<serde_json::Value
             });
             payload["version_metadata"] = json!(version);
             payload["notes"] = json!([
-                "slurm execution is modeled and exercised through the shared runtime lane",
-                "scheduler semantics remain simulated rather than cluster-backed in this repository"
+                "generic hpc capability reporting remains modeled rather than tied to one concrete scheduler lane",
+                "the separate slurm backend reports the implemented shared-filesystem sbatch and sacct path"
             ]);
             Some(payload)
         }
@@ -167,6 +199,21 @@ mod tests {
         assert_eq!(first["capabilities"]["job_id_capture"], true);
         assert_eq!(first["capabilities"]["status_mapping"], true);
         assert_eq!(first["capabilities"]["log_capture"], true);
+    }
+
+    #[test]
+    fn capability_query_output_is_stable_for_slurm() {
+        let first = backend_capability_payload("slurm").expect("slurm payload");
+        let second = backend_capability_payload("slurm").expect("slurm payload");
+        assert_eq!(first, second);
+        assert_eq!(first["format"], "capabilities/v1");
+        assert_eq!(first["backend"], "slurm");
+        assert_eq!(first["status"], "implemented");
+        assert_eq!(first["execution_lane"], "ENFORCED");
+        assert_eq!(first["production_ready"], false);
+        assert_eq!(first["capabilities"]["job_submission"], true);
+        assert_eq!(first["capabilities"]["shared_run_directory"], true);
+        assert_eq!(first["capabilities"]["result_payload_handoff"], true);
     }
 
     #[test]
