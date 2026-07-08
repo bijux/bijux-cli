@@ -278,6 +278,38 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
 }
 
 #[test]
+fn release_boundary_references_route_readers_to_handbook_pages() {
+    for path in [
+        "docs/bijux-cli/interfaces/entrypoints-and-examples.md",
+        "docs/bijux-cli/interfaces/examples/command-examples.md",
+        "docs/bijux-cli/operations/reference/migration-guide.md",
+        "docs/bijux-dag/interfaces/executable-recipes.md",
+        "docs/bijux-dag/interfaces/guides/executable-recipes.md",
+        "docs/bijux-dag/interfaces/reference/support-matrix.md",
+        "docs/bijux-dag/operations/guides/ci-integration.md",
+        "docs/bijux-dag/operations/guides/first-hour-with-bijux-dag.md",
+        "docs/spec/RELEASE_BINARY_VERIFICATION.md",
+    ] {
+        let content = read_repo_file(path);
+        assert!(
+            !content.contains("](../../../contracts/foundation/dag_release_truth_table.v1.json)")
+                && !content
+                    .contains("](../../../../contracts/foundation/dag_release_truth_table.v1.json)")
+                && !content.contains("](../../contracts/foundation/dag_release_truth_table.v1.json)"),
+            "{path} must not link handbook readers directly to the raw release truth-table contract"
+        );
+        assert!(
+            content.contains("release-boundary.md"),
+            "{path} must route release-boundary readers to a handbook page"
+        );
+        assert!(
+            content.contains("contracts/foundation/dag_release_truth_table.v1.json"),
+            "{path} must still name the machine-readable release truth-table contract"
+        );
+    }
+}
+
+#[test]
 fn dag_operator_reference_docs_use_public_binary_examples() {
     for path in [
         "docs/bijux-dag/interfaces/generated-cli-reference.md",
