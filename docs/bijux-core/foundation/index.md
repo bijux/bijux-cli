@@ -32,6 +32,8 @@ flowchart LR
 - [Domain Language](domain-language.md)
 - [Change Principles](change-principles.md)
 - [Decision Rules](decision-rules.md)
+- [Root Policy Surface Report](root-policy-surface-report.md)
+- [Backlog Routing Ledger](backlog-routing-ledger.md)
 
 ## Reading Rule
 

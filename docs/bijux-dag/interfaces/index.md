@@ -50,7 +50,7 @@ flowchart LR
 - [Reusable Subgraphs](guides/reusable-subgraphs.md)
 - [Artifact Contracts](artifact-contracts.md)
 - [Entrypoints and Examples](entrypoints-and-examples.md)
-- [Executable Recipes](guides/executable-recipes.md)
+- [Executable Recipes](executable-recipes.md)
 - [Operator Workflows](operator-workflows.md)
 - [Public Imports](public-imports.md)
 - [Compatibility Commitments](compatibility-commitments.md)

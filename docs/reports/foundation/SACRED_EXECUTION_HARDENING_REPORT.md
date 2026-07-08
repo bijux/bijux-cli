@@ -8,7 +8,7 @@ execution flow and keep engine centralization tied to executable proof.
 ## Guarded surfaces
 
 - contract: `docs/spec/SACRED_EXECUTION_FLOW.md`
-- architecture: `docs/bijux-dag/architecture/reference/runtime-execution-flow.md`
+- architecture: `docs/bijux-dag/architecture/runtime-execution-flow.md`
 - runtime hooks: `crates/bijux-dag-runtime/src/runtime_core/governance/sacred_execution.rs`
 - engine: `crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs`
 - runtime tests: `crates/bijux-dag-runtime/tests/sacred_execution_flow_contracts.rs`

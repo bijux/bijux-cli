@@ -10,7 +10,7 @@ binding, lifecycle sequencing, attempt evidence, and engine/backend ownership.
 - contract: `docs/spec/BACKEND_CONTRACT.md`
 - engine contract: `docs/spec/EXECUTION_ENGINE_CONTRACT.md`
 - attempt schema: `docs/spec/ATTEMPT_TRACE_SCHEMA_V0.1.md`
-- architecture: `docs/bijux-dag/architecture/reference/engine-backend-responsibilities.md`
+- architecture: `docs/bijux-dag/architecture/engine-backend-responsibilities.md`
 - runtime implementation: `crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs`
 - conformance tests: `crates/bijux-dag-runtime/tests/execution_backend_contract.rs`
 - engine proof: `crates/bijux-dag-runtime/tests/engine_flow_contract.rs`
