@@ -158,7 +158,7 @@ pub(crate) fn verify_replay_boundary_inputs(
                                 .join(&input.source_node_id)
                                 .join("outputs")
                                 .join(&file.path);
-                            source_output_path = persisted_source_path.clone();
+                            source_output_path.clone_from(&persisted_source_path);
                             match sha256_artifact_path(&persisted_source_path) {
                                 Ok(actual_sha256) if actual_sha256 != file.sha256 => {
                                     notes.push(format!(
