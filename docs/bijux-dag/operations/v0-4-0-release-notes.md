@@ -169,7 +169,8 @@ make release-validate-rs
 
 For the exact release validation lane and what it proves, use
 [Release Validation Suite](../../bijux-dev/operations/release-validation-suite.md)
-and [Release and Versioning](release-and-versioning.md).
+and [Release and Versioning](release-and-versioning.md). The broad release
+verification lane for this repository is `make release-validate-rs`.
 
 ## Evidence And Decision Sources
 
