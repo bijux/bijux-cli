@@ -2,15 +2,16 @@ use crate::failure_summary::build_run_failure_summary;
 use crate::{
     bind_path_variables_in_value, build_run_outputs_index, cache_dir_from_env, cache_mode_string,
     canonicalize_event_records, category_from_runtime_event_name, collect_outputs_summary,
-    current_process_memory_bytes, node_fingerprint_from_ctx, node_fingerprint_with_inputs,
-    execute_with_retry_operation, reconstruct_timeline_from_events, reduce_execution_config,
+    current_process_memory_bytes, execute_with_retry_operation, node_fingerprint_from_ctx,
+    node_fingerprint_with_inputs, reconstruct_timeline_from_events, reduce_execution_config,
     registered_adapters, sacred_execution, serialize_timeline_export, set_node_fingerprint,
     CacheProof, EffectSet, EventRecord, ExecutionBackendTarget, ExecutionCheckpoint,
-    InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodePathBindings, NodeResult,
-    NodeStatus, ReduceEmptyPolicy, ReduceExecutionMode, RemoteExecutionFingerprintSet,
-    RemoteExecutionIdentity, RemoteExecutionWorkspace, RemoteNodeExecutionPayload,
-    ReplayNodeAction, RunAttempt, RunContext, RunId, RunSnapshot, Runtime, RuntimeConfig,
-    RuntimeError, SchedulerEventHook, SlurmBackendExecutor, SlurmJobRecord, SystemSlurmBackend,
+    InMemoryMetricsRegistry, KubernetesBackendExecutor, KubernetesJobRecord, MetricsRegistry,
+    NodeMetrics, NodePathBindings, NodeResult, NodeStatus, ReduceEmptyPolicy, ReduceExecutionMode,
+    RemoteExecutionFingerprintSet, RemoteExecutionIdentity, RemoteExecutionWorkspace,
+    RemoteNodeExecutionPayload, ReplayNodeAction, RunAttempt, RunContext, RunId, RunSnapshot,
+    Runtime, RuntimeConfig, RuntimeError, SchedulerEventHook, SlurmBackendExecutor, SlurmJobRecord,
+    SystemKubernetesBackend, SystemSlurmBackend,
 };
 #[path = "engine_dispatch.rs"]
 mod engine_dispatch;
@@ -67,6 +68,7 @@ struct PreparedExecutionGraph {
 
 struct BackendExecutionResult {
     node_result: NodeResult,
+    kubernetes_job: Option<KubernetesJobRecord>,
     slurm_job: Option<SlurmJobRecord>,
 }
 
@@ -127,7 +129,9 @@ fn run_id_from_context(ctx: &RunContext) -> Result<String, RuntimeError> {
         .and_then(|name| name.strip_prefix("run.tmp-"))
         .map(ToOwned::to_owned)
         .filter(|run_id| !run_id.is_empty())
-        .ok_or_else(|| RuntimeError::Executor("unable to derive run id from staging path".to_string()))
+        .ok_or_else(|| {
+            RuntimeError::Executor("unable to derive run id from staging path".to_string())
+        })
 }
 
 fn build_remote_payload(
@@ -169,11 +173,7 @@ fn build_remote_payload(
                 .cloned()
                 .unwrap_or_default(),
             params_fingerprint: ctx.params_fingerprints.get(&node.id).cloned().unwrap_or_default(),
-            command_fingerprint: ctx
-                .command_fingerprints
-                .get(&node.id)
-                .cloned()
-                .unwrap_or(None),
+            command_fingerprint: ctx.command_fingerprints.get(&node.id).cloned().unwrap_or(None),
             execution_fingerprint: ctx.execution_fingerprint.clone(),
             evidence_fingerprint: ctx.evidence_fingerprint.clone(),
             execution_contract_fingerprint: ctx.execution_contract_fingerprint.clone(),
@@ -192,9 +192,29 @@ fn execute_node_with_backend(
 ) -> Result<BackendExecutionResult, RuntimeError> {
     match options.execution_backend {
         ExecutionBackendTarget::Local => Ok(BackendExecutionResult {
-            node_result: sacred_execution::run_retry_logic(adapter, graph, node, params, ctx, retry)?,
+            node_result: sacred_execution::run_retry_logic(
+                adapter, graph, node, params, ctx, retry,
+            )?,
+            kubernetes_job: None,
             slurm_job: None,
         }),
+        ExecutionBackendTarget::Kubernetes => {
+            let backend = SystemKubernetesBackend::from_runtime_config(&options.kubernetes)
+                .map_err(RuntimeError::Executor)?;
+            let mut final_job = None;
+            let node_result = execute_with_retry_operation(ctx, node, retry, |attempt| {
+                let payload =
+                    build_remote_payload(ctx, graph, node, params, attempt, "kubernetes")?;
+                let request = crate::build_kubernetes_execution_request(
+                    payload,
+                    &options.kubernetes.default_namespace,
+                );
+                let result = backend.execute_job(request).map_err(RuntimeError::Executor)?;
+                final_job = Some(result.job.clone());
+                Ok(result.node_result)
+            })?;
+            Ok(BackendExecutionResult { node_result, kubernetes_job: final_job, slurm_job: None })
+        }
         ExecutionBackendTarget::Slurm => {
             let backend = SystemSlurmBackend::from_runtime_config(&options.slurm)
                 .map_err(RuntimeError::Executor)?;
@@ -210,7 +230,7 @@ fn execute_node_with_backend(
                 final_job = Some(result.job.clone());
                 Ok(result.node_result)
             })?;
-            Ok(BackendExecutionResult { node_result, slurm_job: final_job })
+            Ok(BackendExecutionResult { node_result, kubernetes_job: None, slurm_job: final_job })
         }
     }
 }
@@ -421,8 +441,11 @@ fn execute_dynamic_controller(
                 ))
             },
         )?;
-    let output_path = crate::authorized_declared_output_path(run_dir.node_outputs_dir(&node.id).as_path(), output)
-        .map_err(|failure| RuntimeError::Executor(failure.message))?;
+    let output_path = crate::authorized_declared_output_path(
+        run_dir.node_outputs_dir(&node.id).as_path(),
+        output,
+    )
+    .map_err(|failure| RuntimeError::Executor(failure.message))?;
     let raw_document = runtime.fs.read_to_string(&output_path).map_err(|error| {
         RuntimeError::Executor(format!(
             "failed to read dynamic expansion output for {}: {}",
@@ -3161,11 +3184,22 @@ pub fn execute(
                         }
                     }
                     crate::write_attempt_events(&ctx, &node_id, &result.attempt_events)?;
-                    if let Some(job) = backend_result.slurm_job.as_ref() {
-                        ctx.fs.write(
-                            &ctx.run_dir.node_dir(&node_id).join("batch-job.json"),
-                            &serde_json::to_vec_pretty(job)?,
-                        )?;
+                    if let Some(job) = backend_result
+                        .kubernetes_job
+                        .as_ref()
+                        .map(|job| serde_json::to_vec_pretty(job))
+                        .transpose()?
+                    {
+                        ctx.fs
+                            .write(&ctx.run_dir.node_dir(&node_id).join("batch-job.json"), &job)?;
+                    } else if let Some(job) = backend_result
+                        .slurm_job
+                        .as_ref()
+                        .map(|job| serde_json::to_vec_pretty(job))
+                        .transpose()?
+                    {
+                        ctx.fs
+                            .write(&ctx.run_dir.node_dir(&node_id).join("batch-job.json"), &job)?;
                     }
                     let branch_decision = match resolve_branch_decision(&ctx, &node) {
                         Ok(Some(selection)) => {

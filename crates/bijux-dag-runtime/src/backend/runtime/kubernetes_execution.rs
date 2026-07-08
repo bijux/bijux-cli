@@ -9,10 +9,14 @@ use crate::remote_execution_model::{
 use crate::{ConstAdapter, ContainerAdapter, FailureClass, NodeResult, NodeStatus, ShellAdapter};
 use bijux_dag_core::{Node, NodeKind};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const DEFAULT_CPU_UNITS: u32 = 1;
 const DEFAULT_MEMORY_MIB: u32 = 256;
@@ -134,6 +138,33 @@ pub struct MockKubernetesBackend {
     next_job_id: Arc<Mutex<u64>>,
     requests: Arc<Mutex<Vec<KubernetesExecutionRequest>>>,
     jobs: Arc<Mutex<BTreeMap<String, KubernetesJobRecord>>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SystemKubernetesBackendConfig {
+    pub kubectl_command: String,
+    pub shared_volume_claim: String,
+    pub shared_local_root: PathBuf,
+    pub poll_interval_ms: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SystemKubernetesPaths {
+    pub control_dir: PathBuf,
+    pub job_spec_path: PathBuf,
+    pub submit_response_path: PathBuf,
+    pub pod_status_path: PathBuf,
+    pub pod_logs_path: PathBuf,
+    pub stdout_path: PathBuf,
+    pub stderr_path: PathBuf,
+    pub outputs_dir: PathBuf,
+    pub inputs_dir: PathBuf,
+    pub work_dir: PathBuf,
+}
+
+#[derive(Debug, Clone)]
+pub struct SystemKubernetesBackend {
+    config: SystemKubernetesBackendConfig,
 }
 
 pub fn validate_kubernetes_execution_request(
@@ -285,6 +316,410 @@ impl KubernetesBackendExecutor for MockKubernetesBackend {
     }
 }
 
+impl SystemKubernetesBackend {
+    pub fn new(config: SystemKubernetesBackendConfig) -> Result<Self, String> {
+        if config.kubectl_command.trim().is_empty() {
+            return Err("kubernetes kubectl command must be non-empty".to_string());
+        }
+        if config.shared_volume_claim.trim().is_empty() {
+            return Err("kubernetes shared volume claim must be non-empty".to_string());
+        }
+        if config.shared_local_root.as_os_str().is_empty() {
+            return Err("kubernetes shared local root must be configured".to_string());
+        }
+        Ok(Self { config })
+    }
+
+    pub fn from_runtime_config(config: &crate::KubernetesRuntimeConfig) -> Result<Self, String> {
+        Self::new(SystemKubernetesBackendConfig {
+            kubectl_command: config
+                .kubectl_command
+                .clone()
+                .unwrap_or_else(|| "kubectl".to_string()),
+            shared_volume_claim: config.shared_volume_claim.clone(),
+            shared_local_root: config.shared_local_root.clone(),
+            poll_interval_ms: config.poll_interval_ms.max(50),
+        })
+    }
+
+    fn job_paths(
+        &self,
+        request: &KubernetesExecutionRequest,
+    ) -> Result<SystemKubernetesPaths, String> {
+        let run_root = Path::new(&request.payload.workspace.out_base);
+        let layout = bijux_dag_artifacts::RunDirLayout::preview(
+            run_root,
+            Some(&request.payload.identity.run_id),
+        )
+        .map_err(|error| format!("preview kubernetes run layout: {error}"))?;
+        let control_dir = layout
+            .node_dir(&request.payload.identity.node_id)
+            .join("batch")
+            .join("kubernetes")
+            .join(format!("attempt-{}", request.payload.identity.attempt_id));
+        Ok(SystemKubernetesPaths {
+            job_spec_path: control_dir.join("job.json"),
+            submit_response_path: control_dir.join("submission.json"),
+            pod_status_path: control_dir.join("pod-status.json"),
+            pod_logs_path: control_dir.join("pod.log"),
+            stdout_path: layout.node_dir(&request.payload.identity.node_id).join("stdout.log"),
+            stderr_path: layout.node_dir(&request.payload.identity.node_id).join("stderr.log"),
+            outputs_dir: layout.node_outputs_dir(&request.payload.identity.node_id),
+            inputs_dir: layout.node_inputs_dir(&request.payload.identity.node_id),
+            work_dir: layout.node_work_dir(&request.payload.identity.node_id),
+            control_dir,
+        })
+    }
+
+    fn relative_shared_path(&self, path: &Path) -> Result<String, String> {
+        let relative = path.strip_prefix(&self.config.shared_local_root).map_err(|_| {
+            format!(
+                "kubernetes shared volume root {} does not contain path {}",
+                self.config.shared_local_root.display(),
+                path.display()
+            )
+        })?;
+        Ok(relative.to_string_lossy().replace('\\', "/"))
+    }
+
+    fn volume_mounts(
+        &self,
+        paths: &SystemKubernetesPaths,
+        request: &KubernetesExecutionRequest,
+    ) -> Result<Vec<Value>, String> {
+        let mut rendered = Vec::with_capacity(request.workspace.mounts.len());
+        for mount in &request.workspace.mounts {
+            let host_path = match mount.mount_path.as_str() {
+                "/bijux/node/inputs" => &paths.inputs_dir,
+                "/bijux/node/outputs" => &paths.outputs_dir,
+                "/bijux/node/work" => &paths.work_dir,
+                other => {
+                    return Err(format!(
+                        "unsupported kubernetes mount target for system backend: {other}"
+                    ))
+                }
+            };
+            rendered.push(json!({
+                "name": "shared-run-root",
+                "mountPath": mount.mount_path,
+                "subPath": self.relative_shared_path(host_path)?,
+                "readOnly": mount.readonly
+            }));
+        }
+        Ok(rendered)
+    }
+
+    fn container_command(
+        &self,
+        request: &KubernetesExecutionRequest,
+    ) -> Result<Vec<String>, String> {
+        let spec = request
+            .payload
+            .node
+            .container
+            .as_ref()
+            .ok_or_else(|| "kubernetes system backend requires a container node".to_string())?;
+        if !crate::effective_env_allowlist(&request.payload.node).is_empty() {
+            return Err(
+                "kubernetes job backend does not inject ambient env allowlists into direct container jobs"
+                    .to_string(),
+            );
+        }
+        crate::resolve_container_argv(&spec.argv, &crate::NodePathBindings::for_container())
+    }
+
+    fn container_workdir(&self, request: &KubernetesExecutionRequest) -> Result<String, String> {
+        let spec = request
+            .payload
+            .node
+            .container
+            .as_ref()
+            .ok_or_else(|| "kubernetes system backend requires a container node".to_string())?;
+        crate::resolve_container_workdir(
+            spec.workdir.as_deref(),
+            &crate::NodePathBindings::for_container(),
+            request.payload.absolute_path_policy,
+        )
+    }
+
+    fn job_name(&self, request: &KubernetesExecutionRequest) -> String {
+        let base = format!(
+            "bijux-{}-{}-a{}-{}",
+            sanitize_dns_label(&request.payload.identity.run_id),
+            sanitize_dns_label(&request.payload.identity.node_id),
+            sanitize_dns_label(&request.payload.identity.attempt_id),
+            current_unix_ms(),
+        );
+        truncate_dns_label(&base, 63)
+    }
+
+    fn build_job_spec(
+        &self,
+        request: &KubernetesExecutionRequest,
+        paths: &SystemKubernetesPaths,
+        job_id: &str,
+    ) -> Result<Value, String> {
+        if request.workload.kind != KubernetesWorkloadKind::ContainerNode {
+            return Err(format!(
+                "kubernetes job backend currently supports container nodes only; node '{}' is {:?}",
+                request.payload.node.id, request.payload.node.kind
+            ));
+        }
+
+        let image = request
+            .workload
+            .image
+            .as_ref()
+            .ok_or_else(|| "kubernetes container workload must declare an image".to_string())?;
+        let command = self.container_command(request)?;
+        let working_dir = self.container_workdir(request)?;
+        let volume_mounts = self.volume_mounts(paths, request)?;
+
+        let mut requests_map = serde_json::Map::from_iter([
+            ("cpu".to_string(), json!(format!("{}m", request.resources.requests.cpu_millis))),
+            ("memory".to_string(), json!(format!("{}Mi", request.resources.requests.memory_mib))),
+        ]);
+        let mut limits_map = serde_json::Map::from_iter([
+            ("cpu".to_string(), json!(format!("{}m", request.resources.limits.cpu_millis))),
+            ("memory".to_string(), json!(format!("{}Mi", request.resources.limits.memory_mib))),
+        ]);
+        if request.workload.gpu_devices > 0 {
+            requests_map.insert(
+                "nvidia.com/gpu".to_string(),
+                json!(request.workload.gpu_devices.to_string()),
+            );
+            limits_map.insert(
+                "nvidia.com/gpu".to_string(),
+                json!(request.workload.gpu_devices.to_string()),
+            );
+        }
+
+        Ok(json!({
+            "apiVersion": "batch/v1",
+            "kind": "Job",
+            "metadata": {
+                "name": job_id,
+                "namespace": request.namespace,
+                "labels": {
+                    "app.kubernetes.io/name": "bijux-dag",
+                    "bijux.run_id": request.payload.identity.run_id,
+                    "bijux.node_id": request.payload.identity.node_id,
+                    "bijux.attempt_id": request.payload.identity.attempt_id
+                }
+            },
+            "spec": {
+                "backoffLimit": request.policy.backoff_limit,
+                "activeDeadlineSeconds": request.policy.active_deadline_seconds,
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "job-name": job_id,
+                            "bijux.run_id": request.payload.identity.run_id,
+                            "bijux.node_id": request.payload.identity.node_id
+                        }
+                    },
+                    "spec": {
+                        "restartPolicy": "Never",
+                        "containers": [{
+                            "name": "node",
+                            "image": image,
+                            "command": command,
+                            "workingDir": working_dir,
+                            "resources": {
+                                "requests": Value::Object(requests_map),
+                                "limits": Value::Object(limits_map)
+                            },
+                            "volumeMounts": volume_mounts
+                        }],
+                        "volumes": [{
+                            "name": "shared-run-root",
+                            "persistentVolumeClaim": {
+                                "claimName": self.config.shared_volume_claim
+                            }
+                        }]
+                    }
+                }
+            }
+        }))
+    }
+
+    fn kubectl(&self) -> Command {
+        Command::new(&self.config.kubectl_command)
+    }
+
+    fn read_pod_status(
+        &self,
+        namespace: &str,
+        job_id: &str,
+    ) -> Result<(KubernetesPodStatus, Value), String> {
+        let output = self
+            .kubectl()
+            .args([
+                "get",
+                "pods",
+                "-n",
+                namespace,
+                "-l",
+                &format!("job-name={job_id}"),
+                "-o",
+                "json",
+            ])
+            .output()
+            .map_err(|error| {
+                format!("invoke kubectl '{}' get pods: {error}", self.config.kubectl_command)
+            })?;
+        if !output.status.success() {
+            return Err(format!(
+                "kubectl get pods failed: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            ));
+        }
+        let payload: Value = serde_json::from_slice(&output.stdout)
+            .map_err(|error| format!("parse kubernetes pod status: {error}"))?;
+        let Some(pod_status) = payload
+            .get("items")
+            .and_then(Value::as_array)
+            .and_then(|items| items.first())
+            .and_then(extract_pod_status)
+        else {
+            return Ok((
+                KubernetesPodStatus { phase: KubernetesPodPhase::Pending, reason: None },
+                payload,
+            ));
+        };
+        Ok((pod_status, payload))
+    }
+
+    fn read_job_logs(&self, namespace: &str, job_id: &str) -> Result<String, String> {
+        let output = self
+            .kubectl()
+            .args(["logs", "-n", namespace, &format!("job/{job_id}")])
+            .output()
+            .map_err(|error| {
+                format!("invoke kubectl '{}' logs: {error}", self.config.kubectl_command)
+            })?;
+        if !output.status.success() {
+            return Err(format!(
+                "kubectl logs failed: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            ));
+        }
+        Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    }
+}
+
+impl KubernetesBackendExecutor for SystemKubernetesBackend {
+    fn execute_job(
+        &self,
+        request: KubernetesExecutionRequest,
+    ) -> Result<KubernetesExecutionResult, String> {
+        validate_kubernetes_execution_request(&request)?;
+        let paths = self.job_paths(&request)?;
+        fs::create_dir_all(&paths.control_dir)
+            .map_err(|error| format!("create kubernetes control dir: {error}"))?;
+        fs::create_dir_all(&paths.outputs_dir)
+            .map_err(|error| format!("create kubernetes outputs dir: {error}"))?;
+        fs::create_dir_all(&paths.work_dir)
+            .map_err(|error| format!("create kubernetes work dir: {error}"))?;
+
+        let job_id = self.job_name(&request);
+        let job_spec = self.build_job_spec(&request, &paths, &job_id)?;
+        fs::write(
+            &paths.job_spec_path,
+            serde_json::to_vec_pretty(&job_spec)
+                .map_err(|error| format!("serialize kubernetes job spec: {error}"))?,
+        )
+        .map_err(|error| format!("write kubernetes job spec: {error}"))?;
+
+        let submission = self
+            .kubectl()
+            .args(["create", "-f", paths.job_spec_path.to_string_lossy().as_ref(), "-o", "json"])
+            .output()
+            .map_err(|error| {
+                format!("invoke kubectl '{}' create: {error}", self.config.kubectl_command)
+            })?;
+        if !submission.status.success() {
+            return Err(format!(
+                "kubectl create failed: {}",
+                String::from_utf8_lossy(&submission.stderr).trim()
+            ));
+        }
+        fs::write(&paths.submit_response_path, &submission.stdout)
+            .map_err(|error| format!("write kubernetes submission response: {error}"))?;
+
+        let submitted_unix_ms = current_unix_ms();
+        let mut observed_status =
+            KubernetesPodStatus { phase: KubernetesPodPhase::Pending, reason: None };
+        let mut lifecycle = vec![KubernetesPodLifecycleEvent {
+            job_id: job_id.clone(),
+            status: observed_status.clone(),
+            unix_ms: submitted_unix_ms,
+        }];
+
+        loop {
+            thread::sleep(Duration::from_millis(self.config.poll_interval_ms));
+            let (status, pod_payload) = self.read_pod_status(&request.namespace, &job_id)?;
+            fs::write(
+                &paths.pod_status_path,
+                serde_json::to_vec_pretty(&pod_payload)
+                    .map_err(|error| format!("serialize kubernetes pod status payload: {error}"))?,
+            )
+            .map_err(|error| format!("write kubernetes pod status payload: {error}"))?;
+            if lifecycle.last().map(|event| &event.status) != Some(&status) {
+                lifecycle.push(KubernetesPodLifecycleEvent {
+                    job_id: job_id.clone(),
+                    status: status.clone(),
+                    unix_ms: current_unix_ms(),
+                });
+            }
+            observed_status = status;
+            if matches!(
+                observed_status.phase,
+                KubernetesPodPhase::Succeeded
+                    | KubernetesPodPhase::Failed
+                    | KubernetesPodPhase::Unknown
+            ) {
+                break;
+            }
+        }
+
+        let combined_logs = self.read_job_logs(&request.namespace, &job_id).unwrap_or_default();
+        fs::write(&paths.pod_logs_path, combined_logs.as_bytes())
+            .map_err(|error| format!("write kubernetes pod logs: {error}"))?;
+        fs::write(&paths.stdout_path, combined_logs.as_bytes())
+            .map_err(|error| format!("write kubernetes stdout log: {error}"))?;
+        fs::write(&paths.stderr_path, [])
+            .map_err(|error| format!("write kubernetes stderr log: {error}"))?;
+
+        let finished_unix_ms = current_unix_ms();
+        let node_result = synthesize_node_result(&request, &paths, &observed_status);
+        let remote_result = RemoteNodeExecutionResult {
+            identity: request.payload.identity.clone(),
+            node_result: node_result.clone(),
+            started_unix_ms: submitted_unix_ms,
+            finished_unix_ms,
+        };
+        let mut job =
+            build_kubernetes_job_record(&job_id, &request, &remote_result, &observed_status);
+        job.lifecycle = lifecycle;
+        let logs = KubernetesLogCapture {
+            stdout_path: paths.stdout_path.display().to_string(),
+            stderr_path: paths.stderr_path.display().to_string(),
+            stdout: combined_logs,
+            stderr: String::new(),
+        };
+
+        Ok(KubernetesExecutionResult {
+            identity: request.payload.identity,
+            job,
+            pod_status: observed_status.clone(),
+            node_status: map_kubernetes_pod_status_to_node_status(&observed_status),
+            node_result,
+            logs,
+        })
+    }
+}
+
 fn kubernetes_node_execution_contract(node: &Node, params: &Value) -> NodeExecutionContract {
     let resources = node.resources.as_ref();
     let cpu_units =
@@ -379,6 +814,59 @@ fn kubernetes_backend_adapter(kind: &NodeKind) -> Result<Box<dyn crate::adapter:
     }
 }
 
+fn synthesize_node_result(
+    _request: &KubernetesExecutionRequest,
+    paths: &SystemKubernetesPaths,
+    pod_status: &KubernetesPodStatus,
+) -> NodeResult {
+    let failure = match pod_status.reason.as_deref() {
+        Some("DeadlineExceeded") => Some(crate::FailureInfo::new(
+            FailureClass::Timeout,
+            "Timeout",
+            "KUBERNETES_DEADLINE_EXCEEDED",
+            "kubernetes job exceeded its active deadline",
+            None,
+        )),
+        Some("Cancelled") => Some(crate::FailureInfo::new(
+            FailureClass::Execution,
+            "Execution",
+            "EXEC_CANCELLED",
+            "kubernetes job was cancelled",
+            None,
+        )),
+        Some(reason) if pod_status.phase == KubernetesPodPhase::Failed => {
+            Some(crate::FailureInfo::new(
+                FailureClass::Execution,
+                "Execution",
+                "KUBERNETES_JOB_FAILED",
+                &format!("kubernetes job failed with reason {reason}"),
+                None,
+            ))
+        }
+        _ if pod_status.phase == KubernetesPodPhase::Failed => Some(crate::FailureInfo::new(
+            FailureClass::Execution,
+            "Execution",
+            "KUBERNETES_JOB_FAILED",
+            "kubernetes job failed",
+            None,
+        )),
+        _ => None,
+    };
+    let status = map_kubernetes_pod_status_to_node_status(pod_status);
+    NodeResult {
+        status,
+        stdout_path: paths.stdout_path.display().to_string(),
+        stderr_path: paths.stderr_path.display().to_string(),
+        outputs_dir: paths.outputs_dir.display().to_string(),
+        output_evidence: Vec::new(),
+        failure,
+        attempts: 1,
+        attempt_events: Vec::new(),
+        container_meta: None,
+        adapter_binary_sha256: None,
+    }
+}
+
 fn build_kubernetes_job_record(
     job_id: &str,
     request: &KubernetesExecutionRequest,
@@ -452,6 +940,56 @@ fn read_log(path: &str) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
+fn extract_pod_status(pod: &Value) -> Option<KubernetesPodStatus> {
+    let status = pod.get("status")?;
+    let phase = match status.get("phase").and_then(Value::as_str)? {
+        "Pending" => KubernetesPodPhase::Pending,
+        "Running" => KubernetesPodPhase::Running,
+        "Succeeded" => KubernetesPodPhase::Succeeded,
+        "Failed" => KubernetesPodPhase::Failed,
+        _ => KubernetesPodPhase::Unknown,
+    };
+    let reason = status
+        .get("containerStatuses")
+        .and_then(Value::as_array)
+        .and_then(|items| items.first())
+        .and_then(|entry| entry.get("state"))
+        .and_then(Value::as_object)
+        .and_then(|state| {
+            for key in ["terminated", "waiting", "running"] {
+                if let Some(reason) = state
+                    .get(key)
+                    .and_then(Value::as_object)
+                    .and_then(|object| object.get("reason"))
+                    .and_then(Value::as_str)
+                {
+                    return Some(reason.to_string());
+                }
+            }
+            None
+        })
+        .or_else(|| status.get("reason").and_then(Value::as_str).map(ToOwned::to_owned));
+    Some(KubernetesPodStatus { phase, reason })
+}
+
+fn current_unix_ms() -> u128 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|duration| duration.as_millis()).unwrap_or(0)
+}
+
+fn sanitize_dns_label(value: &str) -> String {
+    let mut rendered = String::with_capacity(value.len());
+    for ch in value.chars() {
+        let mapped = if ch.is_ascii_alphanumeric() { ch.to_ascii_lowercase() } else { '-' };
+        rendered.push(mapped);
+    }
+    rendered.trim_matches('-').to_string()
+}
+
+fn truncate_dns_label(value: &str, max_len: usize) -> String {
+    let truncated = value.chars().take(max_len).collect::<String>();
+    truncated.trim_matches('-').to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -461,6 +999,8 @@ mod tests {
     };
     use bijux_dag_core::parse_graph_strict;
     use serde_json::json;
+    use std::fs;
+    use std::path::Path;
 
     fn request_payload(kind: &str, timeout_ms: Option<u64>) -> RemoteNodeExecutionPayload {
         let graph = parse_graph_strict(&format!(
@@ -550,6 +1090,203 @@ mod tests {
         assert_eq!(request.policy.active_deadline_seconds, 60);
         assert_eq!(request.workload.kind, KubernetesWorkloadKind::RuntimeAdapter);
         assert!(request.workload.image.is_none());
+    }
+
+    fn system_backend_payload(out_base: &Path, run_id: &str) -> RemoteNodeExecutionPayload {
+        let graph = parse_graph_strict(
+            r#"{
+              "spec": "bijux-dag/v0.1",
+              "nodes": [
+                {
+                  "id": "render",
+                  "kind": "container",
+                  "inputs": ["seed"],
+                  "outputs": [
+                    {"name": "value", "path": "value.txt"},
+                    {"name": "workdir", "path": "workdir.txt"}
+                  ],
+                  "resources": {"cpu": 2, "mem_mb": 1024},
+                  "retry": {"max_attempts": 2, "backoff_ms": 5000},
+                  "container": {
+                    "image": "example.local/runner@sha256:feedface",
+                    "argv": ["/bin/sh", "-c", "printf ignored > /bijux/node/outputs/value.txt"],
+                    "workdir": "scratch",
+                    "engine": "docker"
+                  },
+                  "params": {}
+                }
+              ],
+              "edges": []
+            }"#,
+        )
+        .expect("parse graph");
+        let node = graph.nodes[0].clone();
+        RemoteNodeExecutionPayload {
+            identity: RemoteExecutionIdentity {
+                run_id: run_id.to_string(),
+                node_id: node.id.clone(),
+                attempt_id: "1".to_string(),
+                backend_id: "kubernetes".to_string(),
+            },
+            graph,
+            node,
+            params: json!({}),
+            input_artifacts: Vec::new(),
+            workspace: RemoteExecutionWorkspace {
+                out_base: out_base.display().to_string(),
+                cache_dir: None,
+            },
+            policy: PolicyConfig::default(),
+            absolute_path_policy: AbsolutePathPolicy::AllowLiteral,
+            planner_contract_version: "bijux-dag-planner/v1".to_string(),
+            fingerprints: RemoteExecutionFingerprintSet {
+                node_fingerprint: "node".to_string(),
+                node_definition_fingerprint: "node-def".to_string(),
+                declared_environment_fingerprint: "env".to_string(),
+                params_fingerprint: "params".to_string(),
+                command_fingerprint: Some("command".to_string()),
+                execution_fingerprint: "execution".to_string(),
+                evidence_fingerprint: "evidence".to_string(),
+                execution_contract_fingerprint: "contract".to_string(),
+            },
+        }
+    }
+
+    fn write_executable(path: &Path, contents: &str) {
+        fs::write(path, contents).expect("write executable");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(path).expect("meta").permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(path, perms).expect("chmod");
+        }
+    }
+
+    #[test]
+    fn system_kubernetes_backend_executes_container_jobs_through_shared_volume_contract() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let state_dir = temp.path().join("state");
+        fs::create_dir_all(&state_dir).expect("state dir");
+        let kubectl = temp.path().join("kubectl");
+        write_executable(
+            &kubectl,
+            &format!(
+                r#"#!/bin/sh
+set -eu
+STATE_DIR={state:?}
+SHARED_ROOT={shared_root:?}
+command="$1"
+shift
+case "$command" in
+  create)
+    spec=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -f) spec="$2"; shift 2 ;;
+        -o) shift 2 ;;
+        *) shift ;;
+      esac
+    done
+    job_id=$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print(data["metadata"]["name"])' "$spec")
+    outputs_sub=$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); mounts=data["spec"]["template"]["spec"]["containers"][0]["volumeMounts"]; print(next(m["subPath"] for m in mounts if m["mountPath"]=="/bijux/node/outputs"))' "$spec")
+    workdir=$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print(data["spec"]["template"]["spec"]["containers"][0]["workingDir"])' "$spec")
+    mkdir -p "$STATE_DIR" "$SHARED_ROOT/$outputs_sub"
+    printf 'k8s-system-value' > "$SHARED_ROOT/$outputs_sub/value.txt"
+    printf '%s' "$workdir" > "$SHARED_ROOT/$outputs_sub/workdir.txt"
+    printf 'Succeeded' > "$STATE_DIR/$job_id.phase"
+    printf 'Completed' > "$STATE_DIR/$job_id.reason"
+    printf 'kubernetes backend log\n' > "$STATE_DIR/$job_id.log"
+    python3 - "$job_id" <<'PY'
+import json, sys
+print(json.dumps({{"metadata": {{"name": sys.argv[1]}}}}))
+PY
+    ;;
+  get)
+    label=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -l) label="$2"; shift 2 ;;
+        -o) shift 2 ;;
+        -n) shift 2 ;;
+        pods) shift ;;
+        *) shift ;;
+      esac
+    done
+    job_id=${{label#job-name=}}
+    phase=$(cat "$STATE_DIR/$job_id.phase")
+    reason=$(cat "$STATE_DIR/$job_id.reason")
+    python3 - "$phase" "$reason" <<'PY'
+import json, sys
+phase, reason = sys.argv[1], sys.argv[2]
+print(json.dumps({{
+  "items": [{{
+    "status": {{
+      "phase": phase,
+      "containerStatuses": [{{
+        "state": {{"terminated": {{"reason": reason}}}}
+      }}]
+    }}
+  }}]
+}}))
+PY
+    ;;
+  logs)
+    target=""
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        -n) shift 2 ;;
+        *) target="$1"; shift ;;
+      esac
+    done
+    job_id=${{target#job/}}
+    cat "$STATE_DIR/$job_id.log"
+    ;;
+  *)
+    echo "unexpected kubectl command: $command" >&2
+    exit 1
+    ;;
+esac
+"#,
+                state = state_dir.display().to_string(),
+                shared_root = temp.path().display().to_string(),
+            ),
+        );
+
+        let payload = system_backend_payload(temp.path(), "k8s-system-proof");
+        let request = build_kubernetes_execution_request(payload, "bijux-jobs");
+        let layout =
+            bijux_dag_artifacts::RunDirLayout::preview(temp.path(), Some("k8s-system-proof"))
+                .expect("layout");
+        fs::create_dir_all(layout.node_inputs_dir("render").join("seed")).expect("inputs");
+        fs::create_dir_all(layout.node_outputs_dir("render")).expect("outputs");
+        fs::create_dir_all(layout.node_work_dir("render")).expect("work");
+
+        let backend = SystemKubernetesBackend::new(SystemKubernetesBackendConfig {
+            kubectl_command: kubectl.display().to_string(),
+            shared_volume_claim: "bijux-run-pvc".to_string(),
+            shared_local_root: temp.path().to_path_buf(),
+            poll_interval_ms: 50,
+        })
+        .expect("backend");
+
+        let result = backend.execute_job(request).expect("kubernetes execute");
+
+        assert_eq!(result.pod_status.phase, KubernetesPodPhase::Succeeded);
+        assert_eq!(result.node_status, NodeStatus::Success);
+        assert_eq!(
+            fs::read_to_string(Path::new(&result.node_result.outputs_dir).join("value.txt"))
+                .expect("value output"),
+            "k8s-system-value"
+        );
+        assert_eq!(
+            fs::read_to_string(Path::new(&result.node_result.outputs_dir).join("workdir.txt"))
+                .expect("workdir output"),
+            "/bijux/node/work/scratch"
+        );
+        assert!(result.logs.stdout.contains("kubernetes backend log"));
+        assert_eq!(result.job.metadata.scheduler_id, "kubernetes");
+        assert!(result.job.metadata.resource_request.contains("transfer_mode=mounted_workdir"));
     }
 
     #[test]
