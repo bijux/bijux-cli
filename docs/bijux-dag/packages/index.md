@@ -61,3 +61,7 @@ first. For example:
 
 If a change crosses two rows in the table, treat it as an explicit
 cross-package boundary change and validate both sides.
+
+When the issue is not crate ownership but identity semantics, use
+[Reproducibility Model](../interfaces/reference/reproducibility-model.md)
+before choosing an implementation owner.

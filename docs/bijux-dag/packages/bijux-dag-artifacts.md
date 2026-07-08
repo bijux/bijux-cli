@@ -41,6 +41,9 @@ the `experimental` lane is opt-in behind `experimental-public-api`.
 
 ## Open Next
 
+- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md)
+  when the question is how retained artifact hashes and producer fingerprints
+  participate in cache proof and replay proof
 - open [Run Evidence Layout](../interfaces/reference/run-evidence-layout.md)
   when the question is where manifests, traces, indexes, cache entries, or
   promotion records live on disk

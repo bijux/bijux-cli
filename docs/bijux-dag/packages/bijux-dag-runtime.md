@@ -72,6 +72,7 @@ lane is opt-in behind `experimental-public-api`.
 - open the [DAG Handbook](../index.md) for the full DAG system map
 - open [`bijux-dag-core`](./bijux-dag-core.md) for graph truth and planning inputs
 - open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and response shaping
+- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md) for the canonical explanation of plan identity, execution identity, environment identity, cache keys, and replay-bundle boundaries
 - open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) for the repository-backed execution path that exercises retained container identity and engine-unavailable failure handling
 - open [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md) for the repository-backed execution path that exercises full-workflow cache hits, selective invalidation, corruption refusal, and proof-backed reuse rejection
 - open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) for the repository-backed execution path that exercises branch decisions, join-trigger behavior, and replay stability

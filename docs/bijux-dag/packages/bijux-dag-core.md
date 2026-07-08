@@ -41,6 +41,7 @@ effects begin.
 - open the [DAG Handbook](../index.md) for cross-package architecture and operator-facing context
 - open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question moves from graph truth to execution policy
 - open the [Repository Handbook](../../bijux-core/index.md) when the concern crosses into CLI or maintainer policy
+- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md) when the question is how graph identity feeds plan, execution, cache, and replay identity downstream
 - open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) when you want the repository example that binds a graph-owned label into a real container command surface
 - open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) when you want the repository example that binds a graph-owned enum input into a real branch decision surface
 - open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) when you want the repository example that binds graph-owned path inputs into retry and recovery behavior at a real replay boundary
