@@ -166,9 +166,6 @@ impl CompactRunProgressState {
         let Ok(checkpoint) = serde_json::from_str::<ExecutionCheckpoint>(&raw) else {
             return;
         };
-        self.ready_count = checkpoint.ready_queue_depth;
-        self.blocked_count = checkpoint.blocked_by_budget.len();
-        self.checkpoint_active_nodes = Some(checkpoint.inflight.iter().cloned().collect());
         for (node_id, status) in checkpoint.completed_statuses {
             self.event_active_nodes.remove(&node_id);
             self.terminal_statuses.insert(node_id.clone(), status.clone());
@@ -176,6 +173,15 @@ impl CompactRunProgressState {
                 self.cache_hit_nodes.insert(node_id);
             }
         }
+        if self.finished {
+            self.ready_count = 0;
+            self.blocked_count = 0;
+            self.checkpoint_active_nodes = Some(BTreeSet::new());
+            return;
+        }
+        self.ready_count = checkpoint.ready_queue_depth;
+        self.blocked_count = checkpoint.blocked_by_budget.len();
+        self.checkpoint_active_nodes = Some(checkpoint.inflight.iter().cloned().collect());
     }
 
     fn apply_event(&mut self, event: &Value) {
@@ -800,6 +806,51 @@ mod tests {
         assert_eq!(snapshot.running_count, 0);
         assert!(snapshot.active_nodes.is_empty());
         assert_eq!(snapshot.completed_nodes, 1);
+        assert_eq!(snapshot.success_count, 1);
+    }
+
+    #[test]
+    fn compact_progress_finished_snapshot_ignores_stale_checkpoint_inflight_nodes() {
+        let dir = tempfile::tempdir().expect("tmp");
+        fs::write(
+            dir.path().join("scheduler.checkpoint.json"),
+            serde_json::to_vec_pretty(&json!({
+                "loop_index":7,
+                "ready_queue_depth":0,
+                "ready_queue":[],
+                "inflight":["train"],
+                "scheduled":["train"],
+                "blocked_by_budget":[],
+                "blocked_reasons":{},
+                "completed_statuses":{"train":"success"},
+                "failure_propagation_mode":"continue_independent",
+                "dependency_closure_enabled":false,
+                "generated_unix_ms":44
+            }))
+            .expect("checkpoint"),
+        )
+        .expect("write checkpoint");
+        fs::write(
+            dir.path().join("run.log.jsonl"),
+            concat!(
+                "{\"event\":\"run_started\",\"ts\":1}\n",
+                "{\"event\":\"node_started\",\"ts\":2,\"node_id\":\"train\"}\n",
+                "{\"event\":\"node_finished\",\"ts\":3,\"node_id\":\"train\",\"status\":\"success\"}\n",
+                "{\"event\":\"run_finished\",\"ts\":4}\n"
+            ),
+        )
+        .expect("write run log");
+
+        let mut state = CompactRunProgressState::new(1);
+        let mut cursor = ProgressEventCursor::default();
+        let snapshot = state
+            .refresh_from_staging_dir(&mut cursor, dir.path(), Instant::now())
+            .expect("snapshot");
+
+        assert!(snapshot.finished);
+        assert_eq!(snapshot.total_nodes, 1);
+        assert_eq!(snapshot.running_count, 0);
+        assert!(snapshot.active_nodes.is_empty());
         assert_eq!(snapshot.success_count, 1);
     }
 
