@@ -56,6 +56,19 @@ lane is opt-in behind `experimental-public-api`.
   cached reuse, timeout, cancellation, and pre-start failure paths remain
   inspectable after the run completes
 
+## External Adapter Contract
+
+- executable discovery reads from `BIJUX_DAG_ADAPTERS_DIR`
+- `info --json` must emit descriptor JSON on stdout only; handshake stderr is a
+  protocol violation
+- `execute` receives `--node-spec`, `--workdir`, `--outdir`, and
+  `--failure-path`
+- nonzero adapter exits should write a `FailureInfo` JSON envelope to
+  `--failure-path` when they need precise runtime failure classification
+- the external adapter binary SHA-256 participates in cache identity and node
+  trace evidence, so a binary change invalidates cached reuse even if the
+  adapter keeps the same declared identity
+
 ## Source Layout
 
 - `crates/bijux-dag-runtime/src/runtime_core`

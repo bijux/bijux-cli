@@ -45,6 +45,19 @@ with Bijux runtime policies from Rust.
 
 Use these rules when reviewing runtime fingerprint drift or provenance output.
 
+## External adapter boundary
+
+- runtime discovery reads executable adapters from `BIJUX_DAG_ADAPTERS_DIR`
+- `info --json` must emit descriptor JSON on stdout only; stderr during the
+  handshake is treated as a protocol violation
+- `execute` receives `--node-spec`, `--workdir`, `--outdir`, and
+  `--failure-path`
+- when an adapter exits nonzero and needs precise failure classification, it
+  should write a `FailureInfo` JSON envelope to `--failure-path`
+- the external adapter binary SHA-256 participates in node trace evidence and
+  cache identity, so changing the adapter binary invalidates cached reuse even
+  if the adapter keeps the same declared `id` and `version`
+
 ## Persisted lifecycle evidence
 
 Node traces persist lifecycle evidence separately from terminal `status`.
