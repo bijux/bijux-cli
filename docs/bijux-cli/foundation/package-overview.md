@@ -9,9 +9,13 @@ last_reviewed: 2026-04-06
 
 # Package Overview
 
-`bijux-cli` is the canonical runtime behind the `bijux` binary. It receives argv,
-normalizes command intent, resolves runtime policy, dispatches handlers, renders
-payloads, and emits the final process exit code.
+`bijux-cli` is the native runtime package behind the `bijux` executable. It is
+where the root command stops being a brand and becomes actual command behavior:
+argv parsing, routing, runtime policy, handler execution, output rendering, and
+exit mapping.
+
+Use this page when you already know the question belongs to the CLI runtime and
+you need the package boundary before reading code.
 
 ## Visual Summary
 
@@ -24,13 +28,31 @@ flowchart LR
     output --> exit["stable exit code"]
 ```
 
-## Owned Surface
+## What This Package Owns
 
 - canonical command parsing and path normalization
-- built-in route catalog and alias rewrites
+- the built-in route catalog and alias rewrites
 - CLI handler execution and REPL entry integration
 - structured output rendering for `json`, `yaml`, and `text`
-- contract structs for commands, envelopes, diagnostics, plugins, and config
+- command, envelope, diagnostics, plugin, and config contracts used by the
+  runtime
+
+## Reader Shortcut
+
+If the problem starts with one of these questions, you are in the right place:
+
+- Why did `bijux` parse or route this command the way it did?
+- Which package owns root command behavior rather than Python packaging?
+- Where do help text, output envelopes, and exit behavior become concrete?
+- Which modules define contract-bearing runtime behavior rather than helper
+  internals?
+
+## Behavior To Expect
+
+- `bijux --help` and `bijux help ...` come from the same parser model
+- unknown commands surface as usage failures with correction hints
+- `--quiet` changes stream emission, not exit semantics
+- structured output formatting does not change payload meaning
 
 ## Code Anchors
 
@@ -40,21 +62,9 @@ flowchart LR
 - `crates/bijux-cli/src/routing/parser.rs`
 - `crates/bijux-cli/src/contracts/`
 
-## Public Behavior Anchor Points
+## Read Next
 
-- `bijux --help` and `bijux help ...` are generated from the same parser model
-- unknown commands are surfaced as usage failures with correction hints
-- `--quiet` suppresses stdout/stderr content while preserving exit semantics
-- structured output formatting does not alter payload meaning
-
-## Questions This Page Answers
-
-- what runtime path every command invocation goes through
-- where CLI behavior ownership starts and ends in the repository
-- which modules define contract-bearing behavior versus helper internals
-
-## Next Reads
-
-- [Scope and Non-Goals](scope-and-non-goals.md)
-- [Execution Model](../architecture/execution-model.md)
-- [CLI Surface](../interfaces/cli-surface.md)
+- [CLI Surface](../interfaces/cli-surface.md) for the user-visible command contract
+- [Execution Model](../architecture/execution-model.md) for runtime assembly
+- [Package Index](../packages/index.md) when the question might still belong to
+  `bijux-cli-python` instead
