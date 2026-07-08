@@ -48,6 +48,11 @@ If you need the same run-directory layout and scheduling estimate before any
 work starts, use `plan explain` or `run --preflight-only --explain-scheduling`
 before step 2.
 
+When the question is not "which command should I run?" but "which retained file
+should I inspect?", use
+[Run Evidence Layout](reference/run-evidence-layout.md) before opening the run
+directory manually.
+
 After `bijux-dag run`, the command now prints a compact post-run summary in
 human mode and exposes the same structure under `data.summary` in JSON mode.
 

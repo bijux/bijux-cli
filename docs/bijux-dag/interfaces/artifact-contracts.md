@@ -28,10 +28,12 @@ flowchart LR
 
 ## Contract Surfaces
 
-- outputs index and run outputs index
-- run manifest and provenance records
-- node trace and input/output index files
-- integrity proofs and schema validation descriptors
+- run manifest, graph snapshot, and provenance records
+- run-level and node-level output indexes
+- node trace, input index, and attempt evidence files
+- timeline, event-log, and schema index files
+- cache-entry manifests, metadata, and reuse proofs
+- promotion ledgers and manifest promotion summaries
 
 ## Code Anchors
 
@@ -54,6 +56,7 @@ ephemeral command output.
 
 ## Next Reads
 
+- [Run Evidence Layout](reference/run-evidence-layout.md)
 - [Data Contracts](data-contracts.md)
 - [State and Persistence](../architecture/state-and-persistence.md)
 - [Documentation Standards](../quality/documentation-standards.md)

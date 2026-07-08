@@ -108,6 +108,9 @@ flowchart LR
 - open [Graph Schema Reference](interfaces/reference/graph-schema.md) when the
   question is what a DAG file may declare, from graph inputs through validation
   errors
+- open [Run Evidence Layout](interfaces/reference/run-evidence-layout.md) when
+  the question is where manifests, traces, indexes, cache records, or
+  promotion records live on disk after a run completes
 - open [Generated CLI Reference](interfaces/generated-cli-reference.md) when
   the question is the exact stable command syntax and current help text
 - open [Non-Stable Command Inventory](interfaces/reference/nonstable-command-inventory.md)

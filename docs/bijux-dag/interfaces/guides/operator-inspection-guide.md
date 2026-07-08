@@ -33,3 +33,6 @@ or `--until-unix-ms` when narrowing to a precise time window.
 - use `timeline` when timing coherence matters
 - prefer `--json` for automation and filtered timeline extraction
 - use `doctor` when evidence integrity is the question, not just run status
+- open [Run Evidence Layout](../reference/run-evidence-layout.md) when you need
+  the exact retained file path for manifests, traces, indexes, cache records,
+  or promotions before opening a run by hand

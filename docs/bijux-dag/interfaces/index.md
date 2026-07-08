@@ -48,6 +48,7 @@ flowchart LR
 - [Configuration Surface](configuration-surface.md)
 - [Data Contracts](data-contracts.md)
 - [Graph Schema Reference](reference/graph-schema.md)
+- [Run Evidence Layout](reference/run-evidence-layout.md)
 - [Error Codes](reference/error-codes.md)
 - [Non-Stable Command Inventory](reference/nonstable-command-inventory.md)
 - [Authoring Guide](guides/authoring-guide.md)
