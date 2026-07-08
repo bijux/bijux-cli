@@ -35,7 +35,7 @@ must happen before a later release can honestly claim more.
 | `v0.5` graph expressiveness | richer graph authoring and clearer fanout, join, and reuse semantics | a promise that every authoring convenience is already portable everywhere |
 | `v0.6` scheduling and backfill | promoted schedule and backfill workflows with durable evidence and operator rules | a public always-on scheduler service without proven boundaries |
 | `v0.7` remote workers | deliberate remote execution boundaries and worker lifecycle semantics | generic distributed orchestration parity |
-| `v0.8` HPC and Kubernetes | explicit cluster and batch backend integrations with backend-specific contracts | one abstract backend that hides real environment differences |
+| `v0.8` HPC and Kubernetes | broader backend reach beyond the shipped shared-filesystem SLURM and Kubernetes Job lanes, with backend-specific contracts and operator recovery rules | one abstract backend that hides real environment differences |
 | `v1.0` stable API | a stability promise across stable CLI, retained evidence, and supported library lanes | a guarantee that every repository route or experiment is frozen forever |
 
 ## v0.4.x Hardening
@@ -104,18 +104,21 @@ recovery procedures are all concrete.
 
 ## v0.8 HPC and Kubernetes
 
-Cluster and batch backends should arrive as explicit backend contracts, not as
-marketing shorthand.
+`v0.4.0` already ships two concrete backend lanes: shared-filesystem SLURM
+submission and Kubernetes Job execution for container nodes. The next backend
+release lane is about broadening that reach honestly, not pretending those
+initial contracts do not exist.
 
-- introduce Kubernetes and HPC or batch integrations only with backend-specific
-  capability and downgrade rules
+- broaden Kubernetes and HPC or batch integrations only with backend-specific
+  capability, downgrade, and operator-recovery rules
 - make environment, filesystem, secret, and artifact assumptions visible per
   backend
 - keep backend differences inspectable instead of pretending they behave like
   the local runtime in every detail
 
-This lane is where `bijux-dag` can become useful beyond one host, but only by
-being more specific about backend truth, not less.
+This lane is where `bijux-dag` can move beyond today's concrete backend lanes
+without collapsing them into vague portability claims. Backend growth still has
+to become more specific about truth, not less.
 
 ## v1.0 Stable API
 
