@@ -1,4 +1,4 @@
-"""Python facade and app-author helpers for bijux-cli."""
+"""Python facade, DAG helpers, and app-author helpers for bijux-cli."""
 
 from __future__ import annotations
 
