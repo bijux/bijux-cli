@@ -267,7 +267,27 @@ fn render_help(command: &Command) -> Result<String, String> {
     let mut cloned = command.clone();
     let mut buffer = Vec::new();
     cloned.write_long_help(&mut buffer).map_err(|error| error.to_string())?;
-    String::from_utf8(buffer).map_err(|error| error.to_string())
+    String::from_utf8(buffer)
+        .map(|help| normalize_help_text(&help))
+        .map_err(|error| error.to_string())
+}
+
+fn normalize_help_text(help: &str) -> String {
+    let mut normalized = Vec::new();
+    let mut previous_blank = false;
+    for line in help.lines() {
+        let trimmed = line.trim_end();
+        if trimmed.is_empty() {
+            if !previous_blank {
+                normalized.push(String::new());
+                previous_blank = true;
+            }
+        } else {
+            normalized.push(trimmed.to_string());
+            previous_blank = false;
+        }
+    }
+    normalized.join("\n")
 }
 
 fn join_path(prefix: &str, name: &str) -> String {

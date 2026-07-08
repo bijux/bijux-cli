@@ -55,28 +55,26 @@ Validate, run, replay, explain, and compare reproducible computation graphs
 Usage: bijux-dag [OPTIONS] [COMMAND]
 
 Commands:
-  validate          
-  artifact-inspect  
-  artifact          
-  commands          
-  plan              
-  run               
-  replay            
-  runs              
-  diff              
-  explain           
-  verify            
-  doctor            
-  cache             
-  version           
+  validate
+  artifact-inspect
+  artifact
+  commands
+  plan
+  run
+  replay
+  runs
+  diff
+  explain
+  verify
+  doctor
+  cache
+  version
   help              Print this message or the help of the given subcommand(s)
 
 Options:
       --json
-          
 
       --quiet
-          
 
   -h, --help
           Print help
@@ -86,11 +84,10 @@ v0.4.0 surface truth table:
   experimental: hidden explicit-path routes require deliberate inventory with `bijux-dag commands --lane experimental`
   simulated: modeled platform namespaces require `bijux-dag commands --lane simulated` to inventory and BIJUX_DAG_ENABLE_SIMULATED=1 to execute
   internal: maintainer namespaces require `bijux-dag commands --lane internal` to inventory and BIJUX_DAG_ENABLE_INTERNAL=1 to execute
-  future: cluster-backed kubernetes, generic hpc beyond the shared-filesystem slurm lane, public remote workers, and public scheduler services are not part of v0.4.0
+  future: generic hpc beyond the shared-filesystem slurm lane, public remote workers, and public scheduler services are not part of v0.4.0
 
 Use `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.
 ```
-
 ## `validate`
 
 ### Examples
@@ -114,17 +111,13 @@ Usage: validate [OPTIONS] <DAGS>...
 
 Arguments:
   <DAGS>...
-          
 
 Options:
       --strict
-          
 
       --print-fingerprints
-          
 
       --explain
-          
 
   -h, --help
           Print help
@@ -153,10 +146,8 @@ Usage: artifact-inspect <RUN_DIR> <ARTIFACT_ID>
 
 Arguments:
   <RUN_DIR>
-          
 
   <ARTIFACT_ID>
-          
 
 Options:
   -h, --help
@@ -185,10 +176,10 @@ bijux-dag --json artifact lineage ${RUN_DIR} --artifact-id ${ARTIFACT_ID}
 Usage: artifact <COMMAND>
 
 Commands:
-  registry   
-  lineage    
-  promote    
-  retention  
+  registry
+  lineage
+  promote
+  retention
   help       Print this message or the help of the given subcommand(s)
 
 Options:
@@ -219,7 +210,6 @@ Usage: registry <RUN_DIR>
 
 Arguments:
   <RUN_DIR>
-          
 
 Options:
   -h, --help
@@ -249,11 +239,9 @@ Usage: lineage [OPTIONS] <RUN_DIR>
 
 Arguments:
   <RUN_DIR>
-          
 
 Options:
       --artifact-id <ARTIFACT_ID>
-          
 
   -h, --help
           Print help
@@ -282,14 +270,11 @@ Usage: promote [OPTIONS] --deliverables-root <DELIVERABLES_ROOT> <RUN_DIR> <ARTI
 
 Arguments:
   <RUN_DIR>
-          
 
   <ARTIFACT_ID>
-          
 
 Options:
       --deliverables-root <DELIVERABLES_ROOT>
-          
 
       --to <TO>
           [default: release]
@@ -321,7 +306,6 @@ Usage: retention <ROOT>
 
 Arguments:
   <ROOT>
-          
 
 Options:
   -h, --help
@@ -351,7 +335,6 @@ Usage: commands [OPTIONS]
 
 Options:
       --groups
-          
 
       --lane <LANES>
           [possible values: stable, experimental, simulated, internal]
@@ -382,12 +365,12 @@ bijux-dag --json plan diagnostics ${GRAPH}
 Usage: plan <COMMAND>
 
 Commands:
-  explain      
-  diagnostics  
-  diff         
-  equivalence  
-  closure      
-  backfill     
+  explain
+  diagnostics
+  diff
+  equivalence
+  closure
+  backfill
   help         Print this message or the help of the given subcommand(s)
 
 Options:
@@ -418,17 +401,13 @@ Usage: explain [OPTIONS] <DAGS>...
 
 Arguments:
   <DAGS>...
-          
 
 Options:
       --out <OUT>
-          
 
       --run-id <RUN_ID>
-          
 
       --cache-dir <CACHE_DIR>
-          
 
       --absolute-path-policy <ABSOLUTE_PATH_POLICY>
           [default: allow-literal]
@@ -438,31 +417,23 @@ Options:
           [default: 1]
 
       --cpu-budget <CPU_BUDGET>
-          
 
       --memory-budget-mb <MEMORY_BUDGET_MB>
-          
 
       --gpu-device-budget <GPU_DEVICE_BUDGET>
-          
 
       --resource-capacity <name=count>
           declare a named runtime capacity as <name=count>; repeat for resources such as license tokens or database slots
 
       --from-node <FROM_NODE>
-          
 
       --to-node <TO_NODE>
-          
 
       --select <SELECT>
-          
 
       --exclude <EXCLUDE>
-          
 
       --dependency-closure
-          
 
   -h, --help
           Print help
@@ -491,7 +462,6 @@ Usage: diagnostics <DAGS>...
 
 Arguments:
   <DAGS>...
-          
 
 Options:
   -h, --help
@@ -521,10 +491,8 @@ Usage: diff <BEFORE> <AFTER>
 
 Arguments:
   <BEFORE>
-          
 
   <AFTER>
-          
 
 Options:
   -h, --help
@@ -554,10 +522,8 @@ Usage: equivalence <BEFORE> <AFTER>
 
 Arguments:
   <BEFORE>
-          
 
   <AFTER>
-          
 
 Options:
   -h, --help
@@ -587,11 +553,9 @@ Usage: closure [OPTIONS] <DAGS>...
 
 Arguments:
   <DAGS>...
-          
 
 Options:
       --select <SELECT>
-          
 
   -h, --help
           Print help
@@ -620,13 +584,10 @@ Usage: backfill [OPTIONS] --window-start-unix-ms <WINDOW_START_UNIX_MS> --window
 
 Options:
       --window-start-unix-ms <WINDOW_START_UNIX_MS>
-          
 
       --window-end-unix-ms <WINDOW_END_UNIX_MS>
-          
 
       --partition-key <PARTITION_KEY>
-          
 
   -h, --help
           Print help
@@ -655,53 +616,42 @@ Usage: run [OPTIONS] --out <OUT> <DAGS>...
 
 Arguments:
   <DAGS>...
-          
 
 Options:
       --out <OUT>
-          
 
       --input <INPUT>
-          
 
       --inputs-file <INPUTS_FILE>
-          
 
       --run-id <RUN_ID>
-          
 
       --resume-run <RESUME_RUN>
           resume an existing run directory by run id, reusing only nodes whose persisted outputs still match their recorded evidence
 
       --resume-failure-mode <RESUME_FAILURE_MODE>
           choose whether nodes that cannot be safely reused are rerun or rejected during resume
-          
+
           [default: rerun-incomplete]
           [possible values: rerun-incomplete, reject-incomplete]
 
       --latest <LATEST>
-          
 
       --jobs <JOBS>
           [default: 1]
 
       --cpu-budget <CPU_BUDGET>
-          
 
       --memory-budget-mb <MEMORY_BUDGET_MB>
-          
 
       --gpu-device-budget <GPU_DEVICE_BUDGET>
-          
 
       --resource-capacity <name=count>
           declare a named runtime capacity as <name=count>; repeat for resources such as license tokens or database slots
 
       --node-timeout-ms <NODE_TIMEOUT_MS>
-          
 
       --run-timeout-ms <RUN_TIMEOUT_MS>
-          
 
       --run-timeout-behavior <RUN_TIMEOUT_BEHAVIOR>
           [default: finish-running]
@@ -723,16 +673,12 @@ Options:
           enable the best-effort local policy profile by forcing --deny-network, --deny-clock, and --clean-env; this does not claim syscall sandboxing or host filesystem isolation
 
       --select <SELECT>
-          
 
       --exclude <EXCLUDE>
-          
 
       --to-node <TO_NODE>
-          
 
       --dependency-closure
-          
 
       --materialize-inputs <MATERIALIZE_INPUTS>
           [default: copy]
@@ -743,26 +689,41 @@ Options:
           [possible values: off, read, readwrite]
 
       --cache-dir <CACHE_DIR>
-          
 
       --remote-cache-dir <REMOTE_CACHE_DIR>
-          
 
       --absolute-path-policy <ABSOLUTE_PATH_POLICY>
           [default: allow-literal]
           [possible values: allow-literal, deny-literal]
 
       --preflight-only
-          
 
       --explain-scheduling
-          
 
       --progress <PROGRESS>
           show live progress for `bijux-dag run`; `compact` renders operator-readable updates on stderr in human mode and streams `dag.run.progress` JSON lines on stdout when `--json` is active
-          
+
           [default: off]
           [possible values: off, compact]
+
+      --backend <BACKEND>
+          choose the node execution backend; `kubernetes` runs container nodes as Kubernetes Jobs through kubectl plus a shared persistent volume claim, and `slurm` submits nodes through sbatch and polls sacct until each job reaches a terminal state
+
+          [default: local]
+          [possible values: local, kubernetes, slurm]
+
+      --kubernetes-namespace <KUBERNETES_NAMESPACE>
+          [default: bijux]
+
+      --kubernetes-volume-claim <KUBERNETES_VOLUME_CLAIM>
+
+      --kubernetes-shared-root <KUBERNETES_SHARED_ROOT>
+
+      --slurm-queue <SLURM_QUEUE>
+          [default: general]
+
+      --slurm-partition <SLURM_PARTITION>
+          [default: cpu]
 
   -h, --help
           Print help
@@ -791,7 +752,6 @@ Usage: replay [OPTIONS] --out <OUT> [RUN_DIR]
 
 Arguments:
   [RUN_DIR]
-          
 
 Options:
       --source-run-id <SOURCE_RUN_ID>
@@ -801,19 +761,15 @@ Options:
           root directory used when resolving --source-run-id; defaults to the replay output root when omitted
 
       --out <OUT>
-          
 
       --dry-run
-          
 
       --sandbox
           forbid replay outputs from being written inside the source run directory; this is a write-boundary check, not a process sandbox
 
       --prove
-          
 
       --reuse-cache
-          
 
       --cache <CACHE>
           [default: off]
@@ -823,16 +779,12 @@ Options:
           [default: 1]
 
       --run-id <RUN_ID>
-          
 
       --cpu-budget <CPU_BUDGET>
-          
 
       --memory-budget-mb <MEMORY_BUDGET_MB>
-          
 
       --gpu-device-budget <GPU_DEVICE_BUDGET>
-          
 
       --resource-capacity <name=count>
           declare a named runtime capacity as <name=count>; repeat for resources such as license tokens or database slots
@@ -853,23 +805,18 @@ Options:
           enable the best-effort local policy profile by forcing --deny-network, --deny-clock, and --clean-env; this does not claim syscall sandboxing or host filesystem isolation
 
       --from-node <FROM_NODE>
-          
 
       --select <SELECT>
-          
 
       --exclude <EXCLUDE>
-          
 
       --dependency-closure
-          
 
       --materialize-inputs <MATERIALIZE_INPUTS>
           [default: copy]
           [possible values: copy, hardlink, symlink]
 
       --remote-cache-dir <REMOTE_CACHE_DIR>
-          
 
   -h, --help
           Print help
@@ -897,25 +844,25 @@ bijux-dag --json runs summary --root ${RUNS_ROOT}
 Usage: runs <COMMAND>
 
 Commands:
-  list                
-  show                
-  inspect             
-  history             
-  id-explain          
-  tree                
-  timeline            
-  stop                
-  diff                
-  verify              
-  doctor              
-  explain-failure     
-  summary             
-  compare             
-  trend               
-  failures            
-  flakes              
-  diagnostics-bundle  
-  index               
+  list
+  show
+  inspect
+  history
+  id-explain
+  tree
+  timeline
+  stop
+  diff
+  verify
+  doctor
+  explain-failure
+  summary
+  compare
+  trend
+  failures
+  flakes
+  diagnostics-bundle
+  index
   help                Print this message or the help of the given subcommand(s)
 
 Options:
@@ -946,7 +893,6 @@ Usage: list --root <ROOT>
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -975,11 +921,9 @@ Usage: show --root <ROOT> <RUN_ID>
 
 Arguments:
   <RUN_ID>
-          
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1008,11 +952,9 @@ Usage: inspect --root <ROOT> <RUN_ID>
 
 Arguments:
   <RUN_ID>
-          
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1041,25 +983,18 @@ Usage: history [OPTIONS] --root <ROOT>
 
 Options:
       --root <ROOT>
-          
 
       --status <STATUS>
-          
 
       --graph <GRAPH>
-          
 
       --source <SOURCE>
-          
 
       --offset <OFFSET>
-          
 
       --limit <LIMIT>
-          
 
       --select <SELECT>
-          
 
   -h, --help
           Print help
@@ -1088,11 +1023,9 @@ Usage: id-explain --root <ROOT> <RUN_ID>
 
 Arguments:
   <RUN_ID>
-          
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1121,11 +1054,9 @@ Usage: tree --root <ROOT> <RUN_ID>
 
 Arguments:
   <RUN_ID>
-          
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1154,23 +1085,17 @@ Usage: timeline [OPTIONS] --root <ROOT> <RUN_ID>
 
 Arguments:
   <RUN_ID>
-          
 
 Options:
       --root <ROOT>
-          
 
       --node <NODE>
-          
 
       --event <EVENT>
-          
 
       --since-unix-ms <SINCE_UNIX_MS>
-          
 
       --until-unix-ms <UNTIL_UNIX_MS>
-          
 
   -h, --help
           Print help
@@ -1199,11 +1124,9 @@ Usage: stop --root <ROOT> <RUN_ID>
 
 Arguments:
   <RUN_ID>
-          
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1232,10 +1155,8 @@ Usage: diff [OPTIONS] <RUN_A> <RUN_B>
 
 Arguments:
   <RUN_A>
-          
 
   <RUN_B>
-          
 
 Options:
       --mode <MODE>
@@ -1243,10 +1164,8 @@ Options:
           [possible values: summary, semantic, artifact, provenance, timing, policy, cache, raw]
 
       --node <NODE>
-          
 
       --explain
-          
 
   -h, --help
           Print help
@@ -1275,17 +1194,13 @@ Usage: verify [OPTIONS] --root <ROOT> <RUN_ID>
 
 Arguments:
   <RUN_ID>
-          
 
 Options:
       --root <ROOT>
-          
 
       --deep
-          
 
       --strict
-          
 
   -h, --help
           Print help
@@ -1314,11 +1229,9 @@ Usage: doctor --root <ROOT> <RUN_ID>
 
 Arguments:
   <RUN_ID>
-          
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1347,11 +1260,9 @@ Usage: explain-failure --root <ROOT> <RUN_ID>
 
 Arguments:
   <RUN_ID>
-          
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1380,7 +1291,6 @@ Usage: summary --root <ROOT>
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1409,14 +1319,11 @@ Usage: compare --root <ROOT> <RUN_A> <RUN_B>
 
 Arguments:
   <RUN_A>
-          
 
   <RUN_B>
-          
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1445,7 +1352,6 @@ Usage: trend --root <ROOT>
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1474,7 +1380,6 @@ Usage: failures --root <ROOT>
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1503,7 +1408,6 @@ Usage: flakes --root <ROOT>
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1532,17 +1436,13 @@ Usage: diagnostics-bundle [OPTIONS] --root <ROOT> --out <OUT> <RUN_ID>
 
 Arguments:
   <RUN_ID>
-          
 
 Options:
       --root <ROOT>
-          
 
       --out <OUT>
-          
 
       --redact
-          
 
   -h, --help
           Print help
@@ -1571,7 +1471,6 @@ Usage: index --root <ROOT>
 
 Options:
       --root <ROOT>
-          
 
   -h, --help
           Print help
@@ -1600,10 +1499,8 @@ Usage: diff [OPTIONS] <RUN_A> <RUN_B>
 
 Arguments:
   <RUN_A>
-          
 
   <RUN_B>
-          
 
 Options:
       --mode <MODE>
@@ -1611,10 +1508,8 @@ Options:
           [possible values: summary, semantic, artifact, provenance, timing, policy, cache, raw]
 
       --node <NODE>
-          
 
       --explain
-          
 
   -h, --help
           Print help
@@ -1643,11 +1538,9 @@ Usage: explain [OPTIONS] <RUN_DIR>
 
 Arguments:
   <RUN_DIR>
-          
 
 Options:
       --node <NODE>
-          
 
   -h, --help
           Print help
@@ -1676,14 +1569,11 @@ Usage: verify [OPTIONS] <RUN_DIR>
 
 Arguments:
   <RUN_DIR>
-          
 
 Options:
       --deep
-          
 
       --strict
-          
 
   -h, --help
           Print help
@@ -1737,15 +1627,15 @@ bijux-dag --json cache verify --cache-dir ${CACHE_DIR}
 Usage: cache <COMMAND>
 
 Commands:
-  ls              
-  pack            
-  unpack          
-  gc              
-  verify          
-  explain         
-  stats           
-  prune-simulate  
-  diff            
+  ls
+  pack
+  unpack
+  gc
+  verify
+  explain
+  stats
+  prune-simulate
+  diff
   help            Print this message or the help of the given subcommand(s)
 
 Options:
@@ -1776,7 +1666,6 @@ Usage: ls [OPTIONS]
 
 Options:
       --cache-dir <CACHE_DIR>
-          
 
   -h, --help
           Print help
@@ -1805,14 +1694,11 @@ Usage: pack [OPTIONS] --out <OUT> <NODE_FP>
 
 Arguments:
   <NODE_FP>
-          
 
 Options:
       --out <OUT>
-          
 
       --cache-dir <CACHE_DIR>
-          
 
   -h, --help
           Print help
@@ -1841,11 +1727,9 @@ Usage: unpack [OPTIONS] <PACK>
 
 Arguments:
   <PACK>
-          
 
 Options:
       --cache-dir <CACHE_DIR>
-          
 
   -h, --help
           Print help
@@ -1874,7 +1758,6 @@ Usage: gc [OPTIONS]
 
 Options:
       --cache-dir <CACHE_DIR>
-          
 
   -h, --help
           Print help
@@ -1903,10 +1786,8 @@ Usage: verify [OPTIONS]
 
 Options:
       --cache-dir <CACHE_DIR>
-          
 
       --remote <REMOTE>
-          
 
   -h, --help
           Print help
@@ -1935,16 +1816,12 @@ Usage: explain [OPTIONS] --key <KEY>
 
 Options:
       --cache-dir <CACHE_DIR>
-          
 
       --key <KEY>
-          
 
       --expected-adapter-id <EXPECTED_ADAPTER_ID>
-          
 
       --expected-adapter-version <EXPECTED_ADAPTER_VERSION>
-          
 
   -h, --help
           Print help
@@ -1973,7 +1850,6 @@ Usage: stats [OPTIONS]
 
 Options:
       --cache-dir <CACHE_DIR>
-          
 
   -h, --help
           Print help
@@ -2002,7 +1878,6 @@ Usage: prune-simulate [OPTIONS]
 
 Options:
       --cache-dir <CACHE_DIR>
-          
 
   -h, --help
           Print help
@@ -2031,13 +1906,10 @@ Usage: diff [OPTIONS] --key-a <KEY_A> --key-b <KEY_B>
 
 Options:
       --cache-dir <CACHE_DIR>
-          
 
       --key-a <KEY_A>
-          
 
       --key-b <KEY_B>
-          
 
   -h, --help
           Print help

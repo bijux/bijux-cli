@@ -285,6 +285,7 @@ Maintainer-only and contract-only routes. Execution requires `BIJUX_DAG_ENABLE_I
 | `runtime control-recovery` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
 | `runtime dispatch` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
 | `runtime events` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
+| `runtime execute-payload` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
 | `runtime heartbeat` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
 | `runtime intervention` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
 | `runtime isolation` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
