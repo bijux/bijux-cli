@@ -1,6 +1,6 @@
 use crate::commands::{
-    AbsolutePathPolicyArg, CacheModeArg, DagCli, MaterializeModeArg, ResumeFailureModeArg,
-    RunProgressArg, RunTimeoutBehaviorArg,
+    AbsolutePathPolicyArg, CacheModeArg, DagCli, ExecutionBackendArg, MaterializeModeArg,
+    ResumeFailureModeArg, RunProgressArg, RunTimeoutBehaviorArg,
 };
 use crate::graph_helpers::{
     parse_selectors, resolve_downstream_run_selection, resolve_upstream_run_selection,
@@ -61,6 +61,9 @@ pub(crate) struct RunRouteRequest<'a> {
     pub preflight_only: bool,
     pub explain_scheduling: bool,
     pub progress: RunProgressArg,
+    pub backend: ExecutionBackendArg,
+    pub slurm_queue: String,
+    pub slurm_partition: String,
 }
 
 fn cache_preflight(cache_mode: CacheModeArg, cache_dir: &Option<PathBuf>) -> serde_json::Value {
@@ -91,6 +94,16 @@ fn build_run_runtime_options(
     upstream_selection_targets: Vec<String>,
     downstream_selection_roots: Vec<String>,
 ) -> RuntimeConfig {
+    let slurm_worker_command = std::env::current_exe()
+        .ok()
+        .map(|path| {
+            vec![
+                path.display().to_string(),
+                "runtime".to_string(),
+                "execute-payload".to_string(),
+            ]
+        })
+        .unwrap_or_default();
     RuntimeConfig {
         jobs: req.jobs,
         cpu_budget: req.cpu_budget,
@@ -132,6 +145,21 @@ fn build_run_runtime_options(
         scheduler_policy: bijux_dag_runtime::SchedulerPolicy {
             max_parallelism: req.jobs.max(1),
             ..bijux_dag_runtime::SchedulerPolicy::default()
+        },
+        execution_backend: match req.backend {
+            ExecutionBackendArg::Local => bijux_dag_runtime::ExecutionBackendTarget::Local,
+            ExecutionBackendArg::Slurm => bijux_dag_runtime::ExecutionBackendTarget::Slurm,
+        },
+        slurm: bijux_dag_runtime::SlurmRuntimeConfig {
+            default_queue: req.slurm_queue.clone(),
+            default_partition: req.slurm_partition.clone(),
+            worker_command: slurm_worker_command,
+            sbatch_command: std::env::var("BIJUX_DAG_SLURM_SBATCH").ok(),
+            sacct_command: std::env::var("BIJUX_DAG_SLURM_SACCT").ok(),
+            poll_interval_ms: std::env::var("BIJUX_DAG_SLURM_POLL_INTERVAL_MS")
+                .ok()
+                .and_then(|value| value.parse::<u64>().ok())
+                .unwrap_or(250),
         },
         ..RuntimeConfig::default()
     }
@@ -506,8 +534,8 @@ mod tests {
         RunProgressMonitor, RunRouteRequest,
     };
     use crate::commands::{
-        AbsolutePathPolicyArg, CacheModeArg, Commands, DagCli, MaterializeModeArg,
-        ResumeFailureModeArg, RunProgressArg, RunTimeoutBehaviorArg,
+        AbsolutePathPolicyArg, CacheModeArg, Commands, DagCli, ExecutionBackendArg,
+        MaterializeModeArg, ResumeFailureModeArg, RunProgressArg, RunTimeoutBehaviorArg,
     };
     use crate::ExitCode;
     use serde_json::json;
@@ -567,6 +595,9 @@ mod tests {
             preflight_only: false,
             explain_scheduling: false,
             progress: RunProgressArg::Compact,
+            backend: ExecutionBackendArg::Local,
+            slurm_queue: "general".to_string(),
+            slurm_partition: "cpu".to_string(),
         };
 
         let quiet_cli = DagCli { json: false, quiet: true, command: Commands::Version };
@@ -658,6 +689,9 @@ mod tests {
                 preflight_only: true,
                 explain_scheduling: false,
                 progress: RunProgressArg::Off,
+                backend: ExecutionBackendArg::Local,
+                slurm_queue: "general".to_string(),
+                slurm_partition: "cpu".to_string(),
             },
         )
         .expect("run preflight");
@@ -721,6 +755,9 @@ mod tests {
                 preflight_only: true,
                 explain_scheduling: false,
                 progress: RunProgressArg::Off,
+                backend: ExecutionBackendArg::Local,
+                slurm_queue: "general".to_string(),
+                slurm_partition: "cpu".to_string(),
             },
         )
         .expect("run preflight");
@@ -765,6 +802,9 @@ mod tests {
             preflight_only: false,
             explain_scheduling: false,
             progress: RunProgressArg::Off,
+            backend: ExecutionBackendArg::Local,
+            slurm_queue: "general".to_string(),
+            slurm_partition: "cpu".to_string(),
         };
         let selectors = bijux_dag_runtime::SelectorSet {
             include: vec![bijux_dag_runtime::Selector::Id("train".to_string())],

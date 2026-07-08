@@ -451,14 +451,14 @@ pub use recovery::{
 use registry::{build_registry, AdapterRegistry};
 #[doc(hidden)]
 pub use remote_execution_model::{
-    execution_mode_status, remote_handoff_valid, remote_input_artifact_digest_matches,
-    serialize_node_result_payload, validate_remote_execution_fingerprint_set,
-    validate_remote_execution_payload, validate_remote_execution_workspace,
-    validate_remote_identity, validate_remote_input_artifact, ExecutionModeStatus,
-    MockRemoteWorker, RemoteArtifactHandoff, RemoteExecutionFingerprintSet,
-    RemoteExecutionIdentity, RemoteExecutionWorkspace, RemoteInputArtifact,
-    RemoteNodeExecutionPayload, RemoteNodeExecutionResult, RemoteObservabilityHandoff,
-    RemoteWorkerExecutor,
+    execute_remote_payload_in_place, execution_mode_status, remote_handoff_valid,
+    remote_input_artifact_digest_matches, serialize_node_result_payload,
+    validate_remote_execution_fingerprint_set, validate_remote_execution_payload,
+    validate_remote_execution_workspace, validate_remote_identity,
+    validate_remote_input_artifact, ExecutionModeStatus, MockRemoteWorker,
+    RemoteArtifactHandoff, RemoteExecutionFingerprintSet, RemoteExecutionIdentity,
+    RemoteExecutionWorkspace, RemoteInputArtifact, RemoteNodeExecutionPayload,
+    RemoteNodeExecutionResult, RemoteObservabilityHandoff, RemoteWorkerExecutor,
 };
 #[doc(hidden)]
 pub use remote_executor::{
@@ -565,7 +565,8 @@ pub use slurm_execution::{
     map_slurm_job_status_to_node_status, validate_slurm_execution_request,
     validate_slurm_scheduler_request, MockSlurmBackend, SlurmBackendExecutor,
     SlurmExecutionRequest, SlurmExecutionResult, SlurmJobLifecycleEvent, SlurmJobRecord,
-    SlurmJobStatus, SlurmLogCapture, SlurmSchedulerRequest,
+    SlurmJobStatus, SlurmLogCapture, SlurmSchedulerRequest, SystemSlurmBackend,
+    SystemSlurmBackendConfig, SystemSlurmPaths,
 };
 #[doc(hidden)]
 pub use state_machine::{
@@ -625,9 +626,9 @@ pub mod stable {
         cache_key_explanation, registered_adapter_descriptors,
         registered_adapter_reference_document, registered_adapters, trace_time_order_ok,
         validate_node_transition, validate_run_transition, verify_post_run_state_consistency,
-        AbsolutePathPolicy, CacheKeyInput, CacheMode, ExecutionContext, NodeExecutionContext,
-        NodeLifecycleState, PlannerGuardrails, RunLifecycleState, Runtime, RuntimeConfig,
-        RuntimeError, SchedulerPolicy, SelectorSet,
+        AbsolutePathPolicy, CacheKeyInput, CacheMode, ExecutionBackendTarget, ExecutionContext,
+        NodeExecutionContext, NodeLifecycleState, PlannerGuardrails, RunLifecycleState, Runtime,
+        RuntimeConfig, RuntimeError, SchedulerPolicy, SelectorSet, SlurmRuntimeConfig,
     };
 }
 
@@ -635,8 +636,8 @@ pub mod stable {
 pub mod prelude {
     pub use crate::stable::{
         build_plan, build_planner_analysis, build_scheduler, AbsolutePathPolicy, CacheMode,
-        ExecutionContext, NodeExecutionContext, PlannerGuardrails, Runtime, RuntimeConfig,
-        RuntimeError, SchedulerPolicy, SelectorSet,
+        ExecutionBackendTarget, ExecutionContext, NodeExecutionContext, PlannerGuardrails,
+        Runtime, RuntimeConfig, RuntimeError, SchedulerPolicy, SelectorSet, SlurmRuntimeConfig,
     };
 }
 
@@ -1729,6 +1730,44 @@ pub struct RuntimeConfig {
     pub partial_rerun_dependency_closure: bool,
     pub scheduler_policy: SchedulerPolicy,
     pub failure_propagation: FailurePropagationMode,
+    pub execution_backend: ExecutionBackendTarget,
+    pub slurm: SlurmRuntimeConfig,
+}
+
+/// Selected execution backend for node launches.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ExecutionBackendTarget {
+    #[default]
+    Local,
+    Slurm,
+}
+
+/// Runtime configuration for the SLURM backend.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct SlurmRuntimeConfig {
+    pub default_queue: String,
+    pub default_partition: String,
+    pub poll_interval_ms: u64,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub worker_command: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sbatch_command: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sacct_command: Option<String>,
+}
+
+impl Default for SlurmRuntimeConfig {
+    fn default() -> Self {
+        Self {
+            default_queue: "general".to_string(),
+            default_partition: "cpu".to_string(),
+            poll_interval_ms: 250,
+            worker_command: Vec::new(),
+            sbatch_command: None,
+            sacct_command: None,
+        }
+    }
 }
 
 impl Default for RuntimeConfig {
@@ -1765,6 +1804,8 @@ impl Default for RuntimeConfig {
             partial_rerun_dependency_closure: true,
             scheduler_policy: SchedulerPolicy::default(),
             failure_propagation: FailurePropagationMode::ContinueIndependent,
+            execution_backend: ExecutionBackendTarget::Local,
+            slurm: SlurmRuntimeConfig::default(),
         }
     }
 }
@@ -3002,6 +3043,24 @@ fn execute_with_retries(
     if node.semantic_kind == bijux_dag_core::SemanticNodeKind::Map {
         return execute_map_node(adapter, graph, node, params, ctx, retry);
     }
+    execute_with_retry_operation(ctx, node, retry, |_attempt| {
+        let node_ctx = NodeCtx { graph, node, exec: ctx, params };
+        Ok(match adapter.execute(&node_ctx) {
+            Ok(result) => result,
+            Err(error) => failed_node_result_from_runtime_error(ctx, node, error),
+        })
+    })
+}
+
+pub(crate) fn execute_with_retry_operation<F>(
+    ctx: &RunContext,
+    node: &Node,
+    _retry: &RetryPolicy,
+    mut operation: F,
+) -> Result<NodeResult, RuntimeError>
+where
+    F: FnMut(u32) -> Result<NodeResult, RuntimeError>,
+{
     let mut attempt = 0u32;
     let retry_policy = build_retry_policy(node);
     let mut attempt_events = Vec::new();
@@ -3009,11 +3068,8 @@ fn execute_with_retries(
         attempt += 1;
         prepare_node_execution_dirs(ctx, &node.id)?;
         let started = ctx.clock.now_unix_ms();
-        let node_ctx = NodeCtx { graph, node, exec: ctx, params };
-        let mut result = match adapter.execute(&node_ctx) {
-            Ok(result) => result,
-            Err(err) => failed_node_result_from_runtime_error(ctx, node, err),
-        };
+        let mut result = operation(attempt)
+            .unwrap_or_else(|error| failed_node_result_from_runtime_error(ctx, node, error));
         let finished = ctx.clock.now_unix_ms();
         let retry_decision = result.failure.as_ref().and_then(|failure| {
             (result.status == NodeStatus::Failed).then(|| {

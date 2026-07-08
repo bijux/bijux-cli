@@ -3,12 +3,14 @@ use crate::{
     bind_path_variables_in_value, build_run_outputs_index, cache_dir_from_env, cache_mode_string,
     canonicalize_event_records, category_from_runtime_event_name, collect_outputs_summary,
     current_process_memory_bytes, node_fingerprint_from_ctx, node_fingerprint_with_inputs,
-    reconstruct_timeline_from_events, reduce_execution_config, registered_adapters,
-    sacred_execution, serialize_timeline_export, set_node_fingerprint, CacheProof, EffectSet,
-    EventRecord, ExecutionCheckpoint, InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics,
-    NodePathBindings, NodeResult, NodeStatus, ReduceEmptyPolicy, ReduceExecutionMode,
+    execute_with_retry_operation, reconstruct_timeline_from_events, reduce_execution_config,
+    registered_adapters, sacred_execution, serialize_timeline_export, set_node_fingerprint,
+    CacheProof, EffectSet, EventRecord, ExecutionBackendTarget, ExecutionCheckpoint,
+    InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, NodePathBindings, NodeResult,
+    NodeStatus, ReduceEmptyPolicy, ReduceExecutionMode, RemoteExecutionFingerprintSet,
+    RemoteExecutionIdentity, RemoteExecutionWorkspace, RemoteNodeExecutionPayload,
     ReplayNodeAction, RunAttempt, RunContext, RunId, RunSnapshot, Runtime, RuntimeConfig,
-    RuntimeError, SchedulerEventHook,
+    RuntimeError, SchedulerEventHook, SlurmBackendExecutor, SlurmJobRecord, SystemSlurmBackend,
 };
 #[path = "engine_dispatch.rs"]
 mod engine_dispatch;
@@ -63,6 +65,11 @@ struct PreparedExecutionGraph {
     dynamic_expansions: Vec<DynamicExpansionRecord>,
 }
 
+struct BackendExecutionResult {
+    node_result: NodeResult,
+    slurm_job: Option<SlurmJobRecord>,
+}
+
 struct StopRequestWatcher {
     request: Arc<Mutex<Option<RunStopRequest>>>,
     shutdown: Arc<AtomicBool>,
@@ -102,6 +109,108 @@ impl Drop for StopRequestWatcher {
         self.shutdown.store(true, Ordering::SeqCst);
         if let Some(handle) = self.handle.take() {
             let _ = handle.join();
+        }
+    }
+}
+
+fn run_root_for_remote_workspace(ctx: &RunContext) -> Result<&Path, RuntimeError> {
+    ctx.run_dir.staging_path().parent().ok_or_else(|| {
+        RuntimeError::Executor("run staging path does not have a parent directory".to_string())
+    })
+}
+
+fn run_id_from_context(ctx: &RunContext) -> Result<String, RuntimeError> {
+    ctx.run_dir
+        .staging_path()
+        .file_name()
+        .and_then(|name| name.to_str())
+        .and_then(|name| name.strip_prefix("run.tmp-"))
+        .map(ToOwned::to_owned)
+        .filter(|run_id| !run_id.is_empty())
+        .ok_or_else(|| RuntimeError::Executor("unable to derive run id from staging path".to_string()))
+}
+
+fn build_remote_payload(
+    ctx: &RunContext,
+    graph: &Graph,
+    node: &Node,
+    params: &Value,
+    attempt: u32,
+    backend_id: &str,
+) -> Result<RemoteNodeExecutionPayload, RuntimeError> {
+    Ok(RemoteNodeExecutionPayload {
+        identity: RemoteExecutionIdentity {
+            run_id: run_id_from_context(ctx)?,
+            node_id: node.id.clone(),
+            attempt_id: attempt.to_string(),
+            backend_id: backend_id.to_string(),
+        },
+        graph: graph.clone(),
+        node: node.clone(),
+        params: params.clone(),
+        input_artifacts: Vec::new(),
+        workspace: RemoteExecutionWorkspace {
+            out_base: run_root_for_remote_workspace(ctx)?.display().to_string(),
+            cache_dir: ctx.effective_cache_dir.as_ref().map(|path| path.display().to_string()),
+        },
+        policy: ctx.policy.clone(),
+        absolute_path_policy: ctx.absolute_path_policy,
+        planner_contract_version: ctx.planner_contract_version.clone(),
+        fingerprints: RemoteExecutionFingerprintSet {
+            node_fingerprint: node_fingerprint_from_ctx(ctx, &node.id),
+            node_definition_fingerprint: ctx
+                .node_definition_fingerprints
+                .get(&node.id)
+                .cloned()
+                .unwrap_or_default(),
+            declared_environment_fingerprint: ctx
+                .declared_environment_fingerprints
+                .get(&node.id)
+                .cloned()
+                .unwrap_or_default(),
+            params_fingerprint: ctx.params_fingerprints.get(&node.id).cloned().unwrap_or_default(),
+            command_fingerprint: ctx
+                .command_fingerprints
+                .get(&node.id)
+                .cloned()
+                .unwrap_or(None),
+            execution_fingerprint: ctx.execution_fingerprint.clone(),
+            evidence_fingerprint: ctx.evidence_fingerprint.clone(),
+            execution_contract_fingerprint: ctx.execution_contract_fingerprint.clone(),
+        },
+    })
+}
+
+fn execute_node_with_backend(
+    graph: &Graph,
+    node: &Node,
+    params: &Value,
+    ctx: &RunContext,
+    retry: &bijux_dag_core::RetryPolicy,
+    options: &RuntimeConfig,
+    adapter: &dyn crate::adapter::Adapter,
+) -> Result<BackendExecutionResult, RuntimeError> {
+    match options.execution_backend {
+        ExecutionBackendTarget::Local => Ok(BackendExecutionResult {
+            node_result: sacred_execution::run_retry_logic(adapter, graph, node, params, ctx, retry)?,
+            slurm_job: None,
+        }),
+        ExecutionBackendTarget::Slurm => {
+            let backend = SystemSlurmBackend::from_runtime_config(&options.slurm)
+                .map_err(RuntimeError::Executor)?;
+            let mut final_job = None;
+            let node_result = execute_with_retry_operation(ctx, node, retry, |attempt| {
+                let payload = build_remote_payload(ctx, graph, node, params, attempt, "slurm")?;
+                let request = crate::build_slurm_execution_request(
+                    payload,
+                    &options.slurm.default_queue,
+                    &options.slurm.default_partition,
+                );
+                let result = backend.execute_job(request).map_err(RuntimeError::Executor)?;
+                final_job = Some(result.job.clone());
+                Ok(result.node_result)
+            })?;
+            Ok(BackendExecutionResult { node_result, slurm_job: final_job })
         }
     }
 }
@@ -1922,7 +2031,9 @@ pub fn execute(
     let local_worker_capacity =
         options.jobs.max(1).min(options.scheduler_policy.max_parallelism.max(1));
     let mut local_workers =
-        crate::LocalWorkerPool::<Result<NodeResult, RuntimeError>>::new(local_worker_capacity);
+        crate::LocalWorkerPool::<Result<BackendExecutionResult, RuntimeError>>::new(
+            local_worker_capacity,
+        );
     let mut loop_index: u64 = 0;
     let mut branch_pruned_nodes = BTreeSet::new();
     let mut lifecycle_timestamps = graph
@@ -2869,18 +2980,20 @@ pub fn execute(
             let params_for_thread = params.clone();
             let graph_for_thread = graph.clone();
             let retry = node.retry.clone();
+            let options_for_thread = options.clone();
             local_workers
                 .submit(
                     node_id_clone.clone(),
                     Box::new(move || {
                         let started = ctx_clone.clock.now_unix_ms();
-                        let result = sacred_execution::run_retry_logic(
-                            adapter.as_ref(),
+                        let result = execute_node_with_backend(
                             &graph_for_thread,
                             &node_for_thread,
                             &params_for_thread,
                             &ctx_clone,
                             &retry,
+                            &options_for_thread,
+                            adapter.as_ref(),
                         );
                         let finished = ctx_clone.clock.now_unix_ms();
                         crate::LocalWorkerExecution {
@@ -2897,7 +3010,7 @@ pub fn execute(
             local_workers.request_cancellation();
         }
 
-        type ResultItem = (String, Node, u128, u128, Result<NodeResult, RuntimeError>);
+        type ResultItem = (String, Node, u128, u128, Result<BackendExecutionResult, RuntimeError>);
         let mut results: Vec<ResultItem> = Vec::new();
         for _ in 0..actual_started_ids.len() {
             if cancel.load(Ordering::SeqCst) {
@@ -2921,7 +3034,8 @@ pub fn execute(
                 remember_first_timestamp(&mut timestamps.running_unix_ms, started);
             }
             match res {
-                Ok(mut result) => {
+                Ok(backend_result) => {
+                    let mut result = backend_result.node_result;
                     if matches!(
                         options.run_timeout_behavior,
                         crate::RunTimeoutBehavior::CancelRunning
@@ -3047,6 +3161,12 @@ pub fn execute(
                         }
                     }
                     crate::write_attempt_events(&ctx, &node_id, &result.attempt_events)?;
+                    if let Some(job) = backend_result.slurm_job.as_ref() {
+                        ctx.fs.write(
+                            &ctx.run_dir.node_dir(&node_id).join("batch-job.json"),
+                            &serde_json::to_vec_pretty(job)?,
+                        )?;
+                    }
                     let branch_decision = match resolve_branch_decision(&ctx, &node) {
                         Ok(Some(selection)) => {
                             engine_record::append_indexed_event(

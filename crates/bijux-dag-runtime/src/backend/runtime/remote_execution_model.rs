@@ -242,20 +242,51 @@ impl RemoteWorkerExecutor for MockRemoteWorker {
     }
 }
 
+pub fn execute_remote_payload_in_place(
+    payload: RemoteNodeExecutionPayload,
+) -> Result<RemoteNodeExecutionResult, String> {
+    validate_remote_execution_payload(&payload)?;
+    let adapter = remote_worker_adapter(&payload.node.kind)?;
+    execute_modeled_payload_with_workspace(payload, adapter, RemoteWorkspaceMode::ReuseExisting)
+}
+
 pub(crate) fn execute_modeled_payload(
     payload: RemoteNodeExecutionPayload,
     adapter: Box<dyn Adapter>,
 ) -> Result<RemoteNodeExecutionResult, String> {
-    let run_dir = RunDir::create_with_id(&payload.workspace.out_base, &payload.identity.run_id)
-        .map_err(|error| format!("create remote run dir: {error}"))?;
+    execute_modeled_payload_with_workspace(payload, adapter, RemoteWorkspaceMode::CreateFresh)
+}
+
+enum RemoteWorkspaceMode {
+    CreateFresh,
+    ReuseExisting,
+}
+
+fn execute_modeled_payload_with_workspace(
+    payload: RemoteNodeExecutionPayload,
+    adapter: Box<dyn Adapter>,
+    workspace_mode: RemoteWorkspaceMode,
+) -> Result<RemoteNodeExecutionResult, String> {
+    let run_dir = match workspace_mode {
+        RemoteWorkspaceMode::CreateFresh => {
+            RunDir::create_with_id(&payload.workspace.out_base, &payload.identity.run_id)
+                .map_err(|error| format!("create remote run dir: {error}"))?
+        }
+        RemoteWorkspaceMode::ReuseExisting => {
+            RunDir::resume_with_id(&payload.workspace.out_base, &payload.identity.run_id)
+                .map_err(|error| format!("reuse remote run dir: {error}"))?
+        }
+    };
     let run_dir = Arc::new(run_dir);
     let fs: Arc<dyn Fs> = Arc::new(StdFs);
-    materialize_remote_inputs(
-        fs.as_ref(),
-        run_dir.as_ref(),
-        &payload.node.id,
-        &payload.input_artifacts,
-    )?;
+    if matches!(workspace_mode, RemoteWorkspaceMode::CreateFresh) {
+        materialize_remote_inputs(
+            fs.as_ref(),
+            run_dir.as_ref(),
+            &payload.node.id,
+            &payload.input_artifacts,
+        )?;
+    }
 
     let node_id = payload.node.id.clone();
     let mut graph_fingerprint = HashMap::new();

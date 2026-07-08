@@ -51,6 +51,8 @@ const REPLAY_SOURCE_RUN_ROOT_HELP: &str =
     "root directory used when resolving --source-run-id; defaults to the replay output root when omitted";
 const RUN_PROGRESS_HELP: &str =
     "show live progress for `bijux-dag run`; `compact` renders operator-readable updates on stderr in human mode and streams `dag.run.progress` JSON lines on stdout when `--json` is active";
+const EXECUTION_BACKEND_HELP: &str =
+    "choose the node execution backend; `slurm` submits nodes through sbatch and polls sacct until each job reaches a terminal state";
 const ROOT_HELP_BOUNDARY_HELP: &str =
     "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: hidden explicit-path routes require deliberate inventory with `bijux-dag commands --lane experimental`\n  simulated: modeled platform namespaces require `bijux-dag commands --lane simulated` to inventory and BIJUX_DAG_ENABLE_SIMULATED=1 to execute\n  internal: maintainer namespaces require `bijux-dag commands --lane internal` to inventory and BIJUX_DAG_ENABLE_INTERNAL=1 to execute\n  future: cluster-backed kubernetes, cluster-backed slurm or hpc, public remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.";
 
@@ -106,6 +108,12 @@ pub(crate) enum CommandCatalogLaneArg {
     Experimental,
     Simulated,
     Internal,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+pub(crate) enum ExecutionBackendArg {
+    Local,
+    Slurm,
 }
 
 #[derive(Subcommand)]
@@ -360,6 +368,12 @@ pub(crate) enum Commands {
         explain_scheduling: bool,
         #[arg(long, value_enum, default_value_t = RunProgressArg::Off, help = RUN_PROGRESS_HELP)]
         progress: RunProgressArg,
+        #[arg(long, value_enum, default_value_t = ExecutionBackendArg::Local, help = EXECUTION_BACKEND_HELP)]
+        backend: ExecutionBackendArg,
+        #[arg(long, default_value = "general")]
+        slurm_queue: String,
+        #[arg(long, default_value = "cpu")]
+        slurm_partition: String,
     },
     #[command(name = "run-bundle", alias = "bundle")]
     RunBundle {
@@ -872,6 +886,14 @@ pub(crate) enum ScheduleCommands {
 
 #[derive(Subcommand)]
 pub(crate) enum RuntimeCommands {
+    #[command(name = "execute-payload")]
+    ExecutePayload {
+        payload: PathBuf,
+        #[arg(long)]
+        result: PathBuf,
+        #[arg(long)]
+        in_place: bool,
+    },
     Isolation {
         dag: PathBuf,
     },

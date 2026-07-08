@@ -801,6 +801,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             preflight_only,
             explain_scheduling,
             progress,
+            backend,
+            slurm_queue,
+            slurm_partition,
         } => routes::run_routes::handle_run_command(
             &cli,
             routes::run_routes::RunRouteRequest {
@@ -837,6 +840,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
                 preflight_only: *preflight_only,
                 explain_scheduling: *explain_scheduling,
                 progress: *progress,
+                backend: *backend,
+                slurm_queue: slurm_queue.clone(),
+                slurm_partition: slurm_partition.clone(),
             },
         ),
         Commands::RunBundle { run_dir, out, redact } => {

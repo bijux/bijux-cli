@@ -11,7 +11,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const DEFAULT_CPU_CORES: u32 = 1;
 const DEFAULT_MEMORY_MIB: u32 = 256;
@@ -90,6 +94,29 @@ pub struct MockSlurmBackend {
     next_job_id: Arc<Mutex<u64>>,
     requests: Arc<Mutex<Vec<SlurmExecutionRequest>>>,
     jobs: Arc<Mutex<BTreeMap<String, SlurmJobRecord>>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SystemSlurmBackendConfig {
+    pub sbatch_command: String,
+    pub sacct_command: String,
+    pub poll_interval_ms: u64,
+    pub worker_command: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SystemSlurmPaths {
+    pub payload_path: PathBuf,
+    pub result_path: PathBuf,
+    pub node_dir: PathBuf,
+    pub stdout_path: PathBuf,
+    pub stderr_path: PathBuf,
+    pub script_path: PathBuf,
+}
+
+#[derive(Debug, Clone)]
+pub struct SystemSlurmBackend {
+    config: SystemSlurmBackendConfig,
 }
 
 pub fn validate_slurm_scheduler_request(request: &SlurmSchedulerRequest) -> Result<(), String> {
@@ -222,6 +249,60 @@ impl MockSlurmBackend {
     }
 }
 
+impl SystemSlurmBackend {
+    pub fn new(config: SystemSlurmBackendConfig) -> Result<Self, String> {
+        if config.sbatch_command.trim().is_empty() {
+            return Err("slurm sbatch command must be non-empty".to_string());
+        }
+        if config.sacct_command.trim().is_empty() {
+            return Err("slurm sacct command must be non-empty".to_string());
+        }
+        if config.worker_command.is_empty()
+            || config.worker_command.iter().any(|entry| entry.trim().is_empty())
+        {
+            return Err("slurm worker command must be configured".to_string());
+        }
+        Ok(Self { config })
+    }
+
+    pub fn from_runtime_config(config: &crate::SlurmRuntimeConfig) -> Result<Self, String> {
+        Self::new(SystemSlurmBackendConfig {
+            sbatch_command: config
+                .sbatch_command
+                .clone()
+                .unwrap_or_else(|| "sbatch".to_string()),
+            sacct_command: config
+                .sacct_command
+                .clone()
+                .unwrap_or_else(|| "sacct".to_string()),
+            poll_interval_ms: config.poll_interval_ms.max(50),
+            worker_command: config.worker_command.clone(),
+        })
+    }
+
+    fn job_paths(&self, request: &SlurmExecutionRequest) -> Result<SystemSlurmPaths, String> {
+        let run_root = Path::new(&request.payload.workspace.out_base);
+        let layout = bijux_dag_artifacts::RunDirLayout::preview(
+            run_root,
+            Some(&request.payload.identity.run_id),
+        )
+        .map_err(|error| format!("preview slurm run layout: {error}"))?;
+        let node_dir = layout
+            .node_dir(&request.payload.identity.node_id)
+            .join("batch")
+            .join("slurm")
+            .join(format!("attempt-{}", request.payload.identity.attempt_id));
+        Ok(SystemSlurmPaths {
+            payload_path: node_dir.join("payload.json"),
+            result_path: node_dir.join("result.json"),
+            stdout_path: node_dir.join("scheduler.stdout.log"),
+            stderr_path: node_dir.join("scheduler.stderr.log"),
+            script_path: node_dir.join("submit.sh"),
+            node_dir,
+        })
+    }
+}
+
 impl SlurmBackendExecutor for MockSlurmBackend {
     fn execute_job(&self, request: SlurmExecutionRequest) -> Result<SlurmExecutionResult, String> {
         validate_slurm_execution_request(&request)?;
@@ -245,6 +326,246 @@ impl SlurmBackendExecutor for MockSlurmBackend {
             logs,
         })
     }
+}
+
+impl SlurmBackendExecutor for SystemSlurmBackend {
+    fn execute_job(&self, request: SlurmExecutionRequest) -> Result<SlurmExecutionResult, String> {
+        validate_slurm_execution_request(&request)?;
+        let paths = self.job_paths(&request)?;
+        fs::create_dir_all(&paths.node_dir)
+            .map_err(|error| format!("create slurm control dir: {error}"))?;
+        fs::write(
+            &paths.payload_path,
+            serde_json::to_vec_pretty(&request.payload)
+                .map_err(|error| format!("serialize slurm payload: {error}"))?,
+        )
+        .map_err(|error| format!("write slurm payload: {error}"))?;
+        let worker_invocation = render_worker_invocation(
+            &self.config.worker_command,
+            &paths.payload_path,
+            &paths.result_path,
+        );
+        fs::write(&paths.script_path, worker_invocation.as_bytes())
+            .map_err(|error| format!("write slurm submit script: {error}"))?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut permissions = fs::metadata(&paths.script_path)
+                .map_err(|error| format!("stat slurm submit script: {error}"))?
+                .permissions();
+            permissions.set_mode(0o755);
+            fs::set_permissions(&paths.script_path, permissions)
+                .map_err(|error| format!("chmod slurm submit script: {error}"))?;
+        }
+
+        let mut submit = Command::new(&self.config.sbatch_command);
+        submit
+            .arg("--parsable")
+            .arg("--cpus-per-task")
+            .arg(request.scheduler.cpu_cores.to_string())
+            .arg("--mem")
+            .arg(format!("{}M", request.scheduler.memory_mib))
+            .arg("--time")
+            .arg(&request.scheduler.walltime)
+            .arg("--partition")
+            .arg(&request.scheduler.partition)
+            .arg("--qos")
+            .arg(&request.scheduler.queue)
+            .arg("--output")
+            .arg(&paths.stdout_path)
+            .arg("--error")
+            .arg(&paths.stderr_path);
+        if let Some(account) = &request.scheduler.account {
+            submit.arg("--account").arg(account);
+        }
+        submit.arg(&paths.script_path);
+        let submission = submit
+            .output()
+            .map_err(|error| format!("invoke sbatch '{}': {error}", self.config.sbatch_command))?;
+        if !submission.status.success() {
+            return Err(format!(
+                "sbatch failed: {}",
+                String::from_utf8_lossy(&submission.stderr).trim()
+            ));
+        }
+        let job_id = parse_slurm_job_id(&String::from_utf8_lossy(&submission.stdout))?;
+        let submitted_unix_ms = current_unix_ms();
+
+        let mut terminal_status = SlurmJobStatus::Submitted;
+        let mut remote_result = None;
+        loop {
+            thread::sleep(Duration::from_millis(self.config.poll_interval_ms));
+            let poll = Command::new(&self.config.sacct_command)
+                .arg("-P")
+                .arg("-n")
+                .arg("-j")
+                .arg(&job_id)
+                .arg("--format")
+                .arg("State,ExitCode")
+                .output()
+                .map_err(|error| {
+                    format!("invoke sacct '{}': {error}", self.config.sacct_command)
+                })?;
+            if !poll.status.success() {
+                return Err(format!(
+                    "sacct failed: {}",
+                    String::from_utf8_lossy(&poll.stderr).trim()
+                ));
+            }
+            if let Some(state) = parse_slurm_job_status(&String::from_utf8_lossy(&poll.stdout)) {
+                terminal_status = state;
+            }
+            if matches!(
+                terminal_status,
+                SlurmJobStatus::Completed
+                    | SlurmJobStatus::Failed
+                    | SlurmJobStatus::Cancelled
+                    | SlurmJobStatus::Timeout
+                    | SlurmJobStatus::Preempted
+            ) {
+                if paths.result_path.exists() {
+                    let raw = fs::read_to_string(&paths.result_path)
+                        .map_err(|error| format!("read slurm result payload: {error}"))?;
+                    remote_result = Some(
+                        serde_json::from_str::<RemoteNodeExecutionResult>(&raw)
+                            .map_err(|error| format!("parse slurm result payload: {error}"))?,
+                    );
+                }
+                break;
+            }
+        }
+
+        let remote_result = remote_result.unwrap_or_else(|| {
+            synthesize_remote_result(&request, &paths, terminal_status, submitted_unix_ms)
+        });
+        let job = build_slurm_job_record(&job_id, &request, &remote_result, terminal_status);
+        let logs = capture_logs(&remote_result.node_result)?;
+        Ok(SlurmExecutionResult {
+            identity: remote_result.identity.clone(),
+            scheduler_status: terminal_status,
+            node_status: remote_result.node_result.status.clone(),
+            node_result: remote_result.node_result,
+            job,
+            logs,
+        })
+    }
+}
+
+fn render_worker_invocation(
+    worker_command: &[String],
+    payload_path: &Path,
+    result_path: &Path,
+) -> String {
+    let mut args = worker_command
+        .iter()
+        .map(|entry| shell_quote(entry))
+        .collect::<Vec<_>>();
+    args.push(shell_quote(payload_path.to_string_lossy().as_ref()));
+    args.push("--result".to_string());
+    args.push(shell_quote(result_path.to_string_lossy().as_ref()));
+    args.push("--in-place".to_string());
+    format!("#!/bin/sh\nset -eu\n{}\n", args.join(" "))
+}
+
+fn parse_slurm_job_id(stdout: &str) -> Result<String, String> {
+    let job_id = stdout.trim().split(';').next().unwrap_or_default().trim();
+    if job_id.is_empty() {
+        return Err("sbatch did not return a job id".to_string());
+    }
+    Ok(job_id.to_string())
+}
+
+fn parse_slurm_job_status(stdout: &str) -> Option<SlurmJobStatus> {
+    let line = stdout.lines().find(|line| !line.trim().is_empty())?;
+    let state = line.split('|').next()?.trim().to_ascii_uppercase();
+    Some(match state.as_str() {
+        "COMPLETED" => SlurmJobStatus::Completed,
+        "FAILED" => SlurmJobStatus::Failed,
+        "CANCELLED" => SlurmJobStatus::Cancelled,
+        "TIMEOUT" => SlurmJobStatus::Timeout,
+        "PREEMPTED" => SlurmJobStatus::Preempted,
+        "RUNNING" => SlurmJobStatus::Running,
+        _ => SlurmJobStatus::Submitted,
+    })
+}
+
+fn synthesize_remote_result(
+    request: &SlurmExecutionRequest,
+    paths: &SystemSlurmPaths,
+    terminal_status: SlurmJobStatus,
+    submitted_unix_ms: u128,
+) -> RemoteNodeExecutionResult {
+    let failure = match terminal_status {
+        SlurmJobStatus::Timeout => Some(crate::FailureInfo::new(
+            FailureClass::Timeout,
+            "Timeout",
+            "SLURM_TIMEOUT",
+            "slurm job exceeded its walltime",
+            None,
+        )),
+        SlurmJobStatus::Cancelled => Some(crate::FailureInfo::new(
+            FailureClass::Execution,
+            "Execution",
+            "EXEC_CANCELLED",
+            "slurm job was cancelled",
+            None,
+        )),
+        SlurmJobStatus::Preempted => Some(crate::FailureInfo::new(
+            FailureClass::Infrastructure,
+            "Infrastructure",
+            "SLURM_PREEMPTED",
+            "slurm job was preempted",
+            None,
+        )),
+        SlurmJobStatus::Completed => None,
+        _ => Some(crate::FailureInfo::new(
+            FailureClass::Execution,
+            "Execution",
+            "SLURM_JOB_FAILED",
+            "slurm job failed before writing a node result payload",
+            None,
+        )),
+    };
+    let status = match terminal_status {
+        SlurmJobStatus::Completed => NodeStatus::Success,
+        SlurmJobStatus::Cancelled => NodeStatus::Cancelled,
+        _ => NodeStatus::Failed,
+    };
+    RemoteNodeExecutionResult {
+        identity: request.payload.identity.clone(),
+        node_result: NodeResult {
+            status,
+            stdout_path: paths.stdout_path.display().to_string(),
+            stderr_path: paths.stderr_path.display().to_string(),
+            outputs_dir: Path::new(&request.payload.workspace.out_base)
+                .join(format!("run.tmp-{}", request.payload.identity.run_id))
+                .join("nodes")
+                .join(&request.payload.identity.node_id)
+                .join("outputs")
+                .display()
+                .to_string(),
+            output_evidence: Vec::new(),
+            failure,
+            attempts: 1,
+            attempt_events: Vec::new(),
+            container_meta: None,
+            adapter_binary_sha256: None,
+        },
+        started_unix_ms: submitted_unix_ms,
+        finished_unix_ms: current_unix_ms(),
+    }
+}
+
+fn current_unix_ms() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis())
+        .unwrap_or(0)
+}
+
+fn shell_quote(value: &str) -> String {
+    let escaped = value.replace('\'', "'\"'\"'");
+    format!("'{escaped}'")
 }
 
 fn slurm_tag_value(tags: &[String], key: &str) -> Option<String> {
