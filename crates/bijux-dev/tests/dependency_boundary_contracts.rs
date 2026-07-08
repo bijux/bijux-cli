@@ -120,6 +120,7 @@ fn core_dependencies_match_kernel_allowed_list() {
 #[test]
 fn runtime_dependencies_match_runtime_allowed_list() {
     let allowed: BTreeSet<String> = [
+        "base64",
         "bijux-dag-artifacts",
         "bijux-dag-core",
         "chrono",
@@ -127,6 +128,8 @@ fn runtime_dependencies_match_runtime_allowed_list() {
         "croner",
         "ctrlc",
         "hex",
+        "flate2",
+        "reqwest",
         "serde",
         "serde_json",
         "sha2",

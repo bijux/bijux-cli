@@ -46,7 +46,7 @@ pub mod composition;
 pub mod contract;
 #[doc(hidden)]
 #[path = "graph/dynamic.rs"]
-pub mod dynamic;
+mod dynamic;
 #[doc(hidden)]
 #[path = "graph/edge.rs"]
 pub mod edge;

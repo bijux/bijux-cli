@@ -103,7 +103,6 @@ fn looks_like_path_reference(candidate: &str) -> bool {
         "makes/",
         "pipeline/",
         "planner/",
-        "scripts/",
         "src/",
         "templates/",
         "tools/",

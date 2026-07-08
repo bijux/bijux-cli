@@ -126,7 +126,7 @@ mod tests {
     use std::path::PathBuf;
 
     fn quiet_json_cli() -> DagCli {
-        DagCli::parse_from(["bijux-dag", "--json", "validate", "placeholder.json"])
+        DagCli::parse_from(["bijux-dag", "--json", "validate", "graph.json"])
     }
 
     fn write_graph_fixture() -> (tempfile::TempDir, PathBuf) {

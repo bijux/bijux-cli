@@ -1039,6 +1039,546 @@
       "why_exists": "provide app integration plugin manifest fixture used by release and integration scenarios"
     },
     {
+      "canonical_location": "evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "canonical_path": "evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "branching-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "branching-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide a branching bulletin authoring reference that exercises conditional routing, skipped lanes, and retained publish outputs"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/audience-branch-source/team-update.md",
+      "canonical_path": "evidence/authoring/examples/audience-branch-source/team-update.md",
+      "consumer_surfaces": [
+        "branching-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "branching-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/audience-branch-source/team-update.md",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/audience-branch-source/team-update.md",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide the retained source note consumed by the branching bulletin authoring example and branch workflow contracts"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
+      "canonical_path": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "policy-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "policy-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide a policy-gated bulletin authoring reference that exercises compliance checks before publication"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/compliance-gated-source/team-update.md",
+      "canonical_path": "evidence/authoring/examples/compliance-gated-source/team-update.md",
+      "consumer_surfaces": [
+        "policy-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "policy-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/compliance-gated-source/team-update.md",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/compliance-gated-source/team-update.md",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide the retained source note consumed by the compliance-gated bulletin authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/file-processing-report.dag.json",
+      "canonical_path": "evidence/authoring/examples/file-processing-report.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "file-processing-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "file-processing-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/file-processing-report.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/file-processing-report.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide an executable authoring reference for file ingestion, transformation, and promotable report output flows"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/file-processing-source/alpha.txt",
+      "canonical_path": "evidence/authoring/examples/file-processing-source/alpha.txt",
+      "consumer_surfaces": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/file-processing-source/alpha.txt",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/file-processing-source/alpha.txt",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide a retained source file used by the file-processing authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/file-processing-source/beta.txt",
+      "canonical_path": "evidence/authoring/examples/file-processing-source/beta.txt",
+      "consumer_surfaces": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/file-processing-source/beta.txt",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/file-processing-source/beta.txt",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide a retained source file used by the file-processing authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/file-processing-source/gamma.txt",
+      "canonical_path": "evidence/authoring/examples/file-processing-source/gamma.txt",
+      "consumer_surfaces": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/file-processing-source/gamma.txt",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/file-processing-source/gamma.txt",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide a retained source file used by the file-processing authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "canonical_path": "evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "scheduler-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "scheduler-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide an executable authoring reference for historical catalog backfill workflows"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "canonical_path": "evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "data-pipeline-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "data-pipeline-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide a typed-input authoring reference for regional sales transformation and reporting flows"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/regional-sales-source/orders.csv",
+      "canonical_path": "evidence/authoring/examples/regional-sales-source/orders.csv",
+      "consumer_surfaces": [
+        "data-pipeline-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "data-pipeline-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/regional-sales-source/orders.csv",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/regional-sales-source/orders.csv",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide retained order input data for the regional sales pipeline authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/regional-sales-source/targets.json",
+      "canonical_path": "evidence/authoring/examples/regional-sales-source/targets.json",
+      "consumer_surfaces": [
+        "data-pipeline-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "data-pipeline-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/regional-sales-source/targets.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/regional-sales-source/targets.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide retained target input data for the regional sales pipeline authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/release-note-bundle.dag.json",
+      "canonical_path": "evidence/authoring/examples/release-note-bundle.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "publishing-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "publishing-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/release-note-bundle.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/release-note-bundle.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide an executable authoring reference for bundling and promoting release notes"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/release-note-source/weekly-update.md",
+      "canonical_path": "evidence/authoring/examples/release-note-source/weekly-update.md",
+      "consumer_surfaces": [
+        "publishing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "publishing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/release-note-source/weekly-update.md",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/release-note-source/weekly-update.md",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide the retained markdown source consumed by the release-note bundle authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
+      "canonical_path": "evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "scheduler-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "scheduler-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide an executable authoring reference for scheduled catalog refresh workflows"
+    },
+    {
       "canonical_location": "evidence/authoring/examples/cached-branched-report.dag.json",
       "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
       "consumer_surfaces": [
