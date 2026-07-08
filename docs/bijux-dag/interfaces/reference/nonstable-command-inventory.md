@@ -17,11 +17,6 @@ Stable commands belong in
 [`../generated-cli-reference.md`](../generated-cli-reference.md). This page is
 only for deliberate access to experimental, simulated, or internal routes.
 
-For retained-run recovery specifically, `runtime repair` is the repository
-owned internal lane that can rebuild metadata, restore exact outputs from a
-still-verified cache entry, and fall back to a child rerun when in-place
-recovery is not trustworthy enough.
-
 ## Experimental Routes
 
 Callable by explicit path and repository-tested, but intentionally excluded from the stable public operator surface.
@@ -350,4 +345,5 @@ Maintainer-only and contract-only routes. Execution requires `BIJUX_DAG_ENABLE_I
 | `security trust-classes` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
 | `semantic-portability` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
 | `version-inspect` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
+
 

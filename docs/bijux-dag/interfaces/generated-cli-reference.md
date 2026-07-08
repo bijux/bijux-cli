@@ -604,10 +604,10 @@ Options:
 bijux-dag run ${GRAPH} --out ${RUNS_ROOT} --input source=artifacts/bijux-dag/input.txt --progress compact
 ```
 
-- Run the same workflow in machine-readable mode:
+- Run the same workflow in machine-readable mode with streamed progress snapshots:
 
 ```bash
-bijux-dag --json run ${GRAPH} --out ${RUNS_ROOT} --input source=artifacts/bijux-dag/input.txt
+bijux-dag --json run ${GRAPH} --out ${RUNS_ROOT} --input source=artifacts/bijux-dag/input.txt --progress compact
 ```
 
 ### Help
