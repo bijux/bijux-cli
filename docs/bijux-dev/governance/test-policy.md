@@ -9,21 +9,15 @@ last_reviewed: 2026-07-07
 
 # Test Policy
 
-Test policy defines what verification is required before maintainer-facing
-claims are considered reliable.
+Use this page when you need the maintainer answer to a simple question: what
+verification has to pass before repository-facing claims are worth trusting?
 
 Command ownership and visible maintainer entrypoints are governed by
 `contracts/foundation/maintainer_command_surface.v1.json`.
 
-## Visual Summary
-
-```mermaid
-flowchart LR
-    unit[unit and module tests] --> suite[maintainer suite tests]
-    suite --> workspace[workspace program tests]
-    workspace --> docs[docs integrity checks]
-    docs --> approval[approval readiness]
-```
+Maintainer tooling is allowed to summarize health, release readiness, and
+policy status only because the repository keeps executable evidence behind
+those claims.
 
 ## Test Layers
 
@@ -45,6 +39,21 @@ flowchart LR
 - maintainer-only refresh work must use an explicit command path such as
   `bijux-dev-cli docs write-dag-cli-reference` rather than an ignored test
 
+## What This Policy Protects
+
+| Surface | Why the tests matter |
+| --- | --- |
+| maintainer commands | they should not claim health they cannot prove |
+| release gates | they decide whether a commit is fit for publication |
+| ignored-test governance | it stops nonstable or flaky coverage from silently becoming normal |
+| docs-backed operations | they keep handbook claims tied to real executable checks |
+
+## Reader Shortcut
+
+If a maintainer claim changes but the corresponding verification lane does not,
+that is a policy smell. The test surface and the documentation surface should
+move together.
+
 ## Code Anchors
 
 - `crates/bijux-dev/tests/`
@@ -52,7 +61,7 @@ flowchart LR
 - `crates/bijux-dev/src/suites/test.rs`
 - `makes/rust.mk`
 
-## Next Reads
+## Continue Reading
 
 - [Quality Policy](quality-policy.md)
 - [Known Limitations](known-limitations.md)
