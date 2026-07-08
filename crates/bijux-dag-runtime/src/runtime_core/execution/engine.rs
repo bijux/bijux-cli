@@ -2814,6 +2814,7 @@ pub fn execute(
                     NodeStatus::Cancelled => (node_id.clone(), "cancelled".to_string()),
                 })
                 .collect(),
+            decision_reason,
             failure_propagation_mode: crate::failure_mode_name(&options.failure_propagation)
                 .to_string(),
             dependency_closure_enabled: options.partial_rerun_dependency_closure,

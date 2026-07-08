@@ -431,6 +431,7 @@ fn checkpoint_replay_reconstructs_ready_and_completed_state() {
             ("a".to_string(), "success".to_string()),
             ("b".to_string(), "cached".to_string()),
         ]),
+        decision_reason: "ready_batch".to_string(),
         failure_propagation_mode: "isolate_branch".to_string(),
         dependency_closure_enabled: true,
         generated_unix_ms: 42,
@@ -438,6 +439,47 @@ fn checkpoint_replay_reconstructs_ready_and_completed_state() {
     let state = replay_scheduler_checkpoint(&plan, &checkpoint).expect("replay");
     assert_eq!(state.ready_snapshot(), vec!["c".to_string()]);
     assert!(scheduler_invariant_violations(&state).is_empty());
+}
+
+#[test]
+fn checkpoint_deserialization_preserves_recorded_decision_reason() {
+    let checkpoint: ExecutionCheckpoint = serde_json::from_value(serde_json::json!({
+        "loop_index": 7,
+        "ready_queue_depth": 2,
+        "ready_queue": ["publish", "archive"],
+        "inflight": ["build"],
+        "scheduled": ["build"],
+        "blocked_by_budget": ["notify"],
+        "blocked_reasons": {"notify": "memory budget exhausted"},
+        "completed_statuses": {"extract": "success"},
+        "decision_reason": "ready_batch",
+        "failure_propagation_mode": "continue_independent",
+        "dependency_closure_enabled": false,
+        "generated_unix_ms": 100
+    }))
+    .expect("checkpoint");
+
+    assert_eq!(checkpoint.decision_reason, "ready_batch");
+}
+
+#[test]
+fn checkpoint_deserialization_defaults_missing_legacy_decision_reason() {
+    let checkpoint: ExecutionCheckpoint = serde_json::from_value(serde_json::json!({
+        "loop_index": 7,
+        "ready_queue_depth": 0,
+        "ready_queue": [],
+        "inflight": [],
+        "scheduled": [],
+        "blocked_by_budget": [],
+        "blocked_reasons": {},
+        "completed_statuses": {},
+        "failure_propagation_mode": "fail_fast",
+        "dependency_closure_enabled": false,
+        "generated_unix_ms": 100
+    }))
+    .expect("checkpoint");
+
+    assert_eq!(checkpoint.decision_reason, "not_recorded");
 }
 
 #[test]

@@ -572,9 +572,15 @@ pub struct ExecutionCheckpoint {
     pub blocked_by_budget: Vec<String>,
     pub blocked_reasons: BTreeMap<String, String>,
     pub completed_statuses: BTreeMap<String, String>,
+    #[serde(default = "default_checkpoint_decision_reason")]
+    pub decision_reason: String,
     pub failure_propagation_mode: String,
     pub dependency_closure_enabled: bool,
     pub generated_unix_ms: u128,
+}
+
+fn default_checkpoint_decision_reason() -> String {
+    "not_recorded".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
