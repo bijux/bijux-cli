@@ -1,4 +1,5 @@
 use crate::integrity_service::verify_run;
+use crate::run_data::env_cache_dir;
 use crate::read_run_id;
 use crate::replay_service::{
     node_rerun_diff_report, verify_replay_boundary_inputs, ReplayBoundaryVerificationReport,
@@ -6,9 +7,11 @@ use crate::replay_service::{
 use crate::run_data::load_snapshot;
 use crate::{read_file, ExitCode, Runtime};
 use bijux_dag_artifacts::{
-    sha256_artifact_path, AdapterInfo, Manifest, NodeCounts, NodeTrace, OutputSummary, PolicyInfo,
-    RunMetadata, RunOutputsIndex, RunSummary,
+    sha256_artifact_path, write_run_outputs_index, AdapterInfo, Manifest, NodeCounts, NodeTrace,
+    OutputSummary, OutputsIndex, PolicyInfo, RunMetadata, RunOutputFile, RunOutputsIndex,
+    RunSummary,
 };
+use crate::cache::verify_cache_entry_cli;
 use bijux_dag_core::Graph;
 use bijux_dag_runtime::{
     CacheMode, MaterializeMode, PolicyConfig, RunSnapshot, RunState, RuntimeConfig, SchedulerPolicy,
@@ -26,6 +29,7 @@ pub(crate) struct RepairExecutionOptions {
     pub(crate) jobs: usize,
     pub(crate) materialize_inputs: MaterializeMode,
     pub(crate) cache_mode: CacheMode,
+    pub(crate) cache_dir: Option<PathBuf>,
     pub(crate) remote_cache_dir: Option<PathBuf>,
 }
 
@@ -58,6 +62,7 @@ pub(crate) struct RunRepairIssue {
 pub(crate) enum RunRepairActionKind {
     RebuildManifest,
     RebuildRunLogIndex,
+    RestoreFromCache,
     RerunDownstreamClosure,
     VerifyRepairRun,
 }
@@ -84,6 +89,17 @@ pub(crate) struct RunRepairMetadataReport {
     pub(crate) notes: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub(crate) struct RunRepairCacheRecovery {
+    pub(crate) node_id: String,
+    pub(crate) cache_key: String,
+    pub(crate) cache_entry_path: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) restored_outputs: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) restored_paths: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct RunRepairExecutionReport {
     pub(crate) out_dir: String,
@@ -105,6 +121,10 @@ pub(crate) struct RunRepairReport {
     pub(crate) metadata: RunRepairMetadataReport,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(crate) issues: Vec<RunRepairIssue>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) cache_recovery_candidates: Vec<RunRepairCacheRecovery>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) cache_recoveries_applied: Vec<RunRepairCacheRecovery>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(crate) repair_roots: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -129,6 +149,7 @@ struct RepairAnalysis {
     manifest: Option<Manifest>,
     run_snapshot: Option<RunSnapshot>,
     issues: Vec<RunRepairIssue>,
+    cache_recovery_candidates: Vec<RunRepairCacheRecovery>,
     repair_roots: Vec<String>,
     invalidated_nodes: Vec<String>,
     proposed_actions: Vec<RunRepairAction>,
@@ -142,29 +163,65 @@ struct RepairNodeContext {
     outputs_index: Option<bijux_dag_artifacts::OutputsIndex>,
 }
 
-pub(crate) fn plan_run_repair(run_dir: &Path) -> Result<RunRepairReport, ExitCode> {
-    let analysis = analyze_run_repair(run_dir)?;
-    Ok(analysis_into_report(run_dir, analysis, None))
+pub(crate) fn plan_run_repair(
+    run_dir: &Path,
+    cache_dir: Option<PathBuf>,
+    remote_cache_dir: Option<PathBuf>,
+) -> Result<RunRepairReport, ExitCode> {
+    let analysis = analyze_run_repair(run_dir, cache_dir, remote_cache_dir)?;
+    Ok(analysis_into_report(run_dir, analysis, None, Vec::new()))
 }
 
 pub(crate) fn apply_run_repair(
     run_dir: &Path,
     options: &RepairExecutionOptions,
 ) -> Result<RunRepairReport, ExitCode> {
-    let mut analysis = analyze_run_repair(run_dir)?;
+    let mut analysis =
+        analyze_run_repair(run_dir, options.cache_dir.clone(), options.remote_cache_dir.clone())?;
     let metadata = repair_metadata(run_dir)?;
     analysis.metadata = metadata;
+    let mut cache_recoveries_applied = Vec::new();
+
+    if !analysis.cache_recovery_candidates.is_empty() {
+        cache_recoveries_applied =
+            apply_cache_recoveries(run_dir, &analysis.cache_recovery_candidates)?;
+        if !cache_recoveries_applied.is_empty() {
+            rebuild_run_outputs_index_from_run_dir(run_dir)?;
+            let metadata = repair_metadata(run_dir)?;
+            analysis = analyze_run_repair(
+                run_dir,
+                options.cache_dir.clone(),
+                options.remote_cache_dir.clone(),
+            )?;
+            analysis.metadata = metadata;
+        }
+    }
 
     if analysis.repair_roots.is_empty() {
-        return Ok(analysis_into_report(run_dir, analysis, None));
+        return Ok(analysis_into_report(
+            run_dir,
+            analysis,
+            None,
+            cache_recoveries_applied,
+        ));
     }
     let out_dir = resolve_repair_out_dir(run_dir, options)?;
     if !analysis.blocking_issues.is_empty() {
-        return Ok(analysis_into_report(run_dir, analysis, None));
+        return Ok(analysis_into_report(
+            run_dir,
+            analysis,
+            None,
+            cache_recoveries_applied,
+        ));
     }
     let boundary = analysis.boundary_verification.clone().ok_or_else(|| ExitCode::from(3))?;
     if !boundary.verified {
-        return Ok(analysis_into_report(run_dir, analysis, None));
+        return Ok(analysis_into_report(
+            run_dir,
+            analysis,
+            None,
+            cache_recoveries_applied,
+        ));
     }
     let graph = analysis.graph.as_ref().ok_or_else(|| ExitCode::from(3))?;
     let runtime = Runtime::new();
@@ -195,7 +252,12 @@ pub(crate) fn apply_run_repair(
         verified,
         node_rerun_diffs,
     };
-    Ok(analysis_into_report(run_dir, analysis, Some(execution)))
+    Ok(analysis_into_report(
+        run_dir,
+        analysis,
+        Some(execution),
+        cache_recoveries_applied,
+    ))
 }
 
 pub(crate) fn run_repair_ok(report: &RunRepairReport, apply: bool) -> bool {
@@ -219,6 +281,7 @@ fn analysis_into_report(
     run_dir: &Path,
     analysis: RepairAnalysis,
     repair_run: Option<RunRepairExecutionReport>,
+    cache_recoveries_applied: Vec<RunRepairCacheRecovery>,
 ) -> RunRepairReport {
     RunRepairReport {
         run_id: analysis.run_id,
@@ -227,6 +290,8 @@ fn analysis_into_report(
         incomplete_marker_present: analysis.incomplete_marker_present,
         metadata: analysis.metadata,
         issues: analysis.issues,
+        cache_recovery_candidates: analysis.cache_recovery_candidates,
+        cache_recoveries_applied,
         repair_roots: analysis.repair_roots,
         invalidated_nodes: analysis.invalidated_nodes,
         proposed_actions: analysis.proposed_actions,
@@ -236,7 +301,11 @@ fn analysis_into_report(
     }
 }
 
-fn analyze_run_repair(run_dir: &Path) -> Result<RepairAnalysis, ExitCode> {
+fn analyze_run_repair(
+    run_dir: &Path,
+    cache_dir: Option<PathBuf>,
+    remote_cache_dir: Option<PathBuf>,
+) -> Result<RepairAnalysis, ExitCode> {
     let metadata = inspect_metadata(run_dir)?;
     let incomplete_marker_present = run_dir.join(".run-incomplete.json").exists();
     let run_snapshot = read_run_snapshot(run_dir)?;
@@ -428,8 +497,19 @@ fn analyze_run_repair(run_dir: &Path) -> Result<RepairAnalysis, ExitCode> {
     });
     issues.dedup();
 
-    let repair_roots =
-        if let Some(graph) = graph_ref { minimal_repair_roots(graph, &issues) } else { Vec::new() };
+    let cache_recovery_candidates = collect_cache_recovery_candidates(
+        manifest.as_ref(),
+        &node_contexts,
+        &issues,
+        cache_dir,
+        remote_cache_dir,
+    );
+
+    let repair_roots = if let Some(graph) = graph_ref {
+        minimal_repair_roots(graph, &issues, &cache_recovery_candidates)
+    } else {
+        Vec::new()
+    };
     let invalidated_nodes = if let Some(graph) = graph_ref {
         let mut nodes = bijux_dag_runtime::compute_downstream_run_closure(graph, &repair_roots)
             .into_iter()
@@ -444,8 +524,13 @@ fn analyze_run_repair(run_dir: &Path) -> Result<RepairAnalysis, ExitCode> {
     } else {
         None
     };
-    let proposed_actions =
-        build_proposed_actions(&metadata, &repair_roots, &invalidated_nodes, !issues.is_empty());
+    let proposed_actions = build_proposed_actions(
+        &metadata,
+        &cache_recovery_candidates,
+        &repair_roots,
+        &invalidated_nodes,
+        !issues.is_empty(),
+    );
 
     Ok(RepairAnalysis {
         run_id,
@@ -456,6 +541,7 @@ fn analyze_run_repair(run_dir: &Path) -> Result<RepairAnalysis, ExitCode> {
         manifest,
         run_snapshot,
         issues,
+        cache_recovery_candidates,
         repair_roots,
         invalidated_nodes,
         proposed_actions,
@@ -466,6 +552,7 @@ fn analyze_run_repair(run_dir: &Path) -> Result<RepairAnalysis, ExitCode> {
 
 fn build_proposed_actions(
     metadata: &RunRepairMetadataReport,
+    cache_recovery_candidates: &[RunRepairCacheRecovery],
     repair_roots: &[String],
     invalidated_nodes: &[String],
     has_issues: bool,
@@ -487,6 +574,19 @@ fn build_proposed_actions(
             affected_nodes: Vec::new(),
         });
     }
+    let cache_restorable_nodes = cache_recovery_candidates
+        .iter()
+        .map(|candidate| candidate.node_id.clone())
+        .collect::<Vec<_>>();
+    if !cache_restorable_nodes.is_empty() {
+        actions.push(RunRepairAction {
+            kind: RunRepairActionKind::RestoreFromCache,
+            summary: "restore exact cached outputs for nodes whose retained cache proof still verifies"
+                .to_string(),
+            node_roots: cache_restorable_nodes.clone(),
+            affected_nodes: cache_restorable_nodes,
+        });
+    }
     if has_issues && !repair_roots.is_empty() {
         actions.push(RunRepairAction {
             kind: RunRepairActionKind::RerunDownstreamClosure,
@@ -506,7 +606,15 @@ fn build_proposed_actions(
     actions
 }
 
-fn minimal_repair_roots(graph: &Graph, issues: &[RunRepairIssue]) -> Vec<String> {
+fn minimal_repair_roots(
+    graph: &Graph,
+    issues: &[RunRepairIssue],
+    cache_recovery_candidates: &[RunRepairCacheRecovery],
+) -> Vec<String> {
+    let cache_recovered_nodes = cache_recovery_candidates
+        .iter()
+        .map(|entry| entry.node_id.as_str())
+        .collect::<BTreeSet<_>>();
     let mut candidates = issues
         .iter()
         .filter(|issue| {
@@ -519,6 +627,7 @@ fn minimal_repair_roots(graph: &Graph, issues: &[RunRepairIssue]) -> Vec<String>
                     | RunRepairIssueKind::MissingRunOutputsIndexEntry
             )
         })
+        .filter(|issue| !cache_recovered_nodes.contains(issue.node_id.as_str()))
         .map(|issue| issue.node_id.clone())
         .collect::<BTreeSet<_>>()
         .into_iter()
@@ -605,6 +714,7 @@ fn build_repair_runtime_options(
         jobs: options.jobs.max(1),
         materialize_inputs: options.materialize_inputs,
         cache_mode: options.cache_mode.clone(),
+        cache_dir: options.cache_dir.clone(),
         remote_cache_dir: options.remote_cache_dir.clone(),
         run_root: out_dir,
         run_id: options.run_id.clone(),
@@ -671,6 +781,173 @@ fn collect_node_contexts(run_dir: &Path) -> Result<BTreeMap<String, RepairNodeCo
         contexts.insert(node_id, RepairNodeContext { trace, outputs_index });
     }
     Ok(contexts)
+}
+
+fn collect_cache_recovery_candidates(
+    manifest: Option<&Manifest>,
+    node_contexts: &BTreeMap<String, RepairNodeContext>,
+    issues: &[RunRepairIssue],
+    cache_dir: Option<PathBuf>,
+    remote_cache_dir: Option<PathBuf>,
+) -> Vec<RunRepairCacheRecovery> {
+    let candidate_node_ids = issues
+        .iter()
+        .filter(|issue| {
+            matches!(
+                issue.kind,
+                RunRepairIssueKind::MissingOutput
+                    | RunRepairIssueKind::CorruptArtifact
+                    | RunRepairIssueKind::MissingOutputsIndex
+                    | RunRepairIssueKind::MissingRunOutputsIndexEntry
+            )
+        })
+        .map(|issue| issue.node_id.clone())
+        .collect::<BTreeSet<_>>();
+    let cache_dirs =
+        resolve_cache_recovery_dirs(manifest, cache_dir.as_deref(), remote_cache_dir.as_deref());
+    let mut recoveries = Vec::new();
+    for node_id in candidate_node_ids {
+        let Some(trace) = node_contexts.get(&node_id).and_then(|entry| entry.trace.as_ref()) else {
+            continue;
+        };
+        let Some(cache_identity) = trace.cache_identity.as_ref() else {
+            continue;
+        };
+        for cache_root in &cache_dirs {
+            let entry = cache_root.join(&cache_identity.cache_key);
+            if !entry.is_dir() {
+                continue;
+            }
+            let verified = verify_cache_entry_cli(
+                &entry,
+                &cache_identity.cache_key,
+                &trace.adapter_id,
+                &trace.adapter_version,
+            )
+            .unwrap_or(false);
+            if !verified {
+                continue;
+            }
+            let Ok(index) = read_typed_json::<OutputsIndex>(&entry.join("outputs").join("index.json"))
+            else {
+                continue;
+            };
+            let mut restored_outputs =
+                index.files.iter().map(|file| file.name.clone()).collect::<BTreeSet<_>>().into_iter().collect::<Vec<_>>();
+            restored_outputs.sort();
+            let mut restored_paths =
+                index.files.iter().map(|file| file.path.clone()).collect::<Vec<_>>();
+            restored_paths.sort();
+            recoveries.push(RunRepairCacheRecovery {
+                node_id: node_id.clone(),
+                cache_key: cache_identity.cache_key.clone(),
+                cache_entry_path: entry.display().to_string(),
+                restored_outputs,
+                restored_paths,
+            });
+            break;
+        }
+    }
+    recoveries.sort_by(|left, right| left.node_id.cmp(&right.node_id));
+    recoveries
+}
+
+fn resolve_cache_recovery_dirs(
+    manifest: Option<&Manifest>,
+    cache_dir: Option<&Path>,
+    remote_cache_dir: Option<&Path>,
+) -> Vec<PathBuf> {
+    let mut dirs = Vec::new();
+    if let Some(path) = cache_dir {
+        dirs.push(path.to_path_buf());
+    }
+    if let Some(path) = manifest.and_then(|entry| entry.cache_dir.as_deref()).map(PathBuf::from) {
+        dirs.push(path);
+    }
+    if let Some(path) = env_cache_dir() {
+        dirs.push(path);
+    }
+    if let Some(path) = remote_cache_dir {
+        dirs.push(path.to_path_buf());
+    }
+    let mut seen = BTreeSet::new();
+    dirs.retain(|path| seen.insert(path.clone()));
+    dirs
+}
+
+fn apply_cache_recoveries(
+    run_dir: &Path,
+    recoveries: &[RunRepairCacheRecovery],
+) -> Result<Vec<RunRepairCacheRecovery>, ExitCode> {
+    let mut applied = Vec::new();
+    for recovery in recoveries {
+        let cache_outputs_dir = Path::new(&recovery.cache_entry_path).join("outputs");
+        let target_dir = run_dir.join("nodes").join(&recovery.node_id).join("outputs");
+        if target_dir.exists() {
+            fs::remove_dir_all(&target_dir).map_err(|_| ExitCode::from(3))?;
+        }
+        copy_dir_recursive(&cache_outputs_dir, &target_dir)?;
+        applied.push(recovery.clone());
+    }
+    Ok(applied)
+}
+
+fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), ExitCode> {
+    let metadata = fs::symlink_metadata(src).map_err(|_| ExitCode::from(3))?;
+    if metadata.file_type().is_symlink() {
+        return Err(ExitCode::from(3));
+    }
+    if metadata.is_file() {
+        if let Some(parent) = dst.parent() {
+            fs::create_dir_all(parent).map_err(|_| ExitCode::from(3))?;
+        }
+        fs::copy(src, dst).map_err(|_| ExitCode::from(3))?;
+        return Ok(());
+    }
+    fs::create_dir_all(dst).map_err(|_| ExitCode::from(3))?;
+    let mut entries =
+        fs::read_dir(src).map_err(|_| ExitCode::from(3))?.filter_map(Result::ok).collect::<Vec<_>>();
+    entries.sort_by_key(|entry| entry.file_name());
+    for entry in entries {
+        copy_dir_recursive(&entry.path(), &dst.join(entry.file_name()))?;
+    }
+    Ok(())
+}
+
+fn rebuild_run_outputs_index_from_run_dir(run_dir: &Path) -> Result<(), ExitCode> {
+    let mut files = Vec::new();
+    let nodes_dir = run_dir.join("nodes");
+    if nodes_dir.exists() {
+        let mut entries = fs::read_dir(&nodes_dir)
+            .map_err(|_| ExitCode::from(3))?
+            .filter_map(Result::ok)
+            .collect::<Vec<_>>();
+        entries.sort_by_key(|entry| entry.file_name());
+        for entry in entries {
+            let node_id = entry.file_name().to_string_lossy().to_string();
+            let index_path = entry.path().join("outputs").join("index.json");
+            if !index_path.exists() {
+                continue;
+            }
+            let index: OutputsIndex = read_typed_json(&index_path)?;
+            for file in index.files {
+                files.push(RunOutputFile {
+                    node_id: file.node_id,
+                    node_fingerprint: file.node_fingerprint,
+                    name: file.name,
+                    kind: file.kind,
+                    media_type: file.media_type,
+                    size_bytes: file.size_bytes,
+                    sha256: file.sha256,
+                    path: format!("nodes/{node_id}/outputs/{}", file.path),
+                    promotable: file.promotable,
+                });
+            }
+        }
+    }
+    files.sort_by(|left, right| left.path.cmp(&right.path));
+    write_run_outputs_index(run_dir.join("outputs"), &RunOutputsIndex { files })
+        .map_err(|_| ExitCode::from(3))
 }
 
 fn read_manifest_tolerant(run_dir: &Path) -> Result<Option<Manifest>, ExitCode> {
@@ -954,10 +1231,13 @@ fn read_json_value(path: &Path) -> Result<Value, ExitCode> {
 mod tests {
     use super::{plan_run_repair, RepairExecutionOptions, RunRepairIssueKind};
     use crate::ExitCode;
-    use bijux_dag_runtime::{CacheMode, MaterializeMode};
+    use bijux_dag_runtime::{
+        cache_key_explanation, CacheKeyInput, CacheMode, MaterializeMode,
+        CACHE_ENTRY_MANIFEST_VERSION, CACHE_METADATA_VERSION,
+    };
     use serde_json::json;
     use std::fs;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
     fn write_basic_run_snapshot(path: &Path, run_id: &str, selected_nodes: &[&str]) {
         fs::write(
@@ -983,6 +1263,195 @@ mod tests {
             .expect("snapshot"),
         )
         .expect("write snapshot");
+    }
+
+    fn write_cache_recoverable_render_run(root: &Path) -> (PathBuf, String) {
+        let cache_dir = root.join("cache");
+        let render_dir = root.join("nodes").join("render").join("outputs").join("render");
+        fs::create_dir_all(&render_dir).expect("render outputs");
+        fs::create_dir_all(root.join("outputs")).expect("run outputs");
+        fs::create_dir_all(&cache_dir).expect("cache dir");
+
+        fs::write(
+            root.join("graph.snapshot.json"),
+            serde_json::to_vec_pretty(&json!({
+                "graph": {
+                    "spec": "bijux-dag/v0.1",
+                    "nodes": [
+                        {
+                            "id": "render",
+                            "kind": "const",
+                            "outputs": [{"name":"html","path":"render/report.html","required":true}],
+                            "params": {"value":"healthy-html"}
+                        }
+                    ],
+                    "edges": []
+                },
+                "graph_fingerprint": "repair-fp"
+            }))
+            .expect("graph snapshot"),
+        )
+        .expect("write graph snapshot");
+        write_basic_run_snapshot(root, "repair-source", &["render"]);
+
+        let healthy_html = "<h1>healthy-html</h1>\n".to_string();
+        let output_path = render_dir.join("report.html");
+        fs::write(&output_path, healthy_html.as_bytes()).expect("write render output");
+        let output_sha = bijux_dag_artifacts::sha256_artifact_path(&output_path).expect("sha");
+
+        let key_input = CacheKeyInput {
+            execution_fingerprint: "fp-render".to_string(),
+            node_definition_fingerprint: "node-def-fp".to_string(),
+            declared_environment_fingerprint: "env-fp".to_string(),
+            input_lineage_fingerprint: "input-fp".to_string(),
+            adapter_id: "const".to_string(),
+            adapter_version: "v1".to_string(),
+            output_schema_version: "schema/v1".to_string(),
+            policy_fingerprint: "policy-fp".to_string(),
+            execution_contract_fingerprint: "exec-fp".to_string(),
+            backend_class: "local".to_string(),
+        };
+        let cache_key = cache_key_explanation(&key_input).key;
+
+        fs::write(
+            root.join("manifest.json"),
+            serde_json::to_vec_pretty(&json!({
+                "run_id":"repair-source",
+                "status":"success",
+                "graph_fingerprint":"repair-fp",
+                "cache_mode":"ReadWrite",
+                "cache_dir": cache_dir.display().to_string(),
+                "policy":{"deny_network":false,"deny_env":false,"deny_clock":false,"clean_env":false}
+            }))
+            .expect("manifest"),
+        )
+        .expect("write manifest");
+        fs::write(root.join("run.log.jsonl"), "{\"event\":\"run_started\",\"ts\":1}\n")
+            .expect("write log");
+        fs::write(
+            root.join("run-log.index.json"),
+            serde_json::to_vec_pretty(&vec![json!({"event":"run_started","ts":1})]).expect("index"),
+        )
+        .expect("write log index");
+        fs::write(
+            root.join("nodes").join("render").join("trace.json"),
+            serde_json::to_vec_pretty(&json!({
+                "node_id":"render",
+                "status":"success",
+                "started_unix_ms":1,
+                "finished_unix_ms":2,
+                "attempt":1,
+                "fingerprint":"fp-render",
+                "adapter_id":"const",
+                "adapter_version":"v1",
+                "adapter_outputs_schema_version":"schema/v1",
+                "cache_identity":{
+                    "cache_key": cache_key,
+                    "node_definition_fingerprint":"node-def-fp",
+                    "declared_environment_fingerprint":"env-fp",
+                    "input_lineage_fingerprint":"input-fp",
+                    "params_fingerprint":"params-fp",
+                    "command_fingerprint":"cmd-fp",
+                    "policy_fingerprint":"policy-fp",
+                    "execution_contract_fingerprint":"exec-fp",
+                    "backend_class":"local"
+                }
+            }))
+            .expect("trace"),
+        )
+        .expect("write trace");
+        fs::write(
+            root.join("nodes").join("render").join("outputs").join("index.json"),
+            serde_json::to_vec_pretty(&json!({
+                "files": [{
+                    "name": "html",
+                    "path": "render/report.html",
+                    "kind": "file",
+                    "media_type": "text/html",
+                    "size_bytes": healthy_html.len(),
+                    "sha256": output_sha,
+                    "node_id": "render",
+                    "node_fingerprint": "fp-render"
+                }]
+            }))
+            .expect("node index"),
+        )
+        .expect("write node index");
+        fs::write(
+            root.join("outputs").join("index.json"),
+            serde_json::to_vec_pretty(&json!({ "files": [] })).expect("run outputs"),
+        )
+        .expect("write run outputs");
+
+        let cache_entry = cache_dir.join(&cache_key);
+        fs::create_dir_all(cache_entry.join("outputs").join("render")).expect("cache outputs");
+        fs::write(
+            cache_entry.join("manifest.json"),
+            serde_json::to_vec_pretty(&json!({
+                "manifest_version": CACHE_ENTRY_MANIFEST_VERSION,
+                "cache_key": cache_key,
+                "node_id": "render",
+                "outputs": [{
+                    "name": "html",
+                    "path": "render/report.html",
+                    "kind": "file",
+                    "media_type": "text/html",
+                    "required": true
+                }]
+            }))
+            .expect("cache manifest"),
+        )
+        .expect("write cache manifest");
+        fs::write(
+            cache_entry.join("meta.json"),
+            serde_json::to_vec_pretty(&json!({
+                "cache_metadata_version": CACHE_METADATA_VERSION,
+                "cache_key": cache_key,
+                "node_id": "render",
+                "node_fingerprint": "fp-render",
+                "node_definition_fingerprint": "node-def-fp",
+                "declared_environment_fingerprint": "env-fp",
+                "input_lineage_fingerprint": "input-fp",
+                "params_fingerprint": "params-fp",
+                "command_fingerprint": "cmd-fp",
+                "adapter_id": "const",
+                "adapter_version": "v1",
+                "produces_outputs_schema_version": "schema/v1",
+                "policy_fingerprint": "policy-fp",
+                "execution_contract_fingerprint": "exec-fp",
+                "backend_class": "local",
+                "created_unix_ms": 1,
+                "cache_source": "local",
+                "schema_version": "v0.1"
+            }))
+            .expect("cache meta"),
+        )
+        .expect("write cache meta");
+        fs::write(
+            cache_entry.join("outputs").join("render").join("report.html"),
+            healthy_html.as_bytes(),
+        )
+        .expect("write cache payload");
+        fs::write(
+            cache_entry.join("outputs").join("index.json"),
+            serde_json::to_vec_pretty(&json!({
+                "files": [{
+                    "name": "html",
+                    "path": "render/report.html",
+                    "kind": "file",
+                    "media_type": "text/html",
+                    "size_bytes": healthy_html.len(),
+                    "sha256": output_sha,
+                    "node_id": "render",
+                    "node_fingerprint": "fp-render"
+                }]
+            }))
+            .expect("cache index"),
+        )
+        .expect("write cache index");
+
+        fs::write(&output_path, "<h1>corrupt-html</h1>\n").expect("corrupt output");
+        (cache_dir, healthy_html)
     }
 
     #[test]
@@ -1185,7 +1654,7 @@ mod tests {
         )
         .expect("write run outputs");
 
-        let report = plan_run_repair(dir.path()).expect("plan repair");
+        let report = plan_run_repair(dir.path(), None, None).expect("plan repair");
         assert_eq!(report.repair_roots, vec!["render".to_string()]);
         assert!(report.invalidated_nodes.iter().any(|node_id| node_id == "publish"));
         assert!(report.issues.iter().any(|issue| {
@@ -1272,10 +1741,83 @@ mod tests {
                 jobs: 1,
                 materialize_inputs: MaterializeMode::Copy,
                 cache_mode: CacheMode::Off,
+                cache_dir: None,
                 remote_cache_dir: None,
             },
         )
         .expect_err("nested output root should fail");
         assert_eq!(err, ExitCode::from(3));
+    }
+
+    #[test]
+    fn plan_run_repair_reports_exact_cache_recovery_for_corrupt_outputs() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (cache_dir, _) = write_cache_recoverable_render_run(dir.path());
+
+        let report =
+            plan_run_repair(dir.path(), Some(cache_dir.clone()), None).expect("plan repair");
+        assert!(report.issues.iter().any(|issue| {
+            issue.kind == RunRepairIssueKind::CorruptArtifact && issue.node_id == "render"
+        }));
+        assert!(report.issues.iter().any(|issue| {
+            issue.kind == RunRepairIssueKind::MissingRunOutputsIndexEntry
+                && issue.node_id == "render"
+        }));
+        assert!(report.repair_roots.is_empty(), "exact cache recovery should avoid rerun roots");
+        assert_eq!(report.cache_recovery_candidates.len(), 1);
+        assert_eq!(report.cache_recovery_candidates[0].node_id, "render");
+        assert!(
+            report.proposed_actions.iter().any(|action| {
+                action.kind == super::RunRepairActionKind::RestoreFromCache
+                    && action.node_roots == vec!["render".to_string()]
+            }),
+            "expected restore-from-cache action in repair plan"
+        );
+    }
+
+    #[test]
+    fn apply_run_repair_restores_corrupt_outputs_from_verified_cache() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (cache_dir, healthy_html) = write_cache_recoverable_render_run(dir.path());
+
+        let report = super::apply_run_repair(
+            dir.path(),
+            &RepairExecutionOptions {
+                out_dir: None,
+                run_id: None,
+                jobs: 1,
+                materialize_inputs: MaterializeMode::Copy,
+                cache_mode: CacheMode::Off,
+                cache_dir: Some(cache_dir.clone()),
+                remote_cache_dir: None,
+            },
+        )
+        .expect("apply repair");
+
+        assert!(report.issues.is_empty(), "cache restoration should clear output issues");
+        assert!(report.repair_run.is_none(), "exact cache restoration should avoid child reruns");
+        assert_eq!(report.cache_recoveries_applied.len(), 1);
+        assert_eq!(report.cache_recoveries_applied[0].node_id, "render");
+
+        let restored = fs::read_to_string(
+            dir.path()
+                .join("nodes")
+                .join("render")
+                .join("outputs")
+                .join("render")
+                .join("report.html"),
+        )
+        .expect("restored output");
+        assert_eq!(restored, healthy_html);
+
+        let run_outputs: serde_json::Value = serde_json::from_slice(
+            &fs::read(dir.path().join("outputs").join("index.json")).expect("run outputs"),
+        )
+        .expect("run outputs json");
+        assert_eq!(run_outputs["files"].as_array().map_or(0, Vec::len), 1);
+        assert_eq!(
+            run_outputs["files"][0]["path"],
+            "nodes/render/outputs/render/report.html"
+        );
     }
 }

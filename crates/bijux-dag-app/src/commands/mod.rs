@@ -949,6 +949,8 @@ pub(crate) enum RuntimeCommands {
         #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
         cache: CacheModeArg,
         #[arg(long)]
+        cache_dir: Option<PathBuf>,
+        #[arg(long)]
         remote_cache_dir: Option<PathBuf>,
     },
     Retry {

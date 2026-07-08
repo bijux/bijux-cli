@@ -681,10 +681,14 @@ pub(crate) fn handle_runtime_command(
             jobs,
             materialize_inputs,
             cache,
+            cache_dir,
             remote_cache_dir,
         } => {
             if let Some(out) = out.as_ref() {
                 require_safe_path(out)?;
+            }
+            if let Some(cache_dir) = cache_dir.as_ref() {
+                require_safe_path(cache_dir)?;
             }
             let report = if *apply {
                 apply_run_repair(
@@ -701,11 +705,12 @@ pub(crate) fn handle_runtime_command(
                             crate::commands::CacheModeArg::Read => crate::CacheMode::Read,
                             crate::commands::CacheModeArg::Readwrite => crate::CacheMode::ReadWrite,
                         },
+                        cache_dir: cache_dir.clone(),
                         remote_cache_dir: remote_cache_dir.clone(),
                     },
                 )?
             } else {
-                plan_run_repair(run_dir)?
+                plan_run_repair(run_dir, cache_dir.clone(), remote_cache_dir.clone())?
             };
             let ok = run_repair_ok(&report, *apply);
             let payload = serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?;
@@ -982,6 +987,7 @@ mod tests {
             jobs: 1,
             materialize_inputs: MaterializeModeArg::Copy,
             cache: CacheModeArg::Off,
+            cache_dir: None,
             remote_cache_dir: None,
         }
     }
