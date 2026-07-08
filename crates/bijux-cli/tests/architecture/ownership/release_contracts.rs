@@ -494,8 +494,9 @@ fn release_build_matrices_cover_cli_and_dag_release_families() {
         vec!["bijux-cli", "bijux-dag"],
         ".github/release.env must publish both CLI and DAG release families to GHCR"
     );
-    assert!(
-        release_env.contains("BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES=bijux-cli bijux-dag"),
+    assert_eq!(
+        shell_assignment_value(&release_env, "BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES").as_deref(),
+        Some("bijux-cli bijux-dag"),
         ".github/release.env must explicitly allow the CLI and DAG GHCR release families"
     );
 }
