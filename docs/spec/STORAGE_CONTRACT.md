@@ -39,17 +39,23 @@ finalized storage files when they do not become new write authorities.
 - writes to run-dir staging paths use explicit helper methods
 - storage-relative paths must reject traversal, absolute paths, and backslash
   escapes
-- missing `outputs.index.json` is a storage-health anomaly, not a silent success
+- rooted input and output authorization must reject paths that escape the
+  governed input or output tree
+- missing `outputs/index.json` is a storage-health anomaly, not a silent success
+- storage validation protects governed write paths; it does not claim a general
+  host filesystem sandbox for shell execution
 
 ## Cache rules
 
 - cache entry metadata writes are atomic
-- cache metadata must include a `fingerprint`
-- cache keys must satisfy the same storage-relative path validation rules
+- cache entry keys must satisfy the same storage-relative path validation rules
+- cache metadata must include the retained cache key and proof-compatible
+  identity inputs used by cache verification
 
 ## Related tests
 
 - `crates/bijux-dag-runtime/tests/storage_contracts.rs`
+- `crates/bijux-dag-runtime/tests/security_model_contracts.rs`
 
 ## Versioning and change policy
 

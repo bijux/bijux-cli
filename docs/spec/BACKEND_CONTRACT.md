@@ -33,6 +33,17 @@ Stable backend kinds are:
 Runtime code may model future backend kinds, but only backends with explicit
 conformance proof may participate in the current execution contract.
 
+## Boundary truth
+
+The current backend contract distinguishes capability and lifecycle ownership
+from stronger sandbox claims.
+
+- `Shell` and `Process` provide a local subprocess boundary, not a host sandbox
+- `Container` can provide stronger engine-managed mount and no-network controls,
+  but it is still not documented as a VM boundary
+- `RemoteFuture` remains modeled in the runtime and must not be treated as a
+  shipped public remote-worker security boundary without separate backend proof
+
 ## Capability binding
 
 Backends are matched through `BackendBindingRequest` and `BackendCapabilities`.
@@ -78,6 +89,10 @@ failures without collapsing them into a generic runtime error.
   accepted
 - environment shaping must remain explicit and must not leak ambient state into
   a backend that expects a controlled contract
+- `clean-env` is an environment-shaping control, not a filesystem, network, or
+  clock sandbox
+- deny flags gate declared effects before execution starts; they do not imply
+  syscall interposition after a backend has launched
 
 ## Conformance proof
 
