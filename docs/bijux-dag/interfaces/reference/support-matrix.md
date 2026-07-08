@@ -26,7 +26,8 @@ For the longer release ladder beyond the current matrix, use the
 | `capabilities` | internal | `BIJUX_DAG_ENABLE_INTERNAL=1` | maintainer-only support probe outside the public operator lane |
 | `prove`, `export`, `import`, `migrate inspect` | experimental | explicit-path routes | supported with narrower expectations |
 | control-plane, governance, incident, lab, federation, enterprise | simulated or internal | `commands --lane simulated` plus opt-in env for execution | repository proof and modeling surfaces |
-| Kubernetes, generic HPC beyond the shared-filesystem SLURM lane, public remote scheduler service | future | not part of first-hour adoption | not a `v0.4.0` product promise |
+| `run --backend kubernetes` for container nodes | stable | visible `run` surface with explicit backend selection | requires `--kubernetes-volume-claim`, `--kubernetes-shared-root`, and a shared persistent volume claim mounted into Job pods |
+| Generic HPC beyond the shared-filesystem SLURM lane, public remote scheduler service | future | not part of first-hour adoption | not a `v0.4.0` product promise |
 
 ## Primary proof
 

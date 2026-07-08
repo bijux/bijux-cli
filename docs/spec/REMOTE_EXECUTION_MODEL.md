@@ -9,8 +9,9 @@ last_reviewed: 2026-07-06
 
 # Remote Execution Model
 
-`bijux-dag` models remote execution identity and handoff contracts without
-claiming implemented production backends for Kubernetes or HPC.
+`bijux-dag` models remote execution identity and handoff contracts while
+keeping the generic public remote-worker and HPC surfaces separate from the
+implemented Kubernetes and SLURM batch lanes.
 
 ## Scope
 
@@ -24,10 +25,11 @@ status classification, and node-result payload parity exercised by
 - `local`: implemented
 - `container`: implemented local execution mode
 - `remote-worker`: simulated worker execution mode
-- `kubernetes`: not implemented
-- `hpc`: not implemented
+- `kubernetes`: implemented Kubernetes Job execution mode for container nodes
+- `slurm`: implemented shared-filesystem batch execution mode
+- `hpc`: not implemented as a generic backend family
 
-> Not implemented: production Kubernetes/HPC
+> Not implemented: generic public remote workers and generic HPC
 
 Container execution is a local engine-mediated lane. It does not imply remote
 workers, Kubernetes scheduling, or HPC submission.
@@ -82,10 +84,10 @@ container metadata.
 
 ## Maturity boundary
 
-This document governs modeled remote execution surfaces only. It does not claim
-implemented remote workers, production Kubernetes execution, or production HPC
-execution in `v0.4.0`, and it does not treat local container runs as remote
-execution.
+This document governs modeled remote-worker surfaces plus execution-mode
+classification. It does not claim implemented public remote workers or generic
+HPC execution in `v0.4.0`, and it does not treat local container runs as
+remote execution.
 
 ## Related tests
 

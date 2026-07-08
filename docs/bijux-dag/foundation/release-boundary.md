@@ -31,7 +31,7 @@ For post-`v0.4.0` direction that is not yet a release promise, use the
 | experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
 | simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
 | internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
-| future | not a `v0.4.0` product promise | cluster-backed kubernetes execution, generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
+| future | not a `v0.4.0` product promise | generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
 
 ## Stable Capabilities
 
@@ -39,6 +39,9 @@ The stable `v0.4.0` release contract covers:
 
 - local DAG validation
 - local DAG execution
+- Kubernetes Job submission through `run --backend kubernetes` for container
+  nodes, including request and limit mapping, active deadline mapping, pod
+  phase mapping, shared-volume workspace mounting, and retained batch evidence
 - shared-filesystem SLURM submission through `run --backend slurm`, including
   `sbatch` submission, `sacct` polling, and retained batch evidence
 - run and artifact evidence inspection
@@ -62,7 +65,7 @@ Inventory non-stable routes only by deliberate lane:
 - set `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` only for
   deliberate maintainer or contract workflows
 - do not treat simulated namespaces as production backends
-- do not describe future platform or scheduler work as already shipped
+- do not describe generic scheduler services or public remote workers as already shipped
 
 ## Code Anchors
 

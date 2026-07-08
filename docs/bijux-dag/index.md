@@ -54,7 +54,7 @@ None of those lanes are part of the stable operator compatibility lane.
 | experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | explicit-path operator helpers such as `init`, `status`, `export`, `migrate`, `prove`, and `trace-artifact`; use `bijux-dag commands --lane experimental` for the current inventory |
 | simulated | modeled platform namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | modeled control-plane and organizational route families; use `bijux-dag commands --lane simulated` only when you intentionally need repository-owned modeling surfaces |
 | internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | maintainer verification, schedule, runtime, release, and capability lanes; use `bijux-dag commands --lane internal` only for deliberate repository maintenance work |
-| future | not a `v0.4.0` product promise | cluster-backed kubernetes execution, generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
+| future | not a `v0.4.0` product promise | generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
 
 For the canonical operator-surface source, use
 [Release Boundary](foundation/release-boundary.md). For crate publication
@@ -65,6 +65,11 @@ For what comes after the local-first `v0.4.0` boundary, use the
 Within that boundary, `run --backend slurm` is real: it submits nodes through
 `sbatch`, polls `sacct`, and writes retained batch evidence when the scheduled
 worker can reopen the same run directory on a shared filesystem.
+
+Within that boundary, `run --backend kubernetes` is also real for container
+nodes: it submits Kubernetes Jobs through `kubectl`, mounts retained node
+inputs, outputs, and work directories through a shared persistent volume
+claim, and writes retained batch evidence per node.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/guides/first-hour-with-bijux-dag.md">Start with the first hour guide</a>

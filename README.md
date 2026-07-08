@@ -65,6 +65,10 @@ route is a public promise.
   `sacct`, and records per-node `batch-job.json` plus scheduler stdout/stderr
   evidence when the scheduled worker can reopen the same retained run
   directory on a shared filesystem.
+- `bijux-dag run --backend kubernetes` runs container nodes as Kubernetes Jobs
+  through `kubectl`, records per-node `batch-job.json`, and uses a shared
+  persistent volume claim to mount retained node inputs, outputs, and work
+  directories into the Job pod.
 - Experimental DAG routes remain callable by explicit path, but they are not
   part of the stable compatibility lane. Inventory them deliberately with
   `bijux-dag commands --lane experimental`.
@@ -76,9 +80,9 @@ route is a public promise.
   durable submission, backfill planning, aggregate backfill summary, failed-
   partition retry, queue dispatch, and queue-to-run linkage, but it remains
   outside the stable `v0.4.0` public operator contract.
-- Cluster-backed Kubernetes execution, generic HPC execution beyond the
-  shared-filesystem SLURM lane, public remote workers, and public enterprise
-  or federation APIs are not part of the `v0.4.0` public product boundary.
+- Generic HPC execution beyond the shared-filesystem SLURM lane, public remote
+  workers, and public enterprise or federation APIs are not part of the
+  `v0.4.0` public product boundary.
 
 ### `bijux-dag` v0.4.0 Surface Truth Table
 
@@ -97,7 +101,7 @@ For what comes after that boundary, use
 | experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | explicit-path operator helpers such as `init`, `status`, `export`, `migrate`, `prove`, and `trace-artifact`; use `bijux-dag commands --lane experimental` for the current inventory |
 | simulated | modeled platform namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | modeled control-plane and organizational route families; use `bijux-dag commands --lane simulated` only when you intentionally need repository-owned modeling surfaces |
 | internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | maintainer verification, schedule, runtime, release, and capability lanes; use `bijux-dag commands --lane internal` only for deliberate repository maintenance work |
-| future | not a `v0.4.0` product promise | cluster-backed kubernetes execution, generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
+| future | not a `v0.4.0` product promise | generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
 
 Build operator procedures on the stable row. Use
 `bijux-dag commands --lane experimental` only when you intentionally need

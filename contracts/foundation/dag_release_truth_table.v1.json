@@ -24,6 +24,8 @@
     "capabilities": [
       "local DAG validation",
       "local DAG execution",
+      "kubernetes job submission for container nodes through kubectl and a shared persistent volume claim",
+      "shared-filesystem SLURM submission through sbatch and sacct",
       "run and artifact evidence inspection",
       "replay and diff classification",
       "cache verification and maintenance",
@@ -87,7 +89,6 @@
   "future_surface": {
     "summary": "not a v0.4.0 product promise; promotion requires separate implementation, documentation, tests, and compatibility review",
     "capabilities": [
-      "kubernetes execution backend",
       "generic hpc execution backend beyond the shared-filesystem slurm lane",
       "remote worker execution model",
       "public enterprise, fleet, federation, and governance operator APIs",

@@ -18,9 +18,9 @@ claims.
 - local execution: implemented runtime path
 - container execution: implemented local engine-backed path with explicit
   constraints
-- kubernetes execution: modeled runtime lane with simulated Job and pod
-  semantics, resource and deadline mapping, workspace transfer contracts, and
-  pod phase mapping
+- kubernetes execution: implemented Kubernetes Job lane for container nodes
+  with request and deadline mapping, shared-volume workspace mounting, pod
+  phase mapping, and retained batch evidence
 - slurm execution: implemented shared-filesystem runtime lane with `sbatch`
   submission, `sacct` polling, batch evidence retention, and worker re-entry
   through the same retained run directory
