@@ -464,7 +464,10 @@ fn render_worker_invocation(
     args.push("--result".to_string());
     args.push(shell_quote(result_path.to_string_lossy().as_ref()));
     args.push("--in-place".to_string());
-    format!("#!/bin/sh\nset -eu\n{}\n", args.join(" "))
+    format!(
+        "#!/bin/sh\nset -eu\nexport BIJUX_DAG_ENABLE_INTERNAL=1\n{}\n",
+        args.join(" ")
+    )
 }
 
 fn parse_slurm_job_id(stdout: &str) -> Result<String, String> {

@@ -13,6 +13,7 @@ use bijux_dag_runtime::{
     build_slurm_execution_request, AbsolutePathPolicy, MockSlurmBackend, NodeStatus, PolicyConfig,
     RemoteExecutionFingerprintSet, RemoteExecutionIdentity, RemoteExecutionWorkspace,
     RemoteInputArtifact, RemoteNodeExecutionPayload, SlurmBackendExecutor, SlurmJobStatus,
+    SystemSlurmBackend, SystemSlurmBackendConfig,
 };
 use std::fs;
 use std::path::Path;
@@ -142,4 +143,85 @@ fn mock_slurm_backend_marks_failed_shell_payload_as_failed_job() {
     assert_eq!(result.node_result.status, NodeStatus::Failed);
     assert!(result.logs.stderr.contains("broken"));
     assert_eq!(result.job.terminal_status, SlurmJobStatus::Failed);
+}
+
+fn write_executable(path: &Path, script: &str) {
+    fs::write(path, script).expect("write script");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = fs::metadata(path).expect("stat script").permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(path, permissions).expect("chmod script");
+    }
+}
+
+#[test]
+fn system_slurm_backend_submits_polls_and_collects_worker_result() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let tool_dir = temp.path().join("bin");
+    let state_dir = temp.path().join("state");
+    let log_dir = temp.path().join("logs");
+    fs::create_dir_all(&tool_dir).expect("tool dir");
+    fs::create_dir_all(&state_dir).expect("state dir");
+    fs::create_dir_all(&log_dir).expect("log dir");
+
+    let stdout_log = log_dir.join("node.stdout.log");
+    let stderr_log = log_dir.join("node.stderr.log");
+    let outputs_dir = temp.path().join("outputs");
+    fs::create_dir_all(&outputs_dir).expect("outputs dir");
+
+    let worker = tool_dir.join("worker");
+    write_executable(
+        &worker,
+        &format!(
+            "#!/bin/sh\nset -eu\nPAYLOAD=\"$1\"\nshift\nRESULT=\"\"\nwhile [ $# -gt 0 ]; do\n  case \"$1\" in\n    --result) RESULT=\"$2\"; shift 2 ;;\n    --in-place) shift ;;\n    *) shift ;;\n  esac\ndone\nmkdir -p \"$(dirname \"$RESULT\")\"\nprintf 'worker-stdout\\n' > {stdout:?}\nprintf 'worker-stderr\\n' > {stderr:?}\nprintf 'done\\n' > {outputs:?}/result.txt\ncat > \"$RESULT\" <<'JSON'\n{{\n  \"identity\": {{\"run_id\":\"run-system\",\"node_id\":\"shell-node\",\"attempt_id\":\"1\",\"backend_id\":\"slurm\"}},\n  \"node_result\": {{\n    \"status\":\"Success\",\n    \"stdout_path\": {stdout_json:?},\n    \"stderr_path\": {stderr_json:?},\n    \"outputs_dir\": {outputs_json:?},\n    \"output_evidence\": [],\n    \"failure\": null,\n    \"attempts\": 1,\n    \"attempt_events\": [],\n    \"container_meta\": null,\n    \"adapter_binary_sha256\": null\n  }},\n  \"started_unix_ms\": 10,\n  \"finished_unix_ms\": 20\n}}\nJSON\n",
+            stdout = stdout_log.display().to_string(),
+            stderr = stderr_log.display().to_string(),
+            outputs = outputs_dir.display().to_string(),
+            stdout_json = stdout_log.display().to_string(),
+            stderr_json = stderr_log.display().to_string(),
+            outputs_json = outputs_dir.display().to_string(),
+        ),
+    );
+
+    let sbatch = tool_dir.join("sbatch");
+    write_executable(
+        &sbatch,
+        &format!(
+            "#!/bin/sh\nset -eu\nSTATE_DIR={state:?}\nOUT=\"\"\nERR=\"\"\nSCRIPT=\"\"\nwhile [ $# -gt 0 ]; do\n  case \"$1\" in\n    --parsable) shift ;;\n    --cpus-per-task|--mem|--time|--partition|--qos|--account|--output|--error)\n      if [ \"$1\" = \"--output\" ]; then OUT=\"$2\"; fi\n      if [ \"$1\" = \"--error\" ]; then ERR=\"$2\"; fi\n      shift 2 ;;\n    *) SCRIPT=\"$1\"; shift ;;\n  esac\ndone\nmkdir -p \"$STATE_DIR\" \"$(dirname \"$OUT\")\" \"$(dirname \"$ERR\")\"\nif sh \"$SCRIPT\" > \"$OUT\" 2> \"$ERR\"; then\n  printf 'COMPLETED' > \"$STATE_DIR/job-1.state\"\nelse\n  printf 'FAILED' > \"$STATE_DIR/job-1.state\"\nfi\nprintf 'job-1\\n'\n",
+            state = state_dir.display().to_string(),
+        ),
+    );
+
+    let sacct = tool_dir.join("sacct");
+    write_executable(
+        &sacct,
+        &format!(
+            "#!/bin/sh\nset -eu\nSTATE_DIR={state:?}\nSTATE=$(cat \"$STATE_DIR/job-1.state\")\nprintf '%s|0:0\\n' \"$STATE\"\n",
+            state = state_dir.display().to_string(),
+        ),
+    );
+
+    let payload = shell_payload("slurm", temp.path(), "run-system", "printf ignored", Some(30_000));
+    let request = build_slurm_execution_request(payload, "general", "cpu");
+    let backend = SystemSlurmBackend::new(SystemSlurmBackendConfig {
+        sbatch_command: sbatch.display().to_string(),
+        sacct_command: sacct.display().to_string(),
+        poll_interval_ms: 50,
+        worker_command: vec![worker.display().to_string()],
+    })
+    .expect("system backend");
+
+    let result = backend.execute_job(request).expect("system slurm execute");
+
+    assert_eq!(result.scheduler_status, SlurmJobStatus::Completed);
+    assert_eq!(result.node_status, NodeStatus::Success);
+    assert_eq!(result.job.job_id, "job-1");
+    assert!(result.logs.stdout.contains("worker-stdout"));
+    assert!(result.logs.stderr.contains("worker-stderr"));
+    assert_eq!(
+        fs::read_to_string(outputs_dir.join("result.txt")).expect("result output"),
+        "done\n"
+    );
 }
