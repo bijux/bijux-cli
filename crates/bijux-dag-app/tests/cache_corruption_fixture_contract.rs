@@ -1,5 +1,5 @@
 use bijux_dag_artifacts::{hash::sha256_hex, OutputFile, OutputsIndex};
-use bijux_dag_runtime::{cache_key_explanation, CacheKeyInput};
+use bijux_dag_runtime::{cache_key_explanation, CacheKeyInput, CACHE_METADATA_VERSION};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -45,6 +45,7 @@ fn default_meta(label: &str) -> (String, Value) {
         input_lineage_fingerprint: format!("inputs-{label}"),
         adapter_id: "shell".to_string(),
         adapter_version: "0.1".to_string(),
+        adapter_binary_sha256: None,
         output_schema_version: "v0.1".to_string(),
         policy_fingerprint: "policy-fixed".to_string(),
         execution_contract_fingerprint: "exec-contract-fixed".to_string(),
@@ -54,7 +55,7 @@ fn default_meta(label: &str) -> (String, Value) {
     (
         key.clone(),
         json!({
-            "cache_metadata_version":"cache-meta/v0.2",
+            "cache_metadata_version": CACHE_METADATA_VERSION,
             "cache_key": key,
             "node_fingerprint": key_input.execution_fingerprint,
             "node_definition_fingerprint": key_input.node_definition_fingerprint,
@@ -62,6 +63,7 @@ fn default_meta(label: &str) -> (String, Value) {
             "input_lineage_fingerprint": key_input.input_lineage_fingerprint,
             "adapter_id": key_input.adapter_id,
             "adapter_version": key_input.adapter_version,
+            "adapter_binary_sha256": key_input.adapter_binary_sha256,
             "produces_outputs_schema_version": key_input.output_schema_version,
             "policy_fingerprint": key_input.policy_fingerprint,
             "execution_contract_fingerprint": key_input.execution_contract_fingerprint,
@@ -136,7 +138,7 @@ fn apply_corruption(cache_dir: &Path, fixture_name: &str) -> String {
         }
         "missing_outputs_proof" => {
             let proofless = json!({
-                "cache_metadata_version":"cache-meta/v0.2",
+                "cache_metadata_version": CACHE_METADATA_VERSION,
                 "node_fingerprint": "exec-proofless",
                 "adapter_id":"shell",
                 "adapter_version":"0.1",
@@ -147,8 +149,11 @@ fn apply_corruption(cache_dir: &Path, fixture_name: &str) -> String {
                 .expect("write proofless meta");
         }
         "truncated_meta" => {
-            fs::write(entry.join("meta.json"), b"{\"cache_metadata_version\":\"cache-meta/v0.2\"")
-                .expect("truncate meta");
+            fs::write(
+                entry.join("meta.json"),
+                format!("{{\"cache_metadata_version\":\"{CACHE_METADATA_VERSION}\""),
+            )
+            .expect("truncate meta");
         }
         "unsupported_metadata_version" => {
             let (_, mut meta) = default_meta("cache-entry");
