@@ -4,23 +4,18 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Observability and Diagnostics
 
-`bijux-cli` observability combines structured command payloads, diagnostics
-commands, and optional telemetry event streams for traceability.
+Use this page when you need to understand how `bijux` makes its own behavior
+inspectable, whether for local debugging, automation health checks, or support
+triage.
 
-## Visual Summary
-
-```mermaid
-flowchart LR
-    command["command invocation"] --> payload["structured status and diagnostics payloads"]
-    command --> telemetry["telemetry span events"]
-    payload --> triage["operator triage and automation checks"]
-    telemetry --> triage
-```
+Observability in `bijux-cli` is a combination of structured command payloads,
+purpose-built diagnostics commands, and optional telemetry. The point is to
+make runtime behavior legible without guessing at hidden state.
 
 ## Diagnostic Surfaces
 
@@ -37,6 +32,16 @@ flowchart LR
 - bounded command and message field recording
 - opt-in sink configuration for local diagnostics
 
+## What Each Surface Is Good At
+
+| Surface | Best used for |
+| --- | --- |
+| `status` | routine machine-readable health checks |
+| `doctor` | configuration and environment diagnosis |
+| `doctor --bundle` | packaging evidence for support and later inspection |
+| `audit` | summarizing known issues in one place |
+| telemetry events | understanding route flow and command completion timing |
+
 ## Code Anchors
 
 - `crates/bijux-cli/src/interface/cli/dispatch.rs`
@@ -50,7 +55,13 @@ flowchart LR
 - keep telemetry optional and bounded to avoid leaking oversized data
 - treat diagnostics regressions as operational blockers
 
-## Next Reads
+## Reader Shortcut
+
+If an operational claim cannot be checked through `status`, `doctor`, `audit`,
+or a bounded telemetry surface, the CLI is harder to trust than it should be.
+Observability is part of the product, not an afterthought.
+
+## Continue Reading
 
 - [Failure Recovery](failure-recovery.md)
 - [Risk Register](../quality/risk-register.md)

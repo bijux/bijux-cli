@@ -4,24 +4,17 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Failure Recovery
 
-Failure recovery for `bijux-cli` starts with deterministic diagnostics, explicit
-state inspection, and safe command-level remediation.
+Use this page when a CLI command fails and you need the safest route back to a
+known-good state without erasing evidence or causing additional damage.
 
-## Visual Summary
-
-```mermaid
-flowchart TD
-    failure["command failure"] --> classify["usage or internal classification"]
-    classify --> diagnose["status doctor audit explain"]
-    diagnose --> inspect["inspect state and plugin paths"]
-    inspect --> remediate["targeted config or plugin remediation"]
-    remediate --> verify["re-run diagnostics and command"]
-```
+Failure recovery in `bijux-cli` starts with deterministic diagnostics, explicit
+state inspection, and narrowly targeted remediation. The goal is to restore
+trust, not just to make the error disappear.
 
 ## Recovery Workflow
 
@@ -41,6 +34,15 @@ bijux plugins doctor
 bijux plugins explain
 ```
 
+## What Recovery Should Protect
+
+| Step | Why it matters |
+| --- | --- |
+| capture the failure | preserves the evidence you need for repeatable diagnosis |
+| inspect state and plugin paths | prevents blind cleanup that hides the real cause |
+| remediate one thing at a time | keeps causality understandable |
+| rerun diagnostics and the failing command | proves the system is actually recovered |
+
 ## Code Anchors
 
 - `crates/bijux-cli/src/interface/cli/dispatch.rs`
@@ -54,7 +56,13 @@ bijux plugins explain
 - preserve failing payloads for reproducible debugging
 - apply one remediation step at a time for clear causality
 
-## Next Reads
+## Reader Shortcut
+
+If the recovery step is "delete things until it works," recovery quality is
+already poor. A serious CLI should let you narrow the failure first, then fix
+the smallest possible surface.
+
+## Continue Reading
 
 - [Observability and Diagnostics](observability-and-diagnostics.md)
 - [Risk Register](../quality/risk-register.md)
