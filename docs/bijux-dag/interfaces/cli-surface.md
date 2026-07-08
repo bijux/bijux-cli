@@ -26,6 +26,11 @@ deliberate inventory through `bijux-dag commands --lane simulated` or
 `bijux-dag commands --lane internal`. None of those lanes are part of the
 supported operator-facing release boundary.
 
+For the command-by-command stable reference generated from the live Clap help
+surface, use [Generated CLI Reference](generated-cli-reference.md). For the
+separate inventory of deliberate non-stable routes, use
+[Non-Stable Command Inventory](reference/nonstable-command-inventory.md).
+
 ## v0.4.0 Surface Truth Table
 
 | Class | `v0.4.0` meaning | Representative surfaces |
@@ -93,6 +98,10 @@ For one repository-backed example that uses the stable `cache verify` route
 plus the explicit-path `why-cache-missed` route to explain changed-input misses
 and corruption refusal on the same retained workflow, use
 [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md).
+
+For the full generated inventory of experimental, simulated, and internal
+routes, use
+[Non-Stable Command Inventory](reference/nonstable-command-inventory.md).
 
 ## Full Command Families
 

@@ -105,6 +105,11 @@ flowchart LR
   is how to validate, run, replay, inspect, or compare
 - open [CLI Surface](interfaces/cli-surface.md) when the question is command
   discovery or route classification
+- open [Generated CLI Reference](interfaces/generated-cli-reference.md) when
+  the question is the exact stable command syntax and current help text
+- open [Non-Stable Command Inventory](interfaces/reference/nonstable-command-inventory.md)
+  when you intentionally need the current experimental, simulated, or internal
+  route inventory without mixing it into the stable operator contract
 - open [Capability Map](foundation/capability-map.md) when you need the product
   responsibilities before the crate split
 - open [DAG Packages](packages/index.md) when the route is clear but the owning

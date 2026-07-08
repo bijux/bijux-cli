@@ -43,10 +43,12 @@ flowchart LR
 ## Pages In This Section
 
 - [CLI Surface](cli-surface.md)
+- [Generated CLI Reference](generated-cli-reference.md)
 - [API Surface](api-surface.md)
 - [Configuration Surface](configuration-surface.md)
 - [Data Contracts](data-contracts.md)
 - [Error Codes](reference/error-codes.md)
+- [Non-Stable Command Inventory](reference/nonstable-command-inventory.md)
 - [Reusable Subgraphs](guides/reusable-subgraphs.md)
 - [Artifact Contracts](artifact-contracts.md)
 - [Entrypoints and Examples](entrypoints-and-examples.md)
