@@ -43,6 +43,22 @@ reason codes.
 
 Operator-facing docs may describe a surface as replayable only when they cite `docs/spec/REPLAY_CONTRACT.md` directly.
 
+## Replay bundle boundary
+
+The portable replay bundle surface is the export bundle governed by
+`docs/spec/IMPORT_EXPORT_CONTRACT.md`, not the diagnostics bundle emitted by
+`runs diagnostics-bundle`.
+
+The current bundle boundary is:
+
+- `export-bundle/v0.1` with `--with-files` is the artifact-bearing replay bundle
+  mode
+- `manifest-only` and `without-artifacts` export bundles preserve structural
+  evidence and provenance, but they do not carry the full file payload required
+  for artifact-backed replay proof
+- diagnostics bundles exist for inspection and support capture; they are not an
+  importable replay contract
+
 ## Node rerun boundary
 
 When replay is scoped with `--from-node`, the selected downstream closure

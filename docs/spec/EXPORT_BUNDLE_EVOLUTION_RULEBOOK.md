@@ -25,6 +25,8 @@ This rulebook governs export and proof bundle version surfaces backed by:
 - unsupported past or future bundle versions must be rejected explicitly
 - proof bundle version lanes must stay aligned with replay-bundle
   compatibility policy
+- diagnostics bundle versions must evolve independently from replay-bundle
+  compatibility because diagnostics capture is not an importable replay surface
 
 ## Related tests
 

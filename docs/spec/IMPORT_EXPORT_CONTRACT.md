@@ -26,8 +26,16 @@ Bundles from unsupported past versions must fail import with a clear compatibili
 ## Export modes
 
 - `dag export --manifest-only` emits manifest, graph snapshot, and structural provenance without file payloads
-- `dag export --with-files` emits file payloads for importable structural replay and inspection
+- `dag export --with-files` emits the portable replay bundle mode because it carries both structural evidence and file payloads
 - `--without-artifacts` keeps outputs and files absent while preserving manifest-level structure
+
+The current replay boundary is intentionally narrower than "any bundle can be
+replayed":
+
+- `with-files` is the importable replay-bundle mode
+- `manifest-only` is valid for structural import, inspection, and provenance review, but not for artifact-backed replay proof
+- `without-artifacts` is valid for structural compatibility checks only
+- diagnostics bundles are a separate operator-inspection surface and are not governed by this contract
 
 ## Provenance contract
 
