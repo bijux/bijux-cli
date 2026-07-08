@@ -9,7 +9,15 @@ assertion helpers shared across the DAG workspace.
 - not part of the public `v0.4.0` crates.io release boundary
 - intended for workspace crates and top-level suites
 
-## What This Crate Owns
+## Good Fit
+
+- building DAG integration or contract suites without duplicating fixtures
+- reusing canonical run-artifact and replay assertions across crates
+- exercising fake-adapter flows with the same harnesses used by repository
+  tests
+- keeping repository scenarios aligned when graph or runtime behavior changes
+
+## What It Provides
 
 - canonical DAG fixture builders
 - shared run-artifact and replay assertions

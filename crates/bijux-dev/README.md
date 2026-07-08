@@ -1,7 +1,8 @@
 # bijux-dev
 
-`bijux-dev` is the repository-internal maintainer and governance control plane
-for `bijux-core`.
+`bijux-dev` is the repository-internal maintainer crate for `bijux-core`.
+It powers repository diagnostics, release verification, governance checks, and
+the support commands that keep the public products honest.
 
 ## Release Status
 
@@ -9,7 +10,15 @@ for `bijux-core`.
 - intentionally not published
 - exists to validate, document, and release the public products
 
-## What This Crate Owns
+## Good Fit
+
+- running repository diagnostics and release verification locally
+- generating maintainer reports and checked-in command references
+- enforcing repository contracts around documentation, dependencies, evidence,
+  and publication boundaries
+- wiring shared governance and release suites into make targets and CI
+
+## What It Provides
 
 - maintainer automation and diagnostics through `bijux-dev-cli`
 - repository governance, contracts, evidence, and release verification flows
@@ -22,7 +31,7 @@ for `bijux-core`.
 - `bijux-dev-cli docs write-dag-cli-reference` for rewriting the checked-in DAG
   CLI reference pages without relying on ignored tests
 
-## Layout
+## Code Layout
 
 - `src/maintainer`: maintainer control-plane modules
 - `src/commands`, `src/suites`, `src/repo`, `src/report`: governance and
