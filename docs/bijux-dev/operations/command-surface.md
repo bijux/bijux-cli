@@ -9,22 +9,20 @@ last_reviewed: 2026-07-08
 
 # Command Surface
 
-This page explains the command entrypoints that power repository proof work.
+Use this page when you need to choose the right maintainer command family
+before digging through the source tree or guessing from binary names.
 
 Source contract: `contracts/foundation/maintainer_command_surface.v1.json`.
 
 `bijux-dev-cli` carries the general repository workflow. `bijux-dev-dag` carries
 the DAG-specific verification and release surfaces that sit beside it.
 
-## Command Map
+## What The Two Binaries Are For
 
-```mermaid
-flowchart LR
-    maintainer["repository maintainer"] --> dev_cli["bijux-dev-cli"]
-    maintainer --> dev_dag["bijux-dev-dag"]
-    dev_cli --> verify["workspace checks and reports"]
-    dev_dag --> evidence["DAG evidence and release checks"]
-```
+| Binary | Main job |
+| --- | --- |
+| `bijux-dev-cli` | general repository workflows, governance checks, reporting, and documentation automation |
+| `bijux-dev-dag` | DAG-specific verification, release proof, evidence audits, and runtime-facing maintainer diagnostics |
 
 ## Command Families
 
@@ -58,17 +56,23 @@ renaming a root command.
 | execution and policy diagnostics | `doctor`, `config-dump`, `policy-audit`, `execution-modes-report`, `distributed-semantics-report`, `invariants-report`, `observability-report` |
 | benchmarks and utilities | `artifacts-clean`, `env-summary`, `benchmark-baseline`, `benchmark-compare`, `resource-profile-summary`, `resource-budget-check`, `resource-trend-append`, `e2e-matrix`, `api`, `schedule`, `help` |
 
+## Reader Shortcut
+
+If the question is about repository-wide health, start with `bijux-dev-cli`.
+If the question is about DAG proof, release evidence, or runtime-facing DAG
+diagnostics, start with `bijux-dev-dag`.
+
 ## Command Design Rules
 
 - commands must return actionable diagnostics
 - machine-readable output must remain stable for automation
 - command semantics must map to explicit ownership in code and docs
 
-## Reading Rule
+## What This Page Is Not Saying
 
-Use this page when you know the repository needs a maintainer command but have
-not yet decided which entrypoint owns the job. Move to Diagnostics, Release
-Operations, or Contract Governance once the command family is clear.
+- It is not listing every subcommand in depth.
+- It is not replacing the source contract when root inventory changes.
+- It is not saying the two binaries have interchangeable responsibility.
 
 ## Code Anchors
 
@@ -80,7 +84,7 @@ Operations, or Contract Governance once the command family is clear.
 - `crates/bijux-dev/src/bin/bijux-dev-cli.rs`
 - `crates/bijux-dev/src/main.rs`
 
-## Next Reads
+## Continue Reading
 
 - [Diagnostics and Reporting](diagnostics-and-reporting.md)
 - [Contract Governance](../governance/contract-governance.md)
