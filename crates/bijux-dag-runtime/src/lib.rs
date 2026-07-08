@@ -4814,7 +4814,7 @@ fn create_capture_file(stream_name: &str) -> std_io::Result<(std::fs::File, Path
         ));
         match std::fs::OpenOptions::new().create_new(true).read(true).write(true).open(&path) {
             Ok(file) => return Ok((file, path)),
-            Err(error) if error.kind() == std_io::ErrorKind::AlreadyExists => continue,
+            Err(error) if error.kind() == std_io::ErrorKind::AlreadyExists => {}
             Err(error) => return Err(error),
         }
     }
