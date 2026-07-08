@@ -1111,6 +1111,42 @@
       "why_exists": "provide the retained source note consumed by the branching bulletin authoring example and branch workflow contracts"
     },
     {
+      "canonical_location": "evidence/authoring/examples/audience-branch-source/team-update-revised.md",
+      "canonical_path": "evidence/authoring/examples/audience-branch-source/team-update-revised.md",
+      "consumer_surfaces": [
+        "branching-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "branching-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": "evidence/authoring/examples/audience-branch-source/team-update.md",
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/audience-branch-source/team-update-revised.md",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/audience-branch-source/team-update-revised.md",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide the revised retained source note consumed by the evidence-backed bulletin workflow and executable recipe coverage"
+    },
+    {
       "canonical_location": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
       "canonical_path": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
       "consumer_surfaces": [
