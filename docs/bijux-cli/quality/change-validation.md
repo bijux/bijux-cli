@@ -4,23 +4,17 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Change Validation
 
-Change validation is the minimum evidence package required before merging a
-`bijux-cli` behavior change.
+Use this page when a CLI change is real and the next question is not "did the
+code compile," but "what proof is required before anyone should trust it?"
 
-## Visual Summary
-
-```mermaid
-flowchart LR
-    change["change request"] --> classify["classify contract impact"]
-    classify --> verify["run targeted tests and docs gates"]
-    verify --> compare["compare payloads and behavior"]
-    compare --> record["record compatibility notes"]
-```
+Change validation is the minimum evidence package for a `bijux-cli` behavior
+change. It exists to stop silent contract drift in command grammar, payload
+shape, stream usage, help output, and exit behavior.
 
 ## Validation Checklist
 
@@ -39,6 +33,14 @@ cargo test -p bijux-cli architecture::
 make docs-check
 ```
 
+## What Validation Should Produce
+
+| Surface | What reviewers should walk away with |
+| --- | --- |
+| targeted tests | confidence that the owning lane actually exercised the changed contract |
+| docs gate | confidence that handbook claims and file structure still match the tree |
+| compatibility notes | explicit warning when scripts, plugins, or operators may need to adapt |
+
 ## Code Anchors
 
 - `crates/bijux-cli/tests/routing/`
@@ -46,7 +48,13 @@ make docs-check
 - `crates/bijux-cli/tests/architecture/`
 - `makes/docs.mk`
 
-## Next Reads
+## Reader Shortcut
+
+If a reviewer cannot point to the exact test and doc surfaces that changed with
+the behavior, validation is still incomplete. Broad green status is not enough
+when the affected contract is narrow and specific.
+
+## Continue Reading
 
 - [Definition of Done](definition-of-done.md)
 - [Compatibility Commitments](../interfaces/compatibility-commitments.md)
