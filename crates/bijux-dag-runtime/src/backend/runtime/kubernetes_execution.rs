@@ -839,7 +839,7 @@ fn synthesize_node_result(
                 FailureClass::Execution,
                 "Execution",
                 "KUBERNETES_JOB_FAILED",
-                &format!("kubernetes job failed with reason {reason}"),
+                format!("kubernetes job failed with reason {reason}"),
                 None,
             ))
         }

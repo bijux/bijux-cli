@@ -1,4 +1,4 @@
-use clap::{Command, Parser, Subcommand, ValueEnum};
+use clap::{Args, Command, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 mod surface_policy;
@@ -115,6 +115,154 @@ pub(crate) enum ExecutionBackendArg {
     Local,
     Kubernetes,
     Slurm,
+}
+
+#[derive(Args)]
+pub(crate) struct RunCommandArgs {
+    #[arg(required = true)]
+    pub(crate) dags: Vec<PathBuf>,
+    #[arg(long)]
+    pub(crate) out: PathBuf,
+    #[arg(long = "input", action = clap::ArgAction::Append)]
+    pub(crate) input: Vec<String>,
+    #[arg(long)]
+    pub(crate) inputs_file: Option<PathBuf>,
+    #[arg(long)]
+    pub(crate) run_id: Option<String>,
+    #[arg(long, help = RESUME_RUN_HELP)]
+    pub(crate) resume_run: Option<String>,
+    #[arg(long, value_enum, default_value_t = ResumeFailureModeArg::RerunIncomplete, help = RESUME_FAILURE_MODE_HELP)]
+    pub(crate) resume_failure_mode: ResumeFailureModeArg,
+    #[arg(long)]
+    pub(crate) latest: Option<PathBuf>,
+    #[arg(long, default_value_t = 1)]
+    pub(crate) jobs: usize,
+    #[arg(long)]
+    pub(crate) cpu_budget: Option<u32>,
+    #[arg(long)]
+    pub(crate) memory_budget_mb: Option<u32>,
+    #[arg(long)]
+    pub(crate) gpu_device_budget: Option<u32>,
+    #[arg(
+        long = "resource-capacity",
+        action = clap::ArgAction::Append,
+        value_name = "name=count",
+        help = RESOURCE_CAPACITY_HELP
+    )]
+    pub(crate) resource_capacity: Vec<String>,
+    #[arg(long)]
+    pub(crate) node_timeout_ms: Option<u64>,
+    #[arg(long)]
+    pub(crate) run_timeout_ms: Option<u64>,
+    #[arg(long, value_enum, default_value_t = RunTimeoutBehaviorArg::FinishRunning)]
+    pub(crate) run_timeout_behavior: RunTimeoutBehaviorArg,
+    #[arg(long, help = DENY_NETWORK_HELP)]
+    pub(crate) deny_network: bool,
+    #[arg(long, help = DENY_ENV_HELP)]
+    pub(crate) deny_env: bool,
+    #[arg(long, help = DENY_CLOCK_HELP)]
+    pub(crate) deny_clock: bool,
+    #[arg(long, help = CLEAN_ENV_HELP)]
+    pub(crate) clean_env: bool,
+    #[arg(long, help = HERMETIC_HELP)]
+    pub(crate) hermetic: bool,
+    #[arg(long, action = clap::ArgAction::Append)]
+    pub(crate) select: Vec<String>,
+    #[arg(long, action = clap::ArgAction::Append)]
+    pub(crate) exclude: Vec<String>,
+    #[arg(long = "to-node", action = clap::ArgAction::Append)]
+    pub(crate) to_node: Vec<String>,
+    #[arg(long)]
+    pub(crate) dependency_closure: bool,
+    #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
+    pub(crate) materialize_inputs: MaterializeModeArg,
+    #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
+    pub(crate) cache: CacheModeArg,
+    #[arg(long)]
+    pub(crate) cache_dir: Option<PathBuf>,
+    #[arg(long)]
+    pub(crate) remote_cache_dir: Option<PathBuf>,
+    #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
+    pub(crate) absolute_path_policy: AbsolutePathPolicyArg,
+    #[arg(long)]
+    pub(crate) preflight_only: bool,
+    #[arg(long)]
+    pub(crate) explain_scheduling: bool,
+    #[arg(long, value_enum, default_value_t = RunProgressArg::Off, help = RUN_PROGRESS_HELP)]
+    pub(crate) progress: RunProgressArg,
+    #[arg(long, value_enum, default_value_t = ExecutionBackendArg::Local, help = EXECUTION_BACKEND_HELP)]
+    pub(crate) backend: ExecutionBackendArg,
+    #[arg(long, default_value = "bijux")]
+    pub(crate) kubernetes_namespace: String,
+    #[arg(long)]
+    pub(crate) kubernetes_volume_claim: Option<String>,
+    #[arg(long)]
+    pub(crate) kubernetes_shared_root: Option<PathBuf>,
+    #[arg(long, default_value = "general")]
+    pub(crate) slurm_queue: String,
+    #[arg(long, default_value = "cpu")]
+    pub(crate) slurm_partition: String,
+}
+
+#[derive(Args)]
+pub(crate) struct ReplayCommandArgs {
+    #[arg(required_unless_present = "source_run_id", conflicts_with = "source_run_id")]
+    pub(crate) run_dir: Option<PathBuf>,
+    #[arg(long, help = REPLAY_SOURCE_RUN_ID_HELP)]
+    pub(crate) source_run_id: Option<String>,
+    #[arg(long, help = REPLAY_SOURCE_RUN_ROOT_HELP)]
+    pub(crate) source_run_root: Option<PathBuf>,
+    #[arg(long)]
+    pub(crate) out: PathBuf,
+    #[arg(long)]
+    pub(crate) dry_run: bool,
+    #[arg(long, help = REPLAY_SANDBOX_HELP)]
+    pub(crate) sandbox: bool,
+    #[arg(long)]
+    pub(crate) prove: bool,
+    #[arg(long)]
+    pub(crate) reuse_cache: bool,
+    #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
+    pub(crate) cache: CacheModeArg,
+    #[arg(long, default_value_t = 1)]
+    pub(crate) jobs: usize,
+    #[arg(long)]
+    pub(crate) run_id: Option<String>,
+    #[arg(long)]
+    pub(crate) cpu_budget: Option<u32>,
+    #[arg(long)]
+    pub(crate) memory_budget_mb: Option<u32>,
+    #[arg(long)]
+    pub(crate) gpu_device_budget: Option<u32>,
+    #[arg(
+        long = "resource-capacity",
+        action = clap::ArgAction::Append,
+        value_name = "name=count",
+        help = RESOURCE_CAPACITY_HELP
+    )]
+    pub(crate) resource_capacity: Vec<String>,
+    #[arg(long, help = DENY_NETWORK_HELP)]
+    pub(crate) deny_network: bool,
+    #[arg(long, help = DENY_ENV_HELP)]
+    pub(crate) deny_env: bool,
+    #[arg(long, help = DENY_CLOCK_HELP)]
+    pub(crate) deny_clock: bool,
+    #[arg(long, help = CLEAN_ENV_HELP)]
+    pub(crate) clean_env: bool,
+    #[arg(long, help = HERMETIC_HELP)]
+    pub(crate) hermetic: bool,
+    #[arg(long = "from-node", action = clap::ArgAction::Append)]
+    pub(crate) from_node: Vec<String>,
+    #[arg(long, action = clap::ArgAction::Append)]
+    pub(crate) select: Vec<String>,
+    #[arg(long, action = clap::ArgAction::Append)]
+    pub(crate) exclude: Vec<String>,
+    #[arg(long)]
+    pub(crate) dependency_closure: bool,
+    #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
+    pub(crate) materialize_inputs: MaterializeModeArg,
+    #[arg(long)]
+    pub(crate) remote_cache_dir: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -298,89 +446,8 @@ pub(crate) enum Commands {
         command: RuntimeCommands,
     },
     Run {
-        #[arg(required = true)]
-        dags: Vec<PathBuf>,
-        #[arg(long)]
-        out: PathBuf,
-        #[arg(long = "input", action = clap::ArgAction::Append)]
-        input: Vec<String>,
-        #[arg(long)]
-        inputs_file: Option<PathBuf>,
-        #[arg(long)]
-        run_id: Option<String>,
-        #[arg(long, help = RESUME_RUN_HELP)]
-        resume_run: Option<String>,
-        #[arg(long, value_enum, default_value_t = ResumeFailureModeArg::RerunIncomplete, help = RESUME_FAILURE_MODE_HELP)]
-        resume_failure_mode: ResumeFailureModeArg,
-        #[arg(long)]
-        latest: Option<PathBuf>,
-        #[arg(long, default_value_t = 1)]
-        jobs: usize,
-        #[arg(long)]
-        cpu_budget: Option<u32>,
-        #[arg(long)]
-        memory_budget_mb: Option<u32>,
-        #[arg(long)]
-        gpu_device_budget: Option<u32>,
-        #[arg(
-            long = "resource-capacity",
-            action = clap::ArgAction::Append,
-            value_name = "name=count",
-            help = RESOURCE_CAPACITY_HELP
-        )]
-        resource_capacity: Vec<String>,
-        #[arg(long)]
-        node_timeout_ms: Option<u64>,
-        #[arg(long)]
-        run_timeout_ms: Option<u64>,
-        #[arg(long, value_enum, default_value_t = RunTimeoutBehaviorArg::FinishRunning)]
-        run_timeout_behavior: RunTimeoutBehaviorArg,
-        #[arg(long, help = DENY_NETWORK_HELP)]
-        deny_network: bool,
-        #[arg(long, help = DENY_ENV_HELP)]
-        deny_env: bool,
-        #[arg(long, help = DENY_CLOCK_HELP)]
-        deny_clock: bool,
-        #[arg(long, help = CLEAN_ENV_HELP)]
-        clean_env: bool,
-        #[arg(long, help = HERMETIC_HELP)]
-        hermetic: bool,
-        #[arg(long, action = clap::ArgAction::Append)]
-        select: Vec<String>,
-        #[arg(long, action = clap::ArgAction::Append)]
-        exclude: Vec<String>,
-        #[arg(long = "to-node", action = clap::ArgAction::Append)]
-        to_node: Vec<String>,
-        #[arg(long)]
-        dependency_closure: bool,
-        #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
-        materialize_inputs: MaterializeModeArg,
-        #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
-        cache: CacheModeArg,
-        #[arg(long)]
-        cache_dir: Option<PathBuf>,
-        #[arg(long)]
-        remote_cache_dir: Option<PathBuf>,
-        #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
-        absolute_path_policy: AbsolutePathPolicyArg,
-        #[arg(long)]
-        preflight_only: bool,
-        #[arg(long)]
-        explain_scheduling: bool,
-        #[arg(long, value_enum, default_value_t = RunProgressArg::Off, help = RUN_PROGRESS_HELP)]
-        progress: RunProgressArg,
-        #[arg(long, value_enum, default_value_t = ExecutionBackendArg::Local, help = EXECUTION_BACKEND_HELP)]
-        backend: ExecutionBackendArg,
-        #[arg(long, default_value = "bijux")]
-        kubernetes_namespace: String,
-        #[arg(long)]
-        kubernetes_volume_claim: Option<String>,
-        #[arg(long)]
-        kubernetes_shared_root: Option<PathBuf>,
-        #[arg(long, default_value = "general")]
-        slurm_queue: String,
-        #[arg(long, default_value = "cpu")]
-        slurm_partition: String,
+        #[command(flatten)]
+        command: Box<RunCommandArgs>,
     },
     #[command(name = "run-bundle", alias = "bundle")]
     RunBundle {
@@ -391,63 +458,8 @@ pub(crate) enum Commands {
         redact: bool,
     },
     Replay {
-        #[arg(required_unless_present = "source_run_id", conflicts_with = "source_run_id")]
-        run_dir: Option<PathBuf>,
-        #[arg(long, help = REPLAY_SOURCE_RUN_ID_HELP)]
-        source_run_id: Option<String>,
-        #[arg(long, help = REPLAY_SOURCE_RUN_ROOT_HELP)]
-        source_run_root: Option<PathBuf>,
-        #[arg(long)]
-        out: PathBuf,
-        #[arg(long)]
-        dry_run: bool,
-        #[arg(long, help = REPLAY_SANDBOX_HELP)]
-        sandbox: bool,
-        #[arg(long)]
-        prove: bool,
-        #[arg(long)]
-        reuse_cache: bool,
-        #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
-        cache: CacheModeArg,
-        #[arg(long, default_value_t = 1)]
-        jobs: usize,
-        #[arg(long)]
-        run_id: Option<String>,
-        #[arg(long)]
-        cpu_budget: Option<u32>,
-        #[arg(long)]
-        memory_budget_mb: Option<u32>,
-        #[arg(long)]
-        gpu_device_budget: Option<u32>,
-        #[arg(
-            long = "resource-capacity",
-            action = clap::ArgAction::Append,
-            value_name = "name=count",
-            help = RESOURCE_CAPACITY_HELP
-        )]
-        resource_capacity: Vec<String>,
-        #[arg(long, help = DENY_NETWORK_HELP)]
-        deny_network: bool,
-        #[arg(long, help = DENY_ENV_HELP)]
-        deny_env: bool,
-        #[arg(long, help = DENY_CLOCK_HELP)]
-        deny_clock: bool,
-        #[arg(long, help = CLEAN_ENV_HELP)]
-        clean_env: bool,
-        #[arg(long, help = HERMETIC_HELP)]
-        hermetic: bool,
-        #[arg(long = "from-node", action = clap::ArgAction::Append)]
-        from_node: Vec<String>,
-        #[arg(long, action = clap::ArgAction::Append)]
-        select: Vec<String>,
-        #[arg(long, action = clap::ArgAction::Append)]
-        exclude: Vec<String>,
-        #[arg(long)]
-        dependency_closure: bool,
-        #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
-        materialize_inputs: MaterializeModeArg,
-        #[arg(long)]
-        remote_cache_dir: Option<PathBuf>,
+        #[command(flatten)]
+        command: Box<ReplayCommandArgs>,
     },
     Prove {
         run_dir: PathBuf,
