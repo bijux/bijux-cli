@@ -72,6 +72,10 @@ cache verification and diagnostic sequence, including changed-input cache
 misses and corruption-based reuse refusal, use
 [Cache Behavior Workflow](../../docs/bijux-dag/operations/guides/cache-behavior-workflow.md).
 
+For the canonical explanation of which retained fingerprints and bundle modes
+those commands are actually reporting, use
+[Reproducibility Model](../../docs/bijux-dag/interfaces/reference/reproducibility-model.md).
+
 For the repository-backed example that shows how the app surface reports a real
 container run, retained outputs, and a missing-engine infrastructure failure,
 use

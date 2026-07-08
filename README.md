@@ -452,6 +452,10 @@ warm-cache reuse, selective invalidation, corruption refusal, and explicit
 cache-miss explanation, use
 [`docs/bijux-dag/operations/guides/cache-behavior-workflow.md`](docs/bijux-dag/operations/guides/cache-behavior-workflow.md).
 
+For the retained meaning of graph fingerprints, plan fingerprints, execution
+fingerprints, cache keys, export bundles, and replay proof boundaries, use
+[`docs/bijux-dag/interfaces/reference/reproducibility-model.md`](docs/bijux-dag/interfaces/reference/reproducibility-model.md).
+
 For the container prerequisites, retained output layout, and missing-engine
 failure behavior, use
 [`docs/bijux-dag/operations/guides/container-packaging-workflow.md`](docs/bijux-dag/operations/guides/container-packaging-workflow.md).
@@ -480,6 +484,7 @@ and strict post-repair verification, use
 
 Representative DAG workflow guides:
 
+- [`docs/bijux-dag/interfaces/reference/reproducibility-model.md`](docs/bijux-dag/interfaces/reference/reproducibility-model.md) for the canonical explanation of graph, plan, execution, environment, and artifact identity, plus cache-key and replay-bundle boundaries
 - [`docs/bijux-dag/operations/guides/first-run-tutorial.md`](docs/bijux-dag/operations/guides/first-run-tutorial.md) for the five-minute path from build to graph inspection, retained artifacts, warm cache reuse, replay, and strict verification
 - [`docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md`](docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md) for one retained workflow family that demonstrates branch selection, cache reuse, run comparison, replay proof, strict verification, and artifact promotion together
 - [`docs/bijux-dag/operations/guides/file-processing-workflow.md`](docs/bijux-dag/operations/guides/file-processing-workflow.md) for a host-shell artifact workflow

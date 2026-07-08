@@ -60,5 +60,6 @@ artifacts without taking on runtime execution or command orchestration.
 - [Crate contract](./CONTRACT.md)
 - [Crate changelog](./CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
+- [Reproducibility model](https://bijux.io/bijux-core/bijux-dag/interfaces/reference/reproducibility-model/)
 - [Run evidence layout](https://bijux.io/bijux-core/bijux-dag/interfaces/reference/run-evidence-layout/)
 - [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-artifacts/)

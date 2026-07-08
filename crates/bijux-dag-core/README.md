@@ -81,6 +81,11 @@ For the repository-backed authoring example that binds requested slots plus
 backfill-owned window metadata into a real retained publication surface, use
 [`evidence/dag/authoring/examples/historical-catalog-backfill.dag.json`](../../evidence/dag/authoring/examples/historical-catalog-backfill.dag.json).
 
+For the operator-facing explanation of how graph identity relates to plan,
+execution, cache, and replay identity after this crate lowers a graph into
+deterministic execution surfaces, use
+[Reproducibility Model](../../docs/bijux-dag/interfaces/reference/reproducibility-model.md).
+
 ## Related links
 
 - [Crate contract](./CONTRACT.md)

@@ -68,6 +68,9 @@ crate is usually `bijux-dag-app`.
 - [Cache Behavior Workflow](../../docs/bijux-dag/operations/guides/cache-behavior-workflow.md)
   demonstrates stable cache verification, explicit-path cache-miss
   explanation, selective invalidation, and corruption refusal.
+- [Reproducibility Model](../../docs/bijux-dag/interfaces/reference/reproducibility-model.md)
+  explains the retained identity surfaces behind cache verification, replay,
+  export bundles, and artifact comparison.
 - [Data Pipeline Workflow](../../docs/bijux-dag/operations/guides/data-pipeline-workflow.md)
   demonstrates retained-run comparison and changed-input attribution.
 - [Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md)
