@@ -1700,7 +1700,7 @@ impl Default for RuntimeConfig {
             downstream_selection_roots: Vec::new(),
             partial_rerun_dependency_closure: true,
             scheduler_policy: SchedulerPolicy::default(),
-            failure_propagation: FailurePropagationMode::IsolateBranch,
+            failure_propagation: FailurePropagationMode::ContinueIndependent,
         }
     }
 }

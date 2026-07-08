@@ -262,7 +262,7 @@ fn execute_dynamic_controller(
     )?;
     if !cache_read.hit {
         let adapter = runtime.adapter_for_kind(&node.kind)?;
-        let result = crate::execute_with_retries(
+        let result = sacred_execution::run_retry_logic(
             adapter.as_ref(),
             graph,
             node,
@@ -1569,6 +1569,16 @@ pub fn execute(
             "resume mode cannot be combined with parent run replay".to_string(),
         ));
     }
+    let source_graph_diagnostics = source_graph.validate_with_warnings();
+    if source_graph_diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.severity == bijux_dag_core::Severity::Error)
+    {
+        return Err(GraphError::ValidationFailed.into());
+    }
+    let ambient_env = std::env::vars().collect();
+    crate::security_env::validate_graph_environment_bindings(source_graph, &ambient_env)
+        .map_err(RuntimeError::Executor)?;
     let requested_run_id = options.resume_run_id.clone().or_else(|| options.run_id.clone());
     let run_dir = if let Some(ref run_id) = options.resume_run_id {
         RunDir::resume_with_id(&out_dir, run_id)?
@@ -1589,7 +1599,6 @@ pub fn execute(
     {
         return Err(GraphError::ValidationFailed.into());
     }
-    let ambient_env = std::env::vars().collect();
     crate::security_env::validate_graph_environment_bindings(graph, &ambient_env)
         .map_err(RuntimeError::Executor)?;
     let _contracts = crate::validate_task_contracts(graph, &options)?;
