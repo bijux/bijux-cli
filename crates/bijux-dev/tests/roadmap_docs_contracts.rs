@@ -47,3 +47,22 @@ fn roadmap_page_covers_post_v040_release_lanes_without_blurring_current_boundary
         assert!(roadmap.contains(token), "roadmap page missing token: {token}");
     }
 }
+
+#[test]
+fn entry_points_and_boundary_docs_route_future_release_questions_to_roadmap() {
+    for path in [
+        "README.md",
+        "docs/index.md",
+        "docs/bijux-dag/index.md",
+        "docs/bijux-dag/foundation/release-boundary.md",
+        "docs/bijux-dag/foundation/scope-and-non-goals.md",
+        "docs/bijux-dag/quality/known-limitations.md",
+        "docs/bijux-dag/interfaces/reference/support-matrix.md",
+    ] {
+        let content = read_repo_file(path);
+        assert!(
+            content.contains("bijux-dag-roadmap.md") || content.contains("Bijux Dag Roadmap"),
+            "{path} must route future release questions to the roadmap"
+        );
+    }
+}
