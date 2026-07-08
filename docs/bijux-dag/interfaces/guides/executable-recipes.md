@@ -13,8 +13,7 @@ Use the canonical
 [Executable Recipes](../executable-recipes.md)
 page when you need the full CI-executable command set for DAG operator work.
 
-That page deliberately separates stable operator commands from experimental
-explicit-path routes and includes the executable example
+That page deliberately separates stable operator commands from experimental explicit-path routes and includes the executable example
 `bijux-dag explain --json ${RUN_DIR}`.
 
 The release-boundary source of truth for those lane distinctions is
