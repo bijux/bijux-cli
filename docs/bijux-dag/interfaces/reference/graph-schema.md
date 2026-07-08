@@ -164,7 +164,8 @@ required by the parser; the remaining fields default when omitted.
 - objects
 - one reference object
 
-Reference objects come in exactly three families.
+Reference objects come in exactly three families: `graph_input`,
+`node_output`, and `path_var`.
 
 Graph input reference:
 

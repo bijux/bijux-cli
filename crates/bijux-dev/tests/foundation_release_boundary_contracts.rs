@@ -303,6 +303,7 @@ fn dag_interface_indexes_link_generated_cli_references() {
     assert_contains_all(
         &handbook,
         &[
+            "interfaces/reference/graph-schema.md",
             "interfaces/generated-cli-reference.md",
             "interfaces/reference/nonstable-command-inventory.md",
         ],
@@ -312,7 +313,12 @@ fn dag_interface_indexes_link_generated_cli_references() {
     let interfaces = read_repo_file("docs/bijux-dag/interfaces/index.md");
     assert_contains_all(
         &interfaces,
-        &["Generated CLI Reference", "Non-Stable Command Inventory"],
+        &[
+            "Graph Schema Reference",
+            "Generated CLI Reference",
+            "Authoring Guide",
+            "Non-Stable Command Inventory",
+        ],
         "docs/bijux-dag/interfaces/index.md",
     );
 
@@ -321,6 +327,47 @@ fn dag_interface_indexes_link_generated_cli_references() {
         &entrypoints,
         &["Generated CLI Reference", "Non-Stable Command Inventory"],
         "docs/bijux-dag/interfaces/entrypoints-and-examples.md",
+    );
+}
+
+#[test]
+fn dag_graph_schema_reference_covers_live_authoring_surface() {
+    let graph_schema = read_repo_file("docs/bijux-dag/interfaces/reference/graph-schema.md");
+    assert_contains_all(
+        &graph_schema,
+        &[
+            "configs/dag/schema/dag.schema.json",
+            "crates/bijux-dag-core/src/graph/model.rs",
+            "`graph.inputs`",
+            "## Node Fields",
+            "`graph_input`",
+            "`node_output`",
+            "`path_var`",
+            "`resources`",
+            "`retry`",
+            "`timeout_ms`",
+            "`cache`",
+            "`env_allowlist`",
+            "`branch`",
+            "`subgraphs`",
+            "`subgraph_instances`",
+            "Validation diagnostics always carry",
+        ],
+        "docs/bijux-dag/interfaces/reference/graph-schema.md",
+    );
+
+    let dag_schema = read_repo_file("configs/dag/schema/dag.schema.json");
+    assert_contains_all(
+        &dag_schema,
+        &[
+            "\"subgraphs\"",
+            "\"subgraph_instances\"",
+            "\"dynamic\"",
+            "\"gpu_devices\"",
+            "\"named_resources\"",
+            "\"promotable\"",
+        ],
+        "configs/dag/schema/dag.schema.json",
     );
 }
 
