@@ -2,10 +2,27 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://bijux.dev/schema/dag/v0.1",
   "title": "BijuxDag",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["spec", "nodes", "edges"],
   "$defs": {
+    "graphInputKind": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "integer", "float", "boolean", "path", "enum", "array", "object"]
+        },
+        "values": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "items": { "$ref": "#/$defs/graphInputKind" },
+        "properties": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/graphInputSpec" }
+        }
+      }
+    },
     "graphInputSpec": {
       "anyOf": [
         { "type": "string" },
@@ -17,182 +34,374 @@
           "type": "object",
           "not": { "required": ["type"] }
         },
-        { "$ref": "#/$defs/graphInputSchema" }
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "string",
+                "integer",
+                "float",
+                "boolean",
+                "path",
+                "enum",
+                "array",
+                "object"
+              ]
+            },
+            "required": { "type": "boolean" },
+            "default": true,
+            "values": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "items": { "$ref": "#/$defs/graphInputKind" },
+            "properties": {
+              "type": "object",
+              "additionalProperties": { "$ref": "#/$defs/graphInputSpec" }
+            }
+          }
+        }
       ]
     },
-    "graphInputKind": {
+    "nodeOutputRef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type"],
+      "required": ["node_id", "output_name"],
       "properties": {
-        "type": {
-          "type": "string",
-          "enum": ["string", "integer", "float", "boolean", "path", "enum", "array", "object"]
-        },
-        "values": { "type": "array", "items": { "type": "string" } },
-        "items": { "$ref": "#/$defs/graphInputKind" },
-        "properties": {
-          "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/graphInputSpec" }
-        }
-      }
+        "node_id": { "type": "string" },
+        "output_name": { "type": "string" },
+        "path": { "type": "string" }
+      },
+      "oneOf": [
+        { "required": ["output_name"] },
+        { "required": ["path"] }
+      ]
     },
-    "graphInputSchema": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": ["string", "integer", "float", "boolean", "path", "enum", "array", "object"]
-        },
-        "required": { "type": "boolean" },
-        "default": {},
-        "values": { "type": "array", "items": { "type": "string" } },
-        "items": { "$ref": "#/$defs/graphInputKind" },
-        "properties": {
-          "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/graphInputSpec" }
-        }
-      }
-    }
-  },
-  "properties": {
-    "spec": {"type": "string", "const": "bijux-dag/v0.1"},
-    "meta": {
+    "pathVarBinding": {
       "type": "object",
       "additionalProperties": false,
       "required": ["name"],
       "properties": {
-        "name": {"type": "string"},
-        "description": {"type": ["string", "null"]},
-        "owners": {"type": "array", "items": {"type": "string"}},
-        "tags": {"type": "array", "items": {"type": "string"}}
+        "name": { "type": "string" },
+        "relative_path": { "type": ["string", "null"] }
       }
     },
-    "inputs": {
-      "type": "object",
-      "additionalProperties": { "$ref": "#/$defs/graphInputSpec" }
+    "pathVarRef": {
+      "anyOf": [
+        { "type": "string" },
+        { "$ref": "#/$defs/pathVarBinding" }
+      ]
     },
-    "nondeterminism_allowed": {"type": "boolean"},
-    "nodes": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["id", "kind", "inputs", "outputs"],
-        "properties": {
-          "id": {"type": "string"},
-          "kind": {"type": "string"},
-          "semantic_kind": {
-            "type": "string",
-            "enum": ["task", "branch", "barrier", "map", "reduce"]
-          },
-          "inputs": {"type": "array", "items": {"type": "string"}},
-          "outputs": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["name", "path"],
-              "properties": {
-                "name": {"type": "string"},
-                "path": {"type": "string"},
-                "kind": {
-                  "type": "string",
-                  "enum": ["file", "directory", "value", "table", "log", "binary", "bundle"]
-                },
-                "required": {"type": "boolean"},
-                "media_type": {"type": ["string", "null"]}
-              }
-            }
-          },
-          "params": {},
-          "container": {
-            "type": ["object", "null"],
-            "additionalProperties": false,
-            "required": ["image", "argv", "engine"],
-            "properties": {
-              "image": {"type": "string"},
-              "argv": {"type": "array", "items": {"type": "string"}},
-              "env_allowlist": {"type": "array", "items": {"type": "string"}},
-              "workdir": {"type": ["string", "null"]},
-              "engine": {"type": "string", "enum": ["docker", "podman"]}
-            }
-          },
-          "timeout_ms": {"type": ["integer", "null"], "minimum": 0},
-          "resources": {
-            "type": ["object", "null"],
-            "additionalProperties": false,
-            "required": ["cpu", "mem_mb"],
-            "properties": {
-              "cpu": {"type": "integer", "minimum": 0},
-              "mem_mb": {"type": "integer", "minimum": 0}
-            }
-          },
-          "tags": {"type": "array", "items": {"type": "string"}},
-          "retry": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["max_attempts", "backoff_ms"],
-            "properties": {
-              "max_attempts": {"type": "integer", "minimum": 0},
-              "backoff_ms": {"type": "integer", "minimum": 0}
-            }
-          },
-          "effects": {"type": "array", "items": {"type": "string"}},
-          "env_allowlist": {"type": "array", "items": {"type": "string"}},
-          "group": {"type": ["string", "null"]},
-          "trigger_rule": {
-            "type": "string",
-            "enum": ["all_success", "any_success", "all_done", "none_failed"]
-          },
-          "branch": {
-            "type": ["object", "null"],
-            "additionalProperties": false,
-            "required": ["decisions", "decision_output"],
-            "properties": {
-              "decisions": {"type": "array", "items": {"type": "string"}},
-              "default_decision": {"type": ["string", "null"]},
-              "decision_output": {"type": "string"}
-            }
+    "refSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": ["graph_input"],
+          "properties": {
+            "graph_input": { "type": "string" }
+          }
+        },
+        {
+          "required": ["node_output"],
+          "properties": {
+            "node_output": { "$ref": "#/$defs/nodeOutputRef" }
+          }
+        },
+        {
+          "required": ["path_var"],
+          "properties": {
+            "path_var": { "$ref": "#/$defs/pathVarRef" }
+          }
+        }
+      ],
+      "properties": {
+        "graph_input": { "type": "string" },
+        "node_output": { "$ref": "#/$defs/nodeOutputRef" },
+        "path_var": { "$ref": "#/$defs/pathVarRef" }
+      }
+    },
+    "paramValue": {
+      "anyOf": [
+        { "$ref": "#/$defs/refSpec" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/paramValue" }
+        },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/paramValue" }
+        },
+        true
+      ]
+    },
+    "outputSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "path"],
+      "properties": {
+        "name": { "type": "string" },
+        "path": { "type": "string" },
+        "kind": {
+          "type": "string",
+          "enum": ["file", "directory", "value", "table", "log", "binary", "bundle"]
+        },
+        "required": { "type": "boolean" },
+        "media_type": { "type": ["string", "null"] },
+        "promotable": { "type": "boolean" }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cpu", "mem_mb"],
+      "properties": {
+        "cpu": { "type": "integer", "minimum": 0 },
+        "mem_mb": { "type": "integer", "minimum": 0 },
+        "gpu_devices": { "type": "integer", "minimum": 0 },
+        "named_resources": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }
     },
-    "edges": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["from", "to"],
-        "properties": {
-          "id": {"type": ["string", "null"]},
-          "kind": {
+    "containerSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["image", "argv", "engine"],
+      "properties": {
+        "image": { "type": "string" },
+        "argv": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "env_allowlist": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "workdir": { "type": ["string", "null"] },
+        "engine": {
+          "type": "string",
+          "enum": ["docker", "podman"]
+        }
+      }
+    },
+    "retryPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_attempts": { "type": "integer", "minimum": 0 },
+        "backoff_ms": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "cacheBehavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "branchSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decisions", "decision_output"],
+      "properties": {
+        "decisions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "default_decision": { "type": ["string", "null"] },
+        "decision_output": { "type": "string" }
+      }
+    },
+    "dynamicSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expansion_output"],
+      "properties": {
+        "expansion_output": { "type": "string" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind"],
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "type": "string" },
+        "semantic_kind": {
+          "type": "string",
+          "enum": ["task", "branch", "barrier", "map", "reduce", "dynamic"]
+        },
+        "inputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/outputSpec" }
+        },
+        "params": { "$ref": "#/$defs/paramValue" },
+        "container": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/containerSpec" }
+          ]
+        },
+        "timeout_ms": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "resources": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/resources" }
+          ]
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "retry": { "$ref": "#/$defs/retryPolicy" },
+        "cache": { "$ref": "#/$defs/cacheBehavior" },
+        "effects": {
+          "type": "array",
+          "items": {
             "type": "string",
-            "enum": ["data", "control", "conditional"]
-          },
-          "decision": {"type": ["string", "null"]},
-          "from": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["node_id", "port"],
-            "properties": {
-              "node_id": {"type": "string"},
-              "port": {"type": "string"}
-            }
-          },
-          "to": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["node_id", "port"],
-            "properties": {
-              "node_id": {"type": "string"},
-              "port": {"type": "string"}
+            "enum": ["filesystem", "network", "env", "clock"]
+          }
+        },
+        "env_allowlist": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "group": { "type": ["string", "null"] },
+        "trigger_rule": {
+          "type": "string",
+          "enum": ["all_success", "any_success", "all_done", "none_failed"]
+        },
+        "branch": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/branchSpec" }
+          ]
+        },
+        "dynamic": {
+          "anyOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/dynamicSpec" }
+          ]
+        }
+      }
+    },
+    "portRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node_id", "port"],
+      "properties": {
+        "node_id": { "type": "string" },
+        "port": { "type": "string" }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+        "id": { "type": ["string", "null"] },
+        "kind": {
+          "type": "string",
+          "enum": ["data", "control", "conditional"]
+        },
+        "decision": { "type": ["string", "null"] },
+        "from": { "$ref": "#/$defs/portRef" },
+        "to": { "$ref": "#/$defs/portRef" }
+      }
+    },
+    "subgraphDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["graph"],
+      "properties": {
+        "graph": { "$ref": "#/$defs/graph" },
+        "outputs": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/nodeOutputRef" }
+        }
+      }
+    },
+    "subgraphInstance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "subgraph"],
+      "properties": {
+        "id": { "type": "string" },
+        "subgraph": { "type": "string" },
+        "input_bindings": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/paramValue" }
+        }
+      }
+    },
+    "graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spec", "nodes", "edges"],
+      "properties": {
+        "spec": {
+          "type": "string",
+          "const": "bijux-dag/v0.1"
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": ["string", "null"] },
+            "owners": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "tags": {
+              "type": "array",
+              "items": { "type": "string" }
             }
           }
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/graphInputSpec" }
+        },
+        "nondeterminism_allowed": { "type": "boolean" },
+        "subgraphs": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/subgraphDefinition" }
+        },
+        "subgraph_instances": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/subgraphInstance" }
+        },
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/node" }
+        },
+        "edges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/edge" }
         }
       }
     }
-  }
+  },
+  "allOf": [
+    { "$ref": "#/$defs/graph" }
+  ]
 }
