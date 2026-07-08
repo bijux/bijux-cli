@@ -1,7 +1,7 @@
 # bijux-dag-app
 
 `bijux-dag-app` is the application layer behind the `bijux-dag` command
-surface. It translates command intent into calls across the DAG crates, owns
+surface. It translates command intent into calls across the DAG crates, applies
 release-boundary routing, and shapes the typed responses that the CLI renders.
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
@@ -16,7 +16,14 @@ that product promise coherent at the command and response boundary.
 - contains repository-owned experimental and opt-in routes, but those routes
   are not automatically part of the stable operator contract
 
-## What This Crate Owns
+## Good Fit
+
+- embedding `bijux-dag` command behavior in another Rust surface
+- reusing Bijux command orchestration without re-implementing route policy
+- shaping the same machine and human response models used by the CLI
+- inspecting how stable, experimental, simulated, and internal lanes are gated
+
+## What This Crate Provides
 
 - command orchestration and request validation at the app boundary
 - typed response models and render helpers
@@ -70,7 +77,7 @@ that product promise coherent at the command and response boundary.
 - you only need the executable boundary:
   `bijux-dag-cli`
 
-## Representative Workflow
+## Representative Workflows
 
 For the repository-backed example that shows how the app surface reports a real
 cache verification and diagnostic sequence, including changed-input cache

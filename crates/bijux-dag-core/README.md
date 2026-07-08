@@ -1,7 +1,7 @@
 # bijux-dag-core
 
-`bijux-dag-core` is the deterministic kernel behind the `bijux-dag` product.
-It owns graph truth: parsing, validation, canonicalization, topology,
+`bijux-dag-core` is the deterministic graph kernel behind `bijux-dag`.
+It handles graph truth: parsing, validation, canonicalization, topology,
 identity, reference resolution, and planner lowering.
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
@@ -25,7 +25,7 @@ the explicit graph-contract half of that product promise.
 - branch contracts, conditional-edge validation, and trigger-rule constraints
   that keep selected and skipped lanes deterministic
 
-Choose this crate when you need a pure Rust dependency for DAG authoring,
+Use this crate when you need a pure Rust dependency for DAG authoring,
 inspection, validation, or identity work without pulling in runtime execution
 or command-layer concerns.
 
@@ -63,7 +63,14 @@ or command-layer concerns.
 - you need persisted evidence models:
   `bijux-dag-artifacts`
 
-## Representative Example
+## Good Fit
+
+- building DAG authoring or validation tooling in Rust
+- computing canonical graph identity before any execution side effects
+- lowering validated graphs into deterministic planner inputs
+- reusing Bijux graph semantics without depending on the CLI or runtime
+
+## Representative Examples
 
 For the repository-backed authoring example that binds a graph-owned label into
 a real container command surface, use

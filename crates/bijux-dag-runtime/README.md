@@ -1,8 +1,8 @@
 # bijux-dag-runtime
 
-`bijux-dag-runtime` is the execution engine for `bijux-dag`. It owns runtime
-planning, scheduling, adapter invocation boundaries, policy checks, replay
-classification, cache behavior, and trace emission.
+`bijux-dag-runtime` is the execution engine for `bijux-dag`. It handles
+runtime planning, scheduling, adapter invocation boundaries, policy checks,
+replay classification, cache behavior, and trace emission.
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
@@ -28,8 +28,9 @@ runtime layer that executes, records, replays, and verifies that promise.
 - branch pruning, skipped-lane recording, trigger-rule evaluation, and replay
   equivalence over selected execution paths
 
-Choose this crate when you need to execute validated DAG graphs or integrate
-with Bijux runtime policies from Rust.
+Use this crate when you need to execute validated DAG graphs, replay retained
+runs, enforce runtime policy, or integrate with Bijux execution behavior from
+Rust.
 
 ## What It Does Not Own
 
@@ -37,7 +38,14 @@ with Bijux runtime policies from Rust.
 - top-level command parsing or output presentation
 - release-governance and maintainer report composition
 
-## Runtime identity rules
+## Good Fit
+
+- executing validated graphs from Rust
+- replaying or comparing retained runs
+- integrating with cache, adapter, and runtime policy behavior
+- consuming the same execution semantics that power `bijux-dag`
+
+## Runtime Identity Rules
 
 - runtime manifests and provenance records stamp the crate package version
   directly from build metadata
@@ -50,7 +58,7 @@ with Bijux runtime policies from Rust.
 
 Use these rules when reviewing runtime fingerprint drift or provenance output.
 
-## External adapter boundary
+## External Adapter Boundary
 
 - runtime discovery reads executable adapters from `BIJUX_DAG_ADAPTERS_DIR`
 - `info --json` must emit descriptor JSON on stdout only; stderr during the
@@ -63,7 +71,7 @@ Use these rules when reviewing runtime fingerprint drift or provenance output.
   cache identity, so changing the adapter binary invalidates cached reuse even
   if the adapter keeps the same declared `id` and `version`
 
-## Persisted lifecycle evidence
+## Persisted Lifecycle Evidence
 
 Node traces persist lifecycle evidence separately from terminal `status`.
 
@@ -84,7 +92,7 @@ Node traces persist lifecycle evidence separately from terminal `status`.
   into retained node evidence, so large logs stay on disk instead of being
   buffered fully in memory during execution
 
-## Subprocess cleanup contract
+## Subprocess Cleanup Contract
 
 - On Unix hosts, controlled shell, external, python, and container-engine
   commands run in a dedicated subprocess group.

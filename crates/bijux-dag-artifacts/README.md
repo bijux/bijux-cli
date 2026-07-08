@@ -1,6 +1,6 @@
 # bijux-dag-artifacts
 
-`bijux-dag-artifacts` owns artifact identity, persistence, integrity, and
+`bijux-dag-artifacts` handles artifact identity, persistence, integrity, and
 lifecycle helpers for DAG runs.
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
@@ -24,6 +24,14 @@ verified-artifact and persisted-evidence part of that promise.
 
 Use this crate when you need to read, write, validate, or transport DAG run
 artifacts without taking on runtime execution or command orchestration.
+
+## Good Fit
+
+- reading retained run evidence from Rust
+- validating manifests, traces, indexes, and artifact hashes
+- moving run bundles between machines or storage layers
+- working with promotion, retention, and lineage data without embedding the
+  runtime
 
 ## What It Does Not Own
 
