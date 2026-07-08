@@ -194,8 +194,11 @@ nav:
               - API Surface: bijux-dag/interfaces/api-surface.md
               - Configuration Surface: bijux-dag/interfaces/configuration-surface.md
               - Data Contracts: bijux-dag/interfaces/data-contracts.md
+              - Graph Schema Reference: bijux-dag/interfaces/reference/graph-schema.md
               - Artifact Contracts: bijux-dag/interfaces/artifact-contracts.md
               - Entrypoints and Examples: bijux-dag/interfaces/entrypoints-and-examples.md
+              - Authoring Guide: bijux-dag/interfaces/guides/authoring-guide.md
+              - Reusable Subgraphs: bijux-dag/interfaces/guides/reusable-subgraphs.md
               - Operator Workflows: bijux-dag/interfaces/operator-workflows.md
               - Non-Stable Command Inventory: bijux-dag/interfaces/reference/nonstable-command-inventory.md
               - Public Imports: bijux-dag/interfaces/public-imports.md

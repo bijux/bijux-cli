@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-08
 ---
 
 # Data Contracts
@@ -41,15 +41,20 @@ graph file can declare graph-scoped inputs, node-local params, output
 contracts, execution policy, and environment policy without relying on
 undocumented adapter behavior.
 
+Use [Graph Schema Reference](reference/graph-schema.md) for the full DAG
+file-format reference, including top-level graph fields, reusable subgraphs,
+dynamic controllers, trigger rules, path variables, and validation diagnostics.
+
 - `graph.inputs` is a JSON object of graph-level input values available during
   planning and execution.
 - `node.inputs` declares named input ports. Edges bind those ports to upstream
   output names.
 - `node.outputs` declares typed output contracts with a stable `name`, relative
-  `path`, optional `kind`, optional `required`, and optional `media_type`.
+  `path`, optional `kind`, optional `required`, optional `media_type`, and
+  optional `promotable`.
 - `node.params` accepts literal JSON, arrays, objects, and reference objects.
-- `timeout_ms`, `resources`, `retry`, `effects`, `env_allowlist`, and `cache`
-  are part of the stable graph shape.
+- `timeout_ms`, `resources`, `retry`, `effects`, `env_allowlist`, `cache`,
+  `branch`, and `dynamic` are part of the live graph shape.
 
 ### Output Contract Shape
 
@@ -122,6 +127,10 @@ the actual upstream content that was wired into the node.
 
 ### Reference Shapes
 
+Use the graph schema reference for the complete authoring contract. The
+execution-facing summary here keeps the shapes close to how downstream input
+materialization reasons about them.
+
 Graph params can bind to graph inputs:
 
 ```json
@@ -174,19 +183,16 @@ The path-variable contract is intentionally narrow:
 
 ### Execution Policy Fields
 
-- `resources` currently supports `cpu` and `mem_mb`.
-- `resources.named_resources` supports named capacities such as license tokens,
-  database slots, or other runtime-scoped resource classes that should be
-  scheduled explicitly instead of hidden in adapter-specific params.
+- `resources` supports `cpu` and `mem_mb`, plus optional `gpu_devices` and
+  `named_resources`.
 - `retry` currently supports `max_attempts` and `backoff_ms`.
-- retry params may additionally declare `retryable_failure_classes`,
-  `retryable_exit_codes`, `retry_backoff_strategy`, `retry_jitter_ms`, and
-  `timeout_retry_policy`.
-- `timeout_retry_policy` supports `by_failure_class`, `always`, and `never`.
-- policy-denied nodes are never retried, regardless of retry params.
+- `timeout_ms` is a first-class node field rather than an adapter-specific
+  parameter convention.
 - `cache.enabled = false` requires a non-empty `cache.reason` so cache opt-out is
   auditable.
 - `env_allowlist` is only valid when the node declares the `env` effect.
+- `container.env_allowlist`, `container.workdir`, and container `argv` all stay
+  inside the authored graph contract rather than being inferred later.
 - declared outputs, env rules, params, and cache policy all affect operator and
   release-facing contract surfaces.
 
@@ -201,6 +207,8 @@ guessing:
 - cache disablement without a reason is rejected
 - references to undeclared graph inputs or missing node outputs are rejected
 - unknown path variables and traversal-bearing path suffixes are rejected
+- unsupported container engines are rejected
+- invalid reusable-subgraph bindings and branch decisions are rejected
 
 ## Plan Preview Contract
 

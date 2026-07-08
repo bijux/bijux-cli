@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-08
 ---
 
 # DAG Interfaces
@@ -47,8 +47,10 @@ flowchart LR
 - [API Surface](api-surface.md)
 - [Configuration Surface](configuration-surface.md)
 - [Data Contracts](data-contracts.md)
+- [Graph Schema Reference](reference/graph-schema.md)
 - [Error Codes](reference/error-codes.md)
 - [Non-Stable Command Inventory](reference/nonstable-command-inventory.md)
+- [Authoring Guide](guides/authoring-guide.md)
 - [Reusable Subgraphs](guides/reusable-subgraphs.md)
 - [Artifact Contracts](artifact-contracts.md)
 - [Entrypoints and Examples](entrypoints-and-examples.md)

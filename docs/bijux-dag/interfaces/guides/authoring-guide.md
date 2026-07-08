@@ -4,12 +4,14 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-08
 ---
 
 # Authoring Guide
 
 Use the governed fixture set below when authoring or reviewing DAG definitions.
+For the field-level DAG file contract, start with
+[Graph Schema Reference](../reference/graph-schema.md).
 
 ## Start from valid patterns
 

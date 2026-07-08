@@ -105,6 +105,9 @@ flowchart LR
   is how to validate, run, replay, inspect, or compare
 - open [CLI Surface](interfaces/cli-surface.md) when the question is command
   discovery or route classification
+- open [Graph Schema Reference](interfaces/reference/graph-schema.md) when the
+  question is what a DAG file may declare, from graph inputs through validation
+  errors
 - open [Generated CLI Reference](interfaces/generated-cli-reference.md) when
   the question is the exact stable command syntax and current help text
 - open [Non-Stable Command Inventory](interfaces/reference/nonstable-command-inventory.md)
