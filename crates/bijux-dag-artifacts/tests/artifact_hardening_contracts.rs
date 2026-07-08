@@ -3,7 +3,6 @@ use bijux_dag_artifacts::{
     write_incomplete_run_marker, write_json_atomic_durable, Manifest, RunFinalizationMode,
     RunOutputsIndex, VerificationMode,
 };
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;

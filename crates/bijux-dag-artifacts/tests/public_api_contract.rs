@@ -6,7 +6,6 @@ use bijux_dag_artifacts::stable::{
     lineage_dependencies, ArtifactLineageEdge, ArtifactLineageSnapshot,
 };
 use bijux_dag_artifacts::{DeclaredOutputArtifact, InputFile, InputsIndex};
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;

@@ -1,5 +1,4 @@
 use bijux_dag_artifacts::{build_cleanup_plan, retention::RetentionPolicy, Manifest};
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use serde_json::Value;
@@ -7,10 +6,12 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
+mod support;
+
 #[test]
 fn run_manifest_minimal_and_maximal_roundtrip_remain_conformant() {
     for fixture in ["run_manifest_minimal.json", "run_manifest_maximal.json"] {
-        let payload = bijux_dag_testkit::load_workspace_fixture_text(
+        let payload = support::load_workspace_fixture_text(
             env!("CARGO_MANIFEST_DIR"),
             &format!("crates/bijux-dag-artifacts/tests/fixtures/{fixture}"),
         );
@@ -29,15 +30,15 @@ fn run_manifest_minimal_and_maximal_roundtrip_remain_conformant() {
 
 #[test]
 fn run_manifest_version_migration_fixtures_classify_supported_and_unsupported_versions() {
-    let supported: Value = bijux_dag_testkit::load_workspace_fixture_json(
+    let supported: Value = support::load_workspace_fixture_json(
         env!("CARGO_MANIFEST_DIR"),
         "evidence/compat/run_schema/v0_1_supported/minimal.manifest.json",
     );
-    let unsupported_past: Value = bijux_dag_testkit::load_workspace_fixture_json(
+    let unsupported_past: Value = support::load_workspace_fixture_json(
         env!("CARGO_MANIFEST_DIR"),
         "evidence/compat/run_schema/unsupported_past/minimal.manifest.json",
     );
-    let unsupported_future: Value = bijux_dag_testkit::load_workspace_fixture_json(
+    let unsupported_future: Value = support::load_workspace_fixture_json(
         env!("CARGO_MANIFEST_DIR"),
         "evidence/compat/run_schema/unsupported_future/minimal.manifest.json",
     );

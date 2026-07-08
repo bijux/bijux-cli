@@ -1,7 +1,6 @@
 use bijux_dag_artifacts::{
     FailureAffectedGroups, FailureCauseRecord, FailurePropagationRecord, RunFailureSummary,
 };
-use bijux_dag_testkit as _;
 use serde as _;
 use tempfile as _;
 use thiserror as _;

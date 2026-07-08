@@ -1,6 +1,5 @@
 use bijux_dag_artifacts::services::{RunArtifactStore, RunArtifactVerifier};
 use bijux_dag_artifacts::{ArtifactError, Manifest, RunDir};
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;

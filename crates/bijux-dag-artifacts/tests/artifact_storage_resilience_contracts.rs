@@ -4,7 +4,6 @@ use bijux_dag_artifacts::retention::RetentionPolicy;
 use bijux_dag_artifacts::{
     build_cleanup_plan, verify_run_dir, write_json_atomic_durable, VerificationMode,
 };
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use serde_json::json;

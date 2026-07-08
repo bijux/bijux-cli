@@ -9,7 +9,6 @@ use bijux_dag_artifacts::store::{
     ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
 };
 use bijux_dag_artifacts::{write_outputs_index, DeclaredOutputArtifact, OutputsIndex};
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use serde_json as _;

@@ -1,5 +1,4 @@
 use bijux_dag_artifacts::{Manifest, RunMetadata, RunSummary};
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;
@@ -8,13 +7,15 @@ use std::thread;
 use tempfile as _;
 use thiserror as _;
 
+mod support;
+
 #[test]
 fn minimal_and_maximal_run_manifest_fixtures_parse() {
-    let minimal: Manifest = bijux_dag_testkit::load_workspace_fixture_typed(
+    let minimal: Manifest = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-artifacts/tests/fixtures/run_manifest_minimal.json",
     );
-    let maximal: Manifest = bijux_dag_testkit::load_workspace_fixture_typed(
+    let maximal: Manifest = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-artifacts/tests/fixtures/run_manifest_maximal.json",
     );

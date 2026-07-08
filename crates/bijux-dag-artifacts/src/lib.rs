@@ -14,9 +14,6 @@
     clippy::must_use_candidate,
     clippy::pedantic
 )]
-#[cfg(test)]
-use bijux_dag_testkit as _;
-
 #[doc(hidden)]
 #[path = "io/fs.rs"]
 pub mod fs;
