@@ -462,7 +462,8 @@ path, use
 
 For the full cache story on that same regional sales workflow, including
 warm-cache reuse, selective invalidation, corruption refusal, and explicit
-cache-miss explanation, use
+cache-miss explanation, plus exact retained-output restoration from a still
+verified cache entry, use
 [`docs/bijux-dag/operations/guides/cache-behavior-workflow.md`](docs/bijux-dag/operations/guides/cache-behavior-workflow.md).
 
 For the retained meaning of graph fingerprints, plan fingerprints, execution
@@ -501,7 +502,7 @@ Representative DAG workflow guides:
 - [`docs/bijux-dag/operations/guides/first-run-tutorial.md`](docs/bijux-dag/operations/guides/first-run-tutorial.md) for the five-minute path from build to graph inspection, retained artifacts, warm cache reuse, replay, and strict verification
 - [`docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md`](docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md) for one retained workflow family that demonstrates branch selection, cache reuse, run comparison, replay proof, strict verification, and artifact promotion together
 - [`docs/bijux-dag/operations/guides/file-processing-workflow.md`](docs/bijux-dag/operations/guides/file-processing-workflow.md) for a host-shell artifact workflow
-- [`docs/bijux-dag/operations/guides/cache-behavior-workflow.md`](docs/bijux-dag/operations/guides/cache-behavior-workflow.md) for selective invalidation, corruption refusal, and cache-miss explanation on a retained workflow family
+- [`docs/bijux-dag/operations/guides/cache-behavior-workflow.md`](docs/bijux-dag/operations/guides/cache-behavior-workflow.md) for selective invalidation, corruption refusal, cache-miss explanation, and exact cache-backed repair of retained outputs on a retained workflow family
 - [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md) for changed-input attribution and retained-run comparison
 - [`docs/bijux-dag/operations/guides/branching-bulletin-workflow.md`](docs/bijux-dag/operations/guides/branching-bulletin-workflow.md) for retained branch decisions, skipped lanes, and replay stability
 - [`docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md`](docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md) for transient retry evidence, focused replay repair, and strict verification after recovery
