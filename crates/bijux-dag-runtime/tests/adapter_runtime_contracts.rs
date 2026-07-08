@@ -1935,6 +1935,67 @@ fn external_adapter_info_stderr_boundary_is_rejected() {
 }
 
 #[test]
+fn external_adapter_failure_envelope_is_mapped_structurally() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let adapter_dir = dir.path().join("adapters");
+    fs::create_dir_all(&adapter_dir).expect("mkdir");
+    let adapter_path = adapter_dir.join("failing-adapter");
+    fs::write(
+        &adapter_path,
+        r#"#!/bin/sh
+if [ "$1" = "info" ]; then
+  echo '{"protocol_version":"bijux-dag-adapter/v1","adapter_id":"failing","adapter_version":"0.1","required_effects":{"filesystem":true,"env":false,"network":false,"clock":false},"supported_kinds":["fake"],"output_schema":"v0.1"}'
+  exit 0
+fi
+if [ "$1" = "execute" ]; then
+  failure_path=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --failure-path) failure_path="$2"; shift 2;;
+      --outdir|--workdir|--node-spec) shift 2;;
+      *) shift;;
+    esac
+  done
+  cat > "$failure_path" <<'JSON'
+{"class":"execution","kind":"Execution","code":"REMOTE_DATA_SOURCE_REJECTED","message":"upstream rejected the request","details":{"reason":"quota_exhausted","retryable":false}}
+JSON
+  printf 'adapter stderr\n' >&2
+  exit 9
+fi
+exit 1
+"#,
+    )
+    .expect("write");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut perms = fs::metadata(&adapter_path).expect("meta").permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&adapter_path, perms).expect("chmod");
+    }
+
+    std::env::set_var("BIJUX_DAG_ADAPTERS_DIR", &adapter_dir);
+    let graph = external_graph("fake", None);
+    let runtime = Runtime::new();
+    let run_dir = runtime.run(&graph, dir.path(), RuntimeConfig::default()).expect("run");
+    std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
+
+    let trace: Value = serde_json::from_str(
+        &fs::read_to_string(run_dir.join("nodes").join("n1").join("trace.json")).expect("trace"),
+    )
+    .expect("trace json");
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["exit_code"], 9);
+    assert_eq!(trace["failure"]["code"], "REMOTE_DATA_SOURCE_REJECTED");
+    assert_eq!(trace["failure"]["class"], "execution");
+    assert_eq!(trace["failure"]["details"]["reason"], "quota_exhausted");
+    assert_eq!(trace["failure"]["details"]["retryable"], false);
+    assert_eq!(trace["failure"]["details"]["exit_code"], 9);
+    assert_eq!(trace["stderr"]["tail_lines"], serde_json::json!(["adapter stderr"]));
+}
+
+#[test]
 fn external_adapter_timeout_quarantines_partial_outputs_and_preserves_binary_hash() {
     let _lock = process_env_lock();
     let dir = tempfile::tempdir().expect("tmpdir");

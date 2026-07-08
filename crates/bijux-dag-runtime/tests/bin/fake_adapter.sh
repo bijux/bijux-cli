@@ -13,6 +13,8 @@ if [ "$1" = "execute" ]; then
         shift 2;;
       --node-spec)
         shift 2;;
+      --failure-path)
+        shift 2;;
       *)
         shift;;
     esac
