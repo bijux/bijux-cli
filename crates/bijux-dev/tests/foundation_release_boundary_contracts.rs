@@ -171,6 +171,8 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         &[
             "## v0.4.0 Surface Truth Table",
             "../foundation/release-boundary.md",
+            "generated-cli-reference.md",
+            "reference/nonstable-command-inventory.md",
             "BIJUX_DAG_ENABLE_SIMULATED=1",
             "BIJUX_DAG_ENABLE_INTERNAL=1",
         ],
@@ -278,9 +280,11 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
 #[test]
 fn dag_operator_reference_docs_use_public_binary_examples() {
     for path in [
+        "docs/bijux-dag/interfaces/generated-cli-reference.md",
         "docs/bijux-dag/interfaces/reference/command-taxonomy.md",
         "docs/bijux-dag/interfaces/configuration-surface.md",
         "docs/bijux-dag/interfaces/reference/node-inspection.md",
+        "docs/bijux-dag/interfaces/reference/nonstable-command-inventory.md",
         "docs/bijux-dag/interfaces/reference/operator-command-index.md",
         "docs/bijux-dag/interfaces/guides/operator-inspection-guide.md",
         "docs/bijux-dag/operations/failure-recovery.md",
@@ -291,6 +295,33 @@ fn dag_operator_reference_docs_use_public_binary_examples() {
             "{path} must use `bijux-dag ...` in public command examples"
         );
     }
+}
+
+#[test]
+fn dag_interface_indexes_link_generated_cli_references() {
+    let handbook = read_repo_file("docs/bijux-dag/index.md");
+    assert_contains_all(
+        &handbook,
+        &[
+            "interfaces/generated-cli-reference.md",
+            "interfaces/reference/nonstable-command-inventory.md",
+        ],
+        "docs/bijux-dag/index.md",
+    );
+
+    let interfaces = read_repo_file("docs/bijux-dag/interfaces/index.md");
+    assert_contains_all(
+        &interfaces,
+        &["Generated CLI Reference", "Non-Stable Command Inventory"],
+        "docs/bijux-dag/interfaces/index.md",
+    );
+
+    let entrypoints = read_repo_file("docs/bijux-dag/interfaces/entrypoints-and-examples.md");
+    assert_contains_all(
+        &entrypoints,
+        &["Generated CLI Reference", "Non-Stable Command Inventory"],
+        "docs/bijux-dag/interfaces/entrypoints-and-examples.md",
+    );
 }
 
 #[test]
