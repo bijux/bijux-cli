@@ -24,6 +24,17 @@ The CLI examples on this page stay on the stable `v0.4.0` operator surface
 from the [Release Boundary](../foundation/release-boundary.md), except where a
 section explicitly calls out an experimental route.
 
+## Proof Map
+
+Use this page when you want the product claims tied to the first commands and
+artifacts you can actually inspect:
+
+- explicit graph contracts are proven by `validate` before any run starts
+- deterministic execution records are proven by retained node traces under `artifacts/`
+- verified artifacts are proven by `artifact registry` and `artifact-inspect`
+- cache explanation is proven by the cache-behavior workflow
+- replayable run bundles are proven by the reproducibility model for replay identity
+
 ## Choose An Entry Point
 
 | If you want to... | Start here |
