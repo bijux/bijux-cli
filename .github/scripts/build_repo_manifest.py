@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -122,6 +123,23 @@ def derive_workflow_allowlist(repo_name: str, release_env: list[dict], wrappers:
     return sorted(workflow_id for workflow_id in allow if workflow_id in known)
 
 
+def normalize_release_env_json_entry(key: str, value: Any) -> Any:
+    if key != "BIJUX_PYPI_PACKAGE_MATRIX_JSON" or not isinstance(value, list):
+        return value
+
+    normalized_packages: list[Any] = []
+    for item in value:
+        if not isinstance(item, dict):
+            normalized_packages.append(item)
+            continue
+
+        normalized_item = dict(item)
+        if normalized_item.get("publish_auth") == "token":
+            normalized_item.pop("publish_auth")
+        normalized_packages.append(normalized_item)
+    return normalized_packages
+
+
 def parse_release_env(path: Path) -> list[dict]:
     entries: list[dict] = []
     if not path.exists():
@@ -145,12 +163,20 @@ def parse_release_env(path: Path) -> list[dict]:
             try:
                 parsed_json = json.loads(inner)
             except json.JSONDecodeError:
-                entries.append({"key": key, "type": "string", "value": value})
+                entries.append({"key": key, "type": "string", "value": inner})
             else:
+                parsed_json = normalize_release_env_json_entry(key, parsed_json)
                 entries.append({"key": key, "type": "json", "value": parsed_json})
             continue
 
-        entries.append({"key": key, "type": "string", "value": value})
+        try:
+            shell_parts = shlex.split(value, posix=True)
+        except ValueError:
+            parsed_value = value
+        else:
+            parsed_value = " ".join(shell_parts) if len(shell_parts) > 1 else (shell_parts[0] if shell_parts else "")
+
+        entries.append({"key": key, "type": "string", "value": parsed_value})
 
     return entries
 

@@ -4,43 +4,30 @@
 
 name: "repo / ci"
 on:
-  push:
+  pull_request:
     branches:
       - main
-  pull_request:
+  merge_group:
+    branches:
+      - main
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 permissions:
   contents: read
-  actions: read
-  pull-requests: read
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   PYTHONUNBUFFERED: 1
   BIJUXCLI_API_GUARD: 1
-  RUST_TOOLCHAIN_VERSION: 1.86.0
+  RUST_TOOLCHAIN_VERSION: 1.85.0
 jobs:
-  policy_gate:
-    name: policy-prerequisites
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - name: "Wait for policy and standards prerequisites"
-        shell: bash
-        env:
-          GITHUB_TOKEN: "${{ github.token }}"
-        run:
-          |
-            set -euo pipefail
-            python3 .github/scripts/check_workflow_prerequisites.py
   fmt:
     name: Formatting
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: "Check out the repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: "Set up Python"
         uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
@@ -56,14 +43,14 @@ jobs:
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
       - name: "Run formatting checks"
         run: "make gh-fmt"
-    needs: policy_gate
+    if: "${{ github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]' }}"
   lint:
     name: Lint
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: "Check out the repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: "Set up Python"
         uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
@@ -79,14 +66,14 @@ jobs:
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
       - name: "Run lint checks"
         run: "make gh-lint"
-    needs: policy_gate
+    if: "${{ github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]' }}"
   security:
     name: Security
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: "Check out the repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: "Set up Python"
         uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
@@ -103,7 +90,7 @@ jobs:
         run: "make gh-security-install-rust-tools"
       - name: "Run security checks"
         run: "make gh-security"
-    needs: policy_gate
+    if: "${{ github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]' }}"
   test:
     name: "Tests (py${{ matrix.python-version }})"
     runs-on: ubuntu-24.04
@@ -116,7 +103,7 @@ jobs:
           - 3.12
     steps:
       - name: "Check out the repository"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: "Set up Python"
         uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548
         with:
@@ -133,4 +120,4 @@ jobs:
         run: "make gh-test-install-rust-tools"
       - name: "Run test suites"
         run: "make gh-test"
-    needs: policy_gate
+    if: "${{ github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]' }}"
