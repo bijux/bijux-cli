@@ -14,7 +14,7 @@ the explicit graph-contract half of that product promise.
 - public crate on the `v0.4.0` DAG release line
 - pure kernel layer for DAG authoring, validation, and identity work
 
-## What This Crate Owns
+## What It Provides
 
 - strict graph parsing and validation with stable diagnostics
 - deterministic graph canonicalization and topology ordering

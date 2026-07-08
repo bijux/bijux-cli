@@ -5,8 +5,8 @@ lifecycle helpers for DAG runs.
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
-artifacts, cache explanation, and replayable run bundles. This crate owns the
-verified-artifact and persisted-evidence part of that promise.
+artifacts, cache explanation, and replayable run bundles. This crate provides
+the verified-artifact and persisted-evidence layer of that promise.
 
 ## Release Status
 
@@ -14,7 +14,7 @@ verified-artifact and persisted-evidence part of that promise.
 - durable evidence boundary for manifests, traces, indexes, and artifact
   lineage
 
-## What This Crate Owns
+## What It Provides
 
 - run-manifest, node-trace, outputs-index, and storage-layout models
 - artifact hashing, proof, and schema validation helpers

@@ -16,7 +16,7 @@ runtime layer that executes, records, replays, and verifies that promise.
 - contains modeled platform support lanes, but those are not public operator
   promises by default
 
-## What This Crate Owns
+## What It Provides
 
 - execution planning and node orchestration
 - policy evaluation and runtime diagnostics
