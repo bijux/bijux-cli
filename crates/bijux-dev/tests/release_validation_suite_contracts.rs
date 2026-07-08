@@ -243,17 +243,14 @@ fn release_validation_suite_commands_cover_required_release_checks() {
 }
 
 #[test]
-fn public_dag_publish_validation_does_not_require_registry_testkit_release() {
+fn public_dag_manifests_do_not_depend_on_private_testkit_release() {
     let suite = read_suite();
 
     for crate_name in suite.public_dag_crates {
         let manifest = read_public_dag_manifest(&crate_name);
-        if !manifest.contains("package = \"bijux-dag-testkit\"") {
-            continue;
-        }
         assert!(
-            !manifest.contains("package = \"bijux-dag-testkit\", path = \"../bijux-dag-testkit\", version = "),
-            "{crate_name} must keep bijux-dag-testkit as a local-only dev dependency so cargo publish --dry-run validates the public crate"
+            !manifest.contains("bijux-dag-testkit"),
+            "{crate_name} must not depend on the private bijux-dag-testkit crate because public package verification must not require unpublished support crates"
         );
     }
 }

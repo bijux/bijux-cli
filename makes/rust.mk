@@ -202,6 +202,7 @@ prepare-release-tree-rs: ## Prepare a clean release-candidate tree from committe
 	printf '%s\n' "prepare: release tree version $$release_version"; \
 	python3 "$(RELEASE_TREE_SCRIPT)" --workspace-root . --output-dir "$(RS_RELEASE_TREE_DIR)" --version "$$release_version" >/dev/null
 	@mkdir -p "$(dir $(RS_RELEASE_CARGO_CONFIG))"
+	# Patch staged public DAG crates into the clean release tree so dry-run publish verifies topological public dependencies before the new release is present on crates.io.
 	@printf '\n[patch.crates-io]\nbijux-dag-core = { path = "crates/bijux-dag-core" }\nbijux-dag-artifacts = { path = "crates/bijux-dag-artifacts" }\nbijux-dag-runtime = { path = "crates/bijux-dag-runtime" }\nbijux-dag-app = { path = "crates/bijux-dag-app" }\nbijux-dag-cli = { path = "crates/bijux-dag-cli" }\n' >> "$(RS_RELEASE_CARGO_CONFIG)"
 
 fmt-release-rs: prepare-release-tree-rs ## Run release-candidate formatting validation in a clean tree

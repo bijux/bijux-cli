@@ -32,6 +32,12 @@ validation runs. It does not validate against ambient local edits. That keeps
 local release evidence aligned with the publish surface used by CI and prevents
 an uncommitted worktree from hiding a broken candidate.
 
+The staged release tree patches the public DAG family back into the local
+crates.io view for dry-run verification. That patch exists only to simulate the
+topological release order for public crates that have not been published yet.
+It must not be used to hide private crate dependencies inside public package
+manifests.
+
 The end-to-end release verification flow is:
 
 ```text
