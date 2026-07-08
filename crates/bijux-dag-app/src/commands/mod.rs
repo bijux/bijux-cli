@@ -49,6 +49,8 @@ const REPLAY_SOURCE_RUN_ID_HELP: &str =
     "resolve the replay source run by run id instead of passing a source run directory path";
 const REPLAY_SOURCE_RUN_ROOT_HELP: &str =
     "root directory used when resolving --source-run-id; defaults to the replay output root when omitted";
+const RUN_PROGRESS_HELP: &str =
+    "show live progress for `dag run`; `compact` renders operator-readable updates on stderr in human mode and streams `dag.run.progress` JSON lines on stdout when `--json` is active";
 const ROOT_HELP_BOUNDARY_HELP: &str =
     "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: hidden explicit-path routes require deliberate inventory with `bijux-dag commands --lane experimental`\n  simulated: modeled platform namespaces require `bijux-dag commands --lane simulated` to inventory and BIJUX_DAG_ENABLE_SIMULATED=1 to execute\n  internal: maintainer namespaces require `bijux-dag commands --lane internal` to inventory and BIJUX_DAG_ENABLE_INTERNAL=1 to execute\n  future: cluster-backed kubernetes, cluster-backed slurm or hpc, public remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.";
 
@@ -356,7 +358,7 @@ pub(crate) enum Commands {
         preflight_only: bool,
         #[arg(long)]
         explain_scheduling: bool,
-        #[arg(long, value_enum, default_value_t = RunProgressArg::Off)]
+        #[arg(long, value_enum, default_value_t = RunProgressArg::Off, help = RUN_PROGRESS_HELP)]
         progress: RunProgressArg,
     },
     #[command(name = "run-bundle", alias = "bundle")]
