@@ -9,8 +9,8 @@ last_reviewed: 2026-07-07
 
 # CLI Handbook
 
-`bijux` is the root Bijux command runtime. It owns the visible command surface
-for runtime health, official app routing, plugins, layered config, history,
+`bijux` is the root Bijux command runtime. It is the user-facing surface for
+runtime health, official app routing, plugins, layered config, history,
 memory, REPL behavior, and structured output.
 
 Use this handbook when the question is about what `bijux` does at the command
@@ -21,7 +21,7 @@ line or how the Python distribution reaches the same runtime contract.
 <a class="md-button" href="packages/bijux-cli-python.md">Open the Python bridge package</a>
 </div>
 
-## Visible Command Surface
+## What `bijux` Covers Today
 
 The root `bijux --help` surface currently exposes these top-level command
 groups:
@@ -35,18 +35,10 @@ groups:
 Official apps such as `atlas`, `dag`, `dna`, `gnss`, `rag`, `rar`, and `vex`
 mount through the runtime rather than redefining the runtime contract.
 
-## Package Map
+## Packages In This Surface
 
-```mermaid
-flowchart LR
-    handbook["CLI handbook"] --> runtime["bijux-cli runtime"]
-    handbook --> python["bijux-cli-python bridge"]
-```
-
-## Package Destinations
-
-- [`bijux-cli`](packages/bijux-cli.md) owns native runtime semantics
-- [`bijux-cli-python`](packages/bijux-cli-python.md) owns Python packaging
+- [`bijux-cli`](packages/bijux-cli.md) handles native runtime semantics
+- [`bijux-cli-python`](packages/bijux-cli-python.md) handles Python packaging
   and bridge compatibility
 - stay in this handbook when the question spans both CLI packages
 
@@ -59,7 +51,7 @@ flowchart LR
 - `crates/bijux-cli/src/routing/registry.rs`
 - `crates/bijux-cli/src/contracts/`
 
-## Read This Handbook When
+## Use This Handbook When
 
 - the question is about `bijux` command behavior, flags, output, or exit codes
 - plugin or mounted-app routing boundaries are in scope

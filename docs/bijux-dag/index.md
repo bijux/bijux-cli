@@ -18,8 +18,8 @@ local run orchestration, replay, artifact identity, evidence inspection, and
 drift attribution.
 
 Use this handbook when the question is about DAG behavior itself: what gets
-validated, what gets executed, what evidence is written, and which crate owns
-the answer once the route is clear.
+validated, what gets executed, what evidence is written, and which crate
+handles the answer once the route is clear.
 
 The public `v0.4.0` product boundary is intentionally local-first. Stable DAG
 commands cover local validation, planning, execution, replay, inspection,
@@ -97,16 +97,6 @@ claim, and writes retained batch evidence per node.
 <a class="md-button" href="packages/index.md">Open the package map</a>
 </div>
 
-## Reader Map
-
-```mermaid
-flowchart LR
-    handbook["DAG handbook"] --> operators["operator workflows"]
-    handbook --> interfaces["command and data interfaces"]
-    handbook --> packages["crate ownership"]
-    handbook --> quality["quality and compatibility"]
-```
-
 ## Start Here
 
 - open [First Hour With Bijux Dag](operations/guides/first-hour-with-bijux-dag.md)
@@ -161,14 +151,14 @@ flowchart LR
 - open [DAG Packages](packages/index.md) when the route is clear but the owning
   crate is not
 
-## Package Destinations
+## Packages In This Product
 
-- [`bijux-dag-core`](packages/bijux-dag-core.md) owns graph truth and planner lowering
-- [`bijux-dag-runtime`](packages/bijux-dag-runtime.md) owns execution policy, replay, and diagnostics
-- [`bijux-dag-app`](packages/bijux-dag-app.md) owns command orchestration and response shaping
-- [`bijux-dag-cli`](packages/bijux-dag-cli.md) owns the thin executable wrapper
-- [`bijux-dag-artifacts`](packages/bijux-dag-artifacts.md) owns artifact identity, integrity, and lifecycle helpers
-- [`bijux-dag-testkit`](packages/bijux-dag-testkit.md) owns shared deterministic fixtures for repository tests and maintainer suites
+- [`bijux-dag-core`](packages/bijux-dag-core.md) handles graph truth and planner lowering
+- [`bijux-dag-runtime`](packages/bijux-dag-runtime.md) handles execution policy, replay, and diagnostics
+- [`bijux-dag-app`](packages/bijux-dag-app.md) handles command orchestration and response shaping
+- [`bijux-dag-cli`](packages/bijux-dag-cli.md) handles the thin executable wrapper
+- [`bijux-dag-artifacts`](packages/bijux-dag-artifacts.md) handles artifact identity, integrity, and lifecycle helpers
+- [`bijux-dag-testkit`](packages/bijux-dag-testkit.md) handles shared deterministic fixtures for repository tests and maintainer suites
 
 ## Workflow Spine
 

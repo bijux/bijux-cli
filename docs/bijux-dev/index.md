@@ -9,13 +9,12 @@ last_reviewed: 2026-04-12
 
 # Maintainer Handbook
 
-The maintainer handbook explains the repository machinery behind release proof,
-diagnostics, workflow entrypoints, and shared make targets. It covers the
-maintainer package itself, the operational routes around it, and the governance
-surfaces that keep the repository healthy over time.
+Use the maintainer handbook when the question is about repository gates,
+release proof, diagnostics, documentation generation, or the commands that
+maintain `bijux-core` itself.
 
-Use it when the question is about repository gates, evidence collection,
-documentation operations, release verification, or policy enforcement.
+It covers the maintainer package, the operational routes around it, and the
+governance surfaces that keep the repository healthy over time.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="packages/bijux-dev.md">Open the bijux-dev package</a>
@@ -23,23 +22,12 @@ documentation operations, release verification, or policy enforcement.
 <a class="md-button" href="makes/">Open makes</a>
 </div>
 
-## Section Map
-
-```mermaid
-flowchart LR
-    handbook["Maintainer handbook"] --> package["bijux-dev package"]
-    handbook --> operations["operations"]
-    handbook --> governance["governance"]
-    handbook --> makes["make surfaces"]
-    handbook --> workflows["GitHub workflows"]
-```
-
 ## Package Destination
 
-- [`bijux-dev`](packages/bijux-dev.md) owns the repository control plane,
+- [`bijux-dev`](packages/bijux-dev.md) handles the repository control plane,
   maintainer automation, diagnostics, and release verification flows
 
-## Sections In This Handbook
+## Main Sections
 
 - [Dev Operations](operations/index.md)
 - [Dev Governance](governance/index.md)

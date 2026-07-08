@@ -9,14 +9,15 @@ last_reviewed: 2026-04-12
 
 # Repository Handbook
 
-The repository handbook covers the shared ground above any one crate or command
-surface. Use it when the question is about publication boundaries, repository
-layout, cross-package ownership, release policy, or shared automation.
+Use the repository handbook when the question crosses one product boundary:
+what the workspace publishes, how packages divide responsibility, which release
+claims are real today, and which repository-wide automation keeps those claims
+verified.
 
-<div class="bijux-callout"><strong>Use this branch when ownership is broader than one product.</strong>
-It is the right route for workspace rules, cross-program architecture, release
-boundaries, and the parts of <code>bijux-core</code> that sit above both public
-products.</div>
+<div class="bijux-callout"><strong>Start here when the answer is bigger than one product.</strong>
+This handbook is the right route for workspace layout, release boundaries,
+shared package rules, and the parts of <code>bijux-core</code> that sit above
+both public products.</div>
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="foundation/">Open foundation</a>
@@ -24,17 +25,7 @@ products.</div>
 <a class="md-button" href="operations/">Open operations</a>
 </div>
 
-## Section Map
-
-```mermaid
-flowchart LR
-    repo["Repository handbook"] --> foundation["Foundation"]
-    repo --> architecture["Architecture"]
-    repo --> operations["Operations"]
-    repo --> governance["Governance"]
-```
-
-## What This Handbook Owns
+## What You Will Find Here
 
 - repository-wide publication and release boundaries
 - shared package and crate ownership rules
@@ -52,7 +43,7 @@ flowchart LR
 - open [Operations](operations/index.md) for validation, release, review,
   automation, and contributor workflows
 
-## Task Map
+## Find The Right Page
 
 | If you need to... | Start page |
 | --- | --- |
@@ -65,7 +56,7 @@ flowchart LR
 | review dependency and ownership constraints | [Dependency Direction](architecture/dependency-direction.md) |
 | understand how published and internal crates divide responsibility | [Package Map](foundation/package-map.md) |
 
-## When To Use This Handbook
+## Use This Handbook When
 
 - when a policy affects more than one program handbook
 - when ownership boundaries across crates must be clarified
@@ -87,8 +78,7 @@ The workspace also contains repository-internal support crates:
 - `bijux-dag-testkit`, deterministic test support for DAG crates
 - `bijux-dev`, maintainer diagnostics, contracts, and release tooling
 
-This handbook is the right starting point when that split, rather than one
-concrete command, is the main thing a reader needs to understand.
+Start here when that split matters more than one specific command or crate.
 
 ## Program Handbooks
 
