@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-08
 ---
 
 # Cache Behavior Workflow
@@ -18,6 +18,8 @@ proves on one real repository workflow:
 - an unrelated branch stays cached
 - a corrupted cache entry is refused instead of reused
 - cache-miss explanation identifies both changed inputs and corruption refusal
+- a corrupted retained run output can be restored from an exact verified cache
+  entry through the internal repair lane
 
 The workflow uses the repository regional sales example:
 
@@ -236,6 +238,50 @@ The response should now report:
 
 This is the operator-facing proof that cache reuse is rejected when integrity
 verification fails.
+
+## Restore A Corrupted Retained Output From Cache
+
+Corrupt one retained output in the warm run while leaving the cache entry
+itself untouched:
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+
+target = Path(
+    "artifacts/regional-sales-runs/run-regional-sales-warm/"
+    "nodes/publish_final_table/outputs/final/revenue_attainment.csv"
+)
+target.write_text("corrupted-retained-output\n", encoding="utf-8")
+print(target)
+PY
+```
+
+The stable integrity surface should now fail on that retained run:
+
+```bash
+bijux-dag --json verify "${RUN_ROOT}/run-regional-sales-warm"
+```
+
+Restore the retained output from the exact verified cache entry:
+
+```bash
+BIJUX_DAG_ENABLE_INTERNAL=1 bijux-dag --json runtime repair --apply \
+  --cache-dir "${CACHE_ROOT}" \
+  --out "${RUN_ROOT}" \
+  "${RUN_ROOT}/run-regional-sales-warm"
+```
+
+The repair report should show:
+
+- `data.cache_recoveries_applied[0].node_id = "publish_final_table"`
+- `data.repair_run = null`
+- `data.issues = []`
+
+That is the honest boundary of this repair lane: it restores retained outputs
+only when the exact persisted cache entry still verifies. If the cache entry is
+also missing or corrupt, repair must fall back to a child rerun or remain
+failed.
 
 ## Rerun After Corruption
 
