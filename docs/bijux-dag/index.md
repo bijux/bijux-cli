@@ -73,6 +73,7 @@ claim, and writes retained batch evidence per node.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/guides/first-hour-with-bijux-dag.md">Start with the first hour guide</a>
+<a class="md-button" href="operations/v0-4-0-release-notes.md">Read the v0.4.0 release notes</a>
 <a class="md-button" href="operations/guides/branching-bulletin-workflow.md">Run the branch workflow</a>
 <a class="md-button" href="operations/guides/cache-behavior-workflow.md">Run the cache workflow</a>
 <a class="md-button" href="operations/guides/compliance-gated-bulletin-workflow.md">Run the recovery workflow</a>
@@ -97,6 +98,9 @@ flowchart LR
 
 - open [First Hour With Bijux Dag](operations/guides/first-hour-with-bijux-dag.md)
   when you want a concrete local path from install to a verified run
+- open [v0.4.0 Release Notes](operations/v0-4-0-release-notes.md) when you
+  need the honest release boundary, examples, migration notes, limitations,
+  and validation commands in one operator-facing page
 - open [Data Pipeline Workflow](operations/guides/data-pipeline-workflow.md)
   when you want retained-run comparison and changed-input attribution on a real
   structured workflow

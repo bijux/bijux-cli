@@ -41,6 +41,7 @@ flowchart LR
 ## Boundary and Governance Pages
 
 - [Deployment Boundaries](deployment-boundaries.md)
+- [v0.4.0 Release Notes](v0-4-0-release-notes.md)
 - [Branching Bulletin Workflow](guides/branching-bulletin-workflow.md)
 - [CI Integration](guides/ci-integration.md)
 - [Cache Behavior Workflow](guides/cache-behavior-workflow.md)
