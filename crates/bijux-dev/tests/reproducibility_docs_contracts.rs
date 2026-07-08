@@ -48,10 +48,7 @@ fn reproducibility_reference_covers_identity_layers_cache_and_replay_bundle_boun
         "docs/spec/REPLAY_CONTRACT.md",
         "docs/spec/IMPORT_EXPORT_CONTRACT.md",
     ] {
-        assert!(
-            reference.contains(token),
-            "reproducibility reference missing token: {token}"
-        );
+        assert!(reference.contains(token), "reproducibility reference missing token: {token}");
     }
 }
 
@@ -108,19 +105,10 @@ fn replay_and_import_export_specs_distinguish_replay_bundles_from_diagnostics_bu
         "without-artifacts",
         "diagnostics bundles are a separate operator-inspection surface",
     ] {
-        assert!(
-            import_export.contains(token),
-            "import/export contract missing token: {token}"
-        );
+        assert!(import_export.contains(token), "import/export contract missing token: {token}");
     }
 
-    for token in [
-        "replay-bundle",
-        "diagnostics bundle versions must evolve independently",
-    ] {
-        assert!(
-            bundle_rulebook.contains(token),
-            "export bundle rulebook missing token: {token}"
-        );
+    for token in ["replay-bundle", "diagnostics bundle versions must evolve independently"] {
+        assert!(bundle_rulebook.contains(token), "export bundle rulebook missing token: {token}");
     }
 }
