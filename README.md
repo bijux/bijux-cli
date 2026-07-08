@@ -218,8 +218,26 @@ single live status line on stderr. With `--json`, it also streams
 track elapsed time, active nodes, cache hits, and the latest failure while the
 run is still in flight.
 
-For the shortest repository-backed onboarding path from build to cache-aware
-retained run evidence, start with
+For the shortest repository-backed proof that `bijux-dag` is real, run:
+
+```bash
+make dag-demo
+```
+
+That command builds or reuses `bijux-dag`, resolves the repository example
+inputs to absolute paths, and proves the retained file-processing workflow end
+to end:
+
+- graph inspection before execution
+- cold retained run creation
+- retained artifact registry and final report inspection
+- warm cache reuse on the second run
+- focused replay of the final reporting boundary
+- strict verification of the replayed run
+
+It writes its retained evidence under `artifacts/dag-demo/`.
+
+For the same workflow as a step-by-step operator walkthrough, start with
 [`docs/bijux-dag/operations/guides/first-run-tutorial.md`](docs/bijux-dag/operations/guides/first-run-tutorial.md).
 That tutorial covers:
 
