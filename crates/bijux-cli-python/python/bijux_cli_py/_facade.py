@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
 import importlib
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 
@@ -19,6 +17,17 @@ from ._exceptions import (
     PlatformWheelUnavailable,
     UsageError,
     ValidationError,
+)
+from ._runtime import (
+    ExecutionResult,
+    RuntimeResolution,
+    resolve_runtime_binary,
+    run_subprocess_runtime,
+    runtime_binary_filenames,
+    runtime_timeout_seconds,
+    sanitized_subprocess_env,
+    validate_binary_candidate,
+    workspace_runtime_binaries,
 )
 
 
@@ -37,21 +46,11 @@ def _strict_native_import_enabled() -> bool:
 
 _STRICT_NATIVE_IMPORT = _strict_native_import_enabled()
 _NATIVE_IMPORT_ERROR: Exception | None = None
-_DEFAULT_SUBPROCESS_TIMEOUT_SECONDS = 60
 _COMPAT_CONFIG_ENV_KEYS = {
     "BIJUXCLI_CONFIG",
     "BIJUXCLI_HISTORY_FILE",
     "BIJUXCLI_PLUGINS_DIR",
 }
-_SUBPROCESS_ENV_STRIP_KEYS = frozenset(
-    {
-        "PYTHONHOME",
-        "PYTHONPATH",
-        "PYTHONSTARTUP",
-        "LD_PRELOAD",
-        "DYLD_INSERT_LIBRARIES",
-    }
-)
 
 
 def _is_missing_native_module(exc: ImportError | ModuleNotFoundError) -> bool:
@@ -106,74 +105,22 @@ except (ImportError, ModuleNotFoundError, OSError) as exc:  # pragma: no cover
     _NATIVE_IMPORT_ERROR = exc
 
 
-@dataclass(frozen=True)
-class RuntimeResolution:
-    binary: str
-
-
-@dataclass(frozen=True)
-class ExecutionResult:
-    exit_code: int
-    stdout: str
-    stderr: str
-    error_kind: str | None = None
-
-
 def _resolve_binary() -> RuntimeResolution:
-    candidate = os.environ.get("BIJUX_BIN")
-    if candidate:
-        return RuntimeResolution(
-            binary=_validate_binary_candidate(candidate, "BIJUX_BIN")
-        )
-
-    for resolved in _workspace_runtime_binaries():
-        try:
-            return RuntimeResolution(
-                binary=_validate_binary_candidate(resolved, "workspace runtime")
-            )
-        except PlatformWheelUnavailable:
-            continue
-
-    current_entrypoint = None
-    if sys.argv and sys.argv[0]:
-        current_entrypoint = Path(sys.argv[0]).resolve()
-
-    resolved = shutil.which("bijux")
-    if resolved:
-        resolved_path = Path(resolved).resolve()
-        if current_entrypoint is None or resolved_path != current_entrypoint:
-            return RuntimeResolution(
-                binary=_validate_binary_candidate(str(resolved_path), "PATH")
-            )
-
-    raise PlatformWheelUnavailable(
-        "No compatible runtime binary found. Set BIJUX_BIN or install bijux-cli wheel for this platform."
+    current_entrypoint = sys.argv[0] if sys.argv and sys.argv[0] else None
+    return resolve_runtime_binary(
+        binary_name="bijux",
+        env_key="BIJUX_BIN",
+        workspace_candidates=_workspace_runtime_binaries(),
+        current_entrypoint=current_entrypoint,
     )
 
 
 def _workspace_runtime_binaries() -> list[str]:
-    module_path = Path(__file__).resolve()
-    workspace_root = None
-    for parent in module_path.parents:
-        if (parent / "Cargo.toml").is_file() and (
-            parent / "crates" / "bijux-cli"
-        ).is_dir():
-            workspace_root = parent
-            break
-    if workspace_root is None:
-        return []
-
-    candidates: list[Path] = []
-    for base in (
-        workspace_root / "artifacts" / "rust" / "target" / "debug",
-        workspace_root / "artifacts" / "rust" / "target" / "release",
-        workspace_root / "target" / "debug",
-        workspace_root / "target" / "release",
-    ):
-        candidates.extend(
-            base / binary_name for binary_name in _runtime_binary_filenames()
-        )
-    return [str(path) for path in candidates]
+    return workspace_runtime_binaries(
+        module_file=__file__,
+        workspace_crate_dir="bijux-cli",
+        binary_name="bijux",
+    )
 
 
 def version() -> str:
@@ -265,35 +212,11 @@ def execution_facade_with_status(argv: Iterable[str]) -> ExecutionResult:
         )
 
     runtime = _resolve_binary()
-    try:
-        result = subprocess.run(
-            [runtime.binary, *args],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=_runtime_timeout_seconds(),
-            env=_sanitized_subprocess_env(),
-        )
-    except subprocess.TimeoutExpired as exc:
-        timeout_seconds = _runtime_timeout_seconds()
-        return ExecutionResult(
-            exit_code=1,
-            stdout=(exc.stdout or ""),
-            stderr=f"runtime command timed out after {timeout_seconds}s",
-            error_kind="InternalError",
-        )
-    except OSError as exc:
-        return ExecutionResult(
-            exit_code=1,
-            stdout="",
-            stderr=f"runtime process failed: {exc}",
-            error_kind="InternalError",
-        )
-    return ExecutionResult(
-        exit_code=result.returncode,
-        stdout=result.stdout,
-        stderr=result.stderr,
-        error_kind=_classify_process_error_kind(result.returncode, result.stderr),
+    return run_subprocess_runtime(
+        binary=runtime.binary,
+        args=args,
+        timeout_seconds=_runtime_timeout_seconds(),
+        classify_error_kind=_classify_process_error_kind,
     )
 
 
@@ -447,29 +370,19 @@ def _classify_process_error_kind(exit_code: int, stderr: str) -> str | None:
 
 
 def _runtime_timeout_seconds() -> int:
-    configured = os.environ.get("BIJUX_PY_SUBPROCESS_TIMEOUT")
-    if configured is None:
-        return _DEFAULT_SUBPROCESS_TIMEOUT_SECONDS
-    try:
-        parsed = int(configured)
-    except ValueError:
-        return _DEFAULT_SUBPROCESS_TIMEOUT_SECONDS
-    if parsed <= 0:
-        return _DEFAULT_SUBPROCESS_TIMEOUT_SECONDS
-    return parsed
+    return runtime_timeout_seconds()
 
 
 def _validate_binary_candidate(candidate: str, source: str) -> str:
-    candidate_path = Path(candidate).expanduser().resolve()
-    if not candidate_path.is_file():
-        raise PlatformWheelUnavailable(
-            f"{source} binary does not exist: {candidate_path}"
-        )
-    if not os.access(candidate_path, os.X_OK):
-        raise PlatformWheelUnavailable(
-            f"{source} binary is not executable: {candidate_path}"
-        )
-    return str(candidate_path)
+    return validate_binary_candidate(candidate, source)
+
+
+def _runtime_binary_filenames() -> tuple[str, ...]:
+    return runtime_binary_filenames("bijux")
+
+
+def _sanitized_subprocess_env() -> dict[str, str]:
+    return sanitized_subprocess_env()
 
 
 def _resolve_config_paths_without_native(home_dir: str) -> dict[str, str]:
