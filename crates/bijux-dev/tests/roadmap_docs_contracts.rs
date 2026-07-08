@@ -49,6 +49,23 @@ fn roadmap_page_covers_post_v040_release_lanes_without_blurring_current_boundary
 }
 
 #[test]
+fn roadmap_page_keeps_shipped_backend_lanes_out_of_future_release_fiction() {
+    let roadmap = read_repo_file("docs/tracking/bijux-dag-roadmap.md");
+
+    for token in [
+        "`v0.4.0` already ships two concrete backend lanes",
+        "shared-filesystem SLURM",
+        "Kubernetes Job execution for container nodes",
+        "broadening that reach honestly",
+        "public scheduling services",
+        "broader HPC portability",
+        "current concrete backend lanes that already ship in `v0.4.0`",
+    ] {
+        assert!(roadmap.contains(token), "roadmap page missing token: {token}");
+    }
+}
+
+#[test]
 fn entry_points_and_boundary_docs_route_future_release_questions_to_roadmap() {
     for path in [
         "README.md",
