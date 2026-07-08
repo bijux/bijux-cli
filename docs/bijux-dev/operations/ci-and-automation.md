@@ -4,25 +4,17 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # CI and Automation
 
-This page explains how local workflows and hosted pipelines stay aligned in
-`bijux-core`.
+Use this page when a change is green in one place and you need to know whether
+the repository is actually enforcing the same proof locally and in hosted
+automation.
 
-The repository depends on that alignment because a green PR only means something
-when the same work can be reproduced before the push as well.
-
-## Automation Flow
-
-```mermaid
-flowchart TD
-    local["local gate execution"] --> pr["PR workflows"]
-    pr --> required["required status checks"]
-    required --> release["release workflow triggers"]
-```
+`bijux-core` depends on that alignment because a green PR is not meaningful if
+maintainers cannot reproduce the same gate composition before the push.
 
 ## Automation Scope
 
@@ -38,6 +30,14 @@ flowchart TD
 - path filters must reflect real ownership boundaries
 - failure messages must name owning surface and remediation path
 
+## What Reviewers Should Check
+
+| Surface | Why it matters |
+| --- | --- |
+| local vs CI gate composition | mismatched lanes create false confidence |
+| path filters and workflow triggers | skipped automation can hide broken ownership boundaries |
+| failure output quality | a red workflow must point to the real owner and next action |
+
 ## Pipeline Ownership Rule
 
 Every required workflow must declare:
@@ -46,11 +46,11 @@ Every required workflow must declare:
 - owning handbook page for remediation guidance
 - escalation path when the owner is unavailable
 
-## Reading Rule
+## Reader Shortcut
 
-Use this page when the question is whether CI is enforcing the same contract the
-repository expects locally. Move to GitHub workflows or Repository Gates once
-the mismatch is narrowed to one workflow or gate family.
+If a workflow is green only because local and hosted automation are checking
+different things, the automation is lying. Fix the alignment before trusting
+the result.
 
 ## Code Anchors
 
@@ -58,7 +58,7 @@ the mismatch is narrowed to one workflow or gate family.
 - `makes/gh.mk`
 - `crates/bijux-dev/src/suites/repo.rs`
 
-## Next Reads
+## Continue Reading
 
 - [gh-workflows](../gh-workflows/index.md)
 - [makes](../makes/ci-targets.md)

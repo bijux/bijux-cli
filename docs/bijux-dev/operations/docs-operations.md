@@ -4,22 +4,18 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-09
 ---
 
 # Docs Operations
 
-Documentation operations keep handbook structure, navigation, and publishing
-integrity aligned with repository standards.
+Use this page when documentation is changing and you need to protect handbook
+structure, navigation, and publishability instead of just writing markdown that
+looks acceptable in one editor tab.
 
-## Visual Summary
-
-```mermaid
-flowchart LR
-    author[author or update docs] --> validate[run docs-check]
-    validate --> review[review links and structure]
-    review --> publish[publish docs artifacts]
-```
+Documentation operations matter because the handbook is part of the product
+surface. Broken navigation, stale links, or misleading release guidance can be
+just as damaging as broken code paths.
 
 ## Operational Rules
 
@@ -37,6 +33,14 @@ Before merging docs-heavy changes:
 3. confirm no page links reference retired documents
 4. confirm style and tone follow handbook standards
 
+## What Reviewers Should Check
+
+| Surface | Why it matters |
+| --- | --- |
+| navigation and filesystem alignment | readers must be able to find canonical pages consistently |
+| docs and behavior coupling | public guidance should move with the feature it describes |
+| toolchain alignment | docs deploys must use the same governed Rust baseline the repo documents |
+
 ## Standard Commands
 
 ```bash
@@ -45,6 +49,12 @@ make docs-serve
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- docs-audit
 ```
 
+## Reader Shortcut
+
+If a code change alters a reader-facing command, workflow, or release claim and
+the docs move later, the documentation is already behind. The right time to fix
+the handbook is inside the same change set.
+
 ## Code Anchors
 
 - `mkdocs.yml`
@@ -52,7 +62,7 @@ cargo run -q -p bijux-dev --bin bijux-dev-cli -- docs-audit
 - `makes/docs.mk`
 - `docs/automation/publish_contract_assets.py`
 
-## Next Reads
+## Continue Reading
 
 - [makes](../makes/index.md)
 - [gh-workflows](../gh-workflows/deploy-docs.md)
