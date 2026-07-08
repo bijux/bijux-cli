@@ -9,6 +9,20 @@
       ]
     },
     {
+      "python_test_file": "crates/bijux-cli-python/tests/python/test_dag_sdk_transport.py",
+      "coverage_level": "same",
+      "rust_test_files": [
+        "crates/bijux-cli-python/tests/dag_sdk_transport_contracts.rs"
+      ]
+    },
+    {
+      "python_test_file": "crates/bijux-cli-python/tests/python/test_dag_sdk_workflows.py",
+      "coverage_level": "same",
+      "rust_test_files": [
+        "crates/bijux-cli-python/tests/dag_sdk_workflow_contracts.rs"
+      ]
+    },
+    {
       "python_test_file": "crates/bijux-cli-python/tests/python/test_packaging_contracts.py",
       "coverage_level": "better",
       "rust_test_files": [
