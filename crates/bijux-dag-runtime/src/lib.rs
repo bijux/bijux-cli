@@ -3770,7 +3770,17 @@ pub(crate) fn inspect_declared_outputs(
 
     let mut output_evidence = Vec::new();
     for output in &declared {
-        if !bijux_dag_artifacts::paths::is_normalized_relative_path(&output.path) {
+        let path = match authorized_declared_output_path(dir, output) {
+            Ok(path) => path,
+            Err(failure) => {
+                return OutputInspectionReport {
+                    output_evidence,
+                    present_outputs,
+                    failure: Some(failure),
+                };
+            }
+        };
+        if path.is_symlink() {
             return OutputInspectionReport {
                 output_evidence,
                 present_outputs,
@@ -3778,25 +3788,11 @@ pub(crate) fn inspect_declared_outputs(
                     FailureClass::User,
                     "User",
                     "OUTPUT_PATH_INVALID",
-                    "invalid output path",
-                    Some(serde_json::json!({ "path": output.path })),
-                )),
-            };
-        }
-        if has_symlink_component(dir, Path::new(&output.path)) {
-            return OutputInspectionReport {
-                output_evidence,
-                present_outputs,
-                failure: Some(FailureInfo::new(
-                    FailureClass::User,
-                    "User",
-                    "OUTPUT_PATH_INVALID",
-                    format!("output path traverses symlink: {}", output.path),
+                    format!("output must not be a symlink: {}", output.path),
                     None,
                 )),
             };
         }
-        let path = dir.join(&output.path);
         if !path.exists() {
             output_evidence.push(TraceOutputArtifact {
                 name: output.name.clone(),
@@ -4594,20 +4590,6 @@ fn sort_value_maps(value: &mut Value) {
 
 pub(crate) fn validate_outputs_dir(dir: &Path, outputs: &[FileOutput]) -> Option<FailureInfo> {
     inspect_declared_outputs(dir, outputs).failure
-}
-
-fn has_symlink_component(root: &Path, relative: &Path) -> bool {
-    let mut current = root.to_path_buf();
-    for component in relative.components() {
-        current.push(component.as_os_str());
-        if std::fs::symlink_metadata(&current)
-            .map(|meta| meta.file_type().is_symlink())
-            .unwrap_or(false)
-        {
-            return true;
-        }
-    }
-    false
 }
 
 fn collect_relative_artifacts(

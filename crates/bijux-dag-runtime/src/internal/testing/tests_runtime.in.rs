@@ -1751,7 +1751,7 @@ exit 1
             vec![FileOutput::new("bad".to_string(), "nested//out.txt".to_string())];
         let failure = validate_outputs_dir(dir.path(), &outputs).expect("must fail");
         assert_eq!(failure.code, "OUTPUT_PATH_INVALID");
-        assert!(failure.message.contains("invalid output path"));
+        assert!(failure.message.contains("normalized and relative"));
     }
 
     #[test]
