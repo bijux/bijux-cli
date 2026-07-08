@@ -44,6 +44,6 @@ flowchart TB
 
 ## Next Reads
 
-- [Repository Fit](../foundation/repository-fit.md)
-- [Integration Seams](../architecture/integration-seams.md)
-- [Risk Register](../quality/risk-register.md)
+- [Repository Fit](../../foundation/repository-fit.md)
+- [Integration Seams](../../architecture/integration-seams.md)
+- [Risk Register](../../quality/risk-register.md)
