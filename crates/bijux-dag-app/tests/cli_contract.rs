@@ -51,10 +51,7 @@ fn dag_root_help_describes_release_boundary() {
 
 #[test]
 fn run_help_describes_human_and_json_progress_modes() {
-    let mut run_command = dag_command()
-        .find_subcommand("run")
-        .expect("run subcommand")
-        .clone();
+    let mut run_command = dag_command().find_subcommand("run").expect("run subcommand").clone();
     let mut buffer = Vec::new();
     run_command.write_long_help(&mut buffer).expect("render run help");
     let rendered = String::from_utf8(buffer).expect("utf8 help");

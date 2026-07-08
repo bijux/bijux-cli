@@ -6,6 +6,7 @@ use crate::graph_helpers::{
     parse_selectors, resolve_downstream_run_selection, resolve_upstream_run_selection,
     validate_partial_selection_surface,
 };
+use crate::output_contract::emit_json_line;
 use crate::routes::plan_routes::{
     concise_plan_lines, plan_explain_payload, resolve_plan_preview_layout,
 };
@@ -15,7 +16,6 @@ use crate::routes::resource_capacity_args::parse_resource_capacities;
 use crate::routes::run_progress::{CompactRunProgressMonitor, JsonRunProgressMonitor};
 use crate::run_data::map_materialize_mode;
 use crate::runtime_inputs::{bind_runtime_inputs, missing_required_graph_inputs};
-use crate::output_contract::emit_json_line;
 use crate::{
     emit_json, format_run_completion_human, load_graphs_or_emit, run_completion_summary, ExitCode,
 };
@@ -572,21 +572,20 @@ mod tests {
         let quiet_cli = DagCli { json: false, quiet: true, command: Commands::Version };
         let json_cli = DagCli { json: true, quiet: false, command: Commands::Version };
 
-        assert!(maybe_start_run_progress_monitor(&quiet_cli, &request, layout.as_ref(), 3)
-            .is_none());
+        assert!(
+            maybe_start_run_progress_monitor(&quiet_cli, &request, layout.as_ref(), 3).is_none()
+        );
         assert!(matches!(
             maybe_start_run_progress_monitor(&json_cli, &request, layout.as_ref(), 3),
             Some(RunProgressMonitor::Json(_))
         ));
-        assert!(
-            maybe_start_run_progress_monitor(
-                &DagCli { json: false, quiet: false, command: Commands::Version },
-                &RunRouteRequest { preflight_only: true, ..request },
-                layout.as_ref(),
-                3,
-            )
-            .is_none()
-        );
+        assert!(maybe_start_run_progress_monitor(
+            &DagCli { json: false, quiet: false, command: Commands::Version },
+            &RunRouteRequest { preflight_only: true, ..request },
+            layout.as_ref(),
+            3,
+        )
+        .is_none());
     }
 
     #[test]

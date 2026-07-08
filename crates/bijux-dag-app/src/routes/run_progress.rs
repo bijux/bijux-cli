@@ -570,8 +570,7 @@ mod tests {
     use super::{
         active_progress_run_dir, format_compact_run_progress, progress_event_payload,
         CompactRunProgressFailure, CompactRunProgressMonitor, CompactRunProgressSnapshot,
-        CompactRunProgressState, JsonRunProgressMonitor, ProgressEventCursor,
-        ProgressLineRenderer,
+        CompactRunProgressState, JsonRunProgressMonitor, ProgressEventCursor, ProgressLineRenderer,
     };
     use serde_json::json;
     use std::fs;

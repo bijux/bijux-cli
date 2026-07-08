@@ -9,8 +9,8 @@ use flate2 as _;
 use hex as _;
 use serde as _;
 use serde_json::json;
-use sha2 as _;
 use serde_json::Value;
+use sha2 as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -238,8 +238,5 @@ fn run_json_progress_surfaces_failures_as_they_happen() {
         .expect("failure progress event");
     assert_eq!(failure_progress["data"]["snapshot"]["latest_failure"]["status"], "failed");
     assert_eq!(events.last().expect("final event")["command"], "dag.run");
-    assert_eq!(
-        events.last().expect("final event")["data"]["summary"]["status"],
-        "failed"
-    );
+    assert_eq!(events.last().expect("final event")["data"]["summary"]["status"], "failed");
 }
