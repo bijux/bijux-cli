@@ -16,6 +16,8 @@ The contract source for this matrix is
 [`contracts/foundation/dag_release_truth_table.v1.json`](../../../../contracts/foundation/dag_release_truth_table.v1.json)
 and the handbook page
 [`docs/bijux-dag/foundation/release-boundary.md`](../../foundation/release-boundary.md).
+For the longer release ladder beyond the current matrix, use the
+[Bijux Dag Roadmap](../../../tracking/bijux-dag-roadmap.md).
 
 | Surface | Status | Access path | Notes |
 | --- | --- | --- | --- |
@@ -37,3 +39,4 @@ and the handbook page
 
 - [Release Boundary](../../foundation/release-boundary.md)
 - [Known Limitations](../../quality/known-limitations.md)
+- [Bijux Dag Roadmap](../../../tracking/bijux-dag-roadmap.md)

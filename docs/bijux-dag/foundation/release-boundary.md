@@ -20,6 +20,8 @@ This page governs operator-surface release status. For public/private crate
 publication status, use
 [Package Boundary](../../bijux-core/foundation/package-boundary.md) and
 `contracts/foundation/workspace_package_boundary.v1.json`.
+For post-`v0.4.0` direction that is not yet a release promise, use the
+[Bijux Dag Roadmap](../../tracking/bijux-dag-roadmap.md).
 
 ## v0.4.0 Surface Truth Table
 
@@ -71,5 +73,6 @@ Inventory non-stable routes only by deliberate lane:
 
 - [CLI Surface](../interfaces/cli-surface.md)
 - [Package Boundary](../../bijux-core/foundation/package-boundary.md)
+- [Bijux Dag Roadmap](../../tracking/bijux-dag-roadmap.md)
 - [Scope and Non-Goals](scope-and-non-goals.md)
 - [Known Limitations](../quality/known-limitations.md)

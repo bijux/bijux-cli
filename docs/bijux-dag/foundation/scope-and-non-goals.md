@@ -41,6 +41,8 @@ flowchart TB
 
 The current hidden experimental and simulation surfaces remain constrained by
 `LIM-005` and `LIM-006` in [Known Limitations](../quality/known-limitations.md).
+The post-`v0.4.0` promotion path for scheduling, remote workers, and cluster
+backends lives in the [Bijux Dag Roadmap](../../tracking/bijux-dag-roadmap.md).
 
 ## Code Anchors
 
@@ -52,5 +54,6 @@ The current hidden experimental and simulation surfaces remain constrained by
 ## Next Reads
 
 - [Ownership Boundary](ownership-boundary.md)
+- [Bijux Dag Roadmap](../../tracking/bijux-dag-roadmap.md)
 - [Compatibility Commitments](../interfaces/compatibility-commitments.md)
 - [Known Limitations](../quality/known-limitations.md)
