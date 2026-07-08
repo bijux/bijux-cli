@@ -67,6 +67,10 @@ deployment, external scheduler integration, or promoted remote coordination.
 Maintainer-only probes such as `capabilities` remain outside this first-hour
 operator contract and require `BIJUX_DAG_ENABLE_INTERNAL=1`.
 
+If the next question is whether a flag or backend is a real isolation boundary,
+open [Security And Isolation Truth](../reference/security-isolation-truth.md)
+before assuming shell policy flags behave like a sandbox.
+
 For the full `v0.4.0` release-boundary classification behind that distinction,
 use
 [`contracts/foundation/dag_release_truth_table.v1.json`](../../../../contracts/foundation/dag_release_truth_table.v1.json)
@@ -80,5 +84,6 @@ and
 - [Data Pipeline Workflow](data-pipeline-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Installation And Setup](installation-and-setup.md)
+- [Security And Isolation Truth](../reference/security-isolation-truth.md)
 - [Trust Boundaries](../reference/trust-boundaries.md)
 - [Support Matrix](../../interfaces/reference/support-matrix.md)

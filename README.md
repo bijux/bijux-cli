@@ -218,6 +218,11 @@ node traces, input and output indexes, cache-entry layout, and promotion
 records, use
 [`docs/bijux-dag/interfaces/reference/run-evidence-layout.md`](docs/bijux-dag/interfaces/reference/run-evidence-layout.md).
 
+For the actual local security model, including what shell execution, container
+execution, `--clean-env`, `--deny-network`, `--deny-clock`, and replay
+`--sandbox` do and do not enforce, use
+[`docs/bijux-dag/operations/reference/security-isolation-truth.md`](docs/bijux-dag/operations/reference/security-isolation-truth.md).
+
 For the repository-backed internal schedule workflow that proves cron preview,
 same-slot suppression, queue dispatch, and explicit run linkage without
 claiming a public scheduler service, use

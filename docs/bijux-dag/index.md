@@ -111,6 +111,9 @@ flowchart LR
 - open [Run Evidence Layout](interfaces/reference/run-evidence-layout.md) when
   the question is where manifests, traces, indexes, cache records, or
   promotion records live on disk after a run completes
+- open [Security And Isolation Truth](operations/reference/security-isolation-truth.md)
+  when the question is which execution-boundary protections are enforced,
+  best-effort, or not provided at all
 - open [Generated CLI Reference](interfaces/generated-cli-reference.md) when
   the question is the exact stable command syntax and current help text
 - open [Non-Stable Command Inventory](interfaces/reference/nonstable-command-inventory.md)
