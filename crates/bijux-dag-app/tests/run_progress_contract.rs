@@ -93,6 +93,28 @@ fn write_long_running_graph(path: &Path) {
     .expect("write graph");
 }
 
+fn write_cacheable_graph(path: &Path) {
+    fs::write(
+        path,
+        serde_json::to_vec_pretty(&json!({
+            "spec":"bijux-dag/v0.1",
+            "meta":{"name":"progress-cache","owners":[],"tags":[]},
+            "nodes":[
+                {
+                    "id":"cacheable",
+                    "kind":"shell",
+                    "outputs":[{"name":"out","path":"out.txt"}],
+                    "effects":["filesystem"],
+                    "params":{"argv":["/bin/sh","-c","printf cached > ../outputs/out.txt"]}
+                }
+            ],
+            "edges":[]
+        }))
+        .expect("graph json"),
+    )
+    .expect("write graph");
+}
+
 fn write_failure_graph(path: &Path) {
     fs::write(
         path,
@@ -238,4 +260,93 @@ fn run_json_progress_surfaces_failures_as_they_happen() {
     assert_eq!(failure_progress["data"]["snapshot"]["latest_failure"]["status"], "failed");
     assert_eq!(events.last().expect("final event")["command"], "dag.run");
     assert_eq!(events.last().expect("final event")["data"]["summary"]["status"], "failed");
+}
+
+#[test]
+fn run_compact_progress_reports_cache_hits_after_warm_reuse() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let graph = temp.path().join("graph.json");
+    let out_dir = temp.path().join("runs");
+    let cache_dir = temp.path().join("cache");
+    write_cacheable_graph(&graph);
+    fs::create_dir_all(&out_dir).expect("runs dir");
+    fs::create_dir_all(&cache_dir).expect("cache dir");
+
+    let cold_args = [
+        "run",
+        &output_path_string(&graph),
+        "--out",
+        &output_path_string(&out_dir),
+        "--cache",
+        "readwrite",
+        "--cache-dir",
+        &output_path_string(&cache_dir),
+        "--run-id",
+        "cold-progress-cache",
+        "--progress",
+        "compact",
+    ];
+    let (cold_code, _cold_stdout, cold_stderr) = run_dag_command(&cold_args, &root);
+    assert_eq!(cold_code, 0, "stderr={cold_stderr}");
+
+    let warm_args = [
+        "run",
+        &output_path_string(&graph),
+        "--out",
+        &output_path_string(&out_dir),
+        "--cache",
+        "readwrite",
+        "--cache-dir",
+        &output_path_string(&cache_dir),
+        "--run-id",
+        "warm-progress-cache",
+        "--progress",
+        "compact",
+    ];
+    let (warm_code, _warm_stdout, warm_stderr) = run_dag_command(&warm_args, &root);
+
+    assert_eq!(warm_code, 0, "stderr={warm_stderr}");
+    assert!(warm_stderr.contains("progress elapsed="), "stderr={warm_stderr}");
+    assert!(warm_stderr.contains("cached=1"), "stderr={warm_stderr}");
+    assert!(warm_stderr.contains("cache_hits=1"), "stderr={warm_stderr}");
+    assert!(warm_stderr.contains("latest_failure=-"), "stderr={warm_stderr}");
+}
+
+#[test]
+fn run_json_progress_emits_finished_snapshot_before_final_result() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let graph = temp.path().join("graph.json");
+    let out_dir = temp.path().join("runs");
+    write_long_running_graph(&graph);
+    fs::create_dir_all(&out_dir).expect("runs dir");
+
+    let (code, stdout, stderr) = run_dag_command(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--progress",
+            "compact",
+        ],
+        &root,
+    );
+
+    assert_eq!(code, 0, "stderr={stderr}");
+    assert!(stderr.is_empty(), "json progress should stay off stderr: {stderr}");
+
+    let events = parse_json_stream(&stdout);
+    let progress_events = events
+        .iter()
+        .filter(|event| event["command"] == "dag.run.progress")
+        .collect::<Vec<_>>();
+    let last_progress = progress_events.last().expect("final progress event");
+
+    assert_eq!(last_progress["data"]["snapshot"]["finished"], true);
+    assert_eq!(last_progress["data"]["snapshot"]["running_count"], 0);
+    assert_eq!(last_progress["data"]["snapshot"]["completed_nodes"], 1);
+    assert_eq!(events.last().expect("final event")["command"], "dag.run");
 }
