@@ -55,7 +55,7 @@ fn run_help_describes_human_and_json_progress_modes() {
     run_command.write_long_help(&mut buffer).expect("render run help");
     let rendered = String::from_utf8(buffer).expect("utf8 help");
 
-    assert!(rendered.contains("show live progress for `dag run`"));
+    assert!(rendered.contains("show live progress for `bijux-dag run`"));
     assert!(rendered.contains("operator-readable updates on stderr"));
     assert!(rendered.contains("streams `dag.run.progress` JSON lines on stdout"));
 }
