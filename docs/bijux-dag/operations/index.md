@@ -66,6 +66,7 @@ flowchart LR
 
 ## Cross References
 
+- [Runnable Examples](../interfaces/examples/index.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Change Validation](../quality/change-validation.md)
 

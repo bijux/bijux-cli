@@ -76,6 +76,10 @@ stop state.
 
 ## Concrete Repository Example
 
+For one index of the repository-backed hello, file-processing, cache, replay,
+failure, branch, and container proofs, use
+[Runnable Examples](../interfaces/examples/index.md).
+
 For one end-to-end local workflow that validates real input files, renders a
 promotable report, proves warm-cache reuse, and exercises focused replay, use
 [File Processing Workflow](guides/file-processing-workflow.md).
@@ -124,6 +128,7 @@ operator sequence is still unclear.
 
 ## Next Reads
 
+- [Runnable Examples](../interfaces/examples/index.md)
 - [Failure Recovery](failure-recovery.md)
 - [Branching Bulletin Workflow](guides/branching-bulletin-workflow.md)
 - [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md)

@@ -11,6 +11,10 @@ last_reviewed: 2026-07-08
 
 This page records practical DAG entrypoints for CLI users and Rust integrators.
 
+If you want the repository-backed example set indexed by workflow and expected
+output instead of by interface surface, start with
+[Runnable Examples](examples/index.md).
+
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles.
@@ -210,6 +214,7 @@ println!("spec={}", graph.spec);
 
 ## Next Reads
 
+- [Runnable Examples](examples/index.md)
 - [CLI Surface](cli-surface.md)
 - [Generated CLI Reference](generated-cli-reference.md)
 - [Non-Stable Command Inventory](reference/nonstable-command-inventory.md)
