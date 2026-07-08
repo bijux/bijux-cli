@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-08
 ---
 
 # File Processing Workflow
@@ -167,6 +167,7 @@ on the stable local operator surface.
 
 ## Next Reads
 
+- [First-Run Tutorial](first-run-tutorial.md)
 - [First Hour With Bijux Dag](first-hour-with-bijux-dag.md)
 - [Common Workflows](../common-workflows.md)
 - [Operator Workflows](../../interfaces/operator-workflows.md)

@@ -110,6 +110,19 @@ Continue with the dedicated guide for the full retained-run comparison, replay,
 verification, and promotion sequence:
 [Evidence-Backed Bulletin Workflow](../operations/guides/evidence-backed-bulletin-workflow.md).
 
+For the fastest repository-backed onboarding path that still proves retained
+artifacts, warm cache reuse, focused replay, and strict verification, start
+with the first-run tutorial:
+
+```bash
+cargo run -p bijux-dag-cli --bin bijux-dag -- version
+cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
+  evidence/dag/authoring/examples/file-processing-report.dag.json
+```
+
+Continue with the full path in
+[First-Run Tutorial](../operations/guides/first-run-tutorial.md).
+
 For a real container-backed packaging workflow, validate and run the release
 note example with one path input and one graph-owned label:
 
@@ -187,6 +200,7 @@ println!("spec={}", graph.spec);
 
 - [CLI Surface](cli-surface.md)
 - [Operator Workflows](operator-workflows.md)
+- [First-Run Tutorial](../operations/guides/first-run-tutorial.md)
 - [Evidence-Backed Bulletin Workflow](../operations/guides/evidence-backed-bulletin-workflow.md)
 - [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
 - [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)

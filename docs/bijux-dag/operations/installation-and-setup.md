@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-08
 ---
 
 # Installation And Setup
@@ -62,6 +62,7 @@ bijux-dag artifact-inspect \
 
 ## Next Reads
 
+- [First-Run Tutorial](guides/first-run-tutorial.md)
 - [Local Development](local-development.md)
 - [Common Workflows](common-workflows.md)
 - [File Processing Workflow](guides/file-processing-workflow.md)
