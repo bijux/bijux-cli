@@ -9,25 +9,15 @@ last_reviewed: 2026-07-07
 
 # Release Operations
 
-This page explains how `bijux-core` moves from a verified commit to a released
-artifact.
+Use this page when the repository is close to a release boundary and the next
+question is sequence, ownership, and proof rather than implementation.
 
-The release path is intentionally conservative. Each step exists to make sure
-the tagged result still matches the behavior, compatibility notes, and docs the
-repository is prepared to stand behind.
+The release path is intentionally conservative. Every step exists so the tagged
+result still matches the behavior, compatibility notes, and docs the
+repository is prepared to stand behind in public.
 
 Visible maintainer command ownership remains governed by
 `contracts/foundation/maintainer_command_surface.v1.json`.
-
-## Release Flow
-
-```mermaid
-flowchart LR
-    verify["verify candidate commit"] --> review["compatibility and docs review"]
-    review --> tag["tag approved release"]
-    tag --> publish["publish artifacts"]
-    publish --> monitor["post-release monitoring"]
-```
 
 ## Release Workflow Rules
 
@@ -48,6 +38,15 @@ Canonical package status and publish order are defined by
 - GitHub Releases and GHCR publish two stamped release families: the `bijux-cli` distribution bundle and the `bijux-dag` binary tarball.
 - `bijux-dag-testkit`, `bijux-dev`, and `bijux-cli-python` remain repository-internal support crates and are not published to crates.io.
 - The canonical repository for both products is `https://github.com/bijux/bijux-core`.
+
+## Sequence That Must Hold
+
+| Step | What it should prove |
+| --- | --- |
+| release validation | the candidate commit is publishable from a clean release tree |
+| compatibility and docs review | public readers can understand what changed and whether compatibility moved |
+| tag and publish | published artifacts point back to the reviewed commit identity |
+| post-release monitoring | the public result still behaves like the reviewed release lane predicted |
 
 ## Preflight Checklist
 
@@ -92,12 +91,11 @@ At the release-operations level, the important rule is sequence: release
 validation happens before tag creation and before any publish command is trusted
 as release evidence.
 
-## Reading Rule
+## Reader Shortcut
 
-Use this page when the repository is close to a release boundary and the next
-question is sequence and proof, not implementation. Move to Contract
-Governance or Testing and Validation when the release question is still blocked
-by unresolved behavior.
+If a tag, artifact, or release note gets ahead of release validation and
+compatibility review, the repository has already broken sequence even if the
+publish technically succeeds.
 
 ## Code Anchors
 
@@ -105,7 +103,7 @@ by unresolved behavior.
 - `crates/bijux-dev/src/suites/release.rs`
 - `.github/workflows/`
 
-## Next Reads
+## Continue Reading
 
 - [Release Validation Suite](release-validation-suite.md)
 - [Core Release and Versioning](../../bijux-core/governance/release-and-versioning.md)

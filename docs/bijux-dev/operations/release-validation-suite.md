@@ -9,11 +9,14 @@ last_reviewed: 2026-07-07
 
 # Release Validation Suite
 
-The release validation suite is the required gate between selecting a candidate
-commit and tagging or publishing a release. It answers one concrete question:
-can the committed `HEAD` be formatted, linted, tested, documented, packaged,
-and dry-run published from a clean release tree without relying on local
-workspace state.
+Use this page when a commit looks releaseable and you need proof that the
+committed `HEAD`, not an ambient local workspace, can survive the full release
+candidate gate.
+
+The release validation suite is the hard boundary between "this change seems
+ready" and "this commit is a publishable candidate." It proves formatting,
+linting, testing, documentation, packaging, and dry-run publishing from a
+clean release tree.
 
 ## Canonical Entrypoints
 
@@ -47,6 +50,14 @@ release.validation-suite -> release.readiness -> release.compatibility-matrix
 The make target executes the cargo release checks. The maintainer command then
 follows with the readiness report and compatibility matrix so the release lane
 produces both validation status and the evidence consumed by release review.
+
+## What This Suite Proves
+
+| Proof point | Why it matters |
+| --- | --- |
+| clean-tree validation | release evidence must match committed content, not uncommitted local state |
+| package listing and dry-run publish | crates.io-facing packaging boundaries stay honest before tagging |
+| readiness and compatibility artifacts | release review gets concrete evidence, not verbal reassurance |
 
 ## Command Coverage
 
@@ -96,7 +107,7 @@ Use the release-tree directory when a failure appears to depend on staged
 content, packaging boundaries, or publish inputs. Use the readiness report and
 compatibility matrix during release review and release-note preparation.
 
-## Failure Ownership
+## How To Read A Failure
 
 - formatter, clippy, test, doc, package, or publish failures belong to the release candidate; fix the candidate commit or its governed release inputs before tagging
 - clean release-tree export failures belong to `.github/scripts/prepare_release_tree.py`; repair the export path so the candidate can be validated in isolation
@@ -112,6 +123,12 @@ practice that means:
 - after changing public DAG crate packaging or publish metadata
 - after changing release-tree preparation, release CI wiring, or release docs
 - before relying on readiness or compatibility artifacts in release review
+
+## Reader Shortcut
+
+If a release command passes only in the live workspace and fails in the clean
+release tree, the repository has not proved release readiness. The clean tree
+is the truth surface.
 
 ## Related Surfaces
 
