@@ -33,6 +33,10 @@ automation that keep those products coherent. The public story is simple:
 
 The current workspace release line is `0.4.0`.
 
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles.
+
 ## What Ships Today
 
 | Surface | Delivery form | What it is for |
