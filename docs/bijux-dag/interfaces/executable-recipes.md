@@ -31,6 +31,10 @@ plus the handbook page
 - `${REPLAY_ROOT}`: replay output root directory
 - `${EXPORT_BUNDLE}`: exported replay bundle path
 - `${DIAG_BUNDLE}`: exported diagnostics bundle path
+- `${SOURCE_NOTE}`: original bulletin source note
+- `${REVISED_NOTE}`: revised bulletin source note
+- `${CACHE_ROOT}`: cache root directory
+- `${DELIVERABLES_ROOT}`: deliverables root directory
 
 ## CI Recipe: Major DAG Commands
 
@@ -62,3 +66,26 @@ bijux-dag import --json --verify-only ${EXPORT_BUNDLE}
 bijux-dag migrate inspect --json --run-dir ${RUN_DIR} --from v0.1 --to v0.1
 ```
 <!-- recipe:ci-major-dag-commands:end -->
+
+## CI Recipe: Evidence-Backed Bulletin Workflow
+
+This recipe executes the complete retained bulletin workflow described in
+[Evidence-Backed Bulletin Workflow](../operations/guides/evidence-backed-bulletin-workflow.md).
+It stays on the stable operator surface except for `artifact-inspect`, which is
+part of the stable visible command inventory for retained artifact inspection.
+
+<!-- recipe:ci-evidence-backed-bulletin:start -->
+```bash
+bijux-dag validate ${GRAPH}
+bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id branch-bulletin-cold --cache readwrite --cache-dir ${CACHE_ROOT} --input source_note=${SOURCE_NOTE} --input audience_mode=technical
+bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id branch-bulletin-warm --cache readwrite --cache-dir ${CACHE_ROOT} --input source_note=${SOURCE_NOTE} --input audience_mode=technical
+bijux-dag artifact-inspect --json ${RUN_ROOT}/run-branch-bulletin-cold publish_bulletin:bulletin.md
+bijux-dag artifact lineage ${RUN_ROOT}/run-branch-bulletin-cold --json
+bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id branch-bulletin-updated --cache readwrite --cache-dir ${CACHE_ROOT} --input source_note=${REVISED_NOTE} --input audience_mode=executive
+bijux-dag runs compare branch-bulletin-warm branch-bulletin-updated --root ${RUN_ROOT} --json
+bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id branch-bulletin-proof-source --input source_note=${SOURCE_NOTE} --input audience_mode=executive
+bijux-dag replay --json --source-run-id branch-bulletin-proof-source --source-run-root ${RUN_ROOT} --out ${RUN_ROOT} --run-id branch-bulletin-replay --select id:publish_bulletin --dependency-closure --prove
+bijux-dag verify --json ${RUN_ROOT}/run-branch-bulletin-replay --strict
+bijux-dag artifact promote ${RUN_ROOT}/run-branch-bulletin-updated publish_bulletin:bulletin.md --deliverables-root ${DELIVERABLES_ROOT} --to release --json
+```
+<!-- recipe:ci-evidence-backed-bulletin:end -->
