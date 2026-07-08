@@ -9,19 +9,17 @@ last_reviewed: 2026-04-06
 
 # System Overview
 
-`bijux-core` is a single Rust workspace that hosts the command runtime, the DAG
-execution system, a Python bridge package, and the repository machinery that
-governs them together.
+Use this page when you want the architecture answer before the crate-by-crate
+answer: what are the big moving parts in `bijux-core`, and how do they relate
+without collapsing into one system diagram?
 
-## Workspace Map
+`bijux-core` is a single Rust workspace, but it is not a single runtime. It
+contains:
 
-```mermaid
-flowchart LR
-    root["bijux-core workspace"] --> cli["CLI runtime"]
-    root --> dag["DAG execution"]
-    root --> python["Python bridge"]
-    root --> maintain["Maintainer surface"]
-```
+- the `bijux` command runtime
+- the `bijux-dag` graph and execution stack
+- the Python bridge that distributes the CLI runtime
+- the maintainer surfaces that validate, release, and audit the repository
 
 ## System Components
 
@@ -32,17 +30,20 @@ flowchart LR
 - `crates/bijux-cli-python` owns Python packaging and bridge integration
 - `crates/bijux-dev` owns maintainer-only diagnostics and governance workflows
 
+## What Each Layer Is For
+
+| Layer | Main job |
+| --- | --- |
+| CLI runtime | parse commands, route work, and return stable operator-facing output |
+| DAG stack | define graphs, execute work, retain evidence, and compare runs |
+| Python bridge | ship the CLI runtime through Python packaging without inventing a different product |
+| maintainer surface | prove release readiness, repository integrity, and documentation alignment |
+
 ## Architectural Boundary
 
 - runtime behavior belongs to CLI and DAG program crates
 - repository policy and release evidence belong to maintainer workflows
 - shared workspace policy belongs to root manifests, configs, and make targets
-
-## Reading Rule
-
-Use this page to understand the whole workspace first. Move to Workspace
-Topology and Dependency Direction when the next question is about crate layout
-or one-way dependency rules.
 
 ## Non-Goals
 
@@ -63,7 +64,7 @@ or one-way dependency rules.
 - `crates/bijux-dag-app/src/lib.rs`
 - `crates/bijux-dev/src/lib.rs`
 
-## Next Reads
+## Continue Reading
 
 - [Workspace Topology](workspace-topology.md)
 - [Dependency Direction](dependency-direction.md)

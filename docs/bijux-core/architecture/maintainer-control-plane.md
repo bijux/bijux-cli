@@ -9,24 +9,26 @@ last_reviewed: 2026-04-06
 
 # Maintainer Surface
 
-Maintainer capabilities are isolated from end-user runtime paths so governance
-automation does not distort product command behavior.
+Use this page when the question is about the repository’s proving and control
+machinery rather than the public product runtimes.
 
-## Separation Map
+Maintainer capabilities are intentionally isolated from end-user runtime paths
+so governance automation does not distort CLI or DAG behavior.
 
-```mermaid
-flowchart LR
-    product["Product runtime"] --> contracts["runtime contracts"]
-    maintainer["Maintainer surface"] --> evidence["evidence and governance reports"]
-    maintainer --> contracts
-```
-
-## Control-Plane Responsibilities
+## What The Maintainer Surface Does
 
 - repository structure and contract audits
 - evidence generation and verification workflows
 - release readiness and compatibility checks
 - documentation governance and layout validation
+
+## Why The Separation Matters
+
+- Product runtimes should not absorb repository-governance logic.
+- Maintainer commands need product facts, but they should consume them as
+  evidence rather than rewrite product behavior.
+- Release and audit flows should stay explainable without becoming hidden
+  end-user features.
 
 ## Separation Rules
 
@@ -49,11 +51,6 @@ order:
 2. add contract/test evidence in the owning crate
 3. update maintainer workflows that consume the new evidence
 
-## Reading Rule
-
-Use this page when the question is about repository governance machinery rather
-than user-facing runtime behavior.
-
 ## Code Anchors
 
 - `crates/bijux-dev/src/commands/mod.rs`
@@ -61,7 +58,7 @@ than user-facing runtime behavior.
 - `crates/bijux-dev/src/report/`
 - `crates/bijux-dev/src/maintainer/`
 
-## Next Reads
+## Continue Reading
 
 - [Dependency Direction](dependency-direction.md)
 - [Repository Gates](../../bijux-dev/operations/repository-gates.md)
