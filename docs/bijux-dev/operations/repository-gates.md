@@ -9,21 +9,12 @@ last_reviewed: 2026-04-06
 
 # Repository Gates
 
-This page explains the gate structure that protects `bijux-core` before merge.
+Use this page when a change is ready for scrutiny and you need to know which
+gate families are supposed to prove it safe to merge.
 
-The gates are shared on purpose. They let reviewers see the same proof locally,
-in CI, and in release preparation instead of depending on one narrow signal.
-
-## Gate Flow
-
-```mermaid
-flowchart TD
-    change["proposed change"] --> local["local gate run"]
-    change --> ci["CI gate run"]
-    local --> review["review evidence"]
-    ci --> review
-    review --> merge["merge decision"]
-```
+Repository gates matter because `bijux-core` does not treat CI as a ceremonial
+green badge. The same evidence should support local review, continuous
+integration, and release readiness.
 
 ## Gate Layers
 
@@ -41,7 +32,7 @@ make docs-check
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
 ```
 
-## Gate Failure Triage
+## How To Read A Failure
 
 When a gate fails, classify first before retrying:
 
@@ -53,11 +44,20 @@ When a gate fails, classify first before retrying:
 Classification controls which maintainer commands and handbook pages to use
 next.
 
-## Reading Rule
+## What A Green Gate Should Mean
 
-Use this page when a failure is real but the right gate family is still unclear.
-Move to the more specific operations pages once the failure is clearly about
-docs, automation, contracts, or release work.
+| Signal | What it should prove |
+| --- | --- |
+| local gate success | the change is reproducible on a maintainer workstation |
+| CI gate success | the change survives repository automation and baseline environments |
+| docs gate success | published guidance still matches the code and file layout |
+| contract gate success | public promises still align with behavior and schemas |
+
+## Reader Shortcut
+
+Repeatedly rerunning a failing gate without classification is not diagnosis.
+First decide whether the failure is about layout, contracts, runtime, or
+automation, then move to the relevant surface.
 
 ## Code Anchors
 
@@ -66,7 +66,7 @@ docs, automation, contracts, or release work.
 - `makes/docs.mk`
 - `crates/bijux-dev/src/suites/`
 
-## Next Reads
+## Continue Reading
 
 - [Evidence Collection](evidence-collection.md)
 - [Quality Policy](../governance/quality-policy.md)
