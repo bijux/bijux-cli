@@ -9,31 +9,29 @@ last_reviewed: 2026-04-12
 
 # Change Principles
 
-Repository changes should make ownership clearer, not blurrier. The handbook
-model matters because it keeps readers from debugging organizational drift by
-hand.
+Use this page when you need the reader-facing version of the repository change
+bar: what kinds of changes need more proof, and what kinds should stay small
+and obvious?
 
-```mermaid
-flowchart TD
-    change[Proposed change] --> q1{Changes public contract?}
-    q1 -->|Yes| review[Require design and compatibility review]
-    q1 -->|No| q2{Changes execution semantics?}
-    q2 -->|Yes| validate[Add validation and release notes]
-    q2 -->|No| q3{Docs and tests only?}
-    q3 -->|Yes| fast[Fast path]
-    q3 -->|No| standard[Standard review path]
-    review --> merge[Merge when evidence is complete]
-    validate --> merge
-    fast --> merge
-    standard --> merge
-```
+Repository changes should make ownership clearer, not blurrier. The point is
+not process theater. The point is to keep public products, private support
+code, and repository rules from drifting into each other unnoticed.
 
-## Principles
+## Practical Principles
 
 - prefer stable names over migration-era labels
 - change one ownership boundary at a time and document it explicitly
 - update docs in the same change that changes behavior or structure
 - keep repository rules small enough that product handbooks can stay honest
+
+## What Usually Requires More Evidence
+
+| Change type | Why the bar is higher |
+| --- | --- |
+| public contract change | users and downstream automation may rely on it already |
+| execution semantics change | behavior can shift even if the command shape stays the same |
+| package-boundary change | ownership confusion spreads quickly when crates cross lines |
+| release or compatibility rule change | both product families can be affected at once |
 
 ## Repository Smells
 
@@ -41,7 +39,13 @@ flowchart TD
 - one-off section names that break handbook symmetry without good reason
 - automation surfaces that exist in files but not in the handbook
 
-## Next Reads
+## What This Page Is Not Saying
+
+- It is not saying docs-only changes never matter.
+- It is not replacing crate-level design review.
+- It is not encouraging large procedural checklists for ordinary edits.
+
+## Continue Reading
 
 - [Decision Rules](decision-rules.md)
 - [Change Management](../operations/change-management.md)
