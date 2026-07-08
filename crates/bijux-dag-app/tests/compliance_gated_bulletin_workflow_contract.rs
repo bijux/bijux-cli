@@ -164,9 +164,8 @@ fn compliance_gated_bulletin_workflow_repairs_the_failed_publication_boundary() 
 
     let summary = &source["data"]["summary"];
     assert_eq!(summary["status"], "failed");
-    let failed_node_reasons = summary["failed_node_reasons"]
-        .as_array()
-        .expect("failed node reasons array");
+    let failed_node_reasons =
+        summary["failed_node_reasons"].as_array().expect("failed node reasons array");
     assert!(failed_node_reasons.iter().any(|reason| {
         reason["node_id"] == "validate_publication_gate" && reason["code"] == "EXEC_FAIL"
     }));
@@ -206,9 +205,8 @@ fn compliance_gated_bulletin_workflow_repairs_the_failed_publication_boundary() 
         &root,
     );
     assert_eq!(explain_failure["data"]["root_failure"], "validate_publication_gate");
-    let propagated_failures = explain_failure["data"]["propagated_failures"]
-        .as_array()
-        .expect("propagated failures");
+    let propagated_failures =
+        explain_failure["data"]["propagated_failures"].as_array().expect("propagated failures");
     assert!(propagated_failures.iter().any(|entry| entry["node_id"] == "publish_bulletin"));
     assert_eq!(
         explain_failure["data"]["propagated_skips"].as_array().expect("propagated skips").len(),
@@ -299,9 +297,8 @@ fn compliance_gated_bulletin_workflow_surfaces_retry_exhaustion() {
     assert_eq!(manifest["node_counts"]["skipped"], 0);
 
     let summary = &payload["data"]["summary"];
-    let failed_node_reasons = summary["failed_node_reasons"]
-        .as_array()
-        .expect("failed node reasons array");
+    let failed_node_reasons =
+        summary["failed_node_reasons"].as_array().expect("failed node reasons array");
     assert!(failed_node_reasons.iter().any(|reason| {
         reason["node_id"] == "fetch_compliance_gate" && reason["code"] == "EXEC_FAIL"
     }));
@@ -333,10 +330,11 @@ fn compliance_gated_bulletin_workflow_surfaces_retry_exhaustion() {
         &root,
     );
     assert_eq!(explain_failure["data"]["root_failure"], "fetch_compliance_gate");
-    let propagated_failures = explain_failure["data"]["propagated_failures"]
-        .as_array()
-        .expect("propagated failures");
-    assert!(propagated_failures.iter().any(|entry| entry["node_id"] == "validate_publication_gate"));
+    let propagated_failures =
+        explain_failure["data"]["propagated_failures"].as_array().expect("propagated failures");
+    assert!(propagated_failures
+        .iter()
+        .any(|entry| entry["node_id"] == "validate_publication_gate"));
     assert!(propagated_failures.iter().any(|entry| entry["node_id"] == "publish_bulletin"));
     assert_eq!(
         explain_failure["data"]["propagated_skips"].as_array().expect("propagated skips").len(),
