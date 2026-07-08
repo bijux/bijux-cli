@@ -152,6 +152,7 @@ fn dev_governance_dependencies_match_allowed_list() {
     let allowed: BTreeSet<String> = [
         "anyhow",
         "bijux-cli",
+        "bijux-dag-app",
         "bijux-dag-artifacts",
         "bijux-dag-core",
         "bijux-dag-runtime",
