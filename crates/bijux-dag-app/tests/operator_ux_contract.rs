@@ -15,7 +15,7 @@ use thiserror as _;
 
 use bijux_dag_app::{
     dag_command, dag_run, doctor_run, explain_failure, format_inspect_human, format_show_human,
-    inspect_summary, list_runs, run_timeline, run_tree,
+    inspect_summary, list_runs, run_scheduler_checkpoint, run_timeline, run_tree,
 };
 use serde_json::json;
 use std::fs;
@@ -124,6 +124,28 @@ fn write_run_fixture(base: &std::path::Path, run_id: &str) -> std::path::PathBuf
     )
     .expect("write timeline");
     run
+}
+
+fn write_scheduler_checkpoint(run: &std::path::Path) {
+    fs::write(
+        run.join("scheduler.checkpoint.json"),
+        serde_json::to_vec_pretty(&json!({
+            "loop_index": 3,
+            "ready_queue_depth": 1,
+            "ready_queue": ["publish"],
+            "inflight": ["package"],
+            "scheduled": ["package"],
+            "blocked_by_budget": ["notify"],
+            "blocked_reasons": {"notify": "memory budget exhausted"},
+            "completed_statuses": {"build": "success"},
+            "decision_reason": "ready_batch",
+            "failure_propagation_mode": "continue_independent",
+            "dependency_closure_enabled": false,
+            "generated_unix_ms": 1110u64
+        }))
+        .expect("checkpoint json"),
+    )
+    .expect("write checkpoint");
 }
 
 #[test]
@@ -281,6 +303,22 @@ fn operator_timeline_falls_back_to_node_traces_for_older_runs() {
 }
 
 #[test]
+fn operator_scheduler_checkpoint_reports_ready_and_blocked_state() {
+    let tmp = tempfile::tempdir().expect("tmpdir");
+    let run = write_run_fixture(tmp.path(), "run-checkpoint");
+    write_scheduler_checkpoint(&run);
+
+    let report = run_scheduler_checkpoint(&run).expect("checkpoint report");
+    assert_eq!(report["inspection_state"], "present");
+    assert_eq!(report["decision_reason"], "ready_batch");
+    assert_eq!(report["ready_queue"], json!(["publish"]));
+    assert_eq!(report["scheduled_batch"], json!(["package"]));
+    assert_eq!(report["inflight_nodes"], json!(["package"]));
+    assert_eq!(report["resource_blocked_nodes"], json!(["notify"]));
+    assert_eq!(report["blocked_reasons"]["notify"], "memory budget exhausted");
+}
+
+#[test]
 fn run_list_reads_only_explicit_root() {
     let tmp = tempfile::tempdir().expect("tmpdir");
     let _ = write_run_fixture(tmp.path(), "run-a");
@@ -312,6 +350,27 @@ fn operator_cli_inspect_works_without_ambient_repo_state() {
             "runs",
             "inspect",
             "run-cli",
+            "--root",
+            tmp.path().to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+    assert!(dag_run(&matches).is_ok());
+}
+
+#[test]
+fn operator_cli_scheduler_checkpoint_works_without_ambient_repo_state() {
+    let tmp = tempfile::tempdir().expect("tmpdir");
+    let run = write_run_fixture(tmp.path(), "run-scheduler-cli");
+    write_scheduler_checkpoint(&run);
+
+    let cmd = dag_command();
+    let matches = cmd
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "runs",
+            "scheduler-checkpoint",
+            "run-scheduler-cli",
             "--root",
             tmp.path().to_string_lossy().as_ref(),
         ])

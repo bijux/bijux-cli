@@ -106,8 +106,8 @@ pub use run_failure_summary::explain_failure;
 pub use run_views::{
     doctor_run, explain_run_id, format_inspect_human, format_run_completion_human,
     format_show_human, inspect_summary, list_runs, resolve_run_dir, run_completion_summary,
-    run_timeline, run_tree, runs_failures, runs_flakes, runs_history, runs_history_query,
-    runs_summary, runs_trend,
+    run_scheduler_checkpoint, run_timeline, run_tree, runs_failures, runs_flakes, runs_history,
+    runs_history_query, runs_summary, runs_trend,
 };
 
 /// Explicit long-lived command embedding and response-shaping surface.
