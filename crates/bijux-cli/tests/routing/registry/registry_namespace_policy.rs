@@ -20,6 +20,14 @@ use schemars as _;
 use semver as _;
 use thiserror as _;
 
+fn assert_runtime_package_contract(package_name: &str, binary_name: &str) {
+    let alternate_cli_package = format!("{binary_name}-cli");
+    assert!(
+        package_name == binary_name || package_name == alternate_cli_package,
+        "runtime package must match the binary name or the durable `-cli` crate pattern"
+    );
+}
+
 #[test]
 fn official_reserved_namespaces_take_precedence() {
     let mut registry = RouteRegistry::default();
@@ -76,7 +84,7 @@ fn known_bijux_tools_follow_standard_binary_and_package_patterns() {
         assert_eq!(tool.control_binary(), format!("bijux-dev-{}", tool.namespace));
         assert_eq!(runtime_binary, format!("bijux-{}", tool.namespace));
         assert_eq!(control_binary, format!("bijux-dev-{}", tool.namespace));
-        assert_eq!(runtime_package, runtime_binary);
+        assert_runtime_package_contract(&runtime_package, &runtime_binary);
         assert_eq!(control_package, control_binary);
         assert_eq!(tool.repository(), runtime_binary);
         assert_eq!(tool.status, "declared");
