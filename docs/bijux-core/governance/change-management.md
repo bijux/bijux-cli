@@ -4,17 +4,18 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Change Management
 
-This page explains how repository changes move from proposal to merge without
-losing ownership or evidence along the way.
+Repository change management in `bijux-core` is about keeping one story
+intact from edit to merge: what changed, who owns it, what proves it, and what
+the repository now supports because of it.
 
-The point is not ceremony. The point is to keep scope, proof, and
-documentation attached to the same change so the repository does not create
-another debugging round later.
+That matters more here than in a smaller single-product repo because a change
+can cross runtime behavior, contracts, retained artifacts, generated docs, and
+release evidence even when the code diff looks small.
 
 ## Change Flow
 
@@ -27,6 +28,18 @@ flowchart LR
     document --> merge["merge decision"]
 ```
 
+## The Minimum Change Story
+
+Every meaningful repository change should make four things easy to answer:
+
+1. what surface changed
+2. which handbook, crate, or root entrypoint owns it
+3. what validation proves the new state
+4. what documentation or compatibility surface moved with it
+
+If one of those answers is missing, the repository is likely to pay for it in a
+later debugging or release cycle.
+
 ## Required Steps
 
 1. identify owning crate and handbook section
@@ -34,6 +47,23 @@ flowchart LR
 3. run targeted and cross-surface validation
 4. update docs, risks, and decision records where applicable
 5. merge only with reviewable evidence attached
+
+## How To Classify Impact
+
+### Internal
+
+The change stays inside one owned implementation surface and does not alter
+public or retained meaning.
+
+### Interface
+
+The change alters a user-facing, machine-facing, or reader-facing interface but
+does not necessarily break a compatibility promise.
+
+### Compatibility-sensitive
+
+The change alters a documented or retained contract that downstream users,
+stored runs, or release surfaces may already depend on.
 
 ## Evidence Rules
 
@@ -50,10 +80,12 @@ Attach this minimum bundle for cross-program changes:
 3. compatibility impact note (`none`, `additive`, or `breaking`)
 4. documentation updates linked to changed behavior
 
-## Reading Rule
+## What Good Change Management Prevents
 
-Use this page when a change is already real work and the main question is how
-to carry it through review without losing scope or evidence.
+- behavior changing without matching docs
+- release notes trying to summarize a contract shift that was never explained
+- root rules moving without matching validation
+- cross-product changes landing as if they were one-crate edits
 
 ## Code Anchors
 
