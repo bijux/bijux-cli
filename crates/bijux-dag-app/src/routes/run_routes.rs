@@ -12,9 +12,10 @@ use crate::routes::plan_routes::{
 use crate::routes::policy_surface::{cache_surface_payload, policy_surface_payload};
 use crate::routes::preconditions::{require_file, require_safe_path};
 use crate::routes::resource_capacity_args::parse_resource_capacities;
-use crate::routes::run_progress::CompactRunProgressMonitor;
+use crate::routes::run_progress::{CompactRunProgressMonitor, JsonRunProgressMonitor};
 use crate::run_data::map_materialize_mode;
 use crate::runtime_inputs::{bind_runtime_inputs, missing_required_graph_inputs};
+use crate::output_contract::emit_json_line;
 use crate::{
     emit_json, format_run_completion_human, load_graphs_or_emit, run_completion_summary, ExitCode,
 };
@@ -143,31 +144,61 @@ fn load_resume_summary(run_dir: &Path) -> Option<bijux_dag_runtime::ResumeSummar
     attempts.last()?.resume_summary.clone()
 }
 
-fn maybe_start_compact_progress_monitor(
+enum RunProgressMonitor {
+    Compact(CompactRunProgressMonitor),
+    Json(JsonRunProgressMonitor),
+}
+
+impl RunProgressMonitor {
+    fn finish(self) {
+        match self {
+            Self::Compact(monitor) => monitor.finish(),
+            Self::Json(monitor) => monitor.finish(),
+        }
+    }
+
+    fn streams_json(&self) -> bool {
+        matches!(self, Self::Json(_))
+    }
+}
+
+fn maybe_start_run_progress_monitor(
     cli: &DagCli,
     req: &RunRouteRequest<'_>,
     preview_layout: Option<&bijux_dag_artifacts::RunDirLayout>,
     fallback_total_nodes: usize,
-) -> Option<CompactRunProgressMonitor> {
-    if cli.json || cli.quiet || req.preflight_only || req.progress != RunProgressArg::Compact {
+) -> Option<RunProgressMonitor> {
+    if cli.quiet || req.preflight_only || req.progress != RunProgressArg::Compact {
         return None;
     }
     let layout = preview_layout?;
-    Some(CompactRunProgressMonitor::start(
+    if cli.json {
+        return Some(RunProgressMonitor::Json(JsonRunProgressMonitor::start(
+            &layout.staging_path,
+            &layout.final_path,
+            fallback_total_nodes,
+        )));
+    }
+    Some(RunProgressMonitor::Compact(CompactRunProgressMonitor::start(
         &layout.staging_path,
         &layout.final_path,
         fallback_total_nodes,
-    ))
+    )))
 }
 
 fn emit_run_execution_error(
     cli: &DagCli,
+    streamed_json: bool,
     message: &str,
     completion_summary: Option<&serde_json::Value>,
     run_dir: Option<&Path>,
     payload: serde_json::Value,
 ) -> Result<ExitCode, ExitCode> {
     if cli.json {
+        if streamed_json {
+            emit_json_line("dag.run", false, payload, Vec::new(), ExitCode::from(3));
+            return Err(ExitCode::from(3));
+        }
         return emit_json(cli, "dag.run", false, payload, Vec::new(), ExitCode::from(3));
     }
     eprintln!("{message}");
@@ -178,6 +209,18 @@ fn emit_run_execution_error(
         eprintln!("run dir: {}", path.display());
     }
     Err(ExitCode::from(3))
+}
+
+fn emit_run_json_result(
+    cli: &DagCli,
+    streamed_json: bool,
+    payload: serde_json::Value,
+) -> Result<ExitCode, ExitCode> {
+    if streamed_json {
+        emit_json_line("dag.run", true, payload, Vec::new(), ExitCode::SUCCESS);
+        return Ok(ExitCode::SUCCESS);
+    }
+    emit_json(cli, "dag.run", true, payload, Vec::new(), ExitCode::SUCCESS)
 }
 
 pub(crate) fn handle_run_command(
@@ -342,7 +385,9 @@ pub(crate) fn handle_run_command(
         return Ok(ExitCode::SUCCESS);
     }
     let progress_monitor =
-        maybe_start_compact_progress_monitor(cli, &req, preview_layout.as_ref(), graph.nodes.len());
+        maybe_start_run_progress_monitor(cli, &req, preview_layout.as_ref(), graph.nodes.len());
+    let streamed_json_progress =
+        progress_monitor.as_ref().is_some_and(RunProgressMonitor::streams_json);
     let run_result = runtime.run(&graph, req.out, options);
     if let Some(progress_monitor) = progress_monitor {
         progress_monitor.finish();
@@ -362,6 +407,7 @@ pub(crate) fn handle_run_command(
             });
             return emit_run_execution_error(
                 cli,
+                streamed_json_progress,
                 &error.to_string(),
                 completion_summary.as_ref(),
                 preview_layout.as_ref().map(|layout| layout.staging_path.as_path()),
@@ -379,10 +425,9 @@ pub(crate) fn handle_run_command(
     let completion_summary = run_completion_summary(&run_path).map_err(|_| ExitCode::from(3))?;
 
     if cli.json {
-        return emit_json(
+        return emit_run_json_result(
             cli,
-            "dag.run",
-            true,
+            streamed_json_progress,
             json!({
                 "run_dir": run_path,
                 "cache": cache_surface,
@@ -399,8 +444,6 @@ pub(crate) fn handle_run_command(
                         )
                     }),
             }),
-            Vec::new(),
-            ExitCode::SUCCESS,
         );
     }
     if let Some(scheduling) = scheduling.as_ref() {
@@ -459,8 +502,8 @@ fn effective_policy_flags(
 mod tests {
     use super::{
         build_run_runtime_options, cache_preflight, effective_policy_flags, emit_run_input_error,
-        handle_run_command, load_resume_summary, maybe_start_compact_progress_monitor,
-        RunRouteRequest,
+        handle_run_command, load_resume_summary, maybe_start_run_progress_monitor,
+        RunProgressMonitor, RunRouteRequest,
     };
     use crate::commands::{
         AbsolutePathPolicyArg, CacheModeArg, Commands, DagCli, MaterializeModeArg,
@@ -486,7 +529,7 @@ mod tests {
     }
 
     #[test]
-    fn compact_progress_monitor_stays_disabled_for_quiet_json_and_preflight_modes() {
+    fn progress_monitor_respects_quiet_json_and_preflight_modes() {
         let dir = tempfile::tempdir().expect("tmp");
         let layout = super::resolve_plan_preview_layout(Some(dir.path()), Some("progress-run"))
             .expect("layout");
@@ -529,18 +572,21 @@ mod tests {
         let quiet_cli = DagCli { json: false, quiet: true, command: Commands::Version };
         let json_cli = DagCli { json: true, quiet: false, command: Commands::Version };
 
-        assert!(maybe_start_compact_progress_monitor(&quiet_cli, &request, layout.as_ref(), 3)
+        assert!(maybe_start_run_progress_monitor(&quiet_cli, &request, layout.as_ref(), 3)
             .is_none());
+        assert!(matches!(
+            maybe_start_run_progress_monitor(&json_cli, &request, layout.as_ref(), 3),
+            Some(RunProgressMonitor::Json(_))
+        ));
         assert!(
-            maybe_start_compact_progress_monitor(&json_cli, &request, layout.as_ref(), 3).is_none()
+            maybe_start_run_progress_monitor(
+                &DagCli { json: false, quiet: false, command: Commands::Version },
+                &RunRouteRequest { preflight_only: true, ..request },
+                layout.as_ref(),
+                3,
+            )
+            .is_none()
         );
-        assert!(maybe_start_compact_progress_monitor(
-            &DagCli { json: false, quiet: false, command: Commands::Version },
-            &RunRouteRequest { preflight_only: true, ..request },
-            layout.as_ref(),
-            3,
-        )
-        .is_none());
     }
 
     #[test]
