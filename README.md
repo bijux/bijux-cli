@@ -26,6 +26,10 @@
 The repository also carries the internal crates that keep those products
 packaged, tested, documented, and released from one reviewable tree.
 
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles.
+
 ## What Ships Today
 
 | Surface | Delivery form | What it is for |

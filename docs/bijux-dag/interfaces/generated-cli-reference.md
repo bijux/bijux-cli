@@ -50,7 +50,7 @@ deliberately excluded from this page and listed separately in
 ## Root Help
 
 ```text
-Local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles
+bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles.
 
 Usage: bijux-dag [OPTIONS] [COMMAND]
 
