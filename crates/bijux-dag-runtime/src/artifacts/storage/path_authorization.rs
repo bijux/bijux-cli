@@ -37,10 +37,24 @@ pub(crate) fn authorize_declared_output_target(
         return Err(format!("output path must be normalized and relative: {relative_path}"));
     }
 
-    let canonical_root = output_root
+    let mut pending_root_components = Vec::new();
+    let mut existing_root = output_root;
+    while !existing_root.exists() {
+        let Some(name) = existing_root.file_name() else {
+            return Err(format!("cannot resolve output root {}", output_root.display()));
+        };
+        pending_root_components.push(name.to_os_string());
+        existing_root = existing_root.parent().ok_or_else(|| {
+            format!("cannot resolve output root {}", output_root.display())
+        })?;
+    }
+
+    let mut current = existing_root
         .canonicalize()
-        .map_err(|err| format!("cannot resolve output root {}: {err}", output_root.display()))?;
-    let mut current = canonical_root.clone();
+        .map_err(|err| format!("cannot resolve output root {}: {err}", existing_root.display()))?;
+    for component in pending_root_components.iter().rev() {
+        current.push(component);
+    }
 
     for component in Path::new(relative_path).components() {
         let Component::Normal(part) = component else {
@@ -75,6 +89,16 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let output_root = dir.path().join("output");
         fs::create_dir_all(&output_root).expect("output root");
+
+        let target =
+            authorize_declared_output_target(&output_root, "node/result.txt").expect("target");
+        assert_eq!(target, output_root.join("node").join("result.txt"));
+    }
+
+    #[test]
+    fn declared_output_target_accepts_missing_output_root_when_parent_exists() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let output_root = dir.path().join("missing-output-root");
 
         let target =
             authorize_declared_output_target(&output_root, "node/result.txt").expect("target");

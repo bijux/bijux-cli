@@ -312,7 +312,8 @@ fn execute_dynamic_controller(
                 ))
             },
         )?;
-    let output_path = run_dir.node_outputs_dir(&node.id).join(&output.path);
+    let output_path = crate::authorized_declared_output_path(run_dir.node_outputs_dir(&node.id).as_path(), output)
+        .map_err(|failure| RuntimeError::Executor(failure.message))?;
     let raw_document = runtime.fs.read_to_string(&output_path).map_err(|error| {
         RuntimeError::Executor(format!(
             "failed to read dynamic expansion output for {}: {}",
@@ -391,7 +392,10 @@ fn resolve_branch_decision(
             })),
         ));
     };
-    let output_path = ctx.run_dir.node_outputs_dir(&node.id).join(&output.path);
+    let output_path = crate::authorized_declared_output_path(
+        ctx.run_dir.node_outputs_dir(&node.id).as_path(),
+        output,
+    )?;
     let raw = ctx.fs.read_to_string(&output_path).map_err(|_| {
         FailureInfo::new(
             FailureClass::User,
