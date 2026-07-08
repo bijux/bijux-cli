@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-08
 ---
 
 # Entrypoints and Examples
@@ -90,6 +90,26 @@ That path stays honest about the current release boundary: `cache verify` is on
 the stable operator surface, while `why-cache-missed` is repository-tested but
 still an explicit-path experimental diagnostic route in `v0.4.0`.
 
+For one retained workflow family that combines branch routing, warm cache
+reuse, changed-run comparison, replay proof, strict verification, and final
+promotion, use the evidence-backed bulletin workflow:
+
+```bash
+SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/audience-branch-source/team-update.md"
+bijux-dag validate evidence/dag/authoring/examples/audience-branch-bulletin.dag.json
+bijux-dag run --json evidence/dag/authoring/examples/audience-branch-bulletin.dag.json \
+  --out ./artifacts/evidence-backed-bulletin-runs \
+  --run-id branch-bulletin-cold \
+  --cache readwrite \
+  --cache-dir ./artifacts/evidence-backed-bulletin-cache \
+  --input "source_note=${SOURCE_NOTE}" \
+  --input "audience_mode=technical"
+```
+
+Continue with the dedicated guide for the full retained-run comparison, replay,
+verification, and promotion sequence:
+[Evidence-Backed Bulletin Workflow](../operations/guides/evidence-backed-bulletin-workflow.md).
+
 For a real container-backed packaging workflow, validate and run the release
 note example with one path input and one graph-owned label:
 
@@ -167,6 +187,7 @@ println!("spec={}", graph.spec);
 
 - [CLI Surface](cli-surface.md)
 - [Operator Workflows](operator-workflows.md)
+- [Evidence-Backed Bulletin Workflow](../operations/guides/evidence-backed-bulletin-workflow.md)
 - [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
 - [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)

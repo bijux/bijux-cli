@@ -4,7 +4,7 @@ audience: operators
 type: section-index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-08
 ---
 
 # DAG Operations
@@ -47,6 +47,7 @@ flowchart LR
 - [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](guides/container-packaging-workflow.md)
 - [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
+- [Evidence-Backed Bulletin Workflow](guides/evidence-backed-bulletin-workflow.md)
 - [File Processing Workflow](guides/file-processing-workflow.md)
 - [First Hour With Bijux Dag](guides/first-hour-with-bijux-dag.md)
 - [Historical Catalog Backfill Workflow](guides/historical-catalog-backfill-workflow.md)

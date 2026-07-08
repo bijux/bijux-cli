@@ -212,6 +212,31 @@ fanout, aggregate summary reporting, failed-partition retry, and explicit
 handoff into retained DAG runs without claiming a public scheduler service, use
 [`docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md`](docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md).
 
+For one retained workflow family that demonstrates branch selection, cache
+reuse, changed-run comparison, replay proof, strict verification, and artifact
+promotion together, start with the evidence-backed bulletin workflow:
+
+```bash
+SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/audience-branch-source/team-update.md"
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
+  evidence/dag/authoring/examples/audience-branch-bulletin.dag.json
+
+cargo run -p bijux-dag-cli --bin bijux-dag -- run --json \
+  evidence/dag/authoring/examples/audience-branch-bulletin.dag.json \
+  --out artifacts/evidence-backed-bulletin-runs \
+  --run-id branch-bulletin-cold \
+  --cache readwrite \
+  --cache-dir artifacts/evidence-backed-bulletin-cache \
+  --input "source_note=${SOURCE_NOTE}" \
+  --input "audience_mode=technical"
+```
+
+Then continue with
+[`docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md`](docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md)
+for the full retained-run comparison, replay, verification, and promotion
+sequence.
+
 Run a real DAG workflow against the repository file-processing example:
 
 ```bash
@@ -414,6 +439,11 @@ For retained branch decisions, skipped-lane evidence, join-trigger behavior,
 and replay stability, use
 [`docs/bijux-dag/operations/guides/branching-bulletin-workflow.md`](docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).
 
+For one workflow family that ties branch evidence, warm cache reuse,
+changed-input attribution, replay proof, strict verification, and final
+promotion together, use
+[`docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md`](docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md).
+
 For retry evidence, approval-boundary repair, replay input rematerialization,
 and strict post-repair verification, use
 [`docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md`](docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
@@ -429,6 +459,7 @@ and strict post-repair verification, use
 
 Representative DAG workflow guides:
 
+- [`docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md`](docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md) for one retained workflow family that demonstrates branch selection, cache reuse, run comparison, replay proof, strict verification, and artifact promotion together
 - [`docs/bijux-dag/operations/guides/file-processing-workflow.md`](docs/bijux-dag/operations/guides/file-processing-workflow.md) for a host-shell artifact workflow
 - [`docs/bijux-dag/operations/guides/cache-behavior-workflow.md`](docs/bijux-dag/operations/guides/cache-behavior-workflow.md) for selective invalidation, corruption refusal, and cache-miss explanation on a retained workflow family
 - [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md) for changed-input attribution and retained-run comparison
