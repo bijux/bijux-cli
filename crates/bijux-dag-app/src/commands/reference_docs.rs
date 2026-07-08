@@ -607,8 +607,8 @@ fn stable_examples_for_path(path: &str) -> Option<Vec<ReferenceExample>> {
                 command: "bijux-dag run ${GRAPH} --out ${RUNS_ROOT} --input source=artifacts/bijux-dag/input.txt --progress compact",
             },
             ReferenceExample {
-                purpose: "Run the same workflow in machine-readable mode",
-                command: "bijux-dag --json run ${GRAPH} --out ${RUNS_ROOT} --input source=artifacts/bijux-dag/input.txt",
+                purpose: "Run the same workflow in machine-readable mode with streamed progress snapshots",
+                command: "bijux-dag --json run ${GRAPH} --out ${RUNS_ROOT} --input source=artifacts/bijux-dag/input.txt --progress compact",
             },
         ],
         "runs" => vec![
