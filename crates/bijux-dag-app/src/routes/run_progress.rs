@@ -777,6 +777,33 @@ mod tests {
     }
 
     #[test]
+    fn compact_progress_marks_final_snapshot_finished_after_run_finished_event() {
+        let dir = tempfile::tempdir().expect("tmp");
+        fs::write(
+            dir.path().join("run.log.jsonl"),
+            concat!(
+                "{\"event\":\"run_started\",\"ts\":1}\n",
+                "{\"event\":\"node_started\",\"ts\":2,\"node_id\":\"train\"}\n",
+                "{\"event\":\"node_finished\",\"ts\":3,\"node_id\":\"train\",\"status\":\"success\"}\n",
+                "{\"event\":\"run_finished\",\"ts\":4}\n"
+            ),
+        )
+        .expect("write run log");
+
+        let mut state = CompactRunProgressState::new(1);
+        let mut cursor = ProgressEventCursor::default();
+        let snapshot = state
+            .refresh_from_staging_dir(&mut cursor, dir.path(), Instant::now())
+            .expect("snapshot");
+
+        assert!(snapshot.finished);
+        assert_eq!(snapshot.running_count, 0);
+        assert!(snapshot.active_nodes.is_empty());
+        assert_eq!(snapshot.completed_nodes, 1);
+        assert_eq!(snapshot.success_count, 1);
+    }
+
+    #[test]
     fn progress_event_payload_renders_machine_readable_snapshot() {
         let payload = progress_event_payload(
             Path::new("/tmp/run-1"),
