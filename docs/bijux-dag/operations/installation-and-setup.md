@@ -29,6 +29,20 @@ flowchart TD
 - DAG command surface reachable via `bijux-dag --help`
 - sample graph validates and runs without undocumented flags
 
+## Fastest Honest Validation
+
+If you want one repository command that proves the local DAG surface before you
+start exploring individual subcommands, run:
+
+```bash
+make dag-demo
+```
+
+`dag-demo` builds or reuses `bijux-dag`, runs the retained file-processing
+workflow, inspects the resulting graph and artifacts, checks warm cache reuse,
+replays the final reporting boundary, and finishes with `verify --strict`.
+Its retained evidence lands under `artifacts/dag-demo/`.
+
 ## Recommended Validation Sequence
 
 ```bash

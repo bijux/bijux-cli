@@ -25,6 +25,29 @@ the stable local operator surface while proving:
 - focused replay from a selected node
 - strict verification of retained outputs
 
+## One-Command Proof
+
+If the immediate question is "does this repository already prove one real DAG
+workflow end to end?", run:
+
+```bash
+make dag-demo
+```
+
+That command writes retained evidence under `artifacts/dag-demo/` and executes
+the same workflow this tutorial explains step by step:
+
+- graph inspection before execution
+- cold retained run creation
+- retained artifact registry and report inspection
+- warm cache reuse on the second run
+- focused replay of the final reporting boundary
+- strict verification of the replayed run
+
+Use the remaining sections of this tutorial when you want to see each command,
+understand the run directory layout, or substitute your own run and cache
+roots.
+
 ## What You Need
 
 You can either install the CLI or run it from the repository checkout.
