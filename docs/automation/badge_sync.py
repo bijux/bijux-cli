@@ -474,6 +474,56 @@ def iter_targets() -> tuple[BadgeTarget, ...]:
             "package",
             "bijux-cli-python",
         ),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-dag-artifacts" / "README.md",
+            "package",
+            "bijux-dag-artifacts",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "docs" / "bijux-dag" / "packages" / "bijux-dag-artifacts.md",
+            "package",
+            "bijux-dag-artifacts",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-dag-core" / "README.md",
+            "package",
+            "bijux-dag-core",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "docs" / "bijux-dag" / "packages" / "bijux-dag-core.md",
+            "package",
+            "bijux-dag-core",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-dag-runtime" / "README.md",
+            "package",
+            "bijux-dag-runtime",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "docs" / "bijux-dag" / "packages" / "bijux-dag-runtime.md",
+            "package",
+            "bijux-dag-runtime",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-dag-app" / "README.md",
+            "package",
+            "bijux-dag-app",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "docs" / "bijux-dag" / "packages" / "bijux-dag-app.md",
+            "package",
+            "bijux-dag-app",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-dag-cli" / "README.md",
+            "package",
+            "bijux-dag-cli",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "docs" / "bijux-dag" / "packages" / "bijux-dag-cli.md",
+            "package",
+            "bijux-dag-cli",
+        ),
     )
 
 
