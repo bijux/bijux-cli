@@ -44,6 +44,25 @@ flowchart TD
 The stable `v0.4.x` promise is a serious local DAG runtime, not a replicated
 controller service.
 
+### LIM-007 Stable local execution remains a single-controller runtime
+
+- stability class: `stable-surface`
+- affected command or API: `bijux-dag run`, `bijux-dag replay`, local controller runtime
+- limitation: one controller process owns scheduler state, cache decisions, and
+  run-state mutation. Restart recovery is scoped to retained local run
+  directories and local runtime records, not to a replicated scheduler service.
+- impact: operators must not assume multi-controller failover, durable remote
+  coordination, or high-availability scheduler semantics when the local
+  controlling process exits or the host is interrupted.
+- workaround: treat stable DAG execution as an explicit local job boundary with
+  retained run roots and host-level supervision. Use external schedulers only
+  as submitters into the local `bijux-dag run` surface.
+- planned fix: widen this claim only after multi-controller recovery semantics,
+  remote coordination durability, and release-boundary coverage are implemented
+  and tested as product behavior.
+- release target: a replicated controller or scheduler service is not part of
+  `v0.4.x`.
+
 ## Shell Isolation Limitations
 
 The stable local shell path is useful, but it is not a kernel sandbox.
@@ -103,10 +122,50 @@ platform.
 The repository contains schedule and backfill proof lanes, but `v0.4.x` does
 not yet publish a stable scheduler service.
 
+### LIM-008 Internal schedule and backfill lanes are not stable scheduler APIs
+
+- stability class: `stable-surface`
+- affected command or API: internal `schedule` namespace, scheduled refresh and
+  historical backfill workflow families, `BIJUX_DAG_ENABLE_INTERNAL=1`
+- limitation: schedule preview, queue dispatch, ledger mutation, and backfill
+  control remain internal maintainer surfaces. They are repository-tested, but
+  they are not part of the visible stable operator contract in `bijux-dag --help`.
+- impact: production automation that depends on those internal lanes may drift,
+  rename, or narrow within the `v0.4.x` line without violating the stable DAG
+  operator contract.
+- workaround: use the stable `run` surface with an external scheduler or job
+  launcher for real operations, and treat the internal schedule and backfill
+  workflows as repository-owned proof lanes only.
+- planned fix: promote a public scheduler lane only after its persistence,
+  compatibility, and operator lifecycle expectations are defined and covered by
+  dedicated release docs and tests.
+- release target: the schedule namespace remains internal throughout `v0.4.x`.
+
 ## Remote/Distributed Limitations
 
 The repository models remote coordination and future batch backends, but the
 stable runtime remains local.
+
+### LIM-009 Remote coordination and batch backends are modeled, not shipped
+
+- stability class: `stable-surface`
+- affected command or API: remote coordination model, fake batch execution,
+  future Kubernetes, Slurm, HPC, and public remote-worker surfaces
+- limitation: worker payloads, leases, heartbeats, fake batch metadata, and
+  cluster-oriented backend contracts exist as typed model or simulation
+  surfaces. They do not upgrade the current release into a distributed
+  scheduler, batch platform, or public remote execution service.
+- impact: operators must not read distributed tests, modeled control surfaces,
+  or future backend docs as proof that `v0.4.x` already ships Kubernetes,
+  Slurm, HPC, or public remote-worker execution as a supported product lane.
+- workaround: deploy the stable local controller runtime for real DAG work and
+  treat remote or batch materials as contract and design proof until the
+  release boundary explicitly promotes them.
+- planned fix: implement production backend semantics and operator docs, then
+  promote them through the release boundary, support matrix, and end-to-end
+  workflow coverage in the same release train.
+- release target: remote and distributed execution remain outside the stable
+  `v0.4.x` product promise.
 
 ## API Stability Limitations
 
@@ -173,6 +232,27 @@ exact and evidence-bound rather than broad portability promises.
   claims until a stronger execution boundary actually exists.
 - release target: `v0.4.x` keeps replay sandboxing scoped to source-run write
   protection only.
+
+### LIM-010 Cache and replay proof depends on exact retained evidence
+
+- stability class: `stable-surface`
+- affected command or API: `bijux-dag cache verify`, `why-cache-missed`,
+  `replay`, `export`, `import`
+- limitation: cache reuse depends on exact proof fields such as execution
+  fingerprint, declared environment fingerprint, input lineage fingerprint,
+  adapter identity, execution-contract fingerprint, backend class, and retained
+  output hashes. Replay and import can only prove what the retained run
+  directory or the chosen export-bundle mode actually preserves.
+- impact: cache entries are not a general promise of cross-backend,
+  cross-environment, or broad portability reuse, and structural bundles such as
+  `manifest-only` or `without-artifacts` cannot support artifact-backed replay
+  proof.
+- workaround: use retained run directories or `export --with-files` whenever
+  artifact-backed replay proof matters, and inspect `cache verify`,
+  `why-cache-missed`, and retained output hashes before assuming equivalence.
+- planned fix: widen portability claims only after broader bundle, backend, and
+  compatibility contracts are implemented and enforced as stable surfaces.
+- release target: the exact local proof model remains the `v0.4.x` guarantee.
 
 ## Record Rules
 
