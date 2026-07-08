@@ -14,6 +14,9 @@ and predictable failure handling. The release contract is intentionally honest:
 local shell execution is best-effort isolation, while stronger isolation claims
 are only made where the runtime can actually enforce them.
 
+For the precise enforcement matrix, open
+[Security And Isolation Truth](reference/security-isolation-truth.md).
+
 ## Visual Summary
 
 ```mermaid
@@ -38,6 +41,16 @@ flowchart LR
 | Local shell subprocess | Declared-effect policy gates, curated environment shaping, and Unix subprocess-group termination on timeout or cancellation. `--hermetic` forces `--deny-network`, `--deny-clock`, and `--clean-env`. | The process still runs on the host. There is no socket firewall, no clock virtualization, and no arbitrary filesystem-read sandbox. Non-Unix hosts still rely on best-effort process termination. |
 | Container engine | Declared-effect policy gates plus engine-level no-network mode when the container runtime can honor it. | Isolation depends on the selected engine and runtime host. This is not a VM boundary and does not imply complete filesystem or clock isolation. |
 | Replay `--sandbox` | Source-run write protection: replay outputs cannot be written into the original run directory. | Replay still executes as a normal process. `--sandbox` does not create a process sandbox or network jail. |
+
+The table above is the short operational summary. The truth page is the
+authoritative breakdown for:
+
+- shell backend versus container backend
+- what `clean-env` really does
+- how `deny-network` differs between shell and container execution
+- why `deny-clock` is a declaration gate rather than time virtualization
+- what filesystem boundaries are rooted and validated versus what remains a
+  host-process trust boundary
 
 ## Policy Denial Behavior
 
@@ -89,6 +102,7 @@ best-effort detail.
 
 ## Next Reads
 
+- [Security And Isolation Truth](reference/security-isolation-truth.md)
 - [Deployment Boundaries](deployment-boundaries.md)
 - [Trust Boundaries](reference/trust-boundaries.md)
 - [Risk Register](../quality/risk-register.md)

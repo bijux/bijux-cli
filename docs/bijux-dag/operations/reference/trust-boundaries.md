@@ -18,6 +18,7 @@ artifact trust boundaries.
 - manifest, trace, and outputs index verification
 - cache proof validation and corruption refusal
 - replay and diff classification for locally governed run directories
+- rooted write boundaries for run-dir, output, and cache storage helpers
 
 ## Do not assume what is not promised
 
@@ -25,8 +26,14 @@ artifact trust boundaries.
 - HPC scheduler integration ownership
 - promoted remote coordination
 - distributed consensus for run-state authority
+- shell syscall sandboxing, shell network firewalling, or clock virtualization
+- VM-grade container isolation
 
 ## Operator rule
 
 If a surface is simulated, experimental, or future-facing, treat it as a
 modeled contract boundary unless the release boundary explicitly promotes it.
+
+If a surface sounds security-relevant, verify it against
+[Security And Isolation Truth](security-isolation-truth.md) before treating it
+as an enforced runtime boundary.
