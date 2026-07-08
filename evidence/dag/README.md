@@ -1,19 +1,30 @@
-# Evidence
+# DAG Evidence
 
-`evidence/` is the repository authority for executable proof assets.
+`evidence/dag/` is the repository source of truth for executable DAG proof
+assets.
 
-## Subdomain map
-- `evidence/authoring`: onboarding evidence split into `minimal`, `patterns`, `negative`, and illustrative `examples`.
-- `evidence/battle`: trust-critical end-to-end behavior scenarios.
-- `evidence/cache`: cache reuse and corruption correctness scenarios.
-- `evidence/compat`: version and format compatibility fixtures.
-- `evidence/fault`: fault injection and resilience scenarios.
-- `evidence/operator`: operator inspection and diagnostics scenarios.
-- `evidence/perf`: performance scenarios and controlled baselines.
-- `evidence/compare`: cross-system comparison scenarios and baselines.
-- `evidence/_meta`: shared schemas, registries, and generated evidence maps.
+Use these directories when a handbook page, README, or test claims that a DAG
+behavior is real and repository-backed. The assets here are the concrete runs,
+fixtures, and baselines behind those claims.
 
-## Governance
+## Evidence Areas
+
+- `authoring/`: first-run graphs, validation negatives, and instructional
+  examples for graph authoring
+- `battle/`: trust-critical end-to-end workflows that support release claims
+- `cache/`: cache reuse, invalidation, replay, and corruption proof
+- `compat/`: supported and unsupported compatibility fixtures for schemas,
+  bundles, and run directories
+- `fault/`: failure-mode scenarios and the runtime reactions they must produce
+- `operator/`: operator-facing inspection and diagnostics scenarios
+- `perf/`: approved performance scenarios, fixtures, and enforced baselines
+- `compare/`: executable comparison scenarios with explicit non-equivalence
+  limits
+- `_meta/`: schemas, registries, directory maps, and generated supporting
+  metadata
+
+## Governance Sources
+
 - Contract: `evidence/CONTRACT.md`
 - Taxonomy: `evidence/taxonomy.md`
 - Ownership ledger: `evidence/ownership/evidence_ledger.json`
@@ -22,4 +33,6 @@
 - Shared metadata schema: `evidence/_meta/schemas/evidence_asset.schema.json`
 - Generated directory map: `evidence/_meta/maps/directory_map.json`
 
-Informational inventory markdown files under `evidence/inventory/` are non-authoritative summaries. Registry and ledger are authoritative.
+Informational inventory markdown files under `evidence/inventory/` are
+non-authoritative summaries. The registry and ownership ledger are the
+authoritative sources.
