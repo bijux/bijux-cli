@@ -4,7 +4,7 @@ audience: maintainer
 type: reference
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-09
 ---
 
 # Badge Catalog
@@ -18,9 +18,9 @@ docs landing page, and every public package README stay aligned.
 Do not hand-edit generated badge sections inside README or docs package pages.
 Those surfaces consume the templates below through generated badge blocks.
 
-The repository summary badges describe the public release surface. Package
-surfaces can still render package-specific badge sets for narrower boundaries
-such as the Python bridge.
+The repository summary badges describe the public release surface package by
+package. Package surfaces can still render package-specific badge sets for
+narrower boundaries such as the Python bridge.
 
 ## Badge Order
 
@@ -36,8 +36,10 @@ GHCR badge links are fixed here as part of the contract:
 
 - the repository-wide GHCR summary badge links to
   `https://github.com/bijux?tab=packages&repo_name=bijux-core`
-- per-package GHCR badges link to the package-specific package pages for
-  `bijux-cli` and `bijux-dag`
+- per-package GHCR badges render only for release bundles that publish
+  containers today: `bijux-cli` and `bijux-dag-cli`
+- public library crates still render crates.io, docs, and docs.rs badges even
+  when they do not publish GHCR images
 
 ## Repository Summary
 
