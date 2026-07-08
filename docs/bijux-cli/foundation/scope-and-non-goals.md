@@ -9,20 +9,19 @@ last_reviewed: 2026-04-06
 
 # Scope and Non-Goals
 
-This page makes the CLI contract explicit by separating what `bijux-cli` must
-defend from what it intentionally does not promise.
+Use this page when you need the honest version of the CLI story: what `bijux`
+is expected to do well today, and what it does not claim to solve yet.
 
-## Visual Summary
+The goal is not to sound smaller than the product really is. The goal is to
+keep readers from mistaking adjacent tooling, future ambitions, or unsafe
+assumptions for the current CLI contract.
 
-```mermaid
-flowchart TB
-    scope["In scope"] --> command["command parsing and routing"]
-    scope --> output["output and exit contracts"]
-    scope --> plugins["plugin lifecycle and resolution"]
-    non_goals["Non-goals"] --> sandbox["full plugin sandboxing"]
-    non_goals --> abi["stable in-process ABI today"]
-    non_goals --> host["broad host support promise beyond linux/macos"]
-```
+## What `bijux` Is For
+
+`bijux` is the operator-facing command runtime in this repository. It is built
+to parse commands predictably, execute built-in runtime features, mount apps,
+load plugins, and return stable output and exit behavior that automation can
+trust.
 
 ## In Scope
 
@@ -32,12 +31,28 @@ flowchart TB
 - plugin discovery, manifest checks, route registration, and lifecycle toggles
 - stable error shaping for usage, validation, and internal runtime failures
 
+## What Readers Should Not Assume
+
+- Plugin execution is a convenience and extensibility surface, not a hardened
+  sandbox.
+- The repository does not yet promise a stable in-process extension ABI for all
+  host integrations.
+- The CLI handbook does not absorb DAG semantics, maintainer gates, or every
+  repository-wide workflow just because they live beside `bijux`.
+
 ## Non-Goals
 
 - treating plugin execution as a hardened security sandbox
 - promising a stable in-process extension ABI at current maturity
 - collapsing all repository behavior into the root handbook
 - claiming Windows host support as a complete product contract
+
+## Practical Reading Rule
+
+- Stay inside the CLI handbook when the issue is visible through `bijux`.
+- Move to the DAG handbook when the real question is graph execution or replay.
+- Move to maintainer and repository docs when the real question is release
+  proof, governance, or cross-product workflow.
 
 ## Code Anchors
 
@@ -47,14 +62,14 @@ flowchart TB
 - `crates/bijux-cli/src/interface/cli/dispatch/policy.rs`
 - `crates/bijux-cli/src/kernel/`
 
-## Working Rule
+## Review Focus
 
 If behavior affects command compatibility, route identity, output payload shape,
 or exit semantics, it belongs in scope and must be reviewed as a contract
 change. If it is internal convenience with no external contract effect, it
 belongs in implementation detail.
 
-## Next Reads
+## Continue Reading
 
 - [Ownership Boundary](ownership-boundary.md)
 - [Compatibility Commitments](../interfaces/compatibility-commitments.md)
