@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Context, Result};
+use bijux_dag_app::write_checked_in_cli_reference_docs;
 use serde_json::{json, Value};
 
 use crate::cli::args::{command_option_value, command_positionals_with_options};
@@ -49,6 +50,10 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
                 "copied_file_count": copied_file_count,
             })
         }
+        [group, command] if group == "docs" && command == "write-dag-cli-reference" => {
+            let workspace_root = workspace_root();
+            build_dag_cli_reference_write_payload(&workspace_root, write_checked_in_cli_reference_docs)?
+        }
         _ => return Ok(None),
     };
 
@@ -67,9 +72,25 @@ fn render_path(path: &Path, workspace_root: &Path) -> String {
     path.strip_prefix(workspace_root).unwrap_or(path).to_string_lossy().replace('\\', "/")
 }
 
+fn build_dag_cli_reference_write_payload<F>(workspace_root: &Path, writer: F) -> Result<Value>
+where
+    F: FnOnce(&Path) -> Result<(), String>,
+{
+    writer(workspace_root).map_err(|err| anyhow!(err))?;
+    Ok(json!({
+        "status": "ok",
+        "command": "bijux-dev-cli docs write-dag-cli-reference",
+        "outputs": [
+            "docs/bijux-dag/interfaces/generated-cli-reference.md",
+            "docs/bijux-dag/interfaces/reference/nonstable-command-inventory.md"
+        ],
+    }))
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{render_path, resolve_site_dir};
+    use super::{build_dag_cli_reference_write_payload, render_path, resolve_site_dir};
+    use std::fs;
     use std::path::Path;
 
     #[test]
@@ -97,5 +118,34 @@ mod tests {
         let path = Path::new("/workspace/contracts");
 
         assert_eq!(render_path(path, workspace_root), "contracts");
+    }
+
+    #[test]
+    fn dag_cli_reference_write_payload_reports_checked_in_outputs() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let workspace_root = dir.path();
+        let payload = build_dag_cli_reference_write_payload(workspace_root, |root| {
+            let interfaces_root = root.join("docs/bijux-dag/interfaces");
+            fs::create_dir_all(interfaces_root.join("reference")).map_err(|err| err.to_string())?;
+            fs::write(interfaces_root.join("generated-cli-reference.md"), "stable\n")
+                .map_err(|err| err.to_string())?;
+            fs::write(
+                interfaces_root.join("reference/nonstable-command-inventory.md"),
+                "nonstable\n",
+            )
+            .map_err(|err| err.to_string())?;
+            Ok(())
+        })
+        .expect("payload");
+
+        assert_eq!(payload["status"], "ok");
+        assert_eq!(payload["command"], "bijux-dev-cli docs write-dag-cli-reference");
+        assert_eq!(
+            payload["outputs"],
+            serde_json::json!([
+                "docs/bijux-dag/interfaces/generated-cli-reference.md",
+                "docs/bijux-dag/interfaces/reference/nonstable-command-inventory.md"
+            ])
+        );
     }
 }
