@@ -1996,6 +1996,89 @@ exit 1
 }
 
 #[test]
+fn external_adapter_binary_change_forces_cache_miss_and_rerun() {
+    let _lock = process_env_lock();
+    let dir = tempfile::tempdir().expect("tmpdir");
+    let cache_dir = dir.path().join("cache");
+    let adapter_dir = dir.path().join("adapters");
+    fs::create_dir_all(&adapter_dir).expect("mkdir");
+    let adapter_path = adapter_dir.join("fake-adapter");
+    let runtime_config = RuntimeConfig {
+        cache_mode: bijux_dag_runtime::CacheMode::ReadWrite,
+        cache_dir: Some(cache_dir.clone()),
+        ..RuntimeConfig::default()
+    };
+
+    let write_adapter = |payload: &str| {
+        fs::write(
+            &adapter_path,
+            format!(
+                r#"#!/bin/sh
+if [ "$1" = "info" ]; then
+  echo '{{"protocol_version":"bijux-dag-adapter/v1","adapter_id":"fake","adapter_version":"0.1","required_effects":{{"filesystem":true,"env":false,"network":false,"clock":false}},"supported_kinds":["fake"],"output_schema":"v0.1"}}'
+  exit 0
+fi
+if [ "$1" = "execute" ]; then
+  outdir=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --outdir) outdir="$2"; shift 2;;
+      --workdir|--node-spec|--failure-path) shift 2;;
+      *) shift;;
+    esac
+  done
+  mkdir -p "$outdir"
+  printf '%s' '{payload}' > "$outdir/out"
+  exit 0
+fi
+exit 1
+"#
+            ),
+        )
+        .expect("write adapter");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&adapter_path).expect("meta").permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&adapter_path, perms).expect("chmod");
+        }
+    };
+
+    std::env::set_var("BIJUX_DAG_ADAPTERS_DIR", &adapter_dir);
+    write_adapter("first");
+    let graph = external_graph("fake", None);
+    let first_run = Runtime::new()
+        .run(&graph, dir.path(), runtime_config.clone())
+        .expect("first run");
+    assert_eq!(
+        fs::read_to_string(first_run.join("nodes").join("n1").join("outputs").join("out"))
+            .expect("first output"),
+        "first"
+    );
+
+    write_adapter("second");
+    let second_run = Runtime::new()
+        .run(&graph, dir.path(), runtime_config)
+        .expect("second run");
+    std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
+
+    assert_eq!(
+        fs::read_to_string(second_run.join("nodes").join("n1").join("outputs").join("out"))
+            .expect("second output"),
+        "second"
+    );
+    let cache_entries = fs::read_dir(&cache_dir)
+        .expect("cache entries")
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            entry.path().join("meta.json").exists().then_some(entry.path())
+        })
+        .count();
+    assert_eq!(cache_entries, 2);
+}
+
+#[test]
 fn external_adapter_timeout_quarantines_partial_outputs_and_preserves_binary_hash() {
     let _lock = process_env_lock();
     let dir = tempfile::tempdir().expect("tmpdir");
