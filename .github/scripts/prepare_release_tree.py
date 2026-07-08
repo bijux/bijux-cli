@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -27,7 +28,7 @@ def ensure_clean_output_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-def resolve_git_root(workspace_root: Path) -> Path:
+def resolve_git_root(workspace_root: Path) -> Path | None:
     try:
         result = subprocess.run(
             ["git", "-C", str(workspace_root), "rev-parse", "--show-toplevel"],
@@ -36,18 +37,53 @@ def resolve_git_root(workspace_root: Path) -> Path:
             text=True,
         )
     except subprocess.CalledProcessError as err:
-        raise SystemExit(f"failed to resolve git repository root under {workspace_root}: {err}") from err
+        return None
 
-    git_root = Path(result.stdout.strip()).resolve()
-    if git_root != workspace_root:
-        raise SystemExit(
-            f"workspace root must be the git repository root: requested {workspace_root}, git root {git_root}"
-        )
-    return git_root
+    return Path(result.stdout.strip()).resolve()
+
+
+def copy_workspace_snapshot(workspace_root: Path, output_dir: Path) -> None:
+    ignored_dirs = {
+        ".git",
+        ".hg",
+        ".svn",
+        ".venv",
+        "venv",
+        "__pycache__",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        "target",
+        "artifacts",
+    }
+    ignored_files = {".DS_Store"}
+
+    output_root_entry: str | None = None
+    try:
+        relative_output = output_dir.relative_to(workspace_root)
+    except ValueError:
+        relative_output = None
+    if relative_output is not None and relative_output.parts:
+        output_root_entry = relative_output.parts[0]
+
+    def ignore(path: str, names: list[str]) -> set[str]:
+        current = Path(path).resolve()
+        skipped = {name for name in names if name in ignored_files}
+        skipped.update(name for name in names if name in ignored_dirs and (current / name).is_dir())
+        if output_root_entry is not None and current == workspace_root:
+            skipped.add(output_root_entry)
+        return skipped
+
+    shutil.copytree(workspace_root, output_dir, dirs_exist_ok=True, ignore=ignore)
 
 
 def export_head_snapshot(workspace_root: Path, output_dir: Path) -> None:
-    resolve_git_root(workspace_root)
+    git_root = resolve_git_root(workspace_root)
+    # Release validation re-stamps already-exported clean trees that no longer carry
+    # repository metadata. Fall back to a filtered filesystem copy for that case.
+    if git_root != workspace_root:
+        copy_workspace_snapshot(workspace_root, output_dir)
+        return
     with tempfile.NamedTemporaryFile(suffix=".tar") as archive_file:
         try:
             subprocess.run(
