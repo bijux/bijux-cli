@@ -68,6 +68,9 @@ crate is usually `bijux-dag-app`.
 
 ## Representative Workflows
 
+- [Runnable Examples](../../docs/bijux-dag/interfaces/examples/index.md)
+  maps the repository-backed hello, file-processing, cache, replay, failure,
+  branch, and container proofs to their expected outputs.
 - [File Processing Workflow](../../docs/bijux-dag/operations/guides/file-processing-workflow.md)
   demonstrates a host-shell artifact workflow with replay and promotion.
 - [Cache Behavior Workflow](../../docs/bijux-dag/operations/guides/cache-behavior-workflow.md)

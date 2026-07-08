@@ -252,6 +252,10 @@ That tutorial covers:
 - warm cache reuse on a second run
 - focused replay and strict verification
 
+For one user-facing index of the repository-backed hello, file-processing,
+cache, replay, failure, branch, and container examples, use
+[`docs/bijux-dag/interfaces/examples/index.md`](docs/bijux-dag/interfaces/examples/index.md).
+
 For the exact retained file map after that first run, including manifests,
 node traces, input and output indexes, cache-entry layout, and promotion
 records, use
@@ -532,6 +536,7 @@ and strict post-repair verification, use
 
 Representative DAG workflow guides:
 
+- [`docs/bijux-dag/interfaces/examples/index.md`](docs/bijux-dag/interfaces/examples/index.md) for the public runnable examples catalog, including the shortest proof path and expected outputs for each repository-backed example
 - [`docs/bijux-dag/interfaces/reference/reproducibility-model.md`](docs/bijux-dag/interfaces/reference/reproducibility-model.md) for the canonical explanation of graph, plan, execution, environment, and artifact identity, plus cache-key and replay-bundle boundaries
 - [`docs/bijux-dag/operations/guides/first-run-tutorial.md`](docs/bijux-dag/operations/guides/first-run-tutorial.md) for the five-minute path from build to graph inspection, retained artifacts, warm cache reuse, replay, and strict verification
 - [`docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md`](docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md) for one retained workflow family that demonstrates branch selection, cache reuse, run comparison, replay proof, strict verification, and artifact promotion together
