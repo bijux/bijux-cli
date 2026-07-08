@@ -50,6 +50,6 @@ flowchart LR
 
 ## Next reads
 
-- [Concurrency Model](../../spec/CONCURRENCY_MODEL.md)
-- [Execution Model](execution-model.md)
-- [State and Persistence](state-and-persistence.md)
+- [Concurrency Model](../../../spec/CONCURRENCY_MODEL.md)
+- [Execution Model](../execution-model.md)
+- [State and Persistence](../state-and-persistence.md)

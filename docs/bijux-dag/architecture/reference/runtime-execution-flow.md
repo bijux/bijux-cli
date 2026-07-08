@@ -43,5 +43,5 @@ reports node completions back to the engine.
 
 ## Next Reads
 
-- [Ownership Boundary](../foundation/ownership-boundary.md)
-- [Integration Seams](integration-seams.md)
+- [Ownership Boundary](../../foundation/ownership-boundary.md)
+- [Integration Seams](../integration-seams.md)
