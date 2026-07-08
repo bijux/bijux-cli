@@ -1,9 +1,12 @@
+use crate::output_contract::emit_json_line;
 use bijux_dag_runtime::{ExecutionCheckpoint, RunSnapshot};
+use serde::Serialize;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
 use std::io::{self, IsTerminal, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
+use std::process::ExitCode;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
@@ -11,7 +14,7 @@ use std::time::{Duration, Instant};
 
 const COMPACT_PROGRESS_POLL_INTERVAL: Duration = Duration::from_millis(100);
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub(crate) struct CompactRunProgressFailure {
     pub node_id: String,
     pub status: String,
@@ -19,8 +22,9 @@ pub(crate) struct CompactRunProgressFailure {
     pub failure_code: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub(crate) struct CompactRunProgressSnapshot {
+    #[serde(serialize_with = "serialize_elapsed_millis")]
     pub elapsed: Duration,
     pub total_nodes: usize,
     pub completed_nodes: usize,
@@ -45,6 +49,11 @@ pub(crate) struct ProgressEventCursor {
 }
 
 pub(crate) struct CompactRunProgressMonitor {
+    stop_requested: Arc<AtomicBool>,
+    worker: Option<JoinHandle<()>>,
+}
+
+pub(crate) struct JsonRunProgressMonitor {
     stop_requested: Arc<AtomicBool>,
     worker: Option<JoinHandle<()>>,
 }
@@ -288,6 +297,68 @@ impl CompactRunProgressMonitor {
     }
 }
 
+impl JsonRunProgressMonitor {
+    pub(crate) fn start(
+        staging_path: &Path,
+        final_path: &Path,
+        fallback_total_nodes: usize,
+    ) -> Self {
+        let stop_requested = Arc::new(AtomicBool::new(false));
+        let worker_stop = Arc::clone(&stop_requested);
+        let staging_path = staging_path.to_path_buf();
+        let final_path = final_path.to_path_buf();
+        let worker = thread::spawn(move || {
+            let mut state = CompactRunProgressState::new(fallback_total_nodes);
+            let mut cursor = ProgressEventCursor::default();
+            let started_at = Instant::now();
+            let mut last_snapshot = None;
+            loop {
+                let run_dir_path = active_progress_run_dir(&staging_path, &final_path);
+                if let Some(snapshot) =
+                    state.refresh_from_staging_dir(&mut cursor, run_dir_path.as_path(), started_at)
+                {
+                    if last_snapshot.as_ref() != Some(&snapshot) {
+                        emit_json_line(
+                            "dag.run.progress",
+                            true,
+                            progress_event_payload(run_dir_path.as_path(), &snapshot),
+                            Vec::new(),
+                            ExitCode::SUCCESS,
+                        );
+                        last_snapshot = Some(snapshot);
+                    }
+                }
+                if worker_stop.load(Ordering::Relaxed) {
+                    break;
+                }
+                thread::sleep(COMPACT_PROGRESS_POLL_INTERVAL);
+            }
+            let run_dir_path = active_progress_run_dir(&staging_path, &final_path);
+            if let Some(snapshot) =
+                state.refresh_from_staging_dir(&mut cursor, run_dir_path.as_path(), started_at)
+            {
+                if last_snapshot.as_ref() != Some(&snapshot) {
+                    emit_json_line(
+                        "dag.run.progress",
+                        true,
+                        progress_event_payload(run_dir_path.as_path(), &snapshot),
+                        Vec::new(),
+                        ExitCode::SUCCESS,
+                    );
+                }
+            }
+        });
+        Self { stop_requested, worker: Some(worker) }
+    }
+
+    pub(crate) fn finish(mut self) {
+        self.stop_requested.store(true, Ordering::Relaxed);
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+    }
+}
+
 pub(crate) fn format_compact_run_progress(snapshot: &CompactRunProgressSnapshot) -> String {
     format!(
         "progress elapsed={} done={}/{} ready={} running={} success={} failed={} skipped={} cached={} cancelled={} blocked={} cache_hits={} active=[{}] latest_failure={}",
@@ -370,6 +441,20 @@ fn format_failure(failure: Option<&CompactRunProgressFailure>) -> String {
         rendered.push(']');
     }
     rendered
+}
+
+fn serialize_elapsed_millis<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_u128(duration.as_millis())
+}
+
+fn progress_event_payload(run_dir: &Path, snapshot: &CompactRunProgressSnapshot) -> Value {
+    serde_json::json!({
+        "run_dir": run_dir.display().to_string(),
+        "snapshot": snapshot,
+    })
 }
 
 fn active_progress_run_dir(staging_path: &Path, final_path: &Path) -> PathBuf {
@@ -483,12 +568,14 @@ impl<W: Write> ProgressLineRenderer<W> {
 #[cfg(test)]
 mod tests {
     use super::{
-        active_progress_run_dir, format_compact_run_progress, CompactRunProgressFailure,
-        CompactRunProgressMonitor, CompactRunProgressSnapshot, CompactRunProgressState,
-        ProgressEventCursor, ProgressLineRenderer,
+        active_progress_run_dir, format_compact_run_progress, progress_event_payload,
+        CompactRunProgressFailure, CompactRunProgressMonitor, CompactRunProgressSnapshot,
+        CompactRunProgressState, JsonRunProgressMonitor, ProgressEventCursor,
+        ProgressLineRenderer,
     };
     use serde_json::json;
     use std::fs;
+    use std::path::Path;
     use std::time::{Duration, Instant};
 
     #[test]
@@ -691,9 +778,50 @@ mod tests {
     }
 
     #[test]
+    fn progress_event_payload_renders_machine_readable_snapshot() {
+        let payload = progress_event_payload(
+            Path::new("/tmp/run-1"),
+            &CompactRunProgressSnapshot {
+                elapsed: Duration::from_millis(1_250),
+                total_nodes: 4,
+                completed_nodes: 2,
+                ready_count: 1,
+                running_count: 1,
+                blocked_count: 0,
+                success_count: 1,
+                failed_count: 1,
+                skipped_count: 0,
+                cached_count: 0,
+                cancelled_count: 0,
+                cache_hits: 0,
+                active_nodes: vec!["train".to_string()],
+                latest_failure: Some(CompactRunProgressFailure {
+                    node_id: "extract".to_string(),
+                    status: "failed".to_string(),
+                    reason: Some("exit_code".to_string()),
+                    failure_code: Some("EXEC_FAILED".to_string()),
+                }),
+                finished: false,
+            },
+        );
+
+        assert_eq!(payload["run_dir"], "/tmp/run-1");
+        assert_eq!(payload["snapshot"]["elapsed"], 1_250);
+        assert_eq!(payload["snapshot"]["active_nodes"][0], "train");
+        assert_eq!(payload["snapshot"]["latest_failure"]["failure_code"], "EXEC_FAILED");
+    }
+
+    #[test]
     fn compact_progress_monitor_finishes_without_staging_files() {
         let dir = tempfile::tempdir().expect("tmp");
         let monitor = CompactRunProgressMonitor::start(dir.path(), dir.path(), 1);
+        monitor.finish();
+    }
+
+    #[test]
+    fn json_progress_monitor_finishes_without_staging_files() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let monitor = JsonRunProgressMonitor::start(dir.path(), dir.path(), 1);
         monitor.finish();
     }
 
