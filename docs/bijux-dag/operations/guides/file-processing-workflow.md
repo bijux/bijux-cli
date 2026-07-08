@@ -17,6 +17,16 @@ The workflow is backed by the repository example
 `evidence/dag/authoring/examples/file-processing-report.dag.json` and the
 sample input directory `evidence/dag/authoring/examples/file-processing-source`.
 
+If you want the shortest repository command that proves this workflow before
+you inspect each operator step, run:
+
+```bash
+make dag-demo
+```
+
+That command executes the same retained workflow this guide explains in detail,
+using `artifacts/dag-demo/` as its run and cache root.
+
 ## What This Workflow Proves
 
 - graph inputs drive a real run instead of only a toy constant graph

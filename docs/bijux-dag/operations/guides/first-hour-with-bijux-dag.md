@@ -17,6 +17,11 @@ Use this page for the bootstrap half of that path. For the first complete
 retained workflow after bootstrap, continue with
 [First-Run Tutorial](first-run-tutorial.md).
 
+If you do not need the bootstrap walkthrough and only want one command that
+proves the retained local DAG surface, run `make dag-demo` from repository
+root. The rest of this page explains the slower path that builds confidence in
+the command surface before that retained workflow.
+
 ## First-hour sequence
 
 1. Build the CLI with `cargo build -p bijux-dag-cli --release`.
