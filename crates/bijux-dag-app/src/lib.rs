@@ -145,8 +145,6 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use bijux_dag_core::{Graph, GraphError, Severity, SPEC_VERSION};
 use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
-#[cfg(test)]
-use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
     command_access_denial, hide_non_public_help, lane_label, CacheCommands, CommandAccessDenial,
@@ -164,7 +162,6 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-// Keep the dependency reachable at the crate root for strict target dependency checks.
 use thiserror as _;
 
 pub fn dag_command() -> clap::Command {

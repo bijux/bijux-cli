@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -15,13 +14,14 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::{Effect, Graph};
-use bijux_dag_testkit::{graph_chain, graph_diamond, graph_failure, graph_retry, graph_timeout};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 mod support;
+
+use support::{graph_chain, graph_diamond, graph_failure, graph_retry, graph_timeout};
 
 fn repo_root() -> PathBuf {
     support::repo_root_from_manifest_dir(env!("CARGO_MANIFEST_DIR"))

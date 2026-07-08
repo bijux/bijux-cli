@@ -1,10 +1,13 @@
-use bijux_dag_testkit::{
-    collect_run_dir_snapshot, fixture_path_string, fixture_snapshot_path, graph_map_reduce_fixture,
-    graph_semantic_map_reduce_fixture, update_or_assert_snapshot, write_graph_fixture,
-};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+mod support;
+
+use support::{
+    collect_run_dir_snapshot, fixture_path_string, fixture_snapshot_path, graph_map_reduce_fixture,
+    graph_semantic_map_reduce_fixture, update_or_assert_snapshot, write_graph_fixture,
+};
 
 fn dag_bin(cwd: &Path) -> Command {
     let cargo_bin = std::env::var("CARGO")

@@ -145,7 +145,6 @@ dependencies = [
  "bijux-dag-artifacts",
  "bijux-dag-core",
  "bijux-dag-runtime",
- "bijux-dag-testkit",
  "clap",
  "flate2",
  "hex",

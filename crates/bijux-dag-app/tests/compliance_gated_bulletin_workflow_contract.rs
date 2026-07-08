@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -160,12 +159,20 @@ fn compliance_gated_bulletin_workflow_repairs_the_failed_publication_boundary() 
     let source_manifest = read_manifest(&source_run);
     assert_eq!(source_manifest["status"], "failed");
     assert_eq!(source_manifest["node_counts"]["success"], 2);
-    assert_eq!(source_manifest["node_counts"]["failed"], 1);
-    assert_eq!(source_manifest["node_counts"]["skipped"], 1);
+    assert_eq!(source_manifest["node_counts"]["failed"], 2);
+    assert_eq!(source_manifest["node_counts"]["skipped"], 0);
 
     let summary = &source["data"]["summary"];
     assert_eq!(summary["status"], "failed");
-    assert_eq!(summary["failed_node_reasons"][0]["node_id"], "validate_publication_gate");
+    let failed_node_reasons = summary["failed_node_reasons"]
+        .as_array()
+        .expect("failed node reasons array");
+    assert!(failed_node_reasons.iter().any(|reason| {
+        reason["node_id"] == "validate_publication_gate" && reason["code"] == "EXEC_FAIL"
+    }));
+    assert!(failed_node_reasons.iter().any(|reason| {
+        reason["node_id"] == "publish_bulletin" && reason["code"] == "UPSTREAM_FAILED"
+    }));
 
     let fetch_trace = read_trace(&source_run, "fetch_compliance_gate");
     assert_eq!(fetch_trace["status"], "success");
@@ -179,7 +186,10 @@ fn compliance_gated_bulletin_workflow_repairs_the_failed_publication_boundary() 
     assert_eq!(fetch_attempts[1]["status"], "Success");
 
     let validate_trace = read_trace(&source_run, "validate_publication_gate");
+    let publish_trace = read_trace(&source_run, "publish_bulletin");
     assert_eq!(validate_trace["status"], "failed");
+    assert_eq!(publish_trace["status"], "failed");
+    assert_eq!(publish_trace["failure"]["code"], "UPSTREAM_FAILED");
     assert!(fs::read_to_string(node_stderr_path(&source_run, "validate_publication_gate"))
         .expect("validate stderr")
         .contains("publication gate is not approved"));
@@ -196,7 +206,14 @@ fn compliance_gated_bulletin_workflow_repairs_the_failed_publication_boundary() 
         &root,
     );
     assert_eq!(explain_failure["data"]["root_failure"], "validate_publication_gate");
-    assert_eq!(explain_failure["data"]["propagated_skips"][0]["node_id"], "publish_bulletin");
+    let propagated_failures = explain_failure["data"]["propagated_failures"]
+        .as_array()
+        .expect("propagated failures");
+    assert!(propagated_failures.iter().any(|entry| entry["node_id"] == "publish_bulletin"));
+    assert_eq!(
+        explain_failure["data"]["propagated_skips"].as_array().expect("propagated skips").len(),
+        0
+    );
 
     write_publication_gate(&publication_gate, true, "A. Reviewer", "release-managers");
 
@@ -278,11 +295,16 @@ fn compliance_gated_bulletin_workflow_surfaces_retry_exhaustion() {
     let manifest = read_manifest(&run_dir);
     assert_eq!(manifest["status"], "failed");
     assert_eq!(manifest["node_counts"]["success"], 1);
-    assert_eq!(manifest["node_counts"]["failed"], 1);
-    assert_eq!(manifest["node_counts"]["skipped"], 2);
+    assert_eq!(manifest["node_counts"]["failed"], 3);
+    assert_eq!(manifest["node_counts"]["skipped"], 0);
 
     let summary = &payload["data"]["summary"];
-    assert_eq!(summary["failed_node_reasons"][0]["node_id"], "fetch_compliance_gate");
+    let failed_node_reasons = summary["failed_node_reasons"]
+        .as_array()
+        .expect("failed node reasons array");
+    assert!(failed_node_reasons.iter().any(|reason| {
+        reason["node_id"] == "fetch_compliance_gate" && reason["code"] == "EXEC_FAIL"
+    }));
 
     let fetch_trace = read_trace(&run_dir, "fetch_compliance_gate");
     assert_eq!(fetch_trace["status"], "failed");
@@ -311,9 +333,13 @@ fn compliance_gated_bulletin_workflow_surfaces_retry_exhaustion() {
         &root,
     );
     assert_eq!(explain_failure["data"]["root_failure"], "fetch_compliance_gate");
+    let propagated_failures = explain_failure["data"]["propagated_failures"]
+        .as_array()
+        .expect("propagated failures");
+    assert!(propagated_failures.iter().any(|entry| entry["node_id"] == "validate_publication_gate"));
+    assert!(propagated_failures.iter().any(|entry| entry["node_id"] == "publish_bulletin"));
     assert_eq!(
-        explain_failure["data"]["propagated_skips"][0]["node_id"],
-        "validate_publication_gate"
+        explain_failure["data"]["propagated_skips"].as_array().expect("propagated skips").len(),
+        0
     );
-    assert_eq!(explain_failure["data"]["propagated_skips"][1]["node_id"], "publish_bulletin");
 }

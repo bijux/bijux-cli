@@ -126,6 +126,35 @@ fn write_invalid_graph_fixture() -> (tempfile::TempDir, PathBuf) {
     (dir, dag)
 }
 
+fn branch_semantics_graph_json() -> &'static str {
+    r#"{
+      "spec":"bijux-dag/v0.1",
+      "meta":{"name":"branch-contract","owners":[],"tags":[]},
+      "nodes":[
+        {"id":"seed","kind":"const","inputs":[],"outputs":[{"name":"out","path":"seed/out"}],"params":{"value":1}},
+        {
+          "id":"decide",
+          "kind":"shell",
+          "semantic_kind":"branch",
+          "inputs":["in"],
+          "outputs":[{"name":"decision","path":"decide/decision.txt"}],
+          "effects":["filesystem"],
+          "params":{"argv":["echo","left"]},
+          "branch":{"decisions":["left","right"],"default_decision":"left","decision_output":"decision"}
+        },
+        {"id":"left","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"left/out"}],"params":{"value":"left"},"trigger_rule":"any_success"},
+        {"id":"right","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"right/out"}],"params":{"value":"right"},"trigger_rule":"any_success"},
+        {"id":"join","kind":"shell","inputs":["lhs"],"outputs":[{"name":"out","path":"join/out"}],"params":{"argv":["echo","join"]},"effects":["filesystem"]}
+      ],
+      "edges":[
+        {"id":"seed-to-decide","from":{"node_id":"seed","port":"out"},"to":{"node_id":"decide","port":"in"}},
+        {"id":"branch-left","kind":"conditional","decision":"left","from":{"node_id":"decide","port":"decision"},"to":{"node_id":"left","port":"in"}},
+        {"id":"branch-right","kind":"conditional","decision":"right","from":{"node_id":"decide","port":"decision"},"to":{"node_id":"right","port":"in"}},
+        {"id":"left-to-join","kind":"control","from":{"node_id":"left","port":"out"},"to":{"node_id":"join","port":"lhs"}}
+      ]
+    }"#
+}
+
 fn write_tagged_graph_fixture() -> (tempfile::TempDir, PathBuf) {
     let dir = tempfile::tempdir().expect("tmp");
     let dag = dir.path().join("graph-tagged.json");
@@ -223,7 +252,7 @@ fn write_plan_diff_metadata_only_fixture() -> (tempfile::TempDir, PathBuf) {
 fn write_branch_graph_fixture() -> (tempfile::TempDir, PathBuf) {
     let dir = tempfile::tempdir().expect("tmp");
     let dag = dir.path().join("graph-branch.json");
-    fs::write(&dag, bijux_dag_testkit::branch_semantics_graph_json()).expect("write branch graph");
+    fs::write(&dag, branch_semantics_graph_json()).expect("write branch graph");
     (dir, dag)
 }
 

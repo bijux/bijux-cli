@@ -3,7 +3,6 @@ use bijux_dag_app::{dag_command, dag_run};
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit::{graph_chain, graph_diamond};
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -15,6 +14,10 @@ use std::path::{Path, PathBuf};
 use tar as _;
 use tempfile as _;
 use thiserror as _;
+
+mod support;
+
+use support::{graph_chain, graph_diamond};
 
 fn run_ok(args: &[String]) {
     let refs: Vec<&str> = args.iter().map(String::as_str).collect();

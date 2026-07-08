@@ -3,7 +3,6 @@ use bijux_dag_app::prelude::{
     RuntimeSurfaceConfig,
 };
 use bijux_dag_app::{CacheModeSurface, MaterializeInputsSurface, PartialRuntimeSurfaceConfig};
-use bijux_dag_testkit as _;
 use clap as _;
 use serde as _;
 use serde_json as _;

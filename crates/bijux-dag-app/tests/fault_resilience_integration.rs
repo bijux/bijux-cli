@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -16,10 +15,13 @@ use thiserror as _;
 
 use bijux_dag_app::{dag_command, dag_run};
 use bijux_dag_artifacts::RunDir;
-use bijux_dag_testkit::create_corrupted_run_dir;
 use serde_json::json;
 use std::fs;
 use std::path::{Path, PathBuf};
+
+mod support;
+
+use support::create_corrupted_run_dir;
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")

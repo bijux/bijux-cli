@@ -3,7 +3,6 @@ use bijux_dag_app::{explain_failure, format_inspect_human, inspect_summary};
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime::{build_plan, RuntimeConfig};
-use bijux_dag_testkit::graph_chain;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -15,9 +14,11 @@ use tar as _;
 use tempfile as _;
 use thiserror as _;
 
+mod support;
+
 #[test]
 fn plan_output_shape_snapshot_is_stable() {
-    let graph = graph_chain();
+    let graph = support::graph_chain();
     let plan = build_plan(&graph, &RuntimeConfig::default());
     let rendered = serde_json::to_string_pretty(&plan).expect("serialize plan");
     assert!(rendered.contains("\"nodes\""));
