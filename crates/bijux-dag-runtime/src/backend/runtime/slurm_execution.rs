@@ -267,14 +267,8 @@ impl SystemSlurmBackend {
 
     pub fn from_runtime_config(config: &crate::SlurmRuntimeConfig) -> Result<Self, String> {
         Self::new(SystemSlurmBackendConfig {
-            sbatch_command: config
-                .sbatch_command
-                .clone()
-                .unwrap_or_else(|| "sbatch".to_string()),
-            sacct_command: config
-                .sacct_command
-                .clone()
-                .unwrap_or_else(|| "sacct".to_string()),
+            sbatch_command: config.sbatch_command.clone().unwrap_or_else(|| "sbatch".to_string()),
+            sacct_command: config.sacct_command.clone().unwrap_or_else(|| "sacct".to_string()),
             poll_interval_ms: config.poll_interval_ms.max(50),
             worker_command: config.worker_command.clone(),
         })
@@ -456,18 +450,12 @@ fn render_worker_invocation(
     payload_path: &Path,
     result_path: &Path,
 ) -> String {
-    let mut args = worker_command
-        .iter()
-        .map(|entry| shell_quote(entry))
-        .collect::<Vec<_>>();
+    let mut args = worker_command.iter().map(|entry| shell_quote(entry)).collect::<Vec<_>>();
     args.push(shell_quote(payload_path.to_string_lossy().as_ref()));
     args.push("--result".to_string());
     args.push(shell_quote(result_path.to_string_lossy().as_ref()));
     args.push("--in-place".to_string());
-    format!(
-        "#!/bin/sh\nset -eu\nexport BIJUX_DAG_ENABLE_INTERNAL=1\n{}\n",
-        args.join(" ")
-    )
+    format!("#!/bin/sh\nset -eu\nexport BIJUX_DAG_ENABLE_INTERNAL=1\n{}\n", args.join(" "))
 }
 
 fn parse_slurm_job_id(stdout: &str) -> Result<String, String> {
@@ -560,10 +548,7 @@ fn synthesize_remote_result(
 }
 
 fn current_unix_ms() -> u128 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_millis())
-        .unwrap_or(0)
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|duration| duration.as_millis()).unwrap_or(0)
 }
 
 fn shell_quote(value: &str) -> String {

@@ -240,9 +240,9 @@ fn runtime_timeline_marks_cached_nodes_without_fabricating_execution_start() {
     assert!(scheduled < cached);
     assert!(cached < run_completed);
     assert!(
-        !timeline.iter().any(|entry| {
-            entry["label"] == "node_started" && entry["node_id"] == "node"
-        }),
+        !timeline
+            .iter()
+            .any(|entry| { entry["label"] == "node_started" && entry["node_id"] == "node" }),
         "cache hits should not fabricate node_started timeline entries"
     );
 }

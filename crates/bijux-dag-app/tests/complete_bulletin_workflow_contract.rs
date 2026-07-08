@@ -58,7 +58,8 @@ fn workflow_graph(root: &Path) -> PathBuf {
 }
 
 fn copy_source_note(root: &Path, destination: &Path, fixture_name: &str) -> PathBuf {
-    let source = root.join("evidence/dag/authoring/examples/audience-branch-source").join(fixture_name);
+    let source =
+        root.join("evidence/dag/authoring/examples/audience-branch-source").join(fixture_name);
     fs::create_dir_all(destination).expect("inputs dir");
     let note = destination.join(fixture_name);
     fs::copy(source, &note).expect("copy note");
@@ -80,9 +81,9 @@ fn artifact_id_for_bulletin(registry_payload: &Value) -> String {
         .expect("artifacts array")
         .iter()
         .find(|artifact| {
-            artifact["path"]
-                .as_str()
-                .is_some_and(|path| path.ends_with("nodes/publish_bulletin/outputs/publish/bulletin.md"))
+            artifact["path"].as_str().is_some_and(|path| {
+                path.ends_with("nodes/publish_bulletin/outputs/publish/bulletin.md")
+            })
         })
         .and_then(|artifact| artifact["artifact_id"].as_str())
         .expect("bulletin artifact id")
@@ -137,7 +138,10 @@ fn branch_bulletin_workflow_supports_complete_operator_story() {
     let cold_run = run_dir_from_response(&cold);
     let cold_manifest = read_manifest(&cold_run);
     assert_eq!(cold_manifest["status"], "success");
-    assert_eq!(cold_manifest["run_metadata"]["graph_inputs"]["source_note"], output_path_string(&original_note));
+    assert_eq!(
+        cold_manifest["run_metadata"]["graph_inputs"]["source_note"],
+        output_path_string(&original_note)
+    );
     assert_eq!(cold_manifest["run_metadata"]["graph_inputs"]["audience_mode"], "technical");
     assert_eq!(cold_manifest["node_counts"]["cached"], 0);
 
@@ -198,10 +202,8 @@ fn branch_bulletin_workflow_supports_complete_operator_story() {
         ],
         &root,
     );
-    let artifact_sha = artifact_inspect["data"]["artifact_sha256"]
-        .as_str()
-        .expect("artifact sha")
-        .to_string();
+    let artifact_sha =
+        artifact_inspect["data"]["artifact_sha256"].as_str().expect("artifact sha").to_string();
     assert_eq!(artifact_inspect["data"]["promotable"], true);
     assert_eq!(artifact_sha.len(), 64);
     assert!(
@@ -294,15 +296,11 @@ fn branch_bulletin_workflow_supports_complete_operator_story() {
 
     let changed_outputs = json_array_strings(&compare["data"]["output_hashes"]["changed_outputs"]);
     assert!(
-        changed_outputs
-            .iter()
-            .any(|item| item == "publish_bulletin:publish/bulletin.md"),
+        changed_outputs.iter().any(|item| item == "publish_bulletin:publish/bulletin.md"),
         "expected final bulletin artifact to be attributed as changed"
     );
     assert!(
-        changed_outputs
-            .iter()
-            .any(|item| item == "publish_bulletin:publish/selection.json"),
+        changed_outputs.iter().any(|item| item == "publish_bulletin:publish/selection.json"),
         "expected selected-lane evidence to be attributed as changed"
     );
 

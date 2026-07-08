@@ -2048,9 +2048,8 @@ exit 1
     std::env::set_var("BIJUX_DAG_ADAPTERS_DIR", &adapter_dir);
     write_adapter("first");
     let graph = external_graph("fake", None);
-    let first_run = Runtime::new()
-        .run(&graph, dir.path(), runtime_config.clone())
-        .expect("first run");
+    let first_run =
+        Runtime::new().run(&graph, dir.path(), runtime_config.clone()).expect("first run");
     assert_eq!(
         fs::read_to_string(first_run.join("nodes").join("n1").join("outputs").join("out"))
             .expect("first output"),
@@ -2058,9 +2057,7 @@ exit 1
     );
 
     write_adapter("second");
-    let second_run = Runtime::new()
-        .run(&graph, dir.path(), runtime_config)
-        .expect("second run");
+    let second_run = Runtime::new().run(&graph, dir.path(), runtime_config).expect("second run");
     std::env::remove_var("BIJUX_DAG_ADAPTERS_DIR");
 
     assert_eq!(

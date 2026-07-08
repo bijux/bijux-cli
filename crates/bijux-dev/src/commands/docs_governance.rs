@@ -1244,9 +1244,9 @@ also good `docs/index.md`\n";
 
         let error =
             validate_known_limitations_content(content).expect_err("validation should fail");
-        assert!(
-            error.contains("missing limitations section heading `## Stable Local Execution Limitations`")
-        );
+        assert!(error.contains(
+            "missing limitations section heading `## Stable Local Execution Limitations`"
+        ));
         assert!(error.contains("missing limitations section heading `## Cache/Replay Limitations`"));
     }
 

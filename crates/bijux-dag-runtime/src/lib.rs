@@ -390,11 +390,10 @@ pub use observability::{
     event_contains_sensitive_material, event_names_emitted_once, reconstruct_timeline_from_events,
     required_event_fields_present, serialize_timeline_export, summarize_failure_root_causes,
     validate_required_event_names, validate_required_timeline_labels,
-    verify_event_log_completeness, write_timeline_export,
-    EventCategory, EventLogCompletenessReport, EventRecord, EventSink, FileEventSink,
-    InMemoryMetricsRegistry, MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics,
-    SchedulerMetrics, SpanKind, StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan,
-    REQUIRED_RUNTIME_EVENT_NAMES,
+    verify_event_log_completeness, write_timeline_export, EventCategory,
+    EventLogCompletenessReport, EventRecord, EventSink, FileEventSink, InMemoryMetricsRegistry,
+    MetricsRegistry, NodeMetrics, RemoteCollectorSink, RunMetrics, SchedulerMetrics, SpanKind,
+    StdoutEventSink, TimelineEntry, TimelineExport, TraceSpan, REQUIRED_RUNTIME_EVENT_NAMES,
 };
 #[doc(hidden)]
 pub use observability_deep::{

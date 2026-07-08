@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
 use std::cmp::Ordering;
+use std::collections::BTreeSet;
 use std::fs;
 use std::io::Write;
 use std::path::Path;
@@ -256,22 +256,13 @@ pub fn validate_required_timeline_labels(
     timeline: &TimelineExport,
 ) -> Vec<String> {
     let expected = required_timeline_labels(events);
-    let present = timeline
-        .entries
-        .iter()
-        .map(|entry| entry.label.as_str())
-        .collect::<BTreeSet<_>>();
-    expected
-        .into_iter()
-        .filter(|label| !present.contains(label.as_str()))
-        .collect()
+    let present =
+        timeline.entries.iter().map(|entry| entry.label.as_str()).collect::<BTreeSet<_>>();
+    expected.into_iter().filter(|label| !present.contains(label.as_str())).collect()
 }
 
 fn required_timeline_labels(events: &[EventRecord]) -> BTreeSet<String> {
-    events
-        .iter()
-        .filter_map(required_timeline_label_for_event)
-        .collect()
+    events.iter().filter_map(required_timeline_label_for_event).collect()
 }
 
 fn required_timeline_label_for_event(event: &EventRecord) -> Option<String> {

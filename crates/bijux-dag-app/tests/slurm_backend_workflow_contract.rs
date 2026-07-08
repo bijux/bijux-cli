@@ -136,24 +136,18 @@ fn slurm_backend_run_executes_nodes_and_persists_batch_job_evidence() {
     .expect("parse batch job");
     assert_eq!(batch_job["job_id"], "job-42");
     assert_eq!(batch_job["metadata"]["scheduler_id"], "slurm");
-    assert!(
-        batch_job["metadata"]["resource_request"]
-            .as_str()
-            .expect("resource request")
-            .contains("queue=priority")
-    );
-    assert!(
-        batch_job["metadata"]["resource_request"]
-            .as_str()
-            .expect("resource request")
-            .contains("partition=gpu")
-    );
-    assert!(
-        batch_job["metadata"]["resource_request"]
-            .as_str()
-            .expect("resource request")
-            .contains("account=research")
-    );
+    assert!(batch_job["metadata"]["resource_request"]
+        .as_str()
+        .expect("resource request")
+        .contains("queue=priority"));
+    assert!(batch_job["metadata"]["resource_request"]
+        .as_str()
+        .expect("resource request")
+        .contains("partition=gpu"));
+    assert!(batch_job["metadata"]["resource_request"]
+        .as_str()
+        .expect("resource request")
+        .contains("account=research"));
 
     let rendered =
         fs::read_to_string(run_dir.join("nodes").join("render").join("outputs").join("report.txt"))

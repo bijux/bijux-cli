@@ -393,10 +393,7 @@ fn dag_run_evidence_layout_reference_covers_retained_surfaces() {
     let artifact_package = read_repo_file("docs/bijux-dag/packages/bijux-dag-artifacts.md");
     assert_contains_all(
         &artifact_package,
-        &[
-            "../interfaces/reference/run-evidence-layout.md",
-            "../interfaces/artifact-contracts.md",
-        ],
+        &["../interfaces/reference/run-evidence-layout.md", "../interfaces/artifact-contracts.md"],
         "docs/bijux-dag/packages/bijux-dag-artifacts.md",
     );
 }

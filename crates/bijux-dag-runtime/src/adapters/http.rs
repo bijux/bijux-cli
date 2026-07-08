@@ -449,7 +449,8 @@ impl Adapter for HttpRequestAdapter {
         exec.fs.create_dir_all(&outputs_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
-        if let Err(failure) = crate::preflight_declared_output_targets(&outputs_dir, &node.outputs) {
+        if let Err(failure) = crate::preflight_declared_output_targets(&outputs_dir, &node.outputs)
+        {
             let stderr_message = failure.message.clone();
             return node_failure_result(
                 exec.fs.as_ref(),

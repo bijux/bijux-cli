@@ -278,9 +278,7 @@ pub(crate) fn is_valid_canonical_name(name: &str) -> bool {
 
 pub(crate) fn is_valid_tag_name(name: &str) -> bool {
     !name.is_empty()
-        && name
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | ':'))
+        && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | ':'))
 }
 
 pub(crate) fn error(

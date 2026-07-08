@@ -143,26 +143,20 @@ fn write_cli_reference_docs(interfaces_root: &Path) -> Result<(), String> {
     let reference_root = interfaces_root.join("reference");
     std::fs::create_dir_all(&reference_root)
         .map_err(|err| format!("create {} failed: {err}", reference_root.display()))?;
-    std::fs::write(
-        interfaces_root.join(STABLE_REFERENCE_REL_PATH),
-        format!("{stable}\n"),
-    )
-    .map_err(|err| {
-        format!(
-            "write {} failed: {err}",
-            interfaces_root.join(STABLE_REFERENCE_REL_PATH).display()
-        )
-    })?;
-    std::fs::write(
-        interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH),
-        format!("{nonstable}\n"),
-    )
-    .map_err(|err| {
-        format!(
-            "write {} failed: {err}",
-            interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH).display()
-        )
-    })?;
+    std::fs::write(interfaces_root.join(STABLE_REFERENCE_REL_PATH), format!("{stable}\n"))
+        .map_err(|err| {
+            format!(
+                "write {} failed: {err}",
+                interfaces_root.join(STABLE_REFERENCE_REL_PATH).display()
+            )
+        })?;
+    std::fs::write(interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH), format!("{nonstable}\n"))
+        .map_err(|err| {
+            format!(
+                "write {} failed: {err}",
+                interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH).display()
+            )
+        })?;
     Ok(())
 }
 
@@ -213,7 +207,10 @@ fn stable_commands() -> Result<Vec<StableCommandDoc>, String> {
     collect_stable_commands("", &dag_command())
 }
 
-fn collect_stable_commands(prefix: &str, command: &Command) -> Result<Vec<StableCommandDoc>, String> {
+fn collect_stable_commands(
+    prefix: &str,
+    command: &Command,
+) -> Result<Vec<StableCommandDoc>, String> {
     let mut collected = Vec::new();
     for subcommand in command.get_subcommands() {
         if is_help_command(subcommand) {
@@ -895,8 +892,8 @@ mod tests {
     #[test]
     fn nonstable_inventory_matches_checked_in_generated_reference() {
         let rendered = render_nonstable_command_inventory_markdown().expect("nonstable markdown");
-        let expected =
-            fs::read_to_string(docs_root().join(NONSTABLE_REFERENCE_REL_PATH)).expect("inventory doc file");
+        let expected = fs::read_to_string(docs_root().join(NONSTABLE_REFERENCE_REL_PATH))
+            .expect("inventory doc file");
         assert_eq!(format!("{rendered}\n"), expected);
     }
 
@@ -906,8 +903,8 @@ mod tests {
         let interfaces_root = dir.path().join("interfaces");
         write_cli_reference_docs(&interfaces_root).expect("write reference docs");
 
-        let stable =
-            fs::read_to_string(interfaces_root.join(STABLE_REFERENCE_REL_PATH)).expect("stable file");
+        let stable = fs::read_to_string(interfaces_root.join(STABLE_REFERENCE_REL_PATH))
+            .expect("stable file");
         let nonstable = fs::read_to_string(interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH))
             .expect("nonstable file");
 

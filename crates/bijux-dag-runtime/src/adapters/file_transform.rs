@@ -689,7 +689,8 @@ impl Adapter for FileTransformAdapter {
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
         exec.fs.create_dir_all(&node_dir)?;
         exec.fs.create_dir_all(&outputs_dir)?;
-        if let Err(failure) = crate::preflight_declared_output_targets(&outputs_dir, &node.outputs) {
+        if let Err(failure) = crate::preflight_declared_output_targets(&outputs_dir, &node.outputs)
+        {
             let stderr = failure.message.clone();
             return failure_result(
                 exec,

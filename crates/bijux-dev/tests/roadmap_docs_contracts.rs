@@ -12,10 +12,7 @@ use std::fs;
 use std::path::Path;
 
 fn workspace_root() -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .expect("workspace root")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
 fn read_repo_file(path: &str) -> String {

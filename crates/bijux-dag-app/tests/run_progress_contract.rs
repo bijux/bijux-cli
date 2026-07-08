@@ -339,10 +339,8 @@ fn run_json_progress_emits_finished_snapshot_before_final_result() {
     assert!(stderr.is_empty(), "json progress should stay off stderr: {stderr}");
 
     let events = parse_json_stream(&stdout);
-    let progress_events = events
-        .iter()
-        .filter(|event| event["command"] == "dag.run.progress")
-        .collect::<Vec<_>>();
+    let progress_events =
+        events.iter().filter(|event| event["command"] == "dag.run.progress").collect::<Vec<_>>();
     let last_progress = progress_events.last().expect("final progress event");
 
     assert_eq!(last_progress["data"]["snapshot"]["finished"], true);

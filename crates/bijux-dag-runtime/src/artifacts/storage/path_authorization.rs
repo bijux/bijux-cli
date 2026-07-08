@@ -44,9 +44,9 @@ pub(crate) fn authorize_declared_output_target(
             return Err(format!("cannot resolve output root {}", output_root.display()));
         };
         pending_root_components.push(name.to_os_string());
-        existing_root = existing_root.parent().ok_or_else(|| {
-            format!("cannot resolve output root {}", output_root.display())
-        })?;
+        existing_root = existing_root
+            .parent()
+            .ok_or_else(|| format!("cannot resolve output root {}", output_root.display()))?;
     }
 
     let mut current = existing_root

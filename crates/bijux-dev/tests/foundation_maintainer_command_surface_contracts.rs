@@ -125,7 +125,9 @@ fn maintainer_command_surface_docs_and_policy_inventory_stay_linked() {
         "`bijux-dev-cli maintenance ignored-dag-tests`",
     ] {
         assert!(
-            command_surface.contains(required) || release_operations.contains(required) || test_policy.contains(required),
+            command_surface.contains(required)
+                || release_operations.contains(required)
+                || test_policy.contains(required),
             "maintainer operations docs must mention {required}"
         );
     }

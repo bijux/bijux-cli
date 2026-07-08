@@ -52,7 +52,10 @@ pub(super) fn try_handle(normalized_path: &[String], argv: &[String]) -> Result<
         }
         [group, command] if group == "docs" && command == "write-dag-cli-reference" => {
             let workspace_root = workspace_root();
-            build_dag_cli_reference_write_payload(&workspace_root, write_checked_in_cli_reference_docs)?
+            build_dag_cli_reference_write_payload(
+                &workspace_root,
+                write_checked_in_cli_reference_docs,
+            )?
         }
         _ => return Ok(None),
     };
