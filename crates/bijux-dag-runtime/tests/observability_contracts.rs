@@ -11,8 +11,9 @@ use thiserror as _;
 
 use bijux_dag_runtime::{
     event_contains_sensitive_material, event_names_emitted_once, reconstruct_timeline_from_events,
-    required_event_fields_present, validate_required_event_names, verify_event_log_completeness,
-    EventCategory, EventRecord, TimelineExport, REQUIRED_RUNTIME_EVENT_NAMES,
+    required_event_fields_present, validate_required_event_names,
+    validate_required_timeline_labels, verify_event_log_completeness, EventCategory, EventRecord,
+    TimelineExport, REQUIRED_RUNTIME_EVENT_NAMES,
 };
 use serde_json::json;
 
@@ -109,6 +110,39 @@ fn timeline_reconstruction_normalizes_terminal_node_outcomes() {
 }
 
 #[test]
+fn timeline_label_validation_tracks_required_lifecycle_outcomes() {
+    let mut completed = base_event("node_finished", 3);
+    completed.details = json!({"status":"success"});
+    let mut failed = base_event("node_finished", 4);
+    failed.details = json!({"status":"failed","reason":"exit_code"});
+    let mut cached = base_event("node_finished", 5);
+    cached.details = json!({"status":"cached"});
+    let mut skipped = base_event("node_skipped", 6);
+    skipped.details = json!({"reason":"branch_pruned"});
+    let mut cancelled = base_event("node_skipped", 7);
+    cancelled.details = json!({"reason":"cancelled"});
+
+    let events = vec![
+        base_event("run_started", 1),
+        base_event("node_ready", 2),
+        base_event("node_scheduled", 8),
+        base_event("node_started", 9),
+        completed,
+        failed,
+        cached,
+        skipped,
+        cancelled,
+        base_event("run_finished", 10),
+    ];
+    let timeline = reconstruct_timeline_from_events(&events);
+
+    assert!(
+        validate_required_timeline_labels(&events, &timeline).is_empty(),
+        "reconstructed timeline should retain every required lifecycle label"
+    );
+}
+
+#[test]
 fn completeness_verifier_accepts_monotonic_reconstructible_event_log() {
     let events = vec![
         base_event("run_started", 1),
@@ -124,8 +158,10 @@ fn completeness_verifier_accepts_monotonic_reconstructible_event_log() {
     let report = verify_event_log_completeness(&events, Some(&timeline));
     assert!(report.complete);
     assert!(report.required_names_present);
+    assert!(report.required_timeline_labels_present);
     assert!(report.required_event_field_gaps.is_empty());
     assert!(report.missing_required_names.is_empty());
+    assert!(report.missing_required_timeline_labels.is_empty());
     assert!(report.monotonic_timestamps);
     assert!(report.timeline_matches_reconstruction);
 }
@@ -138,7 +174,9 @@ fn completeness_verifier_flags_missing_names_and_timeline_drift() {
     let report = verify_event_log_completeness(&events, Some(&mismatched_timeline));
     assert!(!report.complete);
     assert!(!report.required_names_present);
+    assert!(!report.required_timeline_labels_present);
     assert!(report.missing_required_names.iter().any(|name| name == "node_ready"));
+    assert!(report.missing_required_timeline_labels.iter().any(|name| name == "run_started"));
     assert!(!report.monotonic_timestamps);
     assert!(!report.timeline_matches_reconstruction);
 }

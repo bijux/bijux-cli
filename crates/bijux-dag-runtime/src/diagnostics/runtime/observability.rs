@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 use std::cmp::Ordering;
 use std::fs;
 use std::io::Write;
@@ -69,8 +70,10 @@ pub fn event_contains_sensitive_material(event: &EventRecord) -> bool {
 pub struct EventLogCompletenessReport {
     pub complete: bool,
     pub required_names_present: bool,
+    pub required_timeline_labels_present: bool,
     pub required_event_field_gaps: Vec<String>,
     pub missing_required_names: Vec<String>,
+    pub missing_required_timeline_labels: Vec<String>,
     pub monotonic_timestamps: bool,
     pub timeline_matches_reconstruction: bool,
     pub gaps: Vec<String>,
@@ -199,6 +202,10 @@ pub fn verify_event_log_completeness(
     timeline: Option<&TimelineExport>,
 ) -> EventLogCompletenessReport {
     let missing_required_names = validate_required_event_names(events);
+    let reconstructed = reconstruct_timeline_from_events(events);
+    let timeline_for_validation = timeline.unwrap_or(&reconstructed);
+    let missing_required_timeline_labels =
+        validate_required_timeline_labels(events, timeline_for_validation);
     let required_event_field_gaps = events
         .iter()
         .enumerate()
@@ -207,7 +214,6 @@ pub fn verify_event_log_completeness(
         .collect::<Vec<_>>();
     let monotonic_timestamps =
         events.windows(2).all(|window| window[0].unix_ms <= window[1].unix_ms);
-    let reconstructed = reconstruct_timeline_from_events(events);
     let timeline_matches_reconstruction =
         timeline.map(|candidate| candidate == &reconstructed).unwrap_or(true);
 
@@ -216,6 +222,12 @@ pub fn verify_event_log_completeness(
         gaps.push(format!(
             "missing required runtime events: {}",
             missing_required_names.join(", ")
+        ));
+    }
+    if !missing_required_timeline_labels.is_empty() {
+        gaps.push(format!(
+            "missing required timeline labels: {}",
+            missing_required_timeline_labels.join(", ")
         ));
     }
     gaps.extend(required_event_field_gaps.iter().cloned());
@@ -229,11 +241,48 @@ pub fn verify_event_log_completeness(
     EventLogCompletenessReport {
         complete: gaps.is_empty(),
         required_names_present: missing_required_names.is_empty(),
+        required_timeline_labels_present: missing_required_timeline_labels.is_empty(),
         required_event_field_gaps,
         missing_required_names,
+        missing_required_timeline_labels,
         monotonic_timestamps,
         timeline_matches_reconstruction,
         gaps,
+    }
+}
+
+pub fn validate_required_timeline_labels(
+    events: &[EventRecord],
+    timeline: &TimelineExport,
+) -> Vec<String> {
+    let expected = required_timeline_labels(events);
+    let present = timeline
+        .entries
+        .iter()
+        .map(|entry| entry.label.as_str())
+        .collect::<BTreeSet<_>>();
+    expected
+        .into_iter()
+        .filter(|label| !present.contains(label.as_str()))
+        .collect()
+}
+
+fn required_timeline_labels(events: &[EventRecord]) -> BTreeSet<String> {
+    events
+        .iter()
+        .filter_map(required_timeline_label_for_event)
+        .collect()
+}
+
+fn required_timeline_label_for_event(event: &EventRecord) -> Option<String> {
+    match event.name.as_str() {
+        "run_started" => Some("run_started".to_string()),
+        "node_ready" => Some("node_ready".to_string()),
+        "node_scheduled" => Some("node_scheduled".to_string()),
+        "node_started" => Some("node_started".to_string()),
+        "node_finished" | "node_skipped" => Some(timeline_label(event)),
+        "run_finished" => Some("run_completed".to_string()),
+        _ => None,
     }
 }
 
