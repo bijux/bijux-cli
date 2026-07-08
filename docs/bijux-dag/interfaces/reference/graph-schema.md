@@ -144,7 +144,9 @@ required by the parser; the remaining fields default when omitted.
 - `container`: container execution contract for `container` nodes.
 - `timeout_ms`: optional per-node timeout in milliseconds.
 - `resources`: optional scheduling resource request.
-- `tags`: optional labels that stay attached to the node contract.
+- `tags`: optional labels that stay attached to the node contract. Tags may use
+  letters, digits, `_`, `-`, `.`, and `:` so namespaced routing hints such as
+  `slurm.partition:gpu` remain valid contract data.
 - `retry`: optional retry policy. Defaults to no retries.
 - `cache`: optional cache behavior. Defaults to enabled.
 - `effects`: declared side effects such as filesystem or environment access.

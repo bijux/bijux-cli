@@ -95,6 +95,32 @@ fn diagnostics_order_and_message_stability() {
 }
 
 #[test]
+fn namespaced_tags_remain_valid_for_scheduler_routing_contracts() {
+    let graph = parse(&format!(
+        r#"{{
+  "spec": "{}",
+  "meta": {{"name": "graph", "tags": ["release.candidate:2026"]}},
+  "nodes": [
+    {{
+      "id":"render",
+      "kind":"shell",
+      "inputs":[],
+      "outputs":[{{"name":"out","path":"render/out"}}],
+      "tags":["slurm.partition:gpu","slurm.queue:priority","team_render"],
+      "effects":["filesystem"],
+      "params":{{"argv":["echo","ok"]}}
+    }}
+  ],
+  "edges": []
+}}"#,
+        SPEC_VERSION
+    ));
+
+    let diagnostics = graph.validate_with_warnings();
+    assert!(!diagnostics.iter().any(|diagnostic| diagnostic.code == "E1026"));
+}
+
+#[test]
 fn canonicalization_stable_across_path_separator_variants() {
     let a = parse(&format!(
         r#"{{

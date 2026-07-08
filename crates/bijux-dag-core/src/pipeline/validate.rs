@@ -1,4 +1,6 @@
-use crate::canonical::{error, is_valid_canonical_name, is_valid_output_path, severity_rank, warn};
+use crate::canonical::{
+    error, is_valid_canonical_name, is_valid_output_path, is_valid_tag_name, severity_rank, warn,
+};
 use crate::expansion::{expand_graph, expansion_error_diagnostic};
 use crate::{
     is_known_path_variable, materialize_graph_input_value, EdgeKind, Effect, Graph, GraphError,
@@ -260,13 +262,13 @@ impl Graph {
                 );
             }
             for tag in &node.tags {
-                if !is_valid_canonical_name(tag) {
+                if !is_valid_tag_name(tag) {
                     emit_rule(
                         &mut diagnostics,
                         "E1026",
                         format!("illegal node tag: {}", tag),
                         format!("/nodes/{}/tags", node.id),
-                        Some("Use [a-zA-Z0-9_-] only".to_string()),
+                        Some("Use [a-zA-Z0-9_.:-] only".to_string()),
                     );
                 }
             }
@@ -1543,13 +1545,13 @@ impl Graph {
                 );
             }
             for tag in &meta.tags {
-                if !is_valid_canonical_name(tag) {
+                if !is_valid_tag_name(tag) {
                     emit_rule(
                         &mut diagnostics,
                         "E1026",
                         format!("illegal graph tag: {}", tag),
                         "/meta/tags".to_string(),
-                        Some("Use [a-zA-Z0-9_-] only".to_string()),
+                        Some("Use [a-zA-Z0-9_.:-] only".to_string()),
                     );
                 }
             }
