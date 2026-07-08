@@ -184,9 +184,27 @@ fn runtime_repair_proposes_failed_boundary_actions_before_apply() {
             Value::String("validate_publication_gate".to_string())
         ]
     );
-    assert_eq!(repair["data"]["issues"][0]["kind"], "failed_node");
-    assert_eq!(repair["data"]["issues"][0]["node_id"], "validate_publication_gate");
-    assert_eq!(repair["data"]["proposed_actions"][0]["kind"], "rerun_downstream_closure");
+    assert!(repair["data"]["issues"]
+        .as_array()
+        .expect("repair issues")
+        .iter()
+        .any(|issue| {
+            issue["kind"] == "failed_node" && issue["node_id"] == "validate_publication_gate"
+        }));
+    assert!(repair["data"]["proposed_actions"]
+        .as_array()
+        .expect("proposed actions")
+        .iter()
+        .any(|action| {
+            action["kind"] == "rerun_downstream_closure"
+                && action["node_roots"]
+                    == Value::Array(vec![Value::String("validate_publication_gate".to_string())])
+                && action["affected_nodes"]
+                    == Value::Array(vec![
+                        Value::String("publish_bulletin".to_string()),
+                        Value::String("validate_publication_gate".to_string()),
+                    ])
+        }));
     assert_eq!(repair["data"]["repair_run"], Value::Null);
 }
 
