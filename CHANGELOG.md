@@ -15,6 +15,9 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ## 0.4.0 – 2026-07-04
 
+Operator-facing DAG release notes:
+[`docs/bijux-dag/operations/v0-4-0-release-notes.md`](docs/bijux-dag/operations/v0-4-0-release-notes.md)
+
 ### Added
 - Published the public `bijux-dag` Rust crates for the first DAG release: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and `bijux-dag-cli`.
 - Added first-release changelog coverage for the DAG crates and refreshed crate READMEs so each public or maintained crate now explains its responsibility, boundaries, and release status.

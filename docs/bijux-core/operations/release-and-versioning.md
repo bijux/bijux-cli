@@ -34,6 +34,9 @@ sequenceDiagram
 - release-tree stamping and release-note generation
 - coordination between CI health and publish decisions
 
+The current DAG operator-facing release framing for the `v0.4.0` line lives in
+[v0.4.0 Release Notes](../../bijux-dag/operations/v0-4-0-release-notes.md).
+
 ## Release Notes Minimum Template
 
 Every release summary should stay evidence-backed and operator-readable.

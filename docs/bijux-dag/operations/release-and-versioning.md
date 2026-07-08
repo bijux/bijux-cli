@@ -12,6 +12,11 @@ last_reviewed: 2026-07-05
 Release and versioning policy for DAG protects compatibility expectations for
 operators, integrations, and artifact consumers.
 
+For the current operator-facing release framing, use
+[v0.4.0 Release Notes](v0-4-0-release-notes.md). That page is where stable
+features, non-stable lanes, limitations, migration notes, examples, and
+validation commands are kept together for this release line.
+
 ## Visual Summary
 
 ```mermaid
@@ -56,6 +61,7 @@ The release gate risks behind this matrix are tracked directly in `RISK-003`,
 
 ## Next Reads
 
+- [v0.4.0 Release Notes](v0-4-0-release-notes.md)
 - [Compatibility Commitments](../interfaces/compatibility-commitments.md)
 - [Definition of Done](../quality/definition-of-done.md)
 - [Review Checklist](../quality/review-checklist.md)
