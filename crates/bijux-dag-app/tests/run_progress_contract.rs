@@ -10,6 +10,7 @@ use hex as _;
 use serde as _;
 use serde_json::json;
 use sha2 as _;
+use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -61,6 +62,14 @@ fn run_dag_command(args: &[&str], cwd: &Path) -> (i32, String, String) {
         String::from_utf8_lossy(&output.stdout).into_owned(),
         String::from_utf8_lossy(&output.stderr).into_owned(),
     )
+}
+
+fn parse_json_stream(stdout: &str) -> Vec<Value> {
+    stdout
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| serde_json::from_str::<Value>(line).expect("parse json line"))
+        .collect()
 }
 
 fn write_long_running_graph(path: &Path) {
@@ -161,7 +170,7 @@ fn run_compact_progress_reports_latest_failure_on_error() {
 }
 
 #[test]
-fn run_compact_progress_stays_silent_for_json_output() {
+fn run_json_progress_streams_snapshots_and_final_result() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
     let graph = temp.path().join("graph.json");
@@ -183,6 +192,54 @@ fn run_compact_progress_stays_silent_for_json_output() {
     );
 
     assert_eq!(code, 0, "stderr={stderr}");
-    assert!(stderr.is_empty(), "json mode should not emit progress: {stderr}");
-    assert!(stdout.contains("\"summary\""));
+    assert!(stderr.is_empty(), "json progress should stay off stderr: {stderr}");
+
+    let events = parse_json_stream(&stdout);
+    assert!(
+        events.iter().any(|event| event["command"] == "dag.run.progress"),
+        "expected at least one progress event: {stdout}"
+    );
+    assert_eq!(events.last().expect("final event")["command"], "dag.run");
+    assert!(events.last().expect("final event")["data"]["summary"].is_object());
+}
+
+#[test]
+fn run_json_progress_surfaces_failures_as_they_happen() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let graph = temp.path().join("graph.json");
+    let out_dir = temp.path().join("runs");
+    write_failure_graph(&graph);
+    fs::create_dir_all(&out_dir).expect("runs dir");
+
+    let (code, stdout, stderr) = run_dag_command(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--progress",
+            "compact",
+        ],
+        &root,
+    );
+
+    assert_eq!(code, 0, "stderr={stderr}");
+    assert!(stderr.is_empty(), "json progress should stay off stderr: {stderr}");
+
+    let events = parse_json_stream(&stdout);
+    let failure_progress = events
+        .iter()
+        .find(|event| {
+            event["command"] == "dag.run.progress"
+                && event["data"]["snapshot"]["latest_failure"]["node_id"] == "explode"
+        })
+        .expect("failure progress event");
+    assert_eq!(failure_progress["data"]["snapshot"]["latest_failure"]["status"], "failed");
+    assert_eq!(events.last().expect("final event")["command"], "dag.run");
+    assert_eq!(
+        events.last().expect("final event")["data"]["summary"]["status"],
+        "failed"
+    );
 }
