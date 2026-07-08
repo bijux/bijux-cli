@@ -25,8 +25,8 @@ boundary, network firewall, or clock virtualization layer.
 
 | Surface | What is enforced | What is best-effort | What is not protected |
 | --- | --- | --- | --- |
-| shell backend | declared-effect policy gates for `network`, `env`, and `clock`; shaped environment; declared output validation; output-root and run-dir path validation | subprocess boundary; Unix subprocess-group cleanup on timeout or cancellation | socket-level network firewalling; clock or syscall interposition; arbitrary filesystem-read sandboxing; host side effects after spawn |
-| container backend | declared-effect policy gates; engine no-network flags for supported engines; digest policy for container image references when required; constrained node mounts; shaped environment | isolation quality of the selected container runtime; engine-reported image identity | VM-grade isolation; clock virtualization; registry signature trust; full host sandboxing beyond the container runtime |
+| shell backend | declared-effect policy gates for `network`, `env`, and `clock`; shaped environment; declared output target preflight; output-root and run-dir path validation | subprocess boundary; Unix subprocess-group cleanup on timeout or cancellation | socket-level network firewalling; clock or syscall interposition; arbitrary filesystem-read sandboxing; host side effects after spawn |
+| container backend | declared-effect policy gates; engine no-network flags for supported engines; digest policy for container image references when required; constrained node mounts; declared output target preflight; shaped environment | isolation quality of the selected container runtime; engine-reported image identity | VM-grade isolation; clock virtualization; registry signature trust; full host sandboxing beyond the container runtime |
 | clean environment | environment shaping through an allowlist and denylist model | correctness depends on honest allowlist declarations | filesystem, process, network, or clock isolation |
 | deny-network | refuse nodes that declare the `network` effect; pass `--network none` to supported container engines | only as strong as accurate effect declarations and the chosen container engine | host-level network isolation for shell subprocesses or dishonest nodes |
 | deny-clock | refuse nodes that declare the `clock` effect | only as strong as accurate effect declarations | time freezing, fake clocks, or wall-clock syscall isolation |
@@ -45,6 +45,10 @@ of it.
 - `deny-clock` refuses nodes that declare `Effect::Clock`
 - `clean-env` shapes the launched environment through the effective allowlist
 - missing required exact environment bindings fail before execution starts
+- declared output targets are authorized before launch, so paths such as
+  `../escape.txt` never become writable targets
+- symlinked existing parent components in declared output paths are rejected
+  before the shell subprocess starts
 - undeclared or missing outputs fail finalization
 - retained output and run-directory paths stay rooted under governed storage
 
@@ -78,7 +82,10 @@ boundary.
 - input, output, and work mounts are validated against the node root
 - inputs are mounted read-only
 - outputs and work are mounted writable
-- declared output paths are normalized and relative
+- declared output targets are authorized before the container starts
+- declared output paths must stay normalized and relative
+- traversal such as `../escape.txt` and symlinked existing parent components
+  are rejected before a writable output target is handed to the adapter
 - digest-pinned image references can be required by policy before execution
 
 ### Best-effort
@@ -166,8 +173,11 @@ not about complete host sandboxing.
 - storage-relative paths reject traversal, absolute paths, and backslash escapes
 - run outputs, cache keys, and governed storage writes go through owned storage
   helpers
+- declared output targets are preflight-authorized before adapter execution
 - input and output authorization rejects paths that escape the rooted input or
   output tree
+- malicious declared output paths such as `../x` or symlinked parent escapes
+  are rejected before the runtime hands out a write path
 - container mounts are restricted to validated paths beneath the node root
 - replay sandbox mode forbids writing into the source run directory
 
