@@ -12,12 +12,32 @@
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli) [![bijux-dag docs.rs](https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-cli` is the Rust runtime crate behind the `bijux` executable.
+`bijux-cli` is the public Rust package behind the `bijux` command runtime.
 
-It is the public command runtime product in `v0.4.0` and the source of truth
-for runtime command semantics shared by the native binary and Python bridge.
+It is the source of truth for command semantics shared by the native binary,
+the Python distribution, and the in-process SDK surfaces used by mounted apps
+and integration tests.
 
-## Scope
+Use it when you want the `bijux` runtime itself, or when you want to embed
+mounted app behavior against the same envelopes, exit codes, and routing rules
+that the installed command uses.
+
+Install the end-user command with either of the public distribution paths:
+
+```bash
+cargo install bijux-cli
+python -m pip install bijux-cli
+```
+
+Then inspect the supported runtime surface with:
+
+```bash
+bijux --help
+bijux doctor
+bijux apps --help
+```
+
+## What It Provides
 
 - Own command parsing, normalization, registry lookup, and execution.
 - Own runtime-facing state behavior for config, history, memory, install diagnostics, plugins, and the REPL.
@@ -52,7 +72,7 @@ for runtime command semantics shared by the native binary and Python bridge.
 - Maintainer commands stay outside the runtime binary; this crate does not parse or execute `bijux-dev-cli` surfaces.
 - The process entrypoint stays thin: decode argv, call the runtime, write streams, map exit codes.
 
-## Rust App SDK
+## Mounted App SDK
 
 `bijux-cli` now exposes a crate-native SDK for mounted Rust apps under [`src/sdk`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli/src/sdk).
 
@@ -64,12 +84,6 @@ Core surfaces:
 - `CommandResult`: root-compatible result envelope with explicit stream policy
 - `BijuxCliHarness`: in-process harness for mounted app tests
 - `SnapshotHelper`: stable rendering helper for app-level snapshot contracts
-
-Recent SDK additions:
-
-- compatibility windows on mounted manifests so apps can declare supported `bijux` host ranges
-- Python callable entrypoints with explicit `module` / `function` fields for mounted package flows
-- checked Rust/Python envelope parity through shared success-envelope fixtures
 
 Minimal example:
 
@@ -102,7 +116,7 @@ impl BijuxApp for HelloApp {
 }
 ```
 
-Python-mounted apps use the same descriptor contract. The runtime now validates
+Python-mounted apps use the same descriptor contract. The runtime validates
 `python_module` entrypoints with optional callable fields, resolves a concrete
 interpreter from the active environment or project `.venv`, and exposes
 `bijux apps doctor <namespace>` for import, version, and callable diagnostics.

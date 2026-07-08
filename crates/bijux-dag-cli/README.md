@@ -1,19 +1,23 @@
 # bijux-dag-cli
 
-`bijux-dag-cli` installs the `bijux-dag` executable. It is the publishable,
-user-facing command package for the DAG product.
+`bijux-dag-cli` installs the `bijux-dag` executable. It is the public command
+package for the DAG product.
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles. This crate is the
 installed command surface for that promise.
 
-Install it from crates.io when you want the standalone DAG command surface:
+Install it when you want the standalone DAG command surface:
 
 ```bash
 cargo install bijux-dag-cli
 bijux-dag --help
 ```
+
+For most users, this is the package to start with. It gives you the supported
+local DAG workflow surface without asking you to assemble the lower-level DAG
+crates yourself.
 
 ## Release Status
 
@@ -48,7 +52,7 @@ When a DAG uses a branch node, retained runs record the selected decision, the
 skipped lane, and the join-node trigger evaluation so operators can inspect the
 execution path directly from run evidence.
 
-## What This Crate Owns
+## What It Provides
 
 - the `bijux-dag` binary entrypoint
 - thin startup wiring, process initialization, and exit mapping
@@ -63,8 +67,8 @@ execution path directly from run evidence.
 - runtime execution logic
 - artifact persistence rules
 
-If the question is about route behavior rather than process startup, the owning
-crate is usually `bijux-dag-app`.
+If the question is about route behavior rather than process startup, the next
+place to read is usually `bijux-dag-app`.
 
 ## Representative Workflows
 
