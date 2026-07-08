@@ -26,7 +26,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ### Changed
 - Advanced the Python distribution to the `v0.4.0` release line alongside the public DAG Rust crate family.
 - Relaxed facade fallback behavior so packaging and helper tests can keep working when the native bridge is unavailable but explicit Python fallback is allowed.
-- Documented the mounted-app packaging flow and shared it with the Rust root runtime contract.
+- Published mounted-app packaging guidance that matches the Rust root runtime contract.
 
 <a id="v0-3-6"></a>
 

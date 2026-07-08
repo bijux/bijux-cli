@@ -7,8 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## 0.4.0 – 2026-07-04
 
 ### Added
-- Documented the current maintainer and governance control-plane release line for `bijux-core`.
-- Added a release-grade README and explicit changelog coverage for the repository-internal maintainer crate.
+- Declared `bijux-dev` as the repository-internal maintainer control plane for governance suites, release verification, diagnostics, and checked-in evidence reports.
+- Added maintained package entrypoints for `bijux-dev-cli` and `bijux-dev-dag` so repository diagnostics and release proofs have explicit ownership.
 
 ### Changed
-- Kept release verification, evidence, and repository-governance tooling aligned with the `v0.4.0` publication boundary for `bijux-cli` and the public DAG Rust crate family.
+- Kept release verification, evidence generation, and repository-governance tooling aligned with the `v0.4.0` publication boundary for `bijux-cli` and the public DAG Rust crate family.
