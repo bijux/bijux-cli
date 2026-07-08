@@ -1,7 +1,10 @@
 use bijux_dag_core::{parse_graph_strict, Severity};
-use bijux_dag_testkit::load_workspace_fixture_text;
 use std::fs;
 use std::path::PathBuf;
+
+mod support;
+
+use support::load_workspace_fixture_text;
 
 fn negative_fixture_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../evidence/dag/authoring/negative")

@@ -12,10 +12,13 @@ use bijux_dag_core::{
     graph_lowering_boundary_note, lower_graph_to_execution_plan, parse_graph_strict,
     planner_identity_for_graph, PlanOptions, PlannerError,
 };
-use bijux_dag_testkit::branch_semantics_graph_json;
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
+
+mod support;
+
+use support::branch_semantics_graph_json;
 
 fn graph_from(json: &str) -> bijux_dag_core::Graph {
     parse_graph_strict(json).expect("parse graph")

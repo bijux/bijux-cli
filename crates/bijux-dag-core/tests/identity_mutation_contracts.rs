@@ -1,5 +1,8 @@
 use bijux_dag_core::{parse_graph_strict, EdgeKind, Effect};
-use bijux_dag_testkit::branch_semantics_graph_json;
+
+mod support;
+
+use support::branch_semantics_graph_json;
 
 fn base_graph() -> bijux_dag_core::Graph {
     parse_graph_strict(branch_semantics_graph_json()).expect("parse branch contract graph")
