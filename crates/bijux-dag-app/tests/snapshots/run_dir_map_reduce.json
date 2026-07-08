@@ -634,6 +634,7 @@
       },
       "evidence_fingerprint": "45c7315bc8941e3a239d4bdd39746404c8e1430f044ec04a3f546bd693664fe6",
       "execution_fingerprint": "b32295baff6b402ec9ed9896e5e6bc5588b9da143091767a690200d7e3ef9110",
+      "exit_code": 0,
       "fingerprint": "5a1e16ba11915a6e9b9d4de055a342a65e37a0ffd1df36415d3f407a020aa8e9",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
@@ -691,6 +692,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/map_left/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/map_left/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
@@ -722,6 +731,7 @@
       },
       "evidence_fingerprint": "45c7315bc8941e3a239d4bdd39746404c8e1430f044ec04a3f546bd693664fe6",
       "execution_fingerprint": "b32295baff6b402ec9ed9896e5e6bc5588b9da143091767a690200d7e3ef9110",
+      "exit_code": 0,
       "fingerprint": "20685590ae61b4f403e6d1e199e592f1d83fcb82aecd205832b0d2aec9a97ab5",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
@@ -779,6 +789,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/map_mid/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/map_mid/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
@@ -810,6 +828,7 @@
       },
       "evidence_fingerprint": "45c7315bc8941e3a239d4bdd39746404c8e1430f044ec04a3f546bd693664fe6",
       "execution_fingerprint": "b32295baff6b402ec9ed9896e5e6bc5588b9da143091767a690200d7e3ef9110",
+      "exit_code": 0,
       "fingerprint": "786ebca4aff27b24d99331e17da0da7eaab96d79317cb834f6ae81d4399c4ec8",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
@@ -867,6 +886,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/map_right/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/map_right/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
@@ -898,6 +925,7 @@
       },
       "evidence_fingerprint": "45c7315bc8941e3a239d4bdd39746404c8e1430f044ec04a3f546bd693664fe6",
       "execution_fingerprint": "b32295baff6b402ec9ed9896e5e6bc5588b9da143091767a690200d7e3ef9110",
+      "exit_code": 0,
       "fingerprint": "8bb0b123c969ff978b66cad5ca80bd301afcb86505091aca841d53e51c7dbd17",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
@@ -955,6 +983,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/reduce/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/reduce/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
@@ -1050,6 +1086,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/seed/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/seed/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded"
     }
   },

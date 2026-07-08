@@ -454,6 +454,7 @@
       },
       "evidence_fingerprint": "987d3e66ef0d4e1f4a0a8c6765d613d817d784f6c7fff5384514773c9025ce4b",
       "execution_fingerprint": "9d8a223bb60407d9dd22305c7d601fe8378ae1cd42c87793cac3e27c315d736f",
+      "exit_code": 0,
       "fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
@@ -511,6 +512,17 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/map/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/map/stdout.log",
+        "size_bytes": 58,
+        "tail_lines": [
+          "mapped 3 items for map (success=3, failed=0, cancelled=0)"
+        ]
+      },
       "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
@@ -542,6 +554,7 @@
       },
       "evidence_fingerprint": "987d3e66ef0d4e1f4a0a8c6765d613d817d784f6c7fff5384514773c9025ce4b",
       "execution_fingerprint": "9d8a223bb60407d9dd22305c7d601fe8378ae1cd42c87793cac3e27c315d736f",
+      "exit_code": 0,
       "fingerprint": "6fc084c557a46859ab08ee55e0b8c17e13785130ed8d0f3cf3f88add75f7b1c8",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
@@ -599,6 +612,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/reduce/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/reduce/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
@@ -686,6 +707,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/seed/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/seed/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded"
     }
   },

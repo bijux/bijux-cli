@@ -360,6 +360,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/const1/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/const1/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded"
     },
     "echo": {
@@ -380,6 +388,7 @@
       },
       "evidence_fingerprint": "a0c2b8052f242fee706012ed591f54e9677bbe975f10f59a62f78b2cbf3336d2",
       "execution_fingerprint": "f0c1c3999bcd1fc14e0277e00964399f985cc115dbc8ad3a3495c6e7177a39ea",
+      "exit_code": 0,
       "fingerprint": "dc4ad6f162b02a8b5edc9fc952895e0b0e628202c3861118dd17d08946168932",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
@@ -437,6 +446,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/echo/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/echo/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [

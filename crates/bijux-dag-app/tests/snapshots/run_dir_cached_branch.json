@@ -595,6 +595,7 @@
       },
       "evidence_fingerprint": "c1ada179ef4f7f5f582a90a2791ee0e205eed1a333cf8f3b47216a2609ff37e3",
       "execution_fingerprint": "379ea99089b50b882fe895eb4dcbc83d3f2bf6214e0cc146b2d3254b24d400c8",
+      "exit_code": 0,
       "fingerprint": "6571805ff766bb0434d7b7613c454850129b31e4647e30bce3c676a048dd1799",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
@@ -652,6 +653,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/branch_a_transform/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/branch_a_transform/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
@@ -683,6 +692,7 @@
       },
       "evidence_fingerprint": "c1ada179ef4f7f5f582a90a2791ee0e205eed1a333cf8f3b47216a2609ff37e3",
       "execution_fingerprint": "379ea99089b50b882fe895eb4dcbc83d3f2bf6214e0cc146b2d3254b24d400c8",
+      "exit_code": 0,
       "fingerprint": "23519b86d467307f1fb52cd61e8d556078aa2530baef942559abf81092970129",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
@@ -740,6 +750,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/branch_b_transform/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/branch_b_transform/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
@@ -771,6 +789,7 @@
       },
       "evidence_fingerprint": "c1ada179ef4f7f5f582a90a2791ee0e205eed1a333cf8f3b47216a2609ff37e3",
       "execution_fingerprint": "379ea99089b50b882fe895eb4dcbc83d3f2bf6214e0cc146b2d3254b24d400c8",
+      "exit_code": 0,
       "fingerprint": "75c87ef2e08293588884844c7736e87f2c383ce84e8783ae7770185c22d37b9e",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
@@ -828,6 +847,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/join_report/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/join_report/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded",
       "trigger_evaluation": {
         "parent_statuses": [
@@ -915,6 +942,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/seed_a/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/seed_a/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded"
     },
     "seed_b": {
@@ -987,6 +1022,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/seed_b/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/seed_b/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded"
     }
   },
