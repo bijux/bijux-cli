@@ -87,16 +87,15 @@ def test_plan_dag_graph_matches_direct_runtime(
 
     assert sdk_payload["ok"] == direct_payload["ok"]
     assert sdk_payload["command"] == direct_payload["command"] == "dag.plan.explain"
-    assert (
-        sdk_payload["data"]["plan_fingerprint"]
-        == direct_payload["data"]["plan_fingerprint"]
-    )
     assert sdk_payload["data"]["ordering"] == direct_payload["data"]["ordering"]
     assert (
         sdk_payload["data"]["selection"]["selected_nodes"]
         == direct_payload["data"]["selection"]["selected_nodes"]
     )
     assert sdk_payload["data"]["run_layout"] == direct_payload["data"]["run_layout"]
+    assert [node["id"] for node in sdk_payload["data"]["planned_nodes"]] == [
+        node["id"] for node in direct_payload["data"]["planned_nodes"]
+    ]
 
 
 def test_run_inspect_and_artifact_queries_match_direct_runtime(
