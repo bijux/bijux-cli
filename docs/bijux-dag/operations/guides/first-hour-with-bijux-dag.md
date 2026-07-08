@@ -88,10 +88,9 @@ open [Security And Isolation Truth](../reference/security-isolation-truth.md)
 before assuming shell policy flags behave like a sandbox.
 
 For the full `v0.4.0` release-boundary classification behind that distinction,
-use
-[`contracts/foundation/dag_release_truth_table.v1.json`](../../../../contracts/foundation/dag_release_truth_table.v1.json)
-and
-[`docs/bijux-dag/foundation/release-boundary.md`](../../foundation/release-boundary.md).
+use the [Release Boundary](../../foundation/release-boundary.md) page, which is
+backed by the machine-readable contract
+`contracts/foundation/dag_release_truth_table.v1.json`.
 
 ## Next reads
 

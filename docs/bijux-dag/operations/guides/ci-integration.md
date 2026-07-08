@@ -24,10 +24,10 @@ Maintainer-only CI probes may add
 `BIJUX_DAG_ENABLE_INTERNAL=1 cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json`,
 but that probe is not part of the public operator boundary.
 
-The contract source for that release distinction is
-[`contracts/foundation/dag_release_truth_table.v1.json`](../../../../contracts/foundation/dag_release_truth_table.v1.json)
-and the handbook page
-[`docs/bijux-dag/foundation/release-boundary.md`](../../foundation/release-boundary.md).
+The contract source for that release distinction is the
+[Release Boundary](../../foundation/release-boundary.md) page, which is backed
+by the machine-readable contract
+`contracts/foundation/dag_release_truth_table.v1.json`.
 
 ## Fixture bootstrap
 
