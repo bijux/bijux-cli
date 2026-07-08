@@ -59,6 +59,8 @@ None of those lanes are part of the stable operator compatibility lane.
 For the canonical operator-surface source, use
 [Release Boundary](foundation/release-boundary.md). For crate publication
 status, use [Package Boundary](../bijux-core/foundation/package-boundary.md).
+For what comes after the local-first `v0.4.0` boundary, use the
+[Bijux Dag Roadmap](../tracking/bijux-dag-roadmap.md).
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/guides/first-hour-with-bijux-dag.md">Start with the first hour guide</a>
@@ -122,6 +124,9 @@ flowchart LR
 - open [Non-Stable Command Inventory](interfaces/reference/nonstable-command-inventory.md)
   when you intentionally need the current experimental, simulated, or internal
   route inventory without mixing it into the stable operator contract
+- open [Bijux Dag Roadmap](../tracking/bijux-dag-roadmap.md) when the question
+  is which capability lane may come next after `v0.4.0` and what still has to
+  be proven before that claim becomes real
 - open [Capability Map](foundation/capability-map.md) when you need the product
   responsibilities before the crate split
 - open [DAG Packages](packages/index.md) when the route is clear but the owning
