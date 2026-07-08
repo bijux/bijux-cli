@@ -56,6 +56,8 @@ mod migrate;
 mod node_execution_explanation;
 #[path = "commands/output_contract.rs"]
 mod output_contract;
+#[path = "commands/reference_docs.rs"]
+mod reference_docs;
 mod read;
 #[path = "read/read_graph.rs"]
 mod read_graph;
