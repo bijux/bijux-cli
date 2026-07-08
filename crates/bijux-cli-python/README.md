@@ -13,11 +13,13 @@
 <!-- bijux-core-badges:generated:end -->
 
 `bijux-cli-python` is the Python distribution for installing and launching the
-`bijux` command runtime.
+`bijux` command runtime, and for delegating DAG workflow calls to
+`bijux-dag`.
 
 It is the PyPI boundary for the public `bijux` product. The Python package
 does not redefine runtime behavior; it packages, launches, and validates the
-same command contract owned by the Rust `bijux-cli` crate.
+same command contracts owned by the Rust `bijux-cli` and `bijux-dag-cli`
+crates.
 
 ## Release Status
 
@@ -31,10 +33,14 @@ same command contract owned by the Rust `bijux-cli` crate.
 - the optional native Rust bridge module (`bijux_cli_py._native`)
 - a Python fallback facade for compatibility and portability checks
 - `bijux_cli_py.app_sdk` for mounted Python apps
+- `bijux_cli_py.dag_sdk` for Python callers that need to load graphs, validate
+  them, produce plans, run workflows, inspect run state, and query artifact
+  registries through `bijux-dag`
 
 ## What It Does Not Own
 
 - independent runtime semantics
+- independent DAG semantics
 - maintainer control-plane commands
 - repository-level governance and release policy
 
@@ -44,6 +50,7 @@ same command contract owned by the Rust `bijux-cli` crate.
   SDK
 - Rust bridge crate: `crates/bijux-cli-python`
 - runtime implementation: `crates/bijux-cli`
+- DAG runtime implementation: `crates/bijux-dag-cli`
 
 ## Reach For Another Surface When
 
@@ -59,6 +66,38 @@ python -m pip install bijux-cli
 bijux --help
 python -m bijux_cli_py --help
 ```
+
+## DAG Workflow Helpers
+
+The package also ships `bijux_cli_py.dag_sdk` for Python callers that want the
+same structured DAG workflow payloads exposed by `bijux-dag --json`.
+
+These helpers delegate to the `bijux-dag` binary. They preserve the CLI JSON
+schema instead of wrapping results in a Python-only envelope.
+
+```python
+from pathlib import Path
+
+from bijux_cli_py import (
+    inspect_dag_run,
+    plan_dag_graph,
+    query_dag_artifacts,
+    run_dag_graph,
+    validate_dag_graph,
+)
+
+graph = Path("evidence/dag/authoring/examples/hello.dag.json")
+run_root = Path("./artifacts/python-dag-runs")
+
+validate = validate_dag_graph(graph)
+plan = plan_dag_graph(graph, out=run_root, run_id="python-plan")
+run = run_dag_graph(graph, out=run_root, run_id="python-run")
+inspect = inspect_dag_run(run_id="python-run", root=run_root)
+artifacts = query_dag_artifacts(run_root / "run-python-run")
+```
+
+If the runtime binary is not on `PATH`, set `BIJUX_DAG_BIN` to the absolute
+path of the `bijux-dag` executable you want the Python helper to call.
 
 ## Mounted Python Apps
 
@@ -99,6 +138,7 @@ callable through your module, and place the generated manifest under
 ## Related Surfaces
 
 - Runtime crate: [`crates/bijux-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli)
+- DAG runtime crate: [`crates/bijux-dag-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli)
 - Python bridge crate: [`crates/bijux-cli-python`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli-python)
 - Mounted app guide: [`crates/bijux-cli-python/docs/MOUNTED_APPS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/MOUNTED_APPS.md)
 - Package changelog: [`crates/bijux-cli-python/CHANGELOG.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/CHANGELOG.md)

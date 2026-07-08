@@ -9,6 +9,11 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ---
 
+### Added
+- Added `bijux_cli_py.dag_sdk` with Python helpers for loading DAG graph JSON,
+  delegating validation/planning/execution to `bijux-dag`, inspecting runs, and
+  querying artifact registries while preserving the CLI JSON payload contract.
+
 <!-- towncrier start -->
 
 <a id="v0-4-0"></a>

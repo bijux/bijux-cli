@@ -22,8 +22,10 @@ last_reviewed: 2026-04-12
 <!-- bijux-core-badges:generated:end -->
 
 `bijux-cli-python` is the Python distribution and native bridge for installing
-and launching the Bijux command runtime. It is the packaging boundary between
-Python callers and the Rust runtime, not a second source of runtime truth.
+and launching the Bijux command runtime. It also owns the Python DAG helper
+surface that delegates graph operations to `bijux-dag`. It remains a packaging
+and delegation boundary between Python callers and Rust runtimes, not a second
+source of runtime truth.
 
 Use this page when the issue is about PyPI packaging, launcher behavior,
 bridge compatibility, or Python-facing parity with the native binary.
@@ -35,12 +37,14 @@ bridge compatibility, or Python-facing parity with the native binary.
 | packaging | Python distribution metadata, entrypoints, and install surface |
 | bridge | native bindings, conversion layer, compatibility checks, fallback facade |
 | release parity | alignment between `bijux` binary behavior and Python launcher behavior |
-| boundary | does not redefine runtime semantics already owned by `bijux-cli` |
+| DAG helpers | Python load/validate/plan/run/inspect/query helpers that preserve `bijux-dag` JSON payloads |
+| boundary | does not redefine runtime semantics already owned by `bijux-cli` or `bijux-dag-cli` |
 
 ## Source Layout
 
 - `crates/bijux-cli-python/pyproject.toml`
 - `crates/bijux-cli-python/python/bijux_cli_py`
+- `crates/bijux-cli-python/python/bijux_cli_py/dag_sdk.py`
 - `crates/bijux-cli-python/src/lib.rs`
 - `crates/bijux-cli-python/src/bindings.rs`
 - `crates/bijux-cli-python/src/conversions.rs`
@@ -52,6 +56,8 @@ bridge compatibility, or Python-facing parity with the native binary.
 - open the [CLI Handbook](../../index.md) for product-level runtime behavior
 - open [`bijux-cli`](./bijux-cli.md) when the question is native runtime
   ownership rather than distribution or bridge mechanics
+- open [`bijux-dag`](../../bijux-dag/index.md) when the question is DAG runtime
+  semantics rather than Python delegation
 - open the [Repository Handbook](../../bijux-core/index.md) when the issue
   touches release governance, workspace policy, or cross-program ownership
 
@@ -62,9 +68,13 @@ bridge compatibility, or Python-facing parity with the native binary.
 - `crates/bijux-cli-python/pyproject.toml`
 - `crates/bijux-cli-python/tests/python/test_runtime_parity.py`
 - `crates/bijux-cli-python/tests/runtime_entrypoint_unity.rs`
+- `crates/bijux-cli-python/tests/python/test_dag_sdk_transport.py`
+- `crates/bijux-cli-python/tests/python/test_dag_sdk_workflows.py`
 
 ## Review Lens
 
 - Python-facing entrypoints should preserve runtime parity instead of drifting into custom behavior
+- DAG helpers should return the same structured payloads a caller would receive
+  from `bijux-dag --json`
 - package metadata should route readers back to the CLI handbook rather than duplicating it
 - release changes should keep bridge compatibility explicit and test-backed
