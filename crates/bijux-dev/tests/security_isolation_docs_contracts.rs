@@ -35,6 +35,9 @@ fn security_truth_reference_covers_current_runtime_boundaries() {
         "What is enforced",
         "What is best-effort",
         "What is not protected",
+        "declared output target preflight",
+        "../escape.txt",
+        "symlinked existing parent components",
         "there is no socket firewall for shell subprocesses",
         "this is not a VM boundary",
         "replay `--sandbox`",
@@ -76,13 +79,18 @@ fn backend_and_storage_specs_keep_boundary_language_honest() {
         "not a host sandbox",
         "not documented as a VM boundary",
         "deny flags gate declared effects before execution starts",
+        "declared output targets must be authorized before backend launch",
+        "symlinked existing parent components",
     ] {
         assert!(backend.contains(token), "backend contract missing token: {token}");
     }
 
     for token in [
         "outputs/index.json",
+        "declared output targets must be validated before execution starts",
         "rooted input and output authorization must reject paths that escape",
+        "reject `../escape`, absolute paths,",
+        "symlinked existing parent escapes",
         "host filesystem sandbox for shell execution",
         "cache metadata must include the retained cache key",
         "crates/bijux-dag-runtime/tests/security_model_contracts.rs",

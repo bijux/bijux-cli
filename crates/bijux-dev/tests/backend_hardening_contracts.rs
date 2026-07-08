@@ -76,6 +76,7 @@ fn backend_hardening_report_links_docs_runtime_and_tests() {
         "crates/bijux-dag-runtime/tests/execution_backend_contract.rs",
         "crates/bijux-dag-runtime/tests/engine_flow_contract.rs",
         "crates/bijux-dev/tests/backend_hardening_contracts.rs",
+        "declared output targets must be authorized before backend launch",
     ] {
         assert!(report.contains(token), "backend hardening report missing: {token}");
     }
