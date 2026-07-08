@@ -92,6 +92,7 @@ claim, and writes retained batch evidence per node.
 <a class="md-button" href="operations/guides/container-packaging-workflow.md">Run the container workflow</a>
 <a class="md-button" href="operations/guides/data-pipeline-workflow.md">Run the data pipeline workflow</a>
 <a class="md-button" href="operations/guides/file-processing-workflow.md">Run the file processing workflow</a>
+<a class="md-button" href="interfaces/examples/index.md">Open runnable examples</a>
 <a class="md-button" href="interfaces/operator-workflows.md">Open operator workflows</a>
 <a class="md-button" href="packages/index.md">Open the package map</a>
 </div>
@@ -110,6 +111,9 @@ flowchart LR
 
 - open [First Hour With Bijux Dag](operations/guides/first-hour-with-bijux-dag.md)
   when you want a concrete local path from install to a verified run
+- open [Runnable Examples](interfaces/examples/index.md) when you want one page
+  that maps the repository-backed hello, file-processing, cache, replay,
+  failure, branch, and container proofs to their expected outputs
 - open [v0.4.0 Release Notes](operations/v0-4-0-release-notes.md) when you
   need the honest release boundary, examples, migration notes, limitations,
   and validation commands in one operator-facing page

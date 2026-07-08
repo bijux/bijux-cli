@@ -191,6 +191,7 @@ nav:
               - Interfaces: bijux-dag/interfaces/index.md
               - CLI Surface: bijux-dag/interfaces/cli-surface.md
               - Generated CLI Reference: bijux-dag/interfaces/generated-cli-reference.md
+              - Runnable Examples: bijux-dag/interfaces/examples/index.md
               - API Surface: bijux-dag/interfaces/api-surface.md
               - Configuration Surface: bijux-dag/interfaces/configuration-surface.md
               - Data Contracts: bijux-dag/interfaces/data-contracts.md
