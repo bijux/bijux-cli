@@ -155,8 +155,12 @@ fn regional_sales_pipeline_renders_final_table_and_reuses_cache() {
     let first_table = fs::read_to_string(find_unique_file(&first_run, "revenue_attainment.csv"))
         .expect("first final table");
     assert!(first_table.contains("report_title,region,revenue,target,variance,status"));
-    assert!(first_table.contains("Regional Revenue Attainment,North,170.00,150.00,20.00,above-target"));
-    assert!(first_table.contains("Regional Revenue Attainment,South,80.00,70.00,10.00,above-target"));
+    assert!(
+        first_table.contains("Regional Revenue Attainment,North,170.00,150.00,20.00,above-target")
+    );
+    assert!(
+        first_table.contains("Regional Revenue Attainment,South,80.00,70.00,10.00,above-target")
+    );
     assert!(first_table.contains("Regional Revenue Attainment,West,63.00,50.00,13.00,above-target"));
 
     let second = run_json_owned(
@@ -270,7 +274,8 @@ fn regional_sales_pipeline_invalidates_changed_orders_and_surfaces_changed_nodes
     assert_eq!(read_trace(&warm_run, "load_targets")["status"], "cached");
 
     let original_orders = fs::read_to_string(&orders_csv).expect("orders csv");
-    let updated_orders = original_orders.replace("A-102,north,mid-market,3,15.00", "A-102,north,mid-market,5,15.00");
+    let updated_orders =
+        original_orders.replace("A-102,north,mid-market,3,15.00", "A-102,north,mid-market,5,15.00");
     assert_ne!(original_orders, updated_orders, "expected to modify one sales order");
     let updated_orders_csv = temp.path().join("inputs").join("orders-updated.csv");
     fs::write(&updated_orders_csv, updated_orders).expect("write updated orders");
@@ -321,8 +326,10 @@ fn regional_sales_pipeline_invalidates_changed_orders_and_surfaces_changed_nodes
     }
 
     let updated_table =
-        fs::read_to_string(find_unique_file(&updated_run, "revenue_attainment.csv")).expect("updated table");
-    assert!(updated_table.contains("Regional Revenue Attainment,North,200.00,150.00,50.00,above-target"));
+        fs::read_to_string(find_unique_file(&updated_run, "revenue_attainment.csv"))
+            .expect("updated table");
+    assert!(updated_table
+        .contains("Regional Revenue Attainment,North,200.00,150.00,50.00,above-target"));
 
     let compare = run_json_owned(
         vec![

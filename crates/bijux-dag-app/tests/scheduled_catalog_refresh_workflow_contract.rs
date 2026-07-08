@@ -133,12 +133,7 @@ fn scheduled_catalog_refresh_proves_preview_dedup_and_run_linkage() {
     write_json(&submit_inputs, &json!({ "now_unix_ms": 1768474800000u64 }));
 
     let validate = run_json_with_env(
-        &[
-            "--json",
-            "schedule",
-            "validate",
-            registry.to_string_lossy().as_ref(),
-        ],
+        &["--json", "schedule", "validate", registry.to_string_lossy().as_ref()],
         &root,
         &INTERNAL_ENV,
     );
@@ -249,14 +244,8 @@ fn scheduled_catalog_refresh_proves_preview_dedup_and_run_linkage() {
     );
     assert_eq!(dispatch["data"]["updated_ledger"]["entries"][0]["status"], "Running");
 
-    let validate_graph = run_json(
-        &[
-            "validate",
-            "--json",
-            workflow_graph(&root).to_string_lossy().as_ref(),
-        ],
-        &root,
-    );
+    let validate_graph =
+        run_json(&["validate", "--json", workflow_graph(&root).to_string_lossy().as_ref()], &root);
     assert_eq!(validate_graph["ok"], true);
 
     let mut run_args = vec![
@@ -276,7 +265,10 @@ fn scheduled_catalog_refresh_proves_preview_dedup_and_run_linkage() {
     assert_eq!(manifest["run_id"], scheduled_run_id);
     assert_eq!(manifest["status"], "success");
     assert_eq!(manifest["run_metadata"]["graph_inputs"]["scheduled_at_unix_ms"], 1768474800000u64);
-    assert_eq!(manifest["run_metadata"]["graph_inputs"]["refresh_label"], "Nightly Catalog Refresh");
+    assert_eq!(
+        manifest["run_metadata"]["graph_inputs"]["refresh_label"],
+        "Nightly Catalog Refresh"
+    );
     assert_eq!(manifest["run_metadata"]["graph_inputs"]["dataset_name"], "atlas.catalog");
 
     let report = fs::read_to_string(
@@ -293,15 +285,8 @@ fn scheduled_catalog_refresh_proves_preview_dedup_and_run_linkage() {
     assert!(report.contains("Scheduled at: 2026-01-15T11:00:00Z"));
     assert!(report.contains("Scheduled at unix ms: 1768474800000"));
 
-    let verify = run_json(
-        &[
-            "verify",
-            "--json",
-            output_path_string(&run_dir).as_str(),
-            "--strict",
-        ],
-        &root,
-    );
+    let verify =
+        run_json(&["verify", "--json", output_path_string(&run_dir).as_str(), "--strict"], &root);
     assert_eq!(verify["ok"], true);
 
     write_json(

@@ -67,11 +67,21 @@ fn copy_source_note(root: &Path, destination: &Path) -> PathBuf {
 }
 
 fn bulletin_path(run_dir: &Path) -> PathBuf {
-    run_dir.join("nodes").join("publish_bulletin").join("outputs").join("publish").join("bulletin.md")
+    run_dir
+        .join("nodes")
+        .join("publish_bulletin")
+        .join("outputs")
+        .join("publish")
+        .join("bulletin.md")
 }
 
 fn selection_path(run_dir: &Path) -> PathBuf {
-    run_dir.join("nodes").join("publish_bulletin").join("outputs").join("publish").join("selection.json")
+    run_dir
+        .join("nodes")
+        .join("publish_bulletin")
+        .join("outputs")
+        .join("publish")
+        .join("selection.json")
 }
 
 #[test]
@@ -122,7 +132,8 @@ fn audience_branch_workflow_selects_one_lane_and_records_join_behavior() {
     assert_eq!(publish["trigger_evaluation"]["trigger_rule"], "none_failed");
     assert_eq!(publish["trigger_evaluation"]["satisfied"], true);
 
-    let parent_statuses = publish["trigger_evaluation"]["parent_statuses"].as_array().expect("parent statuses");
+    let parent_statuses =
+        publish["trigger_evaluation"]["parent_statuses"].as_array().expect("parent statuses");
     assert!(parent_statuses.iter().any(|status| {
         status["node_id"] == "render_executive_bulletin" && status["status"] == "skipped"
     }));
@@ -131,7 +142,8 @@ fn audience_branch_workflow_selects_one_lane_and_records_join_behavior() {
     }));
 
     let selection: Value =
-        serde_json::from_str(&fs::read_to_string(selection_path(&run_dir)).expect("selection")).expect("selection json");
+        serde_json::from_str(&fs::read_to_string(selection_path(&run_dir)).expect("selection"))
+            .expect("selection json");
     assert_eq!(selection["selected_lane"], "technical");
 
     let bulletin = fs::read_to_string(bulletin_path(&run_dir)).expect("bulletin");

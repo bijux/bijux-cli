@@ -45,11 +45,9 @@ pub fn generated_node_id(controller_node_id: &str, raw_node_id: &str) -> String 
     format!("{controller_node_id}__{raw_node_id}")
 }
 
-pub fn parse_dynamic_expansion_document(
-    raw: &str,
-) -> Result<DynamicExpansionDocument, String> {
-    let document: DynamicExpansionDocument =
-        serde_json::from_str(raw).map_err(|error| format!("invalid dynamic expansion document: {error}"))?;
+pub fn parse_dynamic_expansion_document(raw: &str) -> Result<DynamicExpansionDocument, String> {
+    let document: DynamicExpansionDocument = serde_json::from_str(raw)
+        .map_err(|error| format!("invalid dynamic expansion document: {error}"))?;
     if document.schema_version != DYNAMIC_EXPANSION_SCHEMA_VERSION {
         return Err(format!(
             "unsupported dynamic expansion schema version '{}'",
@@ -71,11 +69,10 @@ pub fn apply_dynamic_expansion(
         ));
     }
 
-    let controller = graph
-        .nodes
-        .iter()
-        .find(|node| node.id == controller_node_id)
-        .ok_or_else(|| format!("dynamic controller '{}' is not present in the graph", controller_node_id))?;
+    let controller =
+        graph.nodes.iter().find(|node| node.id == controller_node_id).ok_or_else(|| {
+            format!("dynamic controller '{}' is not present in the graph", controller_node_id)
+        })?;
     let dynamic = controller.dynamic.as_ref().ok_or_else(|| {
         format!("dynamic controller '{}' is missing its dynamic contract", controller_node_id)
     })?;
@@ -101,10 +98,8 @@ pub fn apply_dynamic_expansion(
 
     let mut rewritten_ids = BTreeMap::new();
     for raw_node_id in &raw_node_ids {
-        rewritten_ids.insert(
-            raw_node_id.clone(),
-            generated_node_id(controller_node_id, raw_node_id),
-        );
+        rewritten_ids
+            .insert(raw_node_id.clone(), generated_node_id(controller_node_id, raw_node_id));
     }
 
     let mut existing_ids = graph
@@ -129,7 +124,12 @@ pub fn apply_dynamic_expansion(
             .get(&rewritten.id)
             .cloned()
             .ok_or_else(|| "generated node rewrite map is incomplete".to_string())?;
-        rewrite_param_value_refs(&mut rewritten.params, &raw_node_ids, &rewritten_ids, &existing_ids)?;
+        rewrite_param_value_refs(
+            &mut rewritten.params,
+            &raw_node_ids,
+            &rewritten_ids,
+            &existing_ids,
+        )?;
         generated_nodes.push(rewritten);
     }
 
@@ -155,10 +155,7 @@ pub fn apply_dynamic_expansion(
         generated_edges.push(rewritten);
     }
 
-    let generated_node_ids = generated_nodes
-        .iter()
-        .map(|node| node.id.clone())
-        .collect::<Vec<_>>();
+    let generated_node_ids = generated_nodes.iter().map(|node| node.id.clone()).collect::<Vec<_>>();
     let expansion_fingerprint = dynamic_expansion_fingerprint(&generated_nodes, &generated_edges)?;
 
     let mut expanded = graph.clone();
@@ -200,7 +197,9 @@ fn rewrite_param_value_refs(
     known_node_ids: &BTreeSet<String>,
 ) -> Result<(), String> {
     match value {
-        ParamValue::Ref(reference) => rewrite_ref_spec(reference, raw_node_ids, rewritten_ids, known_node_ids),
+        ParamValue::Ref(reference) => {
+            rewrite_ref_spec(reference, raw_node_ids, rewritten_ids, known_node_ids)
+        }
         ParamValue::Array(items) => {
             for item in items {
                 rewrite_param_value_refs(item, raw_node_ids, rewritten_ids, known_node_ids)?;
@@ -330,7 +329,11 @@ mod tests {
         .expect("document");
 
         let applied = apply_dynamic_expansion(&graph, "expand_regions", document).expect("apply");
-        assert!(applied.graph.nodes.iter().any(|node| node.id == "expand_regions__regional_report"));
+        assert!(applied
+            .graph
+            .nodes
+            .iter()
+            .any(|node| node.id == "expand_regions__regional_report"));
         let generated = applied
             .graph
             .nodes
@@ -338,22 +341,20 @@ mod tests {
             .find(|node| node.id == "expand_regions__regional_report")
             .expect("generated node");
         match &generated.params {
-            ParamValue::Object(map) => {
-                match map.get("upstream") {
-                    Some(ParamValue::Ref(reference)) => {
-                        assert_eq!(reference.graph_input, None);
-                        assert_eq!(reference.path_var, None);
-                        match reference.node_output.as_ref() {
-                            Some(NodeOutputRef { node_id, output_name }) => {
-                                assert_eq!(node_id, "expand_regions__regional_report");
-                                assert_eq!(output_name, "report");
-                            }
-                            None => panic!("expected node output ref"),
+            ParamValue::Object(map) => match map.get("upstream") {
+                Some(ParamValue::Ref(reference)) => {
+                    assert_eq!(reference.graph_input, None);
+                    assert_eq!(reference.path_var, None);
+                    match reference.node_output.as_ref() {
+                        Some(NodeOutputRef { node_id, output_name }) => {
+                            assert_eq!(node_id, "expand_regions__regional_report");
+                            assert_eq!(output_name, "report");
                         }
+                        None => panic!("expected node output ref"),
                     }
-                    other => panic!("expected upstream ref, got {other:?}"),
                 }
-            }
+                other => panic!("expected upstream ref, got {other:?}"),
+            },
             _ => panic!("expected params object"),
         }
         assert_eq!(
@@ -379,10 +380,7 @@ mod tests {
                 node_id: "expand_regions".to_string(),
                 port: "expansion".to_string(),
             },
-            to: crate::PortRef {
-                node_id: "publish".to_string(),
-                port: "report".to_string(),
-            },
+            to: crate::PortRef { node_id: "publish".to_string(), port: "report".to_string() },
         });
         let document = DynamicExpansionDocument {
             schema_version: DYNAMIC_EXPANSION_SCHEMA_VERSION.to_string(),
@@ -395,9 +393,6 @@ mod tests {
 
     #[test]
     fn helper_namespaces_generated_ids() {
-        assert_eq!(
-            generated_node_id("expand_regions", "report"),
-            "expand_regions__report"
-        );
+        assert_eq!(generated_node_id("expand_regions", "report"), "expand_regions__report");
     }
 }

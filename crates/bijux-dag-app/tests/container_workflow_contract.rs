@@ -244,7 +244,8 @@ fn release_note_bundle_workflow_executes_through_container_and_records_identity(
     assert!(release_note_text.contains("staged the deterministic data pipeline workflow"));
 
     let summary_json: Value =
-        serde_json::from_str(&fs::read_to_string(&summary).expect("summary json")).expect("parse summary");
+        serde_json::from_str(&fs::read_to_string(&summary).expect("summary json"))
+            .expect("parse summary");
     assert_eq!(summary_json["bundle_label"], "Release Brief");
     assert_eq!(summary_json["container_workdir"], "/bijux/node/work/scratch");
 
@@ -266,9 +267,7 @@ fn release_note_bundle_workflow_executes_through_container_and_records_identity(
     assert_eq!(trace["container"]["engine_version"], "docker fake 1.0");
     assert_eq!(trace["container"]["image_digest"], "sha256:feedface");
     assert!(
-        trace["container"]["image"]
-            .as_str()
-            .is_some_and(|image| image.contains("@sha256:")),
+        trace["container"]["image"].as_str().is_some_and(|image| image.contains("@sha256:")),
         "expected the retained trace to keep the pinned image reference"
     );
 }

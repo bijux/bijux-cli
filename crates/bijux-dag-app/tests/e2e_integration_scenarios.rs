@@ -65,8 +65,7 @@ fn e2e_minimal_validate_run_and_replay() {
     let _ = run_json(&["validate", "--json", &graph_s], &root);
     let run = run_json(&["run", "--json", &graph_s, "--out", &out_s], &root);
     let run_dir = extract_run_dir(&run);
-    let _ =
-        run_json(&["replay", "--json", &output_path_string(&run_dir), "--out", &out_s], &root);
+    let _ = run_json(&["replay", "--json", &output_path_string(&run_dir), "--out", &out_s], &root);
 }
 
 #[test]

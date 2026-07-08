@@ -177,7 +177,10 @@ fn release_note_bundle_example_uses_path_input_and_pinned_container_image() {
         &binding.source,
         ParamBindingSource::GraphInput { input_name } if input_name == "bundle_label"
     )));
-    assert!(contract.outputs.iter().any(|output| output.media_type == "text/plain" && output.promotable));
+    assert!(contract
+        .outputs
+        .iter()
+        .any(|output| output.media_type == "text/plain" && output.promotable));
     assert!(contract.outputs.iter().any(|output| output.media_type == "application/json"));
 }
 
@@ -219,14 +222,20 @@ fn audience_branch_bulletin_example_declares_typed_branch_inputs_and_join_contra
         ParamBindingSource::GraphInput { input_name } if input_name == "audience_mode"
     )));
 
-    let publish_node =
-        graph.nodes.iter().find(|node| node.id == "publish_bulletin").expect("publish_bulletin node");
+    let publish_node = graph
+        .nodes
+        .iter()
+        .find(|node| node.id == "publish_bulletin")
+        .expect("publish_bulletin node");
     assert_eq!(publish_node.trigger_rule, bijux_dag_core::TriggerRule::NoneFailed);
 
     let publish_contract =
         node_io_contract(&graph, "publish_bulletin").expect("publish_bulletin contract");
     assert_eq!(publish_contract.outputs.len(), 2);
-    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "text/markdown" && output.promotable));
+    assert!(publish_contract
+        .outputs
+        .iter()
+        .any(|output| output.media_type == "text/markdown" && output.promotable));
     assert!(publish_contract.outputs.iter().any(|output| output.media_type == "application/json"));
 }
 
@@ -285,7 +294,10 @@ fn compliance_gated_bulletin_example_declares_retryable_gate_and_promotable_publ
     let publish_contract =
         node_io_contract(&graph, "publish_bulletin").expect("publish_bulletin contract");
     assert_eq!(publish_contract.outputs.len(), 2);
-    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "text/markdown" && output.promotable));
+    assert!(publish_contract
+        .outputs
+        .iter()
+        .any(|output| output.media_type == "text/markdown" && output.promotable));
     assert!(publish_contract.outputs.iter().any(|output| output.media_type == "application/json"));
 }
 
@@ -339,7 +351,10 @@ fn scheduled_catalog_refresh_example_binds_required_schedule_timestamp() {
     let publish_contract =
         node_io_contract(&graph, "render_refresh_report").expect("render_refresh_report contract");
     assert_eq!(publish_contract.outputs.len(), 2);
-    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "text/markdown" && output.promotable));
+    assert!(publish_contract
+        .outputs
+        .iter()
+        .any(|output| output.media_type == "text/markdown" && output.promotable));
     assert!(publish_contract.outputs.iter().any(|output| output.media_type == "application/json"));
 }
 
@@ -406,9 +421,12 @@ fn historical_catalog_backfill_example_binds_required_backfill_metadata() {
         Some("historical partition publication should be regenerated for every backfill submission attempt")
     );
 
-    let publish_contract =
-        node_io_contract(&graph, "render_partition_report").expect("render_partition_report contract");
+    let publish_contract = node_io_contract(&graph, "render_partition_report")
+        .expect("render_partition_report contract");
     assert_eq!(publish_contract.outputs.len(), 2);
-    assert!(publish_contract.outputs.iter().any(|output| output.media_type == "text/markdown" && output.promotable));
+    assert!(publish_contract
+        .outputs
+        .iter()
+        .any(|output| output.media_type == "text/markdown" && output.promotable));
     assert!(publish_contract.outputs.iter().any(|output| output.media_type == "application/json"));
 }

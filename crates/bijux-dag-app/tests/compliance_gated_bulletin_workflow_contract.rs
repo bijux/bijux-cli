@@ -63,7 +63,8 @@ fn read_trace(run_dir: &Path, node_id: &str) -> Value {
 
 fn read_attempts(run_dir: &Path, node_id: &str) -> Value {
     serde_json::from_str(
-        &fs::read_to_string(run_dir.join("nodes").join(node_id).join("attempts.json")).expect("attempts"),
+        &fs::read_to_string(run_dir.join("nodes").join(node_id).join("attempts.json"))
+            .expect("attempts"),
     )
     .expect("attempts json")
 }
@@ -73,7 +74,8 @@ fn workflow_graph(root: &Path) -> PathBuf {
 }
 
 fn copy_source_note(root: &Path, destination: &Path) -> PathBuf {
-    let source = root.join("evidence/dag/authoring/examples/compliance-gated-source/team-update.md");
+    let source =
+        root.join("evidence/dag/authoring/examples/compliance-gated-source/team-update.md");
     fs::create_dir_all(destination).expect("inputs dir");
     let note = destination.join("team-update.md");
     fs::copy(source, &note).expect("copy note");
@@ -107,7 +109,12 @@ fn write_publication_gate(path: &Path, approved: bool, reviewer: &str, reviewer_
 }
 
 fn bulletin_path(run_dir: &Path) -> PathBuf {
-    run_dir.join("nodes").join("publish_bulletin").join("outputs").join("publish").join("bulletin.md")
+    run_dir
+        .join("nodes")
+        .join("publish_bulletin")
+        .join("outputs")
+        .join("publish")
+        .join("bulletin.md")
 }
 
 fn node_stderr_path(run_dir: &Path, node_id: &str) -> PathBuf {
@@ -173,11 +180,9 @@ fn compliance_gated_bulletin_workflow_repairs_the_failed_publication_boundary() 
 
     let validate_trace = read_trace(&source_run, "validate_publication_gate");
     assert_eq!(validate_trace["status"], "failed");
-    assert!(
-        fs::read_to_string(node_stderr_path(&source_run, "validate_publication_gate"))
-            .expect("validate stderr")
-            .contains("publication gate is not approved")
-    );
+    assert!(fs::read_to_string(node_stderr_path(&source_run, "validate_publication_gate"))
+        .expect("validate stderr")
+        .contains("publication gate is not approved"));
 
     let explain_failure = run_json_owned(
         vec![
@@ -230,10 +235,8 @@ fn compliance_gated_bulletin_workflow_repairs_the_failed_publication_boundary() 
     assert!(bulletin.contains("Approved by: A. Reviewer"));
     assert!(bulletin.contains("Gate lookup attempt: 2"));
 
-    let verify = run_json(
-        &["verify", "--json", &output_path_string(&replay_run), "--strict"],
-        &root,
-    );
+    let verify =
+        run_json(&["verify", "--json", &output_path_string(&replay_run), "--strict"], &root);
     assert_eq!(verify["ok"], true);
     assert_eq!(verify["data"]["event_log_completeness"]["complete"], true);
 }
@@ -284,11 +287,9 @@ fn compliance_gated_bulletin_workflow_surfaces_retry_exhaustion() {
     let fetch_trace = read_trace(&run_dir, "fetch_compliance_gate");
     assert_eq!(fetch_trace["status"], "failed");
     assert_eq!(fetch_trace["attempt"], 3);
-    assert!(
-        fs::read_to_string(node_stderr_path(&run_dir, "fetch_compliance_gate"))
-            .expect("fetch stderr")
-            .contains("transient compliance gate lookup failed on attempt 3")
-    );
+    assert!(fs::read_to_string(node_stderr_path(&run_dir, "fetch_compliance_gate"))
+        .expect("fetch stderr")
+        .contains("transient compliance gate lookup failed on attempt 3"));
 
     let fetch_attempts = read_attempts(&run_dir, "fetch_compliance_gate");
     let fetch_attempts = fetch_attempts.as_array().expect("attempt array");
@@ -310,6 +311,9 @@ fn compliance_gated_bulletin_workflow_surfaces_retry_exhaustion() {
         &root,
     );
     assert_eq!(explain_failure["data"]["root_failure"], "fetch_compliance_gate");
-    assert_eq!(explain_failure["data"]["propagated_skips"][0]["node_id"], "validate_publication_gate");
+    assert_eq!(
+        explain_failure["data"]["propagated_skips"][0]["node_id"],
+        "validate_publication_gate"
+    );
     assert_eq!(explain_failure["data"]["propagated_skips"][1]["node_id"], "publish_bulletin");
 }

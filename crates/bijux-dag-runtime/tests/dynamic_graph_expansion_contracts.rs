@@ -56,9 +56,8 @@ fn runtime_executes_dynamic_expansion_before_planning() {
     .expect("graph");
 
     let dir = tempfile::tempdir().expect("tempdir");
-    let final_path = Runtime::new()
-        .run(&graph, dir.path(), RuntimeConfig::default())
-        .expect("dynamic run");
+    let final_path =
+        Runtime::new().run(&graph, dir.path(), RuntimeConfig::default()).expect("dynamic run");
 
     let published = fs::read_to_string(
         final_path.join("nodes").join("expand__publish").join("outputs").join("out.txt"),
@@ -81,10 +80,7 @@ fn runtime_executes_dynamic_expansion_before_planning() {
         snapshot["dynamic_expansions"][0]["controller_node_id"],
         Value::String("expand".to_string())
     );
-    assert_eq!(
-        snapshot["source_graph"]["nodes"][0]["id"],
-        Value::String("expand".to_string())
-    );
+    assert_eq!(snapshot["source_graph"]["nodes"][0]["id"], Value::String("expand".to_string()));
     assert_eq!(
         snapshot["source_graph_fingerprint"],
         Value::String(graph.graph_fingerprint().expect("source fingerprint"))

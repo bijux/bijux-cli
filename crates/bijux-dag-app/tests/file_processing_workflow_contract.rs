@@ -259,10 +259,7 @@ fn file_processing_workflow_supports_lineage_partial_rerun_and_promotion() {
     assert!(destination.join("promotion.json").exists());
 
     let promoted_manifest = read_manifest(&source_run);
-    assert_eq!(
-        promoted_manifest["run_summary"]["promoted_outputs"][0]["output_name"],
-        "report"
-    );
+    assert_eq!(promoted_manifest["run_summary"]["promoted_outputs"][0]["output_name"], "report");
 
     let replay = run_json_owned(
         vec![
@@ -285,8 +282,5 @@ fn file_processing_workflow_supports_lineage_partial_rerun_and_promotion() {
 
     let replay_run = run_dir_from_response(&replay);
     let replay_manifest = read_manifest(&replay_run);
-    assert_eq!(
-        replay_manifest["run_metadata"]["parent_run_id"],
-        "file-processing-source"
-    );
+    assert_eq!(replay_manifest["run_metadata"]["parent_run_id"], "file-processing-source");
 }

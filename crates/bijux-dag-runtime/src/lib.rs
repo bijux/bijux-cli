@@ -3424,14 +3424,20 @@ fn materialize_inputs(
         let mut from_fp = node_fingerprint_from_ctx(ctx, &edge.from.node_id);
         if ctx.fs.metadata(&src_path).is_err() {
             if let Some(source_run_dir) = ctx.replay_source_run_dir.as_deref() {
-                let replay_src_path =
-                    source_run_dir.join("nodes").join(&edge.from.node_id).join("outputs").join(&out.path);
+                let replay_src_path = source_run_dir
+                    .join("nodes")
+                    .join(&edge.from.node_id)
+                    .join("outputs")
+                    .join(&out.path);
                 if ctx.fs.metadata(&replay_src_path).is_ok() {
                     src_path = replay_src_path;
                     if from_fp.is_empty() {
-                        from_fp =
-                            replay_source_node_fingerprint(ctx.fs.as_ref(), source_run_dir, &edge.from.node_id)
-                                .unwrap_or_default();
+                        from_fp = replay_source_node_fingerprint(
+                            ctx.fs.as_ref(),
+                            source_run_dir,
+                            &edge.from.node_id,
+                        )
+                        .unwrap_or_default();
                     }
                 }
             }
@@ -3483,7 +3489,11 @@ fn materialize_inputs(
     Ok(index)
 }
 
-fn replay_source_node_fingerprint(fs: &dyn Fs, source_run_dir: &Path, node_id: &str) -> Option<String> {
+fn replay_source_node_fingerprint(
+    fs: &dyn Fs,
+    source_run_dir: &Path,
+    node_id: &str,
+) -> Option<String> {
     let trace_path = source_run_dir.join("nodes").join(node_id).join("trace.json");
     let bytes = fs.read(&trace_path).ok()?;
     let trace: Value = serde_json::from_slice(&bytes).ok()?;

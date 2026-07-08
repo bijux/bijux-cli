@@ -1146,7 +1146,8 @@ impl Graph {
         let mut conditional_edge_counts = HashMap::<(String, String), usize>::new();
         let mut conditional_incoming_targets = BTreeSet::new();
         for edge in &self.edges {
-            if dynamic_nodes.contains(&edge.from.node_id) || dynamic_nodes.contains(&edge.to.node_id)
+            if dynamic_nodes.contains(&edge.from.node_id)
+                || dynamic_nodes.contains(&edge.to.node_id)
             {
                 let controller_node_id = if dynamic_nodes.contains(&edge.from.node_id) {
                     &edge.from.node_id

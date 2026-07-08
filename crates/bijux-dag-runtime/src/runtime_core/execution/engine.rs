@@ -28,9 +28,9 @@ use bijux_dag_artifacts::{
     TriggerEvaluation, TriggerParentStatus,
 };
 use bijux_dag_core::{
-    apply_dynamic_expansion, AppliedDynamicExpansion, evaluate_trigger_rule,
-    parse_dynamic_expansion_document, DynamicExpansionRecord, Effect, Graph, GraphError, Node,
-    NodeKind, SemanticNodeKind, TriggerRule, UpstreamTerminalOutcome, SPEC_VERSION,
+    apply_dynamic_expansion, evaluate_trigger_rule, parse_dynamic_expansion_document,
+    AppliedDynamicExpansion, DynamicExpansionRecord, Effect, Graph, GraphError, Node, NodeKind,
+    SemanticNodeKind, TriggerRule, UpstreamTerminalOutcome, SPEC_VERSION,
 };
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -224,10 +224,7 @@ fn execute_dynamic_controller(
             declared_env_fingerprint,
         )])),
         params_fingerprints: Arc::new(HashMap::from([(node.id.clone(), params_fingerprint)])),
-        command_fingerprints: Arc::new(HashMap::from([(
-            node.id.clone(),
-            command_fingerprint,
-        )])),
+        command_fingerprints: Arc::new(HashMap::from([(node.id.clone(), command_fingerprint)])),
         planner_contract_version: "bijux-dag-dynamic-expansion/v0.1".to_string(),
         execution_fingerprint: "dynamic-expansion".to_string(),
         evidence_fingerprint: "dynamic-expansion".to_string(),
@@ -265,8 +262,14 @@ fn execute_dynamic_controller(
     )?;
     if !cache_read.hit {
         let adapter = runtime.adapter_for_kind(&node.kind)?;
-        let result =
-            crate::execute_with_retries(adapter.as_ref(), graph, node, &bound_params, &ctx, &node.retry)?;
+        let result = crate::execute_with_retries(
+            adapter.as_ref(),
+            graph,
+            node,
+            &bound_params,
+            &ctx,
+            &node.retry,
+        )?;
         match result.status {
             NodeStatus::Success | NodeStatus::Cached => {
                 sacred_execution::run_cache_write(
@@ -300,16 +303,15 @@ fn execute_dynamic_controller(
             node.id
         ))
     })?;
-    let output = node
-        .outputs
-        .iter()
-        .find(|output| output.name == dynamic.expansion_output)
-        .ok_or_else(|| {
-            RuntimeError::Executor(format!(
-                "dynamic controller {} is missing declared expansion output {}",
-                node.id, dynamic.expansion_output
-            ))
-        })?;
+    let output =
+        node.outputs.iter().find(|output| output.name == dynamic.expansion_output).ok_or_else(
+            || {
+                RuntimeError::Executor(format!(
+                    "dynamic controller {} is missing declared expansion output {}",
+                    node.id, dynamic.expansion_output
+                ))
+            },
+        )?;
     let output_path = run_dir.node_outputs_dir(&node.id).join(&output.path);
     let raw_document = runtime.fs.read_to_string(&output_path).map_err(|error| {
         RuntimeError::Executor(format!(
@@ -342,12 +344,8 @@ fn prepare_execution_graph(
     let mut dynamic_expansions = Vec::new();
 
     while let Some(controller_id) = next_dynamic_controller_id(&graph) {
-        let controller = graph
-            .nodes
-            .iter()
-            .find(|node| node.id == controller_id)
-            .cloned()
-            .ok_or_else(|| {
+        let controller =
+            graph.nodes.iter().find(|node| node.id == controller_id).cloned().ok_or_else(|| {
                 RuntimeError::Executor(format!(
                     "dynamic controller {} disappeared before execution",
                     controller_id
@@ -1585,7 +1583,9 @@ pub fn execute(
     crate::validate_gpu_runtime_capacity(&plan, &options)?;
     crate::validate_named_resource_runtime_capacity(&plan, &options)?;
     let graph_diagnostics = graph.validate_with_warnings();
-    if graph_diagnostics.iter().any(|diagnostic| diagnostic.severity == bijux_dag_core::Severity::Error)
+    if graph_diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.severity == bijux_dag_core::Severity::Error)
     {
         return Err(GraphError::ValidationFailed.into());
     }
@@ -1599,10 +1599,8 @@ pub fn execute(
         ("graph_fingerprint".to_string(), Value::String(graph_fp.clone())),
     ]);
     if !prepared_graph.dynamic_expansions.is_empty() {
-        graph_json.insert(
-            "source_graph".to_string(),
-            serde_json::to_value(source_graph.canonicalize())?,
-        );
+        graph_json
+            .insert("source_graph".to_string(), serde_json::to_value(source_graph.canonicalize())?);
         graph_json.insert(
             "source_graph_fingerprint".to_string(),
             Value::String(prepared_graph.source_graph_fingerprint.clone()),
