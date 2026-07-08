@@ -9,21 +9,18 @@ last_reviewed: 2026-07-04
 
 # Local Development
 
-This page explains the default local path for working in `bijux-core`.
+Use this page when you want the shortest honest local workflow for working in
+`bijux-core` without inventing ad hoc commands.
 
 The rule is simple: start from documented root entrypoints so local work and CI
 keep telling the same story.
 
-## Local Flow
+## Default Local Path
 
-```mermaid
-flowchart LR
-    edit["edit code or docs"] --> lint["run local static checks"]
-    lint --> test["run package and root tests"]
-    test --> inspect["inspect outputs and diagnostics"]
-    inspect --> commit["commit when evidence is coherent"]
-    inspect --> edit
-```
+1. edit code or docs
+2. run the narrowest relevant checks
+3. inspect diagnostics and generated outputs
+4. commit when the evidence matches the change
 
 ## Baseline Commands
 
@@ -36,17 +33,19 @@ make docs-check
 Local runs should use the pinned Rust `1.86.0` toolchain from
 `rust-toolchain.toml` so the root commands agree with CI and release jobs.
 
+## Why These Entry Points Matter
+
+- They keep local development aligned with CI and release automation.
+- They make review evidence easier to reproduce.
+- They reduce the chance that a contributor fixes one path while breaking the
+  documented one.
+
 ## Local Rule
 
 If a workflow cannot be explained from `Makefile`, `makes/`, or a handbook
 page, it is not a healthy repository entrypoint yet.
 
-## Reading Rule
-
-Use this page when the work is local and the main question is which baseline
-commands should happen before review.
-
-## Next Reads
+## Continue Reading
 
 - [Contributor Workflows](contributor-workflows.md)
 - [Automation Surfaces](automation-surfaces.md)
