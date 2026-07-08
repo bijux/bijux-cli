@@ -91,6 +91,7 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- run --json "${GRAPH_PATH}" \
   --run-id first-run-tutorial-cold \
   --cache readwrite \
   --cache-dir "${CACHE_ROOT}" \
+  --progress compact \
   --input "source_dir=${SOURCE_DIR}" \
   --input "report_title=First Run Tutorial Report"
 ```
@@ -100,6 +101,12 @@ The run writes a retained run directory under:
 ```text
 artifacts/first-run-tutorial-runs/run-first-run-tutorial-cold
 ```
+
+`--progress compact` is the readable long-run lane. In human mode it keeps a
+single live status line on stderr. With `--json`, it also streams
+`dag.run.progress` events before the final `dag.run` envelope so automation can
+watch elapsed time, active nodes, cache hits, and the latest failure without
+waiting for completion.
 
 ## Inspect The Run
 
@@ -144,6 +151,7 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- run --json "${GRAPH_PATH}" \
   --run-id first-run-tutorial-warm \
   --cache readwrite \
   --cache-dir "${CACHE_ROOT}" \
+  --progress compact \
   --input "source_dir=${SOURCE_DIR}" \
   --input "report_title=First Run Tutorial Report"
 ```
