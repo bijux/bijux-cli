@@ -164,15 +164,9 @@ boundary input rematerialization, and post-repair verification on a failed run,
 use
 [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
 
-For the repository-backed internal evidence lane that exercises cron preview,
-deterministic schedule run ids, queue dispatch, explicit ledger completion,
-and the handoff from scheduled submission into a retained DAG run, use
-[Scheduled Catalog Refresh Workflow](../../docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md).
-
-For the repository-backed internal evidence lane that exercises deterministic
-backfill fanout, aggregate summary reporting, retried partition state, and
-explicit handoff from backfill requests into retained DAG runs, use
-[Historical Catalog Backfill Workflow](../../docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md).
+Repository-owned schedule and backfill execution flows are documented in the
+DAG handbook, but they remain internal workflow lanes rather than part of the
+default public `v0.4.0` runtime story.
 
 ## Related links
 

@@ -53,40 +53,27 @@ route is a public compatibility promise.
   work: `validate`, `plan`, `run`, `replay`, `runs`, `artifact`,
   `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`,
   `version`, `commands`, and `completions`.
-- branch-backed DAG workflows are part of that stable local operator surface;
-  retained runs record the selected branch decision, the skipped lane, and the
-  join-node trigger outcome.
-- local container-backed DAG nodes are part of that stable operator surface
-  when a supported engine such as Docker is available on `PATH`; the runtime
-  records engine and image identity and fails clearly when the engine is
+- Branch-backed DAG workflows are part of the stable local operator surface.
+  Retained runs record the selected branch decision, skipped lane, and join
+  trigger outcome.
+- Container-backed DAG nodes are part of the stable local operator surface
+  when a supported engine such as Docker is available on `PATH`. Retained runs
+  record engine and image identity and fail clearly when the engine is
   unavailable.
-- on Unix hosts, timed-out or cancelled local DAG subprocesses are terminated
-  as a subprocess group so background child and grandchild helpers do not keep
-  running after the node finishes; non-Unix hosts still rely on best-effort
-  termination.
-- retained DAG node evidence now includes terminal stdout/stderr files,
-  per-attempt log copies, process exit code when exposed, and bounded
-  stdout/stderr tail metadata in `trace.json`.
-- `bijux-dag run --backend slurm` submits nodes through `sbatch`, polls
-  `sacct`, and records per-node `batch-job.json` plus scheduler stdout/stderr
-  evidence when the scheduled worker can reopen the same retained run
-  directory on a shared filesystem.
-- `bijux-dag run --backend kubernetes` runs container nodes as Kubernetes Jobs
-  through `kubectl`, records per-node `batch-job.json`, and uses a shared
-  persistent volume claim to mount retained node inputs, outputs, and work
-  directories into the Job pod.
+- `bijux-dag run --backend slurm` and `bijux-dag run --backend kubernetes`
+  are part of the current release boundary with the documented shared-storage
+  requirements for retained run evidence.
 - Experimental DAG routes remain callable by explicit path, but they are not
   part of the stable compatibility lane. Use
   `bijux-dag commands --lane experimental` when you intentionally need that
   inventory.
-- Simulated and maintainer-only DAG namespaces require
-  `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`, and they
-  now require deliberate lane inventory through `bijux-dag commands --lane
-  simulated` or `bijux-dag commands --lane internal`.
-- The current internal schedule lane is repository-tested for cron preview,
-  durable submission, backfill planning, aggregate backfill summary, failed-
-  partition retry, queue dispatch, and queue-to-run linkage, but it remains
-  outside the stable `v0.4.0` operator contract.
+- Simulated and maintainer-only DAG namespaces require deliberate opt-in
+  through `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`
+  together with lane inventory through `bijux-dag commands --lane simulated`
+  or `bijux-dag commands --lane internal`.
+- The repository-owned schedule and backfill lanes are tested and documented,
+  but they remain internal surfaces rather than part of the default `v0.4.0`
+  operator contract.
 - Generic HPC execution beyond the shared-filesystem SLURM lane, public remote
   workers, and public enterprise or federation APIs are not part of the
   `v0.4.0` public product boundary.
@@ -111,7 +98,9 @@ For what comes after that boundary, use
 | future | not a `v0.4.0` product promise | generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
 
 Build operator procedures on the stable row. Treat the other rows as deliberate
-opt-in surfaces, not as default product guarantees.
+opt-in surfaces, not as default product guarantees. For execution evidence,
+backend requirements, and replay details, use the DAG handbook instead of
+treating the root README as the full operating manual.
 
 ## Start Here
 

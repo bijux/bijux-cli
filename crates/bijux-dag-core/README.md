@@ -84,19 +84,14 @@ For the repository-backed authoring example that binds graph-owned path inputs
 into a retryable compliance gate and a repairable publication boundary, use
 [`evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json`](../../evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json).
 
-For the repository-backed authoring example that binds a schedule-owned
-timestamp into a required integer graph input and a promotable publication
-output, use
-[`evidence/dag/authoring/examples/scheduled-catalog-refresh.dag.json`](../../evidence/dag/authoring/examples/scheduled-catalog-refresh.dag.json).
-
-For the repository-backed authoring example that binds requested slots plus
-backfill-owned window metadata into a real retained publication surface, use
-[`evidence/dag/authoring/examples/historical-catalog-backfill.dag.json`](../../evidence/dag/authoring/examples/historical-catalog-backfill.dag.json).
-
 For the operator-facing explanation of how graph identity relates to plan,
 execution, cache, and replay identity after this crate lowers a graph into
 deterministic execution surfaces, use
 [Reproducibility Model](../../docs/bijux-dag/interfaces/reference/reproducibility-model.md).
+
+Repository-owned schedule and backfill authoring examples also live under
+`evidence/dag/authoring/examples/`, but they remain internal workflow lanes
+rather than part of the default public `v0.4.0` package story.
 
 ## Related links
 
