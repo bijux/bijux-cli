@@ -39,5 +39,5 @@ and the handbook page
 
 ## Next reads
 
-- [Installation And Setup](installation-and-setup.md)
+- [Installation And Setup](../installation-and-setup.md)
 - [First Hour With Bijux Dag](first-hour-with-bijux-dag.md)
