@@ -16,6 +16,13 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
+fn timeline_terminal_event_name(status: &str) -> &'static str {
+    match status {
+        "skipped" | "cancelled" => "node_skipped",
+        _ => "node_finished",
+    }
+}
+
 pub(crate) fn hash_run_dir(run_dir: &Path) -> Result<String, ExitCode> {
     let mut hasher = Sha256::new();
     for rel in ["manifest.json", "graph.snapshot.json", "outputs/index.json"] {
@@ -335,6 +342,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
                     "failed" => observed_statuses.push(NodeStatus::Failed),
                     "skipped" => observed_statuses.push(NodeStatus::Skipped),
                     "cached" => observed_statuses.push(NodeStatus::Cached),
+                    "cancelled" => observed_statuses.push(NodeStatus::Cancelled),
                     _ => {}
                 }
             }
@@ -508,26 +516,28 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
             let Some(node_id) = node.get("node_id").and_then(Value::as_str) else {
                 continue;
             };
+            let node_status = node.get("status").and_then(Value::as_str).unwrap_or("unknown");
             let started = events
                 .iter()
                 .filter(|event| {
                     event.node_id.as_deref() == Some(node_id) && event.name == "node_started"
                 })
                 .count();
+            let terminal_event_name = timeline_terminal_event_name(node_status);
             let finished = events
                 .iter()
                 .filter(|event| {
-                    event.node_id.as_deref() == Some(node_id) && event.name == "node_finished"
+                    event.node_id.as_deref() == Some(node_id) && event.name == terminal_event_name
                 })
                 .count();
-            if started == 0 {
+            if !matches!(node_status, "cached" | "skipped" | "cancelled") && started == 0 {
                 per_node_gaps.push(format!("{node_id}: missing node_started event"));
             }
             if finished == 0 {
-                per_node_gaps.push(format!("{node_id}: missing node_finished event"));
+                per_node_gaps.push(format!("{node_id}: missing {terminal_event_name} event"));
             }
             if finished > 1 {
-                per_node_gaps.push(format!("{node_id}: multiple node_finished events"));
+                per_node_gaps.push(format!("{node_id}: multiple {terminal_event_name} events"));
             }
         }
         if let Some(object) = report.as_object_mut() {
@@ -543,8 +553,10 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
         json!({
             "complete": false,
             "required_names_present": false,
+            "required_timeline_labels_present": false,
             "required_event_field_gaps": [],
             "missing_required_names": [],
+            "missing_required_timeline_labels": [],
             "monotonic_timestamps": false,
             "timeline_matches_reconstruction": false,
             "gaps": ["missing observability.events.json"],

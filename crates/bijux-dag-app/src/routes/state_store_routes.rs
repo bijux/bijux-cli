@@ -5,9 +5,11 @@ use bijux_dag_artifacts::NodeCounts;
 use bijux_dag_runtime::simulated_platform::{clock_within_assumption, SchedulerClockAssumption};
 use bijux_dag_runtime::{
     build_cost_model, check_run_consistency, event_names_emitted_once, forecast_storage_growth,
-    required_event_fields_present, validate_and_repair_run_metadata, validate_required_event_names,
-    validate_storage_relative_path, EventRecord, NodeState, PersistedRunSnapshotRef,
-    RunCompactionPolicy, RunId, RunState, RunSummaryV2, StorageHealthReport,
+    reconstruct_timeline_from_events, required_event_fields_present,
+    validate_and_repair_run_metadata, validate_required_event_names,
+    validate_required_timeline_labels, validate_storage_relative_path, EventRecord, NodeState,
+    PersistedRunSnapshotRef, RunCompactionPolicy, RunId, RunState, RunSummaryV2,
+    StorageHealthReport,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -54,6 +56,7 @@ struct JournalSimulation {
 struct JournalReport {
     event_count: usize,
     required_names_present: bool,
+    required_timeline_labels_present: bool,
     append_only: bool,
     monotonic_timestamps: bool,
     singleton_boundaries_ok: bool,
@@ -299,6 +302,9 @@ fn transaction_payload(simulation: TransactionSimulation) -> (serde_json::Value,
 fn journal_payload(simulation: JournalSimulation) -> (serde_json::Value, bool) {
     let JournalSimulation { events, rewrite_detected } = simulation;
     let required_names_present = validate_required_event_names(&events).is_empty();
+    let timeline = reconstruct_timeline_from_events(&events);
+    let required_timeline_labels_present =
+        validate_required_timeline_labels(&events, &timeline).is_empty();
     let append_only = !rewrite_detected;
     let monotonic_timestamps = events.windows(2).all(|pair| pair[0].unix_ms <= pair[1].unix_ms);
     let singleton_boundaries_ok =
@@ -314,6 +320,9 @@ fn journal_payload(simulation: JournalSimulation) -> (serde_json::Value, bool) {
     if !required_names_present {
         gaps.push("journal is missing required lifecycle event names".to_string());
     }
+    if !required_timeline_labels_present {
+        gaps.push("journal is missing required timeline lifecycle labels".to_string());
+    }
     if !append_only {
         gaps.push("journal rewrite was detected on an append-only surface".to_string());
     }
@@ -326,6 +335,7 @@ fn journal_payload(simulation: JournalSimulation) -> (serde_json::Value, bool) {
     let report = JournalReport {
         event_count: events.len(),
         required_names_present,
+        required_timeline_labels_present,
         append_only,
         monotonic_timestamps,
         singleton_boundaries_ok,
@@ -891,6 +901,7 @@ mod tests {
         let (payload, ok) = journal_payload(simulation);
         assert!(ok);
         assert_eq!(payload["journal_ready"], true);
+        assert_eq!(payload["required_timeline_labels_present"], true);
     }
 
     #[test]
@@ -919,6 +930,7 @@ mod tests {
         let (payload, ok) = journal_payload(simulation);
         assert!(!ok);
         assert!(payload["gaps"].as_array().expect("gaps").len() >= 4);
+        assert_eq!(payload["required_timeline_labels_present"], true);
     }
 
     #[test]
