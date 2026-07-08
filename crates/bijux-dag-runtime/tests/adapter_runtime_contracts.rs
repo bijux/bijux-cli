@@ -2190,62 +2190,84 @@ fn adapter_conformance_suite_covers_shell_hardening_and_output_contract_scenario
     let file_transform_scenarios = &file_transform.scenarios;
     let http_scenarios = &http.scenarios;
     let python_scenarios = &python.scenarios;
-    assert!(file_transform_scenarios.iter().any(|scenario| {
-        scenario.scenario == "success"
-            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
-    }));
-    assert!(file_transform_scenarios.iter().any(|scenario| {
-        scenario.scenario == "failure"
-            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
-    }));
-    assert!(file_transform_scenarios.iter().any(|scenario| {
-        scenario.scenario == "cache_output"
-            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
-    }));
-    assert!(file_transform_scenarios.iter().any(|scenario| {
-        scenario.scenario == "missing_executable"
-            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Skip
-    }));
-    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "argv_contract"));
-    let argv_contract = shell
+    let output_manifest = file_transform
         .scenarios
         .iter()
-        .find(|scenario| scenario.scenario == "argv_contract")
-        .expect("shell argv contract");
-    assert!(argv_contract.reason.contains("non-blank executable"));
-    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "timeout"));
-    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "undeclared_output"));
-    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "workdir_isolation"));
-    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "missing_executable"));
-    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "cache_output"));
-    assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "non_utf8_output"));
-    assert!(python_scenarios.iter().any(|scenario| scenario.scenario == "timeout"));
+        .find(|scenario| scenario.scenario == "output_manifest")
+        .expect("file_transform output manifest");
+    assert_eq!(output_manifest.status, bijux_dag_runtime::AdapterScenarioStatus::Pass);
+    assert!(output_manifest.checked_by_execution);
+    assert_eq!(
+        output_manifest
+            .observation
+            .as_ref()
+            .expect("file_transform output observation")
+            .output_files,
+        vec!["artifact".to_string()]
+    );
+    assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario.scenario == "adapter_identity_schema"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+            && scenario.checked_by_execution
+    }));
+    assert!(shell.scenarios.iter().any(|scenario| {
+        scenario.scenario == "missing_output"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+            && scenario
+                .observation
+                .as_ref()
+                .and_then(|observation| observation.failure_code.as_deref())
+                == Some("OUTPUT_MISSING")
+    }));
+    assert!(shell.scenarios.iter().any(|scenario| {
+        scenario.scenario == "timeout"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+            && scenario.checked_by_execution
+    }));
+    assert!(shell.scenarios.iter().any(|scenario| {
+        scenario.scenario == "failure_schema"
+            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+            && scenario
+                .observation
+                .as_ref()
+                .and_then(|observation| observation.failure_code.as_deref())
+                == Some("EXEC_FAIL")
+    }));
     assert!(python_scenarios.iter().any(|scenario| {
         scenario.scenario == "failure"
             && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+            && scenario.checked_by_execution
     }));
     assert!(python_scenarios.iter().any(|scenario| {
-        scenario.scenario == "env_policy"
+        scenario.scenario == "timeout"
             && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+            && scenario
+                .observation
+                .as_ref()
+                .and_then(|observation| observation.failure_code.as_deref())
+                == Some("EXEC_TIMEOUT")
     }));
     assert!(python_scenarios.iter().any(|scenario| {
-        scenario.scenario == "workdir_isolation"
+        scenario.scenario == "adapter_identity_schema"
             && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
-    }));
-    assert!(python_scenarios.iter().any(|scenario| {
-        scenario.scenario == "missing_executable"
-            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+            && scenario.checked_by_execution
     }));
     assert!(http_scenarios.iter().any(|scenario| {
         scenario.scenario == "failure"
             && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
+            && scenario
+                .observation
+                .as_ref()
+                .and_then(|observation| observation.failure_code.as_deref())
+                == Some("HTTP_STATUS_ERROR")
     }));
     assert!(http_scenarios.iter().any(|scenario| {
         scenario.scenario == "timeout"
             && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Pass
-    }));
-    assert!(http_scenarios.iter().any(|scenario| {
-        scenario.scenario == "missing_executable"
-            && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Skip
+            && scenario
+                .observation
+                .as_ref()
+                .and_then(|observation| observation.failure_code.as_deref())
+                == Some("EXEC_TIMEOUT")
     }));
 }
