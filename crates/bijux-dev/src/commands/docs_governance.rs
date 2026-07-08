@@ -15,6 +15,15 @@ const LIMITATION_REQUIRED_FIELDS: [&str; 7] = [
     "- planned fix:",
     "- release target:",
 ];
+const REQUIRED_LIMITATION_SECTION_HEADINGS: [&str; 7] = [
+    "## Stable Local Execution Limitations",
+    "## Shell Isolation Limitations",
+    "## Container Limitations",
+    "## Scheduling Limitations",
+    "## Remote/Distributed Limitations",
+    "## API Stability Limitations",
+    "## Cache/Replay Limitations",
+];
 const RISK_REGISTER_REL_PATH: &str = "docs/bijux-dag/quality/risk-register.md";
 const RISK_REQUIRED_FIELDS: [&str; 6] = [
     "- severity:",
@@ -327,12 +336,18 @@ fn limitation_field_value<'a>(record: &'a LimitationRecord, field: &str) -> Opti
 }
 
 fn validate_known_limitations_content(content: &str) -> Result<(), String> {
+    let mut violations = Vec::new();
+    for heading in REQUIRED_LIMITATION_SECTION_HEADINGS {
+        if !content.contains(heading) {
+            violations.push(format!("missing limitations section heading `{heading}`"));
+        }
+    }
+
     let records = parse_limitation_records(content);
     if records.is_empty() {
         return Err("missing `### LIM-...` limitation records".to_string());
     }
 
-    let mut violations = Vec::new();
     let mut seen_ids = BTreeSet::new();
     let mut has_experimental = false;
     let mut has_simulation = false;
@@ -1149,6 +1164,10 @@ also good `docs/index.md`\n";
     #[test]
     fn known_limitations_validation_accepts_complete_records() {
         let content = "\
+## Stable Local Execution Limitations\n\
+\n\
+## Shell Isolation Limitations\n\
+\n\
 ### LIM-100 Experimental route example\n\
 \n\
 - stability class: `experimental-surface`\n\
@@ -1159,6 +1178,14 @@ also good `docs/index.md`\n";
 - planned fix: promote only fully documented commands.\n\
 - release target: no guarantee in `v0.4.x`.\n\
 \n\
+## Container Limitations\n\
+\n\
+## Scheduling Limitations\n\
+\n\
+## Remote/Distributed Limitations\n\
+\n\
+## API Stability Limitations\n\
+\n\
 ### LIM-101 Simulation namespace example\n\
 \n\
 - stability class: `simulation-surface`\n\
@@ -1167,7 +1194,9 @@ also good `docs/index.md`\n";
 - impact: operators cannot treat them as production capabilities.\n\
 - workaround: use stable commands for real workflows.\n\
 - planned fix: add real backend semantics before promotion.\n\
-- release target: remain non-public in `v0.4.x`.\n";
+- release target: remain non-public in `v0.4.x`.\n\
+\n\
+## Cache/Replay Limitations\n";
 
         assert!(validate_known_limitations_content(content).is_ok());
     }
@@ -1188,6 +1217,37 @@ also good `docs/index.md`\n";
             validate_known_limitations_content(content).expect_err("validation should fail");
         assert!(error.contains("LIM-100:1: missing limitation field `- planned fix:`"));
         assert!(error.contains("missing `simulation-surface` limitation record"));
+    }
+
+    #[test]
+    fn known_limitations_validation_requires_backlog_section_headings() {
+        let content = "\
+### LIM-100 Experimental route example\n\
+\n\
+- stability class: `experimental-surface`\n\
+- affected command or API: `bijux-dag hidden`\n\
+- limitation: hidden commands do not carry a public compatibility guarantee.\n\
+- impact: downstream automation may break.\n\
+- workaround: use the visible operator contract only.\n\
+- planned fix: promote only fully documented commands.\n\
+- release target: no guarantee in `v0.4.x`.\n\
+\n\
+### LIM-101 Simulation namespace example\n\
+\n\
+- stability class: `simulation-surface`\n\
+- affected command or API: `bijux-dag simulated`\n\
+- limitation: simulation namespaces model behavior rather than shipping it.\n\
+- impact: operators cannot treat them as production capabilities.\n\
+- workaround: use stable commands for real workflows.\n\
+- planned fix: add real backend semantics before promotion.\n\
+- release target: remain non-public in `v0.4.x`.\n";
+
+        let error =
+            validate_known_limitations_content(content).expect_err("validation should fail");
+        assert!(
+            error.contains("missing limitations section heading `## Stable Local Execution Limitations`")
+        );
+        assert!(error.contains("missing limitations section heading `## Cache/Replay Limitations`"));
     }
 
     #[test]
