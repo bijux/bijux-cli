@@ -46,6 +46,6 @@ Public error code behavior is governed by `docs/spec/ERROR_CONTRACT.md`.
 
 ## Next Reads
 
-- [Error Model](../architecture/error-model.md)
-- [CLI Surface](cli-surface.md)
-- [Data Contracts](data-contracts.md)
+- [Error Model](../../architecture/error-model.md)
+- [CLI Surface](../cli-surface.md)
+- [Data Contracts](../data-contracts.md)
