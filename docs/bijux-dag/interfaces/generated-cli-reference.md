@@ -88,6 +88,7 @@ v0.4.0 surface truth table:
 
 Use `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.
 ```
+
 ## `validate`
 
 ### Examples
@@ -851,6 +852,7 @@ Commands:
   id-explain
   tree
   timeline
+  scheduler-checkpoint
   stop
   diff
   verify
@@ -863,7 +865,7 @@ Commands:
   flakes
   diagnostics-bundle
   index
-  help                Print this message or the help of the given subcommand(s)
+  help                  Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help
@@ -1096,6 +1098,37 @@ Options:
       --since-unix-ms <SINCE_UNIX_MS>
 
       --until-unix-ms <UNTIL_UNIX_MS>
+
+  -h, --help
+          Print help
+```
+
+### `runs scheduler-checkpoint`
+
+#### Examples
+
+- Inspect the retained scheduler checkpoint for one run:
+
+```bash
+bijux-dag runs scheduler-checkpoint ${RUN_ID} --root ${RUNS_ROOT}
+```
+
+- Emit the retained scheduler checkpoint in JSON:
+
+```bash
+bijux-dag --json runs scheduler-checkpoint ${RUN_ID} --root ${RUNS_ROOT}
+```
+
+#### Help
+
+```text
+Usage: scheduler-checkpoint --root <ROOT> <RUN_ID>
+
+Arguments:
+  <RUN_ID>
+
+Options:
+      --root <ROOT>
 
   -h, --help
           Print help
@@ -1940,4 +1973,5 @@ Options:
   -h, --help
           Print help
 ```
+
 

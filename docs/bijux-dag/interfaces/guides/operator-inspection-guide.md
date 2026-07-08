@@ -18,12 +18,17 @@ to deeper explanation only as needed.
 2. `bijux-dag runs show`
 3. `bijux-dag runs inspect`
 4. `bijux-dag runs timeline`
-5. `bijux-dag runs explain-failure`
-6. `bijux-dag runs doctor`
+5. `bijux-dag runs scheduler-checkpoint`
+6. `bijux-dag runs explain-failure`
+7. `bijux-dag runs doctor`
 
 Use `bijux-dag runs timeline --node <node-id> --event <event-name>` when the
 question is about one failure or branch of the run, and add `--since-unix-ms`
 or `--until-unix-ms` when narrowing to a precise time window.
+
+Use `bijux-dag runs scheduler-checkpoint` when the question is why the
+scheduler stopped dispatching or which nodes were ready, blocked, inflight, or
+already completed at the retained loop boundary.
 
 The timeline is the authoritative ordered execution story for a run. Expect it
 to open with `run_started`, close with `run_completed`, and use normalized node
@@ -37,6 +42,8 @@ names into operator workflows.
 - treat `unsupported`, `corrupt`, and `incomplete` as distinct operator
   outcomes
 - use `timeline` when timing coherence matters
+- use `scheduler-checkpoint` when scheduler state, not just event order, is the
+  question
 - prefer `--json` for automation and filtered timeline extraction
 - expect cancelled or failed runs to still end with `run_completed`; the run
   status explains the outcome while the timeline explains the ordered path

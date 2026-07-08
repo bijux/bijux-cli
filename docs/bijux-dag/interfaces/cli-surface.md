@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-08
 ---
 
 # CLI Surface
@@ -66,6 +66,12 @@ Within `runs ...`, `runs compare` is the retained-run attribution surface: it
 compares fingerprints, graph inputs, selected nodes, node statuses, output
 hashes, and the first meaningful divergence without claiming a deeper
 directory-wide diff than the retained evidence supports.
+
+Within that same retained-run lane, `runs scheduler-checkpoint` is the stable
+scheduler-state inspection surface: it reports the retained ready queue,
+scheduled batch, resource-blocked nodes, inflight nodes, completed statuses,
+and decision reason without requiring an operator to reconstruct that boundary
+from the full timeline.
 
 If you want the concrete operator path through those groups, read
 [Operator Workflows](./operator-workflows.md).

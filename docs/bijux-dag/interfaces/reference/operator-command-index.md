@@ -4,7 +4,7 @@ audience: operators
 type: reference
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-08
 ---
 
 # Operator Command Index
@@ -31,6 +31,9 @@ verify, compare, or diagnose it.
   `observability.timeline.json`, with node-trace projection only as a
   compatibility fallback; supports `--node`, `--event`, `--since-unix-ms`,
   `--until-unix-ms`, and `--json`
+- `bijux-dag runs scheduler-checkpoint`: inspect retained scheduler checkpoint
+  evidence including ready nodes, scheduled batch, resource-blocked nodes,
+  inflight nodes, completed statuses, and the decision reason for that loop
 - `bijux-dag runs diff`: compare two run directories
 - `bijux-dag runs verify`: verify run integrity and compatibility
 - `bijux-dag runs doctor`: diagnose corrupt or incomplete run evidence

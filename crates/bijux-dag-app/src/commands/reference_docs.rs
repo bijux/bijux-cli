@@ -781,6 +781,16 @@ fn stable_examples_for_path(path: &str) -> Option<Vec<ReferenceExample>> {
                 command: "bijux-dag --json runs timeline ${RUN_ID} --root ${RUNS_ROOT} --node publish",
             },
         ],
+        "runs scheduler-checkpoint" => vec![
+            ReferenceExample {
+                purpose: "Inspect the retained scheduler checkpoint for one run",
+                command: "bijux-dag runs scheduler-checkpoint ${RUN_ID} --root ${RUNS_ROOT}",
+            },
+            ReferenceExample {
+                purpose: "Emit the retained scheduler checkpoint in JSON",
+                command: "bijux-dag --json runs scheduler-checkpoint ${RUN_ID} --root ${RUNS_ROOT}",
+            },
+        ],
         "runs tree" => vec![
             ReferenceExample {
                 purpose: "Render the node tree for one retained run",
