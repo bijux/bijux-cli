@@ -27,3 +27,12 @@ fn generated_adapter_reference_matches_checked_in_spec() {
         fs::read_to_string(repo_root().join("docs/spec/ADAPTER_CONTRACT.md")).expect("read spec");
     assert_eq!(rendered, checked_in);
 }
+
+#[test]
+fn generated_adapter_reference_renders_execution_observations_without_option_debug_output() {
+    let document = registered_adapter_reference_document();
+    let rendered = generate_adapter_reference_markdown(&document);
+    assert!(rendered.contains("checked_by_execution=true"));
+    assert!(rendered.contains("observed status=success"));
+    assert!(!rendered.contains("Some(\""));
+}
