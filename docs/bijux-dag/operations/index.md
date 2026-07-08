@@ -13,8 +13,24 @@ last_reviewed: 2026-07-08
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles.
 
-DAG operations focus on repeatable execution, artifact evidence, and predictable
-recovery under change.
+Use this section when you need to run real DAG workflows, inspect retained
+evidence, recover from failures, or understand the operational boundary of the
+released local-first product.
+
+DAG operations focus on repeatable execution, retained artifacts, and
+predictable recovery under change.
+
+## Start With The Situation You Have
+
+| If you need to... | Open this page |
+| --- | --- |
+| get from checkout to a real run quickly | [First-Run Tutorial](guides/first-run-tutorial.md) |
+| install the tool and verify the environment | [Installation and Setup](installation-and-setup.md) |
+| run the normal local workflow loop | [Common Workflows](common-workflows.md) |
+| inspect failures, traces, and retained evidence | [Observability and Diagnostics](observability-and-diagnostics.md) |
+| recover from runtime or workflow failures | [Failure Recovery](failure-recovery.md) |
+| understand release boundaries and what the shipped product claims today | [v0.4.0 Release Notes](v0-4-0-release-notes.md) |
+| understand runtime limits before deployment or isolation work | [Deployment Boundaries](deployment-boundaries.md) |
 
 ## Operating Priorities
 
@@ -59,8 +75,11 @@ recovery under change.
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Change Validation](../quality/change-validation.md)
 
-## Reading Rule
+## Before You Move Deeper
 
-Use this section when the question is about executing, diagnosing, or recovering
-graph runs in practice. Move back to Interfaces or Quality when the next
-question is about contracts or proof rather than operations.
+- Stay in this section when the question is how to execute, diagnose, or
+  recover real graph runs.
+- Move to Interfaces when the next question is what operators or tooling can
+  depend on.
+- Move to package pages when you already know the issue belongs to one crate
+  such as graph truth, runtime policy, or response shaping.

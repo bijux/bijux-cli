@@ -9,16 +9,39 @@ last_reviewed: 2026-04-06
 
 # CLI Operations
 
-The operations section explains how to run, validate, diagnose, and release
-`bijux-cli` in daily engineering and automation workflows.
+Use this section when you are running, supporting, diagnosing, or releasing
+`bijux`. It is the operator and maintainer runbook for the command runtime
+rather than a description of the public API.
 
-## Operational Scope
+Start here when the question is practical: install it, validate it, recover
+from a failure, understand diagnostics, or prepare a release.
+
+## Start With The Situation You Have
+
+| If you need to... | Open this page |
+| --- | --- |
+| install the CLI and prove the runtime is healthy | [Installation and Setup](installation-and-setup.md) |
+| work on the codebase locally | [Local Development](local-development.md) |
+| run normal operator flows | [Common Workflows](common-workflows.md) |
+| diagnose failures or odd runtime output | [Diagnostics Guide](diagnostics-guide.md) |
+| understand observability and telemetry surfaces | [Observability and Diagnostics](observability-and-diagnostics.md) |
+| release the CLI or review versioning rules | [Release and Versioning](release-and-versioning.md) |
+| understand safety boundaries before deployment | [Security and Safety](security-and-safety.md) |
+
+## What This Section Covers
 
 - installation and first-run verification
 - local build/test and command iteration loops
 - day-to-day command workflows for operators
 - diagnostics and telemetry collection patterns
 - release, security, and deployment boundary practices
+
+## Operating Priorities
+
+- prove runtime health with commands and evidence, not assumption
+- keep native and bridged entrypoints aligned when diagnosing behavior
+- preserve deterministic output and reproducible diagnostics in automation
+- treat release and safety documentation as part of the shipped runtime surface
 
 ## Code Anchors
 
@@ -41,8 +64,11 @@ The operations section explains how to run, validate, diagnose, and release
 - [Security and Safety](security-and-safety.md)
 - [Deployment Boundaries](reference/deployment-boundaries.md)
 
-## Reading Rule
+## Before You Move Deeper
 
-Use this section when the question is about running or supporting the CLI in
-practice. Move back to Interfaces when the next question is about stable caller
-contracts instead of operating behavior.
+- Stay in this section when the question is how to run or support the CLI in
+  practice.
+- Move to Interfaces when the next question is about stable caller contracts
+  instead of operating behavior.
+- Move to package pages when you already know the exact owning crate and need a
+  crate-local boundary.
