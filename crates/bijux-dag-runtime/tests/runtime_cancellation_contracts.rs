@@ -143,6 +143,30 @@ fn operator_cancellation_preserves_completed_nodes_and_marks_remaining_nodes_can
     assert_eq!(publish["transition_cause"], "CancelRequested");
 
     let timeline = read_timeline(&run_path);
+    let run_started_idx = timeline
+        .iter()
+        .position(|entry| entry["label"] == "run_started")
+        .expect("run started timeline entry");
+    let execute_cancel_idx = timeline
+        .iter()
+        .position(|entry| {
+            entry["label"] == "node_cancelled"
+                && entry["node_id"] == "execute"
+                && entry["source_event"] == "node_finished"
+        })
+        .expect("execute cancellation timeline entry");
+    let publish_cancel_idx = timeline
+        .iter()
+        .position(|entry| {
+            entry["label"] == "node_cancelled"
+                && entry["node_id"] == "publish"
+                && entry["source_event"] == "node_skipped"
+        })
+        .expect("publish cancellation timeline entry");
+    let run_completed_idx = timeline
+        .iter()
+        .position(|entry| entry["label"] == "run_completed")
+        .expect("run completed timeline entry");
     assert!(timeline.iter().any(|entry| {
         entry["label"] == "node_cancelled"
             && entry["node_id"] == "execute"
@@ -153,6 +177,9 @@ fn operator_cancellation_preserves_completed_nodes_and_marks_remaining_nodes_can
             && entry["node_id"] == "publish"
             && entry["source_event"] == "node_skipped"
     }));
+    assert!(run_started_idx < execute_cancel_idx);
+    assert!(execute_cancel_idx < publish_cancel_idx);
+    assert!(publish_cancel_idx < run_completed_idx);
 }
 
 #[test]
@@ -239,5 +266,10 @@ fn stop_request_file_cancels_running_run_and_records_operator_request_cause() {
                 && entry["source_event"] == "node_skipped"
         })
         .expect("publish cancellation timeline entry");
+    let run_completed_idx = timeline
+        .iter()
+        .position(|entry| entry["label"] == "run_completed")
+        .expect("run completed timeline entry");
     assert!(cancel_idx < publish_idx);
+    assert!(publish_idx < run_completed_idx);
 }
