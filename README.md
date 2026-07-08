@@ -202,6 +202,17 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- commands
 cargo run -p bijux-dag-cli --bin bijux-dag -- commands --lane experimental
 ```
 
+For the shortest repository-backed onboarding path from build to cache-aware
+retained run evidence, start with
+[`docs/bijux-dag/operations/guides/first-run-tutorial.md`](docs/bijux-dag/operations/guides/first-run-tutorial.md).
+That tutorial covers:
+
+- graph inspection before execution
+- one real workflow with runtime inputs
+- retained run and artifact inspection
+- warm cache reuse on a second run
+- focused replay and strict verification
+
 For the repository-backed internal schedule workflow that proves cron preview,
 same-slot suppression, queue dispatch, and explicit run linkage without
 claiming a public scheduler service, use
@@ -459,6 +470,7 @@ and strict post-repair verification, use
 
 Representative DAG workflow guides:
 
+- [`docs/bijux-dag/operations/guides/first-run-tutorial.md`](docs/bijux-dag/operations/guides/first-run-tutorial.md) for the five-minute path from build to graph inspection, retained artifacts, warm cache reuse, replay, and strict verification
 - [`docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md`](docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md) for one retained workflow family that demonstrates branch selection, cache reuse, run comparison, replay proof, strict verification, and artifact promotion together
 - [`docs/bijux-dag/operations/guides/file-processing-workflow.md`](docs/bijux-dag/operations/guides/file-processing-workflow.md) for a host-shell artifact workflow
 - [`docs/bijux-dag/operations/guides/cache-behavior-workflow.md`](docs/bijux-dag/operations/guides/cache-behavior-workflow.md) for selective invalidation, corruption refusal, and cache-miss explanation on a retained workflow family
