@@ -12,13 +12,13 @@ use bijux_dag_runtime::{
     build_execution_isolation_report, build_heartbeat_audit_report,
     build_manual_intervention_audit_report, build_pause_resume_audit_report,
     build_retry_decision_report, build_timeout_audit_report, build_transition_audit_report,
-    check_run_consistency, detect_stuck_run, evaluate_pause_state,
-    execute_remote_payload_in_place, reconcile_orphaned_node, should_quarantine_run,
-    validate_and_repair_run_metadata, BatchAttemptState, BatchLifecycleEvent,
-    DispatchKeyRecord, InterruptionClass, ManualInterventionRecord, MockRemoteWorker, NodeState,
-    NodeTransition, OperatorRetryPolicy, RemoteNodeExecutionPayload, RemoteWorkerExecutor,
-    ResumePolicy, RunPausePolicy, RunSnapshot, RunState, RunSummaryV2, RunTransition,
-    RuntimeConfig, SchedulerRecoveryRule, StuckRunPolicy, TaskIsolationMode,
+    check_run_consistency, detect_stuck_run, evaluate_pause_state, execute_remote_payload_in_place,
+    reconcile_orphaned_node, should_quarantine_run, validate_and_repair_run_metadata,
+    BatchAttemptState, BatchLifecycleEvent, DispatchKeyRecord, InterruptionClass,
+    ManualInterventionRecord, MockRemoteWorker, NodeState, NodeTransition, OperatorRetryPolicy,
+    RemoteNodeExecutionPayload, RemoteWorkerExecutor, ResumePolicy, RunPausePolicy, RunSnapshot,
+    RunState, RunSummaryV2, RunTransition, RuntimeConfig, SchedulerRecoveryRule, StuckRunPolicy,
+    TaskIsolationMode,
 };
 use serde::Deserialize;
 use serde::Serialize;
@@ -498,15 +498,19 @@ pub(crate) fn handle_runtime_command(
             if let Some(parent) = result.parent() {
                 fs::create_dir_all(parent).map_err(|_| ExitCode::from(3))?;
             }
-            fs::write(result, serde_json::to_vec_pretty(&execution).map_err(|_| ExitCode::from(3))?)
-                .map_err(|_| ExitCode::from(3))?;
+            fs::write(
+                result,
+                serde_json::to_vec_pretty(&execution).map_err(|_| ExitCode::from(3))?,
+            )
+            .map_err(|_| ExitCode::from(3))?;
             Ok(match execution.node_result.status {
                 bijux_dag_runtime::NodeStatus::Success | bijux_dag_runtime::NodeStatus::Cached => {
                     ExitCode::SUCCESS
                 }
                 bijux_dag_runtime::NodeStatus::Cancelled => ExitCode::from(130),
-                bijux_dag_runtime::NodeStatus::Skipped
-                | bijux_dag_runtime::NodeStatus::Failed => ExitCode::from(3),
+                bijux_dag_runtime::NodeStatus::Skipped | bijux_dag_runtime::NodeStatus::Failed => {
+                    ExitCode::from(3)
+                }
             })
         }
         RuntimeCommands::Isolation { dag } => {

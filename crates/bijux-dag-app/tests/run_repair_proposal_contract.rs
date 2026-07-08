@@ -288,12 +288,8 @@ fn runtime_repair_restores_corrupt_output_from_verified_cache_entry() {
     let temp = tempfile::tempdir().expect("tempdir");
     let (run_dir, runs_dir, cache_dir) = build_cached_const_run(&root, temp.path());
 
-    let output_path = run_dir
-        .join("nodes")
-        .join("render")
-        .join("outputs")
-        .join("render")
-        .join("report.html");
+    let output_path =
+        run_dir.join("nodes").join("render").join("outputs").join("render").join("report.html");
     let healthy = fs::read_to_string(&output_path).expect("healthy output");
     fs::write(&output_path, "<h1>corrupt-html</h1>").expect("corrupt output");
 
@@ -304,21 +300,10 @@ fn runtime_repair_restores_corrupt_output_from_verified_cache_entry() {
     assert_eq!(repair["ok"], true);
     assert_eq!(repair["data"]["repair_run"], Value::Null);
     assert_eq!(
-        repair["data"]["cache_recoveries_applied"]
-            .as_array()
-            .map_or(0, std::vec::Vec::len),
+        repair["data"]["cache_recoveries_applied"].as_array().map_or(0, std::vec::Vec::len),
         1
     );
-    assert_eq!(
-        repair["data"]["cache_recoveries_applied"][0]["node_id"],
-        "render"
-    );
-    assert_eq!(
-        fs::read_to_string(&output_path).expect("restored output"),
-        healthy
-    );
-    assert_eq!(
-        repair["data"]["issues"].as_array().map_or(0, std::vec::Vec::len),
-        0
-    );
+    assert_eq!(repair["data"]["cache_recoveries_applied"][0]["node_id"], "render");
+    assert_eq!(fs::read_to_string(&output_path).expect("restored output"), healthy);
+    assert_eq!(repair["data"]["issues"].as_array().map_or(0, std::vec::Vec::len), 0);
 }

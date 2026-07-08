@@ -1,9 +1,10 @@
+use crate::cache::verify_cache_entry_cli;
 use crate::integrity_service::verify_run;
-use crate::run_data::env_cache_dir;
 use crate::read_run_id;
 use crate::replay_service::{
     node_rerun_diff_report, verify_replay_boundary_inputs, ReplayBoundaryVerificationReport,
 };
+use crate::run_data::env_cache_dir;
 use crate::run_data::load_snapshot;
 use crate::{read_file, ExitCode, Runtime};
 use bijux_dag_artifacts::{
@@ -11,7 +12,6 @@ use bijux_dag_artifacts::{
     OutputSummary, OutputsIndex, PolicyInfo, RunMetadata, RunOutputFile, RunOutputsIndex,
     RunSummary,
 };
-use crate::cache::verify_cache_entry_cli;
 use bijux_dag_core::Graph;
 use bijux_dag_runtime::{
     CacheMode, MaterializeMode, PolicyConfig, RunSnapshot, RunState, RuntimeConfig, SchedulerPolicy,
@@ -198,30 +198,15 @@ pub(crate) fn apply_run_repair(
     }
 
     if analysis.repair_roots.is_empty() {
-        return Ok(analysis_into_report(
-            run_dir,
-            analysis,
-            None,
-            cache_recoveries_applied,
-        ));
+        return Ok(analysis_into_report(run_dir, analysis, None, cache_recoveries_applied));
     }
     let out_dir = resolve_repair_out_dir(run_dir, options)?;
     if !analysis.blocking_issues.is_empty() {
-        return Ok(analysis_into_report(
-            run_dir,
-            analysis,
-            None,
-            cache_recoveries_applied,
-        ));
+        return Ok(analysis_into_report(run_dir, analysis, None, cache_recoveries_applied));
     }
     let boundary = analysis.boundary_verification.clone().ok_or_else(|| ExitCode::from(3))?;
     if !boundary.verified {
-        return Ok(analysis_into_report(
-            run_dir,
-            analysis,
-            None,
-            cache_recoveries_applied,
-        ));
+        return Ok(analysis_into_report(run_dir, analysis, None, cache_recoveries_applied));
     }
     let graph = analysis.graph.as_ref().ok_or_else(|| ExitCode::from(3))?;
     let runtime = Runtime::new();
@@ -252,12 +237,7 @@ pub(crate) fn apply_run_repair(
         verified,
         node_rerun_diffs,
     };
-    Ok(analysis_into_report(
-        run_dir,
-        analysis,
-        Some(execution),
-        cache_recoveries_applied,
-    ))
+    Ok(analysis_into_report(run_dir, analysis, Some(execution), cache_recoveries_applied))
 }
 
 pub(crate) fn run_repair_ok(report: &RunRepairReport, apply: bool) -> bool {
@@ -581,8 +561,9 @@ fn build_proposed_actions(
     if !cache_restorable_nodes.is_empty() {
         actions.push(RunRepairAction {
             kind: RunRepairActionKind::RestoreFromCache,
-            summary: "restore exact cached outputs for nodes whose retained cache proof still verifies"
-                .to_string(),
+            summary:
+                "restore exact cached outputs for nodes whose retained cache proof still verifies"
+                    .to_string(),
             node_roots: cache_restorable_nodes.clone(),
             affected_nodes: cache_restorable_nodes,
         });
@@ -828,12 +809,18 @@ fn collect_cache_recovery_candidates(
             if !verified {
                 continue;
             }
-            let Ok(index) = read_typed_json::<OutputsIndex>(&entry.join("outputs").join("index.json"))
+            let Ok(index) =
+                read_typed_json::<OutputsIndex>(&entry.join("outputs").join("index.json"))
             else {
                 continue;
             };
-            let mut restored_outputs =
-                index.files.iter().map(|file| file.name.clone()).collect::<BTreeSet<_>>().into_iter().collect::<Vec<_>>();
+            let mut restored_outputs = index
+                .files
+                .iter()
+                .map(|file| file.name.clone())
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>();
             restored_outputs.sort();
             let mut restored_paths =
                 index.files.iter().map(|file| file.path.clone()).collect::<Vec<_>>();
@@ -905,8 +892,10 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), ExitCode> {
         return Ok(());
     }
     fs::create_dir_all(dst).map_err(|_| ExitCode::from(3))?;
-    let mut entries =
-        fs::read_dir(src).map_err(|_| ExitCode::from(3))?.filter_map(Result::ok).collect::<Vec<_>>();
+    let mut entries = fs::read_dir(src)
+        .map_err(|_| ExitCode::from(3))?
+        .filter_map(Result::ok)
+        .collect::<Vec<_>>();
     entries.sort_by_key(|entry| entry.file_name());
     for entry in entries {
         copy_dir_recursive(&entry.path(), &dst.join(entry.file_name()))?;
@@ -1815,9 +1804,6 @@ mod tests {
         )
         .expect("run outputs json");
         assert_eq!(run_outputs["files"].as_array().map_or(0, Vec::len), 1);
-        assert_eq!(
-            run_outputs["files"][0]["path"],
-            "nodes/render/outputs/render/report.html"
-        );
+        assert_eq!(run_outputs["files"][0]["path"], "nodes/render/outputs/render/report.html");
     }
 }
