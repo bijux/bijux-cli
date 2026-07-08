@@ -86,6 +86,9 @@ flowchart LR
   app mounting, plugin routing, layered config, and the Python bridge
 - open [DAG Handbook](bijux-dag/index.md) for local DAG execution, replay,
   evidence, compatibility, and the supported `bijux-dag` surface
+- open [v0.4.0 DAG Release Notes](bijux-dag/operations/v0-4-0-release-notes.md)
+  when the question is the current public DAG claim, migration path, examples,
+  or validation commands
 - open [Bijux Dag Roadmap](tracking/bijux-dag-roadmap.md) when the question is
   which DAG capability lane may come next after the current release boundary
 - open [Maintainer Handbook](bijux-dev/index.md) for repository gates, docs

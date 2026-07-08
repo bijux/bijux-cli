@@ -252,6 +252,11 @@ node traces, input and output indexes, cache-entry layout, and promotion
 records, use
 [`docs/bijux-dag/interfaces/reference/run-evidence-layout.md`](docs/bijux-dag/interfaces/reference/run-evidence-layout.md).
 
+For the honest `v0.4.0` DAG release framing in one place, including stable
+features, non-stable lanes, known limitations, migration notes, examples, and
+validation commands, use
+[`docs/bijux-dag/operations/v0-4-0-release-notes.md`](docs/bijux-dag/operations/v0-4-0-release-notes.md).
+
 For the post-`v0.4.0` product direction after those current workflows, use
 [`docs/tracking/bijux-dag-roadmap.md`](docs/tracking/bijux-dag-roadmap.md).
 
