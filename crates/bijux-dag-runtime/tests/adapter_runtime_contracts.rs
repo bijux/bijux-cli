@@ -2066,6 +2066,12 @@ fn adapter_conformance_suite_covers_shell_hardening_and_output_contract_scenario
             && scenario.status == bijux_dag_runtime::AdapterScenarioStatus::Skip
     }));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "argv_contract"));
+    let argv_contract = shell
+        .scenarios
+        .iter()
+        .find(|scenario| scenario.scenario == "argv_contract")
+        .expect("shell argv contract");
+    assert!(argv_contract.reason.contains("non-blank executable"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "timeout"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "undeclared_output"));
     assert!(shell.scenarios.iter().any(|scenario| scenario.scenario == "workdir_isolation"));

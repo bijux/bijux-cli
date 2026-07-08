@@ -176,7 +176,7 @@ pub fn build_adapter_conformance_suite(
             shell_backed,
             !shell_backed,
             if shell_backed {
-                "shell nodes require a non-empty argv array of strings before execution starts"
+                "shell nodes require a non-empty argv array of strings and a non-blank executable before execution starts"
             } else {
                 "argv validation is specific to shell-backed command adapters"
             },
