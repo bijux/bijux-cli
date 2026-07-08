@@ -8,5 +8,5 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ### Added
 - First public crates.io release of `bijux-dag-runtime` as the execution engine behind `bijux-dag`.
-- Stable package metadata, release-grade README coverage, and package documentation links for external consumers.
-- Public execution, policy, replay, cache, adapter, and runtime-diagnostics surfaces for validated DAG graphs.
+- Stable Rust import lanes for execution planning, policy enforcement, replay classification, cache behavior, and runtime diagnostics.
+- Public adapter boundaries for local process execution, container-backed nodes, external adapters, and retained execution evidence.

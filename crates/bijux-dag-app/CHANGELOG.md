@@ -8,5 +8,5 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ### Added
 - First public crates.io release of `bijux-dag-app` as the application orchestration layer for the `bijux-dag` command surface.
-- Stable package metadata, release-grade README coverage, and package documentation links for external consumers.
-- Public orchestration, response-shaping, inspect, replay, cache, and migration flows built on the DAG core and runtime crates.
+- Stable Rust import lanes for command orchestration, typed response shaping, inspect flows, replay flows, and cache-oriented operator actions.
+- Public release-boundary routing that keeps stable, experimental, simulated, and internal command lanes deliberately separated.

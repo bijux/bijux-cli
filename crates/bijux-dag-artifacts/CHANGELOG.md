@@ -8,5 +8,5 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ### Added
 - First public crates.io release of `bijux-dag-artifacts` as the artifact identity and persistence layer for `bijux-dag`.
-- Stable package metadata, release-grade README coverage, and package documentation links for external consumers.
-- Public models and helpers for run manifests, outputs indexes, integrity proofs, layout helpers, and lifecycle policies.
+- Stable Rust import lanes for retained run manifests, node traces, outputs indexes, storage layout, and artifact integrity checks.
+- Public lifecycle helpers for retention, promotion, lineage, and run-bundle transport.

@@ -8,5 +8,5 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ### Added
 - First public crates.io release of `bijux-dag-core` as the deterministic DAG kernel in `bijux-core`.
-- Stable package metadata, release-grade README coverage, and package documentation links for external consumers.
-- Public graph parsing, validation, canonicalization, topology, identity, and planner-lowering surfaces for the `bijux-dag` product.
+- Stable Rust import lanes for graph parsing, validation, canonicalization, topology, identity, and planner lowering.
+- Public branch-contract and graph-input resolution surfaces that keep execution planning deterministic before runtime side effects begin.

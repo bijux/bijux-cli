@@ -20,16 +20,15 @@ Operator-facing DAG release notes:
 
 ### Added
 - Published the public `bijux-dag` Rust crates for the first DAG release: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and `bijux-dag-cli`.
-- Added first-release changelog coverage for the DAG crates and refreshed crate READMEs so each public or maintained crate now explains its responsibility, boundaries, and release status.
+- Shipped the first public `bijux-dag` local operator line with stable graph authoring, execution, replay, artifact inspection, cache explanation, and verification surfaces.
 
 ### Changed
 - Advanced the repository release line to `v0.4.0` across workspace metadata, release automation, and maintained compatibility defaults.
-- Reworked the root README, package map, and handbook release notes so the public surface now describes both the `bijux` command runtime and the published `bijux-dag` crates accurately.
-- Updated release operations guidance to document the combined CLI and DAG publication path and the repository-internal status of `bijux-dev`.
-- Reduced the visible `bijux-dag --help` surface to the stable operator roots for `v0.4.0`, while keeping experimental and maintainer routes callable by explicit path.
+- Declared the visible `bijux-dag --help` surface as the stable local operator boundary for `v0.4.0`, while keeping experimental and maintainer routes callable by explicit path.
+- Aligned release operations around the combined `bijux` and `bijux-dag` publication path, including the repository-internal maintainer role of `bijux-dev`.
 
 ### Fixed
-- Removed stale documentation that still described the DAG crates as internal-only, public test-support crates, or deferred beyond the current release line.
+- Removed stale package and release references that still treated the DAG crates as internal-only or deferred beyond the active release line.
 - Aligned mounted-app and release-facing fixtures with the `v0.4.0` compatibility floor so release evidence and examples report the same version line as published artifacts.
 
 <a id="v0-3-6"></a>

@@ -8,5 +8,5 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ### Added
 - First public crates.io release of `bijux-dag-cli`, which installs the `bijux-dag` executable.
-- Stable package metadata, release-grade README coverage, and package documentation links for external consumers.
-- Thin binary wiring over the `bijux-dag-app` surface so the public command stays small and explicitly owned.
+- Stable local operator command surface for DAG validation, planning, execution, replay, artifact inspection, cache explanation, and verification.
+- Thin binary wiring over `bijux-dag-app` so the installed command keeps a narrow, explicit ownership boundary.
