@@ -341,7 +341,7 @@ fn single_output_target(
             })),
         ));
     }
-    Ok(outputs_dir.join(&output.path))
+    crate::authorized_declared_output_path(outputs_dir, output)
 }
 
 fn body_artifact(bytes: &[u8], content_type: Option<&str>) -> HttpBodyArtifact {
@@ -449,6 +449,18 @@ impl Adapter for HttpRequestAdapter {
         exec.fs.create_dir_all(&outputs_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
+        if let Err(failure) = crate::preflight_declared_output_targets(&outputs_dir, &node.outputs) {
+            let stderr_message = failure.message.clone();
+            return node_failure_result(
+                exec.fs.as_ref(),
+                &stdout_path,
+                &stderr_path,
+                &outputs_dir,
+                NodeStatus::Failed,
+                failure,
+                stderr_message.as_bytes(),
+            );
+        }
 
         let request = match parse_http_params(ctx.params) {
             Ok(request) => request,

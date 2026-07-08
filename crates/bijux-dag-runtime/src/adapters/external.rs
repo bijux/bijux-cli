@@ -96,6 +96,22 @@ impl Adapter for ExternalAdapter {
         exec.fs.create_dir_all(&work_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
+        if let Err(failure) = crate::preflight_declared_output_targets(&outputs_dir, &node.outputs) {
+            exec.fs.write(&stdout_path, b"")?;
+            exec.fs.write(&stderr_path, failure.message.as_bytes())?;
+            return Ok(NodeResult {
+                status: crate::NodeStatus::Failed,
+                stdout_path: stdout_path.display().to_string(),
+                stderr_path: stderr_path.display().to_string(),
+                outputs_dir: outputs_dir.display().to_string(),
+                output_evidence: Vec::new(),
+                failure: Some(failure),
+                attempts: 1,
+                attempt_events: Vec::new(),
+                container_meta: None,
+                adapter_binary_sha256: self.binary_hash.clone(),
+            });
+        }
 
         let mut node_spec_value = serde_json::to_value(node)?;
         if let serde_json::Value::Object(map) = &mut node_spec_value {

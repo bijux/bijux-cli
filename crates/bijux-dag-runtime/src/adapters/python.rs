@@ -342,9 +342,10 @@ fn python_output_targets(
                 })),
             ));
         }
+        let authorized = crate::authorized_declared_output_path(outputs_dir, output)?;
         targets.push(PythonOutputTarget {
             name: output.name.clone(),
-            path: outputs_dir.join(&output.path).display().to_string(),
+            path: authorized.display().to_string(),
             required: output.required,
         });
     }
@@ -397,6 +398,16 @@ impl Adapter for PythonFunctionAdapter {
         exec.fs.create_dir_all(&work_dir)?;
         let stdout_path = exec.run_dir.node_stdout_path(&node.id);
         let stderr_path = exec.run_dir.node_stderr_path(&node.id);
+        if let Err(failure) = crate::preflight_declared_output_targets(&outputs_dir, &node.outputs) {
+            let stderr_message = failure.message.clone();
+            return failure_result(
+                exec,
+                &node.id,
+                NodeStatus::Failed,
+                failure,
+                stderr_message.as_bytes(),
+            );
+        }
 
         let invocation = match python_invocation_params(ctx.params) {
             Ok(invocation) => invocation,

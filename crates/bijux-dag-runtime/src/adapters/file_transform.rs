@@ -512,10 +512,11 @@ fn output_targets(
                 })),
             ));
         }
+        let absolute_path = crate::authorized_declared_output_path(outputs_dir, output)?;
         targets.push(OutputTarget {
             name: output.name.clone(),
             relative_path: output.path.clone(),
-            absolute_path: outputs_dir.join(&output.path),
+            absolute_path,
         });
     }
     Ok(targets)
@@ -688,6 +689,17 @@ impl Adapter for FileTransformAdapter {
         let outputs_dir = exec.run_dir.node_outputs_dir(&node.id);
         exec.fs.create_dir_all(&node_dir)?;
         exec.fs.create_dir_all(&outputs_dir)?;
+        if let Err(failure) = crate::preflight_declared_output_targets(&outputs_dir, &node.outputs) {
+            let stderr = failure.message.clone();
+            return failure_result(
+                exec,
+                &node.id,
+                NodeStatus::Failed,
+                failure,
+                b"",
+                stderr.as_bytes(),
+            );
+        }
 
         let operation = match parsed_operation(ctx.params) {
             Ok(operation) => operation,
