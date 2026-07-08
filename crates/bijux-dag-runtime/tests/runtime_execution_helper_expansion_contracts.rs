@@ -13,7 +13,6 @@ use bijux_dag_runtime::{
     ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission, SchedulerFairness,
     SchedulerPolicy, SelectorSet, TriggerSpec,
 };
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;

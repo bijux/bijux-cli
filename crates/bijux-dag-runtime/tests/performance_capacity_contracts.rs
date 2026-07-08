@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -15,6 +14,8 @@ use bijux_dag_runtime::{
     derive_autoscaling_hint, detect_performance_regression, forecast_storage_growth,
     synthetic_large_dag_profiles, BenchmarkResult, PerformanceGate,
 };
+
+mod support;
 
 #[test]
 fn generates_large_dag_profiles() {
@@ -41,11 +42,11 @@ fn forecasts_storage_growth_and_cost() {
 
 #[test]
 fn flags_performance_regression_against_family_gate() {
-    let baseline: BenchmarkResult = bijux_dag_testkit::load_workspace_fixture_typed(
+    let baseline: BenchmarkResult = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json",
     );
-    let candidate: BenchmarkResult = bijux_dag_testkit::load_workspace_fixture_typed(
+    let candidate: BenchmarkResult = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
     );

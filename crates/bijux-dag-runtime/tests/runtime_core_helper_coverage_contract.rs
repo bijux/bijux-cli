@@ -5,7 +5,6 @@ use bijux_dag_runtime::{
     deterministic_schedule_order, PlannerGuardrails, ReadyNode, RetryPolicySemantics,
     RuntimeConfig, SelectorSet,
 };
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;

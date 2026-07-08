@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -18,11 +17,13 @@ use bijux_dag_runtime::{
 };
 use std::collections::BTreeMap;
 
+mod support;
+
 #[test]
 fn type_registry_and_default_validation_are_stable() {
     let registry = default_task_type_registry();
     assert!(!registry.scalar_types.is_empty());
-    let contract: TaskContract = bijux_dag_testkit::load_workspace_fixture_typed(
+    let contract: TaskContract = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
     );
@@ -32,11 +33,11 @@ fn type_registry_and_default_validation_are_stable() {
 
 #[test]
 fn cross_node_compatibility_and_fingerprint_are_stable() {
-    let producer: TaskContract = bijux_dag_testkit::load_workspace_fixture_typed(
+    let producer: TaskContract = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json",
     );
-    let consumer: TaskContract = bijux_dag_testkit::load_workspace_fixture_typed(
+    let consumer: TaskContract = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
     );
@@ -65,14 +66,14 @@ fn compatibility_matrix_report_is_generated_for_graph_snapshot() {
     let mut contracts = BTreeMap::new();
     contracts.insert(
         "const-source".to_string(),
-        bijux_dag_testkit::load_workspace_fixture_typed(
+        support::load_workspace_fixture_typed(
             env!("CARGO_MANIFEST_DIR"),
             "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json",
         ),
     );
     contracts.insert(
         "shell-transform".to_string(),
-        bijux_dag_testkit::load_workspace_fixture_typed(
+        support::load_workspace_fixture_typed(
             env!("CARGO_MANIFEST_DIR"),
             "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
         ),

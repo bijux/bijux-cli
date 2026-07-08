@@ -2,7 +2,6 @@ use bijux_dag_runtime::prelude::{
     build_plan, build_planner_analysis, build_scheduler, PlannerGuardrails, Runtime, RuntimeConfig,
     SchedulerPolicy, SelectorSet,
 };
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;

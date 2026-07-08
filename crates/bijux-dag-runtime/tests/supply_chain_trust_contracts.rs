@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -19,13 +18,15 @@ use bijux_dag_runtime::simulated_platform::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
+mod support;
+
 #[test]
 fn completeness_policy_requires_expected_material() {
-    let attestation: RunProvenanceAttestation = bijux_dag_testkit::load_workspace_fixture_typed(
+    let attestation: RunProvenanceAttestation = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json",
     );
-    let signed: Vec<SignedArtifactManifest> = bijux_dag_testkit::load_workspace_fixture_typed(
+    let signed: Vec<SignedArtifactManifest> = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-runtime/tests/fixtures/provenance/signed_artifacts.json",
     );
@@ -98,11 +99,11 @@ fn drift_report_captures_binary_and_plugin_changes() {
 
 #[test]
 fn replay_warnings_surface_trust_input_changes() {
-    let baseline: RunProvenanceAttestation = bijux_dag_testkit::load_workspace_fixture_typed(
+    let baseline: RunProvenanceAttestation = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json",
     );
-    let mut candidate: RunProvenanceAttestation = bijux_dag_testkit::load_workspace_fixture_typed(
+    let mut candidate: RunProvenanceAttestation = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json",
     );

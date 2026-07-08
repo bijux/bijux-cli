@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit::branch_semantics_graph_json;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -12,6 +11,10 @@ use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{build_plan, RuntimeConfig, Selector, SelectorSet};
+
+mod support;
+
+use support::branch_semantics_graph_json;
 
 fn graph_a() -> &'static str {
     r#"{

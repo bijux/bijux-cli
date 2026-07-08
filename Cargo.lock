@@ -202,7 +202,6 @@ dependencies = [
  "base64",
  "bijux-dag-artifacts",
  "bijux-dag-core",
- "bijux-dag-testkit",
  "chrono",
  "chrono-tz",
  "croner",
