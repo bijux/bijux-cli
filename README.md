@@ -19,8 +19,9 @@
 
 - `bijux`, the root command runtime for apps, plugins, configuration,
   diagnostics, and interactive workflows
-- `bijux-dag`, the local-first DAG system for validation, planning, execution,
-  replay, artifact inspection, and evidence-backed comparison
+- `bijux-dag`, a local-first DAG runtime for reproducible workflows with
+  explicit graph contracts, deterministic execution records, verified
+  artifacts, cache explanation, and replayable run bundles
 
 The repository also carries the internal crates that keep those products
 packaged, tested, documented, and released from one reviewable tree.
@@ -30,7 +31,7 @@ packaged, tested, documented, and released from one reviewable tree.
 | Surface | Delivery form | What it is for |
 | --- | --- | --- |
 | `bijux` | Rust crate, Python distribution, release bundles | operator-facing command runtime with apps, plugins, config, history, memory, REPL, and diagnostics |
-| `bijux-dag` | Rust crates and release bundles | local DAG validation, planning, execution, replay, diff, artifact inspection, and verification |
+| `bijux-dag` | Rust crates and release bundles | local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles |
 | `bijux-dev` | repository-internal crate and binaries | maintainer diagnostics, contracts, inventories, and release proof |
 
 The current workspace release line is `0.4.0`.

@@ -3,6 +3,11 @@
 `bijux-dag-artifacts` owns artifact identity, persistence, integrity, and
 lifecycle helpers for DAG runs.
 
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles. This crate owns the
+verified-artifact and persisted-evidence part of that promise.
+
 ## Release Status
 
 - public crate on the `v0.4.0` DAG release line

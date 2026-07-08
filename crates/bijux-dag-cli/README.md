@@ -3,6 +3,11 @@
 `bijux-dag-cli` installs the `bijux-dag` executable. It is the publishable,
 user-facing command package for the DAG product.
 
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles. This crate is the
+installed command surface for that promise.
+
 Install it from crates.io when you want the standalone DAG command surface:
 
 ```bash

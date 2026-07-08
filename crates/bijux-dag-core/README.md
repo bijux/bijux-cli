@@ -4,6 +4,11 @@
 It owns graph truth: parsing, validation, canonicalization, topology,
 identity, reference resolution, and planner lowering.
 
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles. This crate provides
+the explicit graph-contract half of that product promise.
+
 ## Release Status
 
 - public crate on the `v0.4.0` DAG release line

@@ -4,6 +4,11 @@
 surface. It translates command intent into calls across the DAG crates, owns
 release-boundary routing, and shapes the typed responses that the CLI renders.
 
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles. This crate keeps
+that product promise coherent at the command and response boundary.
+
 ## Release Status
 
 - public crate on the `v0.4.0` DAG release line
