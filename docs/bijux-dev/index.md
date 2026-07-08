@@ -9,12 +9,12 @@ last_reviewed: 2026-04-12
 
 # Maintainer Handbook
 
-Use the maintainer handbook when the question is about repository gates,
-release proof, diagnostics, documentation generation, or the commands that
-maintain `bijux-core` itself.
+Use the maintainer handbook when the question is about keeping `bijux-core`
+healthy: repository gates, release proof, diagnostics, documentation
+generation, and the commands that maintain the repository itself.
 
-It covers the maintainer package, the operational routes around it, and the
-governance surfaces that keep the repository healthy over time.
+This is not the end-user product story. It is the contributor and maintainer
+route for the tooling that proves the product story is real.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="packages/bijux-dev.md">Open the bijux-dev package</a>
@@ -22,43 +22,40 @@ governance surfaces that keep the repository healthy over time.
 <a class="md-button" href="makes/">Open makes</a>
 </div>
 
-## Package Destination
+## Start Here
 
-- [`bijux-dev`](packages/bijux-dev.md) handles the repository control plane,
-  maintainer automation, diagnostics, and release verification flows
+| If you need to... | Open this page |
+| --- | --- |
+| set up or validate maintainer tooling | [Toolchain Setup](operations/toolchain-setup.md) |
+| run repository gates before review or release | [Repository Gates](operations/repository-gates.md) |
+| investigate failing verification output | [Diagnostics and Reporting](operations/diagnostics-and-reporting.md) |
+| handle release or automation incidents | [Incident Response](operations/incident-response.md) |
+| change a policy for contracts, dependencies, docs, or tests | [Governance](governance/index.md) |
+| understand shared make entrypoints and automation surfaces | [makes](makes/index.md) |
 
-## Main Sections
+## What Lives Here
 
-- [Dev Operations](operations/index.md)
-- [Dev Governance](governance/index.md)
-- [makes](makes/index.md)
-- [gh-workflows](gh-workflows/index.md)
+- [`bijux-dev`](packages/bijux-dev.md), the repository control plane for
+  maintainer automation, diagnostics, contracts, and release verification
+- operational guides for gates, evidence collection, incident handling, and
+  release work
+- governance pages for dependencies, contracts, docs, security, and quality
+- the make and GitHub workflow pages that drive repository automation
 
-## Maintainer Workflow Map
+## Use This Handbook When
 
-| If you need to... | Start page |
-|---|---|
-| set up or validate local maintainer tooling | [Toolchain Setup](operations/toolchain-setup.md) |
-| run repository gates before merge | [Repository Gates](operations/repository-gates.md) |
-| investigate failing verification outputs | [Diagnostics and Reporting](operations/diagnostics-and-reporting.md) |
-| handle release or pipeline incidents | [Incident Response](operations/incident-response.md) |
-| adjust policy for tests, contracts, or dependencies | [Dev Governance](governance/index.md) |
+- the question is about repository health rather than product behavior
+- a release or docs workflow failed and you need the owning maintainer route
+- you are changing a repository gate, report, or automation surface
+- you need to know which maintainer command or make target owns a validation
+  path
 
-## Use This Handbook For
+## When To Leave This Handbook
 
-- maintainer command workflows and repository gates
-- evidence collection and reporting operations
-- policy decisions around contracts, dependencies, and security
-- shared make entrypoints and GitHub workflow triggers
-
-## Program Handbooks
-
-- [Repository Handbook](../bijux-core/index.md)
-- [CLI Handbook](../bijux-cli/index.md)
-- [DAG Handbook](../bijux-dag/index.md)
-
-## Decision Boundary
-
-When a question affects runtime behavior seen by end users, switch to the
-program handbook (`bijux-cli` or `bijux-dag`) and return here only for
-verification, release, and repository-health workflows.
+- Move to the [CLI Handbook](../bijux-cli/index.md) when the question is about
+  `bijux` runtime behavior seen by end users.
+- Move to the [DAG Handbook](../bijux-dag/index.md) when the question is about
+  DAG authoring, execution, replay, or retained evidence.
+- Move to the [Repository Handbook](../bijux-core/index.md) when the question
+  is about cross-product package boundaries or shared release policy rather
+  than maintainer tooling itself.
