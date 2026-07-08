@@ -931,6 +931,11 @@ mod tests {
     fn g024_builder_and_file_authoring_surfaces_match_canonical_and_plan_identity() {
         let builder_graph = DagBuilder::new()
             .node(
+                NodeBuilder::new("seed", NodeKind::Const)
+                    .output("out", "artifacts/seed.json")
+                    .build(),
+            )
+            .node(
                 NodeBuilder::new("produce", NodeKind::Shell)
                     .input("seed")
                     .output("out", "artifacts/produce.json")
@@ -938,11 +943,13 @@ mod tests {
                     .build(),
             )
             .node(
-                NodeBuilder::new("consume", NodeKind::Const)
+                NodeBuilder::new("consume", NodeKind::Shell)
                     .input("in")
                     .output("done", "artifacts/consume.json")
+                    .effect(Effect::Filesystem)
                     .build(),
             )
+            .edge("seed", "out", "produce", "seed")
             .edge("produce", "out", "consume", "in")
             .build();
 
