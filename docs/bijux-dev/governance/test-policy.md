@@ -12,6 +12,9 @@ last_reviewed: 2026-07-07
 Test policy defines what verification is required before maintainer-facing
 claims are considered reliable.
 
+Command ownership and visible maintainer entrypoints are governed by
+`contracts/foundation/maintainer_command_surface.v1.json`.
+
 ## Visual Summary
 
 ```mermaid

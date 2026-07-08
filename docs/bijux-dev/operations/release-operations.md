@@ -16,6 +16,9 @@ The release path is intentionally conservative. Each step exists to make sure
 the tagged result still matches the behavior, compatibility notes, and docs the
 repository is prepared to stand behind.
 
+Visible maintainer command ownership remains governed by
+`contracts/foundation/maintainer_command_surface.v1.json`.
+
 ## Release Flow
 
 ```mermaid

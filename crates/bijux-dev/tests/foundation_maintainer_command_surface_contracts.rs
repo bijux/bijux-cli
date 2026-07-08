@@ -94,8 +94,17 @@ fn maintainer_command_surface_docs_and_policy_inventory_stay_linked() {
         read_repo_file("docs/bijux-core/foundation/root-policy-surface-report.md");
     let root_policy_inventory =
         read_repo_file("contracts/foundation/root_policy_surface_inventory.v1.json");
+    let release_operations = read_repo_file("docs/bijux-dev/operations/release-operations.md");
+    let test_policy = read_repo_file("docs/bijux-dev/governance/test-policy.md");
 
-    for content in [&command_surface, &package_doc, &root_policy_report, &root_policy_inventory] {
+    for content in [
+        &command_surface,
+        &package_doc,
+        &root_policy_report,
+        &root_policy_inventory,
+        &release_operations,
+        &test_policy,
+    ] {
         assert!(
             content.contains("contracts/foundation/maintainer_command_surface.v1.json"),
             "maintainer command-surface contract must stay linked from docs and policy inventory"
@@ -108,6 +117,16 @@ fn maintainer_command_surface_docs_and_policy_inventory_stay_linked() {
         assert!(
             command_surface.contains(required),
             "docs/bijux-dev/operations/command-surface.md must document {required}"
+        );
+    }
+
+    for required in [
+        "`bijux-dev-cli docs write-dag-cli-reference`",
+        "`bijux-dev-cli maintenance ignored-dag-tests`",
+    ] {
+        assert!(
+            command_surface.contains(required) || release_operations.contains(required) || test_policy.contains(required),
+            "maintainer operations docs must mention {required}"
         );
     }
 }
