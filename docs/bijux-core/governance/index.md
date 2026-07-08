@@ -16,17 +16,6 @@ This section remains the policy detail layer. Use
 [Operations](../operations/index.md) when the question is primarily about how a
 repository workflow is executed rather than which rule justifies it.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    governance["Core governance"] --> scope["repository scope"]
-    governance --> ownership["package ownership"]
-    governance --> change["change management"]
-    governance --> release["release and versioning"]
-    governance --> risk["risk and exceptions"]
-```
-
 ## Governance Objectives
 
 - keep ownership boundaries explicit and enforceable

@@ -12,17 +12,6 @@ last_reviewed: 2026-04-06
 The quality section defines how `bijux-cli` changes are validated, reviewed,
 and documented before release.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    quality["CLI quality"] --> strategy["test strategy"]
-    quality --> invariants["invariants"]
-    quality --> review["review checklist"]
-    quality --> docs["documentation standards"]
-    quality --> governance["change and dependency governance"]
-```
-
 ## Quality Scope
 
 - test layering and execution expectations

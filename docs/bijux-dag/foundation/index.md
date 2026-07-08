@@ -13,16 +13,6 @@ The foundation section defines what `bijux-dag` is for, what it actually ships
 today, which limits still apply, and how the DAG crate family divides
 responsibility.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    foundation["DAG foundation"] --> identity["package identity"]
-    foundation --> boundaries["ownership boundaries"]
-    foundation --> language["domain language"]
-    foundation --> lifecycle["graph to replay lifecycle"]
-```
-
 ## What This Section Covers
 
 - what `bijux-dag` is built to solve

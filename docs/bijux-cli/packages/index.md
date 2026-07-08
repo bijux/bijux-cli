@@ -5,14 +5,6 @@ Use this page when the CLI surface is clear but the owning package is not.
 `bijux-cli` holds native command behavior. `bijux-cli-python` carries the
 Python distribution surface and bridge back into the same runtime contract.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    cli["CLI packages"] --> runtime["bijux-cli"]
-    cli --> python["bijux-cli-python"]
-```
-
 ## Package Map
 
 | Package | Owns | Enter Here When |

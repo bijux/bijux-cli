@@ -17,17 +17,6 @@ Use this section for policy and boundary questions. Use
 [makes](../makes/index.md) for root command entrypoints, and
 [gh-workflows](../gh-workflows/index.md) for hosted automation triggers.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    governance["Dev governance"] --> ownership["ownership model"]
-    governance --> quality["quality policy"]
-    governance --> tests["test policy"]
-    governance --> change["change control"]
-    governance --> contracts["contract governance"]
-```
-
 ## Pages In This Section
 
 - [Ownership Model](ownership-model.md)

@@ -13,17 +13,6 @@ The interfaces section defines what operators and integrators can rely on:
 command surfaces, crate APIs, config and policy surfaces, and identity-bearing
 data contracts.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    interfaces["DAG interfaces"] --> cli["CLI surface"]
-    interfaces --> api["API surface"]
-    interfaces --> config["configuration surface"]
-    interfaces --> data["data and artifact contracts"]
-    interfaces --> compatibility["compatibility commitments"]
-```
-
 ## Interface Scope
 
 - DAG command and subcommand behavior for the public `bijux-dag --help` surface

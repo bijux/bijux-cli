@@ -16,17 +16,6 @@ artifacts, cache explanation, and replayable run bundles.
 DAG operations focus on repeatable execution, artifact evidence, and predictable
 recovery under change.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    operations["DAG operations"] --> setup["installation and setup"]
-    operations --> run["common run workflows"]
-    operations --> observe["observability and diagnostics"]
-    operations --> recover["failure recovery"]
-    operations --> release["release and versioning"]
-```
-
 ## Operating Priorities
 
 - prefer deterministic runs over convenience shortcuts

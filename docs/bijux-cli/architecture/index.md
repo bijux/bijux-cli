@@ -13,17 +13,6 @@ The architecture section explains how `bijux-cli` is assembled: module
 boundaries, dependency flow, execution pipeline, persistence touchpoints,
 integration seams, and risk areas.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    architecture["CLI architecture"] --> map["module map"]
-    architecture --> deps["dependency direction"]
-    architecture --> exec["execution model"]
-    architecture --> state["state and persistence"]
-    architecture --> seams["integration seams"]
-```
-
 ## Primary Code Anchors
 
 - `crates/bijux-cli/src/lib.rs`

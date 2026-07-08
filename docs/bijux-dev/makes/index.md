@@ -16,16 +16,6 @@ together.
 Use it when the question is about which root make target owns a workflow, how
 targets are grouped, or where repository-wide commands are defined.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    makes["Dev make system"] --> entrypoints["root entrypoints"]
-    makes --> dispatch["package dispatch"]
-    makes --> ci["CI targets"]
-    makes --> release["release surfaces"]
-```
-
 ## Pages In This Section
 
 - [Make System Overview](make-system-overview.md)

@@ -28,16 +28,6 @@ The canonical publication boundary lives in
 [Package Boundary](../../bijux-core/foundation/package-boundary.md) and
 `contracts/foundation/workspace_package_boundary.v1.json`.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    dag["DAG packages"] --> core["core truth"]
-    dag --> runtime["runtime policy"]
-    dag --> entrypoints["app and cli"]
-    dag --> support["artifacts and testkit"]
-```
-
 ## Package Map
 
 | Package | Release status | Owns | Enter Here When |

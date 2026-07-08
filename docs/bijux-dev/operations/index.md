@@ -16,18 +16,6 @@ These pages explain the operational side of the maintainer package. For the
 root command surface itself, use [makes](../makes/index.md). For hosted
 automation entrypoints, use [gh-workflows](../gh-workflows/index.md).
 
-## Section Map
-
-```mermaid
-flowchart LR
-    operations["Dev operations"] --> setup["toolchain setup"]
-    operations --> commands["command surface"]
-    operations --> gates["repository gates"]
-    operations --> evidence["evidence collection"]
-    operations --> diagnostics["diagnostics and reporting"]
-    operations --> release["release operations"]
-```
-
 ## Pages In This Section
 
 - [Toolchain Setup](toolchain-setup.md)

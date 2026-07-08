@@ -6,15 +6,6 @@ runtime behavior.
 `bijux-dev` is the package that turns repository policy, release evidence,
 diagnostics, and documentation gates into executable checks.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    dev["bijux-dev"] --> evidence["release and quality evidence"]
-    dev --> policy["policy and docs gates"]
-    dev --> diagnostics["diagnostics and reports"]
-```
-
 ## Package Map
 
 | Package | Owns | Enter Here When |

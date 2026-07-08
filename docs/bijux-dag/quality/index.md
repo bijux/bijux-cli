@@ -12,17 +12,6 @@ last_reviewed: 2026-07-05
 DAG quality defines the proof required for behavior changes, compatibility
 claims, and operational trust.
 
-## Section Map
-
-```mermaid
-flowchart LR
-  quality["DAG quality"] --> validate["Change validation"]
-  quality --> tests["Test strategy"]
-  quality --> invariants["Invariants"]
-  quality --> review["Review checklist"]
-  quality --> risk["Risk register"]
-```
-
 ## Quality Goals
 
 - keep replay and diff semantics stable across change

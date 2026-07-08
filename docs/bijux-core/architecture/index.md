@@ -16,17 +16,6 @@ Use [Foundation](../foundation/index.md) first when the repository split itself
 is still unclear. Use this section when the ownership model is already clear
 and the remaining question is structural.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    architecture["Core architecture"] --> topology["workspace topology"]
-    architecture --> dependencies["dependency direction"]
-    architecture --> runtime["runtime surfaces"]
-    architecture --> state["state and configuration"]
-    architecture --> flow["artifact and contract flow"]
-```
-
 ## Architecture Priorities
 
 - one workspace authority at the repository root

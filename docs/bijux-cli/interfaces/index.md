@@ -13,17 +13,6 @@ The interfaces section defines what external callers can depend on: command
 surface, API facade modules, configuration behavior, typed data contracts, and
 compatibility commitments.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    interfaces["CLI interfaces"] --> cli["CLI surface"]
-    interfaces --> api["API facade"]
-    interfaces --> config["configuration surface"]
-    interfaces --> contracts["data and artifact contracts"]
-    interfaces --> compatibility["compatibility commitments"]
-```
-
 ## Interface Families
 
 - command-line routes and global flags

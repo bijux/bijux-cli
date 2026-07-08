@@ -13,17 +13,6 @@ The architecture section explains how DAG behavior is implemented across crates:
 semantic kernel, runtime engine, artifact persistence, and orchestration
 routes.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    architecture["DAG architecture"] --> modules["module map"]
-    architecture --> deps["dependency direction"]
-    architecture --> execution["execution model"]
-    architecture --> state["state and persistence"]
-    architecture --> seams["integration seams"]
-```
-
 ## Architecture Scope
 
 - crate/module responsibilities

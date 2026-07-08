@@ -13,16 +13,6 @@ The foundation section answers the first questions about `bijux-cli`: what it
 is, what it is not, where it fits in `bijux-core`, and which principles keep
 command behavior stable as the repository evolves.
 
-## Section Map
-
-```mermaid
-flowchart LR
-    foundation["CLI foundation"] --> identity["package identity"]
-    foundation --> boundaries["ownership boundaries"]
-    foundation --> capability["capability map"]
-    foundation --> lifecycle["lifecycle and change rules"]
-```
-
 ## What This Section Covers
 
 - package role and runtime responsibility
