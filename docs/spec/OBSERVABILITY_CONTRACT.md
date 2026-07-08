@@ -4,7 +4,7 @@ audience: mixed
 type: spec
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-08
 ---
 
 # Observability Contract
@@ -53,15 +53,22 @@ present and passing.
   `run_started`, `node_ready`, `node_scheduled`, `node_started`,
   `node_completed`, `node_failed`, `node_skipped`, `node_cached`,
   `node_cancelled`, and `run_completed`
+- label completeness is validated against the lifecycle events that actually
+  occurred in the run; if a run emits `node_skipped`, the timeline must retain
+  `node_skipped` or `node_cancelled`, and if a run emits `run_finished`, the
+  timeline must retain `run_completed`
 - timeout and cancellation control-plane events must remain visible as
   `run_timed_out` and `run_cancel_requested`
-- `verify_event_log_completeness` must report missing required names, field
-  gaps, timestamp monotonicity, and timeline drift
+- `verify_event_log_completeness` must report missing required event names,
+  missing required timeline labels, field gaps, timestamp monotonicity, and
+  timeline drift
 
 ## Related tests
 
 - `crates/bijux-dag-runtime/tests/observability_contracts.rs`
 - `crates/bijux-dag-runtime/tests/observability_deep_contracts.rs`
+- `crates/bijux-dag-runtime/tests/execution_timeline_contracts.rs`
+- `crates/bijux-dag-runtime/tests/runtime_cancellation_contracts.rs`
 
 ## Versioning and change policy
 

@@ -143,12 +143,30 @@ These files retain run-wide provenance and lineage context.
 These files retain the chronological execution record.
 
 - `observability.events.json` is the structured event stream
-- `observability.timeline.json` is the timeline-oriented summary for run and
+- `observability.timeline.json` is the ordered per-run timeline for run and
   node transitions
 - `run.log.jsonl` is the append-only event log used by audit and repair flows
 
+The timeline normalizes raw runtime events into durable lifecycle labels such
+as:
+
+- `run_started`
+- `node_ready`
+- `node_scheduled`
+- `node_started`
+- `node_completed`
+- `node_failed`
+- `node_skipped`
+- `node_cached`
+- `node_cancelled`
+- `run_completed`
+
+Failed, skipped, cached, and cancelled nodes still live in the same ordered
+stream, and every retained run closes the stream with `run_completed` even when
+the run status is `failed`, `timed_out`, or `cancelled`.
+
 Use the timeline when sequence and duration matter, and use the event log when
-the exact retained event stream matters.
+the exact retained raw event stream matters.
 
 ### `run.schema.json`
 
