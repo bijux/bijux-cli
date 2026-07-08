@@ -9,35 +9,39 @@ last_reviewed: 2026-04-12
 
 # Repository Scope
 
-The repository root owns the things that cross package boundaries. It does not
-own command semantics that already belong to the CLI handbook or execution
-semantics that already belong to the DAG handbook.
+Use this page when you need to decide whether a question belongs in the
+repository handbook at all.
 
-```mermaid
-flowchart TD
-    A[Proposed repository-level change] --> B{Spans package boundaries?}
-    B -->|No| C[Keep change in owning package handbook]
-    B -->|Yes| D{Is it root policy, docs shape, contracts, or release rules?}
-    D -->|Yes| E[Repository scope]
-    D -->|No| C
-    E --> E1[workspace and root build policy]
-    E --> E2[shared docs and publication]
-    E --> E3[cross-program contracts]
-    E --> E4[release and compatibility rules]
-```
+The repository handbook is for the parts of `bijux-core` that cross package or
+product boundaries. It is not where command semantics, DAG runtime behavior, or
+maintainer implementation details should be explained a second time.
 
-## In Scope
+## What Belongs Here
 
-- workspace membership and root build policy
-- shared documentation structure and publication
-- cross-program contracts under `contracts/`
-- release, compatibility, and review rules that span more than one handbook
+| Topic | Why it belongs at the repository level |
+| --- | --- |
+| workspace membership and root build policy | it affects more than one crate family |
+| shared documentation structure and publication | it governs how multiple handbooks fit together |
+| cross-program contracts under `contracts/` | the same contract may constrain more than one product family |
+| release, compatibility, and review rules | those rules must stay consistent across products |
 
-## Out Of Scope
+## What Does Not Belong Here
 
 - CLI runtime semantics that belong in `docs/bijux-cli/`
 - DAG execution semantics that belong in `docs/bijux-dag/`
 - maintainer implementation detail that belongs in `docs/bijux-dev/`
+
+## Reader Shortcut
+
+If the answer only needs one product handbook, stay out of the repository
+handbook. Come here when the answer spans products, packages, contracts, or
+release rules.
+
+## What This Page Is Not Saying
+
+- It is not claiming repository pages are more important than product pages.
+- It is not saying root docs should duplicate crate-level behavior.
+- It is not replacing ownership pages when you need the exact package family.
 
 ## Code Anchors
 
@@ -46,7 +50,7 @@ flowchart TD
 - `contracts/`
 - `mkdocs.yml`
 
-## Next Reads
+## Continue Reading
 
 - [Workspace Layout](workspace-layout.md)
 - [Decision Rules](decision-rules.md)

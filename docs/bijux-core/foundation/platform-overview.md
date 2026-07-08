@@ -9,16 +9,27 @@ last_reviewed: 2026-07-07
 
 # Platform Overview
 
-`bijux-core` is one workspace with more than one public surface. It keeps CLI
-runtime behavior, DAG execution behavior, and repository-health automation in
-one governed repository without pretending they are one package.
+Use this page when you want the plain-language answer to the first repository
+question: what lives in `bijux-core`, and why is it all in one place?
 
-```mermaid
-flowchart LR
-    root["bijux-core repository root"] --> cli["CLI runtime surface"]
-    root --> dag["DAG execution surface"]
-    root --> dev["Maintainer surface"]
-```
+`bijux-core` is a shared home for two public product families and one private
+maintainer surface:
+
+- `bijux`, the command runtime for mounted apps, plugins, config, diagnostics,
+  history, memory, and REPL workflows
+- `bijux-dag`, the local-first DAG toolchain for graph validation, execution,
+  retained evidence, replay, and comparison
+- `bijux-dev`, the private maintainer surface that audits, releases, and proves
+  the repository without pretending to be an end-user product
+
+## What Readers Usually Need To Know First
+
+| Surface | What it is for | Where to read next |
+| --- | --- | --- |
+| `bijux` | command runtime behavior and operator workflows | [CLI handbook](../../bijux-cli/index.md) |
+| `bijux-dag` | DAG authoring, execution, inspection, replay, and verification | [DAG handbook](../../bijux-dag/index.md) |
+| `bijux-dev` | repository diagnostics, evidence, release checks, and governance automation | [Maintainer handbook](../../bijux-dev/index.md) |
+| repository root | shared contracts, docs, release rules, and multi-product ownership | [Repository handbook](../index.md) |
 
 ## What The Repository Organizes
 
@@ -28,7 +39,7 @@ flowchart LR
 - the repository root owns cross-program rules, shared docs, contracts, and
   automation entrypoints
 
-## Stable Reader-Facing Claims
+## What You Can Rely On Today
 
 - `bijux` is a public command runtime.
 - `bijux-dag` is a public local-first DAG product.
@@ -44,14 +55,13 @@ flowchart LR
 - maintainer automation should stay explicit instead of leaking into product
   packages
 
-## Reading Rule
+## What This Page Is Not Saying
 
-Use this page to understand the top-level split. Move to Package Map when you
-need the owning package family, Package Boundary when you need public versus
-private publication status, and Architecture when the question is about crate
-boundaries or dependency direction.
+- It is not saying the repository is one product with one audience.
+- It is not saying every crate is public just because it sits in the workspace.
+- It is not replacing package pages when you need exact crate ownership.
 
-## Next Reads
+## Continue Reading
 
 - [Repository Scope](repository-scope.md)
 - [Package Map](package-map.md)
