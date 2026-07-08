@@ -153,38 +153,53 @@ fn adapters_conformance_json_reports_scenario_matrix() {
     let file_transform_scenarios =
         file_transform["scenarios"].as_array().expect("file_transform scenarios");
     let scenarios = shell["scenarios"].as_array().expect("shell scenarios");
-    assert!(file_transform_scenarios
-        .iter()
-        .any(|scenario| scenario["scenario"] == "success" && scenario["status"] == "pass"));
-    assert!(file_transform_scenarios
-        .iter()
-        .any(|scenario| scenario["scenario"] == "failure" && scenario["status"] == "pass"));
-    assert!(file_transform_scenarios
-        .iter()
-        .any(|scenario| scenario["scenario"] == "cache_output" && scenario["status"] == "pass"));
-    assert!(file_transform_scenarios.iter().any(|scenario| scenario["scenario"]
-        == "missing_executable"
-        && scenario["status"] == "skip"));
-    assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "timeout"));
-    assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "cache_output"));
+    assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "success"
+            && scenario["status"] == "pass"
+            && scenario["checked_by_execution"] == true
+    }));
+    assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "failure"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["failure_code"] == "EXEC_ERROR"
+    }));
+    assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "output_manifest"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["output_files"][0] == "artifact"
+    }));
+    assert!(scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "missing_output"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["failure_code"] == "OUTPUT_MISSING"
+    }));
+    assert!(scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "failure_schema"
+            && scenario["status"] == "pass"
+            && scenario["checked_by_execution"] == true
+    }));
     let http_scenarios = http["scenarios"].as_array().expect("http scenarios");
-    assert!(http_scenarios
-        .iter()
-        .any(|scenario| scenario["scenario"] == "failure" && scenario["status"] == "pass"));
-    assert!(http_scenarios
-        .iter()
-        .any(|scenario| scenario["scenario"] == "timeout" && scenario["status"] == "pass"));
-    assert!(http_scenarios.iter().any(
-        |scenario| scenario["scenario"] == "missing_executable" && scenario["status"] == "skip"
-    ));
+    assert!(http_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "failure"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["failure_code"] == "HTTP_STATUS_ERROR"
+    }));
+    assert!(http_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "timeout"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["failure_code"] == "EXEC_TIMEOUT"
+    }));
     let python_scenarios = python["scenarios"].as_array().expect("python scenarios");
-    assert!(python_scenarios.iter().any(|scenario| scenario["scenario"] == "timeout"));
-    assert!(python_scenarios.iter().any(
-        |scenario| scenario["scenario"] == "workdir_isolation" && scenario["status"] == "pass"
-    ));
-    assert!(python_scenarios.iter().any(
-        |scenario| scenario["scenario"] == "missing_executable" && scenario["status"] == "pass"
-    ));
+    assert!(python_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "timeout"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["failure_code"] == "EXEC_TIMEOUT"
+    }));
+    assert!(python_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "adapter_identity_schema"
+            && scenario["status"] == "pass"
+            && scenario["checked_by_execution"] == true
+    }));
 }
 
 #[test]
