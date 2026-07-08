@@ -146,7 +146,7 @@ nav:
               - Failure Recovery: bijux-cli/operations/failure-recovery.md
               - Release and Versioning: bijux-cli/operations/release-and-versioning.md
               - Security and Safety: bijux-cli/operations/security-and-safety.md
-              - Deployment Boundaries: bijux-cli/operations/deployment-boundaries.md
+              - Deployment Boundaries: bijux-cli/operations/reference/deployment-boundaries.md
           - Quality:
               - Quality: bijux-cli/quality/index.md
               - Test Strategy: bijux-cli/quality/test-strategy.md
