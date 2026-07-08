@@ -762,6 +762,39 @@ fn shell_adapter_rejects_empty_argv_structurally() {
 }
 
 #[test]
+fn shell_adapter_rejects_blank_executable_structurally() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"shell",
+              "kind":"shell",
+              "outputs":[{"name":"value","path":"value.txt"}],
+              "params":{"argv":["   ","-c","printf hi > ../outputs/value.txt"]},
+              "effects":["filesystem"]
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("graph");
+    let runtime = Runtime::new();
+    let temp = tempfile::tempdir().expect("tmpdir");
+    let run_dir = runtime.run(&graph, temp.path(), RuntimeConfig::default()).expect("run");
+    let trace = read_trace(&run_dir);
+    assert_eq!(trace["status"], "failed");
+    assert_eq!(trace["failure"]["code"], "EXEC_ERROR");
+    assert_eq!(trace["failure"]["class"], "user");
+    assert_eq!(trace["failure"]["details"]["field"], "argv");
+    assert_eq!(trace["failure"]["details"]["reason"], "blank_executable");
+    assert!(trace["failure"]["message"]
+        .as_str()
+        .expect("message")
+        .contains("non-empty executable"));
+}
+
+#[test]
 fn shell_adapter_executes_from_isolated_work_dir() {
     let graph = parse_graph_strict(&shell_graph(
         "pwd > ../outputs/value.txt; printf isolated > marker.txt",

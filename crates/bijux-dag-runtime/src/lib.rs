@@ -1029,6 +1029,12 @@ fn shell_argv(params: &Value) -> Result<Vec<String>, FailureInfo> {
                 })),
             ));
         };
+        if index == 0 && arg.trim().is_empty() {
+            return Err(shell_argv_failure(
+                "argv[0] must resolve to a non-empty executable",
+                "blank_executable",
+            ));
+        }
         args.push(arg.to_string());
     }
     Ok(args)
