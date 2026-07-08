@@ -232,6 +232,7 @@ version = "0.4.0"
 dependencies = [
  "anyhow",
  "bijux-cli",
+ "bijux-dag-app",
  "bijux-dag-artifacts",
  "bijux-dag-core",
  "bijux-dag-runtime",
