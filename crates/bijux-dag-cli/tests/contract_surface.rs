@@ -1229,7 +1229,7 @@ fn capabilities_backend_query_supports_kubernetes() {
         serde_json::from_slice(&output.stdout).expect("capabilities backend json");
     assert_eq!(payload["command"], "dag.capabilities");
     assert_eq!(payload["data"]["backend"], "kubernetes");
-    assert_eq!(payload["data"]["status"], "simulated");
+    assert_eq!(payload["data"]["status"], "implemented");
 }
 
 #[test]
