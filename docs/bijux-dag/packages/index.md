@@ -7,17 +7,20 @@ crate is not.
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles.
 
-The package split below shows which crate owns each clause of that promise.
+The crate split below shows where that promise is enforced. Read it as an
+operator-facing ownership map, not just a workspace inventory.
 
-The package split is deliberate:
+## Read The Stack From Bottom To Top
 
-- `bijux-dag-core` keeps graph truth deterministic and side-effect free
-- `bijux-dag-runtime` owns execution-time policy and replay behavior
-- `bijux-dag-app` and `bijux-dag-cli` turn that lower stack into the
-  operator-facing command product
-- `bijux-dag-artifacts` owns durable evidence material
-- `bijux-dag-testkit` keeps shared fixtures and assertions out of production
-  crates
+- `bijux-dag-core` decides whether a graph is valid and deterministic.
+- `bijux-dag-runtime` decides how a valid graph executes, replays, and reuses
+  cached work.
+- `bijux-dag-app` turns those lower layers into operator workflows and typed
+  responses.
+- `bijux-dag-cli` is the binary handoff for the visible `bijux-dag` command.
+- `bijux-dag-artifacts` keeps retained evidence durable and inspectable.
+- `bijux-dag-testkit` stays repository-internal so shared fixtures do not blur
+  the public product boundary.
 
 Five DAG crates are public release targets in the current workspace:
 `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`,
@@ -28,7 +31,7 @@ The canonical publication boundary lives in
 [Package Boundary](../../bijux-core/foundation/package-boundary.md) and
 `contracts/foundation/workspace_package_boundary.v1.json`.
 
-## Package Map
+## Choose The Owning Crate
 
 | Package | Release status | Owns | Enter Here When |
 | --- | --- | --- | --- |
@@ -39,9 +42,19 @@ The canonical publication boundary lives in
 | [`bijux-dag-artifacts`](bijux-dag-artifacts.md) | public | Artifact identity, storage layout, integrity, retention, and lineage helpers | the issue is run evidence shape, hashing, proofs, or artifact lifecycle rules |
 | [`bijux-dag-testkit`](bijux-dag-testkit.md) | private | Shared deterministic fixtures and test support surfaces | the issue is shared fixtures, reusable assertions, or test-only DAG helpers |
 
-## Reading Rule
+## Common Routing Decisions
 
-Choose the package page by the first durable owner, not by the command you saw
+| Situation | Start here |
+| --- | --- |
+| the graph should have been rejected or normalized differently | [`bijux-dag-core`](bijux-dag-core.md) |
+| the run executed, replayed, retried, or cached incorrectly | [`bijux-dag-runtime`](bijux-dag-runtime.md) |
+| the command summary, inspect output, or explanation text is wrong | [`bijux-dag-app`](bijux-dag-app.md) |
+| the issue is really about persisted evidence shape or hashing | [`bijux-dag-artifacts`](bijux-dag-artifacts.md) |
+| the issue is process startup or argv handoff into the app layer | [`bijux-dag-cli`](bijux-dag-cli.md) |
+
+## Choose By The First Durable Owner
+
+Pick the package page by the first durable owner, not by the command you saw
 first. For example:
 
 - `bijux-dag replay` may still require `bijux-dag-runtime` when the real
