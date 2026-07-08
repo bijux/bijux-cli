@@ -4,18 +4,18 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-08
 ---
 
 # First Hour With Bijux Dag
 
 The first hour should prove that a local operator can build the CLI, inspect
-its version and stable command surface, validate a small DAG, and run it with
-visible artifacts.
+its version and stable command surface, and then move into one retained
+workflow that demonstrates cache, replay, and artifact evidence.
 
-For the first practical workflow after this bootstrap path, continue with
-[Data Pipeline Workflow](data-pipeline-workflow.md) or
-[File Processing Workflow](file-processing-workflow.md).
+Use this page for the bootstrap half of that path. For the first complete
+retained workflow after bootstrap, continue with
+[First-Run Tutorial](first-run-tutorial.md).
 
 ## First-hour sequence
 
@@ -25,6 +25,8 @@ For the first practical workflow after this bootstrap path, continue with
 4. Validate `evidence/dag/authoring/examples/minimal_consumer.dag.json`.
 5. Run the same fixture into a local `artifacts/` output root.
 6. Inspect the resulting run with `bijux-dag explain` and `bijux-dag verify`.
+7. Continue with the retained file-processing tutorial for cache, artifacts,
+   and replay.
 
 ## Concrete Walkthrough
 
@@ -47,7 +49,7 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- explain artifacts/runs/<run-dir>
 cargo run -p bijux-dag-cli --bin bijux-dag -- verify artifacts/runs/<run-dir>
 ```
 
-You have a successful first hour when all of the following are true:
+You have completed the bootstrap hour when all of the following are true:
 
 - `version` reports the expected build identity
 - `commands` shows the stable root command inventory
@@ -55,6 +57,8 @@ You have a successful first hour when all of the following are true:
 - `run` creates a run directory under `artifacts/runs`
 - `explain` and `verify` can read that run and report evidence instead of path
   or schema failures
+- you are ready to continue into [First-Run Tutorial](first-run-tutorial.md)
+  for the first retained workflow family
 
 ## Boundary reminder
 
@@ -71,6 +75,7 @@ and
 
 ## Next reads
 
+- [First-Run Tutorial](first-run-tutorial.md)
 - [File Processing Workflow](file-processing-workflow.md)
 - [Data Pipeline Workflow](data-pipeline-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
