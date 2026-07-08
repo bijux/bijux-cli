@@ -227,8 +227,8 @@ pub use adapter::{AdapterDescriptor, CacheCompatibilityMode};
 pub use adapter_conformance::{
     build_adapter_conformance_suite, generate_adapter_reference_markdown,
     validate_output_schema_compatibility, AdapterConformanceSuiteReport,
-    AdapterOutputSchemaCompatibilityReport, AdapterReferenceDocument, AdapterScenarioResult,
-    AdapterScenarioStatus,
+    AdapterOutputSchemaCompatibilityReport, AdapterReferenceDocument, AdapterScenarioObservation,
+    AdapterScenarioResult, AdapterScenarioStatus,
 };
 #[doc(hidden)]
 pub use adapter_sdk::{
