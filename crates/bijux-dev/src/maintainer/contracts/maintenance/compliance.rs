@@ -34,6 +34,13 @@ const MIGRATION_CONTROLS: [(&str, &str, &str, usize); 4] = [
         85,
     ),
 ];
+const DAG_IGNORED_TEST_SCAN_ROOTS: [&str; 5] = [
+    "crates/bijux-dag-app",
+    "crates/bijux-dag-cli",
+    "crates/bijux-dag-core",
+    "crates/bijux-dag-runtime",
+    "crates/bijux-dag-testkit",
+];
 
 fn report_rows(report: &Value, source: &str, issues: &mut Vec<Value>) -> Vec<Value> {
     match report.get("rows") {
@@ -389,10 +396,8 @@ pub fn build_ignored_dag_tests_report(workspace_root: &Path) -> Value {
     let governance = fs::read_to_string(&governance_path)
         .ok()
         .and_then(|raw| serde_json::from_str::<Value>(&raw).ok());
-    let (tests, scan_errors) = collect_ignored_test_rows(
-        workspace_root,
-        &["crates/bijux-dag-app/tests", "crates/bijux-dag-cli/tests"],
-    );
+    let (tests, scan_errors) =
+        collect_ignored_test_rows(workspace_root, &DAG_IGNORED_TEST_SCAN_ROOTS);
     let declared_tests: BTreeSet<String> = governance
         .as_ref()
         .and_then(|payload| payload.get("portfolios"))
@@ -457,6 +462,7 @@ pub fn build_ignored_dag_tests_report(workspace_root: &Path) -> Value {
     json!({
         "generated_at_utc": generated_at_utc(),
         "count": tests.len(),
+        "scan_scope": DAG_IGNORED_TEST_SCAN_ROOTS,
         "tests": tests,
         "required_release_lane": governance
             .as_ref()
