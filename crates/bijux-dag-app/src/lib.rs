@@ -59,6 +59,9 @@ mod output_contract;
 mod read;
 #[path = "read/read_graph.rs"]
 mod read_graph;
+mod repair;
+#[path = "repair/service.rs"]
+mod repair_service;
 mod replay;
 #[path = "replay/cmd.rs"]
 mod replay_cmd;
