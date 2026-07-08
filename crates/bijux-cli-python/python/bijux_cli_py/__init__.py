@@ -19,6 +19,7 @@ from .app_sdk import (
     run_json_app,
     success,
 )
+from .dag_sdk import dag_post_install_diagnostics, dag_command_json, load_dag_graph
 
 _FACADE_EXPORTS = {
     "check_python_runtime_supported",
@@ -65,6 +66,9 @@ __all__ = [
     "run_json_app",
     "build_python_mount_manifest",
     "compatibility_report",
+    "dag_command_json",
+    "dag_post_install_diagnostics",
+    "load_dag_graph",
 ]
 
 

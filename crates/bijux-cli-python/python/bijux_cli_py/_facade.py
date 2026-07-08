@@ -21,6 +21,7 @@ from ._exceptions import (
 from ._runtime import (
     ExecutionResult,
     RuntimeResolution,
+    classify_process_error_kind,
     resolve_runtime_binary,
     run_subprocess_runtime,
     runtime_binary_filenames,
@@ -355,18 +356,7 @@ def _extract_error_message(payload: dict[str, object]) -> str:
 
 
 def _classify_process_error_kind(exit_code: int, stderr: str) -> str | None:
-    if exit_code == 0:
-        return None
-    if exit_code == 2:
-        return "UsageError"
-    if exit_code == 3:
-        return "ValidationError"
-    lower = stderr.lower()
-    if "unknown route" in lower or "unknown namespace" in lower or "usage" in lower:
-        return "UsageError"
-    if "validation" in lower or "invalid" in lower:
-        return "ValidationError"
-    return "InternalError"
+    return classify_process_error_kind(exit_code, stderr)
 
 
 def _runtime_timeout_seconds() -> int:
