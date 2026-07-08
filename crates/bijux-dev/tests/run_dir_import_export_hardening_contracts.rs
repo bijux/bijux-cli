@@ -33,6 +33,46 @@ fn run_dir_contract_documents_sections_required_by_governance_guard() {
 }
 
 #[test]
+fn run_dir_contract_uses_live_retained_paths_and_optional_plan_language() {
+    let root = workspace_root();
+    let contract =
+        fs::read_to_string(root.join("docs/spec/RUN_DIR_CONTRACT.md")).expect("contract");
+    let storage =
+        fs::read_to_string(root.join("docs/spec/RUN_DIR_STORAGE_CONTRACT.md")).expect("storage");
+
+    for token in [
+        "outputs/index.json",
+        "nodes/<node_id>/trace.json",
+        "nodes/<node_id>/inputs/index.json",
+        "nodes/<node_id>/outputs/index.json",
+        "promotions/index.json",
+        "plan.json",
+        "standard local run snapshots do not currently retain `plan.json` by default",
+    ] {
+        assert!(contract.contains(token), "run-dir contract missing token: {token}");
+    }
+
+    for token in [
+        "outputs/index.json",
+        "nodes/<node_id>/trace.json",
+        "nodes/<node_id>/attempts.json",
+        "nodes/<node_id>/resolved_params.json",
+        "plan.json",
+    ] {
+        assert!(storage.contains(token), "run-dir storage contract missing token: {token}");
+    }
+
+    assert!(
+        !contract.contains("outputs.index.json"),
+        "run-dir contract must use the live outputs/index.json path"
+    );
+    assert!(
+        !contract.contains("`trace/`"),
+        "run-dir contract must describe retained node trace files, not a fake trace directory"
+    );
+}
+
+#[test]
 fn import_export_contract_documents_bundle_versioning_modes_and_provenance() {
     let root = workspace_root();
     let contract =
