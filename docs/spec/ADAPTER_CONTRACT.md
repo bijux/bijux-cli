@@ -89,7 +89,7 @@ This document is generated from runtime adapter descriptors and backend contract
 ### shell 0.1
 - `success`: Pass (enforced_by_runtime=true, advisory_only=false) - successful adapter execution is a required runtime path
 - `failure`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime records explicit execution failure results
-- `argv_contract`: Pass (enforced_by_runtime=true, advisory_only=false) - shell nodes require a non-empty argv array of strings before execution starts
+- `argv_contract`: Pass (enforced_by_runtime=true, advisory_only=false) - shell nodes require a non-empty argv array of strings and a non-blank executable before execution starts
 - `missing_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime validates declared output files for every adapter execution
 - `undeclared_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime rejects files written outside the declared output contract
 - `timeout`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime enforces declared timeout budgets and records timeout failures
