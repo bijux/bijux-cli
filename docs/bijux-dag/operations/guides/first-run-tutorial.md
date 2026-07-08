@@ -67,20 +67,21 @@ inventory.
 
 ## Inspect The Graph Before Execution
 
-Validate the graph and inspect the execution plan before any run artifacts are
+Validate the graph and inspect its structure before any run artifacts are
 written:
 
 ```bash
 cargo run -p bijux-dag-cli --bin bijux-dag -- validate "${GRAPH_PATH}"
 
-cargo run -p bijux-dag-cli --bin bijux-dag -- plan explain --json "${GRAPH_PATH}" \
-  --input "source_dir=${SOURCE_DIR}" \
-  --input "report_title=First Run Tutorial Report"
+cargo run -p bijux-dag-cli --bin bijux-dag -- show-effective-graph --json \
+  "${GRAPH_PATH}"
 ```
 
-That `plan explain` response is the graph-inspection step. It proves that the
-input bindings are accepted and that the workflow can be planned before it
-executes.
+That `show-effective-graph` response is the graph-inspection step. It is a
+repository-tested explicit-path inspection route rather than part of the
+default stable `--help` surface, and it shows the nodes, edges, roots, leaves,
+resources, and output contracts before execution starts. The runtime input
+bindings are then proven on the real `run` command below.
 
 ## Run The Workflow
 
@@ -177,7 +178,7 @@ that the resulting run still satisfies strict verification.
 You have completed the first-run tutorial when all of these are true:
 
 - `validate` accepts the file-processing graph
-- `plan explain` shows a valid graph plan with your input bindings
+- `show-effective-graph` shows the graph structure before execution
 - the cold run creates a retained run directory under `artifacts/`
 - `explain` can read that retained run successfully
 - `artifact registry` and `artifact-inspect` show the final report artifact

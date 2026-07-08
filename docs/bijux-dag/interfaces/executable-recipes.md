@@ -35,6 +35,8 @@ plus the handbook page
 - `${REVISED_NOTE}`: revised bulletin source note
 - `${CACHE_ROOT}`: cache root directory
 - `${DELIVERABLES_ROOT}`: deliverables root directory
+- `${FILE_PROCESSING_GRAPH}`: file-processing graph fixture path
+- `${FILE_PROCESSING_SOURCE_DIR}`: file-processing source directory
 
 ## CI Recipe: Major DAG Commands
 
@@ -89,3 +91,25 @@ bijux-dag verify --json ${RUN_ROOT}/run-branch-bulletin-replay --strict
 bijux-dag artifact promote ${RUN_ROOT}/run-branch-bulletin-updated publish_bulletin:bulletin.md --deliverables-root ${DELIVERABLES_ROOT} --to release --json
 ```
 <!-- recipe:ci-evidence-backed-bulletin:end -->
+
+## CI Recipe: First-Run Tutorial
+
+This recipe executes the compact onboarding path described in
+[First-Run Tutorial](../operations/guides/first-run-tutorial.md). It uses the
+stable visible operator surface for execution, retained artifacts, warm cache
+reuse, focused replay, and strict verification, plus the explicit-path
+`show-effective-graph` route for pre-execution graph inspection.
+
+<!-- recipe:ci-first-run-tutorial:start -->
+```bash
+bijux-dag validate ${FILE_PROCESSING_GRAPH}
+bijux-dag show-effective-graph --json ${FILE_PROCESSING_GRAPH}
+bijux-dag run --json ${FILE_PROCESSING_GRAPH} --out ${RUN_ROOT} --run-id first-run-tutorial-cold --cache readwrite --cache-dir ${CACHE_ROOT} --input source_dir=${FILE_PROCESSING_SOURCE_DIR} --input report_title=First-Run-Tutorial-Report
+bijux-dag explain ${RUN_ROOT}/run-first-run-tutorial-cold
+bijux-dag artifact registry ${RUN_ROOT}/run-first-run-tutorial-cold --json
+bijux-dag artifact-inspect --json ${RUN_ROOT}/run-first-run-tutorial-cold render_report:report.md
+bijux-dag run --json ${FILE_PROCESSING_GRAPH} --out ${RUN_ROOT} --run-id first-run-tutorial-warm --cache readwrite --cache-dir ${CACHE_ROOT} --input source_dir=${FILE_PROCESSING_SOURCE_DIR} --input report_title=First-Run-Tutorial-Report
+bijux-dag replay --json --source-run-id first-run-tutorial-cold --source-run-root ${RUN_ROOT} --out ${RUN_ROOT} --run-id first-run-tutorial-replay --from-node render_report
+bijux-dag verify --json ${RUN_ROOT}/run-first-run-tutorial-replay --strict
+```
+<!-- recipe:ci-first-run-tutorial:end -->

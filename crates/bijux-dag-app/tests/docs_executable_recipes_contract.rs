@@ -204,3 +204,58 @@ fn docs_evidence_backed_bulletin_recipe_is_ci_executable() {
         "promoted bulletin must be materialized"
     );
 }
+
+#[test]
+fn docs_first_run_tutorial_recipe_is_ci_executable() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let run_root = temp.path().join("runs");
+    let cache_root = temp.path().join("cache");
+    fs::create_dir_all(&run_root).expect("run root");
+    fs::create_dir_all(&cache_root).expect("cache root");
+
+    let mut vars = BTreeMap::new();
+    vars.insert(
+        "FILE_PROCESSING_GRAPH",
+        root.join("evidence/dag/authoring/examples/file-processing-report.dag.json")
+            .canonicalize()
+            .expect("canonical graph fixture")
+            .to_string_lossy()
+            .into_owned(),
+    );
+    vars.insert(
+        "FILE_PROCESSING_SOURCE_DIR",
+        root.join("evidence/dag/authoring/examples/file-processing-source")
+            .canonicalize()
+            .expect("canonical source directory")
+            .to_string_lossy()
+            .into_owned(),
+    );
+    vars.insert("RUN_ROOT", run_root.to_string_lossy().into_owned());
+    vars.insert("CACHE_ROOT", cache_root.to_string_lossy().into_owned());
+
+    let docs_path = root.join("docs/bijux-dag/interfaces/executable-recipes.md");
+    let commands = load_recipe_commands(&docs_path, "ci-first-run-tutorial");
+    assert!(
+        commands.len() >= 8,
+        "expected first-run tutorial recipe set, got {} commands",
+        commands.len()
+    );
+
+    for command in commands {
+        let rendered = substitute_vars(&command, &vars);
+        let payload = run_recipe_command(&root, &rendered);
+        if !payload.is_null() {
+            assert!(payload.is_object(), "json mode must return a top-level object");
+        }
+    }
+
+    assert!(
+        run_root.join("run-first-run-tutorial-cold").exists(),
+        "cold tutorial run must be materialized"
+    );
+    assert!(
+        run_root.join("run-first-run-tutorial-replay").exists(),
+        "replay tutorial run must be materialized"
+    );
+}
