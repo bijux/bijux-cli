@@ -990,42 +990,28 @@ impl Adapter for ConstAdapter {
 #[derive(Clone)]
 pub struct ShellAdapter;
 
+fn shell_argv_failure(message: impl Into<String>, reason: &'static str) -> FailureInfo {
+    FailureInfo::new(
+        FailureClass::User,
+        "User",
+        "EXEC_ERROR",
+        message,
+        Some(serde_json::json!({
+            "field": "argv",
+            "reason": reason,
+        })),
+    )
+}
+
 fn shell_argv(params: &Value) -> Result<Vec<String>, FailureInfo> {
     let Some(argv_value) = params.get("argv") else {
-        return Err(FailureInfo::new(
-            FailureClass::User,
-            "User",
-            "EXEC_ERROR",
-            "argv is required",
-            Some(serde_json::json!({
-                "field": "argv",
-                "reason": "missing",
-            })),
-        ));
+        return Err(shell_argv_failure("argv is required", "missing"));
     };
     let Some(argv) = argv_value.as_array() else {
-        return Err(FailureInfo::new(
-            FailureClass::User,
-            "User",
-            "EXEC_ERROR",
-            "argv must be an array of strings",
-            Some(serde_json::json!({
-                "field": "argv",
-                "reason": "expected_array",
-            })),
-        ));
+        return Err(shell_argv_failure("argv must be an array of strings", "expected_array"));
     };
     if argv.is_empty() {
-        return Err(FailureInfo::new(
-            FailureClass::User,
-            "User",
-            "EXEC_ERROR",
-            "argv must not be empty",
-            Some(serde_json::json!({
-                "field": "argv",
-                "reason": "empty",
-            })),
-        ));
+        return Err(shell_argv_failure("argv must not be empty", "empty"));
     }
 
     let mut args = Vec::with_capacity(argv.len());
