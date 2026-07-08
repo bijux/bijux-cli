@@ -9,9 +9,13 @@ last_reviewed: 2026-07-07
 
 # DAG Handbook
 
-`bijux-dag` is the deterministic graph product in `bijux-core`. It owns graph
-validation, execution planning, local run orchestration, replay, artifact
-identity, evidence inspection, and drift attribution.
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles.
+
+Inside `bijux-core`, that promise covers graph validation, execution planning,
+local run orchestration, replay, artifact identity, evidence inspection, and
+drift attribution.
 
 Use this handbook when the question is about DAG behavior itself: what gets
 validated, what gets executed, what evidence is written, and which crate owns
@@ -22,6 +26,14 @@ commands cover local validation, planning, execution, replay, inspection,
 cache work, and verification. Simulated namespaces and maintainer-only routes
 remain documented because they exist in the repository, but they are not being
 presented as shipped production backends or public platform APIs.
+
+## Product Proof Map
+
+- explicit graph contracts: [Graph Schema Reference](interfaces/reference/graph-schema.md), [CLI Surface](interfaces/cli-surface.md), and [First-Run Tutorial](operations/guides/first-run-tutorial.md)
+- deterministic execution records: [Run Evidence Layout](interfaces/reference/run-evidence-layout.md), [First Hour With Bijux Dag](operations/guides/first-hour-with-bijux-dag.md), and [Branching Bulletin Workflow](operations/guides/branching-bulletin-workflow.md)
+- verified artifacts: [File Processing Workflow](operations/guides/file-processing-workflow.md), [Container Packaging Workflow](operations/guides/container-packaging-workflow.md), and `bijux-dag artifact-inspect`
+- cache explanation: [Cache Behavior Workflow](operations/guides/cache-behavior-workflow.md) and `bijux-dag cache explain`
+- replayable run bundles: [First-Run Tutorial](operations/guides/first-run-tutorial.md), [Reproducibility Model](interfaces/reference/reproducibility-model.md), and `bijux-dag replay`
 
 The current public crate family is:
 

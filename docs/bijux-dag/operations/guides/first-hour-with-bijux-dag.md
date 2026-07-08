@@ -9,6 +9,10 @@ last_reviewed: 2026-07-08
 
 # First Hour With Bijux Dag
 
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles.
+
 The first hour should prove that a local operator can build the CLI, inspect
 its version and stable command surface, and then move into one retained
 workflow that demonstrates cache, replay, and artifact evidence.
@@ -32,6 +36,13 @@ the command surface before that retained workflow.
 6. Inspect the resulting run with `bijux-dag explain` and `bijux-dag verify`.
 7. Continue with the retained file-processing tutorial for cache, artifacts,
    and replay.
+
+That first hour proves the product sentence in order:
+
+- explicit graph contracts through `validate`
+- deterministic execution records through retained run evidence
+- verified artifacts through `verify` and retained outputs
+- cache explanation and replayable run bundles through the next workflow guide
 
 ## Concrete Walkthrough
 

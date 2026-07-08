@@ -9,6 +9,10 @@ last_reviewed: 2026-07-08
 
 # DAG Operations
 
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles.
+
 DAG operations focus on repeatable execution, artifact evidence, and predictable
 recovery under change.
 

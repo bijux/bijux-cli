@@ -11,8 +11,20 @@ last_reviewed: 2026-07-08
 
 This page records practical DAG entrypoints for CLI users and Rust integrators.
 
+`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+with explicit graph contracts, deterministic execution records, verified
+artifacts, cache explanation, and replayable run bundles.
+
 The CLI examples on this page stay on the stable `v0.4.0` operator surface
 from the [Release Boundary](../foundation/release-boundary.md).
+
+## Proof Map
+
+- explicit graph contracts: `bijux-dag validate`, the graph schema reference, and the authored DAG examples under `evidence/dag/authoring/examples/`
+- deterministic execution records: `bijux-dag run`, `bijux-dag explain`, and retained node traces under `artifacts/`
+- verified artifacts: `bijux-dag artifact registry`, `bijux-dag artifact-inspect`, and the file-processing plus container workflows
+- cache explanation: `bijux-dag cache verify`, `bijux-dag cache explain`, and the cache-behavior workflow
+- replayable run bundles: `bijux-dag replay`, retained source runs, and the reproducibility model for replay identity
 
 ## Visual Summary
 
