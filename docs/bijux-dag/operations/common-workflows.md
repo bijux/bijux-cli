@@ -113,6 +113,10 @@ internal boundary while proving partition fanout, failed-partition retry, and
 aggregate state summaries, use
 [Historical Catalog Backfill Workflow](guides/historical-catalog-backfill-workflow.md).
 
+Those two workflow families remain proof-backed internal surfaces in `v0.4.x`,
+not stable scheduler APIs. Use [Known Limitations](../quality/known-limitations.md)
+before turning them into operator automation.
+
 ## Reading Rule
 
 Use this page when the DAG commands are already familiar but the correct
@@ -129,4 +133,5 @@ operator sequence is still unclear.
 - [Historical Catalog Backfill Workflow](guides/historical-catalog-backfill-workflow.md)
 - [Scheduled Catalog Refresh Workflow](guides/scheduled-catalog-refresh-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
+- [Known Limitations](../quality/known-limitations.md)
 - [Review Checklist](../quality/review-checklist.md)

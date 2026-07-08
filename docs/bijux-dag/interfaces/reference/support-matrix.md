@@ -32,3 +32,8 @@ and the handbook page
 - `BIJUX_DAG_ENABLE_INTERNAL=1 cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json`
 - `docs/spec/RELEASE_BINARY_VERIFICATION.md`
 - `docs/bijux-dag/foundation/release-boundary.md`
+
+## Next Reads
+
+- [Release Boundary](../../foundation/release-boundary.md)
+- [Known Limitations](../../quality/known-limitations.md)

@@ -31,3 +31,8 @@ same operational guarantees.
 - `crates/bijux-dag-runtime/tests/batch_execution_contracts.rs`
 - `crates/bijux-dag-runtime/tests/batch_backend_simulation_contracts.rs`
 - `docs/spec/BATCH_EXECUTION_MODEL.md`
+
+## Next Reads
+
+- [Release Boundary](../../foundation/release-boundary.md)
+- [Known Limitations](../../quality/known-limitations.md)

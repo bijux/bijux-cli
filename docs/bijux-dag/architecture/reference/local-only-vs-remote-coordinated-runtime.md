@@ -48,3 +48,8 @@ typed execution contract, not a separate production scheduler service.
 - `docs/spec/REMOTE_EXECUTION_MODEL.md`
 - `crates/bijux-dag-runtime/tests/distributed_contracts.rs`
 - `crates/bijux-dag-runtime/tests/distributed_event_reconciliation_contracts.rs`
+
+## Next Reads
+
+- [Release Boundary](../../foundation/release-boundary.md)
+- [Known Limitations](../../quality/known-limitations.md)
