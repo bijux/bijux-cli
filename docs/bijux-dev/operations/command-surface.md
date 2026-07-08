@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-08
 ---
 
 # Command Surface
@@ -32,6 +32,16 @@ flowchart LR
 - report commands for architecture, coverage, and evidence status
 - release commands for readiness and compatibility workflows
 - documentation and governance commands for handbook integrity
+
+Representative non-root maintainer routes in that last family include:
+
+- `bijux-dev-cli docs publish-contract-assets` for publishing governed contract
+  assets into a built docs site
+- `bijux-dev-cli docs write-dag-cli-reference` for rewriting the checked-in DAG
+  CLI reference pages from the live Clap command surface
+- `bijux-dev-cli maintenance ignored-dag-tests` for auditing every ignored DAG
+  test across the full DAG crate tree against the governed quarantine
+  portfolios
 
 ## `bijux-dev-dag` Root Surface
 

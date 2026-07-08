@@ -19,6 +19,8 @@ for `bijux-core`.
 
 - `bijux-dev-cli` for maintainer automation and diagnostics
 - `bijux-dev-dag` for repository-owned DAG governance and release surfaces
+- `bijux-dev-cli docs write-dag-cli-reference` for rewriting the checked-in DAG
+  CLI reference pages without relying on ignored tests
 
 ## Layout
 

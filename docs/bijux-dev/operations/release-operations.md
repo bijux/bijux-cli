@@ -52,6 +52,9 @@ Canonical package status and publish order are defined by
 - `make release-validate-rs` is green before any release recommendation
 - `make test-release-rs` is green before any release recommendation
 - `make test-all-rs` is green whenever DAG experimental or internal ignored coverage changed or ignored-test governance changed
+- `bijux-dev-cli maintenance ignored-dag-tests` reports `integrity_status: ok`
+  whenever ignored-test governance, quarantined portfolios, or source-level DAG
+  test helpers changed
 - compatibility notes are prepared for changed public behavior
 - documentation tree and MkDocs navigation are synchronized
 - release owner and rollback owner are explicitly assigned
@@ -68,6 +71,8 @@ Canonical package status and publish order are defined by
 make release-validate-rs
 make test-release-rs
 make test-all-rs
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- maintenance ignored-dag-tests
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- docs write-dag-cli-reference
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- release verify
 make docs-check

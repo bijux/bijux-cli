@@ -37,6 +37,10 @@ flowchart LR
 - flaky ignored tests are forbidden in DAG release-facing coverage
 - ignored DAG tests must carry an explicit nonstable quarantine reason of `experimental` or `internal`
 - ignored Rust tests outside the governed DAG nonstable portfolios are forbidden
+- ignored DAG test audits scan the full DAG crate tree, including source-level
+  unit-test helpers, not only top-level `tests/` directories
+- maintainer-only refresh work must use an explicit command path such as
+  `bijux-dev-cli docs write-dag-cli-reference` rather than an ignored test
 
 ## Code Anchors
 
