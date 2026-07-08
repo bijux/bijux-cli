@@ -1,10 +1,11 @@
 use crate::commands::{DagCli, RuntimeCommands};
-use crate::routes::policy_surface::policy_surface_payload;
-use crate::{emit_json, parse_graph, read_file, ExitCode};
-use bijux_dag_artifacts::{
-    AdapterInfo, Manifest, NodeCounts, NodeTrace, OutputSummary, PolicyInfo, RunMetadata,
-    RunOutputsIndex, RunSummary,
+use crate::repair_service::{
+    apply_run_repair, plan_run_repair, run_repair_ok, RepairExecutionOptions,
 };
+use crate::routes::policy_surface::policy_surface_payload;
+use crate::routes::preconditions::require_safe_path;
+use crate::{emit_json, parse_graph, read_file, ExitCode};
+use bijux_dag_artifacts::{NodeTrace, RunOutputsIndex};
 use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use bijux_dag_runtime::{
     audit_dispatch_discipline, audit_run_event_log, build_cancellation_audit_report,
@@ -167,17 +168,6 @@ struct ControlRecoveryAuditReport {
     recommended_action: String,
 }
 
-#[derive(Debug, Serialize)]
-struct RunRepairReport {
-    run_id: String,
-    manifest_path: String,
-    index_path: String,
-    manifest_rewritten: bool,
-    index_rewritten: bool,
-    incomplete_marker_present: bool,
-    notes: Vec<String>,
-}
-
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = read_file(path)?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
@@ -202,22 +192,6 @@ fn parse_node_state_str(status: &str) -> Option<NodeState> {
         "ready" => Some(NodeState::Eligible),
         "eligible" => Some(NodeState::Eligible),
         "pending" => Some(NodeState::Pending),
-        _ => None,
-    }
-}
-
-fn parse_run_state_str(status: &str) -> Option<RunState> {
-    match status {
-        "submitted" => Some(RunState::Submitted),
-        "planning" => Some(RunState::Planning),
-        "running" => Some(RunState::Running),
-        "paused" => Some(RunState::Paused),
-        "interrupted" => Some(RunState::Interrupted),
-        "cancelling" => Some(RunState::Cancelling),
-        "cancelled" => Some(RunState::Cancelled),
-        "timed_out" => Some(RunState::TimedOut),
-        "failed" => Some(RunState::Failed),
-        "success" | "succeeded" => Some(RunState::Succeeded),
         _ => None,
     }
 }
@@ -507,222 +481,6 @@ fn enforce_mark_success_gate(
     }
 }
 
-fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
-    let run_snapshot: RunSnapshot =
-        serde_json::from_str(&read_file(&run_dir.join("run.snapshot.json"))?)
-            .map_err(|_| ExitCode::from(3))?;
-    let graph_snapshot = read_json_value(&run_dir.join("graph.snapshot.json"))?;
-    let traces = read_node_traces(run_dir)?;
-    let outputs_index = if run_dir.join("outputs").join("index.json").exists() {
-        Some(read_run_outputs_index(run_dir)?)
-    } else {
-        None
-    };
-
-    let mut adapters_seen = BTreeSet::new();
-    let mut adapters = Vec::new();
-    let mut success = 0u32;
-    let mut failed = 0u32;
-    let mut skipped = 0u32;
-    let mut cached = 0u32;
-    let mut cancelled = 0u32;
-    let mut created_unix_ms = u128::MAX;
-    let mut finished_unix_ms = 0u128;
-    let mut status = "success".to_string();
-    for trace in &traces {
-        created_unix_ms = created_unix_ms.min(trace.started_unix_ms);
-        finished_unix_ms = finished_unix_ms.max(trace.finished_unix_ms);
-        match trace.status.as_str() {
-            "success" => success += 1,
-            "failed" => {
-                failed += 1;
-                if trace.lifecycle_state.as_deref() == Some("timed_out")
-                    || trace.failure.as_ref().map(|failure| failure.code.as_str())
-                        == Some("RUN_TIMEOUT")
-                {
-                    status = "timed_out".to_string();
-                } else if status != "timed_out" {
-                    status = "failed".to_string();
-                }
-            }
-            "skipped" => skipped += 1,
-            "cached" => cached += 1,
-            "cancelled" => {
-                cancelled += 1;
-                status = "cancelled".to_string();
-            }
-            _ => {}
-        }
-        let key = format!("{}:{}", trace.adapter_id, trace.adapter_version);
-        if adapters_seen.insert(key) {
-            adapters.push(AdapterInfo {
-                adapter_id: trace.adapter_id.clone(),
-                adapter_version: trace.adapter_version.clone(),
-                effects: Vec::new(),
-            });
-        }
-    }
-    if created_unix_ms == u128::MAX {
-        created_unix_ms = 0;
-    }
-    let outputs = outputs_index
-        .map(|index| {
-            index
-                .files
-                .into_iter()
-                .map(|file| OutputSummary {
-                    node_id: file.node_id,
-                    node_fingerprint: file.node_fingerprint,
-                    name: file.name,
-                    path: file.path,
-                    kind: file.kind,
-                    media_type: file.media_type,
-                    size_bytes: file.size_bytes,
-                    sha256: file.sha256,
-                    promotable: file.promotable,
-                })
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-    let run_cancellation_cause = if status == "cancelled" {
-        let audit_path = run_dir.join("run.audit.json");
-        if audit_path.exists() {
-            read_json_value(&audit_path).ok().and_then(|value| {
-                value.as_array().and_then(|events| {
-                    events.iter().find_map(|event| {
-                        (event.get("action").and_then(Value::as_str) == Some("cancel"))
-                            .then_some("operator_interrupt".to_string())
-                    })
-                })
-            })
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-    Ok(Manifest {
-        manifest_version: "run-manifest/v0.1".to_string(),
-        run_id: run_snapshot.run_id.to_string(),
-        created_unix_ms,
-        started_unix_ms: created_unix_ms,
-        finished_unix_ms,
-        graph_snapshot: "graph.snapshot.json".to_string(),
-        status,
-        spec: "bijux-dag/v0.1".to_string(),
-        graph_fingerprint: graph_snapshot
-            .get("graph_fingerprint")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string(),
-        planner_contract_version: "bijux-dag-planner/v1".to_string(),
-        planner_fingerprint: None,
-        execution_fingerprint: None,
-        evidence_fingerprint: None,
-        tool_version: "recovered-local".to_string(),
-        jobs: traces.len().max(1),
-        adapters,
-        outputs,
-        node_counts: NodeCounts { success, failed, skipped, cached, cancelled },
-        policy: PolicyInfo {
-            deny_network: false,
-            deny_env: false,
-            deny_clock: false,
-            clean_env: false,
-            container_image_reference_policy:
-                bijux_dag_artifacts::ContainerImageReferencePolicy::RequireDigest,
-        },
-        cache_mode: None,
-        cache_dir: None,
-        run_timeout_ms: None,
-        run_timeout_behavior: None,
-        run_cancellation_cause,
-        run_metadata: Some(RunMetadata {
-            submission_source: run_snapshot.submission_source,
-            trigger_source: run_snapshot.trigger_source,
-            operator: run_snapshot.operator,
-            labels: run_snapshot.labels,
-            parent_run_id: run_snapshot.parent_run_id.map(|id| id.to_string()),
-            source_run_id: run_snapshot.replay_source_run_id.map(|id| id.to_string()),
-            graph_inputs: std::collections::BTreeMap::new(),
-        }),
-        run_summary: Some(RunSummary {
-            total_nodes: success + failed + skipped + cached + cancelled,
-            success,
-            failed,
-            skipped,
-            cached,
-            cancelled,
-            promoted_outputs: Vec::new(),
-        }),
-    })
-}
-
-fn apply_run_repairs(run_dir: &Path) -> Result<RunRepairReport, ExitCode> {
-    let manifest_path = run_dir.join("manifest.json");
-    let index_path = run_dir.join("run-log.index.json");
-    let mut notes = Vec::new();
-    let mut manifest_rewritten = false;
-    let mut index_rewritten = false;
-    let incomplete_marker_present = run_dir.join(".run-incomplete.json").exists();
-    let run_id = if run_dir.join("run.snapshot.json").exists() {
-        let snapshot: RunSnapshot =
-            serde_json::from_str(&read_file(&run_dir.join("run.snapshot.json"))?)
-                .map_err(|_| ExitCode::from(3))?;
-        snapshot.run_id.to_string()
-    } else {
-        run_dir
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or("unknown-run")
-            .trim_start_matches("run-")
-            .to_string()
-    };
-
-    let manifest_valid = manifest_path.exists() && read_json_value(&manifest_path).is_ok();
-    if !manifest_valid {
-        let manifest = build_manifest_from_run_dir(run_dir)?;
-        fs::write(
-            &manifest_path,
-            serde_json::to_vec_pretty(&manifest).map_err(|_| ExitCode::from(3))?,
-        )
-        .map_err(|_| ExitCode::from(3))?;
-        manifest_rewritten = true;
-        notes.push("manifest rebuilt from run snapshot, traces, and outputs".to_string());
-    }
-
-    let index_valid = index_path.exists()
-        && fs::read(&index_path)
-            .ok()
-            .and_then(|bytes| serde_json::from_slice::<Vec<Value>>(&bytes).ok())
-            .is_some();
-    if !index_valid {
-        let raw = read_file(&run_dir.join("run.log.jsonl"))?;
-        let rebuilt = raw
-            .lines()
-            .filter(|line| !line.trim().is_empty())
-            .map(|line| serde_json::from_str::<Value>(line).map_err(|_| ExitCode::from(3)))
-            .collect::<Result<Vec<_>, _>>()?;
-        fs::write(&index_path, serde_json::to_vec_pretty(&rebuilt).map_err(|_| ExitCode::from(3))?)
-            .map_err(|_| ExitCode::from(3))?;
-        index_rewritten = true;
-        notes.push("run log index rebuilt from event journal".to_string());
-    }
-    if incomplete_marker_present {
-        notes.push("run is still marked incomplete; investigate scheduler.checkpoint.json before treating artifacts as complete".to_string());
-    }
-
-    Ok(RunRepairReport {
-        run_id,
-        manifest_path: manifest_path.display().to_string(),
-        index_path: index_path.display().to_string(),
-        manifest_rewritten,
-        index_rewritten,
-        incomplete_marker_present,
-        notes,
-    })
-}
-
 pub(crate) fn handle_runtime_command(
     cli: &DagCli,
     command: &RuntimeCommands,
@@ -892,21 +650,42 @@ pub(crate) fn handle_runtime_command(
                 Err(ExitCode::from(3))
             }
         }
-        RuntimeCommands::Repair { run_dir, apply } => {
-            let manifest_valid = run_dir.join("manifest.json").exists()
-                && read_json_value(&run_dir.join("manifest.json")).is_ok();
-            let index_valid = run_dir.join("run-log.index.json").exists()
-                && fs::read(run_dir.join("run-log.index.json"))
-                    .ok()
-                    .and_then(|bytes| serde_json::from_slice::<Vec<Value>>(&bytes).ok())
-                    .is_some();
-            let outcome = validate_and_repair_run_metadata(manifest_valid, index_valid, *apply);
-            let payload = if *apply {
-                serde_json::to_value(apply_run_repairs(run_dir)?).map_err(|_| ExitCode::from(3))?
+        RuntimeCommands::Repair {
+            run_dir,
+            apply,
+            out,
+            run_id,
+            jobs,
+            materialize_inputs,
+            cache,
+            remote_cache_dir,
+        } => {
+            if let Some(out) = out.as_ref() {
+                require_safe_path(out)?;
+            }
+            let report = if *apply {
+                apply_run_repair(
+                    run_dir,
+                    &RepairExecutionOptions {
+                        out_dir: out.clone(),
+                        run_id: run_id.clone(),
+                        jobs: *jobs,
+                        materialize_inputs: crate::run_data::map_materialize_mode(
+                            *materialize_inputs,
+                        ),
+                        cache_mode: match cache {
+                            crate::commands::CacheModeArg::Off => crate::CacheMode::Off,
+                            crate::commands::CacheModeArg::Read => crate::CacheMode::Read,
+                            crate::commands::CacheModeArg::Readwrite => crate::CacheMode::ReadWrite,
+                        },
+                        remote_cache_dir: remote_cache_dir.clone(),
+                    },
+                )?
             } else {
-                serde_json::to_value(&outcome).map_err(|_| ExitCode::from(3))?
+                plan_run_repair(run_dir)?
             };
-            let ok = outcome.manifest_valid && outcome.index_valid;
+            let ok = run_repair_ok(&report, *apply);
+            let payload = serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
                     cli,
@@ -1160,7 +939,7 @@ pub(crate) fn handle_runtime_command(
 #[cfg(test)]
 mod tests {
     use super::{handle_runtime_command, parse_node_state_str};
-    use crate::commands::{Commands, DagCli, RuntimeCommands};
+    use crate::commands::{CacheModeArg, Commands, DagCli, MaterializeModeArg, RuntimeCommands};
     use crate::ExitCode;
     use bijux_dag_runtime::NodeState;
     use serde_json::Value;
@@ -1169,6 +948,19 @@ mod tests {
 
     fn quiet_json_cli(command: RuntimeCommands) -> DagCli {
         DagCli { json: true, quiet: true, command: Commands::Runtime { command } }
+    }
+
+    fn repair_command(run_dir: PathBuf, apply: bool) -> RuntimeCommands {
+        RuntimeCommands::Repair {
+            run_dir,
+            apply,
+            out: None,
+            run_id: None,
+            jobs: 1,
+            materialize_inputs: MaterializeModeArg::Copy,
+            cache: CacheModeArg::Off,
+            remote_cache_dir: None,
+        }
     }
 
     #[test]
@@ -1698,15 +1490,10 @@ mod tests {
         std::fs::write(dir.path().join("outputs").join("index.json"), r#"{"files":[]}"#)
             .expect("outputs");
 
-        let repair_cli = quiet_json_cli(RuntimeCommands::Repair {
-            run_dir: dir.path().to_path_buf(),
-            apply: true,
-        });
-        let repair = handle_runtime_command(
-            &repair_cli,
-            &RuntimeCommands::Repair { run_dir: dir.path().to_path_buf(), apply: true },
-        )
-        .expect("repair");
+        let repair_cli = quiet_json_cli(repair_command(dir.path().to_path_buf(), true));
+        let repair =
+            handle_runtime_command(&repair_cli, &repair_command(dir.path().to_path_buf(), true))
+                .expect("repair");
         assert_eq!(repair, ExitCode::SUCCESS);
         assert!(dir.path().join("manifest.json").exists());
         assert!(dir.path().join("run-log.index.json").exists());
@@ -1784,15 +1571,10 @@ mod tests {
         .expect("state");
         assert_eq!(state_exit, ExitCode::SUCCESS);
 
-        let repair_cli = quiet_json_cli(RuntimeCommands::Repair {
-            run_dir: dir.path().to_path_buf(),
-            apply: true,
-        });
-        let repair_exit = handle_runtime_command(
-            &repair_cli,
-            &RuntimeCommands::Repair { run_dir: dir.path().to_path_buf(), apply: true },
-        )
-        .expect("repair");
+        let repair_cli = quiet_json_cli(repair_command(dir.path().to_path_buf(), true));
+        let repair_exit =
+            handle_runtime_command(&repair_cli, &repair_command(dir.path().to_path_buf(), true))
+                .expect("repair");
         assert_eq!(repair_exit, ExitCode::SUCCESS);
     }
 
@@ -1872,15 +1654,10 @@ mod tests {
         std::fs::write(dir.path().join("outputs").join("index.json"), r#"{"files":[]}"#)
             .expect("outputs");
 
-        let repair_cli = quiet_json_cli(RuntimeCommands::Repair {
-            run_dir: dir.path().to_path_buf(),
-            apply: true,
-        });
-        let repair = handle_runtime_command(
-            &repair_cli,
-            &RuntimeCommands::Repair { run_dir: dir.path().to_path_buf(), apply: true },
-        )
-        .expect("repair");
+        let repair_cli = quiet_json_cli(repair_command(dir.path().to_path_buf(), true));
+        let repair =
+            handle_runtime_command(&repair_cli, &repair_command(dir.path().to_path_buf(), true))
+                .expect("repair");
         assert_eq!(repair, ExitCode::SUCCESS);
 
         let manifest: Value = serde_json::from_str(

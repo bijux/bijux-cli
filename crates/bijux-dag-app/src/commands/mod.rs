@@ -895,6 +895,18 @@ pub(crate) enum RuntimeCommands {
         run_dir: PathBuf,
         #[arg(long)]
         apply: bool,
+        #[arg(long)]
+        out: Option<PathBuf>,
+        #[arg(long)]
+        run_id: Option<String>,
+        #[arg(long, default_value_t = 1)]
+        jobs: usize,
+        #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
+        materialize_inputs: MaterializeModeArg,
+        #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
+        cache: CacheModeArg,
+        #[arg(long)]
+        remote_cache_dir: Option<PathBuf>,
     },
     Retry {
         dag: PathBuf,
