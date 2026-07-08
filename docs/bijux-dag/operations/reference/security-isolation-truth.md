@@ -25,7 +25,7 @@ boundary, network firewall, or clock virtualization layer.
 
 | Surface | What is enforced | What is best-effort | What is not protected |
 | --- | --- | --- | --- |
-| shell backend | declared-effect policy gates for `network`, `env`, and `clock`; shaped environment; declared output target preflight; output-root and run-dir path validation | subprocess boundary; Unix subprocess-group cleanup on timeout or cancellation | socket-level network firewalling; clock or syscall interposition; arbitrary filesystem-read sandboxing; host side effects after spawn |
+| shell backend | declared-effect policy gates for `network`, `env`, and `clock`; shaped environment; non-blank `argv[0]` validation; declared output target preflight; output-root and run-dir path validation | subprocess boundary; Unix subprocess-group cleanup on timeout or cancellation | socket-level network firewalling; clock or syscall interposition; arbitrary filesystem-read sandboxing; host side effects after spawn |
 | container backend | declared-effect policy gates; engine no-network flags for supported engines; digest policy for container image references when required; constrained node mounts; declared output target preflight; shaped environment | isolation quality of the selected container runtime; engine-reported image identity | VM-grade isolation; clock virtualization; registry signature trust; full host sandboxing beyond the container runtime |
 | clean environment | environment shaping through an allowlist and denylist model | correctness depends on honest allowlist declarations | filesystem, process, network, or clock isolation |
 | deny-network | refuse nodes that declare the `network` effect; pass `--network none` to supported container engines | only as strong as accurate effect declarations and the chosen container engine | host-level network isolation for shell subprocesses or dishonest nodes |
@@ -43,6 +43,8 @@ of it.
 - `deny-network` refuses nodes that declare `Effect::Network`
 - `deny-env` refuses nodes that declare `Effect::Env`
 - `deny-clock` refuses nodes that declare `Effect::Clock`
+- shell `argv` must be a non-empty array of strings and `argv[0]` must be a
+  non-blank executable token before the runtime attempts process launch
 - `clean-env` shapes the launched environment through the effective allowlist
 - missing required exact environment bindings fail before execution starts
 - declared output targets are authorized before launch, so paths such as

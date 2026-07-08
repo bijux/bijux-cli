@@ -38,7 +38,7 @@ flowchart LR
 
 | Execution surface | What DAG enforces | What operators must still assume |
 | --- | --- | --- |
-| Local shell subprocess | Declared-effect policy gates, curated environment shaping, declared output target preflight, and Unix subprocess-group termination on timeout or cancellation. `--hermetic` forces `--deny-network`, `--deny-clock`, and `--clean-env`. | The process still runs on the host. There is no socket firewall, no clock virtualization, and no arbitrary filesystem-read sandbox. Non-Unix hosts still rely on best-effort process termination. |
+| Local shell subprocess | Declared-effect policy gates, curated environment shaping, non-blank `argv[0]` validation, declared output target preflight, and Unix subprocess-group termination on timeout or cancellation. `--hermetic` forces `--deny-network`, `--deny-clock`, and `--clean-env`. | The process still runs on the host. There is no socket firewall, no clock virtualization, and no arbitrary filesystem-read sandbox. Non-Unix hosts still rely on best-effort process termination. |
 | Container engine | Declared-effect policy gates, declared output target preflight, plus engine-level no-network mode when the container runtime can honor it. | Isolation depends on the selected engine and runtime host. This is not a VM boundary and does not imply complete filesystem or clock isolation. |
 | Replay `--sandbox` | Source-run write protection: replay outputs cannot be written into the original run directory. | Replay still executes as a normal process. `--sandbox` does not create a process sandbox or network jail. |
 
