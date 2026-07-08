@@ -343,6 +343,8 @@ pub struct CacheIdentity {
     pub node_definition_fingerprint: String,
     pub declared_environment_fingerprint: String,
     pub input_lineage_fingerprint: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub adapter_binary_sha256: Option<String>,
     pub params_fingerprint: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub command_fingerprint: Option<String>,

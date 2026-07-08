@@ -377,20 +377,22 @@ fn execute_dynamic_controller(
     )?;
     let node_fingerprint = node_fingerprint_with_inputs(&base_fingerprint, &inputs_index)?;
     set_node_fingerprint(&ctx, &node.id, node_fingerprint.clone());
-    let (adapter_id, adapter_version) = runtime.adapter_meta_for_kind(&node.kind);
-    let adapter_schema = runtime.adapter_schema_for_kind(&node.kind);
+    let adapter = runtime.adapter_for_kind(&node.kind)?;
+    let adapter_id = adapter.id();
+    let adapter_schema = adapter.produces_outputs_schema_version();
+    let adapter_binary_sha256 = adapter.binary_hash();
     let cache_read = sacred_execution::run_cache_lookup(
         options,
         node,
         &node_fingerprint,
         &ctx,
         Arc::clone(&ctx.fs),
-        &adapter_id,
-        &adapter_version,
+        &adapter_id.id,
+        &adapter_id.version,
+        adapter_binary_sha256.as_deref(),
         &adapter_schema,
     )?;
     if !cache_read.hit {
-        let adapter = runtime.adapter_for_kind(&node.kind)?;
         let result = sacred_execution::run_retry_logic(
             adapter.as_ref(),
             graph,
@@ -407,8 +409,9 @@ fn execute_dynamic_controller(
                     &node_fingerprint,
                     &ctx,
                     Arc::clone(&ctx.fs),
-                    &adapter_id,
-                    &adapter_version,
+                    &adapter_id.id,
+                    &adapter_id.version,
+                    adapter_binary_sha256.as_deref(),
                     &adapter_schema,
                 )?;
             }
@@ -2539,6 +2542,7 @@ pub fn execute(
 
             let adapter_id = adapter.id();
             let adapter_schema = adapter.produces_outputs_schema_version();
+            let adapter_binary_sha256 = adapter.binary_hash();
             let inputs_index = sacred_execution::run_materialize_inputs(
                 &ctx,
                 graph,
@@ -2558,6 +2562,7 @@ pub fn execute(
                     Arc::clone(&ctx.fs),
                     &adapter_id.id,
                     &adapter_id.version,
+                    adapter_binary_sha256.as_deref(),
                     &adapter_schema,
                 )?;
                 let hit = cache_read.hit;
@@ -2968,6 +2973,7 @@ pub fn execute(
                     Arc::clone(&ctx.fs),
                     &aid,
                     &aver,
+                    runtime.adapter_for_kind(&node.kind)?.binary_hash().as_deref(),
                     &aschema,
                 )?;
             }
@@ -3366,6 +3372,7 @@ pub fn execute(
                             Arc::clone(&ctx.fs),
                             &aid,
                             &aver,
+                            runtime.adapter_for_kind(&node.kind)?.binary_hash().as_deref(),
                             &aschema,
                         )?;
                     }

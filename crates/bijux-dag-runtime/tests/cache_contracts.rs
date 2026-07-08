@@ -23,6 +23,7 @@ fn sample_input() -> CacheKeyInput {
         input_lineage_fingerprint: "inputs-fp-1".to_string(),
         adapter_id: "shell".to_string(),
         adapter_version: "1.0.0".to_string(),
+        adapter_binary_sha256: None,
         output_schema_version: "out/v1".to_string(),
         policy_fingerprint: "policy-fp-1".to_string(),
         execution_contract_fingerprint: "exec-contract-fp-1".to_string(),
@@ -58,6 +59,16 @@ fn cache_key_changes_on_backend_capability_change() {
 }
 
 #[test]
+fn cache_key_changes_when_external_adapter_binary_identity_changes() {
+    let mut input = sample_input();
+    input.adapter_binary_sha256 = Some("sha256-a".to_string());
+    let key_a = cache_key_explanation(&input).key;
+    input.adapter_binary_sha256 = Some("sha256-b".to_string());
+    let key_b = cache_key_explanation(&input).key;
+    assert_ne!(key_a, key_b);
+}
+
+#[test]
 fn cache_key_changes_on_policy_or_config_change() {
     let mut input = sample_input();
     let key_a = cache_key_explanation(&input).key;
@@ -82,10 +93,11 @@ fn cache_proof_requires_explicit_metadata_fields() {
         "input_lineage_fingerprint": "inputs-fp-1",
         "adapter_id": "shell",
         "adapter_version": "1.0.0",
+        "adapter_binary_sha256": null,
         "policy_fingerprint": "policy-fp-1",
         "execution_contract_fingerprint": "exec-contract-fp-1",
         "backend_class": "local-shell",
-        "cache_metadata_version": "cache-meta/v0.2",
+        "cache_metadata_version": "cache-meta/v0.4",
         "produces_outputs_schema_version": "out/v1",
     });
     assert!(cache_entry_has_required_proof(&valid));
@@ -94,7 +106,7 @@ fn cache_proof_requires_explicit_metadata_fields() {
     let missing_proof = json!({
         "adapter_id": "shell",
         "adapter_version": "1.0.0",
-        "cache_metadata_version": "cache-meta/v0.2",
+        "cache_metadata_version": "cache-meta/v0.4",
     });
     assert!(!cache_entry_has_required_proof(&missing_proof));
 
@@ -106,6 +118,7 @@ fn cache_proof_requires_explicit_metadata_fields() {
         "input_lineage_fingerprint": "inputs-fp-1",
         "adapter_id": "shell",
         "adapter_version": "1.0.0",
+        "adapter_binary_sha256": null,
         "policy_fingerprint": "policy-fp-1",
         "execution_contract_fingerprint": "exec-contract-fp-1",
         "backend_class": "local-shell",

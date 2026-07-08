@@ -1128,7 +1128,7 @@ fn runtime_cache_meta_records_strong_identity_components() {
         serde_json::from_str(&fs::read_to_string(manifest_path).expect("cache manifest json"))
             .expect("parse cache manifest");
 
-    assert_eq!(meta["cache_metadata_version"], "cache-meta/v0.3");
+    assert_eq!(meta["cache_metadata_version"], "cache-meta/v0.4");
     assert!(meta["cache_key"].is_string());
     assert!(meta["node_fingerprint"].is_string());
     assert!(meta["node_definition_fingerprint"].is_string());
@@ -1138,6 +1138,7 @@ fn runtime_cache_meta_records_strong_identity_components() {
     assert!(meta["command_fingerprint"].is_string());
     assert!(meta["policy_fingerprint"].is_string());
     assert!(meta["execution_contract_fingerprint"].is_string());
+    assert!(meta["adapter_binary_sha256"].is_null());
     assert_eq!(meta["backend_class"], "local");
     assert_eq!(manifest["manifest_version"], "cache-entry/v0.1");
     assert_eq!(manifest["node_id"], "node");
@@ -1150,6 +1151,7 @@ fn runtime_cache_meta_records_strong_identity_components() {
     )
     .expect("parse trace");
     assert!(trace["cache_identity"]["cache_key"].is_string());
+    assert!(trace["cache_identity"]["adapter_binary_sha256"].is_null());
     assert!(trace["cache_identity"]["params_fingerprint"].is_string());
     assert!(trace["cache_identity"]["command_fingerprint"].is_string());
 }

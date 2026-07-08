@@ -10,7 +10,8 @@ pub use crate::CacheMode;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-pub const CACHE_METADATA_VERSION: &str = "cache-meta/v0.3";
+pub const CACHE_METADATA_VERSION: &str = "cache-meta/v0.4";
+pub const CACHE_METADATA_VERSION_PREVIOUS: &str = "cache-meta/v0.3";
 pub const CACHE_METADATA_VERSION_LEGACY: &str = "cache-meta/v0.2";
 pub const CACHE_ENTRY_MANIFEST_VERSION: &str = "cache-entry/v0.1";
 
@@ -22,6 +23,8 @@ pub struct CacheKeyInput {
     pub input_lineage_fingerprint: String,
     pub adapter_id: String,
     pub adapter_version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub adapter_binary_sha256: Option<String>,
     pub output_schema_version: String,
     pub policy_fingerprint: String,
     pub execution_contract_fingerprint: String,
@@ -68,6 +71,10 @@ pub fn cache_key_explanation(input: &CacheKeyInput) -> CacheKeyExplanation {
         ("input_lineage_fingerprint".to_string(), input.input_lineage_fingerprint.clone()),
         ("adapter_id".to_string(), input.adapter_id.clone()),
         ("adapter_version".to_string(), input.adapter_version.clone()),
+        (
+            "adapter_binary_sha256".to_string(),
+            input.adapter_binary_sha256.clone().unwrap_or_default(),
+        ),
         ("output_schema_version".to_string(), input.output_schema_version.clone()),
         ("policy_fingerprint".to_string(), input.policy_fingerprint.clone()),
         (
@@ -104,6 +111,10 @@ pub fn cache_key_input_from_meta(meta: &serde_json::Value) -> Option<CacheKeyInp
             .to_string(),
         adapter_id: meta.get("adapter_id").and_then(|v| v.as_str())?.to_string(),
         adapter_version: meta.get("adapter_version").and_then(|v| v.as_str())?.to_string(),
+        adapter_binary_sha256: meta
+            .get("adapter_binary_sha256")
+            .and_then(|v| v.as_str())
+            .map(ToString::to_string),
         output_schema_version: meta
             .get("produces_outputs_schema_version")
             .or_else(|| meta.get("output_schema_version"))
@@ -139,7 +150,9 @@ pub fn cache_metadata_version_supported(meta: &serde_json::Value) -> bool {
     meta.get("cache_metadata_version")
         .and_then(|v| v.as_str())
         .map(|version| {
-            version == CACHE_METADATA_VERSION || version == CACHE_METADATA_VERSION_LEGACY
+            version == CACHE_METADATA_VERSION
+                || version == CACHE_METADATA_VERSION_PREVIOUS
+                || version == CACHE_METADATA_VERSION_LEGACY
         })
         .unwrap_or(false)
 }

@@ -23,6 +23,7 @@ fn cache_key_is_stable_for_cosmetic_omissions_and_changes_for_meaningful_inputs(
         input_lineage_fingerprint: "inputs-fp-1".to_string(),
         adapter_id: "shell".to_string(),
         adapter_version: "1.0.0".to_string(),
+        adapter_binary_sha256: None,
         output_schema_version: "schema/v1".to_string(),
         policy_fingerprint: "policy-a".to_string(),
         execution_contract_fingerprint: "exec-contract-a".to_string(),
@@ -47,6 +48,12 @@ fn cache_key_is_stable_for_cosmetic_omissions_and_changes_for_meaningful_inputs(
     changed = base.clone();
     changed.execution_contract_fingerprint = "exec-contract-b".to_string();
     assert_ne!(e1.key, cache_key_explanation(&changed).key);
+
+    changed = base.clone();
+    changed.adapter_binary_sha256 = Some("sha256-external-a".to_string());
+    let external_a = cache_key_explanation(&changed).key;
+    changed.adapter_binary_sha256 = Some("sha256-external-b".to_string());
+    assert_ne!(external_a, cache_key_explanation(&changed).key);
 }
 
 #[test]
@@ -59,16 +66,17 @@ fn cache_proof_metadata_and_version_checks_reject_stale_or_missing() {
         "input_lineage_fingerprint": "inputs-fp-1",
         "adapter_id": "shell",
         "adapter_version": "1",
+        "adapter_binary_sha256": null,
         "policy_fingerprint": "policy-1",
         "execution_contract_fingerprint": "exec-contract-1",
         "backend_class": "local",
         "produces_outputs_schema_version": "schema/v1",
-        "cache_metadata_version": "cache-meta/v0.2"
+        "cache_metadata_version": "cache-meta/v0.4"
     });
     assert!(cache_entry_has_required_proof(&ok));
     assert!(cache_metadata_version_supported(&ok));
 
-    let missing_proof = serde_json::json!({"cache_metadata_version": "cache-meta/v0.2"});
+    let missing_proof = serde_json::json!({"cache_metadata_version": "cache-meta/v0.4"});
     assert!(!cache_entry_has_required_proof(&missing_proof));
 
     let stale = serde_json::json!({
@@ -79,6 +87,7 @@ fn cache_proof_metadata_and_version_checks_reject_stale_or_missing() {
         "input_lineage_fingerprint": "inputs-fp-1",
         "adapter_id": "shell",
         "adapter_version": "1",
+        "adapter_binary_sha256": null,
         "policy_fingerprint": "policy-1",
         "execution_contract_fingerprint": "exec-contract-1",
         "backend_class": "local",

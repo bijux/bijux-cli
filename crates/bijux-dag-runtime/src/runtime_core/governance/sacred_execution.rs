@@ -96,6 +96,7 @@ pub(crate) fn run_cache_lookup(
     fs: Arc<dyn crate::Fs>,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_binary_sha256: Option<&str>,
     adapter_outputs_schema_version: &str,
 ) -> Result<CacheRead, RuntimeError> {
     try_cache_read(
@@ -106,6 +107,7 @@ pub(crate) fn run_cache_lookup(
         fs,
         adapter_id,
         adapter_version,
+        adapter_binary_sha256,
         adapter_outputs_schema_version,
     )
 }
@@ -119,6 +121,7 @@ pub(crate) fn run_cache_write(
     fs: Arc<dyn crate::Fs>,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_binary_sha256: Option<&str>,
     adapter_outputs_schema_version: &str,
 ) -> Result<(), RuntimeError> {
     try_cache_write(
@@ -129,6 +132,7 @@ pub(crate) fn run_cache_write(
         fs,
         adapter_id,
         adapter_version,
+        adapter_binary_sha256,
         adapter_outputs_schema_version,
     )
 }

@@ -2105,6 +2105,7 @@ fn write_trace(
         node_id,
         adapter_id,
         adapter_version,
+        adapter_binary_sha256.as_deref(),
         adapter_outputs_schema_version,
     )?);
     let exit_code = terminal_exit_code(node, &status, failure.as_ref(), container_meta.as_ref());
@@ -3370,6 +3371,7 @@ fn cache_key_input_for_run(
     ctx: &RunContext,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_binary_sha256: Option<&str>,
     adapter_outputs_schema_version: &str,
 ) -> Result<CacheKeyInput, RuntimeError> {
     Ok(CacheKeyInput {
@@ -3379,6 +3381,7 @@ fn cache_key_input_for_run(
         input_lineage_fingerprint: input_lineage_fingerprint_from_run(ctx, &node.id)?,
         adapter_id: adapter_id.to_string(),
         adapter_version: adapter_version.to_string(),
+        adapter_binary_sha256: adapter_binary_sha256.map(ToString::to_string),
         output_schema_version: adapter_outputs_schema_version.to_string(),
         policy_fingerprint: policy_fingerprint(&options.policy),
         execution_contract_fingerprint: execution_contract_fingerprint(options),
@@ -4024,6 +4027,7 @@ fn try_cache_read(
     fs: Arc<dyn Fs>,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_binary_sha256: Option<&str>,
     adapter_outputs_schema_version: &str,
 ) -> Result<CacheRead, RuntimeError> {
     if options.cache_mode == CacheMode::Off {
@@ -4045,6 +4049,7 @@ fn try_cache_read(
             ctx,
             adapter_id,
             adapter_version,
+            adapter_binary_sha256,
             adapter_outputs_schema_version,
         )?;
         let key = cache_key_explanation(&key_input).key;
@@ -4193,6 +4198,7 @@ fn try_cache_write(
     fs: Arc<dyn Fs>,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_binary_sha256: Option<&str>,
     adapter_outputs_schema_version: &str,
 ) -> Result<(), RuntimeError> {
     if options.cache_mode != CacheMode::ReadWrite {
@@ -4215,6 +4221,7 @@ fn try_cache_write(
         ctx,
         adapter_id,
         adapter_version,
+        adapter_binary_sha256,
         adapter_outputs_schema_version,
     )?;
     let key = cache_key_explanation(&key_input).key;
@@ -4283,6 +4290,7 @@ fn populate_cache_entry_dir(
         "command_fingerprint": command_fingerprint_from_ctx(ctx, &node.id),
         "adapter_id": key_input.adapter_id,
         "adapter_version": key_input.adapter_version,
+        "adapter_binary_sha256": key_input.adapter_binary_sha256,
         "produces_outputs_schema_version": key_input.output_schema_version,
         "policy_fingerprint": key_input.policy_fingerprint,
         "execution_contract_fingerprint": key_input.execution_contract_fingerprint,
@@ -4450,6 +4458,11 @@ fn verify_cache_entry(
     {
         return Ok(false);
     }
+    if meta.get("adapter_binary_sha256").and_then(|v| v.as_str())
+        != expected_input.adapter_binary_sha256.as_deref()
+    {
+        return Ok(false);
+    }
     let produced_output_schema_version = meta
         .get("produces_outputs_schema_version")
         .and_then(|v| v.as_str())
@@ -4530,6 +4543,7 @@ fn cache_identity_for_trace(
     node_id: &str,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_binary_sha256: Option<&str>,
     adapter_outputs_schema_version: &str,
 ) -> Result<CacheIdentity, RuntimeError> {
     let key_input = CacheKeyInput {
@@ -4539,6 +4553,7 @@ fn cache_identity_for_trace(
         input_lineage_fingerprint: input_lineage_fingerprint_from_run(ctx, node_id)?,
         adapter_id: adapter_id.to_string(),
         adapter_version: adapter_version.to_string(),
+        adapter_binary_sha256: adapter_binary_sha256.map(ToString::to_string),
         output_schema_version: adapter_outputs_schema_version.to_string(),
         policy_fingerprint: policy_fingerprint(&ctx.policy),
         execution_contract_fingerprint: ctx.execution_contract_fingerprint.clone(),
@@ -4549,6 +4564,7 @@ fn cache_identity_for_trace(
         node_definition_fingerprint: key_input.node_definition_fingerprint,
         declared_environment_fingerprint: key_input.declared_environment_fingerprint,
         input_lineage_fingerprint: key_input.input_lineage_fingerprint,
+        adapter_binary_sha256: key_input.adapter_binary_sha256,
         params_fingerprint: params_fingerprint_from_ctx(ctx, node_id),
         command_fingerprint: command_fingerprint_from_ctx(ctx, node_id),
         policy_fingerprint: key_input.policy_fingerprint,
