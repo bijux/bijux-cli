@@ -28,7 +28,15 @@ At the module level, the public lanes are intentionally limited to `stable`,
 helpers remain available for repository-owned coverage, and the `experimental`
 lane is opt-in behind `experimental-public-api`.
 
-## Responsibility Map
+## Reach For This Crate When
+
+- a valid graph runs, retries, replays, or caches incorrectly
+- runtime policy, capability checks, or trigger-rule behavior look wrong
+- you need the execution semantics that power retained run evidence
+- you are deciding whether a defect belongs to runtime policy or to CLI
+  presentation
+
+## What It Owns
 
 | Surface | Ownership |
 | --- | --- |
@@ -39,6 +47,14 @@ lane is opt-in behind `experimental-public-api`.
 | runtime artifacts | manifests, verification, cache lineage, and proof material |
 | runtime identity | build-stamped version identity and deterministic runtime fingerprints |
 | boundary | does not own authoritative DAG schema or user-facing CLI routing |
+
+## What It Does Not Own
+
+- graph schema authority and deterministic compilation belong to
+  [`bijux-dag-core`](bijux-dag-core.md)
+- command routing and response shaping belong to [`bijux-dag-app`](bijux-dag-app.md)
+- package release policy and maintainer reports belong to repository and
+  maintainer surfaces rather than this runtime crate
 
 ## Identity Guarantees
 
@@ -86,18 +102,25 @@ lane is opt-in behind `experimental-public-api`.
 - `crates/bijux-dag-runtime/src/replay`
 - `crates/bijux-dag-runtime/src/diagnostics`
 
-## Open Next
+## Practical Starting Points
 
 - open the [DAG Handbook](../index.md) for the full DAG system map
-- open [`bijux-dag-core`](./bijux-dag-core.md) for graph truth and planning inputs
-- open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and response shaping
-- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md) for the canonical explanation of plan identity, execution identity, environment identity, cache keys, and replay-bundle boundaries
-- open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) for the repository-backed execution path that exercises retained container identity and engine-unavailable failure handling
-- open [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md) for the repository-backed execution path that exercises full-workflow cache hits, selective invalidation, corruption refusal, and proof-backed reuse rejection
-- open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) for the repository-backed execution path that exercises branch decisions, join-trigger behavior, and replay stability
-- open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) for the repository-backed execution path that exercises retry evidence, source-run input rematerialization, and strict verification after repair
-- open [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md) for the repository-backed execution path that exercises deterministic backfill fanout, retried partition state, and explicit handoff from backfill requests into retained runs
-- open [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md) for the repository-backed execution path that exercises cron preview, deterministic schedule run ids, queue dispatch, and explicit ledger-to-run completion
+- open [`bijux-dag-core`](bijux-dag-core.md) for graph truth and planning
+  inputs
+- open [`bijux-dag-app`](bijux-dag-app.md) for command orchestration and
+  response shaping
+- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md)
+  for the canonical explanation of plan identity, execution identity,
+  environment identity, cache keys, and replay-bundle boundaries
+- open [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md)
+  when you want a real execution path for cache hits, invalidation, corruption
+  refusal, and proof-backed reuse rejection
+- open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)
+  when you want a real execution path for retry evidence, source-run input
+  rematerialization, and repair verification
+- open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
+  when you want a real execution path for branch decisions, skipped-lane
+  evidence, and replay stability
 
 ## Code Anchors
 
@@ -108,7 +131,7 @@ lane is opt-in behind `experimental-public-api`.
 - `crates/bijux-dag-runtime/src/policy/evaluator.rs`
 - `crates/bijux-dag-runtime/src/replay/verifier.rs`
 
-## Review Lens
+## Review Focus
 
 - runtime policy should stay explicit, testable, and separate from graph definition
 - artifact and replay rules should be inspectable rather than hidden behind execution helpers

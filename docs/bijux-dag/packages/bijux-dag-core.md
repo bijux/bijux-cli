@@ -21,7 +21,16 @@ This package owns the explicit graph-contract boundary inside that promise.
 Use this page when the question is about graph truth before runtime side
 effects begin.
 
-## Responsibility Map
+## Reach For This Crate When
+
+- a graph should have validated differently
+- node identity, fingerprints, topology, or equivalence look wrong
+- you need a pure Rust dependency for authoring, inspection, or validation
+  without pulling in runtime execution
+- you are deciding whether a bug belongs to graph compilation or to later
+  execution behavior
+
+## What It Owns
 
 | Surface | Ownership |
 | --- | --- |
@@ -32,6 +41,14 @@ effects begin.
 | branch contracts | semantic branch nodes, conditional-edge validation, and trigger-rule compatibility rules |
 | boundary | no scheduler orchestration, CLI routing, or persistence side effects |
 
+## What It Does Not Own
+
+- scheduler decisions, retry behavior, replay policy, and cache reuse belong to
+  [`bijux-dag-runtime`](bijux-dag-runtime.md)
+- command routing and operator-facing output shaping belong to
+  [`bijux-dag-app`](bijux-dag-app.md)
+- retained artifact storage authority belongs to `bijux-dag-artifacts`
+
 ## Source Layout
 
 - `crates/bijux-dag-core/src/graph`
@@ -41,17 +58,21 @@ effects begin.
 - `crates/bijux-dag-core/src/planner`
 - `crates/bijux-dag-core/src/contracts`
 
-## Open Next
+## Practical Starting Points
 
-- open the [DAG Handbook](../index.md) for cross-package architecture and operator-facing context
-- open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question moves from graph truth to execution policy
-- open the [Repository Handbook](../../bijux-core/index.md) when the concern crosses into CLI or maintainer policy
-- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md) when the question is how graph identity feeds plan, execution, cache, and replay identity downstream
-- open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) when you want the repository example that binds a graph-owned label into a real container command surface
-- open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) when you want the repository example that binds a graph-owned enum input into a real branch decision surface
-- open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) when you want the repository example that binds graph-owned path inputs into retry and recovery behavior at a real replay boundary
-- open [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md) when you want the repository example that binds requested slots plus backfill-owned window metadata into a typed graph input contract
-- open [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md) when you want the repository example that binds a schedule-owned timestamp into a typed graph input contract and retained publication output
+- open the [DAG Handbook](../index.md) for the product story before crate
+  boundaries
+- open [`bijux-dag-runtime`](bijux-dag-runtime.md) when the question moves
+  from graph truth to execution policy
+- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md)
+  when the question is how graph identity flows into plan, execution, cache,
+  and replay identity downstream
+- open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
+  when you want a real example of graph-owned branch inputs becoming a retained
+  execution decision
+- open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
+  when you want a graph-owned label and command contract carried into real
+  container execution
 
 ## Code Anchors
 
@@ -61,7 +82,7 @@ effects begin.
 - `crates/bijux-dag-core/src/pipeline/validate.rs`
 - `crates/bijux-dag-core/src/planner/planner.rs`
 
-## Review Lens
+## Review Focus
 
 - graph compilation should remain deterministic and side-effect free
 - runtime or CLI concerns should not leak into the kernel layer
