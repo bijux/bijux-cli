@@ -9,17 +9,33 @@ last_reviewed: 2026-07-08
 
 # DAG Interfaces
 
-The interfaces section defines what operators and integrators can rely on:
-command surfaces, crate APIs, config and policy surfaces, and identity-bearing
-data contracts.
+Use this section when you need the supported caller contract for `bijux-dag`:
+commands, public crate imports, configuration and policy inputs, retained
+artifact payloads, and compatibility boundaries.
 
-## Interface Scope
+Start here when you are authoring workflows, integrating DAG execution into a
+tool, automating around retained run data, or checking whether a route belongs
+to the shipped public `v0.4.0` surface.
 
-- DAG command and subcommand behavior for the public `bijux-dag --help` surface
-- stable crate-root API exports by DAG crate
-- runtime and policy configuration behavior
-- run/artifact/replay/diff contract payloads
-- hidden maintainer namespaces only when the question is about internal or simulation coverage
+## Start With The Question You Have
+
+| If you need to... | Open this page |
+| --- | --- |
+| inspect the visible `bijux-dag` command contract | [CLI Surface](cli-surface.md) |
+| see real runnable examples before adopting the tool | [Runnable Examples](examples/index.md) |
+| embed DAG behavior from Rust | [API Surface](api-surface.md) |
+| understand graph, run, replay, and diff payloads | [Data Contracts](data-contracts.md) |
+| understand compatibility promises and boundaries | [Compatibility Commitments](compatibility-commitments.md) |
+| inspect hidden or intentionally non-stable routes | [Non-Stable Command Inventory](reference/nonstable-command-inventory.md) |
+
+## What This Section Covers
+
+- the public `bijux-dag --help` command surface
+- stable Rust-facing imports across the public DAG crates
+- runtime, policy, and configuration inputs that affect execution
+- graph, run, artifact, replay, and comparison payload contracts
+- deliberately hidden routes only when the question is about internal,
+  simulated, or experimental coverage
 
 ## Code Anchors
 
@@ -51,11 +67,23 @@ data contracts.
 - [Public Imports](public-imports.md)
 - [Compatibility Commitments](compatibility-commitments.md)
 
-## Reading Rule
+## Public Boundary In Plain Terms
 
-Use this section when the question is about what operators, tools, or other
-crates can depend on. Move back to Architecture when the next question is about
-engine structure instead of public contracts. For deliberate non-stable command
-inventory, use `bijux-dag commands --lane experimental`,
-`bijux-dag commands --lane simulated`, or `bijux-dag commands --lane internal`
-rather than treating hidden routes as public API.
+The default product story is local-first DAG execution. Validation, planning,
+running, replay, comparison, cache inspection, and retained evidence all
+belong to that story. Experimental, simulated, and maintainer-only lanes exist
+in the repository, but they are not part of the normal operator contract unless
+you enter them deliberately.
+
+## Before You Move Deeper
+
+- Stay in this section when the question is what operators, tools, or other
+  crates may rely on.
+- Move to Architecture when the next question is engine structure, scheduler
+  assembly, or internal crate wiring.
+- Move to Operations when the next question is how to run, diagnose, recover,
+  or release real DAG workflows.
+- Use `bijux-dag commands --lane experimental`,
+  `bijux-dag commands --lane simulated`, or
+  `bijux-dag commands --lane internal` when you need deliberate visibility into
+  non-default routes instead of treating them as part of the public API.
