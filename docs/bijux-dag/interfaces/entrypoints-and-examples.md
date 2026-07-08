@@ -9,7 +9,8 @@ last_reviewed: 2026-07-08
 
 # Entrypoints and Examples
 
-This page records practical DAG entrypoints for CLI users and Rust integrators.
+This page is the practical starting point for `bijux-dag` users who want
+concrete commands instead of conceptual overviews.
 
 If you want the repository-backed example set indexed by workflow and expected
 output instead of by interface surface, start with
@@ -20,30 +21,24 @@ with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles.
 
 The CLI examples on this page stay on the stable `v0.4.0` operator surface
-from the [Release Boundary](../foundation/release-boundary.md).
+from the [Release Boundary](../foundation/release-boundary.md), except where a
+section explicitly calls out an experimental route.
 
-## Proof Map
+## Choose An Entry Point
 
-- explicit graph contracts: `bijux-dag validate`, the graph schema reference, and the authored DAG examples under `evidence/dag/authoring/examples/`
-- deterministic execution records: `bijux-dag run`, `bijux-dag explain`, and retained node traces under `artifacts/`
-- verified artifacts: `bijux-dag artifact registry`, `bijux-dag artifact-inspect`, and the file-processing plus container workflows
-- cache explanation: `bijux-dag cache verify`, `bijux-dag cache explain`, and the cache-behavior workflow
-- replayable run bundles: `bijux-dag replay`, retained source runs, and the reproducibility model for replay identity
-
-## Visual Summary
-
-```mermaid
-flowchart LR
-    examples[Examples] --> cli_example[CLI example]
-    examples --> rust_example[Rust API example]
-    examples --> config_example[Config-driven example]
-
-    cli_example --> cli_entry[bijux-dag entrypoints]
-    rust_example --> api_entry[dag-core and dag-runtime crate exports]
-    config_example --> runtime_path[configured runtime path]
-```
+| If you want to... | Start here |
+| --- | --- |
+| validate and run a simple DAG | [File-processing commands](#file-processing-cli-entrypoint) |
+| inspect artifacts from a retained run | [File-processing commands](#file-processing-cli-entrypoint) |
+| compare two runs of a structured workflow | [Structured workflow comparison](#structured-workflow-comparison) |
+| verify cache behavior and cache-miss explanation | [Cache-oriented commands](#cache-oriented-commands) |
+| test branch decisions and replay stability | [Evidence-backed branch workflow](#evidence-backed-branch-workflow) |
+| test retry, failure attribution, and focused repair | [Failure-recovery workflow](#failure-recovery-workflow) |
+| embed a minimal DAG parse path in Rust | [Rust entrypoint example](#rust-entrypoint-example) |
 
 ## CLI Entrypoints
+
+### File-Processing CLI Entrypoint
 
 ```bash
 SOURCE_DIR="$(pwd)/evidence/dag/authoring/examples/file-processing-source"
@@ -68,6 +63,11 @@ bijux-dag diff \
   --mode semantic --explain
 ```
 
+That single sequence covers the basic spine of the shipped local operator
+surface: validate, run, inspect, replay, and diff.
+
+### Structured Workflow Comparison
+
 For a structured data workflow with changed-input attribution, use the regional
 sales example. The retained-run comparison below assumes the warm and updated
 runs from the dedicated workflow guide already exist:
@@ -89,6 +89,8 @@ bijux-dag runs compare regional-sales-warm regional-sales-updated \
   --json
 ```
 
+### Cache-Oriented Commands
+
 For the same repository workflow when the question is cache behavior rather
 than retained-run comparison, use the cache guide surfaces directly:
 
@@ -105,6 +107,8 @@ bijux-dag --json cache verify \
 That path stays honest about the current release boundary: `cache verify` is on
 the stable operator surface, while `why-cache-missed` is repository-tested but
 still an explicit-path experimental diagnostic route in `v0.4.0`.
+
+### Evidence-Backed Branch Workflow
 
 For one retained workflow family that combines branch routing, warm cache
 reuse, changed-run comparison, replay proof, strict verification, and final
@@ -126,6 +130,8 @@ Continue with the dedicated guide for the full retained-run comparison, replay,
 verification, and promotion sequence:
 [Evidence-Backed Bulletin Workflow](../operations/guides/evidence-backed-bulletin-workflow.md).
 
+### Fastest Local Onboarding
+
 For the fastest repository-backed onboarding path that still proves retained
 artifacts, warm cache reuse, focused replay, and strict verification, start
 with the first-run tutorial:
@@ -138,6 +144,8 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
 
 Continue with the full path in
 [First-Run Tutorial](../operations/guides/first-run-tutorial.md).
+
+### Container-Backed Workflow
 
 For a real container-backed packaging workflow, validate and run the release
 note example with one path input and one graph-owned label:
@@ -153,6 +161,8 @@ bijux-dag run --json evidence/dag/authoring/examples/release-note-bundle.dag.jso
 cat ./artifacts/release-note-bundle-runs/run-release-note-bundle/nodes/package_bundle/trace.json
 ```
 
+### Minimal Branch Inspection Workflow
+
 For a real branch-backed workflow, validate and run the audience-routing
 example with one path input and one enum branch selector:
 
@@ -166,6 +176,8 @@ bijux-dag run --json evidence/dag/authoring/examples/audience-branch-bulletin.da
   --input "audience_mode=technical"
 cat ./artifacts/audience-branch-runs/run-audience-branch-technical/nodes/choose_audience_lane/trace.json
 ```
+
+### Failure-Recovery Workflow
 
 For a real failure-recovery workflow, validate the compliance-gated bulletin
 example, allow one transient retry, and repair only the failed publication
