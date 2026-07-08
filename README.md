@@ -15,20 +15,23 @@
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-dag docs](https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli) [![bijux-dag docs.rs](https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` is the shared workspace for two public Bijux products:
+`bijux-core` is the repository behind two public Bijux products:
 
 - `bijux`, the root command runtime for apps, plugins, configuration,
   diagnostics, and interactive workflows
-- `bijux-dag`, a local-first DAG runtime for reproducible workflows with
-  explicit graph contracts, deterministic execution records, verified
-  artifacts, cache explanation, and replayable run bundles
+- `bijux-dag`, the local-first DAG toolchain for graph validation, planning,
+  execution, replay, artifact inspection, and verification
 
-The repository also carries the internal crates that keep those products
-packaged, tested, documented, and released from one reviewable tree.
+The same tree also carries the internal crates, contracts, docs, and release
+automation that keep those products coherent. The public story is simple:
 
-`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
-with explicit graph contracts, deterministic execution records, verified
-artifacts, cache explanation, and replayable run bundles.
+- use `bijux` when you want a general command runtime with mounted apps,
+  plugins, config, history, memory, diagnostics, and REPL support
+- use `bijux-dag` when you want reproducible local workflow execution with
+  explicit graph contracts, retained run evidence, cache explanation, replay,
+  and comparison
+
+The current workspace release line is `0.4.0`.
 
 ## What Ships Today
 
@@ -38,12 +41,10 @@ artifacts, cache explanation, and replayable run bundles.
 | `bijux-dag` | Rust crates and release bundles | local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles |
 | `bijux-dev` | repository-internal crate and binaries | maintainer diagnostics, contracts, inventories, and release proof |
 
-The current workspace release line is `0.4.0`.
-
 ## Stable Product Boundary
 
-`v0.4.0` ships a usable local product surface today, but not every repository
-route is a public promise.
+`v0.4.0` is a real local product line today, but not every repository-owned
+route is a public compatibility promise.
 
 - `bijux` supports the visible root command surface shown by `bijux --help`,
   including runtime health, app and plugin routing, layered config, history,
@@ -75,8 +76,9 @@ route is a public promise.
   persistent volume claim to mount retained node inputs, outputs, and work
   directories into the Job pod.
 - Experimental DAG routes remain callable by explicit path, but they are not
-  part of the stable compatibility lane. Inventory them deliberately with
-  `bijux-dag commands --lane experimental`.
+  part of the stable compatibility lane. Use
+  `bijux-dag commands --lane experimental` when you intentionally need that
+  inventory.
 - Simulated and maintainer-only DAG namespaces require
   `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1`, and they
   now require deliberate lane inventory through `bijux-dag commands --lane
@@ -84,7 +86,7 @@ route is a public promise.
 - The current internal schedule lane is repository-tested for cron preview,
   durable submission, backfill planning, aggregate backfill summary, failed-
   partition retry, queue dispatch, and queue-to-run linkage, but it remains
-  outside the stable `v0.4.0` public operator contract.
+  outside the stable `v0.4.0` operator contract.
 - Generic HPC execution beyond the shared-filesystem SLURM lane, public remote
   workers, and public enterprise or federation APIs are not part of the
   `v0.4.0` public product boundary.
@@ -108,13 +110,19 @@ For what comes after that boundary, use
 | internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | maintainer verification, schedule, runtime, release, and capability lanes; use `bijux-dag commands --lane internal` only for deliberate repository maintenance work |
 | future | not a `v0.4.0` product promise | generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
 
-Build operator procedures on the stable row. Use
-`bijux-dag commands --lane experimental` only when you intentionally need
-repository-tested but non-stable operator helpers. Use
-`bijux-dag commands --lane simulated` or `bijux-dag commands --lane internal`
-only for deliberate modeled or maintainer workflows, and only set
-`BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` when you are
-intentionally executing those lanes.
+Build operator procedures on the stable row. Treat the other rows as deliberate
+opt-in surfaces, not as default product guarantees.
+
+## Start Here
+
+- use `cargo install bijux-cli` when you want the `bijux` runtime
+- use `cargo install bijux-dag-cli` when you want the standalone DAG command
+- use the [CLI handbook](https://bijux.io/bijux-core/bijux-cli/) when the
+  question is about `bijux`
+- use the [DAG handbook](https://bijux.io/bijux-core/bijux-dag/) when the
+  question is about `bijux-dag`
+- use the [repository handbook](https://bijux.io/bijux-core/bijux-core/) when
+  the question crosses package boundaries, release policy, or ownership
 
 ## Package Families
 
