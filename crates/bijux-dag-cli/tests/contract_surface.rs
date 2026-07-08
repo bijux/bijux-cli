@@ -433,8 +433,10 @@ fn dag_root_help_lists_top_level_commands() {
     assert!(text.contains("validate"));
     assert!(text.contains("run"));
     assert!(text.contains("completions"));
-    assert!(text
-        .contains("Validate, run, replay, explain, and compare reproducible computation graphs"));
+    assert!(text.contains("Local-first DAG runtime for reproducible workflows"));
+    assert!(text.contains("explicit graph contracts, deterministic execution records,"));
+    assert!(text.contains("verified artifacts, cache explanation, and replayable"));
+    assert!(text.contains("run bundles"));
     assert!(text.contains("v0.4.0 surface truth table:"));
     assert!(text.contains("commands --lane experimental"));
     assert!(text.contains("commands --lane simulated"));

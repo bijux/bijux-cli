@@ -53,6 +53,8 @@ const RUN_PROGRESS_HELP: &str =
     "show live progress for `bijux-dag run`; `compact` renders operator-readable updates on stderr in human mode and streams `dag.run.progress` JSON lines on stdout when `--json` is active";
 const EXECUTION_BACKEND_HELP: &str =
     "choose the node execution backend; `kubernetes` runs container nodes as Kubernetes Jobs through kubectl plus a shared persistent volume claim, and `slurm` submits nodes through sbatch and polls sacct until each job reaches a terminal state";
+const DAG_PRODUCT_SENTENCE: &str =
+    "Local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles";
 const ROOT_HELP_BOUNDARY_HELP: &str =
     "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: hidden explicit-path routes require deliberate inventory with `bijux-dag commands --lane experimental`\n  simulated: modeled platform namespaces require `bijux-dag commands --lane simulated` to inventory and BIJUX_DAG_ENABLE_SIMULATED=1 to execute\n  internal: maintainer namespaces require `bijux-dag commands --lane internal` to inventory and BIJUX_DAG_ENABLE_INTERNAL=1 to execute\n  future: generic hpc beyond the shared-filesystem slurm lane, public remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.";
 
@@ -89,7 +91,7 @@ pub(crate) fn hide_non_public_help(mut command: Command, prefix: &str) -> Comman
 
 #[derive(Parser)]
 #[command(
-    about = "Validate, run, replay, explain, and compare reproducible computation graphs",
+    about = DAG_PRODUCT_SENTENCE,
     long_about = None,
     after_help = ROOT_HELP_BOUNDARY_HELP
 )]

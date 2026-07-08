@@ -50,7 +50,7 @@ deliberately excluded from this page and listed separately in
 ## Root Help
 
 ```text
-Validate, run, replay, explain, and compare reproducible computation graphs
+Local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles
 
 Usage: bijux-dag [OPTIONS] [COMMAND]
 
