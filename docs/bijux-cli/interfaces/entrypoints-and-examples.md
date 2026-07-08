@@ -46,11 +46,11 @@ bijux history --limit 20 --sort timestamp
 bijux repl
 ```
 
-For the DAG product boundary itself, use
-[`contracts/foundation/dag_release_truth_table.v1.json`](../../../contracts/foundation/dag_release_truth_table.v1.json)
-and
-[`docs/bijux-dag/foundation/release-boundary.md`](../../bijux-dag/foundation/release-boundary.md)
-instead of inferring stable support from routed root examples.
+For the DAG product boundary itself, use the
+[DAG release boundary](../../bijux-dag/foundation/release-boundary.md),
+which is backed by the machine-readable contract
+`contracts/foundation/dag_release_truth_table.v1.json`, instead of inferring
+stable support from routed root examples.
 
 ## Rust Caller Example
 

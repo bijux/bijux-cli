@@ -20,10 +20,10 @@ Official product binaries remain the authoritative public operator surface when
 the product ships one. The routed `bijux <app> ...` form is for root-managed
 discovery and delegation.
 
-For DAG specifically, the public release-boundary source of truth is
-[`contracts/foundation/dag_release_truth_table.v1.json`](../../../../contracts/foundation/dag_release_truth_table.v1.json)
-and the handbook page
-[`docs/bijux-dag/foundation/release-boundary.md`](../../../bijux-dag/foundation/release-boundary.md).
+For DAG specifically, use the
+[DAG release boundary](../../../bijux-dag/foundation/release-boundary.md),
+which is backed by the machine-readable contract
+`contracts/foundation/dag_release_truth_table.v1.json`.
 
 ## Preferred Invocation Choices
 
