@@ -28,9 +28,19 @@ and delegation boundary between Python callers and Rust runtimes, not a second
 source of runtime truth.
 
 Use this page when the issue is about PyPI packaging, launcher behavior,
-bridge compatibility, or Python-facing parity with the native binary.
+Python-facing parity, interpreter diagnostics, or the bridge rules between
+Python callers and the Rust runtimes.
 
-## Responsibility Map
+## Reach For This Package When
+
+- `pip install bijux-cli` succeeds but the console script or module entrypoint
+  behaves incorrectly
+- Python and native entrypoints disagree on output, flags, or runtime behavior
+- mounted Python apps fail import, callable resolution, or interpreter checks
+- a Python caller needs DAG helper access without inventing a second DAG
+  protocol
+
+## What It Owns
 
 | Surface | Ownership |
 | --- | --- |
@@ -39,6 +49,13 @@ bridge compatibility, or Python-facing parity with the native binary.
 | release parity | alignment between `bijux` binary behavior and Python launcher behavior |
 | DAG helpers | Python load/validate/plan/run/inspect/query helpers that preserve `bijux-dag` JSON payloads |
 | boundary | does not redefine runtime semantics already owned by `bijux-cli` or `bijux-dag-cli` |
+
+## What It Must Preserve
+
+- the same command semantics as the native `bijux` runtime
+- explicit compatibility checks instead of silent drift between launcher paths
+- DAG helper payloads that stay aligned with the retained `bijux-dag` JSON
+  contracts
 
 ## Source Layout
 
@@ -51,11 +68,13 @@ bridge compatibility, or Python-facing parity with the native binary.
 - `crates/bijux-cli-python/src/compatibility.rs`
 - `crates/bijux-cli-python/tests`
 
-## Open Next
+## Practical Starting Points
 
-- open the [CLI Handbook](../../index.md) for product-level runtime behavior
-- open [`bijux-cli`](./bijux-cli.md) when the question is native runtime
+- open the [CLI Handbook](../index.md) for product-level runtime behavior
+- open [`bijux-cli`](bijux-cli.md) when the question is native runtime
   ownership rather than distribution or bridge mechanics
+- open [Python Bridge Guide](python-bridge-guide.md) when you want the shortest
+  route to the bridge-specific validation story
 - open [`bijux-dag`](../../bijux-dag/index.md) when the question is DAG runtime
   semantics rather than Python delegation
 - open the [Repository Handbook](../../bijux-core/index.md) when the issue
@@ -71,7 +90,7 @@ bridge compatibility, or Python-facing parity with the native binary.
 - `crates/bijux-cli-python/tests/python/test_dag_sdk_transport.py`
 - `crates/bijux-cli-python/tests/python/test_dag_sdk_workflows.py`
 
-## Review Lens
+## Review Focus
 
 - Python-facing entrypoints should preserve runtime parity instead of drifting into custom behavior
 - DAG helpers should return the same structured payloads a caller would receive

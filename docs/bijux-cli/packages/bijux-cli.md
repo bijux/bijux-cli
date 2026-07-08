@@ -21,14 +21,24 @@ last_reviewed: 2026-04-12
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli) [![bijux-dag docs.rs](https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-cli` is the public Rust runtime behind the `bijux` executable. It owns
-command parsing, normalization, registry lookup, execution flow, plugin-facing
-runtime behavior, and the REPL surface.
+`bijux-cli` is the public Rust runtime behind the `bijux` executable. It is
+the source of truth for command semantics shared by the native binary, the
+Python launcher, and the in-process SDK surfaces used by mounted apps and
+tests.
 
-Use this page when the question is about runtime behavior of the command
-product itself rather than repository policy or Python distribution.
+Use this page when the question is about what the `bijux` runtime actually
+does: parsing commands, normalizing inputs, executing features, shaping
+envelopes, and preserving deterministic behavior across entrypoints.
 
-## Responsibility Map
+## Reach For This Crate When
+
+- the installed binary parses or renders something incorrectly
+- a plugin, REPL flow, history path, config command, or runtime query behaves
+  differently than expected
+- a mounted app should use the same command semantics as the native runtime
+- you need the stable Rust dependency that powers the visible `bijux` product
+
+## What It Owns
 
 | Surface | Ownership |
 | --- | --- |
@@ -36,6 +46,15 @@ product itself rather than repository policy or Python distribution.
 | runtime behavior | config, history, memory, install diagnostics, plugins, and REPL state |
 | output contract | deterministic help, envelopes, and stream formatting |
 | boundary | does not own maintainer control-plane commands or DAG semantics |
+
+## What It Does Not Own
+
+- Python packaging, interpreter discovery, and console-script distribution
+  rules belong to [`bijux-cli-python`](bijux-cli-python.md).
+- DAG authoring and graph execution semantics belong to the `bijux-dag-*`
+  crates.
+- Repository governance, release proof, and maintainer diagnostics belong to
+  the maintainer tooling surfaces.
 
 ## Source Layout
 
@@ -49,14 +68,16 @@ product itself rather than repository policy or Python distribution.
 - `crates/bijux-cli/src/routing`
 - `crates/bijux-cli/src/shared`
 
-## Open Next
+## Practical Starting Points
 
-- open the [CLI Handbook](../../index.md) for architecture, interfaces,
-  operations, and quality guidance
-- open the [Repository Handbook](../../bijux-core/index.md) when a change
-  crosses into DAG, maintainer, or repository governance concerns
-- open [`bijux-cli-python`](./bijux-cli-python.md) when the question is
-  Python packaging, bridge parity, or launcher distribution
+- Open the [CLI Handbook](../index.md) when you need the product story before
+  choosing a module.
+- Open [CLI Interfaces](../interfaces/index.md) when the question is what
+  callers can rely on.
+- Open [CLI Operations](../operations/index.md) when the question is
+  installation, diagnostics, release handling, or day-to-day runtime support.
+- Open [`bijux-cli-python`](bijux-cli-python.md) when the issue is Python
+  packaging, bridge parity, or launcher distribution.
 
 ## Code Anchors
 
@@ -66,7 +87,7 @@ product itself rather than repository policy or Python distribution.
 - `crates/bijux-cli/tests/integration.rs`
 - `crates/bijux-cli/tests/routing.rs`
 
-## Review Lens
+## Review Focus
 
 - runtime semantics should stay deterministic across binary and bridge entrypoints
 - public command behavior should be explained in the CLI handbook, not hidden in tests
