@@ -9,25 +9,24 @@ last_reviewed: 2026-07-07
 
 # Capability Map
 
-This page explains what `bijux-dag` is responsible for before it talks about
-crate layout.
+Use this page when you need the reader-facing answer to a basic question: what
+is `bijux-dag` actually good at today?
 
-The useful split is not only "which crate owns this?" A new reader often needs
-the higher-level answer first: is the question about graph truth, execution,
-replay, artifacts, or operator decision support?
+The higher-level split matters before crate ownership does. Most readers first
+need to know whether they are dealing with graph truth, execution behavior,
+retained evidence, or replay and comparison.
 
-## Capability Map
+## What Readers Usually Come Here To Confirm
 
-```mermaid
-flowchart LR
-    define["definition"] --> core["dag-core"]
-    execute["execution"] --> runtime["dag-runtime"]
-    orchestrate["command surfaces"] --> app["dag-app"]
-    persist["artifacts"] --> artifacts["dag-artifacts"]
-    invoke["process entry"] --> cli["dag-cli"]
-```
+| Capability area | What you can expect |
+| --- | --- |
+| graph truth | parse, validate, canonicalize, fingerprint, and lower graphs deterministically |
+| execution | plan, schedule, run, and classify node outcomes with explicit policy boundaries |
+| retained evidence | inspect runs, artifacts, traces, and integrity material after execution completes |
+| replay and comparison | decide whether two runs are equivalent, drifted, incomplete, or unknown |
+| operator decision support | explain cache reuse, replay boundaries, and first divergence with retained proof |
 
-## Capability Inventory
+## Core Capability Inventory
 
 | Capability | What it covers | Primary owning crates |
 | --- | --- | --- |
@@ -51,6 +50,14 @@ questions:
 The handbook pages under [Interfaces](../interfaces/index.md) and
 [Operations](../operations/index.md) are organized around those questions.
 
+## What This Map Is Not Saying
+
+- It is not claiming universal backend equivalence.
+- It is not claiming that simulated or internal routes belong to the default
+  product story.
+- It is not replacing the release-boundary and package pages when you need the
+  exact lane or crate owner.
+
 ## Code Anchors
 
 - `crates/bijux-dag-core/src/`
@@ -59,14 +66,9 @@ The handbook pages under [Interfaces](../interfaces/index.md) and
 - `crates/bijux-dag-artifacts/src/`
 - `crates/bijux-dag-cli/src/main.rs`
 
-## Next Reads
+## Continue Reading
 
 - [DAG Packages](../packages/index.md)
 - [Domain Language](domain-language.md)
 - [Module Map](../architecture/module-map.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
-
-## Reading Rule
-
-Use this page when the question is what the DAG program actually owns before
-you decide which crate or route deserves the deeper read.
