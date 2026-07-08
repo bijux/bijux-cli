@@ -340,11 +340,19 @@ pub fn generate_adapter_reference_markdown(document: &AdapterReferenceDocument) 
         }
         lines.push(String::new());
     }
-    lines.push("## External adapter handshake boundary".to_string());
+    lines.push("## External adapter protocol boundary".to_string());
     lines.push("- `info --json` must emit machine JSON on stdout only.".to_string());
     lines.push("- non-empty stderr during the info handshake is rejected.".to_string());
     lines.push(
-        "- external adapter binaries are fingerprinted into node trace evidence.".to_string(),
+        "- `execute` receives `--node-spec`, `--workdir`, `--outdir`, and `--failure-path`."
+            .to_string(),
+    );
+    lines.push(
+        "- nonzero adapter exits should write a `FailureInfo` JSON envelope to `--failure-path` for precise runtime failure mapping.".to_string(),
+    );
+    lines.push(
+        "- external adapter binaries are fingerprinted into node trace evidence and cache identity."
+            .to_string(),
     );
     lines.push(String::new());
     lines.push("## Slurm contract".to_string());

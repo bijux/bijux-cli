@@ -101,10 +101,12 @@ This document is generated from runtime adapter descriptors and backend contract
 - `large_stdout`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime captures stdout and stderr as node evidence files
 - `non_utf8_output`: Pass (enforced_by_runtime=true, advisory_only=false) - runtime stores output bytes and artifact files without requiring UTF-8 payloads
 
-## External adapter handshake boundary
+## External adapter protocol boundary
 - `info --json` must emit machine JSON on stdout only.
 - non-empty stderr during the info handshake is rejected.
-- external adapter binaries are fingerprinted into node trace evidence.
+- `execute` receives `--node-spec`, `--workdir`, `--outdir`, and `--failure-path`.
+- nonzero adapter exits should write a `FailureInfo` JSON envelope to `--failure-path` for precise runtime failure mapping.
+- external adapter binaries are fingerprinted into node trace evidence and cache identity.
 
 ## Slurm contract
 - submit=`sbatch`, poll=`sacct`, cancel=`scancel`
