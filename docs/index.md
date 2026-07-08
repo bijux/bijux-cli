@@ -24,22 +24,22 @@ last_reviewed: 2026-07-04
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-dag docs](https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli) [![bijux-dag docs.rs](https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` publishes two product families from one repository:
+`bijux-core` publishes two public products from one repository:
 
-- `bijux`, the root command runtime for apps, plugins, config, diagnostics,
-  and interactive workflows
-- `bijux-dag`, the local-first DAG system for validation, planning, execution,
-  replay, artifact inspection, and verification
+- `bijux`, the root command runtime for apps, plugins, configuration,
+  diagnostics, and interactive workflows
+- `bijux-dag`, the local-first DAG toolchain for graph validation, planning,
+  execution, replay, artifact inspection, and verification
 
-The same repository also carries the private maintainer surfaces that keep
-those products releasable and testable without splitting the proof from the
-implementation.
+This site also documents the repository-owned maintainer surfaces that prove,
+test, and release those products. Those maintainer pages are here for
+contributors; they are not the end-user API story.
 
-<div class="bijux-callout"><strong>Start with the surface you care about.</strong>
-Repository docs explain shared ownership, publication boundaries, and release
-policy. CLI docs own the <code>bijux</code> runtime. DAG docs own
-<code>bijux-dag</code>. Maintainer docs own repository gates, diagnostics, and
-release proof.</div>
+<div class="bijux-callout"><strong>Choose the product first.</strong>
+Use the CLI handbook for <code>bijux</code>. Use the DAG handbook for
+<code>bijux-dag</code>. Use the repository or maintainer handbooks only when
+the question crosses package boundaries, release policy, or repository
+operations.</div>
 
 <div class="bijux-panel-grid">
   <div class="bijux-panel"><h3>Repository</h3><p>Use the repository handbook when the question crosses package boundaries, release policy, or shared ownership rules.</p></div>
@@ -55,7 +55,7 @@ release proof.</div>
 <a class="md-button" href="bijux-dev/">Open the maintainer handbook</a>
 </div>
 
-## What Is Public Today
+## What You Can Use Today
 
 | Surface | Public contract |
 | --- | --- |
@@ -63,36 +63,32 @@ release proof.</div>
 | `bijux-dag` | the visible `bijux-dag --help` surface for local DAG validation, planning, execution, replay, inspection, cache work, and verification |
 | maintainer tooling | repository-internal only; documented here for contributors, not shipped as end-user product API |
 
-The DAG handbook also calls out what remains experimental, simulated, or
+The DAG handbook also marks what remains experimental, simulated, or
 maintainer-only so local product claims do not drift into platform promises.
-When the question is what comes after the current `v0.4.0` local boundary, use
-the [Bijux Dag Roadmap](tracking/bijux-dag-roadmap.md).
+For what comes after the current `v0.4.0` local boundary, use the
+[Bijux Dag Roadmap](tracking/bijux-dag-roadmap.md).
 
-## Handbook Map
+## Choose Your Path
 
-```mermaid
-flowchart LR
-    home["Bijux Core"] --> repo["Repository handbook"]
-    home --> cli["CLI handbook"]
-    home --> dag["DAG handbook"]
-    home --> dev["Maintainer handbook"]
-```
+- open the [CLI Handbook](bijux-cli/index.md) for the `bijux` runtime,
+  official app mounting, plugin routing, layered config, REPL behavior, and
+  Python distribution
+- open the [DAG Handbook](bijux-dag/index.md) for local DAG execution, replay,
+  retained evidence, compatibility, and the supported `bijux-dag` surface
+- open the [Repository Handbook](bijux-core/index.md) for package boundaries,
+  release policy, shared workflows, and repository-wide ownership rules
+- open the [Maintainer Handbook](bijux-dev/index.md) for repository gates,
+  diagnostics, release proof, and governance operations
 
-## Start Here
+## Practical Starting Points
 
-- open [Repository Handbook](bijux-core/index.md) for cross-package
-  architecture, release policy, publication boundaries, and shared workflows
-- open [CLI Handbook](bijux-cli/index.md) for the `bijux` runtime, official
-  app mounting, plugin routing, layered config, and the Python bridge
-- open [DAG Handbook](bijux-dag/index.md) for local DAG execution, replay,
-  evidence, compatibility, and the supported `bijux-dag` surface
-- open [v0.4.0 DAG Release Notes](bijux-dag/operations/v0-4-0-release-notes.md)
-  when the question is the current public DAG claim, migration path, examples,
-  or validation commands
-- open [Bijux Dag Roadmap](tracking/bijux-dag-roadmap.md) when the question is
-  which DAG capability lane may come next after the current release boundary
-- open [Maintainer Handbook](bijux-dev/index.md) for repository gates, docs
-  checks, release verification, diagnostics, and governance operations
+- use [Runnable Examples](bijux-dag/interfaces/examples/index.md) when you want
+  real DAG workflows with expected outputs instead of abstract feature lists
+- use [v0.4.0 DAG Release Notes](bijux-dag/operations/v0-4-0-release-notes.md)
+  when you want the current public DAG claim, migration notes, and example
+  inventory in one place
+- use [Bijux Dag Roadmap](tracking/bijux-dag-roadmap.md) when you need to
+  separate current capability from future work
 
 ## Package Flow
 
@@ -114,5 +110,5 @@ flowchart LR
 ## Reading Rule
 
 Start with the handbook that owns the user-visible behavior. Move to package
-pages only when you need the exact implementation boundary or publication
-status.
+pages only when you need the exact crate boundary, publication status, or Rust
+import lane.
