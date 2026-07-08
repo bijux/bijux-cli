@@ -163,6 +163,63 @@ fn repair_command_payload_allow_failure(run_dir: &Path, runs_dir: &Path) -> (i32
     run_internal_json_owned_allow_failure(args, &repo_root())
 }
 
+fn repair_command_payload_with_cache_allow_failure(
+    run_dir: &Path,
+    runs_dir: &Path,
+    cache_dir: &Path,
+) -> (i32, Value, String) {
+    let args = vec![
+        "runtime".to_string(),
+        "repair".to_string(),
+        "--json".to_string(),
+        "--apply".to_string(),
+        "--out".to_string(),
+        output_path_string(runs_dir),
+        "--cache-dir".to_string(),
+        output_path_string(cache_dir),
+        output_path_string(run_dir),
+    ];
+    run_internal_json_owned_allow_failure(args, &repo_root())
+}
+
+fn build_cached_const_run(root: &Path, temp_root: &Path) -> (PathBuf, PathBuf, PathBuf) {
+    let graph = temp_root.join("cache-repair-graph.dag.json");
+    let runs_dir = temp_root.join("runs");
+    let cache_dir = temp_root.join("cache");
+    fs::create_dir_all(&runs_dir).expect("runs dir");
+    fs::create_dir_all(&cache_dir).expect("cache dir");
+    let graph_value: bijux_dag_core::Graph = serde_json::from_value(serde_json::json!({
+            "spec":"bijux-dag/v0.1",
+            "nodes":[{
+                "id":"render",
+                "kind":"const",
+                "outputs":[{"name":"html","path":"render/report.html","kind":"file","media_type":"text/html","required":true}],
+                "params":{"value":"<h1>healthy-html</h1>"}
+            }],
+            "edges":[]
+        }))
+    .expect("graph");
+    support::write_graph_fixture(&graph, &graph_value);
+    let run = run_json_owned_allow_failure(
+        vec![
+            "--json".to_string(),
+            "run".to_string(),
+            output_path_string(&graph),
+            "--out".to_string(),
+            output_path_string(&runs_dir),
+            "--run-id".to_string(),
+            "cache-repair-source".to_string(),
+            "--cache".to_string(),
+            "readwrite".to_string(),
+            "--cache-dir".to_string(),
+            output_path_string(&cache_dir),
+        ],
+        root,
+    );
+    assert_eq!(run.0, 0, "cached const run failed: stderr={}", run.2);
+    (run_dir_from_response(&run.1), runs_dir, cache_dir)
+}
+
 #[test]
 fn runtime_repair_proposes_failed_boundary_actions_before_apply() {
     let root = repo_root();
@@ -223,4 +280,45 @@ fn runtime_repair_detects_corrupt_artifact_in_successful_run() {
             && issue["node_id"] == "publish_bulletin"
             && issue["output_name"] == "bulletin"
     }));
+}
+
+#[test]
+fn runtime_repair_restores_corrupt_output_from_verified_cache_entry() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let (run_dir, runs_dir, cache_dir) = build_cached_const_run(&root, temp.path());
+
+    let output_path = run_dir
+        .join("nodes")
+        .join("render")
+        .join("outputs")
+        .join("render")
+        .join("report.html");
+    let healthy = fs::read_to_string(&output_path).expect("healthy output");
+    fs::write(&output_path, "<h1>corrupt-html</h1>").expect("corrupt output");
+
+    let (code, repair, stderr) =
+        repair_command_payload_with_cache_allow_failure(&run_dir, &runs_dir, &cache_dir);
+    assert_eq!(code, 0, "cache-backed repair should succeed: stderr={stderr}");
+
+    assert_eq!(repair["ok"], true);
+    assert_eq!(repair["data"]["repair_run"], Value::Null);
+    assert_eq!(
+        repair["data"]["cache_recoveries_applied"]
+            .as_array()
+            .map_or(0, std::vec::Vec::len),
+        1
+    );
+    assert_eq!(
+        repair["data"]["cache_recoveries_applied"][0]["node_id"],
+        "render"
+    );
+    assert_eq!(
+        fs::read_to_string(&output_path).expect("restored output"),
+        healthy
+    );
+    assert_eq!(
+        repair["data"]["issues"].as_array().map_or(0, std::vec::Vec::len),
+        0
+    );
 }
