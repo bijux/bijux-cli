@@ -304,6 +304,7 @@ fn dag_interface_indexes_link_generated_cli_references() {
         &handbook,
         &[
             "interfaces/reference/graph-schema.md",
+            "interfaces/reference/run-evidence-layout.md",
             "interfaces/generated-cli-reference.md",
             "interfaces/reference/nonstable-command-inventory.md",
         ],
@@ -315,6 +316,7 @@ fn dag_interface_indexes_link_generated_cli_references() {
         &interfaces,
         &[
             "Graph Schema Reference",
+            "Run Evidence Layout",
             "Generated CLI Reference",
             "Authoring Guide",
             "Non-Stable Command Inventory",
@@ -327,6 +329,49 @@ fn dag_interface_indexes_link_generated_cli_references() {
         &entrypoints,
         &["Generated CLI Reference", "Non-Stable Command Inventory"],
         "docs/bijux-dag/interfaces/entrypoints-and-examples.md",
+    );
+}
+
+#[test]
+fn dag_run_evidence_layout_reference_covers_retained_surfaces() {
+    let layout = read_repo_file("docs/bijux-dag/interfaces/reference/run-evidence-layout.md");
+    assert_contains_all(
+        &layout,
+        &[
+            "manifest.json",
+            "graph.snapshot.json",
+            "outputs/index.json",
+            "nodes/<node_id>/trace.json",
+            "nodes/<node_id>/inputs/index.json",
+            "nodes/<node_id>/outputs/index.json",
+            "run.log.jsonl",
+            "observability.timeline.json",
+            "plan.json",
+            "cache_mode",
+            "cache_dir",
+            "meta.json",
+            "promotions/index.json",
+            "run_summary.promoted_outputs",
+            "crates/bijux-dag-app/tests/snapshots/run_dir_hello.json",
+        ],
+        "docs/bijux-dag/interfaces/reference/run-evidence-layout.md",
+    );
+
+    let artifact_contracts = read_repo_file("docs/bijux-dag/interfaces/artifact-contracts.md");
+    assert_contains_all(
+        &artifact_contracts,
+        &["reference/run-evidence-layout.md", "cache-entry manifests", "promotion ledgers"],
+        "docs/bijux-dag/interfaces/artifact-contracts.md",
+    );
+
+    let artifact_package = read_repo_file("docs/bijux-dag/packages/bijux-dag-artifacts.md");
+    assert_contains_all(
+        &artifact_package,
+        &[
+            "../interfaces/reference/run-evidence-layout.md",
+            "../interfaces/artifact-contracts.md",
+        ],
+        "docs/bijux-dag/packages/bijux-dag-artifacts.md",
     );
 }
 

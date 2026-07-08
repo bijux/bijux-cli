@@ -192,6 +192,14 @@ Each executed node retains evidence under `nodes/<node_id>/`.
 
 The node directory is the durable answer to "what happened for this one node?"
 
+The core retained node files are:
+
+- `nodes/<node_id>/trace.json`
+- `nodes/<node_id>/attempts.json`
+- `nodes/<node_id>/resolved_params.json`
+- `nodes/<node_id>/inputs/index.json`
+- `nodes/<node_id>/outputs/index.json`
+
 ### `trace.json`
 
 `trace.json` is the authoritative node outcome record.
