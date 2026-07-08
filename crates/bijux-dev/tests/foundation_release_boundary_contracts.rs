@@ -333,6 +333,32 @@ fn dag_interface_indexes_link_generated_cli_references() {
 }
 
 #[test]
+fn backend_release_docs_keep_shipped_lanes_and_future_lanes_separate() {
+    let release_boundary = read_repo_file("docs/bijux-dag/foundation/release-boundary.md");
+    let support_matrix = read_repo_file("docs/bijux-dag/interfaces/reference/support-matrix.md");
+
+    assert_contains_all(
+        &release_boundary,
+        &[
+            "Kubernetes Job submission through `run --backend kubernetes`",
+            "shared-filesystem SLURM submission through `run --backend slurm`",
+            "generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service",
+        ],
+        "docs/bijux-dag/foundation/release-boundary.md",
+    );
+
+    assert_contains_all(
+        &support_matrix,
+        &[
+            "| `run --backend slurm` on a shared filesystem | stable | visible `run` surface with explicit backend selection | submits through `sbatch`, polls `sacct`, and records retained batch evidence when the scheduled worker can reopen the same run directory |",
+            "| `run --backend kubernetes` for container nodes | stable | visible `run` surface with explicit backend selection | requires `--kubernetes-volume-claim`, `--kubernetes-shared-root`, and a shared persistent volume claim mounted into Job pods |",
+            "| Generic HPC beyond the shared-filesystem SLURM lane, public remote workers, full scheduler service | future | not part of first-hour adoption | broader portability and distributed control are not a `v0.4.0` product promise |",
+        ],
+        "docs/bijux-dag/interfaces/reference/support-matrix.md",
+    );
+}
+
+#[test]
 fn dag_run_evidence_layout_reference_covers_retained_surfaces() {
     let layout = read_repo_file("docs/bijux-dag/interfaces/reference/run-evidence-layout.md");
     assert_contains_all(
