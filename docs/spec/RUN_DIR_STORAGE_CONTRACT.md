@@ -33,6 +33,28 @@ operator verification surface and artifact conformance tests.
 - `.run-complete.json` marks a complete finalized run
 - `.run-incomplete.json` marks an incomplete or interrupted finalized run
 
+## Governed retained paths
+
+The storage-owned finalized run-directory format centers on:
+
+- `manifest.json`
+- `graph.snapshot.json`
+- `outputs/index.json`
+- `nodes/<node_id>/trace.json`
+- `nodes/<node_id>/attempts.json`
+- `nodes/<node_id>/resolved_params.json`
+- `nodes/<node_id>/inputs/index.json`
+- `nodes/<node_id>/outputs/index.json`
+- `observability.events.json`
+- `observability.timeline.json`
+- `run.log.jsonl`
+- `run.schema.json`
+
+Additional files such as `run.snapshot.json`, `run-log.index.json`,
+`scheduler.checkpoint.json`, `failure-propagation.json`, and `plan.json` may be
+retained for inspection or repair, but they do not replace the authoritative
+manifest, trace, index, and event surfaces.
+
 ## Related tests
 
 - `crates/bijux-dag-artifacts/tests/artifact_hardening_contracts.rs`

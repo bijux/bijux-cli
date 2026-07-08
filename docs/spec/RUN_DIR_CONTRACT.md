@@ -19,20 +19,45 @@ surfaces.
 
 ## Required entries (authoritative)
 
-- `manifest.json`
-- `outputs.index.json`
-- `trace/`
-- `run.log.jsonl`
+Required root entries are:
 
-These entries carry authoritative run evidence and must not be treated as optional.
+- `manifest.json`
+- `graph.snapshot.json`
+- `outputs/index.json`
+- `provenance.json`
+- `lineage.snapshot.json`
+- `observability.events.json`
+- `observability.timeline.json`
+- `run.log.jsonl`
+- `run.schema.json`
+
+Required node entries are:
+
+- `nodes/<node_id>/trace.json`
+- `nodes/<node_id>/attempts.json`
+- `nodes/<node_id>/resolved_params.json`
+- `nodes/<node_id>/inputs/index.json`
+- `nodes/<node_id>/outputs/index.json`
+
+These entries carry authoritative run evidence and must not be treated as
+optional.
 
 ## Optional entries
 
-- `provenance.json`
+- `manifest.finalized.json`
+- `.run-complete.json`
+- `.run-incomplete.json`
 - `run.snapshot.json`
-- `observability.timeline.json`
-- `observability.events.json`
+- `run-log.index.json`
+- `run.audit.json`
+- `scheduler.checkpoint.json`
+- `failure-propagation.json`
 - `observability.metrics.json`
+- `observability.root-causes.json`
+- `observability.graph-visualization.json`
+- `observability.lineage-visualization.json`
+- `promotions/index.json`
+- `plan.json`
 
 Optional entries may be absent in standard verification without making the run
 directory structurally invalid.
@@ -43,9 +68,20 @@ directory structurally invalid.
 - `.run-complete.json`
 - `.run-incomplete.json`
 - `run-log.index.json`
-- `run.schema.json`
+- `run.audit.json`
+- `observability.metrics.json`
+- `observability.root-causes.json`
+- `observability.graph-visualization.json`
+- `observability.lineage-visualization.json`
 
 These artifacts are derived from authoritative evidence and verification rules.
+
+## Optional retained plan surface
+
+- `plan.json` may retain the lowered execution plan when a producer writes it
+- standard local run snapshots do not currently retain `plan.json` by default
+- planner identity is still preserved through `manifest.json`,
+  `graph.snapshot.json`, and `run.snapshot.json`
 
 ## Verification behavior
 

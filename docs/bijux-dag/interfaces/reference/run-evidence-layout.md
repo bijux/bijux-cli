@@ -165,6 +165,27 @@ It points to the live schema surfaces for:
 It also declares the required and optional root and node files for the current
 retained run-directory format.
 
+### `plan.json`
+
+`plan.json` is an optional retained execution-plan file.
+
+When present, it is expected to follow
+`configs/dag/schema/execution_plan.schema.json` and preserve the lowered plan
+shape that fed execution.
+
+Current local run snapshots do not retain `plan.json` by default. The planner
+evidence that is always present today lives in:
+
+- `manifest.json` through planner identity fields such as
+  `planner_contract_version` and `planner_fingerprint`
+- `graph.snapshot.json` through the persisted authored graph
+- `run.snapshot.json` when operator and repair surfaces need retained runtime
+  state beyond the manifest
+
+That split is deliberate: this page documents `plan.json` because the run
+inspection surface will read it if available, but it does not claim that every
+standard local run currently emits one.
+
 ## Node evidence directories
 
 Each executed node retains evidence under `nodes/<node_id>/`.
@@ -257,6 +278,99 @@ output root, for example:
 
 The node output index uses the same evidence shape as the run-level output
 index, but it stays scoped to one producer node.
+
+## Artifact manifests
+
+The run evidence surface uses two different manifest ideas:
+
+- `manifest.json` is the run-level manifest for the whole execution
+- cache entries also keep a separate `manifest.json` that describes one cached
+  node result
+
+The cache-entry manifest is intentionally narrow. It records:
+
+- `manifest_version`
+- `cache_key`
+- `node_id`
+- declared output contracts for the cached node result
+
+This distinction matters because a cache entry is not a miniature run
+directory. It is one reusable node result with enough metadata to prove that it
+still matches the node contract and retained outputs.
+
+## Cache entries
+
+Cache entries live outside the run directory under the configured cache root.
+
+The manifest records the cache configuration that was used for the run through:
+
+- `cache_mode`
+- `cache_dir`
+
+Each cache entry lives under its cache key:
+
+```text
+<cache_root>/
+└── <cache_key>/
+    ├── manifest.json
+    ├── meta.json
+    ├── outputs/
+    │   ├── index.json
+    │   └── <cached output payloads>
+    └── logs/
+        ├── stdout.log
+        ├── stderr.log
+        └── trace.json
+```
+
+`meta.json` carries the explainability and integrity inputs used to judge cache
+reuse, including:
+
+- `cache_key`
+- `node_fingerprint`
+- `node_definition_fingerprint`
+- `declared_environment_fingerprint`
+- `input_lineage_fingerprint`
+- `params_fingerprint`
+- `command_fingerprint`
+- `adapter_id`
+- `adapter_version`
+- `policy_fingerprint`
+- `execution_contract_fingerprint`
+- `backend_class`
+
+Use the cache entry when the question is "why was this node result reusable or
+not reusable?" rather than "what happened in the run overall?"
+
+## Promoted outputs
+
+Promotions are retained inside the run directory under `promotions/`.
+
+```text
+run-<run_id>/
+└── promotions/
+    ├── index.json
+    └── <promotion-record-slug>.json
+```
+
+`promotions/index.json` is the run-local promotion ledger. Per-record JSON files
+keep the full record for one promoted artifact, including:
+
+- canonical and legacy artifact ids
+- source run, node, output name, and output path
+- artifact sha256
+- payload kind and relative payload path
+- destination path
+- source and target environments
+- promotion timestamp
+- upstream and downstream lineage summaries
+
+The run manifest also carries a promotion summary under
+`run_summary.promoted_outputs`.
+
+Use the manifest summary for a compact answer to "which outputs from this run
+were promoted?" Use the `promotions/` records when the question is destination,
+lineage, or environment-specific audit detail.
 
 ## Execution work directories
 
