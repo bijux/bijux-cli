@@ -315,7 +315,7 @@ mod tests {
     };
 
     #[test]
-    fn g091_hello_dag_proves_full_cli_runtime_artifact_path() {
+    fn hello_dag_proves_full_cli_runtime_artifact_path() {
         let report = build_hello_dag_scenario_report(HelloDagScenarioReportV1 {
             validate_ok: true,
             plan_ok: true,
@@ -333,7 +333,7 @@ mod tests {
     }
 
     #[test]
-    fn g092_shell_etl_scenario_proves_safe_and_useful_shell_flow() {
+    fn shell_etl_scenario_proves_safe_and_useful_shell_flow() {
         let report = build_shell_etl_scenario_report(ShellEtlScenarioReportV1 {
             declared_input_count: 2,
             declared_output_count: 1,
@@ -348,7 +348,7 @@ mod tests {
     }
 
     #[test]
-    fn g093_branch_join_scenario_proves_decision_skip_and_convergence() {
+    fn branch_join_scenario_proves_decision_skip_and_convergence() {
         let report = build_branch_join_scenario_report(BranchJoinScenarioReportV1 {
             branch_decision_recorded: true,
             skipped_node_count: 2,
@@ -361,7 +361,7 @@ mod tests {
     }
 
     #[test]
-    fn g094_reducer_scenario_proves_deterministic_fanin_lineage() {
+    fn reducer_scenario_proves_deterministic_fanin_lineage() {
         let report = build_reducer_scenario_report(ReducerScenarioReportV1 {
             partition_count: 4,
             reducer_output_count: 1,
@@ -374,7 +374,7 @@ mod tests {
     }
 
     #[test]
-    fn g095_failure_retry_scenario_proves_root_cause_and_downstream_impact() {
+    fn failure_retry_scenario_proves_root_cause_and_downstream_impact() {
         let report = build_failure_retry_scenario_report(FailureRetryScenarioReportV1 {
             retryable_failure_seen: true,
             non_retryable_failure_seen: true,
@@ -387,7 +387,7 @@ mod tests {
     }
 
     #[test]
-    fn g096_cache_heavy_scenario_proves_hit_miss_noncacheable_with_explain() {
+    fn cache_heavy_scenario_proves_hit_miss_noncacheable_with_explain() {
         let report = build_cache_heavy_scenario_report(CacheHeavyScenarioReportV1 {
             cache_hit_nodes: 3,
             cache_miss_nodes: 2,
@@ -400,7 +400,7 @@ mod tests {
     }
 
     #[test]
-    fn g097_bundle_portability_scenario_proves_clean_workspace_import() {
+    fn bundle_portability_scenario_proves_clean_workspace_import() {
         let report = build_bundle_portability_scenario_report(BundlePortabilityScenarioReportV1 {
             exported_bundle: true,
             imported_in_clean_workspace: true,
@@ -413,7 +413,7 @@ mod tests {
     }
 
     #[test]
-    fn g098_mounted_app_parity_prevents_route_and_output_drift() {
+    fn mounted_app_parity_prevents_route_and_output_drift() {
         let report = build_mounted_app_parity_scenario_report(MountedAppParityScenarioReportV1 {
             root_command_path: "bijux-dag run workflows/hello.json".to_string(),
             direct_command_path: "bijux-dag run workflows/hello.json".to_string(),
@@ -426,7 +426,7 @@ mod tests {
     }
 
     #[test]
-    fn g099_python_bridge_returns_equivalent_machine_output() {
+    fn python_bridge_returns_equivalent_machine_output() {
         let report =
             build_python_bridge_parity_scenario_report(PythonBridgeParityScenarioReportV1 {
                 command_name: "dag run workflows/hello.json --json".to_string(),
@@ -439,7 +439,7 @@ mod tests {
     }
 
     #[test]
-    fn g100_cross_app_mock_evidence_stays_domain_neutral_in_core() {
+    fn cross_app_mock_evidence_stays_domain_neutral_in_core() {
         let report =
             build_cross_app_mock_evidence_scenario_report(CrossAppMockEvidenceScenarioReportV1 {
                 mock_app_mounted: true,
