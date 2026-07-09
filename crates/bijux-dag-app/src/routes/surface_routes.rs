@@ -1,4 +1,4 @@
-use crate::capability_matrix::backend_capability_payload;
+use crate::backend_capability_surface::backend_capability_payload;
 use crate::commands::DagCli;
 use crate::replay_service;
 use crate::{emit_json, ExitCode};
@@ -164,7 +164,7 @@ fn capabilities_payload() -> serde_json::Value {
             "remote": "SIMULATED",
             "batch_hpc": "SIMULATED"
         },
-        "backend_capability_matrix": [
+        "backend_capabilities": [
             backend_capability_payload("kubernetes").unwrap(),
             backend_capability_payload("slurm").unwrap(),
             backend_capability_payload("hpc").unwrap(),

@@ -13,7 +13,7 @@
 mod cache;
 #[path = "cache/cmd.rs"]
 mod cache_cmd;
-mod capability_matrix;
+mod backend_capability_surface;
 #[path = "commands/cli_model.rs"]
 mod cli_model;
 #[cfg(feature = "experimental-public-api")]
