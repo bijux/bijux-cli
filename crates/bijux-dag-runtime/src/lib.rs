@@ -19,6 +19,9 @@ mod adapter_conformance;
 #[cfg(test)]
 #[path = "internal/testing/adapter_contract_tests.rs"]
 mod adapter_contract_tests;
+#[cfg(feature = "experimental-public-api")]
+#[path = "runtime_core/execution/adapter_execution_contracts.rs"]
+mod adapter_execution_contracts;
 #[path = "adapters/sdk.rs"]
 mod adapter_sdk;
 mod adapters;
@@ -46,6 +49,9 @@ mod cache;
 mod clock;
 #[path = "internal/control/config.rs"]
 mod config;
+#[cfg(feature = "experimental-public-api")]
+#[path = "runtime_core/execution/container_evidence_contracts.rs"]
+mod container_evidence_contracts;
 #[path = "backend/runtime/container_execution.rs"]
 mod container_execution;
 #[path = "diagnostics/runtime/control_plane.rs"]
@@ -65,6 +71,9 @@ mod diagnostics;
 mod distributed;
 #[path = "backend/distributed/distribution_readiness.rs"]
 mod distribution_readiness;
+#[cfg(feature = "experimental-public-api")]
+#[path = "runtime_core/execution/durable_queue_contracts.rs"]
+mod durable_queue_contracts;
 #[path = "runtime_core/execution/engine.rs"]
 mod engine;
 mod error;
@@ -104,24 +113,6 @@ mod invariants;
 mod invariants_tests;
 #[path = "internal/control/io.rs"]
 mod io;
-#[cfg(feature = "experimental-public-api")]
-#[path = "runtime_core/execution/adapter_execution_contracts.rs"]
-mod adapter_execution_contracts;
-#[cfg(feature = "experimental-public-api")]
-#[path = "runtime_core/execution/write_boundary_contracts.rs"]
-mod write_boundary_contracts;
-#[cfg(feature = "experimental-public-api")]
-#[path = "runtime_core/planning/planner_admission_contracts.rs"]
-mod planner_admission_contracts;
-#[cfg(feature = "experimental-public-api")]
-#[path = "runtime_core/execution/durable_queue_contracts.rs"]
-mod durable_queue_contracts;
-#[cfg(feature = "experimental-public-api")]
-#[path = "runtime_core/execution/container_evidence_contracts.rs"]
-mod container_evidence_contracts;
-#[cfg(feature = "experimental-public-api")]
-#[path = "runtime_core/execution/observability_taxonomy_contracts.rs"]
-mod observability_taxonomy_contracts;
 #[path = "backend/runtime/kubernetes_execution.rs"]
 mod kubernetes_execution;
 #[path = "backend/runtime/local_executor.rs"]
@@ -134,6 +125,9 @@ mod node_result;
 mod observability;
 #[path = "diagnostics/runtime/observability_deep.rs"]
 mod observability_deep;
+#[cfg(feature = "experimental-public-api")]
+#[path = "runtime_core/execution/observability_taxonomy_contracts.rs"]
+mod observability_taxonomy_contracts;
 #[path = "diagnostics/runtime/operations_governance.rs"]
 mod operations_governance;
 #[path = "artifacts/storage/path_authorization.rs"]
@@ -144,6 +138,9 @@ mod path_resolution;
 mod performance_capacity;
 #[path = "runtime_core/planning/planner.rs"]
 mod planner;
+#[cfg(feature = "experimental-public-api")]
+#[path = "runtime_core/planning/planner_admission_contracts.rs"]
+mod planner_admission_contracts;
 #[path = "runtime_core/planning/planner_analysis.rs"]
 mod planner_analysis;
 mod policy;
@@ -220,6 +217,9 @@ mod trace;
 mod upgrade_compatibility;
 #[path = "internal/workflow/workflow_product.rs"]
 mod workflow_product;
+#[cfg(feature = "experimental-public-api")]
+#[path = "runtime_core/execution/write_boundary_contracts.rs"]
+mod write_boundary_contracts;
 use adapter::{Adapter, AdapterId, EffectSet, NodeCtx};
 #[doc(hidden)]
 pub use adapter::{AdapterDescriptor, CacheCompatibilityMode};

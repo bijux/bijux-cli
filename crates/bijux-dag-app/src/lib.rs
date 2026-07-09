@@ -16,6 +16,9 @@ mod cache_cmd;
 mod capability_matrix;
 #[path = "commands/cli_model.rs"]
 mod cli_model;
+#[cfg(feature = "experimental-public-api")]
+#[path = "commands/command_report_contracts.rs"]
+mod command_report_contracts;
 mod commands;
 #[path = "commands/config_resolution.rs"]
 mod config_resolution;
@@ -45,12 +48,6 @@ mod inspect;
 mod inspect_service;
 #[path = "inspect/integrity_service.rs"]
 mod integrity_service;
-#[cfg(feature = "experimental-public-api")]
-#[path = "commands/command_report_contracts.rs"]
-mod command_report_contracts;
-#[cfg(feature = "experimental-public-api")]
-#[path = "commands/workspace_compatibility_contracts.rs"]
-mod workspace_compatibility_contracts;
 mod migrate;
 #[path = "inspect/node_execution_explanation.rs"]
 mod node_execution_explanation;
@@ -86,6 +83,9 @@ mod runtime_inputs;
 mod status_cmd;
 #[path = "graph/validate_cmd.rs"]
 mod validate_cmd;
+#[cfg(feature = "experimental-public-api")]
+#[path = "commands/workspace_compatibility_contracts.rs"]
+mod workspace_compatibility_contracts;
 mod write;
 
 #[doc(hidden)]

@@ -27,9 +27,6 @@ pub mod hash;
 #[path = "integrity/index.rs"]
 pub mod index;
 #[cfg(feature = "experimental-public-api")]
-#[path = "integrity/run_layout_contracts.rs"]
-mod run_layout_contracts;
-#[cfg(feature = "experimental-public-api")]
 #[path = "integrity/lifecycle_and_cache_contracts.rs"]
 mod lifecycle_and_cache_contracts;
 #[doc(hidden)]
@@ -53,6 +50,9 @@ pub mod proof;
 #[doc(hidden)]
 #[path = "lifecycle/retention.rs"]
 pub mod retention;
+#[cfg(feature = "experimental-public-api")]
+#[path = "integrity/run_layout_contracts.rs"]
+mod run_layout_contracts;
 #[doc(hidden)]
 #[path = "integrity/schema.rs"]
 pub mod schema;
