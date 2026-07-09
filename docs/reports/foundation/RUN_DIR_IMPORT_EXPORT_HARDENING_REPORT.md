@@ -19,7 +19,7 @@ storage, verification, lifecycle, and import/export compatibility.
 - `crates/bijux-dev/tests/run_dir_import_export_hardening_contracts.rs`
 - `configs/dag/schema/operator/run_verify_report.schema.json`
 - `evidence/compat/export_bundle/v0_1_supported/bundle.json`
-- `evidence/compat/export_bundle/unsupported_past/bundle.json`
+- `evidence/compat/export_bundle/unsupported_older_version/bundle.json`
 - trust properties: `tp_run_dir_resilience`, `tp_import_export_compatibility`
 
 ## Current hardening stance

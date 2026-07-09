@@ -7,8 +7,8 @@
         "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json"
       ],
       "unsupported": [
-        "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
-        "evidence/compat/graph_schema/unsupported_past/minimal.dag.json"
+        "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
+        "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json"
       ]
     },
     "run_dir": {
@@ -16,7 +16,7 @@
         "evidence/compat/run_dir/v0_1_supported/manifest.json"
       ],
       "unsupported": [
-        "evidence/compat/run_dir/unsupported_future/manifest.json"
+        "evidence/compat/run_dir/unsupported_newer_version/manifest.json"
       ]
     },
     "export_bundle": {
@@ -24,7 +24,7 @@
         "evidence/compat/export_bundle/v0_1_supported/bundle.json"
       ],
       "unsupported": [
-        "evidence/compat/export_bundle/unsupported_past/bundle.json"
+        "evidence/compat/export_bundle/unsupported_older_version/bundle.json"
       ]
     }
   },
@@ -32,23 +32,23 @@
     "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json": {
       "decision": "supported"
     },
-    "evidence/compat/graph_schema/unsupported_future/minimal.dag.json": {
-      "decision": "unsupported_future"
+    "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json": {
+      "decision": "unsupported_newer_version"
     },
-    "evidence/compat/graph_schema/unsupported_past/minimal.dag.json": {
-      "decision": "unsupported_past"
+    "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json": {
+      "decision": "unsupported_older_version"
     },
     "evidence/compat/run_dir/v0_1_supported/manifest.json": {
       "decision": "supported"
     },
-    "evidence/compat/run_dir/unsupported_future/manifest.json": {
-      "decision": "unsupported_future"
+    "evidence/compat/run_dir/unsupported_newer_version/manifest.json": {
+      "decision": "unsupported_newer_version"
     },
     "evidence/compat/export_bundle/v0_1_supported/bundle.json": {
       "decision": "supported"
     },
-    "evidence/compat/export_bundle/unsupported_past/bundle.json": {
-      "decision": "unsupported_past"
+    "evidence/compat/export_bundle/unsupported_older_version/bundle.json": {
+      "decision": "unsupported_older_version"
     },
     "evidence/compat/scenarios/historical_fixture_validation.json": {
       "decision": "corrupt",

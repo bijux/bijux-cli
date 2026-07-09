@@ -38,8 +38,8 @@
             "type": "string",
             "enum": [
               "supported",
-              "unsupported_future",
-              "unsupported_past",
+              "unsupported_newer_version",
+              "unsupported_older_version",
               "corrupt"
             ]
           },

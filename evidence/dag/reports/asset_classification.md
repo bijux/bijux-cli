@@ -136,12 +136,12 @@ Classification for files in tasks 21-34 scopes.
 | evidence/cache/corrupt/truncated_meta.json | cache | transitional | root-owned | evidence/cache |  |
 | evidence/cache/corrupt/unsupported_metadata_version.json | cache | transitional | root-owned | evidence/cache |  |
 | evidence/cache/scenarios/warm_cold.json | cache | transitional | root-owned | evidence/cache |  |
-| evidence/compat/export_bundle/unsupported_past/bundle.json | compat | transitional | root-owned | evidence/compat |  |
+| evidence/compat/export_bundle/unsupported_older_version/bundle.json | compat | transitional | root-owned | evidence/compat |  |
 | evidence/compat/export_bundle/v0_1_supported/bundle.json | compat | transitional | root-owned | evidence/compat |  |
-| evidence/compat/graph_schema/unsupported_future/minimal.dag.json | compat | transitional | root-owned | evidence/compat |  |
-| evidence/compat/graph_schema/unsupported_past/minimal.dag.json | compat | transitional | root-owned | evidence/compat |  |
+| evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json | compat | transitional | root-owned | evidence/compat |  |
+| evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json | compat | transitional | root-owned | evidence/compat |  |
 | evidence/compat/graph_schema/v0_1_supported/minimal.dag.json | compat | transitional | root-owned | evidence/compat |  |
-| evidence/compat/run_dir/unsupported_future/manifest.json | compat | transitional | root-owned | evidence/compat |  |
+| evidence/compat/run_dir/unsupported_newer_version/manifest.json | compat | transitional | root-owned | evidence/compat |  |
 | evidence/compat/run_dir/v0_1_supported/manifest.json | compat | transitional | root-owned | evidence/compat |  |
 | tests/e2e/README.md | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/cache/cache_hit_second_run.json | battle | transitional | root-owned | evidence/battle |  |

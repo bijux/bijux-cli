@@ -34,18 +34,18 @@ fn run_manifest_version_migration_fixtures_classify_supported_and_unsupported_ve
         env!("CARGO_MANIFEST_DIR"),
         "evidence/compat/run_schema/v0_1_supported/minimal.manifest.json",
     );
-    let unsupported_past: Value = support::load_workspace_fixture_json(
+    let unsupported_older_version: Value = support::load_workspace_fixture_json(
         env!("CARGO_MANIFEST_DIR"),
-        "evidence/compat/run_schema/unsupported_past/minimal.manifest.json",
+        "evidence/compat/run_schema/unsupported_older_version/minimal.manifest.json",
     );
-    let unsupported_future: Value = support::load_workspace_fixture_json(
+    let unsupported_newer_version: Value = support::load_workspace_fixture_json(
         env!("CARGO_MANIFEST_DIR"),
-        "evidence/compat/run_schema/unsupported_future/minimal.manifest.json",
+        "evidence/compat/run_schema/unsupported_newer_version/minimal.manifest.json",
     );
 
     assert_eq!(supported["manifest_version"], "run-manifest/v0.1");
-    assert_ne!(supported["manifest_version"], unsupported_past["manifest_version"]);
-    assert_ne!(supported["manifest_version"], unsupported_future["manifest_version"]);
+    assert_ne!(supported["manifest_version"], unsupported_older_version["manifest_version"]);
+    assert_ne!(supported["manifest_version"], unsupported_newer_version["manifest_version"]);
 }
 
 #[test]

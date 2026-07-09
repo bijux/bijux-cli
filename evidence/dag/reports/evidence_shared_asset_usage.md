@@ -81,12 +81,12 @@ This report tracks where canonical evidence assets are consumed across suite sur
 | `evidence/cache/replay/mismatch_case.json` | `cache` | `e2e-contracts, runtime-tests` |
 | `evidence/cache/replay/unsupported_version_case.json` | `cache` | `e2e-contracts, runtime-tests` |
 | `evidence/cache/scenarios/warm_cold.json` | `cache` | `cache-contracts, runtime-tests` |
-| `evidence/compat/export_bundle/unsupported_past/bundle.json` | `compat` | `crate-contracts, runtime-tests` |
+| `evidence/compat/export_bundle/unsupported_older_version/bundle.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/export_bundle/v0_1_supported/bundle.json` | `compat` | `crate-contracts, runtime-tests` |
-| `evidence/compat/graph_schema/unsupported_future/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
-| `evidence/compat/graph_schema/unsupported_past/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
+| `evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
+| `evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/graph_schema/v0_1_supported/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
-| `evidence/compat/run_dir/unsupported_future/manifest.json` | `compat` | `crate-contracts, runtime-tests` |
+| `evidence/compat/run_dir/unsupported_newer_version/manifest.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/run_dir/v0_1_supported/manifest.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/scenarios/historical_fixture_validation.json` | `compat` | `compatibility-contracts, e2e-matrix` |
 | `evidence/fault/classes/fault_classes.json` | `fault` | `fault-contracts, runtime-tests` |

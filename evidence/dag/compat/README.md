@@ -16,5 +16,5 @@ formats are supported, rejected, or considered corrupt.
 
 ## Boundary
 
-- Compat evidence owns support decision classes: `supported`, `unsupported_future`, `unsupported_past`, `corrupt`.
+- Compat evidence owns support decision classes: `supported`, `unsupported_newer_version`, `unsupported_older_version`, `corrupt`.
 - Compat fixtures are not battle fixtures unless explicitly declared in battle metadata as a consumer.

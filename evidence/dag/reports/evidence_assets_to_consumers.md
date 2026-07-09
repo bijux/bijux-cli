@@ -111,14 +111,14 @@ Generated from `evidence/_meta/registries/evidence_registry.json`.
 | `evidence/compare/scenarios/replay_equivalence.json` | `compare` | `comparison-suite` |
 | `evidence/compare/scenarios/retry_timeout.json` | `compare` | `comparison-suite` |
 | `evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json` | `compare` | `comparison-suite` |
-| `evidence/compat/export_bundle/unsupported_past/bundle.json` | `compat` | `crate-contracts, runtime-tests` |
+| `evidence/compat/export_bundle/unsupported_older_version/bundle.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/export_bundle/v0_1_supported/bundle.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/export_bundle/v0_1_supported/examples/maximal_bundle.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/export_bundle/v0_1_supported/examples/minimal_bundle.json` | `compat` | `crate-contracts, runtime-tests` |
-| `evidence/compat/graph_schema/unsupported_future/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
-| `evidence/compat/graph_schema/unsupported_past/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
+| `evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
+| `evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/graph_schema/v0_1_supported/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
-| `evidence/compat/run_dir/unsupported_future/manifest.json` | `compat` | `crate-contracts, runtime-tests` |
+| `evidence/compat/run_dir/unsupported_newer_version/manifest.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/run_dir/v0_1_supported/manifest.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/scenarios/historical_fixture_validation.json` | `compat` | `compatibility-contracts, e2e-matrix` |
 | `evidence/fault/classes/fault_classes.json` | `fault` | `fault-contracts, runtime-tests` |

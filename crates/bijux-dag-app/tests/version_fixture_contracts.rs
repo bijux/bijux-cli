@@ -38,8 +38,8 @@ fn run_with_internal_lane(
 fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
     let root = repo_root();
     let supported = root.join("evidence/compat/graph_schema/v0_1_supported/minimal.dag.json");
-    let unsupported_future =
-        root.join("evidence/compat/graph_schema/unsupported_future/minimal.dag.json");
+    let unsupported_newer_version =
+        root.join("evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json");
 
     let cmd = dag_command();
     let ok_matches = cmd
@@ -60,7 +60,7 @@ fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
             "--json",
             "version-inspect",
             "--dag",
-            unsupported_future.to_string_lossy().as_ref(),
+            unsupported_newer_version.to_string_lossy().as_ref(),
         ])
         .expect("parse args unsupported");
     assert!(run_with_internal_lane(&bad_matches).is_err());
@@ -70,7 +70,8 @@ fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
 fn supported_and_unsupported_run_dir_formats_are_classified() {
     let root = repo_root();
     let supported = root.join("evidence/compat/run_dir/v0_1_supported");
-    let unsupported = root.join("evidence/compat/run_dir/unsupported_future");
+    let unsupported_newer_version =
+        root.join("evidence/compat/run_dir/unsupported_newer_version");
 
     let cmd = dag_command();
     let ok_matches = cmd
@@ -91,7 +92,7 @@ fn supported_and_unsupported_run_dir_formats_are_classified() {
             "--json",
             "version-inspect",
             "--run-dir",
-            unsupported.to_string_lossy().as_ref(),
+            unsupported_newer_version.to_string_lossy().as_ref(),
         ])
         .expect("parse args unsupported run");
     assert!(run_with_internal_lane(&bad_matches).is_err());
@@ -101,7 +102,8 @@ fn supported_and_unsupported_run_dir_formats_are_classified() {
 fn supported_and_unsupported_export_bundle_versions_are_classified() {
     let root = repo_root();
     let supported = root.join("evidence/compat/export_bundle/v0_1_supported/bundle.json");
-    let unsupported = root.join("evidence/compat/export_bundle/unsupported_past/bundle.json");
+    let unsupported_older_version =
+        root.join("evidence/compat/export_bundle/unsupported_older_version/bundle.json");
 
     let cmd = dag_command();
     let ok_matches = cmd
@@ -120,7 +122,7 @@ fn supported_and_unsupported_export_bundle_versions_are_classified() {
             "bijux-dag",
             "--json",
             "import",
-            unsupported.to_string_lossy().as_ref(),
+            unsupported_older_version.to_string_lossy().as_ref(),
         ])
         .expect("parse args unsupported bundle");
     assert!(dag_run(&bad_matches).is_err());

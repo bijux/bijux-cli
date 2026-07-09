@@ -106,7 +106,7 @@ fn compat_and_fault_metadata_have_strict_family_semantics() {
         );
         let decision = entry["decision"].as_str().expect("decision string");
         assert!(
-            ["supported", "unsupported_future", "unsupported_past", "corrupt"].contains(&decision),
+            ["supported", "unsupported_newer_version", "unsupported_older_version", "corrupt"].contains(&decision),
             "compat decision is invalid: {decision}"
         );
     }

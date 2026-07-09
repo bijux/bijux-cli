@@ -1105,7 +1105,7 @@ pub(super) fn run_evidence_family_boundary_verify() -> Result<(), String> {
             .get("decision")
             .and_then(Value::as_str)
             .ok_or_else(|| format!("compat decision matrix entry missing decision: {path}"))?;
-        let allowed = ["supported", "unsupported_future", "unsupported_past", "corrupt"];
+        let allowed = ["supported", "unsupported_newer_version", "unsupported_older_version", "corrupt"];
         if !allowed.contains(&decision) {
             return Err(format!(
                 "compat decision matrix has unknown decision `{decision}` for `{path}`"
@@ -2936,7 +2936,7 @@ pub(super) fn run_artifact_hardening_guard() -> Result<(), String> {
         "docs/spec/ARTIFACT_LIFECYCLE.md",
         "configs/dag/schema/operator/run_verify_report.schema.json",
         "evidence/compat/export_bundle/v0_1_supported/bundle.json",
-        "evidence/compat/export_bundle/unsupported_past/bundle.json",
+        "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
         "crates/bijux-dag-app/tests/run_dir_import_export_contract.rs",
         "crates/bijux-dag-artifacts/src/storage/hardening.rs",
         "crates/bijux-dag-artifacts/tests/artifact_hardening_contracts.rs",
@@ -3330,12 +3330,12 @@ pub(super) fn run_versioning_compatibility_guard() -> Result<(), String> {
     let required_fixtures = [
         "evidence/compat/metadata.json",
         "evidence/compat/graph_schema/v0_1_supported/minimal.dag.json",
-        "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
-        "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+        "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
+        "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
         "evidence/compat/run_dir/v0_1_supported/manifest.json",
-        "evidence/compat/run_dir/unsupported_future/manifest.json",
+        "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
         "evidence/compat/export_bundle/v0_1_supported/bundle.json",
-        "evidence/compat/export_bundle/unsupported_past/bundle.json",
+        "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
     ];
     let mut missing = Vec::new();
     for rel in required_docs.iter().chain(required_fixtures.iter()) {
@@ -4285,18 +4285,18 @@ pub(super) fn run_compatibility_report() -> Result<(), String> {
         "graph_schema": {
             "current": "0.1",
             "supported_fixtures": collect_fixture_count(&root.join("evidence/compat/graph_schema/v0_1_supported"))?,
-            "unsupported_future_fixtures": collect_fixture_count(&root.join("evidence/compat/graph_schema/unsupported_future"))?,
-            "unsupported_past_fixtures": collect_fixture_count(&root.join("evidence/compat/graph_schema/unsupported_past"))?
+            "unsupported_newer_version_fixtures": collect_fixture_count(&root.join("evidence/compat/graph_schema/unsupported_newer_version"))?,
+            "unsupported_older_version_fixtures": collect_fixture_count(&root.join("evidence/compat/graph_schema/unsupported_older_version"))?
         },
         "run_dir": {
             "current": "run-manifest/v0.1",
             "supported_fixtures": collect_fixture_count(&root.join("evidence/compat/run_dir/v0_1_supported"))?,
-            "unsupported_future_fixtures": collect_fixture_count(&root.join("evidence/compat/run_dir/unsupported_future"))?
+            "unsupported_newer_version_fixtures": collect_fixture_count(&root.join("evidence/compat/run_dir/unsupported_newer_version"))?
         },
         "export_bundle": {
             "current": "export-bundle/v0.1",
             "supported_fixtures": collect_fixture_count(&root.join("evidence/compat/export_bundle/v0_1_supported"))?,
-            "unsupported_past_fixtures": collect_fixture_count(&root.join("evidence/compat/export_bundle/unsupported_past"))?
+            "unsupported_older_version_fixtures": collect_fixture_count(&root.join("evidence/compat/export_bundle/unsupported_older_version"))?
         }
     });
     println!("{}", serde_json::to_string_pretty(&report).map_err(|err| err.to_string())?);

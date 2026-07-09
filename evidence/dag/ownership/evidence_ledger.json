@@ -6581,8 +6581,8 @@
       "why_exists": "schema failure fixture ensures unknown top-level keys are rejected"
     },
     {
-      "canonical_location": "evidence/compat/export_bundle/unsupported_past/bundle.json",
-      "canonical_path": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "canonical_location": "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
+      "canonical_path": "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -6596,11 +6596,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "compat",
-      "id": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "id": "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
       "implementation_status": "implemented",
       "kind": "compat",
       "owner": "team-runtime",
-      "path": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "path": "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -6717,8 +6717,8 @@
       "why_exists": "minimal supported export bundle example for compatibility fixtures"
     },
     {
-      "canonical_location": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
-      "canonical_path": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "canonical_location": "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
+      "canonical_path": "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -6732,11 +6732,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "compat",
-      "id": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "id": "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
       "implementation_status": "implemented",
       "kind": "compat",
       "owner": "team-runtime",
-      "path": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "path": "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -6751,8 +6751,8 @@
       "why_exists": "verify unsupported forward-version graph schema fixture is rejected"
     },
     {
-      "canonical_location": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
-      "canonical_path": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "canonical_location": "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
+      "canonical_path": "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -6766,11 +6766,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "compat",
-      "id": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "id": "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
       "implementation_status": "implemented",
       "kind": "compat",
       "owner": "team-runtime",
-      "path": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "path": "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -6819,8 +6819,8 @@
       "why_exists": "verify supported graph schema fixture remains accepted"
     },
     {
-      "canonical_location": "evidence/compat/run_dir/unsupported_future/manifest.json",
-      "canonical_path": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "canonical_location": "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
+      "canonical_path": "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -6834,11 +6834,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "compat",
-      "id": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "id": "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
       "implementation_status": "implemented",
       "kind": "compat",
       "owner": "team-runtime",
-      "path": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "path": "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
