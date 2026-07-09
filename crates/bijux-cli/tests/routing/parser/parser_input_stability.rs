@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Parser fuzz targets for argv normalization and route safety.
-//! test_type: parser-fuzz
+//! Parser input stability checks for argv normalization and route safety.
+//! test_type: parser-input-stability
 
 use bijux_cli::api::routing::catalog::normalize_command_path;
 use bijux_cli::api::routing::parser::{parse_intent, ParsedIntent};

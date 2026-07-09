@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Parser regression suite replaying minimized fuzz cases.
-//! test_type: parser-fuzz-regression
+//! Parser case replay suite for retained minimized and interesting inputs.
+//! test_type: parser-case-replay
 
 use std::fs;
 use std::path::Path;
