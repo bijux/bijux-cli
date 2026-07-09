@@ -2,6 +2,13 @@
 
 This document is generated from runtime adapter descriptors and backend contract references.
 
+## Scope
+
+This contract governs the registered runtime adapter identities, the published
+conformance scenario meanings, the external adapter handshake boundary, and the
+backend-specific adapter mappings that the runtime treats as supported
+integration surfaces.
+
 ## Registered adapters
 - `const` `0.1`: kinds=["const"], origin=BuiltIn, schema=v0.1, timeout=true, cancel=false, cache=FingerprintExact
 - `container` `0.1`: kinds=["container"], origin=BuiltIn, schema=v0.1, timeout=true, cancel=false, cache=FingerprintExact
@@ -115,3 +122,17 @@ This document is generated from runtime adapter descriptors and backend contract
 ## Fake batch executor
 - submit=`submit(run_id,node_id) -> job_id`, poll=`snapshot(job_id) -> status`, cancel=`cancel(job_id, diagnostic)`
 - states: queued, running, completed, failed, cancelled
+
+## Versioning and change policy
+
+Any incompatible change to registered adapter identities, conformance scenario
+meanings, external adapter protocol fields, or backend contract mappings must
+update this contract and the linked adapter tests in the same change.
+
+## Related tests
+
+- `crates/bijux-dag-runtime/tests/adapter_runtime_contracts.rs`
+- `crates/bijux-dag-runtime/tests/adapter_backend_contracts.rs`
+- `crates/bijux-dag-runtime/tests/adapter_reference_contracts.rs`
+- `crates/bijux-dag-runtime/tests/adapter_sdk_contract.rs`
+- `crates/bijux-dag-app/tests/adapter_command_contract.rs`

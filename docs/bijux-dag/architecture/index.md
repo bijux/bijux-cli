@@ -33,6 +33,7 @@ routes.
 - [Module Map](module-map.md)
 - [Dependency Direction](dependency-direction.md)
 - [Execution Model](execution-model.md)
+- [Runtime Concurrency Boundaries](runtime-concurrency-boundaries.md)
 - [State and Persistence](state-and-persistence.md)
 - [Integration Seams](integration-seams.md)
 - [Error Model](error-model.md)

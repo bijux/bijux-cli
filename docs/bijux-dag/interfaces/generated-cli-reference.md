@@ -17,7 +17,8 @@ deliberately excluded from this page and listed separately in
 
 ## Placeholder Conventions
 
-- `${GRAPH}`: DAG graph file such as `evidence/workflows/file_processing/dag.json`
+- `${GRAPH}`: DAG graph file such as
+  `evidence/dag/authoring/examples/file-processing-report.dag.json`
 - `${GRAPH_A}` and `${GRAPH_B}`: two graph revisions to compare
 - `${RUNS_ROOT}`: retained run root such as `artifacts/bijux-dag/runs`
 - `${RUN_DIR}`: one retained run directory such as `${RUNS_ROOT}/run-20260708-101500`
@@ -1973,5 +1974,4 @@ Options:
   -h, --help
           Print help
 ```
-
 

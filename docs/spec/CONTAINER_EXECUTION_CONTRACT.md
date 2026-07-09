@@ -63,3 +63,9 @@ Image literals are validated as image names, not shell options.
 Any incompatible change to container contract fields, path normalization,
 environment isolation semantics, or GPU runtime argument behavior must update
 this contract and the linked runtime tests in the same change.
+
+## Related tests
+
+- `crates/bijux-dag-runtime/tests/container_execution_contracts.rs`
+- `crates/bijux-dag-runtime/tests/adapter_runtime_contracts.rs`
+- `crates/bijux-dag-app/tests/container_workflow_contract.rs`

@@ -89,3 +89,9 @@ operator meanings:
 Any incompatible change to the classification taxonomy, required explanation
 fields, or missing-trace behavior must update this contract and the linked app
 tests in the same change.
+
+## Related tests
+
+- `crates/bijux-dag-app/tests/node_inspection_contract.rs`
+- `crates/bijux-dag-app/tests/diff_explain_contract.rs`
+- `crates/bijux-dag-app/tests/replay_semantic_surface_contracts.rs`

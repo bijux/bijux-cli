@@ -62,16 +62,17 @@ flowchart LR
 - inspect evidence: `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`
 - operate locally: `cache ...`, `doctor`, `version`, `commands`, `completions`
 
-Within `runs ...`, `runs compare` is the retained-run attribution surface: it
-compares fingerprints, graph inputs, selected nodes, node statuses, output
-hashes, and the first meaningful divergence without claiming a deeper
-directory-wide diff than the retained evidence supports.
+Within the retained runs family, the compare surface is the
+retained-run attribution boundary: it compares fingerprints, graph inputs,
+selected nodes, node statuses, output hashes, and the first meaningful
+divergence without claiming a deeper directory-wide diff than the retained
+evidence supports.
 
-Within that same retained-run lane, `runs scheduler-checkpoint` is the stable
-scheduler-state inspection surface: it reports the retained ready queue,
-scheduled batch, resource-blocked nodes, inflight nodes, completed statuses,
-and decision reason without requiring an operator to reconstruct that boundary
-from the full timeline.
+Within that same retained-run lane, the scheduler-checkpoint surface is the
+stable scheduler-state inspection boundary: it reports the retained ready
+queue, scheduled batch, resource-blocked nodes, inflight nodes, completed
+statuses, and decision reason without requiring an operator to reconstruct
+that boundary from the full timeline.
 
 If you want the concrete operator path through those groups, read
 [Operator Workflows](./operator-workflows.md).
@@ -91,9 +92,9 @@ either widen the contract too far or still need stricter release posture:
   `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`,
   `prove`, `proof-summary`
 
-`node` is the explicit-path deep inspection route for one persisted node and
-surfaces planned fields, artifact indexes, attempts, log tails, cache state,
-failure evidence, and evidence gaps.
+The explicit node-inspection route surfaces planned fields, artifact indexes,
+attempts, log tails, cache state, failure evidence, and evidence gaps for one
+persisted node.
 
 `show-effective-graph` is the explicit graph-structure inspection route and
 surfaces nodes, edges, roots, leaves, branch paths, joins, resources, output
@@ -101,7 +102,7 @@ contracts, and selected versus omitted nodes either from graph input or a
 persisted run snapshot.
 
 For one repository-backed example that uses the stable `cache verify` route
-plus the explicit-path `why-cache-missed` route to explain changed-input misses
+plus the explicit cache-miss explanation route to explain changed-input misses
 and corruption refusal on the same retained workflow, use
 [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md).
 
@@ -133,7 +134,7 @@ surface in `v0.4.0`:
 - maintainer quality and release modeling: `security`, `durability`, `performance`, `release`, `runtime`, `schedule`
 - internal capability probes: `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof`
 
-Inside the internal `schedule` namespace, the current maintained control
+Inside the internal schedule namespace, the current maintained control
 surfaces cover registry validation, submission evaluation, explicit schedule
 pause and resume control, queue state inspection, priority-aware queue
 dispatch, queue ledger updates, and durable backfill control.

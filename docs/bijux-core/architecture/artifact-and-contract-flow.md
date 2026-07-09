@@ -106,7 +106,9 @@ retained meaning.
 Common examples:
 
 - internal refactors with identical outputs
-- performance work that preserves command semantics
+- performance work that preserves command semantics and stays within the
+  benchmark evidence boundaries recorded in the
+  `performance-evidence-report`
 - private helper changes in maintainer tooling
 - test fixture cleanup that does not alter retained contracts
 

@@ -28,6 +28,7 @@ flowchart LR
 - [Workspace Layout](workspace-layout.md)
 - [Package Map](package-map.md)
 - [Package Boundary](package-boundary.md)
+- [Current Implemented Capabilities](current-implemented-capabilities.md)
 - [Documentation System](documentation-system.md)
 - [Module Surface Lanes](module-surface-lanes.md)
 - [Ownership Model](ownership-model.md)

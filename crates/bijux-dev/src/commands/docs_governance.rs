@@ -37,6 +37,17 @@ const REQUIRED_RISK_IDS: [&str; 10] = [
     "RISK-001", "RISK-002", "RISK-003", "RISK-004", "RISK-005", "RISK-006", "RISK-007", "RISK-008",
     "RISK-009", "RISK-010",
 ];
+const ROADMAP_REFERENCE_ALLOWLIST: [&str; 9] = [
+    "docs/index.md",
+    "docs/bijux-dag/index.md",
+    "docs/bijux-dag/foundation/release-boundary.md",
+    "docs/bijux-dag/foundation/scope-and-boundaries.md",
+    "docs/bijux-dag/interfaces/reference/support-matrix.md",
+    "docs/bijux-dag/quality/known-limitations.md",
+    "docs/bijux-dag/operations/v0-4-0-release-notes.md",
+    "docs/bijux-core/governance/documentation-governance-alignment.md",
+    "docs/bijux-core/foundation/module-surface-lanes.md",
+];
 
 #[derive(Debug, Deserialize, Default)]
 struct DocsLintPolicy {
@@ -134,7 +145,10 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
                 return Err(format!("stale crate/path reference in {rel}: {stale}"));
             }
         }
-        if lower.contains("roadmap") && !rel.starts_with("docs/tracking/") {
+        if lower.contains("roadmap")
+            && !rel.starts_with("docs/tracking/")
+            && !roadmap_reference_allowed(&rel)
+        {
             return Err(format!(
                 "speculative roadmap content must live under docs/tracking: {rel}"
             ));
@@ -150,6 +164,10 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
     run_risk_register_guard()?;
 
     Ok(())
+}
+
+fn roadmap_reference_allowed(rel: &str) -> bool {
+    ROADMAP_REFERENCE_ALLOWLIST.contains(&rel)
 }
 
 pub(super) fn run_known_limitations_guard() -> Result<(), String> {
@@ -1093,7 +1111,7 @@ fn collect_source_files_with_extension(
 mod tests {
     use super::{
         broken_inline_code_anchors, extract_inline_code_spans, repo_code_anchor_candidate,
-        should_skip_markdown_link, validate_known_limitations_content,
+        roadmap_reference_allowed, should_skip_markdown_link, validate_known_limitations_content,
         validate_risk_register_content, KNOWN_LIMITATIONS_REL_PATH, REQUIRED_RISK_IDS,
         RISK_REGISTER_REL_PATH,
     };
@@ -1159,6 +1177,28 @@ also good `docs/index.md`\n";
         assert!(should_skip_markdown_link("{{ docs_url }}"));
         assert!(should_skip_markdown_link("#section"));
         assert!(!should_skip_markdown_link("../guide.md"));
+    }
+
+    #[test]
+    fn roadmap_reference_allowlist_covers_boundary_and_entrypoint_docs() {
+        for rel in [
+            "docs/index.md",
+            "docs/bijux-dag/index.md",
+            "docs/bijux-dag/foundation/release-boundary.md",
+            "docs/bijux-dag/foundation/scope-and-boundaries.md",
+            "docs/bijux-dag/interfaces/reference/support-matrix.md",
+            "docs/bijux-dag/quality/known-limitations.md",
+        ] {
+            assert!(roadmap_reference_allowed(rel), "{rel} should allow roadmap routing");
+        }
+    }
+
+    #[test]
+    fn roadmap_reference_allowlist_keeps_general_docs_outside_tracking_blocked() {
+        assert!(!roadmap_reference_allowed("docs/bijux-dag/operations/common-workflows.md"));
+        assert!(!roadmap_reference_allowed(
+            "docs/bijux-dag/architecture/reference/local-only-vs-remote-coordinated-runtime.md"
+        ));
     }
 
     #[test]

@@ -64,5 +64,5 @@ the result.
 - [makes](../makes/ci-targets.md)
 - [Repository Gates](repository-gates.md)
 - [Release Operations](release-operations.md)
-- [Release Operations](release-operations.md#release-validation-suite)
+- [Release Validation Suite](release-validation-suite.md)
 - [Change Control](../governance/change-control.md)
