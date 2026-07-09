@@ -138,7 +138,7 @@ pub(super) fn rows() -> Vec<Value> {
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/root_command_coverage_report.json",
-                "artifacts/status/root_command_matrix_artifact.json",
+                "artifacts/status/root_command_coverage_artifact.json",
                 "artifacts/status/root_command_surface_domain_contract.json",
                 "artifacts/status/root_command_remaining_inventory.json",
                 "artifacts/status/root_command_impact_ranking.json",

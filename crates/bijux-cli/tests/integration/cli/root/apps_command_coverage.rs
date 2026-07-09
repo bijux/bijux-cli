@@ -11,7 +11,7 @@ use serde_json::Value;
 
 fn temp_dir(name: &str) -> PathBuf {
     let root =
-        env::temp_dir().join(format!("bijux-apps-command-matrix-{name}-{}", std::process::id()));
+        env::temp_dir().join(format!("bijux-apps-command-coverage-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root

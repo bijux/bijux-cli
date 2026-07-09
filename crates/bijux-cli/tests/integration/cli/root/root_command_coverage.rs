@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Root command matrix coverage and explicit root-surface law tests.
+//! Root command coverage and explicit root-surface law tests.
 
 use std::process::{Command, Output};
 
@@ -530,7 +530,7 @@ fn repeated_run_determinism_for_machine_readable_root_commands() {
 }
 
 #[test]
-fn root_command_matrix_artifact_smoke_uses_supported_commands() {
+fn root_command_coverage_artifact_smoke_uses_supported_commands() {
     // Smoke check for the matrix command list used by report generation.
     let matrix = [
         ["version"].as_slice(),

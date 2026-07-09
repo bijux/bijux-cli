@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! root integration suites.
 
-mod apps_command_matrix;
+mod apps_command_coverage;
 mod bin_core_integration;
 mod cli_command_matrix;
 mod cross_surface_equivalence;
@@ -11,4 +11,4 @@ mod official_product_routes;
 mod parser_invalid_utf8_argv;
 mod precedence_matrix;
 mod python_command_port_parity;
-mod root_command_matrix;
+mod root_command_coverage;

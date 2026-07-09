@@ -5,7 +5,7 @@
       "coverage_level": "better",
       "rust_test_files": [
         "crates/bijux-cli/tests/routing/contracts/sdk_surface.rs",
-        "crates/bijux-cli/tests/integration/cli/root/apps_command_matrix.rs"
+        "crates/bijux-cli/tests/integration/cli/root/apps_command_coverage.rs"
       ]
     },
     {
