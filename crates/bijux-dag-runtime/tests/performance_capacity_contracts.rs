@@ -46,9 +46,9 @@ fn flags_performance_regression_against_family_gate() {
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json",
     );
-    let candidate: BenchmarkResult = support::load_workspace_fixture_typed(
+    let regression_probe: BenchmarkResult = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
-        "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
+        "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json",
     );
     let gate = PerformanceGate {
         family: "planner".to_string(),
@@ -56,7 +56,7 @@ fn flags_performance_regression_against_family_gate() {
         min_throughput_retention_pct: 95,
     };
 
-    let violations = detect_performance_regression(&baseline, &candidate, &gate);
+    let violations = detect_performance_regression(&baseline, &regression_probe, &gate);
     assert_eq!(violations.len(), 2);
 }
 

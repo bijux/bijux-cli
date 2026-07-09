@@ -110,7 +110,7 @@ Classification for files in tasks 21-34 scopes.
 | crates/bijux-dag-runtime/tests/fixtures/operations/slo_objective.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/packaging/deployment_conformance.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
-| crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
+| crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/plugins/conformance_suite.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/policy/org_models.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |

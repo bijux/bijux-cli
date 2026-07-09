@@ -3043,8 +3043,8 @@
       "why_exists": "exercise runtime subsystem contract fixtures"
     },
     {
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
-      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json",
+      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -3058,11 +3058,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "battle",
-      "id": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
+      "id": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json",
       "implementation_status": "implemented",
       "kind": "battle",
       "owner": "team-runtime",
-      "path": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
+      "path": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",

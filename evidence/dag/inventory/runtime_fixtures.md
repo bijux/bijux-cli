@@ -42,7 +42,7 @@
 - crates/bijux-dag-runtime/tests/fixtures/operations/slo_objective.json
 - crates/bijux-dag-runtime/tests/fixtures/packaging/deployment_conformance.json
 - crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json
-- crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json
+- crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json
 - crates/bijux-dag-runtime/tests/fixtures/plugins/conformance_suite.json
 - crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json
 - crates/bijux-dag-runtime/tests/fixtures/policy/org_models.json
