@@ -8,9 +8,9 @@ use std::path::{Path, PathBuf};
 use bijux_cli::contracts::{known_bijux_tool_namespaces, Namespace, PluginKind, PluginManifestV2};
 use semver::{Prerelease, Version};
 
-const TEMPLATE_CONTRACT_VERSION: &str = "v2";
+const SCAFFOLD_CONTRACT_VERSION: &str = "v2";
 
-fn template_compatibility_min_inclusive() -> String {
+fn scaffold_compatibility_min_inclusive() -> String {
     let runtime = Version::parse(env!("CARGO_PKG_VERSION")).expect("package semver");
     let mut min = Version::new(runtime.major, runtime.minor, runtime.patch);
     if !runtime.pre.is_empty() {
@@ -20,7 +20,7 @@ fn template_compatibility_min_inclusive() -> String {
     min.to_string()
 }
 
-fn template_compatibility_max_exclusive() -> String {
+fn scaffold_compatibility_max_exclusive() -> String {
     let runtime = Version::parse(env!("CARGO_PKG_VERSION")).expect("package semver");
     if runtime.major == 0 {
         Version::new(0, runtime.minor + 1, 0).to_string()
@@ -83,9 +83,9 @@ fn walk_dirs(root: &Path) -> Vec<PathBuf> {
     dirs
 }
 
-fn render_template(text: &str) -> String {
-    let min = template_compatibility_min_inclusive();
-    let max = template_compatibility_max_exclusive();
+fn render_scaffold_template(text: &str) -> String {
+    let min = scaffold_compatibility_min_inclusive();
+    let max = scaffold_compatibility_max_exclusive();
     text.replace("{{cookiecutter.project_name}}", "testplug")
         .replace("{{cookiecutter.project_slug}}", "testplug")
         .replace("{{cookiecutter.plugin_namespace}}", "testplug")
@@ -96,7 +96,7 @@ fn render_template(text: &str) -> String {
         .replace("{{cookiecutter.rust_edition}}", "2021")
 }
 
-fn expected_template_reserved_namespaces() -> BTreeSet<String> {
+fn expected_scaffold_reserved_namespaces() -> BTreeSet<String> {
     ["apps", "cli", "completion", "dev", "doctor", "help", "inspect", "plugins", "repl", "version"]
         .into_iter()
         .map(str::to_string)
@@ -121,7 +121,7 @@ fn reserved_namespaces_from_hook(path: &str) -> BTreeSet<String> {
 }
 
 fn assert_rendered_project_readme(path: &str) {
-    let rendered = render_template(&read_repo_file(path));
+    let rendered = render_scaffold_template(&read_repo_file(path));
     assert!(
         rendered.contains("bijux plugins install ."),
         "{path} should document local install from the rendered project root"
@@ -161,7 +161,7 @@ fn assert_rendered_project_readme(path: &str) {
 }
 
 #[test]
-fn template_docs_reference_current_rendering_and_install_flow() {
+fn scaffold_docs_reference_current_rendering_and_install_flow() {
     for path in
         ["templates/README.md", "templates/plugins-py/README.md", "templates/plugins-rs/README.md"]
     {
@@ -221,7 +221,7 @@ fn rendered_project_readmes_describe_current_plugin_maintenance_flow() {
     assert_rendered_project_readme(
         "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/README.md",
     );
-    let rust_rendered = render_template(&read_repo_file(
+    let rust_rendered = render_scaffold_template(&read_repo_file(
         "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/README.md",
     ));
     assert!(
@@ -236,7 +236,7 @@ fn rendered_project_readmes_describe_current_plugin_maintenance_flow() {
         rust_rendered.to_ascii_lowercase().contains("rebuild"),
         "rendered rust project README must explain the local rebuild contract"
     );
-    let python_rendered = render_template(&read_repo_file(
+    let python_rendered = render_scaffold_template(&read_repo_file(
         "templates/plugins-py/{{cookiecutter.plugin_namespace}}/README.md",
     ));
     assert!(
@@ -246,7 +246,7 @@ fn rendered_project_readmes_describe_current_plugin_maintenance_flow() {
 }
 
 #[test]
-fn template_manifests_match_current_plugin_contract() {
+fn scaffold_manifests_match_current_plugin_contract() {
     for (path, expected_kind) in [
         (
             "templates/plugins-py/{{cookiecutter.plugin_namespace}}/plugin.manifest.json",
@@ -258,7 +258,7 @@ fn template_manifests_match_current_plugin_contract() {
         ),
     ] {
         let manifest: PluginManifestV2 =
-            serde_json::from_str(&render_template(&read_repo_file(path)))
+            serde_json::from_str(&render_scaffold_template(&read_repo_file(path)))
                 .expect("valid manifest json");
         assert_eq!(manifest.schema_version, "v2");
         assert_eq!(manifest.manifest_version, "v2");
@@ -280,13 +280,13 @@ fn template_manifests_match_current_plugin_contract() {
         assert!(
             manifest
                 .compatibility
-                .supports_host(&template_compatibility_min_inclusive())
+                .supports_host(&scaffold_compatibility_min_inclusive())
                 .expect("valid compatibility"),
             "{path} should support the current repository host floor"
         );
     }
 
-    let rust_entrypoint = render_template(&read_repo_file(
+    let rust_entrypoint = render_scaffold_template(&read_repo_file(
         "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/plugin-entrypoint",
     ));
     assert!(
@@ -302,7 +302,7 @@ fn template_manifests_match_current_plugin_contract() {
         "rust template entrypoint should not route every execution through cargo run"
     );
 
-    let rust_cargo_toml = render_template(&read_repo_file(
+    let rust_cargo_toml = render_scaffold_template(&read_repo_file(
         "templates/plugins-rs/{{cookiecutter.plugin_namespace}}/Cargo.toml",
     ));
     assert!(
@@ -316,7 +316,7 @@ fn template_manifests_match_current_plugin_contract() {
 }
 
 #[test]
-fn template_defaults_preserve_plugin_semver_and_host_compatibility_window() {
+fn scaffold_defaults_preserve_plugin_semver_and_host_compatibility_window() {
     for path in ["templates/plugins-py/cookiecutter.json", "templates/plugins-rs/cookiecutter.json"]
     {
         let payload: serde_json::Value =
@@ -327,16 +327,16 @@ fn template_defaults_preserve_plugin_semver_and_host_compatibility_window() {
         );
         assert_eq!(
             payload["cli_min"],
-            template_compatibility_min_inclusive(),
+            scaffold_compatibility_min_inclusive(),
             "{path} must require the current repository host line"
         );
         assert_eq!(
             payload["cli_max"],
-            template_compatibility_max_exclusive(),
+            scaffold_compatibility_max_exclusive(),
             "{path} must keep host compatibility open through the next supported host boundary"
         );
         assert_eq!(
-            payload["_template_version"], TEMPLATE_CONTRACT_VERSION,
+            payload["_template_version"], SCAFFOLD_CONTRACT_VERSION,
             "{path} must track the current template contract version"
         );
 
@@ -364,7 +364,7 @@ fn template_defaults_preserve_plugin_semver_and_host_compatibility_window() {
 }
 
 #[test]
-fn template_hooks_guard_namespace_and_crate_identifier_rules() {
+fn scaffold_hooks_guard_namespace_and_crate_identifier_rules() {
     let py_hook = read_repo_file("templates/plugins-py/hooks/pre_gen_project.py");
     assert!(
         py_hook.contains("project_slug must be lowercase kebab-case"),
@@ -425,8 +425,8 @@ fn template_hooks_guard_namespace_and_crate_identifier_rules() {
 }
 
 #[test]
-fn template_hook_reserved_namespaces_match_runtime_contracts() {
-    let expected = expected_template_reserved_namespaces();
+fn scaffold_hook_reserved_namespaces_match_runtime_contracts() {
+    let expected = expected_scaffold_reserved_namespaces();
     for path in [
         "templates/plugins-py/hooks/pre_gen_project.py",
         "templates/plugins-rs/hooks/pre_gen_project.py",
@@ -440,7 +440,7 @@ fn template_hook_reserved_namespaces_match_runtime_contracts() {
 }
 
 #[test]
-fn template_projects_ship_local_ignore_rules() {
+fn scaffold_projects_ship_local_ignore_rules() {
     let py_ignore =
         read_repo_file("templates/plugins-py/{{cookiecutter.plugin_namespace}}/.gitignore");
     assert!(
@@ -461,7 +461,7 @@ fn template_projects_ship_local_ignore_rules() {
 }
 
 #[test]
-fn template_tree_does_not_ship_legacy_plugin_json_files() {
+fn scaffold_tree_does_not_ship_legacy_plugin_json_files() {
     let template_root = repo_root().join("templates");
     for path in walk_files(&template_root) {
         assert_ne!(
@@ -474,7 +474,7 @@ fn template_tree_does_not_ship_legacy_plugin_json_files() {
 }
 
 #[test]
-fn template_tree_does_not_ship_empty_directories() {
+fn scaffold_tree_does_not_ship_empty_directories() {
     let template_root = repo_root().join("templates");
     for path in walk_dirs(&template_root) {
         if path == template_root {
