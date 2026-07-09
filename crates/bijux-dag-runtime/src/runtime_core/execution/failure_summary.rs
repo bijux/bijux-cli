@@ -332,14 +332,12 @@ mod tests {
     fn summary_separates_primary_failure_from_propagated_failures_and_skips() {
         let tmp = tempfile::tempdir().expect("tmpdir");
         let run_dir = RunDir::create_with_id(tmp.path(), "failure-summary").expect("run dir");
-        fs::create_dir_all(run_dir.staging_path().join("nodes").join("build")).expect("build dir");
-        fs::create_dir_all(run_dir.staging_path().join("nodes").join("report"))
-            .expect("report dir");
-        fs::create_dir_all(run_dir.staging_path().join("nodes").join("publish"))
-            .expect("publish dir");
+        fs::create_dir_all(run_dir.node_dir("build")).expect("build dir");
+        fs::create_dir_all(run_dir.node_dir("report")).expect("report dir");
+        fs::create_dir_all(run_dir.node_dir("publish")).expect("publish dir");
 
         write_trace(
-            &run_dir.staging_path().join("nodes").join("build").join("trace.json"),
+            &run_dir.node_trace_path("build"),
             NodeTrace {
                 node_id: "build".to_string(),
                 status: "failed".to_string(),
@@ -381,7 +379,7 @@ mod tests {
             },
         );
         write_trace(
-            &run_dir.staging_path().join("nodes").join("report").join("trace.json"),
+            &run_dir.node_trace_path("report"),
             NodeTrace {
                 node_id: "report".to_string(),
                 status: "failed".to_string(),
@@ -423,7 +421,7 @@ mod tests {
             },
         );
         write_trace(
-            &run_dir.staging_path().join("nodes").join("publish").join("trace.json"),
+            &run_dir.node_trace_path("publish"),
             NodeTrace {
                 node_id: "publish".to_string(),
                 status: "skipped".to_string(),

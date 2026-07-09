@@ -35,6 +35,7 @@ routes.
 - [Execution Model](execution-model.md)
 - [Runtime Concurrency Boundaries](runtime-concurrency-boundaries.md)
 - [State and Persistence](state-and-persistence.md)
+- [Storage Layout Ownership](storage-layout-ownership.md)
 - [Integration Seams](integration-seams.md)
 - [Error Model](error-model.md)
 - [Extensibility Model](extensibility-model.md)
