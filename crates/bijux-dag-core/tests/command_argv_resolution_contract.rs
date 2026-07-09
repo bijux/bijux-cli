@@ -1,7 +1,7 @@
 use bijux_dag_core::parse_graph_strict;
 
 #[test]
-fn resolve_graph_renders_shell_argv_templates_with_params_inputs_outputs_and_scalars() {
+fn resolve_graph_resolves_shell_argv_expressions_with_params_inputs_outputs_and_scalars() {
     let graph = parse_graph_strict(
         r#"{
           "spec":"bijux-dag/v0.1",
@@ -58,7 +58,7 @@ fn resolve_graph_renders_shell_argv_templates_with_params_inputs_outputs_and_sca
 }
 
 #[test]
-fn resolve_graph_rejects_missing_command_template_params() {
+fn resolve_graph_rejects_missing_command_argv_params() {
     let graph = parse_graph_strict(
         r#"{
           "spec":"bijux-dag/v0.1",
@@ -79,7 +79,7 @@ fn resolve_graph_rejects_missing_command_template_params() {
 }
 
 #[test]
-fn container_fingerprint_tracks_resolved_command_templates() {
+fn container_fingerprint_tracks_resolved_command_argv() {
     let graph_a = parse_graph_strict(
         r#"{
           "spec":"bijux-dag/v0.1",
@@ -133,5 +133,5 @@ fn container_fingerprint_tracks_resolved_command_templates() {
         .node_fingerprint_with_params(node_b, &resolved_b.resolved_params["pack"])
         .expect("fingerprint b");
 
-    assert_ne!(fp_a, fp_b, "container argv templates must affect fingerprint");
+    assert_ne!(fp_a, fp_b, "container argv resolution must affect fingerprint");
 }

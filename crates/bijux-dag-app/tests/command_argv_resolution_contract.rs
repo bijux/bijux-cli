@@ -22,8 +22,8 @@ fn output_path_string(path: &Path) -> String {
     path.to_string_lossy().into_owned()
 }
 
-fn write_shell_template_graph(root: &Path) -> PathBuf {
-    let path = root.join("command-argv-template.dag.json");
+fn write_shell_argv_resolution_graph(root: &Path) -> PathBuf {
+    let path = root.join("command-argv-resolution.dag.json");
     fs::write(
         &path,
         r#"{
@@ -60,8 +60,8 @@ fn write_shell_template_graph(root: &Path) -> PathBuf {
     path
 }
 
-fn write_invalid_shell_template_graph(root: &Path) -> PathBuf {
-    let path = root.join("command-argv-template-invalid.dag.json");
+fn write_unresolved_shell_argv_graph(root: &Path) -> PathBuf {
+    let path = root.join("command-argv-unresolved.dag.json");
     fs::write(
         &path,
         r#"{
@@ -83,10 +83,10 @@ fn write_invalid_shell_template_graph(root: &Path) -> PathBuf {
 }
 
 #[test]
-fn run_executes_shell_argv_templates_with_inputs_outputs_and_params() {
+fn run_executes_resolved_shell_argv_with_inputs_outputs_and_params() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
-    let graph = write_shell_template_graph(tmp.path());
+    let graph = write_shell_argv_resolution_graph(tmp.path());
     let out_dir = tmp.path().join("runs");
 
     let payload = run_json(
@@ -97,12 +97,12 @@ fn run_executes_shell_argv_templates_with_inputs_outputs_and_params() {
             "--out",
             &output_path_string(&out_dir),
             "--run-id",
-            "argv-template",
+            "argv-resolution",
         ],
         &root,
     );
 
-    let run_dir = out_dir.join("run-argv-template");
+    let run_dir = out_dir.join("run-argv-resolution");
     assert_eq!(payload["data"]["run_dir"], output_path_string(&run_dir));
     let result =
         fs::read_to_string(run_dir.join("nodes").join("copy").join("outputs").join("result.txt"))
@@ -111,10 +111,10 @@ fn run_executes_shell_argv_templates_with_inputs_outputs_and_params() {
 }
 
 #[test]
-fn run_rejects_unresolved_shell_argv_templates_before_execution() {
+fn run_rejects_unresolved_shell_argv_before_execution() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
-    let graph = write_invalid_shell_template_graph(tmp.path());
+    let graph = write_unresolved_shell_argv_graph(tmp.path());
     let out_dir = tmp.path().join("runs");
 
     let (code, _stdout, _stderr) = run_dag(
@@ -125,14 +125,14 @@ fn run_rejects_unresolved_shell_argv_templates_before_execution() {
             "--out",
             &output_path_string(&out_dir),
             "--run-id",
-            "argv-template-invalid",
+            "argv-unresolved",
         ],
         &root,
     );
 
     assert_ne!(code, 0, "run must fail for unresolved command templates");
     assert!(
-        !out_dir.join("run-argv-template-invalid").exists(),
+        !out_dir.join("run-argv-unresolved").exists(),
         "run directory must not be created when command templates fail to resolve"
     );
 }
