@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Config parser and serializer fuzz targets.
-//! test_type: config-fuzz
+//! Config parser and serializer stability checks.
+//! test_type: config-parser-stability
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -16,7 +16,7 @@ use thiserror as _;
 
 fn temp_dir(label: &str) -> PathBuf {
     let ts = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
-    let dir = std::env::temp_dir().join(format!("bijux-config-fuzz-{label}-{ts}"));
+    let dir = std::env::temp_dir().join(format!("bijux-config-parser-stability-{label}-{ts}"));
     fs::create_dir_all(&dir).expect("mkdir");
     dir
 }

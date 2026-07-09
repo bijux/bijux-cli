@@ -116,7 +116,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let output_regression = workspace_root
                 .join("crates/bijux-cli-output/tests/output_envelope_fuzz_regressions.rs");
             let bridge_targets = workspace_root
-                .join("crates/bijux-cli-python/tests/bridge_conversion_fuzz_targets.rs");
+                .join("crates/bijux-cli-python/tests/bridge_conversion_stability.rs");
             let bridge_regression = workspace_root
                 .join("crates/bijux-cli-python/tests/bridge_conversion_fuzz_regressions.rs");
             let output_min_dir =
@@ -193,7 +193,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "-p",
                 "bijux-cli-python",
                 "--test",
-                "bridge_conversion_fuzz_targets",
+                "bridge_conversion_stability",
             ]);
             let bridge_reg_ok = run(&[
                 "test",

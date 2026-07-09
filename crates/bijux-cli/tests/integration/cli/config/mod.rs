@@ -5,7 +5,7 @@ mod config_core_parity;
 mod config_deep_behavior_matrix;
 mod config_export_load_parity;
 mod config_fuzz_regressions;
-mod config_fuzz_targets;
+mod config_parser_stability;
 mod config_get_parity;
 mod config_get_performance;
 mod config_key_value_parity;

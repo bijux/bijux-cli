@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Python bridge conversion fuzz targets for success/error envelope handling.
-//! test_type: bridge-conversion-fuzz
+//! Python bridge conversion stability checks for success and error envelope handling.
+//! test_type: bridge-conversion-stability
 
 use bijux_cli as _;
 use bijux_cli_python::{execution_facade_api, execution_outcome_api};
