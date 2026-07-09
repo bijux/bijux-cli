@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Additional deep memory behavior checks for stability and diagnostics consistency.
-//! test_type: memory-deep-behavior
+//! Memory output stability checks for state handling and diagnostics consistency.
+//! test_type: memory-output-stability
 
 use std::fs;
 use std::path::PathBuf;
@@ -27,7 +27,8 @@ fn parse_json(bytes: &[u8]) -> Value {
 
 fn temp_dir(name: &str) -> PathBuf {
     let root =
-        std::env::temp_dir().join(format!("bijux-memory-extra-{name}-{}", std::process::id()));
+        std::env::temp_dir()
+            .join(format!("bijux-memory-output-stability-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir");
     root

@@ -7,7 +7,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let tests = [
                 "crates/bijux-cli/tests/integration/cli/memory/memory_command_matrix.rs",
                 "crates/bijux-cli/tests/integration/cli/memory/memory_parity.rs",
-                "crates/bijux-cli/tests/integration/cli/memory/memory_deep_behavior_extra.rs",
+                "crates/bijux-cli/tests/integration/cli/memory/memory_output_stability.rs",
             ];
             let mut sources = BTreeMap::<String, String>::new();
             for path in tests {
