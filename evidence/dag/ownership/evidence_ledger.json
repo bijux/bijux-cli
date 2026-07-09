@@ -6748,7 +6748,7 @@
         "compatibility"
       ],
       "trust_property": "compatibility",
-      "why_exists": "verify unsupported future graph schema fixture is rejected"
+      "why_exists": "verify unsupported forward-version graph schema fixture is rejected"
     },
     {
       "canonical_location": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",

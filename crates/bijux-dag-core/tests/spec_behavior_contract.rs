@@ -23,9 +23,9 @@ fn parse_rejects_unknown_fields_fixture() {
 }
 
 #[test]
-fn parse_rejects_future_required_behavior_fixture() {
+fn parse_rejects_unsupported_behavior_contract_fixture() {
     let payload = include_str!(
-        "../../../configs/dag/schema/fixtures/v0.1/negative/future-required-behavior.json"
+        "../../../configs/dag/schema/fixtures/v0.1/negative/unsupported_behavior_contract.json"
     );
     assert!(parse_graph_strict(payload).is_err());
 }
