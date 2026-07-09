@@ -298,7 +298,7 @@ mod tests {
     };
 
     #[test]
-    fn g111_nested_subgraph_execution_preserves_parent_child_lineage() {
+    fn nested_subgraph_execution_preserves_parent_child_lineage() {
         let record = validate_nested_subgraph_execution(NestedSubgraphExecutionRecordV1 {
             parent_run_id: "run-100".to_string(),
             subgraph_run_id: "run-100/subgraph-1".to_string(),
@@ -312,7 +312,7 @@ mod tests {
     }
 
     #[test]
-    fn g112_matrix_execution_uses_deterministic_ids_and_replay_bounds() {
+    fn matrix_execution_uses_deterministic_ids_and_replay_bounds() {
         let record = validate_matrix_execution(MatrixExecutionRecordV1 {
             base_node_id: "align".to_string(),
             expanded_node_ids: vec!["align::sample=a".to_string(), "align::sample=b".to_string()],
@@ -326,7 +326,7 @@ mod tests {
     }
 
     #[test]
-    fn g113_partition_execution_exposes_stable_keys_and_reducer_lineage() {
+    fn partition_execution_exposes_stable_keys_and_reducer_lineage() {
         let record = validate_partition_execution(PartitionExecutionRecordV1 {
             partition_keys: vec!["sample-a".to_string(), "sample-b".to_string()],
             producer_node_id: "split-samples".to_string(),
@@ -339,7 +339,7 @@ mod tests {
     }
 
     #[test]
-    fn g114_quorum_execution_reports_deterministic_partial_success() {
+    fn quorum_execution_reports_deterministic_partial_success() {
         let record = validate_quorum_execution(QuorumExecutionRecordV1 {
             required_successes: 2,
             total_candidates: 3,
@@ -353,7 +353,7 @@ mod tests {
     }
 
     #[test]
-    fn g115_optional_input_execution_keeps_missing_inputs_visible_without_forced_failure() {
+    fn optional_input_execution_keeps_missing_inputs_visible_without_forced_failure() {
         let record = validate_optional_input_execution(OptionalInputExecutionRecordV1 {
             optional_inputs_present: vec!["sample_sheet".to_string()],
             optional_inputs_missing: vec!["annotation_db".to_string()],
@@ -366,7 +366,7 @@ mod tests {
     }
 
     #[test]
-    fn g116_service_sensor_execution_stays_simulated_and_advisory() {
+    fn service_sensor_execution_stays_simulated_and_advisory() {
         let record = validate_service_sensor_execution(ServiceSensorExecutionRecordV1 {
             lifecycle_events_recorded: true,
             synthetic_outputs: true,
@@ -378,7 +378,7 @@ mod tests {
     }
 
     #[test]
-    fn g117_event_recorded_replay_refuses_fresh_external_polling() {
+    fn event_recorded_replay_refuses_fresh_external_polling() {
         let record = validate_event_recorded_replay(EventRecordedReplayRecordV1 {
             recorded_event_ids: vec!["event-1".to_string(), "event-2".to_string()],
             replay_used_recorded_events_only: true,
@@ -390,7 +390,7 @@ mod tests {
     }
 
     #[test]
-    fn g118_policy_overlay_diff_is_visible_without_mutating_graph_identity() {
+    fn policy_overlay_diff_is_visible_without_mutating_graph_identity() {
         let record = validate_policy_overlay_execution(PolicyOverlayExecutionRecordV1 {
             base_graph_fingerprint: "graph-sha256-123".to_string(),
             overlay_profile: "security".to_string(),
@@ -403,7 +403,7 @@ mod tests {
     }
 
     #[test]
-    fn g119_non_cacheable_nodes_refuse_unsafe_cache_reuse() {
+    fn non_cacheable_nodes_refuse_unsafe_cache_reuse() {
         let record = validate_non_cacheable_execution(NonCacheableExecutionRecordV1 {
             node_id: "fetch-clock".to_string(),
             non_cacheable_reason: "external time dependency".to_string(),
@@ -415,7 +415,7 @@ mod tests {
     }
 
     #[test]
-    fn g120_graph_conformance_profiles_are_behavior_based_not_docs_based() {
+    fn graph_conformance_profiles_are_behavior_based_not_docs_based() {
         let minimal = validate_graph_conformance_profile(GraphConformanceProfileResultV1 {
             profile: "minimal".to_string(),
             behavior_checks_passed: true,

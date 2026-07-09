@@ -634,7 +634,7 @@ mod tests {
     }
 
     #[test]
-    fn g121_resource_requirements_refuse_unavailable_capacity_before_run() {
+    fn resource_requirements_refuse_unavailable_capacity_before_run() {
         let requirements = build_resource_requirements(&sample_graph());
         let report = validate_resource_requirements(
             requirements,
@@ -662,7 +662,7 @@ mod tests {
     }
 
     #[test]
-    fn g122_pool_placement_reports_unavailable_pools_deterministically() {
+    fn pool_placement_reports_unavailable_pools_deterministically() {
         let graph = sample_graph();
         let report = plan_pool_placement(
             &graph,
@@ -683,7 +683,7 @@ mod tests {
     }
 
     #[test]
-    fn g123_adapter_capabilities_are_machine_readable_for_planner_runnability() {
+    fn adapter_capabilities_are_machine_readable_for_planner_runnability() {
         let shell = adapter_capability_for_kind("shell").expect("shell capability");
         let python = adapter_capability_for_kind("python").expect("python capability");
         let http = adapter_capability_for_kind("http").expect("http capability");
@@ -706,7 +706,7 @@ mod tests {
     }
 
     #[test]
-    fn g126_data_locality_advisory_is_visible_and_reversible() {
+    fn data_locality_advisory_is_visible_and_reversible() {
         let mut graph = sample_graph();
         graph.nodes[0].tags.push("artifact_mb:900".to_string());
         graph.nodes[0].tags.push("site:gpu-cluster".to_string());
@@ -719,7 +719,7 @@ mod tests {
     }
 
     #[test]
-    fn g127_cost_planning_is_advisory_and_does_not_claim_runtime_duration() {
+    fn cost_planning_is_advisory_and_does_not_claim_runtime_duration() {
         let mut graph = sample_graph();
         graph.nodes[0].tags.push("artifact_mb:4096".to_string());
         graph.nodes[0].tags.push("expansion:matrix".to_string());
@@ -731,7 +731,7 @@ mod tests {
     }
 
     #[test]
-    fn g128_capacity_what_if_is_advisory_and_evidence_tied() {
+    fn capacity_what_if_is_advisory_and_evidence_tied() {
         let graph = sample_graph();
         let report = build_capacity_what_if_report(
             &graph,
@@ -749,7 +749,7 @@ mod tests {
     }
 
     #[test]
-    fn g129_planner_confidence_labels_are_explicit() {
+    fn planner_confidence_labels_are_explicit() {
         let mut graph = sample_graph();
         graph.nodes[0].tags.push("confidence:configured".to_string());
         let report = build_planner_confidence_report(&graph);
