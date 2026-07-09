@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Config precedence and source reporting coverage matrix.
+//! Config precedence and source reporting laws.
 //! test_type: config-source-precedence
 
 use std::fs;
@@ -31,7 +31,10 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
 fn temp_dir(name: &str) -> PathBuf {
     let counter = TEMP_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
     let root = std::env::temp_dir()
-        .join(format!("bijux-config-source-precedence-{name}-{}-{counter}", std::process::id(),));
+        .join(format!(
+            "bijux-config-source-precedence-laws-{name}-{}-{counter}",
+            std::process::id(),
+        ));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -39,7 +42,7 @@ fn temp_dir(name: &str) -> PathBuf {
 
 #[test]
 fn cli_flags_override_env_backed_values_and_config_path() {
-    let root = temp_dir("config-source-precedence");
+    let root = temp_dir("config-source-precedence-laws");
     let env_path = root.join("env.env");
     let arg_path = root.join("arg.env");
     fs::write(&env_path, "BIJUXCLI_ALPHA=from-env-path\n").expect("env cfg");
@@ -72,7 +75,7 @@ fn cli_flags_override_env_backed_values_and_config_path() {
 
 #[test]
 fn env_overrides_file_and_file_overrides_default_with_missing_fallback() {
-    let root = temp_dir("config-source-precedence");
+    let root = temp_dir("config-source-precedence-laws");
     let file = root.join("config.env");
     let missing = root.join("missing.env");
     fs::write(&file, "BIJUXCLI_ALPHA=from-file\n").expect("file cfg");
@@ -128,7 +131,7 @@ fn env_overrides_file_and_file_overrides_default_with_missing_fallback() {
 
 #[test]
 fn malformed_and_duplicate_config_source_behavior_is_stable() {
-    let root = temp_dir("config-source-precedence");
+    let root = temp_dir("config-source-precedence-laws");
     let malformed = root.join("malformed.env");
     let duplicate = root.join("duplicate.env");
     fs::write(&malformed, "BIJUXCLI_ALPHA=1\nBROKEN\n").expect("malformed");

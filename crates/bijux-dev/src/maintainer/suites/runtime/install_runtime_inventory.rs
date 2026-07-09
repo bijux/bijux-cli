@@ -32,7 +32,7 @@ pub(super) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/precedence_regression_matrix.json",
+                "artifacts/status/precedence_regression_report.json",
                 "artifacts/parity/command_precedence_report.json",
                 "artifacts/status/precedence_contract.json"
             ],

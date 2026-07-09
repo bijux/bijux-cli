@@ -119,7 +119,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-PRECEDENCE-REPORTS" => {
             let test_file = workspace_root
-                .join("crates/bijux-cli/tests/integration/cli/root/precedence_matrix.rs");
+                .join("crates/bijux-cli/tests/integration/cli/root/precedence_laws.rs");
             let text = fs::read_to_string(&test_file).unwrap_or_default();
             let env_payload =
                 run_bijux_json(workspace_root, &["env"]).unwrap_or_else(|_| json!({}));
@@ -136,13 +136,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 json!({
                                     "test_name": name,
                                     "status": if text.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                    "evidence":"crates/bijux-cli/tests/integration/cli/root/precedence_matrix.rs"
+                                    "evidence":"crates/bijux-cli/tests/integration/cli/root/precedence_laws.rs"
                                 })
                             })
                             .collect::<Vec<_>>();
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/precedence_regression_matrix.json",
+                "artifacts/status/precedence_regression_report.json",
                 &json!({
                     "generated_at": generated_at_utc(),
                     "generator": "bijux-dev-cli",
@@ -173,7 +173,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/precedence_regression_matrix.json",
+                "artifacts/status/precedence_regression_report.json",
                 "artifacts/parity/command_precedence_report.json",
                 "artifacts/status/precedence_contract.json"
             ]}))

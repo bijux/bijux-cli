@@ -18,4 +18,4 @@ mod config_read_matrix;
 mod config_root_listing;
 mod config_root_parity;
 mod config_set_parity;
-mod config_source_precedence_matrix;
+mod config_source_precedence_laws;

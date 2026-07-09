@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Precedence matrix coverage for flags/env/config/default and rendering policies.
+//! Precedence laws for flags, environment, config files, defaults, and rendering policies.
 
 use std::fs;
 use std::path::PathBuf;
@@ -30,7 +30,7 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
 fn temp_dir(name: &str) -> PathBuf {
     let counter = TEMP_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
     let root = std::env::temp_dir()
-        .join(format!("bijux-precedence-matrix-{name}-{}-{counter}", std::process::id(),));
+        .join(format!("bijux-precedence-laws-{name}-{}-{counter}", std::process::id(),));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -58,7 +58,7 @@ fn strip_ansi(input: &str) -> String {
 
 #[test]
 fn cli_flags_override_env_values() {
-    let root = temp_dir("precedence-matrix");
+    let root = temp_dir("precedence-laws");
     let config = root.join("config.env");
     fs::write(&config, "BIJUXCLI_ALPHA=config\n").expect("write config");
 
@@ -75,7 +75,7 @@ fn cli_flags_override_env_values() {
 
 #[test]
 fn env_values_override_config_file_values() {
-    let root = temp_dir("precedence-matrix");
+    let root = temp_dir("precedence-laws");
     let config = root.join("config.env");
     fs::write(&config, "BIJUXCLI_ALPHA=config\n").expect("write config");
 
@@ -91,7 +91,7 @@ fn env_values_override_config_file_values() {
 
 #[test]
 fn config_file_values_override_defaults() {
-    let root = temp_dir("precedence-matrix");
+    let root = temp_dir("precedence-laws");
     let config = root.join("config.env");
     fs::write(&config, "BIJUXCLI_ALPHA=config\n").expect("write config");
 
@@ -114,7 +114,7 @@ fn defaults_apply_when_nothing_is_supplied() {
 
 #[test]
 fn explicit_config_path_overrides_default_config_path() {
-    let root = temp_dir("precedence-matrix");
+    let root = temp_dir("precedence-laws");
     let path_a = root.join("a.env");
     let path_b = root.join("b.env");
     fs::write(&path_a, "BIJUXCLI_ALPHA=from_a\n").expect("write a");
@@ -131,7 +131,7 @@ fn explicit_config_path_overrides_default_config_path() {
 
 #[test]
 fn explicit_config_path_overrides_env_config_path() {
-    let root = temp_dir("precedence-matrix");
+    let root = temp_dir("precedence-laws");
     let env_path = root.join("env.env");
     let arg_path = root.join("arg.env");
     fs::write(&env_path, "BIJUXCLI_ALPHA=from_env_path\n").expect("write env path");

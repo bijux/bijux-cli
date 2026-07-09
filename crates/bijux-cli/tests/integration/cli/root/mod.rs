@@ -9,6 +9,6 @@ mod flag_normalization_laws;
 mod install_command;
 mod official_product_routes;
 mod parser_invalid_utf8_argv;
-mod precedence_matrix;
+mod precedence_laws;
 mod python_command_port_parity;
 mod root_command_coverage;

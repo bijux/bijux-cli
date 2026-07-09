@@ -177,7 +177,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-SOURCE-SURFACE-REPORTS" => {
             let source = fs::read_to_string(workspace_root.join(
-                "crates/bijux-cli/tests/integration/cli/config/config_source_precedence_matrix.rs",
+                "crates/bijux-cli/tests/integration/cli/config/config_source_precedence_laws.rs",
             ))
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -207,7 +207,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test": fn_name,
                                         "status": if source.contains(&format!("fn {fn_name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/integration/cli/config/config_source_precedence_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/config/config_source_precedence_laws.rs",
                                     })
                                 })
                                 .collect();
@@ -281,7 +281,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "frozen",
                                     "rule": "Config precedence truth must be observable, deterministic, and consistent across config get and bijux-dev-cli env.",
                                     "evidence": [
-                                        "crates/bijux-cli/tests/integration/cli/config/config_source_precedence_matrix.rs",
+                                        "crates/bijux-cli/tests/integration/cli/config/config_source_precedence_laws.rs",
                                         "artifacts/status/config_source_parity_artifact.json",
                                         "artifacts/status/config_source_drift_artifact.json",
                                     ],
