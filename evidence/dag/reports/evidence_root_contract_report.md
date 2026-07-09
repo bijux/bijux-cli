@@ -1,4 +1,4 @@
-# Final Evidence Root Contract Report
+# Evidence Root Contract Report
 
 Date: 2026-03-07
 Owner: bijux-dev-dag

@@ -22,17 +22,17 @@ fn repo_root() -> PathBuf {
 }
 
 #[test]
-fn final_evidence_audit_reports_exist() {
+fn evidence_audit_review_reports_exist() {
     let root = repo_root();
     for required in [
         "evidence/reports/evidence_audit_2026-03-07.md",
         "evidence/reports/evidence_topology_before_after.md",
-        "evidence/reports/root_cleanup_before_after.md",
+        "evidence/reports/evidence_root_consolidation_report.md",
         "evidence/reports/release_evidence_strength_before_after.md",
         "evidence/reports/evidence_architecture_freeze_review_cycle.md",
         "evidence/reports/evidence_roast_memo_2026-03-07.md",
     ] {
-        assert!(root.join(required).exists(), "missing final evidence audit report: {required}");
+        assert!(root.join(required).exists(), "missing evidence audit review report: {required}");
     }
 }
 
