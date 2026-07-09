@@ -45,7 +45,7 @@ fn root_namespaces_from_inspect(payload: &Value) -> BTreeSet<String> {
 }
 
 #[test]
-fn bridge_and_core_agree_on_exit_codes_for_representative_matrix() {
+fn bridge_and_core_agree_on_exit_codes_for_representative_routes() {
     let cases = [
         vec!["status", "--format", "json", "--no-pretty"],
         vec!["doctor", "--format", "json", "--no-pretty"],
