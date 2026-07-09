@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Config read behavior matrix coverage.
+//! Config read behavior coverage.
 //! test_type: config-read-determinism
 
 use std::fs;
@@ -34,7 +34,7 @@ fn assert_success_json(out: &Output, context: &str) -> Value {
 
 fn temp_dir(name: &str) -> PathBuf {
     let root = std::env::temp_dir()
-        .join(format!("bijux-config-read-matrix-{name}-{}", std::process::id()));
+        .join(format!("bijux-config-read-coverage-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root

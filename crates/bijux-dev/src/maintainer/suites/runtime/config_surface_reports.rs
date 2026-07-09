@@ -6,7 +6,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-CONFIG-READ-SURFACE-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
-                    .join("crates/bijux-cli/tests/integration/cli/config/config_read_matrix.rs"),
+                    .join("crates/bijux-cli/tests/integration/cli/config/config_read_coverage.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -55,24 +55,24 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test": fn_name,
                                         "status": if source.contains(&format!("fn {fn_name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/integration/cli/config/config_read_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/config/config_read_coverage.rs",
                                     })
                                 })
                                 .collect();
             write_status_artifact_json(
                                 workspace_root,
-                                "artifacts/status/config_read_matrix_artifact.json",
+                                "artifacts/status/config_read_coverage_artifact.json",
                                 &json!({
                                     "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
-                                    "scope": "config read matrix",
+                                    "scope": "config read coverage artifact",
                                     "coverage_rows": coverage_rows,
                                     "domains": [
-                                        {"surface": "root config list", "status": "complete", "evidence": "config_read_matrix.rs"},
-                                        {"surface": "cli config get", "status": "complete", "evidence": "config_read_matrix.rs"},
-                                        {"surface": "json/yaml/text rendering", "status": "complete", "evidence": "config_read_matrix.rs"},
-                                        {"surface": "quiet/no-color behavior", "status": "complete", "evidence": "config_read_matrix.rs"},
-                                        {"surface": "deterministic repeated runs", "status": "complete", "evidence": "config_read_matrix.rs"},
+                                        {"surface": "root config list", "status": "complete", "evidence": "config_read_coverage.rs"},
+                                        {"surface": "cli config get", "status": "complete", "evidence": "config_read_coverage.rs"},
+                                        {"surface": "json/yaml/text rendering", "status": "complete", "evidence": "config_read_coverage.rs"},
+                                        {"surface": "quiet/no-color behavior", "status": "complete", "evidence": "config_read_coverage.rs"},
+                                        {"surface": "deterministic repeated runs", "status": "complete", "evidence": "config_read_coverage.rs"},
                                     ],
                                 }),
                             )
@@ -87,21 +87,21 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "frozen",
                                     "rule": "Config reads must remain deterministic, explainable, and consistent across listing/get surfaces.",
                                     "evidence": [
-                                        "crates/bijux-cli/tests/integration/cli/config/config_read_matrix.rs",
-                                        "artifacts/status/config_read_matrix_artifact.json",
+                                        "crates/bijux-cli/tests/integration/cli/config/config_read_coverage.rs",
+                                        "artifacts/status/config_read_coverage_artifact.json",
                                     ],
                                 }),
                             )
                             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_read_matrix_artifact.json",
+                "artifacts/status/config_read_coverage_artifact.json",
                 "artifacts/status/config_read_domain_contract.json"
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS" => {
             let source =
                 fs::read_to_string(workspace_root.join(
-                    "crates/bijux-cli/tests/integration/cli/config/config_mutation_matrix.rs",
+                    "crates/bijux-cli/tests/integration/cli/config/config_mutation_coverage.rs",
                 ))
                 .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -132,24 +132,24 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test": fn_name,
                                         "status": if source.contains(&format!("fn {fn_name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/integration/cli/config/config_mutation_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/config/config_mutation_coverage.rs",
                                     })
                                 })
                                 .collect();
             write_status_artifact_json(
                                 workspace_root,
-                                "artifacts/status/config_mutation_matrix_artifact.json",
+                                "artifacts/status/config_mutation_coverage_artifact.json",
                                 &json!({
                                     "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
-                                    "scope": "config mutation matrix",
+                                    "scope": "config mutation coverage artifact",
                                     "coverage_rows": coverage_rows,
                                     "domains": [
-                                        {"surface": "config set", "status": "complete", "evidence": "config_mutation_matrix.rs"},
-                                        {"surface": "config unset", "status": "complete", "evidence": "config_mutation_matrix.rs"},
-                                        {"surface": "config clear/reload", "status": "complete", "evidence": "config_mutation_matrix.rs"},
-                                        {"surface": "config export/load", "status": "complete", "evidence": "config_mutation_matrix.rs"},
-                                        {"surface": "rollback + retry idempotency", "status": "complete", "evidence": "config_mutation_matrix.rs"},
+                                        {"surface": "config set", "status": "complete", "evidence": "config_mutation_coverage.rs"},
+                                        {"surface": "config unset", "status": "complete", "evidence": "config_mutation_coverage.rs"},
+                                        {"surface": "config clear/reload", "status": "complete", "evidence": "config_mutation_coverage.rs"},
+                                        {"surface": "config export/load", "status": "complete", "evidence": "config_mutation_coverage.rs"},
+                                        {"surface": "rollback + retry idempotency", "status": "complete", "evidence": "config_mutation_coverage.rs"},
                                     ],
                                 }),
                             )
@@ -164,14 +164,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "frozen",
                                     "rule": "Config mutation behavior is accepted only with rollback safety and idempotent retry proof.",
                                     "evidence": [
-                                        "crates/bijux-cli/tests/integration/cli/config/config_mutation_matrix.rs",
-                                        "artifacts/status/config_mutation_matrix_artifact.json",
+                                        "crates/bijux-cli/tests/integration/cli/config/config_mutation_coverage.rs",
+                                        "artifacts/status/config_mutation_coverage_artifact.json",
                                     ],
                                 }),
                             )
                             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/config_mutation_matrix_artifact.json",
+                "artifacts/status/config_mutation_coverage_artifact.json",
                 "artifacts/status/config_mutation_domain_contract.json"
             ]}))
         }

@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Config mutation behavior matrix coverage.
+//! Config mutation behavior coverage.
 //! test_type: config-mutation-rollback
 
 use std::fs;
@@ -25,7 +25,7 @@ fn assert_success_json(out: &Output, context: &str) -> Value {
 
 fn temp_dir(name: &str) -> PathBuf {
     let root = std::env::temp_dir()
-        .join(format!("bijux-config-mutation-matrix-{name}-{}", std::process::id()));
+        .join(format!("bijux-config-mutation-coverage-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
