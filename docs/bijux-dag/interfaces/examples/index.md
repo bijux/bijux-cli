@@ -25,7 +25,7 @@ present.
 | Example | Primary surface | Graph or guide | Expected outputs |
 | --- | --- | --- | --- |
 | minimal hello DAG | validate and run a tiny graph | `evidence/dag/authoring/examples/hello.dag.json` | retained run directory, constant output, shell output |
-| file-processing DAG | run one practical local report workflow | `evidence/dag/authoring/examples/file-processing-report.dag.json` | rendered report, artifact registry entry, replayable run |
+| file-processing DAG | run one practical local report workflow | `evidence/dag/authoring/examples/file-processing-report.dag.json` | rendered report, artifact registry entry, replayable run per [Replay Contract](../../../spec/REPLAY_CONTRACT.md) |
 | cache demo | prove warm reuse and selective invalidation | [Cache Behavior Workflow](../../operations/guides/cache-behavior-workflow.md) | warm cache hits, changed-input invalidation, cache-miss explanation |
 | failure demo | prove retry evidence and focused repair | [Compliance-Gated Bulletin Workflow](../../operations/guides/compliance-gated-bulletin-workflow.md) | retry attempt record, failed approval boundary, repaired verified run |
 | replay demo | rerun a selected boundary from retained evidence | [First-Run Tutorial](../../operations/guides/first-run-tutorial.md) | replay proof, node-scoped rerun diff, strict verification success |

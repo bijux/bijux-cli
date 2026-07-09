@@ -20,7 +20,7 @@ currently proves in code, contracts, tests, and retained evidence.
 - local DAG authoring, validation, planning, execution, replay, and retained
   run inspection through the visible `bijux-dag` operator surface
 - deterministic run-directory evidence, artifact manifests, cache explanation,
-  and replayable run bundles
+  and replayable run bundles (see [Replay Contract](../../spec/REPLAY_CONTRACT.md))
 - built-in runtime adapters for `const`, `shell`, `python`, `http`,
   `file_transform`, and `container`, with governed contract surfaces
 - maintainer verification and governance lanes for contracts, docs, release

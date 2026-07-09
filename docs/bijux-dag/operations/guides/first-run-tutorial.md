@@ -15,7 +15,7 @@ This tutorial is the shortest honest path from a fresh checkout to a retained
 It is also the shortest proof path for the `bijux-dag` product promise:
 explicit graph contracts at validation time, deterministic execution records in
 the retained run, verified artifacts after execution, cache explanation on the
-warm rerun, and replayable run bundles through the retained source run.
+warm rerun, and replayable run bundles through the retained source run (see [Replay Contract](../../../spec/REPLAY_CONTRACT.md)).
 
 Use it when the question is not "what can the product eventually do," but
 "can I run one real workflow and understand exactly what happened?"

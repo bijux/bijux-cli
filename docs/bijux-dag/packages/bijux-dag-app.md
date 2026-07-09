@@ -27,7 +27,7 @@ writes, and shapes the typed responses that the CLI renders.
 
 At the product level, `bijux-dag` v0.4.0 is a local-first DAG runtime for
 reproducible workflows with explicit graph contracts, deterministic execution
-records, verified artifacts, cache explanation, and replayable run bundles.
+records, verified artifacts, cache explanation, and replayable run bundles (see [Replay Contract](../../spec/REPLAY_CONTRACT.md)).
 This package keeps that promise coherent at the command and response boundary.
 
 Use this page when the issue is about command behavior or output shape rather

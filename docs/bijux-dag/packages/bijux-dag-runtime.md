@@ -27,7 +27,7 @@ cache policy, and runtime diagnostics.
 
 At the product level, `bijux-dag` v0.4.0 is a local-first DAG runtime for
 reproducible workflows with explicit graph contracts, deterministic execution
-records, verified artifacts, cache explanation, and replayable run bundles.
+records, verified artifacts, cache explanation, and replayable run bundles (see [Replay Contract](../../spec/REPLAY_CONTRACT.md)).
 This package is the runtime layer that executes, records, replays, and
 verifies that promise.
 

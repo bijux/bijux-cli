@@ -11,7 +11,7 @@ last_reviewed: 2026-07-08
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows with
 explicit graph contracts, deterministic execution records, verified artifacts,
-cache explanation, and replayable run bundles.
+cache explanation, and replayable run bundles (see [Replay Contract](../../spec/REPLAY_CONTRACT.md)).
 
 This release is intentionally serious and intentionally narrow. It ships a real
 local product surface today. It does not claim to be a full distributed
