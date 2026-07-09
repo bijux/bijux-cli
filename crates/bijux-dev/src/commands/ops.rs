@@ -4650,7 +4650,7 @@ pub(super) fn run_foundation_review_guard() -> Result<(), String> {
         "docs/reports/foundation/TEST_TRUST_COVERAGE_REPORT.md",
         "docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md",
         "docs/reports/foundation/repository-proof-statement.md",
-        "docs/reports/foundation/cleanup_backlog.md",
+        "docs/reports/foundation/foundation_follow_through_report.md",
         "docs/reports/foundation/subsystem_strength_assessment.md",
         "docs/reports/foundation/foundation-final-report.md",
     ] {

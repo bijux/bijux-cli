@@ -1,5 +1,5 @@
 ---
-title: Cleanup Backlog
+title: Foundation Follow-Through Report
 audience: maintainer
 type: report
 status: canonical
@@ -7,7 +7,7 @@ owner: bijux-dag-docs
 last_reviewed: 2026-07-06
 ---
 
-# Cleanup Backlog
+# Foundation Follow-Through Report
 
 ## Current follow-through items
 

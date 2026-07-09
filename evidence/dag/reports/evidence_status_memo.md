@@ -15,7 +15,7 @@
 - Advisory evidence cannot be reported as blocking release proof.
 - Legacy roots (`examples/`, `benchmarks/`, `comparisons/`) must remain deleted as canonical sources.
 
-## Current Cleanup Backlog
+## Current Follow-Through Items
 
 - Reduce remaining perf and compare assets that do not add durable release value.
 - Continue pruning stale assets flagged by evidence reports.
