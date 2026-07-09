@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! REPL execution law coverage for stable behavior contracts.
+//! REPL command parity coverage for stable behavior contracts.
 
 use std::fs;
 use std::path::PathBuf;
@@ -25,7 +25,7 @@ fn temp_dir(label: &str) -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
-    let root = std::env::temp_dir().join(format!("bijux-repl-law-{label}-{nanos}"));
+    let root = std::env::temp_dir().join(format!("bijux-repl-command-parity-{label}-{nanos}"));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir");
     root
