@@ -5,7 +5,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS" => {
             let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli-python/tests/bridge_execution_law_extra.rs"),
+                workspace_root.join("crates/bijux-cli-python/tests/bridge_execution_parity.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -33,7 +33,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "coverage_id": coverage_id,
                         "test": name,
                         "status": if covered { "covered" } else { "missing" },
-                        "evidence": "crates/bijux-cli-python/tests/bridge_execution_law_extra.rs",
+                        "evidence": "crates/bijux-cli-python/tests/bridge_execution_parity.rs",
                     })
                 })
                 .collect();
@@ -90,7 +90,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS" => {
             let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli-python/tests/bridge_conversion_law_extra.rs"),
+                workspace_root.join("crates/bijux-cli-python/tests/bridge_conversion_contracts.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -118,7 +118,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "coverage_id": coverage_id,
                         "test": name,
                         "status": if covered { "covered" } else { "missing" },
-                        "evidence": "crates/bijux-cli-python/tests/bridge_conversion_law_extra.rs",
+                        "evidence": "crates/bijux-cli-python/tests/bridge_conversion_contracts.rs",
                     })
                 })
                 .collect();

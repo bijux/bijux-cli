@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Python bridge execution law coverage for stable behavior contracts.
+//! Python bridge execution parity coverage for stable behavior contracts.
 
 use bijux_cli::api::runtime::run_app;
 use bijux_cli_python::{
