@@ -44,7 +44,7 @@
 - crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json
 - crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json
 - crates/bijux-dag-runtime/tests/fixtures/plugins/conformance_suite.json
-- crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json
+- crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_reference.json
 - crates/bijux-dag-runtime/tests/fixtures/policy/org_models.json
 - crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json
 - crates/bijux-dag-runtime/tests/fixtures/provenance/signed_artifacts.json
