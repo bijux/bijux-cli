@@ -513,7 +513,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-CLI-COMMAND-SURFACE-REPORTS" => {
             let matrix = fs::read_to_string(
                 workspace_root
-                    .join("crates/bijux-cli/tests/integration/cli/root/cli_command_matrix.rs"),
+                    .join("crates/bijux-cli/tests/integration/cli/root/cli_command_coverage.rs"),
             )
             .unwrap_or_default();
             let fixture = fs::read_to_string(
@@ -539,8 +539,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                                 "command":command,
                                                 "status": if matrix.contains(&quoted) || matrix.contains(&format!("\"{command}\"")) {"complete"} else {"partial"},
                                                 "status_model":["complete","partial","shim","missing"],
-                                                "evidence":"crates/bijux-cli/tests/integration/cli/root/cli_command_matrix.rs",
-                                                "evidence_links":["crates/bijux-cli/tests/integration/cli/root/cli_command_matrix.rs"],
+                                                "evidence":"crates/bijux-cli/tests/integration/cli/root/cli_command_coverage.rs",
+                                                "evidence_links":["crates/bijux-cli/tests/integration/cli/root/cli_command_coverage.rs"],
                                                 "user_value": match command.as_str() {
                                                     "cli status" => 100,"cli paths" => 95,"cli self-test" => 90,"cli config get" => 88,"cli config set" => 86,"cli config list" => 84,"cli config unset" => 80,"cli config clear" => 78,
                                                     "cli plugins list" => 96,"cli plugins inspect" => 94,"cli plugins install" => 92,"cli plugins uninstall" => 92,"cli plugins check" => 90,"cli plugins doctor" => 88,_ => 70
@@ -572,11 +572,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (236, "quiet_mode_and_no_color_behavior_for_relevant_cli_commands"),
                 (237, "malformed_input_is_rejected_for_argument_taking_cli_subcommands"),
                 (238, "repeated_run_stability_for_machine_readable_cli_commands"),
-                (239, "cli_command_matrix_artifact_smoke_uses_supported_commands"),
+                (239, "cli_command_coverage_artifact_smoke_uses_supported_commands"),
             ]);
             let coverage_rows = required.iter().map(|(id, name)| json!({
                                         "coverage_id":id,"test":name,"status":if matrix.contains(&format!("fn {name}(")){"complete"}else{"missing"},
-                                        "evidence":"crates/bijux-cli/tests/integration/cli/root/cli_command_matrix.rs"
+                                        "evidence":"crates/bijux-cli/tests/integration/cli/root/cli_command_coverage.rs"
                                     })).collect::<Vec<_>>();
             let has_cov = |id: i64| {
                 coverage_rows.iter().any(|r| {
@@ -603,13 +603,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "generated_at":generated_at,"generator":"bijux-dev-cli","scope":"cli command coverage","commands":rows,
                                         "summary":{"total":rows.len(),"complete":rows.iter().filter(|r| r["status"]=="complete").count(),"partial":rows.iter().filter(|r| r["status"]=="partial").count(),"shim":0,"missing":0}
                                     })).ok()?;
-            write_status_artifact_json(workspace_root, "artifacts/status/cli_command_matrix_artifact.json", &json!({
-                                        "generated_at":generated_at,"generator":"bijux-dev-cli","scope":"cli command matrix","coverage_rows":coverage_rows,"commands":rows
+            write_status_artifact_json(workspace_root, "artifacts/status/cli_command_coverage_artifact.json", &json!({
+                                        "generated_at":generated_at,"generator":"bijux-dev-cli","scope":"cli command coverage artifact","coverage_rows":coverage_rows,"commands":rows
                                     })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/cli_command_surface_domain_contract.json", &json!({
                                         "generated_at":generated_at,"generator":"bijux-dev-cli","domain":"cli-command-surface","status":"frozen",
                                         "rule":"cli subcommands are covered by explicit parity, stream, formatting, malformed-input, and determinism tests.",
-                                        "evidence":["crates/bijux-cli/tests/routing/fixtures/cli_subcommands.txt","crates/bijux-cli/tests/integration/cli/root/cli_command_matrix.rs","artifacts/status/cli_command_coverage_report.json","artifacts/status/cli_command_matrix_artifact.json"]
+                                        "evidence":["crates/bijux-cli/tests/routing/fixtures/cli_subcommands.txt","crates/bijux-cli/tests/integration/cli/root/cli_command_coverage.rs","artifacts/status/cli_command_coverage_report.json","artifacts/status/cli_command_coverage_artifact.json"]
                                     })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/cli_command_remaining_inventory.json", &json!({
                                         "generated_at":generated_at,"generator":"bijux-dev-cli","scope":"remaining cli subcommands not proven complete in rust","remaining_commands":remaining,"count":remaining.len()
@@ -631,7 +631,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     })).ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/cli_command_coverage_report.json",
-                "artifacts/status/cli_command_matrix_artifact.json",
+                "artifacts/status/cli_command_coverage_artifact.json",
                 "artifacts/status/cli_command_surface_domain_contract.json",
                 "artifacts/status/cli_command_remaining_inventory.json",
                 "artifacts/status/cli_command_value_ranking.json",

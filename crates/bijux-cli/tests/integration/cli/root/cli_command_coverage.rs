@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! CLI command surface matrix coverage and explicit public-law tests.
+//! CLI command surface coverage and explicit public-law tests.
 //! test_type: cli-command-surface
 
 use std::fs;
@@ -27,7 +27,7 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
 
 fn temp_dir(name: &str) -> PathBuf {
     let root = std::env::temp_dir()
-        .join(format!("bijux-cli-command-matrix-{name}-{}", std::process::id()));
+        .join(format!("bijux-cli-command-coverage-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root
@@ -61,8 +61,8 @@ fn parity_cli_config_get_and_set_against_current_behavior() {
     let config = root.join("config.env");
     let config_text = config.to_string_lossy().to_string();
 
-    parity_against_core(&["cli", "config", "set", "MATRIX_KEY=42", "--config-path", &config_text]);
-    parity_against_core(&["cli", "config", "get", "matrix_key", "--config-path", &config_text]);
+    parity_against_core(&["cli", "config", "set", "coverage_key=42", "--config-path", &config_text]);
+    parity_against_core(&["cli", "config", "get", "coverage_key", "--config-path", &config_text]);
 }
 
 #[test]
@@ -270,7 +270,7 @@ fn repeated_run_stability_for_machine_readable_cli_commands() {
 }
 
 #[test]
-fn cli_command_matrix_artifact_smoke_uses_supported_commands() {
+fn cli_command_coverage_artifact_smoke_uses_supported_commands() {
     let checks: &[(&[&str], Option<&str>, bool)] = &[
         (&["cli", "status"], Some("runtime"), false),
         (&["cli", "paths"], Some("active_binary"), false),
@@ -280,20 +280,20 @@ fn cli_command_matrix_artifact_smoke_uses_supported_commands() {
     ];
     for (args, required_key, allow_empty_object) in checks {
         let out = run(args);
-        assert!(out.status.success(), "matrix command should succeed for {args:?}");
+        assert!(out.status.success(), "coverage command should succeed for {args:?}");
         assert!(
             out.stderr.is_empty(),
-            "successful matrix command should keep stderr empty for {args:?}"
+            "successful coverage command should keep stderr empty for {args:?}"
         );
         let payload: Value = serde_json::from_slice(&out.stdout).expect("json payload");
-        let object = payload.as_object().expect("matrix payload should be object");
+        let object = payload.as_object().expect("coverage payload should be object");
         if !allow_empty_object {
-            assert!(!object.is_empty(), "matrix payload should not be empty for {args:?}");
+            assert!(!object.is_empty(), "coverage payload should not be empty for {args:?}");
         }
         if let Some(key) = required_key {
             assert!(
                 object.contains_key(*key),
-                "matrix payload missing required key `{key}` for {args:?}"
+                "coverage payload missing required key `{key}` for {args:?}"
             );
         }
     }

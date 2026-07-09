@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Flag normalization matrix coverage for global/local argument handling.
+//! Flag normalization laws for global and local argument handling.
 
 use std::process::Command;
 

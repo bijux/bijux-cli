@@ -163,7 +163,7 @@ pub(super) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/flag_normalization_matrix.json"
+                "artifacts/status/flag_normalization_report.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX",
         }),
