@@ -5,7 +5,7 @@ use semver::{Prerelease, Version};
 
 mod plugin_cli_lifecycle;
 mod plugin_command_parity;
-mod plugin_discovery_determinism_matrix;
+mod plugin_discovery_ordering_laws;
 mod plugin_failure_injection;
 mod plugin_failure_rollback_matrix;
 mod plugin_lifecycle_coverage;
