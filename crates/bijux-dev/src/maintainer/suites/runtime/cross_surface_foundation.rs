@@ -250,11 +250,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS" => {
-            let source =
-                fs::read_to_string(workspace_root.join(
-                    "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_ordering_laws.rs",
-                ))
-                .unwrap_or_default();
+            let source = fs::read_to_string(workspace_root.join(
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_ordering_laws.rs",
+            ))
+            .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
                 (61, "deterministic_discovery_under_shuffled_install_order"),
                 (62, "deterministic_plugin_list_ordering"),

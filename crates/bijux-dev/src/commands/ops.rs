@@ -5449,14 +5449,11 @@ fn evaluate_limitations_visibility(root: &Path) -> Result<Value, String> {
         }
 
         if id == "dag-capabilities" {
-            let capabilities = payload["data"]["backend_capabilities"]
-                .as_array()
-                .cloned()
-                .unwrap_or_default();
+            let capabilities =
+                payload["data"]["backend_capabilities"].as_array().cloned().unwrap_or_default();
             if capabilities.is_empty() {
-                violations.push(
-                    "dag capabilities must return backend_capabilities entries".to_string(),
-                );
+                violations
+                    .push("dag capabilities must return backend_capabilities entries".to_string());
             }
             for row in capabilities {
                 if row.get("status").is_none() || row.get("production_ready").is_none() {

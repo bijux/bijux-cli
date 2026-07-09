@@ -10,10 +10,10 @@
 //!
 #![allow(dead_code)]
 
+mod backend_capability_surface;
 mod cache;
 #[path = "cache/cmd.rs"]
 mod cache_cmd;
-mod backend_capability_surface;
 #[path = "commands/cli_model.rs"]
 mod cli_model;
 #[cfg(feature = "experimental-public-api")]

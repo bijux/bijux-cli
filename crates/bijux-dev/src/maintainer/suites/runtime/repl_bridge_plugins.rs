@@ -4,11 +4,10 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-COVERAGE" => {
-            let source =
-                fs::read_to_string(workspace_root.join(
-                    "crates/bijux-cli/tests/integration/cli/plugins/plugin_lifecycle_coverage.rs",
-                ))
-                .unwrap_or_default();
+            let source = fs::read_to_string(workspace_root.join(
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_lifecycle_coverage.rs",
+            ))
+            .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
                 (21, "python_scaffold_install_list_inspect_uninstall_end_to_end"),
                 (22, "rust_scaffold_install_list_inspect_uninstall_end_to_end"),
@@ -108,22 +107,22 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .filter(|row| row.get("status").and_then(Value::as_str) == Some("complete"))
                 .count();
             write_status_artifact_json(
-                                workspace_root,
-                                "artifacts/status/plugin_rollback_test_coverage.json",
-                                &json!({
-                                    "generated_at": generated_at_utc(),
-                                    "generator": "bijux-dev-cli",
-                                    "scope": "plugin rollback resilience tests",
-                                    "rows": coverage_rows,
-                                    "summary": {
-                                        "complete": complete,
-                                        "missing": rows.len() - complete,
-                                        "coverage_window_end": 60,
-                                        "artifact_path": "artifacts/status/plugin_rollback_test_coverage.json",
-                                    },
-                                }),
-                            )
-                            .ok()?;
+                workspace_root,
+                "artifacts/status/plugin_rollback_test_coverage.json",
+                &json!({
+                    "generated_at": generated_at_utc(),
+                    "generator": "bijux-dev-cli",
+                    "scope": "plugin rollback resilience tests",
+                    "rows": coverage_rows,
+                    "summary": {
+                        "complete": complete,
+                        "missing": rows.len() - complete,
+                        "coverage_window_end": 60,
+                        "artifact_path": "artifacts/status/plugin_rollback_test_coverage.json",
+                    },
+                }),
+            )
+            .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/plugin_rollback_test_coverage.json"
             ]}))
