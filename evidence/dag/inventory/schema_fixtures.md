@@ -17,4 +17,4 @@
 - configs/dag/schema/fixtures/v0.1/positive/fan-in.json
 - configs/dag/schema/fixtures/v0.1/positive/fan-out.json
 - configs/dag/schema/fixtures/v0.1/positive/isolated-node.json
-- configs/dag/schema/fixtures/v0.2-draft/positive/minimal_empty_graph.json
+- configs/dag/schema/fixtures/v0.2/positive/minimal_empty_graph.json
