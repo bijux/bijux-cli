@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Plugin failure and rollback matrix coverage.
+//! Plugin rollback resilience coverage.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -33,7 +33,7 @@ fn run_ok_json(args: &[&str], plugins_dir: &Path) -> Value {
 fn temp_dir(name: &str) -> PathBuf {
     let counter = TEMP_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
     let dir = std::env::temp_dir()
-        .join(format!("bijux-plugin-failure-matrix-{name}-{}-{counter}", std::process::id(),));
+        .join(format!("bijux-plugin-rollback-resilience-{name}-{}-{counter}", std::process::id(),));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("mkdir temp");
     dir

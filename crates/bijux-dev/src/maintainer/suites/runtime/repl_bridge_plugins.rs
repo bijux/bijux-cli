@@ -66,9 +66,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "artifacts/status/plugin_lifecycle_test_coverage.json"
             ]}))
         }
-        "STATUS-CONTRACT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX" => {
+        "STATUS-CONTRACT-GENERATE-PLUGIN-ROLLBACK-TEST-COVERAGE" => {
             let source = fs::read_to_string(workspace_root.join(
-                "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs",
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_rollback_resilience.rs",
             ))
             .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
@@ -92,40 +92,40 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (58, "plugin_doctor_reports_rollback_relevant_damage_clearly"),
                 (59, "machine_readable_rollback_diagnostics_are_stable"),
             ];
-            let matrix_rows: Vec<Value> = rows
+            let coverage_rows: Vec<Value> = rows
                                 .iter()
                                 .map(|(coverage_id, name)| {
                                     json!({
                                         "coverage_id": coverage_id,
                                         "test_name": name,
                                         "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/plugins/plugin_rollback_resilience.rs",
                                     })
                                 })
                                 .collect();
-            let complete = matrix_rows
+            let complete = coverage_rows
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) == Some("complete"))
                 .count();
             write_status_artifact_json(
                                 workspace_root,
-                                "artifacts/status/plugin_failure_rollback_test_matrix.json",
+                                "artifacts/status/plugin_rollback_test_coverage.json",
                                 &json!({
                                     "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
-                                    "scope": "plugin failure and rollback tests",
-                                    "rows": matrix_rows,
+                                    "scope": "plugin rollback resilience tests",
+                                    "rows": coverage_rows,
                                     "summary": {
                                         "complete": complete,
                                         "missing": rows.len() - complete,
                                         "coverage_window_end": 60,
-                                        "artifact_path": "artifacts/status/plugin_failure_rollback_test_matrix.json",
+                                        "artifact_path": "artifacts/status/plugin_rollback_test_coverage.json",
                                     },
                                 }),
                             )
                             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/plugin_failure_rollback_test_matrix.json"
+                "artifacts/status/plugin_rollback_test_coverage.json"
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX" => {

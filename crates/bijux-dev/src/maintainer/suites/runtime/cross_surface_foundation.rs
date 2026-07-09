@@ -382,9 +382,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "complete",
                                     "coverage_ids": [455],
                                     "evidence": [
-                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs::failed_install_rolls_back_and_preserves_existing_plugin_list",
-                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs::failed_uninstall_rolls_back_and_keeps_registry_unchanged",
-                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs::install_and_uninstall_are_transaction_safe_and_cleanup_backup_files",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_rollback_resilience.rs::failed_install_rolls_back_and_preserves_existing_plugin_list",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_rollback_resilience.rs::failed_uninstall_rolls_back_and_keeps_registry_unchanged",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_rollback_resilience.rs::install_and_uninstall_are_transaction_safe_and_cleanup_backup_files",
                                         "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries",
                                         "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state",
                                     ],

@@ -7,7 +7,7 @@ mod plugin_cli_lifecycle;
 mod plugin_command_parity;
 mod plugin_discovery_ordering_laws;
 mod plugin_failure_injection;
-mod plugin_failure_rollback_matrix;
+mod plugin_rollback_resilience;
 mod plugin_lifecycle_coverage;
 mod plugin_namespace_law;
 mod plugin_scaffold_case_replays;
