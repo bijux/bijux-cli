@@ -15,7 +15,7 @@ Files in crate source trees with 0% line coverage.
 | crates/bijux-dev/src/bin/generate_human_output_governance_reports.rs | 0 | 163 | 0.00 |
 | crates/bijux-dev/src/bin/generate_json_output_governance_reports.rs | 0 | 173 | 0.00 |
 | crates/bijux-dev/src/bin/generate_line_coverage_reports.rs | 0 | 323 | 0.00 |
-| crates/bijux-dev/src/bin/generate_old_forensic_findings_current_status_report.rs | 0 | 33 | 0.00 |
+| crates/bijux-dev/src/bin/generate_forensic_findings_status_report.rs | 0 | 33 | 0.00 |
 | crates/bijux-dev/src/bin/generate_replay_diff_benchmark_report.rs | 0 | 27 | 0.00 |
 | crates/bijux-dev/src/bin/generate_run_history_reports.rs | 0 | 35 | 0.00 |
 | crates/bijux-dev/src/bin/generate_runtime_adapter_scope_reports.rs | 0 | 145 | 0.00 |

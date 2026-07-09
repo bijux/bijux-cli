@@ -13,7 +13,7 @@ use std::path::Path;
 use tempfile as _;
 
 fn main() {
-    let out = Path::new("docs/reports/foundation/OLD_FORENSIC_FINDINGS_CURRENT_STATUS_REPORT.md");
+    let out = Path::new("docs/reports/foundation/FORENSIC_FINDINGS_STATUS_REPORT.md");
     if let Some(parent) = out.parent() {
         fs::create_dir_all(parent).expect("create report directory");
     }
@@ -23,8 +23,8 @@ fn main() {
 
 fn report_markdown() -> String {
     let mut markdown = String::new();
-    markdown.push_str("# Old Forensic Findings: Current Status\n\n");
-    markdown.push_str("This report re-audits prior forensic findings against the current code and test suite.\n\n");
+    markdown.push_str("# Forensic Findings Status Report\n\n");
+    markdown.push_str("This report re-audits retained forensic findings against the current code and test suite.\n\n");
     markdown.push_str("## Container Image Validation Rules\n\n");
     markdown.push_str("- Empty or whitespace-only image strings are rejected.\n");
     markdown.push_str("- Non-empty image strings are treated as literal image identifiers, including values that begin with `-` or contain option-like substrings.\n");
