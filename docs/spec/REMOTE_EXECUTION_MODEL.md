@@ -29,7 +29,9 @@ status classification, and node-result payload parity exercised by
 - `slurm`: implemented shared-filesystem batch execution mode
 - `hpc`: not implemented as a generic backend family
 
-> Not implemented: generic public remote workers and generic HPC
+> Not implemented: production Kubernetes/HPC promotion as generic backend families
+>
+> Not implemented: production Kubernetes/HPC
 
 Container execution is a local engine-mediated lane. It does not imply remote
 workers, Kubernetes scheduling, or HPC submission.
