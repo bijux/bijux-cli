@@ -25,8 +25,8 @@
     {"module": "internal/analysis/dataset_semantics.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-runtime-intelligence", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
     {"module": "internal/workflow/ai_operator_assist.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-operator-assist", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
     {"module": "internal/workflow/workflow_product.rs", "category": "speculative", "user_facing_path": false, "direct_test": false, "example_or_fixture": false, "owner_repo": "future-operator-assist", "lifecycle": "expire-or-graduate", "target_date": "2026-12-31"},
-    {"module": "adapters/registry.rs", "category": "adapter-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true, "owner_repo": "bijux-dag", "lifecycle": "retained"},
-    {"module": "runtime_core/execution/scheduler.rs", "category": "runtime-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true, "owner_repo": "bijux-dag", "lifecycle": "retained"},
-    {"module": "runtime_core/execution/run_state.rs", "category": "kernel-relevant", "user_facing_path": true, "direct_test": true, "example_or_fixture": true, "owner_repo": "bijux-dag", "lifecycle": "retained"}
+    {"module": "adapters/registry.rs", "category": "adapter-registry", "user_facing_path": true, "direct_test": true, "example_or_fixture": true, "owner_repo": "bijux-dag", "lifecycle": "retained"},
+    {"module": "runtime_core/execution/scheduler.rs", "category": "runtime-scheduler", "user_facing_path": true, "direct_test": true, "example_or_fixture": true, "owner_repo": "bijux-dag", "lifecycle": "retained"},
+    {"module": "runtime_core/execution/run_state.rs", "category": "run-state-machine", "user_facing_path": true, "direct_test": true, "example_or_fixture": true, "owner_repo": "bijux-dag", "lifecycle": "retained"}
   ]
 }
