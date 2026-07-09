@@ -17,7 +17,7 @@ documented across human output, JSON output, and exit behavior.
 This contract governs:
 
 - the public error code registry in `configs/dag/policy/error_codes.json`
-- the operator reference page `docs/bijux-dag/interfaces/reference/error-codes.md`
+- the operator reference page `docs/bijux-dag/interfaces/error-codes.md`
 - the executable output and exit-code contract tests
 
 ## Registry rule
@@ -36,7 +36,7 @@ Public error code additions require docs plus test coverage.
 
 The required documentation and test surfaces are:
 
-- `docs/bijux-dag/interfaces/reference/error-codes.md`
+- `docs/bijux-dag/interfaces/error-codes.md`
 - `crates/bijux-dag-app/tests/error_output_contract.rs`
 - `crates/bijux-dag-app/tests/error_exit_contract.rs`
 

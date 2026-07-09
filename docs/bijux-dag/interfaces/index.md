@@ -61,7 +61,7 @@ to the shipped public `v0.4.0` surface.
 - [Graph Schema Reference](reference/graph-schema.md)
 - [Reproducibility Model](reference/reproducibility-model.md)
 - [Run Evidence Layout](reference/run-evidence-layout.md)
-- [Error Codes](reference/error-codes.md)
+- [Error Codes](error-codes.md)
 - [Gated Command Inventory](reference/gated-command-inventory.md)
 - [Authoring Guide](authoring-guide.md)
 - [Reusable Subgraphs](guides/reusable-subgraphs.md)
