@@ -1,5 +1,5 @@
 ---
-title: Comparison Report Template
+title: Comparison Report Format
 audience: mixed
 type: interface
 status: canonical
@@ -7,9 +7,9 @@ owner: bijux-dag-docs
 last_reviewed: 2026-07-06
 ---
 
-# Comparison Report Template
+# Comparison Report Format
 
-Use this template when publishing a comparison result derived from
+Use this format when publishing a comparison result derived from
 `evidence/compare/`.
 
 ## Required sections

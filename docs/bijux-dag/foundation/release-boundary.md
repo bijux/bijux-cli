@@ -79,5 +79,5 @@ Inventory non-stable routes only by deliberate lane:
 - [CLI Surface](../interfaces/cli-surface.md)
 - [Package Boundary](../../bijux-core/foundation/package-boundary.md)
 - [Bijux Dag Roadmap](../../tracking/bijux-dag-roadmap.md)
-- [Scope and Non-Goals](scope-and-non-goals.md)
+- [Scope and Boundaries](scope-and-boundaries.md)
 - [Known Limitations](../quality/known-limitations.md)

@@ -1,5 +1,5 @@
 ---
-title: Scope and Non-Goals
+title: Scope and Boundaries
 audience: mixed
 type: explanation
 status: canonical
@@ -7,7 +7,7 @@ owner: bijux-cli-docs
 last_reviewed: 2026-04-06
 ---
 
-# Scope and Non-Goals
+# Scope and Boundaries
 
 Use this page when you need the honest version of the CLI story: what `bijux`
 is expected to do well today, and what it does not claim to solve yet.

@@ -106,7 +106,7 @@ nav:
           - Foundation:
               - Foundation: bijux-cli/foundation/index.md
               - Package Overview: bijux-cli/foundation/package-overview.md
-              - Scope and Non-Goals: bijux-cli/foundation/scope-and-non-goals.md
+              - Scope and Boundaries: bijux-cli/foundation/scope-and-boundaries.md
               - Ownership Boundary: bijux-cli/foundation/ownership-boundary.md
               - Repository Fit: bijux-cli/foundation/repository-fit.md
               - Capability Map: bijux-cli/foundation/capability-map.md
@@ -169,7 +169,7 @@ nav:
               - Foundation: bijux-dag/foundation/index.md
               - Package Overview: bijux-dag/foundation/package-overview.md
               - Release Boundary: bijux-dag/foundation/release-boundary.md
-              - Scope and Non-Goals: bijux-dag/foundation/scope-and-non-goals.md
+              - Scope and Boundaries: bijux-dag/foundation/scope-and-boundaries.md
               - Ownership Boundary: bijux-dag/foundation/ownership-boundary.md
               - Capability Map: bijux-dag/foundation/capability-map.md
               - Domain Language: bijux-dag/foundation/domain-language.md

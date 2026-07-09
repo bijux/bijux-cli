@@ -32,7 +32,7 @@ command behavior stable as the repository evolves.
 ## Pages In This Section
 
 - [Package Overview](package-overview.md)
-- [Scope and Non-Goals](scope-and-non-goals.md)
+- [Scope and Boundaries](scope-and-boundaries.md)
 - [Ownership Boundary](ownership-boundary.md)
 - [Repository Fit](repository-fit.md)
 - [Capability Map](capability-map.md)

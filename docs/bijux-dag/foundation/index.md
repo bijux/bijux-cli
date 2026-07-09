@@ -33,7 +33,7 @@ responsibility.
 
 - [Release Boundary](release-boundary.md)
 - [Package Overview](package-overview.md)
-- [Scope and Non-Goals](scope-and-non-goals.md)
+- [Scope and Boundaries](scope-and-boundaries.md)
 - [Ownership Boundary](ownership-boundary.md)
 - [Capability Map](capability-map.md)
 - [Domain Language](domain-language.md)

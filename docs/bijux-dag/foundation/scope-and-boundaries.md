@@ -1,5 +1,5 @@
 ---
-title: Scope and Non-Goals
+title: Scope and Boundaries
 audience: mixed
 type: explanation
 status: canonical
@@ -7,7 +7,7 @@ owner: bijux-dag-docs
 last_reviewed: 2026-07-05
 ---
 
-# Scope and Non-Goals
+# Scope and Boundaries
 
 Use this page when you need the honest boundary of the shipped `bijux-dag`
 product: what the local-first DAG runtime defends today, and what still sits
