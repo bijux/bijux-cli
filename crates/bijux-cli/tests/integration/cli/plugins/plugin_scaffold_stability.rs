@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Plugin scaffold and plugin-command rendering fuzz targets.
-//! test_type: plugin-scaffold-fuzz
+//! Plugin scaffold stability checks for scaffolded surfaces and diagnostics rendering.
+//! test_type: plugin-scaffold-stability
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -17,7 +17,7 @@ use super::{current_plugin_host_ceiling, current_plugin_host_floor};
 
 fn temp_dir(label: &str) -> PathBuf {
     let ts = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
-    let dir = std::env::temp_dir().join(format!("bijux-scaffold-fuzz-{label}-{ts}"));
+    let dir = std::env::temp_dir().join(format!("bijux-plugin-scaffold-stability-{label}-{ts}"));
     fs::create_dir_all(&dir).expect("mkdir");
     dir
 }

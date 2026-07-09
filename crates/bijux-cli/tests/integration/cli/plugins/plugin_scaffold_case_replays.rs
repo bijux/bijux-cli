@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Plugin scaffold fuzz regression replay for retained minimized cases.
-//! test_type: plugin-scaffold-fuzz-regression
+//! Plugin scaffold case replay suite for retained minimized scaffold inputs.
+//! test_type: plugin-scaffold-case-replay
 
 use std::fs;
 use std::path::Path;
@@ -32,7 +32,7 @@ fn minimized_scaffold_cases_replay_with_deterministic_exit_codes() {
     assert!(!files.is_empty(), "scaffold minimized corpus must not be empty");
 
     let root =
-        std::env::temp_dir().join(format!("bijux-scaffold-fuzz-replay-{}", std::process::id()));
+        std::env::temp_dir().join(format!("bijux-plugin-scaffold-case-replay-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir root");
     let plugins_dir = root.join("plugins");
