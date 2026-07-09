@@ -37,6 +37,25 @@ expect to see.
 | `foundation-release-gate` | `bijux-dev` | `crates/bijux-dev/tests/` | work that changes release criteria, hard gates, or the executable proof behind publication claims |
 | `foundation-operator-diagnostics` | `bijux-cli` | `crates/bijux-cli/src/interface/cli/handlers/` | work that changes operator-facing diagnostic handling for the CLI runtime family |
 
+## Tracked Goals
+
+The table below keeps the currently routed foundation goals concrete. Every row
+names the issue class, the enforcing crate, the evidence surface reviewers
+should inspect, and the current delivery state.
+
+| Goal | Issue Class | Owning Crate | Evidence Location | Status | Note |
+| --- | --- | --- | --- | --- | --- |
+| 1 | foundation-ownership-boundary | bijux-dev | contracts/foundation/workspace_product_map.v1.json | done | workspace product ownership stays governed by a durable contract |
+| 2 | foundation-ownership-boundary | bijux-dev | crates/bijux-dev/tests/maintainer/architecture/ownership_boundaries.rs | done | maintainer architecture tests enforce crate ownership boundaries |
+| 3 | foundation-ownership-boundary | bijux-dev | contracts/foundation/dag_dependency_direction.v1.json | done | DAG dependency direction is governed through a repository contract |
+| 4 | foundation-ownership-boundary | bijux-dev | contracts/foundation/cli_dependency_direction.v1.json | done | CLI dependency direction stays enforced through a contract-backed boundary |
+| 5 | foundation-ownership-boundary | bijux-dev | contracts/foundation/module_surface_lanes.v1.json | done | module export lanes are governed as a stable ownership surface |
+| 7 | foundation-backlog-governance | bijux-dev | contracts/foundation/backlog_issue_class_routing.v1.json | done | issue classes and owning-crate routing now have an explicit contract |
+| 8 | foundation-backlog-governance | bijux-dev | docs/bijux-core/foundation/root-policy-surface-report.md | done | the root policy surface report maps governance truth to reader-facing documentation |
+| 9 | foundation-compatibility-lanes | bijux-cli | contracts/foundation/version_compatibility_lanes.v1.json | done | compatibility lanes are described through a machine-readable contract surface |
+| 10 | foundation-release-gate | bijux-dev | crates/bijux-dev/tests/foundation_hard_release_gate_contracts.rs | done | release gating is enforced by executable proof instead of prose-only claims |
+| 28 | foundation-operator-diagnostics | bijux-cli | crates/bijux-cli/src/interface/cli/handlers/cli.rs | done | operator diagnostics expose stable evidence and remediation surfaces |
+
 ## How To Use The Ledger
 
 Use this page when you need to answer one of these questions:
