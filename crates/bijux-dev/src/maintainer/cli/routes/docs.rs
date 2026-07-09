@@ -132,11 +132,8 @@ mod tests {
             fs::create_dir_all(interfaces_root.join("reference")).map_err(|err| err.to_string())?;
             fs::write(interfaces_root.join("generated-cli-reference.md"), "stable\n")
                 .map_err(|err| err.to_string())?;
-            fs::write(
-                interfaces_root.join("reference/gated-command-inventory.md"),
-                "nonstable\n",
-            )
-            .map_err(|err| err.to_string())?;
+            fs::write(interfaces_root.join("reference/gated-command-inventory.md"), "nonstable\n")
+                .map_err(|err| err.to_string())?;
             Ok(())
         })
         .expect("payload");

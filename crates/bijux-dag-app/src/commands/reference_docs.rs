@@ -150,13 +150,14 @@ fn write_cli_reference_docs(interfaces_root: &Path) -> Result<(), String> {
                 interfaces_root.join(STABLE_REFERENCE_REL_PATH).display()
             )
         })?;
-    std::fs::write(interfaces_root.join(GATED_REFERENCE_REL_PATH), format!("{gated}\n"))
-        .map_err(|err| {
+    std::fs::write(interfaces_root.join(GATED_REFERENCE_REL_PATH), format!("{gated}\n")).map_err(
+        |err| {
             format!(
                 "write {} failed: {err}",
                 interfaces_root.join(GATED_REFERENCE_REL_PATH).display()
             )
-        })?;
+        },
+    )?;
     Ok(())
 }
 
