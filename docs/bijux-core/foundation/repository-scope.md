@@ -9,68 +9,87 @@ last_reviewed: 2026-07-09
 
 # Repository Scope
 
-`bijux-core` exists above any single crate, but that does not mean every
-question belongs in the repository handbook. The repository layer is only the
-right home when the answer depends on more than one product family, more than
-one package boundary, or more than one published surface.
+`bijux-core` has repository-level documentation because some questions cannot
+be answered honestly from a single product handbook. The root scope is not
+"everything in the repo." It is the smaller set of questions that cross
+products, packages, release boundaries, or shared contracts.
 
-This page defines that boundary so the root docs stay useful instead of turning
-into a duplicate of the CLI, DAG, or maintainer handbooks.
+This page defines that line so the repository handbook stays useful instead of
+becoming a vague duplicate of the CLI, DAG, or maintainer handbooks.
 
-## What Belongs Here
+## Use The Repository Handbook When The Question Crosses Boundaries
 
-| Topic | Why it belongs at the repository level |
+| Question type | Why it belongs here |
 | --- | --- |
-| workspace membership and root build policy | it affects more than one crate family |
-| shared documentation structure and publication | it governs how multiple handbooks fit together |
-| cross-program contracts under `contracts/` | the same contract may constrain more than one product family |
-| release, compatibility, and review rules | those rules must stay consistent across products |
+| Which product family or crate owns this surface? | ownership routing crosses package and handbook boundaries |
+| Which crates are public and which stay repository-internal? | publication intent is a root release concern |
+| Which shared contracts constrain more than one product family? | contracts under `contracts/` often feed both docs and tests across the workspace |
+| Which review, release, or compatibility rules apply to both `bijux` and `bijux-dag`? | those rules must stay consistent above product-level docs |
+| How is the workspace laid out and why does that shape matter? | root structure affects contributors across the whole repository |
 
-## What Usually Does Not Belong Here
+## Leave The Repository Handbook When One Owner Is Clear
 
-- CLI runtime semantics that belong in `docs/bijux-cli/`
-- DAG execution semantics that belong in `docs/bijux-dag/`
-- maintainer implementation detail that belongs in `docs/bijux-dev/`
+Once the answer clearly belongs to one product or one maintainer surface, move
+to the owning handbook:
 
-## What The Repository Handbook Is For In Practice
+- [CLI Handbook](../../bijux-cli/index.md) for `bijux` runtime behavior
+- [DAG Handbook](../../bijux-dag/index.md) for graph, run, replay, and
+  artifact behavior
+- [Maintainer Handbook](../../bijux-dev/index.md) for repository automation,
+  release proof, and governance tooling
 
-Readers usually need the repository layer for one of four reasons:
+## What The Repository Layer Actually Covers
 
-- to understand how the workspace is split
-- to understand how products and support crates relate to each other
-- to understand which rules apply across both public product families
-- to understand shared release, contract, and documentation boundaries
+The repository handbook is the shared layer between those handbooks. It exists
+to explain:
 
-That is a narrower job than "explain the whole repository." It is the job of
-explaining the shared surface between the handbooks.
+- how the workspace is divided into public products and private support crates
+- how contracts, docs, and release rules stay aligned across that divide
+- which top-level directories and entrypoints are stable repository surfaces
+- which root rules contributors must understand before changing more than one
+  package family
 
-## A Useful Shortcut
+## What Usually Falls Out Of Scope
 
-If the answer only needs one product handbook, stay out of the repository
-handbook. Come here when the answer spans products, packages, contracts, or
-release rules.
+These belong elsewhere unless the root boundary itself is the subject:
 
-## Signs A Page Is Out Of Scope
+- command syntax and runtime behavior for `bijux`
+- DAG authoring or execution semantics
+- implementation detail for `bijux-dev` maintainer commands
+- crate-local behavior that does not affect release, docs, contracts, or
+  shared ownership
 
-A repository page has probably drifted out of scope when it:
+## A Practical Test
 
-- explains one command family in detail
-- repeats DAG execution semantics already owned by `docs/bijux-dag/`
-- documents maintainer implementation details better owned by `docs/bijux-dev/`
-- teaches crate-local behavior instead of shared repository boundaries
+Stay here if at least one of these is true:
 
-## What This Page Is Not Saying
+1. the answer needs more than one handbook
+2. the change can affect more than one public product family
+3. the reader needs the release or contract boundary, not just the behavior
+4. the owning surface is a root directory, root Make target, or shared
+   contract
 
-- It is not claiming repository pages are more important than product pages.
-- It is not saying root docs should duplicate crate-level behavior.
-- It is not replacing ownership pages when you need the exact package family.
+If none of those are true, the repository layer is probably the wrong starting
+point.
 
-## Code Anchors
+## Drift Signs
 
-- `Cargo.toml`
-- `Makefile`
-- `contracts/`
-- `mkdocs.yml`
+A repository page has drifted when it starts doing any of the following:
+
+- teaching one command family in product-level detail
+- restating DAG execution behavior that already belongs in the DAG handbook
+- documenting maintainer internals that should live under `docs/bijux-dev/`
+- listing code paths without explaining the shared repository decision they
+  support
+
+## Durable Anchors
+
+The repository layer is grounded in a small set of root surfaces:
+
+- `Cargo.toml` for workspace membership
+- `Makefile` and `makes/` for root entrypoints
+- `contracts/` for shared machine-readable truth
+- `mkdocs.yml` for published handbook structure
 
 ## Continue Reading
 
