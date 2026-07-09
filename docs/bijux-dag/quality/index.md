@@ -32,6 +32,8 @@ claims, and operational trust.
 - [Dependency Governance](dependency-governance.md)
 - [Risk Register](risk-register.md)
 - [Known Limitations](known-limitations.md)
+- [Comparison Limitations](comparison-limitations.md)
+- [Comparison Evidence Surfaces](comparison-evidence-surfaces.md)
 - [Documentation Standards](documentation-standards.md)
 
 ## Reading Rule
