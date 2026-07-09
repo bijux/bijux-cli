@@ -27,8 +27,8 @@ use serde_yaml as _;
 use tempfile as _;
 
 #[cfg(feature = "experimental-public-api")]
-#[path = "contracts/authoring_iteration03.rs"]
-mod authoring_iteration03;
+#[path = "contracts/authoring_contracts.rs"]
+mod authoring_contracts;
 #[doc(hidden)]
 #[path = "build/builder.rs"]
 pub mod builder;
@@ -90,8 +90,8 @@ mod performance_iteration19_contracts;
 #[path = "planner/planner.rs"]
 pub mod planner;
 #[cfg(feature = "experimental-public-api")]
-#[path = "contracts/planner_iteration05.rs"]
-mod planner_iteration05;
+#[path = "contracts/planner_contracts.rs"]
+mod planner_contracts;
 #[doc(hidden)]
 #[path = "pipeline/resolve.rs"]
 pub mod resolve;
@@ -108,8 +108,8 @@ mod scientific_integration_contracts;
 #[path = "analysis/semantics.rs"]
 pub mod semantics;
 #[cfg(feature = "experimental-public-api")]
-#[path = "contracts/semantics_iteration04.rs"]
-mod semantics_iteration04;
+#[path = "contracts/semantics_contracts.rs"]
+mod semantics_contracts;
 #[doc(hidden)]
 #[path = "graph/topology.rs"]
 pub mod topology;
@@ -227,14 +227,14 @@ pub mod prelude {
 #[cfg(feature = "experimental-public-api")]
 pub mod experimental {
     pub mod authoring_contracts {
-        pub use crate::authoring_iteration03::*;
+        pub use crate::authoring_contracts::*;
     }
     pub mod execution_contracts {
         pub use crate::execution_iteration12::*;
     }
     pub mod planner_contracts {
         pub use crate::performance_iteration19_contracts::*;
-        pub use crate::planner_iteration05::*;
+        pub use crate::planner_contracts::*;
     }
     pub mod resource_capabilities {
         pub use crate::resource_iteration13::*;
@@ -243,7 +243,7 @@ pub mod experimental {
         pub use crate::scientific_integration_contracts::*;
     }
     pub mod semantic_contracts {
-        pub use crate::semantics_iteration04::*;
+        pub use crate::semantics_contracts::*;
     }
     pub use crate::semantics::{
         classify_compatibility, complexity_score, enforce_late_binding_immutability, explain_graph,
