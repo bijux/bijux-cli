@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Deterministic behavior matrix under hostile state conditions.
+//! Determinism checks under hostile state conditions.
 
 use std::fs;
 use std::path::{Path, PathBuf};

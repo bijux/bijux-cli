@@ -5,7 +5,7 @@ mod adversarial_fs_process_campaign_regressions;
 mod adversarial_fs_process_campaigns;
 mod config_corruption_campaign_regressions;
 mod config_corruption_hardening;
-mod deterministic_hostile_state_matrix;
+mod hostile_state_determinism;
 mod history_memory_resilience_hardening;
 mod history_write_resilience;
 mod install_ambiguity_hardening;
