@@ -525,7 +525,7 @@ mod tests {
     use std::collections::BTreeMap;
 
     #[test]
-    fn g131_durable_queue_snapshot_prevents_duplicate_restart_dispatch() {
+    fn durable_queue_snapshot_prevents_duplicate_restart_dispatch() {
         let valid = DurableRunQueueSnapshotV1 {
             run_id: "run-131".to_string(),
             admitted_nodes: vec!["node-b".to_string()],
@@ -567,7 +567,7 @@ mod tests {
     }
 
     #[test]
-    fn g132_node_lease_validation_rejects_double_dispatch_and_expired_active_owners() {
+    fn node_lease_validation_rejects_double_dispatch_and_expired_active_owners() {
         let leases = vec![QueueLeaseRecordV1 {
             node_id: "node-lease".to_string(),
             lease_owner: "worker-1".to_string(),
@@ -606,7 +606,7 @@ mod tests {
     }
 
     #[test]
-    fn g133_multi_run_scheduler_prevents_starvation_when_capacity_exists() {
+    fn multi_run_scheduler_prevents_starvation_when_capacity_exists() {
         let report = plan_multi_run_fairness(
             &[
                 MultiRunDemandV1 {
@@ -637,7 +637,7 @@ mod tests {
     }
 
     #[test]
-    fn g134_pause_resume_scope_transitions_are_legal_and_visible() {
+    fn pause_resume_scope_transitions_are_legal_and_visible() {
         let events = vec![
             PauseTransitionEventV1 {
                 scope: PauseScopeV1::Graph,
@@ -666,7 +666,7 @@ mod tests {
     }
 
     #[test]
-    fn g135_partial_rerun_selector_preview_is_deterministic() {
+    fn partial_rerun_selector_preview_is_deterministic() {
         let request = PartialRerunPreviewRequestV1 {
             selector: PartialRerunSelectorKindV1::ChangedInputClosure,
             failed_nodes: vec!["node-failed".to_string()],
@@ -684,7 +684,7 @@ mod tests {
     }
 
     #[test]
-    fn g136_checkpoint_resume_honors_adapter_contract_mode() {
+    fn checkpoint_resume_honors_adapter_contract_mode() {
         let resumable = evaluate_checkpoint_resume(&AdapterCheckpointContractV1 {
             node_id: "node-resume".to_string(),
             adapter_kind: "shell".to_string(),
@@ -704,7 +704,7 @@ mod tests {
     }
 
     #[test]
-    fn g137_backpressure_status_reports_throttle_or_refuse_actions() {
+    fn backpressure_status_reports_throttle_or_refuse_actions() {
         let throttle = evaluate_backpressure(&BackpressureSignalsV1 {
             artifact_store_degraded: false,
             cache_degraded: true,
@@ -728,7 +728,7 @@ mod tests {
     }
 
     #[test]
-    fn g138_adapter_circuit_breaker_quarantines_repeated_failures() {
+    fn adapter_circuit_breaker_quarantines_repeated_failures() {
         let initial = AdapterCircuitBreakerStateV1 {
             adapter_id: "shell".to_string(),
             failure_count: 1,
@@ -743,7 +743,7 @@ mod tests {
     }
 
     #[test]
-    fn g139_runtime_upgrade_recovery_checks_schema_and_major_compatibility() {
+    fn runtime_upgrade_recovery_checks_schema_and_major_compatibility() {
         let schema_failure =
             evaluate_runtime_upgrade_recovery(&RuntimeUpgradeCompatibilityInputV1 {
                 run_id: "run-upgrade-1".to_string(),
@@ -765,7 +765,7 @@ mod tests {
     }
 
     #[test]
-    fn g140_runtime_history_compaction_keeps_large_histories_queryable() {
+    fn runtime_history_compaction_keeps_large_histories_queryable() {
         let mut events = Vec::new();
         for idx in 0..500 {
             events.push(RuntimeHistoryEventV1 {

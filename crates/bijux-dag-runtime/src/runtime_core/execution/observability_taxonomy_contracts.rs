@@ -745,7 +745,7 @@ mod tests {
     }
 
     #[test]
-    fn g161_event_taxonomy_requires_all_runtime_observability_domains() {
+    fn event_taxonomy_requires_all_runtime_observability_domains() {
         let events = vec![
             event(ObservabilityEventDomainV1::Planner, "plan-built"),
             event(ObservabilityEventDomainV1::Scheduler, "node-ready"),
@@ -769,7 +769,7 @@ mod tests {
     }
 
     #[test]
-    fn g162_correlation_ids_link_root_command_to_support_bundle() {
+    fn correlation_ids_link_root_command_to_support_bundle() {
         let chain = CorrelationChainV1 {
             root_command_id: "cmd-root-17".to_string(),
             dag_command_id: "cmd-dag-17".to_string(),
@@ -788,7 +788,7 @@ mod tests {
     }
 
     #[test]
-    fn g163_timeline_reconstruction_is_deterministic_and_causal() {
+    fn timeline_reconstruction_is_deterministic_and_causal() {
         let events = vec![
             ObservabilityEventRecordV1 {
                 event_id: "evt-2".to_string(),
@@ -827,7 +827,7 @@ mod tests {
     }
 
     #[test]
-    fn g164_run_metrics_report_queue_runtime_retries_cache_failures_and_verification() {
+    fn run_metrics_report_queue_runtime_retries_cache_failures_and_verification() {
         let report = build_actionable_run_metrics(&RunMetricsSampleV1 {
             run_id: "run-17".to_string(),
             queue_time_ms: 15_000,
@@ -856,7 +856,7 @@ mod tests {
     }
 
     #[test]
-    fn g165_large_run_summary_is_compact_and_operator_focused() {
+    fn large_run_summary_is_compact_and_operator_focused() {
         let summary = summarize_large_run_compact(
             &[
                 RunNodeOutcomeV1 {
@@ -894,7 +894,7 @@ mod tests {
     }
 
     #[test]
-    fn g166_cross_run_comparison_reports_all_drift_dimensions() {
+    fn cross_run_comparison_reports_all_drift_dimensions() {
         let baseline = RunComparisonInputV1 {
             run_id: "run-a".to_string(),
             graph_fingerprint: "graph-1".to_string(),
@@ -930,7 +930,7 @@ mod tests {
     }
 
     #[test]
-    fn g167_flake_analysis_identifies_transient_failures_retry_storms_and_unstable_adapters() {
+    fn flake_analysis_identifies_transient_failures_retry_storms_and_unstable_adapters() {
         let report = analyze_flake_history(&[
             RunHistoryEntryV1 {
                 run_id: "run-1".to_string(),
@@ -962,7 +962,7 @@ mod tests {
     }
 
     #[test]
-    fn g168_app_evidence_api_supports_stable_attachment_contract() {
+    fn app_evidence_api_supports_stable_attachment_contract() {
         let mut envelope =
             RunEvidenceEnvelopeV1 { run_id: "run-17".to_string(), attachments: Vec::new() };
         attach_app_evidence(
@@ -995,7 +995,7 @@ mod tests {
     }
 
     #[test]
-    fn g169_evidence_graph_query_returns_related_entities_without_file_scans() {
+    fn evidence_graph_query_returns_related_entities_without_file_scans() {
         let graph = EvidenceGraphV1 {
             nodes: vec![
                 "run-17".to_string(),
@@ -1035,7 +1035,7 @@ mod tests {
     }
 
     #[test]
-    fn g170_evidence_completeness_is_profile_driven_for_promotion_gates() {
+    fn evidence_completeness_is_profile_driven_for_promotion_gates() {
         let audit = verify_evidence_completeness_profile(
             EvidenceCompletenessProfileV1::Audit,
             &[

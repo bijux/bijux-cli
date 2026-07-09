@@ -448,7 +448,7 @@ mod tests {
     };
 
     #[test]
-    fn g141_docker_smoke_contract_requires_recorded_execution_evidence() {
+    fn docker_smoke_contract_requires_recorded_execution_evidence() {
         let record = DockerSmokeExecutionRecordV1 {
             workflow_id: "docker-smoke".to_string(),
             engine: "docker".to_string(),
@@ -472,7 +472,7 @@ mod tests {
     }
 
     #[test]
-    fn g142_container_image_identity_refuses_tag_only_in_production() {
+    fn container_image_identity_refuses_tag_only_in_production() {
         let refused = enforce_container_image_identity("ghcr.io/bijux/tool:latest", true, false);
         assert!(!refused.accepted);
         assert!(refused.reason.contains("tag-only image reference is refused"));
@@ -487,7 +487,7 @@ mod tests {
     }
 
     #[test]
-    fn g143_apptainer_boundary_reports_explicit_support_or_refusal() {
+    fn apptainer_boundary_reports_explicit_support_or_refusal() {
         let refused = evaluate_apptainer_boundary("apptainer", false, false);
         assert_eq!(refused.state, ApptainerSupportStateV1::Refused);
         assert_eq!(refused.smoke_behavior, "refused");
@@ -501,7 +501,7 @@ mod tests {
     }
 
     #[test]
-    fn g144_batch_script_export_includes_resources_logs_scratch_artifacts_and_cleanup() {
+    fn batch_script_export_includes_resources_logs_scratch_artifacts_and_cleanup() {
         let output = render_batch_script_export(&BatchScriptExportDescriptorV1 {
             scheduler: "slurm".to_string(),
             job_name: "align-smoke".to_string(),
@@ -523,7 +523,7 @@ mod tests {
     }
 
     #[test]
-    fn g145_mock_batch_lifecycle_covers_submit_poll_cancel_fail_complete_and_logs() {
+    fn mock_batch_lifecycle_covers_submit_poll_cancel_fail_complete_and_logs() {
         let events = vec![
             MockBatchLifecycleEventV1 {
                 action: "submit".to_string(),
@@ -554,7 +554,7 @@ mod tests {
     }
 
     #[test]
-    fn g146_batch_backend_promotion_refuses_export_only_and_requires_execution_evidence() {
+    fn batch_backend_promotion_refuses_export_only_and_requires_execution_evidence() {
         let export_only = evaluate_batch_backend_promotion(&BatchBackendPromotionEvidenceV1 {
             export_only: true,
             has_job_id: false,
@@ -576,7 +576,7 @@ mod tests {
     }
 
     #[test]
-    fn g147_remote_worker_protocol_trace_requires_concrete_lifecycle_order() {
+    fn remote_worker_protocol_trace_requires_concrete_lifecycle_order() {
         let events = vec![
             RemoteWorkerProtocolEventV1 {
                 event: "register".to_string(),
@@ -604,7 +604,7 @@ mod tests {
     }
 
     #[test]
-    fn g148_external_adapter_sdk_descriptor_requires_capabilities_effects_outputs_and_errors() {
+    fn external_adapter_sdk_descriptor_requires_capabilities_effects_outputs_and_errors() {
         let descriptor = ExternalAdapterSdkDescriptorV1 {
             adapter_id: "ext.aligner".to_string(),
             capabilities: vec!["streaming".to_string(), "typed-output".to_string()],
@@ -616,7 +616,7 @@ mod tests {
     }
 
     #[test]
-    fn g149_executor_fallback_refuses_incompatible_semantics_or_evidence() {
+    fn executor_fallback_refuses_incompatible_semantics_or_evidence() {
         let semantics_fail = evaluate_executor_fallback(&ExecutorFallbackRequestV1 {
             from_backend: "container".to_string(),
             to_backend: "shell".to_string(),
@@ -637,7 +637,7 @@ mod tests {
     }
 
     #[test]
-    fn g150_backend_comparison_report_makes_env_artifact_runtime_differences_visible() {
+    fn backend_comparison_report_makes_env_artifact_runtime_differences_visible() {
         let report = build_backend_comparison_report(&[
             BackendExecutionFingerprintV1 {
                 backend: "local".to_string(),
