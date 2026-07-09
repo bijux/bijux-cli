@@ -1,7 +1,7 @@
 {
   "spec": "bijux-dag/v0.1",
   "meta": {
-    "name": "template-composition",
+    "name": "templated-composition",
     "owners": ["platform"],
     "tags": ["template", "composition"]
   },

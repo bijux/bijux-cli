@@ -16,7 +16,7 @@
 - crates/bijux-dag-core/tests/fixtures/partitioned_map_reduce.json
 - crates/bijux-dag-core/tests/fixtures/retry_nondet.json
 - crates/bijux-dag-core/tests/fixtures/shell_no_fs.json
-- crates/bijux-dag-core/tests/fixtures/template_composition.json
+- crates/bijux-dag-core/tests/fixtures/templated_composition.json
 - crates/bijux-dag-core/tests/fixtures/unknown_node_output.json
 - crates/bijux-dag-core/tests/fixtures/unreachable.json
 - crates/bijux-dag-runtime/tests/fixtures/.gitkeep

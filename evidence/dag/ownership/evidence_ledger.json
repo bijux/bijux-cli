@@ -835,8 +835,8 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
-      "canonical_location": "crates/bijux-dag-core/tests/fixtures/template_composition.json",
-      "canonical_path": "crates/bijux-dag-core/tests/fixtures/template_composition.json",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/templated_composition.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/templated_composition.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -850,11 +850,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "authoring",
-      "id": "crates/bijux-dag-core/tests/fixtures/template_composition.json",
+      "id": "crates/bijux-dag-core/tests/fixtures/templated_composition.json",
       "implementation_status": "implemented",
       "kind": "authoring",
       "owner": "team-core",
-      "path": "crates/bijux-dag-core/tests/fixtures/template_composition.json",
+      "path": "crates/bijux-dag-core/tests/fixtures/templated_composition.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
