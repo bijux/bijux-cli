@@ -74,9 +74,9 @@
     "crates/bijux-dag-core/tests/fixtures/invalid_env_reference.json",
     "crates/bijux-dag-core/tests/fixtures/invalid_resource_declaration.json",
     "crates/bijux-dag-core/tests/fixtures/unsupported_node_settings.json",
-    "crates/bijux-dag-runtime/tests/fixtures/advanced_semantics/adapter_relevant_example.json",
-    "crates/bijux-dag-runtime/tests/fixtures/advanced_semantics/kernel_relevant_example.json",
-    "crates/bijux-dag-runtime/tests/fixtures/advanced_semantics/runtime_relevant_example.json",
+    "crates/bijux-dag-runtime/tests/fixtures/advanced_semantics/adapter_capability_resolution.json",
+    "crates/bijux-dag-runtime/tests/fixtures/advanced_semantics/deterministic_submission_order.json",
+    "crates/bijux-dag-runtime/tests/fixtures/advanced_semantics/state_transition_stability.json",
     "evidence/cache/replay/mismatch_fixture_corpus.json"
   ],
   "forbidden_globs": [
