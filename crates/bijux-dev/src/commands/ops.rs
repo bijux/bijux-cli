@@ -3199,7 +3199,7 @@ pub(super) fn run_operator_ux_guard() -> Result<(), String> {
         "docs/bijux-dag/interfaces/operator-command-index.md",
         "docs/bijux-dag/interfaces/operator-inspection-guide.md",
         "docs/bijux-dag/interfaces/command-taxonomy.md",
-        "docs/bijux-dag/interfaces/reference/nonstable-command-inventory.md",
+        "docs/bijux-dag/interfaces/reference/gated-command-inventory.md",
         "crates/bijux-dag-app/tests/operator_ux_contract.rs",
         "evidence/operator/scenarios/inspection_only.json",
         "configs/dag/schema/operator/run_list.schema.json",

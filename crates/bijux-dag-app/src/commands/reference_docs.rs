@@ -7,7 +7,7 @@ use clap::Command;
 use std::path::Path;
 
 const STABLE_REFERENCE_REL_PATH: &str = "generated-cli-reference.md";
-const NONSTABLE_REFERENCE_REL_PATH: &str = "reference/nonstable-command-inventory.md";
+const GATED_REFERENCE_REL_PATH: &str = "reference/gated-command-inventory.md";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct ReferenceExample {
@@ -52,7 +52,7 @@ This page is generated from the live `bijux-dag` Clap command definitions.\n\
 It records the stable `v0.4.0` operator surface exactly as the product presents\n\
 it through `bijux-dag --help`. Experimental, simulated, and internal routes are\n\
 deliberately excluded from this page and listed separately in\n\
-[`reference/nonstable-command-inventory.md`](reference/nonstable-command-inventory.md).\n\n\
+[`reference/gated-command-inventory.md`](reference/gated-command-inventory.md).\n\n\
 ## Placeholder Conventions\n\n\
 - `${GRAPH}`: DAG graph file such as `evidence/workflows/file_processing/dag.json`\n\
 - `${GRAPH_A}` and `${GRAPH_B}`: two graph revisions to compare\n\
@@ -82,12 +82,12 @@ deliberately excluded from this page and listed separately in\n\
     Ok(markdown)
 }
 
-pub(crate) fn render_nonstable_command_inventory_markdown() -> Result<String, String> {
+pub(crate) fn render_gated_command_inventory_markdown() -> Result<String, String> {
     let mut experimental = Vec::new();
     let mut simulated = Vec::new();
     let mut internal = Vec::new();
 
-    for entry in nonstable_commands() {
+    for entry in gated_commands() {
         match entry.lane {
             CommandLane::Experimental => experimental.push(entry),
             CommandLane::Simulation => simulated.push(entry),
@@ -99,14 +99,14 @@ pub(crate) fn render_nonstable_command_inventory_markdown() -> Result<String, St
     let mut markdown = String::new();
     markdown.push_str(
         "---\n\
-title: Non-Stable Command Inventory\n\
+title: Gated Command Inventory\n\
 audience: operators\n\
 type: generated-reference\n\
 status: canonical\n\
 owner: bijux-dag-docs\n\
 generated_from: bijux-dag clap help surface\n\
 ---\n\n\
-# Non-Stable Command Inventory\n\n\
+# Gated Command Inventory\n\n\
 This page is generated from the live `bijux-dag` command tree. It is the\n\
 repository-owned inventory for routes that remain outside the stable\n\
 `v0.4.0` operator compatibility lane.\n\n\
@@ -115,19 +115,19 @@ Stable commands belong in\n\
 only for deliberate access to experimental, simulated, or internal routes.\n\n",
     );
 
-    render_nonstable_section(
+    render_gated_section(
         &mut markdown,
         "Experimental Routes",
         "Callable by explicit path and repository-tested, but intentionally excluded from the stable public operator surface.",
         &experimental,
     );
-    render_nonstable_section(
+    render_gated_section(
         &mut markdown,
         "Simulated Routes",
         "Modeled platform namespaces. Execution requires `BIJUX_DAG_ENABLE_SIMULATED=1` and does not claim production backends.",
         &simulated,
     );
-    render_nonstable_section(
+    render_gated_section(
         &mut markdown,
         "Internal Routes",
         "Maintainer-only and contract-only routes. Execution requires `BIJUX_DAG_ENABLE_INTERNAL=1`.",
@@ -139,7 +139,7 @@ only for deliberate access to experimental, simulated, or internal routes.\n\n",
 
 fn write_cli_reference_docs(interfaces_root: &Path) -> Result<(), String> {
     let stable = render_stable_cli_reference_markdown()?;
-    let nonstable = render_nonstable_command_inventory_markdown()?;
+    let gated = render_gated_command_inventory_markdown()?;
     let reference_root = interfaces_root.join("reference");
     std::fs::create_dir_all(&reference_root)
         .map_err(|err| format!("create {} failed: {err}", reference_root.display()))?;
@@ -150,11 +150,11 @@ fn write_cli_reference_docs(interfaces_root: &Path) -> Result<(), String> {
                 interfaces_root.join(STABLE_REFERENCE_REL_PATH).display()
             )
         })?;
-    std::fs::write(interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH), format!("{nonstable}\n"))
+    std::fs::write(interfaces_root.join(GATED_REFERENCE_REL_PATH), format!("{gated}\n"))
         .map_err(|err| {
             format!(
                 "write {} failed: {err}",
-                interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH).display()
+                interfaces_root.join(GATED_REFERENCE_REL_PATH).display()
             )
         })?;
     Ok(())
@@ -181,7 +181,7 @@ fn render_stable_command(command: &StableCommandDoc, depth: usize, out: &mut Str
     }
 }
 
-fn render_nonstable_section(
+fn render_gated_section(
     out: &mut String,
     heading: &str,
     summary: &str,
@@ -230,9 +230,9 @@ fn collect_stable_commands(
     Ok(collected)
 }
 
-fn nonstable_commands() -> Vec<NonStableCommandDoc> {
+fn gated_commands() -> Vec<NonStableCommandDoc> {
     let mut entries = Vec::new();
-    collect_nonstable_commands("", &dag_command(), &mut entries);
+    collect_gated_commands("", &dag_command(), &mut entries);
     entries.sort_by(|left, right| {
         lane_sort_key(left.lane)
             .cmp(&lane_sort_key(right.lane))
@@ -241,7 +241,7 @@ fn nonstable_commands() -> Vec<NonStableCommandDoc> {
     entries
 }
 
-fn collect_nonstable_commands(prefix: &str, command: &Command, out: &mut Vec<NonStableCommandDoc>) {
+fn collect_gated_commands(prefix: &str, command: &Command, out: &mut Vec<NonStableCommandDoc>) {
     for subcommand in command.get_subcommands() {
         if is_help_command(subcommand) {
             continue;
@@ -256,7 +256,7 @@ fn collect_nonstable_commands(prefix: &str, command: &Command, out: &mut Vec<Non
                 opt_in_env: access.opt_in_env,
             });
         }
-        collect_nonstable_commands(&path, subcommand, out);
+        collect_gated_commands(&path, subcommand, out);
     }
 }
 
@@ -858,9 +858,9 @@ mod tests {
     use std::path::PathBuf;
 
     use super::{
-        render_nonstable_command_inventory_markdown, render_stable_cli_reference_markdown,
+        render_gated_command_inventory_markdown, render_stable_cli_reference_markdown,
         stable_commands, stable_examples_for_path, write_cli_reference_docs,
-        NONSTABLE_REFERENCE_REL_PATH, STABLE_REFERENCE_REL_PATH,
+        GATED_REFERENCE_REL_PATH, STABLE_REFERENCE_REL_PATH,
     };
 
     fn docs_root() -> PathBuf {
@@ -890,9 +890,9 @@ mod tests {
     }
 
     #[test]
-    fn nonstable_inventory_matches_checked_in_generated_reference() {
-        let rendered = render_nonstable_command_inventory_markdown().expect("nonstable markdown");
-        let expected = fs::read_to_string(docs_root().join(NONSTABLE_REFERENCE_REL_PATH))
+    fn gated_inventory_matches_checked_in_generated_reference() {
+        let rendered = render_gated_command_inventory_markdown().expect("gated markdown");
+        let expected = fs::read_to_string(docs_root().join(GATED_REFERENCE_REL_PATH))
             .expect("inventory doc file");
         assert_eq!(format!("{rendered}\n"), expected);
     }
@@ -905,8 +905,8 @@ mod tests {
 
         let stable = fs::read_to_string(interfaces_root.join(STABLE_REFERENCE_REL_PATH))
             .expect("stable file");
-        let nonstable = fs::read_to_string(interfaces_root.join(NONSTABLE_REFERENCE_REL_PATH))
-            .expect("nonstable file");
+        let gated =
+            fs::read_to_string(interfaces_root.join(GATED_REFERENCE_REL_PATH)).expect("gated file");
 
         assert_eq!(
             stable,
@@ -916,10 +916,10 @@ mod tests {
             )
         );
         assert_eq!(
-            nonstable,
+            gated,
             format!(
                 "{}\n",
-                render_nonstable_command_inventory_markdown().expect("render nonstable markdown")
+                render_gated_command_inventory_markdown().expect("render gated markdown")
             )
         );
     }

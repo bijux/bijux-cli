@@ -28,8 +28,8 @@ supported operator-facing release boundary.
 
 For the command-by-command stable reference generated from the live Clap help
 surface, use [Generated CLI Reference](generated-cli-reference.md). For the
-separate inventory of deliberate non-stable routes, use
-[Non-Stable Command Inventory](reference/nonstable-command-inventory.md).
+separate inventory of deliberate gated routes, use
+[Gated Command Inventory](reference/gated-command-inventory.md).
 
 ## v0.4.0 Surface Truth Table
 
@@ -111,7 +111,7 @@ replay-bundle mode explains that output, use
 
 For the full generated inventory of experimental, simulated, and internal
 routes, use
-[Non-Stable Command Inventory](reference/nonstable-command-inventory.md).
+[Gated Command Inventory](reference/gated-command-inventory.md).
 
 ## Full Command Families
 

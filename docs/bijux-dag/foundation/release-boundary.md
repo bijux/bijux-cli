@@ -50,7 +50,7 @@ The stable `v0.4.0` release contract covers:
 - machine-readable CLI JSON output
 
 Use `bijux-dag commands` to inspect the stable operator surface itself.
-Inventory non-stable routes only by deliberate lane:
+Inventory gated routes only by deliberate lane:
 `bijux-dag commands --lane experimental`,
 `bijux-dag commands --lane simulated`, or
 `bijux-dag commands --lane internal`.

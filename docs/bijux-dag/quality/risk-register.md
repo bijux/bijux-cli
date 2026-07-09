@@ -102,7 +102,7 @@ flowchart LR
 
 - severity: `high`
 - affected component: `bijux-dag --help`, hidden experimental routes, hidden simulation routes, and public command documentation
-- current status: `mitigating`; the visible root help is intentionally smaller than the full binary command inventory, and non-stable routes now require deliberate lane-scoped inventory through `bijux-dag commands --lane ...`
+- current status: `mitigating`; the visible root help is intentionally smaller than the full binary command inventory, and gated routes now require deliberate lane-scoped inventory through `bijux-dag commands --lane ...`
 - risk: users may script experimental commands or infer that modeled platform features are part of the stable operator contract simply because the routes are executable
 - mitigation: keep the stable root help surface concise, keep experimental and simulated commands explicitly non-public, keep non-stable discovery split by deliberate lane, and require documentation, tests, and compatibility review before promoting any hidden route
 - release decision: ship only the visible operator contract for `v0.4.0`; any command promotion requires a separate future release decision

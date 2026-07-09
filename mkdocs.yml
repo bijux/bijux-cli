@@ -201,7 +201,7 @@ nav:
               - Authoring Guide: bijux-dag/interfaces/guides/authoring-guide.md
               - Reusable Subgraphs: bijux-dag/interfaces/guides/reusable-subgraphs.md
               - Operator Workflows: bijux-dag/interfaces/operator-workflows.md
-              - Non-Stable Command Inventory: bijux-dag/interfaces/reference/nonstable-command-inventory.md
+              - Gated Command Inventory: bijux-dag/interfaces/reference/gated-command-inventory.md
               - Public Imports: bijux-dag/interfaces/public-imports.md
               - Compatibility Commitments: bijux-dag/interfaces/compatibility-commitments.md
           - Operations:

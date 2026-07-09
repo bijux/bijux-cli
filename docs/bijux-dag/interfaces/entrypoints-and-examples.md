@@ -240,7 +240,7 @@ println!("spec={}", graph.spec);
 - [Runnable Examples](examples/index.md)
 - [CLI Surface](cli-surface.md)
 - [Generated CLI Reference](generated-cli-reference.md)
-- [Non-Stable Command Inventory](reference/nonstable-command-inventory.md)
+- [Gated Command Inventory](reference/gated-command-inventory.md)
 - [Operator Workflows](operator-workflows.md)
 - [First-Run Tutorial](../operations/guides/first-run-tutorial.md)
 - [Evidence-Backed Bulletin Workflow](../operations/guides/evidence-backed-bulletin-workflow.md)

@@ -26,7 +26,7 @@ to the shipped public `v0.4.0` surface.
 | embed DAG behavior from Rust | [API Surface](api-surface.md) |
 | understand graph, run, replay, and diff payloads | [Data Contracts](data-contracts.md) |
 | understand compatibility promises and boundaries | [Compatibility Commitments](compatibility-commitments.md) |
-| inspect hidden or intentionally non-stable routes | [Non-Stable Command Inventory](reference/nonstable-command-inventory.md) |
+| inspect hidden or intentionally gated routes | [Gated Command Inventory](reference/gated-command-inventory.md) |
 
 ## What This Section Covers
 
@@ -57,7 +57,7 @@ to the shipped public `v0.4.0` surface.
 - [Reproducibility Model](reference/reproducibility-model.md)
 - [Run Evidence Layout](reference/run-evidence-layout.md)
 - [Error Codes](reference/error-codes.md)
-- [Non-Stable Command Inventory](reference/nonstable-command-inventory.md)
+- [Gated Command Inventory](reference/gated-command-inventory.md)
 - [Authoring Guide](guides/authoring-guide.md)
 - [Reusable Subgraphs](guides/reusable-subgraphs.md)
 - [Artifact Contracts](artifact-contracts.md)

@@ -85,7 +85,7 @@ where
         "command": "bijux-dev-cli docs write-dag-cli-reference",
         "outputs": [
             "docs/bijux-dag/interfaces/generated-cli-reference.md",
-            "docs/bijux-dag/interfaces/reference/nonstable-command-inventory.md"
+            "docs/bijux-dag/interfaces/reference/gated-command-inventory.md"
         ],
     }))
 }
@@ -133,7 +133,7 @@ mod tests {
             fs::write(interfaces_root.join("generated-cli-reference.md"), "stable\n")
                 .map_err(|err| err.to_string())?;
             fs::write(
-                interfaces_root.join("reference/nonstable-command-inventory.md"),
+                interfaces_root.join("reference/gated-command-inventory.md"),
                 "nonstable\n",
             )
             .map_err(|err| err.to_string())?;
@@ -147,7 +147,7 @@ mod tests {
             payload["outputs"],
             serde_json::json!([
                 "docs/bijux-dag/interfaces/generated-cli-reference.md",
-                "docs/bijux-dag/interfaces/reference/nonstable-command-inventory.md"
+                "docs/bijux-dag/interfaces/reference/gated-command-inventory.md"
             ])
         );
     }

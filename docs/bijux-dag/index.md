@@ -37,7 +37,7 @@ opt-in lanes rather than the default product story.
 Use [Release Boundary](foundation/release-boundary.md) for the exact lane
 classification, [Generated CLI Reference](interfaces/generated-cli-reference.md)
 for the stable command surface generated from the live binary, and
-[Non-Stable Command Inventory](interfaces/reference/nonstable-command-inventory.md)
+[Gated Command Inventory](interfaces/reference/gated-command-inventory.md)
 when you deliberately need the experimental, simulated, or internal route
 inventory.
 

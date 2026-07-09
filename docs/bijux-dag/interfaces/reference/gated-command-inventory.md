@@ -1,5 +1,5 @@
 ---
-title: Non-Stable Command Inventory
+title: Gated Command Inventory
 audience: operators
 type: generated-reference
 status: canonical
@@ -7,7 +7,7 @@ owner: bijux-dag-docs
 generated_from: bijux-dag clap help surface
 ---
 
-# Non-Stable Command Inventory
+# Gated Command Inventory
 
 This page is generated from the live `bijux-dag` command tree. It is the
 repository-owned inventory for routes that remain outside the stable
