@@ -5051,8 +5051,7 @@ fn evaluate_example_command_catalog(root: &Path) -> Result<Value, String> {
     }
     for command_id in required {
         if !present.contains(command_id) {
-            violations
-                .push(format!("required command is missing from catalog: {command_id}"));
+            violations.push(format!("required command is missing from catalog: {command_id}"));
         }
     }
 

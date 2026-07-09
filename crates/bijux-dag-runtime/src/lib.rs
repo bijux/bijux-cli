@@ -119,6 +119,10 @@ mod kubernetes_execution;
 mod local_executor;
 #[path = "backend/runtime/local_worker_pool.rs"]
 mod local_worker_pool;
+#[path = "internal/control/node_execution_contract.rs"]
+mod node_execution_contract;
+#[path = "internal/control/node_execution_types.rs"]
+mod node_execution_types;
 #[path = "runtime_core/execution/node_result.rs"]
 mod node_result;
 #[path = "diagnostics/runtime/observability.rs"]
@@ -202,10 +206,6 @@ mod store;
 mod subprocess;
 #[path = "internal/identity/supply_chain_trust.rs"]
 mod supply_chain_trust;
-#[path = "internal/control/node_execution_contract.rs"]
-mod node_execution_contract;
-#[path = "internal/control/node_execution_types.rs"]
-mod node_execution_types;
 #[path = "internal/identity/tenancy.rs"]
 mod tenancy;
 #[cfg(test)]
@@ -383,6 +383,29 @@ pub use local_executor::LocalExecutor;
 pub use local_worker_pool::{
     LocalWorkerAssignment, LocalWorkerCompletion, LocalWorkerExecution, LocalWorkerPool,
     LocalWorkerState, LocalWorkerStatus,
+};
+#[doc(hidden)]
+pub use node_execution_contract::{
+    build_retry_policy, build_task_contract, default_forced_cleanup, evaluate_retry_decision,
+    retry_backoff_ms as contract_retry_backoff_ms, retry_jitter_ms as contract_retry_jitter_ms,
+    retry_observation, retry_observation_from_failure, retry_wait_ms as contract_retry_wait_ms,
+    validate_task_contracts, BackoffStrategy, ForcedCancellationCleanup, IdempotencyMode,
+    NodeProvenance, OutputMaterializationPolicy, RetryDecision, RetryFailureObservation,
+    RetryPolicyV2, RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason,
+    TaskInputDescriptor, TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope,
+    TimeoutPolicy, TimeoutRetryPolicy,
+};
+#[doc(hidden)]
+pub use node_execution_types::{
+    check_replay_adapter_compatibility, compatibility_matrix_report,
+    compatibility_score_for_contract, compute_task_contract_fingerprint,
+    default_task_type_registry, generate_task_contract_markdown, validate_cross_node_compatibility,
+    validate_parameter_defaults, AdapterCapabilityDeclaration, CollectionType, CompatibilityScore,
+    NullabilityContract, OutputEvolutionMarker, PartitionCollectionContract,
+    PolymorphicTaskContract, PolymorphicVariant, ResourceReference, ScalarType, SchemaReference,
+    SecretReference, TaskCompatibilityMatrixReport, TaskCompatibilityRelationship,
+    TaskContractDiagnostic, TaskContractFingerprint, TaskTypeRegistry, TypeCoercionRule,
+    VersionedTypeRule,
 };
 #[doc(hidden)]
 pub use observability::{
@@ -586,29 +609,6 @@ use std::time::Duration;
 #[doc(hidden)]
 pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
 use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
-#[doc(hidden)]
-pub use node_execution_contract::{
-    build_retry_policy, build_task_contract, default_forced_cleanup, evaluate_retry_decision,
-    retry_backoff_ms as contract_retry_backoff_ms, retry_jitter_ms as contract_retry_jitter_ms,
-    retry_observation, retry_observation_from_failure, retry_wait_ms as contract_retry_wait_ms,
-    validate_task_contracts, BackoffStrategy, ForcedCancellationCleanup, IdempotencyMode,
-    NodeProvenance, OutputMaterializationPolicy, RetryDecision, RetryFailureObservation,
-    RetryPolicyV2, RuntimeState, SideEffectClassification, TaskContract, TaskFailureReason,
-    TaskInputDescriptor, TaskIsolationMode, TaskOutputDescriptor, TaskResultEnvelope,
-    TimeoutPolicy, TimeoutRetryPolicy,
-};
-#[doc(hidden)]
-pub use node_execution_types::{
-    check_replay_adapter_compatibility, compatibility_matrix_report,
-    compatibility_score_for_contract, compute_task_contract_fingerprint,
-    default_task_type_registry, generate_task_contract_markdown, validate_cross_node_compatibility,
-    validate_parameter_defaults, AdapterCapabilityDeclaration, CollectionType, CompatibilityScore,
-    NullabilityContract, OutputEvolutionMarker, PartitionCollectionContract,
-    PolymorphicTaskContract, PolymorphicVariant, ResourceReference, ScalarType, SchemaReference,
-    SecretReference, TaskCompatibilityMatrixReport, TaskCompatibilityRelationship,
-    TaskContractDiagnostic, TaskContractFingerprint, TaskTypeRegistry, TypeCoercionRule,
-    VersionedTypeRule,
-};
 #[doc(hidden)]
 pub use upgrade_compatibility::{
     build_compatibility_dashboard, classify_compatibility, evaluate_release_gate,
