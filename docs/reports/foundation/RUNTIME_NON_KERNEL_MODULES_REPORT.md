@@ -26,19 +26,19 @@ Performance-related classifications on this page must stay backed by `bijux-dev-
 - `backend/distributed/distributed.rs` (speculative, decision `move`): distributed extension surface should be isolated from foundation runtime kernel
 - `backend/distributed/distribution_readiness.rs` (speculative, decision `move`): distributed extension surface should be isolated from foundation runtime kernel
 - `backend/distributed/federated_scheduling.rs` (speculative, decision `move`): federated scheduling semantics should live outside foundation runtime core
-- `backend/distributed/geo_federation.rs` (speculative, decision `move`): future geo federation control plane capability should not expand foundation runtime
-- `backend/distributed/ha_scheduler.rs` (speculative, decision `move`): high-availability scheduler model belongs to future distributed execution scope
+- `backend/distributed/geo_federation.rs` (speculative, decision `move`): unreleased geo federation control plane capability should not expand foundation runtime
+- `backend/distributed/ha_scheduler.rs` (speculative, decision `move`): high-availability scheduler model belongs to unreleased distributed execution scope
 - `backend/distributed/infrastructure.rs` (speculative, decision `move`): distributed extension surface should be isolated from foundation runtime kernel
 - `backend/fake.rs` (support, decision `keep`): runtime support module
 - `backend/local_process.rs` (support, decision `keep`): runtime support module
 - `backend/mod.rs` (support, decision `keep`): runtime support module
 - `backend/runtime/backend_cluster.rs` (backend, decision `keep`): backend capability and local execution integration surface
-- `backend/runtime/batch_execution.rs` (backend, decision `move`): batch execution support is future execution-mode boundary and should remain non-foundation
-- `backend/runtime/container_execution.rs` (backend, decision `move`): container execution support is future execution-mode boundary and should remain non-foundation
+- `backend/runtime/batch_execution.rs` (backend, decision `move`): batch execution support is modeled execution-mode boundary and should remain non-foundation
+- `backend/runtime/container_execution.rs` (backend, decision `move`): container execution support is modeled execution-mode boundary and should remain non-foundation
 - `backend/runtime/execution_backend.rs` (backend, decision `keep`): backend capability and local execution integration surface
 - `backend/runtime/local_executor.rs` (backend, decision `keep`): backend capability and local execution integration surface
-- `backend/runtime/remote_execution_model.rs` (backend, decision `move`): remote execution model is future-distributed boundary and should not define kernel scope
-- `backend/runtime/remote_executor.rs` (backend, decision `move`): remote executor is future-distributed boundary and should not define kernel scope
+- `backend/runtime/remote_execution_model.rs` (backend, decision `move`): remote execution model is unreleased distributed boundary and should not define kernel scope
+- `backend/runtime/remote_executor.rs` (backend, decision `move`): remote executor is unreleased distributed boundary and should not define kernel scope
 - `backend/runtime/subprocess.rs` (backend, decision `keep`): backend capability and local execution integration surface
 - `builtins/const_adapter.rs` (backend, decision `keep`): adapter integration surface required for node execution
 - `builtins/container_adapter.rs` (backend, decision `keep`): adapter integration surface required for node execution

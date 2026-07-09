@@ -47,7 +47,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "official_namespaces": namespaces,
                                     "placeholder_entries": placeholder_entries,
                                     "metadata_contract": contract,
-                                    "freeze_rule": "future-ready via metadata and tests; no speculative runtime expansion",
+                                    "freeze_rule": "release-boundary enforced via metadata and tests; no speculative runtime expansion",
                                 }),
                             )
                             .ok()?;

@@ -61,6 +61,6 @@
     "planning_home": "core-with-runtime-bridge",
     "runtime_single_crate": "keep-after-scope-contraction",
     "testkit_growth": "keep-as-shared-test-support",
-    "container_remote_batch_placement": "runtime-future-execution-boundaries"
+    "container_remote_batch_placement": "runtime-execution-extension-boundaries"
   }
 }

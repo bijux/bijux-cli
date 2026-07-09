@@ -72,7 +72,7 @@
       "module": "backend/distributed/ha_scheduler.rs",
       "decision": "move",
       "owner": "runtime-foundation",
-      "reason": "HA scheduler control semantics belong to future distributed control surfaces"
+      "reason": "HA scheduler control semantics belong to unreleased distributed control surfaces"
     },
     {
       "module": "diagnostics/runtime/control_plane_api.rs",
