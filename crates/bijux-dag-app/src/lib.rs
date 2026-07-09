@@ -46,11 +46,11 @@ mod inspect_service;
 #[path = "inspect/integrity_service.rs"]
 mod integrity_service;
 #[cfg(feature = "experimental-public-api")]
-#[path = "commands/iteration08_contracts.rs"]
-mod iteration08_contracts;
+#[path = "commands/command_report_contracts.rs"]
+mod command_report_contracts;
 #[cfg(feature = "experimental-public-api")]
-#[path = "commands/iteration11_contracts.rs"]
-mod iteration11_contracts;
+#[path = "commands/workspace_compatibility_contracts.rs"]
+mod workspace_compatibility_contracts;
 mod migrate;
 #[path = "inspect/node_execution_explanation.rs"]
 mod node_execution_explanation;
@@ -132,10 +132,10 @@ pub mod prelude {
 #[cfg(feature = "experimental-public-api")]
 pub mod experimental {
     pub mod command_reports {
-        pub use crate::iteration08_contracts::*;
+        pub use crate::command_report_contracts::*;
     }
     pub mod workspace_compatibility {
-        pub use crate::iteration11_contracts::*;
+        pub use crate::workspace_compatibility_contracts::*;
     }
 }
 

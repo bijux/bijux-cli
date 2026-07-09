@@ -344,7 +344,7 @@ mod tests {
     };
 
     #[test]
-    fn g101_workspace_config_changes_behavior_only_through_visible_fields() {
+    fn workspace_config_changes_behavior_only_through_visible_fields() {
         let first = resolve_app_workspace_config(AppWorkspaceConfigV1 {
             workspace_id: "project-a".to_string(),
             app_route: "dag".to_string(),
@@ -366,7 +366,7 @@ mod tests {
     }
 
     #[test]
-    fn g102_route_inventory_diff_exposes_added_removed_deprecated_and_conflicts() {
+    fn route_inventory_diff_exposes_added_removed_deprecated_and_conflicts() {
         let diff = diff_route_inventory(
             vec!["dag run".to_string(), "dag plan".to_string(), "dag old".to_string()],
             vec!["dag run".to_string(), "dag plan".to_string(), "dag inspect".to_string()],
@@ -380,7 +380,7 @@ mod tests {
     }
 
     #[test]
-    fn g103_compatibility_window_blocks_incompatible_apps_before_dispatch() {
+    fn compatibility_window_blocks_incompatible_apps_before_dispatch() {
         let below = enforce_app_compatibility_window(2, 3, 6);
         assert!(!below.compatible);
         let above = enforce_app_compatibility_window(7, 3, 6);
@@ -390,7 +390,7 @@ mod tests {
     }
 
     #[test]
-    fn g104_deprecation_lifecycle_produces_warn_migrate_and_refuse_with_hints() {
+    fn deprecation_lifecycle_produces_warn_migrate_and_refuse_with_hints() {
         let warn = evaluate_deprecation_lifecycle(5, 4, 7, 10, "dag run").expect("warn");
         assert_eq!(warn.action, "warn");
         let migrate = evaluate_deprecation_lifecycle(8, 4, 7, 10, "dag run").expect("migrate");
@@ -401,7 +401,7 @@ mod tests {
     }
 
     #[test]
-    fn g105_install_repair_requires_backup_and_explicit_change_summary() {
+    fn install_repair_requires_backup_and_explicit_change_summary() {
         let report = validate_install_repair_report(InstallRepairReportV1 {
             backup_created: true,
             changed_paths: vec![
@@ -417,7 +417,7 @@ mod tests {
     }
 
     #[test]
-    fn g106_support_bundle_is_minimal_redacted_and_reproduction_ready() {
+    fn support_bundle_is_minimal_redacted_and_reproduction_ready() {
         let report = validate_support_bundle_report(SupportBundleReportV1 {
             includes_config: true,
             includes_routes: true,
@@ -434,7 +434,7 @@ mod tests {
     }
 
     #[test]
-    fn g107_command_impact_preview_surfaces_risky_side_effects_before_execution() {
+    fn command_impact_preview_surfaces_risky_side_effects_before_execution() {
         let preview = validate_command_impact_preview(CommandImpactPreviewV1 {
             file_writes: vec!["runs/run-123/manifest.json".to_string()],
             run_roots_touched: vec!["runs/".to_string()],
@@ -449,7 +449,7 @@ mod tests {
     }
 
     #[test]
-    fn g108_official_app_onboarding_is_reproducible_without_root_internal_changes() {
+    fn official_app_onboarding_is_reproducible_without_root_internal_changes() {
         let report = validate_official_app_onboarding(OfficialAppOnboardingReportV1 {
             mock_app_registered: true,
             route_contract_passed: true,
@@ -462,7 +462,7 @@ mod tests {
     }
 
     #[test]
-    fn g109_plugin_lifecycle_is_usable_and_rolls_back_cleanly_on_failure() {
+    fn plugin_lifecycle_is_usable_and_rolls_back_cleanly_on_failure() {
         let report = validate_plugin_lifecycle_report(PluginLifecycleReportV1 {
             install_ok: true,
             list_ok: true,
@@ -479,7 +479,7 @@ mod tests {
     }
 
     #[test]
-    fn g110_root_cli_growth_budget_stays_stable_as_apps_increase() {
+    fn root_cli_growth_budget_stays_stable_as_apps_increase() {
         let report = validate_root_cli_growth_budget(
             RootCliGrowthBudgetReportV1 {
                 app_count: 14,

@@ -517,7 +517,7 @@ mod tests {
     };
 
     #[test]
-    fn g071_validate_report_makes_invalid_graphs_fixable_from_output() {
+    fn validate_report_makes_invalid_graphs_fixable_from_output() {
         let report = build_validate_command_report(
             "workflows/pipeline.json",
             true,
@@ -545,7 +545,7 @@ mod tests {
     }
 
     #[test]
-    fn g072_plan_report_exposes_fingerprint_artifacts_cache_and_preflight() {
+    fn plan_report_exposes_fingerprint_artifacts_cache_and_preflight() {
         let report = build_plan_command_report(
             "workflows/pipeline.json",
             "plan-sha256-abc",
@@ -582,7 +582,7 @@ mod tests {
     }
 
     #[test]
-    fn g073_run_report_exposes_logs_artifacts_state_and_verification_path() {
+    fn run_report_exposes_logs_artifacts_state_and_verification_path() {
         let report = build_run_command_report(
             "workflows/minimal.json",
             "run-20260501-001",
@@ -599,7 +599,7 @@ mod tests {
     }
 
     #[test]
-    fn g074_inspect_report_includes_state_cache_trace_failures_and_next_action() {
+    fn inspect_report_includes_state_cache_trace_failures_and_next_action() {
         let report = build_inspect_command_report(
             "run-20260501-001",
             "failed",
@@ -632,7 +632,7 @@ mod tests {
     }
 
     #[test]
-    fn g075_status_report_prioritizes_state_failure_next_command_and_evidence() {
+    fn status_report_prioritizes_state_failure_next_command_and_evidence() {
         let status = build_status_command_report(
             "run-20260501-001",
             "failed",
@@ -648,7 +648,7 @@ mod tests {
     }
 
     #[test]
-    fn g076_replay_report_supports_selectors_and_preserves_prior_evidence() {
+    fn replay_report_supports_selectors_and_preserves_prior_evidence() {
         let report = build_replay_command_report(
             "run-20260501-001",
             "run-20260501-002",
@@ -674,7 +674,7 @@ mod tests {
     }
 
     #[test]
-    fn g077_diff_classification_separates_semantic_change_from_noise() {
+    fn diff_classification_separates_semantic_change_from_noise() {
         let classified = classify_diff_observations(vec![
             DiffObservationV1 {
                 surface: "graph".to_string(),
@@ -701,7 +701,7 @@ mod tests {
     }
 
     #[test]
-    fn g078_cache_explain_is_direct_for_hit_miss_noncacheable_and_refusal() {
+    fn cache_explain_is_direct_for_hit_miss_noncacheable_and_refusal() {
         let hit = build_cache_explain_report(
             "align-reads",
             CacheExplainOutcomeV1::Hit,
@@ -734,7 +734,7 @@ mod tests {
     }
 
     #[test]
-    fn g079_export_import_report_rewrites_paths_for_portability() {
+    fn export_import_report_rewrites_paths_for_portability() {
         let report = build_export_import_portability_report(
             "/workspace/runs/run-1",
             "/clean-room/imported",
@@ -752,7 +752,7 @@ mod tests {
     }
 
     #[test]
-    fn g080_doctor_report_provides_one_remediation_per_finding() {
+    fn doctor_report_provides_one_remediation_per_finding() {
         let report = build_doctor_command_report(
             "degraded",
             vec![
