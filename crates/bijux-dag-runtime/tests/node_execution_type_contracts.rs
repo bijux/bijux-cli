@@ -25,7 +25,7 @@ fn type_registry_and_default_validation_are_stable() {
     assert!(!registry.scalar_types.is_empty());
     let contract: TaskContract = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
-        "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
+        "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json",
     );
     let diagnostics = validate_parameter_defaults(&contract, &BTreeMap::new());
     assert!(!diagnostics.is_empty());
@@ -35,11 +35,11 @@ fn type_registry_and_default_validation_are_stable() {
 fn cross_node_compatibility_and_fingerprint_are_stable() {
     let producer: TaskContract = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
-        "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json",
+        "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json",
     );
     let consumer: TaskContract = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
-        "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
+        "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json",
     );
     let diagnostics = validate_cross_node_compatibility(&producer, &consumer);
     assert!(diagnostics.is_empty());
@@ -68,14 +68,14 @@ fn compatibility_matrix_report_is_generated_for_graph_snapshot() {
         "const-source".to_string(),
         support::load_workspace_fixture_typed(
             env!("CARGO_MANIFEST_DIR"),
-            "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json",
+            "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json",
         ),
     );
     contracts.insert(
         "shell-transform".to_string(),
         support::load_workspace_fixture_typed(
             env!("CARGO_MANIFEST_DIR"),
-            "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
+            "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json",
         ),
     );
     let report = compatibility_matrix_report(&graph, &contracts);

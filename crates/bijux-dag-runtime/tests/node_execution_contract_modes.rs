@@ -25,7 +25,7 @@ fn fixture(path: &str) -> Graph {
 }
 
 #[test]
-fn task_contract_supports_all_isolation_modes() {
+fn node_execution_contract_supports_all_isolation_modes() {
     let mut graph = fixture("linear.dag.json");
     graph.nodes.push(bijux_dag_core::Node {
         id: "subprocess_mode".to_string(),
