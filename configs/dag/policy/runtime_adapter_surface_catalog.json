@@ -40,13 +40,13 @@
     {
       "module": "adapters/registry.rs",
       "category": "modeled",
-      "owner": "future-adapter-runtime-repo",
+      "owner": "bijux-dag",
       "contract_test": "crates/bijux-dev-dag/tests/runtime_adapter_scope_reports_contracts.rs"
     },
     {
       "module": "adapters/contract.rs",
       "category": "modeled",
-      "owner": "future-adapter-runtime-repo",
+      "owner": "bijux-dag",
       "contract_test": "crates/bijux-dev-dag/tests/runtime_adapter_scope_reports_contracts.rs"
     }
   ]
