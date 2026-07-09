@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Bridge conversion fuzz regression replay for retained minimized cases.
-//! test_type: bridge-conversion-fuzz-regression
+//! Bridge conversion case replay suite for retained minimized cases.
+//! test_type: bridge-conversion-case-replay
 
 use std::fs;
 use std::path::Path;
