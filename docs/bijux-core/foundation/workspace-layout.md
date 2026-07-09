@@ -9,76 +9,91 @@ last_reviewed: 2026-07-09
 
 # Workspace Layout
 
-The root of `bijux-core` is intentionally opinionated. The directory layout is
-part of the repository contract: source, contracts, docs, automation, and
-generated outputs do not share a bucket just because they all matter.
+`bijux-core` uses the repository root as a map of responsibilities. A reader
+should be able to look at a top-level path and make a good first guess about
+what lives there, who owns it, and whether it is authored source, shared
+contract, automation, or generated output.
 
-That separation is what lets a reader understand the purpose of a path before
-opening it and what lets a reviewer tell authored source from generated output
-without guesswork.
+That matters because this repository ships public products, private support
+crates, shared contracts, published docs, and release automation from one
+workspace. A flat or blurry root would hide those boundaries instead of making
+them easier to review.
 
-## Root Layout
+## Root Directory Guide
 
-| Root | What belongs there |
-| --- | --- |
-| `crates/` | Rust package ownership boundaries |
-| `contracts/` | shared machine-checkable contract assets |
-| `docs/` | published handbook sources |
-| `makes/` | repository command entrypoints |
-| `.github/workflows/` | hosted automation entrypoints |
-| `artifacts/` | generated outputs that must stay out of tracked roots |
+| Root | What readers should expect to find there | Why it exists as a separate root |
+| --- | --- | --- |
+| `crates/` | Rust crates and their source trees | crate ownership is the primary code boundary in this workspace |
+| `contracts/` | shared machine-readable schemas, truth tables, and inventories | several release and docs claims are enforced from one canonical contract root |
+| `docs/` | the authored source for the published handbook site | reader-facing explanation stays separate from code and generated output |
+| `makes/` | named Make fragments and reusable command entrypoints | root automation remains visible and reviewable instead of drifting into ad hoc shell scripts |
+| `.github/workflows/` | hosted CI, docs, and release workflow entrypoints | repository automation is part of the public maintenance story |
+| `artifacts/` | generated local or CI output that should not pollute authored roots | generated output gets one predictable landing zone |
 
-## How To Read The Root
+## How To Read The Root Quickly
 
-### `crates/`
+### `crates/` means package ownership
 
-This is where Rust package ownership is made explicit. If a behavior belongs to
-one executable or library surface, the owning code should be here rather than
-in a repository root helper.
+When you need the code that owns a behavior, start here. The workspace is
+designed so product and support responsibilities are visible as crate
+boundaries instead of being hidden in root utilities.
 
-### `contracts/`
+### `contracts/` means shared truth
 
-This is where machine-checkable shared truth lives: schemas, release tables,
-and other assets that multiple programs or docs rely on.
+When the question is about a schema, release lane, publication boundary, or
+another machine-checkable promise, this root usually contains the canonical
+asset that docs and tests are expected to follow.
 
-### `docs/`
+### `docs/` means published explanation
 
-This is the authored source for published reader-facing documentation, not a
-dumping ground for generated site output or transient notes.
+This root is the source of the handbook site. It is for durable reader-facing
+content, not a scratch area for temporary notes or generated HTML.
 
-### `makes/` and `.github/workflows/`
+### `makes/` and `.github/workflows/` mean repeatable automation
 
-These roots hold repeatable automation entrypoints. If a workflow matters often
-enough to document or enforce, it should be visible here rather than hidden in
-ad hoc shell history.
+These roots expose the commands and workflows that contributors, reviewers, and
+release maintainers are expected to run or trust. If automation matters, it
+should have a named home here.
 
-### `artifacts/`
+### `artifacts/` means generated output
 
-This is the default home for generated outputs from local and CI runs unless a
-command is explicitly refreshing a governed destination such as checked docs.
+This root exists so logs, reports, build output, and generated files from local
+work do not leak into product or handbook paths unless the task is explicitly
+refreshing a governed destination.
 
-## Layout Rule
+## What The Layout Protects
 
-Root directories should make ownership more obvious, not less. If a new root
-directory weakens that rule, it needs repository-handbook justification.
+The root layout is trying to keep several repository mistakes from hardening:
 
-## What This Layout Tries To Prevent
+- product code mixed with generated output
+- shared contracts scattered through crate-local directories
+- workflow logic hidden in one-off scripts
+- docs treated as a dumping ground instead of a published handbook source
+- new top-level directories created before existing ownership boundaries were
+  used well
 
-- source code mixed with generated artifacts
-- handbook sources mixed with contracts or workflow automation
-- new roots that exist only because ownership was not made explicit elsewhere
+## A Placement Rule That Scales
 
-## Practical Placement Questions
+Before adding a new path, answer these questions in order:
 
-When a new file or directory appears, ask:
+1. Is this code, shared contract, documentation, automation, or generated
+   output?
+2. Does one of the existing roots already own that category?
+3. If the answer feels like "no," is the real problem weak structure inside an
+   existing root rather than the need for a new top-level directory?
 
-1. is this authored source, shared contract, automation, or generated output?
-2. does it already have an owned root that matches that purpose?
-3. if not, is the problem really missing structure inside an existing root
-   rather than a need for a new top-level directory?
+Most bad layout decisions come from skipping that third question.
 
-Most layout problems come from answering that third question too quickly with
-"new root."
+## Reading The Repository With This Model
+
+If you already know the category of the thing you are looking for, the root
+layout should narrow your search immediately:
+
+- behavior owner: go to `crates/`
+- schema or release truth: go to `contracts/`
+- published explanation: go to `docs/`
+- root command or CI behavior: go to `makes/` or `.github/workflows/`
+- generated output from a run: go to `artifacts/`
 
 ## Continue Reading
 
