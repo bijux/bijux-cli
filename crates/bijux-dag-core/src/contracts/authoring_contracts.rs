@@ -878,7 +878,7 @@ mod tests {
     use std::collections::BTreeSet;
 
     #[test]
-    fn g021_graph_examples_execution_report_requires_all_example_kinds() {
+    fn graph_examples_execution_report_requires_all_example_kinds() {
         let report = build_graph_examples_execution_report(vec![
             GraphExampleExecutionEntryV1 {
                 kind: "const".to_string(),
@@ -900,7 +900,7 @@ mod tests {
     }
 
     #[test]
-    fn g022_surgical_validation_diagnostic_contains_violation_context() {
+    fn surgical_validation_diagnostic_contains_violation_context() {
         let diagnostic = build_surgical_validation_diagnostic(
             "node.validate",
             Some("edge.12"),
@@ -916,7 +916,7 @@ mod tests {
     }
 
     #[test]
-    fn g023_canonicalization_visibility_report_exposes_graph_and_node_fingerprints() {
+    fn canonicalization_visibility_report_exposes_graph_and_node_fingerprints() {
         let report = build_graph_canonicalization_visibility_report(
             "{\"graph_id\":\"demo\"}",
             "sha256:graph-demo",
@@ -928,7 +928,7 @@ mod tests {
     }
 
     #[test]
-    fn g024_builder_and_file_authoring_surfaces_match_canonical_and_plan_identity() {
+    fn builder_and_file_authoring_surfaces_match_canonical_and_plan_identity() {
         let builder_graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("seed", NodeKind::Const)
@@ -967,7 +967,7 @@ mod tests {
     }
 
     #[test]
-    fn g025_cycle_and_reachability_rejections_have_exact_codes_and_remediation() {
+    fn cycle_and_reachability_rejections_have_exact_codes_and_remediation() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("start", NodeKind::Const)
@@ -1008,7 +1008,7 @@ mod tests {
     }
 
     #[test]
-    fn g026_port_contract_enforcement_is_deterministic_for_unknown_duplicate_and_missing_ports() {
+    fn port_contract_enforcement_is_deterministic_for_unknown_duplicate_and_missing_ports() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("source", NodeKind::Const)
@@ -1042,7 +1042,7 @@ mod tests {
     }
 
     #[test]
-    fn g027_graph_package_import_refuses_corrupt_stale_and_unsafe_bundles() {
+    fn graph_package_import_refuses_corrupt_stale_and_unsafe_bundles() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("producer", NodeKind::Const)
@@ -1072,7 +1072,7 @@ mod tests {
     }
 
     #[test]
-    fn g028_graph_migration_preview_and_apply_are_user_visible() {
+    fn graph_migration_preview_and_apply_are_user_visible() {
         let legacy_graph_json = r#"
         {
           "spec": "v0.1",
@@ -1098,7 +1098,7 @@ mod tests {
     }
 
     #[test]
-    fn g029_semantic_lint_is_advisory_unless_promoted_by_policy() {
+    fn semantic_lint_is_advisory_unless_promoted_by_policy() {
         let lint_only_graph =
             DagBuilder::new().node(NodeBuilder::new("n1", NodeKind::Const).build()).build();
 
@@ -1122,7 +1122,7 @@ mod tests {
     }
 
     #[test]
-    fn g030_json_and_builder_authoring_converge_to_single_semantic_model() {
+    fn json_and_builder_authoring_converge_to_single_semantic_model() {
         let builder_graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("extract", NodeKind::Const)

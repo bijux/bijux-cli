@@ -911,7 +911,7 @@ mod tests {
     use std::collections::BTreeSet;
 
     #[test]
-    fn g041_dry_plan_output_contains_lowered_shape_and_runnable_refusals() {
+    fn dry_plan_output_contains_lowered_shape_and_runnable_refusals() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("extract", NodeKind::Const)
@@ -936,7 +936,7 @@ mod tests {
     }
 
     #[test]
-    fn g042_plan_explain_reports_included_skipped_and_capability_blocked_nodes() {
+    fn plan_explain_reports_included_skipped_and_capability_blocked_nodes() {
         let graph = DagBuilder::new()
             .node(NodeBuilder::new("a", NodeKind::Const).output("out", "artifacts/a.json").build())
             .node(
@@ -957,7 +957,7 @@ mod tests {
     }
 
     #[test]
-    fn g043_semantic_plan_diff_ignores_metadata_noise() {
+    fn semantic_plan_diff_ignores_metadata_noise() {
         let base = DagBuilder::new()
             .node(
                 NodeBuilder::new("n1", NodeKind::Const).output("out", "artifacts/n1.json").build(),
@@ -981,7 +981,7 @@ mod tests {
     }
 
     #[test]
-    fn g044_parameter_resolution_report_exposes_full_source_chain() {
+    fn parameter_resolution_report_exposes_full_source_chain() {
         let report = build_parameter_explain_report(
             &std::collections::BTreeMap::from([("threads".to_string(), "4".to_string())]),
             &std::collections::BTreeMap::from([("threads".to_string(), "8".to_string())]),
@@ -1003,7 +1003,7 @@ mod tests {
     }
 
     #[test]
-    fn g045_planner_preflight_converts_missing_capabilities_into_diagnostics() {
+    fn planner_preflight_converts_missing_capabilities_into_diagnostics() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("shell_step", NodeKind::Shell)
@@ -1040,7 +1040,7 @@ mod tests {
     }
 
     #[test]
-    fn g046_plan_fingerprint_tracks_execution_semantics_not_metadata_noise() {
+    fn plan_fingerprint_tracks_execution_semantics_not_metadata_noise() {
         let base = DagBuilder::new()
             .node(
                 NodeBuilder::new("n1", NodeKind::Const).output("out", "artifacts/n1.json").build(),
@@ -1073,7 +1073,7 @@ mod tests {
     }
 
     #[test]
-    fn g047_plan_package_export_includes_portable_review_surfaces() {
+    fn plan_package_export_includes_portable_review_surfaces() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("n1", NodeKind::Const).output("out", "artifacts/n1.json").build(),
@@ -1092,7 +1092,7 @@ mod tests {
     }
 
     #[test]
-    fn g048_resource_hints_are_visible_at_graph_and_node_levels() {
+    fn resource_hints_are_visible_at_graph_and_node_levels() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("cpu_heavy", NodeKind::Const)
@@ -1129,7 +1129,7 @@ mod tests {
     }
 
     #[test]
-    fn g049_planner_conflicts_are_emitted_with_readable_reasons() {
+    fn planner_conflicts_are_emitted_with_readable_reasons() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("mapped", NodeKind::Shell)
@@ -1174,7 +1174,7 @@ mod tests {
     }
 
     #[test]
-    fn g050_planner_performance_report_covers_real_graph_shapes_with_budgets() {
+    fn planner_performance_report_covers_real_graph_shapes_with_budgets() {
         let report = measure_planner_performance_real_shapes(2_000).expect("performance report");
         let shapes =
             report.samples.iter().map(|sample| sample.shape.clone()).collect::<BTreeSet<_>>();

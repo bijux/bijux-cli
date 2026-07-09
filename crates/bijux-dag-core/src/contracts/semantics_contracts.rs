@@ -717,7 +717,7 @@ mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
     #[test]
-    fn g031_branch_decision_artifact_persists_chosen_and_skipped_branches() {
+    fn branch_decision_artifact_persists_chosen_and_skipped_branches() {
         let artifact = build_branch_decision_artifact(
             "branch.qc",
             r#"{"metric":"coverage","value":0.91}"#,
@@ -731,7 +731,7 @@ mod tests {
     }
 
     #[test]
-    fn g032_skipped_state_is_explicit_and_affects_trigger_readiness() {
+    fn skipped_state_is_explicit_and_affects_trigger_readiness() {
         let readiness = evaluate_trigger_readiness_from_states(
             "all_success",
             &[UpstreamTerminalStateV1::Success, UpstreamTerminalStateV1::Skipped],
@@ -742,7 +742,7 @@ mod tests {
     }
 
     #[test]
-    fn g033_barrier_semantics_refuse_invalid_usage_pre_runtime() {
+    fn barrier_semantics_refuse_invalid_usage_pre_runtime() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("barrier", NodeKind::Const)
@@ -761,7 +761,7 @@ mod tests {
     }
 
     #[test]
-    fn g034_reducer_semantics_define_ordering_and_refuse_ambiguous_fanin() {
+    fn reducer_semantics_define_ordering_and_refuse_ambiguous_fanin() {
         let graph = DagBuilder::new()
             .node(NodeBuilder::new("a", NodeKind::Const).output("out", "artifacts/a.json").build())
             .node(NodeBuilder::new("b", NodeKind::Const).output("out", "artifacts/b.json").build())
@@ -783,7 +783,7 @@ mod tests {
     }
 
     #[test]
-    fn g035_conditional_edges_are_preserved_in_lowered_plan_semantics() {
+    fn conditional_edges_are_preserved_in_lowered_plan_semantics() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("branch", NodeKind::Const)
@@ -836,7 +836,7 @@ mod tests {
     }
 
     #[test]
-    fn g036_optional_upstreams_are_reported_separately_from_required_missing_inputs() {
+    fn optional_upstreams_are_reported_separately_from_required_missing_inputs() {
         let graph = DagBuilder::new()
             .node(
                 NodeBuilder::new("producer", NodeKind::Const)
@@ -861,7 +861,7 @@ mod tests {
     }
 
     #[test]
-    fn g037_trigger_rule_truth_tables_cover_quorum_and_skipped_aware_profiles() {
+    fn trigger_rule_truth_tables_cover_quorum_and_skipped_aware_profiles() {
         let quorum_row = evaluate_trigger_truth_table_row(
             TriggerRuleProfileV1::QuorumSuccess,
             vec![
@@ -884,7 +884,7 @@ mod tests {
     }
 
     #[test]
-    fn g038_matrix_expansion_is_bounded_and_refuses_explosive_cardinality() {
+    fn matrix_expansion_is_bounded_and_refuses_explosive_cardinality() {
         let dimensions = BTreeMap::from([
             ("chromosome".to_string(), vec!["1".to_string(), "2".to_string()]),
             ("sample".to_string(), vec!["s1".to_string(), "s2".to_string()]),
@@ -902,7 +902,7 @@ mod tests {
     }
 
     #[test]
-    fn g039_partition_identities_are_stable_and_reducer_linked() {
+    fn partition_identities_are_stable_and_reducer_linked() {
         let report = build_partition_identity_report(
             "dataset.v1",
             "reduce.partitions",
@@ -924,7 +924,7 @@ mod tests {
     }
 
     #[test]
-    fn g040_subgraph_materialization_scopes_ids_and_catches_collisions() {
+    fn subgraph_materialization_scopes_ids_and_catches_collisions() {
         let report = materialize_subgraph_scope(
             "graph.main",
             "subgraph.align",
