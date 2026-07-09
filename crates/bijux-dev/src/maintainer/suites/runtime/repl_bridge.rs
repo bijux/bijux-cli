@@ -329,21 +329,21 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                             "category": "meta-command",
                             "justification": "interactive help navigation for command discovery",
                             "defensible": true,
-                            "evidence": "crates/bijux-cli/tests/integration/repl/transcript_cases.rs",
+                            "evidence": "crates/bijux-cli/tests/integration/repl/repl_transcript_contracts.rs",
                         },
                         {
                             "name": ":set trace|quiet|format",
                             "category": "meta-command",
                             "justification": "session-level output policy toggles",
                             "defensible": true,
-                            "evidence": "crates/bijux-cli/tests/integration/repl/transcript_cases.rs",
+                            "evidence": "crates/bijux-cli/tests/integration/repl/repl_transcript_contracts.rs",
                         },
                         {
                             "name": ":exit",
                             "category": "meta-command",
                             "justification": "interactive shutdown convenience",
                             "defensible": true,
-                            "evidence": "crates/bijux-cli/tests/integration/repl/transcript_cases.rs",
+                            "evidence": "crates/bijux-cli/tests/integration/repl/repl_transcript_contracts.rs",
                         },
                     ],
                     "removed_repl_only_behaviors": [
@@ -364,8 +364,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "scope": "repl-vs-cli",
                                     "evidence": {
                                         "tests": [
-                                            "crates/bijux-cli/tests/integration/repl/transcript_cases.rs::repl_output_parity_with_non_interactive_cli_for_status",
-                                            "crates/bijux-cli/tests/integration/repl/transcript_cases.rs::repl_does_not_define_separate_semantics_for_common_commands",
+                                            "crates/bijux-cli/tests/integration/repl/repl_transcript_contracts.rs::repl_output_parity_with_non_interactive_cli_for_status",
+                                            "crates/bijux-cli/tests/integration/repl/repl_transcript_contracts.rs::repl_does_not_define_separate_semantics_for_common_commands",
                                         ]
                                     },
                                     "commands": [
@@ -504,7 +504,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-REPL-HOSTILE-SESSION-REPORTS" => {
             let test_paths = [
                 "crates/bijux-cli/tests/integration/repl/repl_hostile_session_hardening.rs",
-                "crates/bijux-cli/tests/integration/repl/repl_hostile_session_extra.rs",
+                "crates/bijux-cli/tests/integration/repl/repl_session_resilience.rs",
             ];
             let sources: Vec<(String, String)> = test_paths
                 .iter()
@@ -528,9 +528,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 (230, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
                                 (231, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
                                 (232, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
-                                (233, "plugin_management_state_doctor_and_broken_completion_source_do_not_crash"),
-                                (234, "plugin_management_state_doctor_and_broken_completion_source_do_not_crash"),
-                                (235, "plugin_management_state_doctor_and_broken_completion_source_do_not_crash"),
+                                (233, "plugin_management_doctor_and_broken_completion_source_do_not_crash"),
+                                (234, "plugin_management_doctor_and_broken_completion_source_do_not_crash"),
+                                (235, "plugin_management_doctor_and_broken_completion_source_do_not_crash"),
                             ]);
             let coverage_rows: Vec<Value> = required
                 .iter()

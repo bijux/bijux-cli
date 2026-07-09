@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Extra hostile-session transcript coverage for stable behavior contracts.
+//! REPL session resilience coverage for stable behavior contracts.
 
 use libc as _;
 use std::fs;
@@ -17,7 +17,7 @@ use thiserror as _;
 
 fn temp_path(name: &str, ext: &str) -> PathBuf {
     std::env::temp_dir().join(format!(
-        "bijux-repl-hostile-extra-{name}-{}.{}",
+        "bijux-repl-session-resilience-{name}-{}.{}",
         std::process::id(),
         ext
     ))

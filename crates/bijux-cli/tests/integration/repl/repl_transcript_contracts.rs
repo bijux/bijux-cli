@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Expanded transcript parity and resiliency cases for REPL runtime.
+//! REPL transcript contract coverage for runtime behavior.
 
 use libc as _;
 use std::fs;
@@ -19,11 +19,11 @@ use shlex as _;
 use thiserror as _;
 
 fn temp_history_path(name: &str) -> std::path::PathBuf {
-    std::env::temp_dir().join(format!("bijux-repl-case-{name}.txt"))
+    std::env::temp_dir().join(format!("bijux-repl-transcript-{name}.txt"))
 }
 
 #[test]
-fn transcript_case_help_command() {
+fn repl_transcript_help_command() {
     let (mut session, _) = startup_repl("default", None);
     let event = execute_repl_input(&mut session, ReplInput::Line(":help status".to_string()))
         .expect("help should execute");
@@ -34,7 +34,7 @@ fn transcript_case_help_command() {
 }
 
 #[test]
-fn transcript_case_plugin_command() {
+fn repl_transcript_plugin_command() {
     let (mut session, _) = startup_repl("default", None);
     let frame = execute_repl_line(&mut session, "community inspect").expect("plugin route");
     let content = frame.expect("frame").content;
@@ -42,7 +42,7 @@ fn transcript_case_plugin_command() {
 }
 
 #[test]
-fn transcript_case_error_command() {
+fn repl_transcript_error_command() {
     let (mut session, _) = startup_repl("default", None);
     let err = execute_repl_input(&mut session, ReplInput::Line(":invalid".to_string()))
         .expect_err("invalid meta command should fail");
@@ -51,7 +51,7 @@ fn transcript_case_error_command() {
 }
 
 #[test]
-fn transcript_case_quiet_mode() {
+fn repl_transcript_quiet_mode() {
     let (mut session, _) = startup_repl("default", None);
     let _ = execute_repl_input(&mut session, ReplInput::Line(":set quiet on".to_string()))
         .expect("quiet on");
@@ -60,7 +60,7 @@ fn transcript_case_quiet_mode() {
 }
 
 #[test]
-fn transcript_case_json_mode() {
+fn repl_transcript_json_mode() {
     let (mut session, _) = startup_repl("default", None);
     let _ = execute_repl_input(&mut session, ReplInput::Line(":set format json".to_string()))
         .expect("json mode");
@@ -69,7 +69,7 @@ fn transcript_case_json_mode() {
 }
 
 #[test]
-fn transcript_case_yaml_mode() {
+fn repl_transcript_yaml_mode() {
     let (mut session, _) = startup_repl("default", None);
     let _ = execute_repl_input(&mut session, ReplInput::Line(":set format yaml".to_string()))
         .expect("yaml mode");
@@ -78,14 +78,14 @@ fn transcript_case_yaml_mode() {
 }
 
 #[test]
-fn transcript_case_interrupt() {
+fn repl_transcript_interrupt() {
     let (mut session, _) = startup_repl("default", None);
     let interrupted = execute_repl_input(&mut session, ReplInput::Interrupt).expect("interrupt");
     assert!(matches!(interrupted, ReplEvent::Interrupted(_)));
 }
 
 #[test]
-fn transcript_case_eof_exit() {
+fn repl_transcript_eof_exit() {
     let (mut session, _) = startup_repl("default", None);
     let eof = execute_repl_input(&mut session, ReplInput::Eof).expect("eof");
     assert!(matches!(eof, ReplEvent::Exit(_)));
@@ -209,7 +209,7 @@ fn startup_works_without_config_or_plugin_registry() {
 }
 
 #[test]
-fn transcript_cases_cover_status_doctor_plugins_config_get_and_history() {
+fn repl_transcript_contracts_cover_status_doctor_plugins_config_get_and_history() {
     let (mut session, _) = startup_repl("default", None);
     let commands =
         ["status", "doctor", "plugins list", "cli config get repl_missing_key", "history"];
@@ -221,7 +221,7 @@ fn transcript_cases_cover_status_doctor_plugins_config_get_and_history() {
 }
 
 #[test]
-fn transcript_case_command_failure_recovery_and_syntax_errors() {
+fn repl_transcript_command_failure_recovery_and_syntax_errors() {
     let (mut session, _) = startup_repl("default", None);
     let failed = execute_repl_line(&mut session, "inspect unexpected")
         .expect("execution should return frame");
@@ -234,7 +234,7 @@ fn transcript_case_command_failure_recovery_and_syntax_errors() {
 }
 
 #[test]
-fn transcript_case_nested_help_inside_repl() {
+fn repl_transcript_nested_help_inside_repl() {
     let (mut session, _) = startup_repl("default", None);
     let event = execute_repl_input(&mut session, ReplInput::Line(":help cli status".to_string()))
         .expect("nested help should execute");
@@ -248,7 +248,7 @@ fn transcript_case_nested_help_inside_repl() {
 }
 
 #[test]
-fn transcript_case_switching_output_formats_in_session() {
+fn repl_transcript_switching_output_formats_in_session() {
     let (mut session, _) = startup_repl("default", None);
 
     let _ = execute_repl_input(&mut session, ReplInput::Line(":set format json".to_string()))
@@ -268,7 +268,7 @@ fn transcript_case_switching_output_formats_in_session() {
 }
 
 #[test]
-fn transcript_case_trace_mode_in_session() {
+fn repl_transcript_trace_mode_in_session() {
     let (mut session, _) = startup_repl("default", None);
     let _ = execute_repl_input(&mut session, ReplInput::Line(":set trace on".to_string()))
         .expect("trace mode on");
