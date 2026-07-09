@@ -88,7 +88,7 @@ This report tracks where canonical evidence assets are consumed across suite sur
 | `evidence/compat/graph_schema/v0_1_supported/minimal.dag.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/run_dir/unsupported_future/manifest.json` | `compat` | `crate-contracts, runtime-tests` |
 | `evidence/compat/run_dir/v0_1_supported/manifest.json` | `compat` | `crate-contracts, runtime-tests` |
-| `evidence/compat/scenarios/legacy_fixture_validation.json` | `compat` | `compatibility-contracts, e2e-matrix` |
+| `evidence/compat/scenarios/historical_fixture_validation.json` | `compat` | `compatibility-contracts, e2e-matrix` |
 | `evidence/fault/classes/fault_classes.json` | `fault` | `fault-contracts, runtime-tests` |
 | `evidence/fault/corrupt_runs/invalid_outputs_index.json` | `fault` | `crate-contracts, runtime-tests` |
 | `evidence/fault/corrupt_runs/missing_manifest_version.json` | `fault` | `crate-contracts, runtime-tests` |

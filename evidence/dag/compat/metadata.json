@@ -50,9 +50,9 @@
     "evidence/compat/export_bundle/unsupported_past/bundle.json": {
       "decision": "unsupported_past"
     },
-    "evidence/compat/scenarios/legacy_fixture_validation.json": {
+    "evidence/compat/scenarios/historical_fixture_validation.json": {
       "decision": "corrupt",
-      "note": "legacy fixture intentionally encodes invalid legacy shape behavior"
+      "note": "historical fixture intentionally encodes invalid prior-shape behavior"
     }
   }
 }

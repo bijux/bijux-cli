@@ -6887,8 +6887,8 @@
       "why_exists": "verify supported run-dir manifest format remains accepted"
     },
     {
-      "canonical_location": "evidence/compat/scenarios/legacy_fixture_validation.json",
-      "canonical_path": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "canonical_location": "evidence/compat/scenarios/historical_fixture_validation.json",
+      "canonical_path": "evidence/compat/scenarios/historical_fixture_validation.json",
       "consumer_surfaces": [
         "compatibility-contracts",
         "e2e-matrix"
@@ -6902,11 +6902,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "compat",
-      "id": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "id": "evidence/compat/scenarios/historical_fixture_validation.json",
       "implementation_status": "implemented",
       "kind": "compat",
       "owner": "team-runtime",
-      "path": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "path": "evidence/compat/scenarios/historical_fixture_validation.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",

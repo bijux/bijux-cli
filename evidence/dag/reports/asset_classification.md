@@ -55,7 +55,7 @@ Classification for files in tasks 21-34 scopes.
 | configs/dag/schema/fixtures/compat/negative/unsupported_future_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/compat/negative/unsupported_v0_0_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/compat/positive/v0_1_fanout_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
-| configs/dag/schema/fixtures/compat/positive/v0_1_legacy_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
+| configs/dag/schema/fixtures/compat/positive/v0_1_compat_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/v0.1/negative/future-required-behavior.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/v0.1/negative/invalid-enum-container-engine.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/v0.1/negative/invalid-output-path.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
@@ -146,7 +146,7 @@ Classification for files in tasks 21-34 scopes.
 | tests/e2e/README.md | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/cache/cache_hit_second_run.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/cache/fingerprint_change_invalidates_cache.json | battle | transitional | root-owned | evidence/battle |  |
-| evidence/compat/scenarios/legacy_fixture_validation.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/compat/scenarios/historical_fixture_validation.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/container_execution_if_supported.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/failure/missing_outputs_rejected.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/failure/node_failure_downstream_skipped.json | battle | transitional | root-owned | evidence/battle |  |

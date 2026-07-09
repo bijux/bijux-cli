@@ -1,7 +1,7 @@
 {
-  "scenario_id": "compat-legacy-fixture-validation",
+  "scenario_id": "compat-historical-fixture-validation",
   "fixture": "configs/dag/schema/fixtures/v0.1/positive/hello.valid.json",
   "assertions": [
-    "legacy_fixture_still_valid"
+    "historical_fixture_still_valid"
   ]
 }

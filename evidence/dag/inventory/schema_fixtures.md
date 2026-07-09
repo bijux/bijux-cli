@@ -5,7 +5,7 @@
 - configs/dag/schema/fixtures/compat/negative/unsupported_future_graph.json
 - configs/dag/schema/fixtures/compat/negative/unsupported_v0_0_graph.json
 - configs/dag/schema/fixtures/compat/positive/v0_1_fanout_graph.json
-- configs/dag/schema/fixtures/compat/positive/v0_1_legacy_graph.json
+- configs/dag/schema/fixtures/compat/positive/v0_1_compat_graph.json
 - configs/dag/schema/fixtures/v0.1/negative/future-required-behavior.json
 - configs/dag/schema/fixtures/v0.1/negative/invalid-enum-container-engine.json
 - configs/dag/schema/fixtures/v0.1/negative/invalid-output-path.json

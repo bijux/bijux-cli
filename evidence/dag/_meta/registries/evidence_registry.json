@@ -2211,17 +2211,17 @@
       ]
     },
     {
-      "canonical_path": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "canonical_path": "evidence/compat/scenarios/historical_fixture_validation.json",
       "consumers": [
         "compatibility-contracts",
         "e2e-matrix"
       ],
       "derived_from": null,
       "duplicate_of": null,
-      "id": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "id": "evidence/compat/scenarios/historical_fixture_validation.json",
       "kind": "compat",
       "owner": "team-runtime",
-      "registry_key": "compat:evidence/compat/scenarios/legacy_fixture_validation.json",
+      "registry_key": "compat:evidence/compat/scenarios/historical_fixture_validation.json",
       "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",

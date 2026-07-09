@@ -5,7 +5,7 @@
 - tests/e2e/README.md
 - evidence/battle/workflows/cache/cache_hit_second_run.json
 - evidence/battle/workflows/cache/fingerprint_change_invalidates_cache.json
-- evidence/compat/scenarios/legacy_fixture_validation.json
+- evidence/compat/scenarios/historical_fixture_validation.json
 - evidence/battle/workflows/container_execution_if_supported.json
 - evidence/battle/workflows/failure/missing_outputs_rejected.json
 - evidence/battle/workflows/failure/node_failure_downstream_skipped.json
