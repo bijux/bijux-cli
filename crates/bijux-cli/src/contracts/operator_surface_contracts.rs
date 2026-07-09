@@ -504,7 +504,7 @@ mod tests {
     };
 
     #[test]
-    fn g001_compact_help_entrypoint_requires_core_operator_routes() {
+    fn compact_help_entrypoint_requires_core_operator_routes() {
         let report = build_compact_operator_help_entrypoint(
             &["doctor", "plugins", "dag", "config"],
             &["atlas", "genomics"],
@@ -517,7 +517,7 @@ mod tests {
     }
 
     #[test]
-    fn g002_script_stable_command_envelope_uses_required_machine_fields() {
+    fn script_stable_command_envelope_uses_required_machine_fields() {
         let envelope = build_script_stable_command_envelope(
             "command-envelope-v1",
             "bijux dag plan",
@@ -535,7 +535,7 @@ mod tests {
     }
 
     #[test]
-    fn g003_actionable_error_envelope_includes_remediation_and_evidence_pointer() {
+    fn actionable_error_envelope_includes_remediation_and_evidence_pointer() {
         let error = build_actionable_error_envelope(
             ActionableFailureClassV1::Plugin,
             "plugin_manifest_invalid",
@@ -552,7 +552,7 @@ mod tests {
     }
 
     #[test]
-    fn g004_command_explain_includes_route_and_side_effect_contract() {
+    fn command_explain_includes_route_and_side_effect_contract() {
         let record = build_command_explain_record(
             "bijux dag run",
             "dag.runtime.run",
@@ -568,7 +568,7 @@ mod tests {
     }
 
     #[test]
-    fn g005_output_mode_parity_reports_commands_missing_required_modes() {
+    fn output_mode_parity_reports_commands_missing_required_modes() {
         let report = evaluate_output_mode_parity(vec![
             OutputModeParityEntryV1 {
                 command: "bijux dag run".to_string(),
@@ -589,7 +589,7 @@ mod tests {
     }
 
     #[test]
-    fn g006_install_diagnostics_bundle_identifies_failing_component() {
+    fn install_diagnostics_bundle_identifies_failing_component() {
         let bundle = build_install_diagnosis_bundle(vec![
             InstallDiagnosticComponentV1 {
                 component: "binary_path".to_string(),
@@ -608,7 +608,7 @@ mod tests {
     }
 
     #[test]
-    fn g007_completion_snapshot_excludes_hidden_stale_and_deprecated_routes() {
+    fn completion_snapshot_excludes_hidden_stale_and_deprecated_routes() {
         let snapshot = build_completion_snapshot_from_registry(
             "zsh",
             vec![
@@ -638,7 +638,7 @@ mod tests {
     }
 
     #[test]
-    fn g008_side_effect_classification_marks_risky_dispatches() {
+    fn side_effect_classification_marks_risky_dispatches() {
         let preview =
             classify_command_side_effect("bijux dag run --graph sample.json").expect("classify");
         assert!(preview.requires_confirmation);
@@ -646,7 +646,7 @@ mod tests {
     }
 
     #[test]
-    fn g009_python_bridge_parity_report_detects_machine_output_drift() {
+    fn python_bridge_parity_report_detects_machine_output_drift() {
         let report = build_python_bridge_command_parity_report(vec![
             PythonBridgeParityEntryV1 {
                 command: "bijux status --format json".to_string(),
@@ -664,7 +664,7 @@ mod tests {
     }
 
     #[test]
-    fn g010_official_app_discovery_prefers_highest_priority_and_refuses_shadow_attempts() {
+    fn official_app_discovery_prefers_highest_priority_and_refuses_shadow_attempts() {
         let report = build_official_app_discovery_report(
             vec![
                 OfficialAppRouteDescriptorV1 {

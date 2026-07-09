@@ -12,10 +12,10 @@ pub mod envelope;
 pub mod execution;
 /// Shared marker contracts.
 pub mod marker;
-/// Root operator flow contracts for backlog iteration 01.
-pub mod operator_iteration01;
-/// Official app, plugin, and SDK contracts for backlog iteration 02.
-pub mod operator_iteration02;
+/// Root operator flow and machine envelope contracts.
+pub mod operator_surface_contracts;
+/// Official app, plugin, and SDK integration contracts.
+pub mod integration_surface_contracts;
 /// Plugin manifest and compatibility contracts.
 pub mod plugin;
 /// Official product-mount reservation contracts.
@@ -39,7 +39,7 @@ pub use execution::{
     PrettyMode,
 };
 pub use marker::ContractMarker;
-pub use operator_iteration01::{
+pub use operator_surface_contracts::{
     build_actionable_error_envelope, build_command_explain_record,
     build_compact_operator_help_entrypoint, build_completion_snapshot_from_registry,
     build_install_diagnosis_bundle, build_official_app_discovery_report,
@@ -52,7 +52,7 @@ pub use operator_iteration01::{
     OutputModeParityReportV1, PythonBridgeParityEntryV1, PythonBridgeParityReportV1,
     ScriptStableCommandEnvelopeV1,
 };
-pub use operator_iteration02::{
+pub use integration_surface_contracts::{
     build_app_capability_discovery_report, build_app_route_provenance_record,
     build_plugin_scaffold_conformance_report, build_sdk_example_conformance_report,
     enforce_plugin_trust_class_behavior, evaluate_legacy_shim_policy,

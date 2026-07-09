@@ -466,7 +466,7 @@ mod tests {
     };
 
     #[test]
-    fn g011_plugin_manifest_contract_refuses_invalid_compatibility_window() {
+    fn plugin_manifest_contract_refuses_invalid_compatibility_window() {
         let manifest = ExecutablePluginManifestContractV1 {
             namespace: "community-tools".to_string(),
             version: "1.2.0".to_string(),
@@ -480,7 +480,7 @@ mod tests {
     }
 
     #[test]
-    fn g012_plugin_subprocess_policy_refuses_invalid_working_directory_policy() {
+    fn plugin_subprocess_policy_refuses_invalid_working_directory_policy() {
         let policy = PluginSubprocessExecutionPolicyV1 {
             argv: vec!["plugin-bin".to_string(), "run".to_string()],
             timeout_ms: 30_000,
@@ -492,7 +492,7 @@ mod tests {
     }
 
     #[test]
-    fn g013_plugin_scaffold_conformance_requires_discovery_and_envelope_validity() {
+    fn plugin_scaffold_conformance_requires_discovery_and_envelope_validity() {
         let report = build_plugin_scaffold_conformance_report(vec![
             PluginScaffoldConformanceEntryV1 {
                 language: "rust".to_string(),
@@ -512,7 +512,7 @@ mod tests {
     }
 
     #[test]
-    fn g014_descriptor_compatibility_reports_version_window_mismatch() {
+    fn descriptor_compatibility_reports_version_window_mismatch() {
         let report = evaluate_official_app_descriptor_compatibility(
             &OfficialAppDescriptorCompatibilityInputV1 {
                 host_version: "0.4.0".to_string(),
@@ -527,7 +527,7 @@ mod tests {
     }
 
     #[test]
-    fn g015_legacy_shim_policy_warns_with_canonical_route() {
+    fn legacy_shim_policy_warns_with_canonical_route() {
         let decision: LegacyShimPolicyDecisionV1 =
             evaluate_legacy_shim_policy("bijux-dag", "bijux dag", "warned")
                 .expect("shim decision should build");
@@ -536,7 +536,7 @@ mod tests {
     }
 
     #[test]
-    fn g016_route_conflict_resolution_is_deterministic_by_priority() {
+    fn route_conflict_resolution_is_deterministic_by_priority() {
         let resolution = resolve_route_conflict_deterministically(
             "dag run",
             vec![
@@ -558,7 +558,7 @@ mod tests {
     }
 
     #[test]
-    fn g017_route_provenance_record_captures_handler_and_descriptor_hash() {
+    fn route_provenance_record_captures_handler_and_descriptor_hash() {
         let record = build_app_route_provenance_record(
             "dag run",
             "sha256:abc123",
@@ -571,7 +571,7 @@ mod tests {
     }
 
     #[test]
-    fn g018_sdk_example_conformance_requires_config_and_error_contracts() {
+    fn sdk_example_conformance_requires_config_and_error_contracts() {
         let report = build_sdk_example_conformance_report(vec![
             SdkExampleConformanceEntryV1 {
                 language: "rust".to_string(),
@@ -593,7 +593,7 @@ mod tests {
     }
 
     #[test]
-    fn g019_experimental_destructive_plugin_command_is_blocked_without_override() {
+    fn experimental_destructive_plugin_command_is_blocked_without_override() {
         let decision: PluginTrustEnforcementDecisionV1 =
             enforce_plugin_trust_class_behavior("experimental", "destructive", false)
                 .expect("trust decision should build");
@@ -602,7 +602,7 @@ mod tests {
     }
 
     #[test]
-    fn g020_app_capability_discovery_reports_missing_optional_prerequisites() {
+    fn app_capability_discovery_reports_missing_optional_prerequisites() {
         let report = build_app_capability_discovery_report(
             "dag",
             vec!["run".to_string(), "plan".to_string()],
