@@ -28,7 +28,7 @@ For the longer release ladder beyond the current matrix, use the
 | control-plane, governance, incident, lab, federation, enterprise | simulated or internal | `commands --lane simulated` plus opt-in env for execution | repository proof and modeling surfaces |
 | `run --backend slurm` on a shared filesystem | stable | visible `run` surface with explicit backend selection | submits through `sbatch`, polls `sacct`, and records retained batch evidence when the scheduled worker can reopen the same run directory |
 | `run --backend kubernetes` for container nodes | stable | visible `run` surface with explicit backend selection | requires `--kubernetes-volume-claim`, `--kubernetes-shared-root`, and a shared persistent volume claim mounted into Job pods |
-| Generic HPC beyond the shared-filesystem SLURM lane, public remote workers, full scheduler service | future | not part of first-hour adoption | broader portability and distributed control are not a `v0.4.0` product promise |
+| Generic HPC beyond the shared-filesystem SLURM lane, public remote workers, full scheduler service | unreleased | not part of first-hour adoption | broader portability and distributed control are not a `v0.4.0` product promise |
 
 ## Primary proof
 

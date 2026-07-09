@@ -13,7 +13,7 @@ struct DagReleaseTruthTable {
     experimental_operator_surface: SurfaceEntry,
     simulated_surface: SurfaceEntry,
     internal_surface: SurfaceEntry,
-    future_surface: FutureSurfaceEntry,
+    unreleased_surface: UnreleasedSurfaceEntry,
 }
 
 #[derive(Debug, Deserialize)]
@@ -23,7 +23,7 @@ struct SurfaceEntry {
 }
 
 #[derive(Debug, Deserialize)]
-struct FutureSurfaceEntry {
+struct UnreleasedSurfaceEntry {
     summary: String,
     capabilities: Vec<String>,
 }
@@ -100,8 +100,8 @@ fn dag_release_truth_table_contract_is_current() {
     assert!(!truth_table.experimental_operator_surface.summary.trim().is_empty());
     assert!(!truth_table.simulated_surface.summary.trim().is_empty());
     assert!(!truth_table.internal_surface.summary.trim().is_empty());
-    assert!(!truth_table.future_surface.summary.trim().is_empty());
-    assert!(!truth_table.future_surface.capabilities.is_empty());
+    assert!(!truth_table.unreleased_surface.summary.trim().is_empty());
+    assert!(!truth_table.unreleased_surface.capabilities.is_empty());
     assert!(truth_table.simulated_surface.summary.contains("BIJUX_DAG_ENABLE_SIMULATED=1"));
     assert!(truth_table.internal_surface.summary.contains("BIJUX_DAG_ENABLE_INTERNAL=1"));
     assert!(truth_table.simulated_surface.root_commands.contains(&"governance".to_string()));
@@ -185,7 +185,7 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
             "| experimental |",
             "| simulated |",
             "| internal |",
-            "| future |",
+            "| unreleased |",
             "BIJUX_DAG_ENABLE_SIMULATED=1",
             "BIJUX_DAG_ENABLE_INTERNAL=1",
             "contracts/foundation/workspace_package_boundary.v1.json",
@@ -384,7 +384,7 @@ fn backend_release_docs_keep_shipped_lanes_and_future_lanes_separate() {
         &[
             "| `run --backend slurm` on a shared filesystem | stable | visible `run` surface with explicit backend selection | submits through `sbatch`, polls `sacct`, and records retained batch evidence when the scheduled worker can reopen the same run directory |",
             "| `run --backend kubernetes` for container nodes | stable | visible `run` surface with explicit backend selection | requires `--kubernetes-volume-claim`, `--kubernetes-shared-root`, and a shared persistent volume claim mounted into Job pods |",
-            "| Generic HPC beyond the shared-filesystem SLURM lane, public remote workers, full scheduler service | future | not part of first-hour adoption | broader portability and distributed control are not a `v0.4.0` product promise |",
+            "| Generic HPC beyond the shared-filesystem SLURM lane, public remote workers, full scheduler service | unreleased | not part of first-hour adoption | broader portability and distributed control are not a `v0.4.0` product promise |",
         ],
         "docs/bijux-dag/interfaces/reference/support-matrix.md",
     );

@@ -86,7 +86,7 @@
       "equivalence-proof"
     ]
   },
-  "future_surface": {
+  "unreleased_surface": {
     "summary": "not a v0.4.0 product promise; promotion requires separate implementation, documentation, tests, and compatibility review",
     "capabilities": [
       "generic hpc execution backend beyond the shared-filesystem slurm lane",

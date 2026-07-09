@@ -11,7 +11,7 @@ last_reviewed: 2026-07-06
 
 `bijux-dag` is only trustworthy if a reader can tell which surfaces are
 supported in `v0.4.0`, which ones are still experimental, which ones are
-simulation-only, and which claims still belong to the future.
+simulation-only, and which claims remain unreleased.
 
 The contract source for this page is
 `contracts/foundation/dag_release_truth_table.v1.json`.
@@ -31,7 +31,7 @@ For post-`v0.4.0` direction that is not yet a release promise, use the
 | experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
 | simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
 | internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
-| future | not a `v0.4.0` product promise | generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
+| unreleased | not a `v0.4.0` product promise | generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
 
 ## Stable Capabilities
 
