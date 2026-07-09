@@ -8,7 +8,7 @@ mod plugin_command_parity;
 mod plugin_discovery_determinism_matrix;
 mod plugin_failure_injection;
 mod plugin_failure_rollback_matrix;
-mod plugin_lifecycle_matrix;
+mod plugin_lifecycle_coverage;
 mod plugin_namespace_law;
 mod plugin_scaffold_case_replays;
 mod plugin_scaffold_minimal;

@@ -168,14 +168,14 @@ pub(super) fn rows() -> Vec<Value> {
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX",
         }),
         json!({
-            "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
+            "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-COVERAGE",
             "kind": "generate",
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/plugin_lifecycle_test_matrix.json"
+                "artifacts/status/plugin_lifecycle_test_coverage.json"
             ],
-            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-COVERAGE",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX",

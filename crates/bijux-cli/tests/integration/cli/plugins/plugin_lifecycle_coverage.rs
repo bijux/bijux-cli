@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Plugin lifecycle end-to-end matrix coverage.
+//! Plugin lifecycle end-to-end coverage.
 
 use std::fs;
 use std::path::{Path, PathBuf};
