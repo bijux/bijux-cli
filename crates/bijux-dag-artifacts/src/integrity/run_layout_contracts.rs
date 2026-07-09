@@ -577,7 +577,7 @@ mod tests {
     };
 
     #[test]
-    fn g061_run_directory_layout_contract_is_predictable() {
+    fn run_directory_layout_contract_is_predictable() {
         let layout =
             build_run_directory_layout_contract("20260501-abc").expect("layout should build");
         assert_eq!(layout.manifest_path, "run-20260501-abc/manifest.json");
@@ -586,7 +586,7 @@ mod tests {
     }
 
     #[test]
-    fn g062_artifact_identity_is_content_based_for_files_and_directories() {
+    fn artifact_identity_is_content_based_for_files_and_directories() {
         let file_a =
             content_identity_for_file("outputs/a.json", br#"{"a":1}"#).expect("file identity");
         let file_b =
@@ -613,7 +613,7 @@ mod tests {
     }
 
     #[test]
-    fn g063_artifact_inventory_records_producer_attempt_adapter_schema_and_lineage() {
+    fn artifact_inventory_records_producer_attempt_adapter_schema_and_lineage() {
         let records = build_complete_artifact_inventory(vec![ArtifactInventoryRecordV1 {
             role: "primary".to_string(),
             path: "outputs/sample.vcf".to_string(),
@@ -631,7 +631,7 @@ mod tests {
     }
 
     #[test]
-    fn g064_cache_key_explain_includes_direct_factors() {
+    fn cache_key_explain_includes_direct_factors() {
         let factors = CacheKeyFactorsV1 {
             graph_fingerprint: "graph-abc".to_string(),
             node_id: "align-reads".to_string(),
@@ -653,7 +653,7 @@ mod tests {
     }
 
     #[test]
-    fn g065_safe_cache_reuse_is_demonstrable_with_matching_evidence() {
+    fn safe_cache_reuse_is_demonstrable_with_matching_evidence() {
         let evidence = CacheReuseEvidenceV1 {
             cache_key: "cache-key-123".to_string(),
             artifact_hash: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
@@ -674,7 +674,7 @@ mod tests {
     }
 
     #[test]
-    fn g066_unsafe_cache_reuse_reports_changed_factors() {
+    fn unsafe_cache_reuse_reports_changed_factors() {
         let expected = CacheReuseContextV1 {
             input_fingerprint: "input-a".to_string(),
             policy_fingerprint: "policy-a".to_string(),
@@ -700,7 +700,7 @@ mod tests {
     }
 
     #[test]
-    fn g067_replay_plan_is_readable_before_execution() {
+    fn replay_plan_is_readable_before_execution() {
         let plan = build_replay_plan_readout(vec![
             ReplayNodePlanDecisionV1 {
                 node_id: "align-reads".to_string(),
@@ -731,7 +731,7 @@ mod tests {
     }
 
     #[test]
-    fn g068_replay_ancestry_is_preserved_for_reused_and_rerun_nodes() {
+    fn replay_ancestry_is_preserved_for_reused_and_rerun_nodes() {
         let validated = validate_replay_ancestry_records(vec![
             ReplayAncestryRecordV1 {
                 replay_run_id: "run-200".to_string(),
@@ -762,7 +762,7 @@ mod tests {
     }
 
     #[test]
-    fn g069_run_diff_answers_what_changed() {
+    fn run_diff_answers_what_changed() {
         let changes = diff_run_snapshots(
             vec![
                 NodeRunSnapshotV1 {
@@ -818,7 +818,7 @@ mod tests {
     }
 
     #[test]
-    fn g070_bundle_verification_detects_tampering() {
+    fn bundle_verification_detects_tampering() {
         let expected = BundleProofInputsV1 {
             manifest_hash: "m1".to_string(),
             plan_hash: "p1".to_string(),

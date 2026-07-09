@@ -27,11 +27,11 @@ pub mod hash;
 #[path = "integrity/index.rs"]
 pub mod index;
 #[cfg(feature = "experimental-public-api")]
-#[path = "integrity/iteration07_contracts.rs"]
-mod iteration07_contracts;
+#[path = "integrity/run_layout_contracts.rs"]
+mod run_layout_contracts;
 #[cfg(feature = "experimental-public-api")]
-#[path = "integrity/iteration16_contracts.rs"]
-mod iteration16_contracts;
+#[path = "integrity/lifecycle_and_cache_contracts.rs"]
+mod lifecycle_and_cache_contracts;
 #[doc(hidden)]
 #[path = "lifecycle/lineage.rs"]
 pub mod lineage;
@@ -136,10 +136,10 @@ pub mod prelude {
 #[cfg(feature = "experimental-public-api")]
 pub mod experimental {
     pub mod run_layout {
-        pub use crate::iteration07_contracts::*;
+        pub use crate::run_layout_contracts::*;
     }
     pub mod lifecycle_and_cache {
-        pub use crate::iteration16_contracts::*;
+        pub use crate::lifecycle_and_cache_contracts::*;
     }
 }
 

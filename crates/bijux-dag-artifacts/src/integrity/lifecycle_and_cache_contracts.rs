@@ -460,7 +460,7 @@ mod tests {
     };
 
     #[test]
-    fn g151_artifact_schema_descriptor_requires_media_role_version_verifier_and_contract() {
+    fn artifact_schema_descriptor_requires_media_role_version_verifier_and_contract() {
         let descriptor = ArtifactSchemaDescriptorV1 {
             artifact_id: "artifact://run-151/node-a/output.json".to_string(),
             media_type: "application/json".to_string(),
@@ -478,7 +478,7 @@ mod tests {
     }
 
     #[test]
-    fn g152_artifact_lifecycle_transitions_are_explicit_and_queryable() {
+    fn artifact_lifecycle_transitions_are_explicit_and_queryable() {
         use ArtifactLifecycleStateV1::{Archived, Draft, Exported, Retained, Verified};
         validate_artifact_lifecycle_transition(Draft, Verified).expect("draft->verified");
         validate_artifact_lifecycle_transition(Verified, Retained).expect("verified->retained");
@@ -490,7 +490,7 @@ mod tests {
     }
 
     #[test]
-    fn g153_retention_class_policy_never_deletes_replay_critical_evidence() {
+    fn retention_class_policy_never_deletes_replay_critical_evidence() {
         let replay_critical = enforce_retention_class(RetentionClassV1::Ephemeral, 400, true);
         assert!(!replay_critical.allow_delete);
         assert!(replay_critical.reason.contains("replay-critical"));
@@ -500,7 +500,7 @@ mod tests {
     }
 
     #[test]
-    fn g154_cache_gc_dry_run_explains_evidence_safe_removals() {
+    fn cache_gc_dry_run_explains_evidence_safe_removals() {
         let report = build_cache_gc_dry_run(&[
             CacheGcCandidateV1 {
                 cache_key: "keep-evidence".to_string(),
@@ -530,7 +530,7 @@ mod tests {
     }
 
     #[test]
-    fn g155_cache_import_bundle_refuses_unsafe_entries() {
+    fn cache_import_bundle_refuses_unsafe_entries() {
         let bundle = CachePortableBundleV1 {
             bundle_id: "cache-bundle-155".to_string(),
             entries: vec![CachePortableEntryV1 {
@@ -550,7 +550,7 @@ mod tests {
     }
 
     #[test]
-    fn g156_artifact_lineage_query_answers_ancestors_descendants_and_producers() {
+    fn artifact_lineage_query_answers_ancestors_descendants_and_producers() {
         let index = build_artifact_lineage_query_index(vec![
             ArtifactLineageRecordV1 {
                 artifact_id: "a1".to_string(),
@@ -583,7 +583,7 @@ mod tests {
     }
 
     #[test]
-    fn g157_artifact_preview_is_safe_for_large_or_binary_content() {
+    fn artifact_preview_is_safe_for_large_or_binary_content() {
         let binary = build_safe_artifact_preview("application/octet-stream", &[0, 1, 2, 3], 1024);
         assert_eq!(binary.preview_kind, "summary");
         assert!(binary.preview.contains("binary artifact preview suppressed"));
@@ -598,7 +598,7 @@ mod tests {
     }
 
     #[test]
-    fn g158_artifact_index_migration_refuses_semantic_loss_paths() {
+    fn artifact_index_migration_refuses_semantic_loss_paths() {
         let refused = evaluate_artifact_index_migration(&ArtifactIndexMigrationRequestV1 {
             from_schema: "artifact-index/v1".to_string(),
             to_schema: "artifact-index/v2".to_string(),
@@ -616,7 +616,7 @@ mod tests {
     }
 
     #[test]
-    fn g159_artifact_deduplication_preserves_producer_and_consumer_identity() {
+    fn artifact_deduplication_preserves_producer_and_consumer_identity() {
         let deduped = deduplicate_artifacts_preserving_lineage(&[
             DedupCandidateArtifactV1 {
                 artifact_id: "a1".to_string(),
@@ -639,7 +639,7 @@ mod tests {
     }
 
     #[test]
-    fn g160_archive_bundle_profile_requires_long_lived_verification_material() {
+    fn archive_bundle_profile_requires_long_lived_verification_material() {
         let profile = ArchiveBundleProfileV1 {
             bundle_id: "archive-160".to_string(),
             schema_descriptors: vec!["schema/artifact-index-v2.json".to_string()],
