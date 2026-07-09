@@ -202,10 +202,10 @@ mod store;
 mod subprocess;
 #[path = "internal/identity/supply_chain_trust.rs"]
 mod supply_chain_trust;
-#[path = "internal/control/task_contract.rs"]
-mod task_contract;
-#[path = "internal/control/task_types.rs"]
-mod task_types;
+#[path = "internal/control/node_execution_contract.rs"]
+mod node_execution_contract;
+#[path = "internal/control/node_execution_types.rs"]
+mod node_execution_types;
 #[path = "internal/identity/tenancy.rs"]
 mod tenancy;
 #[cfg(test)]
@@ -587,7 +587,7 @@ use std::time::Duration;
 pub use store::{validate_storage_relative_path, ArtifactStore, CacheStore, StorageHealthReport};
 use store::{ArtifactStore as RuntimeArtifactStore, CacheStore as RuntimeCacheStore};
 #[doc(hidden)]
-pub use task_contract::{
+pub use node_execution_contract::{
     build_retry_policy, build_task_contract, default_forced_cleanup, evaluate_retry_decision,
     retry_backoff_ms as contract_retry_backoff_ms, retry_jitter_ms as contract_retry_jitter_ms,
     retry_observation, retry_observation_from_failure, retry_wait_ms as contract_retry_wait_ms,
@@ -598,7 +598,7 @@ pub use task_contract::{
     TimeoutPolicy, TimeoutRetryPolicy,
 };
 #[doc(hidden)]
-pub use task_types::{
+pub use node_execution_types::{
     check_replay_adapter_compatibility, compatibility_matrix_report,
     compatibility_score_for_contract, compute_task_contract_fingerprint,
     default_task_type_registry, generate_task_contract_markdown, validate_cross_node_compatibility,

@@ -1,4 +1,4 @@
-use crate::task_contract::{TaskContract, TaskInputDescriptor, TaskOutputDescriptor};
+use crate::node_execution_contract::{TaskContract, TaskInputDescriptor, TaskOutputDescriptor};
 use crate::RuntimeError;
 use bijux_dag_core::Graph;
 use serde::{Deserialize, Serialize};
