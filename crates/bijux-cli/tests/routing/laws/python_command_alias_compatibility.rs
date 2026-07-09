@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Regression tests for legacy Python command forms.
+//! Compatibility checks for historical Python command aliases.
 
 use bijux_cli::api::routing::catalog::normalize_command_path;
 use bijux_cli::api::routing::parser::parse_intent;
@@ -14,7 +14,7 @@ use semver as _;
 use thiserror as _;
 
 #[test]
-fn legacy_status_maps_to_cli_status_and_resolves() {
+fn python_status_alias_maps_to_cli_status_and_resolves() {
     let argv = vec!["bijux".to_string(), "status".to_string()];
     let intent = parse_intent(&argv).expect("parse should succeed");
     assert_eq!(intent.normalized_path, vec!["status"]);
@@ -25,7 +25,7 @@ fn legacy_status_maps_to_cli_status_and_resolves() {
 }
 
 #[test]
-fn legacy_plugins_list_maps_to_cli_plugins_list() {
+fn python_plugins_list_alias_maps_to_cli_plugins_list() {
     let argv = vec!["bijux".to_string(), "plugins".to_string(), "list".to_string()];
     let intent = parse_intent(&argv).expect("parse should succeed");
     assert_eq!(intent.normalized_path, vec!["cli", "plugins", "list"]);

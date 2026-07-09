@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 //! laws routing suites.
 
-mod legacy_forms_regression;
+mod python_command_alias_compatibility;
 mod route_fuzz_regressions;
 mod route_fuzz_targets;
 mod route_inspection_output;
