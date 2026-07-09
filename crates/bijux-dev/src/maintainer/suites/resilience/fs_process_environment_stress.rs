@@ -99,7 +99,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let targets = workspace_root
                 .join("crates/bijux-cli/tests/integration/cli/config/config_parser_stability.rs");
             let regression = workspace_root
-                .join("crates/bijux-cli/tests/integration/cli/config/config_fuzz_regressions.rs");
+                .join("crates/bijux-cli/tests/integration/cli/config/config_case_replays.rs");
             let min_dir = workspace_root.join("crates/bijux-cli/tests/fuzz/config_minimized_cases");
             let targets_text = fs::read_to_string(&targets).unwrap_or_default();
             let regression_text = fs::read_to_string(&regression).unwrap_or_default();
@@ -134,7 +134,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "test": test_name,
                                         "status": if source.contains(&format!("fn {test_name}(")) { "covered" } else { "missing" },
                                         "evidence": if *test_name == "minimized_config_cases_replay_with_stable_exit_behavior" {
-                                            "crates/bijux-cli/tests/integration/cli/config/config_fuzz_regressions.rs"
+                                            "crates/bijux-cli/tests/integration/cli/config/config_case_replays.rs"
                                         } else {
                                             "crates/bijux-cli/tests/integration/cli/config/config_parser_stability.rs"
                                         },
@@ -153,7 +153,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "bijux-cli",
                     "--test",
                     "integration",
-                    "config_fuzz_regressions::",
+                    "config_case_replays::",
                 ])
                 .current_dir(workspace_root)
                 .status()

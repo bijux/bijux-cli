@@ -2,9 +2,9 @@
 //! config integration suites.
 
 mod config_core_parity;
-mod config_deep_behavior_matrix;
+mod config_semantic_stability;
 mod config_export_load_parity;
-mod config_fuzz_regressions;
+mod config_case_replays;
 mod config_parser_stability;
 mod config_get_parity;
 mod config_get_performance;

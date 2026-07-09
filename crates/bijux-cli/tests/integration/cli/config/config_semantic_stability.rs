@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Deep config behavior matrix for parsing, mutation, roundtrip, and diagnostics consistency.
-//! test_type: config-deep-behavior
+//! Config semantic stability checks for parsing, mutation, roundtrip, and diagnostics consistency.
+//! test_type: config-semantic-stability
 
 use std::fs;
 use std::path::PathBuf;
@@ -26,7 +26,8 @@ fn run_json(args: &[&str]) -> Value {
 
 fn temp_dir(name: &str) -> PathBuf {
     let root =
-        std::env::temp_dir().join(format!("bijux-config-deep-{name}-{}", std::process::id()));
+        std::env::temp_dir()
+            .join(format!("bijux-config-semantic-stability-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir");
     root

@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Config fuzz regression suite from minimized crash-style cases.
-//! test_type: config-fuzz-regression
+//! Config case replay suite from retained minimized config inputs.
+//! test_type: config-case-replay
 
 use std::fs;
 use std::path::Path;
@@ -27,7 +27,7 @@ fn minimized_config_cases_replay_with_stable_exit_behavior() {
     files.sort();
     assert!(!files.is_empty(), "minimized config cases must be retained");
 
-    let scratch = std::env::temp_dir().join("bijux-config-fuzz-replay.env");
+    let scratch = std::env::temp_dir().join("bijux-config-case-replay.env");
     for case in files {
         let payload = fs::read(&case).expect("read case");
         fs::write(&scratch, payload).expect("write scratch");

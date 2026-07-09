@@ -5,7 +5,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-CONFIG-DEEP-BEHAVIOR-REPORTS" => {
             let source = fs::read_to_string(workspace_root.join(
-                "crates/bijux-cli/tests/integration/cli/config/config_deep_behavior_matrix.rs",
+                "crates/bijux-cli/tests/integration/cli/config/config_semantic_stability.rs",
             ))
             .unwrap_or_default();
             let has_test = |name: &str| source.contains(&format!("fn {name}("));
@@ -87,7 +87,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let coverage_rows = required.iter().map(|(id, name)| json!({
                                 "coverage_id": id, "test_name": name,
                                 "status": if has_test(name) {"covered"} else {"missing"},
-                                "evidence": "crates/bijux-cli/tests/integration/cli/config/config_deep_behavior_matrix.rs"
+                                "evidence": "crates/bijux-cli/tests/integration/cli/config/config_semantic_stability.rs"
                             })).collect::<Vec<_>>();
             let missing = coverage_rows
                 .iter()
