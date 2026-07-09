@@ -13,14 +13,14 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, serde::Deserialize)]
-struct PlaceholderPolicy {
+struct UnimplementedSurfacePolicy {
     forbidden_tokens: Vec<String>,
     forbidden_public_output_tokens: Vec<String>,
-    allowed_public_output_exceptions: Vec<PlaceholderException>,
+    allowed_public_output_exceptions: Vec<UnimplementedSurfaceException>,
 }
 
 #[derive(Debug, serde::Deserialize)]
-struct PlaceholderException {
+struct UnimplementedSurfaceException {
     path: String,
     contains: String,
     reason: String,
@@ -77,11 +77,11 @@ fn is_excluded(rel: &str) -> bool {
 #[test]
 fn stable_sources_reject_todo_and_unimplemented_markers() {
     let root = repo_root();
-    let policy: PlaceholderPolicy = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/dag/policy/placeholder_surface_policy.json"))
-            .expect("read placeholder policy"),
+    let policy: UnimplementedSurfacePolicy = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/dag/policy/unimplemented_surface_policy.json"))
+            .expect("read unimplemented surface policy"),
     )
-    .expect("parse placeholder policy");
+    .expect("parse unimplemented surface policy");
 
     let mut files = Vec::new();
     collect_rs_files(&root.join("crates"), &mut files);
@@ -103,19 +103,19 @@ fn stable_sources_reject_todo_and_unimplemented_markers() {
 
     assert!(
         violations.is_empty(),
-        "stable source includes forbidden placeholder markers: {}",
+        "stable source includes forbidden unimplemented-surface markers: {}",
         violations.join(" | ")
     );
 }
 
 #[test]
-fn public_output_placeholder_text_requires_policy_exception() {
+fn public_output_unimplemented_text_requires_policy_exception() {
     let root = repo_root();
-    let policy: PlaceholderPolicy = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/dag/policy/placeholder_surface_policy.json"))
-            .expect("read placeholder policy"),
+    let policy: UnimplementedSurfacePolicy = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/dag/policy/unimplemented_surface_policy.json"))
+            .expect("read unimplemented surface policy"),
     )
-    .expect("parse placeholder policy");
+    .expect("parse unimplemented surface policy");
 
     let exceptions: Vec<(String, String)> = policy
         .allowed_public_output_exceptions
@@ -160,13 +160,13 @@ fn public_output_placeholder_text_requires_policy_exception() {
 
     assert!(
         violations.is_empty(),
-        "public output placeholder text needs explicit exception: {}",
+        "public output unimplemented-surface text needs explicit exception: {}",
         violations.join(" | ")
     );
 }
 
 #[test]
-fn release_blocking_evidence_assets_are_placeholder_free() {
+fn release_blocking_evidence_assets_are_unimplemented_surface_free() {
     let root = repo_root();
     let release: serde_json::Value = serde_json::from_str(
         &fs::read_to_string(root.join("evidence/release/release_evidence_set.json"))
@@ -193,13 +193,13 @@ fn release_blocking_evidence_assets_are_placeholder_free() {
 
     assert!(
         violations.is_empty(),
-        "release-blocking evidence asset contains placeholder markers: {}",
+        "release-blocking evidence asset contains unimplemented-surface markers: {}",
         violations.join(" | ")
     );
 }
 
 #[test]
-fn battle_scenarios_are_placeholder_free() {
+fn battle_scenarios_are_unimplemented_surface_free() {
     let root = repo_root();
     let mut files = Vec::new();
     collect_json_files(&root.join("evidence/battle/workflows"), &mut files);
@@ -218,31 +218,31 @@ fn battle_scenarios_are_placeholder_free() {
 
     assert!(
         violations.is_empty(),
-        "battle scenario contains placeholder marker: {}",
+        "battle scenario contains unimplemented-surface marker: {}",
         violations.join(" | ")
     );
 }
 
 #[test]
-fn placeholder_exceptions_must_have_reasons() {
+fn unimplemented_surface_exceptions_must_have_reasons() {
     let root = repo_root();
-    let policy: PlaceholderPolicy = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/dag/policy/placeholder_surface_policy.json"))
-            .expect("read placeholder policy"),
+    let policy: UnimplementedSurfacePolicy = serde_json::from_str(
+        &fs::read_to_string(root.join("configs/dag/policy/unimplemented_surface_policy.json"))
+            .expect("read unimplemented surface policy"),
     )
-    .expect("parse placeholder policy");
+    .expect("parse unimplemented surface policy");
 
     for exception in policy.allowed_public_output_exceptions {
         assert!(
             !exception.reason.trim().is_empty(),
-            "placeholder exception missing reason: {}",
+            "unimplemented surface exception missing reason: {}",
             exception.path
         );
     }
 }
 
 #[test]
-fn operator_command_surfaces_are_placeholder_free() {
+fn operator_command_surfaces_are_unimplemented_surface_free() {
     let root = repo_root();
     let mut files = Vec::new();
     collect_rs_files(&root.join("crates/bijux-dag-app/src"), &mut files);
@@ -264,7 +264,7 @@ fn operator_command_surfaces_are_placeholder_free() {
 
     assert!(
         violations.is_empty(),
-        "operator command surface contains placeholder wording: {}",
+        "operator command surface contains unimplemented-surface wording: {}",
         violations.join(" | ")
     );
 }
