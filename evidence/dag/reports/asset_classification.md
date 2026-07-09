@@ -123,8 +123,8 @@ Classification for files in tasks 21-34 scopes.
 | crates/bijux-dag-runtime/tests/fixtures/secrets/stdout_leak.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/state_machine/cancellation_trace.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/state_machine/evolution_trace.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
-| crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
-| crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
+| crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
+| crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/verification/invariants.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |

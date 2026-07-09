@@ -399,7 +399,7 @@
     }
   },
   "baselines": [
-    "evidence/perf/baselines/example_v1.json",
+    "evidence/perf/baselines/benchmark_report_reference_v1.json",
     "evidence/perf/baselines/regression_thresholds.json",
     "evidence/perf/baselines/resource_trend_v1.json"
   ],
