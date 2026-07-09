@@ -556,7 +556,7 @@ pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
 
     for required in [
         "docs/bijux-core/foundation/current-implemented-capabilities.md",
-        "docs/bijux-dag/foundation/modeled-and-future-surfaces.md",
+        "docs/bijux-dag/foundation/release-boundary.md",
         "docs/bijux-core/governance/spec-to-code-and-test-ownership.md",
         "docs/reports/foundation/docs-root-inventory-report.md",
         "docs/reports/foundation/foundation-final-report.md",
