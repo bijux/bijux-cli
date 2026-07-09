@@ -1105,7 +1105,8 @@ pub(super) fn run_evidence_family_boundary_verify() -> Result<(), String> {
             .get("decision")
             .and_then(Value::as_str)
             .ok_or_else(|| format!("compat decision matrix entry missing decision: {path}"))?;
-        let allowed = ["supported", "unsupported_newer_version", "unsupported_older_version", "corrupt"];
+        let allowed =
+            ["supported", "unsupported_newer_version", "unsupported_older_version", "corrupt"];
         if !allowed.contains(&decision) {
             return Err(format!(
                 "compat decision matrix has unknown decision `{decision}` for `{path}`"

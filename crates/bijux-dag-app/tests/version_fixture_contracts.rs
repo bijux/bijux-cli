@@ -70,8 +70,7 @@ fn supported_and_unsupported_graph_schema_fixtures_are_classified() {
 fn supported_and_unsupported_run_dir_formats_are_classified() {
     let root = repo_root();
     let supported = root.join("evidence/compat/run_dir/v0_1_supported");
-    let unsupported_newer_version =
-        root.join("evidence/compat/run_dir/unsupported_newer_version");
+    let unsupported_newer_version = root.join("evidence/compat/run_dir/unsupported_newer_version");
 
     let cmd = dag_command();
     let ok_matches = cmd

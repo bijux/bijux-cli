@@ -299,10 +299,7 @@ fn import_rejects_unsupported_bundle_version_fixture() {
     let unsupported_older_version =
         root.join("evidence/compat/export_bundle/unsupported_older_version/bundle.json");
     let (code, stdout, _stderr) =
-        run_dag(
-            &["import", "--json", &output_path_string(&unsupported_older_version)],
-            &root,
-        );
+        run_dag(&["import", "--json", &output_path_string(&unsupported_older_version)], &root);
     assert_ne!(code, 0, "unsupported bundle version must fail");
     let payload: Value = serde_json::from_str(&stdout).expect("parse import failure payload");
     let message = payload["errors"]
