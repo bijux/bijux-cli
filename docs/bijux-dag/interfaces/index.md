@@ -56,6 +56,7 @@ to the shipped public `v0.4.0` surface.
 - [API Surface](api-surface.md)
 - [Configuration Surface](configuration-surface.md)
 - [Data Contracts](data-contracts.md)
+- [Compatibility Matrix](compatibility-matrix.md)
 - [Graph Schema Reference](reference/graph-schema.md)
 - [Reproducibility Model](reference/reproducibility-model.md)
 - [Run Evidence Layout](reference/run-evidence-layout.md)
