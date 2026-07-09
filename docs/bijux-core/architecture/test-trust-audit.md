@@ -16,7 +16,7 @@ real semantic behavior instead of accumulating accidental coverage.
 
 - `configs/dag/policy/test_trust_ledger.json`
 - `crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json`
-- `crates/bijux-dev/tests/test_trust_cleanup_contracts.rs`
+- `crates/bijux-dev/tests/test_trust_maintenance_contracts.rs`
 
 ## Audit Questions
 

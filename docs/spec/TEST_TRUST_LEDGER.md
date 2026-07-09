@@ -10,7 +10,7 @@ guard expects to stay explicit.
 
 `configs/dag/policy/test_trust_ledger.json` is the authoritative machine
 source for classification rules, must-never-break coverage, and trust-family
-cleanup decisions.
+maintenance decisions.
 
 ## Required policy sections
 
@@ -24,4 +24,4 @@ cleanup decisions.
 
 Ledger section names and cleanup intent are stable contract surfaces. Any
 incompatible change requires updating this document, the ledger policy, and the
-cleanup report in the same change.
+maintenance report in the same change.

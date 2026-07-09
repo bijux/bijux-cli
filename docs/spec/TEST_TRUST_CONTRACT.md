@@ -20,7 +20,7 @@ runtime tests into non-empty trust classes, and every listed file must exist.
 ## Related tests
 
 - `crates/bijux-dev/src/commands/ops.rs`
-- `crates/bijux-dev/tests/test_trust_cleanup_contracts.rs`
+- `crates/bijux-dev/tests/test_trust_maintenance_contracts.rs`
 
 ## Versioning and change policy
 

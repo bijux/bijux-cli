@@ -188,13 +188,13 @@ fn snapshot_assertions_are_restricted_to_allowlist() {
 }
 
 #[test]
-fn foundation_repo_suite_keeps_test_trust_cleanup_guard() {
+fn foundation_repo_suite_keeps_test_trust_maintenance_guard() {
     let root = repo_root();
     let repo_suites =
         fs::read_to_string(root.join("crates/bijux-dev/src/suites/repo.rs")).expect("repo suites");
     assert!(
-        repo_suites.contains("\"test-trust-cleanup\""),
-        "repo suite must keep test-trust-cleanup guard"
+        repo_suites.contains("\"test-trust-maintenance\""),
+        "repo suite must keep test-trust-maintenance guard"
     );
 }
 

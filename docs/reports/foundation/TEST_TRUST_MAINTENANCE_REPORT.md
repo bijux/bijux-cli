@@ -1,18 +1,18 @@
-# Test Trust Cleanup Report
+# Test Trust Maintenance Report
 
 ## Purpose
 
 This report records the surfaces that keep runtime test classification and
-cleanup decisions reviewable.
+maintenance decisions reviewable.
 
 ## Guarded surfaces
 
 - policy ledger: `configs/dag/policy/test_trust_ledger.json`
 - ledger contract: `docs/spec/TEST_TRUST_LEDGER.md`
-- cleanup tests: `crates/bijux-dev/tests/test_trust_cleanup_contracts.rs`
+- maintenance tests: `crates/bijux-dev/tests/test_trust_maintenance_contracts.rs`
 - runtime catalog: `crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json`
 
-## Current cleanup stance
+## Current maintenance stance
 
 - every runtime test file should land in an explicit trust class
 - must-never-break surfaces must stay out of cosmetic and duplicate lanes

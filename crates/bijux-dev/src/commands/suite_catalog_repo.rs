@@ -324,13 +324,13 @@ pub(super) const REPO_SUITES: &[SuiteDef] = &[
         run: || run_test_trust_foundation_guard(),
     },
     SuiteDef {
-        id: "test-trust-cleanup",
-        description: "test trust ledger classification and semantic surface cleanup enforcement",
+        id: "test-trust-maintenance",
+        description: "test trust ledger classification and semantic surface maintenance enforcement",
         domain: "governance",
         slow: false,
         internal: false,
         effect: CommandEffect::Validation,
-        run: || run_test_trust_cleanup_guard(),
+        run: || run_test_trust_maintenance_guard(),
     },
     SuiteDef {
         id: "docs-config-reduction",

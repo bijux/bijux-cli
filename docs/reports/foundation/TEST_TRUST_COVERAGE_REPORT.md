@@ -18,5 +18,5 @@ expects to remain visible.
 
 - test trust contract: `docs/spec/TEST_TRUST_CONTRACT.md`
 - test trust ledger: `docs/spec/TEST_TRUST_LEDGER.md`
-- cleanup report: `docs/reports/foundation/TEST_TRUST_CLEANUP_REPORT.md`
-- test trust suites: `repo.test-trust-foundation`, `repo.test-trust-cleanup`
+- maintenance report: `docs/reports/foundation/TEST_TRUST_MAINTENANCE_REPORT.md`
+- test trust suites: `repo.test-trust-foundation`, `repo.test-trust-maintenance`

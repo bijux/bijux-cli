@@ -2420,7 +2420,7 @@ pub(super) fn run_battle_suite_mandatory_guard() -> Result<(), String> {
     Ok(())
 }
 
-pub(super) fn run_test_trust_cleanup_guard() -> Result<(), String> {
+pub(super) fn run_test_trust_maintenance_guard() -> Result<(), String> {
     let root = repo_root()?;
     let ledger = root.join("configs/dag/policy/test_trust_ledger.json");
     if !ledger.exists() {
@@ -2432,9 +2432,9 @@ pub(super) fn run_test_trust_cleanup_guard() -> Result<(), String> {
         return Err("missing test trust ledger spec".to_string());
     }
 
-    let report = root.join("docs/reports/foundation/TEST_TRUST_CLEANUP_REPORT.md");
+    let report = root.join("docs/reports/foundation/TEST_TRUST_MAINTENANCE_REPORT.md");
     if !report.exists() {
-        return Err("missing test trust cleanup report".to_string());
+        return Err("missing test trust maintenance report".to_string());
     }
 
     let policy: Value =
@@ -4598,7 +4598,7 @@ pub(super) fn run_foundation_verification_guard() -> Result<(), String> {
         "artifact-hardening",
         "performance-evidence",
         "test-trust-foundation",
-        "test-trust-cleanup",
+        "test-trust-maintenance",
         "docs-config-reduction",
         "scheduler-invariants",
         "backend-contract",
