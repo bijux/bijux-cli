@@ -34,7 +34,7 @@ fn repo_root() -> PathBuf {
 fn overreach_policy_entries_are_complete_and_valid() {
     let root = repo_root();
     let policy: RuntimeOverreachPolicy = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/dag/policy/runtime_overreach_cleanup.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/runtime_overreach_policy.json"))
             .expect("read runtime overreach policy"),
     )
     .expect("parse runtime overreach policy");
@@ -80,7 +80,7 @@ fn overreach_policy_entries_are_complete_and_valid() {
 fn release_evidence_set_does_not_depend_on_overreach_modules() {
     let root = repo_root();
     let policy: RuntimeOverreachPolicy = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/dag/policy/runtime_overreach_cleanup.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/runtime_overreach_policy.json"))
             .expect("read runtime overreach policy"),
     )
     .expect("parse runtime overreach policy");
@@ -108,7 +108,7 @@ fn release_evidence_set_does_not_depend_on_overreach_modules() {
 fn runtime_scope_policy_marks_overreach_modules_as_move_or_retain() {
     let root = repo_root();
     let policy: RuntimeOverreachPolicy = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/dag/policy/runtime_overreach_cleanup.json"))
+        &fs::read_to_string(root.join("configs/dag/policy/runtime_overreach_policy.json"))
             .expect("read runtime overreach policy"),
     )
     .expect("parse runtime overreach policy");
