@@ -26,6 +26,7 @@ predictable recovery under change.
 | --- | --- |
 | get from checkout to a real run quickly | [First-Run Tutorial](guides/first-run-tutorial.md) |
 | install the tool and verify the environment | [Installation and Setup](installation-and-setup.md) |
+| bootstrap the first retained operator run | [First Hour With Bijux Dag](first-hour-with-bijux-dag.md) |
 | run the normal local workflow loop | [Common Workflows](common-workflows.md) |
 | inspect failures, traces, and retained evidence | [Observability and Diagnostics](observability-and-diagnostics.md) |
 | recover from runtime or workflow failures | [Failure Recovery](failure-recovery.md) |
@@ -42,6 +43,8 @@ predictable recovery under change.
 ## Core Runbook Pages
 
 - [Installation and Setup](installation-and-setup.md)
+- [CI Integration](ci-integration.md)
+- [First Hour With Bijux Dag](first-hour-with-bijux-dag.md)
 - [Local Development](local-development.md)
 - [Common Workflows](common-workflows.md)
 - [Observability and Diagnostics](observability-and-diagnostics.md)
@@ -50,9 +53,10 @@ predictable recovery under change.
 ## Boundary and Governance Pages
 
 - [Deployment Boundaries](deployment-boundaries.md)
+- [Trust Boundaries](trust-boundaries.md)
 - [v0.4.0 Release Notes](v0-4-0-release-notes.md)
 - [Branching Bulletin Workflow](guides/branching-bulletin-workflow.md)
-- [CI Integration](guides/ci-integration.md)
+- [CI Integration Guide](guides/ci-integration.md)
 - [Cache Behavior Workflow](guides/cache-behavior-workflow.md)
 - [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md)
 - [Container Packaging Workflow](guides/container-packaging-workflow.md)
@@ -60,11 +64,11 @@ predictable recovery under change.
 - [Evidence-Backed Bulletin Workflow](guides/evidence-backed-bulletin-workflow.md)
 - [File Processing Workflow](guides/file-processing-workflow.md)
 - [First-Run Tutorial](guides/first-run-tutorial.md)
-- [First Hour With Bijux Dag](guides/first-hour-with-bijux-dag.md)
+- [First Hour Guide](guides/first-hour-with-bijux-dag.md)
 - [Historical Catalog Backfill Workflow](guides/historical-catalog-backfill-workflow.md)
 - [Scheduled Catalog Refresh Workflow](guides/scheduled-catalog-refresh-workflow.md)
 - [Security And Isolation Truth](reference/security-isolation-truth.md)
-- [Trust Boundaries](reference/trust-boundaries.md)
+- [Trust Boundaries Reference](reference/trust-boundaries.md)
 - [Performance and Scaling](performance-and-scaling.md)
 - [Release and Versioning](release-and-versioning.md)
 - [Security and Safety](security-and-safety.md)
