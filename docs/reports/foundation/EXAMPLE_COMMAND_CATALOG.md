@@ -1,9 +1,9 @@
-# Example Task Index
+# Example Command Catalog
 
-This index maps common DAG/operator tasks to deterministic example assets and
+This catalog maps common DAG/operator commands to deterministic example assets and
 their primary command entrypoint.
 
-| task | example graph | primary command |
+| command id | example graph | primary command |
 | --- | --- | --- |
 | `validate` | `evidence/dag/authoring/examples/hello.dag.json` | `bijux-dag validate --json evidence/dag/authoring/examples/hello.dag.json` |
 | `plan` | `evidence/dag/authoring/examples/hello.dag.json` | `bijux-dag plan explain --json evidence/dag/authoring/examples/hello.dag.json` |

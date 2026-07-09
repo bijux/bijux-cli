@@ -3892,7 +3892,7 @@ fn evaluate_distribution_delivery_goals(root: &Path) -> Result<Value, String> {
         evaluate_publishable_crates(root)?,
         evaluate_python_bridge_distribution(root)?,
         evaluate_release_artifacts_runnable(root)?,
-        evaluate_example_task_index(root)?,
+        evaluate_example_command_catalog(root)?,
         evaluate_executable_docs_recipes(root)?,
         evaluate_install_paths_predictable(root)?,
         evaluate_local_dev_loop_focus(root)?,
@@ -5007,16 +5007,16 @@ fn evaluate_release_artifacts_runnable(root: &Path) -> Result<Value, String> {
     }))
 }
 
-fn evaluate_example_task_index(root: &Path) -> Result<Value, String> {
-    let contract_rel = "configs/dag/release/example_task_index.json";
-    let index_rel = "docs/reports/foundation/EXAMPLE_TASK_INDEX.md";
+fn evaluate_example_command_catalog(root: &Path) -> Result<Value, String> {
+    let contract_rel = "configs/dag/release/example_command_catalog.json";
+    let index_rel = "docs/reports/foundation/EXAMPLE_COMMAND_CATALOG.md";
     let contract_payload = fs::read_to_string(root.join(contract_rel))
         .map_err(|err| format!("failed to read {contract_rel}: {err}"))?;
     let contract: Value = serde_json::from_str(&contract_payload)
         .map_err(|err| format!("failed to parse {contract_rel}: {err}"))?;
-    let rows = contract["tasks"]
+    let rows = contract["commands"]
         .as_array()
-        .ok_or_else(|| "example task contract must contain `tasks` array".to_string())?;
+        .ok_or_else(|| "example command catalog must contain `commands` array".to_string())?;
 
     let required = [
         "validate",
@@ -5033,33 +5033,36 @@ fn evaluate_example_task_index(root: &Path) -> Result<Value, String> {
     let mut present = BTreeSet::new();
     let mut violations = Vec::new();
     for row in rows {
-        let Some(task) = row.get("task").and_then(Value::as_str) else {
-            violations.push("example task entry missing `task`".to_string());
+        let Some(command_id) = row.get("command_id").and_then(Value::as_str) else {
+            violations.push("example command entry missing `command_id`".to_string());
             continue;
         };
-        present.insert(task.to_string());
+        present.insert(command_id.to_string());
         let graph = row
             .get("graph")
             .and_then(Value::as_str)
-            .ok_or_else(|| format!("task `{task}` is missing graph"))?;
+            .ok_or_else(|| format!("command `{command_id}` is missing graph"))?;
         if !root.join(graph).exists() {
-            violations.push(format!("task `{task}` graph does not exist: {graph}"));
+            violations.push(format!("command `{command_id}` graph does not exist: {graph}"));
         }
         if row.get("command").and_then(Value::as_str).is_none_or(str::is_empty) {
-            violations.push(format!("task `{task}` command is required"));
+            violations.push(format!("command `{command_id}` command is required"));
         }
     }
-    for task in required {
-        if !present.contains(task) {
-            violations.push(format!("required task is missing from contract: {task}"));
+    for command_id in required {
+        if !present.contains(command_id) {
+            violations
+                .push(format!("required command is missing from catalog: {command_id}"));
         }
     }
 
     let index_body = fs::read_to_string(root.join(index_rel))
         .map_err(|err| format!("failed to read {index_rel}: {err}"))?;
-    for task in present {
-        if !index_body.contains(&format!("`{task}`")) {
-            violations.push(format!("example task index markdown is missing task `{task}`"));
+    for command_id in present {
+        if !index_body.contains(&format!("`{command_id}`")) {
+            violations.push(format!(
+                "example command catalog markdown is missing command `{command_id}`"
+            ));
         }
     }
 
