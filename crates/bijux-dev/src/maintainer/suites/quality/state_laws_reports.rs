@@ -4,9 +4,9 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-MEMORY-SURFACE-REPORTS" => {
-            let matrix_source = fs::read_to_string(
+            let coverage_source = fs::read_to_string(
                 workspace_root
-                    .join("crates/bijux-cli/tests/integration/cli/memory/memory_command_matrix.rs"),
+                    .join("crates/bijux-cli/tests/integration/cli/memory/memory_command_coverage.rs"),
             )
             .unwrap_or_default();
             let parity_source = fs::read_to_string(
@@ -35,13 +35,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (359, "memory_root_parity_with_python_summary_command"),
             ]);
             let coverage_rows = required.iter().map(|(id, name)| {
-                                        let in_matrix = matrix_source.contains(&format!("fn {name}("));
+                                        let in_coverage = coverage_source.contains(&format!("fn {name}("));
                                         let in_parity = parity_source.contains(&format!("fn {name}("));
                                         json!({
                                             "coverage_id": id,
                                             "test": name,
-                                            "status": if in_matrix || in_parity { "complete" } else { "missing" },
-                                            "evidence": if in_matrix { "crates/bijux-cli/tests/integration/cli/memory/memory_command_matrix.rs" } else { "crates/bijux-cli/tests/integration/cli/memory/memory_parity.rs" },
+                                            "status": if in_coverage || in_parity { "complete" } else { "missing" },
+                                            "evidence": if in_coverage { "crates/bijux-cli/tests/integration/cli/memory/memory_command_coverage.rs" } else { "crates/bijux-cli/tests/integration/cli/memory/memory_parity.rs" },
                                         })
                                     }).collect::<Vec<_>>();
             let generated_at = generated_at_utc();
@@ -59,11 +59,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     })).ok()?;
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/memory_command_matrix_artifact.json",
+                "artifacts/status/memory_command_coverage_artifact.json",
                 &json!({
                     "generated_at": generated_at,
                     "generator":"bijux-dev-cli",
-                    "scope":"memory command matrix",
+                    "scope":"memory command coverage artifact",
                     "coverage_rows":coverage_rows,
                     "commands":coverage_rows,
                 }),
@@ -85,7 +85,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "status": if parity_source.contains("fn memory_root_parity_with_python_summary_command(") { "complete" } else { "partial" },
                                         "evidence":[
                                             "crates/bijux-cli/tests/integration/cli/memory/memory_parity.rs",
-                                            "crates/bijux-cli/tests/integration/cli/memory/memory_command_matrix.rs",
+                                            "crates/bijux-cli/tests/integration/cli/memory/memory_command_coverage.rs",
                                         ],
                                     })).ok()?;
             write_status_artifact_json(workspace_root, "artifacts/status/memory_read_domain_contract.json", &json!({
@@ -95,15 +95,15 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "status":"frozen",
                                         "rule":"Memory read behavior is accepted only when determinism and corruption handling remain green.",
                                         "evidence":[
-                                            "crates/bijux-cli/tests/integration/cli/memory/memory_command_matrix.rs",
-                                            "artifacts/status/memory_command_matrix_artifact.json",
+                                            "crates/bijux-cli/tests/integration/cli/memory/memory_command_coverage.rs",
+                                            "artifacts/status/memory_command_coverage_artifact.json",
                                             "artifacts/status/memory_corruption_matrix_artifact.json",
                                             "artifacts/status/memory_python_parity_artifact.json",
                                         ],
                                     })).ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/memory_command_coverage_report.json",
-                "artifacts/status/memory_command_matrix_artifact.json",
+                "artifacts/status/memory_command_coverage_artifact.json",
                 "artifacts/status/memory_corruption_matrix_artifact.json",
                 "artifacts/status/memory_python_parity_artifact.json",
                 "artifacts/status/memory_read_domain_contract.json"

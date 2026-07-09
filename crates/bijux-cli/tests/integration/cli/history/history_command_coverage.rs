@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! History command behavior matrix coverage.
+//! History command behavior coverage.
 //! test_type: history-command-stability
 
 use std::fs;
@@ -27,7 +27,8 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
 
 fn temp_dir(name: &str) -> PathBuf {
     let root =
-        std::env::temp_dir().join(format!("bijux-history-matrix-{name}-{}", std::process::id()));
+        std::env::temp_dir()
+            .join(format!("bijux-history-coverage-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root

@@ -52,7 +52,7 @@ pub(super) fn rows() -> Vec<Value> {
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/memory_command_coverage_report.json",
-                "artifacts/status/memory_command_matrix_artifact.json",
+                "artifacts/status/memory_command_coverage_artifact.json",
                 "artifacts/status/memory_corruption_matrix_artifact.json",
                 "artifacts/status/memory_python_parity_artifact.json",
                 "artifacts/status/memory_read_domain_contract.json"

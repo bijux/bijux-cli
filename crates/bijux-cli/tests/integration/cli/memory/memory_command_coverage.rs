@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Memory command behavior matrix coverage.
+//! Memory command behavior coverage.
 //! test_type: memory-command-stability
 
 use std::fs;
@@ -27,7 +27,7 @@ fn temp_dir(name: &str) -> PathBuf {
         .expect("clock")
         .as_nanos();
     let root = std::env::temp_dir()
-        .join(format!("bijux-memory-matrix-{name}-{}-{nanos}", std::process::id()));
+        .join(format!("bijux-memory-coverage-{name}-{}-{nanos}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root

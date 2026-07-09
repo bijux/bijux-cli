@@ -207,7 +207,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-HISTORY-SURFACE-REPORTS" => {
             let source =
                 fs::read_to_string(workspace_root.join(
-                    "crates/bijux-cli/tests/integration/cli/history/history_command_matrix.rs",
+                    "crates/bijux-cli/tests/integration/cli/history/history_command_coverage.rs",
                 ))
                 .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -237,7 +237,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test": fn_name,
                                         "status": if source.contains(&format!("fn {fn_name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/integration/cli/history/history_command_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/history/history_command_coverage.rs",
                                     })
                                 })
                                 .collect::<Vec<_>>();
@@ -261,7 +261,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                             .ok()?;
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/history_command_matrix_artifact.json",
+                "artifacts/status/history_command_coverage_artifact.json",
                 &json!({
                     "generated_at": generated_at_utc(),
                     "generator": "bijux-dev-cli",
@@ -303,8 +303,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "frozen",
                                     "rule": "History read behavior must remain deterministic, format-stable, and resilient under malformed storage states.",
                                     "evidence": [
-                                        "crates/bijux-cli/tests/integration/cli/history/history_command_matrix.rs",
-                                        "artifacts/status/history_command_matrix_artifact.json",
+                                        "crates/bijux-cli/tests/integration/cli/history/history_command_coverage.rs",
+                                        "artifacts/status/history_command_coverage_artifact.json",
                                         "artifacts/status/history_corruption_matrix_artifact.json",
                                     ],
                                 }),
@@ -312,7 +312,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
                 "artifacts/status/history_command_coverage_report.json",
-                "artifacts/status/history_command_matrix_artifact.json",
+                "artifacts/status/history_command_coverage_artifact.json",
                 "artifacts/status/history_corruption_matrix_artifact.json",
                 "artifacts/status/history_read_domain_contract.json"
             ]}))
