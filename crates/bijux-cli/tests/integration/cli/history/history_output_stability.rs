@@ -21,9 +21,8 @@ fn run_with_env(args: &[&str], envs: &[(&str, String)]) -> Output {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root =
-        std::env::temp_dir()
-            .join(format!("bijux-history-output-stability-{name}-{}", std::process::id()));
+    let root = std::env::temp_dir()
+        .join(format!("bijux-history-output-stability-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root

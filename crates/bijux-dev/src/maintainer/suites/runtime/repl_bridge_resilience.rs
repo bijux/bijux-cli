@@ -392,11 +392,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX" => {
-            let source =
-                fs::read_to_string(workspace_root.join(
-                    "crates/bijux-cli/tests/integration/cli/root/flag_normalization_laws.rs",
-                ))
-                .unwrap_or_default();
+            let source = fs::read_to_string(
+                workspace_root
+                    .join("crates/bijux-cli/tests/integration/cli/root/flag_normalization_laws.rs"),
+            )
+            .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
                 (81, "global_flags_before_namespace_are_accepted"),
                 (82, "global_flags_after_namespace_are_accepted_when_supported"),

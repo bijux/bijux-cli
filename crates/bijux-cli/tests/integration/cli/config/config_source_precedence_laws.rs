@@ -30,11 +30,10 @@ fn run_with_env(args: &[&str], envs: &[(&str, &str)]) -> Output {
 
 fn temp_dir(name: &str) -> PathBuf {
     let counter = TEMP_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
-    let root = std::env::temp_dir()
-        .join(format!(
-            "bijux-config-source-precedence-laws-{name}-{}-{counter}",
-            std::process::id(),
-        ));
+    let root = std::env::temp_dir().join(format!(
+        "bijux-config-source-precedence-laws-{name}-{}-{counter}",
+        std::process::id(),
+    ));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir temp");
     root

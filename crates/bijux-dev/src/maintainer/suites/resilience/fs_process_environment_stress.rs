@@ -147,20 +147,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .map(|p| rel(&p, workspace_root))
                 .collect();
             let replay_ok = Command::new("cargo")
+                .args(["test", "-p", "bijux-cli", "--test", "integration", "config_case_replays::"])
+                .current_dir(workspace_root)
+                .status()
+                .ok()
+                .is_some_and(|s| s.success());
+            let targets_ok = Command::new("cargo")
                 .args([
                     "test",
                     "-p",
                     "bijux-cli",
                     "--test",
                     "integration",
-                    "config_case_replays::",
+                    "config_parser_stability::",
                 ])
-                .current_dir(workspace_root)
-                .status()
-                .ok()
-                .is_some_and(|s| s.success());
-            let targets_ok = Command::new("cargo")
-                .args(["test", "-p", "bijux-cli", "--test", "integration", "config_parser_stability::"])
                 .current_dir(workspace_root)
                 .status()
                 .ok()

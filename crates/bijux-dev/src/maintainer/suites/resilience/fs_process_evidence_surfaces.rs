@@ -205,11 +205,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-HISTORY-SURFACE-REPORTS" => {
-            let source =
-                fs::read_to_string(workspace_root.join(
-                    "crates/bijux-cli/tests/integration/cli/history/history_command_coverage.rs",
-                ))
-                .unwrap_or_default();
+            let source = fs::read_to_string(workspace_root.join(
+                "crates/bijux-cli/tests/integration/cli/history/history_command_coverage.rs",
+            ))
+            .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (322, "history_root_listing_no_file_one_record_many_records_and_ordering"),
                 (323, "history_root_listing_no_file_one_record_many_records_and_ordering"),

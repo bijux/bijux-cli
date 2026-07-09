@@ -4,11 +4,11 @@ use crate::contracts::maintenance::*;
 pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-MEMORY-SURFACE-REPORTS" => {
-            let coverage_source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/integration/cli/memory/memory_command_coverage.rs"),
-            )
-            .unwrap_or_default();
+            let coverage_source =
+                fs::read_to_string(workspace_root.join(
+                    "crates/bijux-cli/tests/integration/cli/memory/memory_command_coverage.rs",
+                ))
+                .unwrap_or_default();
             let parity_source = fs::read_to_string(
                 workspace_root
                     .join("crates/bijux-cli/tests/integration/cli/memory/memory_parity.rs"),

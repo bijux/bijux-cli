@@ -31,8 +31,8 @@ fn minimized_scaffold_cases_replay_with_deterministic_exit_codes() {
     files.sort();
     assert!(!files.is_empty(), "scaffold minimized corpus must not be empty");
 
-    let root =
-        std::env::temp_dir().join(format!("bijux-plugin-scaffold-case-replay-{}", std::process::id()));
+    let root = std::env::temp_dir()
+        .join(format!("bijux-plugin-scaffold-case-replay-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir root");
     let plugins_dir = root.join("plugins");

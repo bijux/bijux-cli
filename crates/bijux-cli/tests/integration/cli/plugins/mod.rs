@@ -11,8 +11,8 @@ mod plugin_failure_rollback_matrix;
 mod plugin_lifecycle_matrix;
 mod plugin_namespace_law;
 mod plugin_scaffold_case_replays;
-mod plugin_scaffold_stability;
 mod plugin_scaffold_minimal;
+mod plugin_scaffold_stability;
 
 pub(super) fn current_plugin_host_floor() -> String {
     let runtime = Version::parse(env!("CARGO_PKG_VERSION")).expect("package semver");

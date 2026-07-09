@@ -61,7 +61,14 @@ fn parity_cli_config_get_and_set_against_current_behavior() {
     let config = root.join("config.env");
     let config_text = config.to_string_lossy().to_string();
 
-    parity_against_core(&["cli", "config", "set", "coverage_key=42", "--config-path", &config_text]);
+    parity_against_core(&[
+        "cli",
+        "config",
+        "set",
+        "coverage_key=42",
+        "--config-path",
+        &config_text,
+    ]);
     parity_against_core(&["cli", "config", "get", "coverage_key", "--config-path", &config_text]);
 }
 

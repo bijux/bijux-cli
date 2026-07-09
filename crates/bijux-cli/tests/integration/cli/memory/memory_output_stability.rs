@@ -26,9 +26,8 @@ fn parse_json(bytes: &[u8]) -> Value {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let root =
-        std::env::temp_dir()
-            .join(format!("bijux-memory-output-stability-{name}-{}", std::process::id()));
+    let root = std::env::temp_dir()
+        .join(format!("bijux-memory-output-stability-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(&root).expect("mkdir");
     root

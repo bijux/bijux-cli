@@ -206,22 +206,34 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
-                                (241, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
-                                (242, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
-                                (243, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
-                                (244, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
-                                (245, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
-                                (246, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
-                                (247, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
-                                (248, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
-                                (249, "completion_runtime_namespaces_are_visible_and_aliases_are_not_rewritten"),
-                                (250, "completion_runtime_namespaces_are_visible_and_aliases_are_not_rewritten"),
-                                (251, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
-                                (252, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
-                                (253, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
-                                (254, "completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs"),
-                                (255, "completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs"),
-                            ]);
+                (241, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
+                (242, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
+                (243, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
+                (244, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
+                (
+                    245,
+                    "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported",
+                ),
+                (
+                    246,
+                    "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported",
+                ),
+                (
+                    247,
+                    "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported",
+                ),
+                (
+                    248,
+                    "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported",
+                ),
+                (249, "completion_runtime_namespaces_are_visible_and_aliases_are_not_rewritten"),
+                (250, "completion_runtime_namespaces_are_visible_and_aliases_are_not_rewritten"),
+                (251, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
+                (252, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
+                (253, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
+                (254, "completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs"),
+                (255, "completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs"),
+            ]);
             let coverage_rows: Vec<Value> = required
                 .iter()
                 .map(|(coverage_id, name)| {
@@ -394,11 +406,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-REPL-EXECUTION-LAW-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/integration/repl/repl_command_parity_contracts.rs"),
-            )
-            .unwrap_or_default();
+            let source =
+                fs::read_to_string(workspace_root.join(
+                    "crates/bijux-cli/tests/integration/repl/repl_command_parity_contracts.rs",
+                ))
+                .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                                 (201, "repl_uses_same_kernel_entrypoint_and_route_resolution_as_non_interactive_cli"),
                                 (202, "repl_uses_same_kernel_entrypoint_and_route_resolution_as_non_interactive_cli"),
