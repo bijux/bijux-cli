@@ -61,7 +61,7 @@ to the shipped public `v0.4.0` surface.
 - [Run Evidence Layout](reference/run-evidence-layout.md)
 - [Error Codes](reference/error-codes.md)
 - [Gated Command Inventory](reference/gated-command-inventory.md)
-- [Authoring Guide](guides/authoring-guide.md)
+- [Authoring Guide](authoring-guide.md)
 - [Reusable Subgraphs](guides/reusable-subgraphs.md)
 - [Artifact Contracts](artifact-contracts.md)
 - [Entrypoints and Examples](entrypoints-and-examples.md)

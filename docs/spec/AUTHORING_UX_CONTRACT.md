@@ -19,24 +19,24 @@ graph parsing and validation guards.
 
 ## Positive authoring fixtures
 
-- `evidence/dag/authoring/patterns/minimal.json`
-- `evidence/dag/authoring/patterns/medium.json`
-- `evidence/dag/authoring/patterns/pattern_chain.json`
-- `evidence/dag/authoring/patterns/pattern_diamond.json`
-- `evidence/dag/authoring/patterns/pattern_fanout.json`
-- `evidence/dag/authoring/patterns/pattern_aggregation.json`
-- `evidence/dag/authoring/patterns/pattern_cache_heavy.json`
-- `evidence/dag/authoring/patterns/pattern_replay_sensitive.json`
+- `evidence/authoring/patterns/minimal.json`
+- `evidence/authoring/patterns/medium.json`
+- `evidence/authoring/patterns/pattern_chain.json`
+- `evidence/authoring/patterns/pattern_diamond.json`
+- `evidence/authoring/patterns/pattern_fanout.json`
+- `evidence/authoring/patterns/pattern_aggregation.json`
+- `evidence/authoring/patterns/pattern_cache_heavy.json`
+- `evidence/authoring/patterns/pattern_replay_sensitive.json`
 
 These fixtures must parse and validate without error-level diagnostics.
 
 ## Negative authoring fixtures
 
-- `evidence/dag/authoring/negative/undeclared_outputs.json`
-- `evidence/dag/authoring/negative/invalid_refs.json`
-- `evidence/dag/authoring/negative/cycle.json`
-- `evidence/dag/authoring/negative/invalid_selectors.json`
-- `evidence/dag/authoring/negative/unsupported_adapter_payload.json`
+- `evidence/authoring/negative/undeclared_outputs.json`
+- `evidence/authoring/negative/invalid_refs.json`
+- `evidence/authoring/negative/cycle.json`
+- `evidence/authoring/negative/invalid_selectors.json`
+- `evidence/authoring/negative/unsupported_adapter_payload.json`
 
 Negative fixtures must remain explicit proof for rejected authoring patterns.
 
