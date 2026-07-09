@@ -515,7 +515,7 @@ mod tests {
     };
 
     #[test]
-    fn g181_route_dispatch_and_help_startup_remain_responsive_under_inventory_growth() {
+    fn route_dispatch_and_help_startup_remain_responsive_under_inventory_growth() {
         let report = evaluate_route_dispatch_and_help_startup(&RouteDispatchBenchmarkInputV1 {
             route_count: 140,
             app_count: 6,
@@ -542,7 +542,7 @@ mod tests {
     }
 
     #[test]
-    fn g182_graph_parse_and_validation_budget_catches_regressions() {
+    fn graph_parse_and_validation_budget_catches_regressions() {
         let healthy =
             evaluate_graph_parse_and_validation_budget(&GraphValidationBenchmarkInputV1 {
                 small_graph_ms: 12.0,
@@ -568,7 +568,7 @@ mod tests {
     }
 
     #[test]
-    fn g183_canonicalization_and_fingerprinting_budget_is_measured_for_large_graphs() {
+    fn canonicalization_and_fingerprinting_budget_is_measured_for_large_graphs() {
         let report =
             evaluate_canonicalization_and_fingerprinting(&CanonicalFingerprintBenchmarkInputV1 {
                 node_count: 2_000,
@@ -591,7 +591,7 @@ mod tests {
     }
 
     #[test]
-    fn g184_planner_lowering_and_explain_remain_bounded_for_complex_shapes() {
+    fn planner_lowering_and_explain_remain_bounded_for_complex_shapes() {
         let report = evaluate_planner_lowering_and_explain(&PlannerLoweringBenchmarkInputV1 {
             chain_lowering_ms: 40.0,
             branch_lowering_ms: 70.0,
@@ -617,7 +617,7 @@ mod tests {
     }
 
     #[test]
-    fn g185_runtime_startup_overhead_is_tracked_and_budgeted() {
+    fn runtime_startup_overhead_is_tracked_and_budgeted() {
         let report = evaluate_runtime_startup_benchmark(&RuntimeStartupBenchmarkInputV1 {
             run_root_creation_ms: 60.0,
             manifest_write_ms: 24.0,
@@ -639,7 +639,7 @@ mod tests {
     }
 
     #[test]
-    fn g186_scheduler_churn_benchmark_catches_retry_and_cancellation_regressions() {
+    fn scheduler_churn_benchmark_catches_retry_and_cancellation_regressions() {
         let healthy = evaluate_scheduler_churn_benchmark(&SchedulerChurnBenchmarkInputV1 {
             retries_processed: 3_000,
             branch_events_processed: 4_000,
@@ -663,7 +663,7 @@ mod tests {
     }
 
     #[test]
-    fn g187_artifact_write_inventory_and_export_stay_within_deterministic_budgets() {
+    fn artifact_write_inventory_and_export_stay_within_deterministic_budgets() {
         let healthy = evaluate_artifact_write_and_inventory_benchmark(&ArtifactBenchmarkInputV1 {
             small_output_write_ms: 35.0,
             large_output_write_ms: 180.0,
@@ -685,7 +685,7 @@ mod tests {
     }
 
     #[test]
-    fn g188_evidence_verification_performance_is_release_tracked() {
+    fn evidence_verification_performance_is_release_tracked() {
         let healthy =
             evaluate_evidence_verification_benchmark(&EvidenceVerificationBenchmarkInputV1 {
                 small_bundle_ms: 60.0,
@@ -707,7 +707,7 @@ mod tests {
     }
 
     #[test]
-    fn g189_history_query_benchmark_keeps_long_lived_usage_responsive() {
+    fn history_query_benchmark_keeps_long_lived_usage_responsive() {
         let healthy = evaluate_history_query_benchmark(&HistoryQueryBenchmarkInputV1 {
             pagination_ms: 34.0,
             filtering_ms: 48.0,
@@ -729,7 +729,7 @@ mod tests {
     }
 
     #[test]
-    fn g190_cache_effectiveness_never_trades_speed_for_trust() {
+    fn cache_effectiveness_never_trades_speed_for_trust() {
         let healthy = evaluate_cache_effectiveness_benchmark(&CacheEffectivenessBenchmarkInputV1 {
             rerun_count: 50,
             cache_hit_count: 28,
