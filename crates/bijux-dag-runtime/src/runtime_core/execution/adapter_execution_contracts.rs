@@ -489,7 +489,7 @@ mod tests {
     };
 
     #[test]
-    fn g051_const_adapter_contract_proves_cache_replay_diff_and_inspect_readiness() {
+    fn const_adapter_contract_proves_cache_replay_diff_and_inspect_readiness() {
         let contract = build_const_adapter_execution_contract(
             true,
             vec![ConstAdapterOutputArtifactV1 {
@@ -506,7 +506,7 @@ mod tests {
     }
 
     #[test]
-    fn g052_shell_adapter_contract_enforces_argv_timeout_and_output_capture() {
+    fn shell_adapter_contract_enforces_argv_timeout_and_output_capture() {
         let contract = build_shell_adapter_execution_contract(
             vec!["python".to_string(), "script.py".to_string()],
             "/workspace/run",
@@ -522,7 +522,7 @@ mod tests {
     }
 
     #[test]
-    fn g053_command_invocation_defaults_to_safe_argv_literal_mode() {
+    fn command_invocation_defaults_to_safe_argv_literal_mode() {
         let safe = build_command_invocation_safety_contract(
             CommandInvocationModeV1::ArgvLiteral,
             vec!["echo".to_string(), "a|b".to_string()],
@@ -540,7 +540,7 @@ mod tests {
     }
 
     #[test]
-    fn g054_required_outputs_fail_on_missing_corrupt_or_outside_root_paths() {
+    fn required_outputs_fail_on_missing_corrupt_or_outside_root_paths() {
         let report = enforce_required_outputs_strict(
             "/run/42",
             vec!["metrics".to_string(), "summary".to_string()],
@@ -556,7 +556,7 @@ mod tests {
     }
 
     #[test]
-    fn g055_optional_outputs_are_recorded_as_explicit_absent_values() {
+    fn optional_outputs_are_recorded_as_explicit_absent_values() {
         let evidence = record_optional_outputs_honestly(
             vec!["summary".to_string(), "plots".to_string()],
             std::collections::BTreeMap::from([(
@@ -573,7 +573,7 @@ mod tests {
     }
 
     #[test]
-    fn g056_runtime_state_machine_is_closed_over_legal_transitions() {
+    fn runtime_state_machine_is_closed_over_legal_transitions() {
         let legal =
             validate_runtime_state_transition(RuntimeStateV1::Running, RuntimeStateV1::Completed);
         assert!(legal.allowed);
@@ -585,7 +585,7 @@ mod tests {
     }
 
     #[test]
-    fn g057_cancellation_requests_are_idempotent_and_non_corrupting() {
+    fn cancellation_requests_are_idempotent_and_non_corrupting() {
         let report = apply_cancellation_idempotently(CancellationStateV1::Running, 3);
         assert_eq!(report.final_state, CancellationStateV1::Cancelled);
         assert!(report.idempotent);
@@ -593,7 +593,7 @@ mod tests {
     }
 
     #[test]
-    fn g058_retry_policy_retries_only_transient_failures_with_backoff() {
+    fn retry_policy_retries_only_transient_failures_with_backoff() {
         let no_retry = decide_retry_from_policy(
             RetryPolicyInputV1 { max_attempts: 3, backoff_ms: 1000 },
             RetryFailureClassV1::ContractFailure,
@@ -612,7 +612,7 @@ mod tests {
     }
 
     #[test]
-    fn g059_crash_recovery_detects_duplicate_writes_before_resume() {
+    fn crash_recovery_detects_duplicate_writes_before_resume() {
         let report = decide_crash_recovery(vec![
             RecoveryWriteRecordV1 {
                 node_id: "n1".to_string(),
@@ -632,7 +632,7 @@ mod tests {
     }
 
     #[test]
-    fn g060_heartbeats_distinguish_alive_attempts_without_fingerprint_noise() {
+    fn heartbeats_distinguish_alive_attempts_without_fingerprint_noise() {
         let liveness = evaluate_heartbeat_liveness(
             vec![AttemptHeartbeatSampleV1 {
                 attempt_id: "attempt-1".to_string(),

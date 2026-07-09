@@ -105,14 +105,14 @@ mod invariants_tests;
 #[path = "internal/control/io.rs"]
 mod io;
 #[cfg(feature = "experimental-public-api")]
-#[path = "runtime_core/execution/iteration06_contracts.rs"]
-mod iteration06_contracts;
+#[path = "runtime_core/execution/adapter_execution_contracts.rs"]
+mod adapter_execution_contracts;
 #[cfg(feature = "experimental-public-api")]
-#[path = "runtime_core/execution/iteration09_contracts.rs"]
-mod iteration09_contracts;
+#[path = "runtime_core/execution/write_boundary_contracts.rs"]
+mod write_boundary_contracts;
 #[cfg(feature = "experimental-public-api")]
-#[path = "runtime_core/planning/iteration13_contracts.rs"]
-mod iteration13_contracts;
+#[path = "runtime_core/planning/planner_admission_contracts.rs"]
+mod planner_admission_contracts;
 #[cfg(feature = "experimental-public-api")]
 #[path = "runtime_core/execution/iteration14_contracts.rs"]
 mod iteration14_contracts;
@@ -646,13 +646,13 @@ pub mod prelude {
 #[cfg(feature = "experimental-public-api")]
 pub mod experimental {
     pub mod adapter_execution {
-        pub use crate::iteration06_contracts::*;
+        pub use crate::adapter_execution_contracts::*;
     }
     pub mod write_boundaries {
-        pub use crate::iteration09_contracts::*;
+        pub use crate::write_boundary_contracts::*;
     }
     pub mod planner_admission {
-        pub use crate::iteration13_contracts::*;
+        pub use crate::planner_admission_contracts::*;
     }
     pub mod durable_queue {
         pub use crate::iteration14_contracts::*;

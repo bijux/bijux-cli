@@ -453,7 +453,7 @@ mod tests {
     };
 
     #[test]
-    fn g081_write_boundary_refuses_traversal_and_symlink_escape() {
+    fn write_boundary_refuses_traversal_and_symlink_escape() {
         let allowed_roots = vec!["/workspace/runs".to_string(), "/workspace/cache".to_string()];
         let traversal = enforce_write_boundary(
             "../etc/passwd",
@@ -477,7 +477,7 @@ mod tests {
     }
 
     #[test]
-    fn g082_environment_allowlist_prevents_secret_leakage() {
+    fn environment_allowlist_prevents_secret_leakage() {
         let report = enforce_environment_allowlist(
             vec![
                 ("PATH".to_string(), "/usr/bin".to_string()),
@@ -494,7 +494,7 @@ mod tests {
     }
 
     #[test]
-    fn g083_secret_redaction_removes_sensitive_values_while_keeping_context() {
+    fn secret_redaction_removes_sensitive_values_while_keeping_context() {
         let report = redact_sensitive_values(
             "request failed token=abc123 path=/workspace/run secret=topsecret",
             &["abc123".to_string(), "topsecret".to_string()],
@@ -507,7 +507,7 @@ mod tests {
     }
 
     #[test]
-    fn g084_network_policy_labels_drive_cache_and_replay_trust() {
+    fn network_policy_labels_drive_cache_and_replay_trust() {
         let forbidden = classify_network_policy_trust(NetworkPolicyLabelV1::Forbidden, true);
         assert_eq!(forbidden.cache_trust, "unsafe");
         assert_eq!(forbidden.replay_trust, "unsafe");
@@ -518,7 +518,7 @@ mod tests {
     }
 
     #[test]
-    fn g085_bundle_import_rejects_hostile_inputs() {
+    fn bundle_import_rejects_hostile_inputs() {
         let report = validate_bundle_import_safety(true, true, false, true, true);
         assert!(!report.accepted);
         assert!(report.rejection_reasons.contains(&"path_traversal".to_string()));
@@ -528,7 +528,7 @@ mod tests {
     }
 
     #[test]
-    fn g086_plugin_execution_refuses_unknown_or_mutated_binaries() {
+    fn plugin_execution_refuses_unknown_or_mutated_binaries() {
         let outside = authorize_plugin_execution(
             "/tmp/rogue/plugin",
             &["/workspace/plugins".to_string()],
@@ -551,7 +551,7 @@ mod tests {
     }
 
     #[test]
-    fn g087_shell_output_capture_is_bounded_and_points_to_overflow_artifact() {
+    fn shell_output_capture_is_bounded_and_points_to_overflow_artifact() {
         let report = capture_shell_output_bounded(8192, 256, 1024).expect("capture report");
         assert_eq!(report.stdout_bytes_captured, 1024);
         assert_eq!(report.stderr_bytes_captured, 256);
@@ -565,7 +565,7 @@ mod tests {
     }
 
     #[test]
-    fn g088_override_audit_records_risky_runtime_choices() {
+    fn override_audit_records_risky_runtime_choices() {
         let events = validate_override_audit_events(vec![
             OverrideAuditEventV1 {
                 override_type: "forced_rerun".to_string(),
@@ -599,7 +599,7 @@ mod tests {
     }
 
     #[test]
-    fn g089_supply_chain_inventory_captures_adapter_plugin_and_app_surfaces() {
+    fn supply_chain_inventory_captures_adapter_plugin_and_app_surfaces() {
         let report = build_supply_chain_inventory_report(
             "run-20260501-001",
             vec![
@@ -628,7 +628,7 @@ mod tests {
     }
 
     #[test]
-    fn g090_low_trust_profile_refuses_unsafe_nodes_before_execution() {
+    fn low_trust_profile_refuses_unsafe_nodes_before_execution() {
         let report = enforce_low_trust_profile(vec![
             NodeRiskSurfaceV1 {
                 node_id: "const-safe".to_string(),

@@ -194,7 +194,7 @@ mod tests {
     }
 
     #[test]
-    fn g124_container_capability_requires_backend_and_digest_before_production_ready() {
+    fn container_capability_requires_backend_and_digest_before_production_ready() {
         let report = evaluate_container_capability_negotiation(
             &ContainerCapabilityProbeV1 {
                 enabled: true,
@@ -212,7 +212,7 @@ mod tests {
     }
 
     #[test]
-    fn g125_remote_capability_status_blocks_production_when_not_real() {
+    fn remote_capability_status_blocks_production_when_not_real() {
         let report = build_remote_capability_honesty_report(vec![
             RemoteCapabilityStatusV1 {
                 capability: "remote".to_string(),
@@ -246,7 +246,7 @@ mod tests {
     }
 
     #[test]
-    fn g130_admission_refuses_oversized_or_unavailable_planner_outputs_before_execution() {
+    fn admission_refuses_oversized_or_unavailable_planner_outputs_before_execution() {
         let admission = admit_run_from_planner_outputs(
             &ResourcePreflightReportV1 {
                 requirements: vec![ResourceRequirementV1 {
