@@ -34,7 +34,7 @@
       "python_test_file": "crates/bijux-cli-python/tests/python/test_runtime_parity.py",
       "coverage_level": "better",
       "rust_test_files": [
-        "crates/bijux-cli-python/tests/bridge_execution_law_extra.rs",
+        "crates/bijux-cli-python/tests/bridge_execution_parity.rs",
         "crates/bijux-cli-python/tests/bridge_surface_parity_matrix.rs",
         "crates/bijux-cli-python/tests/runtime_entrypoint_unity.rs"
       ]
