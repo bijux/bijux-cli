@@ -1006,10 +1006,10 @@ mod tests {
               "spec":"bijux-dag/v0.1",
               "meta":{"name":"runtime","owners":[],"tags":[]},
               "nodes":[
-                {"id":"const1","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
-                {"id":"task1","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"effects":["filesystem"],"params":{"argv":["/bin/sh","-c","true"]}}
+                {"id":"literal_source","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+                {"id":"shell_node","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"effects":["filesystem"],"params":{"argv":["/bin/sh","-c","true"]}}
               ],
-              "edges":[{"from":{"node_id":"const1","port":"out"},"to":{"node_id":"task1","port":"in"}}]
+              "edges":[{"from":{"node_id":"literal_source","port":"out"},"to":{"node_id":"shell_node","port":"in"}}]
             }"#,
         )
         .expect("write dag");
@@ -1069,9 +1069,9 @@ mod tests {
               "spec":"bijux-dag/v0.1",
               "meta":{"name":"runtime","owners":[],"tags":[]},
               "nodes":[
-                {"id":"const1","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+                {"id":"literal_source","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
                 {
-                  "id":"task1",
+                  "id":"shell_node",
                   "kind":"shell",
                   "inputs":["in"],
                   "outputs":[{"name":"out","path":"b/out"}],
@@ -1085,14 +1085,14 @@ mod tests {
                   }
                 }
               ],
-              "edges":[{"from":{"node_id":"const1","port":"out"},"to":{"node_id":"task1","port":"in"}}]
+              "edges":[{"from":{"node_id":"literal_source","port":"out"},"to":{"node_id":"shell_node","port":"in"}}]
             }"#,
         )
         .expect("write dag");
 
         let cli = quiet_json_cli(RuntimeCommands::Retry {
             dag: dag.clone(),
-            node_id: "task1".to_string(),
+            node_id: "shell_node".to_string(),
             attempt: 2,
             failure_class: "artifact_transient".to_string(),
             exit_code: None,
@@ -1101,7 +1101,7 @@ mod tests {
             &cli,
             &RuntimeCommands::Retry {
                 dag,
-                node_id: "task1".to_string(),
+                node_id: "shell_node".to_string(),
                 attempt: 2,
                 failure_class: "artifact_transient".to_string(),
                 exit_code: None,
@@ -1121,9 +1121,9 @@ mod tests {
               "spec":"bijux-dag/v0.1",
               "meta":{"name":"runtime","owners":[],"tags":[]},
               "nodes":[
-                {"id":"const1","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+                {"id":"literal_source","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
                 {
-                  "id":"task1",
+                  "id":"shell_node",
                   "kind":"shell",
                   "inputs":["in"],
                   "outputs":[{"name":"out","path":"b/out"}],
@@ -1136,14 +1136,14 @@ mod tests {
                   }
                 }
               ],
-              "edges":[{"from":{"node_id":"const1","port":"out"},"to":{"node_id":"task1","port":"in"}}]
+              "edges":[{"from":{"node_id":"literal_source","port":"out"},"to":{"node_id":"shell_node","port":"in"}}]
             }"#,
         )
         .expect("write dag");
 
         let cli = quiet_json_cli(RuntimeCommands::Timeout {
             dag: dag.clone(),
-            node_id: "task1".to_string(),
+            node_id: "shell_node".to_string(),
             queue_wait_ms: Some(15),
             execution_ms: Some(50),
             total_elapsed_ms: Some(90),
@@ -1155,7 +1155,7 @@ mod tests {
             &cli,
             &RuntimeCommands::Timeout {
                 dag,
-                node_id: "task1".to_string(),
+                node_id: "shell_node".to_string(),
                 queue_wait_ms: Some(15),
                 execution_ms: Some(50),
                 total_elapsed_ms: Some(90),
