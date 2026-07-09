@@ -126,6 +126,16 @@
       ]
     },
     {
+      "path_glob": "crates/bijux-dag-app/src/routes/run_routes.rs",
+      "allowed_env_keys": [
+        "BIJUX_DAG_KUBECTL",
+        "BIJUX_DAG_KUBERNETES_POLL_INTERVAL_MS",
+        "BIJUX_DAG_SLURM_SBATCH",
+        "BIJUX_DAG_SLURM_SACCT",
+        "BIJUX_DAG_SLURM_POLL_INTERVAL_MS"
+      ]
+    },
+    {
       "path_glob": "crates/bijux-dev/src/commands/mod.rs",
       "allowed_env_keys": [
         "CARGO_TARGET_DIR",

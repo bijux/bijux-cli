@@ -183,9 +183,6 @@ mod tests {
     use crate::commands::model::CommandEffect;
 
     fn pass() -> Result<(), String> {
-        if std::env::var("BIJUX_DEV_DAG_FORCE_TEST_FAIL").ok().as_deref() == Some("1") {
-            return Err("forced failure".to_string());
-        }
         Ok(())
     }
 
