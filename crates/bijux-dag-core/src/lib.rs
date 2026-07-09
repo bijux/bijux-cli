@@ -57,8 +57,8 @@ pub mod effects;
 #[path = "contracts/error.rs"]
 pub mod error;
 #[cfg(feature = "experimental-public-api")]
-#[path = "contracts/execution_iteration12.rs"]
-mod execution_iteration12;
+#[path = "contracts/execution_contracts.rs"]
+mod execution_contracts;
 #[doc(hidden)]
 #[path = "graph/expansion.rs"]
 pub mod expansion;
@@ -84,8 +84,8 @@ pub mod node;
 #[path = "pipeline/parse.rs"]
 pub mod parse;
 #[cfg(feature = "experimental-public-api")]
-#[path = "contracts/performance_iteration19_contracts.rs"]
-mod performance_iteration19_contracts;
+#[path = "contracts/performance_contracts.rs"]
+mod performance_contracts;
 #[doc(hidden)]
 #[path = "planner/planner.rs"]
 pub mod planner;
@@ -96,8 +96,8 @@ mod planner_contracts;
 #[path = "pipeline/resolve.rs"]
 pub mod resolve;
 #[cfg(feature = "experimental-public-api")]
-#[path = "contracts/resource_iteration13.rs"]
-mod resource_iteration13;
+#[path = "contracts/resource_contracts.rs"]
+mod resource_contracts;
 #[doc(hidden)]
 #[path = "graph/resources.rs"]
 pub mod resources;
@@ -230,14 +230,14 @@ pub mod experimental {
         pub use crate::authoring_contracts::*;
     }
     pub mod execution_contracts {
-        pub use crate::execution_iteration12::*;
+        pub use crate::execution_contracts::*;
     }
     pub mod planner_contracts {
-        pub use crate::performance_iteration19_contracts::*;
+        pub use crate::performance_contracts::*;
         pub use crate::planner_contracts::*;
     }
     pub mod resource_capabilities {
-        pub use crate::resource_iteration13::*;
+        pub use crate::resource_contracts::*;
     }
     pub mod scientific_integration {
         pub use crate::scientific_integration_contracts::*;
