@@ -12,7 +12,7 @@ use thiserror as _;
 #[test]
 fn backend_conformance_fixture_has_expected_shape() {
     let fixture_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../evidence/perf/fixtures/infrastructure/backend_conformance_matrix.json");
+        .join("../../evidence/perf/fixtures/infrastructure/backend_conformance_expectations.json");
     let payload = std::fs::read_to_string(&fixture_path)
         .unwrap_or_else(|err| panic!("failed to read {}: {err}", fixture_path.display()));
     let value: serde_json::Value = serde_json::from_str(&payload)

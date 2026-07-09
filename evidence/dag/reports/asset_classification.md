@@ -4,7 +4,7 @@ Classification for files in tasks 21-34 scopes.
 
 | path | class | status | ownership | canonical_location | notes |
 |---|---|---|---|---|---|
-| evidence/perf/fixtures/infrastructure/backend_conformance_matrix.json | perf | transitional | root-owned | evidence/perf |  |
+| evidence/perf/fixtures/infrastructure/backend_conformance_expectations.json | perf | transitional | root-owned | evidence/perf |  |
 | evidence/perf/fixtures/large_dag.json | perf | transitional | root-owned | evidence/perf |  |
 | evidence/perf/fixtures/observability/investigation_bundle_demo.json | perf | transitional | root-owned | evidence/perf |  |
 | evidence/perf/fixtures/observability/retry_cancel_cache_failure.json | perf | transitional | root-owned | evidence/perf |  |
@@ -125,7 +125,7 @@ Classification for files in tasks 21-34 scopes.
 | crates/bijux-dag-runtime/tests/fixtures/state_machine/evolution_trace.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
-| crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
+| crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/verification/invariants.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/workflow_product/workflow_health.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence | candidate speculative asset; verify release relevance |

@@ -14,7 +14,7 @@ This report lists the primary test surfaces and the evidence assets they consume
 - `crates/bijux-dag-app/tests/replay_contract.rs`
   - `evidence/cache/replay/*.json`
 - `crates/bijux-dag-runtime/tests/infrastructure_fixture_contract.rs`
-  - `evidence/perf/fixtures/infrastructure/backend_conformance_matrix.json`
+  - `evidence/perf/fixtures/infrastructure/backend_conformance_expectations.json`
 - `crates/bijux-dev-dag/tests/benchmark_scenario_contract.rs`
   - `evidence/perf/scenarios/*.json`
   - `evidence/perf/baselines/*.json`

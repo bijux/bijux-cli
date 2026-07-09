@@ -22,7 +22,7 @@
 - evidence/perf/scenarios/tiny_parse_validate.json
 - evidence/perf/scenarios/wide_canonical.json
 - evidence/perf/scenarios/wide_scheduler_overhead.json
-- evidence/perf/fixtures/infrastructure/backend_conformance_matrix.json
+- evidence/perf/fixtures/infrastructure/backend_conformance_expectations.json
 - evidence/perf/fixtures/large_dag.json
 - evidence/perf/fixtures/observability/investigation_bundle_demo.json
 - evidence/perf/fixtures/observability/retry_cancel_cache_failure.json

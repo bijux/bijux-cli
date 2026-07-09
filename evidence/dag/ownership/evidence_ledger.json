@@ -3485,8 +3485,8 @@
       "why_exists": "exercise runtime subsystem contract fixtures"
     },
     {
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json",
-      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json",
+      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -3500,11 +3500,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "battle",
-      "id": "crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json",
+      "id": "crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json",
       "implementation_status": "implemented",
       "kind": "battle",
       "owner": "team-runtime",
-      "path": "crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json",
+      "path": "crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",

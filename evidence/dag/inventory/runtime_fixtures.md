@@ -57,7 +57,7 @@
 - crates/bijux-dag-runtime/tests/fixtures/state_machine/evolution_trace.json
 - crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json
 - crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json
-- crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json
+- crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json
 - crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json
 - crates/bijux-dag-runtime/tests/fixtures/verification/invariants.json
 - crates/bijux-dag-runtime/tests/fixtures/workflow_product/workflow_health.json
