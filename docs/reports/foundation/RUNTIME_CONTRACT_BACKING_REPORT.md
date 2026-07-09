@@ -73,8 +73,8 @@ Performance-related classifications on this page must stay backed by `bijux-dev-
 - `crates/bijux-dag-runtime/src/internal/control/runtime.rs`
 - `crates/bijux-dag-runtime/src/internal/control/selectors.rs`
 - `crates/bijux-dag-runtime/src/internal/control/services.rs`
-- `crates/bijux-dag-runtime/src/internal/control/task_contract.rs`
-- `crates/bijux-dag-runtime/src/internal/control/task_types.rs`
+- `crates/bijux-dag-runtime/src/internal/control/node_execution_contract.rs`
+- `crates/bijux-dag-runtime/src/internal/control/node_execution_types.rs`
 - `crates/bijux-dag-runtime/src/internal/ext/extension_catalog.rs`
 - `crates/bijux-dag-runtime/src/internal/ext/formal_verification.rs`
 - `crates/bijux-dag-runtime/src/internal/identity/auth_identity.rs`

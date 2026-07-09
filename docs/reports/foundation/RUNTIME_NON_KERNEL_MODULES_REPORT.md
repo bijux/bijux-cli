@@ -67,8 +67,8 @@ Performance-related classifications on this page must stay backed by `bijux-dev-
 - `internal/control/runtime.rs` (support, decision `keep`): runtime control helpers and typed surfaces
 - `internal/control/selectors.rs` (support, decision `keep`): runtime control helpers and typed surfaces
 - `internal/control/services.rs` (support, decision `keep`): runtime control helpers and typed surfaces
-- `internal/control/task_contract.rs` (support, decision `keep`): runtime control helpers and typed surfaces
-- `internal/control/task_types.rs` (support, decision `keep`): runtime control helpers and typed surfaces
+- `internal/control/node_execution_contract.rs` (support, decision `keep`): runtime control helpers and typed surfaces
+- `internal/control/node_execution_types.rs` (support, decision `keep`): runtime control helpers and typed surfaces
 - `internal/ext/extension_catalog.rs` (support, decision `move`): extension and catalog support should be isolated from runtime kernel
 - `internal/ext/formal_verification.rs` (support, decision `keep`): verification helpers support invariants without changing runtime execution semantics
 - `internal/identity/auth_identity.rs` (security, decision `keep`): security and identity constraints used by runtime

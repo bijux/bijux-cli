@@ -163,7 +163,7 @@ cite `docs/spec/PLANNER_CONTRACT.md` directly.
 
 - `crates/bijux-dag-core/tests/planner_contract.rs`
 - `crates/bijux-dag-core/tests/planner_fixture_contracts.rs`
-- `crates/bijux-dag-core/tests/planner_validation_remaining_contracts.rs`
+- `crates/bijux-dag-core/tests/planner_validation_edge_case_contracts.rs`
 - `crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs`
 - `crates/bijux-dag-app/tests/plan_command_contract.rs`
 

@@ -11,7 +11,7 @@ This report records the repository surfaces that currently harden planner behavi
 - schema: `configs/dag/schema/execution_plan.schema.json`
 - trust map: `configs/dag/policy/trust_property_test_map.json`
 - battle trust policy: `configs/dag/policy/battle_trust_properties.json`
-- core planner tests: `crates/bijux-dag-core/tests/planner_contract.rs`, `crates/bijux-dag-core/tests/planner_fixture_contracts.rs`, `crates/bijux-dag-core/tests/planner_validation_remaining_contracts.rs`
+- core planner tests: `crates/bijux-dag-core/tests/planner_contract.rs`, `crates/bijux-dag-core/tests/planner_fixture_contracts.rs`, `crates/bijux-dag-core/tests/planner_validation_edge_case_contracts.rs`
 - runtime lowering tests: `crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs`, `crates/bijux-dag-runtime/tests/engine_correctness_contracts.rs`
 - maintainer guard: `crates/bijux-dev/tests/planner_hardening_contracts.rs`
 - maintainer command surface: `dag plan-dump`
