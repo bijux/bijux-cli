@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Route and route-registry fuzz targets for deterministic behavior and crash resistance.
-//! test_type: route-fuzz
+//! Route registry stability checks for deterministic behavior and crash resistance.
+//! test_type: route-registry-stability
 
 use bijux_cli::api::diagnostics::{registry_inventory, route_inventory};
 use bijux_cli::api::routing::registry::{RouteError, RouteRegistry};

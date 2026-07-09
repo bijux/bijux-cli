@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
-//! Route fuzz regression suite replaying minimized route-fuzz cases.
-//! `test_type`: route-fuzz-regression
+//! Route case replay suite for retained minimized route registry cases.
+//! `test_type`: route-case-replay
 
 use proptest as _;
 use serde as _;
