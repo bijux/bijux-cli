@@ -36,7 +36,7 @@ def resolve_std_repo() -> Path:
 
 STD_REPO = resolve_std_repo()
 WORKFLOW_INVENTORY_PATH = STD_REPO / ".github/standards/workflow-inventory.json"
-REPOS = [
+MANAGED_REPOSITORIES = [
     "bijux-atlas",
     "bijux-canon",
     "bijux-core",
@@ -46,10 +46,27 @@ REPOS = [
     "bijux-phylogenetics",
     "bijux-pollenomics",
     "bijux-proteomics",
-    "bijux-telecom",
+    "bijux-gnss",
     "bijux-std",
     "bijux.github.io",
 ]
+
+
+def repository_checkout_variable(repo_name: str) -> str:
+    suffix = "".join(character.upper() if character.isalnum() else "_" for character in repo_name)
+    return f"BIJUX_REPOSITORY_PATH_{suffix}"
+
+
+def resolve_repository_checkout(repo_name: str) -> Path:
+    variable = repository_checkout_variable(repo_name)
+    configured_path = os.environ.get(variable)
+    repo_path = Path(configured_path).expanduser().resolve() if configured_path else ROOT / repo_name
+    if not repo_path.is_dir():
+        raise FileNotFoundError(
+            f"Repository checkout for '{repo_name}' not found at {repo_path}. "
+            f"Set {variable} to its checkout path."
+        )
+    return repo_path
 
 
 def load_workflow_inventory() -> dict[str, Any]:
@@ -234,8 +251,8 @@ def main() -> None:
     inventory = load_workflow_inventory()
     manifest: dict = {"version": 2, "workflow_inventory": inventory, "repositories": []}
 
-    for repo_name in REPOS:
-        repo_path = ROOT / repo_name
+    for repo_name in MANAGED_REPOSITORIES:
+        repo_path = resolve_repository_checkout(repo_name)
         repo_entry: dict = {"name": repo_name}
         release_env = parse_release_env(repo_path / ".github/release.env")
         repo_entry["release_env"] = release_env
