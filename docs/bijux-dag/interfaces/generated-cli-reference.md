@@ -17,8 +17,7 @@ deliberately excluded from this page and listed separately in
 
 ## Placeholder Conventions
 
-- `${GRAPH}`: DAG graph file such as
-  `evidence/dag/authoring/examples/file-processing-report.dag.json`
+- `${GRAPH}`: DAG graph file such as `evidence/workflows/file_processing/dag.json`
 - `${GRAPH_A}` and `${GRAPH_B}`: two graph revisions to compare
 - `${RUNS_ROOT}`: retained run root such as `artifacts/bijux-dag/runs`
 - `${RUN_DIR}`: one retained run directory such as `${RUNS_ROOT}/run-20260708-101500`
@@ -51,7 +50,7 @@ deliberately excluded from this page and listed separately in
 ## Root Help
 
 ```text
-bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles (see [Replay Contract](../../spec/REPLAY_CONTRACT.md)).
+bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles.
 
 Usage: bijux-dag [OPTIONS] [COMMAND]
 

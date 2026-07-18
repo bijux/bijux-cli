@@ -79,7 +79,7 @@ deliberately excluded from this page and listed separately in\n\
         render_stable_command(command, 2, &mut markdown);
     }
 
-    Ok(markdown)
+    Ok(markdown.trim_end().to_string())
 }
 
 pub(crate) fn render_gated_command_inventory_markdown() -> Result<String, String> {
@@ -134,7 +134,7 @@ only for deliberate access to experimental, simulated, or internal routes.\n\n",
         &internal,
     );
 
-    Ok(markdown)
+    Ok(markdown.trim_end().to_string())
 }
 
 fn write_cli_reference_docs(interfaces_root: &Path) -> Result<(), String> {

@@ -345,5 +345,3 @@ Maintainer-only and contract-only routes. Execution requires `BIJUX_DAG_ENABLE_I
 | `security trust-classes` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
 | `semantic-portability` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
 | `version-inspect` | `internal` | `opt-in` | `BIJUX_DAG_ENABLE_INTERNAL` |
-
-
