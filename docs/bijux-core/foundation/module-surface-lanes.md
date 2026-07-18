@@ -38,7 +38,7 @@ The governing contract for this page is
 
 - `contracts/foundation/module_surface_lanes.v1.json`
 - `crates/bijux-dev/tests/foundation_module_surface_contracts.rs`
-- crate `src/lib.rs` entrypoints under `crates/`
+- the library entrypoint owned by each workspace crate
 
 ## Next Reads
 

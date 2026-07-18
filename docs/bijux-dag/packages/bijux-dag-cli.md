@@ -27,7 +27,8 @@ to the application layer.
 
 At the product level, `bijux-dag` v0.4.0 is a local-first DAG runtime for
 reproducible workflows with explicit graph contracts, deterministic execution
-records, verified artifacts, cache explanation, and replayable run bundles (see [Replay Contract](../../spec/REPLAY_CONTRACT.md)).
+records, verified artifacts, cache explanation, and replayable run bundles.
+The [Replay Contract](../../spec/REPLAY_CONTRACT.md) defines the replay authority.
 This package is the installed binary entrypoint for that promise.
 
 Use this page when the issue is about executable startup, process behavior, or

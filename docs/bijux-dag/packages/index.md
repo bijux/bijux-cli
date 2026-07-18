@@ -5,7 +5,8 @@ crate is not.
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
-artifacts, cache explanation, and replayable run bundles (see [Replay Contract](../../spec/REPLAY_CONTRACT.md)).
+artifacts, cache explanation, and replayable run bundles.
+The [Replay Contract](../../spec/REPLAY_CONTRACT.md) defines the replay authority.
 
 The crate split below shows where that promise is enforced. Read it as an
 operator-facing ownership map, not just a workspace inventory.

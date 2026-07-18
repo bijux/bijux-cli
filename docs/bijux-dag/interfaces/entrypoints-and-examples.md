@@ -18,7 +18,8 @@ output instead of by interface surface, start with
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
-artifacts, cache explanation, and replayable run bundles (see [Replay Contract](../../spec/REPLAY_CONTRACT.md)).
+artifacts, cache explanation, and replayable run bundles.
+The [Replay Contract](../../spec/REPLAY_CONTRACT.md) defines the replay authority.
 
 The CLI examples on this page stay on the stable `v0.4.0` operator surface
 from the [Release Boundary](../foundation/release-boundary.md), except where a
