@@ -313,6 +313,10 @@ fn scaffold_manifests_match_current_plugin_contract() {
         rust_cargo_toml.contains("[lib]\nname = \"testplug_rs\""),
         "rust template Cargo.toml should keep crate_name for the Rust library identifier"
     );
+    assert!(
+        rust_cargo_toml.contains("\n[workspace]\n"),
+        "rust template must remain standalone when rendered below another Cargo workspace"
+    );
 }
 
 #[test]

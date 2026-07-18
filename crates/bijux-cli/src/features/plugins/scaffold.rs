@@ -123,7 +123,7 @@ pub(crate) fn scaffold_plugin_layout(
         fs::write(
             base_dir.join("Cargo.toml"),
             format!(
-                "[package]\nname = \"{cargo_package_name}\"\nversion = \"{SCAFFOLD_PLUGIN_VERSION}\"\nedition = \"2021\"\nlicense = \"Apache-2.0\"\ndescription = \"Rust executable plugin for {namespace}\"\n\n[lib]\nname = \"{cargo_module_name}\"\npath = \"src/lib.rs\"\n\n[[bin]]\nname = \"{cargo_package_name}\"\npath = \"src/main.rs\"\n\n[dependencies]\nserde_json = \"1\"\n"
+                "[package]\nname = \"{cargo_package_name}\"\nversion = \"{SCAFFOLD_PLUGIN_VERSION}\"\nedition = \"2021\"\nlicense = \"Apache-2.0\"\ndescription = \"Rust executable plugin for {namespace}\"\n\n[workspace]\n\n[lib]\nname = \"{cargo_module_name}\"\npath = \"src/lib.rs\"\n\n[[bin]]\nname = \"{cargo_package_name}\"\npath = \"src/main.rs\"\n\n[dependencies]\nserde_json = \"1\"\n"
             ),
         )?;
         let entrypoint_path = base_dir.join(RUST_SCAFFOLD_ENTRYPOINT);

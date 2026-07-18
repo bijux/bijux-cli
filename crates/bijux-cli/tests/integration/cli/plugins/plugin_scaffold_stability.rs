@@ -116,7 +116,12 @@ fn fuzz_python_and_rust_scaffold_manifest_generation_are_correct() {
     assert_eq!(rs_manifest["version"], "0.1.0");
     assert_eq!(rs_manifest["compatibility"]["min_inclusive"], current_plugin_host_floor());
     assert_eq!(rs_manifest["compatibility"]["max_exclusive"], current_plugin_host_ceiling());
-    assert!(rs_dir.join("Cargo.toml").exists(), "rust scaffold must emit a Cargo package");
+    let cargo_manifest =
+        fs::read_to_string(rs_dir.join("Cargo.toml")).expect("read rust Cargo manifest");
+    assert!(
+        cargo_manifest.contains("\n[workspace]\n"),
+        "rust scaffold must remain standalone when generated below another Cargo workspace"
+    );
     assert!(rs_dir.join("plugin-entrypoint").exists(), "rust scaffold must emit an entrypoint");
     assert!(rs_dir.join("src/main.rs").exists(), "rust scaffold must emit a Rust binary");
     let entrypoint =

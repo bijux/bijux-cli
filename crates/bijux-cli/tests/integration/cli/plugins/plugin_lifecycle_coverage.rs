@@ -151,7 +151,13 @@ fn rust_scaffold_install_list_inspect_uninstall_end_to_end() {
         &plugins_dir,
         &[("CARGO_TARGET_DIR", inherited_target_dir.to_str().expect("shared target utf-8"))],
     );
-    assert_eq!(routed.status.code(), Some(0));
+    assert_eq!(
+        routed.status.code(),
+        Some(0),
+        "generated Rust plugin failed:\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&routed.stdout),
+        String::from_utf8_lossy(&routed.stderr),
+    );
     assert!(String::from_utf8_lossy(&routed.stdout).contains("Usage: rustchain [ARGS]"));
     assert!(routed.stderr.is_empty());
 
