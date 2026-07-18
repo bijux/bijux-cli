@@ -205,6 +205,20 @@ pub fn generate_adapter_reference_markdown(document: &AdapterReferenceDocument) 
     lines.push(String::new());
     lines.push("This document is generated from runtime adapter descriptors and backend contract references.".to_string());
     lines.push(String::new());
+    lines.push("## Scope".to_string());
+    lines.push(String::new());
+    lines.push(
+        "This contract governs the registered runtime adapter identities, the published"
+            .to_string(),
+    );
+    lines.push(
+        "conformance scenario meanings, the external adapter handshake boundary, and the"
+            .to_string(),
+    );
+    lines
+        .push("backend-specific adapter mappings that the runtime treats as supported".to_string());
+    lines.push("integration surfaces.".to_string());
+    lines.push(String::new());
     lines.push("## Registered adapters".to_string());
     for descriptor in &document.descriptors {
         lines.push(format!(
@@ -297,6 +311,25 @@ pub fn generate_adapter_reference_markdown(document: &AdapterReferenceDocument) 
         document.fake_batch.cancel_api
     ));
     lines.push(format!("- states: {}", document.fake_batch.supported_states.join(", ")));
+    lines.push(String::new());
+    lines.push("## Versioning and change policy".to_string());
+    lines.push(String::new());
+    lines.push(
+        "Any incompatible change to registered adapter identities, conformance scenario"
+            .to_string(),
+    );
+    lines.push(
+        "meanings, external adapter protocol fields, or backend contract mappings must".to_string(),
+    );
+    lines.push("update this contract and the linked adapter tests in the same change.".to_string());
+    lines.push(String::new());
+    lines.push("## Related tests".to_string());
+    lines.push(String::new());
+    lines.push("- `crates/bijux-dag-runtime/tests/adapter_runtime_contracts.rs`".to_string());
+    lines.push("- `crates/bijux-dag-runtime/tests/adapter_backend_contracts.rs`".to_string());
+    lines.push("- `crates/bijux-dag-runtime/tests/adapter_reference_contracts.rs`".to_string());
+    lines.push("- `crates/bijux-dag-runtime/tests/adapter_sdk_contract.rs`".to_string());
+    lines.push("- `crates/bijux-dag-app/tests/adapter_command_contract.rs`".to_string());
     lines.join("\n")
 }
 
