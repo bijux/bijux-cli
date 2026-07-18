@@ -1,24 +1,11 @@
 # Rust quality checks and reports that write only under `artifacts/`.
 
-RS_ARTIFACT_ROOT ?= artifacts/rust
-RS_RUN_ID ?= local
+RS_ARTIFACT_ROOT ?= $(ARTIFACT_ROOT_ABS)/rust
+RS_RUN_ID ?= $(RUN_ID)
 
 RS_TARGET_DIR ?= $(abspath $(RS_ARTIFACT_ROOT)/target)
-RS_NEXTEST_CACHE_DIR ?= $(RS_TARGET_DIR)/nextest
-RS_NEXTEST_CONFIG_HOME ?= $(abspath $(RS_ARTIFACT_ROOT)/nextest/config)
-RS_PROFRAW_DIR ?= $(abspath $(RS_ARTIFACT_ROOT)/coverage/profraw)
-RS_LLVM_PROFILE_FILE ?= $(RS_PROFRAW_DIR)/default_%m_%p.profraw
-RS_COVERAGE_TARGET_DIR ?= $(abspath $(RS_ARTIFACT_ROOT)/coverage/target)
-
-RS_FMT_REPORT ?= $(RS_ARTIFACT_ROOT)/fmt/$(RS_RUN_ID)/report.txt
-RS_LINT_REPORT ?= $(RS_ARTIFACT_ROOT)/lint/$(RS_RUN_ID)/report.txt
-RS_TEST_REPORT ?= $(RS_ARTIFACT_ROOT)/test/$(RS_RUN_ID)/nextest.log
-RS_TEST_ALL_REPORT ?= $(RS_ARTIFACT_ROOT)/test/$(RS_RUN_ID)/nextest-all.log
-RS_AUDIT_REPORT ?= $(RS_ARTIFACT_ROOT)/audit/$(RS_RUN_ID)/report.txt
 RS_COVERAGE_DIR ?= $(RS_ARTIFACT_ROOT)/coverage/$(RS_RUN_ID)
 RS_LCOV_FILE ?= $(RS_COVERAGE_DIR)/lcov.info
-RS_COVERAGE_TEST_REPORT ?= $(RS_COVERAGE_DIR)/nextest.log
-RS_COVERAGE_SUMMARY_REPORT ?= $(RS_COVERAGE_DIR)/summary.txt
 RS_RELEASE_VALIDATION_DIR ?= $(RS_ARTIFACT_ROOT)/release-validation/$(RS_RUN_ID)
 RS_RELEASE_TREE_DIR ?= $(abspath $(RS_RELEASE_VALIDATION_DIR)/workspace)
 RS_RELEASE_CARGO_CONFIG ?= $(RS_RELEASE_TREE_DIR)/.cargo/config.toml
@@ -54,145 +41,25 @@ CARGO_TERM_COLOR ?= always
 NEXTEST_PROFILE ?= default
 NEXTEST_RELEASE_PROFILE ?= ci
 NEXTEST_FULL_PROFILE ?= ci
+NEXTEST_PROFILE_FAST ?= $(NEXTEST_PROFILE)
+NEXTEST_PROFILE_SLOW ?= $(NEXTEST_PROFILE)
+NEXTEST_PROFILE_ALL ?= $(NEXTEST_FULL_PROFILE)
+NEXTEST_SLOW_NAME_EXPR ?= test(/::slow__/)
 NEXTEST_STATUS_LEVEL ?= all
 NEXTEST_FINAL_STATUS_LEVEL ?= all
-# Default fast-lane exclusions for tests that consistently exceed 10 seconds.
-# Override with NEXTEST_FILTER_EXPR to run a custom selection.
-NEXTEST_SLOW_EXCLUDE_EXPR ?= not ( \
-	test(/repo_health_exposes_stale_generated_artifact_detection/) or \
-	test(/repo_docs_maintenance_crate_health_json_and_text_contracts/) or \
-	test(/repo_health_json_contracts_are_stable/) or \
-	test(/repo_text_heads_match_snapshots/) or \
-	test(/executes_dev_cli_namespace_commands/) or \
-	test(/all_command_groups_build_expected_top_level_keys/) \
-)
+CORE_RUST_GATE_BIN ?= makes/bin/run_core_rust_gate.sh
+RUST_GATE_BIN ?= $(CORE_RUST_GATE_BIN)
+RUST_AUDIT_PREREQUISITES += audit-policy-rs
 
-define rs_require_tool
-	@command -v $(1) >/dev/null 2>&1 || { \
-		echo "$(1) is required but not installed"; \
-		exit 1; \
-	}
-endef
-
-define rs_nextest_summary
-	summary_line=$$(perl -pe 's/\e\[[0-9;]*[[:alpha:]]//g' "$(1)" | grep 'Summary \[' | tail -n 1 || true); \
-	printf '\033[1;36m%s\033[0m %s\n' "nextest-summary:" "$${summary_line:-unavailable}"
-endef
-
-.PHONY: fmt-rs lint-rs test-rs test-release-rs test-all-rs prepare-release-tree-rs fmt-release-rs clippy-release-rs test-release-workspace-rs doc-release-rs package-release-rs publish-dry-run-release-rs smoke-release-rs release-validate-rs coverage coverage-rs audit-rs publish-rs build-dag-release-bundle
+.PHONY: test-release-rs prepare-release-tree-rs fmt-release-rs clippy-release-rs
+.PHONY: test-release-workspace-rs doc-release-rs package-release-rs
+.PHONY: publish-dry-run-release-rs smoke-release-rs release-validate-rs
+.PHONY: coverage audit-policy-rs publish-rs build-dag-release-bundle
 .NOTPARALLEL: prepare-release-tree-rs fmt-release-rs clippy-release-rs test-release-workspace-rs doc-release-rs package-release-rs publish-dry-run-release-rs smoke-release-rs release-validate-rs
 
 ##@ Rust
-fmt-rs: ## Run Rust formatting checks
-	@mkdir -p "$(dir $(RS_FMT_REPORT))"
-	@printf '%s\n' "run: cargo fmt --all -- --check"
-	@set -o pipefail; \
-	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
-	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
-	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
-	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
-	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
-	cargo fmt --all -- --check 2>&1 | tee "$(RS_FMT_REPORT)"
-
-lint-rs: ## Run Rust clippy checks with -D warnings
-	@mkdir -p "$(dir $(RS_LINT_REPORT))"
-	@printf '%s\n' "run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings"
-	@set -o pipefail; \
-	CLIPPY_CONF_DIR="configs/rust" \
-	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
-	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
-	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
-	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
-	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
-	cargo clippy --workspace --all-targets --all-features --locked -- -D warnings 2>&1 | tee "$(RS_LINT_REPORT)"
-
-test-rs: ## Run the Rust fast suite and skip known tests over 10 seconds
-	$(call rs_require_tool,cargo-nextest)
-	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli && cargo build -p bijux-dag-cli --bin bijux-dag"
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dag-cli --bin bijux-dag
-	@status=0; \
-	filter_expr="$${NEXTEST_FILTER_EXPR:-$(NEXTEST_SLOW_EXCLUDE_EXPR)}"; \
-	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
-	BIJUX_DAG_BIN="$(RS_DAG_BIN)" \
-	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
-	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
-	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
-	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
-	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
-	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
-	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
-	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
-	cargo nextest run \
-		--workspace \
-		--config-file configs/rust/nextest.toml \
-		--profile "$(NEXTEST_PROFILE)" \
-		--status-level "$(NEXTEST_STATUS_LEVEL)" \
-		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
-		$${filter_expr:+-E "$${filter_expr}"} \
-		2>&1 | tee "$(RS_TEST_REPORT)" || status=$$?; \
-	$(call rs_nextest_summary,$(RS_TEST_REPORT)); \
-	test $$status -eq 0
-
 test-release-rs: ## Run the required Rust release-candidate lane
-	$(call rs_require_tool,cargo-nextest)
-	@mkdir -p "$(dir $(RS_TEST_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli && cargo build -p bijux-dag-cli --bin bijux-dag"
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dag-cli --bin bijux-dag
-	@status=0; \
-	filter_expr="$${NEXTEST_FILTER_EXPR:-$(NEXTEST_SLOW_EXCLUDE_EXPR)}"; \
-	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
-	BIJUX_DAG_BIN="$(RS_DAG_BIN)" \
-	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
-	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
-	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
-	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
-	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
-	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
-	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
-	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
-	cargo nextest run \
-		--workspace \
-		--config-file configs/rust/nextest.toml \
-		--profile "$(NEXTEST_RELEASE_PROFILE)" \
-		--status-level "$(NEXTEST_STATUS_LEVEL)" \
-		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
-		$${filter_expr:+-E "$${filter_expr}"} \
-		2>&1 | tee "$(RS_TEST_REPORT)" || status=$$?; \
-	$(call rs_nextest_summary,$(RS_TEST_REPORT)); \
-	test $$status -eq 0
-
-test-all-rs: ## Run the full Rust suite, including ignored tests
-	$(call rs_require_tool,cargo-nextest)
-	@mkdir -p "$(dir $(RS_TEST_ALL_REPORT))" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli && cargo build -p bijux-dag-cli --bin bijux-dag"
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
-	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo build -p bijux-dag-cli --bin bijux-dag
-	@status=0; \
-	BIJUX_DEV_CLI_BIN="$(RS_DEV_CLI_BIN)" \
-	BIJUX_DAG_BIN="$(RS_DAG_BIN)" \
-	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
-	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
-	CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
-	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
-	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
-	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
-	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
-	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
-	cargo nextest run \
-		--workspace \
-		--run-ignored all \
-		--retries 0 \
-		--config-file configs/rust/nextest.toml \
-		--profile "$(NEXTEST_FULL_PROFILE)" \
-		--status-level "$(NEXTEST_STATUS_LEVEL)" \
-		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
-		$${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} \
-		2>&1 | tee "$(RS_TEST_ALL_REPORT)" || status=$$?; \
-	$(call rs_nextest_summary,$(RS_TEST_ALL_REPORT)); \
-	test $$status -eq 0
+	@NEXTEST_PROFILE_FAST="$(NEXTEST_RELEASE_PROFILE)" "$(RUST_GATE_BIN)" test
 
 prepare-release-tree-rs: ## Prepare a clean release-candidate tree from committed HEAD
 	@mkdir -p "$(RS_RELEASE_VALIDATION_DIR)"
@@ -316,68 +183,10 @@ coverage: coverage-rs ## Run coverage and refresh tracked coverage reports
 	@cp "$(RS_LCOV_FILE)" artifacts/coverage/lcov.info
 	@BIJUX_COVERAGE_LCOV_PATH="$(RS_LCOV_FILE)" cargo run --locked -p bijux-dev --bin generate_line_coverage_reports
 
-coverage-rs: ## Run Rust coverage with llvm-cov and emit reports
-	$(call rs_require_tool,cargo-llvm-cov)
-	$(call rs_require_tool,cargo-nextest)
-	@mkdir -p "$(RS_COVERAGE_DIR)" "$(RS_PROFRAW_DIR)" "$(RS_NEXTEST_CONFIG_HOME)"
-	@printf '%s\n' "prepare: cargo build -p bijux-dev --bin bijux-dev-cli && cargo build -p bijux-dag-cli --bin bijux-dag"
-	@CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" cargo build -p bijux-dev --bin bijux-dev-cli
-	@CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" cargo build -p bijux-dag-cli --bin bijux-dag
-	@status=0; \
-	BIJUX_DEV_CLI_BIN="$(RS_COVERAGE_TARGET_DIR)/debug/bijux-dev-cli" \
-	BIJUX_DAG_BIN="$(RS_COVERAGE_TARGET_DIR)/debug/bijux-dag" \
-	LLVM_PROFILE_FILE="$(RS_LLVM_PROFILE_FILE)" \
-	XDG_CONFIG_HOME="$(RS_NEXTEST_CONFIG_HOME)" \
-	CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
-	CARGO_LLVM_COV_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
-	NEXTEST_CACHE_DIR="$(RS_NEXTEST_CACHE_DIR)" \
-	CARGO_TERM_COLOR="$(CARGO_TERM_COLOR)" \
-	CARGO_TERM_PROGRESS_WHEN="$(CARGO_TERM_PROGRESS_WHEN)" \
-	CARGO_TERM_PROGRESS_WIDTH="$(CARGO_TERM_PROGRESS_WIDTH)" \
-	CARGO_TERM_VERBOSE="$(CARGO_TERM_VERBOSE)" \
-	cargo llvm-cov nextest \
-		--workspace \
-		--run-ignored all \
-		--retries 0 \
-		--config-file configs/rust/nextest.toml \
-		--profile "$(NEXTEST_PROFILE)" \
-		--status-level "$(NEXTEST_STATUS_LEVEL)" \
-		--final-status-level "$(NEXTEST_FINAL_STATUS_LEVEL)" \
-		$${NEXTEST_FILTER_EXPR:+-E "$${NEXTEST_FILTER_EXPR}"} \
-		2>&1 | tee "$(RS_COVERAGE_TEST_REPORT)" || status=$$?; \
-	printf '%s' "$$status" > "$(RS_COVERAGE_DIR)/status.code"; \
-	$(call rs_nextest_summary,$(RS_COVERAGE_TEST_REPORT)); \
-	true
-	@set -o pipefail; \
-	CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
-	CARGO_LLVM_COV_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
-	cargo llvm-cov report --summary-only 2>&1 | tee "$(RS_COVERAGE_SUMMARY_REPORT)"
-	@set -o pipefail; \
-	CARGO_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
-	CARGO_LLVM_COV_TARGET_DIR="$(RS_COVERAGE_TARGET_DIR)" \
-	cargo llvm-cov report --lcov --output-path "$(RS_LCOV_FILE)" >/dev/null
-	@total_line=$$(perl -pe 's/\e\[[0-9;]*[[:alpha:]]//g' "$(RS_COVERAGE_SUMMARY_REPORT)" | grep '^TOTAL' | tail -n 1 || true); \
-	printf '\033[1;36m%s\033[0m %s\n' "coverage-summary:" "$${total_line:-unavailable}"; \
-	printf '\033[1;36m%s\033[0m %s\n' "coverage-lcov:" "$(RS_LCOV_FILE)"; \
-	printf '\033[1;36m%s\033[0m %s\n' "coverage-report:" "$(RS_COVERAGE_SUMMARY_REPORT)"
-	@test "$$(cat "$(RS_COVERAGE_DIR)/status.code")" -eq 0
-
-audit-rs: ## Run cargo-deny and cargo-audit
-	$(call rs_require_tool,cargo-deny)
-	$(call rs_require_tool,cargo-audit)
-	@mkdir -p "$(dir $(RS_AUDIT_REPORT))"
-	@set -o pipefail; \
-	deny_status=0; \
-	audit_status=0; \
-	{ \
-		echo "run: cargo deny check bans licenses sources --config configs/rust/deny.toml"; \
-		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo deny check bans licenses sources --config configs/rust/deny.toml || deny_status=$$?; \
-		echo; \
-		echo "run: cargo run -q -p bijux-dev --bin bijux-dev-dag -- security"; \
-		CARGO_TARGET_DIR="$(RS_TARGET_DIR)" cargo run -q -p bijux-dev --bin bijux-dev-dag -- security || audit_status=$$?; \
-	} 2>&1 | tee "$(RS_AUDIT_REPORT)"; \
-	test $$deny_status -eq 0; \
-	test $$audit_status -eq 0
+audit-policy-rs: ## Verify Core security policy before Cargo advisory checks
+	@mkdir -p "$(RS_TARGET_DIR)"
+	@CARGO_TARGET_DIR="$(RS_TARGET_DIR)" \
+		cargo run --locked -q -p bijux-dev --bin bijux-dev-dag -- security
 
 publish-rs: ## Publish Rust crates and dry-run by default
 	@set -euo pipefail; \

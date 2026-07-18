@@ -16,7 +16,6 @@ RM                    := rm -rf
 PROFRAW_DIR           := artifacts/rust/coverage/profraw
 LLVM_PROFILE_FILE     ?= $(abspath $(PROFRAW_DIR)/default_%m_%p.profraw)
 BIJUX_RUNTIME_BIN     ?= bijux
-PINNED_REF_GATE_BIN  ?= $(ROOT_MK_DIR)/bin/run_pinned_ref_gate.sh
 PYTHON_EDITABLE_EXTRAS ?= test,lint,security,docs,build
 PYTHON_EDITABLE_SPEC  ?= ./crates/bijux-cli-python[$(PYTHON_EDITABLE_EXTRAS)]
 PYTHON_INSTALL_ARTIFACTS_DIR ?= artifacts/python/install
@@ -149,13 +148,8 @@ all: fmt lint security test build ## Run quality checks and build distributions
 fmt: fmt-rs ## Run Rust formatting checks
 lint: lint-rs ## Run Rust lint checks
 test: test-release-rs test-py ## Run the required Rust release lane and Python test suites
+test-slow: test-slow-rs ## Run governed slow Rust tests
 test-all: test-all-rs ## Run full Rust tests including ignored tests
-test-all-frozen: ## Start a detached background full-suite run for a frozen commit and write artifacts plus frozen source under artifacts/<sha>/
-	@PINNED_REF_GATE_TARGET="test-all" "$(PINNED_REF_GATE_BIN)"
-lint-frozen: ## Start a detached background lint run for a frozen commit and write artifacts plus frozen source under artifacts/<sha>/
-	@PINNED_REF_GATE_TARGET="lint" "$(PINNED_REF_GATE_BIN)"
-audit-frozen: ## Start a detached background audit run for a frozen commit and write artifacts plus frozen source under artifacts/<sha>/
-	@PINNED_REF_GATE_TARGET="audit" "$(PINNED_REF_GATE_BIN)"
 audit: audit-rs ## Run Rust dependency and advisory audits
 security: audit-rs security-py ## Run Rust and Python security checks
 build: build-py ## Build Python distribution packages

@@ -15,51 +15,32 @@ fn read_repo_file(path: &str) -> String {
         .unwrap_or_else(|err| panic!("failed to read {}: {err}", absolute.display()))
 }
 
-fn target_block<'a>(makefile: &'a str, target: &str) -> &'a str {
-    let start = makefile.find(target).unwrap_or_else(|| panic!("missing target {target}"));
-    let tail = &makefile[start..];
-    let end = tail.find("\n\n").unwrap_or(tail.len());
-    &tail[..end]
-}
-
 #[test]
 fn frozen_gate_entrypoints_delegate_to_pinned_ref_launcher() {
-    let makefile = read_repo_file("makes/_internal.mk");
-
-    assert!(
-        makefile.contains("PINNED_REF_GATE_BIN  ?= $(ROOT_MK_DIR)/bin/run_pinned_ref_gate.sh"),
-        "root make surface must declare the pinned-ref launcher path"
-    );
+    let makefile = read_repo_file(".bijux/shared/bijux-makes-rs/cargo.mk");
 
     for (target, gate_target) in [
-        ("test-all-frozen:", "PINNED_REF_GATE_TARGET=\"test-all\""),
-        ("lint-frozen:", "PINNED_REF_GATE_TARGET=\"lint\""),
-        ("audit-frozen:", "PINNED_REF_GATE_TARGET=\"audit\""),
+        ("test-all-frozen:", "PINNED_GATE_TARGET=test-all"),
+        ("lint-frozen:", "PINNED_GATE_TARGET=lint"),
+        ("audit-frozen:", "PINNED_GATE_TARGET=audit"),
     ] {
-        let block = target_block(&makefile, target);
         assert!(
-            block.contains("$(PINNED_REF_GATE_BIN)"),
-            "{target} must use the shared pinned-ref launcher"
+            makefile.contains(target) && makefile.contains(gate_target),
+            "{target} must use the shared pinned launcher with {gate_target}"
         );
-        assert!(block.contains(gate_target), "{target} must set {gate_target}");
     }
 }
 
 #[test]
 fn pinned_ref_launcher_isolates_artifacts_and_bootstrap_state() {
-    let launcher = read_repo_file("makes/bin/run_pinned_ref_gate.sh");
+    let launcher = read_repo_file(".bijux/shared/bijux-makes/scripts/run_pinned_gate.sh");
 
     for needle in [
         "artifact_root=\"${repo_root}/artifacts/${short_sha}\"",
         "pinned_repo_dir=\"${artifact_root}/frozen-repo\"",
         "background_dir=\"${artifact_root}/background\"",
-        "artifact_target_dir=\"${artifact_root}/target/${pinned_target}\"",
-        "artifact_cargo_home=\"${artifact_root}/cargo/home/${pinned_target}\"",
-        "artifact_tmp_dir=\"${artifact_root}/tmp/${pinned_target}\"",
-        "python_venv_dir=\"${python_artifact_root}/.venv\"",
-        "python_install_dir=\"${python_artifact_root}/install\"",
-        "export VENV=\"${python_venv_dir}\"",
-        "export PYTHON_INSTALL_ARTIFACTS_DIR=\"${python_install_dir}\"",
+        "export ARTIFACT_ROOT=\"${artifact_root}\"",
+        "export RUN_ID=\"${short_sha}\"",
         "console_log=${console_log}",
         "status_file=${status_file}",
     ] {
@@ -73,12 +54,12 @@ fn frozen_gate_docs_publish_usage_contract() {
     let root_entrypoints = read_repo_file("docs/bijux-dev/makes/root-entrypoints.md");
 
     for needle in [
-        "TEST_ALL_FROZEN_REF=<ref> make test-all-frozen",
-        "TEST_ALL_FROZEN_REF=<ref> make lint-frozen",
-        "TEST_ALL_FROZEN_REF=<ref> make audit-frozen",
+        "PINNED_REF=<ref> make test-all-frozen",
+        "PINNED_REF=<ref> make lint-frozen",
+        "PINNED_REF=<ref> make audit-frozen",
         "artifacts/<sha>/frozen-repo/",
         "artifacts/<sha>/background/",
-        "artifacts/<sha>/python/",
+        "artifacts/<sha>/rust/",
     ] {
         assert!(ci_targets.contains(needle), "CI targets handbook must document `{needle}`");
     }

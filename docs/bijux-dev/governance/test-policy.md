@@ -30,6 +30,8 @@ those claims.
 
 - no release recommendation without passing the required release lane
 - the required Rust release lane is `make test-release-rs`, and `make test` delegates to it before Python tests
+- `make test-rs` excludes `slow__` tests and exact names in `configs/rust/nextest-slow-roster.txt`
+- `make test-slow-rs` runs the complementary named and rostered slow lane
 - `make test-all-rs` is the full Rust verification lane and includes the governed ignored DAG portfolios
 - flaky ignored tests are forbidden in DAG release-facing coverage
 - ignored DAG tests must carry an explicit nonstable quarantine reason of `experimental` or `internal`
@@ -59,6 +61,7 @@ move together.
 - `crates/bijux-dev/tests/`
 - `crates/bijux-dev/tests/ignored_test_hygiene_contracts.rs`
 - `crates/bijux-dev/src/suites/test.rs`
+- `configs/rust/nextest-slow-roster.txt`
 - `makes/rust.mk`
 
 ## Continue Reading
