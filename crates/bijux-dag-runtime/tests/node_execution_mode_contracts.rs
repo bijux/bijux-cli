@@ -16,17 +16,19 @@ use bijux_dag_runtime::{
 };
 use serde_json::json;
 
-fn fixture(path: &str) -> Graph {
-    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../bijux-dag-core/tests/snapshots")
-        .join(path);
-    let text = std::fs::read_to_string(root).unwrap();
-    bijux_dag_core::parse_graph_strict(&text).unwrap()
+fn planner_fixture(name: &str) -> Graph {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../bijux-dag-core/tests/fixtures/planner")
+        .join(name);
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read planner fixture {}: {error}", path.display()));
+    bijux_dag_core::parse_graph_strict(&text)
+        .unwrap_or_else(|error| panic!("parse planner fixture {}: {error}", path.display()))
 }
 
 #[test]
 fn node_execution_contract_supports_all_isolation_modes() {
-    let mut graph = fixture("linear.dag.json");
+    let mut graph = planner_fixture("linear.dag.json");
     graph.nodes.push(bijux_dag_core::Node {
         id: "subprocess_mode".to_string(),
         kind: NodeKind::Shell,
@@ -291,7 +293,7 @@ fn file_transform_nodes_use_in_process_task_isolation() {
 
 #[test]
 fn task_result_envelope_json_shape_is_stable() {
-    let graph = fixture("linear.dag.json");
+    let graph = planner_fixture("linear.dag.json");
     let node = graph.nodes.first().unwrap().clone();
     let options = RuntimeConfig::default();
     let contract = build_task_contract(&node, &graph, &options);
