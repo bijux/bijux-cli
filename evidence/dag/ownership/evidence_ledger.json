@@ -767,6 +767,384 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/diamond.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/diamond.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/diamond.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/diamond.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "validate deterministic planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/fan_in.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/fan_in.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/fan_in.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/fan_in.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "validate deterministic planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/fan_out.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/fan_out.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/fan_out.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/fan_out.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "validate deterministic planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/imported_bundle_replay.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/imported_bundle_replay.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/imported_bundle_replay.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/imported_bundle_replay.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate deterministic replay-oriented planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/isolated_groups.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/isolated_groups.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/isolated_groups.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/isolated_groups.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "validate deterministic planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/linear.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/linear.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "runtime-contracts"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "runtime-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/linear.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/linear.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "validate deterministic planner lowering, runtime execution contracts, and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/replay_oriented.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/replay_oriented.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/replay_oriented.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/replay_oriented.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate deterministic replay-oriented planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/resource_heavy.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/resource_heavy.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/resource_heavy.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/resource_heavy.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "resource-accounting",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "resource-accounting",
+        "schema-compatibility"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "validate deterministic planner resource accounting and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/retry_heavy.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/retry_heavy.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/retry_heavy.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/retry_heavy.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "failure-propagation",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "failure-propagation",
+        "schema-compatibility"
+      ],
+      "trust_property": "failure-propagation",
+      "why_exists": "validate deterministic planner retry policy lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate deterministic selective replay planning and execution-plan schema compatibility"
+    },
+    {
       "canonical_location": "crates/bijux-dag-core/tests/fixtures/retry_nondet.json",
       "canonical_path": "crates/bijux-dag-core/tests/fixtures/retry_nondet.json",
       "consumer_surfaces": [
