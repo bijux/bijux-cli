@@ -110,6 +110,19 @@ pub(super) fn collect_all_files(root: &Path, out: &mut Vec<PathBuf>) -> Result<(
 }
 
 fn tracked_files_with_extension(root: &Path, ext: &str) -> Option<Vec<PathBuf>> {
+    let top_level = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .current_dir(root)
+        .output()
+        .ok()?;
+    if !top_level.status.success() {
+        return None;
+    }
+    let repository_root = PathBuf::from(String::from_utf8_lossy(&top_level.stdout).trim());
+    if repository_root.canonicalize().ok()? != root.canonicalize().ok()? {
+        return None;
+    }
+
     let glob = format!("*.{ext}");
     let output =
         Command::new("git").args(["ls-files", "--", &glob]).current_dir(root).output().ok()?;
