@@ -197,7 +197,7 @@ fn replay_node_rerun_surfaces_boundary_verification_and_focused_diff() {
     let tmp = tempfile::tempdir().expect("tmp");
     let out_dir = tmp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
-    let graph = root.join("crates/bijux-dag-core/tests/snapshots/selective_replay.dag.json");
+    let graph = root.join("crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json");
 
     let source = run_json(
         &[

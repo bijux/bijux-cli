@@ -6,14 +6,22 @@ Generated from `evidence/_meta/registries/evidence_registry.json`.
 | --- | --- | --- |
 | `evidence/authoring/examples/app-integration/mock-official-app.mount.json` | `authoring` | `app-integration, authoring-contracts` |
 | `evidence/authoring/examples/app-integration/mock-plugin.manifest.json` | `authoring` | `app-integration, authoring-contracts` |
+| `evidence/authoring/examples/audience-branch-bulletin.dag.json` | `authoring` | `dag-validate, authoring-contracts, branching-guides` |
 | `evidence/authoring/examples/cached-branched-report.dag.json` | `authoring` | `dag-validate, authoring-contracts` |
+| `evidence/authoring/examples/compliance-gated-bulletin.dag.json` | `authoring` | `dag-validate, authoring-contracts, policy-guides` |
 | `evidence/authoring/examples/etl-constant-to-shell.dag.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/examples/failure-heavy-retry.dag.json` | `authoring` | `dag-validate, authoring-contracts` |
+| `evidence/authoring/examples/file-processing-report.dag.json` | `authoring` | `dag-validate, authoring-contracts, file-processing-guides` |
 | `evidence/authoring/examples/hello.dag.json` | `authoring` | `dag-validate, authoring-contracts` |
+| `evidence/authoring/examples/historical-catalog-backfill.dag.json` | `authoring` | `dag-validate, authoring-contracts, scheduler-guides` |
 | `evidence/authoring/examples/minimal_consumer.dag.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/examples/multi-output-artifact.dag.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/examples/parameterized-report.dag.json` | `authoring` | `dag-validate, authoring-contracts` |
+| `evidence/authoring/examples/regional-sales-pipeline.dag.json` | `authoring` | `dag-validate, authoring-contracts, data-pipeline-guides` |
+| `evidence/authoring/examples/regional-sales-source/targets.json` | `authoring` | `data-pipeline-guides, dag-run, authoring-contracts` |
+| `evidence/authoring/examples/release-note-bundle.dag.json` | `authoring` | `dag-validate, authoring-contracts, publishing-guides` |
 | `evidence/authoring/examples/replay-heavy-branching.dag.json` | `authoring` | `dag-validate, authoring-contracts` |
+| `evidence/authoring/examples/scheduled-catalog-refresh.dag.json` | `authoring` | `dag-validate, authoring-contracts, scheduler-guides` |
 | `evidence/authoring/negative/cycle.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/negative/invalid_container_workdir.json` | `authoring` | `dag-validate, authoring-contracts` |
 | `evidence/authoring/negative/invalid_refs.json` | `authoring` | `dag-validate, authoring-contracts` |

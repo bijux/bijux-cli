@@ -10,7 +10,7 @@ DEV_TOOL := LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TARGET_DIR="$(CARGO_T
 
 DAG_OUTPUT_PATHS := artifacts/runs artifacts/reports artifacts/target artifacts/contracts
 
-run_or_fail = @echo "--> $(1)"; @$(2) || (echo "--> failed: $(1)" >&2; echo "--> inspect artifacts: $(DAG_OUTPUT_PATHS)" >&2; exit 1)
+run_or_fail = @echo "--> $(1)"; $(2) || (echo "--> failed: $(1)" >&2; echo "--> inspect artifacts: $(DAG_OUTPUT_PATHS)" >&2; exit 1)
 
 .PHONY: dag-help dag-demo dag-check dag-test dag-test-all dag-clippy dag-coverage dag-contracts dag-release
 .PHONY: checks checks-fast checks-all contracts-all contract-all release-verify

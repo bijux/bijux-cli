@@ -15,12 +15,16 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::PathBuf;
 
-fn snapshot_path(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests").join("snapshots").join(name)
+fn planner_fixture_path(name: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures")
+        .join("planner")
+        .join(name)
 }
 
 fn load_graph(name: &str) -> bijux_dag_core::Graph {
-    let payload = fs::read_to_string(snapshot_path(name)).expect("snapshot fixture");
+    let payload = fs::read_to_string(planner_fixture_path(name)).expect("planner fixture");
     parse_graph_strict(&payload).expect("parse graph fixture")
 }
 

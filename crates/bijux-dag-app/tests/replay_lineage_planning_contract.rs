@@ -141,7 +141,7 @@ fn replay_partial_selection_emits_dry_run_plan_with_selectors() {
     let tmp = tempfile::tempdir().expect("tmp");
     let out_dir = tmp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
-    let graph = root.join("crates/bijux-dag-core/tests/snapshots/selective_replay.dag.json");
+    let graph = root.join("crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json");
 
     let source = run_json(
         &[
@@ -220,7 +220,7 @@ fn replay_rejects_corrupt_upstream_artifact_at_rerun_boundary() {
     let tmp = tempfile::tempdir().expect("tmp");
     let out_dir = tmp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
-    let graph = root.join("crates/bijux-dag-core/tests/snapshots/selective_replay.dag.json");
+    let graph = root.join("crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json");
 
     let source = run_json(
         &[
@@ -274,7 +274,7 @@ fn replay_reports_node_scoped_diff_for_single_rerun_root() {
     let tmp = tempfile::tempdir().expect("tmp");
     let out_dir = tmp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
-    let graph = root.join("crates/bijux-dag-core/tests/snapshots/selective_replay.dag.json");
+    let graph = root.join("crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json");
 
     let source = run_json(
         &[

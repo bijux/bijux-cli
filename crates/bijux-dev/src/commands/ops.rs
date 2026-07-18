@@ -690,9 +690,9 @@ pub(super) fn run_repo_runtime_scope_reports(
 
 pub(super) fn run_repo_planner_hardening_report(out: &Path) -> Result<(), String> {
     let root = repo_root()?;
-    let snapshots_dir = root.join("crates/bijux-dag-core/tests/snapshots");
+    let planner_fixtures_dir = root.join("crates/bijux-dag-core/tests/fixtures/planner");
     let mut fixtures = Vec::new();
-    collect_all_files(&snapshots_dir, &mut fixtures)?;
+    collect_all_files(&planner_fixtures_dir, &mut fixtures)?;
     fixtures.retain(|path| {
         path.extension().and_then(|ext| ext.to_str()) == Some("json")
             && path
@@ -733,7 +733,7 @@ pub(super) fn run_repo_planner_hardening_report(out: &Path) -> Result<(), String
     }
 
     let mut report = String::from(
-        "# Planner Hardening Report\n\n## Purpose\n\nThis report records the repository surfaces that currently harden planner behavior and keep lowering claims tied to executable proof.\n\n## Guarded surfaces\n\n- contract: `docs/spec/PLANNER_CONTRACT.md`\n- battle trust properties: `docs/spec/BATTLE_TRUST_PROPERTIES.md`\n- schema: `configs/dag/schema/execution_plan.schema.json`\n- trust map: `configs/dag/policy/trust_property_test_map.json`\n- battle trust policy: `configs/dag/policy/battle_trust_properties.json`\n- core planner tests: `crates/bijux-dag-core/tests/planner_contract.rs`, `crates/bijux-dag-core/tests/planner_fixture_contracts.rs`, `crates/bijux-dag-core/tests/planner_validation_remaining_contracts.rs`\n- runtime lowering tests: `crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs`, `crates/bijux-dag-runtime/tests/engine_correctness_contracts.rs`\n- maintainer guard: `crates/bijux-dev/tests/planner_hardening_contracts.rs`\n- maintainer command surface: `dag plan-dump`\n\nGenerated from execution-plan lowering against canonical graph fixtures in `crates/bijux-dag-core/tests/snapshots`.\n\n## Fixture results\n\n",
+        "# Planner Hardening Report\n\n## Purpose\n\nThis report records the repository surfaces that currently harden planner behavior and keep lowering claims tied to executable proof.\n\n## Guarded surfaces\n\n- contract: `docs/spec/PLANNER_CONTRACT.md`\n- battle trust properties: `docs/spec/BATTLE_TRUST_PROPERTIES.md`\n- schema: `configs/dag/schema/execution_plan.schema.json`\n- trust map: `configs/dag/policy/trust_property_test_map.json`\n- battle trust policy: `configs/dag/policy/battle_trust_properties.json`\n- core planner tests: `crates/bijux-dag-core/tests/planner_contract.rs`, `crates/bijux-dag-core/tests/planner_fixture_contracts.rs`, `crates/bijux-dag-core/tests/planner_validation_edge_case_contracts.rs`\n- runtime lowering tests: `crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs`, `crates/bijux-dag-runtime/tests/engine_correctness_contracts.rs`\n- maintainer guard: `crates/bijux-dev/tests/planner_hardening_contracts.rs`\n- maintainer command surface: `dag plan-dump`\n\nGenerated from execution-plan lowering against canonical graph fixtures in `crates/bijux-dag-core/tests/fixtures/planner`.\n\n## Fixture results\n\n",
     );
     for (fixture, nodes, edges, stable_dump, schema_ok) in &rows {
         report.push_str(&format!(
@@ -1572,7 +1572,11 @@ pub(super) fn run_evidence_consumers_verify() -> Result<(), String> {
         .collect::<Result<_, _>>()?;
     let mut violations = Vec::new();
     let mut files = Vec::new();
-    collect_all_files(&root, &mut files)?;
+    for extension in ["rs", "md", "json", "toml"] {
+        files.extend(repository_files_with_extension(&root, extension)?);
+    }
+    files.sort();
+    files.dedup();
     let ignore_paths = [
         "crates/bijux-dev/src/commands/ops.rs",
         "crates/bijux-dev/src/commands/mod.rs",
@@ -1594,13 +1598,6 @@ pub(super) fn run_evidence_consumers_verify() -> Result<(), String> {
             || ignore_prefixes.iter().any(|prefix| rel.starts_with(prefix))
             || rel.contains("/tests/")
             || rel.ends_with("/README.md")
-        {
-            continue;
-        }
-        if !(rel.ends_with(".rs")
-            || rel.ends_with(".md")
-            || rel.ends_with(".json")
-            || rel.ends_with(".toml"))
         {
             continue;
         }

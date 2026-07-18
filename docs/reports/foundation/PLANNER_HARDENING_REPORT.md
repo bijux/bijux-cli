@@ -16,20 +16,20 @@ This report records the repository surfaces that currently harden planner behavi
 - maintainer guard: `crates/bijux-dev/tests/planner_hardening_contracts.rs`
 - maintainer command surface: `dag plan-dump`
 
-Generated from execution-plan lowering against canonical graph fixtures in `crates/bijux-dag-core/tests/snapshots`.
+Generated from execution-plan lowering against canonical graph fixtures in `crates/bijux-dag-core/tests/fixtures/planner`.
 
 ## Fixture results
 
-- `crates/bijux-dag-core/tests/snapshots/diamond.dag.json` :: nodes=`4` edges=`4` stable_dump=`true` schema_required_fields=`true`
-- `crates/bijux-dag-core/tests/snapshots/fan_in.dag.json` :: nodes=`3` edges=`2` stable_dump=`true` schema_required_fields=`true`
-- `crates/bijux-dag-core/tests/snapshots/fan_out.dag.json` :: nodes=`3` edges=`2` stable_dump=`true` schema_required_fields=`true`
-- `crates/bijux-dag-core/tests/snapshots/imported_bundle_replay.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
-- `crates/bijux-dag-core/tests/snapshots/isolated_groups.dag.json` :: nodes=`3` edges=`1` stable_dump=`true` schema_required_fields=`true`
-- `crates/bijux-dag-core/tests/snapshots/linear.dag.json` :: nodes=`3` edges=`2` stable_dump=`true` schema_required_fields=`true`
-- `crates/bijux-dag-core/tests/snapshots/replay_oriented.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
-- `crates/bijux-dag-core/tests/snapshots/resource_heavy.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
-- `crates/bijux-dag-core/tests/snapshots/retry_heavy.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
-- `crates/bijux-dag-core/tests/snapshots/selective_replay.dag.json` :: nodes=`4` edges=`3` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/fixtures/planner/diamond.dag.json` :: nodes=`4` edges=`4` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/fixtures/planner/fan_in.dag.json` :: nodes=`3` edges=`2` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/fixtures/planner/fan_out.dag.json` :: nodes=`3` edges=`2` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/fixtures/planner/imported_bundle_replay.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/fixtures/planner/isolated_groups.dag.json` :: nodes=`3` edges=`1` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/fixtures/planner/linear.dag.json` :: nodes=`3` edges=`2` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/fixtures/planner/replay_oriented.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/fixtures/planner/resource_heavy.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/fixtures/planner/retry_heavy.dag.json` :: nodes=`2` edges=`1` stable_dump=`true` schema_required_fields=`true`
+- `crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json` :: nodes=`4` edges=`3` stable_dump=`true` schema_required_fields=`true`
 
 ## Guardrails
 

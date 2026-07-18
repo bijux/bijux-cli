@@ -35,8 +35,7 @@
     "tests/e2e/fixtures",
     "tests/e2e/replay/fixtures",
     "tests/compatibility/graph_schema",
-    "crates/bijux-dag-core/tests/compat",
-    "crates/bijux-dag-core/tests/snapshots"
+    "crates/bijux-dag-core/tests/compat"
   ],
   "legacy_scenario_paths": [
     "tests/e2e/fixtures/e2e_minimal.json",

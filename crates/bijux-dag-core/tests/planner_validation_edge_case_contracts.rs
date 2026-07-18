@@ -196,8 +196,8 @@ fn planner_inclusion_exclusion_and_capability_diagnostics_are_stable() {
 
 #[test]
 fn planner_plan_dump_is_deterministic_and_schema_compatible_for_replay_oriented_graph() {
-    let replay_fixture =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/snapshots/replay_oriented.dag.json");
+    let replay_fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/planner/replay_oriented.dag.json");
     let payload = fs::read_to_string(replay_fixture).expect("fixture");
     let graph = parse_graph_strict(&payload).expect("parse fixture");
 
