@@ -48,7 +48,7 @@ and the generated-shape proof in
 
 ## Related tracking
 
-- `docs/tracking/INVARIANT_COVERAGE.md`
+- `docs/reports/governance/INVARIANT_COVERAGE.md`
 - `docs/bijux-dag/quality/invariants.md`
 
 ## Versioning and change policy

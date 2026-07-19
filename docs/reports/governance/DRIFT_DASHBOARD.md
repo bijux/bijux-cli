@@ -1,7 +1,7 @@
 ---
 title: Drift Dashboard
 audience: maintainers
-type: tracking
+type: report
 status: canonical
 owner: bijux-core-docs
 last_reviewed: 2026-07-06

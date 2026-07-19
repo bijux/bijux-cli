@@ -21,7 +21,7 @@ publication status, use
 [Package Boundary](../../bijux-core/foundation/package-boundary.md) and
 `contracts/foundation/workspace_package_boundary.v1.json`.
 For post-`v0.4.0` direction that is not yet a release promise, use the
-[Bijux Dag Roadmap](../../tracking/bijux-dag-roadmap.md).
+[Bijux Dag Roadmap](../roadmap.md).
 
 ## v0.4.0 Surface Truth Table
 
@@ -78,6 +78,6 @@ Inventory gated routes only by deliberate lane:
 
 - [CLI Surface](../interfaces/cli-surface.md)
 - [Package Boundary](../../bijux-core/foundation/package-boundary.md)
-- [Bijux Dag Roadmap](../../tracking/bijux-dag-roadmap.md)
+- [Bijux Dag Roadmap](../roadmap.md)
 - [Scope and Boundaries](scope-and-boundaries.md)
 - [Known Limitations](../quality/known-limitations.md)

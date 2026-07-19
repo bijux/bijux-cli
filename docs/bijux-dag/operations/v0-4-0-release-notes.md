@@ -180,5 +180,5 @@ When you need the exact source behind a release claim, use these pages together:
 - [Known Limitations](../quality/known-limitations.md)
 - [Risk Register](../quality/risk-register.md)
 - [Generated CLI Reference](../interfaces/generated-cli-reference.md)
-- [Bijux Dag Roadmap](../../tracking/bijux-dag-roadmap.md) for what comes
+- [Bijux Dag Roadmap](../roadmap.md) for what comes
   after the current release boundary

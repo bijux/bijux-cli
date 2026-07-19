@@ -1,7 +1,7 @@
 ---
 title: Invariant Coverage
 audience: maintainers
-type: tracking
+type: report
 status: canonical
 owner: bijux-dag-docs
 last_reviewed: 2026-07-06

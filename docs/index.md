@@ -104,6 +104,6 @@ product handbook pages. Read the
 authority and maintenance rules.
 
 The [v0.4.0 Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) define
-the current DAG release. The [Bijux Dag Roadmap](tracking/bijux-dag-roadmap.md)
+the current DAG release. The [Bijux Dag Roadmap](bijux-dag/roadmap.md)
 is non-binding direction; if it conflicts with the release boundary, the
 narrower shipped claim wins.

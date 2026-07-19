@@ -146,11 +146,11 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
             }
         }
         if lower.contains("roadmap")
-            && !rel.starts_with("docs/tracking/")
+            && rel != "docs/bijux-dag/roadmap.md"
             && !roadmap_reference_allowed(&rel)
         {
             return Err(format!(
-                "speculative roadmap content must live under docs/tracking: {rel}"
+                "speculative roadmap content must live in the owned product roadmap: {rel}"
             ));
         }
         if content.contains("AUTO-GENERATED") && !rel.starts_with("docs/generated/") {
@@ -579,7 +579,7 @@ pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
         "docs/reports/foundation/docs-root-inventory-report.md",
         "docs/reports/foundation/foundation-final-report.md",
         "docs/reports/foundation/repository-proof-statement.md",
-        "docs/tracking/renovation-burndown-report.md",
+        "docs/reports/governance/documentation-authority-report.md",
         "docs/bijux-core/governance/documentation-governance-alignment.md",
     ] {
         if !root.join(required).exists() {

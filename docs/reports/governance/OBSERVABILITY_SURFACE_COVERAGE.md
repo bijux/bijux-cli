@@ -1,13 +1,13 @@
 ---
-title: Observability Surface Plan
+title: Observability Surface Coverage
 audience: maintainer
-type: tracking
+type: report
 status: active
 owner: bijux-dag-maintainers
 last_reviewed: 2026-07-06
 ---
 
-# Observability Surface Plan
+# Observability Surface Coverage
 
 ## Current governed surfaces
 

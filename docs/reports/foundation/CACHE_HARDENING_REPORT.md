@@ -19,7 +19,7 @@ corruption handling, and operator cache verification behavior.
 - contract: `docs/spec/CACHE_CONTRACT.md`
 - evolution model: `docs/spec/CACHE_EVOLUTION_MODEL.md`
 - prune policy: `docs/spec/CACHE_PRUNE_POLICY.md`
-- correctness ledger: `docs/tracking/CACHE_CORRECTNESS_COVERAGE.md`
+- correctness ledger: `docs/reports/governance/CACHE_CORRECTNESS_COVERAGE.md`
 - evidence metadata: `evidence/cache/metadata.json`
 - corruption fixtures: `evidence/cache/corrupt/missing_meta.json`, `evidence/cache/corrupt/hash_mismatch.json`, `evidence/cache/corrupt/missing_manifest.json`, `evidence/cache/corrupt/unsupported_metadata_version.json`, `evidence/cache/corrupt/truncated_meta.json`, `evidence/cache/corrupt/missing_outputs_proof.json`
 - warm/cold scenario: `evidence/cache/scenarios/warm_cold.json`

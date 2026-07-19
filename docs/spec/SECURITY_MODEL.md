@@ -44,7 +44,7 @@ clock virtualization.
 - host process execution still occurs on the local machine
 
 Non-hermetic behavior that remains intentionally outside the current proof
-boundary is tracked in `docs/tracking/NON_HERMETIC_BEHAVIORS.md`.
+boundary is tracked in `docs/reports/governance/NON_HERMETIC_BEHAVIORS.md`.
 
 ## Environment controls
 

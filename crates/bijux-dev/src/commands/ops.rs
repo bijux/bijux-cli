@@ -2651,7 +2651,7 @@ pub(super) fn run_concurrency_model_guard() -> Result<(), String> {
     let required = [
         "docs/spec/CONCURRENCY_MODEL.md",
         "docs/bijux-dag/architecture/runtime-concurrency-boundaries.md",
-        "docs/tracking/concurrency-flake-ledger.md",
+        "docs/reports/governance/concurrency-flake-ledger.md",
         "crates/bijux-dag-runtime/tests/concurrency_contracts.rs",
     ];
     let mut missing = Vec::new();
@@ -2997,7 +2997,7 @@ pub(super) fn run_observability_contract_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/OBSERVABILITY_CONTRACT.md",
-        "docs/tracking/OBSERVABILITY_SURFACE_PLAN.md",
+        "docs/reports/governance/OBSERVABILITY_SURFACE_COVERAGE.md",
         "crates/bijux-dag-runtime/tests/observability_contracts.rs",
         "crates/bijux-dag-runtime/src/diagnostics/runtime/observability.rs",
     ];
@@ -3067,8 +3067,8 @@ pub(super) fn run_security_model_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/SECURITY_MODEL.md",
-        "docs/tracking/NON_HERMETIC_BEHAVIORS.md",
-        "docs/tracking/SECURITY_DEBT_LEDGER.md",
+        "docs/reports/governance/NON_HERMETIC_BEHAVIORS.md",
+        "docs/reports/governance/SECURITY_DEBT_LEDGER.md",
         "crates/bijux-dag-runtime/tests/security_model_contracts.rs",
         "crates/bijux-dag-runtime/tests/security_policy_contracts.rs",
         "crates/bijux-dag-runtime/tests/secrets_security_contracts.rs",
@@ -3362,7 +3362,7 @@ pub(super) fn run_cache_evolution_guard() -> Result<(), String> {
         "docs/spec/CACHE_EVOLUTION_MODEL.md",
         "docs/reports/foundation/CACHE_HARDENING_REPORT.md",
         "docs/spec/CACHE_PRUNE_POLICY.md",
-        "docs/tracking/CACHE_CORRECTNESS_COVERAGE.md",
+        "docs/reports/governance/CACHE_CORRECTNESS_COVERAGE.md",
         "evidence/cache/metadata.json",
         "evidence/cache/corrupt/missing_meta.json",
         "evidence/cache/corrupt/hash_mismatch.json",
@@ -3651,7 +3651,7 @@ pub(super) fn run_formal_invariants_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/FORMAL_INVARIANTS.md",
-        "docs/tracking/INVARIANT_COVERAGE.md",
+        "docs/reports/governance/INVARIANT_COVERAGE.md",
         "crates/bijux-dag-runtime/src/runtime_core/governance/invariants.rs",
         "crates/bijux-dag-runtime/src/internal/testing/invariants_tests.rs",
         "crates/bijux-dag-runtime/tests/formal_invariant_property_contracts.rs",
@@ -3706,7 +3706,7 @@ pub(super) fn run_invariants_report() -> Result<(), String> {
         root.join("crates/bijux-dag-runtime/src/runtime_core/governance/invariants.rs"),
     )
     .map_err(|err| err.to_string())?;
-    let coverage = fs::read_to_string(root.join("docs/tracking/INVARIANT_COVERAGE.md"))
+    let coverage = fs::read_to_string(root.join("docs/reports/governance/INVARIANT_COVERAGE.md"))
         .map_err(|err| err.to_string())?;
 
     let mut ids = Vec::new();
@@ -3731,7 +3731,7 @@ pub(super) fn run_invariants_report() -> Result<(), String> {
     let payload = json!({
         "invariant_ids": ids,
         "missing_coverage_entries": missing_coverage,
-        "coverage_file": "docs/tracking/INVARIANT_COVERAGE.md"
+        "coverage_file": "docs/reports/governance/INVARIANT_COVERAGE.md"
     });
     println!("{}", serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?);
     if payload["missing_coverage_entries"].as_array().is_some_and(|a| a.is_empty()) {
@@ -3923,7 +3923,7 @@ pub(super) fn run_drift_dashboard() -> Result<(), String> {
             {"name":"benchmark drift","severity":"warning","check":"performance-claims"},
             {"name":"dependency drift","severity":"warning","check":"dependency-policy"}
         ],
-        "dashboard_doc": "docs/tracking/DRIFT_DASHBOARD.md",
+        "dashboard_doc": "docs/reports/governance/DRIFT_DASHBOARD.md",
         "anti_drift_policy": root.join("docs/spec/ANTI_DRIFT_POLICY.md").exists()
     });
     println!("{}", serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?);
@@ -3940,8 +3940,8 @@ pub(super) fn run_repo_trust_summary() -> Result<(), String> {
             "anti_drift": root.join("docs/spec/ANTI_DRIFT_POLICY.md").exists()
         },
         "tracking": {
-            "invariant_coverage": root.join("docs/tracking/INVARIANT_COVERAGE.md").exists(),
-            "drift_dashboard": root.join("docs/tracking/DRIFT_DASHBOARD.md").exists()
+            "invariant_coverage": root.join("docs/reports/governance/INVARIANT_COVERAGE.md").exists(),
+            "drift_dashboard": root.join("docs/reports/governance/DRIFT_DASHBOARD.md").exists()
         },
         "evidence_index": root.join("docs/bijux-core/governance/repo-trust-evidence-index.md").exists()
     });
@@ -3953,7 +3953,7 @@ pub(super) fn run_anti_drift_governance_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/ANTI_DRIFT_POLICY.md",
-        "docs/tracking/DRIFT_DASHBOARD.md",
+        "docs/reports/governance/DRIFT_DASHBOARD.md",
         "docs/bijux-core/governance/repo-trust-evidence-index.md",
         ".github/pull_request_template.md",
     ];
@@ -4309,7 +4309,7 @@ pub(super) fn run_cache_coverage_report() -> Result<(), String> {
                 "contract": root.join("docs/spec/CACHE_CONTRACT.md").exists(),
                 "model": root.join("docs/spec/CACHE_EVOLUTION_MODEL.md").exists(),
                 "prune_policy": root.join("docs/spec/CACHE_PRUNE_POLICY.md").exists(),
-                "coverage_ledger": root.join("docs/tracking/CACHE_CORRECTNESS_COVERAGE.md").exists()
+                "coverage_ledger": root.join("docs/reports/governance/CACHE_CORRECTNESS_COVERAGE.md").exists()
             },
             "fixtures": {
                 "corruption": collect_fixture_count(&root.join("evidence/cache/corrupt"))?,

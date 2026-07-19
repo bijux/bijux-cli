@@ -18,7 +18,7 @@ For the detailed reference version, open
 release policy, open
 [Release Boundary](../foundation/release-boundary.md).
 The [Known Limitations](../quality/known-limitations.md) page records current
-constraints. The [Bijux Dag Roadmap](../../tracking/bijux-dag-roadmap.md) is
+constraints. The [Bijux Dag Roadmap](../roadmap.md) is
 future direction, not a supported-surface claim.
 
 | Surface | Status | Access path | Notes |

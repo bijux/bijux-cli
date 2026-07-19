@@ -1,7 +1,7 @@
 ---
 title: Security Debt Ledger
 audience: maintainer
-type: tracking
+type: report
 status: active
 owner: bijux-dag-maintainers
 last_reviewed: 2026-07-06

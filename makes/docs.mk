@@ -133,7 +133,7 @@ docs-publication-check: ## Enforce the curated public documentation boundary
 	  docs/bijux-dev/operations/repository-gates.md; do \
 	  test -f "$$path" || (echo "ERROR: missing public authority page $$path" && exit 1); \
 	done
-	@for path in /spec/ /reports/ /tracking/; do \
+	@for path in /spec/ /reports/; do \
 	  grep -Fqx "  $$path" "$(MKDOCS_CFG)" || \
 	    (echo "ERROR: internal documentation boundary $${path} is not excluded" && exit 1); \
 	done

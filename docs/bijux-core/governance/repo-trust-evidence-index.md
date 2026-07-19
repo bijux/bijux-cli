@@ -21,8 +21,8 @@ the DAG release boundary and its governance checks.
 
 ## Tracking surfaces
 
-- `docs/tracking/INVARIANT_COVERAGE.md`
-- `docs/tracking/DRIFT_DASHBOARD.md`
+- `docs/reports/governance/INVARIANT_COVERAGE.md`
+- `docs/reports/governance/DRIFT_DASHBOARD.md`
 
 ## Operational trust anchors
 

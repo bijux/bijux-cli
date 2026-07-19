@@ -364,7 +364,6 @@ fn assert_markdown_links_resolve(markdown_files: impl IntoIterator<Item = PathBu
 fn source_reference_markdown_files(root: &Path) -> Vec<PathBuf> {
     let mut markdown_files = collect_markdown_files(&root.join("docs/spec"));
     markdown_files.extend(collect_markdown_files(&root.join("docs/reports")));
-    markdown_files.extend(collect_markdown_files(&root.join("docs/tracking")));
     markdown_files.push(root.join("README.md"));
     markdown_files.push(root.join("docs/index.md"));
     markdown_files.extend([
@@ -436,7 +435,6 @@ fn repository_specs_and_reports_source_references_resolve() {
     let root = repo_root();
     let mut markdown_files = collect_markdown_files(&root.join("docs/spec"));
     markdown_files.extend(collect_markdown_files(&root.join("docs/reports")));
-    markdown_files.extend(collect_markdown_files(&root.join("docs/tracking")));
     markdown_files.push(root.join("README.md"));
     markdown_files.push(root.join("docs/index.md"));
     assert_source_references_resolve(markdown_files, "repository specification and report pages");

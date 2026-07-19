@@ -13,8 +13,8 @@ last_reviewed: 2026-07-08
 explains what comes after that release without blurring future direction into a
 shipped contract.
 
-Use [Release Boundary](../bijux-dag/foundation/release-boundary.md) for the
-current public promise and [Known Limitations](../bijux-dag/quality/known-limitations.md)
+Use [Release Boundary](foundation/release-boundary.md) for the
+current public promise and [Known Limitations](quality/known-limitations.md)
 for the current constraints. Use this roadmap only when the question is what
 must happen before a later release can honestly claim more.
 

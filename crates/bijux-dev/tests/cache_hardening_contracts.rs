@@ -56,14 +56,15 @@ fn cache_hardening_report_and_coverage_ledger_link_docs_tests_and_trust_property
     let root = workspace_root();
     let report = fs::read_to_string(root.join("docs/reports/foundation/CACHE_HARDENING_REPORT.md"))
         .expect("report");
-    let coverage = fs::read_to_string(root.join("docs/tracking/CACHE_CORRECTNESS_COVERAGE.md"))
-        .expect("coverage ledger");
+    let coverage =
+        fs::read_to_string(root.join("docs/reports/governance/CACHE_CORRECTNESS_COVERAGE.md"))
+            .expect("coverage ledger");
 
     for token in [
         "docs/spec/CACHE_CONTRACT.md",
         "docs/spec/CACHE_EVOLUTION_MODEL.md",
         "docs/spec/CACHE_PRUNE_POLICY.md",
-        "docs/tracking/CACHE_CORRECTNESS_COVERAGE.md",
+        "docs/reports/governance/CACHE_CORRECTNESS_COVERAGE.md",
         "crates/bijux-dag-runtime/tests/cache_contracts.rs",
         "crates/bijux-dag-runtime/tests/cache_evolution_contracts.rs",
         "crates/bijux-dag-app/tests/cache_evolution_contract.rs",

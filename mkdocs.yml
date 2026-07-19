@@ -24,7 +24,6 @@ watch:
 exclude_docs: |
   /spec/
   /reports/
-  /tracking/
   /bijux-core/**
   !/bijux-core/index.md
   !/bijux-core/foundation/platform-overview.md
@@ -67,6 +66,7 @@ exclude_docs: |
   !/bijux-cli/packages/bijux-cli-python.md
   /bijux-dag/**
   !/bijux-dag/index.md
+  !/bijux-dag/roadmap.md
   !/bijux-dag/foundation/package-overview.md
   !/bijux-dag/foundation/release-boundary.md
   !/bijux-dag/foundation/scope-and-boundaries.md
@@ -210,6 +210,7 @@ nav:
           - Release Boundary: bijux-dag/foundation/release-boundary.md
           - Scope And Boundaries: bijux-dag/foundation/scope-and-boundaries.md
           - Capability Map: bijux-dag/foundation/capability-map.md
+          - Roadmap: bijux-dag/roadmap.md
       - Architecture:
           - Architecture Overview: bijux-dag/architecture/index.md
           - Execution Model: bijux-dag/architecture/execution-model.md

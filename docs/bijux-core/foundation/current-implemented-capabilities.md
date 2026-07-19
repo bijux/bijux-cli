@@ -42,5 +42,6 @@ Implemented does not mean public, stable, or broadly promised.
 ## What This Page Excludes
 
 This page does not catalog speculative future work, modeled platform
-expansion, or draft API promotion lanes. Those belong under `docs/tracking/`
+expansion or unshipped API promotion lanes. Those belong in the owned product
+roadmap
 and the DAG release-boundary handbooks.

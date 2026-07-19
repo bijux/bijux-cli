@@ -23,7 +23,7 @@ fn read_repo_file(path: &str) -> String {
 
 #[test]
 fn roadmap_page_covers_post_v040_release_lanes_without_blurring_current_boundary() {
-    let roadmap = read_repo_file("docs/tracking/bijux-dag-roadmap.md");
+    let roadmap = read_repo_file("docs/bijux-dag/roadmap.md");
 
     for token in [
         "# Bijux Dag Roadmap",
@@ -47,7 +47,7 @@ fn roadmap_page_covers_post_v040_release_lanes_without_blurring_current_boundary
 
 #[test]
 fn roadmap_page_keeps_shipped_backend_lanes_out_of_future_release_fiction() {
-    let roadmap = read_repo_file("docs/tracking/bijux-dag-roadmap.md");
+    let roadmap = read_repo_file("docs/bijux-dag/roadmap.md");
 
     for token in [
         "`v0.4.0` already ships two concrete backend lanes",

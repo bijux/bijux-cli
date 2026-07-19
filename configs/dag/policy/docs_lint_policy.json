@@ -3,9 +3,7 @@
     "docs/generated/",
     "docs/reports/foundation/archive/",
     "docs/reports/root-doc-archive/",
-    "docs/adr/archive/",
-    "docs/tracking/",
-    "docs/_tracking/"
+    "docs/adr/archive/"
   ],
   "metadata_required_prefixes": [],
   "metadata_required_exact": [
