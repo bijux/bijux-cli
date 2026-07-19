@@ -9,8 +9,9 @@ last_reviewed: 2026-07-04
 
 # Local Development
 
-Use this page when you want the shortest honest local workflow for working in
-`bijux-core` without inventing ad hoc commands.
+Local development begins with the owning surface and the smallest documented
+command that proves it. Repository-wide gates follow when a change crosses
+package, contract, release, or publication boundaries.
 
 The rule is simple: start from documented root entrypoints so local work and CI
 keep telling the same story.
@@ -45,7 +46,7 @@ Local runs should use the pinned Rust `1.86.0` toolchain from
 If a workflow cannot be explained from `Makefile`, `makes/`, or a handbook
 page, it is not a healthy repository entrypoint yet.
 
-## Continue Reading
+## Development References
 
 - [Contributor Workflows](contributor-workflows.md)
 - [Automation Surfaces](automation-surfaces.md)

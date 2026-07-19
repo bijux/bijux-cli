@@ -114,7 +114,7 @@ tracked source. Source defines the rules; runtime state proves a run.
 - `crates/bijux-dag-artifacts/src/storage/`
 - `crates/bijux-dev/src/commands/shared_io.rs`
 
-## Next Reads
+## State Ownership References
 
 - [Artifact and Contract Flow](artifact-and-contract-flow.md)
 - [Testing and Validation](../operations/testing-and-validation.md)

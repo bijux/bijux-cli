@@ -10,9 +10,8 @@ last_reviewed: 2026-07-06
 # Package Boundary
 
 `bijux-core` ships two public release families and several repository-internal
-support crates. Use this page when you need the durable publication answer:
-which workspace packages are public releases, and which stay private support
-code?
+support crates. The publication boundary below is the durable answer for which
+workspace packages are public releases and which remain private support code.
 
 The contract source for this page is
 `contracts/foundation/workspace_package_boundary.v1.json`.
@@ -59,7 +58,7 @@ The canonical crates.io publish order is:
 The DAG crate family publishes first so dependency edges are satisfied before
 the separate `bijux` runtime crate is released.
 
-## What This Page Is Not Saying
+## Boundary Interpretation
 
 - It is not saying private crates are unimportant.
 - It is not saying every public crate has the same user audience.
@@ -72,7 +71,7 @@ the separate `bijux` runtime crate is released.
 - Update this page and `contracts/foundation/workspace_package_boundary.v1.json`
   together when publication intent changes.
 
-## Continue Reading
+## Publication References
 
 - [Package Map](package-map.md)
 - [Repository Packages](../packages/index.md)

@@ -9,8 +9,9 @@ last_reviewed: 2026-07-09
 
 # Package Map
 
-Use this page when you know the problem you are trying to solve, but you do
-not yet know which package family owns it.
+Route work by the behavior being changed before choosing a crate. Package names
+are implementation boundaries, not a substitute for identifying the product or
+maintainer responsibility involved.
 
 The point is not to memorize crate names. The point is to route a reader,
 contributor, or reviewer to the right handbook and the right code surface
@@ -76,7 +77,7 @@ handbook and then drill down from there.
 - debugging release or docs automation from product pages alone
 - changing a downstream surface while missing the real owner upstream
 
-## Continue Reading
+## Package Boundary References
 
 - [Ownership Model](ownership-model.md)
 - [Package Boundary](package-boundary.md)

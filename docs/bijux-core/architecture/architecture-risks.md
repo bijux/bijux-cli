@@ -12,7 +12,7 @@ last_reviewed: 2026-04-06
 Architecture risks track where structure drift can cause expensive debugging,
 compatibility loss, or unreliable release outcomes.
 
-## Visual Summary
+## Risk Relationships
 
 ```mermaid
 quadrantChart
@@ -52,7 +52,7 @@ quadrantChart
 - `makes/docs.mk`
 - `mkdocs.yml`
 
-## Next Reads
+## Risk Governance
 
 - [Risk and Exceptions](../governance/risk-and-exceptions.md)
 - [Change Management](../operations/change-management.md)

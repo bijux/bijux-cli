@@ -9,9 +9,9 @@ last_reviewed: 2026-04-06
 
 # System Overview
 
-Use this page when you want the architecture answer before the crate-by-crate
-answer: what are the big moving parts in `bijux-core`, and how do they relate
-without collapsing into one system diagram?
+The system architecture starts with responsibility and dependency direction,
+then narrows to crate-level implementation. This view explains the shared shape
+without collapsing distinct runtimes into one diagram.
 
 `bijux-core` is a single Rust workspace, but it is not a single runtime. It
 contains:
@@ -64,7 +64,7 @@ contains:
 - `crates/bijux-dag-app/src/lib.rs`
 - `crates/bijux-dev/src/lib.rs`
 
-## Continue Reading
+## Architecture References
 
 - [Workspace Topology](workspace-topology.md)
 - [Dependency Direction](dependency-direction.md)

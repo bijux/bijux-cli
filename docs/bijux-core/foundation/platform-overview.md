@@ -69,19 +69,19 @@ hiding them in separate repos with duplicated policy and drift.
 - maintainer automation should stay explicit instead of leaking into product
   packages
 
-## A Practical Reading Shortcut
+## Route By Responsibility
 
 If the question starts with "what does the command do?", leave this page and go
 to the owning product handbook. If it starts with "how do these surfaces fit
 together?" or "which of these surfaces is public?", stay here.
 
-## What This Page Is Not Saying
+## Product Boundary
 
 - It is not saying the repository is one product with one audience.
 - It is not saying every crate is public just because it sits in the workspace.
 - It is not replacing package pages when you need exact crate ownership.
 
-## Continue Reading
+## Choose The Owning Handbook
 
 - [Repository Scope](repository-scope.md)
 - [Package Map](package-map.md)

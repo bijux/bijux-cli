@@ -101,7 +101,7 @@ A release is in good shape when:
 - generated references and package READMEs match shipped capabilities
 - evidence artifacts can explain what was built and from which source revision
 
-## Next Reads
+## Distribution References
 
 - [Release and Versioning](../operations/release-and-versioning.md)
 - [Compatibility and Schema](../governance/compatibility-and-schema.md)

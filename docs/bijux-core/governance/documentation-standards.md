@@ -99,7 +99,7 @@ These roots and files shape most documentation decisions:
 - `makes/docs.mk` for docs build and validation entrypoints
 - `docs/index.md` for top-level site routing
 
-## Next Reads
+## Documentation Authorities
 
 - [Decision Record Policy](decision-record-policy.md)
 - [Risk and Exceptions](risk-and-exceptions.md)

@@ -42,10 +42,11 @@ flowchart LR
 - DAG core importing app-route modules
 - duplicate policy logic in multiple binary entrypoints
 
-## Reading Rule
+## Dependency Review
 
-Use this page when a new dependency feels convenient but might weaken the
-repository split.
+Review a proposed dependency against the owned direction before accepting its
+local convenience. A dependency that weakens the repository split is an
+architecture change, not an implementation detail.
 
 ## Code Anchors
 
@@ -54,7 +55,7 @@ repository split.
 - `crates/bijux-dag-runtime/Cargo.toml`
 - `crates/bijux-dev/Cargo.toml`
 
-## Next Reads
+## Boundary References
 
 - [Maintainer Control Plane](maintainer-control-plane.md)
 - [Testing and Validation](../operations/testing-and-validation.md)
