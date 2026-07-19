@@ -7,7 +7,6 @@ import importlib
 import json
 import os
 from pathlib import Path
-import subprocess
 import sys
 
 from ._exceptions import (
@@ -78,20 +77,6 @@ def _allow_native_import_fallback(exc: Exception) -> bool:
         configured = os.environ.get("BIJUX_PY_ALLOW_NATIVE_OSERROR_FALLBACK", "")
         return configured.strip().lower() in {"1", "true", "yes", "on"}
     return False
-
-
-def _runtime_binary_filenames() -> tuple[str, ...]:
-    if os.name == "nt":
-        return ("bijux.exe", "bijux")
-    return ("bijux",)
-
-
-def _sanitized_subprocess_env() -> dict[str, str]:
-    return {
-        key: value
-        for key, value in os.environ.items()
-        if key not in _SUBPROCESS_ENV_STRIP_KEYS
-    }
 
 
 try:
