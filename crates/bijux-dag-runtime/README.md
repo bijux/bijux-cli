@@ -70,52 +70,18 @@ Rust.
 
 Use these rules when reviewing runtime fingerprint drift or provenance output.
 
-## External Adapter Boundary
+## Integration Boundaries
 
-- runtime discovery reads executable adapters from `BIJUX_DAG_ADAPTERS_DIR`
-- `info --json` must emit descriptor JSON on stdout only; stderr during the
-  handshake is treated as a protocol violation
-- `execute` receives `--node-spec`, `--workdir`, `--outdir`, and
-  `--failure-path`
-- when an adapter exits nonzero and needs precise failure classification, it
-  should write a `FailureInfo` JSON envelope to `--failure-path`
-- the external adapter binary SHA-256 participates in node trace evidence and
-  cache identity, so changing the adapter binary invalidates cached reuse even
-  if the adapter keeps the same declared `id` and `version`
+| Boundary | Runtime commitment | Authority |
+| --- | --- | --- |
+| external adapters | descriptor handshake, explicit execution paths, typed failure information, and adapter-binary identity in cache evidence | [Adapter Contract](../../docs/spec/ADAPTER_CONTRACT.md) |
+| retained lifecycle evidence | terminal status, validated lifecycle transitions, per-attempt output, and bounded log summaries | [Run Evidence Layout](../../docs/bijux-dag/interfaces/run-evidence-layout.md) |
+| subprocess cleanup | process-group termination on Unix and explicit best-effort behavior on other hosts | [Execution Security And Isolation](../../docs/bijux-dag/operations/security-isolation-truth.md) |
+| replay and cache | identity-aware reuse, refusal evidence, and replay verification | [Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md) |
 
-## Persisted Lifecycle Evidence
-
-Node traces persist lifecycle evidence separately from terminal `status`.
-
-- terminal `status` stays the coarse completion lane such as `success`,
-  `failed`, `cached`, or `cancelled`
-- process-backed nodes also record `exit_code` when the backend exposes one
-- `lifecycle_state` records the final execution interpretation using the stable
-  runtime vocabulary: `pending`, `ready`, `queued`, `running`, `succeeded`,
-  `failed`, `skipped`, `cached`, `cancelled`, and `timed_out`
-- `lifecycle_transitions` records the validated path through those states so a
-  cache hit, timeout, cancellation, or queued-but-never-started node remains
-  inspectable after the run finishes
-- `stdout` and `stderr` trace fields record the retained terminal log path,
-  byte size, and a bounded tail excerpt from the terminal attempt
-- `nodes/<node_id>/attempts/<attempt>/stdout.log` and `stderr.log` preserve
-  per-attempt copies when the runtime records attempt history
-- runtime capture streams process output into spill files before it is copied
-  into retained node evidence, so large logs stay on disk instead of being
-  buffered fully in memory during execution
-
-## Subprocess Cleanup Contract
-
-- On Unix hosts, controlled shell, external, python, and container-engine
-  commands run in a dedicated subprocess group.
-- When a node times out or an operator cancellation arrives, the runtime sends
-  `TERM` and then `KILL` to that subprocess group so child and grandchild
-  helpers do not keep running after the node finishes.
-- If the runtime has to fall back because group signaling cannot complete
-  cleanly, it records that degradation in the captured node `stderr` instead of
-  silently claiming full cleanup.
-- On non-Unix hosts, subprocess termination remains best-effort leader
-  termination rather than a full process-tree guarantee.
+These boundaries are observable contracts, not claims of host isolation.
+Shell execution is not a VM boundary, and external adapter support does not
+turn modeled distributed backends into stable public services.
 
 ## Public Rust Surface
 
@@ -150,35 +116,18 @@ Node traces persist lifecycle evidence separately from terminal `status`.
 - you need only persisted artifact helpers without execution policy:
   `bijux-dag-artifacts`
 
-## Representative Workflow
+## Verify A Runtime Claim
 
-For the repository-backed example that exercises mounted container inputs,
-retained outputs, recorded image digest, and clear engine-unavailable failure
-behavior, use
-[Container Packaging Workflow](../../docs/bijux-dag/operations/container-packaging-workflow.md).
+| Claim | Repository-backed proof |
+| --- | --- |
+| container inputs, outputs, and engine identity | [Container Packaging Workflow](../../docs/bijux-dag/operations/container-packaging-workflow.md) |
+| cache reuse, invalidation, corruption refusal, and miss explanation | [Cache Behavior Workflow](../../docs/bijux-dag/operations/cache-behavior-workflow.md) |
+| graph, execution, cache, and replay identity | [Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md) |
+| branch selection, skipped lanes, and replay stability | [Branching Bulletin Workflow](../../docs/bijux-dag/operations/branching-bulletin-workflow.md) |
+| retry evidence and focused replay repair | [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/compliance-gated-bulletin-workflow.md) |
 
-For the repository-backed example that exercises full-workflow cache hits,
-selective invalidation, corruption refusal, and proof-backed cache rejection on
-one retained workflow family, use
-[Cache Behavior Workflow](../../docs/bijux-dag/operations/cache-behavior-workflow.md).
-
-For the canonical explanation of how graph identity, plan identity,
-execution identity, environment identity, artifact hashes, cache keys, and
-replay bundles fit together, use
-[Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md).
-
-For the repository-backed example that exercises branch decisions, join trigger
-evaluation, skipped-lane evidence, and replay stability, use
-[Branching Bulletin Workflow](../../docs/bijux-dag/operations/branching-bulletin-workflow.md).
-
-For the repository-backed example that exercises retry accounting, replay
-boundary input rematerialization, and post-repair verification on a failed run,
-use
-[Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/compliance-gated-bulletin-workflow.md).
-
-Repository-owned schedule and backfill execution flows are documented in the
-DAG handbook, but they remain internal workflow lanes rather than part of the
-default public `v0.4.0` runtime story.
+Schedule and backfill flows remain internal workflow lanes in v0.4.x. Their
+presence in repository evidence is not a public runtime commitment.
 
 ## Related links
 
