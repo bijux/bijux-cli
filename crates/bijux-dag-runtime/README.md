@@ -156,6 +156,19 @@ of the batch-lane promise.
 Schedule and backfill flows remain internal workflow lanes in v0.4.x. Their
 presence in repository evidence is not a public runtime commitment.
 
+## Internal Documentation
+
+- [`ADAPTERS_AND_BACKENDS.md`](docs/ADAPTERS_AND_BACKENDS.md): adapter
+  handshake, backend capabilities, containers, batch execution, and refusals.
+- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): execution flow, source
+  boundaries, dependency direction, stable exports, and extension decisions.
+- [`CACHE_REPLAY_AND_EVIDENCE.md`](docs/CACHE_REPLAY_AND_EVIDENCE.md): cache
+  identity, hit validation, replay eligibility, persistence, and repair.
+- [`CONTRACTS.md`](docs/CONTRACTS.md): owned execution semantics, effects,
+  state, backend, cache, replay, and failure contracts.
+- [`EXECUTION_AND_SCHEDULING.md`](docs/EXECUTION_AND_SCHEDULING.md): admission,
+  readiness, attempts, retries, cancellation, state invariants, and recovery.
+
 ## Related links
 
 - [Crate contracts](docs/CONTRACTS.md)
