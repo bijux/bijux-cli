@@ -49,7 +49,10 @@ review of the behavior and assertions remains necessary.
 `docs/reports/governance/DRIFT_DASHBOARD.md` records their current check
 mapping. The comparison harness contract separates measured facts from
 interpretation so performance or behavior comparisons cannot silently become
-product claims.
+product claims. Runtime performance claims are governed by
+`evidence/perf/metadata.json` and the
+`bijux-dev-dag performance-evidence-report` command; comparison claims use
+their scenario-specific evidence under `evidence/compare/`.
 
 Generated evidence is revision-specific. Review its generator, inputs, and
 source revision before relying on a conclusion. A stale report must be

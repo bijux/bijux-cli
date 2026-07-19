@@ -4,7 +4,7 @@ audience: mixed
 type: quality
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-10
+last_reviewed: 2026-07-19
 ---
 
 # Comparison Evidence Surfaces
@@ -54,6 +54,11 @@ Current factual scenarios cover bounded behavior such as:
 
 Each conclusion remains scoped to its scenario and evidence asset. Similarity
 in one behavior does not establish whole-product equivalence.
+
+The scheduler-overhead scenario is comparison evidence for its named workload,
+not a general runtime-performance result. Product performance thresholds and
+release budgets are governed separately by `evidence/perf/metadata.json` and
+the `bijux-dev-dag performance-evidence-report` command.
 
 ## Non-Equivalence Limits
 

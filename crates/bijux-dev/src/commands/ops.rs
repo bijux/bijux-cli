@@ -2057,8 +2057,14 @@ pub(super) fn run_benchmark_compare(
 pub(super) fn run_performance_claims_guard() -> Result<(), String> {
     let root = repo_root()?;
     let docs = root.join("docs");
-    let evidence_markers =
-        ["artifacts/benchmarks", "benchmarks/", "performance-evidence-report", "benchmark_report"];
+    let evidence_markers = [
+        "artifacts/benchmarks",
+        "benchmarks/",
+        "evidence/perf/",
+        "evidence/compare/",
+        "performance-evidence-report",
+        "benchmark_report",
+    ];
     let mut violations = Vec::new();
     let mut stack = vec![docs];
     while let Some(dir) = stack.pop() {
