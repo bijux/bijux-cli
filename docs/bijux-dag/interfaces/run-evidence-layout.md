@@ -4,7 +4,7 @@ audience: mixed
 type: reference
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-08
+last_reviewed: 2026-07-19
 ---
 
 # Run Evidence Layout
@@ -19,6 +19,24 @@ The examples on this page are based on the checked-in run-directory snapshots in
 `crates/bijux-dag-app/tests/snapshots/` together with the live storage models in
 `crates/bijux-dag-artifacts/src/storage/models.rs` and
 `crates/bijux-dag-artifacts/src/lib.rs`.
+
+## Evidence Trust Hierarchy
+
+Not every retained file carries the same authority:
+
+| Evidence class | Examples | Use |
+| --- | --- | --- |
+| identity and contract | `manifest.json`, `graph.snapshot.json`, `run.schema.json` | establish what ran, under which graph and schema |
+| node execution | `nodes/<node_id>/trace.json`, `attempts.json`, input/output indexes | explain node status, attempts, materialized inputs, and declared outputs |
+| integrity and lineage | `outputs/index.json`, `lineage.snapshot.json`, `provenance.json` | verify artifact identity and dependency history |
+| ordered observation | `run.log.jsonl`, observability events and timeline | reconstruct what the runtime observed and when |
+| derived convenience | visualizations, root-cause summaries, compact snapshots | accelerate inspection; verify consequential claims against underlying evidence |
+| transient work | `nodes/<node_id>/work/`, `run.tmp-<run_id>` | execution staging only, never finalized proof |
+
+A successful command envelope is not a substitute for retained evidence.
+Likewise, the presence of a file does not prove its integrity: use
+`bijux-dag verify` and artifact inspection when the decision depends on hashes,
+schema validity, or replayability.
 
 ## Directory shape
 
