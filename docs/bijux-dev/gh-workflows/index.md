@@ -1,42 +1,52 @@
 ---
-title: gh-workflows
-audience: mixed
+title: GitHub Workflow Ownership
+audience: maintainers
 type: index
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-19
 ---
 
-# Dev GitHub Workflows
+# GitHub Workflow Ownership
 
-This section maps the GitHub Actions entrypoints in `bijux-core`. Use it to
-identify which workflow owns a failure, release gate, or automation path before
-debugging jobs directly in CI logs.
+Start with the workflow family and its authority before debugging an individual
+job. Some workflows are repository-owned; others are synchronized from
+`bijux-std` and must be corrected upstream rather than patched in this checkout.
 
-## Pages In This Section
+## Validation And Policy
 
-- [ci](ci.md)
-- [release-validation](release-validation.md)
-- [Documentation Deployment](deploy-docs.md)
-- [release-crates](release-crates.md)
-- [release-pypi](release-pypi.md)
-- [release-github](release-github.md)
-- [bijux-canon](bijux-canon.md)
-
-## Workflow Ownership Map
-
-| Workflow | Owns | Enter Here When |
+| Workflow | Responsibility | Detailed guide |
 | --- | --- | --- |
-| [ci](ci.md) | Repository validation gates and baseline verification | pull request checks fail or mandatory CI signals regress |
-| [release-validation](release-validation.md) | Release-candidate verification from committed `HEAD` | release checks fail on formatting, packaging, publish dry runs, or smoke coverage |
-| [Documentation Deployment](deploy-docs.md) | Documentation build artifact and GitHub Pages deployment | docs site output, invocation, artifact upload, or deploy permissions fail |
-| [release-crates](release-crates.md) | Rust crate release orchestration | crates release process, publish ordering, or registry upload issues appear |
-| [release-pypi](release-pypi.md) | Python release orchestration | PyPI publication, packaging metadata, or python release gates fail |
-| [release-github](release-github.md) | GitHub release record and release artifacts | release notes, release tagging, or artifact publication on GitHub breaks |
-| [bijux-canon](bijux-canon.md) | Cross-repo canon integration workflow | canon handoff integration or shared validation contracts fail |
+| `ci.yml` | required formatting, lint, security, and test jobs | [CI](ci.md) |
+| `release-validation.yml` | committed-source release-candidate proof | [Release Validation](release-validation.md) |
+| `bijux-canon.yml` | broader canon and evidence integration | [Bijux Canon](bijux-canon.md) |
+| `bijux-std-checks.yml`, `bijux-std.yml` | shared standards and contract validation | [CI and Automation](../operations/ci-and-automation.md) |
+| `github-policy.yml`, `pr-approval-policy.yml`, `automerge-pr.yml` | repository settings, review policy, and approved merge automation | [CI and Automation](../operations/ci-and-automation.md) |
 
-## Reading Rule
+Policy and standards workflows are managed surfaces. Confirm the generated-file
+notice and checksum before deciding where a change belongs.
 
-Start with workflow ownership first, then inspect job-level behavior. If a
-failure spans multiple workflows, treat it as a contract boundary issue rather
-than patching one workflow in isolation.
+## Documentation And Publication
+
+| Workflow | Responsibility | Detailed guide |
+| --- | --- | --- |
+| `deploy-docs.yml` | strict build, Pages artifact, and deployment | [Documentation Deployment](deploy-docs.md) |
+| `release-on-tag.yml` | release fan-out for an accepted tag | [Release Surfaces](../makes/release-surfaces.md) |
+| `release-artifacts.yml` | reusable package artifact build | [Release Operations](../operations/release-operations.md) |
+| `release-crates.yml` | crates.io publication | [Rust Crates Release](release-crates.md) |
+| `release-pypi.yml` | Python package publication | [PyPI Release](release-pypi.md) |
+| `release-ghcr.yml` | container publication | [Release Operations](../operations/release-operations.md) |
+| `release-github.yml` | GitHub release and attached artifacts | [GitHub Release](release-github.md) |
+
+## Failure Routing
+
+1. Record the workflow, job, source commit, event, and final status.
+2. Identify the delegated make target or called workflow.
+3. Reproduce the repository-owned target locally when credentials and hosted
+   policy are not the failing boundary.
+4. If the file is managed by shared standards, verify drift and prepare the fix
+   in `bijux-std`.
+5. If publication began, inspect every target registry before retrying.
+
+A failure spanning several workflows is usually a shared gate, release identity,
+or standards problem. Do not copy a local workaround into each workflow.
