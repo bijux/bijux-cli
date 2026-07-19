@@ -29,6 +29,28 @@ handoff. Regenerate inventories only when the source set or governed inventory
 format changes; do not create report churn for prose edits that leave inventory
 unchanged.
 
+## Documentation Change Flow
+
+```mermaid
+flowchart LR
+    source["Code, contract, or reader need"]
+    authority["Select canonical documentation owner"]
+    edit["Edit source page or producer"]
+    focused["Governance and source-reference checks"]
+    strict["Strict MkDocs build"]
+    boundary["Page budget, depth, hygiene, and navigation"]
+    inspect["Inspect rendered decisions and claims"]
+    handoff["Record exact evidence and omissions"]
+
+    source --> authority --> edit --> focused --> strict --> boundary --> inspect --> handoff
+    focused -->|generated drift| edit
+    strict -->|link or render failure| edit
+    inspect -->|claim exceeds evidence| authority
+```
+
+The loop returns to the authority, not just the wording, when a claim is in the
+wrong handbook or duplicates an executable contract.
+
 ## Choose The Owning Surface
 
 | Material | Destination |
@@ -86,6 +108,23 @@ Change a producer before its generated output. Review the semantic diff, run
 the owning contract, and keep independently meaningful producer and generated
 changes in separate commits. Do not hand-edit `.bijux/shared/` or generated
 GitHub standards.
+
+## Diagnose A Failed Gate
+
+| Failure | Likely boundary | Correct response |
+| --- | --- | --- |
+| metadata, authority, depth, or filename violation | documentation governance | repair ownership or structure; do not exclude the page from lint |
+| source-reference or anchor failure | link graph or moved authority | update every consumer or restore the canonical path deliberately |
+| generated badge or shared shell drift | owning producer or synchronized standard | regenerate through the producer; change `bijux-std` first for shared content |
+| strict MkDocs warning promoted to error | source Markdown, plugin input, navigation, or theme contract | fix the underlying source and rebuild |
+| publication count exceeds 100 | public information architecture | consolidate reader questions; do not hide a canonical page without a replacement route |
+| public page exceeds product/category/page depth | handbook structure | move it to the correct durable category and update links |
+| internal spec or report appears in the site | publication boundary | restore exclusion and link only to an explanatory public authority |
+| rendered navigation check fails | shared chrome, handbook tabs, or package routes | inspect built HTML and repair the source or shell contract |
+
+Run the failed component directly while diagnosing, then rerun
+`make docs-check` because a component pass does not prove the composed
+publication gate.
 
 ## Handoff Evidence
 

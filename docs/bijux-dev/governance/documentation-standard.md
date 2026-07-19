@@ -34,6 +34,35 @@ guidance.
 Do not label a command as safe, complete, or reproducible without stating the
 boundary that makes the claim true.
 
+## Admission Decision
+
+```mermaid
+flowchart LR
+    need["Reader or contract need"]
+    owner{"Existing authority?"}
+    revise["Revise canonical page"]
+    kind{"Material kind"}
+    handbook["Public handbook"]
+    crate["Crate README or local docs"]
+    spec["Executable specification"]
+    report["Governed report"]
+    artifact["Transient artifact"]
+    validate["Owning validation and review"]
+
+    need --> owner
+    owner -->|yes| revise --> validate
+    owner -->|no| kind
+    kind -->|reader workflow| handbook --> validate
+    kind -->|package internals| crate --> validate
+    kind -->|enforced behavior| spec --> validate
+    kind -->|revision evidence| report --> validate
+    kind -->|local run output| artifact --> validate
+```
+
+Page count is not a quality target. Add a page only when no existing authority
+can own the reader question without becoming incoherent. Otherwise, revise or
+consolidate the canonical page and preserve stable links deliberately.
+
 ## Evidence Language
 
 Use terms precisely:
@@ -64,6 +93,18 @@ must not recommend:
 
 When a local repair belongs in shared standards, identify the upstream
 authority and the downstream refresh procedure.
+
+## Operational Review
+
+| Review question | Reject when |
+| --- | --- |
+| Who owns the behavior or process? | ownership is inferred from file location or an obsolete command |
+| What does the reader decide or do next? | the page lists concepts but offers no safe action or refusal |
+| Which command or contract proves the claim? | a path, PID, generated file, or focused test is presented as broad success |
+| Which output is transient and which is governed? | logs are proposed for Git or generated authority is proposed for hand editing |
+| Which support lane is described? | stable, experimental, simulated, internal, and unsupported behavior are blended |
+| What happens on partial failure? | recovery discards evidence, retries blindly, or hides a non-zero component |
+| Does a diagram clarify real ownership? | boxes merely repeat headings or imply dependencies that code does not have |
 
 ## Review Rejection
 
