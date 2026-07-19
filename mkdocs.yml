@@ -19,6 +19,109 @@ watch:
   - mkdocs.shared.yml
   - docs/automation
 
+# Only curated handbook pages are published. Specifications and reports remain
+# governed repository inputs, but they are not reader-facing website pages.
+exclude_docs: |
+  /spec/
+  /reports/
+  /tracking/
+  /bijux-core/**
+  !/bijux-core/index.md
+  !/bijux-core/foundation/platform-overview.md
+  !/bijux-core/foundation/repository-scope.md
+  !/bijux-core/foundation/package-map.md
+  !/bijux-core/foundation/package-boundary.md
+  !/bijux-core/foundation/documentation-system.md
+  !/bijux-core/architecture/system-overview.md
+  !/bijux-core/architecture/dependency-direction.md
+  !/bijux-core/architecture/state-and-configuration.md
+  !/bijux-core/architecture/distribution-model.md
+  !/bijux-core/architecture/architecture-risks.md
+  !/bijux-core/operations/local-development.md
+  !/bijux-core/operations/testing-and-validation.md
+  !/bijux-core/operations/release-and-versioning.md
+  !/bijux-core/governance/documentation-standards.md
+  !/bijux-core/packages/index.md
+  /bijux-cli/**
+  !/bijux-cli/index.md
+  !/bijux-cli/foundation/package-overview.md
+  !/bijux-cli/foundation/scope-and-boundaries.md
+  !/bijux-cli/foundation/capability-map.md
+  !/bijux-cli/architecture/index.md
+  !/bijux-cli/architecture/execution-model.md
+  !/bijux-cli/architecture/state-and-persistence.md
+  !/bijux-cli/architecture/error-model.md
+  !/bijux-cli/architecture/architecture-risks.md
+  !/bijux-cli/interfaces/cli-surface.md
+  !/bijux-cli/interfaces/configuration-surface.md
+  !/bijux-cli/interfaces/operator-workflows.md
+  !/bijux-cli/interfaces/public-imports.md
+  !/bijux-cli/operations/installation-and-setup.md
+  !/bijux-cli/operations/diagnostics-guide.md
+  !/bijux-cli/operations/security-and-safety.md
+  !/bijux-cli/operations/failure-recovery.md
+  !/bijux-cli/quality/known-limitations.md
+  !/bijux-cli/quality/test-strategy.md
+  !/bijux-cli/packages/index.md
+  !/bijux-cli/packages/bijux-cli.md
+  !/bijux-cli/packages/bijux-cli-python.md
+  /bijux-dag/**
+  !/bijux-dag/index.md
+  !/bijux-dag/foundation/package-overview.md
+  !/bijux-dag/foundation/release-boundary.md
+  !/bijux-dag/foundation/scope-and-boundaries.md
+  !/bijux-dag/foundation/capability-map.md
+  !/bijux-dag/architecture/index.md
+  !/bijux-dag/architecture/execution-model.md
+  !/bijux-dag/architecture/state-and-persistence.md
+  !/bijux-dag/architecture/engine-backend-responsibilities.md
+  !/bijux-dag/architecture/architecture-risks.md
+  !/bijux-dag/interfaces/cli-surface.md
+  !/bijux-dag/interfaces/generated-cli-reference.md
+  !/bijux-dag/interfaces/authoring-guide.md
+  !/bijux-dag/interfaces/graph-schema.md
+  !/bijux-dag/interfaces/artifact-contracts.md
+  !/bijux-dag/interfaces/runnable-examples.md
+  !/bijux-dag/interfaces/reproducibility-model.md
+  !/bijux-dag/interfaces/run-evidence-layout.md
+  !/bijux-dag/interfaces/compatibility-matrix.md
+  !/bijux-dag/interfaces/error-codes.md
+  !/bijux-dag/operations/installation-and-setup.md
+  !/bijux-dag/operations/first-run-tutorial.md
+  !/bijux-dag/operations/common-workflows.md
+  !/bijux-dag/operations/cache-behavior-workflow.md
+  !/bijux-dag/operations/evidence-backed-bulletin-workflow.md
+  !/bijux-dag/operations/container-packaging-workflow.md
+  !/bijux-dag/operations/security-isolation-truth.md
+  !/bijux-dag/operations/failure-recovery.md
+  !/bijux-dag/operations/v0-4-0-release-notes.md
+  !/bijux-dag/quality/known-limitations.md
+  !/bijux-dag/quality/test-strategy.md
+  !/bijux-dag/quality/comparison-evidence-surfaces.md
+  !/bijux-dag/packages/index.md
+  !/bijux-dag/packages/bijux-dag-core.md
+  !/bijux-dag/packages/bijux-dag-runtime.md
+  !/bijux-dag/packages/bijux-dag-app.md
+  !/bijux-dag/packages/bijux-dag-cli.md
+  !/bijux-dag/packages/bijux-dag-artifacts.md
+  !/bijux-dag/packages/bijux-dag-testkit.md
+  /bijux-dev/**
+  !/bijux-dev/index.md
+  !/bijux-dev/operations/toolchain-setup.md
+  !/bijux-dev/operations/command-surface.md
+  !/bijux-dev/operations/repository-gates.md
+  !/bijux-dev/operations/evidence-collection.md
+  !/bijux-dev/operations/docs-operations.md
+  !/bijux-dev/operations/ci-and-automation.md
+  !/bijux-dev/operations/incident-response.md
+  !/bijux-dev/operations/release-operations.md
+  !/bijux-dev/governance/ownership-model.md
+  !/bijux-dev/governance/documentation-standard.md
+  !/bijux-dev/governance/test-policy.md
+  !/bijux-dev/makes/make-system-overview.md
+  !/bijux-dev/makes/ci-targets.md
+  !/bijux-dev/packages/bijux-dev.md
+
 extra:
   bijux:
     repository: bijux-core
@@ -53,234 +156,118 @@ extra:
 nav:
   - Home: index.md
   - Repository Handbook:
-      - Home:
-          - Overview: bijux-core/index.md
-          - Foundation:
-              - Foundation: bijux-core/foundation/index.md
-              - Platform Overview: bijux-core/foundation/platform-overview.md
-              - Repository Scope: bijux-core/foundation/repository-scope.md
-              - Workspace Layout: bijux-core/foundation/workspace-layout.md
-              - Package Map: bijux-core/foundation/package-map.md
-              - Package Boundary: bijux-core/foundation/package-boundary.md
-              - Ownership Model: bijux-core/foundation/ownership-model.md
-              - Domain Language: bijux-core/foundation/domain-language.md
-              - Change Principles: bijux-core/foundation/change-principles.md
-              - Decision Rules: bijux-core/foundation/decision-rules.md
-          - Architecture:
-              - Core Architecture: bijux-core/architecture/index.md
-              - System Overview: bijux-core/architecture/system-overview.md
-              - Workspace Topology: bijux-core/architecture/workspace-topology.md
-              - Dependency Direction: bijux-core/architecture/dependency-direction.md
-              - Runtime Surfaces: bijux-core/architecture/runtime-surfaces.md
-              - State and Configuration: bijux-core/architecture/state-and-configuration.md
-              - Distribution Model: bijux-core/architecture/distribution-model.md
-              - Maintainer Control Plane: bijux-core/architecture/maintainer-control-plane.md
-              - Artifact and Contract Flow: bijux-core/architecture/artifact-and-contract-flow.md
-              - Architecture Risks: bijux-core/architecture/architecture-risks.md
-          - Operations:
-              - Operations: bijux-core/operations/index.md
-              - Local Development: bijux-core/operations/local-development.md
-              - Testing and Validation: bijux-core/operations/testing-and-validation.md
-              - Release and Versioning: bijux-core/operations/release-and-versioning.md
-              - API and Schema Governance: bijux-core/operations/api-and-schema-governance.md
-              - Contributor Workflows: bijux-core/operations/contributor-workflows.md
-              - Automation Surfaces: bijux-core/operations/automation-surfaces.md
-              - Artifact Governance: bijux-core/operations/artifact-governance.md
-              - Review Expectations: bijux-core/operations/review-expectations.md
-              - Change Management: bijux-core/operations/change-management.md
-          - Governance:
-              - Core Governance: bijux-core/governance/index.md
-              - Repository Scope: bijux-core/governance/repository-scope.md
-              - Package Ownership: bijux-core/governance/package-ownership.md
-              - Change Management: bijux-core/governance/change-management.md
-              - Testing and Validation: bijux-core/governance/testing-and-validation.md
-              - Release and Versioning: bijux-core/governance/release-and-versioning.md
-              - Compatibility and Schema: bijux-core/governance/compatibility-and-schema.md
-              - Documentation Standards: bijux-core/governance/documentation-standards.md
-              - Decision Record Policy: bijux-core/governance/decision-record-policy.md
-              - Risk and Exceptions: bijux-core/governance/risk-and-exceptions.md
-          - Packages: bijux-core/packages/index.md
+      - Overview: bijux-core/index.md
+      - Product And Packages:
+          - Platform Overview: bijux-core/foundation/platform-overview.md
+          - Repository Scope: bijux-core/foundation/repository-scope.md
+          - Package Map: bijux-core/foundation/package-map.md
+          - Package Boundary: bijux-core/foundation/package-boundary.md
+          - Documentation System: bijux-core/foundation/documentation-system.md
+      - Architecture:
+          - System Overview: bijux-core/architecture/system-overview.md
+          - Dependency Direction: bijux-core/architecture/dependency-direction.md
+          - State And Configuration: bijux-core/architecture/state-and-configuration.md
+          - Distribution Model: bijux-core/architecture/distribution-model.md
+          - Architecture Risks: bijux-core/architecture/architecture-risks.md
+      - Development:
+          - Local Development: bijux-core/operations/local-development.md
+          - Testing And Validation: bijux-core/operations/testing-and-validation.md
+          - Release And Versioning: bijux-core/operations/release-and-versioning.md
+          - Documentation Standards: bijux-core/governance/documentation-standards.md
+          - Package Index: bijux-core/packages/index.md
   - CLI Handbook:
-      - Home:
-          - Overview: bijux-cli/index.md
-          - Foundation:
-              - Foundation: bijux-cli/foundation/index.md
-              - Package Overview: bijux-cli/foundation/package-overview.md
-              - Scope and Boundaries: bijux-cli/foundation/scope-and-boundaries.md
-              - Ownership Boundary: bijux-cli/foundation/ownership-boundary.md
-              - Repository Fit: bijux-cli/foundation/repository-fit.md
-              - Capability Map: bijux-cli/foundation/capability-map.md
-              - Domain Language: bijux-cli/foundation/domain-language.md
-              - Lifecycle Overview: bijux-cli/foundation/lifecycle-overview.md
-              - Dependencies and Adjacencies: bijux-cli/foundation/dependencies-and-adjacencies.md
-              - Change Principles: bijux-cli/foundation/change-principles.md
-          - Architecture:
-              - Architecture: bijux-cli/architecture/index.md
-              - Module Map: bijux-cli/architecture/module-map.md
-              - Dependency Direction: bijux-cli/architecture/dependency-direction.md
-              - Execution Model: bijux-cli/architecture/execution-model.md
-              - State and Persistence: bijux-cli/architecture/state-and-persistence.md
-              - Integration Seams: bijux-cli/architecture/integration-seams.md
-              - Error Model: bijux-cli/architecture/error-model.md
-              - Extensibility Model: bijux-cli/architecture/extensibility-model.md
-              - Code Navigation: bijux-cli/architecture/code-navigation.md
-              - Architecture Risks: bijux-cli/architecture/architecture-risks.md
-          - Interfaces:
-              - Interfaces: bijux-cli/interfaces/index.md
-              - CLI Surface: bijux-cli/interfaces/cli-surface.md
-              - API Surface: bijux-cli/interfaces/api-surface.md
-              - Configuration Surface: bijux-cli/interfaces/configuration-surface.md
-              - Data Contracts: bijux-cli/interfaces/data-contracts.md
-              - Artifact Contracts: bijux-cli/interfaces/artifact-contracts.md
-              - Entrypoints and Examples: bijux-cli/interfaces/entrypoints-and-examples.md
-              - Operator Workflows: bijux-cli/interfaces/operator-workflows.md
-              - Public Imports: bijux-cli/interfaces/public-imports.md
-              - Compatibility Commitments: bijux-cli/interfaces/compatibility-commitments.md
-          - Operations:
-              - Operations: bijux-cli/operations/index.md
-              - Installation and Setup: bijux-cli/operations/installation-and-setup.md
-              - Local Development: bijux-cli/operations/local-development.md
-              - Common Workflows: bijux-cli/operations/common-workflows.md
-              - Observability and Diagnostics: bijux-cli/operations/observability-and-diagnostics.md
-              - Performance and Scaling: bijux-cli/operations/performance-and-scaling.md
-              - Failure Recovery: bijux-cli/operations/failure-recovery.md
-              - Release and Versioning: bijux-cli/operations/release-and-versioning.md
-              - Security and Safety: bijux-cli/operations/security-and-safety.md
-              - Deployment Boundaries: bijux-cli/operations/deployment-boundaries.md
-          - Quality:
-              - Quality: bijux-cli/quality/index.md
-              - Test Strategy: bijux-cli/quality/test-strategy.md
-              - Invariants: bijux-cli/quality/invariants.md
-              - Review Checklist: bijux-cli/quality/review-checklist.md
-              - Documentation Standards: bijux-cli/quality/documentation-standards.md
-              - Definition of Done: bijux-cli/quality/definition-of-done.md
-              - Dependency Governance: bijux-cli/quality/dependency-governance.md
-              - Change Validation: bijux-cli/quality/change-validation.md
-              - Known Limitations: bijux-cli/quality/known-limitations.md
-              - Risk Register: bijux-cli/quality/risk-register.md
-          - Packages:
-              - Packages: bijux-cli/packages/index.md
-              - bijux-cli: bijux-cli/packages/bijux-cli.md
-              - bijux-cli-python: bijux-cli/packages/bijux-cli-python.md
+      - Overview: bijux-cli/index.md
+      - Product:
+          - Package Overview: bijux-cli/foundation/package-overview.md
+          - Scope And Boundaries: bijux-cli/foundation/scope-and-boundaries.md
+          - Capability Map: bijux-cli/foundation/capability-map.md
+      - Architecture:
+          - Architecture Overview: bijux-cli/architecture/index.md
+          - Execution Model: bijux-cli/architecture/execution-model.md
+          - State And Persistence: bijux-cli/architecture/state-and-persistence.md
+          - Error Model: bijux-cli/architecture/error-model.md
+          - Architecture Risks: bijux-cli/architecture/architecture-risks.md
+      - Use:
+          - Command Surface: bijux-cli/interfaces/cli-surface.md
+          - Configuration: bijux-cli/interfaces/configuration-surface.md
+          - Operator Workflows: bijux-cli/interfaces/operator-workflows.md
+          - Public Rust Imports: bijux-cli/interfaces/public-imports.md
+          - Installation: bijux-cli/operations/installation-and-setup.md
+          - Diagnostics: bijux-cli/operations/diagnostics-guide.md
+          - Security: bijux-cli/operations/security-and-safety.md
+          - Recovery: bijux-cli/operations/failure-recovery.md
+      - Quality:
+          - Known Limitations: bijux-cli/quality/known-limitations.md
+          - Test Strategy: bijux-cli/quality/test-strategy.md
+      - Packages:
+          - Package Index: bijux-cli/packages/index.md
+          - Rust Runtime: bijux-cli/packages/bijux-cli.md
+          - Python Distribution: bijux-cli/packages/bijux-cli-python.md
   - DAG Handbook:
-      - Home:
-          - Overview: bijux-dag/index.md
-          - Foundation:
-              - Foundation: bijux-dag/foundation/index.md
-              - Package Overview: bijux-dag/foundation/package-overview.md
-              - Release Boundary: bijux-dag/foundation/release-boundary.md
-              - Scope and Boundaries: bijux-dag/foundation/scope-and-boundaries.md
-              - Ownership Boundary: bijux-dag/foundation/ownership-boundary.md
-              - Capability Map: bijux-dag/foundation/capability-map.md
-              - Domain Language: bijux-dag/foundation/domain-language.md
-              - Lifecycle Overview: bijux-dag/foundation/lifecycle-overview.md
-              - Dependencies and Adjacencies: bijux-dag/foundation/dependencies-and-adjacencies.md
-              - Change Principles: bijux-dag/foundation/change-principles.md
-          - Architecture:
-              - Architecture: bijux-dag/architecture/index.md
-              - Module Map: bijux-dag/architecture/module-map.md
-              - Dependency Direction: bijux-dag/architecture/dependency-direction.md
-              - Execution Model: bijux-dag/architecture/execution-model.md
-              - State and Persistence: bijux-dag/architecture/state-and-persistence.md
-              - Integration Seams: bijux-dag/architecture/integration-seams.md
-              - Error Model: bijux-dag/architecture/error-model.md
-              - Extensibility Model: bijux-dag/architecture/extensibility-model.md
-              - Code Navigation: bijux-dag/architecture/code-navigation.md
-              - Architecture Risks: bijux-dag/architecture/architecture-risks.md
-          - Interfaces:
-              - Interfaces: bijux-dag/interfaces/index.md
-              - CLI Surface: bijux-dag/interfaces/cli-surface.md
-              - Generated CLI Reference: bijux-dag/interfaces/generated-cli-reference.md
-              - Runnable Examples: bijux-dag/interfaces/runnable-examples.md
-              - API Surface: bijux-dag/interfaces/api-surface.md
-              - Configuration Surface: bijux-dag/interfaces/configuration-surface.md
-              - Data Contracts: bijux-dag/interfaces/data-contracts.md
-              - Graph Schema Reference: bijux-dag/interfaces/graph-schema.md
-              - Artifact Contracts: bijux-dag/interfaces/artifact-contracts.md
-              - Entrypoints and Examples: bijux-dag/interfaces/entrypoints-and-examples.md
-              - Authoring Guide: bijux-dag/interfaces/authoring-guide.md
-              - Reusable Subgraphs: bijux-dag/interfaces/reusable-subgraphs.md
-              - Operator Workflows: bijux-dag/interfaces/operator-workflows.md
-              - Gated Command Inventory: bijux-dag/interfaces/gated-command-inventory.md
-              - Public Imports: bijux-dag/interfaces/public-imports.md
-              - Compatibility Commitments: bijux-dag/interfaces/compatibility-commitments.md
-          - Operations:
-              - Operations: bijux-dag/operations/index.md
-              - Installation and Setup: bijux-dag/operations/installation-and-setup.md
-              - Local Development: bijux-dag/operations/local-development.md
-              - Common Workflows: bijux-dag/operations/common-workflows.md
-              - Observability and Diagnostics: bijux-dag/operations/observability-and-diagnostics.md
-              - Performance and Scaling: bijux-dag/operations/performance-and-scaling.md
-              - Failure Recovery: bijux-dag/operations/failure-recovery.md
-              - Release and Versioning: bijux-dag/operations/release-and-versioning.md
-              - Security and Safety: bijux-dag/operations/security-and-safety.md
-              - Deployment Boundaries: bijux-dag/operations/deployment-boundaries.md
-          - Quality:
-              - Quality: bijux-dag/quality/index.md
-              - Test Strategy: bijux-dag/quality/test-strategy.md
-              - Invariants: bijux-dag/quality/invariants.md
-              - Review Checklist: bijux-dag/quality/review-checklist.md
-              - Documentation Standards: bijux-dag/quality/documentation-standards.md
-              - Definition of Done: bijux-dag/quality/definition-of-done.md
-              - Dependency Governance: bijux-dag/quality/dependency-governance.md
-              - Change Validation: bijux-dag/quality/change-validation.md
-              - Known Limitations: bijux-dag/quality/known-limitations.md
-              - Risk Register: bijux-dag/quality/risk-register.md
-          - Packages:
-              - Packages: bijux-dag/packages/index.md
-              - bijux-dag-core: bijux-dag/packages/bijux-dag-core.md
-              - bijux-dag-runtime: bijux-dag/packages/bijux-dag-runtime.md
-              - bijux-dag-app: bijux-dag/packages/bijux-dag-app.md
-              - bijux-dag-cli: bijux-dag/packages/bijux-dag-cli.md
-              - bijux-dag-artifacts: bijux-dag/packages/bijux-dag-artifacts.md
-              - bijux-dag-testkit: bijux-dag/packages/bijux-dag-testkit.md
+      - Overview: bijux-dag/index.md
+      - Product:
+          - Package Overview: bijux-dag/foundation/package-overview.md
+          - Release Boundary: bijux-dag/foundation/release-boundary.md
+          - Scope And Boundaries: bijux-dag/foundation/scope-and-boundaries.md
+          - Capability Map: bijux-dag/foundation/capability-map.md
+      - Architecture:
+          - Architecture Overview: bijux-dag/architecture/index.md
+          - Execution Model: bijux-dag/architecture/execution-model.md
+          - State And Persistence: bijux-dag/architecture/state-and-persistence.md
+          - Backend Responsibilities: bijux-dag/architecture/engine-backend-responsibilities.md
+          - Architecture Risks: bijux-dag/architecture/architecture-risks.md
+      - Interfaces:
+          - Command Surface: bijux-dag/interfaces/cli-surface.md
+          - Generated Command Reference: bijux-dag/interfaces/generated-cli-reference.md
+          - Authoring Guide: bijux-dag/interfaces/authoring-guide.md
+          - Graph Schema: bijux-dag/interfaces/graph-schema.md
+          - Artifact Contracts: bijux-dag/interfaces/artifact-contracts.md
+          - Runnable Examples: bijux-dag/interfaces/runnable-examples.md
+          - Reproducibility Model: bijux-dag/interfaces/reproducibility-model.md
+          - Run Evidence Layout: bijux-dag/interfaces/run-evidence-layout.md
+          - Compatibility Matrix: bijux-dag/interfaces/compatibility-matrix.md
+          - Error Codes: bijux-dag/interfaces/error-codes.md
+      - Operations:
+          - Installation: bijux-dag/operations/installation-and-setup.md
+          - First Run: bijux-dag/operations/first-run-tutorial.md
+          - Common Workflows: bijux-dag/operations/common-workflows.md
+          - Cache Behavior: bijux-dag/operations/cache-behavior-workflow.md
+          - Evidence Workflow: bijux-dag/operations/evidence-backed-bulletin-workflow.md
+          - Container Workflow: bijux-dag/operations/container-packaging-workflow.md
+          - Security And Isolation: bijux-dag/operations/security-isolation-truth.md
+          - Failure Recovery: bijux-dag/operations/failure-recovery.md
+          - Release Notes: bijux-dag/operations/v0-4-0-release-notes.md
+      - Quality:
+          - Known Limitations: bijux-dag/quality/known-limitations.md
+          - Test Strategy: bijux-dag/quality/test-strategy.md
+          - Comparison Evidence: bijux-dag/quality/comparison-evidence-surfaces.md
+      - Packages:
+          - Package Index: bijux-dag/packages/index.md
+          - Graph Kernel: bijux-dag/packages/bijux-dag-core.md
+          - Runtime: bijux-dag/packages/bijux-dag-runtime.md
+          - Application: bijux-dag/packages/bijux-dag-app.md
+          - Command Package: bijux-dag/packages/bijux-dag-cli.md
+          - Artifacts: bijux-dag/packages/bijux-dag-artifacts.md
+          - Testkit: bijux-dag/packages/bijux-dag-testkit.md
   - Maintainer Handbook:
-      - Home:
-          - Overview: bijux-dev/index.md
-          - Operations:
-              - Dev Operations: bijux-dev/operations/index.md
-              - Toolchain Setup: bijux-dev/operations/toolchain-setup.md
-              - Command Surface: bijux-dev/operations/command-surface.md
-              - Repository Gates: bijux-dev/operations/repository-gates.md
-              - Evidence Collection: bijux-dev/operations/evidence-collection.md
-              - Diagnostics and Reporting: bijux-dev/operations/diagnostics-and-reporting.md
-              - Docs Operations: bijux-dev/operations/docs-operations.md
-              - CI and Automation: bijux-dev/operations/ci-and-automation.md
-              - Incident Response: bijux-dev/operations/incident-response.md
-              - Release Operations: bijux-dev/operations/release-operations.md
-          - Governance:
-              - Dev Governance: bijux-dev/governance/index.md
-              - Ownership Model: bijux-dev/governance/ownership-model.md
-              - Quality Policy: bijux-dev/governance/quality-policy.md
-              - Test Policy: bijux-dev/governance/test-policy.md
-              - Change Control: bijux-dev/governance/change-control.md
-              - Contract Governance: bijux-dev/governance/contract-governance.md
-              - Dependency Governance: bijux-dev/governance/dependency-governance.md
-              - Documentation Standard: bijux-dev/governance/documentation-standard.md
-              - Security and Secrets: bijux-dev/governance/security-and-secrets.md
-              - Known Limitations: bijux-dev/governance/known-limitations.md
-          - makes:
-              - makes: bijux-dev/makes/index.md
-              - Make System Overview: bijux-dev/makes/make-system-overview.md
-              - Root Entrypoints: bijux-dev/makes/root-entrypoints.md
-              - Environment Model: bijux-dev/makes/environment-model.md
-              - Repository Layout: bijux-dev/makes/repository-layout.md
-              - Package Dispatch: bijux-dev/makes/package-dispatch.md
-              - CI Targets: bijux-dev/makes/ci-targets.md
-              - Package Contracts: bijux-dev/makes/package-contracts.md
-              - Release Surfaces: bijux-dev/makes/release-surfaces.md
-              - Authoring Rules: bijux-dev/makes/authoring-rules.md
-          - gh-workflows:
-              - gh-workflows: bijux-dev/gh-workflows/index.md
-              - ci: bijux-dev/gh-workflows/ci.md
-              - deploy-docs: bijux-dev/gh-workflows/deploy-docs.md
-              - release-crates: bijux-dev/gh-workflows/release-crates.md
-              - release-pypi: bijux-dev/gh-workflows/release-pypi.md
-              - release-github: bijux-dev/gh-workflows/release-github.md
-              - bijux-canon: bijux-dev/gh-workflows/bijux-canon.md
-          - Packages:
-              - Packages: bijux-dev/packages/index.md
-              - bijux-dev: bijux-dev/packages/bijux-dev.md
+      - Overview: bijux-dev/index.md
+      - Operations:
+          - Toolchain Setup: bijux-dev/operations/toolchain-setup.md
+          - Command Surface: bijux-dev/operations/command-surface.md
+          - Repository Gates: bijux-dev/operations/repository-gates.md
+          - Evidence Collection: bijux-dev/operations/evidence-collection.md
+          - Documentation Operations: bijux-dev/operations/docs-operations.md
+          - CI And Automation: bijux-dev/operations/ci-and-automation.md
+          - Incident Response: bijux-dev/operations/incident-response.md
+          - Release Operations: bijux-dev/operations/release-operations.md
+      - Governance:
+          - Ownership Model: bijux-dev/governance/ownership-model.md
+          - Documentation Standard: bijux-dev/governance/documentation-standard.md
+          - Test Policy: bijux-dev/governance/test-policy.md
+      - Build System:
+          - Make System: bijux-dev/makes/make-system-overview.md
+          - CI Targets: bijux-dev/makes/ci-targets.md
+      - Package: bijux-dev/packages/bijux-dev.md
 
 hooks:
   - docs/automation/publish_contract_assets.py
