@@ -25,6 +25,31 @@ architecture path from defect to observable harm.
 | application routes erase unknown or incomplete states | inspect, replay, or diff reports confidence unsupported by retained evidence | replay semantic surface, replay proof, route response, and run completion contracts | `RISK-005` |
 | public and private command lanes blur | users automate experimental or simulated routes as stable behavior | generated reference, root help, command lane, and release-boundary contracts | `RISK-002`, `RISK-009` |
 
+## Containment Flow
+
+```mermaid
+flowchart LR
+    change["Graph, runtime, artifact, backend, or route change"]
+    invariant["Identify affected invariant"]
+    focused["Run owning adversarial contract"]
+    join{"Crosses identity or evidence joins?"}
+    adjacent["Run adjacent cache, replay, app, or artifact contracts"]
+    release{"Evidence complete and consistent?"}
+    accept["Accept bounded change"]
+    block["Block or retain explicit limitation"]
+
+    change --> invariant --> focused --> join
+    join -->|yes| adjacent --> release
+    join -->|no| release
+    release -->|yes| accept
+    release -->|no| block
+```
+
+The important joins are where one crate's output becomes another crate's
+truth: graph to plan, plan to attempt, provisional backend output to durable
+evidence, retained evidence to replay, and application response to operator
+claim.
+
 ## Proof Requirements
 
 ### Identity changes
@@ -57,6 +82,17 @@ isolation, scheduling, cancellation, provenance, or recovery semantics.
 Preserve explicit equivalent, changed, incomplete, incompatible, and unknown
 outcomes. Do not turn missing evidence into equality, success, or an empty
 difference.
+
+## Stop Conditions
+
+| Finding | Required decision |
+| --- | --- |
+| semantic identity changes without an explicit contract change | block cache, replay, and compatibility claims |
+| a scheduler outcome cannot be reconstructed from retained transitions | block deterministic execution claims |
+| output exists outside declared rooted storage or lacks accepted integrity | reject the artifact and the run evidence that depends on it |
+| backend capability or identity is missing | refuse execution or classify the result as unsupported; do not infer local equivalence |
+| replay lacks source evidence required by its contract | return incomplete or incompatible, never success |
+| a route is absent from the stable release truth table | keep it experimental, simulated, internal, or unreleased as governed |
 
 ## Evidence Standard
 

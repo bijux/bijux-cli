@@ -28,6 +28,30 @@ implementations vary without changing accepted run state.
 The planner does not select scheduler-specific status semantics, and a backend
 does not decide whether an attempt's evidence is authoritative.
 
+## Authority Flow
+
+```mermaid
+flowchart LR
+    node["Validated node and declared outputs"]
+    engine["Engine creates attempt contract"]
+    bind{"Capabilities satisfy request?"}
+    backend["Backend lifecycle"]
+    provisional["Provisional status, streams, and outputs"]
+    accept{"Engine validates evidence"}
+    record["Durable attempt record"]
+    failure["Classified failure"]
+
+    node --> engine --> bind
+    bind -->|no| failure
+    bind -->|yes| backend --> provisional --> accept
+    accept -->|yes| record
+    accept -->|no| failure
+```
+
+The backend never writes itself into accepted run truth. It returns
+observations to the engine, which checks output declarations, lifecycle
+completion, and failure precedence before a durable record is created.
+
 ## Binding Before Effects
 
 `BackendBindingRequest` names the node and required `BackendKind`.
@@ -58,6 +82,27 @@ primary failure remains the result even if cleanup also fails. If lifecycle
 work succeeds and cleanup fails, cleanup failure becomes the attempt result.
 Only a fully accepted lifecycle produces an `ExecutionAttemptRecord`.
 
+```mermaid
+stateDiagram-v2
+    [*] --> Bound
+    Bound --> Prepared: prepare
+    Prepared --> Launched: launch
+    Launched --> Observed: observe
+    Observed --> Finalized: validate and finalize
+    Finalized --> Cleaned: cleanup
+    Bound --> Failed
+    Prepared --> Failed
+    Launched --> Failed
+    Observed --> Failed
+    Finalized --> Failed
+    Failed --> Cleaned: cleanup
+    Cleaned --> [*]
+```
+
+The diagram shows lifecycle order, not a claim that every substrate exposes
+the same native states. Backends translate substrate observations into the
+shared result contract without hiding their backend identity.
+
 ## Failure Semantics
 
 The error classes preserve where execution failed:
@@ -75,6 +120,25 @@ The error classes preserve where execution failed:
 - output authorization remains engine-owned across every substrate
 - replay and inspection read accepted records rather than provisional backend
   state
+
+## Backend Adoption Standard
+
+A backend is not release-ready merely because it implements the lifecycle
+trait. Promotion requires:
+
+1. a declared capability set and fail-before-effects binding tests;
+2. real execution evidence for the named substrate, not only mocks;
+3. deterministic mapping for submission, observation, timeout, cancellation,
+   and cleanup failures;
+4. authorized output collection with rooted paths and integrity checks;
+5. retained backend and workload identity sufficient for inspection;
+6. compatibility behavior for replay and comparison;
+7. operator prerequisites, unsupported conditions, and recovery guidance;
+8. conformance plus substrate-specific tests in the governed lane.
+
+Shared-filesystem assumptions for SLURM and persistent-volume assumptions for
+Kubernetes are part of those bounded contracts. They must be diagnosed
+explicitly rather than generalized into support for arbitrary clusters.
 
 ## Implementation and Proof
 

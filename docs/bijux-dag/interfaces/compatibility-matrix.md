@@ -27,6 +27,29 @@ Acceptance means the reader recognizes the declared version. It does not
 promise that malformed payloads, missing required evidence, or incompatible
 semantics will be repaired automatically.
 
+## Reader Decision
+
+```mermaid
+flowchart LR
+    input["Versioned graph, run, index, or bundle"]
+    declared["Read declared identifier"]
+    lane{"Compatibility lane"}
+    parse["Parse current contract"]
+    validate["Validate shape, semantics, and integrity"]
+    accept["Accept for bounded use"]
+    refuse["Refuse before interpretation"]
+
+    input --> declared --> lane
+    lane -->|current or accepted alias| parse --> validate
+    lane -->|unknown or refused| refuse
+    validate -->|complete| accept
+    validate -->|malformed, incomplete, or corrupt| refuse
+```
+
+Version recognition is the first gate, not the last. Current identifiers still
+require full schema, semantic, path, and integrity validation before the
+payload can support execution, replay, or comparison.
+
 ## DAG Compatibility Lanes
 
 | Surface | Current identifiers | Accepted previous identifiers | Explicitly refused identifiers | Executable evidence |
@@ -40,6 +63,20 @@ The graph spellings in the accepted column are aliases for the same retained
 graph contract, not four independent schema generations. Run manifests,
 artifact indexes, and replay bundles have no accepted predecessor lane in the
 current contract.
+
+## Producer And Consumer Direction
+
+Writers emit only the canonical current identifier. Readers may accept the
+explicit previous aliases listed in the machine contract. This asymmetry keeps
+new output unambiguous while allowing a bounded read window.
+
+| Operation | Required behavior |
+| --- | --- |
+| write a new graph, run, index, or bundle | emit the current canonical identifier |
+| read an accepted graph alias | normalize it to the current in-memory contract without claiming a separate schema generation |
+| read a future or refused identifier | fail before trusting payload fields |
+| migrate retained evidence | write a new destination through an explicit governed migration; preserve the source |
+| compare differently versioned evidence | classify compatibility before semantic equivalence |
 
 ## Refusal And Migration
 
@@ -77,6 +114,19 @@ A compatibility change must update:
 Adding an accepted predecessor is a deliberate compatibility expansion.
 Removing one or reinterpreting an existing identifier is incompatible and
 requires explicit release treatment.
+
+## Compatibility Review Questions
+
+Before accepting a change, reviewers should be able to answer:
+
+- Which writer emits the identifier and which readers consume it?
+- Is the change an alias, an additive readable shape, a migration, or a refusal?
+- Can old evidence remain inspectable without in-place mutation?
+- Does cache, replay, export, import, and diff classify the new relationship
+  consistently?
+- Which fixture proves both acceptance and refusal at the boundary?
+- Which release first emits the new canonical identifier, and when may the old
+  read lane be removed?
 
 ## Related Contracts
 
