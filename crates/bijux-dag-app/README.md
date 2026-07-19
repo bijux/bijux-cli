@@ -117,6 +117,19 @@ Repository-owned schedule and backfill application flows are documented in the
 DAG handbook, but they remain internal workflow lanes rather than part of the
 default public `v0.4.0` app story.
 
+## Internal Documentation
+
+- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): request flow, source boundaries,
+  dependency direction, stable exports, and extension decisions.
+- [`COMMAND_ROUTING.md`](docs/COMMAND_ROUTING.md): command authority, surface
+  lanes, preconditions, paths, dispatch, and route verification.
+- [`CONTRACTS.md`](docs/CONTRACTS.md): owned orchestration, input, output,
+  stability, dependency, and failure contracts.
+- [`RESPONSES_AND_FAILURES.md`](docs/RESPONSES_AND_FAILURES.md): typed
+  responses, JSON/human parity, failure classes, causality, and references.
+- [`WORKFLOWS_AND_SERVICES.md`](docs/WORKFLOWS_AND_SERVICES.md): graph, run,
+  evidence, cache, replay, configuration, and service design.
+
 ## Related links
 
 - [Crate contracts](docs/CONTRACTS.md)
