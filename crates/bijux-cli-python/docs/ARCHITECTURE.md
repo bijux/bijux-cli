@@ -30,6 +30,26 @@ The first two paths must preserve `bijux-cli` semantics. The third preserves
 `bijux-dag-cli` semantics and must not imply that DAG execution lives in this
 package.
 
+```mermaid
+flowchart LR
+    console["bijux console script"]
+    facade["Python facade"]
+    native["PyO3 native bridge"]
+    fallback["governed process fallback"]
+    rust["bijux-cli runtime"]
+    dag_sdk["Python DAG client"]
+    dag_process["separately installed bijux-dag"]
+
+    console --> facade
+    facade -->|extension available| native --> rust
+    facade -->|extension unavailable| fallback --> rust
+    dag_sdk -->|JSON process protocol| dag_process
+```
+
+The native and fallback branches are alternate transports to one `bijux`
+authority. The DAG branch is a separate process-client boundary and never
+joins the root-runtime implementation.
+
 ## Authority Boundaries
 
 The Rust runtime owns commands, route policy, output envelopes, exit codes,
@@ -64,6 +84,22 @@ different authorities and deployment requirements.
 
 Fallback exists for operational resilience; it is not permission to diverge.
 Parity tests are the release gate for both paths.
+
+```mermaid
+flowchart TB
+    rust_authority["bijux-cli contracts"]
+    bridge["Native bridge representation"]
+    process["Process fallback representation"]
+    parity["Parity contracts"]
+    python_api["Python-facing result or exception"]
+
+    rust_authority --> bridge --> parity
+    rust_authority --> process --> parity
+    parity --> python_api
+```
+
+An error-classification or envelope change must converge through parity before
+it becomes part of the Python-facing contract.
 
 ## Verification
 

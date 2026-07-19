@@ -6,22 +6,28 @@ runtime state or performing external effects.
 
 ## Processing Pipeline
 
-```text
-serialized graph
-      |
-      v
-strict parsing -> input/reference resolution -> validation
-      |                                         |
-      v                                         v
-canonical graph ------------------------> planner lowering
-      |
-      v
-graph and node identity
+```mermaid
+flowchart LR
+    source["Serialized graph"]
+    parse["Strict parsing"]
+    resolve["Input and reference resolution"]
+    validate["Semantic validation"]
+    canonical["Canonical graph"]
+    identity["Graph and node identity"]
+    plan["Planner lowering"]
+
+    source --> parse --> resolve --> validate --> canonical
+    canonical --> identity
+    canonical --> plan
 ```
 
 Each operation receives all required data from the caller. Runtime scheduling,
 artifact layout, process execution, clocks, and environment discovery happen
 in downstream crates.
+
+The pipeline is intentionally one-way. Runtime observations cannot flow back
+into canonicalization or identity without making the same authored graph mean
+different things on different machines.
 
 ## Source Boundaries
 
@@ -54,6 +60,26 @@ specific machine or run.
 depend on this crate. Core must not import them. `bijux-dag-artifacts` is a
 sibling authority for retained evidence; graph validity and identity cannot
 depend on a run directory.
+
+```mermaid
+flowchart TB
+    core["bijux-dag-core<br/>graph and planning truth"]
+    runtime["bijux-dag-runtime"]
+    app["bijux-dag-app"]
+    testkit["bijux-dag-testkit"]
+    dev["bijux-dev"]
+    artifacts["bijux-dag-artifacts<br/>retained evidence truth"]
+
+    runtime --> core
+    app --> core
+    testkit -. development use .-> core
+    dev -. verification use .-> core
+    runtime --> artifacts
+    app --> artifacts
+```
+
+The absence of an arrow from core to any other workspace package is a purity
+constraint, not merely a preferred layering style.
 
 ## Extension Decisions
 

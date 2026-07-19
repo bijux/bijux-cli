@@ -6,20 +6,19 @@ responses. It does not reimplement graph, runtime, or artifact semantics.
 
 ## Request Flow
 
-```text
-command model
-     |
-     v
-surface and lane policy
-     |
-     v
-input/config/path preconditions
-     |
-     v
-owning core, runtime, or artifact service
-     |
-     v
-typed response and selected renderer
+```mermaid
+flowchart LR
+    command["Canonical command model"]
+    lane{"Surface and lane policy"}
+    preconditions["Input, configuration, and path preconditions"]
+    owner["Owning core, runtime, or artifact service"]
+    response["Typed application response"]
+    render["Human or machine renderer"]
+
+    command --> lane
+    lane -->|allowed| preconditions --> owner --> response --> render
+    lane -->|refused| response
+    preconditions -->|invalid| response
 ```
 
 `dag_command` builds the supported Clap command. `dag_run` accepts parsed
@@ -49,6 +48,25 @@ artifact serializer.
 The app depends on core, runtime, and artifacts. `bijux-dag-cli` depends on the
 app as a process wrapper. The app must not depend on CLI, testkit, or
 maintainer packages.
+
+```mermaid
+flowchart TB
+    cli["bijux-dag-cli<br/>process wrapper"]
+    app["bijux-dag-app<br/>application policy"]
+    core["bijux-dag-core<br/>graph truth"]
+    runtime["bijux-dag-runtime<br/>execution truth"]
+    artifacts["bijux-dag-artifacts<br/>evidence truth"]
+
+    cli --> app
+    app --> core
+    app --> runtime
+    app --> artifacts
+    runtime --> core
+    runtime --> artifacts
+```
+
+The app may compose these owners into one command response. It may not copy
+their validation, execution, or evidence algorithms into route handlers.
 
 ## Stable Surface
 

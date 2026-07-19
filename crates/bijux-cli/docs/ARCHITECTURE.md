@@ -24,24 +24,45 @@ The runtime processes an invocation through five owned boundaries:
 shared data shapes, while `sdk` supplies the application-facing composition
 surface.
 
+```mermaid
+flowchart LR
+    caller["Binary, Rust API, SDK, or Python bridge"]
+    interface["bootstrap / interface"]
+    route["routing"]
+    kernel["kernel"]
+    feature["owned feature"]
+    adapter["infrastructure adapter"]
+    result["normalized outcome"]
+
+    caller --> interface --> route --> kernel --> feature
+    feature --> adapter
+    adapter --> feature --> kernel --> result
+```
+
+Only the outer entry and rendering adapters vary by caller. Route selection,
+feature policy, lifecycle normalization, and state semantics remain one native
+runtime contract.
+
 ## Dependency Direction
 
 The intended source dependency direction is:
 
-```text
-bootstrap/interface
-        |
-        v
-   routing/kernel
-        |
-        v
-     features
-        |
-        v
- infrastructure
+```mermaid
+flowchart TB
+    entry["bootstrap and interface"]
+    control["routing and kernel"]
+    features["features"]
+    infra["infrastructure"]
+    contracts["contracts"]
+    facades["api and sdk"]
 
-contracts <- all runtime layers
-api/sdk   -> selected owned surfaces
+    entry --> control --> features --> infra
+    entry --> contracts
+    control --> contracts
+    features --> contracts
+    infra --> contracts
+    facades --> control
+    facades --> features
 ```
 
 Infrastructure must not decide command semantics. A filesystem adapter may

@@ -7,23 +7,20 @@ formats.
 
 ## Runtime Flow
 
-```text
-validated execution plan
-          |
-          v
-policy and backend admission
-          |
-          v
-scheduler readiness and trigger evaluation
-          |
-          v
-adapter/backend attempt execution
-          |
-          v
-result normalization and state transition
-          |
-          v
-artifact, cache, trace, and replay evidence
+```mermaid
+flowchart TB
+    plan["Validated execution plan"]
+    admission{"Policy and backend admission"}
+    ready["Scheduler readiness and trigger evaluation"]
+    attempt["Adapter or backend attempt"]
+    normalize["Result normalization"]
+    terminal{"Governed state transition"}
+    evidence["Artifact, cache, trace, and replay evidence"]
+
+    plan --> admission
+    admission -->|accepted| ready --> attempt --> normalize --> terminal --> evidence
+    admission -->|refused| evidence
+    attempt -->|timeout or cancellation| normalize
 ```
 
 No layer may skip directly from process status to successful node completion.
@@ -56,6 +53,24 @@ Adapter and backend implementations depend on runtime-owned contracts; the
 scheduler must not branch on implementation-private status. Artifact
 orchestration depends on artifact APIs rather than reproducing serialized
 models.
+
+```mermaid
+flowchart LR
+    core["core ExecutionPlan"]
+    scheduler["runtime core and scheduler"]
+    contract["adapter and backend contracts"]
+    implementations["local, container, SLURM, Kubernetes, and adapters"]
+    artifacts["artifact APIs"]
+    app["application orchestration"]
+
+    core --> scheduler --> contract --> implementations
+    implementations --> scheduler
+    scheduler --> artifacts
+    app --> scheduler
+```
+
+Implementations report through runtime-owned contracts. They do not expose
+private statuses that the scheduler must interpret by concrete type.
 
 ## Stable Surface
 
