@@ -488,7 +488,7 @@ impl Adapter for PythonFunctionAdapter {
                         "python function timed out after configured node timeout",
                         Some(json!({
                             "interpreter": interpreter.display().to_string(),
-                            "exit_code": output.status.code(),
+                            "exit_code": output.exit_code(),
                         })),
                     )),
                     attempts: 1,
@@ -511,7 +511,7 @@ impl Adapter for PythonFunctionAdapter {
                         "python function execution cancelled by operator",
                         Some(json!({
                             "interpreter": interpreter.display().to_string(),
-                            "exit_code": output.status.code(),
+                            "exit_code": output.exit_code(),
                         })),
                     )),
                     attempts: 1,
@@ -523,14 +523,14 @@ impl Adapter for PythonFunctionAdapter {
             ControlledCommandResult::Exited(output) => {
                 if !output.status.success() {
                     let stderr = output.read_tail_bytes(PYTHON_FAILURE_STDERR_READ_BYTES)?;
-                    let failure = python_failure_from_stderr(&stderr, output.status.code())
+                    let failure = python_failure_from_stderr(&stderr, output.exit_code())
                         .unwrap_or_else(|| {
                             python_failure(
                                 "EXEC_FAIL",
                                 "python adapter command failed",
                                 Some(json!({
                                     "interpreter": interpreter.display().to_string(),
-                                    "exit_code": output.status.code(),
+                                    "exit_code": output.exit_code(),
                                 })),
                             )
                         });

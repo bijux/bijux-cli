@@ -847,6 +847,10 @@ impl ControlledCommandOutput {
     fn read_tail_bytes(&self, max_bytes: u64) -> Result<Vec<u8>, RuntimeError> {
         self.stderr.read_tail_bytes(max_bytes).map_err(RuntimeError::Io)
     }
+
+    fn exit_code(&self) -> Option<i32> {
+        controlled_exit_code(self.status)
+    }
 }
 
 #[derive(Debug)]
@@ -1203,7 +1207,7 @@ impl Adapter for ShellAdapter {
                         "Timeout",
                         "EXEC_TIMEOUT",
                         "execution timed out after configured node timeout",
-                        Some(serde_json::json!({ "exit_code": output.status.code() })),
+                        Some(serde_json::json!({ "exit_code": output.exit_code() })),
                     )),
                     attempts: 1,
                     attempt_events: Vec::new(),
@@ -1223,7 +1227,7 @@ impl Adapter for ShellAdapter {
                         "Execution",
                         "EXEC_CANCELLED",
                         "execution cancelled by operator",
-                        Some(serde_json::json!({ "exit_code": output.status.code() })),
+                        Some(serde_json::json!({ "exit_code": output.exit_code() })),
                     )),
                     attempts: 1,
                     attempt_events: Vec::new(),
@@ -1233,7 +1237,7 @@ impl Adapter for ShellAdapter {
             }
             ControlledCommandResult::Exited(output) => {
                 let success = output.status.success();
-                let exit_code = output.status.code();
+                let exit_code = output.exit_code();
                 if !success {
                     return Ok(NodeResult {
                         status: NodeStatus::Failed,
@@ -1563,7 +1567,7 @@ impl Adapter for ContainerAdapter {
                     container_meta: Some(container_trace(
                         spec,
                         engine,
-                        output.status.code(),
+                        output.exit_code(),
                         Some(engine_version.clone()),
                     )),
                     adapter_binary_sha256: None,
@@ -1582,7 +1586,7 @@ impl Adapter for ContainerAdapter {
                     container_meta: Some(container_trace(
                         spec,
                         engine,
-                        output.status.code(),
+                        output.exit_code(),
                         Some(engine_version.clone()),
                     )),
                     adapter_binary_sha256: None,
@@ -1590,7 +1594,7 @@ impl Adapter for ContainerAdapter {
             }
             ControlledCommandResult::Exited(output) => {
                 let success = output.status.success();
-                let exit_code = output.status.code();
+                let exit_code = output.exit_code();
                 if !success {
                     return Ok(NodeResult {
                         status: NodeStatus::Failed,
@@ -4892,15 +4896,19 @@ fn terminate_process_group_best_effort(
             "failed to send SIGTERM to subprocess group {process_group_id}: {error}"
         ));
     }
-    if let Some(status) = wait_for_child_exit(child, SIGNAL_GRACE_PERIOD)? {
-        termination.status = status;
-        return Ok(termination);
+    let leader_status = wait_for_child_exit(child, SIGNAL_GRACE_PERIOD)?;
+
+    if process_group_exists(process_group_id)? {
+        if let Err(error) = signal_process_group(process_group_id, "KILL") {
+            termination.cleanup_diagnostics.push(format!(
+                "failed to send SIGKILL to subprocess group {process_group_id}: {error}"
+            ));
+        }
     }
 
-    if let Err(error) = signal_process_group(process_group_id, "KILL") {
-        termination.cleanup_diagnostics.push(format!(
-            "failed to send SIGKILL to subprocess group {process_group_id}: {error}"
-        ));
+    if let Some(status) = leader_status {
+        termination.status = status;
+        return Ok(termination);
     }
     if let Some(status) = wait_for_child_exit(child, SIGNAL_GRACE_PERIOD)? {
         termination.status = status;
@@ -4925,6 +4933,34 @@ fn signal_process_group(process_group_id: u32, signal: &str) -> std_io::Result<(
         return Ok(());
     }
     Err(std_io::Error::other(format!("kill exited with status {status}")))
+}
+
+#[cfg(unix)]
+fn process_group_exists(process_group_id: u32) -> std_io::Result<bool> {
+    let target = format!("-{process_group_id}");
+    let status = std::process::Command::new("kill")
+        .args(["-0", &target])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()?;
+    Ok(status.success())
+}
+
+fn controlled_exit_code(status: std::process::ExitStatus) -> Option<i32> {
+    if let Some(code) = status.code() {
+        return Some(code);
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::ExitStatusExt;
+        return status.signal().map(|signal| 128 + signal);
+    }
+
+    #[cfg(not(unix))]
+    {
+        None
+    }
 }
 
 fn wait_for_child_exit(

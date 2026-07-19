@@ -310,7 +310,7 @@ impl Adapter for ExternalAdapter {
                         Some(json!({
                             "timeout_class": "external_adapter_process",
                             "quarantined_outputs_dir": quarantined_outputs_dir,
-                            "exit_code": output.status.code(),
+                            "exit_code": output.exit_code(),
                         })),
                     )),
                     attempts: 1,
@@ -335,7 +335,7 @@ impl Adapter for ExternalAdapter {
                         "execution cancelled by operator",
                         Some(json!({
                             "quarantined_outputs_dir": quarantined_outputs_dir,
-                            "exit_code": output.status.code(),
+                            "exit_code": output.exit_code(),
                         })),
                     )),
                     attempts: 1,
@@ -347,22 +347,19 @@ impl Adapter for ExternalAdapter {
         };
         let success = output.status.success();
         if !success {
-            let failure = structured_failure_from_file(
-                exec.fs.as_ref(),
-                &failure_path,
-                output.status.code(),
-            )?
-            .unwrap_or_else(|| {
-                FailureInfo::new(
-                    bijux_dag_artifacts::FailureClass::Execution,
-                    "Execution",
-                    "EXEC_FAIL",
-                    "adapter command failed",
-                    Some(json!({
-                        "exit_code": output.status.code(),
-                    })),
-                )
-            });
+            let failure =
+                structured_failure_from_file(exec.fs.as_ref(), &failure_path, output.exit_code())?
+                    .unwrap_or_else(|| {
+                        FailureInfo::new(
+                            bijux_dag_artifacts::FailureClass::Execution,
+                            "Execution",
+                            "EXEC_FAIL",
+                            "adapter command failed",
+                            Some(json!({
+                                "exit_code": output.exit_code(),
+                            })),
+                        )
+                    });
             return Ok(NodeResult {
                 status: crate::NodeStatus::Failed,
                 stdout_path: stdout_path.display().to_string(),
