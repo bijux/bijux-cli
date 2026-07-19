@@ -9,40 +9,20 @@ last_reviewed: 2026-07-09
 
 # Common Workflows
 
-Use this page when you do not need the full command catalog, only the normal
-way to get routine work done without creating avoidable confusion or state
-drift.
+Use this page to route an operational question to its owning guide. The
+[operator lifecycle](../interfaces/operator-workflows.md) defines the common
+read-modify-verify discipline; these pages own the detailed behavior.
 
-The goal is not to enumerate every route. It is to show the sequences people
-actually reach for when moving from inspection to intentional state change.
+## Workflow Index
 
-## Workflow Set
-
-- runtime health: `status`, `doctor`, `audit`
-- configuration: `config list/get/set/unset/export/load`
-- memory state: `memory list/get/set/delete/clear`
-- history management: `history --limit/--filter/--sort` and `history clear --force`
-- plugin lifecycle: install, inspect, check, enable/disable, uninstall
-
-## Example Session
-
-```bash
-bijux status --format json --no-pretty
-bijux config set profile=dev
-bijux memory set context=oncall
-bijux history --limit 25 --sort timestamp
-bijux plugins list
-```
-
-## What These Workflows Are For
-
-| Workflow | What it should help you achieve |
-| --- | --- |
-| health | decide whether the CLI itself is healthy before changing anything |
-| configuration | inspect and adjust runtime policy deliberately |
-| memory and history | understand or reset local state with visible intent |
-| plugins | manage extension lifecycle without losing track of trust and health |
-| verification | confirm the runtime still looks coherent after a state change |
+| Need | Start here | Evidence to retain |
+| --- | --- | --- |
+| establish runtime health | [Diagnostics Guide](diagnostics-guide.md) | focused findings, resolved paths, and bundle location when exported |
+| install and initialize the runtime | [Installation And Setup](installation-and-setup.md) | version, executable resolution, and initial doctor result |
+| recover from corrupted or conflicting state | [Failure Recovery](failure-recovery.md) | original diagnosis, backup path, repair result, and final validation |
+| understand configuration precedence | [Configuration Surface](../interfaces/configuration-surface.md) | effective value and source chain |
+| operate plugins safely | [Operator Workflows](../interfaces/operator-workflows.md) | pre-change inventory and post-change health check |
+| automate command consumption | [CLI Surface](../interfaces/cli-surface.md) | stable command path, structured envelope, and exit behavior |
 
 ## Code Anchors
 
@@ -51,18 +31,6 @@ bijux plugins list
 - `crates/bijux-cli/src/interface/cli/handlers/memory.rs`
 - `crates/bijux-cli/src/interface/cli/handlers/history.rs`
 - `crates/bijux-cli/src/interface/cli/handlers/plugins.rs`
-
-## Workflow Rules
-
-- prefer explicit options over implicit defaults in automation
-- validate plugin health after each lifecycle mutation
-- keep state changes observable with status and diagnostics checks
-
-## Reader Shortcut
-
-If a workflow changes CLI state and you cannot point to the verification step
-afterward, the workflow is incomplete. Read-modify-verify is the normal safe
-shape, not optional ceremony.
 
 ## Continue Reading
 
