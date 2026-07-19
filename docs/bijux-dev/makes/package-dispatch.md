@@ -46,5 +46,5 @@ that a maintainer can predict where failures will land.
 ## Continue Reading
 
 - [CI Targets](ci-targets.md)
-- [Package Contracts](package-contracts.md)
+- [Make Execution Model](make-system-overview.md)
 - [Maintainer Package Destination](../packages/bijux-dev.md)

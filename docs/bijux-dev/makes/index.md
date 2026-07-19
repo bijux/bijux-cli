@@ -18,13 +18,10 @@ targets are grouped, or where repository-wide commands are defined.
 
 ## Pages In This Section
 
-- [Make System Overview](make-system-overview.md)
+- [Make Execution Model](make-system-overview.md)
 - [Root Entrypoints](root-entrypoints.md)
-- [Environment Model](environment-model.md)
-- [Repository Layout](repository-layout.md)
 - [Package Dispatch](package-dispatch.md)
 - [CI Targets](ci-targets.md)
-- [Package Contracts](package-contracts.md)
 - [Release Surfaces](release-surfaces.md)
 - [Authoring Rules](authoring-rules.md)
 

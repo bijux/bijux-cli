@@ -28,6 +28,5 @@ target from `make help` to the owning fragment without guesswork.
 
 ## Next Reads
 
-- [Make System Overview](make-system-overview.md)
-- [Repository Layout](repository-layout.md)
+- [Make Execution Model](make-system-overview.md)
 - [Documentation Standard](../governance/documentation-standard.md)
