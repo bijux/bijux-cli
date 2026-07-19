@@ -183,23 +183,32 @@ pub(super) const CONTRACT_SUITES: &[SuiteDef] = &[
 
 pub(super) const DOC_SUITES: &[SuiteDef] = &[
     SuiteDef {
-        id: "api",
-        description: "check documentation index files",
+        id: "handbook-indexes",
+        description: "check canonical public handbook index files",
         domain: "docs",
         slow: false,
         internal: false,
         effect: CommandEffect::Validation,
         run: || {
             let root = repo_root()?;
-            if !root.join("docs").join("DEVELOPMENT.md").exists() {
-                return Err("missing docs/DEVELOPMENT.md".into());
+            let required = [
+                "docs/index.md",
+                "docs/bijux-core/index.md",
+                "docs/bijux-cli/index.md",
+                "docs/bijux-dag/index.md",
+                "docs/bijux-dev/index.md",
+            ];
+            let missing =
+                required.into_iter().filter(|path| !root.join(path).is_file()).collect::<Vec<_>>();
+            if !missing.is_empty() {
+                return Err(format!("missing canonical handbook indexes: {}", missing.join(", ")));
             }
             Ok(())
         },
     },
     SuiteDef {
         id: "guarantee-evidence",
-        description: "guarantee language requires linked proof",
+        description: "guarantee claims require proof references",
         domain: "docs",
         slow: false,
         internal: false,

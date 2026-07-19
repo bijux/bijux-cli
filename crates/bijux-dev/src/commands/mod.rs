@@ -3049,21 +3049,8 @@ fn run_docs_guarantee_guard() -> Result<(), String> {
             .to_string_lossy()
             .replace('\\', "/");
         let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
-        for (idx, line) in content.lines().enumerate() {
-            let lower = line.to_lowercase();
-            let has_guarantee = lower.contains("guarantee") || lower.contains("guarantees");
-            if !has_guarantee {
-                continue;
-            }
-            let has_link = line.contains("](")
-                && (line.contains("docs/spec/")
-                    || line.contains("tests/")
-                    || line.contains("benchmarks/")
-                    || line.contains("artifacts/benchmarks/")
-                    || line.contains("artifacts/memory/"));
-            if !has_link {
-                violations.push(format!("{rel}:{} guarantee claim missing proof link", idx + 1));
-            }
+        for line in crate::suites::docs::guarantee_claims_without_evidence(&content) {
+            violations.push(format!("{rel}:{line} guarantee claim missing proof reference"));
         }
     }
     if violations.is_empty() {

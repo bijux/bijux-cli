@@ -72,7 +72,7 @@ module-hygiene-drift: ## Run module hygiene drift gate
 	$(call run_or_fail,Run module hygiene drift gate,cargo test -p bijux-dev --test module_hygiene_governance_contracts -- --nocapture)
 
 docs-truth-drift: ## Run documentation truth-boundary drift gate
-	$(call run_or_fail,Run docs truth drift gate,cargo test -p bijux-dev --test docs_truth_drift_contracts -- --nocapture)
+	$(call run_or_fail,Run docs truth drift gate,$(DEV_TOOL) docs run --domain docs --fail-fast)
 
 evidence-all: evidence-verify ## Run the canonical evidence verification entrypoint
 
