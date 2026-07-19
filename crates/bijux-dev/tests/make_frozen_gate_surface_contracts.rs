@@ -38,9 +38,11 @@ fn pinned_ref_launcher_isolates_artifacts_and_bootstrap_state() {
     for needle in [
         "pinned_ref=\"${PINNED_REF:-${TEST_ALL_FROZEN_REF:-HEAD}}\"",
         "artifact_root=\"${repo_root}/artifacts/${short_sha}\"",
-        "pinned_repo_dir=\"${artifact_root}/frozen-repo\"",
+        "gate_root=\"${artifact_root}/gates/${pinned_target}\"",
+        "pinned_repo_dir=\"${gate_root}/frozen-repo\"",
         "background_dir=\"${artifact_root}/background\"",
-        "artifact_execution_root=\"${pinned_repo_dir}/artifacts\"",
+        "gate_artifact_root=\"${gate_root}/artifacts\"",
+        "artifact_execution_root=\"${gate_artifact_root}\"",
         "export PROJECT_ROOT=\"${pinned_repo_dir}\"",
         "export ARTIFACT_ROOT=\"${artifact_execution_root}\"",
         "export RUN_ID=\"${short_sha}\"",
@@ -62,9 +64,9 @@ fn frozen_gate_docs_publish_usage_contract() {
         "PINNED_REF=<ref> make test-all-frozen",
         "PINNED_REF=<ref> make lint-frozen",
         "PINNED_REF=<ref> make audit-frozen",
-        "artifacts/<sha>/frozen-repo/",
+        "artifacts/<sha>/gates/<gate>/frozen-repo/",
+        "artifacts/<sha>/gates/<gate>/artifacts/",
         "artifacts/<sha>/background/",
-        "artifacts/<sha>/rust/",
     ] {
         assert!(ci_targets.contains(needle), "CI targets handbook must document `{needle}`");
     }

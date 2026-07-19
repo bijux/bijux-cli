@@ -37,7 +37,7 @@ fn root_make_entrypoint_loads_shared_common_and_rust_contracts() {
     for expected in [
         "RS_ARTIFACT_ROOT ?= $(ARTIFACT_ROOT_ABS)/rust",
         "RS_RUN_ID ?= $(RUN_ID)",
-        "NEXTEST_SLOW_NAME_EXPR ?= test(/::slow__/)",
+        "NEXTEST_SLOW_NAME_EXPR ?= test(/^slow__/)",
         "RUST_GATE_BIN ?= $(CORE_RUST_GATE_BIN)",
         "RUST_AUDIT_PREREQUISITES += audit-policy-rs",
         "NEXTEST_PROFILE_FAST=\"$(NEXTEST_RELEASE_PROFILE)\" \"$(RUST_GATE_BIN)\" test",

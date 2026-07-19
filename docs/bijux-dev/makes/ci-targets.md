@@ -96,9 +96,9 @@ PINNED_REF=<ref> make audit-frozen
 ```
 
 The launcher resolves `<ref>` to a commit, creates or verifies a detached clean
-checkout at `artifacts/<sha>/frozen-repo/`, and starts the selected Make target
-in a detached background process. Returning from the launcher means the
-process started; it does not mean the gate passed.
+checkout at `artifacts/<sha>/gates/<gate>/frozen-repo/`, and starts the selected
+Make target in a detached background process. Returning from the launcher means
+the process started; it does not mean the gate passed.
 
 Inspect the run through:
 
@@ -106,7 +106,8 @@ Inspect the run through:
 - `artifacts/<sha>/background/<gate>.pid` for the launched process
 - `artifacts/<sha>/background/<gate>.exit.status` for the final numeric status
 - `artifacts/<sha>/background/<gate>.meta` for the resolved commit and paths
-- `artifacts/<sha>/rust/` for Rust reports, Cargo state, and test products
+- `artifacts/<sha>/gates/<gate>/artifacts/` for reports, Cargo state, and test
+  products
 
 The status file is removed before launch and written only after the gate
 finishes. Its absence means the run has not published a final result. For a

@@ -95,9 +95,10 @@ PINNED_REF=<commit> make test-all-frozen
 ```
 
 This launches `make test-all` from a clean detached checkout under
-`artifacts/<sha>/frozen-repo/`. The launch message proves only that execution
-started. The console log, final nextest report, and terminal status under
-`artifacts/<sha>/` establish the result.
+`artifacts/<sha>/gates/test-all/frozen-repo/`. The launch message proves only
+that execution started. The console log, final nextest report under
+`artifacts/<sha>/gates/test-all/artifacts/`, and terminal status under
+`artifacts/<sha>/background/` establish the result.
 
 Do not report a frozen run as passed until the status file exists with success
 and the final summary is present. A missing status means running, interrupted,
