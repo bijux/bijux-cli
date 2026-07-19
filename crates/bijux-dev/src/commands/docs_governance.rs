@@ -577,7 +577,7 @@ pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
         "docs/bijux-dag/foundation/release-boundary.md",
         "docs/bijux-core/governance/spec-to-code-and-test-ownership.md",
         "docs/reports/foundation/docs-root-inventory-report.md",
-        "docs/reports/foundation/foundation-final-report.md",
+        "docs/reports/foundation/foundation-governance-posture.md",
         "docs/reports/foundation/repository-proof-statement.md",
         "docs/reports/governance/documentation-authority-report.md",
         "docs/bijux-core/governance/documentation-governance-alignment.md",

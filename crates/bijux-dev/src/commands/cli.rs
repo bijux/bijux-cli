@@ -380,9 +380,9 @@ pub(super) enum RepoCommand {
         contract_backing_out: PathBuf,
         #[arg(long, default_value = "docs/reports/foundation/RUNTIME_OPERATOR_SURFACE_REPORT.md")]
         operator_surface_out: PathBuf,
-        #[arg(long, default_value = "docs/reports/foundation/core_PUBLIC_API_SHRINK_REPORT.md")]
+        #[arg(long, default_value = "docs/reports/foundation/core-public-api-surface.md")]
         core_api_out: PathBuf,
-        #[arg(long, default_value = "docs/reports/foundation/runtime_PUBLIC_API_SHRINK_REPORT.md")]
+        #[arg(long, default_value = "docs/reports/foundation/runtime-public-api-surface.md")]
         runtime_api_out: PathBuf,
     },
     /// Generate planner hardening report from canonical graph fixtures

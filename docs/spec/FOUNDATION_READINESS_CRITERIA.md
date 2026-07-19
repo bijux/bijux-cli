@@ -4,7 +4,7 @@ audience: maintainer
 type: spec
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-19
 ---
 
 # Foundation Readiness Criteria
@@ -18,7 +18,7 @@ and release-facing governance artifacts are all present together.
 - core governance contracts exist under `docs/spec/`
 - runtime, replay, cache, config, and test-trust surfaces remain backed by
   executable checks
-- proof statements and final foundation summaries are present and current
+- proof statements and foundation governance posture are present and current
 
 ## Reading rule
 

@@ -4,7 +4,7 @@ audience: maintainer
 type: report
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-19
 ---
 
 # Release Evidence Report
@@ -19,5 +19,5 @@ evidence.
 - release binary verification: `docs/spec/RELEASE_BINARY_VERIFICATION.md`
 - repository proof statement:
   `docs/reports/foundation/repository-proof-statement.md`
-- foundation final report:
-  `docs/reports/foundation/foundation-final-report.md`
+- foundation governance posture:
+  `docs/reports/foundation/foundation-governance-posture.md`
