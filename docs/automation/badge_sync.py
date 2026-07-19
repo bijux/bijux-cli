@@ -21,13 +21,6 @@ BADGE_BLOCK_RE = re.compile(
     re.DOTALL,
 )
 TOKEN_RE = re.compile(r"{{\s*(?P<name>[a-z0-9_]+)\s*}}")
-BADGE_GROUPS: tuple[str, ...] = (
-    "family-crates-badge",
-    "family-rustdocs-badge",
-    "family-pypi-badge",
-    "family-ghcr-badge",
-    "family-docs-badge",
-)
 
 
 @dataclass(frozen=True)
@@ -224,103 +217,11 @@ def _record_context(record: PackageRecord) -> dict[str, str]:
     }
 
 
-def _ordered_records(
-    records: tuple[PackageRecord, ...], current: PackageRecord | None = None
-) -> tuple[PackageRecord, ...]:
-    if current is None:
-        return records
-    return (current,) + tuple(record for record in records if record.key != current.key)
-
-
-def _records_for_group(
-    records: tuple[PackageRecord, ...], group_name: str
-) -> tuple[PackageRecord, ...]:
-    if group_name == "family-crates-badge":
-        return tuple(record for record in records if record.crates_url)
-    if group_name == "family-rustdocs-badge":
-        return tuple(record for record in records if record.docsrs_url)
-    if group_name == "family-pypi-badge":
-        return tuple(record for record in records if record.pypi_url)
-    if group_name == "family-ghcr-badge":
-        return tuple(record for record in records if record.ghcr_url)
-    if group_name == "family-docs-badge":
-        return tuple(record for record in records if record.docs_url)
-    return ()
-
-
-def _published_records(records: tuple[PackageRecord, ...]) -> tuple[PackageRecord, ...]:
-    return tuple(record for record in records if record.published)
-
-
-def _public_family_count(records: tuple[PackageRecord, ...]) -> int:
-    return len(_published_records(records))
-
-
-def _render_group(
-    template: str, records: tuple[PackageRecord, ...], group_name: str
-) -> str:
-    rendered = [
-        _render_template(template, _record_context(record))
-        for record in _records_for_group(records, group_name)
-    ]
-    return " ".join(rendered)
-
-
-def _render_badge_line(
-    catalog: dict[str, str],
-    group_records: dict[str, tuple[PackageRecord, ...]],
-    group_names: tuple[str, ...],
-) -> str:
-    parts = [
-        _render_group(catalog[group_name], group_records[group_name], group_name)
-        for group_name in group_names
-    ]
-    return " ".join(part for part in parts if part)
-
-
 def render_repository_badges(
     catalog: dict[str, str], records: tuple[PackageRecord, ...]
 ) -> str:
-    published_records = _published_records(records)
-    sections = [
-        _render_template(
-            catalog["repository-summary"],
-            {
-                "ghcr_package_count": str(
-                    len(tuple(record for record in published_records if record.ghcr_url))
-                ),
-                "public_package_count": str(_public_family_count(records)),
-            },
-        )
-    ]
-    repository_group_records = {
-        "family-crates-badge": published_records,
-        "family-rustdocs-badge": published_records,
-        "family-pypi-badge": tuple(record for record in records if record.pypi_url),
-        "family-ghcr-badge": published_records,
-        "family-docs-badge": published_records,
-    }
-    release_line = _render_badge_line(
-        catalog,
-        repository_group_records,
-        ("family-crates-badge", "family-pypi-badge", "family-ghcr-badge"),
-    )
-    if release_line:
-        sections.append(release_line)
-    docs_line = _render_badge_line(
-        catalog,
-        repository_group_records,
-        ("family-docs-badge", "family-rustdocs-badge"),
-    )
-    docs_parts: list[str] = []
-    repository_docs_badge = catalog.get("repository-docs-badge", "").strip()
-    if repository_docs_badge:
-        docs_parts.append(repository_docs_badge)
-    if docs_line:
-        docs_parts.append(docs_line)
-    if docs_parts:
-        sections.append(" ".join(docs_parts))
-    return "\n\n".join(sections)
+    del records
+    return catalog["repository-summary"]
 
 
 def render_package_badges(
@@ -328,41 +229,18 @@ def render_package_badges(
     current: PackageRecord,
     records: tuple[PackageRecord, ...],
 ) -> str:
-    ordered = _ordered_records(records, current)
-    published_records = _published_records(records)
-    summary_name = "rust-package-summary" if current.kind == "rust" else "python-package-summary"
+    del records
+    summary_name = (
+        "rust-package-summary" if current.kind == "rust" else "python-package-summary"
+    )
     sections = [_render_template(catalog[summary_name], _record_context(current))]
-    package_group_records = {
-        "family-crates-badge": ordered,
-        "family-rustdocs-badge": ordered,
-        "family-pypi-badge": ordered,
-        "family-ghcr-badge": ordered,
-        "family-docs-badge": (current,)
-        if current.published
-        else (current,) + tuple(
-            record for record in published_records if record.family_key == current.family_key
-        ),
-    }
-    release_line = _render_badge_line(
-        catalog,
-        package_group_records,
-        ("family-crates-badge", "family-pypi-badge", "family-ghcr-badge"),
-    )
-    if release_line:
-        sections.append(release_line)
-    docs_line = _render_badge_line(
-        catalog,
-        package_group_records,
-        ("family-docs-badge", "family-rustdocs-badge"),
-    )
-    docs_parts: list[str] = []
+    docs_parts = [
+        _render_template(catalog["family-docs-badge"], _record_context(current))
+    ]
     repository_docs_badge = catalog.get("repository-docs-badge", "").strip()
     if repository_docs_badge:
-        docs_parts.append(repository_docs_badge)
-    if docs_line:
-        docs_parts.append(docs_line)
-    if docs_parts:
-        sections.append(" ".join(docs_parts))
+        docs_parts.insert(0, repository_docs_badge)
+    sections.append(" ".join(docs_parts))
     return "\n\n".join(sections)
 
 
@@ -380,7 +258,9 @@ def _link_badge(href: str, alt: str, src: str) -> str:
     return f'<a href="{href}"><img alt="{alt}" src="{src}" height="18"></a>'
 
 
-def _package_map_links(record: PackageRecord, family_records: tuple[PackageRecord, ...]) -> str:
+def _package_map_links(
+    record: PackageRecord, family_records: tuple[PackageRecord, ...]
+) -> str:
     links: list[str] = []
     if record.crates_url and record.crate_name:
         links.append(
@@ -398,7 +278,9 @@ def _package_map_links(record: PackageRecord, family_records: tuple[PackageRecor
                 f"https://img.shields.io/badge/rust--docs-{_shield_text(record.badge_label)}-DEA584?logo=rust&logoColor=white",
             )
         )
-    python_record = next((candidate for candidate in family_records if candidate.pypi_url), None)
+    python_record = next(
+        (candidate for candidate in family_records if candidate.pypi_url), None
+    )
     if python_record and python_record.pypi_url and python_record.pypi_name:
         links.append(
             _link_badge(
@@ -442,7 +324,9 @@ def render_package_map(records: dict[str, PackageRecord]) -> str:
     ]
     for record in ordered:
         family_records = tuple(
-            candidate for candidate in records.values() if candidate.family_key == record.family_key
+            candidate
+            for candidate in records.values()
+            if candidate.family_key == record.family_key
         )
         lines.append(
             f"| `{record.display_name}` | {record.purpose} | {_package_map_links(record, family_records)} |"
@@ -454,7 +338,9 @@ def iter_targets() -> tuple[BadgeTarget, ...]:
     return (
         BadgeTarget(REPO_ROOT / "README.md", "repository"),
         BadgeTarget(REPO_ROOT / "docs" / "index.md", "repository"),
-        BadgeTarget(REPO_ROOT / "crates" / "bijux-cli" / "README.md", "package", "bijux-cli"),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-cli" / "README.md", "package", "bijux-cli"
+        ),
         BadgeTarget(
             REPO_ROOT / "docs" / "bijux-cli" / "packages" / "bijux-cli.md",
             "package",
@@ -466,11 +352,7 @@ def iter_targets() -> tuple[BadgeTarget, ...]:
             "bijux-cli-python",
         ),
         BadgeTarget(
-            REPO_ROOT
-            / "docs"
-            / "bijux-cli"
-            / "packages"
-            / "bijux-cli-python.md",
+            REPO_ROOT / "docs" / "bijux-cli" / "packages" / "bijux-cli-python.md",
             "package",
             "bijux-cli-python",
         ),
@@ -536,7 +418,9 @@ def render_target(
     text = target.path.read_text(encoding="utf-8")
     if target.kind == "repository":
         body = render_repository_badges(catalog, records)
-        updated = _replace_managed_block(text, START_MARKER, END_MARKER, body, target.path)
+        updated = _replace_managed_block(
+            text, START_MARKER, END_MARKER, body, target.path
+        )
         if target.path == REPO_ROOT / "README.md":
             updated = _replace_managed_block(
                 updated,
