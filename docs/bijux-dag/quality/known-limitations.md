@@ -17,7 +17,8 @@ can change.
 Use [Release Boundary](../foundation/release-boundary.md) to classify a surface
 as stable, experimental, simulated, internal, or future-facing. Use this
 register to assess operational consequences within that classification. The
-[Bijux Dag Roadmap](../roadmap.md) records candidate release lanes rather than
+[Future Direction](../foundation/future-direction.md) records capability
+promotion requirements rather than
 current guarantees.
 
 ## Stable Local Execution Limitations

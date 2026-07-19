@@ -126,5 +126,5 @@ For the public-versus-private crate boundary behind that split, use
   ownership.
 - Move to the [Maintainer Handbook](../bijux-dev/index.md) when the work is
   about governance suites, release proof, or repository gates.
-- Move to the [Bijux Dag Roadmap](roadmap.md) only when
+- Move to [Future Direction](foundation/future-direction.md) only when
   the question is about future work rather than shipped `v0.4.0` behavior.

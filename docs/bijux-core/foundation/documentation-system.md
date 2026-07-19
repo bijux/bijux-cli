@@ -52,7 +52,7 @@ Local command output, logs, sites, and ad hoc analysis belong under
 
 Planning material is not product truth. Current limitations belong beside the
 affected product; future direction belongs in an explicitly non-binding
-[DAG roadmap](../../bijux-dag/roadmap.md). Status ledgers that enforce a
+[DAG future direction](../../bijux-dag/foundation/future-direction.md). Status ledgers that enforce a
 contract belong with the executable specification or generated evidence that
 owns them.
 

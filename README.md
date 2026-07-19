@@ -42,8 +42,8 @@ The machine-readable release authority is
 
 Use the [Release Boundary](docs/bijux-dag/foundation/release-boundary.md) for
 operator decisions, the [v0.4.0 Release Notes](docs/bijux-dag/operations/v0-4-0-release-notes.md)
-for the shipped release, and the [Bijux Dag Roadmap](docs/bijux-dag/roadmap.md)
-only for non-binding future direction.
+for the shipped release, and [Future Direction](docs/bijux-dag/foundation/future-direction.md)
+only for capability promotion criteria beyond the current contract.
 
 ## Install And Verify
 

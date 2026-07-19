@@ -17,7 +17,7 @@ The governing policy is the
 [Release Boundary](../foundation/release-boundary.md), backed by
 `contracts/foundation/dag_release_truth_table.v1.json`.
 The [Known Limitations](../quality/known-limitations.md) page records current
-constraints. The [Bijux Dag Roadmap](../roadmap.md) is
+constraints. [Future Direction](../foundation/future-direction.md) is
 future direction, not a supported-surface claim.
 
 ## Command Lanes
