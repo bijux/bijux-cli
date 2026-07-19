@@ -83,11 +83,11 @@ current guarantees.
 ### LIM-009 Remote coordination and batch backends are modeled, not shipped
 
 - stability class: `stable-surface`
-- affected command or API: coordination models, fake batch execution, and future Kubernetes, Slurm, HPC, or remote-worker surfaces
-- limitation: leases, heartbeats, worker payloads, and batch metadata are typed models or simulations, not production backend semantics.
-- impact: their presence does not prove a distributed scheduler, batch platform, or supported remote execution service.
-- workaround: use the local controller for real work and treat remote or batch material only as design and contract evidence.
-- planned fix: implement production semantics, operator lifecycle documentation, support commitments, and end-to-end backend evidence before promotion.
+- affected command or API: modeled remote-worker coordination, fake batch execution, generic HPC, and public scheduler-service surfaces
+- limitation: remote-worker leases, heartbeats, payload handoff, and fake batch lifecycle are typed models or simulations. This limitation does not apply to the bounded `run --backend kubernetes` and shared-filesystem `run --backend slurm` lanes classified as stable by the release boundary.
+- impact: modeled coordination evidence does not prove a public remote-worker service, generic HPC abstraction, or distributed scheduler.
+- workaround: use the documented Kubernetes or SLURM backend only when its shared-storage prerequisites are satisfied; treat remote-worker and generic scheduler material as design evidence.
+- planned fix: require production coordination semantics, recovery behavior, operator lifecycle documentation, support commitments, and end-to-end evidence before promoting any broader remote surface.
 - release target: remote and distributed execution remain outside the stable `v0.4.x` product promise.
 
 ## API Stability Limitations
