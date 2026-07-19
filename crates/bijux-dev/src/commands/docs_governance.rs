@@ -1135,25 +1135,73 @@ fn documentation_shape_violations(
         if crates_root.exists() {
             for entry in fs::read_dir(&crates_root).map_err(|err| err.to_string())? {
                 let crate_dir = entry.map_err(|err| err.to_string())?.path();
-                if !crate_dir.is_dir() {
+                if !crate_dir.is_dir() || !crate_dir.join("Cargo.toml").is_file() {
                     continue;
                 }
                 let docs_dir = crate_dir.join("docs");
+                let crate_name =
+                    crate_dir.file_name().and_then(|name| name.to_str()).unwrap_or("<unknown>");
+                if !docs_dir.is_dir() {
+                    violations.push(format!(
+                        "missing crate documentation directory: crates/{crate_name}/docs"
+                    ));
+                    continue;
+                }
+                if !docs_dir.join("CONTRACTS.md").is_file() {
+                    violations.push(format!(
+                        "missing crate contract documentation: crates/{crate_name}/docs/CONTRACTS.md"
+                    ));
+                }
                 let mut pages = Vec::new();
                 collect_markdown_files(&docs_dir, &mut pages)?;
                 if pages.len() > budget {
-                    let crate_name =
-                        crate_dir.file_name().and_then(|name| name.to_str()).unwrap_or("<unknown>");
                     violations.push(format!(
                         "crate documentation budget exceeded: crates/{crate_name}/docs has {} pages > {budget}",
                         pages.len()
                     ));
                 }
+                for page in pages {
+                    let rel = page.strip_prefix(&docs_dir).map_err(|err| err.to_string())?;
+                    if rel.components().count() > 1 {
+                        violations.push(format!(
+                            "nested crate documentation is not allowed: crates/{crate_name}/docs/{}",
+                            rel.to_string_lossy().replace('\\', "/")
+                        ));
+                    }
+                }
             }
         }
     }
 
+    for internal_root in [root.join("docs/spec"), root.join("docs/reports")] {
+        let mut pages = Vec::new();
+        collect_markdown_files(&internal_root, &mut pages)?;
+        for page in pages {
+            let Some(file_name) = page.file_name().and_then(|name| name.to_str()) else {
+                continue;
+            };
+            if file_name == "README.md" || internal_documentation_name_is_valid(file_name) {
+                continue;
+            }
+            let rel = page.strip_prefix(root).map_err(|err| err.to_string())?;
+            violations.push(format!(
+                "internal documentation filename must use uppercase snake case: {}",
+                rel.to_string_lossy().replace('\\', "/")
+            ));
+        }
+    }
+
     Ok(violations)
+}
+
+fn internal_documentation_name_is_valid(file_name: &str) -> bool {
+    let Some(stem) = file_name.strip_suffix(".md") else {
+        return false;
+    };
+    !stem.is_empty()
+        && stem.chars().all(|character| {
+            character.is_ascii_uppercase() || character.is_ascii_digit() || character == '_'
+        })
 }
 
 fn valid_documentation_status(status: &str) -> bool {
@@ -1196,11 +1244,12 @@ mod tests {
     use super::{
         broken_inline_code_anchors, collect_inbound_counts, collect_mkdocs_nav_entries,
         documentation_scope, documentation_shape_violations, extract_inline_code_spans,
-        repo_code_anchor_candidate, roadmap_reference_allowed, schema_reference_path,
-        should_skip_markdown_link, validate_known_limitations_content,
-        validate_risk_register_content, DocsLintPolicy, KNOWN_LIMITATIONS_REL_PATH,
-        REQUIRED_RISK_IDS, RISK_REGISTER_REL_PATH,
+        internal_documentation_name_is_valid, repo_code_anchor_candidate,
+        roadmap_reference_allowed, schema_reference_path, should_skip_markdown_link,
+        validate_known_limitations_content, validate_risk_register_content, DocsLintPolicy,
+        KNOWN_LIMITATIONS_REL_PATH, REQUIRED_RISK_IDS, RISK_REGISTER_REL_PATH,
     };
+    use std::collections::BTreeSet;
     use std::fs;
     use std::path::Path;
     use tempfile::tempdir;
@@ -1312,6 +1361,9 @@ also good `docs/index.md`\n";
         let root = tempdir().expect("tempdir");
         let crate_docs = root.path().join("crates/example/docs");
         fs::create_dir_all(&crate_docs).expect("crate docs");
+        fs::write(root.path().join("crates/example/Cargo.toml"), "[package]\nname = \"example\"\n")
+            .expect("manifest");
+        fs::write(crate_docs.join("CONTRACTS.md"), "# Contracts\n").expect("contracts");
         fs::write(crate_docs.join("architecture.md"), "# Architecture\n").expect("architecture");
         fs::write(crate_docs.join("operations.md"), "# Operations\n").expect("operations");
 
@@ -1339,7 +1391,39 @@ also good `docs/index.md`\n";
         assert!(violations.iter().any(|message| message.contains("has depth 5 > 4")));
         assert!(violations
             .iter()
-            .any(|message| message.contains("crates/example/docs has 2 pages > 1")));
+            .any(|message| message.contains("crates/example/docs has 3 pages > 1")));
+    }
+
+    #[test]
+    fn documentation_shape_requires_flat_crate_contracts_and_consistent_internal_names() {
+        let root = tempdir().expect("tempdir");
+        let crate_dir = root.path().join("crates/example");
+        fs::create_dir_all(crate_dir.join("docs/architecture")).expect("crate docs");
+        fs::write(crate_dir.join("Cargo.toml"), "[package]\nname = \"example\"\n")
+            .expect("manifest");
+        fs::write(crate_dir.join("docs/architecture/design.md"), "# Design\n").expect("design");
+        fs::create_dir_all(root.path().join("docs/spec")).expect("spec");
+        fs::create_dir_all(root.path().join("docs/reports")).expect("reports");
+        fs::write(root.path().join("docs/spec/bad-name.md"), "# Spec\n").expect("spec file");
+
+        let violations = documentation_shape_violations(
+            root.path(),
+            &BTreeSet::new(),
+            &DocsLintPolicy { crate_docs_page_budget: Some(10), ..DocsLintPolicy::default() },
+        )
+        .expect("shape");
+
+        assert!(violations.iter().any(|message| message.contains("docs/CONTRACTS.md")));
+        assert!(violations.iter().any(|message| message.contains("nested crate documentation")));
+        assert!(violations.iter().any(|message| message.contains("docs/spec/bad-name.md")));
+    }
+
+    #[test]
+    fn internal_documentation_names_allow_only_uppercase_snake_case() {
+        assert!(internal_documentation_name_is_valid("ATTEMPT_TRACE_SCHEMA.md"));
+        assert!(internal_documentation_name_is_valid("SCHEMA_V0_1.md"));
+        assert!(!internal_documentation_name_is_valid("attempt-trace-schema.md"));
+        assert!(!internal_documentation_name_is_valid("SCHEMA_V0.1.md"));
     }
 
     #[test]
