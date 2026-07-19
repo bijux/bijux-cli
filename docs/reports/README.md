@@ -1,3 +1,12 @@
+---
+title: Governed Report Evidence
+audience: maintainers
+type: report-index
+status: internal
+owner: bijux-dag-governance
+last_reviewed: 2026-07-19
+---
+
 # Governed Report Evidence
 
 `docs/reports/` retains reviewable evidence generated or mechanically checked

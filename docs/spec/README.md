@@ -1,3 +1,12 @@
+---
+title: Executable Specification Authority
+audience: maintainers
+type: specification-index
+status: internal
+owner: bijux-dag-governance
+last_reviewed: 2026-07-19
+---
+
 # Executable Specification Authority
 
 `docs/spec/` contains repository contracts that are read by tests, maintainer

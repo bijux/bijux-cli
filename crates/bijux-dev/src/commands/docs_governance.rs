@@ -56,6 +56,8 @@ struct DocsLintPolicy {
     #[serde(default)]
     exclude_prefixes: Vec<String>,
     #[serde(default)]
+    orphan_exempt_prefixes: Vec<String>,
+    #[serde(default)]
     metadata_required_prefixes: Vec<String>,
     #[serde(default)]
     metadata_required_exact: Vec<String>,
@@ -789,11 +791,12 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
     let required_exact: BTreeSet<String> = policy.metadata_required_exact.iter().cloned().collect();
     let standalone_allowlist: BTreeSet<String> =
         policy.standalone_allowlist.iter().cloned().collect();
+    let nav_entries = collect_mkdocs_nav_entries(&root)?;
 
     let mut metadata_errors = Vec::new();
     let mut bad_status = Vec::new();
-    let mut title_map: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    let mut topic_map: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut title_map: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
+    let mut topic_map: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
     let mut orphan_docs = Vec::new();
 
     for rel_path in &markdown_files {
@@ -818,8 +821,7 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
                 None => metadata_errors.push(format!("{rel_path}: missing `status`")),
                 Some(line) => {
                     let value = line.trim_start_matches("status:").trim().to_ascii_lowercase();
-                    if !matches!(value.as_str(), "stable" | "generated" | "historical" | "internal")
-                    {
+                    if !valid_documentation_status(&value) {
                         bad_status.push(format!("{rel_path}: invalid `status` value `{value}`"));
                     }
                 }
@@ -828,10 +830,14 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
 
         if let Some(title) = lines.iter().find_map(|line| line.strip_prefix("# ").map(str::trim)) {
             if !title.is_empty() {
-                title_map.entry(title.to_string()).or_default().push(rel_path.clone());
+                let scope = documentation_scope(rel_path);
+                title_map
+                    .entry((scope.clone(), title.to_string()))
+                    .or_default()
+                    .push(rel_path.clone());
                 let topic = normalize_topic(title);
                 if !topic.is_empty() {
-                    topic_map.entry(topic).or_default().push(rel_path.clone());
+                    topic_map.entry((scope, topic)).or_default().push(rel_path.clone());
                 }
             }
         }
@@ -844,8 +850,17 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
         let is_index = file_name.starts_with("readme") || file_name.starts_with("index");
         let standalone_marker = head.iter().any(|line| line.trim() == "standalone: yes");
         let in_allowlist = standalone_allowlist.contains(rel_path);
+        let in_nav = nav_entries.contains(rel_path);
+        let orphan_exempt =
+            policy.orphan_exempt_prefixes.iter().any(|prefix| rel_path.starts_with(prefix));
         let inbound_count = inbound.get(rel_path).copied().unwrap_or(0);
-        if !is_index && !standalone_marker && !in_allowlist && inbound_count == 0 {
+        if !is_index
+            && !standalone_marker
+            && !in_allowlist
+            && !in_nav
+            && !orphan_exempt
+            && inbound_count == 0
+        {
             orphan_docs.push(rel_path.clone());
         }
     }
@@ -853,12 +868,16 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
     let duplicate_titles = title_map
         .into_iter()
         .filter(|(_, paths)| paths.len() > 1)
-        .map(|(title, paths)| format!("duplicate title `{title}`: {}", paths.join(", ")))
+        .map(|((scope, title), paths)| {
+            format!("duplicate title `{title}` in `{scope}`: {}", paths.join(", "))
+        })
         .collect::<Vec<_>>();
     let duplicate_topics = topic_map
         .into_iter()
         .filter(|(_, paths)| paths.len() > 1)
-        .map(|(topic, paths)| format!("duplicate topic `{topic}`: {}", paths.join(", ")))
+        .map(|((scope, topic), paths)| {
+            format!("duplicate topic `{topic}` in `{scope}`: {}", paths.join(", "))
+        })
         .collect::<Vec<_>>();
 
     let mut violations = Vec::new();
@@ -884,6 +903,7 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
     let required_exact: BTreeSet<String> = policy.metadata_required_exact.iter().cloned().collect();
     let standalone_allowlist: BTreeSet<String> =
         policy.standalone_allowlist.iter().cloned().collect();
+    let nav_entries = collect_mkdocs_nav_entries(&root)?;
     let mut section_counts: BTreeMap<String, usize> = BTreeMap::new();
     let mut status_counts: BTreeMap<String, usize> = BTreeMap::new();
     let mut metadata_gaps = Vec::new();
@@ -901,9 +921,7 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
             .iter()
             .find(|line| line.starts_with("status:"))
             .map(|line| line.trim_start_matches("status:").trim().to_ascii_lowercase())
-            .filter(|status| {
-                matches!(status.as_str(), "stable" | "generated" | "historical" | "internal")
-            })
+            .filter(|status| valid_documentation_status(status))
             .unwrap_or_else(|| "missing_or_invalid".to_string());
         *status_counts.entry(status).or_insert(0) += 1;
 
@@ -929,8 +947,17 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
         let is_index = file_name.starts_with("readme") || file_name.starts_with("index");
         let standalone_marker = head.iter().any(|line| line.trim() == "standalone: yes");
         let in_allowlist = standalone_allowlist.contains(rel_path);
+        let in_nav = nav_entries.contains(rel_path);
+        let orphan_exempt =
+            policy.orphan_exempt_prefixes.iter().any(|prefix| rel_path.starts_with(prefix));
         let inbound_count = inbound.get(rel_path).copied().unwrap_or(0);
-        if !is_index && !standalone_marker && !in_allowlist && inbound_count == 0 {
+        if !is_index
+            && !standalone_marker
+            && !in_allowlist
+            && !in_nav
+            && !orphan_exempt
+            && inbound_count == 0
+        {
             orphan_candidates.push(rel_path.clone());
         }
     }
@@ -1041,6 +1068,7 @@ fn collect_inbound_counts(
     markdown_files: &[String],
     policy: &DocsLintPolicy,
 ) -> Result<BTreeMap<String, usize>, String> {
+    let canonical_root = fs::canonicalize(root).map_err(|err| err.to_string())?;
     let tracked: BTreeSet<String> = markdown_files.iter().cloned().collect();
     let mut inbound: BTreeMap<String, usize> = BTreeMap::new();
     for rel_path in markdown_files {
@@ -1061,13 +1089,14 @@ fn collect_inbound_counts(
                     continue;
                 }
                 let resolved = source_path.parent().unwrap_or(Path::new(".")).join(link_no_anchor);
-                if !resolved.exists()
-                    || resolved.extension().and_then(|ext| ext.to_str()) != Some("md")
-                {
+                if resolved.extension().and_then(|ext| ext.to_str()) != Some("md") {
                     continue;
                 }
-                let rel_target = resolved
-                    .strip_prefix(root)
+                let Ok(canonical_target) = fs::canonicalize(&resolved) else {
+                    continue;
+                };
+                let rel_target = canonical_target
+                    .strip_prefix(&canonical_root)
                     .map_err(|err| err.to_string())?
                     .to_string_lossy()
                     .replace('\\', "/");
@@ -1081,6 +1110,29 @@ fn collect_inbound_counts(
         }
     }
     Ok(inbound)
+}
+
+fn collect_mkdocs_nav_entries(root: &Path) -> Result<BTreeSet<String>, String> {
+    let content = fs::read_to_string(root.join("mkdocs.yml")).map_err(|err| err.to_string())?;
+    let mut entries = BTreeSet::new();
+    for line in content.lines() {
+        let Some((_, value)) = line.trim().split_once(':') else {
+            continue;
+        };
+        let path = value.trim();
+        if path.ends_with(".md") {
+            entries.insert(format!("docs/{path}"));
+        }
+    }
+    Ok(entries)
+}
+
+fn documentation_scope(rel_path: &str) -> String {
+    rel_path.split('/').nth(1).unwrap_or("repository").to_string()
+}
+
+fn valid_documentation_status(status: &str) -> bool {
+    matches!(status, "canonical" | "stable" | "generated" | "historical" | "internal")
 }
 
 fn normalize_topic(title: &str) -> String {
@@ -1117,10 +1169,11 @@ fn collect_source_files_with_extension(
 #[cfg(test)]
 mod tests {
     use super::{
-        broken_inline_code_anchors, extract_inline_code_spans, repo_code_anchor_candidate,
+        broken_inline_code_anchors, collect_inbound_counts, collect_mkdocs_nav_entries,
+        documentation_scope, extract_inline_code_spans, repo_code_anchor_candidate,
         roadmap_reference_allowed, should_skip_markdown_link, validate_known_limitations_content,
-        validate_risk_register_content, KNOWN_LIMITATIONS_REL_PATH, REQUIRED_RISK_IDS,
-        RISK_REGISTER_REL_PATH,
+        validate_risk_register_content, DocsLintPolicy, KNOWN_LIMITATIONS_REL_PATH,
+        REQUIRED_RISK_IDS, RISK_REGISTER_REL_PATH,
     };
     use std::fs;
     use std::path::Path;
@@ -1184,6 +1237,48 @@ also good `docs/index.md`\n";
         assert!(should_skip_markdown_link("{{ docs_url }}"));
         assert!(should_skip_markdown_link("#section"));
         assert!(!should_skip_markdown_link("../guide.md"));
+    }
+
+    #[test]
+    fn documentation_scope_separates_product_handbooks() {
+        assert_eq!(documentation_scope("docs/bijux-cli/interfaces/api-surface.md"), "bijux-cli");
+        assert_eq!(documentation_scope("docs/bijux-dag/interfaces/api-surface.md"), "bijux-dag");
+        assert_eq!(documentation_scope("docs/spec/REPLAY_CONTRACT.md"), "spec");
+    }
+
+    #[test]
+    fn inbound_counts_normalize_parent_directory_links() {
+        let root = tempdir().expect("tempdir");
+        let source_dir = root.path().join("docs/product/quality");
+        let target_dir = root.path().join("docs/product/interfaces");
+        fs::create_dir_all(&source_dir).expect("source dir");
+        fs::create_dir_all(&target_dir).expect("target dir");
+        fs::write(source_dir.join("comparison.md"), "[Report](../interfaces/report.md)\n")
+            .expect("source");
+        fs::write(target_dir.join("report.md"), "# Report\n").expect("target");
+        let files = vec![
+            "docs/product/interfaces/report.md".to_string(),
+            "docs/product/quality/comparison.md".to_string(),
+        ];
+
+        let inbound = collect_inbound_counts(root.path(), &files, &DocsLintPolicy::default())
+            .expect("inbound counts");
+
+        assert_eq!(inbound.get("docs/product/interfaces/report.md"), Some(&1));
+    }
+
+    #[test]
+    fn mkdocs_navigation_entries_are_reader_entrypoints() {
+        let root = tempdir().expect("tempdir");
+        fs::write(
+            root.path().join("mkdocs.yml"),
+            "nav:\n  - Trust Evidence: bijux-core/governance/trust-evidence.md\n",
+        )
+        .expect("mkdocs");
+
+        let entries = collect_mkdocs_nav_entries(root.path()).expect("nav entries");
+
+        assert!(entries.contains("docs/bijux-core/governance/trust-evidence.md"));
     }
 
     #[test]

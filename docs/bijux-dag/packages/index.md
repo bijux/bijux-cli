@@ -1,3 +1,10 @@
+---
+title: DAG Packages
+audience: maintainers
+status: canonical
+owner: bijux-dag
+---
+
 # DAG Packages
 
 Use this page when the DAG command or behavior is already known but the owning

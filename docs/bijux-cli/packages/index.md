@@ -1,3 +1,10 @@
+---
+title: CLI Packages
+audience: maintainers
+status: canonical
+owner: bijux-cli
+---
+
 # CLI Packages
 
 Use this page when you already know the question belongs to `bijux`, but you
