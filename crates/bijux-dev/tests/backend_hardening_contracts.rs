@@ -40,8 +40,8 @@ fn execution_engine_contract_and_attempt_schema_track_backend_surface() {
     let root = workspace_root();
     let engine_contract = fs::read_to_string(root.join("docs/spec/EXECUTION_ENGINE_CONTRACT.md"))
         .expect("engine contract");
-    let attempt_schema = fs::read_to_string(root.join("docs/spec/ATTEMPT_TRACE_SCHEMA_V0.1.md"))
-        .expect("attempt schema");
+    let attempt_schema =
+        fs::read_to_string(root.join("docs/spec/ATTEMPT_TRACE_SCHEMA.md")).expect("attempt schema");
 
     for token in [
         "execute_with_backend",
@@ -70,7 +70,7 @@ fn backend_hardening_report_links_docs_runtime_and_tests() {
     for token in [
         "docs/spec/BACKEND_CONTRACT.md",
         "docs/spec/EXECUTION_ENGINE_CONTRACT.md",
-        "docs/spec/ATTEMPT_TRACE_SCHEMA_V0.1.md",
+        "docs/spec/ATTEMPT_TRACE_SCHEMA.md",
         "docs/bijux-dag/architecture/engine-backend-responsibilities.md",
         "crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs",
         "crates/bijux-dag-runtime/tests/execution_backend_contract.rs",

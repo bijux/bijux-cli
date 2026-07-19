@@ -81,7 +81,7 @@ The error classes preserve where execution failed:
 - implementation: `crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs`
 - governing contracts: `docs/spec/BACKEND_CONTRACT.md` and
   `docs/spec/EXECUTION_ENGINE_CONTRACT.md`
-- attempt schema: `docs/spec/ATTEMPT_TRACE_SCHEMA_V0.1.md`
+- attempt schema: `docs/spec/ATTEMPT_TRACE_SCHEMA.md`
 - conformance: `crates/bijux-dag-runtime/tests/execution_backend_contract.rs`
 - engine integration: `crates/bijux-dag-runtime/tests/engine_flow_contract.rs`
 

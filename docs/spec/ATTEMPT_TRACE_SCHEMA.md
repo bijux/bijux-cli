@@ -1,16 +1,20 @@
 ---
-title: Attempt Trace Schema v0.1
+title: Attempt Trace Schema
 audience: mixed
 type: spec
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-19
 ---
 
-# Attempt Trace Schema v0.1
+# Attempt Trace Schema
 
 This document defines the stable backend attempt record carried by
 `ExecutionAttemptRecord`.
+
+The Rust type is the serialization authority. This path remains stable as the
+record evolves; compatibility changes belong in the contract rules and release
+notes rather than in parallel version-named documents.
 
 ## Record shape
 
