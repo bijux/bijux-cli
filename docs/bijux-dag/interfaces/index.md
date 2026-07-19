@@ -49,9 +49,7 @@ to the shipped public `v0.4.0` surface.
 
 - [CLI Surface](cli-surface.md)
 - [Generated CLI Reference](generated-cli-reference.md)
-- [Command Taxonomy](command-taxonomy.md)
 - [Operator Command Index](operator-command-index.md)
-- [Operator Inspection Guide](operator-inspection-guide.md)
 - [Support Matrix](support-matrix.md)
 - [Executable Examples](runnable-examples.md)
 - [API Surface](api-surface.md)

@@ -311,12 +311,10 @@ fn release_boundary_references_route_readers_to_handbook_pages() {
 fn dag_operator_reference_docs_use_public_binary_examples() {
     for path in [
         "docs/bijux-dag/interfaces/generated-cli-reference.md",
-        "docs/bijux-dag/interfaces/command-taxonomy.md",
         "docs/bijux-dag/interfaces/configuration-surface.md",
         "docs/bijux-dag/interfaces/node-inspection.md",
         "docs/bijux-dag/interfaces/gated-command-inventory.md",
         "docs/bijux-dag/interfaces/operator-command-index.md",
-        "docs/bijux-dag/interfaces/operator-inspection-guide.md",
         "docs/bijux-dag/operations/failure-recovery.md",
     ] {
         let content = read_repo_file(path);
