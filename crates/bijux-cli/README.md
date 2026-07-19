@@ -106,6 +106,19 @@ manifest placement, compatibility checks, and packaging.
 - [`tests/routing.rs`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/tests/routing.rs): parser, registry, schema, and routing law coverage.
 - [`tests/data/fixtures`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli/tests/data/fixtures) and [`tests/data/golden`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli/tests/data/golden): stable fixtures and snapshots.
 
+## Internal Documentation
+
+- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): runtime layers, dependency
+  direction, state ownership, and extension decisions.
+- [`CONTRACTS.md`](docs/CONTRACTS.md): package ownership, invariants, schemas,
+  effects, and failure behavior.
+- [`PUBLIC_API.md`](docs/PUBLIC_API.md): supported Rust facade, contract types,
+  SDK surface, and compatibility rules.
+- [`ROUTING_AND_EXECUTION.md`](docs/ROUTING_AND_EXECUTION.md): canonical route
+  resolution, execution policy, lifecycle, and external dispatch.
+- [`STATE_AND_EFFECTS.md`](docs/STATE_AND_EFFECTS.md): configuration, durable
+  state, subprocess, stream, locking, and recovery rules.
+
 ## Release References
 
 - Package contracts: [`docs/CONTRACTS.md`](docs/CONTRACTS.md)

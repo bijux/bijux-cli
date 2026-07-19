@@ -140,6 +140,20 @@ The runtime implementations live outside this crate:
   successful empty result.
 - Preserve the original structured command failure for diagnosis.
 
+## Internal Documentation
+
+- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): Rust/Python component boundaries,
+  invocation paths, and semantic authorities.
+- [`BINDINGS_AND_CONVERSIONS.md`](docs/BINDINGS_AND_CONVERSIONS.md): native
+  binding surface, bridge payloads, argument rules, and error mapping.
+- [`CONTRACTS.md`](docs/CONTRACTS.md): package ownership, process boundaries,
+  invariants, and failure behavior.
+- [`MOUNTED_APPS.md`](docs/MOUNTED_APPS.md): Python application descriptors,
+  interpreter discovery, and stream discipline.
+- [`PACKAGING_AND_COMPATIBILITY.md`](docs/PACKAGING_AND_COMPATIBILITY.md):
+  wheel construction, entrypoint ownership, path precedence, and release
+  verification.
+
 ## References
 
 - Package contracts: [`docs/CONTRACTS.md`](docs/CONTRACTS.md)
