@@ -33,7 +33,8 @@ content should be merged or removed.
 These files are versioned inputs to governance, not a browsing hierarchy.
 Their exact language and paths can be executable interfaces. A handbook may
 explain a contract and link to its repository source, but must not duplicate it
-as a second authority.
+as a second authority. `docs/spec/README.md` defines the admission and editing
+rules for that contract surface.
 
 ## Generated Evidence
 
@@ -41,6 +42,8 @@ as a second authority.
 show what a check observed at a particular repository state. They do not define
 product behavior, and they are not published as user guidance. When a report
 and its source contract disagree, the report is stale.
+`docs/reports/README.md` defines report provenance, freshness, review, and
+retention rules.
 
 Local command output, logs, sites, and ad hoc analysis belong under
 `artifacts/`, not in `docs/reports`.

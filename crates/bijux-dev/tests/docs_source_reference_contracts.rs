@@ -441,6 +441,32 @@ fn repository_specs_and_reports_source_references_resolve() {
 }
 
 #[test]
+fn repository_internal_documentation_roots_define_their_authority() {
+    let root = repo_root();
+    let spec_index = fs::read_to_string(root.join("docs/spec/README.md"))
+        .expect("executable specification authority");
+    let report_index = fs::read_to_string(root.join("docs/reports/README.md"))
+        .expect("governed report evidence authority");
+
+    for required in [
+        "public MkDocs navigation",
+        "interface change",
+        "implementation and specification disagree",
+    ] {
+        assert!(spec_index.contains(required), "docs/spec/README.md must explain `{required}`");
+    }
+
+    for required in
+        ["product behavior", "find the producer", "Which contract defines the expected result?"]
+    {
+        assert!(
+            report_index.contains(required),
+            "docs/reports/README.md must explain `{required}`"
+        );
+    }
+}
+
+#[test]
 fn package_readme_source_references_resolve() {
     let root = repo_root();
     let markdown_files = [
