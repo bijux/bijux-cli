@@ -96,6 +96,19 @@ make test
 Do not describe a focused `bijux-dev` test as proof that all runtime, Python,
 documentation, or release lanes passed.
 
+## Internal Documentation
+
+- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): binary/source boundaries,
+  dependency direction, effects, runtime adapters, and extension decisions.
+- [`COMMANDS_AND_SUITES.md`](docs/COMMANDS_AND_SUITES.md): command authority,
+  suite metadata, aggregation, advisory mode, overrides, and additions.
+- [`CONTRACTS.md`](docs/CONTRACTS.md): package, command effect, suite, report,
+  Make/CI, dependency, and verification contracts.
+- [`EVIDENCE_AND_REPORTS.md`](docs/EVIDENCE_AND_REPORTS.md): evidence identity,
+  report families, generation, rendering, integrity, and review.
+- [`GOVERNANCE_AND_RELEASES.md`](docs/GOVERNANCE_AND_RELEASES.md): governance
+  domains, shared standards, release inputs, status, mutation, and ownership.
+
 ## Maintainer References
 
 - [Package contracts](docs/CONTRACTS.md)
