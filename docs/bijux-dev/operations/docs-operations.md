@@ -33,7 +33,10 @@ unchanged.
 
 | Material | Destination |
 | --- | --- |
-| reader-facing repository, CLI, DAG, or maintainer guidance | corresponding `docs/bijux-*` handbook |
+| reader-facing repository guidance | `docs/bijux-core/` |
+| CLI product and operator guidance | `docs/bijux-cli/` |
+| DAG product and operator guidance | `docs/bijux-dag/` |
+| maintainer, make, workflow, and governance guidance | `docs/bijux-dev/` |
 | executable prose contract consumed by tests or tools | `docs/spec` |
 | reproducible evidence compared across revisions | `docs/reports` |
 | package purpose, public imports, and package-local verification | crate README or crate-local docs |

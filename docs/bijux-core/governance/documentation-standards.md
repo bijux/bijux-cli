@@ -50,13 +50,25 @@ clear enough.
 The governed policy in `configs/dag/policy/docs_lint_policy.json` limits:
 
 - the public MkDocs navigation to 100 Markdown pages;
-- product handbooks to `docs/<product>/<category>/<page>.md`;
+- product handbooks to the product/category/page shape illustrated by
+  `docs/bijux-core/architecture/system-overview.md`;
 - each crate-local `docs/` tree to ten Markdown pages.
 
 The budget is a ceiling, not a target. A public addition should displace,
 consolidate, or justify itself against existing navigation. Internal
 specifications and generated reports do not consume the public-page budget, but
 they still require authority, provenance, and retention discipline.
+
+The four governed handbook roots are:
+
+- `docs/bijux-core/`
+- `docs/bijux-cli/`
+- `docs/bijux-dag/`
+- `docs/bijux-dev/`
+
+Each category contains pages directly. Do not add another durable directory
+layer beneath a category to encode initiative, delivery order, or temporary
+ownership.
 
 ## Content Acceptance
 
