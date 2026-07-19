@@ -113,4 +113,4 @@ delivered surface.
 - [State and Configuration](state-and-configuration.md)
 - [Artifact and Contract Flow](artifact-and-contract-flow.md)
 - [Compatibility and Schema](../governance/compatibility-and-schema.md)
-- [Release and Versioning](../governance/release-and-versioning.md)
+- [Release and Versioning](../operations/release-and-versioning.md)

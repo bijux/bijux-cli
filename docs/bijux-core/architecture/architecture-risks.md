@@ -56,4 +56,4 @@ quadrantChart
 
 - [Risk and Exceptions](../governance/risk-and-exceptions.md)
 - [Change Management](../operations/change-management.md)
-- [Release and Versioning](../governance/release-and-versioning.md)
+- [Release and Versioning](../operations/release-and-versioning.md)

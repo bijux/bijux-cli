@@ -103,6 +103,6 @@ A release is in good shape when:
 
 ## Next Reads
 
-- [Release and Versioning](../governance/release-and-versioning.md)
+- [Release and Versioning](../operations/release-and-versioning.md)
 - [Compatibility and Schema](../governance/compatibility-and-schema.md)
 - [Decision Record Policy](../governance/decision-record-policy.md)

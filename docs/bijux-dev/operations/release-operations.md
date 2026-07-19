@@ -106,6 +106,6 @@ publish technically succeeds.
 ## Continue Reading
 
 - [Release Validation Suite](release-validation-suite.md)
-- [Core Release and Versioning](../../bijux-core/governance/release-and-versioning.md)
+- [Core Release and Versioning](../../bijux-core/operations/release-and-versioning.md)
 - [Contract Governance](../governance/contract-governance.md)
 - [Known Limitations](../governance/known-limitations.md)
