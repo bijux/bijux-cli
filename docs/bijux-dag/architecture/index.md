@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # DAG Architecture
@@ -33,13 +33,10 @@ routes.
 - [Module Map](module-map.md)
 - [Dependency Direction](dependency-direction.md)
 - [Execution Model](execution-model.md)
-- [Execution Mode Responsibilities](execution-mode-responsibilities.md)
+- [Execution Modes and Coordination Boundaries](execution-mode-responsibilities.md)
 - [Runtime Concurrency Boundaries](runtime-concurrency-boundaries.md)
-- [Local Vs Batch Execution Constraints](local-vs-batch-execution-constraints.md)
-- [Local Only Vs Remote Coordinated Runtime](local-only-vs-remote-coordinated-runtime.md)
 - [State and Persistence](state-and-persistence.md)
 - [Storage Layout Ownership](storage-layout-ownership.md)
-- [Controller Backend Artifact Boundary](controller-backend-artifact-boundary.md)
 - [Integration Seams](integration-seams.md)
 - [Error Model](error-model.md)
 - [Extensibility Model](extensibility-model.md)

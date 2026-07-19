@@ -1197,7 +1197,7 @@ also good `docs/index.md`\n";
     fn roadmap_reference_allowlist_keeps_general_docs_outside_tracking_blocked() {
         assert!(!roadmap_reference_allowed("docs/bijux-dag/operations/common-workflows.md"));
         assert!(!roadmap_reference_allowed(
-            "docs/bijux-dag/architecture/local-only-vs-remote-coordinated-runtime.md"
+            "docs/bijux-dag/architecture/execution-mode-responsibilities.md"
         ));
     }
 

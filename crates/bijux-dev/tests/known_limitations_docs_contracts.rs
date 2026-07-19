@@ -53,8 +53,7 @@ fn release_boundary_and_scope_pages_route_readers_to_known_limitations() {
     for path in [
         "docs/bijux-dag/foundation/release-boundary.md",
         "docs/bijux-dag/interfaces/support-matrix.md",
-        "docs/bijux-dag/architecture/local-only-vs-remote-coordinated-runtime.md",
-        "docs/bijux-dag/architecture/local-vs-batch-execution-constraints.md",
+        "docs/bijux-dag/architecture/execution-mode-responsibilities.md",
         "docs/bijux-dag/operations/common-workflows.md",
         "docs/bijux-dag/operations/performance-and-scaling.md",
     ] {

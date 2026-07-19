@@ -3158,7 +3158,7 @@ pub(super) fn run_batch_execution_boundary_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/BATCH_EXECUTION_MODEL.md",
-        "docs/bijux-dag/architecture/local-vs-batch-execution-constraints.md",
+        "docs/bijux-dag/architecture/execution-mode-responsibilities.md",
         "crates/bijux-dag-runtime/tests/batch_execution_contracts.rs",
         "crates/bijux-dag-runtime/tests/batch_backend_simulation_contracts.rs",
     ];
@@ -3597,8 +3597,7 @@ pub(super) fn run_distributed_coordination_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/DISTRIBUTED_COORDINATION_MODEL.md",
-        "docs/bijux-dag/architecture/controller-backend-artifact-boundary.md",
-        "docs/bijux-dag/architecture/local-only-vs-remote-coordinated-runtime.md",
+        "docs/bijux-dag/architecture/execution-mode-responsibilities.md",
         "crates/bijux-dag-runtime/tests/distributed_event_reconciliation_contracts.rs",
     ];
     let mut missing = Vec::new();
