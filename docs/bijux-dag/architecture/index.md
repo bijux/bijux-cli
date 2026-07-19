@@ -33,6 +33,8 @@ routes.
 - [Module Map](module-map.md)
 - [Dependency Direction](dependency-direction.md)
 - [Execution Model](execution-model.md)
+- [Runtime Execution Flow](runtime-execution-flow.md)
+- [Engine Backend Responsibilities](engine-backend-responsibilities.md)
 - [Execution Modes and Coordination Boundaries](execution-mode-responsibilities.md)
 - [Runtime Concurrency Boundaries](runtime-concurrency-boundaries.md)
 - [State and Persistence](state-and-persistence.md)
