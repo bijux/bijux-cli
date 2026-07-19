@@ -40,6 +40,7 @@ exclude_docs: |
   !/bijux-core/operations/testing-and-validation.md
   !/bijux-core/operations/release-and-versioning.md
   !/bijux-core/governance/documentation-standards.md
+  !/bijux-core/governance/trust-evidence.md
   !/bijux-core/packages/index.md
   /bijux-cli/**
   !/bijux-cli/index.md
@@ -174,6 +175,7 @@ nav:
           - Testing And Validation: bijux-core/operations/testing-and-validation.md
           - Release And Versioning: bijux-core/operations/release-and-versioning.md
           - Documentation Standards: bijux-core/governance/documentation-standards.md
+          - Trust Evidence: bijux-core/governance/trust-evidence.md
           - Package Index: bijux-core/packages/index.md
   - CLI Handbook:
       - Overview: bijux-cli/index.md

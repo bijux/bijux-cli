@@ -2290,7 +2290,7 @@ pub(super) fn run_test_trust_foundation_guard() -> Result<(), String> {
     for rel in [
         "docs/spec/TEST_TRUST_CONTRACT.md",
         "docs/spec/TEST_PHILOSOPHY.md",
-        "docs/bijux-core/architecture/test-trust-audit.md",
+        "docs/bijux-core/governance/trust-evidence.md",
         "crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json",
     ] {
         if !root.join(rel).exists() {
@@ -3939,11 +3939,11 @@ pub(super) fn run_repo_trust_summary() -> Result<(), String> {
             "adoption_surfaces": root.join("docs/spec/ADOPTION_SURFACES.md").exists(),
             "anti_drift": root.join("docs/spec/ANTI_DRIFT_POLICY.md").exists()
         },
-        "tracking": {
+        "evidence": {
             "invariant_coverage": root.join("docs/reports/governance/INVARIANT_COVERAGE.md").exists(),
             "drift_dashboard": root.join("docs/reports/governance/DRIFT_DASHBOARD.md").exists()
         },
-        "evidence_index": root.join("docs/bijux-core/governance/repo-trust-evidence-index.md").exists()
+        "trust_model": root.join("docs/bijux-core/governance/trust-evidence.md").exists()
     });
     println!("{}", serde_json::to_string_pretty(&payload).map_err(|err| err.to_string())?);
     Ok(())
@@ -3954,7 +3954,7 @@ pub(super) fn run_anti_drift_governance_guard() -> Result<(), String> {
     let required = [
         "docs/spec/ANTI_DRIFT_POLICY.md",
         "docs/reports/governance/DRIFT_DASHBOARD.md",
-        "docs/bijux-core/governance/repo-trust-evidence-index.md",
+        "docs/bijux-core/governance/trust-evidence.md",
         ".github/pull_request_template.md",
     ];
     let mut missing = Vec::new();
