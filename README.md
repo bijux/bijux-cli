@@ -7,6 +7,8 @@
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
 <!-- bijux-core-badges:generated:end -->
 
+## Products
+
 `bijux-core` is the release workspace for two public commands. They share
 package governance and release evidence, but they solve different problems and
 are installed separately.
@@ -25,7 +27,7 @@ The current workspace release line is `0.4.0`.
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles.
 
-### `bijux-dag` v0.4.0 Surface Truth Table
+## DAG Release Boundary
 
 The machine-readable release authority is
 [`contracts/foundation/dag_release_truth_table.v1.json`](contracts/foundation/dag_release_truth_table.v1.json).
@@ -79,6 +81,20 @@ The public package families in this repository are:
 | `bijux-dag-app` | Application orchestration and response-shaping layer that turns DAG runtime behavior into user-facing workflows. | <a href="https://crates.io/crates/bijux-dag-app"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-app?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-app"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-app-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/"><img alt="Docs" src="https://img.shields.io/badge/docs-app-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-app"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
 | `bijux-dag-cli` | Installable `bijux-dag` command package for validating, running, replaying, and inspecting DAG workflows. | <a href="https://crates.io/crates/bijux-dag-cli"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-cli?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-cli"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-cli/"><img alt="Docs" src="https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag"><img alt="GHCR" src="https://img.shields.io/badge/bijux--dag-ghcr-181717?logo=github&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
 <!-- bijux-core-package-map:generated:end -->
+
+### Private Support Packages
+
+Three workspace packages are intentionally excluded from crates.io:
+
+| Package | Repository responsibility | Contract |
+| --- | --- | --- |
+| `bijux-cli-python` | builds and tests the public Python distribution without becoming a separate Cargo release | [Python package contracts](crates/bijux-cli-python/docs/CONTRACTS.md) |
+| `bijux-dag-testkit` | provides deterministic fixtures and assertions to repository tests only | [Testkit contracts](crates/bijux-dag-testkit/docs/CONTRACTS.md) |
+| `bijux-dev` | implements repository governance, report generation, and release evidence | [Maintainer contracts](crates/bijux-dev/docs/CONTRACTS.md) |
+
+Private means unavailable as a crates.io dependency. It does not mean
+unsupported or ungoverned: each package has an explicit boundary and focused
+verification.
 
 The canonical package publication boundary lives in
 [`docs/bijux-core/foundation/package-boundary.md`](docs/bijux-core/foundation/package-boundary.md)
@@ -134,11 +150,14 @@ how to inspect and verify it.
 | what makes two runs equivalent? | [Reproducibility Model](docs/bijux-dag/interfaces/reproducibility-model.md) |
 | what isolation is actually enforced? | [Execution Security And Isolation](docs/bijux-dag/operations/security-isolation-truth.md) |
 | how are repository docs divided? | [Documentation System](docs/bijux-core/foundation/documentation-system.md) |
+| which package owns a behavior? | [Package Ownership](docs/bijux-core/governance/package-ownership.md) and the owning crate's contracts page |
 | how do maintainers validate changes? | [Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/) |
 
-`docs/spec/` contains executable contracts and `docs/reports/` contains
-governed evidence. Neither directory is published as a reader handbook, and
-local logs or generated sites belong under `artifacts/`.
+`docs/spec/` contains cross-package normative contracts. `docs/reports/`
+contains versioned evidence produced or mechanically checked by repository
+tooling. Neither directory is published as a reader handbook. Crate-local
+contracts define package ownership, while local logs and generated sites
+belong under `artifacts/`.
 
 ## License
 
