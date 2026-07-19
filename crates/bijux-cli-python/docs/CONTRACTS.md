@@ -1,50 +1,91 @@
-# bijux-cli-python Contracts
+# `bijux-cli-python` Contracts
 
-Responsibility: Python packaging, native bridge, and runtime parity boundary for
-the `bijux` command runtime, plus Python delegation helpers for the
-`bijux-dag` runtime.
+`bijux-cli-python` owns Python distribution and interop for the `bijux`
+runtime. It does not own a second implementation of command semantics. Its
+native bridge, fallback facade, launcher, and mounted-application SDK must
+remain compatible with `bijux-cli`.
 
-## Scope
+The package is private in the Cargo publication graph because Cargo builds the
+native extension as part of Python distribution. The resulting Python package
+is a public installation surface.
 
-`bijux-cli-python` owns Python distribution metadata, launcher entrypoints,
-native binding conversions, compatibility checks, parity enforcement between
-Python callers and the native `bijux` runtime, and Python DAG helper APIs that
-delegate graph operations to `bijux-dag`.
+## Owned Surface
 
-## Authority
+The package owns:
 
-This crate is authoritative for Python install surfaces and bridge behavior,
-but it must preserve the command semantics already owned by `bijux-cli` and
-`bijux-dag-cli`.
+- wheel and source-distribution metadata;
+- Python 3.11-or-newer compatibility;
+- the `bijux` console launcher and `python -m bijux_cli_py`;
+- PyO3 conversions and native-extension loading;
+- fallback selection when the extension is unavailable;
+- mounted Python application descriptors and result envelopes;
+- the subprocess client for an independently installed `bijux-dag`.
+
+It does not own `bijux` routing, DAG graph semantics, DAG execution, or
+maintainer commands.
+
+## Runtime Authorities
+
+| Python surface | Semantic authority |
+| --- | --- |
+| launcher and facade | `bijux-cli` |
+| native bridge conversions | exported Rust types from `bijux-cli` |
+| mounted application SDK | `bijux-cli` mount discovery and routing |
+| DAG process client | `bijux-dag-cli` JSON command surface |
+| package metadata and interpreter support | `crates/bijux-cli-python/pyproject.toml` |
+
+The fallback facade is a compatibility path, not an independent product
+implementation. If it cannot preserve a supported operation, it must report
+that limit rather than approximate native behavior.
+
+## Process Boundary
+
+The DAG helpers execute `bijux-dag --json`. They may resolve an executable,
+construct arguments, materialize temporary graph input, enforce a timeout, and
+decode the returned envelope. They must not:
+
+- reinterpret a failed command as a successful Python value;
+- invent a Python-only graph or response schema;
+- keep temporary graph files after a completed call;
+- search repository build directories in an installed deployment;
+- hide which executable was selected when diagnosis is requested.
+
+`BIJUX_DAG_BIN` is the explicit executable override.
+`BIJUX_DAG_PY_SUBPROCESS_TIMEOUT` controls the client timeout. Neither changes
+the selected binary's supported command surface.
 
 ## Invariants
 
-- Python entrypoints must preserve native runtime semantics instead of redefining them
-- bridge conversions must keep machine-readable outputs compatible with `bijux-cli`
-- DAG helper APIs must keep machine-readable outputs compatible with `bijux-dag --json`
-- packaging metadata must point users back to the primary CLI runtime contract
-- DAG helper APIs may delegate to `bijux-dag`, but they must not invent a
-  Python-only DAG schema or workflow law
-- maintainer-only workflows remain outside this crate boundary
+- Native and fallback entrypoints preserve public command meaning.
+- Rust-to-Python conversions preserve envelope status and diagnostic fields.
+- Installed-package behavior does not depend on a source checkout.
+- A missing executable, timeout, nonzero status, and malformed JSON remain
+  distinct failure classes.
+- Mounted application output remains compatible with the root runtime.
+- Python packaging cannot imply that `bijux-dag` is bundled.
 
-## Related tests
+## Failure Contract
 
-- `crates/bijux-cli-python/tests/runtime_entrypoint_unity.rs`
-- `crates/bijux-cli-python/tests/python_packaging_ownership.rs`
-- `crates/bijux-cli-python/tests/bridge_bindings.rs`
-- `crates/bijux-cli-python/tests/python/test_packaging_contracts.py`
-- `crates/bijux-cli-python/tests/python/test_runtime_parity.py`
-- `crates/bijux-cli-python/tests/python/test_dag_sdk_transport.py`
-- `crates/bijux-cli-python/tests/python/test_dag_sdk_workflows.py`
+Extension import failure may select the documented fallback when compatibility
+can be preserved. ABI incompatibility, executable resolution failure, timeout,
+invalid output, or unsupported behavior must remain explicit. Diagnostics may
+redact secrets, but cannot erase the causal executable, operation, or failure
+class.
 
-## Related schemas
+## Verification
 
-None. This crate consumes CLI runtime output and package metadata contracts
-through `bijux-cli` rather than defining an independent schema surface.
+| Claim | Required evidence |
+| --- | --- |
+| native bridge conversion | `crates/bijux-cli-python/tests/bridge_bindings.rs` |
+| package and entrypoint ownership | `crates/bijux-cli-python/tests/python_packaging_ownership.rs` and `runtime_entrypoint_unity.rs` |
+| Python package metadata | `crates/bijux-cli-python/tests/python/test_packaging_contracts.py` |
+| native/fallback parity | `crates/bijux-cli-python/tests/python/test_runtime_parity.py` |
+| DAG transport and workflow delegation | `test_dag_sdk_transport.py` and `test_dag_sdk_workflows.py` |
 
-## Versioning and change policy
+Run Rust bridge checks and the focused Python tests appropriate to the changed
+surface. A full Python claim also requires the repository Python test lane; a
+Rust-only run does not prove wheel, interpreter, or subprocess behavior.
 
-Python launcher behavior, bridge conversion semantics, DAG helper delegation,
-and packaging ownership must remain compatible with the native `bijux-cli` and
-`bijux-dag-cli` runtimes. Any incompatible change requires updating this
-document and the linked Rust and Python parity tests in the same change.
+Changes to launcher behavior, bridge conversions, fallback selection, DAG
+delegation, or packaging metadata must update this page, the package README,
+and parity evidence together.
