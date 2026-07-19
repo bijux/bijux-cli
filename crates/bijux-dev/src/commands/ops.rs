@@ -3589,14 +3589,11 @@ pub(super) fn run_replay_contract_guard() -> Result<(), String> {
                 .to_string_lossy()
                 .replace('\\', "/");
             let text = fs::read_to_string(&path).map_err(|err| err.to_string())?;
-            for line in text.lines() {
-                let lower = line.to_ascii_lowercase();
-                if lower.contains("replayable")
-                    && !line.contains("REPLAY_CONTRACT.md")
-                    && !line.contains("docs/spec/REPLAY_CONTRACT.md")
-                {
-                    violations.push(format!("{}: {}", rel, line.trim()));
-                }
+            if text.to_ascii_lowercase().contains("replayable")
+                && !text.contains("REPLAY_CONTRACT.md")
+                && !text.contains("docs/spec/REPLAY_CONTRACT.md")
+            {
+                violations.push(rel);
             }
         }
     }

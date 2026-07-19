@@ -53,8 +53,11 @@ It records the stable `v0.4.0` operator surface exactly as the product presents\
 it through `bijux-dag --help`. Experimental, simulated, and internal routes are\n\
 deliberately excluded from this page and listed separately in\n\
 [`gated-command-inventory.md`](gated-command-inventory.md).\n\n\
+The replayable-run claim reproduced in the generated help below is bounded by\n\
+the [Replay Contract](../../spec/REPLAY_CONTRACT.md), including its retained\n\
+evidence requirements and explicit refusal conditions.\n\n\
 ## Placeholder Conventions\n\n\
-- `${GRAPH}`: DAG graph file such as `evidence/workflows/file_processing/dag.json`\n\
+- `${GRAPH}`: DAG graph file such as `evidence/dag/authoring/examples/minimal_consumer.dag.json`\n\
 - `${GRAPH_A}` and `${GRAPH_B}`: two graph revisions to compare\n\
 - `${RUNS_ROOT}`: retained run root such as `artifacts/bijux-dag/runs`\n\
 - `${RUN_DIR}`: one retained run directory such as `${RUNS_ROOT}/run-20260708-101500`\n\

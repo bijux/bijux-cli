@@ -15,9 +15,13 @@ it through `bijux-dag --help`. Experimental, simulated, and internal routes are
 deliberately excluded from this page and listed separately in
 [`gated-command-inventory.md`](gated-command-inventory.md).
 
+The replayable-run claim reproduced in the generated help below is bounded by
+the [Replay Contract](../../spec/REPLAY_CONTRACT.md), including its retained
+evidence requirements and explicit refusal conditions.
+
 ## Placeholder Conventions
 
-- `${GRAPH}`: DAG graph file such as `evidence/workflows/file_processing/dag.json`
+- `${GRAPH}`: DAG graph file such as `evidence/dag/authoring/examples/minimal_consumer.dag.json`
 - `${GRAPH_A}` and `${GRAPH_B}`: two graph revisions to compare
 - `${RUNS_ROOT}`: retained run root such as `artifacts/bijux-dag/runs`
 - `${RUN_DIR}`: one retained run directory such as `${RUNS_ROOT}/run-20260708-101500`
