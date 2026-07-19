@@ -68,4 +68,4 @@ contains:
 
 - [Workspace Topology](workspace-topology.md)
 - [Dependency Direction](dependency-direction.md)
-- [Repository Scope](../governance/repository-scope.md)
+- [Repository Scope](../foundation/repository-scope.md)

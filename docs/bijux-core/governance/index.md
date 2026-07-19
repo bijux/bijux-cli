@@ -31,7 +31,6 @@ repository workflow is executed rather than which rule justifies it.
 
 ## Pages In This Section
 
-- [Repository Scope](repository-scope.md)
 - [Package Ownership](package-ownership.md)
 - [Change Management](change-management.md)
 - [Testing and Validation](testing-and-validation.md)

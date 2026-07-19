@@ -49,6 +49,12 @@ to explain:
 - which root rules contributors must understand before changing more than one
   package family
 
+Repository scope includes workspace membership, shared dependency policy,
+cross-product compatibility, documentation publication, and release criteria
+that span more than one product. It does not transfer command semantics, DAG
+execution rules, or maintainer implementation detail to the repository layer.
+Those remain owned by their product or maintainer handbooks.
+
 ## What Usually Falls Out Of Scope
 
 These belong elsewhere unless the root boundary itself is the subject:
@@ -91,7 +97,7 @@ The repository layer is grounded in a small set of root surfaces:
 - `contracts/` for shared machine-readable truth
 - `mkdocs.yml` for published handbook structure
 
-## Continue Reading
+## Scope References
 
 - [Workspace Layout](workspace-layout.md)
 - [Decision Rules](decision-rules.md)
