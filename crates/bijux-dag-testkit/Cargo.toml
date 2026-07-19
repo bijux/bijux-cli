@@ -2,12 +2,17 @@
 name = "bijux-dag-testkit"
 version.workspace = true
 publish = false
+description = "Deterministic fixtures and assertion helpers for consumers and maintainers of Bijux DAG crates."
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-homepage.workspace = true
+homepage = "https://bijux.io/bijux-core/bijux-dag/"
+documentation = "https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-testkit/"
 rust-version.workspace = true
+readme = "README.md"
+keywords = ["bijux", "dag", "testing", "fixtures", "assertions"]
+categories = ["development-tools::testing"]
 
 [lints]
 workspace = true
@@ -16,5 +21,5 @@ workspace = true
 serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
-bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core", version = "0.3.5" }
-bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts", version = "0.3.5" }
+"bijux-dag-core" = { path = "../bijux-dag-core", version = "0.4.0" }
+"bijux-dag-artifacts" = { path = "../bijux-dag-artifacts", version = "0.4.0" }

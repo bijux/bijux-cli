@@ -6,14 +6,22 @@ use bijux_dag_artifacts::{
 };
 use bijux_dag_core::Effect;
 use bijux_dag_runtime::{
-    invariants, reconstruct_timeline_from_events, verify_event_log_completeness, EventRecord,
-    NodeStatus, TimelineExport,
+    reconstruct_timeline_from_events, run_summary_invariant_ok, terminal_run_has_terminal_node,
+    trace_time_order_ok, verify_event_log_completeness, EventRecord, NodeStatus, RunNodeCounts,
+    TimelineExport,
 };
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
+
+fn timeline_terminal_event_name(status: &str) -> &'static str {
+    match status {
+        "skipped" | "cancelled" => "node_skipped",
+        _ => "node_finished",
+    }
+}
 
 pub(crate) fn hash_run_dir(run_dir: &Path) -> Result<String, ExitCode> {
     let mut hasher = Sha256::new();
@@ -36,6 +44,15 @@ fn legacy_artifact_id(file: &RunOutputFile) -> String {
             .and_then(|value| value.to_str())
             .unwrap_or(file.path.as_str())
     )
+}
+
+fn lineage_lookup_ids(file: &RunOutputFile) -> Vec<String> {
+    let mut ids = vec![legacy_artifact_id(file)];
+    let declared_output_id = format!("{}:{}", file.node_id, file.name);
+    if !ids.iter().any(|candidate| candidate == &declared_output_id) {
+        ids.push(declared_output_id);
+    }
+    ids
 }
 
 fn output_name(file: &RunOutputFile) -> String {
@@ -90,15 +107,30 @@ pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, Exit
         find_output_by_artifact_id(&run_outputs, &manifest.run_id, artifact_id)?;
     let artifact_path = run_dir.join(&output.path);
     let (size_bytes, payload_missing) = match fs::metadata(&artifact_path) {
-        Ok(metadata) => (Some(metadata.len()), false),
+        Ok(_) => (Some(output.size_bytes), false),
         Err(_) => (None, true),
     };
     let lineage_path = run_dir.join("lineage.snapshot.json");
     let lineage = if lineage_path.exists() {
         let snapshot: bijux_dag_artifacts::lineage::ArtifactLineageSnapshot =
             read_typed_json(&lineage_path)?;
-        let upstream = bijux_dag_artifacts::platform::lineage_dependencies(&snapshot, &legacy_id);
-        let downstream = bijux_dag_artifacts::platform::lineage_dependents(&snapshot, &legacy_id);
+        let lookup_ids = lineage_lookup_ids(output);
+        let upstream = lookup_ids
+            .iter()
+            .flat_map(|candidate| {
+                bijux_dag_artifacts::platform::lineage_dependencies(&snapshot, candidate)
+            })
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        let downstream = lookup_ids
+            .iter()
+            .flat_map(|candidate| {
+                bijux_dag_artifacts::platform::lineage_dependents(&snapshot, candidate)
+            })
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
         json!({
             "subject_artifact_id": canonical_identity.canonical_artifact_id,
             "subject_legacy_artifact_id": legacy_id,
@@ -124,6 +156,7 @@ pub fn inspect_artifact(run_dir: &Path, artifact_id: &str) -> Result<Value, Exit
         "path": output.path,
         "size_bytes": size_bytes,
         "payload_missing": payload_missing,
+        "promotable": output.promotable,
         "provenance": {
             "graph_fingerprint": manifest.graph_fingerprint,
             "run_id": manifest.run_id,
@@ -309,6 +342,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
                     "failed" => observed_statuses.push(NodeStatus::Failed),
                     "skipped" => observed_statuses.push(NodeStatus::Skipped),
                     "cached" => observed_statuses.push(NodeStatus::Cached),
+                    "cancelled" => observed_statuses.push(NodeStatus::Cancelled),
                     _ => {}
                 }
             }
@@ -327,7 +361,7 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
             if deep {
                 let started = val.get("started_unix_ms").and_then(Value::as_u64).unwrap_or(0);
                 let finished = val.get("finished_unix_ms").and_then(Value::as_u64).unwrap_or(0);
-                if !invariants::trace_time_order_ok(started, finished) {
+                if !trace_time_order_ok(started, finished) {
                     invariant_violations.push(format!("INV-TRACE-TIME-001 violation in {node_id}"));
                 }
             }
@@ -360,19 +394,18 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
         }
     }
 
-    let manifest_counts = invariants::RunNodeCounts {
+    let manifest_counts = RunNodeCounts {
         success: manifest.node_counts.success,
         failed: manifest.node_counts.failed,
         skipped: manifest.node_counts.skipped,
         cached: manifest.node_counts.cached,
+        cancelled: manifest.node_counts.cancelled,
     };
-    if !invariants::run_summary_invariant_ok(manifest_counts, &observed_statuses) {
+    if !run_summary_invariant_ok(manifest_counts, &observed_statuses) {
         invariant_violations
             .push("INV-RUN-COUNTS-001 manifest totals do not match node traces".to_string());
     }
-    if manifest.status == "completed"
-        && !invariants::terminal_run_has_terminal_node(&observed_statuses)
-    {
+    if manifest.status == "completed" && !terminal_run_has_terminal_node(&observed_statuses) {
         invariant_violations
             .push("INV-RUN-TERMINAL-001 completed run has no terminal node statuses".to_string());
     }
@@ -483,26 +516,28 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
             let Some(node_id) = node.get("node_id").and_then(Value::as_str) else {
                 continue;
             };
+            let node_status = node.get("status").and_then(Value::as_str).unwrap_or("unknown");
             let started = events
                 .iter()
                 .filter(|event| {
                     event.node_id.as_deref() == Some(node_id) && event.name == "node_started"
                 })
                 .count();
+            let terminal_event_name = timeline_terminal_event_name(node_status);
             let finished = events
                 .iter()
                 .filter(|event| {
-                    event.node_id.as_deref() == Some(node_id) && event.name == "node_finished"
+                    event.node_id.as_deref() == Some(node_id) && event.name == terminal_event_name
                 })
                 .count();
-            if started == 0 {
+            if !matches!(node_status, "cached" | "skipped" | "cancelled") && started == 0 {
                 per_node_gaps.push(format!("{node_id}: missing node_started event"));
             }
             if finished == 0 {
-                per_node_gaps.push(format!("{node_id}: missing node_finished event"));
+                per_node_gaps.push(format!("{node_id}: missing {terminal_event_name} event"));
             }
             if finished > 1 {
-                per_node_gaps.push(format!("{node_id}: multiple node_finished events"));
+                per_node_gaps.push(format!("{node_id}: multiple {terminal_event_name} events"));
             }
         }
         if let Some(object) = report.as_object_mut() {
@@ -518,8 +553,10 @@ pub(crate) fn verify_run(run_dir: &Path, deep: bool, strict: bool) -> Result<Val
         json!({
             "complete": false,
             "required_names_present": false,
+            "required_timeline_labels_present": false,
             "required_event_field_gaps": [],
             "missing_required_names": [],
+            "missing_required_timeline_labels": [],
             "monotonic_timestamps": false,
             "timeline_matches_reconstruction": false,
             "gaps": ["missing observability.events.json"],

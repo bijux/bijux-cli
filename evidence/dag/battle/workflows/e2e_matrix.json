@@ -8,7 +8,7 @@
     },
     {
       "name": "local-binary-entrypoint",
-      "command": "cargo run -p bijux-dag-cli -- dag validate evidence/authoring/examples/hello.dag.json"
+      "command": "cargo run -p bijux-dag-cli --bin bijux-dag -- validate evidence/authoring/examples/hello.dag.json"
     }
   ]
 }

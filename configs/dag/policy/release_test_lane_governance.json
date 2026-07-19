@@ -1,0 +1,211 @@
+{
+  "format": "release-test-lane-governance/v2",
+  "required_release_lane": {
+    "make_target": "test-release-rs",
+    "ci_entrypoint": "make gh-test",
+    "nextest_profile": "ci",
+    "purpose": "Required Rust release-candidate lane for stable DAG behavior that must stay green in CI.",
+    "ignored_tests_allowed": false
+  },
+  "full_verification_lane": {
+    "make_target": "test-all-rs",
+    "purpose": "Full workspace Rust verification, including governed ignored DAG portfolios for experimental and internal command surfaces."
+  },
+  "rules": {
+    "forbid_flaky_ignored_tests": true,
+    "release_lane_may_not_depend_on_ignored_tests": true,
+    "ignored_tests_require_quarantine_record": true,
+    "ignored_tests_must_be_nonstable": true
+  },
+  "portfolios": [
+    {
+      "portfolio_id": "dag-app-adapter-contracts",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/adapter_command_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Adapter command routes remain explicit-path experimental surfaces, so their scenario-matrix coverage stays in the governed full lane instead of the stable release lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test adapter_command_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "adapters_describe_json_contains_descriptor_fields",
+        "adapters_admit_json_reports_unsupported_nodes",
+        "adapters_doctor_reports_external_handshake_rejections_with_reasons",
+        "adapters_conformance_json_reports_scenario_matrix",
+        "adapters_cache_compat_json_rejects_schema_drift",
+        "adapters_reference_prints_generated_markdown_contract"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-artifact-hash-parity",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/artifact_hash_parity_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Artifact hash parity covers the explicit-path experimental `hash artifact` route, so it remains governed full-lane evidence instead of stable release-lane evidence.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test artifact_hash_parity_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "hash_artifact_cli_output_matches_internal_sha256"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-e2e-explicit-inspection",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/e2e_integration_scenarios.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "The remaining ignored end-to-end inspection checks exercise explicit-path experimental routes that stay outside the stable operator compatibility lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test e2e_integration_scenarios --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "e2e_status_and_node_inspection_for_minimal_run"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-e2e-bundle-round-trip",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/e2e_integration_scenarios.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Run-bundle export and import remain repository-tested experimental routes, so their end-to-end coverage stays in the governed full lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test e2e_integration_scenarios --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "e2e_import_export_round_trip_for_run_bundle"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-json-error-output",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/error_output_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Structured error output for `lint` remains governed full-lane evidence because `lint` is an explicit-path experimental route, not part of the stable operator contract.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test error_output_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "json_error_output_contains_structured_fields"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-json-error-snapshots",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/error_snapshot_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Representative JSON error snapshots remain governed full-lane evidence because they lock the experimental `lint` surface instead of the stable operator lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test error_snapshot_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "representative_json_error_snapshot_is_stable"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-graph-hash-parity",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/hash_graph_parity_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Graph hash parity covers the explicit-path experimental `hash graph` route, so it remains governed full-lane evidence rather than stable release-lane evidence.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test hash_graph_parity_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "hash_graph_cli_output_matches_core_graph_id"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-prove-human-snapshot",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/operator_human_snapshot_contracts.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "The human-readable prove snapshot covers an experimental command surface, so it stays in the governed full lane instead of the required stable release lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test operator_human_snapshot_contracts --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "prove_human_output_snapshot_is_stable"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-internal-schema-lockstep",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/operator_schema_lockstep_contracts.rs",
+      "execution_lane": "full",
+      "ignore_reason": "internal",
+      "surface_class": "internal",
+      "outside_required_release_lane": true,
+      "rationale": "Capability query schema lockstep covers an internal maintainer-only probe, so it stays in the governed full lane instead of the stable operator lane.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test operator_schema_lockstep_contracts --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "capability_query_output_schema_lockstep"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-experimental-schema-lockstep",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/operator_schema_lockstep_contracts.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Schema lockstep checks for `prove`, `export`, and `import` remain governed full-lane evidence because those routes are explicit-path experimental surfaces.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test operator_schema_lockstep_contracts --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "prove_output_schema_lockstep",
+        "export_summary_schema_lockstep",
+        "import_summary_schema_lockstep"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-prove-contracts",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/prove_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Proof-surface backend-origin coverage remains governed full-lane evidence because `prove` is an explicit-path experimental route.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test prove_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "prove_reports_backend_origin_and_unsigned_trust_boundary"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-replay-imported-bundle-round-trip",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/replay_diff_hardening_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Replay bundle import and export stay outside the stable operator lane because the bundle routes remain explicit-path experimental surfaces.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test replay_diff_hardening_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "replay_imported_bundle_round_trip_is_supported"
+      ]
+    },
+    {
+      "portfolio_id": "dag-app-experimental-comparison-surfaces",
+      "crate": "bijux-dag-app",
+      "path": "crates/bijux-dag-app/tests/replay_diff_hardening_contract.rs",
+      "execution_lane": "full",
+      "ignore_reason": "experimental",
+      "surface_class": "experimental",
+      "outside_required_release_lane": true,
+      "rationale": "Canonical graph diff and artifact-trace schema checks remain governed full-lane evidence for explicit-path experimental comparison routes.",
+      "full_lane_command": "cargo nextest run -p bijux-dag-app --test replay_diff_hardening_contract --run-ignored only --config-file configs/rust/nextest.toml --profile ci --status-level all --final-status-level all",
+      "tests": [
+        "canonical_diff_and_artifact_trace_schemas_are_lockstep"
+      ]
+    }
+  ]
+}

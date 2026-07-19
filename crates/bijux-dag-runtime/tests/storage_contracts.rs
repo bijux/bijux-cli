@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -35,16 +34,20 @@ fn sample_manifest(run_id: &str) -> Manifest {
         jobs: 1,
         adapters: Vec::new(),
         outputs: Vec::new(),
-        node_counts: NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0 },
+        node_counts: NodeCounts { success: 0, failed: 0, skipped: 0, cached: 0, cancelled: 0 },
         policy: PolicyInfo {
             deny_network: false,
             deny_env: false,
             deny_clock: false,
             clean_env: false,
+            container_image_reference_policy:
+                bijux_dag_artifacts::ContainerImageReferencePolicy::RequireDigest,
         },
         cache_mode: None,
         cache_dir: None,
         run_timeout_ms: None,
+        run_timeout_behavior: None,
+        run_cancellation_cause: None,
         run_metadata: None,
         run_summary: None,
     }

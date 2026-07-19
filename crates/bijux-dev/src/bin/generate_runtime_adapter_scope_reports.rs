@@ -34,7 +34,7 @@ fn run() -> Result<(), String> {
     let root = repo_root()?;
     let catalog = load_catalog(&root)?;
     write_runtime_adapter_surface_inventory(&root, &catalog)?;
-    write_backend_capability_matrix(&root)?;
+    write_backend_capability_report(&root)?;
     write_backend_support_matrix(&root)?;
     write_unsupported_capability_approximations(&root)?;
     write_backend_mode_lists(&root)?;
@@ -80,7 +80,7 @@ fn write_runtime_adapter_surface_inventory(
     )
 }
 
-fn write_backend_capability_matrix(root: &Path) -> Result<(), String> {
+fn write_backend_capability_report(root: &Path) -> Result<(), String> {
     let mut lines = vec![
         "# Backend Capability Matrix".to_string(),
         "".to_string(),

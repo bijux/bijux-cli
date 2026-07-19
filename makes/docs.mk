@@ -12,6 +12,7 @@ DOCS_REQUIREMENTS ?= configs/docs/requirements-docs.txt
 # Keep documentation build outputs and caches under `artifacts/`.
 DOCS_SITE_DIR    ?= artifacts/docs/site
 DOCS_CACHE_DIR   ?= artifacts/docs/.cache
+DOCS_PYCACHE_DIR ?= artifacts/docs/pycache
 DOCS_CONTRACT_DIR ?= $(DOCS_SITE_DIR)/contracts
 
 define docs_search_file
@@ -39,12 +40,12 @@ DOCS_PORT           ?= 8000
 ifeq ($(shell uname -s),Darwin)
   BREW_PREFIX   := $(shell command -v brew >/dev/null 2>&1 && brew --prefix)
   LIBFFI_PREFIX := $(shell test -n "$(BREW_PREFIX)" && brew --prefix libffi)
-  DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true DYLD_FALLBACK_LIBRARY_PATH="$(BREW_PREFIX)/lib:$(LIBFFI_PREFIX)/lib:$$DYLD_FALLBACK_LIBRARY_PATH"
+  DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true PYTHONPYCACHEPREFIX="$(abspath $(DOCS_PYCACHE_DIR))" DYLD_FALLBACK_LIBRARY_PATH="$(BREW_PREFIX)/lib:$(LIBFFI_PREFIX)/lib:$$DYLD_FALLBACK_LIBRARY_PATH"
 else
-  DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true
+  DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true PYTHONPYCACHEPREFIX="$(abspath $(DOCS_PYCACHE_DIR))"
 endif
 
-.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-cli-structure-check docs-dag-structure-check docs-root-structure-check docs-maintainer-structure-check docs-package-surface-check docs-navigation-check
+.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-publication-check docs-navigation-check
 
 docs docs-serve docs-deploy docs-check docs-install docs-require: | bootstrap
 
@@ -95,11 +96,7 @@ docs-check: docs-require ## Verify that documentation builds without errors
 	    --config-file "$(MKDOCS_CFG)" \
 	    --site-dir "$(DOCS_SITE_DIR)"
 	@$(MAKE) docs-hygiene
-	@$(MAKE) docs-cli-structure-check
-	@$(MAKE) docs-dag-structure-check
-	@$(MAKE) docs-root-structure-check
-	@$(MAKE) docs-maintainer-structure-check
-	@$(MAKE) docs-package-surface-check
+	@$(MAKE) docs-publication-check
 	@$(MAKE) docs-navigation-check
 	@echo "Documentation passes build checks"
 
@@ -111,6 +108,13 @@ docs-hygiene: ## Verify that documentation outputs stay out of the repo root
 	@test ! -e "site"   || (echo "ERROR: root 'site/' is forbidden"; exit 1)
 	@test ! -e ".cache" || (echo "ERROR: root '.cache/' is forbidden"; exit 1)
 	@test ! -d "docs/artifacts" || (echo "ERROR: generated 'docs/artifacts' is forbidden"; exit 1)
+	@leaked=$$(find docs crates \
+	  -path '*/.venv' -prune -o \
+	  -path '*/.venv*' -prune -o \
+	  \( -type d \( -name '__pycache__' -o -name '.pytest_cache' \) \
+	     -o -type f \( -name '*.pyc' -o -name '*.pyo' \) \) -print); \
+	  test -z "$$leaked" || \
+	    (echo "ERROR: Python caches must be written under artifacts/:"; echo "$$leaked"; exit 1)
 	@test -f "$(DOCS_CONTRACT_DIR)/schemas/output-envelope-v1.schema.json" || (echo "ERROR: published contract schema copy is missing"; exit 1)
 	@test -f "$(DOCS_CONTRACT_DIR)/schemas/error-envelope-v1.schema.json" || (echo "ERROR: published contract error schema copy is missing"; exit 1)
 	@test -f "$(DOCS_CONTRACT_DIR)/schemas/plugin-manifest-v2.schema.json" || (echo "ERROR: published contract plugin schema copy is missing"; exit 1)
@@ -118,55 +122,34 @@ docs-hygiene: ## Verify that documentation outputs stay out of the repo root
 	@test -f "$(DOCS_CONTRACT_DIR)/product_mount_metadata_contract.json" || (echo "ERROR: published contract mount metadata copy is missing"; exit 1)
 	@echo "Docs hygiene OK"
 
-docs-cli-structure-check: ## Enforce canonical CLI handbook structure (5x10 pages)
-	@for d in foundation architecture interfaces operations quality; do \
-	  test -d "docs/bijux-cli/$$d" || (echo "ERROR: missing docs/bijux-cli/$$d" && exit 1); \
-	  count=$$(find "docs/bijux-cli/$$d" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
-	  test "$$count" = "10" || (echo "ERROR: docs/bijux-cli/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
+docs-publication-check: ## Enforce the curated public documentation boundary
+	@count=$$(awk '/^[[:space:]]+- [^:]+: .*\.md$$/ { count++ } END { print count + 0 }' "$(MKDOCS_CFG)"); \
+	  test "$$count" -ge 40 || (echo "ERROR: public navigation is unexpectedly small ($$count pages)" && exit 1); \
+	  test "$$count" -le 100 || (echo "ERROR: public navigation exceeds 100 pages ($$count pages)" && exit 1); \
+	  echo "Public documentation page budget OK ($$count pages)"
+	@deep=$$(find docs/bijux-core docs/bijux-cli docs/bijux-dag docs/bijux-dev \
+	  -type f -name '*.md' | awk -F/ 'NF > 4 { print }'); \
+	  test -z "$$deep" || (echo "ERROR: product documentation exceeds product/category/page depth:"; echo "$$deep"; exit 1)
+	@for path in \
+	  docs/bijux-core/foundation/documentation-system.md \
+	  docs/bijux-cli/interfaces/cli-surface.md \
+	  docs/bijux-dag/foundation/release-boundary.md \
+	  docs/bijux-dag/interfaces/generated-cli-reference.md \
+	  docs/bijux-dag/interfaces/reproducibility-model.md \
+	  docs/bijux-dag/operations/security-isolation-truth.md \
+	  docs/bijux-dag/quality/known-limitations.md \
+	  docs/bijux-dev/operations/repository-gates.md; do \
+	  test -f "$$path" || (echo "ERROR: missing public authority page $$path" && exit 1); \
 	done
-	@test -d "docs/bijux-cli/packages" || (echo "ERROR: missing docs/bijux-cli/packages" && exit 1)
-	@test -f "docs/bijux-cli/packages/bijux-cli.md" || (echo "ERROR: missing docs/bijux-cli/packages/bijux-cli.md" && exit 1)
-	@test -f "docs/bijux-cli/packages/bijux-cli-python.md" || (echo "ERROR: missing docs/bijux-cli/packages/bijux-cli-python.md" && exit 1)
-	@echo "CLI docs structure OK"
-
-docs-dag-structure-check: ## Enforce canonical DAG handbook structure (5x10 pages)
-	@for d in foundation architecture interfaces operations quality; do \
-	  test -d "docs/bijux-dag/$$d" || (echo "ERROR: missing docs/bijux-dag/$$d" && exit 1); \
-	  count=$$(find "docs/bijux-dag/$$d" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
-	  test "$$count" = "10" || (echo "ERROR: docs/bijux-dag/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
+	@for path in /spec/ /reports/; do \
+	  grep -Fqx "  $$path" "$(MKDOCS_CFG)" || \
+	    (echo "ERROR: internal documentation boundary $${path} is not excluded" && exit 1); \
 	done
-	@test -d "docs/bijux-dag/packages" || (echo "ERROR: missing docs/bijux-dag/packages" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-core.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-core.md" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-runtime.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-runtime.md" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-app.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-app.md" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-cli.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-cli.md" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-artifacts.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-artifacts.md" && exit 1)
-	@test -f "docs/bijux-dag/packages/bijux-dag-testkit.md" || (echo "ERROR: missing docs/bijux-dag/packages/bijux-dag-testkit.md" && exit 1)
-	@echo "DAG docs structure OK"
-
-docs-root-structure-check: ## Enforce repository handbook foundation and operations structure
-	@for d in foundation operations; do \
-	  test -d "docs/bijux-core/$$d" || (echo "ERROR: missing docs/bijux-core/$$d" && exit 1); \
-	  count=$$(find "docs/bijux-core/$$d" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
-	  test "$$count" = "10" || (echo "ERROR: docs/bijux-core/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
-	done
-	@echo "Repository docs structure OK"
-
-docs-maintainer-structure-check: ## Enforce maintainer handbook structure
-	@for d in operations governance makes; do \
-	  test -d "docs/bijux-dev/$$d" || (echo "ERROR: missing docs/bijux-dev/$$d" && exit 1); \
-	  count=$$(find "docs/bijux-dev/$$d" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
-	  test "$$count" = "10" || (echo "ERROR: docs/bijux-dev/$$d must contain exactly 10 markdown pages (found $$count)" && exit 1); \
-	done
-	@test -d "docs/bijux-dev/gh-workflows" || (echo "ERROR: missing docs/bijux-dev/gh-workflows" && exit 1)
-	@workflow_count=$$(find "docs/bijux-dev/gh-workflows" -mindepth 1 -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '); \
-	  test "$$workflow_count" = "7" || (echo "ERROR: docs/bijux-dev/gh-workflows must contain exactly 7 markdown pages (found $$workflow_count)" && exit 1)
-	@echo "Maintainer docs structure OK"
-
-docs-package-surface-check: ## Verify repository and maintainer package surfaces exist
-	@test -f "docs/bijux-core/packages/index.md" || (echo "ERROR: missing docs/bijux-core/packages/index.md" && exit 1)
-	@test -f "docs/bijux-dev/packages/bijux-dev.md" || (echo "ERROR: missing docs/bijux-dev/packages/bijux-dev.md" && exit 1)
-	@echo "Package surface docs OK"
+	@core_pages=$$(awk '/^  !\/bijux-core\// { path=$$0; sub(/^  !\//, "docs/", path); print path }' "$(MKDOCS_CFG)"); \
+	  stock=$$(printf '%s\n' "$$core_pages" | xargs rg -n \
+	    '^## (Visual Summary|Reader Shortcut|Continue Reading|Next Reads|Reading Rule|What This Page Is Not Saying|Open Next)$$|^Use this page when' || true); \
+	  test -z "$$stock" || (echo "ERROR: published repository handbook uses stock presentation prose:"; echo "$$stock"; exit 1)
+	@echo "Documentation publication boundary OK"
 
 docs-navigation-check: ## Verify shared chrome and handbook/package tabs are rendered
 	@$(call docs_search_file,bijux-hub-strip,$(DOCS_SITE_DIR)/index.html) || (echo "ERROR: shared Bijux hub strip is missing" && exit 1)
@@ -180,9 +163,8 @@ docs-navigation-check: ## Verify shared chrome and handbook/package tabs are ren
 	@$(call docs_search_tree,/bijux-dag/packages/bijux-dag-runtime/,$(DOCS_SITE_DIR)) || (echo "ERROR: DAG runtime package tab is missing" && exit 1)
 	@$(call docs_search_tree,/bijux-dev/packages/bijux-dev/,$(DOCS_SITE_DIR)) || (echo "ERROR: maintainer package tab is missing" && exit 1)
 	@$(call docs_search_file,data-bijux-detail-strip,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: handbook program strip is missing" && exit 1)
-	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: CLI detail strip labels are missing" && exit 1)
-	@$(call docs_search_file,Foundation,$(DOCS_SITE_DIR)/bijux-core/index.html) || (echo "ERROR: repository detail strip labels are missing" && exit 1)
-	@$(call docs_search_file,makes,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer make-section navigation labels are missing" && exit 1)
-	@$(call docs_search_file,gh-workflows,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer workflow navigation labels are missing" && exit 1)
+	@$(call docs_search_file,Product,$(DOCS_SITE_DIR)/bijux-cli/index.html) || (echo "ERROR: CLI product navigation is missing" && exit 1)
+	@$(call docs_search_file,Architecture,$(DOCS_SITE_DIR)/bijux-core/index.html) || (echo "ERROR: repository architecture navigation is missing" && exit 1)
+	@$(call docs_search_file,Build System,$(DOCS_SITE_DIR)/bijux-dev/index.html) || (echo "ERROR: maintainer build navigation is missing" && exit 1)
 	@"$(DOCS_PYTHON_BIN)" docs/automation/navigation_sanity.py "$(DOCS_SITE_DIR)"
 	@echo "Docs navigation OK"

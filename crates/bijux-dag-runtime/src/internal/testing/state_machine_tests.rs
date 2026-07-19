@@ -6,12 +6,20 @@ use crate::state_machine::{
 #[test]
 fn node_state_machine_has_explicit_legal_edges() {
     use NodeLifecycleState as S;
-    assert!(node_transition_allowed(S::Queued, S::Ready));
-    assert!(node_transition_allowed(S::Ready, S::Running));
+    assert!(node_transition_allowed(S::Pending, S::Ready));
+    assert!(node_transition_allowed(S::Ready, S::Queued));
+    assert!(node_transition_allowed(S::Queued, S::Running));
     assert!(node_transition_allowed(S::Running, S::Succeeded));
     assert!(node_transition_allowed(S::Running, S::Failed));
-    assert!(node_transition_allowed(S::Running, S::Cached));
+    assert!(node_transition_allowed(S::Ready, S::Cached));
+    assert!(node_transition_allowed(S::Queued, S::Cached));
+    assert!(node_transition_allowed(S::Pending, S::Skipped));
     assert!(node_transition_allowed(S::Ready, S::Skipped));
+    assert!(node_transition_allowed(S::Queued, S::Skipped));
+    assert!(node_transition_allowed(S::Pending, S::TimedOut));
+    assert!(node_transition_allowed(S::Ready, S::TimedOut));
+    assert!(node_transition_allowed(S::Queued, S::TimedOut));
+    assert!(node_transition_allowed(S::Running, S::TimedOut));
     assert!(node_transition_allowed(S::Running, S::Cancelled));
     assert!(!node_transition_allowed(S::Succeeded, S::Running));
 }
@@ -37,16 +45,18 @@ fn failure_propagation_rule_is_deterministic() {
 #[test]
 fn terminal_node_states_have_no_outgoing_transitions() {
     use NodeLifecycleState as S;
-    let terminal = [S::Succeeded, S::Failed, S::Cached, S::Skipped, S::Cancelled];
+    let terminal = [S::Succeeded, S::Failed, S::Cached, S::Skipped, S::Cancelled, S::TimedOut];
     let all = [
-        S::Queued,
+        S::Pending,
         S::Ready,
+        S::Queued,
         S::Running,
         S::Succeeded,
         S::Failed,
         S::Cached,
         S::Skipped,
         S::Cancelled,
+        S::TimedOut,
     ];
     for from in terminal {
         for to in all {

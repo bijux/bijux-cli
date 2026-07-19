@@ -1,0 +1,11 @@
+{
+  "spec": "v0.1",
+  "meta": {
+    "name": "compat-v0-1",
+    "description": "v0.1 compatibility fixture",
+    "owners": [],
+    "tags": []
+  },
+  "nodes": [],
+  "edges": []
+}

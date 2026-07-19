@@ -59,6 +59,8 @@ pub(crate) fn show_effective_policy(
             deny_env: req.deny_env,
             deny_clock: req.deny_clock,
             clean_env: req.clean_env,
+            container_image_reference_policy:
+                bijux_dag_runtime::ContainerImageReferencePolicy::RequireDigest,
             allowed_env: req.allow_env.to_vec(),
         })
     } else {

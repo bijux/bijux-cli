@@ -33,12 +33,16 @@ flowchart TD
 
 - canonical graph identity is stable for equivalent definitions
 - run/replay identities remain attributable and non-ambiguous
+- runtime fingerprints are derived from build identity, not from the shell
+  location used to launch the binary
 - diff classifications preserve mismatch semantics and group boundaries
 - artifact indexes/proofs remain internally consistent and verifiable
 
 ## Invariant Breach Signals
 
 - same graph yields different canonical fingerprint without rule change
+- same binary yields different runtime fingerprint after only changing the
+  working directory
 - replay changes fidelity class without environment or input explanation
 - diff reason-code meanings mutate without compatibility notice
 - integrity validation accepts tampered or incomplete evidence

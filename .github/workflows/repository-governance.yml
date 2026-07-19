@@ -1,0 +1,297 @@
+name: "repo / governance"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "crates/bijux-dag-*/**"
+      - "crates/bijux-dev/**"
+      - "configs/dag/**"
+      - "configs/rust/**"
+      - "makes/**"
+      - "docs/bijux-dag/**"
+      - "docs/bijux-dev/**"
+      - "evidence/**"
+      - ".github/scripts/**"
+      - ".github/workflows/*.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "crates/bijux-dag-*/**"
+      - "crates/bijux-dev/**"
+      - "configs/dag/**"
+      - "configs/rust/**"
+      - "makes/**"
+      - "docs/bijux-dag/**"
+      - "docs/bijux-dev/**"
+      - "evidence/**"
+      - ".github/scripts/**"
+      - ".github/workflows/*.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  RUST_TOOLCHAIN_VERSION: "1.86.0"
+
+jobs:
+  canon:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ matrix.timeout_minutes }}
+    continue-on-error: ${{ matrix.soft_fail }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: rust-format
+            name: Rust Format
+            os: ubuntu-24.04
+            timeout_minutes: 20
+            soft_fail: false
+            rust_components: "rustfmt"
+            pre_run: ""
+            run: cargo fmt --all -- --check
+            artifact_name: ""
+            artifact_path: ""
+          - id: rust-lint
+            name: Rust Lint
+            os: ubuntu-24.04
+            timeout_minutes: 30
+            soft_fail: false
+            rust_components: "clippy rustfmt"
+            pre_run: ""
+            run: |
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain policy
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain quality --include-slow
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain style
+            artifact_name: checks-report
+            artifact_path: artifacts/reports
+          - id: rust-test-ubuntu
+            name: Rust Test (ubuntu-24.04)
+            os: ubuntu-24.04
+            timeout_minutes: 45
+            soft_fail: false
+            rust_components: ""
+            pre_run: ""
+            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- tests run --domain governance
+            artifact_name: test-reports-ubuntu-24.04
+            artifact_path: artifacts/reports
+          - id: rust-test-macos
+            name: Rust Test (macos-14)
+            os: macos-14
+            timeout_minutes: 45
+            soft_fail: false
+            rust_components: ""
+            pre_run: ""
+            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- tests run --domain governance
+            artifact_name: test-reports-macos-14
+            artifact_path: artifacts/reports
+          - id: compatibility-fixture-drift
+            name: Compatibility Fixture Drift
+            os: ubuntu-24.04
+            timeout_minutes: 30
+            soft_fail: false
+            rust_components: ""
+            pre_run: ""
+            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- contracts run --domain compat
+            artifact_name: compatibility-fixture-report
+            artifact_path: artifacts/reports
+          - id: dependency-audit
+            name: Dependency Audit
+            os: ubuntu-24.04
+            timeout_minutes: 30
+            soft_fail: false
+            rust_components: ""
+            pre_run: cargo install cargo-audit --locked --version 0.22.1
+            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- security
+            artifact_name: dependency-audit-report
+            artifact_path: artifacts/reports
+          - id: docs-build
+            name: Docs Build
+            os: ubuntu-24.04
+            timeout_minutes: 30
+            soft_fail: false
+            rust_components: ""
+            pre_run: ""
+            run: |
+              cargo doc --locked --workspace --no-deps
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- docs run
+            artifact_name: docs-report
+            artifact_path: artifacts/reports
+          - id: ecosystem-contracts
+            name: Ecosystem Contracts
+            os: ubuntu-24.04
+            timeout_minutes: 30
+            soft_fail: false
+            rust_components: ""
+            pre_run: ""
+            run: cargo test --locked -p bijux-dev --test control_plane_contracts --test evidence_control_plane_suites_contracts
+            artifact_name: ""
+            artifact_path: ""
+          - id: evidence-verify
+            name: Evidence Verify
+            os: ubuntu-24.04
+            timeout_minutes: 45
+            soft_fail: false
+            rust_components: ""
+            pre_run: ""
+            run: |
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-release-set
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-battle
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-cache
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-replay
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-consumers
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- repo release-evidence-report
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- repo evidence-summary-report
+              cargo run --locked -p bijux-dev --bin generate_scheduler_profile_report
+              git diff --exit-code docs/reports/foundation/scheduler_profile_report.json
+              cargo run --locked -p bijux-dev --bin generate_runtime_adapter_scope_reports
+              git diff --exit-code \
+                docs/reports/foundation/runtime_adapter_surface_inventory.md \
+                docs/reports/foundation/backend_capability_matrix.md \
+                docs/reports/foundation/backend_support_matrix.md \
+                docs/reports/foundation/unsupported_capability_approximations_report.md \
+                docs/reports/foundation/implemented_backend_surfaces_report.md \
+                docs/reports/foundation/simulated_backend_surfaces_report.md
+              cargo run --locked -p bijux-dev --bin generate_app_route_coverage_reports
+              git diff --exit-code \
+                docs/reports/foundation/app_route_coverage_by_command_family.md \
+                docs/reports/foundation/app_response_schema_coverage_by_command_family.md
+              cargo test --locked -p bijux-dag-core --test graph_identity_property_contracts
+              cargo run --locked -p bijux-dev --bin generate_graph_identity_reports
+              git diff --exit-code \
+                docs/reports/foundation/graph_identity_decomposition_report.json \
+                docs/spec/GRAPH_IDENTITY_FIELD_IMPACT.md
+              cargo test --locked -p bijux-dag-cli --test contract_surface completions_generation_supports_all_supported_shells -- --exact
+            artifact_name: evidence-verify-reports
+            artifact_path: artifacts/reports
+          - id: package-dry-run
+            name: Package Dry Run
+            os: ubuntu-24.04
+            timeout_minutes: 30
+            soft_fail: false
+            rust_components: ""
+            pre_run: ""
+            run: |
+              cargo test --locked -p bijux-dev --test foundation_workspace_package_boundary_contracts
+              make package-release-rs publish-dry-run-release-rs
+            artifact_name: package-dry-run-report
+            artifact_path: artifacts/rust/release-validation
+          - id: public-api-drift
+            name: Public API Drift
+            os: ubuntu-24.04
+            timeout_minutes: 45
+            soft_fail: false
+            rust_components: ""
+            pre_run: |
+              rustup toolchain install nightly-2025-06-22 --profile minimal
+              cargo install --locked cargo-public-api --version 0.48.0
+            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- api public-surface
+            artifact_name: public-api-report
+            artifact_path: artifacts/reports
+          - id: repo-health
+            name: Repo Health
+            os: ubuntu-24.04
+            timeout_minutes: 30
+            soft_fail: false
+            rust_components: ""
+            pre_run: ""
+            run: |
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- repo hotspot-reports
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- repo planner-hardening-report
+              git diff --exit-code \
+                docs/reports/foundation/FILE_SIZE_HOTSPOT_REPORT.md \
+                docs/reports/foundation/LONG_FUNCTION_HOTSPOT_REPORT.md \
+                docs/reports/foundation/PUBLIC_API_HOTSPOT_REPORT.md \
+                docs/reports/foundation/dependency_cycle_report.md
+              git diff --exit-code docs/reports/foundation/PLANNER_HARDENING_REPORT.md
+              cargo test --locked -p bijux-dev --test file_size_guardrails
+            artifact_name: ""
+            artifact_path: ""
+          - id: schema-governance
+            name: Schema Governance
+            os: ubuntu-24.04
+            timeout_minutes: 30
+            soft_fail: false
+            rust_components: ""
+            pre_run: ""
+            run: |
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- repo schema-changelog
+              git diff --exit-code docs/reports/foundation/SCHEMA_CHANGELOG.md
+              cargo test --locked -p bijux-dev --test evidence_schema_contracts
+            artifact_name: schema-governance-report
+            artifact_path: docs/reports/foundation/SCHEMA_CHANGELOG.md
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
+
+      - name: Install Rust components
+        if: ${{ matrix.rust_components != '' }}
+        run: rustup component add ${{ matrix.rust_components }} --toolchain ${{ env.RUST_TOOLCHAIN_VERSION }}
+
+      - name: Restore the Rust cache
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Install lane toolchain
+        if: ${{ matrix.pre_run != '' }}
+        run: ${{ matrix.pre_run }}
+
+      - name: Run lane
+        run: ${{ matrix.run }}
+
+      - name: Upload lane artifacts
+        if: ${{ always() && matrix.artifact_name != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: warn
+
+  release-proof:
+    name: Release Proof
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
+    needs: canon
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN_VERSION }}
+
+      - name: Restore the Rust cache
+        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+
+      - name: Verify release evidence set
+        run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-release-set
+
+      - name: Generate release proof reports
+        run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- repo release-evidence-report
+
+      - name: Upload release proof reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-proof-report
+          path: artifacts/reports
+          if-no-files-found: warn

@@ -3,7 +3,9 @@ use crate::ExitCode;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SelectorField {
     Run,
+    Graph,
     Node,
+    NodePrefix,
     State,
     Tag,
     Artifact,
@@ -11,6 +13,7 @@ pub(crate) enum SelectorField {
     Attempt,
     Kind,
     Id,
+    IdPrefix,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -28,7 +31,9 @@ pub(crate) fn parse_selector_expression(raw: &str) -> Result<SelectorExpression,
     }
     let field = match key.as_str() {
         "run" => SelectorField::Run,
+        "graph" => SelectorField::Graph,
         "node" => SelectorField::Node,
+        "node-prefix" => SelectorField::NodePrefix,
         "state" => SelectorField::State,
         "tag" => SelectorField::Tag,
         "artifact" => SelectorField::Artifact,
@@ -41,6 +46,7 @@ pub(crate) fn parse_selector_expression(raw: &str) -> Result<SelectorExpression,
         }
         "kind" => SelectorField::Kind,
         "id" => SelectorField::Id,
+        "id-prefix" => SelectorField::IdPrefix,
         _ => return Err(ExitCode::from(2)),
     };
     Ok(SelectorExpression { field, value: value.to_string() })
@@ -70,8 +76,16 @@ mod tests {
             SelectorExpression { field: SelectorField::Run, value: "run-1".to_string() }
         );
         assert_eq!(
+            parse_selector_expression("graph:workflow-a").expect("graph"),
+            SelectorExpression { field: SelectorField::Graph, value: "workflow-a".to_string() }
+        );
+        assert_eq!(
             parse_selector_expression("node:align").expect("node"),
             SelectorExpression { field: SelectorField::Node, value: "align".to_string() }
+        );
+        assert_eq!(
+            parse_selector_expression("node-prefix:train").expect("node-prefix"),
+            SelectorExpression { field: SelectorField::NodePrefix, value: "train".to_string() }
         );
         assert_eq!(
             parse_selector_expression("state:failed").expect("state"),
@@ -92,6 +106,10 @@ mod tests {
         assert_eq!(
             parse_selector_expression("attempt:2").expect("attempt"),
             SelectorExpression { field: SelectorField::Attempt, value: "2".to_string() }
+        );
+        assert_eq!(
+            parse_selector_expression("id-prefix:join").expect("id-prefix"),
+            SelectorExpression { field: SelectorField::IdPrefix, value: "join".to_string() }
         );
     }
 

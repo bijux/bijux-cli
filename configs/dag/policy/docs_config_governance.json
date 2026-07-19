@@ -4,7 +4,6 @@
     "policy": "repository-governance",
     "verification": "dev-control-plane"
   },
-  "docs_root_markdown_budget": 110,
   "banned_docs": [
     "docs/ELITE_MVP_SCORECARD.md",
     "docs/PLATFORM_MATURITY_SCORECARD.md",

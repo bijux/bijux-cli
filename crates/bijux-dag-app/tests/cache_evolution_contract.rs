@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -32,7 +31,11 @@ fn write_cache_entry(base: &std::path::Path, key: &str, valid: bool) {
     fs::write(entry.join("outputs/out.txt"), &content).expect("write output");
     let index = json!({
         "files": [{
+            "name": "out",
             "path": "out.txt",
+            "kind": "file",
+            "media_type": "text/plain",
+            "size_bytes": 2,
             "sha256": if valid { sha256_hex(b"ok") } else { sha256_hex(b"other") },
             "node_id": "n",
             "node_fingerprint": key
@@ -58,7 +61,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let explain = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "cache",
             "explain",
@@ -73,7 +76,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let stats = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "cache",
             "stats",
@@ -86,7 +89,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let prune = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "cache",
             "prune-simulate",
@@ -99,7 +102,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let diff = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "cache",
             "diff",
@@ -116,7 +119,7 @@ fn cache_explain_stats_and_prune_simulate_cover_valid_and_invalid_entries() {
     let verify = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "cache",
             "verify",
@@ -134,6 +137,7 @@ fn cache_corruption_fixtures_and_warm_cold_expectations_exist() {
     for rel in [
         "corrupt/missing_meta.json",
         "corrupt/hash_mismatch.json",
+        "corrupt/missing_manifest.json",
         "corrupt/unsupported_metadata_version.json",
         "corrupt/truncated_meta.json",
         "corrupt/missing_outputs_proof.json",

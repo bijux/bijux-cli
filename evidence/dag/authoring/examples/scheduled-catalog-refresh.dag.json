@@ -1,0 +1,83 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "scheduled-catalog-refresh",
+    "description": "Render a promotable refresh bulletin from a schedule-owned timestamp and dataset label.",
+    "owners": ["platform"],
+    "tags": ["authoring", "scheduling", "reporting"]
+  },
+  "inputs": {
+    "scheduled_at_unix_ms": {
+      "type": "integer",
+      "required": true
+    },
+    "refresh_label": {
+      "type": "string",
+      "default": "Nightly Catalog Refresh"
+    },
+    "dataset_name": {
+      "type": "string",
+      "default": "atlas.catalog"
+    }
+  },
+  "nodes": [
+    {
+      "id": "capture_schedule_context",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "request",
+          "path": "schedule/request.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "value": {
+          "scheduled_at_unix_ms": { "graph_input": "scheduled_at_unix_ms" },
+          "refresh_label": { "graph_input": "refresh_label" },
+          "dataset_name": { "graph_input": "dataset_name" }
+        }
+      }
+    },
+    {
+      "id": "render_refresh_report",
+      "kind": "shell",
+      "inputs": ["request"],
+      "outputs": [
+        {
+          "name": "report",
+          "path": "publish/report.md",
+          "media_type": "text/markdown",
+          "promotable": true
+        },
+        {
+          "name": "summary",
+          "path": "publish/summary.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport datetime as dt\nimport json\nimport pathlib\n\nrequest = json.loads(pathlib.Path(\"../inputs/capture_schedule_context/request\").read_text())\nscheduled_at = dt.datetime.fromtimestamp(request[\"scheduled_at_unix_ms\"] / 1000, tz=dt.timezone.utc)\ntimestamp = scheduled_at.isoformat().replace(\"+00:00\", \"Z\")\nreport_lines = [\n    \"# \" + request[\"refresh_label\"],\n    \"\",\n    \"Dataset: \" + request[\"dataset_name\"],\n    \"Scheduled at: \" + timestamp,\n    \"Scheduled at unix ms: \" + str(request[\"scheduled_at_unix_ms\"]),\n]\nout_dir = pathlib.Path(\"../outputs/publish\")\nout_dir.mkdir(parents=True, exist_ok=True)\n(out_dir / \"report.md\").write_text(\"\\n\".join(report_lines) + \"\\n\")\n(out_dir / \"summary.json\").write_text(json.dumps({\n    \"refresh_label\": request[\"refresh_label\"],\n    \"dataset_name\": request[\"dataset_name\"],\n    \"scheduled_at_unix_ms\": request[\"scheduled_at_unix_ms\"],\n    \"scheduled_at_utc\": timestamp\n}, indent=2) + \"\\n\")\nPY"
+        ]
+      },
+      "cache": {
+        "enabled": false,
+        "reason": "scheduled publication should be regenerated for every emitted schedule slot"
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    {
+      "from": { "node_id": "capture_schedule_context", "port": "request" },
+      "to": { "node_id": "render_refresh_report", "port": "request" }
+    }
+  ]
+}

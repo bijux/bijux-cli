@@ -1,0 +1,9 @@
+{
+  "format": "backend-capability-report/v1",
+  "generated_from": "crates/bijux-dag-app/src/lib.rs::backend_capability_payload",
+  "backends": [
+    {"backend": "kubernetes", "status": "implemented", "semantic_portability": "fidelity-preserving"},
+    {"backend": "hpc", "status": "simulated", "semantic_portability": "fidelity-preserving"},
+    {"backend": "remote", "status": "simulated", "semantic_portability": "fidelity-preserving"}
+  ]
+}

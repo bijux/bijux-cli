@@ -14,7 +14,7 @@ pub struct SuiteMetadata {
 }
 
 pub const RELEASE_VERIFY_SUITES: &[&str] =
-    &["checks.run", "tests.run", "contracts.run", "repo.run", "docs.run"];
+    &["release.validation-suite", "release.readiness", "release.compatibility-matrix"];
 
 pub fn release_verify_suite_ids() -> Vec<&'static str> {
     release::VERIFY_FLOW.to_vec()

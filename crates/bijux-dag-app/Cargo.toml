@@ -1,24 +1,32 @@
 [package]
 name = "bijux-dag-app"
 version.workspace = true
-publish = false
+description = "Application orchestration and response-shaping layer for Bijux DAG command surfaces."
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-homepage.workspace = true
+homepage = "https://bijux.io/bijux-core/bijux-dag/"
+documentation = "https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/"
 rust-version.workspace = true
+readme = "README.md"
+keywords = ["bijux", "dag", "cli", "orchestration", "responses"]
+categories = ["command-line-interface", "development-tools"]
 
 [lints]
 workspace = true
+
+[features]
+default = []
+experimental-public-api = []
 
 [dependencies]
 clap = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
-bijux_dag_core = { package = "bijux-dag-core", path = "../bijux-dag-core", version = "0.3.5" }
-bijux_dag_runtime = { package = "bijux-dag-runtime", path = "../bijux-dag-runtime", version = "0.3.5" }
-bijux_dag_artifacts = { package = "bijux-dag-artifacts", path = "../bijux-dag-artifacts", version = "0.3.5" }
+"bijux-dag-core" = { path = "../bijux-dag-core", version = "0.4.0" }
+"bijux-dag-runtime" = { path = "../bijux-dag-runtime", version = "0.4.0" }
+"bijux-dag-artifacts" = { path = "../bijux-dag-artifacts", version = "0.4.0" }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
@@ -28,4 +36,3 @@ flate2 = { workspace = true }
 tempfile = { workspace = true }
 
 [dev-dependencies]
-bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit", version = "0.3.5" }

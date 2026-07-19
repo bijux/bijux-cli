@@ -1,6 +1,64 @@
 {
-  "asset_count": 150,
+  "asset_count": 164,
   "assets": [
+    {
+      "canonical_path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "consumers": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "consumers": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "branching-guides"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
     {
       "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
       "consumers": [
@@ -13,6 +71,26 @@
       "kind": "authoring",
       "owner": "team-authoring",
       "registry_key": "authoring:evidence/authoring/examples/cached-branched-report.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "policy-guides"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/compliance-gated-bulletin.dag.json",
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "keep",
@@ -59,6 +137,26 @@
       ]
     },
     {
+      "canonical_path": "evidence/authoring/examples/file-processing-report.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "file-processing-guides"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/file-processing-report.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/file-processing-report.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
       "canonical_path": "evidence/authoring/examples/hello.dag.json",
       "consumers": [
         "dag-validate",
@@ -73,6 +171,26 @@
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "move",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "scheduler-guides"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
       "trust_properties": [
         "schema-compatibility"
       ]
@@ -116,6 +234,85 @@
       ]
     },
     {
+      "canonical_path": "evidence/authoring/examples/parameterized-report.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/parameterized-report.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/parameterized-report.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "data-pipeline-guides"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/regional-sales-source/targets.json",
+      "consumers": [
+        "data-pipeline-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/regional-sales-source/targets.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/regional-sales-source/targets.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/examples/release-note-bundle.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "publishing-guides"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/release-note-bundle.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/release-note-bundle.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
       "canonical_path": "evidence/authoring/examples/replay-heavy-branching.dag.json",
       "consumers": [
         "dag-validate",
@@ -135,6 +332,26 @@
       ]
     },
     {
+      "canonical_path": "evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "scheduler-guides"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
       "canonical_path": "evidence/authoring/negative/cycle.json",
       "consumers": [
         "dag-validate",
@@ -146,6 +363,25 @@
       "kind": "authoring",
       "owner": "team-authoring",
       "registry_key": "authoring:evidence/authoring/negative/cycle.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/negative/invalid_container_workdir.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/negative/invalid_container_workdir.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/negative/invalid_container_workdir.json",
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "keep",
@@ -184,6 +420,25 @@
       "kind": "authoring",
       "owner": "team-authoring",
       "registry_key": "authoring:evidence/authoring/negative/invalid_selectors.json",
+      "release_blocking": false,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ]
+    },
+    {
+      "canonical_path": "evidence/authoring/negative/missing_required_input_binding.json",
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/authoring/negative/missing_required_input_binding.json",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "registry_key": "authoring:evidence/authoring/negative/missing_required_input_binding.json",
       "release_blocking": false,
       "simulation_status": "implemented",
       "status": "keep",
@@ -1424,6 +1679,25 @@
       ]
     },
     {
+      "canonical_path": "evidence/cache/corrupt/missing_manifest.json",
+      "consumers": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "derived_from": null,
+      "duplicate_of": null,
+      "id": "evidence/cache/corrupt/missing_manifest.json",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "registry_key": "cache:evidence/cache/corrupt/missing_manifest.json",
+      "release_blocking": true,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "cache-correctness"
+      ]
+    },
+    {
       "canonical_path": "evidence/cache/corrupt/missing_meta.json",
       "consumers": [
         "cache-contracts",
@@ -1926,17 +2200,17 @@
       ]
     },
     {
-      "canonical_path": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "canonical_path": "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
       "consumers": [
         "crate-contracts",
         "runtime-tests"
       ],
       "derived_from": null,
       "duplicate_of": null,
-      "id": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "id": "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
       "kind": "compat",
       "owner": "team-runtime",
-      "registry_key": "compat:evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "registry_key": "compat:evidence/compat/export_bundle/unsupported_older_version/bundle.json",
       "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",
@@ -2002,17 +2276,17 @@
       ]
     },
     {
-      "canonical_path": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "canonical_path": "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
       "consumers": [
         "crate-contracts",
         "runtime-tests"
       ],
       "derived_from": null,
       "duplicate_of": null,
-      "id": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "id": "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
       "kind": "compat",
       "owner": "team-runtime",
-      "registry_key": "compat:evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "registry_key": "compat:evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
       "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",
@@ -2021,17 +2295,17 @@
       ]
     },
     {
-      "canonical_path": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "canonical_path": "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
       "consumers": [
         "crate-contracts",
         "runtime-tests"
       ],
       "derived_from": null,
       "duplicate_of": null,
-      "id": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "id": "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
       "kind": "compat",
       "owner": "team-runtime",
-      "registry_key": "compat:evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "registry_key": "compat:evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
       "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",
@@ -2059,17 +2333,17 @@
       ]
     },
     {
-      "canonical_path": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "canonical_path": "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
       "consumers": [
         "crate-contracts",
         "runtime-tests"
       ],
       "derived_from": null,
       "duplicate_of": null,
-      "id": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "id": "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
       "kind": "compat",
       "owner": "team-runtime",
-      "registry_key": "compat:evidence/compat/run_dir/unsupported_future/manifest.json",
+      "registry_key": "compat:evidence/compat/run_dir/unsupported_newer_version/manifest.json",
       "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",
@@ -2097,17 +2371,17 @@
       ]
     },
     {
-      "canonical_path": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "canonical_path": "evidence/compat/scenarios/historical_fixture_validation.json",
       "consumers": [
         "compatibility-contracts",
         "e2e-matrix"
       ],
       "derived_from": null,
       "duplicate_of": null,
-      "id": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "id": "evidence/compat/scenarios/historical_fixture_validation.json",
       "kind": "compat",
       "owner": "team-runtime",
-      "registry_key": "compat:evidence/compat/scenarios/legacy_fixture_validation.json",
+      "registry_key": "compat:evidence/compat/scenarios/historical_fixture_validation.json",
       "release_blocking": true,
       "simulation_status": "implemented",
       "status": "keep",

@@ -4,23 +4,17 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Risk Register
 
-The risk register tracks the highest-impact technical and operational risks for
-`bijux-cli` and the expected mitigation path.
+Use this page when a change seems acceptable in isolation but may still make
+the CLI less trustworthy to users, scripts, or plugin authors.
 
-## Visual Summary
-
-```mermaid
-flowchart LR
-    routing["routing drift risk"] --> mitigation1["parser and routing law tests"]
-    plugins["plugin lifecycle risk"] --> mitigation2["plugin diagnostics and integration checks"]
-    persistence["state corruption risk"] --> mitigation3["state diagnostics and recovery workflow"]
-    docs["documentation drift risk"] --> mitigation4["docs gates and checklist enforcement"]
-```
+The risk register exists to keep the highest-impact failure modes visible
+instead of letting them hide inside implementation details or optimistic review
+language.
 
 ## Active Risks
 
@@ -44,7 +38,22 @@ flowchart LR
 - `crates/bijux-cli/tests/`
 - `docs/bijux-cli/`
 
-## Next Reads
+## What Reviewers Should Watch Closely
+
+| Risk | Why it matters |
+| --- | --- |
+| routing and alias drift | small parser changes can break stable command invocations silently |
+| plugin lifecycle regressions | install, inspect, route, or uninstall flows can decay without obvious compile-time signals |
+| state mutation regressions | config and history corruption reduces trust in local recovery and diagnostics |
+| documentation drift | users follow the handbook into behavior the binary no longer provides |
+
+## Reader Shortcut
+
+If a mitigation exists only on paper and not as a maintained test, gate, or
+operational workflow, the risk is still active. Reviewers should treat it as a
+real live concern, not historical context.
+
+## Continue Reading
 
 - [Architecture Risks](../architecture/architecture-risks.md)
 - [Change Validation](change-validation.md)

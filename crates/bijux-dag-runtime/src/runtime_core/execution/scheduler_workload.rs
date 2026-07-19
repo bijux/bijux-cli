@@ -96,6 +96,12 @@ pub struct WeightedPriorityPolicy {
     pub low_weight: u32,
 }
 
+impl Default for WeightedPriorityPolicy {
+    fn default() -> Self {
+        Self { critical_weight: 100, high_weight: 75, standard_weight: 50, low_weight: 25 }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DependencyTriggerBufferPolicy {
     pub max_buffered_events: usize,
@@ -112,6 +118,7 @@ pub struct MaterializedRunPreview {
 pub struct CronConflict {
     pub schedule_ids: Vec<String>,
     pub expression: String,
+    pub timezone: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -129,12 +136,34 @@ pub struct ScheduleSuppressionAnnotation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ScheduleOverrideAction {
+    Pause,
+    Resume,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ScheduleOverrideRecord {
     pub schedule_id: String,
     pub operator: String,
-    pub action: String,
-    pub reason: String,
+    pub action: ScheduleOverrideAction,
+    pub reason: Option<String>,
     pub created_unix_ms: u128,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct ScheduleOverrideState {
+    #[serde(default)]
+    pub records: Vec<ScheduleOverrideRecord>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScheduleOverrideStatus {
+    pub schedule_id: String,
+    pub paused: bool,
+    pub operator: Option<String>,
+    pub reason: Option<String>,
+    pub updated_unix_ms: Option<u128>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -181,6 +210,19 @@ pub struct SchedulerMaturityMatrix {
     pub ha_ready: bool,
 }
 
+pub(crate) fn priority_class_weight(
+    class: Option<&PriorityClass>,
+    policy: &WeightedPriorityPolicy,
+) -> u32 {
+    match class {
+        Some(PriorityClass::Critical) => policy.critical_weight,
+        Some(PriorityClass::High) => policy.high_weight,
+        Some(PriorityClass::Standard) => policy.standard_weight,
+        Some(PriorityClass::Low) => policy.low_weight,
+        None => 0,
+    }
+}
+
 pub fn is_suppressed_by_calendar(
     calendar: &DagCalendar,
     environment: &str,
@@ -221,18 +263,9 @@ pub fn weighted_priority_tie_break_order(
     priorities: &BTreeMap<String, PriorityClass>,
     policy: &WeightedPriorityPolicy,
 ) -> Vec<ScheduledSubmission> {
-    fn weight(class: Option<&PriorityClass>, p: &WeightedPriorityPolicy) -> u32 {
-        match class {
-            Some(PriorityClass::Critical) => p.critical_weight,
-            Some(PriorityClass::High) => p.high_weight,
-            Some(PriorityClass::Standard) => p.standard_weight,
-            Some(PriorityClass::Low) => p.low_weight,
-            None => 0,
-        }
-    }
     submissions.sort_by(|a, b| {
-        let wa = weight(priorities.get(&a.schedule_id), policy);
-        let wb = weight(priorities.get(&b.schedule_id), policy);
+        let wa = priority_class_weight(priorities.get(&a.schedule_id), policy);
+        let wb = priority_class_weight(priorities.get(&b.schedule_id), policy);
         wb.cmp(&wa)
             .then_with(|| a.created_unix_ms.cmp(&b.created_unix_ms))
             .then_with(|| a.schedule_id.cmp(&b.schedule_id))
@@ -248,9 +281,14 @@ pub fn materialize_next_runs(
 ) -> MaterializedRunPreview {
     let mut next = Vec::new();
     match definition.trigger {
-        TriggerSpec::Cron { .. } => {
-            for i in 1..=n.max(1) {
-                next.push(now_unix_ms + (i as u128 * 60_000));
+        TriggerSpec::Cron { ref expression, ref timezone } => {
+            if let Ok(runs) = crate::cron_calendar::materialize_next_cron_runs(
+                expression,
+                timezone,
+                now_unix_ms,
+                n,
+            ) {
+                next = runs;
             }
         }
         TriggerSpec::Backfill(ref b) => {
@@ -267,18 +305,18 @@ pub fn materialize_next_runs(
 }
 
 pub fn detect_cron_conflicts(definitions: &[ScheduleDefinition]) -> Vec<CronConflict> {
-    let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut grouped: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
     for d in definitions {
-        if let TriggerSpec::Cron { expression, .. } = &d.trigger {
-            grouped.entry(expression.clone()).or_default().push(d.id.clone());
+        if let TriggerSpec::Cron { expression, timezone } = &d.trigger {
+            grouped.entry((expression.clone(), timezone.clone())).or_default().push(d.id.clone());
         }
     }
     grouped
         .into_iter()
         .filter(|(_, ids)| ids.len() > 1)
-        .map(|(expression, mut ids)| {
+        .map(|((expression, timezone), mut ids)| {
             ids.sort();
-            CronConflict { schedule_ids: ids, expression }
+            CronConflict { schedule_ids: ids, expression, timezone }
         })
         .collect()
 }

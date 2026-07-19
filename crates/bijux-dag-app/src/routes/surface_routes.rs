@@ -1,4 +1,4 @@
-use crate::capability_matrix::backend_capability_payload;
+use crate::backend_capability_surface::backend_capability_payload;
 use crate::commands::DagCli;
 use crate::replay_service;
 use crate::{emit_json, ExitCode};
@@ -11,9 +11,11 @@ fn operator_commands() -> Vec<&'static str> {
         "runs.show",
         "runs.inspect",
         "runs.history",
+        "runs.stop",
         "runs.id-explain",
         "runs.tree",
         "runs.timeline",
+        "runs.scheduler-checkpoint",
         "runs.diff",
         "runs.verify",
         "runs.doctor",
@@ -150,18 +152,21 @@ fn capabilities_payload() -> serde_json::Value {
         },
         "execution_modes": {
             "local_process": "implemented",
-            "container": "simulated",
+            "container": "implemented",
+            "batch_slurm": "implemented",
             "remote": "simulated",
             "batch_hpc": "simulated"
         },
         "execution_lanes": {
             "local_process": "ENFORCED",
-            "container": "SIMULATED",
+            "container": "ENFORCED",
+            "batch_slurm": "ENFORCED",
             "remote": "SIMULATED",
             "batch_hpc": "SIMULATED"
         },
-        "backend_capability_matrix": [
+        "backend_capabilities": [
             backend_capability_payload("kubernetes").unwrap(),
+            backend_capability_payload("slurm").unwrap(),
             backend_capability_payload("hpc").unwrap(),
             backend_capability_payload("remote").unwrap()
         ],
@@ -189,7 +194,7 @@ pub(crate) fn handle_capabilities_command(
                     }),
                     vec![json!({
                         "message": format!("unsupported backend query: {name}"),
-                        "remediation": "use --backend kubernetes, --backend hpc, or --backend remote"
+                        "remediation": "use --backend slurm, --backend kubernetes, --backend hpc, or --backend remote"
                     })],
                     ExitCode::from(2),
                 );
@@ -243,7 +248,7 @@ pub(crate) fn handle_semantic_portability_command(
                 Vec::new()
             } else {
                 vec![
-                    json!({"message":"unsupported backend target","remediation":"use --backend kubernetes, --backend hpc, or --backend remote"}),
+                    json!({"message":"unsupported backend target","remediation":"use --backend slurm, --backend kubernetes, --backend hpc, or --backend remote"}),
                 ]
             },
             if supported { ExitCode::SUCCESS } else { ExitCode::from(2) },
@@ -348,13 +353,16 @@ mod tests {
         let code = handle_capabilities_command(&cli, &None).expect("capabilities");
         assert_eq!(code, ExitCode::SUCCESS);
         let payload = super::capabilities_payload();
+        assert_eq!(payload["execution_modes"]["container"], "implemented");
         assert_eq!(payload["execution_lanes"]["local_process"], "ENFORCED");
-        assert_eq!(payload["execution_lanes"]["container"], "SIMULATED");
+        assert_eq!(payload["execution_lanes"]["container"], "ENFORCED");
+        assert_eq!(payload["execution_lanes"]["batch_slurm"], "ENFORCED");
         assert_eq!(payload["execution_lanes"]["remote"], "SIMULATED");
         assert_eq!(payload["execution_lanes"]["batch_hpc"], "SIMULATED");
         let operator_commands =
             payload["operator_commands"].as_array().expect("operator commands payload");
         for expected in [
+            "runs.stop",
             "runtime.state",
             "runtime.write-discipline",
             "runtime.worker-recovery",

@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -48,7 +47,7 @@ fn consistency_and_quarantine_contracts_detect_inconsistent_terminal_run() {
     let summary = RunSummaryV2 {
         run_id: RunId("run_01".to_string()),
         state: RunState::Failed,
-        counts: NodeCounts { success: 2, failed: 0, skipped: 0, cached: 0 },
+        counts: NodeCounts { success: 2, failed: 0, skipped: 0, cached: 0, cancelled: 0 },
     };
     let node_states =
         vec![("n1".to_string(), NodeState::Success), ("n2".to_string(), NodeState::Failed)];

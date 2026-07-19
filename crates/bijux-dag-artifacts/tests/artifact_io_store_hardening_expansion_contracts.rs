@@ -9,8 +9,7 @@ use bijux_dag_artifacts::retention::RetentionPolicy;
 use bijux_dag_artifacts::store::{
     ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
 };
-use bijux_dag_artifacts::{write_outputs_index, OutputsIndex};
-use bijux_dag_testkit as _;
+use bijux_dag_artifacts::{write_outputs_index, DeclaredOutputArtifact, OutputsIndex};
 use hex as _;
 use serde as _;
 use serde_json::{json, Value};
@@ -25,8 +24,19 @@ fn fs_accepts_normalized_relative_paths_for_indexing() {
     fs::create_dir_all(dir.path().join("nested/ok")).expect("mkdir");
     fs::write(dir.path().join("nested/ok/payload.bin"), b"payload").expect("write");
 
-    write_outputs_index(dir.path(), "node-a", "fp-a", &["nested/ok/payload.bin".to_string()])
-        .expect("index");
+    write_outputs_index(
+        dir.path(),
+        "node-a",
+        "fp-a",
+        &[DeclaredOutputArtifact {
+            name: "payload".to_string(),
+            path: "nested/ok/payload.bin".to_string(),
+            kind: "file".to_string(),
+            media_type: "application/octet-stream".to_string(),
+            promotable: false,
+        }],
+    )
+    .expect("index");
 
     let parsed: OutputsIndex =
         serde_json::from_str(&fs::read_to_string(dir.path().join("index.json")).expect("read"))
@@ -44,7 +54,22 @@ fn fs_rejects_escaping_paths() {
         dir.path(),
         "node-a",
         "fp-a",
-        &["../escape.txt".to_string(), "safe.txt".to_string()],
+        &[
+            DeclaredOutputArtifact {
+                name: "escape".to_string(),
+                path: "../escape.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+                promotable: false,
+            },
+            DeclaredOutputArtifact {
+                name: "safe".to_string(),
+                path: "safe.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+                promotable: false,
+            },
+        ],
     )
     .expect_err("escape must fail");
     assert!(err.to_string().contains("normalized relative path"));

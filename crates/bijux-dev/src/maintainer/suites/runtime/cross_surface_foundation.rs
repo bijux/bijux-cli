@@ -250,11 +250,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-PLUGIN-DISCOVERY-DETERMINISM-REPORTS" => {
-            let source =
-                fs::read_to_string(workspace_root.join(
-                    "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_determinism_matrix.rs",
-                ))
-                .unwrap_or_default();
+            let source = fs::read_to_string(workspace_root.join(
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_ordering_laws.rs",
+            ))
+            .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
                 (61, "deterministic_discovery_under_shuffled_install_order"),
                 (62, "deterministic_plugin_list_ordering"),
@@ -275,18 +274,18 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 (77, "registry_and_discovery_disagreement_diagnostics_are_deterministic"),
                 (78, "plugin_metadata_ordering_is_stable_in_machine_output"),
             ];
-            let matrix_rows: Vec<Value> = rows
+            let law_rows: Vec<Value> = rows
                                 .iter()
                                 .map(|(coverage_id, name)| {
                                     json!({
                                         "coverage_id": coverage_id,
                                         "test_name": name,
                                         "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_determinism_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_ordering_laws.rs",
                                     })
                                 })
                                 .collect();
-            let complete = matrix_rows
+            let complete = law_rows
                 .iter()
                 .filter(|row| row.get("status").and_then(Value::as_str) == Some("complete"))
                 .count();
@@ -297,7 +296,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "generated_at": generated_at_utc(),
                                     "generator": "bijux-dev-cli",
                                     "scope": "plugin discovery and ordering determinism",
-                                    "rows": matrix_rows,
+                                    "rows": law_rows,
                                     "summary": {
                                         "complete": complete,
                                         "missing": rows.len() - complete,
@@ -315,7 +314,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                     "law": "plugin ordering is deterministic",
                     "status": "frozen",
                     "evidence": [
-                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_determinism_matrix.rs",
+                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_discovery_ordering_laws.rs",
                         "artifacts/status/plugin_discovery_determinism_report.json",
                     ],
                     "coverage_ids": [80],
@@ -382,9 +381,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": "complete",
                                     "coverage_ids": [455],
                                     "evidence": [
-                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs::failed_install_rolls_back_and_preserves_existing_plugin_list",
-                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs::failed_uninstall_rolls_back_and_keeps_registry_unchanged",
-                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_rollback_matrix.rs::install_and_uninstall_are_transaction_safe_and_cleanup_backup_files",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_rollback_resilience.rs::failed_install_rolls_back_and_preserves_existing_plugin_list",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_rollback_resilience.rs::failed_uninstall_rolls_back_and_keeps_registry_unchanged",
+                                        "crates/bijux-cli/tests/integration/cli/plugins/plugin_rollback_resilience.rs::install_and_uninstall_are_transaction_safe_and_cleanup_backup_files",
                                         "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::install_reports_write_failures_and_preserves_existing_registry_entries",
                                         "crates/bijux-cli/tests/integration/cli/plugins/plugin_failure_injection.rs::uninstall_disable_enable_failures_do_not_break_existing_plugin_state",
                                     ],

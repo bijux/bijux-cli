@@ -1,11 +1,7 @@
-use bijux_dag_core::canonical::canonical_json;
-use bijux_dag_core::edge::{EdgeDependencyKind, TypedEdge};
-use bijux_dag_core::resolve::resolve_graph;
-use bijux_dag_core::topology::deterministic_topology_order;
-use bijux_dag_core::validate::{validate_graph, validate_topology};
 use bijux_dag_core::{
-    lower_graph_to_execution_plan, parse_graph_strict, planner_identity_for_graph, Graph,
-    GraphError, PlanOptions, Severity,
+    canonical_json, deterministic_topology_order, lower_graph_to_execution_plan,
+    parse_graph_strict, planner_identity_for_graph, resolve_graph, validate_graph,
+    validate_topology, EdgeDependencyKind, Graph, GraphError, PlanOptions, Severity, TypedEdge,
 };
 use criterion as _;
 use hex as _;

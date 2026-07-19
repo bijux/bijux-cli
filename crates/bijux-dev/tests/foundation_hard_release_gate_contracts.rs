@@ -1,7 +1,8 @@
 use bijux_cli::api::runtime::run_app;
-use bijux_dag_core::canonical::canonical_json;
-use bijux_dag_core::validate::validate_graph;
-use bijux_dag_core::{lower_graph_to_execution_plan, parse_graph_strict, PlanOptions, Severity};
+use bijux_dag_core::{
+    canonical_json, lower_graph_to_execution_plan, parse_graph_strict, validate_graph, PlanOptions,
+    Severity,
+};
 use serde::Deserialize;
 use serde_json::Value;
 use std::fs;
@@ -36,7 +37,6 @@ fn read_contract() -> HardReleaseGateContract {
 fn run_dag_command(args: &[&str], cwd: &Path) -> (i32, String, String) {
     let output = Command::new(resolve_bijux_dag_binary(cwd))
         .current_dir(cwd)
-        .arg("dag")
         .args(args)
         .output()
         .expect("run dag command");
@@ -69,6 +69,11 @@ fn resolve_bijux_dag_binary(cwd: &Path) -> PathBuf {
     static BIN_PATH: OnceLock<PathBuf> = OnceLock::new();
     BIN_PATH
         .get_or_init(|| {
+            if let Some(path) = std::env::var_os("BIJUX_DAG_BIN").map(PathBuf::from) {
+                if path.exists() {
+                    return path;
+                }
+            }
             let workspace_root = resolve_workspace_root(cwd);
             let target_root = std::env::var_os("CARGO_TARGET_DIR")
                 .map(PathBuf::from)

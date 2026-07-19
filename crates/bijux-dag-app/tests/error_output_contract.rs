@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -30,7 +29,7 @@ fn examples_file(file_name: &str) -> String {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn json_error_output_contains_structured_fields() {
     let output = support::run_dag_command(
         &["lint", "--strict", "--json", &examples_file("hello.dag.json")],

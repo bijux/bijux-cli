@@ -3,7 +3,6 @@ use bijux_dag_app::{dag_command, dag_run, inspect_artifact};
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -34,7 +33,12 @@ fn import_verify_reports_corrupt_bundle_without_panicking() {
     .expect("write");
 
     let matches = dag_command()
-        .try_get_matches_from(["dag", "import", bundle.to_string_lossy().as_ref(), "--verify-only"])
+        .try_get_matches_from([
+            "bijux-dag",
+            "import",
+            bundle.to_string_lossy().as_ref(),
+            "--verify-only",
+        ])
         .expect("parse import");
     let code = dag_run(&matches);
     assert!(code.is_err(), "corrupt bundle should not import successfully");

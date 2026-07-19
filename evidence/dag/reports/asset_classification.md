@@ -4,7 +4,7 @@ Classification for files in tasks 21-34 scopes.
 
 | path | class | status | ownership | canonical_location | notes |
 |---|---|---|---|---|---|
-| evidence/perf/fixtures/infrastructure/backend_conformance_matrix.json | perf | transitional | root-owned | evidence/perf |  |
+| evidence/perf/fixtures/infrastructure/backend_conformance_expectations.json | perf | transitional | root-owned | evidence/perf |  |
 | evidence/perf/fixtures/large_dag.json | perf | transitional | root-owned | evidence/perf |  |
 | evidence/perf/fixtures/observability/investigation_bundle_demo.json | perf | transitional | root-owned | evidence/perf |  |
 | evidence/perf/fixtures/observability/retry_cancel_cache_failure.json | perf | transitional | root-owned | evidence/perf |  |
@@ -52,11 +52,11 @@ Classification for files in tasks 21-34 scopes.
 | evidence/compare/scenarios/replay_equivalence.json | compare | transitional | root-owned | evidence/compare |  |
 | evidence/compare/scenarios/retry_timeout.json | compare | transitional | root-owned | evidence/compare |  |
 | evidence/compare/scenarios/scheduler_tiny_tasks_overhead.json | compare | transitional | root-owned | evidence/compare |  |
-| configs/dag/schema/fixtures/compat/negative/unsupported_future_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
+| configs/dag/schema/fixtures/compat/negative/unsupported_forward_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/compat/negative/unsupported_v0_0_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/compat/positive/v0_1_fanout_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
-| configs/dag/schema/fixtures/compat/positive/v0_1_legacy_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
-| configs/dag/schema/fixtures/v0.1/negative/future-required-behavior.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
+| configs/dag/schema/fixtures/compat/positive/v0_1_compat_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
+| configs/dag/schema/fixtures/v0.1/negative/unsupported_behavior_contract.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/v0.1/negative/invalid-enum-container-engine.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/v0.1/negative/invalid-output-path.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/v0.1/negative/malformed-ref.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
@@ -67,7 +67,7 @@ Classification for files in tasks 21-34 scopes.
 | configs/dag/schema/fixtures/v0.1/positive/fan-in.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/v0.1/positive/fan-out.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | configs/dag/schema/fixtures/v0.1/positive/isolated-node.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
-| configs/dag/schema/fixtures/v0.2-draft/positive/minimal_empty_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
+| configs/dag/schema/fixtures/v0.2/positive/minimal_empty_graph.json | schema | transitional | schema-owned | configs/dag/schema/fixtures |  |
 | evidence/fault/corrupt_runs/invalid_outputs_index.json | compat | transitional | crate-owned | evidence/compat |  |
 | evidence/fault/corrupt_runs/missing_manifest_version.json | compat | transitional | crate-owned | evidence/compat |  |
 | crates/bijux-dag-runtime/tests/fixtures/.gitkeep | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
@@ -110,9 +110,9 @@ Classification for files in tasks 21-34 scopes.
 | crates/bijux-dag-runtime/tests/fixtures/operations/slo_objective.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/packaging/deployment_conformance.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
-| crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
+| crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/plugins/conformance_suite.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
-| crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
+| crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_reference.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/policy/org_models.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/provenance/signed_artifacts.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
@@ -123,29 +123,30 @@ Classification for files in tasks 21-34 scopes.
 | crates/bijux-dag-runtime/tests/fixtures/secrets/stdout_leak.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/state_machine/cancellation_trace.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/state_machine/evolution_trace.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
-| crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
-| crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
-| crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
+| crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
+| crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
+| crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/verification/invariants.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence |  |
 | crates/bijux-dag-runtime/tests/fixtures/workflow_product/workflow_health.json | helper | transitional | crate-owned | crate-local tests/helpers or evidence | candidate speculative asset; verify release relevance |
 | evidence/cache/corrupt/hash_mismatch.json | cache | transitional | root-owned | evidence/cache |  |
+| evidence/cache/corrupt/missing_manifest.json | cache | transitional | root-owned | evidence/cache |  |
 | evidence/cache/corrupt/missing_meta.json | cache | transitional | root-owned | evidence/cache |  |
 | evidence/cache/corrupt/missing_outputs_proof.json | cache | transitional | root-owned | evidence/cache |  |
 | evidence/cache/corrupt/truncated_meta.json | cache | transitional | root-owned | evidence/cache |  |
 | evidence/cache/corrupt/unsupported_metadata_version.json | cache | transitional | root-owned | evidence/cache |  |
 | evidence/cache/scenarios/warm_cold.json | cache | transitional | root-owned | evidence/cache |  |
-| evidence/compat/export_bundle/unsupported_past/bundle.json | compat | transitional | root-owned | evidence/compat |  |
+| evidence/compat/export_bundle/unsupported_older_version/bundle.json | compat | transitional | root-owned | evidence/compat |  |
 | evidence/compat/export_bundle/v0_1_supported/bundle.json | compat | transitional | root-owned | evidence/compat |  |
-| evidence/compat/graph_schema/unsupported_future/minimal.dag.json | compat | transitional | root-owned | evidence/compat |  |
-| evidence/compat/graph_schema/unsupported_past/minimal.dag.json | compat | transitional | root-owned | evidence/compat |  |
+| evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json | compat | transitional | root-owned | evidence/compat |  |
+| evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json | compat | transitional | root-owned | evidence/compat |  |
 | evidence/compat/graph_schema/v0_1_supported/minimal.dag.json | compat | transitional | root-owned | evidence/compat |  |
-| evidence/compat/run_dir/unsupported_future/manifest.json | compat | transitional | root-owned | evidence/compat |  |
+| evidence/compat/run_dir/unsupported_newer_version/manifest.json | compat | transitional | root-owned | evidence/compat |  |
 | evidence/compat/run_dir/v0_1_supported/manifest.json | compat | transitional | root-owned | evidence/compat |  |
 | tests/e2e/README.md | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/cache/cache_hit_second_run.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/cache/fingerprint_change_invalidates_cache.json | battle | transitional | root-owned | evidence/battle |  |
-| evidence/compat/scenarios/legacy_fixture_validation.json | battle | transitional | root-owned | evidence/battle |  |
+| evidence/compat/scenarios/historical_fixture_validation.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/container_execution_if_supported.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/failure/missing_outputs_rejected.json | battle | transitional | root-owned | evidence/battle |  |
 | evidence/battle/workflows/failure/node_failure_downstream_skipped.json | battle | transitional | root-owned | evidence/battle |  |

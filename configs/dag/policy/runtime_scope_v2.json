@@ -213,13 +213,13 @@
       "module": "backend/distributed/geo_federation.rs",
       "classification": "speculative",
       "decision": "move",
-      "rationale": "future geo federation control plane capability should not expand foundation runtime"
+      "rationale": "unreleased geo federation control plane capability should not expand foundation runtime"
     },
     {
       "module": "backend/distributed/ha_scheduler.rs",
       "classification": "speculative",
       "decision": "move",
-      "rationale": "high-availability scheduler model belongs to future distributed execution scope"
+      "rationale": "high-availability scheduler model belongs to unreleased distributed execution scope"
     },
     {
       "module": "backend/distributed/infrastructure.rs",
@@ -255,14 +255,14 @@
       "module": "backend/runtime/batch_execution.rs",
       "classification": "backend",
       "decision": "move",
-      "rationale": "batch execution support is future execution-mode boundary and should remain non-foundation",
+      "rationale": "batch execution support is modeled execution-mode boundary and should remain non-foundation",
       "execution_mode_maturity": "simulated-only"
     },
     {
       "module": "backend/runtime/container_execution.rs",
       "classification": "backend",
       "decision": "move",
-      "rationale": "container execution support is future execution-mode boundary and should remain non-foundation",
+      "rationale": "container execution support is modeled execution-mode boundary and should remain non-foundation",
       "execution_mode_maturity": "simulated-only"
     },
     {
@@ -281,15 +281,15 @@
       "module": "backend/runtime/remote_execution_model.rs",
       "classification": "backend",
       "decision": "move",
-      "rationale": "remote execution model is future-distributed boundary and should not define kernel scope",
-      "execution_mode_maturity": "future"
+      "rationale": "remote execution model is unreleased distributed boundary and should not define kernel scope",
+      "execution_mode_maturity": "unreleased"
     },
     {
       "module": "backend/runtime/remote_executor.rs",
       "classification": "backend",
       "decision": "move",
-      "rationale": "remote executor is future-distributed boundary and should not define kernel scope",
-      "execution_mode_maturity": "future"
+      "rationale": "remote executor is unreleased distributed boundary and should not define kernel scope",
+      "execution_mode_maturity": "unreleased"
     },
     {
       "module": "backend/runtime/subprocess.rs",

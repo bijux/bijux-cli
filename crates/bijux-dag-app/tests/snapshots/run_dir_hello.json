@@ -7,6 +7,8 @@
     "manifest.finalized.json",
     "manifest.json",
     "nodes/const1/attempts.json",
+    "nodes/const1/attempts/1/stderr.log",
+    "nodes/const1/attempts/1/stdout.log",
     "nodes/const1/inputs/index.json",
     "nodes/const1/outputs/index.json",
     "nodes/const1/outputs/out_const",
@@ -15,6 +17,8 @@
     "nodes/const1/stdout.log",
     "nodes/const1/trace.json",
     "nodes/echo/attempts.json",
+    "nodes/echo/attempts/1/stderr.log",
+    "nodes/echo/attempts/1/stdout.log",
     "nodes/echo/inputs/const1/in",
     "nodes/echo/inputs/index.json",
     "nodes/echo/outputs/index.json",
@@ -135,6 +139,28 @@
         ]
       },
       {
+        "adapter_id": "file_transform",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
+        "adapter_id": "http",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem",
+          "network"
+        ]
+      },
+      {
+        "adapter_id": "python",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
         "adapter_id": "shell",
         "adapter_version": "0.1",
         "effects": [
@@ -143,8 +169,8 @@
       }
     ],
     "created_unix_ms": 0,
-    "evidence_fingerprint": "dab42f164e96d28d1847b479f0b880ecc657a70d6640530e09084beb29e4fed5",
-    "execution_fingerprint": "e1aee1708d8a234d764c22ed87bf6e621b4b61901320519b0c589458310b8d31",
+    "evidence_fingerprint": "a0c2b8052f242fee706012ed591f54e9677bbe975f10f59a62f78b2cbf3336d2",
+    "execution_fingerprint": "f0c1c3999bcd1fc14e0277e00964399f985cc115dbc8ad3a3495c6e7177a39ea",
     "finished_unix_ms": 0,
     "graph_fingerprint": "77d649354ef18c909fd8365577d4f04386b93638865ea57262aacfbb0e75157b",
     "graph_snapshot": "graph.snapshot.json",
@@ -158,22 +184,31 @@
     },
     "outputs": [
       {
-        "file": "out_const",
-        "node_fingerprint": "c5679252d72bbc44225d1782f8d0c202695b59fdff6c6d108302e8682e9061c2",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out_const",
+        "node_fingerprint": "633d7014a89a7b51f66a5177bd8043904c4b042080a6a0756f162837cea4cee3",
         "node_id": "const1",
-        "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+        "path": "out_const",
+        "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a",
+        "size_bytes": 7
       },
       {
-        "file": "out_echo",
-        "node_fingerprint": "672045107af67a2b8647280fb40048a9808536cd71c9bca262a757a9fe5e3595",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out_echo",
+        "node_fingerprint": "dc4ad6f162b02a8b5edc9fc952895e0b0e628202c3861118dd17d08946168932",
         "node_id": "echo",
-        "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8"
+        "path": "out_echo",
+        "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8",
+        "size_bytes": 11
       }
     ],
     "planner_contract_version": "bijux-dag-planner/v1",
-    "planner_fingerprint": "795dccfda9ee27e449ed386f4f3a96ff277a6f9a21007e3f6aec2601885d64a9",
+    "planner_fingerprint": "f54b2b75b6ecd4f69ae09cbe009e3b5dcabfc88aa44b3a5e0bcaa27745ed85b7",
     "policy": {
       "clean_env": true,
+      "container_image_reference_policy": "require_digest",
       "deny_clock": false,
       "deny_env": false,
       "deny_network": false
@@ -205,10 +240,14 @@
       "outputs": {
         "files": [
           {
-            "node_fingerprint": "c5679252d72bbc44225d1782f8d0c202695b59fdff6c6d108302e8682e9061c2",
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out_const",
+            "node_fingerprint": "633d7014a89a7b51f66a5177bd8043904c4b042080a6a0756f162837cea4cee3",
             "node_id": "const1",
             "path": "out_const",
-            "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+            "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a",
+            "size_bytes": 7
           }
         ]
       }
@@ -217,21 +256,26 @@
       "inputs": {
         "files": [
           {
-            "from_node": "const1",
-            "from_node_fingerprint": "c5679252d72bbc44225d1782f8d0c202695b59fdff6c6d108302e8682e9061c2",
-            "from_output": "out_const",
-            "path": "const1/in",
-            "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+            "local_path": "const1/in",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "633d7014a89a7b51f66a5177bd8043904c4b042080a6a0756f162837cea4cee3",
+            "source_node_id": "const1",
+            "source_output_name": "out_const",
+            "source_sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
           }
         ]
       },
       "outputs": {
         "files": [
           {
-            "node_fingerprint": "672045107af67a2b8647280fb40048a9808536cd71c9bca262a757a9fe5e3595",
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out_echo",
+            "node_fingerprint": "dc4ad6f162b02a8b5edc9fc952895e0b0e628202c3861118dd17d08946168932",
             "node_id": "echo",
             "path": "out_echo",
-            "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8"
+            "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8",
+            "size_bytes": 11
           }
         ]
       }
@@ -251,12 +295,61 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "dab42f164e96d28d1847b479f0b880ecc657a70d6640530e09084beb29e4fed5",
-      "execution_fingerprint": "e1aee1708d8a234d764c22ed87bf6e621b4b61901320519b0c589458310b8d31",
-      "fingerprint": "c5679252d72bbc44225d1782f8d0c202695b59fdff6c6d108302e8682e9061c2",
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "382aaa2595d90d7f200057b1fa76425dd03c63cfd5d8c8f0bf1e201bee1fd6b0",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "node_definition_fingerprint": "e87c71d279ce994acde0ad2ca76c81eb55f6b8a726c0b13d33d32f6fa9915358",
+        "params_fingerprint": "5e99d76e946ff987af1402a9ef575fb4fbf3d2bc668d8be30ad48aac48cc3878",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "a0c2b8052f242fee706012ed591f54e9677bbe975f10f59a62f78b2cbf3336d2",
+      "execution_fingerprint": "f0c1c3999bcd1fc14e0277e00964399f985cc115dbc8ad3a3495c6e7177a39ea",
+      "fingerprint": "633d7014a89a7b51f66a5177bd8043904c4b042080a6a0756f162837cea4cee3",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "const1",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out_const",
+          "path": "out_const",
+          "present": true,
+          "required": true,
+          "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a",
+          "size_bytes": 7
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -267,6 +360,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/const1/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/const1/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded"
     },
     "echo": {
@@ -274,12 +375,63 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "dab42f164e96d28d1847b479f0b880ecc657a70d6640530e09084beb29e4fed5",
-      "execution_fingerprint": "e1aee1708d8a234d764c22ed87bf6e621b4b61901320519b0c589458310b8d31",
-      "fingerprint": "672045107af67a2b8647280fb40048a9808536cd71c9bca262a757a9fe5e3595",
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "203b52bd47277e8cb50cb0d1f80ed52f8dd5348384d018080c96cb29adf80fbf",
+        "command_fingerprint": "d0281e0435ef37936951fc4dec4675ab92884b0d1b17cdd76d92920398a4b05a",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "f4d036c25970635d18705697c51814b41c28ef04a88724a57eb9d91fde76b60b",
+        "node_definition_fingerprint": "8c46109faf9fdb30f97c65904f24862ba18386a1eb10ae3cd17c9108d37ef7ba",
+        "params_fingerprint": "ccc96dd5f48b6069261e9315fe5e3babfd412a3b6878ae7f39c35d9ebb432377",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "a0c2b8052f242fee706012ed591f54e9677bbe975f10f59a62f78b2cbf3336d2",
+      "execution_fingerprint": "f0c1c3999bcd1fc14e0277e00964399f985cc115dbc8ad3a3495c6e7177a39ea",
+      "exit_code": 0,
+      "fingerprint": "dc4ad6f162b02a8b5edc9fc952895e0b0e628202c3861118dd17d08946168932",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "echo",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out_echo",
+          "path": "out_echo",
+          "present": true,
+          "required": true,
+          "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8",
+          "size_bytes": 11
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -294,22 +446,49 @@
       },
       "started_unix_ms": 0,
       "status": "success",
-      "transition_cause": "ExecutionSucceeded"
+      "stderr": {
+        "path": "nodes/echo/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/echo/stdout.log",
+        "size_bytes": 0
+      },
+      "transition_cause": "ExecutionSucceeded",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "const1",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
     }
   },
   "outputs_index": {
     "files": [
       {
-        "node_fingerprint": "c5679252d72bbc44225d1782f8d0c202695b59fdff6c6d108302e8682e9061c2",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out_const",
+        "node_fingerprint": "633d7014a89a7b51f66a5177bd8043904c4b042080a6a0756f162837cea4cee3",
         "node_id": "const1",
         "path": "nodes/const1/outputs/out_const",
-        "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a"
+        "sha256": "5aa762ae383fbb727af3c7a36d4940a5b8c40a989452d2304fc958ff3f354e7a",
+        "size_bytes": 7
       },
       {
-        "node_fingerprint": "672045107af67a2b8647280fb40048a9808536cd71c9bca262a757a9fe5e3595",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out_echo",
+        "node_fingerprint": "dc4ad6f162b02a8b5edc9fc952895e0b0e628202c3861118dd17d08946168932",
         "node_id": "echo",
         "path": "nodes/echo/outputs/out_echo",
-        "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8"
+        "sha256": "35b5b2b9680d46b3796d48aadbfe40968fc34cb15cc3fc7aad91814d10b7b4d8",
+        "size_bytes": 11
       }
     ]
   },
@@ -347,7 +526,7 @@
         "const1"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -381,7 +560,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "const1",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -411,7 +592,7 @@
         "echo"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -445,7 +626,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "echo",
+      "reason": null,
       "status": "success",
       "ts": 0
     },

@@ -2,7 +2,7 @@
 
 - scope: `benchmarks/fixtures`
 
-- evidence/perf/fixtures/infrastructure/backend_conformance_matrix.json
+- evidence/perf/fixtures/infrastructure/backend_conformance_expectations.json
 - evidence/perf/fixtures/large_dag.json
 - evidence/perf/fixtures/observability/investigation_bundle_demo.json
 - evidence/perf/fixtures/observability/retry_cancel_cache_failure.json

@@ -5,6 +5,8 @@ edition = "{{cookiecutter.rust_edition}}"
 license = "Apache-2.0"
 description = "Rust executable for {{cookiecutter.project_name}} Bijux plugin"
 
+[workspace]
+
 [lib]
 name = "{{cookiecutter.crate_name}}"
 path = "src/lib.rs"

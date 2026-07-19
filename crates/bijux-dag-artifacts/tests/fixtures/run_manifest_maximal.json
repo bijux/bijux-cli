@@ -23,7 +23,11 @@
     {
       "node_id": "n1",
       "node_fingerprint": "fp1",
-      "file": "n1/out.txt",
+      "name": "out",
+      "path": "n1/out.txt",
+      "kind": "file",
+      "media_type": "application/octet-stream",
+      "size_bytes": 3,
       "sha256": "abc"
     }
   ],
@@ -31,7 +35,8 @@
     "success": 1,
     "failed": 0,
     "skipped": 0,
-    "cached": 0
+    "cached": 0,
+    "cancelled": 0
   },
   "policy": {
     "deny_network": true,
@@ -42,6 +47,8 @@
   "cache_mode": "readwrite",
   "cache_dir": "cache",
   "run_timeout_ms": 1000,
+  "run_timeout_behavior": "finish_running",
+  "run_cancellation_cause": null,
   "run_metadata": {
     "submission_source": "manual",
     "trigger_source": "cli",
@@ -57,6 +64,7 @@
     "success": 1,
     "failed": 0,
     "skipped": 0,
-    "cached": 0
+    "cached": 0,
+    "cancelled": 0
   }
 }

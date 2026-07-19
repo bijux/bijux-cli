@@ -1,0 +1,230 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "regional-sales-pipeline",
+    "description": "Ingest regional sales data, clean it, derive summary tables, validate business totals, and publish a final revenue attainment table.",
+    "owners": ["platform"],
+    "tags": ["authoring", "data-pipeline", "analytics"]
+  },
+  "inputs": {
+    "orders_csv": {
+      "type": "path",
+      "required": true
+    },
+    "targets_json": {
+      "type": "path",
+      "required": true
+    },
+    "report_title": {
+      "type": "string",
+      "default": "Regional Revenue Attainment"
+    }
+  },
+  "nodes": [
+    {
+      "id": "ingest_orders",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "records",
+          "path": "ingest/orders.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "orders_csv": { "graph_input": "orders_csv" },
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport csv\nimport json\nimport pathlib\n\norders_csv = pathlib.Path(\"{params.orders_csv}\")\nif not orders_csv.is_file():\n    raise SystemExit(\"orders_csv is not a file: \" + str(orders_csv))\n\nrequired_columns = [\"order_id\", \"region\", \"segment\", \"units\", \"unit_price\"]\nwith orders_csv.open(newline=\"\", encoding=\"utf-8\") as handle:\n    reader = csv.DictReader(handle)\n    if reader.fieldnames != required_columns:\n        raise SystemExit(\"orders_csv must contain columns: \" + \", \".join(required_columns))\n    rows = list(reader)\n\nif not rows:\n    raise SystemExit(\"orders_csv must contain at least one order\")\n\nrecords = []\nfor row in rows:\n    order_id = row[\"order_id\"].strip()\n    if not order_id:\n        raise SystemExit(\"order_id must not be empty\")\n    records.append({\n        \"order_id\": order_id,\n        \"region\": row[\"region\"],\n        \"segment\": row[\"segment\"],\n        \"units\": row[\"units\"],\n        \"unit_price\": row[\"unit_price\"]\n    })\n\nout_dir = pathlib.Path(\"../outputs/ingest\")\nout_dir.mkdir(parents=True, exist_ok=True)\n(out_dir / \"orders.json\").write_text(json.dumps(records, indent=2) + \"\\n\", encoding=\"utf-8\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "clean_orders",
+      "kind": "shell",
+      "inputs": ["records"],
+      "outputs": [
+        {
+          "name": "records",
+          "path": "clean/orders.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nrecords = json.loads(pathlib.Path(\"../inputs/ingest_orders/records\").read_text(encoding=\"utf-8\"))\ncleaned = []\nfor row in records:\n    units = int(str(row[\"units\"]).strip())\n    price = float(str(row[\"unit_price\"]).strip())\n    if units <= 0:\n        raise SystemExit(\"units must be positive for order \" + row[\"order_id\"])\n    if price <= 0:\n        raise SystemExit(\"unit_price must be positive for order \" + row[\"order_id\"])\n    cleaned.append({\n        \"order_id\": row[\"order_id\"].strip(),\n        \"region\": row[\"region\"].strip().title(),\n        \"segment\": row[\"segment\"].strip().lower(),\n        \"units\": units,\n        \"unit_price\": round(price, 2),\n        \"revenue\": round(units * price, 2)\n    })\n\ncleaned.sort(key=lambda row: (row[\"region\"], row[\"segment\"], row[\"order_id\"]))\nout_dir = pathlib.Path(\"../outputs/clean\")\nout_dir.mkdir(parents=True, exist_ok=True)\n(out_dir / \"orders.json\").write_text(json.dumps(cleaned, indent=2) + \"\\n\", encoding=\"utf-8\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "derive_region_totals",
+      "kind": "shell",
+      "inputs": ["records"],
+      "outputs": [
+        {
+          "name": "table",
+          "path": "derived/region_totals.csv",
+          "media_type": "text/csv"
+        },
+        {
+          "name": "summary",
+          "path": "derived/region_summary.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport csv\nimport json\nimport pathlib\n\nrecords = json.loads(pathlib.Path(\"../inputs/clean_orders/records\").read_text(encoding=\"utf-8\"))\nby_region = {}\nfor row in records:\n    summary = by_region.setdefault(row[\"region\"], {\"region\": row[\"region\"], \"orders\": 0, \"units\": 0, \"revenue\": 0.0})\n    summary[\"orders\"] += 1\n    summary[\"units\"] += row[\"units\"]\n    summary[\"revenue\"] += row[\"revenue\"]\n\nregions = sorted(by_region.values(), key=lambda item: (-item[\"revenue\"], item[\"region\"]))\nfor item in regions:\n    item[\"revenue\"] = round(item[\"revenue\"], 2)\n\ngrand_total = round(sum(item[\"revenue\"] for item in regions), 2)\nout_dir = pathlib.Path(\"../outputs/derived\")\nout_dir.mkdir(parents=True, exist_ok=True)\nwith (out_dir / \"region_totals.csv\").open(\"w\", newline=\"\", encoding=\"utf-8\") as handle:\n    writer = csv.writer(handle)\n    writer.writerow([\"region\", \"orders\", \"units\", \"revenue\"])\n    for item in regions:\n        writer.writerow([item[\"region\"], item[\"orders\"], item[\"units\"], f\"{item['revenue']:.2f}\"])\n(out_dir / \"region_summary.json\").write_text(json.dumps({\"regions\": regions, \"grand_total_revenue\": grand_total}, indent=2) + \"\\n\", encoding=\"utf-8\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "derive_segment_totals",
+      "kind": "shell",
+      "inputs": ["records"],
+      "outputs": [
+        {
+          "name": "table",
+          "path": "derived/segment_totals.csv",
+          "media_type": "text/csv"
+        },
+        {
+          "name": "summary",
+          "path": "derived/segment_summary.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport csv\nimport json\nimport pathlib\n\nrecords = json.loads(pathlib.Path(\"../inputs/clean_orders/records\").read_text(encoding=\"utf-8\"))\nby_segment = {}\nfor row in records:\n    summary = by_segment.setdefault(row[\"segment\"], {\"segment\": row[\"segment\"], \"orders\": 0, \"units\": 0, \"revenue\": 0.0})\n    summary[\"orders\"] += 1\n    summary[\"units\"] += row[\"units\"]\n    summary[\"revenue\"] += row[\"revenue\"]\n\nsegments = sorted(by_segment.values(), key=lambda item: (-item[\"revenue\"], item[\"segment\"]))\nfor item in segments:\n    item[\"revenue\"] = round(item[\"revenue\"], 2)\n\ngrand_total = round(sum(item[\"revenue\"] for item in segments), 2)\nout_dir = pathlib.Path(\"../outputs/derived\")\nout_dir.mkdir(parents=True, exist_ok=True)\nwith (out_dir / \"segment_totals.csv\").open(\"w\", newline=\"\", encoding=\"utf-8\") as handle:\n    writer = csv.writer(handle)\n    writer.writerow([\"segment\", \"orders\", \"units\", \"revenue\"])\n    for item in segments:\n        writer.writerow([item[\"segment\"], item[\"orders\"], item[\"units\"], f\"{item['revenue']:.2f}\"])\n(out_dir / \"segment_summary.json\").write_text(json.dumps({\"segments\": segments, \"grand_total_revenue\": grand_total}, indent=2) + \"\\n\", encoding=\"utf-8\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "load_targets",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "targets",
+          "path": "targets/targets.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "targets_json": { "graph_input": "targets_json" },
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nsource = pathlib.Path(\"{params.targets_json}\")\nif not source.is_file():\n    raise SystemExit(\"targets_json is not a file: \" + str(source))\n\npayload = json.loads(source.read_text(encoding=\"utf-8\"))\nif not isinstance(payload, dict) or not payload:\n    raise SystemExit(\"targets_json must be a non-empty JSON object\")\n\nnormalized = {}\nfor region, target in payload.items():\n    canonical_region = str(region).strip().title()\n    value = round(float(target), 2)\n    if value <= 0:\n        raise SystemExit(\"targets must be positive for region \" + canonical_region)\n    normalized[canonical_region] = value\n\nout_dir = pathlib.Path(\"../outputs/targets\")\nout_dir.mkdir(parents=True, exist_ok=True)\n(out_dir / \"targets.json\").write_text(json.dumps(normalized, indent=2, sort_keys=True) + \"\\n\", encoding=\"utf-8\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "validate_outputs",
+      "kind": "shell",
+      "inputs": ["region_summary", "segment_summary", "targets"],
+      "outputs": [
+        {
+          "name": "report",
+          "path": "validate/report.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nregion_summary = json.loads(pathlib.Path(\"../inputs/derive_region_totals/region_summary\").read_text(encoding=\"utf-8\"))\nsegment_summary = json.loads(pathlib.Path(\"../inputs/derive_segment_totals/segment_summary\").read_text(encoding=\"utf-8\"))\ntargets = json.loads(pathlib.Path(\"../inputs/load_targets/targets\").read_text(encoding=\"utf-8\"))\n\nregion_total = round(float(region_summary[\"grand_total_revenue\"]), 2)\nsegment_total = round(float(segment_summary[\"grand_total_revenue\"]), 2)\nif region_total != segment_total:\n    raise SystemExit(f\"region and segment revenue totals differ: {region_total} != {segment_total}\")\n\nregions = [item[\"region\"] for item in region_summary[\"regions\"]]\nmissing_targets = [region for region in regions if region not in targets]\nif missing_targets:\n    raise SystemExit(\"missing targets for regions: \" + \", \".join(missing_targets))\n\nreport = {\n    \"region_total_revenue\": region_total,\n    \"segment_total_revenue\": segment_total,\n    \"region_count\": len(region_summary[\"regions\"]),\n    \"segment_count\": len(segment_summary[\"segments\"]),\n    \"validated_regions\": regions\n}\nout_dir = pathlib.Path(\"../outputs/validate\")\nout_dir.mkdir(parents=True, exist_ok=True)\n(out_dir / \"report.json\").write_text(json.dumps(report, indent=2) + \"\\n\", encoding=\"utf-8\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "publish_final_table",
+      "kind": "shell",
+      "inputs": ["region_summary", "targets", "validation_report"],
+      "outputs": [
+        {
+          "name": "table",
+          "path": "final/revenue_attainment.csv",
+          "media_type": "text/csv",
+          "promotable": true
+        }
+      ],
+      "params": {
+        "report_title": { "graph_input": "report_title" },
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport csv\nimport json\nimport pathlib\n\nregion_summary = json.loads(pathlib.Path(\"../inputs/derive_region_totals/region_summary\").read_text(encoding=\"utf-8\"))\ntargets = json.loads(pathlib.Path(\"../inputs/load_targets/targets\").read_text(encoding=\"utf-8\"))\nvalidation = json.loads(pathlib.Path(\"../inputs/validate_outputs/validation_report\").read_text(encoding=\"utf-8\"))\n\nout_dir = pathlib.Path(\"../outputs/final\")\nout_dir.mkdir(parents=True, exist_ok=True)\nwith (out_dir / \"revenue_attainment.csv\").open(\"w\", newline=\"\", encoding=\"utf-8\") as handle:\n    writer = csv.writer(handle)\n    writer.writerow([\"report_title\", \"region\", \"revenue\", \"target\", \"variance\", \"status\"])\n    for item in region_summary[\"regions\"]:\n        target = round(float(targets[item[\"region\"]]), 2)\n        revenue = round(float(item[\"revenue\"]), 2)\n        variance = round(revenue - target, 2)\n        status = \"above-target\" if variance >= 0 else \"below-target\"\n        writer.writerow([\"{params.report_title}\", item[\"region\"], f\"{revenue:.2f}\", f\"{target:.2f}\", f\"{variance:.2f}\", status])\n\nif validation[\"region_total_revenue\"] <= 0:\n    raise SystemExit(\"validated revenue total must be positive\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    {
+      "from": { "node_id": "ingest_orders", "port": "records" },
+      "to": { "node_id": "clean_orders", "port": "records" }
+    },
+    {
+      "from": { "node_id": "clean_orders", "port": "records" },
+      "to": { "node_id": "derive_region_totals", "port": "records" }
+    },
+    {
+      "from": { "node_id": "clean_orders", "port": "records" },
+      "to": { "node_id": "derive_segment_totals", "port": "records" }
+    },
+    {
+      "from": { "node_id": "derive_region_totals", "port": "summary" },
+      "to": { "node_id": "validate_outputs", "port": "region_summary" }
+    },
+    {
+      "from": { "node_id": "derive_segment_totals", "port": "summary" },
+      "to": { "node_id": "validate_outputs", "port": "segment_summary" }
+    },
+    {
+      "from": { "node_id": "load_targets", "port": "targets" },
+      "to": { "node_id": "validate_outputs", "port": "targets" }
+    },
+    {
+      "from": { "node_id": "derive_region_totals", "port": "summary" },
+      "to": { "node_id": "publish_final_table", "port": "region_summary" }
+    },
+    {
+      "from": { "node_id": "load_targets", "port": "targets" },
+      "to": { "node_id": "publish_final_table", "port": "targets" }
+    },
+    {
+      "from": { "node_id": "validate_outputs", "port": "report" },
+      "to": { "node_id": "publish_final_table", "port": "validation_report" }
+    }
+  ]
+}

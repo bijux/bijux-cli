@@ -1,7 +1,8 @@
 //! DAG canonicalization entrypoints and helpers.
 
 use crate::{
-    BranchSpec, EdgeKind, Effect, Graph, GraphError, ParamValue, Severity, ValidationDiagnostic,
+    BranchSpec, EdgeKind, Effect, Graph, GraphError, NodeOutputRef, ParamValue, Severity,
+    ValidationDiagnostic,
 };
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -18,6 +19,13 @@ impl Graph {
             for output in &mut node.outputs {
                 output.name = normalize_identity_text(&output.name);
                 output.path = normalize_rel_path(&output.path);
+            }
+            if let Some(resources) = &mut node.resources {
+                resources.named_resources = resources
+                    .named_resources
+                    .iter()
+                    .map(|(name, amount)| (normalize_identity_text(name), *amount))
+                    .collect();
             }
             node.env_allowlist =
                 node.env_allowlist.iter().map(|entry| normalize_identity_text(entry)).collect();
@@ -66,7 +74,11 @@ impl Graph {
                 branch.decisions.sort();
             }
             if let Some(resources) = &node.resources {
-                if resources.cpu == 0 && resources.mem_mb == 0 {
+                if resources.cpu == 0
+                    && resources.mem_mb == 0
+                    && resources.gpu_devices == 0
+                    && resources.named_resources.is_empty()
+                {
                     node.resources = None;
                 }
             }
@@ -94,17 +106,73 @@ impl Graph {
         });
 
         let mut inputs = self.inputs.clone();
-        let mut inputs_value = Value::Object(inputs.clone());
+        let mut inputs_value = serde_json::to_value(&inputs)
+            .expect("graph inputs should serialize for canonicalization");
         sort_value_maps(&mut inputs_value);
-        if let Value::Object(map) = inputs_value {
-            inputs = map;
-        }
+        inputs = serde_json::from_value(inputs_value)
+            .expect("graph inputs should deserialize canonically");
+
+        let subgraphs = self
+            .subgraphs
+            .iter()
+            .map(|(name, definition)| {
+                let mut outputs = definition
+                    .outputs
+                    .iter()
+                    .map(|(export_name, reference)| {
+                        (
+                            normalize_identity_text(export_name),
+                            NodeOutputRef {
+                                node_id: normalize_identity_text(&reference.node_id),
+                                output_name: normalize_identity_text(&reference.output_name),
+                            },
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                outputs.sort_by(|left, right| left.0.cmp(&right.0));
+                (
+                    normalize_identity_text(name),
+                    crate::SubgraphDefinition {
+                        graph: definition.graph.canonicalize(),
+                        outputs: outputs.into_iter().collect(),
+                    },
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+
+        let mut subgraph_instances = self
+            .subgraph_instances
+            .iter()
+            .cloned()
+            .map(|mut instance| {
+                instance.id = normalize_identity_text(&instance.id);
+                instance.subgraph = normalize_identity_text(&instance.subgraph);
+                instance.input_bindings = instance
+                    .input_bindings
+                    .into_iter()
+                    .map(|(name, mut value)| {
+                        sort_param_value(&mut value);
+                        (normalize_identity_text(&name), value)
+                    })
+                    .collect();
+                instance
+            })
+            .collect::<Vec<_>>();
+        subgraph_instances.sort_by(|left, right| {
+            (&left.id, &left.subgraph, left.input_bindings.len()).cmp(&(
+                &right.id,
+                &right.subgraph,
+                right.input_bindings.len(),
+            ))
+        });
 
         Graph {
             spec: self.spec.clone(),
             meta: self.meta.clone(),
             inputs,
             nondeterminism_allowed: self.nondeterminism_allowed,
+            subgraphs,
+            subgraph_instances,
             nodes,
             edges,
         }
@@ -206,6 +274,11 @@ pub(crate) fn is_valid_output_path(path: &str) -> bool {
 
 pub(crate) fn is_valid_canonical_name(name: &str) -> bool {
     !name.is_empty() && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+}
+
+pub(crate) fn is_valid_tag_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | ':'))
 }
 
 pub(crate) fn error(

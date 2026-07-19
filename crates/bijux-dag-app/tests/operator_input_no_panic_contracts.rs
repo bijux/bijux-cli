@@ -3,7 +3,6 @@ use bijux_dag_app::{dag_command, dag_run};
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -23,7 +22,7 @@ fn malformed_graph_load_via_read_graph_path_does_not_panic() {
     fs::write(&malformed, "{not-json").expect("write malformed graph");
     let cmd = dag_command();
     let matches = cmd
-        .try_get_matches_from(["dag", "validate", malformed.to_string_lossy().as_ref()])
+        .try_get_matches_from(["bijux-dag", "validate", malformed.to_string_lossy().as_ref()])
         .expect("parse validate args");
     let result = dag_run(&matches);
     assert_eq!(result, Err(ExitCode::from(2)));
@@ -35,7 +34,7 @@ fn malformed_filesystem_input_via_fs_input_path_does_not_panic() {
     let missing = tmp.path().join("missing-graph.json");
     let cmd = dag_command();
     let matches = cmd
-        .try_get_matches_from(["dag", "validate", missing.to_string_lossy().as_ref()])
+        .try_get_matches_from(["bijux-dag", "validate", missing.to_string_lossy().as_ref()])
         .expect("parse validate args");
     let result = dag_run(&matches);
     assert_eq!(result, Err(ExitCode::from(3)));
@@ -49,7 +48,7 @@ fn malformed_bundle_import_routed_through_app_does_not_panic() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "import",
             bundle.to_string_lossy().as_ref(),
@@ -69,7 +68,7 @@ fn corrupted_run_dir_inspect_routed_through_app_does_not_panic() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "runs",
             "inspect",

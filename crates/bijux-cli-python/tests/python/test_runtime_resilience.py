@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import os
 import json
-import subprocess
+import os
 from pathlib import Path
+import subprocess
 
 import pytest
 
@@ -13,15 +13,23 @@ from bijux_cli_py import (
     plugin_registry_inspection,
     post_install_diagnostics,
 )
-from bijux_cli_py._exceptions import NativeExtensionUnavailable, PlatformWheelUnavailable
+from bijux_cli_py._exceptions import (
+    InternalError,
+    NativeExtensionUnavailable,
+    PlatformWheelUnavailable,
+    UsageError,
+    ValidationError,
+)
 from bijux_cli_py._facade import (
     ensure_native_extension,
     error_to_exception,
     execution_facade,
     execution_facade_with_status,
+)
+from bijux_cli_py._facade import (
     version as facade_version,
 )
-from bijux_cli_py._exceptions import InternalError, UsageError, ValidationError
+import bijux_cli_py._runtime as runtime
 
 
 def test_legacy_runtime_warning_is_opt_in() -> None:
@@ -255,7 +263,7 @@ def test_subprocess_error_classification_uses_stderr_semantics(
         lambda: facade.RuntimeResolution(binary="/tmp/fake-bijux"),
     )
     monkeypatch.setattr(
-        facade.subprocess,
+        runtime.subprocess,
         "run",
         lambda *_args, **_kwargs: subprocess.CompletedProcess(
             args=["/tmp/fake-bijux", "status"],
@@ -284,7 +292,7 @@ def test_subprocess_timeout_is_normalized_to_internal_error(
     def _raise_timeout(*_args: object, **_kwargs: object) -> object:
         raise subprocess.TimeoutExpired(cmd=["/tmp/fake-bijux", "status"], timeout=1)
 
-    monkeypatch.setattr(facade.subprocess, "run", _raise_timeout)
+    monkeypatch.setattr(runtime.subprocess, "run", _raise_timeout)
 
     result = execution_facade_with_status(["status"])
     assert result.exit_code == 1

@@ -1,16 +1,24 @@
 [package]
 name = "bijux-dag-artifacts"
 version.workspace = true
-publish = false
+description = "Artifact identity, persistence, integrity, and lifecycle helpers for Bijux DAG runs."
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-homepage.workspace = true
+homepage = "https://bijux.io/bijux-core/bijux-dag/"
+documentation = "https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-artifacts/"
 rust-version.workspace = true
+readme = "README.md"
+keywords = ["bijux", "dag", "artifacts", "integrity", "lineage"]
+categories = ["data-structures", "development-tools", "filesystem"]
 
 [lints]
 workspace = true
+
+[features]
+default = []
+experimental-public-api = []
 
 [dependencies]
 serde = { workspace = true }
@@ -21,4 +29,3 @@ hex = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
-bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit", version = "0.3.5" }

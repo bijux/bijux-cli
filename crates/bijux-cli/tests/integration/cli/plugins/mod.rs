@@ -5,14 +5,14 @@ use semver::{Prerelease, Version};
 
 mod plugin_cli_lifecycle;
 mod plugin_command_parity;
-mod plugin_discovery_determinism_matrix;
+mod plugin_discovery_ordering_laws;
 mod plugin_failure_injection;
-mod plugin_failure_rollback_matrix;
-mod plugin_lifecycle_matrix;
+mod plugin_lifecycle_coverage;
 mod plugin_namespace_law;
-mod plugin_scaffold_fuzz_regressions;
-mod plugin_scaffold_fuzz_targets;
+mod plugin_rollback_resilience;
+mod plugin_scaffold_case_replays;
 mod plugin_scaffold_minimal;
+mod plugin_scaffold_stability;
 
 pub(super) fn current_plugin_host_floor() -> String {
     let runtime = Version::parse(env!("CARGO_PKG_VERSION")).expect("package semver");

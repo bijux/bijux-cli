@@ -3,7 +3,6 @@ use bijux_dag_app::{dag_command, dag_run, doctor_run, runs_history};
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -122,7 +121,7 @@ fn replay_creates_new_run_linked_to_source_ancestry() {
 
     let run_matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "run",
             dag.to_string_lossy().as_ref(),
             "--out",
@@ -135,7 +134,7 @@ fn replay_creates_new_run_linked_to_source_ancestry() {
 
     let replay_matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "replay",
             out.join("run-source-run").to_string_lossy().as_ref(),
             "--out",

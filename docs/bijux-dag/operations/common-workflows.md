@@ -4,63 +4,91 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # Common Workflows
 
-This page captures the DAG workflow path people follow most often.
+Use this page after learning the command surface to choose the operational proof
+that matches the decision you need to make. Commands and expected outputs live
+in the linked guides so one tested page remains authoritative for each
+workflow.
 
-The sequence matters because DAG work is less about one command and more about
-moving safely from validation to evidence-backed decisions.
-
-## Workflow Map
+## Normal Operator Loop
 
 ```mermaid
-flowchart TD
+flowchart LR
     define["prepare graph and inputs"] --> validate["validate"]
-    validate --> execute["run"]
-    execute --> inspect["inspect status and artifacts"]
-    inspect --> compare["replay and diff"]
-    compare --> decide["promote or investigate"]
+    validate --> run["run"]
+    run --> inspect["inspect evidence"]
+    inspect --> reproduce["replay or compare"]
+    reproduce --> decide["promote or investigate"]
 ```
 
-## Workflow Catalog
+The minimum responsible sequence is:
 
-- preflight validation for graph and config correctness
-- execution workflow for run creation and status tracking
-- reproducibility workflow for replay confirmation
-- change-attribution workflow for semantic diff explanations
+1. validate the graph and resolve required inputs
+2. execute into a deliberate artifact root
+3. inspect run state and required artifacts
+4. replay when reproducibility matters, or compare when attribution matters
+5. promote only after the required evidence verifies
 
-## Canonical Command Path
+The [First-Run Tutorial](first-run-tutorial.md) executes this loop against a
+checked-in graph. The [Operator Workflows](../interfaces/operator-workflows.md)
+documents individual inspection, replay, comparison, scheduling, and backfill
+operations.
+
+## Choose A Workflow
+
+| Question | Workflow | Proof produced |
+| --- | --- | --- |
+| which checked-in example demonstrates a capability? | [Executable Examples](../interfaces/runnable-examples.md) | tested commands and declared expected outputs |
+| can a local file workflow run, cache, replay, and promote? | [File Processing Workflow](file-processing-workflow.md) | rendered report, warm reuse, focused replay, promotion evidence |
+| which nodes changed after an input changed? | [Data Pipeline Workflow](data-pipeline-workflow.md) | structured comparison and affected-stage attribution |
+| why was cached work reused or refused? | [Cache Behavior Workflow](cache-behavior-workflow.md) | hit evidence, selective invalidation, corruption refusal, miss reason |
+| which conditional lane ran? | [Branching Bulletin Workflow](branching-bulletin-workflow.md) | selected branch, retained skip, join trigger, replay stability |
+| can a failed tail be repaired without hiding the root failure? | [Compliance-Gated Bulletin Workflow](compliance-gated-bulletin-workflow.md) | retry attempts, approval failure, propagated fallout, repaired verification |
+| can a node execute in a real container boundary? | [Container Packaging Workflow](container-packaging-workflow.md) | mounted inputs, retained outputs, image and engine identity |
+| how are scheduled submissions linked to runs? | [Scheduled Catalog Refresh Workflow](scheduled-catalog-refresh-workflow.md) | cron preview, slot suppression, queue dispatch, ledger-to-run identity |
+| how are failed historical partitions retried? | [Historical Catalog Backfill Workflow](historical-catalog-backfill-workflow.md) | partition fanout, retry selection, aggregate state |
+
+The schedule and backfill guides describe proof-backed internal surfaces in
+v0.4.x, not stable scheduler APIs. Read
+[Known Limitations](../quality/known-limitations.md) before depending on them.
+
+## Stop A Live Run
+
+Request a cooperative stop when an active run should stop dispatching more
+nodes:
 
 ```bash
-bijux dag validate ./pipelines/main.dag.json
-bijux dag run ./pipelines/main.dag.json --out ./runs/proposed
-bijux dag status ./runs/proposed/latest
-bijux dag replay ./runs/proposed/latest --out ./runs/replay
-bijux dag diff ./runs/reference/latest ./runs/proposed/latest --mode semantic --explain
+bijux-dag runs stop run-20260406-01 --root ./runs/proposed
 ```
+
+Use `--json` when automation needs the recorded request path and current stop
+state. A stop request is evidence of intent, not proof that already-dispatched
+work was terminated; inspect the retained run state before deciding what to do
+next.
+
+## Promotion Criteria
+
+Promote an output only when:
+
+- the run reached the expected final state
+- required artifacts exist and pass the applicable verification
+- replay or comparison evidence exists when reproducibility or attribution is
+  part of the claim
+- drift and exceptions are absent or explicitly approved
 
 ## Code Anchors
 
 - `crates/bijux-dag-app/src/routes/run_routes.rs`
-- `crates/bijux-dag-app/src/routes/status_routes.rs`
 - `crates/bijux-dag-app/src/routes/inspect_routes.rs`
-
-## Promotion Criteria
-
-- run completed with expected fidelity level
-- required artifact evidence present and verifiable
-- drift either absent or explicitly approved
-
-## Reading Rule
-
-Use this page when the DAG commands are already familiar but the correct
-operator sequence is still unclear.
+- `crates/bijux-dag-app/src/routes/replay_routes.rs`
 
 ## Next Reads
 
 - [Failure Recovery](failure-recovery.md)
-- [Operator Workflows](../interfaces/operator-workflows.md)
+- [Run Evidence Layout](../interfaces/run-evidence-layout.md)
+- [Security And Isolation](security-isolation-truth.md)
 - [Review Checklist](../quality/review-checklist.md)

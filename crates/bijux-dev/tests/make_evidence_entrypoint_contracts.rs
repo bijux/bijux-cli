@@ -31,13 +31,27 @@ fn collect_makefiles(root: &Path) -> Vec<PathBuf> {
 }
 
 #[test]
-#[ignore = "legacy make entrypoint contract expects historical module wiring"]
 fn root_make_includes_evidence_module() {
     let root = repo_root();
     let root_mk = fs::read_to_string(root.join("makes/root.mk")).expect("read makes/root.mk");
     assert!(
         root_mk.contains("include $(ROOT_MK_DIR)/dag.mk"),
         "makes/root.mk must include DAG make module"
+    );
+}
+
+#[test]
+fn dag_command_wrapper_keeps_recipe_silencing_out_of_shell_commands() {
+    let root = repo_root();
+    let dag_mk = fs::read_to_string(root.join("makes/dag.mk")).expect("read makes/dag.mk");
+
+    assert!(
+        dag_mk.contains("run_or_fail = @echo \"--> $(1)\"; $(2) ||"),
+        "run_or_fail must apply Make recipe silencing only at the recipe boundary"
+    );
+    assert!(
+        !dag_mk.contains("; @$(2)"),
+        "run_or_fail must not pass Make recipe syntax to the shell"
     );
 }
 

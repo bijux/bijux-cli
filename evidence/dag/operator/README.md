@@ -1,6 +1,8 @@
 # Operator Evidence
 
-Purpose: operator inspection and diagnostics scenarios.
+Use operator evidence when you need runnable scenarios for inspection,
+diagnostics, or support-oriented command behavior.
 
-Subdirectories:
+## What Lives Here
+
 - `scenarios/`

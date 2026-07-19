@@ -30,14 +30,36 @@ pub fn write_lineage_snapshot(
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|err| err.to_string())?;
     }
-    let payload = serde_json::to_vec_pretty(snapshot).map_err(|err| err.to_string())?;
+    let payload = serialize_lineage_snapshot(snapshot)?;
     fs::write(path, payload).map_err(|err| err.to_string())
+}
+
+pub fn serialize_lineage_snapshot(snapshot: &ArtifactLineageSnapshot) -> Result<Vec<u8>, String> {
+    serde_json::to_vec_pretty(snapshot).map_err(|err| err.to_string())
 }
 
 pub fn export_lineage_visualization(
     path: impl AsRef<Path>,
     snapshot: &ArtifactLineageSnapshot,
 ) -> Result<(), String> {
+    let visualization = build_lineage_visualization(snapshot);
+    let path = path.as_ref();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+    }
+    let payload = serialize_lineage_visualization(&visualization)?;
+    fs::write(path, payload).map_err(|err| err.to_string())
+}
+
+pub fn serialize_lineage_visualization(
+    visualization: &ArtifactLineageVisualization,
+) -> Result<Vec<u8>, String> {
+    serde_json::to_vec_pretty(visualization).map_err(|err| err.to_string())
+}
+
+pub fn build_lineage_visualization(
+    snapshot: &ArtifactLineageSnapshot,
+) -> ArtifactLineageVisualization {
     let mut nodes: Vec<String> = snapshot
         .edges
         .iter()
@@ -59,15 +81,5 @@ pub fn export_lineage_visualization(
                 .collect::<Vec<_>>()
         })
         .collect();
-    let visualization = ArtifactLineageVisualization {
-        schema_version: snapshot.schema_version.clone(),
-        nodes,
-        links,
-    };
-    let path = path.as_ref();
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|err| err.to_string())?;
-    }
-    let payload = serde_json::to_vec_pretty(&visualization).map_err(|err| err.to_string())?;
-    fs::write(path, payload).map_err(|err| err.to_string())
+    ArtifactLineageVisualization { schema_version: snapshot.schema_version.clone(), nodes, links }
 }

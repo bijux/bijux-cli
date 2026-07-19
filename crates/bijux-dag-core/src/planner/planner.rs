@@ -1,8 +1,10 @@
 //! Planner lowering and execution-plan contract.
 
+use crate::expansion::expand_graph;
 use crate::{
-    node_io_contract, BranchSpec, Edge, EdgeKind, Effect, FileOutput, Graph, GraphError, Node,
-    NodeIoContract, NodeKind, ParamValue, Resources, RetryPolicy, SemanticNodeKind, TriggerRule,
+    node_io_contract, BranchSpec, CacheBehavior, Edge, EdgeKind, Effect, FileOutput, Graph,
+    GraphError, Node, NodeIoContract, NodeKind, ParamValue, Resources, RetryPolicy,
+    SemanticNodeKind, TriggerRule,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -37,6 +39,7 @@ pub struct PlannedNode {
     pub outputs: Vec<FileOutput>,
     pub side_effects: Vec<Effect>,
     pub retry: RetryPolicy,
+    pub cache: CacheBehavior,
     pub trigger_rule: TriggerRule,
     #[serde(default)]
     pub timeout_ms: Option<u64>,
@@ -101,6 +104,7 @@ struct ExecutionIdentityNode {
     params: ParamValue,
     trigger_rule: TriggerRule,
     retry: RetryPolicy,
+    cache: CacheBehavior,
     timeout_ms: Option<u64>,
     resources: Option<Resources>,
     effects: Vec<Effect>,
@@ -139,17 +143,21 @@ pub fn lower_graph_to_execution_plan(
     graph: &Graph,
     mut options: PlanOptions,
 ) -> Result<ExecutionPlan, PlannerError> {
-    let validation_diags = graph.validate_with_warnings();
+    let expanded = expand_graph(graph).map_err(|_| PlannerError::ValidationFailed)?;
+    let validation_diags = expanded.validate_with_warnings();
     if validation_diags.iter().any(|d| d.severity == crate::Severity::Error) {
         return Err(PlannerError::ValidationFailed);
     }
 
     if options.supported_kinds.is_empty() {
         options.supported_kinds =
-            ["const", "shell", "container"].into_iter().map(str::to_string).collect();
+            ["const", "shell", "python", "http", "file_transform", "container"]
+                .into_iter()
+                .map(str::to_string)
+                .collect();
     }
 
-    let canonical = graph.canonicalize();
+    let canonical = expanded.canonicalize();
 
     let selected = if options.selected_nodes.is_empty() {
         canonical.nodes.iter().map(|n| n.id.clone()).collect::<BTreeSet<_>>()
@@ -239,6 +247,8 @@ fn to_planned_nodes(nodes: &[Node], edges: &[Edge]) -> Vec<PlannedNode> {
         meta: None,
         inputs: Default::default(),
         nondeterminism_allowed: false,
+        subgraphs: Default::default(),
+        subgraph_instances: Vec::new(),
         nodes: nodes.to_vec(),
         edges: edges.to_vec(),
     };
@@ -265,6 +275,7 @@ fn to_planned_nodes(nodes: &[Node], edges: &[Edge]) -> Vec<PlannedNode> {
             outputs: n.outputs.clone(),
             side_effects: n.effects.clone(),
             retry: n.retry.clone(),
+            cache: n.cache.clone(),
             trigger_rule: n.trigger_rule.clone(),
             timeout_ms: n.timeout_ms,
             resources: n.resources.clone(),
@@ -422,6 +433,7 @@ fn execution_identity_nodes(
                 params: node.params.clone(),
                 trigger_rule: node.trigger_rule.clone(),
                 retry: node.retry.clone(),
+                cache: node.cache.clone(),
                 timeout_ms: node.timeout_ms,
                 resources: node.resources.clone(),
                 effects: node.effects.clone(),
@@ -471,7 +483,15 @@ pub fn can_runtime_execute_plan_without_raw_graph() -> bool {
 }
 
 pub fn node_kind_supported(kind: &NodeKind) -> bool {
-    matches!(kind, NodeKind::Const | NodeKind::Shell | NodeKind::Container)
+    matches!(
+        kind,
+        NodeKind::Const
+            | NodeKind::Shell
+            | NodeKind::Python
+            | NodeKind::Http
+            | NodeKind::FileTransform
+            | NodeKind::Container
+    )
 }
 
 fn planned_branch_contract(branch: &BranchSpec) -> PlannedBranchContract {

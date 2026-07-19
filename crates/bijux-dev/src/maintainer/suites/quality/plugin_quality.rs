@@ -166,9 +166,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             let manifest_reg =
                 "crates/bijux-cli/tests/integration/cli/plugins/plugin_namespace_law.rs";
             let scaffold_targets =
-                "crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_fuzz_targets.rs";
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_stability.rs";
             let scaffold_reg =
-                "crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_fuzz_regressions.rs";
+                "crates/bijux-cli/tests/integration/cli/plugins/plugin_scaffold_case_replays.rs";
             let mtxt = text(manifest_targets);
             let mrtxt = text(manifest_reg);
             let stxt = text(scaffold_targets);
@@ -287,7 +287,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "bijux-cli",
                 "--test",
                 "integration",
-                "plugin_scaffold_fuzz_targets::",
+                "plugin_scaffold_stability::",
             ]);
             let sr_ok = run(&[
                 "test",
@@ -295,7 +295,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 "bijux-cli",
                 "--test",
                 "integration",
-                "plugin_scaffold_fuzz_regressions::",
+                "plugin_scaffold_case_replays::",
             ]);
             let missing = coverage
                 .iter()

@@ -1,8 +1,8 @@
 use crate::commands::DiffModeArg;
 use crate::diff::{build_run_diff, RunDiff};
 use bijux_dag_artifacts::lineage::ArtifactLineageSnapshot;
-use bijux_dag_artifacts::OutputsIndex;
-use serde::Deserialize;
+use bijux_dag_artifacts::{sha256_artifact_path, InputsIndex, OutputsIndex};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{BTreeSet, HashMap};
 use std::fs;
@@ -54,6 +54,197 @@ pub(crate) fn load_run_material(run_dir: &Path) -> Result<RunMaterial, ExitCode>
         provenance,
         lineage,
     })
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ReplayBoundaryArtifactCheck {
+    pub boundary_node_id: String,
+    pub source_node_id: String,
+    pub source_output_name: String,
+    pub source_node_fingerprint: String,
+    pub recorded_sha256: String,
+    pub source_output_path: String,
+    pub materialized_input_path: String,
+    pub verified: bool,
+    pub notes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ReplayBoundaryVerificationReport {
+    pub source_run_id: String,
+    pub boundary_nodes: Vec<String>,
+    pub boundary_nodes_without_upstream_artifacts: Vec<String>,
+    pub verified: bool,
+    pub errors: Vec<String>,
+    pub checks: Vec<ReplayBoundaryArtifactCheck>,
+}
+
+pub(crate) fn verify_replay_boundary_inputs(
+    run_dir: &Path,
+    source_run_id: &str,
+    boundary_nodes: &[String],
+) -> Result<ReplayBoundaryVerificationReport, ExitCode> {
+    let material = load_run_material(run_dir)?;
+    let mut boundary_nodes = boundary_nodes.to_vec();
+    boundary_nodes.sort();
+    boundary_nodes.dedup();
+
+    let mut boundary_nodes_without_upstream_artifacts = Vec::new();
+    let mut errors = Vec::new();
+    let mut checks = Vec::new();
+
+    for boundary_node_id in &boundary_nodes {
+        let inputs_index_path =
+            run_dir.join("nodes").join(boundary_node_id).join("inputs").join("index.json");
+        if !inputs_index_path.exists() {
+            errors.push(format!(
+                "boundary node {} is missing inputs/index.json in source run {}",
+                boundary_node_id, source_run_id
+            ));
+            continue;
+        }
+        let inputs_index: InputsIndex = read_typed_json(&inputs_index_path)?;
+        if inputs_index.files.is_empty() {
+            boundary_nodes_without_upstream_artifacts.push(boundary_node_id.clone());
+        }
+        for input in inputs_index.files {
+            let mut notes = Vec::new();
+            let source_trace = material.node_traces.get(&input.source_node_id);
+            let source_status =
+                source_trace.and_then(|trace| trace.get("status")).and_then(Value::as_str);
+            if !matches!(source_status, Some("success" | "cached")) {
+                notes.push(format!(
+                    "source node {} is not terminally reusable in source run {}",
+                    input.source_node_id, source_run_id
+                ));
+            }
+            let trace_fingerprint =
+                source_trace.and_then(|trace| trace.get("fingerprint")).and_then(Value::as_str);
+            if trace_fingerprint != Some(input.source_node_fingerprint.as_str()) {
+                notes.push(format!(
+                    "source node fingerprint drift detected for {}",
+                    input.source_node_id
+                ));
+            }
+
+            let mut source_output_path = run_dir
+                .join("nodes")
+                .join(&input.source_node_id)
+                .join("outputs")
+                .join(&input.source_output_name);
+            let materialized_input_path =
+                run_dir.join("nodes").join(boundary_node_id).join("inputs").join(&input.local_path);
+
+            match material.node_outputs.get(&input.source_node_id) {
+                Some(index) => {
+                    let source_output =
+                        index.files.iter().find(|file| file.name == input.source_output_name);
+                    match source_output {
+                        Some(file) => {
+                            if file.node_fingerprint != input.source_node_fingerprint {
+                                notes.push(format!(
+                                    "output index fingerprint drift detected for {}:{}",
+                                    input.source_node_id, input.source_output_name
+                                ));
+                            }
+                            if file.sha256 != input.source_sha256 {
+                                notes.push(format!(
+                                    "recorded source artifact hash drift detected for {}:{}",
+                                    input.source_node_id, input.source_output_name
+                                ));
+                            }
+                            let persisted_source_path = run_dir
+                                .join("nodes")
+                                .join(&input.source_node_id)
+                                .join("outputs")
+                                .join(&file.path);
+                            source_output_path.clone_from(&persisted_source_path);
+                            match sha256_artifact_path(&persisted_source_path) {
+                                Ok(actual_sha256) if actual_sha256 != file.sha256 => {
+                                    notes.push(format!(
+                                        "persisted source artifact hash mismatch for {}:{}",
+                                        input.source_node_id, input.source_output_name
+                                    ))
+                                }
+                                Ok(_) => {}
+                                Err(_) => notes.push(format!(
+                                    "persisted source artifact is unreadable for {}:{}",
+                                    input.source_node_id, input.source_output_name
+                                )),
+                            }
+                        }
+                        None => notes.push(format!(
+                            "source output {} is missing from node outputs index for {}",
+                            input.source_output_name, input.source_node_id
+                        )),
+                    }
+                }
+                None => notes.push(format!(
+                    "source node outputs index is missing for {}",
+                    input.source_node_id
+                )),
+            }
+
+            match sha256_artifact_path(&materialized_input_path) {
+                Ok(actual_sha256) if actual_sha256 != input.source_sha256 => notes.push(format!(
+                    "materialized input hash mismatch for {} <- {}:{}",
+                    boundary_node_id, input.source_node_id, input.source_output_name
+                )),
+                Ok(_) => {}
+                Err(_) => notes.push(format!(
+                    "materialized input is unreadable for {} <- {}:{}",
+                    boundary_node_id, input.source_node_id, input.source_output_name
+                )),
+            }
+
+            checks.push(ReplayBoundaryArtifactCheck {
+                boundary_node_id: boundary_node_id.clone(),
+                source_node_id: input.source_node_id,
+                source_output_name: input.source_output_name,
+                source_node_fingerprint: input.source_node_fingerprint,
+                recorded_sha256: input.source_sha256,
+                source_output_path: source_output_path.display().to_string(),
+                materialized_input_path: materialized_input_path.display().to_string(),
+                verified: notes.is_empty(),
+                notes,
+            });
+        }
+    }
+
+    let verified = errors.is_empty() && checks.iter().all(|check| check.verified);
+    Ok(ReplayBoundaryVerificationReport {
+        source_run_id: source_run_id.to_string(),
+        boundary_nodes,
+        boundary_nodes_without_upstream_artifacts,
+        verified,
+        errors,
+        checks,
+    })
+}
+
+pub(crate) fn node_rerun_diff_report(
+    run_a: &Path,
+    run_b: &Path,
+    node_id: &str,
+) -> Result<Value, ExitCode> {
+    let material_a = load_run_material(run_a)?;
+    let material_b = load_run_material(run_b)?;
+    let diff = build_run_diff(
+        material_a.manifest.clone(),
+        material_b.manifest.clone(),
+        material_a.graph_fingerprint.clone(),
+        material_b.graph_fingerprint.clone(),
+        &material_a.node_traces,
+        &material_b.node_traces,
+        &material_a.node_outputs,
+        &material_b.node_outputs,
+    );
+    Ok(json!({
+        "node_id": node_id,
+        "summary": summary_payload(&material_a, &material_b, &diff, Some(node_id)),
+        "artifact": artifact_payload(run_a, run_b, &material_a, &material_b, Some(node_id))?,
+        "causal_chain": build_causal_chain(&material_a, &material_b, &diff, Some(node_id)),
+    }))
 }
 
 pub(crate) fn run_diff_from_dirs(run_a: &Path, run_b: &Path) -> Result<RunDiff, ExitCode> {
@@ -136,6 +327,8 @@ pub(crate) fn replay_dry_run_plan(
     out: &Path,
     snapshot: &crate::run_data::GraphSnapshot,
     source_run_id: Option<&str>,
+    downstream_selection_roots: &[String],
+    selected_node_ids: &[String],
     selectors_include: &[String],
     selectors_exclude: &[String],
     cache_mode: &str,
@@ -154,7 +347,9 @@ pub(crate) fn replay_dry_run_plan(
     }
     let mut planned_actions = Vec::new();
     for node_id in node_ids {
-        let selected = if selectors_include.is_empty() {
+        let selected = if !downstream_selection_roots.is_empty() {
+            selected_node_ids.iter().any(|selected| selected == &node_id)
+        } else if selectors_include.is_empty() {
             true
         } else {
             selectors_include.iter().any(|selector| selector == &node_id)
@@ -170,8 +365,14 @@ pub(crate) fn replay_dry_run_plan(
             && material.node_outputs.contains_key(&node_id);
         let (action, reason) = if sandbox && target_inside_source {
             ("forbid", "sandbox forbids writing inside the source run directory")
-        } else if excluded || !selected {
+        } else if excluded {
             ("skip", "node excluded from replay selector set")
+        } else if !selected && !downstream_selection_roots.is_empty() {
+            ("skip", "node lies outside the requested downstream rerun closure")
+        } else if !selected {
+            ("skip", "node excluded from replay selector set")
+        } else if !downstream_selection_roots.is_empty() {
+            ("reexecute", "node lies inside the requested downstream rerun closure")
         } else if cache_mode != "Off" && matches!(status, Some("cached")) {
             ("cache", "node was cached in the source run and cache reuse is enabled")
         } else if sandbox && evidence_complete && matches!(status, Some("success" | "cached")) {
@@ -203,6 +404,8 @@ pub(crate) fn replay_dry_run_plan(
             None
         },
         "selectors": {
+            "downstream_roots": downstream_selection_roots,
+            "selected_node_ids": selected_node_ids,
             "select": selectors_include,
             "exclude": selectors_exclude,
         },
@@ -995,19 +1198,19 @@ mod tests {
         write(&run_b.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
         write(
             &run_a.join("outputs/index.json"),
-            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","sha256":"a","path":"nodes/n1/outputs/report.json"}]}"#,
+            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","name":"report","kind":"file","media_type":"application/json","size_bytes":13,"sha256":"a","path":"nodes/n1/outputs/report.json"}]}"#,
         );
         write(
             &run_b.join("outputs/index.json"),
-            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","sha256":"b","path":"nodes/n1/outputs/report.json"}]}"#,
+            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","name":"report","kind":"file","media_type":"application/json","size_bytes":13,"sha256":"b","path":"nodes/n1/outputs/report.json"}]}"#,
         );
         write(
             &run_a.join("nodes/n1/outputs/index.json"),
-            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","sha256":"a","path":"nodes/n1/outputs/report.json"}]}"#,
+            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","name":"report","kind":"file","media_type":"application/json","size_bytes":13,"sha256":"a","path":"nodes/n1/outputs/report.json"}]}"#,
         );
         write(
             &run_b.join("nodes/n1/outputs/index.json"),
-            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","sha256":"b","path":"nodes/n1/outputs/report.json"}]}"#,
+            r#"{"files":[{"node_id":"n1","node_fingerprint":"fp1","name":"report","kind":"file","media_type":"application/json","size_bytes":13,"sha256":"b","path":"nodes/n1/outputs/report.json"}]}"#,
         );
         write(&run_a.join("nodes/n1/outputs/report.json"), r#"{"a":1,"b":2}"#);
         write(&run_b.join("nodes/n1/outputs/report.json"), r#"{"a":1,"b":3}"#);
@@ -1139,7 +1342,7 @@ mod tests {
         );
         write(
             &run_dir.join("nodes/a/outputs/index.json"),
-            r#"{"files":[{"node_id":"a","node_fingerprint":"fp-a","sha256":"a","path":"nodes/a/outputs/out"}]}"#,
+            r#"{"files":[{"node_id":"a","node_fingerprint":"fp-a","name":"out","kind":"file","media_type":"application/octet-stream","size_bytes":1,"sha256":"a","path":"nodes/a/outputs/out"}]}"#,
         );
         let snapshot = GraphSnapshot {
             graph: serde_json::from_value::<Graph>(json!({
@@ -1150,12 +1353,17 @@ mod tests {
             }))
             .expect("graph"),
             graph_fingerprint: "fp-1".to_string(),
+            source_graph: None,
+            source_graph_fingerprint: None,
+            dynamic_expansions: Vec::new(),
         };
         let plan = replay_dry_run_plan(
             &run_dir,
             &run_dir.join("nested-target"),
             &snapshot,
             Some("source-run"),
+            &Vec::new(),
+            &Vec::new(),
             &Vec::new(),
             &Vec::new(),
             "Read",
@@ -1166,5 +1374,94 @@ mod tests {
         .expect("dry run plan");
         assert_eq!(plan["sandbox_mode"], "isolated");
         assert_eq!(plan["planned_actions"][0]["action"], "forbid");
+    }
+
+    #[test]
+    fn replay_dry_run_plan_reexecutes_requested_downstream_closure() {
+        let tmp = tempfile::tempdir().expect("temp dir");
+        let run_dir = tmp.path().join("source");
+        fs::create_dir_all(run_dir.join("nodes/source/outputs")).expect("source outputs");
+        fs::create_dir_all(run_dir.join("nodes/branch/outputs")).expect("branch outputs");
+        fs::create_dir_all(run_dir.join("nodes/sink/outputs")).expect("sink outputs");
+        fs::create_dir_all(run_dir.join("outputs")).expect("run outputs");
+        write(&run_dir.join("manifest.json"), r#"{"status":"completed","policy":{}}"#);
+        write(&run_dir.join("graph.snapshot.json"), r#"{"graph_fingerprint":"fp-1"}"#);
+        write(&run_dir.join("outputs/index.json"), r#"{"files":[]}"#);
+        write(
+            &run_dir.join("nodes/source/trace.json"),
+            r#"{"status":"success","adapter_id":"const","evidence_fingerprint":"e-source"}"#,
+        );
+        write(
+            &run_dir.join("nodes/source/outputs/index.json"),
+            r#"{"files":[{"node_id":"source","node_fingerprint":"fp-source","name":"out","kind":"file","media_type":"application/octet-stream","size_bytes":1,"sha256":"1","path":"nodes/source/outputs/out"}]}"#,
+        );
+        write(
+            &run_dir.join("nodes/branch/trace.json"),
+            r#"{"status":"cached","adapter_id":"const","evidence_fingerprint":"e-branch"}"#,
+        );
+        write(
+            &run_dir.join("nodes/branch/outputs/index.json"),
+            r#"{"files":[{"node_id":"branch","node_fingerprint":"fp-branch","name":"out","kind":"file","media_type":"application/octet-stream","size_bytes":1,"sha256":"2","path":"nodes/branch/outputs/out"}]}"#,
+        );
+        write(
+            &run_dir.join("nodes/sink/trace.json"),
+            r#"{"status":"success","adapter_id":"const","evidence_fingerprint":"e-sink"}"#,
+        );
+        write(
+            &run_dir.join("nodes/sink/outputs/index.json"),
+            r#"{"files":[{"node_id":"sink","node_fingerprint":"fp-sink","name":"out","kind":"file","media_type":"application/octet-stream","size_bytes":1,"sha256":"3","path":"nodes/sink/outputs/out"}]}"#,
+        );
+        let snapshot = GraphSnapshot {
+            graph: serde_json::from_value::<Graph>(json!({
+                "spec":"bijux-dag/v0.1",
+                "meta":{"name":"g","owners":[],"tags":[]},
+                "nodes":[
+                    {"id":"source","kind":"const","outputs":[{"name":"out","path":"source/out"}],"params":{}},
+                    {"id":"branch","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"branch/out"}],"params":{}},
+                    {"id":"sink","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"sink/out"}],"params":{}}
+                ],
+                "edges":[
+                    {"from":{"node_id":"source","port":"out"},"to":{"node_id":"branch","port":"in"}},
+                    {"from":{"node_id":"branch","port":"out"},"to":{"node_id":"sink","port":"in"}}
+                ]
+            }))
+            .expect("graph"),
+            graph_fingerprint: "fp-1".to_string(),
+            source_graph: None,
+            source_graph_fingerprint: None,
+            dynamic_expansions: Vec::new(),
+        };
+        let plan = replay_dry_run_plan(
+            &run_dir,
+            &tmp.path().join("replay"),
+            &snapshot,
+            Some("source-run"),
+            &["branch".to_string()],
+            &["branch".to_string(), "sink".to_string()],
+            &Vec::new(),
+            &Vec::new(),
+            "Read",
+            1,
+            false,
+            false,
+        )
+        .expect("dry run plan");
+        assert_eq!(plan["selectors"]["downstream_roots"], serde_json::json!(["branch"]));
+        assert_eq!(plan["selectors"]["selected_node_ids"], serde_json::json!(["branch", "sink"]));
+        let actions = plan["planned_actions"].as_array().expect("planned actions");
+        assert_eq!(
+            actions.iter().find(|entry| entry["node_id"] == "source").expect("source action")
+                ["action"],
+            "skip"
+        );
+        assert_eq!(
+            actions.iter().find(|entry| entry["node_id"] == "branch").expect("branch action")
+                ["action"],
+            "reexecute"
+        );
+        assert_eq!(
+            actions.iter().find(|entry| entry["node_id"] == "sink").expect("sink action")["action"],
+            "reexecute"
+        );
     }
 }

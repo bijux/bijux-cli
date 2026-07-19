@@ -651,7 +651,7 @@ mod tests {
     use std::collections::BTreeMap;
 
     #[test]
-    fn g171_domain_neutral_artifact_roles_are_typed_and_enforceable() {
+    fn domain_neutral_artifact_roles_are_typed_and_enforceable() {
         let report = validate_domain_neutral_artifact_roles(&[
             ArtifactRoleMetadataV1 {
                 artifact_id: "artifact-fastq-1".to_string(),
@@ -677,7 +677,7 @@ mod tests {
     }
 
     #[test]
-    fn g172_sample_identity_propagation_supports_warn_and_refuse_policies() {
+    fn sample_identity_propagation_supports_warn_and_refuse_policies() {
         let artifacts = vec![
             ArtifactSampleIdentityV1 {
                 artifact_id: "a-fastq".to_string(),
@@ -720,7 +720,7 @@ mod tests {
     }
 
     #[test]
-    fn g173_reference_identity_metadata_is_typed_and_checksum_guarded() {
+    fn reference_identity_metadata_is_typed_and_checksum_guarded() {
         validate_reference_identity_metadata(&ReferenceIdentityMetadataV1 {
             reference_id: "grch38".to_string(),
             build: "grch38.p14".to_string(),
@@ -742,7 +742,7 @@ mod tests {
     }
 
     #[test]
-    fn g174_scientific_findings_use_standard_advisory_and_enforced_shapes() {
+    fn scientific_findings_use_standard_advisory_and_enforced_shapes() {
         let report = normalize_scientific_findings(&[
             ScientificFindingV1 {
                 finding_id: "f-1".to_string(),
@@ -765,7 +765,7 @@ mod tests {
     }
 
     #[test]
-    fn g175_truth_set_comparisons_are_attachable_with_explicit_limitations() {
+    fn truth_set_comparisons_are_attachable_with_explicit_limitations() {
         let mut envelope =
             TruthSetEvidenceEnvelopeV1 { run_id: "run-18".to_string(), comparisons: Vec::new() };
         attach_truth_set_comparison(
@@ -784,7 +784,7 @@ mod tests {
     }
 
     #[test]
-    fn g176_scientific_trust_class_promotion_is_evidence_and_policy_gated() {
+    fn scientific_trust_class_promotion_is_evidence_and_policy_gated() {
         let exploratory = evaluate_scientific_trust_promotion(
             ScientificRunTrustClassV1::Exploratory,
             false,
@@ -809,7 +809,7 @@ mod tests {
     }
 
     #[test]
-    fn g177_scientific_overrides_are_audited_with_high_risk_visibility() {
+    fn scientific_overrides_are_audited_with_high_risk_visibility() {
         let report = audit_scientific_overrides(&[
             ScientificOverrideRecordV1 {
                 override_id: "ovr-1".to_string(),
@@ -832,7 +832,7 @@ mod tests {
     }
 
     #[test]
-    fn g178_uncertainty_is_first_class_and_blocks_silent_guesses() {
+    fn uncertainty_is_first_class_and_blocks_silent_guesses() {
         let report = evaluate_scientific_uncertainty(&[
             ScientificUncertaintyInputV1 {
                 field: "tumor_purity".to_string(),
@@ -860,7 +860,7 @@ mod tests {
     }
 
     #[test]
-    fn g179_cross_app_evidence_links_share_core_lineage_kernel() {
+    fn cross_app_evidence_links_share_core_lineage_kernel() {
         let report = validate_cross_app_evidence_links(&[
             CrossAppEvidenceLinkV1 {
                 source_app: "genomics".to_string(),
@@ -886,7 +886,7 @@ mod tests {
     }
 
     #[test]
-    fn g180_strict_promotion_refuses_simulated_or_advisory_for_certification_grade() {
+    fn strict_promotion_refuses_simulated_or_advisory_for_certification_grade() {
         let refused = enforce_strict_scientific_promotion_refusal(
             ScientificRunTrustClassV1::Certification,
             ScientificEvidenceStrengthV1::Advisory,

@@ -1,8 +1,8 @@
 use bijux_dag_artifacts::{
-    build_cleanup_plan, finalize_run_manifest, verify_run_dir, write_incomplete_run_marker,
-    write_json_atomic_durable, Manifest, RunOutputsIndex, VerificationMode,
+    build_cleanup_plan, finalize_run_manifest, finalize_run_manifest_with_mode, verify_run_dir,
+    write_incomplete_run_marker, write_json_atomic_durable, Manifest, RunFinalizationMode,
+    RunOutputsIndex, VerificationMode,
 };
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;
@@ -38,16 +38,21 @@ fn sample_manifest(run_id: &str) -> Manifest {
             failed: 0,
             skipped: 0,
             cached: 0,
+            cancelled: 0,
         },
         policy: bijux_dag_artifacts::PolicyInfo {
             deny_network: true,
             deny_env: true,
             deny_clock: true,
             clean_env: true,
+            container_image_reference_policy:
+                bijux_dag_artifacts::ContainerImageReferencePolicy::RequireDigest,
         },
         cache_mode: None,
         cache_dir: None,
         run_timeout_ms: None,
+        run_timeout_behavior: None,
+        run_cancellation_cause: None,
         run_metadata: None,
         run_summary: None,
     }
@@ -76,6 +81,21 @@ fn incomplete_and_finalized_markers_are_written() {
     finalize_run_manifest(dir.path()).unwrap();
     assert!(dir.path().join("manifest.finalized.json").exists());
     assert!(dir.path().join(".run-complete.json").exists());
+}
+
+#[test]
+fn incomplete_finalization_preserves_incomplete_marker_without_completion_marker() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(
+        dir.path().join("manifest.json"),
+        serde_json::to_vec_pretty(&sample_manifest("run-4")).unwrap(),
+    )
+    .unwrap();
+    write_incomplete_run_marker(dir.path(), "run timed out").unwrap();
+    finalize_run_manifest_with_mode(dir.path(), RunFinalizationMode::Incomplete).unwrap();
+    assert!(dir.path().join("manifest.finalized.json").exists());
+    assert!(dir.path().join(".run-incomplete.json").exists());
+    assert!(!dir.path().join(".run-complete.json").exists());
 }
 
 #[test]

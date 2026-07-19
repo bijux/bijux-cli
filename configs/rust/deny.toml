@@ -8,7 +8,10 @@ yanked = "deny"
 allow = [
   "Apache-2.0",
   "Apache-2.0 WITH LLVM-exception",
+  "BSD-3-Clause",
+  "ISC",
   "MIT",
+  "CDLA-Permissive-2.0",
   "Unicode-3.0",
   "Zlib",
 ]

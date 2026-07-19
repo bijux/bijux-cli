@@ -2,6 +2,10 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 
+fn default_container_image_reference_policy() -> bijux_dag_runtime::ContainerImageReferencePolicy {
+    bijux_dag_runtime::ContainerImageReferencePolicy::RequireDigest
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum CacheModeSurface {
@@ -25,6 +29,8 @@ pub struct PolicySurfaceConfig {
     pub deny_env: bool,
     pub deny_clock: bool,
     pub clean_env: bool,
+    #[serde(default = "default_container_image_reference_policy")]
+    pub container_image_reference_policy: bijux_dag_runtime::ContainerImageReferencePolicy,
     #[serde(default)]
     pub allowed_env: Vec<String>,
 }
@@ -57,6 +63,8 @@ pub fn default_runtime_config() -> RuntimeSurfaceConfig {
             deny_env: false,
             deny_clock: false,
             clean_env: true,
+            container_image_reference_policy:
+                bijux_dag_runtime::ContainerImageReferencePolicy::RequireDigest,
             allowed_env: Vec::new(),
         },
     }
@@ -114,6 +122,13 @@ pub fn policy_evaluation_trace(policy: &PolicySurfaceConfig) -> Vec<String> {
     events.push(format!(
         "rule:clean_env decision:{}",
         if policy.clean_env { "enforce" } else { "skip" }
+    ));
+    events.push(format!(
+        "rule:container_image_reference decision:{}",
+        match policy.container_image_reference_policy {
+            bijux_dag_runtime::ContainerImageReferencePolicy::RequireDigest => "require_digest",
+            bijux_dag_runtime::ContainerImageReferencePolicy::AllowUnpinned => "allow_unpinned",
+        }
     ));
     events
 }
@@ -190,6 +205,8 @@ mod tests {
             deny_env: false,
             deny_clock: false,
             clean_env: true,
+            container_image_reference_policy:
+                bijux_dag_runtime::ContainerImageReferencePolicy::RequireDigest,
             allowed_env: vec![],
         };
         assert_ne!(config_fingerprint(&a), config_fingerprint(&b));
@@ -204,6 +221,8 @@ mod tests {
             deny_env: true,
             deny_clock: false,
             clean_env: true,
+            container_image_reference_policy:
+                bijux_dag_runtime::ContainerImageReferencePolicy::RequireDigest,
             allowed_env: vec![],
         };
         let trace = policy_evaluation_trace(&policy);

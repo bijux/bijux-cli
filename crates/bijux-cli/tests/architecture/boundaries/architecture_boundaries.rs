@@ -48,7 +48,6 @@ fn internal_workspace_deps(pkg: &Value) -> BTreeSet<(String, String)> {
 }
 
 #[test]
-#[ignore = "legacy workspace boundary expectation no longer matches merged repository layout"]
 fn enforces_internal_crate_boundaries() {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../Cargo.toml");
     let output = Command::new("cargo")

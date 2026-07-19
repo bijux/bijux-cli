@@ -34,6 +34,7 @@ pub enum NodeState {
     Skipped,
     Cached,
     Cancelled,
+    TimedOut,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -45,6 +46,7 @@ pub enum RunState {
     Interrupted,
     Cancelling,
     Cancelled,
+    TimedOut,
     Failed,
     Succeeded,
 }
@@ -62,6 +64,7 @@ pub enum TransitionCause {
     PolicyDenied,
     DependencyFailed,
     SelectionFiltered,
+    ExecutionAborted,
     CancelRequested,
     TimeoutExceeded,
     ReplayReused,
@@ -89,6 +92,26 @@ pub struct RunAttempt {
     pub run_id: RunId,
     pub parent_run_id: Option<RunId>,
     pub reason: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resume_summary: Option<ResumeSummary>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResumeFailureMode {
+    RerunIncomplete,
+    RejectIncomplete,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ResumeSummary {
+    pub failure_mode: ResumeFailureMode,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub reused_nodes: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rerun_nodes: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rejected_nodes: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -147,11 +170,14 @@ impl RunSummaryV2 {
             total_nodes: self.counts.success
                 + self.counts.failed
                 + self.counts.skipped
-                + self.counts.cached,
+                + self.counts.cached
+                + self.counts.cancelled,
             success: self.counts.success,
             failed: self.counts.failed,
             skipped: self.counts.skipped,
             cached: self.counts.cached,
+            cancelled: self.counts.cancelled,
+            promoted_outputs: Vec::new(),
         }
     }
 }
@@ -198,6 +224,15 @@ pub const INV_NODE_TRANSITION_QUEUED_SKIPPED: &str = "INV-NODE-TERMINAL-004";
 pub const INV_NODE_TRANSITION_ELIGIBLE_CACHED: &str = "INV-NODE-TERMINAL-005";
 pub const INV_NODE_TRANSITION_QUEUED_CACHED: &str = "INV-NODE-TERMINAL-006";
 pub const INV_NODE_TRANSITION_RUNNING_CANCELLED: &str = "INV-NODE-TERMINAL-007";
+pub const INV_NODE_TRANSITION_QUEUED_FAILED: &str = "INV-NODE-TERMINAL-008";
+pub const INV_NODE_TRANSITION_PENDING_CANCELLED: &str = "INV-NODE-TERMINAL-009";
+pub const INV_NODE_TRANSITION_ELIGIBLE_CANCELLED: &str = "INV-NODE-TERMINAL-010";
+pub const INV_NODE_TRANSITION_QUEUED_CANCELLED: &str = "INV-NODE-TERMINAL-011";
+pub const INV_NODE_TRANSITION_PENDING_TIMED_OUT: &str = "INV-NODE-TERMINAL-012";
+pub const INV_NODE_TRANSITION_ELIGIBLE_TIMED_OUT: &str = "INV-NODE-TERMINAL-013";
+pub const INV_NODE_TRANSITION_QUEUED_TIMED_OUT: &str = "INV-NODE-TERMINAL-014";
+pub const INV_NODE_TRANSITION_RUNNING_TIMED_OUT: &str = "INV-NODE-TERMINAL-015";
+pub const INV_NODE_TRANSITION_PENDING_SKIPPED: &str = "INV-NODE-TERMINAL-016";
 pub const INV_NODE_TERMINAL_NO_REVERT: &str = "INV-NODE-TERMINAL-REVERT-001";
 
 pub const INV_RUN_TRANSITION_SUBMITTED_PLANNING: &str = "INV-RUN-TRANSITION-001";
@@ -209,8 +244,9 @@ pub const INV_RUN_TRANSITION_INTERRUPTED_RUNNING: &str = "INV-RUN-TRANSITION-006
 pub const INV_RUN_TRANSITION_INTERRUPTED_CANCELLING: &str = "INV-RUN-TRANSITION-007";
 pub const INV_RUN_TRANSITION_RUNNING_CANCELLING: &str = "INV-RUN-TRANSITION-008";
 pub const INV_RUN_TRANSITION_CANCELLING_CANCELLED: &str = "INV-RUN-TERMINAL-001";
-pub const INV_RUN_TRANSITION_RUNNING_FAILED: &str = "INV-RUN-TERMINAL-002";
-pub const INV_RUN_TRANSITION_RUNNING_SUCCEEDED: &str = "INV-RUN-TERMINAL-003";
+pub const INV_RUN_TRANSITION_RUNNING_TIMED_OUT: &str = "INV-RUN-TERMINAL-002";
+pub const INV_RUN_TRANSITION_RUNNING_FAILED: &str = "INV-RUN-TERMINAL-003";
+pub const INV_RUN_TRANSITION_RUNNING_SUCCEEDED: &str = "INV-RUN-TERMINAL-004";
 pub const INV_RUN_FAILED_CAUSAL_FAILURE: &str = "INV-RUN-FAILED-CAUSAL-001";
 
 pub fn node_transition_invariant_id(from: NodeState, to: NodeState) -> Option<&'static str> {
@@ -226,6 +262,15 @@ pub fn node_transition_invariant_id(from: NodeState, to: NodeState) -> Option<&'
         (S::Eligible, S::Cached) => Some(INV_NODE_TRANSITION_ELIGIBLE_CACHED),
         (S::Queued, S::Cached) => Some(INV_NODE_TRANSITION_QUEUED_CACHED),
         (S::Running, S::Cancelled) => Some(INV_NODE_TRANSITION_RUNNING_CANCELLED),
+        (S::Queued, S::Failed) => Some(INV_NODE_TRANSITION_QUEUED_FAILED),
+        (S::Pending, S::Skipped) => Some(INV_NODE_TRANSITION_PENDING_SKIPPED),
+        (S::Pending, S::Cancelled) => Some(INV_NODE_TRANSITION_PENDING_CANCELLED),
+        (S::Eligible, S::Cancelled) => Some(INV_NODE_TRANSITION_ELIGIBLE_CANCELLED),
+        (S::Queued, S::Cancelled) => Some(INV_NODE_TRANSITION_QUEUED_CANCELLED),
+        (S::Pending, S::TimedOut) => Some(INV_NODE_TRANSITION_PENDING_TIMED_OUT),
+        (S::Eligible, S::TimedOut) => Some(INV_NODE_TRANSITION_ELIGIBLE_TIMED_OUT),
+        (S::Queued, S::TimedOut) => Some(INV_NODE_TRANSITION_QUEUED_TIMED_OUT),
+        (S::Running, S::TimedOut) => Some(INV_NODE_TRANSITION_RUNNING_TIMED_OUT),
         _ => None,
     }
 }
@@ -242,6 +287,7 @@ pub fn run_transition_invariant_id(from: RunState, to: RunState) -> Option<&'sta
         (S::Interrupted, S::Cancelling) => Some(INV_RUN_TRANSITION_INTERRUPTED_CANCELLING),
         (S::Running, S::Cancelling) => Some(INV_RUN_TRANSITION_RUNNING_CANCELLING),
         (S::Cancelling, S::Cancelled) => Some(INV_RUN_TRANSITION_CANCELLING_CANCELLED),
+        (S::Running, S::TimedOut) => Some(INV_RUN_TRANSITION_RUNNING_TIMED_OUT),
         (S::Running, S::Failed) => Some(INV_RUN_TRANSITION_RUNNING_FAILED),
         (S::Running, S::Succeeded) => Some(INV_RUN_TRANSITION_RUNNING_SUCCEEDED),
         _ => None,
@@ -256,6 +302,7 @@ fn node_is_terminal(state: NodeState) -> bool {
             | NodeState::Skipped
             | NodeState::Cached
             | NodeState::Cancelled
+            | NodeState::TimedOut
     )
 }
 
@@ -274,11 +321,20 @@ pub fn validate_node_transition(transition: &NodeTransition) -> Result<(), Strin
             | (S::Queued, S::Running)
             | (S::Running, S::Success)
             | (S::Running, S::Failed)
+            | (S::Pending, S::Skipped)
             | (S::Eligible, S::Skipped)
             | (S::Queued, S::Skipped)
             | (S::Eligible, S::Cached)
             | (S::Queued, S::Cached)
+            | (S::Queued, S::Failed)
+            | (S::Pending, S::Cancelled)
+            | (S::Eligible, S::Cancelled)
+            | (S::Queued, S::Cancelled)
             | (S::Running, S::Cancelled)
+            | (S::Pending, S::TimedOut)
+            | (S::Eligible, S::TimedOut)
+            | (S::Queued, S::TimedOut)
+            | (S::Running, S::TimedOut)
     );
     if allowed {
         Ok(())
@@ -302,6 +358,7 @@ pub fn validate_run_transition(transition: &RunTransition) -> Result<(), String>
             | (S::Interrupted, S::Cancelling)
             | (S::Running, S::Cancelling)
             | (S::Cancelling, S::Cancelled)
+            | (S::Running, S::TimedOut)
             | (S::Running, S::Failed)
             | (S::Running, S::Succeeded)
     );
@@ -327,7 +384,10 @@ pub fn verify_post_run_state_consistency(
         violations
             .push(format!("{} failed run has no causal failure", INV_RUN_FAILED_CAUSAL_FAILURE));
     }
-    if matches!(run_state, RunState::Succeeded | RunState::Failed | RunState::Cancelled) {
+    if matches!(
+        run_state,
+        RunState::Succeeded | RunState::Failed | RunState::Cancelled | RunState::TimedOut
+    ) {
         let non_terminal = node_states.iter().any(|s| {
             !matches!(
                 s,
@@ -336,6 +396,7 @@ pub fn verify_post_run_state_consistency(
                     | NodeState::Skipped
                     | NodeState::Cached
                     | NodeState::Cancelled
+                    | NodeState::TimedOut
             )
         });
         if non_terminal {
@@ -370,7 +431,10 @@ pub fn terminal_transition_audit_events(
         }
     }
     for transition in run_transitions {
-        if matches!(transition.to, RunState::Succeeded | RunState::Failed | RunState::Cancelled) {
+        if matches!(
+            transition.to,
+            RunState::Succeeded | RunState::Failed | RunState::Cancelled | RunState::TimedOut
+        ) {
             out.push(TransitionAuditEvent {
                 invariant_id: run_transition_invariant_id(
                     transition.from.clone(),

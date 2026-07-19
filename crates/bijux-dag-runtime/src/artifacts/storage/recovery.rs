@@ -289,7 +289,7 @@ pub fn should_quarantine_run(
     run_state: &RunState,
     consistency: &ConsistencyCheckReport,
 ) -> Option<String> {
-    if matches!(run_state, RunState::Cancelled | RunState::Failed)
+    if matches!(run_state, RunState::Cancelled | RunState::Failed | RunState::TimedOut)
         && (!consistency.summary_matches_node_states
             || !consistency.all_success_nodes_have_artifacts)
     {

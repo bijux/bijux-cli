@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -21,6 +20,7 @@ fn maps_major_runtime_events_to_stable_categories() {
     assert_eq!(category_from_runtime_event_name("node_scheduled"), EventCategory::Schedule);
     assert_eq!(category_from_runtime_event_name("node_started"), EventCategory::Start);
     assert_eq!(category_from_runtime_event_name("node_attempt_started"), EventCategory::Retry);
+    assert_eq!(category_from_runtime_event_name("node_retry_scheduled"), EventCategory::Retry);
     assert_eq!(category_from_runtime_event_name("run_timeout"), EventCategory::Timeout);
     assert_eq!(category_from_runtime_event_name("cache_hit"), EventCategory::CacheHit);
     assert_eq!(category_from_runtime_event_name("policy_denied"), EventCategory::Failure);

@@ -3,7 +3,7 @@
 
 GH_DOCS_PAGES_DIR ?= artifacts/docs/docs/artifacts
 GH_RELEASE_TAG_PATTERN ?= ^v[0-9]+\.[0-9]+\.[0-9]+$$
-GH_CRATES_RELEASE_PACKAGES ?= bijux-cli
+GH_CRATES_RELEASE_PACKAGES ?= bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-cli
 GH_RELEASE_CI_WORKFLOW_FILE ?= ci.yml
 GH_RELEASE_CI_WAIT_TIMEOUT_SECONDS ?= 1800
 GH_RELEASE_CI_POLL_INTERVAL_SECONDS ?= 15
@@ -13,7 +13,7 @@ GH_SECURITY_CARGO_DENY_VERSION ?= 0.18.3
 GH_SECURITY_CARGO_AUDIT_VERSION ?= 0.22.1
 GH_TEST_CARGO_NEXTEST_VERSION ?= 0.9.100
 
-.PHONY: gh-fmt gh-lint gh-security gh-audit gh-test \
+.PHONY: gh-fmt gh-lint gh-security gh-audit gh-test gh-release-validate \
 	docs-artifact-pages docs-artifact-pages-check gh-docs-install gh-docs-configure-git \
 	gh-security-install-rust-tools gh-test-install-rust-tools \
 	gh-release-plan-github gh-release-plan-pypi gh-release-plan-crates \
@@ -29,6 +29,8 @@ gh-security: install security ## Run GitHub security checks
 gh-audit: gh-security ## Compatibility alias for GitHub security checks
 
 gh-test: install test ## Run GitHub test suites
+
+gh-release-validate: install release-validate-rs ## Run the canonical release validation suite in GitHub Actions
 
 gh-security-install-rust-tools: ## Install Rust security tools that match the pinned CI toolchain
 	@cargo install --locked cargo-deny --version "$(GH_SECURITY_CARGO_DENY_VERSION)"

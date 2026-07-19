@@ -4,23 +4,17 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Dependency Governance
 
-Dependency governance ensures `bijux-cli` remains predictable when parser,
-serialization, schema, and semver libraries evolve.
+Use this page when a dependency update looks routine but might change what the
+CLI accepts, prints, serializes, or promises.
 
-## Visual Summary
-
-```mermaid
-flowchart TD
-    update["dependency update"] --> impact["contract impact analysis"]
-    impact --> tests["targeted parser and contract tests"]
-    tests --> docs["docs and compatibility notes"]
-    docs --> approve["review approval"]
-```
+Dependency governance matters because `bijux-cli` leans on parser, schema,
+serialization, and compatibility libraries that can shift user-visible
+behavior even when local code changes are small.
 
 ## Governance Focus
 
@@ -37,6 +31,15 @@ flowchart TD
 - `crates/bijux-cli/src/contracts/plugin.rs`
 - `crates/bijux-cli/tests/routing/`
 
+## What Reviewers Should Check
+
+| Dependency surface | Why it is risky |
+| --- | --- |
+| parser and help libraries | route grammar, help text, and argv interpretation may drift |
+| schema and serialization libraries | machine-readable outputs can change shape or ordering |
+| semver logic | compatibility acceptance and plugin range checks can loosen or tighten unexpectedly |
+| error and propagation libraries | diagnostics may change wording or classification in contract-facing flows |
+
 ## Governance Rules
 
 - no dependency bumps without targeted test evidence
@@ -44,7 +47,13 @@ flowchart TD
 - avoid broad upgrade bundles that hide root-cause regressions
 - keep dependency decisions auditable in commit and review history
 
-## Next Reads
+## Reader Shortcut
+
+If a dependency change alters command grammar, payload shape, or compatibility
+range behavior, the dependency did not stay internal. Review it like a contract
+change, because for users it effectively is one.
+
+## Continue Reading
 
 - [Dependencies and Adjacencies](../foundation/dependencies-and-adjacencies.md)
 - [Change Validation](change-validation.md)

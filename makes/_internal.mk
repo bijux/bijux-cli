@@ -19,8 +19,10 @@ BIJUX_RUNTIME_BIN     ?= bijux
 PYTHON_EDITABLE_EXTRAS ?= test,lint,security,docs,build
 PYTHON_EDITABLE_SPEC  ?= ./crates/bijux-cli-python[$(PYTHON_EDITABLE_EXTRAS)]
 PYTHON_INSTALL_ARTIFACTS_DIR ?= artifacts/python/install
+PYTHON_BYTECODE_DIR ?= artifacts/python/pycache
 PIP_BOOTSTRAP_LOG     ?= $(abspath $(PYTHON_INSTALL_ARTIFACTS_DIR)/pip-bootstrap.log)
 PIP_EDITABLE_LOG      ?= $(abspath $(PYTHON_INSTALL_ARTIFACTS_DIR)/pip-editable.log)
+export PYTHONPYCACHEPREFIX := $(abspath $(PYTHON_BYTECODE_DIR))
 
 .NOTPARALLEL: all clean
 
@@ -147,7 +149,8 @@ all: fmt lint security test build ## Run quality checks and build distributions
 
 fmt: fmt-rs ## Run Rust formatting checks
 lint: lint-rs ## Run Rust lint checks
-test: test-rs test-py ## Run Rust and Python test suites
+test: test-release-rs test-py ## Run the required Rust release lane and Python test suites
+test-slow: test-slow-rs ## Run governed slow Rust tests
 test-all: test-all-rs ## Run full Rust tests including ignored tests
 audit: audit-rs ## Run Rust dependency and advisory audits
 security: audit-rs security-py ## Run Rust and Python security checks

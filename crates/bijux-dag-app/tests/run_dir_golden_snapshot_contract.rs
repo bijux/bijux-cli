@@ -1,10 +1,13 @@
-use bijux_dag_testkit::{
-    collect_run_dir_snapshot, fixture_path_string, fixture_snapshot_path, graph_map_reduce_fixture,
-    update_or_assert_snapshot, write_graph_fixture,
-};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+mod support;
+
+use support::{
+    collect_run_dir_snapshot, fixture_path_string, fixture_snapshot_path, graph_map_reduce_fixture,
+    graph_semantic_map_reduce_fixture, update_or_assert_snapshot, write_graph_fixture,
+};
 
 fn dag_bin(cwd: &Path) -> Command {
     let cargo_bin = std::env::var("CARGO")
@@ -37,14 +40,14 @@ fn run_dir_from(payload: &Value) -> PathBuf {
 }
 
 #[test]
-fn hello_workflow_run_dir_snapshot_is_stable() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__hello_workflow_run_dir_snapshot_is_stable() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
     let out_dir = temp.path().join("runs");
     let graph = root.join("evidence/dag/authoring/examples/hello.dag.json");
     let payload = run_json(
         &[
-            "dag",
             "--json",
             "run",
             &fixture_path_string(&graph),
@@ -63,14 +66,14 @@ fn hello_workflow_run_dir_snapshot_is_stable() {
 }
 
 #[test]
-fn cached_branch_workflow_run_dir_snapshot_is_stable() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__cached_branch_workflow_run_dir_snapshot_is_stable() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
     let out_dir = temp.path().join("runs");
     let graph = root.join("evidence/dag/authoring/examples/cached-branched-report.dag.json");
     let payload = run_json(
         &[
-            "dag",
             "--json",
             "run",
             &fixture_path_string(&graph),
@@ -92,7 +95,8 @@ fn cached_branch_workflow_run_dir_snapshot_is_stable() {
 }
 
 #[test]
-fn map_reduce_workflow_run_dir_snapshot_is_stable() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__map_reduce_workflow_run_dir_snapshot_is_stable() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
     let graph_path = temp.path().join("map_reduce.json");
@@ -100,7 +104,6 @@ fn map_reduce_workflow_run_dir_snapshot_is_stable() {
     let out_dir = temp.path().join("runs");
     let payload = run_json(
         &[
-            "dag",
             "--json",
             "run",
             &fixture_path_string(&graph_path),
@@ -116,6 +119,36 @@ fn map_reduce_workflow_run_dir_snapshot_is_stable() {
         &fixture_snapshot_path(
             env!("CARGO_MANIFEST_DIR"),
             "tests/snapshots/run_dir_map_reduce.json",
+        ),
+        &snapshot,
+    );
+}
+
+#[test]
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__semantic_map_reduce_workflow_run_dir_snapshot_is_stable() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let graph_path = temp.path().join("semantic_map_reduce.json");
+    write_graph_fixture(&graph_path, &graph_semantic_map_reduce_fixture());
+    let out_dir = temp.path().join("runs");
+    let payload = run_json(
+        &[
+            "--json",
+            "run",
+            &fixture_path_string(&graph_path),
+            "--out",
+            &fixture_path_string(&out_dir),
+            "--run-id",
+            "semantic-map-reduce-fixed",
+        ],
+        &root,
+    );
+    let snapshot = collect_run_dir_snapshot(&run_dir_from(&payload));
+    update_or_assert_snapshot(
+        &fixture_snapshot_path(
+            env!("CARGO_MANIFEST_DIR"),
+            "tests/snapshots/run_dir_semantic_map_reduce.json",
         ),
         &snapshot,
     );

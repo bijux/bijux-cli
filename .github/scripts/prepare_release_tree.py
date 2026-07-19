@@ -7,27 +7,9 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
+import tempfile
 from pathlib import Path
-
-
-IGNORE_NAMES = {
-    ".git",
-    ".DS_Store",
-    ".direnv",
-    "artifacts",
-    "build",
-    "dist",
-    "htmlcov",
-    ".idea",
-    ".pytest_cache",
-    ".ruff_cache",
-    "__pycache__",
-    "target",
-    "venv",
-    ".venv",
-}
-IGNORE_PREFIXES = (".coverage",)
-IGNORE_SUFFIXES = (".egg-info", ".dSYM")
 
 
 def parse_args() -> argparse.Namespace:
@@ -46,27 +28,75 @@ def ensure_clean_output_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-def should_ignore(name: str) -> bool:
-    return (
-        name in IGNORE_NAMES
-        or name.startswith(IGNORE_PREFIXES)
-        or name.endswith(IGNORE_SUFFIXES)
-    )
+def resolve_git_root(workspace_root: Path) -> Path | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(workspace_root), "rev-parse", "--show-toplevel"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as err:
+        return None
+
+    return Path(result.stdout.strip()).resolve()
 
 
-def ignore_entries(_dir: str, names: list[str]) -> set[str]:
-    return {name for name in names if should_ignore(name)}
+def copy_workspace_snapshot(workspace_root: Path, output_dir: Path) -> None:
+    ignored_dirs = {
+        ".git",
+        ".hg",
+        ".svn",
+        ".venv",
+        "venv",
+        "__pycache__",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        "target",
+        "artifacts",
+    }
+    ignored_files = {".DS_Store"}
+
+    output_root_entry: str | None = None
+    try:
+        relative_output = output_dir.relative_to(workspace_root)
+    except ValueError:
+        relative_output = None
+    if relative_output is not None and relative_output.parts:
+        output_root_entry = relative_output.parts[0]
+
+    def ignore(path: str, names: list[str]) -> set[str]:
+        current = Path(path).resolve()
+        skipped = {name for name in names if name in ignored_files}
+        skipped.update(name for name in names if name in ignored_dirs and (current / name).is_dir())
+        if output_root_entry is not None and current == workspace_root:
+            skipped.add(output_root_entry)
+        return skipped
+
+    shutil.copytree(workspace_root, output_dir, dirs_exist_ok=True, ignore=ignore)
 
 
-def copy_workspace(workspace_root: Path, output_dir: Path) -> None:
-    for entry in workspace_root.iterdir():
-        if should_ignore(entry.name):
-            continue
-        destination = output_dir / entry.name
-        if entry.is_dir():
-            shutil.copytree(entry, destination, ignore=ignore_entries)
-        else:
-            shutil.copy2(entry, destination)
+def export_head_snapshot(workspace_root: Path, output_dir: Path) -> None:
+    git_root = resolve_git_root(workspace_root)
+    # Release validation re-stamps already-exported clean trees that no longer carry
+    # repository metadata. Fall back to a filtered filesystem copy for that case.
+    if git_root != workspace_root:
+        copy_workspace_snapshot(workspace_root, output_dir)
+        return
+    with tempfile.NamedTemporaryFile(suffix=".tar") as archive_file:
+        try:
+            subprocess.run(
+                ["git", "-C", str(workspace_root), "archive", "--format=tar", "HEAD"],
+                check=True,
+                stdout=archive_file,
+            )
+        except subprocess.CalledProcessError as err:
+            raise SystemExit(f"failed to export committed HEAD from {workspace_root}: {err}") from err
+        archive_file.flush()
+        archive_file.seek(0)
+        with tarfile.open(fileobj=archive_file, mode="r:") as archive:
+            archive.extractall(output_dir, filter="data")
 
 
 def rewrite_workspace_version(path: Path, release_version: str) -> None:
@@ -92,7 +122,7 @@ def rewrite_workspace_version(path: Path, release_version: str) -> None:
 def rewrite_bijux_dependency_versions(path: Path, release_version: str) -> None:
     content = path.read_text(encoding="utf-8")
     rewritten, replacements = re.subn(
-        r'(\bbijux[-_][A-Za-z0-9_-]+\b\s*=\s*\{[^{}]*?\bversion\s*=\s*")([^"]+)(")',
+        r'((?:"bijux[-_][A-Za-z0-9_-]+"|bijux[-_][A-Za-z0-9_-]+)\s*=\s*\{[^{}]*?\bversion\s*=\s*")([^"]+)(")',
         rf'\g<1>{release_version}\g<3>',
         content,
         flags=re.DOTALL,
@@ -226,7 +256,7 @@ def main() -> int:
         raise SystemExit("release version must not be empty")
 
     ensure_clean_output_dir(output_dir)
-    copy_workspace(workspace_root, output_dir)
+    export_head_snapshot(workspace_root, output_dir)
     rewrite_workspace_version(output_dir / "Cargo.toml", release_version)
     rewrite_bijux_dependency_versions(output_dir / "Cargo.toml", release_version)
     workspace_packages = rewrite_workspace_crates(output_dir, release_version)

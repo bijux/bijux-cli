@@ -1,7 +1,7 @@
 # Changelog
 <a id="top"></a>
 
-All notable changes to **Bijux CLI** are documented here.
+All notable changes to **bijux-core** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
@@ -10,6 +10,26 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ---
 
 <!-- towncrier start -->
+
+<a id="v0-4-0"></a>
+
+## 0.4.0 – 2026-07-20
+
+Operator-facing DAG release notes:
+[`docs/bijux-dag/operations/v0-4-0-release-notes.md`](docs/bijux-dag/operations/v0-4-0-release-notes.md)
+
+### Added
+- Published the public `bijux-dag` Rust crates for the first DAG release: `bijux-dag-core`, `bijux-dag-artifacts`, `bijux-dag-runtime`, `bijux-dag-app`, and `bijux-dag-cli`.
+- Shipped the first public `bijux-dag` local operator line with stable graph authoring, execution, replay, artifact inspection, cache explanation, and verification surfaces.
+
+### Changed
+- Advanced the repository release line to `v0.4.0` across workspace metadata, release automation, and maintained compatibility defaults.
+- Declared the visible `bijux-dag --help` surface as the stable local operator boundary for `v0.4.0`, while keeping experimental and maintainer routes callable by explicit path.
+- Aligned release operations around the combined `bijux` and `bijux-dag` publication path, including the repository-internal maintainer role of `bijux-dev`.
+
+### Fixed
+- Removed stale package and release references that still treated the DAG crates as internal-only or deferred beyond the active release line.
+- Aligned mounted-app and release-facing fixtures with the `v0.4.0` compatibility floor so release evidence and examples report the same version line as published artifacts.
 
 <a id="v0-3-6"></a>
 
@@ -313,7 +333,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * None
 
 
-[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.3.6...HEAD
+[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/bijux/bijux-core/compare/v0.3.6...v0.4.0
 [0.3.6]: https://github.com/bijux/bijux-core/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/bijux/bijux-core/compare/v0.3.4...v0.3.5
 [0.3.0]: https://github.com/bijux/bijux-core/compare/v0.2.0...v0.3.0

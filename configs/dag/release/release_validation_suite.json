@@ -1,0 +1,85 @@
+{
+  "format": "release-validation-suite/v1",
+  "local_entrypoint": "make release-validate-rs",
+  "ci_entrypoint": "make gh-release-validate",
+  "maintainer_entrypoint": "cargo run -q -p bijux-dev --bin bijux-dev-cli -- release verify",
+  "package_boundary_contract": "contracts/foundation/workspace_package_boundary.v1.json",
+  "documentation": {
+    "operator_handbook": "docs/bijux-dev/operations/release-validation-suite.md",
+    "workflow_handbook": "docs/bijux-dev/gh-workflows/release-validation.md",
+    "release_operations": "docs/bijux-dev/operations/release-operations.md"
+  },
+  "release_tree": {
+    "script": ".github/scripts/prepare_release_tree.py",
+    "candidate_ref": "HEAD",
+    "version_source": "workspace.package.version"
+  },
+  "verify_flow": [
+    "release.validation-suite",
+    "release.readiness",
+    "release.compatibility-matrix"
+  ],
+  "public_dag_crates": [
+    "bijux-dag-core",
+    "bijux-dag-artifacts",
+    "bijux-dag-runtime",
+    "bijux-dag-app",
+    "bijux-dag-cli"
+  ],
+  "commands": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
+    "cargo test --workspace --all-targets --all-features --locked",
+    "cargo doc --workspace --all-features --no-deps",
+    "cargo package -p bijux-dag-core --list",
+    "cargo package -p bijux-dag-artifacts --list",
+    "cargo package -p bijux-dag-runtime --list",
+    "cargo package -p bijux-dag-app --list",
+    "cargo package -p bijux-dag-cli --list",
+    "cargo publish -p bijux-dag-core --dry-run --locked",
+    "cargo publish -p bijux-dag-artifacts --dry-run --locked",
+    "cargo publish -p bijux-dag-runtime --dry-run --locked",
+    "cargo publish -p bijux-dag-app --dry-run --locked",
+    "cargo publish -p bijux-dag-cli --dry-run --locked",
+    "cargo test -p bijux-dag-cli --test smoke_pipeline --locked -- --nocapture"
+  ],
+  "artifacts": [
+    {
+      "path": "artifacts/rust/release-validation/<run-id>/workspace/",
+      "purpose": "clean release tree prepared from committed HEAD"
+    },
+    {
+      "path": "artifacts/rust/release-validation/<run-id>/target/",
+      "purpose": "shared target directory reused across release validation commands"
+    },
+    {
+      "path": "artifacts/rust/release-validation/<run-id>/",
+      "purpose": "per-command release validation logs and run outputs"
+    },
+    {
+      "path": "artifacts/release/readiness_report.json",
+      "purpose": "release readiness evidence report emitted after validation"
+    },
+    {
+      "path": "artifacts/release/compatibility_matrix.json",
+      "purpose": "compatibility matrix generated from supported schema fixtures"
+    }
+  ],
+  "failure_ownership": [
+    {
+      "failure_class": "formatter, clippy, test, doc, package, and publish failures",
+      "owner": "release candidate",
+      "action": "fix the candidate commit or its governed release inputs before tagging"
+    },
+    {
+      "failure_class": "clean release-tree export failures",
+      "owner": ".github/scripts/prepare_release_tree.py",
+      "action": "repair the release-tree export logic so the candidate commit can be validated in isolation"
+    },
+    {
+      "failure_class": "CI wrapper or workflow setup failures",
+      "owner": ".github/workflows/release-validation.yml and makes/gh.mk",
+      "action": "repair the workflow or wrapper target so CI executes the same suite as local maintainers"
+    }
+  ]
+}

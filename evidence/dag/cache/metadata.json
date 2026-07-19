@@ -10,6 +10,10 @@
       "corruption_class": "proof_hash_mismatch",
       "expected_diagnostic": "cache-proof-hash-mismatch"
     },
+    "evidence/cache/corrupt/missing_manifest.json": {
+      "corruption_class": "missing_manifest",
+      "expected_diagnostic": "cache-entry-missing-manifest"
+    },
     "evidence/cache/corrupt/unsupported_metadata_version.json": {
       "corruption_class": "unsupported_metadata_version",
       "expected_diagnostic": "cache-metadata-version-unsupported"
@@ -31,6 +35,7 @@
   "cache_proof_outcomes": {
     "evidence/cache/corrupt/missing_meta.json": "cache_proof_failure",
     "evidence/cache/corrupt/hash_mismatch.json": "cache_proof_failure",
+    "evidence/cache/corrupt/missing_manifest.json": "cache_proof_failure",
     "evidence/cache/corrupt/unsupported_metadata_version.json": "cache_unsupported_metadata",
     "evidence/cache/corrupt/truncated_meta.json": "cache_metadata_parse_failure",
     "evidence/cache/corrupt/missing_outputs_proof.json": "cache_proof_failure",

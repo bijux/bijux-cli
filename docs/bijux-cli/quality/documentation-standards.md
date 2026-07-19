@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Documentation Standards
@@ -12,19 +12,13 @@ last_reviewed: 2026-04-06
 CLI documentation is treated as part of the contract surface, not optional
 after-the-fact commentary.
 
-## Visual Summary
-
-```mermaid
-flowchart LR
-    source["source and tests"] --> docs["handbook pages"]
-    docs --> review["review checklist"]
-    review --> release["release notes and compatibility framing"]
-```
+Use this page when a code change affects what readers, script authors, or
+operators will believe about the CLI and you need the rule for when the
+handbook is good enough to publish.
 
 ## Standards
 
 - every page must include frontmatter with owner and last review date
-- every page must include at least one Mermaid diagram
 - every page must include concrete code anchors
 - page claims must map to currently shipped behavior
 - cross-links should point to canonical handbook pages only
@@ -43,13 +37,28 @@ Legacy chapter themes remain represented through current pages:
 - reference and contracts material maps into interfaces and quality
 - development and architecture material maps into architecture and quality
 
+## What Good CLI Documentation Should Do
+
+| Standard | Why readers need it |
+| --- | --- |
+| behavior-backed claims | users should not learn features the binary does not actually provide |
+| concrete code anchors | maintainers should be able to audit where the claim comes from |
+| canonical cross-links | readers should not get sent through stale or duplicate narratives |
+| governed section shape | the handbook should stay navigable as the product grows |
+
 ## Code Anchors
 
 - `mkdocs.yml`
 - `makes/docs.mk`
 - `docs/bijux-cli/`
 
-## Next Reads
+## Reader Shortcut
+
+If a page sounds polished but cannot be traced back to current behavior, tests,
+or owned code, it is marketing language, not product documentation. This
+handbook should prefer truth over polish every time.
+
+## Continue Reading
 
 - [Review Checklist](review-checklist.md)
 - [Change Principles](../foundation/change-principles.md)

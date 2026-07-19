@@ -58,7 +58,8 @@ fn has_speculative_keywords(payload: &str) -> bool {
 
 fn collect_doc_references(root: &Path) -> Result<BTreeSet<String>, String> {
     let mut refs = BTreeSet::new();
-    let docs = ["docs/spec/AUTHORING_UX_CONTRACT.md", "docs/user/AUTHORING_GUIDE.md"];
+    let docs =
+        ["docs/spec/AUTHORING_UX_CONTRACT.md", "docs/bijux-dag/interfaces/authoring-guide.md"];
     for rel in docs {
         let text = fs::read_to_string(root.join(rel)).map_err(|err| err.to_string())?;
         for token in text.split_whitespace() {

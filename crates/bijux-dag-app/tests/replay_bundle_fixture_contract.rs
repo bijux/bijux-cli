@@ -36,13 +36,14 @@ fn run_json(args: &[&str], cwd: &Path) -> (i32, Value) {
 }
 
 #[test]
-fn checked_in_replay_bundle_fixtures_import_with_expected_fidelity() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__checked_in_replay_bundle_fixtures_import_with_expected_fidelity() {
     let root = repo_root();
     for (fixture, expected_level) in
         [("historic_manifest_only.json", "graded"), ("historic_with_files.json", "exact")]
     {
         let (code, payload) = run_json(
-            &["dag", "--json", "import", "--verify-only", fixture_path(fixture).to_str().unwrap()],
+            &["--json", "import", "--verify-only", fixture_path(fixture).to_str().unwrap()],
             &root,
         );
         assert_eq!(code, 0, "fixture import failed for {fixture}");
@@ -67,11 +68,11 @@ fn replay_bundle_fixtures_are_checked_in_and_machine_readable() {
 }
 
 #[test]
-fn unsupported_historical_bundle_fixture_is_rejected() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__unsupported_historical_bundle_fixture_is_rejected() {
     let root = repo_root();
     let (code, payload) = run_json(
         &[
-            "dag",
             "--json",
             "import",
             "--verify-only",

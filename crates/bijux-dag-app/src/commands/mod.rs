@@ -1,8 +1,100 @@
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Args, Command, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
+mod surface_policy;
+
+pub(crate) use surface_policy::{
+    command_access_denial, command_access_for_path, lane_label, CommandAccessDenial,
+    CommandAvailability, CommandLane,
+};
+
+const PUBLIC_ROOT_COMMANDS: &[&str] = &[
+    "artifact",
+    "artifact-inspect",
+    "cache",
+    "commands",
+    "diff",
+    "doctor",
+    "explain",
+    "plan",
+    "replay",
+    "run",
+    "runs",
+    "validate",
+    "verify",
+    "version",
+];
+
+const HIDDEN_DEFAULT_COMMAND_PATHS: &[&str] = &["artifact fetch", "explain-plan", "run-bundle"];
+
+const DENY_NETWORK_HELP: &str =
+    "deny declared network effects; shell execution does not firewall sockets, and container execution only enforces this when the runtime can honor a no-network mode";
+const DENY_ENV_HELP: &str =
+    "deny declared environment effects; this is a policy gate over declared DAG effects, not a syscall sandbox over arbitrary process reads";
+const DENY_CLOCK_HELP: &str =
+    "deny declared clock effects; this does not virtualize wall clock access inside spawned processes";
+const CLEAN_ENV_HELP: &str =
+    "run with the curated bijux environment instead of inheriting the full parent environment; this shapes environment variables only";
+const HERMETIC_HELP: &str =
+    "enable the best-effort local policy profile by forcing --deny-network, --deny-clock, and --clean-env; this does not claim syscall sandboxing or host filesystem isolation";
+const RESUME_RUN_HELP: &str =
+    "resume an existing run directory by run id, reusing only nodes whose persisted outputs still match their recorded evidence";
+const RESUME_FAILURE_MODE_HELP: &str =
+    "choose whether nodes that cannot be safely reused are rerun or rejected during resume";
+const RESOURCE_CAPACITY_HELP: &str =
+    "declare a named runtime capacity as <name=count>; repeat for resources such as license tokens or database slots";
+const REPLAY_SANDBOX_HELP: &str =
+    "forbid replay outputs from being written inside the source run directory; this is a write-boundary check, not a process sandbox";
+const REPLAY_SOURCE_RUN_ID_HELP: &str =
+    "resolve the replay source run by run id instead of passing a source run directory path";
+const REPLAY_SOURCE_RUN_ROOT_HELP: &str =
+    "root directory used when resolving --source-run-id; defaults to the replay output root when omitted";
+const RUN_PROGRESS_HELP: &str =
+    "show live progress for `bijux-dag run`; `compact` renders operator-readable updates on stderr in human mode and streams `dag.run.progress` JSON lines on stdout when `--json` is active";
+const EXECUTION_BACKEND_HELP: &str =
+    "choose the node execution backend; `kubernetes` runs container nodes as Kubernetes Jobs through kubectl plus a shared persistent volume claim, and `slurm` submits nodes through sbatch and polls sacct until each job reaches a terminal state";
+const DAG_PRODUCT_SENTENCE: &str =
+    "bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles.";
+const ROOT_HELP_BOUNDARY_HELP: &str =
+    "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: hidden explicit-path routes require deliberate inventory with `bijux-dag commands --lane experimental`\n  simulated: modeled platform namespaces require `bijux-dag commands --lane simulated` to inventory and BIJUX_DAG_ENABLE_SIMULATED=1 to execute\n  internal: maintainer namespaces require `bijux-dag commands --lane internal` to inventory and BIJUX_DAG_ENABLE_INTERNAL=1 to execute\n  future: generic hpc beyond the shared-filesystem slurm lane, public remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.";
+
+pub(crate) fn root_command_hidden_from_public_help(name: &str) -> bool {
+    !PUBLIC_ROOT_COMMANDS.contains(&name)
+}
+
+pub(crate) fn command_path_hidden_from_public_help(path: &str) -> bool {
+    let head = path.split(' ').next().unwrap_or(path);
+    if root_command_hidden_from_public_help(head) {
+        return true;
+    }
+    HIDDEN_DEFAULT_COMMAND_PATHS.contains(&path)
+}
+
+pub(crate) fn hide_non_public_help(mut command: Command, prefix: &str) -> Command {
+    let subcommand_names = command
+        .get_subcommands()
+        .map(|subcommand| subcommand.get_name().to_string())
+        .collect::<Vec<_>>();
+    for name in subcommand_names {
+        let path = if prefix.is_empty() { name.clone() } else { format!("{prefix} {name}") };
+        command = command.mut_subcommand(&name, |subcommand| {
+            let subcommand = hide_non_public_help(subcommand, &path);
+            if command_path_hidden_from_public_help(&path) {
+                subcommand.hide(true)
+            } else {
+                subcommand
+            }
+        });
+    }
+    command
+}
+
 #[derive(Parser)]
-#[command(about = "Git for computation graphs", long_about = None)]
+#[command(
+    about = DAG_PRODUCT_SENTENCE,
+    long_about = None,
+    after_help = ROOT_HELP_BOUNDARY_HELP
+)]
 pub(crate) struct DagCli {
     #[arg(long, global = true)]
     pub(crate) json: bool,
@@ -12,6 +104,169 @@ pub(crate) struct DagCli {
     pub(crate) command: Commands,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+pub(crate) enum CommandCatalogLaneArg {
+    Stable,
+    Experimental,
+    Simulated,
+    Internal,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+pub(crate) enum ExecutionBackendArg {
+    Local,
+    Kubernetes,
+    Slurm,
+}
+
+#[derive(Args)]
+pub(crate) struct RunCommandArgs {
+    #[arg(required = true)]
+    pub(crate) dags: Vec<PathBuf>,
+    #[arg(long)]
+    pub(crate) out: PathBuf,
+    #[arg(long = "input", action = clap::ArgAction::Append)]
+    pub(crate) input: Vec<String>,
+    #[arg(long)]
+    pub(crate) inputs_file: Option<PathBuf>,
+    #[arg(long)]
+    pub(crate) run_id: Option<String>,
+    #[arg(long, help = RESUME_RUN_HELP)]
+    pub(crate) resume_run: Option<String>,
+    #[arg(long, value_enum, default_value_t = ResumeFailureModeArg::RerunIncomplete, help = RESUME_FAILURE_MODE_HELP)]
+    pub(crate) resume_failure_mode: ResumeFailureModeArg,
+    #[arg(long)]
+    pub(crate) latest: Option<PathBuf>,
+    #[arg(long, default_value_t = 1)]
+    pub(crate) jobs: usize,
+    #[arg(long)]
+    pub(crate) cpu_budget: Option<u32>,
+    #[arg(long)]
+    pub(crate) memory_budget_mb: Option<u32>,
+    #[arg(long)]
+    pub(crate) gpu_device_budget: Option<u32>,
+    #[arg(
+        long = "resource-capacity",
+        action = clap::ArgAction::Append,
+        value_name = "name=count",
+        help = RESOURCE_CAPACITY_HELP
+    )]
+    pub(crate) resource_capacity: Vec<String>,
+    #[arg(long)]
+    pub(crate) node_timeout_ms: Option<u64>,
+    #[arg(long)]
+    pub(crate) run_timeout_ms: Option<u64>,
+    #[arg(long, value_enum, default_value_t = RunTimeoutBehaviorArg::FinishRunning)]
+    pub(crate) run_timeout_behavior: RunTimeoutBehaviorArg,
+    #[arg(long, help = DENY_NETWORK_HELP)]
+    pub(crate) deny_network: bool,
+    #[arg(long, help = DENY_ENV_HELP)]
+    pub(crate) deny_env: bool,
+    #[arg(long, help = DENY_CLOCK_HELP)]
+    pub(crate) deny_clock: bool,
+    #[arg(long, help = CLEAN_ENV_HELP)]
+    pub(crate) clean_env: bool,
+    #[arg(long, help = HERMETIC_HELP)]
+    pub(crate) hermetic: bool,
+    #[arg(long, action = clap::ArgAction::Append)]
+    pub(crate) select: Vec<String>,
+    #[arg(long, action = clap::ArgAction::Append)]
+    pub(crate) exclude: Vec<String>,
+    #[arg(long = "to-node", action = clap::ArgAction::Append)]
+    pub(crate) to_node: Vec<String>,
+    #[arg(long)]
+    pub(crate) dependency_closure: bool,
+    #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
+    pub(crate) materialize_inputs: MaterializeModeArg,
+    #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
+    pub(crate) cache: CacheModeArg,
+    #[arg(long)]
+    pub(crate) cache_dir: Option<PathBuf>,
+    #[arg(long)]
+    pub(crate) remote_cache_dir: Option<PathBuf>,
+    #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
+    pub(crate) absolute_path_policy: AbsolutePathPolicyArg,
+    #[arg(long)]
+    pub(crate) preflight_only: bool,
+    #[arg(long)]
+    pub(crate) explain_scheduling: bool,
+    #[arg(long, value_enum, default_value_t = RunProgressArg::Off, help = RUN_PROGRESS_HELP)]
+    pub(crate) progress: RunProgressArg,
+    #[arg(long, value_enum, default_value_t = ExecutionBackendArg::Local, help = EXECUTION_BACKEND_HELP)]
+    pub(crate) backend: ExecutionBackendArg,
+    #[arg(long, default_value = "bijux")]
+    pub(crate) kubernetes_namespace: String,
+    #[arg(long)]
+    pub(crate) kubernetes_volume_claim: Option<String>,
+    #[arg(long)]
+    pub(crate) kubernetes_shared_root: Option<PathBuf>,
+    #[arg(long, default_value = "general")]
+    pub(crate) slurm_queue: String,
+    #[arg(long, default_value = "cpu")]
+    pub(crate) slurm_partition: String,
+}
+
+#[derive(Args)]
+pub(crate) struct ReplayCommandArgs {
+    #[arg(required_unless_present = "source_run_id", conflicts_with = "source_run_id")]
+    pub(crate) run_dir: Option<PathBuf>,
+    #[arg(long, help = REPLAY_SOURCE_RUN_ID_HELP)]
+    pub(crate) source_run_id: Option<String>,
+    #[arg(long, help = REPLAY_SOURCE_RUN_ROOT_HELP)]
+    pub(crate) source_run_root: Option<PathBuf>,
+    #[arg(long)]
+    pub(crate) out: PathBuf,
+    #[arg(long)]
+    pub(crate) dry_run: bool,
+    #[arg(long, help = REPLAY_SANDBOX_HELP)]
+    pub(crate) sandbox: bool,
+    #[arg(long)]
+    pub(crate) prove: bool,
+    #[arg(long)]
+    pub(crate) reuse_cache: bool,
+    #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
+    pub(crate) cache: CacheModeArg,
+    #[arg(long, default_value_t = 1)]
+    pub(crate) jobs: usize,
+    #[arg(long)]
+    pub(crate) run_id: Option<String>,
+    #[arg(long)]
+    pub(crate) cpu_budget: Option<u32>,
+    #[arg(long)]
+    pub(crate) memory_budget_mb: Option<u32>,
+    #[arg(long)]
+    pub(crate) gpu_device_budget: Option<u32>,
+    #[arg(
+        long = "resource-capacity",
+        action = clap::ArgAction::Append,
+        value_name = "name=count",
+        help = RESOURCE_CAPACITY_HELP
+    )]
+    pub(crate) resource_capacity: Vec<String>,
+    #[arg(long, help = DENY_NETWORK_HELP)]
+    pub(crate) deny_network: bool,
+    #[arg(long, help = DENY_ENV_HELP)]
+    pub(crate) deny_env: bool,
+    #[arg(long, help = DENY_CLOCK_HELP)]
+    pub(crate) deny_clock: bool,
+    #[arg(long, help = CLEAN_ENV_HELP)]
+    pub(crate) clean_env: bool,
+    #[arg(long, help = HERMETIC_HELP)]
+    pub(crate) hermetic: bool,
+    #[arg(long = "from-node", action = clap::ArgAction::Append)]
+    pub(crate) from_node: Vec<String>,
+    #[arg(long, action = clap::ArgAction::Append)]
+    pub(crate) select: Vec<String>,
+    #[arg(long, action = clap::ArgAction::Append)]
+    pub(crate) exclude: Vec<String>,
+    #[arg(long)]
+    pub(crate) dependency_closure: bool,
+    #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
+    pub(crate) materialize_inputs: MaterializeModeArg,
+    #[arg(long)]
+    pub(crate) remote_cache_dir: Option<PathBuf>,
+}
+
 #[derive(Subcommand)]
 pub(crate) enum Commands {
     Init {
@@ -19,7 +274,8 @@ pub(crate) enum Commands {
         dir: Option<PathBuf>,
     },
     Validate {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         strict: bool,
         #[arg(long)]
@@ -28,21 +284,25 @@ pub(crate) enum Commands {
         explain: bool,
     },
     Canonicalize {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
     },
     Lint {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         strict: bool,
     },
     #[command(name = "graph-lint")]
     GraphLint {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         strict: bool,
     },
     Fingerprint {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         explain: bool,
     },
@@ -63,6 +323,8 @@ pub(crate) enum Commands {
     CommandCatalog {
         #[arg(long)]
         groups: bool,
+        #[arg(long = "lane", value_enum, action = clap::ArgAction::Append)]
+        lanes: Vec<CommandCatalogLaneArg>,
     },
     #[command(name = "control-plane")]
     ControlPlane {
@@ -119,17 +381,59 @@ pub(crate) enum Commands {
         command: ReleaseCommands,
     },
     CanonicalBytes {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
     },
     CanonicalDiff {
         dag: PathBuf,
     },
     ShowEffectiveGraph {
-        dag: PathBuf,
+        #[arg(required_unless_present = "run_dir", conflicts_with = "run_dir")]
+        dags: Vec<PathBuf>,
+        #[arg(long)]
+        run_dir: Option<PathBuf>,
+        #[arg(long = "select", action = clap::ArgAction::Append, conflicts_with = "run_dir")]
+        select: Vec<String>,
+        #[arg(long = "exclude", action = clap::ArgAction::Append, conflicts_with = "run_dir")]
+        exclude: Vec<String>,
+        #[arg(long = "from-node", action = clap::ArgAction::Append, conflicts_with = "run_dir")]
+        from_node: Vec<String>,
+        #[arg(long = "to-node", action = clap::ArgAction::Append, conflicts_with = "run_dir")]
+        to_node: Vec<String>,
+        #[arg(long, conflicts_with = "run_dir")]
+        dependency_closure: bool,
     },
     #[command(name = "explain-plan", alias = "show-effective-plan")]
     ExplainPlan {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
+        #[arg(long)]
+        out: Option<PathBuf>,
+        #[arg(long)]
+        run_id: Option<String>,
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+        #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
+        absolute_path_policy: AbsolutePathPolicyArg,
+        #[arg(long, default_value_t = 1)]
+        jobs: usize,
+        #[arg(long)]
+        cpu_budget: Option<u32>,
+        #[arg(long)]
+        memory_budget_mb: Option<u32>,
+        #[arg(long)]
+        gpu_device_budget: Option<u32>,
+        #[arg(
+            long = "resource-capacity",
+            action = clap::ArgAction::Append,
+            value_name = "name=count",
+            help = RESOURCE_CAPACITY_HELP
+        )]
+        resource_capacity: Vec<String>,
+        #[arg(long = "from-node", action = clap::ArgAction::Append)]
+        from_node: Vec<String>,
+        #[arg(long = "to-node", action = clap::ArgAction::Append)]
+        to_node: Vec<String>,
     },
     Plan {
         #[command(subcommand)]
@@ -144,47 +448,8 @@ pub(crate) enum Commands {
         command: RuntimeCommands,
     },
     Run {
-        dag: PathBuf,
-        #[arg(long)]
-        out: PathBuf,
-        #[arg(long)]
-        run_id: Option<String>,
-        #[arg(long)]
-        latest: Option<PathBuf>,
-        #[arg(long, default_value_t = 1)]
-        jobs: usize,
-        #[arg(long)]
-        cpu_budget: Option<u32>,
-        #[arg(long)]
-        node_timeout_ms: Option<u64>,
-        #[arg(long)]
-        run_timeout_ms: Option<u64>,
-        #[arg(long)]
-        deny_network: bool,
-        #[arg(long)]
-        deny_env: bool,
-        #[arg(long)]
-        deny_clock: bool,
-        #[arg(long)]
-        clean_env: bool,
-        #[arg(long)]
-        hermetic: bool,
-        #[arg(long, action = clap::ArgAction::Append)]
-        select: Vec<String>,
-        #[arg(long, action = clap::ArgAction::Append)]
-        exclude: Vec<String>,
-        #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
-        materialize_inputs: MaterializeModeArg,
-        #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
-        cache: CacheModeArg,
-        #[arg(long)]
-        cache_dir: Option<PathBuf>,
-        #[arg(long)]
-        remote_cache_dir: Option<PathBuf>,
-        #[arg(long)]
-        preflight_only: bool,
-        #[arg(long)]
-        explain_scheduling: bool,
+        #[command(flatten)]
+        command: Box<RunCommandArgs>,
     },
     #[command(name = "run-bundle", alias = "bundle")]
     RunBundle {
@@ -195,43 +460,8 @@ pub(crate) enum Commands {
         redact: bool,
     },
     Replay {
-        run_dir: PathBuf,
-        #[arg(long)]
-        out: PathBuf,
-        #[arg(long)]
-        dry_run: bool,
-        #[arg(long)]
-        sandbox: bool,
-        #[arg(long)]
-        prove: bool,
-        #[arg(long)]
-        reuse_cache: bool,
-        #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
-        cache: CacheModeArg,
-        #[arg(long, default_value_t = 1)]
-        jobs: usize,
-        #[arg(long)]
-        run_id: Option<String>,
-        #[arg(long)]
-        cpu_budget: Option<u32>,
-        #[arg(long)]
-        deny_network: bool,
-        #[arg(long)]
-        deny_env: bool,
-        #[arg(long)]
-        deny_clock: bool,
-        #[arg(long)]
-        clean_env: bool,
-        #[arg(long)]
-        hermetic: bool,
-        #[arg(long, action = clap::ArgAction::Append)]
-        select: Vec<String>,
-        #[arg(long, action = clap::ArgAction::Append)]
-        exclude: Vec<String>,
-        #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
-        materialize_inputs: MaterializeModeArg,
-        #[arg(long)]
-        remote_cache_dir: Option<PathBuf>,
+        #[command(flatten)]
+        command: Box<ReplayCommandArgs>,
     },
     Prove {
         run_dir: PathBuf,
@@ -241,7 +471,8 @@ pub(crate) enum Commands {
         run_dir: PathBuf,
     },
     Graph {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long, value_enum, default_value_t = GraphFormatArg::Dot)]
         format: GraphFormatArg,
     },
@@ -268,11 +499,16 @@ pub(crate) enum Commands {
     },
     #[command(name = "why-cache-missed")]
     WhyCacheMissed {
-        key: String,
+        #[arg(required_unless_present_all = ["run_dir", "node"])]
+        key: Option<String>,
+        #[arg(long, required_unless_present_all = ["run_dir", "node"])]
+        expected_adapter_id: Option<String>,
+        #[arg(long, required_unless_present_all = ["run_dir", "node"])]
+        expected_adapter_version: Option<String>,
         #[arg(long)]
-        expected_adapter_id: String,
-        #[arg(long)]
-        expected_adapter_version: String,
+        run_dir: Option<PathBuf>,
+        #[arg(long, requires = "run_dir")]
+        node: Option<String>,
         #[arg(long)]
         cache_dir: Option<PathBuf>,
     },
@@ -392,7 +628,8 @@ pub(crate) enum Commands {
 #[derive(Subcommand)]
 pub(crate) enum HashCommands {
     Graph {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long)]
         explain: bool,
     },
@@ -407,17 +644,57 @@ pub(crate) enum HashCommands {
 #[derive(Subcommand)]
 pub(crate) enum PlanCommands {
     Explain {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
+        #[arg(long)]
+        out: Option<PathBuf>,
+        #[arg(long)]
+        run_id: Option<String>,
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+        #[arg(long, value_enum, default_value_t = AbsolutePathPolicyArg::AllowLiteral)]
+        absolute_path_policy: AbsolutePathPolicyArg,
+        #[arg(long, default_value_t = 1)]
+        jobs: usize,
+        #[arg(long)]
+        cpu_budget: Option<u32>,
+        #[arg(long)]
+        memory_budget_mb: Option<u32>,
+        #[arg(long)]
+        gpu_device_budget: Option<u32>,
+        #[arg(
+            long = "resource-capacity",
+            action = clap::ArgAction::Append,
+            value_name = "name=count",
+            help = RESOURCE_CAPACITY_HELP
+        )]
+        resource_capacity: Vec<String>,
+        #[arg(long = "from-node", action = clap::ArgAction::Append)]
+        from_node: Vec<String>,
+        #[arg(long = "to-node", action = clap::ArgAction::Append)]
+        to_node: Vec<String>,
+        #[arg(long, action = clap::ArgAction::Append)]
+        select: Vec<String>,
+        #[arg(long, action = clap::ArgAction::Append)]
+        exclude: Vec<String>,
+        #[arg(long)]
+        dependency_closure: bool,
     },
     Diagnostics {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
     },
     Diff {
         before: PathBuf,
         after: PathBuf,
     },
+    Equivalence {
+        before: PathBuf,
+        after: PathBuf,
+    },
     Closure {
-        dag: PathBuf,
+        #[arg(required = true)]
+        dags: Vec<PathBuf>,
         #[arg(long, action = clap::ArgAction::Append)]
         select: Vec<String>,
     },
@@ -432,9 +709,154 @@ pub(crate) enum PlanCommands {
 }
 
 #[derive(Subcommand)]
+pub(crate) enum ScheduleBackfillCommands {
+    Plan {
+        registry: PathBuf,
+        #[arg(long)]
+        schedule_id: String,
+        #[arg(long)]
+        planned_unix_ms: u128,
+        #[arg(long)]
+        backfill_id: Option<String>,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    Status {
+        state: PathBuf,
+    },
+    Summary {
+        state: PathBuf,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    Advance {
+        state: PathBuf,
+        request: PathBuf,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    Pause {
+        state: PathBuf,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        reason: Option<String>,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    Resume {
+        state: PathBuf,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    #[command(name = "retry-failed")]
+    RetryFailed {
+        state: PathBuf,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+    Cancel {
+        state: PathBuf,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        reason: Option<String>,
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ScheduleQueueCommands {
+    Status {
+        registry: PathBuf,
+        #[arg(long, help = "existing submission ledger json used to reconstruct queue state")]
+        ledger: Option<PathBuf>,
+        #[arg(long, help = "write the queue state json to this path")]
+        out: Option<PathBuf>,
+    },
+    Dispatch {
+        ledger: PathBuf,
+        #[arg(long, default_value_t = 1)]
+        max_dispatches: usize,
+        #[arg(long, help = "json file containing queue priority dispatch policy")]
+        policy: Option<PathBuf>,
+        #[arg(long, help = "write the updated submission ledger json to this path")]
+        out: Option<PathBuf>,
+    },
+    Update {
+        ledger: PathBuf,
+        #[arg(help = "json file containing submission status updates")]
+        updates: PathBuf,
+        #[arg(long, help = "write the updated submission ledger json to this path")]
+        out: Option<PathBuf>,
+    },
+}
+
+#[derive(Subcommand)]
+pub(crate) enum ScheduleControlCommands {
+    Status {
+        registry: PathBuf,
+        #[arg(long, help = "existing schedule control json used to compute pause status")]
+        overrides: Option<PathBuf>,
+        #[arg(long, help = "write the schedule control status json to this path")]
+        out: Option<PathBuf>,
+    },
+    Pause {
+        overrides: PathBuf,
+        #[arg(long)]
+        schedule_id: String,
+        #[arg(long)]
+        operator: String,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        reason: Option<String>,
+        #[arg(long, help = "write the updated schedule control json to this path")]
+        out: Option<PathBuf>,
+    },
+    Resume {
+        overrides: PathBuf,
+        #[arg(long)]
+        schedule_id: String,
+        #[arg(long)]
+        operator: String,
+        #[arg(long)]
+        at_unix_ms: u128,
+        #[arg(long)]
+        reason: Option<String>,
+        #[arg(long, help = "write the updated schedule control json to this path")]
+        out: Option<PathBuf>,
+    },
+}
+
+#[derive(Subcommand)]
 pub(crate) enum ScheduleCommands {
     Validate {
         registry: PathBuf,
+    },
+    #[command(
+        about = "evaluate internal schedule trigger inputs into deterministic submission records"
+    )]
+    Submit {
+        registry: PathBuf,
+        #[arg(
+            help = "json file containing now_unix_ms plus manual_requests[].arguments, events[].payload, dependency completions, and signals[].payload"
+        )]
+        inputs: PathBuf,
+        #[arg(
+            long,
+            help = "existing submission ledger json used to suppress duplicate submissions"
+        )]
+        ledger: Option<PathBuf>,
+        #[arg(long, help = "existing schedule control json used to pause schedules")]
+        overrides: Option<PathBuf>,
+        #[arg(long, help = "write the updated submission ledger json to this path")]
+        out: Option<PathBuf>,
     },
     Preview {
         registry: PathBuf,
@@ -447,7 +869,7 @@ pub(crate) enum ScheduleCommands {
         registry: PathBuf,
         #[arg(long)]
         schedule_id: String,
-        #[arg(long)]
+        #[arg(long, help = "requested timestamp used for schedule-derived graph input bindings")]
         requested_unix_ms: u128,
     },
     Audit {
@@ -469,10 +891,30 @@ pub(crate) enum ScheduleCommands {
     Throttle {
         simulation: PathBuf,
     },
+    Queue {
+        #[command(subcommand)]
+        command: ScheduleQueueCommands,
+    },
+    Control {
+        #[command(subcommand)]
+        command: ScheduleControlCommands,
+    },
+    Backfill {
+        #[command(subcommand)]
+        command: ScheduleBackfillCommands,
+    },
 }
 
 #[derive(Subcommand)]
 pub(crate) enum RuntimeCommands {
+    #[command(name = "execute-payload")]
+    ExecutePayload {
+        payload: PathBuf,
+        #[arg(long)]
+        result: PathBuf,
+        #[arg(long)]
+        in_place: bool,
+    },
     Isolation {
         dag: PathBuf,
     },
@@ -498,6 +940,20 @@ pub(crate) enum RuntimeCommands {
         run_dir: PathBuf,
         #[arg(long)]
         apply: bool,
+        #[arg(long)]
+        out: Option<PathBuf>,
+        #[arg(long)]
+        run_id: Option<String>,
+        #[arg(long, default_value_t = 1)]
+        jobs: usize,
+        #[arg(long, value_enum, default_value_t = MaterializeModeArg::Copy)]
+        materialize_inputs: MaterializeModeArg,
+        #[arg(long, value_enum, default_value_t = CacheModeArg::Off)]
+        cache: CacheModeArg,
+        #[arg(long)]
+        cache_dir: Option<PathBuf>,
+        #[arg(long)]
+        remote_cache_dir: Option<PathBuf>,
     },
     Retry {
         dag: PathBuf,
@@ -507,6 +963,8 @@ pub(crate) enum RuntimeCommands {
         attempt: u32,
         #[arg(long)]
         failure_class: String,
+        #[arg(long)]
+        exit_code: Option<i32>,
     },
     Timeout {
         dag: PathBuf,
@@ -560,6 +1018,14 @@ pub(crate) enum ArtifactCommands {
         run_dir: PathBuf,
         #[arg(long)]
         artifact_id: Option<String>,
+    },
+    Promote {
+        run_dir: PathBuf,
+        artifact_id: String,
+        #[arg(long)]
+        deliverables_root: PathBuf,
+        #[arg(long, default_value = "release")]
+        to: String,
     },
     Retention {
         root: PathBuf,
@@ -1003,6 +1469,8 @@ pub(crate) enum RunsCommands {
         #[arg(long)]
         status: Option<String>,
         #[arg(long)]
+        graph: Option<String>,
+        #[arg(long)]
         source: Option<String>,
         #[arg(long)]
         offset: Option<usize>,
@@ -1022,6 +1490,25 @@ pub(crate) enum RunsCommands {
         root: PathBuf,
     },
     Timeline {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+        #[arg(long)]
+        node: Option<String>,
+        #[arg(long)]
+        event: Option<String>,
+        #[arg(long)]
+        since_unix_ms: Option<u128>,
+        #[arg(long)]
+        until_unix_ms: Option<u128>,
+    },
+    #[command(name = "scheduler-checkpoint")]
+    SchedulerCheckpoint {
+        run_id: String,
+        #[arg(long)]
+        root: PathBuf,
+    },
+    Stop {
         run_id: String,
         #[arg(long)]
         root: PathBuf,
@@ -1261,4 +1748,28 @@ pub(crate) enum DiffModeArg {
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 pub(crate) enum GraphFormatArg {
     Dot,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub(crate) enum AbsolutePathPolicyArg {
+    AllowLiteral,
+    DenyLiteral,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub(crate) enum RunTimeoutBehaviorArg {
+    FinishRunning,
+    CancelRunning,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub(crate) enum ResumeFailureModeArg {
+    RerunIncomplete,
+    RejectIncomplete,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
+pub(crate) enum RunProgressArg {
+    Off,
+    Compact,
 }

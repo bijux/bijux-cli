@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 
-use crate::contracts::known_bijux_tools;
+use crate::contracts::{known_bijux_tool_by_query, known_bijux_tools};
 use crate::routing::model::{
     CLI_CONFIG_SUBCOMMANDS, CLI_PLUGINS_SUBCOMMANDS, ROOT_APPS_SUBCOMMANDS,
     ROOT_INTERACTION_COMMANDS, ROOT_RUNTIME_COMMANDS, ROOT_STATE_COMMANDS,
@@ -64,6 +64,63 @@ pub(crate) fn render_command_help(path: &[&str]) -> Result<String> {
 
     let normalized = normalize_help_whitespace(&rendered);
     Ok(decorate_help_text(normalized, path))
+}
+
+pub(crate) fn render_known_tool_help(path: &[&str]) -> Option<String> {
+    let (control_plane, query) = match path {
+        [namespace] => (false, *namespace),
+        ["dev", namespace] => (true, *namespace),
+        _ => return None,
+    };
+    let tool = known_bijux_tool_by_query(query)?;
+    let aliases = if tool.aliases.is_empty() {
+        String::new()
+    } else {
+        format!("\nAliases:\n  {}\n", tool.aliases.join(", "))
+    };
+    let capabilities = if tool.capabilities.is_empty() {
+        "  (none)\n".to_string()
+    } else {
+        format!("  {}\n", tool.capabilities.join(", "))
+    };
+
+    let (root_route, product_binary, install_note, examples) = if control_plane {
+        (
+            format!("bijux dev {} <command> ...", tool.namespace),
+            tool.control_binary_name,
+            format!("cargo install {}", tool.control_package_name),
+            vec![
+                format!("bijux dev {} status", tool.namespace),
+                format!("{} --help", tool.control_binary_name),
+            ],
+        )
+    } else {
+        (
+            format!("bijux {} <command> ...", tool.namespace),
+            tool.runtime_binary_name,
+            format!("cargo install {}", tool.runtime_package_name),
+            vec![
+                format!("bijux apps which {}", tool.namespace),
+                format!("{} --help", tool.runtime_binary_name),
+            ],
+        )
+    };
+
+    let mut rendered = format!(
+        "Official app help: {}\n\nSummary:\n  {}\n{}\nCapabilities:\n{}Routing:\n  root route: {}\n  product binary: {}\n\nInstall:\n  {}\n\nExamples:\n",
+        tool.display_name, tool.help_summary, aliases, capabilities, root_route, product_binary, install_note
+    );
+    for example in examples {
+        rendered.push_str("  ");
+        rendered.push_str(&example);
+        rendered.push('\n');
+    }
+    if !control_plane {
+        rendered.push_str(&format!(
+            "\nUse `{product_binary} --help` for the public command surface.\n"
+        ));
+    }
+    Some(rendered)
 }
 
 pub(crate) fn decorate_help_text(mut rendered: String, path: &[&str]) -> String {
@@ -299,7 +356,7 @@ fn help_examples(path: &[&str]) -> Vec<String> {
             "bijux status".to_string(),
             "bijux explain status".to_string(),
             "bijux apps list".to_string(),
-            "bijux dag --help".to_string(),
+            "bijux-dag --help".to_string(),
             "bijux install atlas --dry-run".to_string(),
             "bijux config get foo".to_string(),
             "bijux config set foo=bar".to_string(),

@@ -3,6 +3,7 @@ use crate::{read_file, ExitCode, Graph};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use bijux_dag_artifacts::OutputsIndex;
+use bijux_dag_core::DynamicExpansionRecord;
 use bijux_dag_runtime::MaterializeMode;
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
@@ -12,6 +13,12 @@ use std::path::{Path, PathBuf};
 pub(crate) struct GraphSnapshot {
     pub(crate) graph: Graph,
     pub(crate) graph_fingerprint: String,
+    #[serde(default)]
+    pub(crate) source_graph: Option<Graph>,
+    #[serde(default)]
+    pub(crate) source_graph_fingerprint: Option<String>,
+    #[serde(default)]
+    pub(crate) dynamic_expansions: Vec<DynamicExpansionRecord>,
 }
 
 pub(crate) fn env_cache_dir() -> Option<PathBuf> {
@@ -102,5 +109,59 @@ pub(crate) fn map_materialize_mode(arg: MaterializeModeArg) -> MaterializeMode {
         MaterializeModeArg::Copy => MaterializeMode::Copy,
         MaterializeModeArg::Hardlink => MaterializeMode::Hardlink,
         MaterializeModeArg::Symlink => MaterializeMode::Symlink,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::load_snapshot;
+    use bijux_dag_core::parse_graph_strict;
+    use std::fs;
+
+    #[test]
+    fn load_snapshot_accepts_dynamic_expansion_metadata() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let graph = parse_graph_strict(
+            r#"{"spec":"bijux-dag/v0.1","nodes":[{"id":"publish","kind":"const","outputs":[{"name":"out","path":"publish/out"}],"params":{"value":"ok"}}],"edges":[]}"#,
+        )
+        .expect("graph");
+        let source_graph = parse_graph_strict(
+            r#"{"spec":"bijux-dag/v0.1","nodes":[{"id":"expand","kind":"const","semantic_kind":"dynamic","outputs":[{"name":"expansion","path":"expand/expansion.json","kind":"value"}],"params":{"value":{}},"dynamic":{"expansion_output":"expansion"}}],"edges":[]}"#,
+        )
+        .expect("source graph");
+        fs::write(
+            dir.path().join("graph.snapshot.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "graph": graph.canonicalize(),
+                "graph_fingerprint": "expanded-fp",
+                "source_graph": source_graph.canonicalize(),
+                "source_graph_fingerprint": "source-fp",
+                "dynamic_expansions": [
+                    {
+                        "controller_node_id": "expand",
+                        "expansion_output": "expansion",
+                        "expansion_fingerprint": "expansion-fp",
+                        "generated_node_ids": ["expand__publish"],
+                        "generated_edge_count": 1
+                    }
+                ]
+            }))
+            .expect("snapshot bytes"),
+        )
+        .expect("write snapshot");
+
+        let snapshot = load_snapshot(dir.path()).expect("load snapshot");
+        assert_eq!(snapshot.graph_fingerprint, "expanded-fp");
+        assert_eq!(snapshot.source_graph_fingerprint.as_deref(), Some("source-fp"));
+        assert_eq!(snapshot.dynamic_expansions.len(), 1);
+        assert_eq!(snapshot.dynamic_expansions[0].controller_node_id, "expand");
+        assert_eq!(
+            snapshot
+                .source_graph
+                .as_ref()
+                .and_then(|source| source.nodes.first())
+                .map(|node| node.id.as_str()),
+            Some("expand")
+        );
     }
 }

@@ -156,6 +156,27 @@ fn fixture_invalid_env_reference() {
 }
 
 #[test]
+fn env_effect_requires_declared_allowlist_bindings() {
+    let input = r#"{
+      "spec":"bijux-dag/v0.1",
+      "nodes":[
+        {
+          "id":"env-node",
+          "kind":"shell",
+          "inputs":[],
+          "outputs":[{"name":"out","path":"out.txt"}],
+          "params":{"argv":["/bin/sh","-c","echo ok > ../outputs/out.txt"]},
+          "effects":["filesystem","env"]
+        }
+      ],
+      "edges":[]
+    }"#;
+    let graph = parse_graph_strict(input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(has_code(&diags, "E1035"));
+}
+
+#[test]
 fn fixture_invalid_resource_declaration_rejects_unknown_resource_keys() {
     let input = fixture("invalid_resource_declaration.json");
     let error = parse_graph_strict(&input).expect_err("unknown resources key must be rejected");
@@ -175,10 +196,26 @@ fn fixture_duplicate_outputs_per_node() {
 }
 
 #[test]
+fn fixture_missing_required_input_binding() {
+    let input = fixture("missing_required_input_binding.json");
+    let graph = parse_graph_strict(&input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(has_code(&diags, "E1005"));
+}
+
+#[test]
 fn fixture_illegal_output_path_traversal() {
     let input = fixture("illegal_output_path_traversal.json");
     let error = parse_graph_strict(&input).expect_err("path traversal must be rejected");
     assert_eq!(error.to_string(), "validation failed");
+}
+
+#[test]
+fn fixture_invalid_container_workdir() {
+    let input = fixture("invalid_container_workdir.json");
+    let graph = parse_graph_strict(&input).unwrap();
+    let diags = graph.validate_with_warnings();
+    assert!(has_code(&diags, "E1025"));
 }
 
 #[test]

@@ -5,11 +5,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-PARSER-FUZZ-HARDENING-REPORTS" => {
             let routing_test =
-                workspace_root.join("crates/bijux-cli/tests/routing/parser_fuzz_targets.rs");
+                workspace_root.join("crates/bijux-cli/tests/routing/parser_input_stability.rs");
             let bin_test = workspace_root
                 .join("crates/bijux-cli/tests/integration/cli/root/parser_invalid_utf8_argv.rs");
             let regression_test =
-                workspace_root.join("crates/bijux-cli/tests/routing/parser_fuzz_regressions.rs");
+                workspace_root.join("crates/bijux-cli/tests/routing/parser_case_replays.rs");
             let corpus_dir = workspace_root
                 .join("crates/bijux-cli/tests/routing/fuzz/parser_interesting_inputs");
             let min_dir =
@@ -104,7 +104,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .map(|p| rel(&p, workspace_root))
                 .collect();
             let regression_ok = Command::new("cargo")
-                .args(["test", "-p", "bijux-cli", "--test", "routing", "parser_fuzz_regressions::"])
+                .args(["test", "-p", "bijux-cli", "--test", "routing", "parser_case_replays::"])
                 .current_dir(workspace_root)
                 .status()
                 .ok()
@@ -125,7 +125,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "status": if regression_ok { "clean" } else { "needs-triage" },
                                     "known_crash_case_count": minimized_files.len(),
                                     "regression_test_ok": regression_ok,
-                                    "regression_test_command": ["cargo","test","-p","bijux-cli","--test","routing","parser_fuzz_regressions::"],
+                                    "regression_test_command": ["cargo","test","-p","bijux-cli","--test","routing","parser_case_replays::"],
                                     "triage_notes": [
                                         "minimized cases are retained and replayed on every gate run",
                                         "new parser crashes must be added as minimized reproducer cases",

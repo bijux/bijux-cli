@@ -10,12 +10,12 @@ pub mod diagnostics;
 pub mod envelope;
 /// Execution-policy and flag contracts.
 pub mod execution;
+/// Official app, plugin, and SDK integration contracts.
+pub mod integration_surface_contracts;
 /// Shared marker contracts.
 pub mod marker;
-/// Root operator flow contracts for backlog iteration 01.
-pub mod operator_iteration01;
-/// Official app, plugin, and SDK contracts for backlog iteration 02.
-pub mod operator_iteration02;
+/// Root operator flow and machine envelope contracts.
+pub mod operator_surface_contracts;
 /// Plugin manifest and compatibility contracts.
 pub mod plugin;
 /// Official product-mount reservation contracts.
@@ -38,21 +38,7 @@ pub use execution::{
     ColorMode, ConfigSource, ExecutionPolicy, ExitCode, GlobalFlags, LogLevel, OutputFormat,
     PrettyMode,
 };
-pub use marker::ContractMarker;
-pub use operator_iteration01::{
-    build_actionable_error_envelope, build_command_explain_record,
-    build_compact_operator_help_entrypoint, build_completion_snapshot_from_registry,
-    build_install_diagnosis_bundle, build_official_app_discovery_report,
-    build_python_bridge_command_parity_report, build_script_stable_command_envelope,
-    classify_command_side_effect, evaluate_output_mode_parity, ActionableErrorEnvelopeV1,
-    ActionableFailureClassV1, CommandExplainV1, CommandSideEffectClassV1,
-    CommandSideEffectPreviewV1, CompactHelpEntryPointV1, CompletionRouteEntryV1,
-    CompletionSnapshotV1, InstallDiagnosisBundleV1, InstallDiagnosticComponentV1,
-    OfficialAppDiscoveryReportV1, OfficialAppRouteDescriptorV1, OutputModeParityEntryV1,
-    OutputModeParityReportV1, PythonBridgeParityEntryV1, PythonBridgeParityReportV1,
-    ScriptStableCommandEnvelopeV1,
-};
-pub use operator_iteration02::{
+pub use integration_surface_contracts::{
     build_app_capability_discovery_report, build_app_route_provenance_record,
     build_plugin_scaffold_conformance_report, build_sdk_example_conformance_report,
     enforce_plugin_trust_class_behavior, evaluate_legacy_shim_policy,
@@ -64,6 +50,20 @@ pub use operator_iteration02::{
     PluginScaffoldConformanceReportV1, PluginSubprocessExecutionPolicyV1,
     PluginTrustEnforcementDecisionV1, RouteConflictContenderV1, RouteConflictResolutionV1,
     SdkExampleConformanceEntryV1, SdkExampleConformanceReportV1,
+};
+pub use marker::ContractMarker;
+pub use operator_surface_contracts::{
+    build_actionable_error_envelope, build_command_explain_record,
+    build_compact_operator_help_entrypoint, build_completion_snapshot_from_registry,
+    build_install_diagnosis_bundle, build_official_app_discovery_report,
+    build_python_bridge_command_parity_report, build_script_stable_command_envelope,
+    classify_command_side_effect, evaluate_output_mode_parity, ActionableErrorEnvelopeV1,
+    ActionableFailureClassV1, CommandExplainV1, CommandSideEffectClassV1,
+    CommandSideEffectPreviewV1, CompactHelpEntryPointV1, CompletionRouteEntryV1,
+    CompletionSnapshotV1, InstallDiagnosisBundleV1, InstallDiagnosticComponentV1,
+    OfficialAppDiscoveryReportV1, OfficialAppRouteDescriptorV1, OutputModeParityEntryV1,
+    OutputModeParityReportV1, PythonBridgeParityEntryV1, PythonBridgeParityReportV1,
+    ScriptStableCommandEnvelopeV1,
 };
 pub use plugin::{
     CompatibilityRange, PluginCapability, PluginKind, PluginLifecycleState, PluginManifestV2,

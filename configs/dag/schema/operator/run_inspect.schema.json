@@ -2,7 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "run_inspect",
   "type": "object",
-  "required": ["run_id", "status", "retry_count", "cache_hits", "artifact_count", "integrity_state"],
+  "required": [
+    "run_id",
+    "status",
+    "retry_count",
+    "cache_hits",
+    "artifact_count",
+    "failure_classes",
+    "integrity_state"
+  ],
   "properties": {
     "run_id": {},
     "status": {},
@@ -13,6 +21,7 @@
     "cache_hits": {"type": "integer", "minimum": 0},
     "artifact_count": {"type": "integer", "minimum": 0},
     "failed_nodes": {"type": "array", "items": {"type": "string"}},
+    "failure_classes": {"type": "array", "items": {"type": "string"}},
     "integrity_state": {
       "type": "string",
       "enum": ["healthy", "incomplete", "corrupt", "unsupported"]

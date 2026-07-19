@@ -1,35 +1,27 @@
 {
+  "public_page_budget": 100,
+  "public_page_max_depth": 4,
+  "crate_docs_page_budget": 10,
   "exclude_prefixes": [
     "docs/generated/",
+    "docs/badges.md",
     "docs/reports/foundation/archive/",
     "docs/reports/root-doc-archive/",
-    "docs/adr/archive/",
-    "docs/tracking/",
-    "docs/_tracking/"
+    "docs/adr/archive/"
   ],
-  "metadata_required_prefixes": [],
+  "orphan_exempt_prefixes": [
+    "docs/spec/",
+    "docs/reports/"
+  ],
+  "metadata_required_prefixes": [
+    "docs/bijux-core/",
+    "docs/bijux-cli/",
+    "docs/bijux-dag/",
+    "docs/bijux-dev/"
+  ],
   "metadata_required_exact": [
-    "docs/README.md",
-    "docs/INDEX.md",
     "docs/spec/README.md",
-    "docs/reference/README.md",
-    "docs/architecture/README.md",
-    "docs/adr/README.md",
-    "docs/user/README.md",
-    "docs/operations/README.md",
-    "docs/dev/README.md",
-    "docs/testing/README.md",
-    "docs/reports/README.md",
-    "docs/user/FIRST_HOUR_WITH_BIJUX_DAG.md",
-    "docs/user/INSTALLATION.md",
-    "docs/user/AUTHORING_GUIDE.md",
-    "docs/user/OPERATOR_WORKFLOWS.md",
-    "docs/user/TRUST_BOUNDARIES.md",
-    "docs/reference/SUPPORT_AND_COMPATIBILITY_MATRICES.md",
-    "docs/reference/GLOSSARY.md",
-    "docs/reference/COMPARISON_REFERENCE.md"
+    "docs/reports/README.md"
   ],
-  "standalone_allowlist": [
-    "docs-information-architecture.md"
-  ]
+  "standalone_allowlist": []
 }

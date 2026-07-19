@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -39,7 +38,7 @@ fn cli_validate_smoke_accepts_valid_graph() {
         .expect("write graph");
 
     let matches = dag_command()
-        .try_get_matches_from(["dag", "validate", graph_path.to_string_lossy().as_ref()])
+        .try_get_matches_from(["bijux-dag", "validate", graph_path.to_string_lossy().as_ref()])
         .expect("cli parse");
     let code = dag_run(&matches).expect("validate command");
     assert_eq!(code, std::process::ExitCode::SUCCESS);
@@ -52,7 +51,7 @@ fn cli_validate_smoke_reports_invalid_graph() {
     std::fs::write(&graph_path, b"{ not-valid-json").expect("write graph");
 
     let matches = dag_command()
-        .try_get_matches_from(["dag", "validate", graph_path.to_string_lossy().as_ref()])
+        .try_get_matches_from(["bijux-dag", "validate", graph_path.to_string_lossy().as_ref()])
         .expect("cli parse");
     let err = dag_run(&matches).expect_err("invalid graph should fail validation");
     assert_eq!(err, std::process::ExitCode::from(2));

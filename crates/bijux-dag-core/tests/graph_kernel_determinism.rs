@@ -16,44 +16,50 @@ fn base_graph() -> Graph {
     Graph {
         spec: SPEC_VERSION.to_string(),
         meta: None,
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
+        subgraphs: std::collections::BTreeMap::new(),
+        subgraph_instances: Vec::new(),
         nodes: vec![
             Node {
                 id: "a".to_string(),
                 kind: NodeKind::Const,
                 semantic_kind: SemanticNodeKind::Task,
                 inputs: vec![],
-                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: None,
                 resources: None,
                 tags: vec![],
                 retry: RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![],
                 env_allowlist: vec![],
                 group: None,
                 trigger_rule: TriggerRule::AllSuccess,
                 branch: None,
+                dynamic: None,
             },
             Node {
                 id: "b".to_string(),
                 kind: NodeKind::Const,
                 semantic_kind: SemanticNodeKind::Task,
                 inputs: vec!["in".to_string()],
-                outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                 params: ParamValue::default(),
                 container: None,
                 timeout_ms: None,
                 resources: None,
                 tags: vec![],
                 retry: RetryPolicy::default(),
+                cache: Default::default(),
                 effects: vec![],
                 env_allowlist: vec![],
                 group: None,
                 trigger_rule: TriggerRule::AllSuccess,
                 branch: None,
+                dynamic: None,
             },
         ],
         edges: vec![Edge {
@@ -129,9 +135,15 @@ fn canonicalization_stable_under_random_ordering() {
 #[test]
 fn resolver_determinism() {
     let mut graph = base_graph();
-    graph.inputs.insert("x".to_string(), serde_json::json!(1));
-    graph.nodes[0].params =
-        ParamValue::Ref(RefSpec { graph_input: Some("x".to_string()), node_output: None });
+    graph.inputs.insert(
+        "x".to_string(),
+        bijux_dag_core::GraphInputSpec::from_default_value(serde_json::json!(1)).expect("spec"),
+    );
+    graph.nodes[0].params = ParamValue::Ref(RefSpec {
+        graph_input: Some("x".to_string()),
+        node_output: None,
+        path_var: None,
+    });
     let left = serde_json::to_string(&graph.resolve_graph().unwrap().resolved_params).unwrap();
     let right = serde_json::to_string(&graph.resolve_graph().unwrap().resolved_params).unwrap();
     assert_eq!(left, right);

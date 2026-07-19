@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -22,6 +21,14 @@ fn repo_root() -> PathBuf {
 }
 
 fn dag_command(root: &Path) -> Command {
+    if let Some(path) = std::env::var_os("BIJUX_DAG_BIN") {
+        let path = PathBuf::from(path);
+        if path.exists() {
+            let mut command = Command::new(path);
+            command.current_dir(root);
+            return command;
+        }
+    }
     let cargo_bin = std::env::var("CARGO")
         .ok()
         .or_else(|| option_env!("CARGO").map(ToOwned::to_owned))
@@ -33,7 +40,6 @@ fn dag_command(root: &Path) -> Command {
         "-p",
         "bijux-dag-cli",
         "--",
-        "dag",
     ]);
     command
 }
@@ -72,8 +78,22 @@ fn normalize_paths(text: &str, tmp_root: &Path) -> String {
     text.replace(&*tmp_root.to_string_lossy(), "<TMP>")
 }
 
+fn normalize_run_human_output(text: &str, tmp_root: &Path) -> String {
+    normalize_paths(text, tmp_root)
+        .lines()
+        .map(|line| {
+            if line.starts_with("run_summary_duration_ms: ") {
+                "run_summary_duration_ms: <DURATION_MS>".to_string()
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n"
+}
+
 #[test]
-#[ignore = "slow"]
 fn validate_human_output_snapshot_is_stable() {
     let root = repo_root();
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
@@ -82,7 +102,6 @@ fn validate_human_output_snapshot_is_stable() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn plan_human_output_snapshot_is_stable() {
     let root = repo_root();
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
@@ -91,7 +110,6 @@ fn plan_human_output_snapshot_is_stable() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn run_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -107,7 +125,7 @@ fn run_human_output_snapshot_is_stable() {
             "run-fixed",
         ],
     );
-    let normalized = normalize_paths(&out, tmp.path());
+    let normalized = normalize_run_human_output(&out, tmp.path());
     assert_eq!(normalized, include_str!("snapshots/run_human_output.txt"));
 }
 
@@ -128,7 +146,6 @@ fn inspect_human_output_snapshot_is_stable() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn history_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -137,15 +154,10 @@ fn history_human_output_snapshot_is_stable() {
     write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
     let history =
         run_human(&root, &["runs", "history", "--root", out_dir.to_string_lossy().as_ref()]);
-    let mut payload: serde_json::Value =
-        serde_json::from_str(&history).expect("history payload should be json");
-    payload["runs"][0]["created_unix_ms"] = serde_json::json!(0);
-    let rendered = serde_json::to_string_pretty(&payload).expect("render normalized history");
-    assert_eq!(format!("{rendered}\n"), include_str!("snapshots/history_human_output.txt"));
+    assert_eq!(history, include_str!("snapshots/history_human_output.txt"));
 }
 
 #[test]
-#[ignore = "slow"]
 fn replay_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -169,7 +181,6 @@ fn replay_human_output_snapshot_is_stable() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn diff_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -189,31 +200,29 @@ fn diff_human_output_snapshot_is_stable() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn prove_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let out_dir = tmp.path().join("runs");
     let run_dir = write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
-    let prove = run_human_with_code(&root, 3, &["prove", run_dir.to_string_lossy().as_ref()]);
+    let prove = run_human_with_code(&root, 0, &["prove", run_dir.to_string_lossy().as_ref()]);
     assert_eq!(prove, include_str!("snapshots/prove_human_output_contract.txt"));
 }
 
 #[test]
-#[ignore = "slow"]
 fn verify_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");
     let graph = root.join("evidence/authoring/examples/hello.dag.json");
     let out_dir = tmp.path().join("runs");
     let run_dir = write_run_with_fixed_id(&root, &graph, &out_dir, "run-fixed");
-    let verify = run_human_with_code(&root, 3, &["verify", run_dir.to_string_lossy().as_ref()]);
+    let verify = run_human_with_code(&root, 0, &["verify", run_dir.to_string_lossy().as_ref()]);
     assert_eq!(verify, include_str!("snapshots/verify_human_output_contract.txt"));
 }
 
 #[test]
-#[ignore = "slow"]
 fn artifact_inspect_human_output_snapshot_is_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tempdir");

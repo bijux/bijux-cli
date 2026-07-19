@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -33,7 +32,6 @@ fn dag_command(root: &Path) -> Command {
         "-p",
         "bijux-dag-cli",
         "--",
-        "dag",
     ]);
     command
 }
@@ -47,7 +45,7 @@ fn run_json(root: &Path, args: &[&str]) -> (i32, serde_json::Value, String) {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_describe_json_contains_descriptor_fields() {
     let root = repo_root();
     let (code, payload, stderr) = run_json(&root, &["--json", "adapters", "describe"]);
@@ -60,10 +58,31 @@ fn adapters_describe_json_contains_descriptor_fields() {
             && descriptor.get("supports_timeout").is_some()
             && descriptor.get("supports_cancel").is_some()
     }));
+    assert!(descriptors.iter().any(|descriptor| {
+        descriptor["id"] == "http"
+            && descriptor["supported_kinds"]
+                .as_array()
+                .is_some_and(|kinds| kinds.iter().any(|kind| kind == "http"))
+            && descriptor.get("supports_timeout").is_some()
+    }));
+    assert!(descriptors.iter().any(|descriptor| {
+        descriptor["id"] == "python"
+            && descriptor["supported_kinds"]
+                .as_array()
+                .is_some_and(|kinds| kinds.iter().any(|kind| kind == "python"))
+            && descriptor.get("supports_timeout").is_some()
+    }));
+    assert!(descriptors.iter().any(|descriptor| {
+        descriptor["id"] == "file_transform"
+            && descriptor["supported_kinds"]
+                .as_array()
+                .is_some_and(|kinds| kinds.iter().any(|kind| kind == "file_transform"))
+            && descriptor.get("supports_timeout").is_some()
+    }));
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_admit_json_reports_unsupported_nodes() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmpdir");
@@ -85,7 +104,7 @@ fn adapters_admit_json_reports_unsupported_nodes() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_doctor_reports_external_handshake_rejections_with_reasons() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmpdir");
@@ -118,20 +137,73 @@ fn adapters_doctor_reports_external_handshake_rejections_with_reasons() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_conformance_json_reports_scenario_matrix() {
     let root = repo_root();
     let (code, payload, stderr) = run_json(&root, &["--json", "adapters", "conformance"]);
     assert_eq!(code, 0, "command failed: {stderr}");
     let suites = payload["data"]["suites"].as_array().expect("suites");
+    let file_transform = suites
+        .iter()
+        .find(|suite| suite["adapter_id"] == "file_transform")
+        .expect("file_transform suite");
+    let http = suites.iter().find(|suite| suite["adapter_id"] == "http").expect("http suite");
     let shell = suites.iter().find(|suite| suite["adapter_id"] == "shell").expect("shell suite");
+    let python = suites.iter().find(|suite| suite["adapter_id"] == "python").expect("python suite");
+    let file_transform_scenarios =
+        file_transform["scenarios"].as_array().expect("file_transform scenarios");
     let scenarios = shell["scenarios"].as_array().expect("shell scenarios");
-    assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "timeout"));
-    assert!(scenarios.iter().any(|scenario| scenario["scenario"] == "cache_output"));
+    assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "success"
+            && scenario["status"] == "pass"
+            && scenario["checked_by_execution"] == true
+    }));
+    assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "failure"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["failure_code"] == "EXEC_ERROR"
+    }));
+    assert!(file_transform_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "output_manifest"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["output_files"][0] == "artifact"
+    }));
+    assert!(scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "missing_output"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["failure_code"] == "OUTPUT_MISSING"
+    }));
+    assert!(scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "failure_schema"
+            && scenario["status"] == "pass"
+            && scenario["checked_by_execution"] == true
+    }));
+    let http_scenarios = http["scenarios"].as_array().expect("http scenarios");
+    assert!(http_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "failure"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["failure_code"] == "HTTP_STATUS_ERROR"
+    }));
+    assert!(http_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "timeout"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["failure_code"] == "EXEC_TIMEOUT"
+    }));
+    let python_scenarios = python["scenarios"].as_array().expect("python scenarios");
+    assert!(python_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "timeout"
+            && scenario["status"] == "pass"
+            && scenario["observation"]["failure_code"] == "EXEC_TIMEOUT"
+    }));
+    assert!(python_scenarios.iter().any(|scenario| {
+        scenario["scenario"] == "adapter_identity_schema"
+            && scenario["status"] == "pass"
+            && scenario["checked_by_execution"] == true
+    }));
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_cache_compat_json_rejects_schema_drift() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmpdir");
@@ -162,7 +234,7 @@ fn adapters_cache_compat_json_rejects_schema_drift() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn adapters_reference_prints_generated_markdown_contract() {
     let root = repo_root();
     let output =

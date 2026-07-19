@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -12,8 +11,9 @@ use thiserror as _;
 
 use bijux_dag_runtime::{
     event_contains_sensitive_material, event_names_emitted_once, reconstruct_timeline_from_events,
-    required_event_fields_present, validate_required_event_names, verify_event_log_completeness,
-    EventCategory, EventRecord, TimelineExport, REQUIRED_RUNTIME_EVENT_NAMES,
+    required_event_fields_present, validate_required_event_names,
+    validate_required_timeline_labels, verify_event_log_completeness, EventCategory, EventRecord,
+    TimelineExport, REQUIRED_RUNTIME_EVENT_NAMES,
 };
 use serde_json::json;
 
@@ -74,15 +74,72 @@ fn required_event_name_catalog_contains_core_lifecycle_events() {
 #[test]
 fn timeline_reconstruction_is_stable_from_event_log_only() {
     let events = vec![
-        base_event("run_started", 1),
-        base_event("node_ready", 2),
         base_event("run_finished", 3),
+        base_event("node_ready", 2),
+        base_event("run_started", 1),
     ];
     let timeline = reconstruct_timeline_from_events(&events);
     assert_eq!(timeline.schema_version, "v0.1");
     assert_eq!(timeline.entries.len(), 3);
+    assert_eq!(timeline.entries[0].label, "run_started");
     assert_eq!(timeline.entries[1].label, "node_ready");
-    assert_eq!(timeline.entries[1].category, "start");
+    assert_eq!(timeline.entries[1].category, "ready");
+    assert_eq!(timeline.entries[2].label, "run_completed");
+    assert_eq!(timeline.entries[2].source_event.as_deref(), Some("run_finished"));
+}
+
+#[test]
+fn timeline_reconstruction_normalizes_terminal_node_outcomes() {
+    let mut failed = base_event("node_finished", 4);
+    failed.category = EventCategory::Failure;
+    failed.details = json!({"status":"failed","reason":"exit_code"});
+    let mut cached = base_event("node_finished", 3);
+    cached.category = EventCategory::CacheHit;
+    cached.details = json!({"status":"cached"});
+    let mut cancelled = base_event("node_skipped", 2);
+    cancelled.category = EventCategory::Failure;
+    cancelled.details = json!({"reason":"cancelled"});
+
+    let timeline = reconstruct_timeline_from_events(&[failed, cached, cancelled]);
+    assert_eq!(timeline.entries[0].label, "node_cancelled");
+    assert_eq!(timeline.entries[0].category, "cancel");
+    assert_eq!(timeline.entries[1].label, "node_cached");
+    assert_eq!(timeline.entries[1].status.as_deref(), Some("cached"));
+    assert_eq!(timeline.entries[2].label, "node_failed");
+    assert_eq!(timeline.entries[2].reason.as_deref(), Some("exit_code"));
+}
+
+#[test]
+fn timeline_label_validation_tracks_required_lifecycle_outcomes() {
+    let mut completed = base_event("node_finished", 3);
+    completed.details = json!({"status":"success"});
+    let mut failed = base_event("node_finished", 4);
+    failed.details = json!({"status":"failed","reason":"exit_code"});
+    let mut cached = base_event("node_finished", 5);
+    cached.details = json!({"status":"cached"});
+    let mut skipped = base_event("node_skipped", 6);
+    skipped.details = json!({"reason":"branch_pruned"});
+    let mut cancelled = base_event("node_skipped", 7);
+    cancelled.details = json!({"reason":"cancelled"});
+
+    let events = vec![
+        base_event("run_started", 1),
+        base_event("node_ready", 2),
+        base_event("node_scheduled", 8),
+        base_event("node_started", 9),
+        completed,
+        failed,
+        cached,
+        skipped,
+        cancelled,
+        base_event("run_finished", 10),
+    ];
+    let timeline = reconstruct_timeline_from_events(&events);
+
+    assert!(
+        validate_required_timeline_labels(&events, &timeline).is_empty(),
+        "reconstructed timeline should retain every required lifecycle label"
+    );
 }
 
 #[test]
@@ -101,8 +158,10 @@ fn completeness_verifier_accepts_monotonic_reconstructible_event_log() {
     let report = verify_event_log_completeness(&events, Some(&timeline));
     assert!(report.complete);
     assert!(report.required_names_present);
+    assert!(report.required_timeline_labels_present);
     assert!(report.required_event_field_gaps.is_empty());
     assert!(report.missing_required_names.is_empty());
+    assert!(report.missing_required_timeline_labels.is_empty());
     assert!(report.monotonic_timestamps);
     assert!(report.timeline_matches_reconstruction);
 }
@@ -115,7 +174,9 @@ fn completeness_verifier_flags_missing_names_and_timeline_drift() {
     let report = verify_event_log_completeness(&events, Some(&mismatched_timeline));
     assert!(!report.complete);
     assert!(!report.required_names_present);
+    assert!(!report.required_timeline_labels_present);
     assert!(report.missing_required_names.iter().any(|name| name == "node_ready"));
+    assert!(report.missing_required_timeline_labels.iter().any(|name| name == "run_started"));
     assert!(!report.monotonic_timestamps);
     assert!(!report.timeline_matches_reconstruction);
 }

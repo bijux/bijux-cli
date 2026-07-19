@@ -5,10 +5,64 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+const KNOWN_LIMITATIONS_REL_PATH: &str = "docs/bijux-dag/quality/known-limitations.md";
+const LIMITATION_REQUIRED_FIELDS: [&str; 7] = [
+    "- stability class:",
+    "- affected command or API:",
+    "- limitation:",
+    "- impact:",
+    "- workaround:",
+    "- planned fix:",
+    "- release target:",
+];
+const REQUIRED_LIMITATION_SECTION_HEADINGS: [&str; 7] = [
+    "## Stable Local Execution Limitations",
+    "## Shell Isolation Limitations",
+    "## Container Limitations",
+    "## Scheduling Limitations",
+    "## Remote/Distributed Limitations",
+    "## API Stability Limitations",
+    "## Cache/Replay Limitations",
+];
+const RISK_REGISTER_REL_PATH: &str = "docs/bijux-dag/quality/risk-register.md";
+const RISK_REQUIRED_FIELDS: [&str; 6] = [
+    "- severity:",
+    "- affected component:",
+    "- current status:",
+    "- risk:",
+    "- mitigation:",
+    "- release decision:",
+];
+const REQUIRED_RISK_IDS: [&str; 10] = [
+    "RISK-001", "RISK-002", "RISK-003", "RISK-004", "RISK-005", "RISK-006", "RISK-007", "RISK-008",
+    "RISK-009", "RISK-010",
+];
+const ROADMAP_REFERENCE_ALLOWLIST: [&str; 11] = [
+    "docs/index.md",
+    "docs/bijux-dag/index.md",
+    "docs/bijux-dag/foundation/release-boundary.md",
+    "docs/bijux-dag/foundation/scope-and-boundaries.md",
+    "docs/bijux-dag/interfaces/support-matrix.md",
+    "docs/bijux-dag/quality/known-limitations.md",
+    "docs/bijux-dag/operations/v0-4-0-release-notes.md",
+    "docs/bijux-core/governance/documentation-governance-alignment.md",
+    "docs/bijux-core/foundation/documentation-system.md",
+    "docs/bijux-core/foundation/module-surface-lanes.md",
+    "docs/reports/governance/DOCUMENTATION_AUTHORITY_REPORT.md",
+];
+
 #[derive(Debug, Deserialize, Default)]
 struct DocsLintPolicy {
     #[serde(default)]
+    public_page_budget: Option<usize>,
+    #[serde(default)]
+    public_page_max_depth: Option<usize>,
+    #[serde(default)]
+    crate_docs_page_budget: Option<usize>,
+    #[serde(default)]
     exclude_prefixes: Vec<String>,
+    #[serde(default)]
+    orphan_exempt_prefixes: Vec<String>,
     #[serde(default)]
     metadata_required_prefixes: Vec<String>,
     #[serde(default)]
@@ -21,16 +75,15 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
     let root = repo_root()?;
     let docs_root = root.join("docs");
     let allowed_dirs = [
+        "assets",
+        "automation",
+        "bijux-cli",
+        "bijux-core",
+        "bijux-dag",
+        "bijux-dev",
+        "overrides",
+        "reports",
         "spec",
-        "architecture",
-        "user",
-        "dev",
-        "reference",
-        "tracking",
-        "generated",
-        "_tracking",
-        "adr",
-        "operations",
     ];
 
     for entry in fs::read_dir(&docs_root).map_err(|err| err.to_string())? {
@@ -44,36 +97,16 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
         }
     }
 
-    let root_markdown_count = fs::read_dir(&docs_root)
-        .map_err(|err| err.to_string())?
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.path().extension().and_then(|v| v.to_str()) == Some("md"))
-        .count();
-    let max_root_docs = 110usize;
-    if root_markdown_count > max_root_docs {
-        return Err(format!(
-            "docs root budget exceeded: {} > {}",
-            root_markdown_count, max_root_docs
-        ));
-    }
-
     for rel in [
-        "docs/spec/DOCS_GOVERNANCE.md",
-        "docs/tracking/DOC_OWNERSHIP.json",
-        "docs/tracking/DOCS_PRUNING_CHECKLIST.md",
+        "docs/index.md",
+        "docs/bijux-core/governance/documentation-standards.md",
+        "docs/bijux-core/governance/index.md",
+        "docs/bijux-dev/governance/documentation-standard.md",
+        "docs/bijux-dev/operations/docs-operations.md",
     ] {
         if !root.join(rel).exists() {
             return Err(format!("missing docs governance artifact: {rel}"));
         }
-    }
-
-    let owners: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("docs/tracking/DOC_OWNERSHIP.json"))
-            .map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
-    if owners.get("owners").and_then(Value::as_array).is_none_or(|items| items.is_empty()) {
-        return Err("docs ownership metadata has no owners entries".to_string());
     }
 
     for forbidden in ["production-grade", "world-class"] {
@@ -95,6 +128,7 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
 
     let mut files = Vec::new();
     collect_markdown_files(&docs_root, &mut files)?;
+    let mut unauthorized_roadmap_references = Vec::new();
     for file in files {
         let rel = file
             .strip_prefix(&root)
@@ -108,10 +142,11 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
                 return Err(format!("stale crate/path reference in {rel}: {stale}"));
             }
         }
-        if lower.contains("roadmap") && !rel.starts_with("docs/tracking/") {
-            return Err(format!(
-                "speculative roadmap content must live under docs/tracking: {rel}"
-            ));
+        if lower.contains("roadmap")
+            && rel != "docs/bijux-dag/roadmap.md"
+            && !roadmap_reference_allowed(&rel)
+        {
+            unauthorized_roadmap_references.push(rel.clone());
         }
         if content.contains("AUTO-GENERATED") && !rel.starts_with("docs/generated/") {
             return Err(format!(
@@ -119,8 +154,37 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
             ));
         }
     }
+    if !unauthorized_roadmap_references.is_empty() {
+        return Err(format!(
+            "speculative roadmap content must live in the owned product roadmap: {}",
+            unauthorized_roadmap_references.join(", ")
+        ));
+    }
+
+    run_known_limitations_guard()?;
+    run_risk_register_guard()?;
 
     Ok(())
+}
+
+fn roadmap_reference_allowed(rel: &str) -> bool {
+    ROADMAP_REFERENCE_ALLOWLIST.contains(&rel)
+}
+
+pub(super) fn run_known_limitations_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(KNOWN_LIMITATIONS_REL_PATH);
+    let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    validate_known_limitations_content(&content)
+        .map_err(|err| format!("{KNOWN_LIMITATIONS_REL_PATH}: {err}"))
+}
+
+pub(super) fn run_risk_register_guard() -> Result<(), String> {
+    let root = repo_root()?;
+    let path = root.join(RISK_REGISTER_REL_PATH);
+    let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    validate_risk_register_content(&content)
+        .map_err(|err| format!("{RISK_REGISTER_REL_PATH}: {err}"))
 }
 
 pub(super) fn run_docs_link_check() -> Result<(), String> {
@@ -135,11 +199,7 @@ pub(super) fn run_docs_link_check() -> Result<(), String> {
             let start = cap.0 + 2;
             if let Some(end_rel) = content[start..].find(')') {
                 let link = &content[start..start + end_rel];
-                if link.starts_with("http://")
-                    || link.starts_with("https://")
-                    || link.starts_with("mailto:")
-                    || link.starts_with('#')
-                {
+                if should_skip_markdown_link(link) {
                     continue;
                 }
                 let resolved = file.parent().unwrap_or(Path::new(".")).join(link);
@@ -153,6 +213,278 @@ pub(super) fn run_docs_link_check() -> Result<(), String> {
                 }
             }
         }
+
+        violations.extend(broken_inline_code_anchors(&root, &file, &content)?);
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+fn should_skip_markdown_link(link: &str) -> bool {
+    link.starts_with("http://")
+        || link.starts_with("https://")
+        || link.starts_with("mailto:")
+        || link.starts_with('#')
+        || link.contains("{{")
+        || link.contains("}}")
+}
+
+fn extract_inline_code_spans(content: &str) -> Vec<(usize, String)> {
+    let mut spans = Vec::new();
+    let mut fence_open = false;
+
+    for (line_index, line) in content.lines().enumerate() {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("```") {
+            fence_open = !fence_open;
+            continue;
+        }
+        if fence_open {
+            continue;
+        }
+
+        let mut cursor = 0usize;
+        while let Some(start_rel) = line[cursor..].find('`') {
+            let start = cursor + start_rel + 1;
+            let Some(end_rel) = line[start..].find('`') else {
+                break;
+            };
+            let end = start + end_rel;
+            let span = line[start..end].trim();
+            if !span.is_empty() {
+                spans.push((line_index + 1, span.to_string()));
+            }
+            cursor = end + 1;
+        }
+    }
+
+    spans
+}
+
+fn repo_code_anchor_candidate(span: &str) -> Option<&str> {
+    let anchor = span.trim();
+    if anchor.is_empty() || anchor.contains("://") || anchor.contains(' ') {
+        return None;
+    }
+
+    let starts_with_repo_root =
+        ["crates/", "docs/", "configs/", ".github/", "makes/", "templates/", "evidence/"]
+            .iter()
+            .any(|prefix| anchor.starts_with(prefix));
+    if !starts_with_repo_root {
+        return None;
+    }
+
+    let looks_like_path = anchor.ends_with('/')
+        || Path::new(anchor).extension().and_then(|ext| ext.to_str()).is_some();
+    looks_like_path.then_some(anchor)
+}
+
+fn broken_inline_code_anchors(
+    root: &Path,
+    file: &Path,
+    content: &str,
+) -> Result<Vec<String>, String> {
+    let rel = file
+        .strip_prefix(root)
+        .map_err(|err| err.to_string())?
+        .to_string_lossy()
+        .replace('\\', "/");
+    let mut violations = Vec::new();
+
+    for (line_number, span) in extract_inline_code_spans(content) {
+        let Some(anchor) = repo_code_anchor_candidate(&span) else {
+            continue;
+        };
+        if !root.join(anchor).exists() {
+            violations.push(format!("{rel}:{line_number}: broken code anchor {anchor}"));
+        }
+    }
+
+    Ok(violations)
+}
+
+#[derive(Debug, Clone)]
+struct LimitationRecord {
+    id: String,
+    heading_line: usize,
+    body: Vec<String>,
+}
+
+fn parse_limitation_records(content: &str) -> Vec<LimitationRecord> {
+    let mut records = Vec::new();
+    let mut current: Option<LimitationRecord> = None;
+
+    for (line_index, line) in content.lines().enumerate() {
+        let trimmed = line.trim_start();
+        if let Some(heading) = trimmed.strip_prefix("### ") {
+            if heading.starts_with("LIM-") {
+                if let Some(record) = current.take() {
+                    records.push(record);
+                }
+                let id = heading.split_whitespace().next().unwrap_or_default().to_string();
+                current =
+                    Some(LimitationRecord { id, heading_line: line_index + 1, body: Vec::new() });
+                continue;
+            }
+            if let Some(record) = current.take() {
+                records.push(record);
+            }
+        }
+
+        if let Some(record) = current.as_mut() {
+            record.body.push(line.to_string());
+        }
+    }
+
+    if let Some(record) = current {
+        records.push(record);
+    }
+
+    records
+}
+
+fn limitation_field_value<'a>(record: &'a LimitationRecord, field: &str) -> Option<&'a str> {
+    record.body.iter().find_map(|line| {
+        line.trim_start().strip_prefix(field).map(str::trim).filter(|value| !value.is_empty())
+    })
+}
+
+fn validate_known_limitations_content(content: &str) -> Result<(), String> {
+    let mut violations = Vec::new();
+    for heading in REQUIRED_LIMITATION_SECTION_HEADINGS {
+        if !content.contains(heading) {
+            violations.push(format!("missing limitations section heading `{heading}`"));
+        }
+    }
+
+    let records = parse_limitation_records(content);
+    if records.is_empty() {
+        return Err("missing `### LIM-...` limitation records".to_string());
+    }
+
+    let mut seen_ids = BTreeSet::new();
+    let mut has_experimental = false;
+    let mut has_simulation = false;
+
+    for record in &records {
+        if !seen_ids.insert(record.id.clone()) {
+            violations.push(format!(
+                "{}:{}: duplicate limitation identifier",
+                record.id, record.heading_line
+            ));
+        }
+
+        for field in LIMITATION_REQUIRED_FIELDS {
+            if limitation_field_value(record, field).is_none() {
+                violations.push(format!(
+                    "{}:{}: missing limitation field `{field}`",
+                    record.id, record.heading_line
+                ));
+            }
+        }
+
+        if let Some(stability_class) = limitation_field_value(record, "- stability class:") {
+            match stability_class.trim_matches('`') {
+                "experimental-surface" => has_experimental = true,
+                "simulation-surface" => has_simulation = true,
+                _ => {}
+            }
+        }
+    }
+
+    if !has_experimental {
+        violations.push("missing `experimental-surface` limitation record".to_string());
+    }
+    if !has_simulation {
+        violations.push("missing `simulation-surface` limitation record".to_string());
+    }
+
+    if violations.is_empty() {
+        Ok(())
+    } else {
+        Err(violations.join(", "))
+    }
+}
+
+#[derive(Debug, Clone)]
+struct RiskRecord {
+    id: String,
+    heading_line: usize,
+    body: Vec<String>,
+}
+
+fn parse_risk_records(content: &str) -> Vec<RiskRecord> {
+    let mut records = Vec::new();
+    let mut current: Option<RiskRecord> = None;
+
+    for (line_index, line) in content.lines().enumerate() {
+        let trimmed = line.trim_start();
+        if let Some(heading) = trimmed.strip_prefix("### ") {
+            if heading.starts_with("RISK-") {
+                if let Some(record) = current.take() {
+                    records.push(record);
+                }
+                let id = heading.split_whitespace().next().unwrap_or_default().to_string();
+                current = Some(RiskRecord { id, heading_line: line_index + 1, body: Vec::new() });
+                continue;
+            }
+            if let Some(record) = current.take() {
+                records.push(record);
+            }
+        }
+
+        if let Some(record) = current.as_mut() {
+            record.body.push(line.to_string());
+        }
+    }
+
+    if let Some(record) = current {
+        records.push(record);
+    }
+
+    records
+}
+
+fn risk_field_value<'a>(record: &'a RiskRecord, field: &str) -> Option<&'a str> {
+    record.body.iter().find_map(|line| {
+        line.trim_start().strip_prefix(field).map(str::trim).filter(|value| !value.is_empty())
+    })
+}
+
+fn validate_risk_register_content(content: &str) -> Result<(), String> {
+    let records = parse_risk_records(content);
+    if records.is_empty() {
+        return Err("missing `### RISK-...` risk records".to_string());
+    }
+
+    let mut violations = Vec::new();
+    let mut seen_ids = BTreeSet::new();
+
+    for record in &records {
+        if !seen_ids.insert(record.id.clone()) {
+            violations
+                .push(format!("{}:{}: duplicate risk identifier", record.id, record.heading_line));
+        }
+
+        for field in RISK_REQUIRED_FIELDS {
+            if risk_field_value(record, field).is_none() {
+                violations.push(format!(
+                    "{}:{}: missing risk field `{field}`",
+                    record.id, record.heading_line
+                ));
+            }
+        }
+    }
+
+    for required_id in REQUIRED_RISK_IDS {
+        if !seen_ids.contains(required_id) {
+            violations.push(format!("missing required risk record `{required_id}`"));
+        }
     }
 
     if violations.is_empty() {
@@ -164,25 +496,32 @@ pub(super) fn run_docs_link_check() -> Result<(), String> {
 
 pub(super) fn run_naming_governance_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let required_docs = [
-        "docs/spec/NAMING_GUIDELINES.md",
-        "docs/spec/TERMINOLOGY_GLOSSARY.md",
-        "docs/spec/NAMING_PHILOSOPHY.md",
-        "docs/spec/NAMING_REVIEW_POLICY.md",
-        "docs/reference/NAMING_AUDIT.md",
-        "configs/dag/policy/naming_rules.json",
-    ];
+    let policy_path = root.join("configs/dag/policy/naming_rules.json");
+    if !policy_path.exists() {
+        return Err(
+            "missing naming governance artifact: configs/dag/policy/naming_rules.json".to_string()
+        );
+    }
+
+    let policy: Value =
+        serde_json::from_str(&fs::read_to_string(&policy_path).map_err(|err| err.to_string())?)
+            .map_err(|err| err.to_string())?;
+    let required_docs = policy
+        .get("required_docs")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "naming_rules.json missing required_docs".to_string())?;
+    if required_docs.is_empty() {
+        return Err("naming_rules.json required_docs must not be empty".to_string());
+    }
     for rel in required_docs {
+        let Some(rel) = rel.as_str() else {
+            return Err("naming_rules.json required_docs must contain only strings".to_string());
+        };
         if !root.join(rel).exists() {
             return Err(format!("missing naming governance artifact: {rel}"));
         }
     }
 
-    let policy: Value = serde_json::from_str(
-        &fs::read_to_string(root.join("configs/dag/policy/naming_rules.json"))
-            .map_err(|err| err.to_string())?,
-    )
-    .map_err(|err| err.to_string())?;
     let banned_terms = policy
         .get("runtime_module_banned_terms")
         .and_then(Value::as_array)
@@ -235,14 +574,14 @@ pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
     }
 
     for required in [
-        "docs/spec/CURRENT_IMPLEMENTED_CAPABILITIES.md",
-        "docs/spec/MODELED_AND_FUTURE_SURFACES.md",
-        "docs/spec/SPEC_TO_CODE_AND_TEST_OWNERSHIP.md",
+        "docs/bijux-core/foundation/current-implemented-capabilities.md",
+        "docs/bijux-dag/foundation/release-boundary.md",
+        "docs/bijux-core/governance/spec-to-code-and-test-ownership.md",
         "docs/reports/foundation/DOCS_ROOT_INVENTORY_REPORT.md",
-        "docs/reports/foundation/FOUNDATION_FINAL_REPORT.md",
+        "docs/reports/foundation/FOUNDATION_GOVERNANCE_POSTURE.md",
         "docs/reports/foundation/REPOSITORY_PROOF_STATEMENT.md",
-        "docs/reports/foundation/archive/RENOVATION_BURNDOWN_REPORT.md",
-        "docs/adr/20260309-DOCUMENTATION-GOVERNANCE-ALIGNMENT.md",
+        "docs/reports/governance/DOCUMENTATION_AUTHORITY_REPORT.md",
+        "docs/bijux-core/governance/documentation-governance-alignment.md",
     ] {
         if !root.join(required).exists() {
             return Err(format!("missing docs config reduction authority: {required}"));
@@ -264,6 +603,13 @@ pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn schema_reference_path(token: &str) -> Option<&str> {
+    let clean = token.trim_matches(|c: char| {
+        matches!(c, ')' | '(' | '[' | ']' | ',' | ';' | ':' | '!' | '?' | '.' | '"' | '`')
+    });
+    clean.find("configs/dag/schema/").map(|idx| &clean[idx..])
+}
+
 pub(super) fn run_docs_schema_reference_guard() -> Result<(), String> {
     let root = repo_root()?;
     let mut files = Vec::new();
@@ -273,16 +619,8 @@ pub(super) fn run_docs_schema_reference_guard() -> Result<(), String> {
     for file in files {
         let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
         for token in content.split_whitespace() {
-            if !token.contains("configs/dag/schema/") {
+            let Some(path) = schema_reference_path(token) else {
                 continue;
-            }
-            let clean =
-                token.trim_matches(|c: char| matches!(c, ')' | '(' | '[' | ']' | ',' | ';' | '"'));
-            let path = if clean.contains("configs/dag/schema/") {
-                let idx = clean.find("configs/dag/schema/").unwrap_or(0);
-                &clean[idx..]
-            } else {
-                clean
             };
             if !root.join(path).exists() {
                 let rel = file
@@ -304,31 +642,33 @@ pub(super) fn run_docs_schema_reference_guard() -> Result<(), String> {
 
 pub(super) fn run_docs_contract_reference_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let crate_names = [
-        "bijux-dag-core",
-        "bijux-dag-artifacts",
-        "bijux-dag-runtime",
-        "bijux-dag-app",
-        "bijux-dag-cli",
-        "bijux-dag-testkit",
-        "bijux-dev-dag",
-    ];
     let mut violations = Vec::new();
+    let crate_docs = [
+        ("bijux-dag-core", "docs/bijux-dag/packages/bijux-dag-core.md"),
+        ("bijux-dag-artifacts", "docs/bijux-dag/packages/bijux-dag-artifacts.md"),
+        ("bijux-dag-runtime", "docs/bijux-dag/packages/bijux-dag-runtime.md"),
+        ("bijux-dag-app", "docs/bijux-dag/packages/bijux-dag-app.md"),
+        ("bijux-dag-cli", "docs/bijux-dag/packages/bijux-dag-cli.md"),
+        ("bijux-dag-testkit", "docs/bijux-dag/packages/bijux-dag-testkit.md"),
+        ("bijux-dev", "docs/bijux-dev/packages/bijux-dev.md"),
+    ];
 
-    let docs_index = fs::read_to_string(root.join("docs/reference/DOCS_INDEX.md"))
-        .map_err(|err| err.to_string())?;
-
-    for crate_name in crate_names {
+    for (crate_name, doc_rel) in crate_docs {
         let crate_dir = root.join("crates").join(crate_name);
         if !crate_dir.join("README.md").exists() {
             violations.push(format!("{crate_name} missing README.md"));
         }
-        if !crate_dir.join("CONTRACT.md").exists() {
-            violations.push(format!("{crate_name} missing CONTRACT.md"));
+        if !crate_dir.join("docs/CONTRACTS.md").exists() {
+            violations.push(format!("{crate_name} missing docs/CONTRACTS.md"));
         }
-        if !docs_index.contains(crate_name) {
-            violations
-                .push(format!("docs/reference/DOCS_INDEX.md missing crate mention: {crate_name}"));
+        let doc_path = root.join(doc_rel);
+        if !doc_path.exists() {
+            violations.push(format!("missing package handbook page: {doc_rel}"));
+            continue;
+        }
+        let doc_text = fs::read_to_string(&doc_path).map_err(|err| err.to_string())?;
+        if !doc_text.contains(crate_name) {
+            violations.push(format!("{doc_rel} missing crate mention: {crate_name}"));
         }
     }
 
@@ -339,78 +679,34 @@ pub(super) fn run_docs_contract_reference_guard() -> Result<(), String> {
     }
 }
 
-pub(super) fn run_docs_index_generate() -> Result<(), String> {
-    let root = repo_root()?;
-    let docs_root = root.join("docs");
-    let sections = ["spec", "architecture", "user", "dev", "reference", "tracking", "generated"];
-
-    let mut lines = vec![
-        "# Documentation index".to_string(),
-        "".to_string(),
-        "Generated from docs taxonomy.".to_string(),
-        "".to_string(),
-    ];
-
-    for section in sections {
-        let dir = docs_root.join(section);
-        if !dir.exists() {
-            continue;
-        }
-        lines.push(format!("## {}", section));
-        let mut entries: Vec<String> = fs::read_dir(&dir)
-            .map_err(|err| err.to_string())?
-            .filter_map(|entry| entry.ok())
-            .map(|entry| entry.file_name().to_string_lossy().to_string())
-            .collect();
-        entries.sort();
-        for entry in entries {
-            lines.push(format!("- `{}`", entry));
-        }
-        lines.push(String::new());
-    }
-
-    lines.push("## crate-doc-contracts".to_string());
-    for crate_name in [
-        "bijux-dag-core",
-        "bijux-dag-artifacts",
-        "bijux-dag-runtime",
-        "bijux-dag-app",
-        "bijux-dag-cli",
-        "bijux-dag-testkit",
-        "bijux-dev-dag",
-    ] {
-        lines.push(format!("- `{}`", crate_name));
-    }
-    lines.push(String::new());
-
-    fs::write(docs_root.join("reference").join("DOCS_INDEX.md"), lines.join("\n"))
-        .map_err(|err| err.to_string())?;
-
-    run_docs_inventory_generate()
-}
-
 pub(super) fn run_docs_coverage_report() -> Result<(), String> {
     let root = repo_root()?;
-    let crate_names = [
-        "bijux-dag-core",
-        "bijux-dag-artifacts",
-        "bijux-dag-runtime",
-        "bijux-dag-app",
-        "bijux-dag-cli",
-        "bijux-dag-testkit",
-        "bijux-dev-dag",
+    let crate_docs = [
+        ("bijux-dag-core", "docs/bijux-dag/packages/bijux-dag-core.md"),
+        ("bijux-dag-artifacts", "docs/bijux-dag/packages/bijux-dag-artifacts.md"),
+        ("bijux-dag-runtime", "docs/bijux-dag/packages/bijux-dag-runtime.md"),
+        ("bijux-dag-app", "docs/bijux-dag/packages/bijux-dag-app.md"),
+        ("bijux-dag-cli", "docs/bijux-dag/packages/bijux-dag-cli.md"),
+        ("bijux-dag-testkit", "docs/bijux-dag/packages/bijux-dag-testkit.md"),
+        ("bijux-dev", "docs/bijux-dev/packages/bijux-dev.md"),
     ];
 
     let mut missing = Vec::new();
-    for crate_name in crate_names {
-        if !root.join("crates").join(crate_name).join("CONTRACT.md").exists() {
+    for (crate_name, doc_rel) in crate_docs {
+        if !root.join("crates").join(crate_name).join("docs/CONTRACTS.md").exists() {
             missing.push(format!("missing contract doc for {crate_name}"));
+        }
+        if !root.join(doc_rel).exists() {
+            missing.push(format!("missing package handbook page for {crate_name}: {doc_rel}"));
         }
     }
 
-    let command_taxonomy = root.join("docs/reference/COMMAND_TAXONOMY.md");
-    if !command_taxonomy.exists() {
-        missing.push("missing CLI command taxonomy doc".to_string());
+    for rel in
+        ["docs/bijux-cli/interfaces/cli-surface.md", "docs/bijux-dag/interfaces/cli-surface.md"]
+    {
+        if !root.join(rel).exists() {
+            missing.push(format!("missing command surface doc: {rel}"));
+        }
     }
 
     println!(
@@ -436,11 +732,13 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
     let required_exact: BTreeSet<String> = policy.metadata_required_exact.iter().cloned().collect();
     let standalone_allowlist: BTreeSet<String> =
         policy.standalone_allowlist.iter().cloned().collect();
+    let nav_entries = collect_mkdocs_nav_entries(&root)?;
+    let shape_violations = documentation_shape_violations(&root, &nav_entries, &policy)?;
 
     let mut metadata_errors = Vec::new();
     let mut bad_status = Vec::new();
-    let mut title_map: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    let mut topic_map: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut title_map: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
+    let mut topic_map: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
     let mut orphan_docs = Vec::new();
 
     for rel_path in &markdown_files {
@@ -465,8 +763,7 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
                 None => metadata_errors.push(format!("{rel_path}: missing `status`")),
                 Some(line) => {
                     let value = line.trim_start_matches("status:").trim().to_ascii_lowercase();
-                    if !matches!(value.as_str(), "stable" | "generated" | "historical" | "internal")
-                    {
+                    if !valid_documentation_status(&value) {
                         bad_status.push(format!("{rel_path}: invalid `status` value `{value}`"));
                     }
                 }
@@ -475,10 +772,14 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
 
         if let Some(title) = lines.iter().find_map(|line| line.strip_prefix("# ").map(str::trim)) {
             if !title.is_empty() {
-                title_map.entry(title.to_string()).or_default().push(rel_path.clone());
+                let scope = documentation_scope(rel_path);
+                title_map
+                    .entry((scope.clone(), title.to_string()))
+                    .or_default()
+                    .push(rel_path.clone());
                 let topic = normalize_topic(title);
                 if !topic.is_empty() {
-                    topic_map.entry(topic).or_default().push(rel_path.clone());
+                    topic_map.entry((scope, topic)).or_default().push(rel_path.clone());
                 }
             }
         }
@@ -491,8 +792,17 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
         let is_index = file_name.starts_with("readme") || file_name.starts_with("index");
         let standalone_marker = head.iter().any(|line| line.trim() == "standalone: yes");
         let in_allowlist = standalone_allowlist.contains(rel_path);
+        let in_nav = nav_entries.contains(rel_path);
+        let orphan_exempt =
+            policy.orphan_exempt_prefixes.iter().any(|prefix| rel_path.starts_with(prefix));
         let inbound_count = inbound.get(rel_path).copied().unwrap_or(0);
-        if !is_index && !standalone_marker && !in_allowlist && inbound_count == 0 {
+        if !is_index
+            && !standalone_marker
+            && !in_allowlist
+            && !in_nav
+            && !orphan_exempt
+            && inbound_count == 0
+        {
             orphan_docs.push(rel_path.clone());
         }
     }
@@ -500,12 +810,16 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
     let duplicate_titles = title_map
         .into_iter()
         .filter(|(_, paths)| paths.len() > 1)
-        .map(|(title, paths)| format!("duplicate title `{title}`: {}", paths.join(", ")))
+        .map(|((scope, title), paths)| {
+            format!("duplicate title `{title}` in `{scope}`: {}", paths.join(", "))
+        })
         .collect::<Vec<_>>();
     let duplicate_topics = topic_map
         .into_iter()
         .filter(|(_, paths)| paths.len() > 1)
-        .map(|(topic, paths)| format!("duplicate topic `{topic}`: {}", paths.join(", ")))
+        .map(|((scope, topic), paths)| {
+            format!("duplicate topic `{topic}` in `{scope}`: {}", paths.join(", "))
+        })
         .collect::<Vec<_>>();
 
     let mut violations = Vec::new();
@@ -514,6 +828,7 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
     violations.extend(duplicate_titles);
     violations.extend(duplicate_topics);
     violations.extend(orphan_docs.into_iter().map(|path| format!("orphan doc: {path}")));
+    violations.extend(shape_violations);
     if violations.is_empty() {
         Ok(())
     } else {
@@ -531,6 +846,7 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
     let required_exact: BTreeSet<String> = policy.metadata_required_exact.iter().cloned().collect();
     let standalone_allowlist: BTreeSet<String> =
         policy.standalone_allowlist.iter().cloned().collect();
+    let nav_entries = collect_mkdocs_nav_entries(&root)?;
     let mut section_counts: BTreeMap<String, usize> = BTreeMap::new();
     let mut status_counts: BTreeMap<String, usize> = BTreeMap::new();
     let mut metadata_gaps = Vec::new();
@@ -544,18 +860,22 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
         let content = fs::read_to_string(root.join(rel_path)).map_err(|err| err.to_string())?;
         let lines = content.lines().collect::<Vec<_>>();
         let head = lines.iter().take(60).map(|line| line.to_ascii_lowercase()).collect::<Vec<_>>();
+        let metadata_required = required_exact.contains(rel_path)
+            || policy.metadata_required_prefixes.iter().any(|prefix| rel_path.starts_with(prefix));
         let status = head
             .iter()
             .find(|line| line.starts_with("status:"))
             .map(|line| line.trim_start_matches("status:").trim().to_ascii_lowercase())
-            .filter(|status| {
-                matches!(status.as_str(), "stable" | "generated" | "historical" | "internal")
-            })
-            .unwrap_or_else(|| "missing_or_invalid".to_string());
+            .filter(|status| valid_documentation_status(status))
+            .unwrap_or_else(|| {
+                if metadata_required {
+                    "missing_or_invalid".to_string()
+                } else {
+                    "metadata_not_required".to_string()
+                }
+            });
         *status_counts.entry(status).or_insert(0) += 1;
 
-        let metadata_required = required_exact.contains(rel_path)
-            || policy.metadata_required_prefixes.iter().any(|prefix| rel_path.starts_with(prefix));
         if metadata_required {
             if !head.iter().any(|line| line.starts_with("audience:")) {
                 metadata_gaps.push(format!("{rel_path}: missing `audience`"));
@@ -576,32 +896,55 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
         let is_index = file_name.starts_with("readme") || file_name.starts_with("index");
         let standalone_marker = head.iter().any(|line| line.trim() == "standalone: yes");
         let in_allowlist = standalone_allowlist.contains(rel_path);
+        let in_nav = nav_entries.contains(rel_path);
+        let orphan_exempt =
+            policy.orphan_exempt_prefixes.iter().any(|prefix| rel_path.starts_with(prefix));
         let inbound_count = inbound.get(rel_path).copied().unwrap_or(0);
-        if !is_index && !standalone_marker && !in_allowlist && inbound_count == 0 {
+        if !is_index
+            && !standalone_marker
+            && !in_allowlist
+            && !in_nav
+            && !orphan_exempt
+            && inbound_count == 0
+        {
             orphan_candidates.push(rel_path.clone());
         }
     }
 
-    let inventory_path = root.join("docs/generated/DOCS_INVENTORY.md");
+    let inventory_path = root.join("docs/reports/governance/DOCUMENTATION_INVENTORY.md");
     let mut inventory_lines = vec![
-        "# Documentation inventory".to_string(),
+        "# Documentation Inventory".to_string(),
         "".to_string(),
-        "Generated by `bijux-dev-dag docs-index`.".to_string(),
+        "Generated by `bijux-dev-dag docs-inventory`.".to_string(),
         "".to_string(),
-        "## Counts by section".to_string(),
+        "This report inventories Markdown under `docs/`. It distinguishes public".to_string(),
+        "handbook pages from internal specifications and retained evidence, and".to_string(),
+        "reports metadata gaps where repository policy requires front matter.".to_string(),
+        "".to_string(),
+        "It does not measure accuracy, completeness, or writing quality.".to_string(),
+        "".to_string(),
+        "## Counts By Section".to_string(),
         "".to_string(),
     ];
     for (section, count) in section_counts {
         inventory_lines.push(format!("- `{section}`: {count}"));
     }
     inventory_lines.push(String::new());
-    inventory_lines.push("## Counts by status".to_string());
+    inventory_lines.push("## Counts By Declared Status".to_string());
+    inventory_lines.push(String::new());
+    inventory_lines.push(
+        "Executable specifications and generated reports outside the metadata-governed".to_string(),
+    );
+    inventory_lines.push(
+        "handbook roots are counted as `metadata_not_required` when they do not declare a status."
+            .to_string(),
+    );
     inventory_lines.push(String::new());
     for (status, count) in status_counts {
         inventory_lines.push(format!("- `{status}`: {count}"));
     }
     inventory_lines.push(String::new());
-    inventory_lines.push("## Metadata gaps".to_string());
+    inventory_lines.push("## Metadata Gaps".to_string());
     inventory_lines.push(String::new());
     if metadata_gaps.is_empty() {
         inventory_lines.push("- none".to_string());
@@ -613,13 +956,22 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
     fs::write(inventory_path, format!("{}\n", inventory_lines.join("\n")))
         .map_err(|err| err.to_string())?;
 
-    let consolidation_path = root.join("docs/generated/DOCS_CONSOLIDATION_CANDIDATES.md");
+    let consolidation_path =
+        root.join("docs/reports/governance/DOCUMENTATION_CONSOLIDATION_CANDIDATES.md");
     let mut candidate_lines = vec![
-        "# Documentation consolidation candidates".to_string(),
+        "# Documentation Consolidation Candidates".to_string(),
         "".to_string(),
-        "Generated by `bijux-dev-dag docs-index`.".to_string(),
+        "Generated by `bijux-dev-dag docs-inventory`.".to_string(),
         "".to_string(),
-        "These files currently have no inbound links from non-archived docs and are candidates for merge, move, or deletion.".to_string(),
+        "This report identifies Markdown files with no inbound links from".to_string(),
+        "non-archived documentation. Each row is a review candidate, not an".to_string(),
+        "automatic deletion decision: standalone entry points, generated evidence,".to_string(),
+        "and externally linked pages can be valid without an internal inbound link.".to_string(),
+        "".to_string(),
+        "An empty result means the link graph found no candidates under this rule;".to_string(),
+        "it does not establish that the documentation is current or necessary.".to_string(),
+        "".to_string(),
+        "## Candidates".to_string(),
         "".to_string(),
     ];
     if orphan_candidates.is_empty() {
@@ -688,6 +1040,7 @@ fn collect_inbound_counts(
     markdown_files: &[String],
     policy: &DocsLintPolicy,
 ) -> Result<BTreeMap<String, usize>, String> {
+    let canonical_root = fs::canonicalize(root).map_err(|err| err.to_string())?;
     let tracked: BTreeSet<String> = markdown_files.iter().cloned().collect();
     let mut inbound: BTreeMap<String, usize> = BTreeMap::new();
     for rel_path in markdown_files {
@@ -700,11 +1053,7 @@ fn collect_inbound_counts(
                 let close = open + close_rel;
                 let link = content[open..close].trim();
                 cursor = close + 1;
-                if link.starts_with("http://")
-                    || link.starts_with("https://")
-                    || link.starts_with("mailto:")
-                    || link.starts_with('#')
-                {
+                if should_skip_markdown_link(link) {
                     continue;
                 }
                 let link_no_anchor = link.split('#').next().unwrap_or(link).trim();
@@ -712,13 +1061,14 @@ fn collect_inbound_counts(
                     continue;
                 }
                 let resolved = source_path.parent().unwrap_or(Path::new(".")).join(link_no_anchor);
-                if !resolved.exists()
-                    || resolved.extension().and_then(|ext| ext.to_str()) != Some("md")
-                {
+                if resolved.extension().and_then(|ext| ext.to_str()) != Some("md") {
                     continue;
                 }
-                let rel_target = resolved
-                    .strip_prefix(root)
+                let Ok(canonical_target) = fs::canonicalize(&resolved) else {
+                    continue;
+                };
+                let rel_target = canonical_target
+                    .strip_prefix(&canonical_root)
                     .map_err(|err| err.to_string())?
                     .to_string_lossy()
                     .replace('\\', "/");
@@ -732,6 +1082,130 @@ fn collect_inbound_counts(
         }
     }
     Ok(inbound)
+}
+
+fn collect_mkdocs_nav_entries(root: &Path) -> Result<BTreeSet<String>, String> {
+    let content = fs::read_to_string(root.join("mkdocs.yml")).map_err(|err| err.to_string())?;
+    let mut entries = BTreeSet::new();
+    for line in content.lines() {
+        let Some((_, value)) = line.trim().split_once(':') else {
+            continue;
+        };
+        let path = value.trim();
+        if path.ends_with(".md") {
+            entries.insert(format!("docs/{path}"));
+        }
+    }
+    Ok(entries)
+}
+
+fn documentation_scope(rel_path: &str) -> String {
+    rel_path.split('/').nth(1).unwrap_or("repository").to_string()
+}
+
+fn documentation_shape_violations(
+    root: &Path,
+    nav_entries: &BTreeSet<String>,
+    policy: &DocsLintPolicy,
+) -> Result<Vec<String>, String> {
+    let mut violations = Vec::new();
+
+    if let Some(budget) = policy.public_page_budget {
+        if nav_entries.len() > budget {
+            violations.push(format!(
+                "public documentation budget exceeded: {} > {budget}",
+                nav_entries.len()
+            ));
+        }
+    }
+
+    if let Some(max_depth) = policy.public_page_max_depth {
+        for rel_path in nav_entries {
+            let depth = Path::new(rel_path).components().count();
+            if depth > max_depth {
+                violations.push(format!(
+                    "public documentation depth exceeded: {rel_path} has depth {depth} > {max_depth}"
+                ));
+            }
+        }
+    }
+
+    if let Some(budget) = policy.crate_docs_page_budget {
+        let crates_root = root.join("crates");
+        if crates_root.exists() {
+            for entry in fs::read_dir(&crates_root).map_err(|err| err.to_string())? {
+                let crate_dir = entry.map_err(|err| err.to_string())?.path();
+                if !crate_dir.is_dir() || !crate_dir.join("Cargo.toml").is_file() {
+                    continue;
+                }
+                let docs_dir = crate_dir.join("docs");
+                let crate_name =
+                    crate_dir.file_name().and_then(|name| name.to_str()).unwrap_or("<unknown>");
+                if !docs_dir.is_dir() {
+                    violations.push(format!(
+                        "missing crate documentation directory: crates/{crate_name}/docs"
+                    ));
+                    continue;
+                }
+                if !docs_dir.join("CONTRACTS.md").is_file() {
+                    violations.push(format!(
+                        "missing crate contract documentation: crates/{crate_name}/docs/CONTRACTS.md"
+                    ));
+                }
+                let mut pages = Vec::new();
+                collect_markdown_files(&docs_dir, &mut pages)?;
+                if pages.len() > budget {
+                    violations.push(format!(
+                        "crate documentation budget exceeded: crates/{crate_name}/docs has {} pages > {budget}",
+                        pages.len()
+                    ));
+                }
+                for page in pages {
+                    let rel = page.strip_prefix(&docs_dir).map_err(|err| err.to_string())?;
+                    if rel.components().count() > 1 {
+                        violations.push(format!(
+                            "nested crate documentation is not allowed: crates/{crate_name}/docs/{}",
+                            rel.to_string_lossy().replace('\\', "/")
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
+    for internal_root in [root.join("docs/spec"), root.join("docs/reports")] {
+        let mut pages = Vec::new();
+        collect_markdown_files(&internal_root, &mut pages)?;
+        for page in pages {
+            let Some(file_name) = page.file_name().and_then(|name| name.to_str()) else {
+                continue;
+            };
+            if file_name == "README.md" || internal_documentation_name_is_valid(file_name) {
+                continue;
+            }
+            let rel = page.strip_prefix(root).map_err(|err| err.to_string())?;
+            violations.push(format!(
+                "internal documentation filename must use uppercase snake case: {}",
+                rel.to_string_lossy().replace('\\', "/")
+            ));
+        }
+    }
+
+    Ok(violations)
+}
+
+fn internal_documentation_name_is_valid(file_name: &str) -> bool {
+    let Some(stem) = file_name.strip_suffix(".md") else {
+        return false;
+    };
+    !stem.is_empty()
+        && stem.chars().all(|character| {
+            character.is_ascii_uppercase() || character.is_ascii_digit() || character == '_'
+        })
+}
+
+fn valid_documentation_status(status: &str) -> bool {
+    matches!(status, "canonical" | "stable" | "generated" | "historical" | "internal")
 }
 
 fn normalize_topic(title: &str) -> String {
@@ -763,4 +1237,416 @@ fn collect_source_files_with_extension(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        broken_inline_code_anchors, collect_inbound_counts, collect_mkdocs_nav_entries,
+        documentation_scope, documentation_shape_violations, extract_inline_code_spans,
+        internal_documentation_name_is_valid, repo_code_anchor_candidate,
+        roadmap_reference_allowed, schema_reference_path, should_skip_markdown_link,
+        validate_known_limitations_content, validate_risk_register_content, DocsLintPolicy,
+        KNOWN_LIMITATIONS_REL_PATH, REQUIRED_RISK_IDS, RISK_REGISTER_REL_PATH,
+    };
+    use std::collections::BTreeSet;
+    use std::fs;
+    use std::path::Path;
+    use tempfile::tempdir;
+
+    #[test]
+    fn inline_code_span_extraction_skips_fenced_blocks_and_keeps_line_numbers() {
+        let content = "\
+before `crates/demo/src/lib.rs`\n\
+```text\n\
+`crates/ignored/src/lib.rs`\n\
+```\n\
+after `docs/index.md`\n";
+
+        let spans = extract_inline_code_spans(content);
+        assert_eq!(
+            spans,
+            vec![(1, "crates/demo/src/lib.rs".to_string()), (5, "docs/index.md".to_string())]
+        );
+    }
+
+    #[test]
+    fn repo_code_anchor_candidate_filters_to_repository_paths() {
+        assert_eq!(
+            repo_code_anchor_candidate("crates/demo/src/lib.rs"),
+            Some("crates/demo/src/lib.rs")
+        );
+        assert_eq!(repo_code_anchor_candidate("docs/guide/"), Some("docs/guide/"));
+        assert_eq!(repo_code_anchor_candidate("https://crates.io/crates/demo"), None);
+        assert_eq!(repo_code_anchor_candidate("cargo run demo"), None);
+        assert_eq!(repo_code_anchor_candidate("demo"), None);
+    }
+
+    #[test]
+    fn broken_inline_code_anchors_report_missing_repo_paths_with_line_numbers() {
+        let root = tempdir().expect("tempdir");
+        let docs_dir = root.path().join("docs");
+        let crates_dir = root.path().join("crates/demo/src");
+        fs::create_dir_all(&docs_dir).expect("docs dir");
+        fs::create_dir_all(&crates_dir).expect("crate dir");
+        fs::write(crates_dir.join("lib.rs"), "// ok").expect("write crate");
+        fs::write(docs_dir.join("index.md"), "# ok").expect("write docs");
+
+        let source_file = docs_dir.join("guide.md");
+        let content = "\
+good `crates/demo/src/lib.rs`\n\
+bad `crates/demo/src/missing.rs`\n\
+also good `docs/index.md`\n";
+
+        let violations =
+            broken_inline_code_anchors(root.path(), &source_file, content).expect("violations");
+        assert_eq!(
+            violations,
+            vec!["docs/guide.md:2: broken code anchor crates/demo/src/missing.rs".to_string()]
+        );
+    }
+
+    #[test]
+    fn markdown_link_skip_rules_allow_template_placeholders() {
+        assert!(should_skip_markdown_link("https://bijux.io"));
+        assert!(should_skip_markdown_link("{{ docs_url }}"));
+        assert!(should_skip_markdown_link("#section"));
+        assert!(!should_skip_markdown_link("../guide.md"));
+    }
+
+    #[test]
+    fn documentation_scope_separates_product_handbooks() {
+        assert_eq!(documentation_scope("docs/bijux-cli/interfaces/api-surface.md"), "bijux-cli");
+        assert_eq!(documentation_scope("docs/bijux-dag/interfaces/api-surface.md"), "bijux-dag");
+        assert_eq!(documentation_scope("docs/spec/REPLAY_CONTRACT.md"), "spec");
+    }
+
+    #[test]
+    fn inbound_counts_normalize_parent_directory_links() {
+        let root = tempdir().expect("tempdir");
+        let source_dir = root.path().join("docs/product/quality");
+        let target_dir = root.path().join("docs/product/interfaces");
+        fs::create_dir_all(&source_dir).expect("source dir");
+        fs::create_dir_all(&target_dir).expect("target dir");
+        fs::write(source_dir.join("comparison.md"), "[Report](../interfaces/report.md)\n")
+            .expect("source");
+        fs::write(target_dir.join("report.md"), "# Report\n").expect("target");
+        let files = vec![
+            "docs/product/interfaces/report.md".to_string(),
+            "docs/product/quality/comparison.md".to_string(),
+        ];
+
+        let inbound = collect_inbound_counts(root.path(), &files, &DocsLintPolicy::default())
+            .expect("inbound counts");
+
+        assert_eq!(inbound.get("docs/product/interfaces/report.md"), Some(&1));
+    }
+
+    #[test]
+    fn mkdocs_navigation_entries_are_reader_entrypoints() {
+        let root = tempdir().expect("tempdir");
+        fs::write(
+            root.path().join("mkdocs.yml"),
+            "nav:\n  - Trust Evidence: bijux-core/governance/trust-evidence.md\n",
+        )
+        .expect("mkdocs");
+
+        let entries = collect_mkdocs_nav_entries(root.path()).expect("nav entries");
+
+        assert!(entries.contains("docs/bijux-core/governance/trust-evidence.md"));
+    }
+
+    #[test]
+    fn documentation_shape_limits_publication_and_crate_growth() {
+        let root = tempdir().expect("tempdir");
+        let crate_docs = root.path().join("crates/example/docs");
+        fs::create_dir_all(&crate_docs).expect("crate docs");
+        fs::write(root.path().join("crates/example/Cargo.toml"), "[package]\nname = \"example\"\n")
+            .expect("manifest");
+        fs::write(crate_docs.join("CONTRACTS.md"), "# Contracts\n").expect("contracts");
+        fs::write(crate_docs.join("architecture.md"), "# Architecture\n").expect("architecture");
+        fs::write(crate_docs.join("operations.md"), "# Operations\n").expect("operations");
+
+        let nav_entries = [
+            "docs/index.md",
+            "docs/product/operations/run.md",
+            "docs/product/operations/deep/run.md",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+        let policy = DocsLintPolicy {
+            public_page_budget: Some(2),
+            public_page_max_depth: Some(4),
+            crate_docs_page_budget: Some(1),
+            ..DocsLintPolicy::default()
+        };
+
+        let violations =
+            documentation_shape_violations(root.path(), &nav_entries, &policy).expect("shape");
+
+        assert!(violations
+            .iter()
+            .any(|message| message.contains("public documentation budget exceeded: 3 > 2")));
+        assert!(violations.iter().any(|message| message.contains("has depth 5 > 4")));
+        assert!(violations
+            .iter()
+            .any(|message| message.contains("crates/example/docs has 3 pages > 1")));
+    }
+
+    #[test]
+    fn documentation_shape_requires_flat_crate_contracts_and_consistent_internal_names() {
+        let root = tempdir().expect("tempdir");
+        let crate_dir = root.path().join("crates/example");
+        fs::create_dir_all(crate_dir.join("docs/architecture")).expect("crate docs");
+        fs::write(crate_dir.join("Cargo.toml"), "[package]\nname = \"example\"\n")
+            .expect("manifest");
+        fs::write(crate_dir.join("docs/architecture/design.md"), "# Design\n").expect("design");
+        fs::create_dir_all(root.path().join("docs/spec")).expect("spec");
+        fs::create_dir_all(root.path().join("docs/reports")).expect("reports");
+        fs::write(root.path().join("docs/spec/bad-name.md"), "# Spec\n").expect("spec file");
+
+        let violations = documentation_shape_violations(
+            root.path(),
+            &BTreeSet::new(),
+            &DocsLintPolicy { crate_docs_page_budget: Some(10), ..DocsLintPolicy::default() },
+        )
+        .expect("shape");
+
+        assert!(violations.iter().any(|message| message.contains("docs/CONTRACTS.md")));
+        assert!(violations.iter().any(|message| message.contains("nested crate documentation")));
+        assert!(violations.iter().any(|message| message.contains("docs/spec/bad-name.md")));
+    }
+
+    #[test]
+    fn internal_documentation_names_allow_only_uppercase_snake_case() {
+        assert!(internal_documentation_name_is_valid("ATTEMPT_TRACE_SCHEMA.md"));
+        assert!(internal_documentation_name_is_valid("SCHEMA_V0_1.md"));
+        assert!(!internal_documentation_name_is_valid("attempt-trace-schema.md"));
+        assert!(!internal_documentation_name_is_valid("SCHEMA_V0.1.md"));
+    }
+
+    #[test]
+    fn roadmap_reference_allowlist_covers_boundary_and_entrypoint_docs() {
+        for rel in [
+            "docs/index.md",
+            "docs/bijux-dag/index.md",
+            "docs/bijux-dag/foundation/release-boundary.md",
+            "docs/bijux-dag/foundation/scope-and-boundaries.md",
+            "docs/bijux-dag/interfaces/support-matrix.md",
+            "docs/bijux-dag/quality/known-limitations.md",
+            "docs/bijux-core/foundation/documentation-system.md",
+            "docs/reports/governance/DOCUMENTATION_AUTHORITY_REPORT.md",
+        ] {
+            assert!(roadmap_reference_allowed(rel), "{rel} should allow roadmap routing");
+        }
+    }
+
+    #[test]
+    fn roadmap_reference_allowlist_keeps_general_docs_outside_tracking_blocked() {
+        assert!(!roadmap_reference_allowed("docs/bijux-dag/operations/common-workflows.md"));
+        assert!(!roadmap_reference_allowed(
+            "docs/bijux-dag/architecture/execution-mode-responsibilities.md"
+        ));
+    }
+
+    #[test]
+    fn known_limitations_validation_accepts_complete_records() {
+        let content = "\
+## Stable Local Execution Limitations\n\
+\n\
+## Shell Isolation Limitations\n\
+\n\
+### LIM-100 Experimental route example\n\
+\n\
+- stability class: `experimental-surface`\n\
+- affected command or API: `bijux-dag hidden`\n\
+- limitation: hidden commands do not carry a public compatibility guarantee.\n\
+- impact: downstream automation may break.\n\
+- workaround: use the visible operator contract only.\n\
+- planned fix: promote only fully documented commands.\n\
+- release target: no guarantee in `v0.4.x`.\n\
+\n\
+## Container Limitations\n\
+\n\
+## Scheduling Limitations\n\
+\n\
+## Remote/Distributed Limitations\n\
+\n\
+## API Stability Limitations\n\
+\n\
+### LIM-101 Simulation namespace example\n\
+\n\
+- stability class: `simulation-surface`\n\
+- affected command or API: `bijux-dag simulated`\n\
+- limitation: simulation namespaces model behavior rather than shipping it.\n\
+- impact: operators cannot treat them as production capabilities.\n\
+- workaround: use stable commands for real workflows.\n\
+- planned fix: add real backend semantics before promotion.\n\
+- release target: remain non-public in `v0.4.x`.\n\
+\n\
+## Cache/Replay Limitations\n";
+
+        assert!(validate_known_limitations_content(content).is_ok());
+    }
+
+    #[test]
+    fn known_limitations_validation_reports_missing_fields_and_surface_classes() {
+        let content = "\
+### LIM-100 Experimental route example\n\
+\n\
+- stability class: `experimental-surface`\n\
+- affected command or API: `bijux-dag hidden`\n\
+- limitation: hidden commands do not carry a public compatibility guarantee.\n\
+- impact: downstream automation may break.\n\
+- workaround: use the visible operator contract only.\n\
+- release target: no guarantee in `v0.4.x`.\n";
+
+        let error =
+            validate_known_limitations_content(content).expect_err("validation should fail");
+        assert!(error.contains("LIM-100:1: missing limitation field `- planned fix:`"));
+        assert!(error.contains("missing `simulation-surface` limitation record"));
+    }
+
+    #[test]
+    fn known_limitations_validation_requires_backlog_section_headings() {
+        let content = "\
+### LIM-100 Experimental route example\n\
+\n\
+- stability class: `experimental-surface`\n\
+- affected command or API: `bijux-dag hidden`\n\
+- limitation: hidden commands do not carry a public compatibility guarantee.\n\
+- impact: downstream automation may break.\n\
+- workaround: use the visible operator contract only.\n\
+- planned fix: promote only fully documented commands.\n\
+- release target: no guarantee in `v0.4.x`.\n\
+\n\
+### LIM-101 Simulation namespace example\n\
+\n\
+- stability class: `simulation-surface`\n\
+- affected command or API: `bijux-dag simulated`\n\
+- limitation: simulation namespaces model behavior rather than shipping it.\n\
+- impact: operators cannot treat them as production capabilities.\n\
+- workaround: use stable commands for real workflows.\n\
+- planned fix: add real backend semantics before promotion.\n\
+- release target: remain non-public in `v0.4.x`.\n";
+
+        let error =
+            validate_known_limitations_content(content).expect_err("validation should fail");
+        assert!(error.contains(
+            "missing limitations section heading `## Stable Local Execution Limitations`"
+        ));
+        assert!(error.contains("missing limitations section heading `## Cache/Replay Limitations`"));
+    }
+
+    #[test]
+    fn known_limitations_validation_rejects_duplicate_identifiers() {
+        let content = "\
+### LIM-100 Experimental route example\n\
+\n\
+- stability class: `experimental-surface`\n\
+- affected command or API: `bijux-dag hidden`\n\
+- limitation: hidden commands do not carry a public compatibility guarantee.\n\
+- impact: downstream automation may break.\n\
+- workaround: use the visible operator contract only.\n\
+- planned fix: promote only fully documented commands.\n\
+- release target: no guarantee in `v0.4.x`.\n\
+\n\
+### LIM-100 Simulation namespace example\n\
+\n\
+- stability class: `simulation-surface`\n\
+- affected command or API: `bijux-dag simulated`\n\
+- limitation: simulation namespaces model behavior rather than shipping it.\n\
+- impact: operators cannot treat them as production capabilities.\n\
+- workaround: use stable commands for real workflows.\n\
+- planned fix: add real backend semantics before promotion.\n\
+- release target: remain non-public in `v0.4.x`.\n";
+
+        let error =
+            validate_known_limitations_content(content).expect_err("validation should fail");
+        assert!(error.contains("LIM-100:"));
+        assert!(error.contains("duplicate limitation identifier"));
+    }
+
+    #[test]
+    fn known_limitations_handbook_matches_record_contract() {
+        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+        let content = fs::read_to_string(repo_root.join(KNOWN_LIMITATIONS_REL_PATH))
+            .expect("read known limitations handbook");
+
+        assert!(validate_known_limitations_content(&content).is_ok());
+    }
+
+    #[test]
+    fn schema_reference_path_ignores_markdown_and_sentence_punctuation() {
+        assert_eq!(
+            schema_reference_path("`configs/dag/schema/execution_plan.schema.json`."),
+            Some("configs/dag/schema/execution_plan.schema.json")
+        );
+        assert_eq!(
+            schema_reference_path("[schema](configs/dag/schema/graph.schema.json),"),
+            Some("configs/dag/schema/graph.schema.json")
+        );
+        assert_eq!(schema_reference_path("ordinary prose"), None);
+    }
+
+    fn complete_risk_record(id: &str, component: &str) -> String {
+        format!(
+            "### {id} Example risk\n\n\
+- severity: `high`\n\
+- affected component: {component}\n\
+- current status: `mitigating`\n\
+- risk: this risk remains active until release review closes it.\n\
+- mitigation: keep docs, tests, and release checks aligned.\n\
+- release decision: keep the affected surface gated until the evidence stays green.\n"
+        )
+    }
+
+    fn complete_risk_register_fixture() -> String {
+        REQUIRED_RISK_IDS
+            .iter()
+            .enumerate()
+            .map(|(index, id)| complete_risk_record(id, &format!("component-{index}")))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    #[test]
+    fn risk_register_validation_accepts_complete_records() {
+        let content = complete_risk_register_fixture();
+        assert!(validate_risk_register_content(&content).is_ok());
+    }
+
+    #[test]
+    fn risk_register_validation_reports_missing_fields_and_required_ids() {
+        let content = "\
+### RISK-001 Example risk\n\n\
+- severity: `high`\n\
+- affected component: local shell execution\n\
+- current status: `mitigating`\n\
+- risk: this risk remains active until release review closes it.\n\
+- release decision: keep the affected surface gated until the evidence stays green.\n";
+
+        let error = validate_risk_register_content(content).expect_err("validation should fail");
+        assert!(error.contains("RISK-001:1: missing risk field `- mitigation:`"));
+        assert!(error.contains("missing required risk record `RISK-002`"));
+    }
+
+    #[test]
+    fn risk_register_validation_rejects_duplicate_identifiers() {
+        let content = complete_risk_register_fixture().replace("### RISK-010", "### RISK-001");
+        let error = validate_risk_register_content(&content).expect_err("validation should fail");
+        assert!(error.contains("RISK-001:"));
+        assert!(error.contains("duplicate risk identifier"));
+        assert!(error.contains("missing required risk record `RISK-010`"));
+    }
+
+    #[test]
+    fn risk_register_handbook_matches_record_contract() {
+        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..");
+        let content = fs::read_to_string(repo_root.join(RISK_REGISTER_REL_PATH))
+            .expect("read risk register handbook");
+
+        assert!(validate_risk_register_content(&content).is_ok());
+    }
 }

@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "path_glob": "crates/bijux-dag-app/src/commands/config_resolution.rs",
+      "allowed_env_keys": [
+        "BIJUX_DAG_JOBS",
+        "BIJUX_DAG_CACHE_MODE",
+        "BIJUX_DAG_MATERIALIZE_INPUTS",
+        "BIJUX_DAG_POLICY_JSON"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dag-app/src/read/run_data.rs",
+      "allowed_env_keys": [
+        "BIJUX_DAG_CACHE_DIR"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dag-runtime/src/lib.rs",
+      "allowed_env_keys": [
+        "BIJUX_DAG_CACHE_DIR"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dag-runtime/src/adapters/external.rs",
+      "allowed_env_keys": [
+        "BIJUX_DAG_ADAPTERS_DIR"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dag-runtime/build.rs",
+      "allowed_env_keys": [
+        "CARGO_MANIFEST_DIR"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-cli/build.rs",
+      "allowed_env_keys": [
+        "CARGO_PKG_VERSION",
+        "CARGO_MANIFEST_DIR",
+        "BIJUX_VERSION_OVERRIDE"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-cli/src/interface/cli/handlers/cli.rs",
+      "allowed_env_keys": [
+        "PATH",
+        "BIJUX_BIN",
+        "BIJUX_WHEEL_VERSION",
+        "SHELL"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-cli/src/features/install/completion.rs",
+      "allowed_env_keys": [
+        "SHELL"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-cli/src/features/apps.rs",
+      "allowed_env_keys": [
+        "PATH"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-cli/src/features/plugins/runtime.rs",
+      "allowed_env_keys": [
+        "BIJUX_PLUGIN_TIMEOUT_SECONDS"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-cli/src/features/plugins/registry.rs",
+      "allowed_env_keys": [
+        "BIJUX_PLUGIN_REGISTRY_LOCK_STALE_AFTER_SECONDS"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dag-testkit/src/workflows.rs",
+      "allowed_env_keys": [
+        "BIJUX_UPDATE_GOLDENS"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dev/src/bin/trust_health.rs",
+      "allowed_env_keys": [
+        "BIJUX_ACTIVE_IDENTITIES"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dev/src/maintainer/suites/runtime/repl_bridge_plugins.rs",
+      "allowed_env_keys": [
+        "PATH"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dev/src/maintainer/suites/control_plane/ownership_scope_bridge.rs",
+      "allowed_env_keys": [
+        "PATH"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dev/src/maintainer/suites/control_plane/stale_artifacts.rs",
+      "allowed_env_keys": [
+        "MAINTAINER_STALE_ARTIFACT_ROOT",
+        "MAINTAINER_STALE_NOW_EPOCH",
+        "MAINTAINER_STALE_MAX_SECONDS",
+        "MAINTAINER_FORCE_STALE_FILES",
+        "MAINTAINER_INJECT_STALE_ARTIFACT",
+        "MAINTAINER_ALLOW_INJECTION_DRIFT"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dev/src/maintainer/runtime/query_provider.rs",
+      "allowed_env_keys": [
+        "PATH",
+        "BIJUX_BIN",
+        "BIJUX_WHEEL_VERSION",
+        "BIJUX_PYTHON_BRIDGE_SUPPORTED"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dev/src/commands/suite_dispatch.rs",
+      "allowed_env_keys": [
+        "BIJUX_DEV_DAG_FORCE_TEST_FAIL"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dag-app/src/routes/run_routes.rs",
+      "allowed_env_keys": [
+        "BIJUX_DAG_KUBECTL",
+        "BIJUX_DAG_KUBERNETES_POLL_INTERVAL_MS",
+        "BIJUX_DAG_SLURM_SBATCH",
+        "BIJUX_DAG_SLURM_SACCT",
+        "BIJUX_DAG_SLURM_POLL_INTERVAL_MS"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dev/src/commands/mod.rs",
+      "allowed_env_keys": [
+        "CARGO_TARGET_DIR",
+        "BIJUX_PUBLIC_API_TOOLCHAIN"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dev/src/commands/reporting.rs",
+      "allowed_env_keys": [
+        "BIJUX_DEV_DAG_DISABLE_AUDIT_APPEND"
+      ]
+    },
+    {
+      "path_glob": "crates/bijux-dev/src/commands/ops.rs",
+      "allowed_env_keys": [
+        "BIJUX_DAG_CACHE_DIR",
+        "BIJUX_DAG_ADAPTERS_DIR"
+      ]
+    }
+  ]
+}

@@ -38,7 +38,12 @@ fn graph_id_changes_on_semantic_command_resource_and_env_changes() {
         "argv": ["/bin/sh", "-c", "echo b"]
     }));
     let mut changed_res = base.clone();
-    changed_res.nodes[0].resources = Some(bijux_dag_core::Resources { cpu: 2, mem_mb: 64 });
+    changed_res.nodes[0].resources = Some(bijux_dag_core::Resources {
+        cpu: 2,
+        mem_mb: 64,
+        gpu_devices: 0,
+        named_resources: std::collections::BTreeMap::new(),
+    });
     let mut changed_env = base.clone();
     changed_env.nodes[0].env_allowlist.push("B".to_string());
     assert_ne!(base.graph_id().unwrap(), changed_cmd.graph_id().unwrap());

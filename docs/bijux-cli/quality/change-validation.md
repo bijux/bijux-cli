@@ -1,53 +1,78 @@
 ---
 title: Change Validation
-audience: mixed
-type: explanation
+audience: contributors
+type: quality
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # Change Validation
 
-Change validation is the minimum evidence package required before merging a
-`bijux-cli` behavior change.
+Use this page after the focused edit loop is green. It defines the evidence a
+reviewer needs for the completed CLI change; it does not repeat local
+reproduction commands.
 
-## Visual Summary
+## Classify The Contract
 
-```mermaid
-flowchart LR
-    change["change request"] --> classify["classify contract impact"]
-    classify --> verify["run targeted tests and docs gates"]
-    verify --> compare["compare payloads and behavior"]
-    compare --> record["record compatibility notes"]
-```
+| Changed meaning | Required evidence |
+| --- | --- |
+| command or flag grammar | parser/routing contract, help output, and compatibility note |
+| JSON field, error envelope, or ordering | integration contract, schema or snapshot review, and consumer impact |
+| stdout/stderr ownership | real-process integration test covering both streams |
+| exit status or error category | process-level assertion tying payload, category, and exit code together |
+| plugin manifest, namespace, or lifecycle | plugin contract tests and end-to-end lifecycle proof |
+| Python launcher or bridge | Python packaging test and native runtime parity proof |
+| module ownership | architecture test demonstrating dependency direction |
+| public documentation | behavior proof plus strict documentation build |
 
-## Validation Checklist
+Additive output can still be incompatible when consumers reject unknown
+fields, compare complete objects, or depend on ordering. “The command still
+runs” is not sufficient compatibility evidence.
 
-1. classify whether command grammar, output, or exit semantics changed
-2. execute targeted routing and integration suites
-3. run architecture boundary tests when module ownership shifts
-4. verify docs structure and handbook consistency
-5. include explicit compatibility notes when callers may be affected
+## Evidence Package
 
-## Validation Commands
+A reviewable validation record states:
 
-```bash
-cargo test -p bijux-cli routing::
-cargo test -p bijux-cli integration::
-cargo test -p bijux-cli architecture::
-make docs-check
-```
+- the changed contract in one sentence;
+- the focused test that owns that contract;
+- broader lanes run and their exact scope;
+- generated references or snapshots reviewed;
+- compatibility effect for scripts, plugins, Python callers, and operators;
+- omitted slow, platform, or release checks.
 
-## Code Anchors
+Use [Testing And Validation](../../bijux-core/operations/testing-and-validation.md)
+for the exact meaning of repository test lanes. Typical CLI changes widen from
+focused tests to `make test`; documentation changes also require
+`make docs-check`. Packaging or publication changes use the release validation
+surface rather than claiming ordinary tests prove publishability.
 
-- `crates/bijux-cli/tests/routing/`
-- `crates/bijux-cli/tests/integration/`
-- `crates/bijux-cli/tests/architecture/`
-- `makes/docs.mk`
+## Snapshot And Reference Changes
 
-## Next Reads
+Treat generated output as evidence, not as a file that must be made green:
 
-- [Definition of Done](definition-of-done.md)
+1. regenerate through the owning command;
+2. inspect semantic differences;
+3. confirm the implementation intentionally changed;
+4. update compatibility guidance when callers can observe the difference;
+5. commit generator and generated output together only when they express one
+   inseparable contract change.
+
+Never overwrite a snapshot first and infer correctness from the resulting pass.
+
+## Stop Conditions
+
+Validation is incomplete when:
+
+- only a broad suite covers a narrow public contract incidentally;
+- a changed JSON or error surface has no consumer-impact decision;
+- human output was checked but machine output was not;
+- documentation describes behavior not exercised by the selected test;
+- an omitted lane is hidden behind “all checks passed.”
+
+## Continue Reading
+
 - [Compatibility Commitments](../interfaces/compatibility-commitments.md)
 - [Test Strategy](test-strategy.md)
+- [Definition Of Done](definition-of-done.md)
+- [Local Development](../operations/local-development.md)

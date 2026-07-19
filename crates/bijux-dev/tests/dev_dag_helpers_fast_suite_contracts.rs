@@ -12,7 +12,6 @@ use std::path::Path;
 use tempfile as _;
 
 #[test]
-#[ignore = "legacy helper fast-suite inventory targets historical contracts set"]
 fn helper_fast_suite_config_includes_required_contract_tests() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let suite_path = root.join("configs/dag/suites/dev_dag_helpers_fast.json");

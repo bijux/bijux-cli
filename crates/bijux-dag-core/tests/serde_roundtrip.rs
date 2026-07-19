@@ -17,8 +17,9 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::{
-    ContainerSpec, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind, NodeOutputRef,
-    ParamValue, PortRef, RefSpec, Resources, RetryPolicy,
+    CacheBehavior, ContainerSpec, Edge, Effect, FileOutput, Graph, GraphMeta, Node, NodeKind,
+    NodeOutputRef, ParamValue, PathVarBinding, PathVarRef, PortRef, RefSpec, Resources,
+    RetryPolicy,
 };
 
 #[test]
@@ -56,7 +57,7 @@ fn serde_roundtrip_edge_and_port_models() {
 
 #[test]
 fn serde_roundtrip_file_output_model() {
-    let output = FileOutput { name: "result".to_string(), path: "out/result.txt".to_string() };
+    let output = FileOutput::new("result".to_string(), "out/result.txt".to_string());
     let encoded = serde_json::to_string(&output).unwrap();
     let decoded: FileOutput = serde_json::from_str(&encoded).unwrap();
     assert_eq!(decoded, output);
@@ -78,7 +79,12 @@ fn serde_roundtrip_graph_meta_model() {
 
 #[test]
 fn serde_roundtrip_resources_model() {
-    let resources = Resources { cpu: 2, mem_mb: 128 };
+    let resources = Resources {
+        cpu: 2,
+        mem_mb: 128,
+        gpu_devices: 0,
+        named_resources: std::collections::BTreeMap::new(),
+    };
     let encoded = serde_json::to_string(&resources).unwrap();
     let decoded: Resources = serde_json::from_str(&encoded).unwrap();
     assert_eq!(decoded.cpu, resources.cpu);
@@ -112,13 +118,51 @@ fn serde_roundtrip_container_spec_model() {
 fn serde_roundtrip_ref_models() {
     let ref_spec = RefSpec {
         graph_input: None,
-        node_output: Some(NodeOutputRef { node_id: "src".to_string(), path: "out".to_string() }),
+        node_output: Some(NodeOutputRef {
+            node_id: "src".to_string(),
+            output_name: "out".to_string(),
+        }),
+        path_var: None,
     };
     let encoded = serde_json::to_string(&ref_spec).unwrap();
     let decoded: RefSpec = serde_json::from_str(&encoded).unwrap();
     let left = serde_json::to_value(&ref_spec).unwrap();
     let right = serde_json::to_value(&decoded).unwrap();
     assert_eq!(left, right);
+}
+
+#[test]
+fn serde_accepts_legacy_node_output_ref_field_name() {
+    let decoded: RefSpec =
+        serde_json::from_str(r#"{"node_output":{"node_id":"src","path":"out"}}"#).unwrap();
+    assert_eq!(decoded.node_output.as_ref().map(|output| output.output_name.as_str()), Some("out"));
+}
+
+#[test]
+fn serde_accepts_path_variable_ref_shapes() {
+    let simple: RefSpec = serde_json::from_str(r#"{"path_var":"outputs_dir"}"#).unwrap();
+    assert_eq!(simple.path_var, Some(PathVarRef::Name("outputs_dir".to_string())));
+
+    let nested: RefSpec = serde_json::from_str(
+        r#"{"path_var":{"name":"cache_dir","relative_path":"reused/result.json"}}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        nested.path_var,
+        Some(PathVarRef::Binding(PathVarBinding {
+            name: "cache_dir".to_string(),
+            relative_path: Some("reused/result.json".to_string()),
+        }))
+    );
+}
+
+#[test]
+fn serde_roundtrip_cache_behavior_model() {
+    let behavior =
+        CacheBehavior { enabled: false, reason: Some("external time dependency".to_string()) };
+    let encoded = serde_json::to_string(&behavior).unwrap();
+    let decoded: CacheBehavior = serde_json::from_str(&encoded).unwrap();
+    assert_eq!(decoded, behavior);
 }
 
 #[test]
@@ -135,6 +179,7 @@ fn serde_roundtrip_param_value_model() {
                 ParamValue::Ref(RefSpec {
                     graph_input: Some("seed".to_string()),
                     node_output: None,
+                    path_var: None,
                 }),
             ),
         ]
@@ -150,16 +195,20 @@ fn serde_roundtrip_param_value_model() {
 
 #[test]
 fn serde_roundtrip_node_kind_model() {
-    let cases = vec!["const", "shell", "container", "custom"];
+    let cases = vec!["const", "shell", "python", "http", "file_transform", "container", "custom"];
     for text in cases {
         let node_kind: NodeKind = serde_json::from_str(&format!("\"{}\"", text)).unwrap();
         let encoded = serde_json::to_string(&node_kind).unwrap();
         assert_eq!(encoded, format!("\"{}\"", text));
-        if text == "custom" {
-            match node_kind {
+        match text {
+            "python" => assert!(matches!(node_kind, NodeKind::Python)),
+            "http" => assert!(matches!(node_kind, NodeKind::Http)),
+            "file_transform" => assert!(matches!(node_kind, NodeKind::FileTransform)),
+            "custom" => match node_kind {
                 NodeKind::External(name) => assert_eq!(name, "custom"),
                 _ => panic!("expected external node kind"),
-            }
+            },
+            _ => {}
         }
     }
 }
@@ -207,9 +256,7 @@ fn core_public_api_contract_snapshot_stable() {
 #[test]
 fn strict_parse_then_validation_diagnostics_separation() {
     let mut graph = sample_graph();
-    graph.nodes[0]
-        .outputs
-        .push(FileOutput { name: "dup".to_string(), path: "out/result.txt".to_string() });
+    graph.nodes[0].outputs.push(FileOutput::new("dup".to_string(), "out/result.txt".to_string()));
     let text = serde_json::to_string(&graph).unwrap();
     let parsed = bijux_dag_core::parse_graph_strict(&text).unwrap();
     let diags = parsed.validate_with_warnings();
@@ -225,8 +272,10 @@ fn sample_graph() -> Graph {
             owners: vec!["core-team".to_string()],
             tags: vec!["test".to_string()],
         }),
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
+        subgraphs: std::collections::BTreeMap::new(),
+        subgraph_instances: Vec::new(),
         nodes: vec![sample_node("source")],
         edges: vec![],
     }
@@ -238,20 +287,19 @@ fn sample_node(id: &str) -> Node {
         kind: NodeKind::Const,
         semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
         inputs: vec![],
-        outputs: vec![FileOutput {
-            name: "result".to_string(),
-            path: "out/result.txt".to_string(),
-        }],
+        outputs: vec![FileOutput::new("result".to_string(), "out/result.txt".to_string())],
         params: ParamValue::default(),
         container: None,
         timeout_ms: None,
         resources: None,
         tags: vec!["roundtrip".to_string()],
         retry: RetryPolicy::default(),
+        cache: Default::default(),
         effects: vec![Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
         trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     }
 }

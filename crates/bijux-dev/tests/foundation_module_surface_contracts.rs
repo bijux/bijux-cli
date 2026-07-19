@@ -65,8 +65,22 @@ fn parse_top_level_module_decls(crate_name: &str) -> Vec<ModuleDecl> {
     let path = repo_root().join(format!("crates/{crate_name}/src/lib.rs"));
     let source = fs::read_to_string(&path)
         .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
+    let mut depth = 0usize;
+    let mut decls = Vec::new();
 
-    source.lines().filter_map(parse_module_decl).collect()
+    for line in source.lines() {
+        if depth == 0 {
+            if let Some(decl) = parse_module_decl(line) {
+                decls.push(decl);
+            }
+        }
+
+        let opens = line.matches('{').count();
+        let closes = line.matches('}').count();
+        depth = depth.saturating_add(opens).saturating_sub(closes);
+    }
+
+    decls
 }
 
 #[test]

@@ -1,0 +1,95 @@
+{
+  "version": "1",
+  "owner": "runtime-foundation",
+  "scope": "runtime-overreach-reduction",
+  "foundational_runtime_modules": [
+    "runtime_core/execution/engine.rs",
+    "runtime_core/execution/scheduler.rs",
+    "runtime_core/execution/state_machine.rs",
+    "runtime_core/planning/planner.rs",
+    "artifacts/storage/store.rs",
+    "artifacts/storage/path_authorization.rs",
+    "artifacts/storage/recovery.rs",
+    "backend/runtime/local_executor.rs",
+    "backend/runtime/execution_backend.rs"
+  ],
+  "overreach_modules": [
+    {
+      "module": "internal/workflow/ai_operator_assist.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "assistive workflow intelligence is outside deterministic runtime kernel scope"
+    },
+    {
+      "module": "internal/workflow/workflow_product.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "workflow productization semantics should not expand runtime kernel ownership"
+    },
+    {
+      "module": "backend/distributed/distribution_readiness.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "ecosystem packaging and adoption readiness belongs in governance/reporting surfaces"
+    },
+    {
+      "module": "internal/analysis/dataset_semantics.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "dataset catalog and lineage semantics are broader platform concerns"
+    },
+    {
+      "module": "artifacts/storage/semantic_lineage.rs",
+      "decision": "retain",
+      "owner": "runtime-foundation",
+      "reason": "artifact lineage integrity is required for core artifact trust guarantees"
+    },
+    {
+      "module": "internal/analysis/cost_optimization.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "cost optimization models are advisory and non-kernel"
+    },
+    {
+      "module": "internal/analysis/adaptive_scheduler.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "adaptive scheduler intelligence exceeds deterministic kernel scope"
+    },
+    {
+      "module": "backend/distributed/federated_scheduling.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "federated scheduler semantics are non-foundational in current scope"
+    },
+    {
+      "module": "backend/distributed/geo_federation.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "geo-federation control concerns are outside local deterministic runtime scope"
+    },
+    {
+      "module": "backend/distributed/ha_scheduler.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "HA scheduler control semantics belong to unreleased distributed control surfaces"
+    },
+    {
+      "module": "diagnostics/runtime/control_plane_api.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "control-plane API belongs in app/dev control-plane ownership"
+    },
+    {
+      "module": "internal/identity/provenance_compliance.rs",
+      "decision": "move",
+      "owner": "runtime-foundation",
+      "reason": "compliance evaluation policy should be isolated from runtime kernel ownership"
+    }
+  ],
+  "constraints": {
+    "release_evidence_must_not_reference_overreach_modules": true,
+    "evidence_registry_consumers_must_not_require_overreach_modules": true,
+    "new_overreach_modules_require_policy_update": true
+  }
+}

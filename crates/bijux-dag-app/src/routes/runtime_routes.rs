@@ -1,20 +1,23 @@
 use crate::commands::{DagCli, RuntimeCommands};
-use crate::{emit_json, parse_graph, read_file, ExitCode};
-use bijux_dag_artifacts::{
-    AdapterInfo, Manifest, NodeCounts, NodeTrace, OutputSummary, PolicyInfo, RunMetadata,
-    RunOutputsIndex,
+use crate::repair_service::{
+    apply_run_repair, plan_run_repair, run_repair_ok, RepairExecutionOptions,
 };
+use crate::routes::policy_surface::policy_surface_payload;
+use crate::routes::preconditions::require_safe_path;
+use crate::{emit_json, parse_graph, read_file, ExitCode};
+use bijux_dag_artifacts::{NodeTrace, RunOutputsIndex};
 use bijux_dag_runtime::simulated_platform::RemoteStatusEvent;
 use bijux_dag_runtime::{
     audit_dispatch_discipline, audit_run_event_log, build_cancellation_audit_report,
     build_execution_isolation_report, build_heartbeat_audit_report,
     build_manual_intervention_audit_report, build_pause_resume_audit_report,
     build_retry_decision_report, build_timeout_audit_report, build_transition_audit_report,
-    check_run_consistency, detect_stuck_run, evaluate_pause_state, reconcile_orphaned_node,
-    should_quarantine_run, validate_and_repair_run_metadata, BatchAttemptState,
-    BatchLifecycleEvent, DispatchKeyRecord, InterruptionClass, ManualInterventionRecord, NodeState,
-    NodeTransition, OperatorRetryPolicy, ResumePolicy, RunPausePolicy, RunSnapshot, RunState,
-    RunSummaryV2, RunTransition, RuntimeConfig, SchedulerRecoveryRule, StuckRunPolicy,
+    check_run_consistency, detect_stuck_run, evaluate_pause_state, execute_remote_payload_in_place,
+    reconcile_orphaned_node, should_quarantine_run, validate_and_repair_run_metadata,
+    BatchAttemptState, BatchLifecycleEvent, DispatchKeyRecord, InterruptionClass,
+    ManualInterventionRecord, MockRemoteWorker, NodeState, NodeTransition, OperatorRetryPolicy,
+    RemoteNodeExecutionPayload, RemoteWorkerExecutor, ResumePolicy, RunPausePolicy, RunSnapshot,
+    RunState, RunSummaryV2, RunTransition, RuntimeConfig, SchedulerRecoveryRule, StuckRunPolicy,
     TaskIsolationMode,
 };
 use serde::Deserialize;
@@ -166,17 +169,6 @@ struct ControlRecoveryAuditReport {
     recommended_action: String,
 }
 
-#[derive(Debug, Serialize)]
-struct RunRepairReport {
-    run_id: String,
-    manifest_path: String,
-    index_path: String,
-    manifest_rewritten: bool,
-    index_rewritten: bool,
-    incomplete_marker_present: bool,
-    notes: Vec<String>,
-}
-
 fn parse_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, ExitCode> {
     let raw = read_file(path)?;
     serde_json::from_str(&raw).map_err(|_| ExitCode::from(3))
@@ -190,29 +182,17 @@ fn read_json_value(path: &Path) -> Result<Value, ExitCode> {
 fn parse_node_state_str(status: &str) -> Option<NodeState> {
     match status {
         "success" => Some(NodeState::Success),
+        "succeeded" => Some(NodeState::Success),
         "failed" => Some(NodeState::Failed),
         "skipped" => Some(NodeState::Skipped),
         "cached" => Some(NodeState::Cached),
         "cancelled" => Some(NodeState::Cancelled),
+        "timed_out" => Some(NodeState::TimedOut),
         "queued" => Some(NodeState::Queued),
         "running" => Some(NodeState::Running),
+        "ready" => Some(NodeState::Eligible),
         "eligible" => Some(NodeState::Eligible),
         "pending" => Some(NodeState::Pending),
-        _ => None,
-    }
-}
-
-fn parse_run_state_str(status: &str) -> Option<RunState> {
-    match status {
-        "submitted" => Some(RunState::Submitted),
-        "planning" => Some(RunState::Planning),
-        "running" => Some(RunState::Running),
-        "paused" => Some(RunState::Paused),
-        "interrupted" => Some(RunState::Interrupted),
-        "cancelling" => Some(RunState::Cancelling),
-        "cancelled" => Some(RunState::Cancelled),
-        "failed" => Some(RunState::Failed),
-        "success" | "succeeded" => Some(RunState::Succeeded),
         _ => None,
     }
 }
@@ -502,200 +482,63 @@ fn enforce_mark_success_gate(
     }
 }
 
-fn build_manifest_from_run_dir(run_dir: &Path) -> Result<Manifest, ExitCode> {
-    let run_snapshot: RunSnapshot =
-        serde_json::from_str(&read_file(&run_dir.join("run.snapshot.json"))?)
-            .map_err(|_| ExitCode::from(3))?;
-    let graph_snapshot = read_json_value(&run_dir.join("graph.snapshot.json"))?;
-    let traces = read_node_traces(run_dir)?;
-    let outputs_index = if run_dir.join("outputs").join("index.json").exists() {
-        Some(read_run_outputs_index(run_dir)?)
-    } else {
-        None
-    };
-
-    let mut adapters_seen = BTreeSet::new();
-    let mut adapters = Vec::new();
-    let mut success = 0u32;
-    let mut failed = 0u32;
-    let mut skipped = 0u32;
-    let mut cached = 0u32;
-    let mut created_unix_ms = u128::MAX;
-    let mut finished_unix_ms = 0u128;
-    let mut status = "success".to_string();
-    for trace in &traces {
-        created_unix_ms = created_unix_ms.min(trace.started_unix_ms);
-        finished_unix_ms = finished_unix_ms.max(trace.finished_unix_ms);
-        match trace.status.as_str() {
-            "success" => success += 1,
-            "failed" => {
-                failed += 1;
-                status = "failed".to_string();
-            }
-            "skipped" => skipped += 1,
-            "cached" => cached += 1,
-            "cancelled" => status = "cancelled".to_string(),
-            _ => {}
-        }
-        let key = format!("{}:{}", trace.adapter_id, trace.adapter_version);
-        if adapters_seen.insert(key) {
-            adapters.push(AdapterInfo {
-                adapter_id: trace.adapter_id.clone(),
-                adapter_version: trace.adapter_version.clone(),
-                effects: Vec::new(),
-            });
-        }
-    }
-    if created_unix_ms == u128::MAX {
-        created_unix_ms = 0;
-    }
-    let outputs = outputs_index
-        .map(|index| {
-            index
-                .files
-                .into_iter()
-                .map(|file| OutputSummary {
-                    node_id: file.node_id,
-                    node_fingerprint: file.node_fingerprint,
-                    file: Path::new(&file.path)
-                        .file_name()
-                        .and_then(|value| value.to_str())
-                        .unwrap_or(file.path.as_str())
-                        .to_string(),
-                    sha256: file.sha256,
-                })
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-    Ok(Manifest {
-        manifest_version: "run-manifest/v0.1".to_string(),
-        run_id: run_snapshot.run_id.to_string(),
-        created_unix_ms,
-        started_unix_ms: created_unix_ms,
-        finished_unix_ms,
-        graph_snapshot: "graph.snapshot.json".to_string(),
-        status,
-        spec: "bijux-dag/v0.1".to_string(),
-        graph_fingerprint: graph_snapshot
-            .get("graph_fingerprint")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string(),
-        planner_contract_version: "bijux-dag-planner/v1".to_string(),
-        planner_fingerprint: None,
-        execution_fingerprint: None,
-        evidence_fingerprint: None,
-        tool_version: "recovered-local".to_string(),
-        jobs: traces.len().max(1),
-        adapters,
-        outputs,
-        node_counts: NodeCounts { success, failed, skipped, cached },
-        policy: PolicyInfo {
-            deny_network: false,
-            deny_env: false,
-            deny_clock: false,
-            clean_env: false,
-        },
-        cache_mode: None,
-        cache_dir: None,
-        run_timeout_ms: None,
-        run_metadata: Some(RunMetadata {
-            submission_source: run_snapshot.submission_source,
-            trigger_source: run_snapshot.trigger_source,
-            operator: run_snapshot.operator,
-            labels: run_snapshot.labels,
-            parent_run_id: run_snapshot.parent_run_id.map(|id| id.to_string()),
-            source_run_id: run_snapshot.replay_source_run_id.map(|id| id.to_string()),
-        }),
-        run_summary: None,
-    })
-}
-
-fn apply_run_repairs(run_dir: &Path) -> Result<RunRepairReport, ExitCode> {
-    let manifest_path = run_dir.join("manifest.json");
-    let index_path = run_dir.join("run-log.index.json");
-    let mut notes = Vec::new();
-    let mut manifest_rewritten = false;
-    let mut index_rewritten = false;
-    let incomplete_marker_present = run_dir.join(".run-incomplete.json").exists();
-    let run_id = if run_dir.join("run.snapshot.json").exists() {
-        let snapshot: RunSnapshot =
-            serde_json::from_str(&read_file(&run_dir.join("run.snapshot.json"))?)
-                .map_err(|_| ExitCode::from(3))?;
-        snapshot.run_id.to_string()
-    } else {
-        run_dir
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or("unknown-run")
-            .trim_start_matches("run-")
-            .to_string()
-    };
-
-    let manifest_valid = manifest_path.exists() && read_json_value(&manifest_path).is_ok();
-    if !manifest_valid {
-        let manifest = build_manifest_from_run_dir(run_dir)?;
-        fs::write(
-            &manifest_path,
-            serde_json::to_vec_pretty(&manifest).map_err(|_| ExitCode::from(3))?,
-        )
-        .map_err(|_| ExitCode::from(3))?;
-        manifest_rewritten = true;
-        notes.push("manifest rebuilt from run snapshot, traces, and outputs".to_string());
-    }
-
-    let index_valid = index_path.exists()
-        && fs::read(&index_path)
-            .ok()
-            .and_then(|bytes| serde_json::from_slice::<Vec<Value>>(&bytes).ok())
-            .is_some();
-    if !index_valid {
-        let raw = read_file(&run_dir.join("run.log.jsonl"))?;
-        let rebuilt = raw
-            .lines()
-            .filter(|line| !line.trim().is_empty())
-            .map(|line| serde_json::from_str::<Value>(line).map_err(|_| ExitCode::from(3)))
-            .collect::<Result<Vec<_>, _>>()?;
-        fs::write(&index_path, serde_json::to_vec_pretty(&rebuilt).map_err(|_| ExitCode::from(3))?)
-            .map_err(|_| ExitCode::from(3))?;
-        index_rewritten = true;
-        notes.push("run log index rebuilt from event journal".to_string());
-    }
-    if incomplete_marker_present {
-        notes.push("run is still marked incomplete; investigate scheduler.checkpoint.json before treating artifacts as complete".to_string());
-    }
-
-    Ok(RunRepairReport {
-        run_id,
-        manifest_path: manifest_path.display().to_string(),
-        index_path: index_path.display().to_string(),
-        manifest_rewritten,
-        index_rewritten,
-        incomplete_marker_present,
-        notes,
-    })
-}
-
 pub(crate) fn handle_runtime_command(
     cli: &DagCli,
     command: &RuntimeCommands,
 ) -> Result<ExitCode, ExitCode> {
     match command {
+        RuntimeCommands::ExecutePayload { payload, result, in_place } => {
+            let payload: RemoteNodeExecutionPayload = parse_json_file(payload)?;
+            let execution = if *in_place {
+                execute_remote_payload_in_place(payload)
+            } else {
+                MockRemoteWorker.execute_payload(payload)
+            }
+            .map_err(|_| ExitCode::from(3))?;
+            if let Some(parent) = result.parent() {
+                fs::create_dir_all(parent).map_err(|_| ExitCode::from(3))?;
+            }
+            fs::write(
+                result,
+                serde_json::to_vec_pretty(&execution).map_err(|_| ExitCode::from(3))?,
+            )
+            .map_err(|_| ExitCode::from(3))?;
+            Ok(match execution.node_result.status {
+                bijux_dag_runtime::NodeStatus::Success | bijux_dag_runtime::NodeStatus::Cached => {
+                    ExitCode::SUCCESS
+                }
+                bijux_dag_runtime::NodeStatus::Cancelled => ExitCode::from(130),
+                bijux_dag_runtime::NodeStatus::Skipped | bijux_dag_runtime::NodeStatus::Failed => {
+                    ExitCode::from(3)
+                }
+            })
+        }
         RuntimeCommands::Isolation { dag } => {
             let graph = parse_graph(&read_file(dag)?)?;
             let report = build_execution_isolation_report(&graph, &RuntimeConfig::default())
                 .map_err(|_| ExitCode::from(3))?;
+            let policy_surface = policy_surface_payload(&graph, &RuntimeConfig::default(), false)?;
             if cli.json {
                 return emit_json(
                     cli,
                     "dag.runtime.isolation",
                     true,
-                    serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?,
+                    json!({
+                        "execution_isolation": report,
+                        "policy_surface": policy_surface,
+                    }),
                     Vec::new(),
                     ExitCode::SUCCESS,
                 );
             }
-            println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&json!({
+                    "execution_isolation": report,
+                    "policy_surface": policy_surface,
+                }))
+                .unwrap()
+            );
             Ok(ExitCode::SUCCESS)
         }
         RuntimeCommands::Dispatch { simulation } => {
@@ -834,21 +677,47 @@ pub(crate) fn handle_runtime_command(
                 Err(ExitCode::from(3))
             }
         }
-        RuntimeCommands::Repair { run_dir, apply } => {
-            let manifest_valid = run_dir.join("manifest.json").exists()
-                && read_json_value(&run_dir.join("manifest.json")).is_ok();
-            let index_valid = run_dir.join("run-log.index.json").exists()
-                && fs::read(run_dir.join("run-log.index.json"))
-                    .ok()
-                    .and_then(|bytes| serde_json::from_slice::<Vec<Value>>(&bytes).ok())
-                    .is_some();
-            let outcome = validate_and_repair_run_metadata(manifest_valid, index_valid, *apply);
-            let payload = if *apply {
-                serde_json::to_value(apply_run_repairs(run_dir)?).map_err(|_| ExitCode::from(3))?
+        RuntimeCommands::Repair {
+            run_dir,
+            apply,
+            out,
+            run_id,
+            jobs,
+            materialize_inputs,
+            cache,
+            cache_dir,
+            remote_cache_dir,
+        } => {
+            if let Some(out) = out.as_ref() {
+                require_safe_path(out)?;
+            }
+            if let Some(cache_dir) = cache_dir.as_ref() {
+                require_safe_path(cache_dir)?;
+            }
+            let report = if *apply {
+                apply_run_repair(
+                    run_dir,
+                    &RepairExecutionOptions {
+                        out_dir: out.clone(),
+                        run_id: run_id.clone(),
+                        jobs: *jobs,
+                        materialize_inputs: crate::run_data::map_materialize_mode(
+                            *materialize_inputs,
+                        ),
+                        cache_mode: match cache {
+                            crate::commands::CacheModeArg::Off => crate::CacheMode::Off,
+                            crate::commands::CacheModeArg::Read => crate::CacheMode::Read,
+                            crate::commands::CacheModeArg::Readwrite => crate::CacheMode::ReadWrite,
+                        },
+                        cache_dir: cache_dir.clone(),
+                        remote_cache_dir: remote_cache_dir.clone(),
+                    },
+                )?
             } else {
-                serde_json::to_value(&outcome).map_err(|_| ExitCode::from(3))?
+                plan_run_repair(run_dir, cache_dir.clone(), remote_cache_dir.clone())?
             };
-            let ok = outcome.manifest_valid && outcome.index_valid;
+            let ok = run_repair_ok(&report, *apply);
+            let payload = serde_json::to_value(&report).map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
                     cli,
@@ -866,7 +735,7 @@ pub(crate) fn handle_runtime_command(
                 Err(ExitCode::from(3))
             }
         }
-        RuntimeCommands::Retry { dag, node_id, attempt, failure_class } => {
+        RuntimeCommands::Retry { dag, node_id, attempt, failure_class, exit_code } => {
             let graph = parse_graph(&read_file(dag)?)?;
             let report = build_retry_decision_report(
                 &graph,
@@ -874,6 +743,7 @@ pub(crate) fn handle_runtime_command(
                 node_id,
                 *attempt,
                 failure_class,
+                *exit_code,
             )
             .map_err(|_| ExitCode::from(3))?;
             if cli.json {
@@ -1100,14 +970,30 @@ pub(crate) fn handle_runtime_command(
 
 #[cfg(test)]
 mod tests {
-    use super::handle_runtime_command;
-    use crate::commands::{Commands, DagCli, RuntimeCommands};
+    use super::{handle_runtime_command, parse_node_state_str};
+    use crate::commands::{CacheModeArg, Commands, DagCli, MaterializeModeArg, RuntimeCommands};
     use crate::ExitCode;
+    use bijux_dag_runtime::NodeState;
+    use serde_json::Value;
     use std::fs;
     use std::path::PathBuf;
 
     fn quiet_json_cli(command: RuntimeCommands) -> DagCli {
         DagCli { json: true, quiet: true, command: Commands::Runtime { command } }
+    }
+
+    fn repair_command(run_dir: PathBuf, apply: bool) -> RuntimeCommands {
+        RuntimeCommands::Repair {
+            run_dir,
+            apply,
+            out: None,
+            run_id: None,
+            jobs: 1,
+            materialize_inputs: MaterializeModeArg::Copy,
+            cache: CacheModeArg::Off,
+            cache_dir: None,
+            remote_cache_dir: None,
+        }
     }
 
     #[test]
@@ -1120,10 +1006,10 @@ mod tests {
               "spec":"bijux-dag/v0.1",
               "meta":{"name":"runtime","owners":[],"tags":[]},
               "nodes":[
-                {"id":"const1","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
-                {"id":"task1","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"effects":["filesystem"],"params":{"argv":["/bin/sh","-c","true"]}}
+                {"id":"literal_source","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+                {"id":"shell_node","kind":"shell","inputs":["in"],"outputs":[{"name":"out","path":"b/out"}],"effects":["filesystem"],"params":{"argv":["/bin/sh","-c","true"]}}
               ],
-              "edges":[{"from":{"node_id":"const1","port":"out"},"to":{"node_id":"task1","port":"in"}}]
+              "edges":[{"from":{"node_id":"literal_source","port":"out"},"to":{"node_id":"shell_node","port":"in"}}]
             }"#,
         )
         .expect("write dag");
@@ -1183,9 +1069,9 @@ mod tests {
               "spec":"bijux-dag/v0.1",
               "meta":{"name":"runtime","owners":[],"tags":[]},
               "nodes":[
-                {"id":"const1","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+                {"id":"literal_source","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
                 {
-                  "id":"task1",
+                  "id":"shell_node",
                   "kind":"shell",
                   "inputs":["in"],
                   "outputs":[{"name":"out","path":"b/out"}],
@@ -1199,24 +1085,26 @@ mod tests {
                   }
                 }
               ],
-              "edges":[{"from":{"node_id":"const1","port":"out"},"to":{"node_id":"task1","port":"in"}}]
+              "edges":[{"from":{"node_id":"literal_source","port":"out"},"to":{"node_id":"shell_node","port":"in"}}]
             }"#,
         )
         .expect("write dag");
 
         let cli = quiet_json_cli(RuntimeCommands::Retry {
             dag: dag.clone(),
-            node_id: "task1".to_string(),
+            node_id: "shell_node".to_string(),
             attempt: 2,
             failure_class: "artifact_transient".to_string(),
+            exit_code: None,
         });
         let code = handle_runtime_command(
             &cli,
             &RuntimeCommands::Retry {
                 dag,
-                node_id: "task1".to_string(),
+                node_id: "shell_node".to_string(),
                 attempt: 2,
                 failure_class: "artifact_transient".to_string(),
+                exit_code: None,
             },
         )
         .expect("retry");
@@ -1233,9 +1121,9 @@ mod tests {
               "spec":"bijux-dag/v0.1",
               "meta":{"name":"runtime","owners":[],"tags":[]},
               "nodes":[
-                {"id":"const1","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
+                {"id":"literal_source","kind":"const","inputs":[],"outputs":[{"name":"out","path":"a/out"}],"params":{"value":"1"}},
                 {
-                  "id":"task1",
+                  "id":"shell_node",
                   "kind":"shell",
                   "inputs":["in"],
                   "outputs":[{"name":"out","path":"b/out"}],
@@ -1248,14 +1136,14 @@ mod tests {
                   }
                 }
               ],
-              "edges":[{"from":{"node_id":"const1","port":"out"},"to":{"node_id":"task1","port":"in"}}]
+              "edges":[{"from":{"node_id":"literal_source","port":"out"},"to":{"node_id":"shell_node","port":"in"}}]
             }"#,
         )
         .expect("write dag");
 
         let cli = quiet_json_cli(RuntimeCommands::Timeout {
             dag: dag.clone(),
-            node_id: "task1".to_string(),
+            node_id: "shell_node".to_string(),
             queue_wait_ms: Some(15),
             execution_ms: Some(50),
             total_elapsed_ms: Some(90),
@@ -1267,7 +1155,7 @@ mod tests {
             &cli,
             &RuntimeCommands::Timeout {
                 dag,
-                node_id: "task1".to_string(),
+                node_id: "shell_node".to_string(),
                 queue_wait_ms: Some(15),
                 execution_ms: Some(50),
                 total_elapsed_ms: Some(90),
@@ -1635,15 +1523,10 @@ mod tests {
         std::fs::write(dir.path().join("outputs").join("index.json"), r#"{"files":[]}"#)
             .expect("outputs");
 
-        let repair_cli = quiet_json_cli(RuntimeCommands::Repair {
-            run_dir: dir.path().to_path_buf(),
-            apply: true,
-        });
-        let repair = handle_runtime_command(
-            &repair_cli,
-            &RuntimeCommands::Repair { run_dir: dir.path().to_path_buf(), apply: true },
-        )
-        .expect("repair");
+        let repair_cli = quiet_json_cli(repair_command(dir.path().to_path_buf(), true));
+        let repair =
+            handle_runtime_command(&repair_cli, &repair_command(dir.path().to_path_buf(), true))
+                .expect("repair");
         assert_eq!(repair, ExitCode::SUCCESS);
         assert!(dir.path().join("manifest.json").exists());
         assert!(dir.path().join("run-log.index.json").exists());
@@ -1721,16 +1604,104 @@ mod tests {
         .expect("state");
         assert_eq!(state_exit, ExitCode::SUCCESS);
 
-        let repair_cli = quiet_json_cli(RuntimeCommands::Repair {
-            run_dir: dir.path().to_path_buf(),
-            apply: true,
-        });
-        let repair_exit = handle_runtime_command(
-            &repair_cli,
-            &RuntimeCommands::Repair { run_dir: dir.path().to_path_buf(), apply: true },
-        )
-        .expect("repair");
+        let repair_cli = quiet_json_cli(repair_command(dir.path().to_path_buf(), true));
+        let repair_exit =
+            handle_runtime_command(&repair_cli, &repair_command(dir.path().to_path_buf(), true))
+                .expect("repair");
         assert_eq!(repair_exit, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_repair_rebuilds_cancellation_cause_and_counts_from_traces() {
+        let dir = tempfile::tempdir().expect("tmp");
+        std::fs::create_dir_all(dir.path().join("nodes").join("prepare")).expect("prepare dir");
+        std::fs::create_dir_all(dir.path().join("nodes").join("execute")).expect("execute dir");
+        std::fs::create_dir_all(dir.path().join("outputs")).expect("outputs");
+        std::fs::write(
+            dir.path().join("graph.snapshot.json"),
+            r#"{"graph":{"nodes":[],"edges":[]},"graph_fingerprint":"fp"}"#,
+        )
+        .expect("graph snapshot");
+        std::fs::write(
+            dir.path().join("run.snapshot.json"),
+            r#"{
+              "run_id":"run-cancelled",
+              "graph_snapshot_path":"graph.snapshot.json",
+              "planner_config":"{}",
+              "scheduler_config":"{}",
+              "policy_config":"{}",
+              "provenance":"{}",
+              "submission_source":"manual",
+              "trigger_source":"cli",
+              "operator":"ops",
+              "labels":["cancelled"],
+              "parent_run_id":null,
+              "requested_selectors":[],
+              "selected_nodes":["prepare","execute"],
+              "dependency_closure_enabled":false,
+              "replay_source_run_id":null,
+              "partial_rerun_contract":null
+            }"#,
+        )
+        .expect("run snapshot");
+        std::fs::write(
+            dir.path().join("nodes").join("prepare").join("trace.json"),
+            r#"{
+              "node_id":"prepare",
+              "status":"success",
+              "started_unix_ms":1,
+              "finished_unix_ms":2,
+              "attempt":1,
+              "fingerprint":"fp-prepare",
+              "adapter_id":"const",
+              "adapter_version":"v1",
+              "adapter_outputs_schema_version":"schema/v1"
+            }"#,
+        )
+        .expect("prepare trace");
+        std::fs::write(
+            dir.path().join("nodes").join("execute").join("trace.json"),
+            r#"{
+              "node_id":"execute",
+              "status":"cancelled",
+              "started_unix_ms":3,
+              "finished_unix_ms":4,
+              "attempt":1,
+              "fingerprint":"fp-execute",
+              "adapter_id":"shell",
+              "adapter_version":"v1",
+              "adapter_outputs_schema_version":"schema/v1",
+              "failure":{"kind":"Execution","code":"EXEC_CANCELLED","message":"execution cancelled by operator"},
+              "transition_cause":"CancelRequested",
+              "lifecycle_state":"cancelled"
+            }"#,
+        )
+        .expect("execute trace");
+        std::fs::write(
+            dir.path().join("run.audit.json"),
+            r#"[{"action":"cancel","ts":4,"run_id":"run-cancelled"}]"#,
+        )
+        .expect("audit");
+        std::fs::write(dir.path().join("run.log.jsonl"), r#"{"event":"run_cancelled","ts":4}"#)
+            .expect("run log");
+        std::fs::write(dir.path().join("outputs").join("index.json"), r#"{"files":[]}"#)
+            .expect("outputs");
+
+        let repair_cli = quiet_json_cli(repair_command(dir.path().to_path_buf(), true));
+        let repair =
+            handle_runtime_command(&repair_cli, &repair_command(dir.path().to_path_buf(), true))
+                .expect("repair");
+        assert_eq!(repair, ExitCode::SUCCESS);
+
+        let manifest: Value = serde_json::from_str(
+            &std::fs::read_to_string(dir.path().join("manifest.json")).expect("manifest"),
+        )
+        .expect("parse manifest");
+        assert_eq!(manifest["status"], "cancelled");
+        assert_eq!(manifest["run_cancellation_cause"], "operator_interrupt");
+        assert_eq!(manifest["node_counts"]["success"], 1);
+        assert_eq!(manifest["node_counts"]["cancelled"], 1);
+        assert_eq!(manifest["run_summary"]["cancelled"], 1);
     }
 
     #[test]
@@ -1769,5 +1740,13 @@ mod tests {
         )
         .expect("events");
         assert_eq!(code, ExitCode::SUCCESS);
+    }
+
+    #[test]
+    fn runtime_routes_accept_stable_and_legacy_lifecycle_state_names() {
+        assert_eq!(parse_node_state_str("ready"), Some(NodeState::Eligible));
+        assert_eq!(parse_node_state_str("eligible"), Some(NodeState::Eligible));
+        assert_eq!(parse_node_state_str("succeeded"), Some(NodeState::Success));
+        assert_eq!(parse_node_state_str("success"), Some(NodeState::Success));
     }
 }

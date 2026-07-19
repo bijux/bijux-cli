@@ -1,0 +1,38 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "negative-invalid-container-workdir",
+    "owners": [
+      "runtime"
+    ],
+    "tags": [
+      "negative"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "container_publish",
+      "kind": "container",
+      "outputs": [
+        {
+          "name": "artifact",
+          "path": "publish/artifact.txt"
+        }
+      ],
+      "container": {
+        "image": "alpine:3.20",
+        "argv": [
+          "sh",
+          "-c",
+          "echo ok > artifact.txt"
+        ],
+        "engine": "docker",
+        "workdir": "{work_dir}/../escape"
+      },
+      "effects": [
+        "filesystem"
+      ]
+    }
+  ],
+  "edges": []
+}

@@ -19,8 +19,9 @@ pub use super::status::{
     run_all_contracts as run_all_status_contracts, run_contract as run_status_contract,
 };
 pub use compliance::{
-    build_audit_report, build_diff_report, build_flaky_tests_report, build_migrated_report,
-    build_remaining_report, build_requirement_catalog_report,
+    build_audit_report, build_diff_report, build_flaky_tests_report,
+    build_ignored_dag_tests_report, build_migrated_report, build_remaining_report,
+    build_requirement_catalog_report,
 };
 pub use generators::{build_generators_report, run_all_generators, run_generator};
 pub use inventory::{

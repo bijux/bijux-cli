@@ -5,7 +5,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-EXECUTION-REPORTS" => {
             let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli-python/tests/bridge_execution_law_extra.rs"),
+                workspace_root.join("crates/bijux-cli-python/tests/bridge_execution_parity.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -33,7 +33,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "coverage_id": coverage_id,
                         "test": name,
                         "status": if covered { "covered" } else { "missing" },
-                        "evidence": "crates/bijux-cli-python/tests/bridge_execution_law_extra.rs",
+                        "evidence": "crates/bijux-cli-python/tests/bridge_execution_parity.rs",
                     })
                 })
                 .collect();
@@ -90,7 +90,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-PYTHON-BRIDGE-CONVERSION-REPORTS" => {
             let source = fs::read_to_string(
-                workspace_root.join("crates/bijux-cli-python/tests/bridge_conversion_law_extra.rs"),
+                workspace_root.join("crates/bijux-cli-python/tests/bridge_conversion_contracts.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
@@ -118,7 +118,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "coverage_id": coverage_id,
                         "test": name,
                         "status": if covered { "covered" } else { "missing" },
-                        "evidence": "crates/bijux-cli-python/tests/bridge_conversion_law_extra.rs",
+                        "evidence": "crates/bijux-cli-python/tests/bridge_conversion_contracts.rs",
                     })
                 })
                 .collect();
@@ -202,26 +202,38 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-REPL-COMPLETION-REPORTS" => {
             let source = fs::read_to_string(
                 workspace_root
-                    .join("crates/bijux-cli/tests/integration/repl/repl_completion_extra.rs"),
+                    .join("crates/bijux-cli/tests/integration/repl/repl_completion_contracts.rs"),
             )
             .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
-                                (241, "completion_empty_prompt_and_partial_root_cli_dev_tokens_are_supported"),
-                                (242, "completion_empty_prompt_and_partial_root_cli_dev_tokens_are_supported"),
-                                (243, "completion_empty_prompt_and_partial_root_cli_dev_tokens_are_supported"),
-                                (244, "completion_empty_prompt_and_partial_root_cli_dev_tokens_are_supported"),
-                                (245, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
-                                (246, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
-                                (247, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
-                                (248, "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported"),
-                                (249, "completion_reserved_namespaces_are_visible_and_hidden_aliases_are_not_canonical_suggestions"),
-                                (250, "completion_reserved_namespaces_are_visible_and_hidden_aliases_are_not_canonical_suggestions"),
-                                (251, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
-                                (252, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
-                                (253, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
-                                (254, "completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs"),
-                                (255, "completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs"),
-                            ]);
+                (241, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
+                (242, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
+                (243, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
+                (244, "completion_empty_prompt_and_partial_root_cli_tokens_are_supported"),
+                (
+                    245,
+                    "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported",
+                ),
+                (
+                    246,
+                    "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported",
+                ),
+                (
+                    247,
+                    "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported",
+                ),
+                (
+                    248,
+                    "completion_partial_plugin_config_plugin_and_diagnostics_tokens_are_supported",
+                ),
+                (249, "completion_runtime_namespaces_are_visible_and_aliases_are_not_rewritten"),
+                (250, "completion_runtime_namespaces_are_visible_and_aliases_are_not_rewritten"),
+                (251, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
+                (252, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
+                (253, "completion_recovers_with_broken_registry_corrupted_state_and_no_plugins"),
+                (254, "completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs"),
+                (255, "completion_ordering_is_stable_with_multiple_plugins_and_repeated_runs"),
+            ]);
             let coverage_rows: Vec<Value> = required
                 .iter()
                 .map(|(coverage_id, name)| {
@@ -230,7 +242,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "coverage_id": coverage_id,
                         "test": name,
                         "status": if covered { "covered" } else { "missing" },
-                        "evidence": "crates/bijux-cli/tests/integration/repl/repl_completion_extra.rs",
+                        "evidence": "crates/bijux-cli/tests/integration/repl/repl_completion_contracts.rs",
                     })
                 })
                 .collect();
@@ -329,21 +341,21 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                             "category": "meta-command",
                             "justification": "interactive help navigation for command discovery",
                             "defensible": true,
-                            "evidence": "crates/bijux-cli/tests/integration/repl/transcript_cases.rs",
+                            "evidence": "crates/bijux-cli/tests/integration/repl/repl_transcript_contracts.rs",
                         },
                         {
                             "name": ":set trace|quiet|format",
                             "category": "meta-command",
                             "justification": "session-level output policy toggles",
                             "defensible": true,
-                            "evidence": "crates/bijux-cli/tests/integration/repl/transcript_cases.rs",
+                            "evidence": "crates/bijux-cli/tests/integration/repl/repl_transcript_contracts.rs",
                         },
                         {
                             "name": ":exit",
                             "category": "meta-command",
                             "justification": "interactive shutdown convenience",
                             "defensible": true,
-                            "evidence": "crates/bijux-cli/tests/integration/repl/transcript_cases.rs",
+                            "evidence": "crates/bijux-cli/tests/integration/repl/repl_transcript_contracts.rs",
                         },
                     ],
                     "removed_repl_only_behaviors": [
@@ -364,8 +376,8 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "scope": "repl-vs-cli",
                                     "evidence": {
                                         "tests": [
-                                            "crates/bijux-cli/tests/integration/repl/transcript_cases.rs::repl_output_parity_with_non_interactive_cli_for_status",
-                                            "crates/bijux-cli/tests/integration/repl/transcript_cases.rs::repl_does_not_define_separate_semantics_for_common_commands",
+                                            "crates/bijux-cli/tests/integration/repl/repl_transcript_contracts.rs::repl_output_parity_with_non_interactive_cli_for_status",
+                                            "crates/bijux-cli/tests/integration/repl/repl_transcript_contracts.rs::repl_does_not_define_separate_semantics_for_common_commands",
                                         ]
                                     },
                                     "commands": [
@@ -394,11 +406,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-REPL-EXECUTION-LAW-REPORTS" => {
-            let source = fs::read_to_string(
-                workspace_root
-                    .join("crates/bijux-cli/tests/integration/repl/repl_execution_law_extra.rs"),
-            )
-            .unwrap_or_default();
+            let source =
+                fs::read_to_string(workspace_root.join(
+                    "crates/bijux-cli/tests/integration/repl/repl_command_parity_contracts.rs",
+                ))
+                .unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                                 (201, "repl_uses_same_kernel_entrypoint_and_route_resolution_as_non_interactive_cli"),
                                 (202, "repl_uses_same_kernel_entrypoint_and_route_resolution_as_non_interactive_cli"),
@@ -424,7 +436,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test": name,
                                         "status": if covered { "covered" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/integration/repl/repl_execution_law_extra.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/repl/repl_command_parity_contracts.rs",
                                     })
                                 })
                                 .collect();
@@ -504,7 +516,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         "STATUS-CONTRACT-GENERATE-REPL-HOSTILE-SESSION-REPORTS" => {
             let test_paths = [
                 "crates/bijux-cli/tests/integration/repl/repl_hostile_session_hardening.rs",
-                "crates/bijux-cli/tests/integration/repl/repl_hostile_session_extra.rs",
+                "crates/bijux-cli/tests/integration/repl/repl_session_resilience.rs",
             ];
             let sources: Vec<(String, String)> = test_paths
                 .iter()
@@ -528,9 +540,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                 (230, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
                                 (231, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
                                 (232, "ctrl_c_eof_mode_switch_and_no_color_behavior_are_stable_in_one_session"),
-                                (233, "plugin_management_state_doctor_and_broken_completion_source_do_not_crash"),
-                                (234, "plugin_management_state_doctor_and_broken_completion_source_do_not_crash"),
-                                (235, "plugin_management_state_doctor_and_broken_completion_source_do_not_crash"),
+                                (233, "plugin_management_doctor_and_broken_completion_source_do_not_crash"),
+                                (234, "plugin_management_doctor_and_broken_completion_source_do_not_crash"),
+                                (235, "plugin_management_doctor_and_broken_completion_source_do_not_crash"),
                             ]);
             let coverage_rows: Vec<Value> = required
                 .iter()

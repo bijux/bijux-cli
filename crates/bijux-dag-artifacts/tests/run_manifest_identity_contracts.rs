@@ -1,5 +1,4 @@
 use bijux_dag_artifacts::{Manifest, RunMetadata, RunSummary};
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;
@@ -8,13 +7,15 @@ use std::thread;
 use tempfile as _;
 use thiserror as _;
 
+mod support;
+
 #[test]
 fn minimal_and_maximal_run_manifest_fixtures_parse() {
-    let minimal: Manifest = bijux_dag_testkit::load_workspace_fixture_typed(
+    let minimal: Manifest = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-artifacts/tests/fixtures/run_manifest_minimal.json",
     );
-    let maximal: Manifest = bijux_dag_testkit::load_workspace_fixture_typed(
+    let maximal: Manifest = support::load_workspace_fixture_typed(
         env!("CARGO_MANIFEST_DIR"),
         "crates/bijux-dag-artifacts/tests/fixtures/run_manifest_maximal.json",
     );
@@ -34,19 +35,34 @@ fn run_metadata_supports_parent_and_source_run_identity_links() {
         labels: vec!["x".to_string()],
         parent_run_id: Some("run-parent".to_string()),
         source_run_id: Some("run-source".to_string()),
+        graph_inputs: std::collections::BTreeMap::from([
+            ("region".to_string(), serde_json::json!("eu-west-1")),
+            ("attempts".to_string(), serde_json::json!(2)),
+        ]),
     };
     let value = serde_json::to_value(metadata).expect("serialize metadata");
     assert_eq!(value["parent_run_id"], "run-parent");
     assert_eq!(value["source_run_id"], "run-source");
+    assert_eq!(value["graph_inputs"]["region"], "eu-west-1");
+    assert_eq!(value["graph_inputs"]["attempts"], 2);
 }
 
 #[test]
 fn run_summary_shape_is_stable() {
-    let summary = RunSummary { total_nodes: 3, success: 2, failed: 1, skipped: 0, cached: 0 };
+    let summary = RunSummary {
+        total_nodes: 4,
+        success: 2,
+        failed: 1,
+        skipped: 0,
+        cached: 0,
+        cancelled: 1,
+        promoted_outputs: Vec::new(),
+    };
     let value = serde_json::to_value(summary).expect("serialize summary");
-    for key in ["total_nodes", "success", "failed", "skipped", "cached"] {
+    for key in ["total_nodes", "success", "failed", "skipped", "cached", "cancelled"] {
         assert!(value.get(key).is_some(), "run_summary missing required key: {key}");
     }
+    assert!(value.get("promoted_outputs").is_none());
 }
 
 #[test]

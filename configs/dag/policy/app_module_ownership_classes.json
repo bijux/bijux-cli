@@ -16,6 +16,6 @@
     {"prefix": "crates/bijux-dag-app/src/migrate/", "class": "support"},
     {"prefix": "crates/bijux-dag-app/src/write/", "class": "support"},
     {"prefix": "crates/bijux-dag-app/src/lib.rs", "class": "support"},
-    {"prefix": "crates/bijux-dag-app/src/capability_matrix.rs", "class": "support"}
+    {"prefix": "crates/bijux-dag-app/src/backend_capability_surface.rs", "class": "support"}
   ]
 }

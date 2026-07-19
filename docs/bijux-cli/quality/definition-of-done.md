@@ -4,26 +4,18 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Definition of Done
 
-This page explains when a CLI change is actually ready to leave review.
+Use this page when a change looks finished in code review but you need the
+harder answer: is it actually ready to leave review and become part of the
+trusted CLI surface?
 
-The line between "implemented" and "done" matters here. A change is only done
-when the behavior, proof, and written contract all point at the same result.
-
-## Done Flow
-
-```mermaid
-flowchart LR
-    implementation["implementation complete"] --> tests["targeted tests pass"]
-    implementation --> docs["docs and examples updated"]
-    tests --> review["compatibility review"]
-    docs --> review
-    review --> done["ready for release"]
-```
+The line between "implemented" and "done" matters here. A `bijux-cli` change
+is only done when behavior, evidence, and the written contract all point at the
+same result.
 
 ## Done Criteria
 
@@ -40,6 +32,15 @@ flowchart LR
 - `docs/bijux-cli/`
 - `makes/docs.mk`
 
+## What “Done” Must Mean
+
+| Surface | What reviewers should be able to trust |
+| --- | --- |
+| code | the owning implementation actually carries the intended behavior |
+| tests | the changed contract is exercised by the correct lane |
+| docs | readers can learn the new behavior without guessing |
+| compatibility framing | downstream consumers know whether adaptation is required |
+
 ## Not Done Signals
 
 - docs still describe old behavior
@@ -47,12 +48,13 @@ flowchart LR
 - compatibility risk is implied but not stated
 - review checklist items are skipped without rationale
 
-## Reading Rule
+## Reader Shortcut
 
-Use this page when a change feels nearly finished but the review still needs a
-clear stop-or-go rule.
+If the team needs verbal context from the author to explain why a change is
+safe, the change is not done yet. The repository itself should carry enough
+evidence for a new reviewer to reach the same conclusion.
 
-## Next Reads
+## Continue Reading
 
 - [Review Checklist](review-checklist.md)
 - [Change Validation](change-validation.md)

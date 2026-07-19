@@ -42,9 +42,9 @@
 - crates/bijux-dag-runtime/tests/fixtures/operations/slo_objective.json
 - crates/bijux-dag-runtime/tests/fixtures/packaging/deployment_conformance.json
 - crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_baseline.json
-- crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json
+- crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json
 - crates/bijux-dag-runtime/tests/fixtures/plugins/conformance_suite.json
-- crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json
+- crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_reference.json
 - crates/bijux-dag-runtime/tests/fixtures/policy/org_models.json
 - crates/bijux-dag-runtime/tests/fixtures/provenance/run_attestation.json
 - crates/bijux-dag-runtime/tests/fixtures/provenance/signed_artifacts.json
@@ -55,9 +55,9 @@
 - crates/bijux-dag-runtime/tests/fixtures/secrets/stdout_leak.json
 - crates/bijux-dag-runtime/tests/fixtures/state_machine/cancellation_trace.json
 - crates/bijux-dag-runtime/tests/fixtures/state_machine/evolution_trace.json
-- crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json
-- crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json
-- crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json
+- crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json
+- crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json
+- crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json
 - crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json
 - crates/bijux-dag-runtime/tests/fixtures/verification/invariants.json
 - crates/bijux-dag-runtime/tests/fixtures/workflow_product/workflow_health.json

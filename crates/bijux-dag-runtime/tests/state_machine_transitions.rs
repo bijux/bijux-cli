@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -61,6 +60,7 @@ fn accepts_legal_run_transitions() {
         (RunState::Interrupted, RunState::Cancelling),
         (RunState::Running, RunState::Cancelling),
         (RunState::Cancelling, RunState::Cancelled),
+        (RunState::Running, RunState::TimedOut),
         (RunState::Running, RunState::Failed),
         (RunState::Running, RunState::Succeeded),
     ];

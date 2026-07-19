@@ -45,6 +45,18 @@ Each governed asset must include:
 - lifecycle: `decision`, `deletion_review`, `retirement_date`
 - status: `implementation_status`, `why_exists`
 
+## Related schemas
+
+- `configs/dag/schema/evidence_asset.schema.json`
+- `configs/dag/schema/evidence_authoring_metadata.schema.json`
+- `configs/dag/schema/evidence_battle_metadata.schema.json`
+- `configs/dag/schema/evidence_cache_metadata.schema.json`
+- `configs/dag/schema/evidence_compare_metadata.schema.json`
+- `configs/dag/schema/evidence_compat_metadata.schema.json`
+- `configs/dag/schema/evidence_family.schema.json`
+- `configs/dag/schema/evidence_fault_metadata.schema.json`
+- `configs/dag/schema/evidence_perf_metadata.schema.json`
+
 ## Enforcement
 `bijux-dev-dag` is the only approved control plane for evidence governance checks:
 - taxonomy and ownership reporting

@@ -1,7 +1,7 @@
 use crate::commands::{DagCli, GovernanceCommands};
 use crate::{emit_json, parse_graph, read_file, ExitCode};
 use bijux_dag_artifacts::hash::sha256_hex;
-use bijux_dag_core::node::derive_interface;
+use bijux_dag_core::derive_interface;
 use bijux_dag_core::{compile_graph, node_io_contract, NodeInputSource, Severity};
 use serde::Serialize;
 use serde_json::json;
@@ -374,6 +374,7 @@ fn governance_contracts_payload(dag: &Path) -> Result<(serde_json::Value, bool),
             "owners": compiled.normalized_graph.meta.as_ref().map(|meta| meta.owners.clone()).unwrap_or_default(),
             "tags": compiled.normalized_graph.meta.as_ref().map(|meta| meta.tags.clone()).unwrap_or_default(),
             "graph_input_names": compiled.normalized_graph.inputs.keys().cloned().collect::<Vec<_>>(),
+            "graph_input_schema": compiled.normalized_graph.input_schema(),
             "graph_fingerprint": compiled.graph_fingerprint,
             "topology_order": compiled.plan_hints.deterministic_topology_order,
             "diagnostic_counts": diagnostic_counts,
@@ -664,6 +665,7 @@ fn catalog_export_payload(
         "tags": graph_tags(&graph).into_iter().map(|tag| normalize_tag(&tag)).collect::<Vec<_>>(),
         "graph_fingerprint": compiled.graph_fingerprint,
         "graph_input_names": graph.inputs.keys().cloned().collect::<Vec<_>>(),
+        "graph_input_schema": graph.input_schema(),
         "nodes": nodes,
         "run_record": run_record,
     }))
@@ -1118,8 +1120,13 @@ mod tests {
 
     #[test]
     fn governance_contracts_missing_file_does_not_panic() {
-        let cli =
-            DagCli::parse_from(["dag", "--json", "governance", "contracts", "/missing/file.json"]);
+        let cli = DagCli::parse_from([
+            "bijux-dag",
+            "--json",
+            "governance",
+            "contracts",
+            "/missing/file.json",
+        ]);
         let result = std::panic::catch_unwind(|| {
             let _ = handle_governance_command(
                 &cli,
@@ -1354,7 +1361,7 @@ mod tests {
             .expect("manifest");
         std::fs::write(
             run_dir.join("outputs").join("index.json"),
-            r#"{"files":[{"node_id":"extract","node_fingerprint":"fp","sha256":"abc","path":"nodes/extract/report.json"}]}"#,
+            r#"{"files":[{"node_id":"extract","node_fingerprint":"fp","name":"report","kind":"file","media_type":"application/json","size_bytes":0,"sha256":"abc","path":"nodes/extract/report.json"}]}"#,
         )
         .expect("index");
         let cli = quiet_json_cli(GovernanceCommands::CatalogExport {

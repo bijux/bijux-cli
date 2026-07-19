@@ -1,11 +1,24 @@
+//! Application orchestration and response shaping for the `bijux-dag` command surface.
+//!
+//! Prefer [`stable`] when browsing the long-lived app surface, [`prelude`] for
+//! command embedding helpers, and crate-root imports only when you already
+//! know the exact item you need. Broad compatibility re-exports remain
+//! callable for focused imports, but they are intentionally hidden from the
+//! default docs lane. The `experimental-public-api` feature enables
+//! repository-owned contract helpers that are intentionally excluded from the
+//! default docs lane.
+//!
 #![allow(dead_code)]
 
+mod backend_capability_surface;
 mod cache;
 #[path = "cache/cmd.rs"]
 mod cache_cmd;
-mod capability_matrix;
 #[path = "commands/cli_model.rs"]
 mod cli_model;
+#[cfg(feature = "experimental-public-api")]
+#[path = "commands/command_report_contracts.rs"]
+mod command_report_contracts;
 mod commands;
 #[path = "commands/config_resolution.rs"]
 mod config_resolution;
@@ -35,16 +48,19 @@ mod inspect;
 mod inspect_service;
 #[path = "inspect/integrity_service.rs"]
 mod integrity_service;
-#[path = "commands/iteration08_contracts.rs"]
-pub mod iteration08_contracts;
-#[path = "commands/iteration11_contracts.rs"]
-pub mod iteration11_contracts;
 mod migrate;
+#[path = "inspect/node_execution_explanation.rs"]
+mod node_execution_explanation;
 #[path = "commands/output_contract.rs"]
 mod output_contract;
 mod read;
 #[path = "read/read_graph.rs"]
 mod read_graph;
+#[path = "commands/reference_docs.rs"]
+mod reference_docs;
+mod repair;
+#[path = "repair/service.rs"]
+mod repair_service;
 mod replay;
 #[path = "replay/cmd.rs"]
 mod replay_cmd;
@@ -53,31 +69,79 @@ mod replay_service;
 mod routes;
 #[path = "commands/run_cmd.rs"]
 mod run_cmd;
+#[path = "inspect/run_comparison.rs"]
+mod run_comparison;
 #[path = "read/run_data.rs"]
 mod run_data;
+#[path = "inspect/run_failure_summary.rs"]
+mod run_failure_summary;
 #[path = "inspect/run_views.rs"]
 mod run_views;
+#[path = "read/runtime_inputs.rs"]
+mod runtime_inputs;
 #[path = "inspect/status_cmd.rs"]
 mod status_cmd;
 #[path = "graph/validate_cmd.rs"]
 mod validate_cmd;
+#[cfg(feature = "experimental-public-api")]
+#[path = "commands/workspace_compatibility_contracts.rs"]
+mod workspace_compatibility_contracts;
 mod write;
 
+#[doc(hidden)]
 pub use config_surface::{
     config_fingerprint, default_runtime_config, normalize_runtime_config, policy_evaluation_trace,
     resolve_effective_config, CacheModeSurface, MaterializeInputsSurface,
     PartialRuntimeSurfaceConfig, PolicySurfaceConfig, RuntimeSurfaceConfig,
 };
+#[doc(hidden)]
 pub use integrity_service::inspect_artifact;
+#[doc(hidden)]
+pub use reference_docs::write_checked_in_cli_reference_docs;
+#[doc(hidden)]
+pub use run_comparison::runs_compare;
+#[doc(hidden)]
+pub use run_failure_summary::explain_failure;
+#[doc(hidden)]
 pub use run_views::{
-    doctor_run, explain_failure, explain_run_id, format_inspect_human, format_show_human,
-    inspect_summary, list_runs, resolve_run_dir, run_timeline, run_tree, runs_compare,
-    runs_failures, runs_flakes, runs_history, runs_history_query, runs_summary, runs_trend,
+    doctor_run, explain_run_id, format_inspect_human, format_run_completion_human,
+    format_show_human, inspect_summary, list_runs, resolve_run_dir, run_completion_summary,
+    run_scheduler_checkpoint, run_timeline, run_tree, runs_failures, runs_flakes, runs_history,
+    runs_history_query, runs_summary, runs_trend,
 };
 
+/// Explicit long-lived command embedding and response-shaping surface.
+pub mod stable {
+    pub use crate::{
+        dag_command, dag_run, default_runtime_config, inspect_artifact, list_runs,
+        normalize_runtime_config, policy_evaluation_trace, resolve_effective_config,
+        resolve_run_dir, runs_summary, CacheModeSurface, MaterializeInputsSurface,
+        PartialRuntimeSurfaceConfig, PolicySurfaceConfig, RuntimeSurfaceConfig,
+    };
+}
+
+/// Common imports for embedding `bijux-dag` command orchestration.
+pub mod prelude {
+    pub use crate::stable::{
+        dag_command, dag_run, default_runtime_config, inspect_artifact, normalize_runtime_config,
+        resolve_effective_config, RuntimeSurfaceConfig,
+    };
+}
+
+/// Opt-in app contract helpers that are outside the stable command lane.
+#[cfg(feature = "experimental-public-api")]
+pub mod experimental {
+    pub mod command_reports {
+        pub use crate::command_report_contracts::*;
+    }
+    pub mod workspace_compatibility {
+        pub use crate::workspace_compatibility_contracts::*;
+    }
+}
+
 use crate::cache::{
-    cache_diff, cache_prune_simulate, cache_stats, explain_cache_key, pack_cache_entry,
-    unpack_cache_entry, verify_cache_dirs,
+    cache_diff, cache_prune_simulate, cache_stats, explain_cache_key, explain_run_node_cache_miss,
+    pack_cache_entry, unpack_cache_entry, verify_cache_dirs,
 };
 use crate::cli_model::command_name as dag_command_name;
 use crate::integrity_service::{check_engine, hash_run_dir, verify_run};
@@ -85,11 +149,10 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use bijux_dag_core::{Graph, GraphError, Severity, SPEC_VERSION};
 use bijux_dag_runtime::{CacheMode, Runtime, RuntimeConfig};
-#[cfg(test)]
-use bijux_dag_testkit as _;
 use clap::{ArgMatches, CommandFactory, FromArgMatches};
 use commands::{
-    CacheCommands, Commands, ConfigCommands, DagCli, GraphFormatArg, HashCommands, MigrateCommands,
+    command_access_denial, hide_non_public_help, lane_label, CacheCommands, CommandAccessDenial,
+    Commands, ConfigCommands, DagCli, GraphFormatArg, HashCommands, MigrateCommands,
     PolicyCommands,
 };
 use config_resolution::{
@@ -103,11 +166,11 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-// Keep the dependency reachable at the crate root for strict target dependency checks.
 use thiserror as _;
 
 pub fn dag_command() -> clap::Command {
-    DagCli::command().name(dag_command_name()).subcommand_required(false)
+    let command = DagCli::command().name(dag_command_name()).subcommand_required(false);
+    hide_non_public_help(command, "")
 }
 
 pub fn dag_run(matches: &ArgMatches) -> Result<ExitCode, ExitCode> {
@@ -122,6 +185,9 @@ pub fn dag_run(matches: &ArgMatches) -> Result<ExitCode, ExitCode> {
 }
 
 fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
+    if let Some(denial) = command_access_denial(&cli.command) {
+        return emit_command_access_denial(&cli, denial);
+    }
     match &cli.command {
         Commands::Init { dir } => {
             let base = dir.clone().unwrap_or_else(|| PathBuf::from("."));
@@ -180,18 +246,17 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Validate { dag, strict, print_fingerprints, explain } => {
+        Commands::Validate { dags, strict, print_fingerprints, explain } => {
             routes::validate_routes::handle_validate_command(
                 &cli,
-                dag,
+                dags,
                 *strict,
                 *print_fingerprints,
                 *explain,
             )
         }
-        Commands::Canonicalize { dag } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::Canonicalize { dags } => {
+            let graph = load_graphs_or_emit(&cli, "dag.canonicalize", dags)?;
             let json = graph.to_canonical_json().map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
@@ -206,10 +271,9 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             println!("{}", json);
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Lint { dag, strict } => {
+        Commands::Lint { dags, strict } => {
             let strict = *strict;
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+            let graph = load_graphs_or_emit(&cli, "dag.lint", dags)?;
             let lint = lint_graph(&graph);
             let has_warnings = !lint.is_empty();
             if cli.json {
@@ -235,9 +299,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::GraphLint { dag, strict } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::GraphLint { dags, strict } => {
+            let graph = load_graphs_or_emit(&cli, "dag.graph-lint", dags)?;
             let lint = lint_graph(&graph);
             let has_warnings = !lint.is_empty();
             if cli.json {
@@ -262,9 +325,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Fingerprint { dag, explain } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::Fingerprint { dags, explain } => {
+            let graph = load_graphs_or_emit(&cli, "dag.fingerprint", dags)?;
             let explained = graph.graph_fingerprint_explain().map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
@@ -291,9 +353,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             Ok(ExitCode::SUCCESS)
         }
         Commands::Hash { command } => match command {
-            HashCommands::Graph { dag, explain } => {
-                let input = read_file(dag)?;
-                let graph = parse_graph(&input)?;
+            HashCommands::Graph { dags, explain } => {
+                let graph = load_graphs_or_emit(&cli, "dag.hash.graph", dags)?;
                 let explained = graph.graph_fingerprint_explain().map_err(|_| ExitCode::from(3))?;
                 if cli.json {
                     return emit_json(
@@ -414,9 +475,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Release { command } => {
             routes::release_routes::handle_release_command(&cli, command)
         }
-        Commands::CanonicalBytes { dag } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::CanonicalBytes { dags } => {
+            let graph = load_graphs_or_emit(&cli, "dag.canonical-bytes", dags)?;
             let bytes = graph.canonical_json_bytes().map_err(|_| ExitCode::from(3))?;
             if cli.json {
                 return emit_json(
@@ -462,30 +522,72 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::ShowEffectiveGraph { dag } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
-            let canonical = graph.canonicalize();
-            let payload = serde_json::to_value(&canonical).map_err(|_| ExitCode::from(3))?;
-            if cli.json {
-                return emit_json(
-                    &cli,
-                    "dag.show-effective-graph",
-                    true,
-                    payload,
-                    Vec::new(),
-                    ExitCode::SUCCESS,
-                );
-            }
-            println!("{}", serde_json::to_string_pretty(&payload).unwrap());
-            Ok(ExitCode::SUCCESS)
-        }
-        Commands::ExplainPlan { dag } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
-            let analysis = routes::plan_routes::build_default_planner_analysis(&graph)
+        Commands::ShowEffectiveGraph {
+            dags,
+            run_dir,
+            select,
+            exclude,
+            from_node,
+            to_node,
+            dependency_closure,
+        } => routes::graph_routes::handle_show_effective_graph_command(
+            &cli,
+            dags,
+            run_dir,
+            select,
+            exclude,
+            from_node,
+            to_node,
+            *dependency_closure,
+        ),
+        Commands::ExplainPlan {
+            dags,
+            out,
+            run_id,
+            cache_dir,
+            absolute_path_policy,
+            jobs,
+            cpu_budget,
+            memory_budget_mb,
+            gpu_device_budget,
+            resource_capacity,
+            from_node,
+            to_node,
+        } => {
+            let graph = load_graphs_or_emit(&cli, "dag.explain-plan", dags)?;
+            graph_helpers::validate_partial_selection_surface(from_node, to_node, &[], &[], false)?;
+            let (upstream_selection_targets, _) =
+                graph_helpers::resolve_upstream_run_selection(&graph, to_node)?;
+            let (downstream_selection_roots, _) =
+                graph_helpers::resolve_downstream_run_selection(&graph, from_node)?;
+            let preview_layout = routes::plan_routes::resolve_plan_preview_layout(
+                out.as_deref(),
+                run_id.as_deref(),
+            )?;
+            let named_resource_capacities =
+                routes::resource_capacity_args::parse_resource_capacities(resource_capacity)?;
+            let preview = routes::plan_routes::PlanPreviewConfig {
+                run_root: out.clone(),
+                run_id: preview_layout.as_ref().map(|layout| layout.run_id.clone()),
+                cache_dir: cache_dir.clone(),
+                absolute_path_policy: (*absolute_path_policy).into(),
+                jobs: *jobs,
+                cpu_budget: *cpu_budget,
+                memory_budget_mb: *memory_budget_mb,
+                gpu_device_budget: *gpu_device_budget,
+                named_resource_capacities,
+                upstream_selection_targets,
+                downstream_selection_roots,
+                selectors: bijux_dag_runtime::SelectorSet::default(),
+                dependency_closure: false,
+            };
+            let analysis = routes::plan_routes::build_default_planner_analysis(&graph, &preview)
                 .map_err(|_| ExitCode::from(3))?;
-            let payload = routes::plan_routes::plan_explain_payload(&analysis);
+            let payload = routes::plan_routes::plan_explain_payload(
+                &analysis,
+                preview_layout.as_ref(),
+                preview.absolute_path_policy,
+            );
             if cli.json {
                 return emit_json(
                     &cli,
@@ -508,9 +610,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::Runtime { command } => {
             routes::runtime_routes::handle_runtime_command(&cli, command)
         }
-        Commands::Graph { dag, format } => {
-            let input = read_file(dag)?;
-            let graph = parse_graph(&input)?;
+        Commands::Graph { dags, format } => {
+            let graph = load_graphs_or_emit(&cli, "dag.graph", dags)?;
             match format {
                 GraphFormatArg::Dot => {
                     let dot = graph_to_dot(&graph);
@@ -529,47 +630,34 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::Replay {
-            run_dir,
-            out,
-            dry_run,
-            sandbox,
-            prove,
-            reuse_cache,
-            cache,
-            jobs,
-            run_id,
-            cpu_budget,
-            deny_network,
-            deny_env,
-            deny_clock,
-            clean_env,
-            hermetic,
-            select,
-            exclude,
-            materialize_inputs,
-            remote_cache_dir,
-        } => routes::replay_routes::handle_replay_command(
+        Commands::Replay { command } => routes::replay_routes::handle_replay_command(
             &cli,
-            run_dir,
-            out,
-            *dry_run,
-            *sandbox,
-            *prove,
-            *reuse_cache,
-            *cache,
-            *jobs,
-            run_id.clone(),
-            *cpu_budget,
-            *deny_network,
-            *deny_env,
-            *deny_clock,
-            *clean_env,
-            *hermetic,
-            select,
-            exclude,
-            *materialize_inputs,
-            remote_cache_dir.clone(),
+            command.run_dir.as_deref(),
+            command.source_run_id.as_deref(),
+            command.source_run_root.as_deref(),
+            &command.out,
+            command.dry_run,
+            command.sandbox,
+            command.prove,
+            command.reuse_cache,
+            command.cache,
+            command.jobs,
+            command.run_id.clone(),
+            command.cpu_budget,
+            command.memory_budget_mb,
+            command.gpu_device_budget,
+            &command.resource_capacity,
+            command.deny_network,
+            command.deny_env,
+            command.deny_clock,
+            command.clean_env,
+            command.hermetic,
+            &command.from_node,
+            &command.select,
+            &command.exclude,
+            command.dependency_closure,
+            command.materialize_inputs,
+            command.remote_cache_dir.clone(),
         ),
         Commands::Prove { run_dir } => {
             routes::prove_verify_routes::handle_prove_command(&cli, run_dir)
@@ -601,24 +689,38 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             key,
             expected_adapter_id,
             expected_adapter_version,
+            run_dir,
+            node,
             cache_dir,
         } => {
-            let dir = cache_dir
-                .clone()
-                .or_else(env_cache_dir)
-                .unwrap_or_else(|| PathBuf::from(".bijux/cache"));
-            let report =
-                explain_cache_key(&dir, key, expected_adapter_id, expected_adapter_version)?;
-            let payload = json!({
-                "cache_dir": dir,
-                "key": key,
-                "eligible": report["eligible"],
-                "reasons": report["reasons"],
-                "taxonomy": report["taxonomy"],
-                "key_components": report["key_components"],
-                "proof_verified": report["proof_verified"],
-                "meta": report["meta"]
-            });
+            let payload = if let (Some(run_dir), Some(node_id)) =
+                (run_dir.as_ref(), node.as_deref())
+            {
+                explain_run_node_cache_miss(run_dir, node_id, cache_dir.as_deref())?
+            } else {
+                let key = key.as_deref().ok_or(ExitCode::from(3))?;
+                let expected_adapter_id =
+                    expected_adapter_id.as_deref().ok_or(ExitCode::from(3))?;
+                let expected_adapter_version =
+                    expected_adapter_version.as_deref().ok_or(ExitCode::from(3))?;
+                let dir = cache_dir
+                    .clone()
+                    .or_else(env_cache_dir)
+                    .unwrap_or_else(|| PathBuf::from(".bijux/cache"));
+                let report =
+                    explain_cache_key(&dir, key, expected_adapter_id, expected_adapter_version)?;
+                json!({
+                    "mode": "key",
+                    "cache_dir": dir,
+                    "key": key,
+                    "eligible": report["eligible"],
+                    "reasons": report["reasons"],
+                    "taxonomy": report["taxonomy"],
+                    "key_components": report["key_components"],
+                    "proof_verified": report["proof_verified"],
+                    "meta": report["meta"]
+                })
+            };
             if cli.json {
                 return emit_json(
                     &cli,
@@ -638,52 +740,48 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
         Commands::TraceNode { run_dir, id } => {
             routes::diagnostics_routes::handle_trace_node_command(&cli, run_dir, id)
         }
-        Commands::Run {
-            dag,
-            out,
-            run_id,
-            latest,
-            jobs,
-            cpu_budget,
-            node_timeout_ms,
-            run_timeout_ms,
-            deny_network,
-            deny_env,
-            deny_clock,
-            clean_env,
-            hermetic,
-            select,
-            exclude,
-            materialize_inputs,
-            cache,
-            cache_dir,
-            remote_cache_dir,
-            preflight_only,
-            explain_scheduling,
-        } => routes::run_routes::handle_run_command(
+        Commands::Run { command } => routes::run_routes::handle_run_command(
             &cli,
             routes::run_routes::RunRouteRequest {
-                dag,
-                out,
-                run_id: run_id.clone(),
-                latest: latest.clone(),
-                jobs: *jobs,
-                cpu_budget: *cpu_budget,
-                node_timeout_ms: *node_timeout_ms,
-                run_timeout_ms: *run_timeout_ms,
-                deny_network: *deny_network,
-                deny_env: *deny_env,
-                deny_clock: *deny_clock,
-                clean_env: *clean_env,
-                hermetic: *hermetic,
-                select,
-                exclude,
-                materialize_inputs: *materialize_inputs,
-                cache: *cache,
-                cache_dir: cache_dir.clone(),
-                remote_cache_dir: remote_cache_dir.clone(),
-                preflight_only: *preflight_only,
-                explain_scheduling: *explain_scheduling,
+                dags: &command.dags,
+                out: &command.out,
+                input: &command.input,
+                inputs_file: command.inputs_file.clone(),
+                run_id: command.run_id.clone(),
+                resume_run: command.resume_run.clone(),
+                resume_failure_mode: command.resume_failure_mode,
+                latest: command.latest.clone(),
+                jobs: command.jobs,
+                cpu_budget: command.cpu_budget,
+                memory_budget_mb: command.memory_budget_mb,
+                gpu_device_budget: command.gpu_device_budget,
+                resource_capacity: &command.resource_capacity,
+                node_timeout_ms: command.node_timeout_ms,
+                run_timeout_ms: command.run_timeout_ms,
+                run_timeout_behavior: command.run_timeout_behavior,
+                deny_network: command.deny_network,
+                deny_env: command.deny_env,
+                deny_clock: command.deny_clock,
+                clean_env: command.clean_env,
+                hermetic: command.hermetic,
+                select: &command.select,
+                exclude: &command.exclude,
+                to_node: &command.to_node,
+                dependency_closure: command.dependency_closure,
+                materialize_inputs: command.materialize_inputs,
+                cache: command.cache,
+                cache_dir: command.cache_dir.clone(),
+                remote_cache_dir: command.remote_cache_dir.clone(),
+                absolute_path_policy: command.absolute_path_policy,
+                preflight_only: command.preflight_only,
+                explain_scheduling: command.explain_scheduling,
+                progress: command.progress,
+                backend: command.backend,
+                kubernetes_namespace: command.kubernetes_namespace.clone(),
+                kubernetes_volume_claim: command.kubernetes_volume_claim.clone(),
+                kubernetes_shared_root: command.kubernetes_shared_root.clone(),
+                slurm_queue: command.slurm_queue.clone(),
+                slurm_partition: command.slurm_partition.clone(),
             },
         ),
         Commands::RunBundle { run_dir, out, redact } => {
@@ -736,8 +834,8 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Commands::CommandCatalog { groups } => {
-            routes::command_routes::handle_command_catalog_command(&cli, *groups)
+        Commands::CommandCatalog { groups, lanes } => {
+            routes::command_routes::handle_command_catalog_command(&cli, *groups, lanes)
         }
         Commands::Migrate { command } => {
             let msg = match command {
@@ -1212,6 +1310,43 @@ fn run(cli: DagCli) -> Result<ExitCode, ExitCode> {
     }
 }
 
+fn emit_command_access_denial(
+    cli: &DagCli,
+    denial: CommandAccessDenial,
+) -> Result<ExitCode, ExitCode> {
+    let command = format!("dag.{}", denial.root_command);
+    let lane = lane_label(denial.lane);
+    let message = denial.message();
+    let hint = format!(
+        "set {}=1 to run this {} route intentionally or use `bijux-dag commands --lane {}` to inspect this non-stable access lane",
+        denial.opt_in_env,
+        lane,
+        lane
+    );
+    if cli.json {
+        return emit_json(
+            cli,
+            &command,
+            false,
+            json!({
+                "command_family": denial.root_command,
+                "lane": denial.lane,
+                "access": "opt-in",
+                "opt_in_env": denial.opt_in_env,
+            }),
+            vec![json!({
+                "code": "release-boundary-opt-in",
+                "message": message,
+                "hint": hint,
+            })],
+            ExitCode::from(2),
+        );
+    }
+    eprintln!("{message}");
+    eprintln!("{hint}");
+    Err(ExitCode::from(2))
+}
+
 pub(crate) fn read_file(path: &Path) -> Result<String, ExitCode> {
     fs_input::read_utf8_file(path).map_err(|_| ExitCode::from(3))
 }
@@ -1228,7 +1363,8 @@ pub(crate) fn read_run_id(run_dir: &Path) -> Result<String, ExitCode> {
 
 pub(crate) fn selector_cli_string(selector: &bijux_dag_runtime::Selector) -> String {
     match selector {
-        bijux_dag_runtime::Selector::IdPrefix(v) => format!("id:{v}"),
+        bijux_dag_runtime::Selector::Id(v) => format!("id:{v}"),
+        bijux_dag_runtime::Selector::IdPrefix(v) => format!("id-prefix:{v}"),
         bijux_dag_runtime::Selector::Tag(v) => format!("tag:{v}"),
         bijux_dag_runtime::Selector::Kind(v) => format!("kind:{v}"),
     }
@@ -1240,6 +1376,35 @@ pub(crate) fn parse_graph(input: &str) -> Result<Graph, ExitCode> {
         Err(GraphError::Json(_)) => Err(ExitCode::from(2)),
         Err(GraphError::InvalidSpec(_)) => Err(ExitCode::from(1)),
         Err(_) => Err(ExitCode::from(3)),
+    }
+}
+
+pub(crate) fn load_graphs_or_emit(
+    cli: &commands::DagCli,
+    command_name: &str,
+    dags: &[PathBuf],
+) -> Result<Graph, ExitCode> {
+    match read_graph::load_graphs(dags) {
+        Ok(graph) => Ok(graph),
+        Err(error) => {
+            let code = error.exit_code();
+            if cli.json {
+                let _ = emit_json(
+                    cli,
+                    command_name,
+                    false,
+                    json!({
+                        "error": error.to_string(),
+                        "dags": dags,
+                    }),
+                    Vec::new(),
+                    code,
+                );
+            } else if !cli.quiet {
+                eprintln!("{error}");
+            }
+            Err(code)
+        }
     }
 }
 

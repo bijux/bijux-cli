@@ -9,7 +9,7 @@
     "mission": "docs/spec/MISSION_STATEMENT.md",
     "positioning": "docs/reference/POSITIONING_NOTE.md",
     "support_matrix": "docs/reference/SUPPORT_MATRIX.md",
-    "backend_capabilities": "evidence/reports/backend_capability_matrix_generated.json",
+    "backend_capabilities": "evidence/reports/backend_capability_report_generated.json",
     "evidence_inventory": "configs/policy/evidence_rationalization_policy.json",
     "benchmark_registry": "configs/policy/benchmark_signal_governance.json"
   },

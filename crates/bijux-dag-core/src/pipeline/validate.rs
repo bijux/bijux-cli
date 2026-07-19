@@ -1,6 +1,10 @@
-use crate::canonical::{error, is_valid_canonical_name, is_valid_output_path, severity_rank, warn};
+use crate::canonical::{
+    error, is_valid_canonical_name, is_valid_output_path, is_valid_tag_name, severity_rank, warn,
+};
+use crate::expansion::{expand_graph, expansion_error_diagnostic};
 use crate::{
-    EdgeKind, Effect, Graph, GraphError, Node, ParamValue, SemanticNodeKind, Severity, TriggerRule,
+    is_known_path_variable, materialize_graph_input_value, EdgeKind, Effect, Graph, GraphError,
+    GraphInputKind, GraphInputSpec, Node, ParamValue, SemanticNodeKind, Severity, TriggerRule,
     ValidationDiagnostic,
 };
 use std::collections::{BTreeSet, HashMap};
@@ -24,7 +28,7 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1002", severity: Severity::Error, domain: ValidationDomain::Topology },
     ValidationRule { id: "E1003", severity: Severity::Error, domain: ValidationDomain::Topology },
     ValidationRule { id: "E1004", severity: Severity::Error, domain: ValidationDomain::Topology },
-    ValidationRule { id: "E1005", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1005", severity: Severity::Error, domain: ValidationDomain::Topology },
     ValidationRule { id: "E1006", severity: Severity::Error, domain: ValidationDomain::Schema },
     ValidationRule { id: "E1007", severity: Severity::Error, domain: ValidationDomain::Schema },
     ValidationRule { id: "E1008", severity: Severity::Error, domain: ValidationDomain::Topology },
@@ -43,6 +47,44 @@ const VALIDATION_RULES: &[ValidationRule] = &[
     ValidationRule { id: "E1028", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "E1029", severity: Severity::Error, domain: ValidationDomain::Topology },
     ValidationRule { id: "E1030", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1031", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1032", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1033", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1034", severity: Severity::Error, domain: ValidationDomain::Schema },
+    ValidationRule { id: "E1035", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1036", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1037", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1038", severity: Severity::Error, domain: ValidationDomain::Topology },
+    ValidationRule { id: "E1039", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1040", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1041", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1042", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1043", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1044", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1045", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1046", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1047", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1048", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1049", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1050", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1051", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1052", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1053", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1054", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1055", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1056", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1057", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1058", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1059", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1060", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1061", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1062", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1063", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1064", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1065", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1066", severity: Severity::Error, domain: ValidationDomain::Topology },
+    ValidationRule { id: "E1067", severity: Severity::Error, domain: ValidationDomain::Semantic },
+    ValidationRule { id: "E1068", severity: Severity::Error, domain: ValidationDomain::Semantic },
     ValidationRule { id: "W2001", severity: Severity::Warning, domain: ValidationDomain::Topology },
     ValidationRule { id: "W2002", severity: Severity::Warning, domain: ValidationDomain::Topology },
 ];
@@ -80,18 +122,126 @@ fn valid_env_allowlist_pattern(pattern: &str) -> bool {
     core.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
 }
 
+fn node_param_object(node: &Node) -> Option<&std::collections::BTreeMap<String, ParamValue>> {
+    match &node.params {
+        ParamValue::Object(map) => Some(map),
+        _ => None,
+    }
+}
+
+fn node_param_literal_string<'a>(node: &'a Node, key: &str) -> Option<&'a str> {
+    node_param_object(node).and_then(|params| params.get(key)).and_then(|value| match value {
+        ParamValue::Literal(serde_json::Value::String(text)) => Some(text.as_str()),
+        _ => None,
+    })
+}
+
+fn param_value_literal_string(value: &ParamValue) -> Option<&str> {
+    match value {
+        ParamValue::Literal(serde_json::Value::String(text)) => Some(text.as_str()),
+        _ => None,
+    }
+}
+
+fn node_param_object_field<'a>(
+    node: &'a Node,
+    key: &str,
+) -> Option<&'a std::collections::BTreeMap<String, ParamValue>> {
+    node_param_object(node).and_then(|params| params.get(key)).and_then(|value| match value {
+        ParamValue::Object(map) => Some(map),
+        _ => None,
+    })
+}
+
+fn node_param_array_field<'a>(node: &'a Node, key: &str) -> Option<&'a [ParamValue]> {
+    node_param_object(node).and_then(|params| params.get(key)).and_then(|value| match value {
+        ParamValue::Array(items) => Some(items.as_slice()),
+        _ => None,
+    })
+}
+
+fn param_value_is_literal_string(value: &ParamValue) -> bool {
+    matches!(value, ParamValue::Literal(serde_json::Value::String(_)))
+}
+
+fn param_value_literal_u64(value: &ParamValue) -> Option<u64> {
+    match value {
+        ParamValue::Literal(serde_json::Value::Number(number)) => number.as_u64(),
+        _ => None,
+    }
+}
+
+fn param_value_literal_bool(value: &ParamValue) -> Option<bool> {
+    match value {
+        ParamValue::Literal(serde_json::Value::Bool(value)) => Some(*value),
+        _ => None,
+    }
+}
+
+fn is_normalized_relative_path(path: &str) -> bool {
+    !path.is_empty()
+        && !path.starts_with('/')
+        && !path.contains('\\')
+        && path.split('/').all(|segment| !segment.is_empty() && segment != "." && segment != "..")
+}
+
 fn trigger_rule_supports_conditional_incoming(rule: &TriggerRule) -> bool {
     matches!(rule, TriggerRule::AnySuccess | TriggerRule::AllDone)
 }
 
+fn validate_path_variable_expression(value: &str) -> Result<(), String> {
+    let Some(close_index) = value.find('}') else {
+        return Err(format!("invalid path variable expression: {value}"));
+    };
+    let variable = &value[1..close_index];
+    if variable.is_empty() || !is_known_path_variable(variable) {
+        return Err(format!("unknown path variable expression: {value}"));
+    }
+    let rest = &value[(close_index + 1)..];
+    if rest.is_empty() {
+        return Ok(());
+    }
+    let Some(relative_path) = rest.strip_prefix('/') else {
+        return Err(format!("invalid path variable expression: {value}"));
+    };
+    if !is_normalized_relative_path(relative_path) {
+        return Err(format!("invalid path variable suffix: {relative_path}"));
+    }
+    Ok(())
+}
+
+fn validate_container_workdir_value(workdir: &str) -> Result<(), String> {
+    if workdir.starts_with('{') {
+        return validate_path_variable_expression(workdir);
+    }
+    if workdir.starts_with('/') {
+        return Ok(());
+    }
+    if is_normalized_relative_path(workdir) {
+        return Ok(());
+    }
+    Err(format!("invalid relative workdir: {workdir}"))
+}
+
 impl Graph {
     pub fn validate_with_warnings(&self) -> Vec<ValidationDiagnostic> {
+        let expanded = match expand_graph(self) {
+            Ok(graph) => graph,
+            Err(error) => return vec![expansion_error_diagnostic(error)],
+        };
+        expanded.validate_expanded_with_warnings()
+    }
+
+    fn validate_expanded_with_warnings(&self) -> Vec<ValidationDiagnostic> {
         let mut diagnostics = Vec::new();
+
+        validate_graph_inputs(self, &mut diagnostics);
 
         let mut ids = BTreeSet::new();
         let mut node_map: HashMap<&str, &Node> = HashMap::new();
         let mut branch_output_by_node: HashMap<&str, &str> = HashMap::new();
         let mut branch_decisions_by_node: HashMap<&str, BTreeSet<String>> = HashMap::new();
+        let mut dynamic_nodes = BTreeSet::new();
         for node in &self.nodes {
             if !ids.insert(node.id.as_str()) {
                 emit_rule(
@@ -112,13 +262,13 @@ impl Graph {
                 );
             }
             for tag in &node.tags {
-                if !is_valid_canonical_name(tag) {
+                if !is_valid_tag_name(tag) {
                     emit_rule(
                         &mut diagnostics,
                         "E1026",
                         format!("illegal node tag: {}", tag),
                         format!("/nodes/{}/tags", node.id),
-                        Some("Use [a-zA-Z0-9_-] only".to_string()),
+                        Some("Use [a-zA-Z0-9_.:-] only".to_string()),
                     );
                 }
             }
@@ -139,6 +289,362 @@ impl Graph {
                     format!("/nodes/{}/effects", node.id),
                     Some("Include filesystem effect for shell nodes".to_string()),
                 );
+            }
+            if node.kind == crate::NodeKind::Python && node.effects.is_empty() {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("missing effects for python node: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Declare effects for python nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Python && !node.effects.contains(&Effect::Filesystem) {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("python node missing filesystem effect: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Include filesystem effect for python nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Python && !matches!(node.params, ParamValue::Object(_))
+            {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1039",
+                    format!("python node params must be an object: {}", node.id),
+                    format!("/nodes/{}/params", node.id),
+                    Some("Declare python module and function inside params".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Python {
+                match node_param_literal_string(node, "module") {
+                    Some(module) if !module.trim().is_empty() => {}
+                    _ => emit_rule(
+                        &mut diagnostics,
+                        "E1040",
+                        format!("python node missing module: {}", node.id),
+                        format!("/nodes/{}/params/module", node.id),
+                        Some("Provide a non-empty module string for python nodes".to_string()),
+                    ),
+                }
+                match node_param_literal_string(node, "function") {
+                    Some(function) if !function.trim().is_empty() => {}
+                    _ => emit_rule(
+                        &mut diagnostics,
+                        "E1041",
+                        format!("python node missing function: {}", node.id),
+                        format!("/nodes/{}/params/function", node.id),
+                        Some("Provide a non-empty function string for python nodes".to_string()),
+                    ),
+                }
+            }
+            if node.kind == crate::NodeKind::Http && node.effects.is_empty() {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("missing effects for http node: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Declare effects for http nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Http && !node.effects.contains(&Effect::Filesystem) {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("http node missing filesystem effect: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Include filesystem effect for http nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Http && !node.effects.contains(&Effect::Network) {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("http node missing network effect: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Include network effect for http nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Http && !matches!(node.params, ParamValue::Object(_)) {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1042",
+                    format!("http node params must be an object: {}", node.id),
+                    format!("/nodes/{}/params", node.id),
+                    Some("Declare method, url, headers, and body inside params".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::Http {
+                match node_param_literal_string(node, "method") {
+                    Some(method) if !method.trim().is_empty() => {}
+                    _ => emit_rule(
+                        &mut diagnostics,
+                        "E1043",
+                        format!("http node missing method: {}", node.id),
+                        format!("/nodes/{}/params/method", node.id),
+                        Some("Provide a non-empty HTTP method string".to_string()),
+                    ),
+                }
+                match node_param_literal_string(node, "url") {
+                    Some(url) if url.starts_with("http://") || url.starts_with("https://") => {}
+                    _ => emit_rule(
+                        &mut diagnostics,
+                        "E1044",
+                        format!("http node missing or invalid url: {}", node.id),
+                        format!("/nodes/{}/params/url", node.id),
+                        Some("Provide an absolute http:// or https:// URL".to_string()),
+                    ),
+                }
+                if let Some(headers) = node_param_object_field(node, "headers") {
+                    if headers.values().any(|value| !param_value_is_literal_string(value)) {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1045",
+                            format!("http node headers must be string literals: {}", node.id),
+                            format!("/nodes/{}/params/headers", node.id),
+                            Some(
+                                "Provide request headers as an object of string values".to_string(),
+                            ),
+                        );
+                    }
+                } else if node_param_object(node)
+                    .is_some_and(|params| params.contains_key("headers"))
+                {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1045",
+                        format!("http node headers must be an object: {}", node.id),
+                        format!("/nodes/{}/params/headers", node.id),
+                        Some("Provide request headers as an object of string values".to_string()),
+                    );
+                }
+                if node.outputs.len() != 1 {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1046",
+                        format!("http node requires exactly one declared output: {}", node.id),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some("Declare exactly one output to capture the HTTP response".to_string()),
+                    );
+                }
+            }
+            if node.kind == crate::NodeKind::FileTransform && node.effects.is_empty() {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("missing effects for file_transform node: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Declare effects for file_transform nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::FileTransform
+                && !node.effects.contains(&Effect::Filesystem)
+            {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1009",
+                    format!("file_transform node missing filesystem effect: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some("Include filesystem effect for file_transform nodes".to_string()),
+                );
+            }
+            if node.kind == crate::NodeKind::FileTransform
+                && !matches!(node.params, ParamValue::Object(_))
+            {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1047",
+                    format!("file_transform node params must be an object: {}", node.id),
+                    format!("/nodes/{}/params", node.id),
+                    Some(
+                        "Declare operation-specific fields inside an object for file_transform nodes"
+                            .to_string(),
+                    ),
+                );
+            }
+            if node.kind == crate::NodeKind::FileTransform {
+                let operation = match node_param_literal_string(node, "operation") {
+                    Some(
+                        "copy" | "concatenate" | "split" | "gzip_compress" | "gzip_decompress"
+                        | "checksum",
+                    ) => node_param_literal_string(node, "operation"),
+                    _ => {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1048",
+                            format!(
+                                "file_transform node operation must be one of copy, concatenate, split, gzip_compress, gzip_decompress, checksum: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/operation", node.id),
+                            Some("Choose a supported built-in file_transform operation".to_string()),
+                        );
+                        None
+                    }
+                };
+
+                let requires_single_source = matches!(
+                    operation,
+                    Some("copy" | "split" | "gzip_compress" | "gzip_decompress" | "checksum")
+                );
+                if requires_single_source {
+                    match node_param_literal_string(node, "source") {
+                        Some(path) if is_normalized_relative_path(path) => {}
+                        _ => emit_rule(
+                            &mut diagnostics,
+                            "E1049",
+                            format!(
+                                "file_transform node source must be a normalized relative input path: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/source", node.id),
+                            Some(
+                                "Reference an input artifact relative to the node inputs directory"
+                                    .to_string(),
+                            ),
+                        ),
+                    }
+                }
+
+                if matches!(operation, Some("concatenate")) {
+                    match node_param_array_field(node, "sources") {
+                        Some(paths)
+                            if !paths.is_empty()
+                                && paths.iter().all(|value| {
+                                    matches!(
+                                        value,
+                                        ParamValue::Literal(serde_json::Value::String(path))
+                                            if is_normalized_relative_path(path)
+                                    )
+                                }) => {}
+                        _ => emit_rule(
+                            &mut diagnostics,
+                            "E1050",
+                            format!(
+                                "file_transform node sources must be a non-empty array of normalized relative input paths: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/sources", node.id),
+                            Some(
+                                "Provide concatenate sources as an ordered array of input-relative paths"
+                                    .to_string(),
+                            ),
+                        ),
+                    }
+                }
+
+                if matches!(operation, Some("split")) {
+                    match node_param_object(node)
+                        .and_then(|params| params.get("chunk_bytes"))
+                        .and_then(param_value_literal_u64)
+                    {
+                        Some(chunk_bytes) if chunk_bytes > 0 => {}
+                        _ => emit_rule(
+                            &mut diagnostics,
+                            "E1051",
+                            format!(
+                                "file_transform split node requires chunk_bytes > 0: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/chunk_bytes", node.id),
+                            Some(
+                                "Provide a positive chunk_bytes integer for split operations"
+                                    .to_string(),
+                            ),
+                        ),
+                    }
+                }
+
+                if matches!(operation, Some("checksum"))
+                    && node_param_object(node)
+                        .is_some_and(|params| params.contains_key("checksum_algorithm"))
+                {
+                    match node_param_literal_string(node, "checksum_algorithm") {
+                        Some("sha256") => {}
+                        _ => emit_rule(
+                            &mut diagnostics,
+                            "E1052",
+                            format!(
+                                "file_transform checksum_algorithm must be sha256 when provided: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/checksum_algorithm", node.id),
+                            Some("Use checksum_algorithm: \"sha256\"".to_string()),
+                        ),
+                    }
+                }
+
+                if matches!(operation, Some("gzip_compress"))
+                    && node_param_object(node)
+                        .is_some_and(|params| params.contains_key("compression_level"))
+                {
+                    match node_param_object(node)
+                        .and_then(|params| params.get("compression_level"))
+                        .and_then(param_value_literal_u64)
+                    {
+                        Some(level) if level <= 9 => {}
+                        _ => emit_rule(
+                            &mut diagnostics,
+                            "E1053",
+                            format!(
+                                "file_transform compression_level must be an integer between 0 and 9: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/compression_level", node.id),
+                            Some("Use gzip compression levels from 0 through 9".to_string()),
+                        ),
+                    }
+                }
+
+                if node.outputs.iter().any(|output| output.expects_directory()) {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1054",
+                        format!(
+                            "file_transform node outputs must be file outputs, not directories: {}",
+                            node.id
+                        ),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some("Declare file outputs for file_transform operations".to_string()),
+                    );
+                }
+
+                match operation {
+                    Some("split") if node.outputs.is_empty() => emit_rule(
+                        &mut diagnostics,
+                        "E1055",
+                        format!(
+                            "file_transform split node requires one or more declared outputs: {}",
+                            node.id
+                        ),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some(
+                            "Declare outputs for each split chunk you expect to materialize"
+                                .to_string(),
+                        ),
+                    ),
+                    Some(
+                        "copy" | "concatenate" | "gzip_compress" | "gzip_decompress" | "checksum",
+                    ) if node.outputs.len() != 1 => {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1055",
+                            format!(
+                                "file_transform node requires exactly one declared output for operation {}: {}",
+                                operation.unwrap_or("unknown"),
+                                node.id
+                            ),
+                            format!("/nodes/{}/outputs", node.id),
+                            Some(
+                                "Declare exactly one output for copy, concatenate, gzip, and checksum operations"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                    _ => {}
+                }
             }
             if node.kind == crate::NodeKind::Container && node.container.is_none() {
                 emit_rule(
@@ -178,6 +684,34 @@ impl Graph {
                     );
                 }
             }
+            if node.cache.enabled {
+                if let Some(reason) = &node.cache.reason {
+                    if !reason.trim().is_empty() {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1032",
+                            format!(
+                                "cache reason only applies when cache is disabled: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/cache/reason", node.id),
+                            Some("Remove cache.reason or set cache.enabled to false".to_string()),
+                        );
+                    }
+                }
+            } else if node.cache.reason.as_deref().is_none_or(|reason| reason.trim().is_empty()) {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1032",
+                    format!("cache-disabled node requires a reason: {}", node.id),
+                    format!("/nodes/{}/cache", node.id),
+                    Some("Provide cache.reason when cache.enabled is false".to_string()),
+                );
+            }
+            let container_env_allowlist =
+                node.container.as_ref().map(|spec| spec.env_allowlist.as_slice()).unwrap_or(&[]);
+            let has_declared_env_bindings =
+                !node.env_allowlist.is_empty() || !container_env_allowlist.is_empty();
             if !node.env_allowlist.is_empty() && !node.effects.contains(&Effect::Env) {
                 emit_rule(
                     &mut diagnostics,
@@ -199,6 +733,18 @@ impl Graph {
                         ),
                     );
                 }
+            }
+            if node.effects.contains(&Effect::Env) && !has_declared_env_bindings {
+                emit_rule(
+                    &mut diagnostics,
+                    "E1035",
+                    format!("env effect requires declared env_allowlist bindings: {}", node.id),
+                    format!("/nodes/{}/effects", node.id),
+                    Some(
+                        "Declare allowed environment variables in env_allowlist or container.env_allowlist"
+                            .to_string(),
+                    ),
+                );
             }
             if node.kind == crate::NodeKind::Container {
                 if let Some(spec) = &node.container {
@@ -242,6 +788,20 @@ impl Graph {
                             format!("/nodes/{}/container/argv", node.id),
                             Some("Provide argv for container nodes".to_string()),
                         );
+                    }
+                    if let Some(workdir) = spec.workdir.as_deref() {
+                        if let Err(message) = validate_container_workdir_value(workdir) {
+                            emit_rule(
+                                &mut diagnostics,
+                                "E1025",
+                                message,
+                                format!("/nodes/{}/container/workdir", node.id),
+                                Some(
+                                    "Use an absolute path or a normalized relative/path-variable workdir"
+                                        .to_string(),
+                                ),
+                            );
+                        }
                     }
                 }
             }
@@ -337,14 +897,279 @@ impl Graph {
                 }
                 _ => {}
             }
+            match (&node.semantic_kind, &node.dynamic) {
+                (SemanticNodeKind::Dynamic, None) => {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1063",
+                        format!("dynamic node missing dynamic contract: {}", node.id),
+                        format!("/nodes/{}/dynamic", node.id),
+                        Some(
+                            "Declare dynamic.expansion_output so the runtime can load the generated graph fragment"
+                                .to_string(),
+                        ),
+                    );
+                }
+                (SemanticNodeKind::Dynamic, Some(dynamic)) => {
+                    dynamic_nodes.insert(node.id.clone());
+                    if !node.outputs.iter().any(|output| output.name == dynamic.expansion_output) {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1064",
+                            format!(
+                                "dynamic expansion output '{}' is not declared on node {}",
+                                dynamic.expansion_output, node.id
+                            ),
+                            format!("/nodes/{}/dynamic/expansion_output", node.id),
+                            Some(
+                                "Declare the expansion output as a normal node output so the controller run persists it"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                    if node.outputs.iter().any(|output| {
+                        output.name == dynamic.expansion_output && output.expects_directory()
+                    }) {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1065",
+                            format!(
+                                "dynamic expansion output '{}' on node {} must be a file or value output",
+                                dynamic.expansion_output, node.id
+                            ),
+                            format!("/nodes/{}/outputs", node.id),
+                            Some(
+                                "Write one expansion document file that declares generated nodes and edges"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                    if !node.inputs.is_empty() {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1067",
+                            format!(
+                                "dynamic controller nodes must not declare runtime inputs: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/inputs", node.id),
+                            Some(
+                                "Use graph inputs inside the controller command; dynamic expansion runs before normal node-to-node execution"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                    if node.branch.is_some() {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1068",
+                            format!(
+                                "dynamic controller nodes cannot also declare branch contracts: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/branch", node.id),
+                            Some(
+                                "Keep dynamic expansion and branch routing as separate node responsibilities"
+                                    .to_string(),
+                            ),
+                        );
+                    }
+                }
+                (_, Some(_)) => {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1063",
+                        format!(
+                            "dynamic contract is only allowed on semantic_kind=dynamic nodes: {}",
+                            node.id
+                        ),
+                        format!("/nodes/{}/dynamic", node.id),
+                        Some(
+                            "Set semantic_kind=dynamic or remove the dynamic contract".to_string(),
+                        ),
+                    );
+                }
+                _ => {}
+            }
+            if node.semantic_kind == SemanticNodeKind::Map {
+                if node.outputs.is_empty() {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1056",
+                        format!("map node requires one or more declared outputs: {}", node.id),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some(
+                            "Declare directory outputs that will collect per-item map results"
+                                .to_string(),
+                        ),
+                    );
+                }
+                if node.outputs.iter().any(|output| output.expects_file()) {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1057",
+                        format!("map node outputs must be directory outputs: {}", node.id),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some(
+                            "Use output kind directory so each mapped item has an isolated artifact root"
+                                .to_string(),
+                        ),
+                    );
+                }
+                if node.inputs.is_empty() {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1058",
+                        format!("map node requires at least one declared input: {}", node.id),
+                        format!("/nodes/{}/inputs", node.id),
+                        Some(
+                            "Bind a JSON array input that the runtime can expand deterministically"
+                                .to_string(),
+                        ),
+                    );
+                } else if node.inputs.len() > 1 {
+                    match node_param_object_field(node, "map")
+                        .and_then(|map| map.get("input"))
+                        .and_then(param_value_literal_string)
+                    {
+                        Some(input) if node.inputs.iter().any(|candidate| candidate == input) => {}
+                        Some(input) => emit_rule(
+                            &mut diagnostics,
+                            "E1058",
+                            format!(
+                                "map.input '{}' is not a declared input on node {}",
+                                input, node.id
+                            ),
+                            format!("/nodes/{}/params/map/input", node.id),
+                            Some(
+                                "Choose one of the declared inputs as the array source for semantic map expansion"
+                                    .to_string(),
+                            ),
+                        ),
+                        None => emit_rule(
+                            &mut diagnostics,
+                            "E1058",
+                            format!(
+                                "map node with multiple inputs must declare params.map.input: {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/map/input", node.id),
+                            Some(
+                                "Set params.map.input to the input port that carries the JSON array"
+                                    .to_string(),
+                            ),
+                        ),
+                    }
+                }
+            }
+            if node.semantic_kind == SemanticNodeKind::Reduce {
+                if node.outputs.len() != 1 {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1059",
+                        format!("reduce node must declare exactly one output: {}", node.id),
+                        format!("/nodes/{}/outputs", node.id),
+                        Some(
+                            "Declare one reducer output artifact so fan-in has a single result contract"
+                                .to_string(),
+                        ),
+                    );
+                }
+                if node.trigger_rule != TriggerRule::AllSuccess {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1062",
+                        format!("reduce node trigger_rule must remain all_success: {}", node.id),
+                        format!("/nodes/{}/trigger_rule", node.id),
+                        Some(
+                            "Use params.reduce.mode to choose all_success or partial reducer behavior"
+                                .to_string(),
+                        ),
+                    );
+                }
+                if let Some(reduce) = node_param_object_field(node, "reduce") {
+                    if reduce
+                        .get("allow_empty_collection")
+                        .and_then(param_value_literal_bool)
+                        .is_some()
+                    {
+                        emit_rule(
+                            &mut diagnostics,
+                            "E1061",
+                            format!(
+                                "reduce.allow_empty_collection is not supported on node {}",
+                                node.id
+                            ),
+                            format!("/nodes/{}/params/reduce/allow_empty_collection", node.id),
+                            Some("Use params.reduce.empty with forbid, allow, or skip".to_string()),
+                        );
+                    }
+                    if let Some(mode) = reduce.get("mode").and_then(param_value_literal_string) {
+                        if !matches!(mode, "all_success" | "partial") {
+                            emit_rule(
+                                &mut diagnostics,
+                                "E1060",
+                                format!(
+                                    "reduce.mode '{}' is not supported on node {}",
+                                    mode, node.id
+                                ),
+                                format!("/nodes/{}/params/reduce/mode", node.id),
+                                Some(
+                                    "Choose reduce.mode=all_success or reduce.mode=partial"
+                                        .to_string(),
+                                ),
+                            );
+                        }
+                    }
+                    if let Some(empty_policy) =
+                        reduce.get("empty").and_then(param_value_literal_string)
+                    {
+                        if !matches!(empty_policy, "forbid" | "allow" | "skip") {
+                            emit_rule(
+                                &mut diagnostics,
+                                "E1061",
+                                format!(
+                                    "reduce.empty '{}' is not supported on node {}",
+                                    empty_policy, node.id
+                                ),
+                                format!("/nodes/{}/params/reduce/empty", node.id),
+                                Some("Choose reduce.empty=forbid, allow, or skip".to_string()),
+                            );
+                        }
+                    }
+                }
+            }
             node_map.insert(node.id.as_str(), node);
         }
 
         let mut edge_pairs = BTreeSet::new();
         let mut target_bindings = BTreeSet::new();
+        let mut bound_inputs = BTreeSet::<(String, String)>::new();
         let mut conditional_edge_counts = HashMap::<(String, String), usize>::new();
         let mut conditional_incoming_targets = BTreeSet::new();
         for edge in &self.edges {
+            if dynamic_nodes.contains(&edge.from.node_id)
+                || dynamic_nodes.contains(&edge.to.node_id)
+            {
+                let controller_node_id = if dynamic_nodes.contains(&edge.from.node_id) {
+                    &edge.from.node_id
+                } else {
+                    &edge.to.node_id
+                };
+                emit_rule(
+                    &mut diagnostics,
+                    "E1066",
+                    format!(
+                        "dynamic controller node {} must not have declared graph edges",
+                        controller_node_id
+                    ),
+                    format!("/edges/{}->{}", edge.from.node_id, edge.to.node_id),
+                    Some(
+                        "Emit connectivity in the generated expansion document instead of wiring the controller node into the static graph"
+                            .to_string(),
+                    ),
+                );
+            }
             let from_node = node_map.get(edge.from.node_id.as_str());
             let to_node = node_map.get(edge.to.node_id.as_str());
             if from_node.is_none() {
@@ -387,6 +1212,11 @@ impl Graph {
                     format!("/edges/to/{}/{}", edge.to.node_id, edge.to.port),
                     None,
                 );
+            }
+            if from_node.outputs.iter().any(|output| output.name == edge.from.port)
+                && to_node.inputs.iter().any(|input| input == &edge.to.port)
+            {
+                bound_inputs.insert((edge.to.node_id.clone(), edge.to.port.clone()));
             }
 
             let pair_key = format!(
@@ -495,6 +1325,17 @@ impl Graph {
         }
 
         for node in &self.nodes {
+            for input in &node.inputs {
+                if !bound_inputs.contains(&(node.id.clone(), input.clone())) {
+                    emit_rule(
+                        &mut diagnostics,
+                        "E1005",
+                        format!("missing required input binding: {}.{}", node.id, input),
+                        format!("/nodes/{}/inputs/{}", node.id, input),
+                        Some("Connect an upstream edge for every declared node input".to_string()),
+                    );
+                }
+            }
             if let Some(decisions) = branch_decisions_by_node.get(node.id.as_str()) {
                 for decision in decisions {
                     if conditional_edge_counts
@@ -704,18 +1545,131 @@ impl Graph {
                 );
             }
             for tag in &meta.tags {
-                if !is_valid_canonical_name(tag) {
+                if !is_valid_tag_name(tag) {
                     emit_rule(
                         &mut diagnostics,
                         "E1026",
                         format!("illegal graph tag: {}", tag),
                         "/meta/tags".to_string(),
-                        Some("Use [a-zA-Z0-9_-] only".to_string()),
+                        Some("Use [a-zA-Z0-9_.:-] only".to_string()),
                     );
                 }
             }
         }
         diagnostics
+    }
+}
+
+fn validate_graph_inputs(graph: &Graph, diagnostics: &mut Vec<ValidationDiagnostic>) {
+    for (input_name, spec) in &graph.inputs {
+        validate_graph_input_spec(spec, &format!("/inputs/{input_name}"), diagnostics);
+    }
+}
+
+fn validate_graph_input_spec(
+    spec: &GraphInputSpec,
+    path: &str,
+    diagnostics: &mut Vec<ValidationDiagnostic>,
+) {
+    match &spec.kind {
+        GraphInputKind::Enum { values } => {
+            if values.is_empty() {
+                emit_rule(
+                    diagnostics,
+                    "E1034",
+                    "enum input must declare at least one allowed value".to_string(),
+                    format!("{path}/values"),
+                    Some("Provide one or more enum values".to_string()),
+                );
+            }
+            let mut seen = BTreeSet::new();
+            for value in values {
+                if !seen.insert(value) {
+                    emit_rule(
+                        diagnostics,
+                        "E1034",
+                        format!("duplicate enum value: {value}"),
+                        format!("{path}/values"),
+                        Some("Make enum values unique".to_string()),
+                    );
+                }
+            }
+        }
+        GraphInputKind::Array { items } => {
+            if let Some(item_kind) = items.as_deref() {
+                validate_graph_input_kind(item_kind, &format!("{path}/items"), diagnostics);
+            }
+        }
+        GraphInputKind::Object { properties } => {
+            if let Some(properties) = properties {
+                for (property_name, property_spec) in properties {
+                    validate_graph_input_spec(
+                        property_spec,
+                        &format!("{path}/properties/{property_name}"),
+                        diagnostics,
+                    );
+                }
+            }
+        }
+        GraphInputKind::String
+        | GraphInputKind::Integer
+        | GraphInputKind::Float
+        | GraphInputKind::Boolean
+        | GraphInputKind::Path => {}
+    }
+
+    if let Some(default) = &spec.default {
+        if let Err(error) = materialize_graph_input_value(spec, default, &format!("{path}/default"))
+        {
+            emit_rule(
+                diagnostics,
+                "E1033",
+                error.message,
+                error.path,
+                Some("Adjust the default value to match the declared input type".to_string()),
+            );
+        }
+    }
+}
+
+fn validate_graph_input_kind(
+    kind: &GraphInputKind,
+    path: &str,
+    diagnostics: &mut Vec<ValidationDiagnostic>,
+) {
+    match kind {
+        GraphInputKind::Enum { values } => {
+            if values.is_empty() {
+                emit_rule(
+                    diagnostics,
+                    "E1034",
+                    "enum input must declare at least one allowed value".to_string(),
+                    format!("{path}/values"),
+                    Some("Provide one or more enum values".to_string()),
+                );
+            }
+        }
+        GraphInputKind::Array { items } => {
+            if let Some(item_kind) = items.as_deref() {
+                validate_graph_input_kind(item_kind, &format!("{path}/items"), diagnostics);
+            }
+        }
+        GraphInputKind::Object { properties } => {
+            if let Some(properties) = properties {
+                for (property_name, property_spec) in properties {
+                    validate_graph_input_spec(
+                        property_spec,
+                        &format!("{path}/properties/{property_name}"),
+                        diagnostics,
+                    );
+                }
+            }
+        }
+        GraphInputKind::String
+        | GraphInputKind::Integer
+        | GraphInputKind::Float
+        | GraphInputKind::Boolean
+        | GraphInputKind::Path => {}
     }
 }
 
@@ -760,6 +1714,18 @@ fn validate_param_value(
 ) {
     match value {
         ParamValue::Ref(spec) => {
+            let source_count = usize::from(spec.graph_input.is_some())
+                + usize::from(spec.node_output.is_some())
+                + usize::from(spec.path_var.is_some());
+            if source_count != 1 {
+                emit_rule(
+                    diagnostics,
+                    "E1031",
+                    "reference must declare exactly one source".to_string(),
+                    path.to_string(),
+                    Some("Use exactly one of graph_input, node_output, or path_var".to_string()),
+                );
+            }
             if let Some(input) = &spec.graph_input {
                 if !graph.inputs.contains_key(input) {
                     emit_rule(
@@ -779,14 +1745,14 @@ fn validate_param_value(
                         .expect("checked above")
                         .outputs
                         .iter()
-                        .any(|output| output.name == node_output.path)
+                        .any(|output| output.name == node_output.output_name)
                 {
                     emit_rule(
                         diagnostics,
                         "E1021",
                         format!(
                             "unknown node output ref: {}.{}",
-                            node_output.node_id, node_output.path
+                            node_output.node_id, node_output.output_name
                         ),
                         path.to_string(),
                         None,
@@ -801,10 +1767,35 @@ fn validate_param_value(
                             "E1022",
                             format!(
                                 "forward node output ref: {}.{}",
-                                node_output.node_id, node_output.path
+                                node_output.node_id, node_output.output_name
                             ),
                             path.to_string(),
                             None,
+                        );
+                    }
+                }
+            }
+            if let Some(path_var) = &spec.path_var {
+                if !is_known_path_variable(path_var.name()) {
+                    emit_rule(
+                        diagnostics,
+                        "E1020",
+                        format!("unknown path variable ref: {}", path_var.name()),
+                        path.to_string(),
+                        Some(
+                            "Use one of run_dir, work_dir, inputs_dir, outputs_dir, or cache_dir"
+                                .to_string(),
+                        ),
+                    );
+                }
+                if let Some(relative_path) = path_var.relative_path() {
+                    if !is_valid_relative_path_suffix(relative_path) {
+                        emit_rule(
+                            diagnostics,
+                            "E1025",
+                            format!("invalid path variable suffix: {}", relative_path),
+                            path.to_string(),
+                            Some("Use a normalized relative path without '..'".to_string()),
                         );
                     }
                 }
@@ -836,6 +1827,10 @@ fn validate_param_value(
         }
         ParamValue::Literal(_) => {}
     }
+}
+
+fn is_valid_relative_path_suffix(path: &str) -> bool {
+    is_normalized_relative_path(path) && is_valid_output_path(path)
 }
 
 fn classify_rule_domain(code: &str) -> Option<ValidationDomain> {

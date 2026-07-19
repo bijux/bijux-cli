@@ -1,18 +1,17 @@
 use crate::commands::DagCli;
-use crate::{emit_json, parse_graph, read_file, ExitCode};
+use crate::{emit_json, load_graphs_or_emit, ExitCode};
 use bijux_dag_core::Severity;
 use serde_json::{json, Value};
-use std::path::Path;
+use std::path::PathBuf;
 
 pub(crate) fn handle_validate_command(
     cli: &DagCli,
-    dag: &Path,
+    dags: &[PathBuf],
     strict: bool,
     print_fingerprints: bool,
     explain: bool,
 ) -> Result<ExitCode, ExitCode> {
-    let input = read_file(dag)?;
-    let graph = parse_graph(&input)?;
+    let graph = load_graphs_or_emit(cli, "dag.validate", dags)?;
     let diags = graph.validate_with_warnings();
     let has_errors = diags.iter().any(|d| d.severity == Severity::Error);
     let has_warnings = diags.iter().any(|d| d.severity == Severity::Warning);
@@ -97,17 +96,49 @@ mod tests {
     use super::handle_validate_command;
     use crate::commands::DagCli;
     use clap::Parser;
+    use std::path::PathBuf;
 
     #[test]
     fn validate_route_rejects_missing_file_without_panic() {
-        let cli = DagCli::parse_from(["dag", "validate", "/missing.json"]);
-        let code = handle_validate_command(
-            &cli,
-            std::path::Path::new("/missing.json"),
-            false,
-            false,
-            false,
-        );
+        let cli = DagCli::parse_from(["bijux-dag", "validate", "/missing.json"]);
+        let code =
+            handle_validate_command(&cli, &[PathBuf::from("/missing.json")], false, false, false);
         assert!(code.is_err());
+    }
+
+    #[test]
+    fn validate_route_accepts_composed_graph_fragments() {
+        let dir = tempfile::tempdir().expect("tmp");
+        let foundation = dir.path().join("foundation.json");
+        let publication = dir.path().join("publication.json");
+        std::fs::write(
+            &foundation,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "nodes":[{"id":"extract","kind":"const","outputs":[{"name":"report","path":"extract/report.json"}],"params":{"value":"seed"}}],
+              "edges":[]
+            }"#,
+        )
+        .expect("write foundation");
+        std::fs::write(
+            &publication,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "nodes":[{"id":"publish","kind":"const","inputs":["report"],"outputs":[{"name":"out","path":"publish/out.json"}],"params":{"seed":{"node_output":{"node_id":"extract","output_name":"report"}}}}],
+              "edges":[{"from":{"node_id":"extract","port":"report"},"to":{"node_id":"publish","port":"report"}}]
+            }"#,
+        )
+        .expect("write publication");
+
+        let cli = DagCli::parse_from([
+            "bijux-dag",
+            "--json",
+            "validate",
+            foundation.to_string_lossy().as_ref(),
+            publication.to_string_lossy().as_ref(),
+        ]);
+        let code = handle_validate_command(&cli, &[foundation, publication], false, false, false)
+            .expect("validate");
+        assert_eq!(code, std::process::ExitCode::SUCCESS);
     }
 }

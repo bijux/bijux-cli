@@ -1,7 +1,7 @@
 //! Shared test helpers for workspace crates.
 
 pub mod fake_adapter;
-pub mod iteration10_scenarios;
+pub mod product_scenarios;
 pub mod workflows;
 
 use bijux_dag_artifacts::{Manifest, NodeTrace};
@@ -17,10 +17,11 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub use fake_adapter::{FakeAdapterExecution, FakeAdapterHarness, FakeAdapterScenario};
+pub use product_scenarios::*;
 pub use workflows::{
     collect_run_dir_snapshot, fixture_path_string, fixture_snapshot_path,
-    graph_branch_join_fixture, graph_map_reduce_fixture, update_or_assert_snapshot,
-    write_graph_fixture, DagFixture,
+    graph_branch_join_fixture, graph_map_reduce_fixture, graph_semantic_map_reduce_fixture,
+    update_or_assert_snapshot, write_graph_fixture, DagFixture,
 };
 
 pub fn load_workspace_fixture_text(manifest_dir: &str, relative_path: &str) -> String {
@@ -326,8 +327,10 @@ fn graph_from_nodes(nodes: Vec<Node>, edges: Vec<(&str, &str, &str, &str)>) -> G
     Graph {
         spec: SPEC_VERSION.to_string(),
         meta: None,
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
+        subgraphs: std::collections::BTreeMap::new(),
+        subgraph_instances: Vec::new(),
         nodes,
         edges: edges
             .into_iter()
@@ -348,18 +351,20 @@ fn const_node(id: &str) -> Node {
         kind: NodeKind::Const,
         semantic_kind: SemanticNodeKind::Task,
         inputs: vec![],
-        outputs: vec![FileOutput { name: "out".to_string(), path: format!("out_{id}") }],
+        outputs: vec![FileOutput::new("out".to_string(), format!("out_{id}"))],
         params: param_object(vec![("value", Value::from("ok"))]),
         container: None,
         timeout_ms: None,
         resources: None,
         tags: vec![],
         retry: RetryPolicy::default(),
+        cache: Default::default(),
         effects: vec![],
         env_allowlist: vec![],
         group: None,
         trigger_rule: TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     }
 }
 
@@ -369,7 +374,7 @@ fn shell_node(id: &str) -> Node {
         kind: NodeKind::Shell,
         semantic_kind: SemanticNodeKind::Task,
         inputs: vec!["in".to_string()],
-        outputs: vec![FileOutput { name: "out".to_string(), path: format!("out_{id}") }],
+        outputs: vec![FileOutput::new("out".to_string(), format!("out_{id}"))],
         params: param_object(vec![(
             "argv",
             Value::Array(vec![
@@ -383,11 +388,13 @@ fn shell_node(id: &str) -> Node {
         resources: None,
         tags: vec![],
         retry: RetryPolicy::default(),
+        cache: Default::default(),
         effects: vec![Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
         trigger_rule: TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     }
 }
 

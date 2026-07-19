@@ -1,5 +1,4 @@
 use bijux_dag_artifacts::{Manifest, NodeTrace, RunSummary};
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use serde_json::json;
@@ -30,8 +29,13 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
             .map(|idx| bijux_dag_artifacts::OutputSummary {
                 node_id: format!("n{idx}"),
                 node_fingerprint: format!("fp-{idx}"),
-                file: format!("out-{idx}"),
+                name: format!("out-{idx}"),
+                path: format!("node-{idx}/out-{idx}.bin"),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+                size_bytes: idx as u64,
                 sha256: "hash".to_string(),
+                promotable: false,
             })
             .collect(),
         node_counts: bijux_dag_artifacts::NodeCounts {
@@ -39,16 +43,21 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
             failed: 0,
             skipped: 0,
             cached: 0,
+            cancelled: 0,
         },
         policy: bijux_dag_artifacts::PolicyInfo {
             deny_network: false,
             deny_env: false,
             deny_clock: false,
             clean_env: false,
+            container_image_reference_policy:
+                bijux_dag_artifacts::ContainerImageReferencePolicy::RequireDigest,
         },
         cache_mode: None,
         cache_dir: None,
         run_timeout_ms: None,
+        run_timeout_behavior: None,
+        run_cancellation_cause: None,
         run_metadata: None,
         run_summary: Some(RunSummary {
             total_nodes: 200,
@@ -56,6 +65,8 @@ fn resource_manifest_does_not_duplicate_output_summaries_pathologically() {
             failed: 0,
             skipped: 0,
             cached: 0,
+            cancelled: 0,
+            promoted_outputs: Vec::new(),
         }),
     };
 
@@ -82,17 +93,53 @@ fn resource_retry_trace_event_volume_stays_bounded() {
         resources: None,
         inputs_index: None,
         resolved_params: Some(json!({"argv":["/bin/sh","-c","exit 1"]})),
+        exit_code: None,
+        stdout: None,
+        stderr: None,
+        outputs: Vec::new(),
         container: None,
         cache_proof: None,
+        cache_identity: None,
         branch_decision: None,
+        trigger_evaluation: Some(bijux_dag_artifacts::TriggerEvaluation {
+            trigger_rule: "all_success".to_string(),
+            satisfied: false,
+            reason: "requires every upstream to complete in success or cached status".to_string(),
+            parent_statuses: vec![bijux_dag_artifacts::TriggerParentStatus {
+                node_id: "extract".to_string(),
+                status: "failed".to_string(),
+            }],
+        }),
         skip_reason: None,
         failure: Some(bijux_dag_artifacts::FailureInfo {
+            class: Some(bijux_dag_artifacts::FailureClass::Execution),
             kind: "execution".to_string(),
             code: "EXEC_NON_ZERO".to_string(),
             message: "failed".to_string(),
             details: None,
         }),
         transition_cause: Some("retry_exhausted".to_string()),
+        lifecycle_state: Some("failed".to_string()),
+        lifecycle_transitions: vec![
+            bijux_dag_artifacts::NodeLifecycleTransition {
+                from_state: "pending".to_string(),
+                to_state: "eligible".to_string(),
+                cause: "scheduler_eligible".to_string(),
+                unix_ms: 1,
+            },
+            bijux_dag_artifacts::NodeLifecycleTransition {
+                from_state: "eligible".to_string(),
+                to_state: "queued".to_string(),
+                cause: "scheduler_queued".to_string(),
+                unix_ms: 1,
+            },
+            bijux_dag_artifacts::NodeLifecycleTransition {
+                from_state: "queued".to_string(),
+                to_state: "failed".to_string(),
+                cause: "execution_failed".to_string(),
+                unix_ms: 2,
+            },
+        ],
         replay_provenance: None,
     };
 

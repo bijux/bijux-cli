@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -16,10 +15,13 @@ use thiserror as _;
 
 use bijux_dag_app::{dag_command, dag_run};
 use bijux_dag_artifacts::RunDir;
-use bijux_dag_testkit::create_corrupted_run_dir;
 use serde_json::json;
 use std::fs;
 use std::path::{Path, PathBuf};
+
+mod support;
+
+use support::create_corrupted_run_dir;
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
@@ -53,7 +55,7 @@ fn fault_permission_denied_run_dir_creation() {
     }
 
     let result = run_matches(&[
-        "dag",
+        "bijux-dag",
         "run",
         graph.to_string_lossy().as_ref(),
         "--out",
@@ -78,7 +80,7 @@ fn fault_disk_pressure_simulated_write_failure() {
 fn fault_trace_file_missing_detected() {
     let temp = tempfile::tempdir().expect("tmp");
     let run = create_corrupted_run_dir(temp.path(), "missing_trace");
-    let result = run_matches(&["dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
+    let result = run_matches(&["bijux-dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
     assert!(result.is_err());
 }
 
@@ -86,7 +88,7 @@ fn fault_trace_file_missing_detected() {
 fn fault_outputs_index_corruption_detected() {
     let temp = tempfile::tempdir().expect("tmp");
     let run = create_corrupted_run_dir(temp.path(), "tampered_outputs_index");
-    let result = run_matches(&["dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
+    let result = run_matches(&["bijux-dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
     assert!(result.is_err());
 }
 
@@ -113,7 +115,7 @@ fn fault_subprocess_non_zero_exit() {
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
     let result = run_matches(&[
-        "dag",
+        "bijux-dag",
         "run",
         graph_path.to_string_lossy().as_ref(),
         "--out",
@@ -146,7 +148,7 @@ fn fault_subprocess_timeout_classification() {
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
     let result = run_matches(&[
-        "dag",
+        "bijux-dag",
         "run",
         graph_path.to_string_lossy().as_ref(),
         "--out",
@@ -178,7 +180,7 @@ fn fault_subprocess_killed_signal_like_failure() {
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
     let result = run_matches(&[
-        "dag",
+        "bijux-dag",
         "run",
         graph_path.to_string_lossy().as_ref(),
         "--out",
@@ -192,7 +194,7 @@ fn fault_missing_required_env_var() {
     let temp = tempfile::tempdir().expect("tmp");
     let graph_path = temp.path().join("env-missing.json");
     let graph = json!({
-      "spec":"dag/v0.1",
+      "spec":"bijux-dag/v0.1",
       "meta":{"name":"env"},
       "nodes":[
         {
@@ -201,7 +203,8 @@ fn fault_missing_required_env_var() {
           "inputs":[],
           "outputs":[{"name":"out","path":"out"}],
           "params":{"argv":["/bin/sh","-c","test -n \"$REQUIRED_X\" && echo ok > ../outputs/out"]},
-          "effects":["filesystem","env"]
+          "effects":["filesystem","env"],
+          "env_allowlist":["REQUIRED_X"]
         }
       ],
       "edges":[]
@@ -210,7 +213,7 @@ fn fault_missing_required_env_var() {
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
     let result = run_matches(&[
-        "dag",
+        "bijux-dag",
         "run",
         graph_path.to_string_lossy().as_ref(),
         "--out",
@@ -218,6 +221,7 @@ fn fault_missing_required_env_var() {
         "--clean-env",
     ]);
     assert!(result.is_err());
+    assert_eq!(fs::read_dir(&out_dir).expect("run root entries").count(), 0);
 }
 
 #[test]
@@ -225,7 +229,7 @@ fn fault_malformed_graph_configuration() {
     let temp = tempfile::tempdir().expect("tmp");
     let bad = temp.path().join("bad.json");
     fs::write(&bad, "{not-json").expect("write bad");
-    let result = run_matches(&["dag", "validate", bad.to_string_lossy().as_ref()]);
+    let result = run_matches(&["bijux-dag", "validate", bad.to_string_lossy().as_ref()]);
     assert!(result.is_err());
 }
 
@@ -233,7 +237,7 @@ fn fault_malformed_graph_configuration() {
 fn fault_manifest_tamper_after_completion() {
     let temp = tempfile::tempdir().expect("tmp");
     let run = create_corrupted_run_dir(temp.path(), "truncated_manifest");
-    let result = run_matches(&["dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
+    let result = run_matches(&["bijux-dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
     assert!(result.is_err());
 }
 
@@ -241,7 +245,7 @@ fn fault_manifest_tamper_after_completion() {
 fn fault_missing_trace_referenced_by_manifest() {
     let temp = tempfile::tempdir().expect("tmp");
     let run = create_corrupted_run_dir(temp.path(), "missing_trace");
-    let result = run_matches(&["dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
+    let result = run_matches(&["bijux-dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
     assert!(result.is_err());
 }
 
@@ -251,8 +255,13 @@ fn fault_stale_cache_metadata_mismatch() {
     let cache = temp.path().join("cache");
     fs::create_dir_all(cache.join("abc")).expect("mkdir");
     fs::write(cache.join("abc").join("meta.json"), "{\"fingerprint\":\"old\"}").expect("write");
-    let result =
-        run_matches(&["dag", "cache", "verify", "--cache-dir", cache.to_string_lossy().as_ref()]);
+    let result = run_matches(&[
+        "bijux-dag",
+        "cache",
+        "verify",
+        "--cache-dir",
+        cache.to_string_lossy().as_ref(),
+    ]);
     assert!(result.is_err() || result.is_ok());
 }
 
@@ -260,10 +269,12 @@ fn fault_stale_cache_metadata_mismatch() {
 fn fault_run_id_collision() {
     let temp = tempfile::tempdir().expect("tmp");
     let first = RunDir::create_with_id(temp.path(), "same-id").expect("run1");
-    let second = RunDir::create_with_id(temp.path(), "same-id").expect("run2");
     let _ = first.finalize();
-    let collision = second.finalize();
-    assert!(collision.is_err() || collision.is_ok());
+    let second = RunDir::create_with_id(temp.path(), "same-id");
+    assert!(
+        second.is_err() || second.and_then(|run| run.finalize()).is_err(),
+        "run id collision should be rejected when reserving or finalizing duplicate paths"
+    );
 }
 
 #[test]
@@ -279,7 +290,7 @@ fn fault_latest_alias_race() {
 fn fault_no_silent_half_valid_artifacts() {
     let temp = tempfile::tempdir().expect("tmp");
     let run = create_corrupted_run_dir(temp.path(), "tampered_outputs_index");
-    let result = run_matches(&["dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
+    let result = run_matches(&["bijux-dag", "verify", run.to_string_lossy().as_ref(), "--deep"]);
     assert!(result.is_err());
 }
 
@@ -306,7 +317,7 @@ fn fault_subprocess_malformed_output_payload() {
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
     let result = run_matches(&[
-        "dag",
+        "bijux-dag",
         "run",
         graph_path.to_string_lossy().as_ref(),
         "--out",
@@ -338,7 +349,7 @@ fn fault_partial_run_cleanup_after_early_failure() {
     let out_dir = temp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
     let _ = run_matches(&[
-        "dag",
+        "bijux-dag",
         "run",
         graph_path.to_string_lossy().as_ref(),
         "--out",

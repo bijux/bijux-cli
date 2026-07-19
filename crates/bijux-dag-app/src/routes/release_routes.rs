@@ -493,13 +493,30 @@ fn node_signature(node: &Node) -> Vec<String> {
         .map(|output| format!("{}->{}", output.name, output.path))
         .collect::<Vec<_>>();
     signature.push(format!("outputs:{outputs:?}"));
+    signature.push(format!("params:{:?}", node.params));
     signature.push(format!("timeout:{:?}", node.timeout_ms));
     signature.push(format!("resources:{:?}", node.resources.as_ref().map(|r| (r.cpu, r.mem_mb))));
     signature.push(format!("retry:{}:{}", node.retry.max_attempts, node.retry.backoff_ms));
+    signature.push(format!("cache:{}:{:?}", node.cache.enabled, node.cache.reason));
     let mut effects =
         node.effects.iter().map(|effect| format!("{effect:?}").to_lowercase()).collect::<Vec<_>>();
     effects.sort();
     signature.push(format!("effects:{effects:?}"));
+    let mut env_allowlist = node.env_allowlist.clone();
+    env_allowlist.sort();
+    signature.push(format!("env_allowlist:{env_allowlist:?}"));
+    let container_signature = node.container.as_ref().map(|container| {
+        let mut env_allowlist = container.env_allowlist.clone();
+        env_allowlist.sort();
+        (
+            container.image.clone(),
+            container.argv.clone(),
+            env_allowlist,
+            container.workdir.clone(),
+            container.engine.clone(),
+        )
+    });
+    signature.push(format!("container:{container_signature:?}"));
     signature
 }
 
@@ -1212,6 +1229,139 @@ mod tests {
         let report = super::classify_payload(&before, &after).expect("report");
         assert_eq!(report.compatibility_class, "breaking");
         assert!(report.changed_nodes.contains_key("a"));
+    }
+
+    #[test]
+    fn release_classification_tracks_cache_and_env_contract_changes() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let before = dir.path().join("before.json");
+        let after = dir.path().join("after.json");
+        std::fs::write(
+            &before,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"wf","owners":["team"],"tags":["prod"]},
+              "nodes":[{
+                "id":"publish",
+                "kind":"shell",
+                "inputs":[],
+                "outputs":[{"name":"report","path":"report.json"}],
+                "params":{"argv":["/bin/true"]},
+                "cache":{"enabled":true},
+                "effects":["env","filesystem"],
+                "env_allowlist":["REPORT_TOKEN"]
+              }],
+              "edges":[]
+            }"#,
+        )
+        .expect("write before");
+        std::fs::write(
+            &after,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"wf","owners":["team"],"tags":["prod"]},
+              "nodes":[{
+                "id":"publish",
+                "kind":"shell",
+                "inputs":[],
+                "outputs":[{"name":"report","path":"report.json"}],
+                "params":{"argv":["/bin/true"]},
+                "cache":{"enabled":false,"reason":"publishes externally visible state"},
+                "effects":["env","filesystem"],
+                "env_allowlist":["REPORT_TOKEN","REPORT_CHANNEL"]
+              }],
+              "edges":[]
+            }"#,
+        )
+        .expect("write after");
+
+        let report = super::classify_payload(&before, &after).expect("report");
+        assert_eq!(report.compatibility_class, "risky");
+        let changes = report.changed_nodes.get("publish").expect("publish changes");
+        assert!(changes.iter().any(|change| change.starts_with("cache:")));
+        assert!(changes.iter().any(|change| change.starts_with("env_allowlist:")));
+    }
+
+    #[test]
+    fn release_classification_tracks_param_reference_changes() {
+        let dir = tempfile::tempdir().expect("tmpdir");
+        let before = dir.path().join("before.json");
+        let after = dir.path().join("after.json");
+        std::fs::write(
+            &before,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"wf","owners":["team"],"tags":["prod"]},
+              "inputs":{"region":"eu","dataset_uri":"s3://warehouse/catalog"},
+              "nodes":[
+                {
+                  "id":"extract",
+                  "kind":"const",
+                  "inputs":[],
+                  "outputs":[{"name":"request","path":"request.json"}],
+                  "params":{
+                    "value":{
+                      "dataset_uri":{"graph_input":"dataset_uri"},
+                      "region":{"graph_input":"region"}
+                    }
+                  }
+                },
+                {
+                  "id":"publish",
+                  "kind":"shell",
+                  "inputs":["request"],
+                  "outputs":[{"name":"report","path":"report.json"}],
+                  "params":{
+                    "report_source":{"node_output":{"node_id":"extract","output_name":"request"}},
+                    "argv":["/bin/true"]
+                  }
+                }
+              ],
+              "edges":[{"from":{"node_id":"extract","port":"request"},"to":{"node_id":"publish","port":"request"}}]
+            }"#,
+        )
+        .expect("write before");
+        std::fs::write(
+            &after,
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "meta":{"name":"wf","owners":["team"],"tags":["prod"]},
+              "inputs":{"region":"eu","dataset_uri":"s3://warehouse/catalog","tenant":"atlas"},
+              "nodes":[
+                {
+                  "id":"extract",
+                  "kind":"const",
+                  "inputs":[],
+                  "outputs":[{"name":"request","path":"request.json"}],
+                  "params":{
+                    "value":{
+                      "dataset_uri":{"graph_input":"dataset_uri"},
+                      "tenant":{"graph_input":"tenant"}
+                    }
+                  }
+                },
+                {
+                  "id":"publish",
+                  "kind":"shell",
+                  "inputs":["request"],
+                  "outputs":[{"name":"report","path":"report.json"}],
+                  "params":{
+                    "report_source":{"node_output":{"node_id":"extract","output_name":"report"}},
+                    "argv":["/bin/true"]
+                  }
+                }
+              ],
+              "edges":[{"from":{"node_id":"extract","port":"request"},"to":{"node_id":"publish","port":"request"}}]
+            }"#,
+        )
+        .expect("write after");
+
+        let report = super::classify_payload(&before, &after).expect("report");
+        assert_eq!(report.compatibility_class, "risky");
+        let extract_changes = report.changed_nodes.get("extract").expect("extract changes");
+        assert!(extract_changes.iter().any(|change| change.starts_with("params:")));
+        let publish_changes = report.changed_nodes.get("publish").expect("publish changes");
+        assert!(publish_changes.iter().any(|change| change.starts_with("params:")));
     }
 
     #[test]

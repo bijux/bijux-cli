@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -142,7 +141,7 @@ fn replay_partial_selection_emits_dry_run_plan_with_selectors() {
     let tmp = tempfile::tempdir().expect("tmp");
     let out_dir = tmp.path().join("runs");
     fs::create_dir_all(&out_dir).expect("mkdir");
-    let graph = root.join("crates/bijux-dag-core/tests/snapshots/selective_replay.dag.json");
+    let graph = root.join("crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json");
 
     let source = run_json(
         &[
@@ -174,4 +173,152 @@ fn replay_partial_selection_emits_dry_run_plan_with_selectors() {
     assert!(dry["data"]["dry_run_plan"]["selectors"]["select"]
         .as_array()
         .is_some_and(|v| v.iter().any(|entry| entry == "id:replay_check")));
+}
+
+#[test]
+fn replay_accepts_source_run_id_with_explicit_run_root() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = root.join("evidence/authoring/examples/hello.dag.json");
+
+    let _source = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "source-by-id",
+        ],
+        &root,
+    );
+
+    let replay = run_json(
+        &[
+            "replay",
+            "--json",
+            "--source-run-id",
+            "source-by-id",
+            "--source-run-root",
+            &output_path_string(&out_dir),
+            "--out",
+            &output_path_string(&out_dir),
+            "--dry-run",
+        ],
+        &root,
+    );
+    assert_eq!(replay["ok"], true);
+    assert_eq!(replay["data"]["dry_run_plan"]["source_run_id"], "source-by-id");
+}
+
+#[test]
+fn replay_rejects_corrupt_upstream_artifact_at_rerun_boundary() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = root.join("crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json");
+
+    let source = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "boundary-source",
+        ],
+        &root,
+    );
+    let source_run = run_dir_from_response(&source);
+    fs::write(source_run.join("nodes/source/outputs/source/out"), "corrupt")
+        .expect("corrupt source");
+
+    let (code, stdout, stderr) = run_dag(
+        &[
+            "replay",
+            "--json",
+            "--source-run-id",
+            "boundary-source",
+            "--source-run-root",
+            &output_path_string(&out_dir),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "boundary-replay",
+            "--from-node",
+            "branch_a",
+        ],
+        &root,
+    );
+    assert_eq!(code, 3, "stdout={stdout} stderr={stderr}");
+    let payload: Value = serde_json::from_str(&stdout).expect("parse replay rejection");
+    assert_eq!(payload["ok"], false);
+    assert_eq!(
+        payload["data"]["message"],
+        "upstream artifact verification failed for the requested replay boundary"
+    );
+    assert_eq!(payload["data"]["upstream_artifact_verification"]["verified"], false);
+    assert!(payload["data"]["upstream_artifact_verification"]["checks"]
+        .as_array()
+        .is_some_and(|checks| checks.iter().any(|check| check["verified"] == false)));
+}
+
+#[test]
+fn replay_reports_node_scoped_diff_for_single_rerun_root() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = root.join("crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json");
+
+    let source = run_json(
+        &[
+            "run",
+            "--json",
+            &output_path_string(&graph),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "node-diff-source",
+        ],
+        &root,
+    );
+    let source_run = run_dir_from_response(&source);
+    let trace_path = source_run.join("nodes/branch_a/trace.json");
+    let mut trace: Value =
+        serde_json::from_str(&fs::read_to_string(&trace_path).expect("read trace"))
+            .expect("parse trace");
+    trace["status"] = Value::String("failed".to_string());
+    fs::write(&trace_path, serde_json::to_vec_pretty(&trace).expect("encode trace"))
+        .expect("write trace");
+
+    let replay = run_json(
+        &[
+            "replay",
+            "--json",
+            "--source-run-id",
+            "node-diff-source",
+            "--source-run-root",
+            &output_path_string(&out_dir),
+            "--out",
+            &output_path_string(&out_dir),
+            "--run-id",
+            "node-diff-replay",
+            "--from-node",
+            "branch_a",
+        ],
+        &root,
+    );
+    assert_eq!(replay["ok"], true);
+    assert_eq!(replay["data"]["node_rerun_diff"]["node_id"], "branch_a");
+    assert_eq!(replay["data"]["node_rerun_diff"]["summary"]["node"], "branch_a");
+    assert_eq!(replay["data"]["node_rerun_diff"]["summary"]["equivalent"], false);
+    assert!(replay["data"]["node_rerun_diff"]["causal_chain"]
+        .as_array()
+        .is_some_and(|chain| chain.len() > 1));
 }

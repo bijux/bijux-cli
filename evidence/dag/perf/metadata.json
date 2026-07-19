@@ -1,7 +1,7 @@
 {
   "version": "2",
   "owner": "runtime-foundation",
-  "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md",
+  "contract_reference": "evidence/perf/CONTRACT.md",
   "release_relevant_set": [
     "evidence/perf/scenarios/tiny_canonical.json",
     "evidence/perf/scenarios/medium_canonical.json",
@@ -21,7 +21,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "evidence/perf/baselines/regression_thresholds.json#tiny-canonical",
       "release_blocking": true,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/medium_canonical.json": {
       "scenario_class": "core",
@@ -32,7 +32,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "evidence/perf/baselines/regression_thresholds.json#medium-canonical",
       "release_blocking": true,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/wide_scheduler_overhead.json": {
       "scenario_class": "core",
@@ -43,7 +43,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "evidence/perf/baselines/regression_thresholds.json#wide-scheduler-overhead",
       "release_blocking": true,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/cache_heavy_canonical.json": {
       "scenario_class": "core",
@@ -54,7 +54,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "evidence/perf/baselines/regression_thresholds.json#cache-heavy-canonical",
       "release_blocking": true,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/replay_verification_cost.json": {
       "scenario_class": "core",
@@ -65,7 +65,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "evidence/perf/baselines/regression_thresholds.json#replay-verification-cost",
       "release_blocking": true,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/manifest_trace_write_amplification.json": {
       "scenario_class": "core",
@@ -76,7 +76,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "evidence/perf/baselines/regression_thresholds.json#manifest-trace-write-amplification",
       "release_blocking": true,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/memory_execute_many_nodes.json": {
       "scenario_class": "core",
@@ -87,7 +87,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "evidence/perf/baselines/regression_thresholds.json#memory-execute-many-nodes",
       "release_blocking": true,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/deep_canonical.json": {
       "scenario_class": "advisory",
@@ -98,7 +98,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/replay_canonical.json": {
       "scenario_class": "advisory",
@@ -109,7 +109,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/many_small_nodes_scheduler_overhead.json": {
       "scenario_class": "advisory",
@@ -120,7 +120,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/cache_heavy_lookup.json": {
       "scenario_class": "experimental",
@@ -131,7 +131,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/cache_metadata_growth.json": {
       "scenario_class": "experimental",
@@ -142,7 +142,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/deep_scheduler_overhead.json": {
       "scenario_class": "experimental",
@@ -153,7 +153,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/few_heavy_nodes_orchestration_overhead.json": {
       "scenario_class": "experimental",
@@ -164,7 +164,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/manifest_trace_volume_growth.json": {
       "scenario_class": "experimental",
@@ -175,7 +175,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/medium_execute_local.json": {
       "scenario_class": "experimental",
@@ -186,7 +186,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/memory_import_export_path.json": {
       "scenario_class": "experimental",
@@ -197,7 +197,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/memory_parse_validate_large_graph.json": {
       "scenario_class": "experimental",
@@ -208,7 +208,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/memory_replay_path.json": {
       "scenario_class": "experimental",
@@ -219,7 +219,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/resource_budgets.json": {
       "scenario_class": "experimental",
@@ -230,7 +230,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/tiny_parse_validate.json": {
       "scenario_class": "experimental",
@@ -241,7 +241,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/wide_canonical.json": {
       "scenario_class": "experimental",
@@ -252,7 +252,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/tenk_nodes_canonical.json": {
       "scenario_class": "advisory",
@@ -263,7 +263,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/large_artifact_canonical.json": {
       "scenario_class": "advisory",
@@ -274,7 +274,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/failure_injection_canonical.json": {
       "scenario_class": "advisory",
@@ -285,7 +285,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/diff_canonical.json": {
       "scenario_class": "advisory",
@@ -296,7 +296,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/portability_canonical.json": {
       "scenario_class": "advisory",
@@ -307,7 +307,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/determinism_score.json": {
       "scenario_class": "experimental",
@@ -318,7 +318,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/replay_fidelity_score.json": {
       "scenario_class": "experimental",
@@ -329,7 +329,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/explainability_quality.json": {
       "scenario_class": "experimental",
@@ -340,7 +340,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/artifact_lineage_completeness.json": {
       "scenario_class": "experimental",
@@ -351,7 +351,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/portability_success_rate.json": {
       "scenario_class": "experimental",
@@ -362,7 +362,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/inspect_history_latency.json": {
       "scenario_class": "advisory",
@@ -373,7 +373,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/cli_validate_latency.json": {
       "scenario_class": "experimental",
@@ -384,7 +384,7 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     },
     "evidence/perf/scenarios/cli_validate_memory.json": {
       "scenario_class": "experimental",
@@ -395,11 +395,11 @@
       "threshold_owner": "dev-control-plane",
       "threshold_reference": "",
       "release_blocking": false,
-      "contract_reference": "docs/spec/PERFORMANCE_CONTRACT.md"
+      "contract_reference": "evidence/perf/CONTRACT.md"
     }
   },
   "baselines": [
-    "evidence/perf/baselines/example_v1.json",
+    "evidence/perf/baselines/benchmark_report_reference_v1.json",
     "evidence/perf/baselines/regression_thresholds.json",
     "evidence/perf/baselines/resource_trend_v1.json"
   ],

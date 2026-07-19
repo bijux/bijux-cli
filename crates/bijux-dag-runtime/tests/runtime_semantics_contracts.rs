@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -13,11 +12,12 @@ use thiserror as _;
 use bijux_dag_runtime::{
     append_audit_event, artifact_commit_guaranteed, artifact_lineage_complete,
     cache_entry_invalidated, cache_entry_valid, cancellation_is_terminal, classify_failure,
-    dependency_resolution_is_complete, deterministic_schedule_order, fairness_is_satisfied,
-    recovery_action_required, replay_equivalent, retry_allowed, run_manifest_valid,
-    timeout_triggered, trace_event_count_by_category, CacheValidationInput,
-    ManifestVerificationInput, ReadyNode, RecoveryInput, RetryPolicySemantics, RuntimeAuditEvent,
-    RuntimeFailureClass,
+    dependency_resolution_is_complete, deterministic_schedule_order, evaluate_retry_decision,
+    fairness_is_satisfied, recovery_action_required, replay_equivalent, retry_allowed,
+    retry_observation, run_manifest_valid, timeout_triggered, trace_event_count_by_category,
+    BackoffStrategy, CacheValidationInput, ManifestVerificationInput, ReadyNode, RecoveryInput,
+    RetryPolicySemantics, RetryPolicyV2, RuntimeAuditEvent, RuntimeFailureClass,
+    TimeoutRetryPolicy,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -110,4 +110,65 @@ fn runtime_audit_and_trace_events_are_recorded_and_grouped() {
     let grouped = trace_event_count_by_category(&events);
     assert_eq!(grouped.get("execution"), Some(&1));
     assert_eq!(grouped.get("failure"), Some(&1));
+}
+
+#[test]
+fn retry_decision_vetoes_policy_failures_and_respects_timeout_override() {
+    let policy = RetryPolicyV2 {
+        max_attempts: 2,
+        backoff_strategy: BackoffStrategy::Linear,
+        backoff_ms: 25,
+        jitter_ms: 0,
+        timeout_retry_policy: TimeoutRetryPolicy::Never,
+        retryable_failure_classes: vec![],
+        retryable_exit_codes: vec![137],
+    };
+
+    let policy_failure =
+        evaluate_retry_decision("worker", &policy, 1, &retry_observation("policy", None, None));
+    assert!(!policy_failure.retryable);
+    assert_eq!(policy_failure.reason, "policy_failures_are_non_retryable");
+
+    let timeout_failure = evaluate_retry_decision(
+        "worker",
+        &policy,
+        1,
+        &retry_observation("timeout", None, Some(137)),
+    );
+    assert!(!timeout_failure.retryable);
+    assert_eq!(timeout_failure.reason, "timeout_retry_policy_denies_timeout_retry");
+}
+
+#[test]
+fn retry_decision_can_match_exit_code_rules_and_enforce_budget() {
+    let policy = RetryPolicyV2 {
+        max_attempts: 1,
+        backoff_strategy: BackoffStrategy::Linear,
+        backoff_ms: 25,
+        jitter_ms: 0,
+        timeout_retry_policy: TimeoutRetryPolicy::ByFailureClass,
+        retryable_failure_classes: vec![],
+        retryable_exit_codes: vec![75],
+    };
+
+    let first = evaluate_retry_decision(
+        "worker",
+        &policy,
+        1,
+        &retry_observation("execution", Some("EXEC_FAIL"), Some(75)),
+    );
+    assert!(first.retryable);
+    assert!(first.retry_allowed);
+    assert_eq!(first.reason, "retryable_exit_code_matched");
+    assert_eq!(first.matched_exit_code, Some(75));
+
+    let exhausted = evaluate_retry_decision(
+        "worker",
+        &policy,
+        2,
+        &retry_observation("execution", Some("EXEC_FAIL"), Some(75)),
+    );
+    assert!(exhausted.retryable);
+    assert!(!exhausted.retry_allowed);
+    assert_eq!(exhausted.reason, "retry_budget_exhausted");
 }

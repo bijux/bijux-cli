@@ -1,0 +1,137 @@
+---
+title: Compatibility Matrix
+audience: mixed
+type: interface
+status: canonical
+owner: bijux-dag-docs
+last_reviewed: 2026-07-19
+---
+
+# Compatibility Matrix
+
+This matrix states which version identifiers `bijux-dag` accepts today and
+which it refuses before interpreting payload contents. The machine-readable
+authority is
+`contracts/foundation/version_compatibility_lanes.v1.json`; this page explains
+the DAG-owned subset for operators and integration authors.
+
+## How To Read A Lane
+
+| Classification | Meaning |
+| --- | --- |
+| current | canonical identifier emitted and consumed by this release |
+| accepted previous | explicit alias or older identifier accepted by the current reader |
+| refused | known unsupported identifier that must fail closed |
+
+Acceptance means the reader recognizes the declared version. It does not
+promise that malformed payloads, missing required evidence, or incompatible
+semantics will be repaired automatically.
+
+## Reader Decision
+
+```mermaid
+flowchart LR
+    input["Versioned graph, run, index, or bundle"]
+    declared["Read declared identifier"]
+    lane{"Compatibility lane"}
+    parse["Parse current contract"]
+    validate["Validate shape, semantics, and integrity"]
+    accept["Accept for bounded use"]
+    refuse["Refuse before interpretation"]
+
+    input --> declared --> lane
+    lane -->|current or accepted alias| parse --> validate
+    lane -->|unknown or refused| refuse
+    validate -->|complete| accept
+    validate -->|malformed, incomplete, or corrupt| refuse
+```
+
+Version recognition is the first gate, not the last. Current identifiers still
+require full schema, semantic, path, and integrity validation before the
+payload can support execution, replay, or comparison.
+
+## DAG Compatibility Lanes
+
+| Surface | Current identifiers | Accepted previous identifiers | Explicitly refused identifiers | Executable evidence |
+| --- | --- | --- | --- | --- |
+| graph schema and specification | `bijux-dag/v0.1` | `v1`, `v0.1`, `0.1` | `v9`, `bijux-dag/v9` | `evidence/compat/graph_schema/` |
+| run manifest | `run-manifest/v0.1` | none | `run-manifest/v0`, `run-manifest/v2` | `evidence/compat/run_dir/` |
+| run-dir format and artifact index | `run-dir-schema/v0.1` | none | `run-dir-schema/v0`, `run-dir-schema/v2` | `evidence/compat/run_dir/` |
+| export bundle and proof bundle | `export-bundle/v0.1`, `proof-bundle/v0.1` | none | corresponding `v0` and `v2` bundle identifiers | `evidence/compat/export_bundle/` |
+
+The graph spellings in the accepted column are aliases for the same retained
+graph contract, not four independent schema generations. Run manifests,
+artifact indexes, and replay bundles have no accepted predecessor lane in the
+current contract.
+
+## Producer And Consumer Direction
+
+Writers emit only the canonical current identifier. Readers may accept the
+explicit previous aliases listed in the machine contract. This asymmetry keeps
+new output unambiguous while allowing a bounded read window.
+
+| Operation | Required behavior |
+| --- | --- |
+| write a new graph, run, index, or bundle | emit the current canonical identifier |
+| read an accepted graph alias | normalize it to the current in-memory contract without claiming a separate schema generation |
+| read a future or refused identifier | fail before trusting payload fields |
+| migrate retained evidence | write a new destination through an explicit governed migration; preserve the source |
+| compare differently versioned evidence | classify compatibility before semantic equivalence |
+
+## Refusal And Migration
+
+- Reject an unknown or explicitly refused version before using its fields as
+  trusted execution or replay evidence.
+- Preserve the declared version in diagnostics so an operator can identify the
+  incompatible producer.
+- Do not silently rewrite retained runs or bundles in place.
+- Use an explicit migration command or governed import path only when the
+  relevant evolution rulebook defines one.
+- Treat a future version as unsupported even when its JSON happens to resemble
+  the current shape.
+
+Refusal is a safety property: interpreting unknown retained evidence as current
+would make replay, integrity, and compatibility claims unreliable.
+
+## Cross-Product Boundary
+
+The same machine contract also governs CLI command, output, and error
+envelopes, configuration schema registries, and product mount descriptors.
+Those are owned by the CLI handbook and are not duplicated here. A change to
+the shared contract must keep both product handbooks and their executable
+fixtures aligned.
+
+## Change Review
+
+A compatibility change must update:
+
+- `contracts/foundation/version_compatibility_lanes.v1.json`
+- the relevant schema or evolution rulebook under `docs/spec/`
+- compatibility fixtures under `evidence/compat/`
+- the reader or migration implementation
+- this matrix and its governing tests
+
+Adding an accepted predecessor is a deliberate compatibility expansion.
+Removing one or reinterpreting an existing identifier is incompatible and
+requires explicit release treatment.
+
+## Compatibility Review Questions
+
+Before accepting a change, reviewers should be able to answer:
+
+- Which writer emits the identifier and which readers consume it?
+- Is the change an alias, an additive readable shape, a migration, or a refusal?
+- Can old evidence remain inspectable without in-place mutation?
+- Does cache, replay, export, import, and diff classify the new relationship
+  consistently?
+- Which fixture proves both acceptance and refusal at the boundary?
+- Which release first emits the new canonical identifier, and when may the old
+  read lane be removed?
+
+## Related Contracts
+
+- [Compatibility Commitments](compatibility-commitments.md)
+- [Graph Schema Reference](graph-schema.md)
+- [Run Evidence Layout](run-evidence-layout.md)
+- [Reproducibility Model](reproducibility-model.md)
+- [Migration Policy](../../spec/MIGRATION_POLICY.md)

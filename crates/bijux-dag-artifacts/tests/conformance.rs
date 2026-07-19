@@ -12,9 +12,9 @@ use bijux_dag_artifacts::schema::{
     validate_output_schema_descriptor, ArtifactSchemaDescriptor, SchemaValidationMode,
 };
 use bijux_dag_artifacts::{
-    write_outputs_index, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex,
+    write_inputs_index, write_outputs_index, DeclaredOutputArtifact, InputCollection,
+    InputCollectionItem, InputsIndex, Manifest, NodeTrace, OutputsIndex, RunOutputsIndex,
 };
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;
@@ -27,7 +27,22 @@ fn outputs_index_is_stable_under_repeated_writes() {
     fs::write(dir.path().join("b.txt"), b"b").unwrap();
     fs::write(dir.path().join("a.txt"), b"a").unwrap();
 
-    let paths = vec!["b.txt".to_string(), "a.txt".to_string()];
+    let paths = vec![
+        DeclaredOutputArtifact {
+            name: "b".to_string(),
+            path: "b.txt".to_string(),
+            kind: "file".to_string(),
+            media_type: "application/octet-stream".to_string(),
+            promotable: false,
+        },
+        DeclaredOutputArtifact {
+            name: "a".to_string(),
+            path: "a.txt".to_string(),
+            kind: "file".to_string(),
+            media_type: "application/octet-stream".to_string(),
+            promotable: false,
+        },
+    ];
     write_outputs_index(dir.path(), "node", "fp", &paths).unwrap();
     let first = fs::read_to_string(dir.path().join("index.json")).unwrap();
 
@@ -39,6 +54,69 @@ fn outputs_index_is_stable_under_repeated_writes() {
     assert_eq!(parsed.files.len(), 2);
     assert_eq!(parsed.files[0].path, "a.txt");
     assert_eq!(parsed.files[1].path, "b.txt");
+}
+
+#[test]
+fn inputs_index_preserves_semantic_collection_metadata() {
+    let dir = tempfile::tempdir().unwrap();
+    let index = InputsIndex {
+        collections: vec![InputCollection {
+            name: "reduce_inputs".to_string(),
+            semantic_kind: "reduce".to_string(),
+            manifest_path: "reduce.collection.json".to_string(),
+            mode: Some("partial".to_string()),
+            empty_policy: Some("allow".to_string()),
+            items: vec![
+                InputCollectionItem {
+                    input_port: "left".to_string(),
+                    source_node_id: "map_a".to_string(),
+                    source_output_name: "out".to_string(),
+                    status: "success".to_string(),
+                    local_path: Some("map_a/left".to_string()),
+                    source_sha256: Some(format!("{:064x}", 1)),
+                },
+                InputCollectionItem {
+                    input_port: "right".to_string(),
+                    source_node_id: "map_b".to_string(),
+                    source_output_name: "out".to_string(),
+                    status: "failed".to_string(),
+                    local_path: None,
+                    source_sha256: None,
+                },
+            ],
+        }],
+        files: vec![],
+    };
+
+    write_inputs_index(dir.path(), &index).unwrap();
+    let raw = fs::read_to_string(dir.path().join("index.json")).unwrap();
+    let parsed: InputsIndex = serde_json::from_str(&raw).unwrap();
+    assert_eq!(parsed.collections.len(), 1);
+    assert_eq!(parsed.collections[0].semantic_kind, "reduce");
+    assert_eq!(parsed.collections[0].items[0].status, "success");
+    assert_eq!(parsed.collections[0].items[1].status, "failed");
+}
+
+#[test]
+fn inputs_index_keeps_empty_collection_items_explicit() {
+    let dir = tempfile::tempdir().unwrap();
+    let index = InputsIndex {
+        collections: vec![InputCollection {
+            name: "reduce_inputs".to_string(),
+            semantic_kind: "reduce".to_string(),
+            manifest_path: "reduce.collection.json".to_string(),
+            mode: Some("all_success".to_string()),
+            empty_policy: Some("allow".to_string()),
+            items: vec![],
+        }],
+        files: vec![],
+    };
+
+    write_inputs_index(dir.path(), &index).unwrap();
+    let raw = fs::read_to_string(dir.path().join("index.json")).unwrap();
+    assert!(raw.contains("\"items\": []"));
+    let parsed: InputsIndex = serde_json::from_str(&raw).unwrap();
+    assert!(parsed.collections[0].items.is_empty());
 }
 
 #[test]
@@ -133,7 +211,22 @@ fn write_outputs_index_rejects_escaping_paths() {
         dir.path(),
         "node",
         "fp",
-        &["ok.txt".to_string(), "../escape.txt".to_string()],
+        &[
+            DeclaredOutputArtifact {
+                name: "ok".to_string(),
+                path: "ok.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+                promotable: false,
+            },
+            DeclaredOutputArtifact {
+                name: "escape".to_string(),
+                path: "../escape.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+                promotable: false,
+            },
+        ],
     )
     .err()
     .unwrap();
@@ -149,7 +242,22 @@ fn write_outputs_index_rejects_missing_declared_outputs() {
         dir.path(),
         "node",
         "fp",
-        &["ok.txt".to_string(), "missing.txt".to_string()],
+        &[
+            DeclaredOutputArtifact {
+                name: "ok".to_string(),
+                path: "ok.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+                promotable: false,
+            },
+            DeclaredOutputArtifact {
+                name: "missing".to_string(),
+                path: "missing.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+                promotable: false,
+            },
+        ],
     )
     .err()
     .unwrap();

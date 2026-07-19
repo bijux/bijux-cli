@@ -8,5 +8,6 @@ pub fn trace_status_label(status: &NodeStatus) -> &'static str {
         NodeStatus::Failed => "failed",
         NodeStatus::Skipped => "skipped",
         NodeStatus::Cached => "cached",
+        NodeStatus::Cancelled => "cancelled",
     }
 }

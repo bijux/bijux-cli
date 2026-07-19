@@ -103,17 +103,19 @@ mod tests {
     }
 
     #[test]
-    fn named_path_binary_discovery_supports_app_shim_names() {
+    fn named_path_binary_discovery_supports_app_alias_binary_names() {
         let temp = TempDir::new().expect("tempdir");
         let shim_bin = temp.path().join("shim-bin");
         std::fs::create_dir_all(&shim_bin).expect("shim bin");
-        write_executable(&shim_bin.join("bijux-dag"), b"#!/bin/sh\n");
+        write_executable(&shim_bin.join("bijux-workflow"), b"#!/bin/sh\n");
         let path_value = std::env::join_paths([&shim_bin]).expect("join path");
 
-        let discovered =
-            discover_named_path_binaries(path_value.to_str().expect("utf-8 path"), "bijux-dag");
+        let discovered = discover_named_path_binaries(
+            path_value.to_str().expect("utf-8 path"),
+            "bijux-workflow",
+        );
         assert_eq!(discovered.len(), 1);
-        assert!(discovered[0].ends_with("bijux-dag"));
+        assert!(discovered[0].ends_with("bijux-workflow"));
     }
 
     #[cfg(unix)]

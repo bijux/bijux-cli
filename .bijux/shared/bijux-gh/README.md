@@ -69,7 +69,7 @@ Repositories should not maintain ad hoc variants unless there is a repository-sp
 Canonical reusable release helper scripts are provided under `.github/scripts`.
 
 - `wait_for_ci.py`: waits for the configured CI workflow to complete for the release SHA.
-- `check_workflow_prerequisites.py`: holds expensive PR/push workflows until the required policy and standards workflows succeed, and fails fast when prerequisite policy checks conclude unsuccessfully.
+- `check_workflow_prerequisites.py`: holds auxiliary workflows until the required policy and standards workflows succeed, identifies governed workflows by stable path across display-name changes, ignores malformed or wrong-event runs for the same SHA, and fails fast when prerequisite policy checks conclude unsuccessfully.
 
 Repository-specific release prepare scripts may still exist in `.github/scripts`, but shared helpers should come from this canonical source.
 
@@ -110,6 +110,11 @@ Maturin mode keys:
 - `BIJUX_PYPI_CACHE_DEPENDENCY_PATH`
 - `BIJUX_PYPI_MANIFEST_PATH`
 - `BIJUX_PYPI_INTERPRETER`
+
+When `BIJUX_PYPI_RUST_TOOLCHAIN` is unset, the workflow inherits
+`BIJUX_RELEASE_RUST_TOOLCHAIN` before falling back to its built-in default.
+That keeps PyPI publication aligned with the rest of the release lanes without
+forcing each repo to duplicate the same toolchain pin in multiple places.
 
 ## `release-crates.yml` configuration contract
 

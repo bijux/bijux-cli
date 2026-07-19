@@ -153,10 +153,7 @@ fn make_random_graph(mut seed: u64, nodes: usize) -> Graph {
             kind: bijux_dag_core::NodeKind::Const,
             semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
             inputs: Vec::new(),
-            outputs: vec![bijux_dag_core::FileOutput {
-                name: "out".to_string(),
-                path: format!("o/{i}.txt"),
-            }],
+            outputs: vec![bijux_dag_core::FileOutput::new("out".to_string(), format!("o/{i}.txt"))],
             params: bijux_dag_core::ParamValue::Literal(serde_json::json!({
                 "value": (lcg(&mut seed) % 1000) as i64
             })),
@@ -165,11 +162,13 @@ fn make_random_graph(mut seed: u64, nodes: usize) -> Graph {
             resources: None,
             tags: Vec::new(),
             retry: bijux_dag_core::RetryPolicy::default(),
+            cache: Default::default(),
             effects: Vec::new(),
             env_allowlist: Vec::new(),
             group: None,
             trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
             branch: None,
+            dynamic: None,
         });
     }
 

@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -10,6 +9,7 @@ use sha2 as _;
 use tempfile as _;
 use thiserror as _;
 
+use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::simulated_platform::{
     artifact_upload_can_commit, cancellation_delivered_in_time, check_worker_version_compatibility,
     classify_heartbeat, classify_status_reporting, is_duplicate_dispatch, normalize_status_events,
@@ -21,7 +21,12 @@ use bijux_dag_runtime::simulated_platform::{
     RemoteStatusEvent, StatusReportingClass, TaskLeaseSemantics, WorkLease, WorkerCapabilities,
     WorkerHeartbeat, WorkerIdentity, WorkerPoolCapabilityRequest, WorkerVersionCompatibilityRule,
 };
-use bijux_dag_runtime::{RemoteExecutionRequest, RemoteExecutorSubmitter};
+use bijux_dag_runtime::{
+    AbsolutePathPolicy, NodeStatus, PolicyConfig, RemoteExecutionFingerprintSet,
+    RemoteExecutionIdentity, RemoteExecutionRequest, RemoteExecutionWorkspace,
+    RemoteExecutorSubmitter, RemoteNodeExecutionPayload,
+};
+use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
 
 #[test]
@@ -70,6 +75,66 @@ fn mock_backend_accepts_typed_submissions() {
         })
         .expect("legacy submission should succeed");
     assert!(legacy.accepted);
+}
+
+#[test]
+fn mock_backend_executes_remote_payloads_through_shared_worker_model() {
+    let backend = MockRemoteBackend::default();
+    let temp = tempfile::tempdir().expect("temp dir");
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {
+              "id": "const-node",
+              "kind": "const",
+              "outputs": [{"name": "value", "path": "value.txt"}],
+              "params": {"value": "hello"}
+            }
+          ],
+          "edges": []
+        }"#,
+    )
+    .expect("graph");
+    let node = graph.nodes[0].clone();
+    let payload = RemoteNodeExecutionPayload {
+        identity: RemoteExecutionIdentity {
+            run_id: "run-remote-worker".to_string(),
+            node_id: node.id.clone(),
+            attempt_id: "1".to_string(),
+            backend_id: "mock".to_string(),
+        },
+        graph,
+        node,
+        params: json!({"value": "hello"}),
+        input_artifacts: Vec::new(),
+        workspace: RemoteExecutionWorkspace {
+            out_base: temp.path().display().to_string(),
+            cache_dir: None,
+        },
+        policy: PolicyConfig::default(),
+        absolute_path_policy: AbsolutePathPolicy::AllowLiteral,
+        planner_contract_version: "bijux-dag-planner/v1".to_string(),
+        fingerprints: RemoteExecutionFingerprintSet {
+            node_fingerprint: "node-fp".to_string(),
+            node_definition_fingerprint: "node-def-fp".to_string(),
+            declared_environment_fingerprint: "env-fp".to_string(),
+            params_fingerprint: "params-fp".to_string(),
+            command_fingerprint: Some("command-fp".to_string()),
+            execution_fingerprint: "execution-fp".to_string(),
+            evidence_fingerprint: "evidence-fp".to_string(),
+            execution_contract_fingerprint: "execution-contract-fp".to_string(),
+        },
+    };
+
+    let result = backend
+        .execute_remote_payload(payload.clone())
+        .expect("remote payload execution should succeed");
+    let recorded = backend.payload_executions();
+    assert_eq!(recorded.len(), 1);
+    assert_eq!(recorded[0].identity.run_id, payload.identity.run_id);
+    assert_eq!(recorded[0].identity.node_id, payload.identity.node_id);
+    assert_eq!(result.node_result.status, NodeStatus::Success);
 }
 
 #[test]

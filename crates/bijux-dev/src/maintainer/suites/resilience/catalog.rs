@@ -198,7 +198,7 @@ pub(crate) fn rows() -> Vec<Value> {
             "implementation": "rust",
             "outputs": [
                 "artifacts/status/history_command_coverage_report.json",
-                "artifacts/status/history_command_matrix_artifact.json",
+                "artifacts/status/history_command_coverage_artifact.json",
                 "artifacts/status/history_corruption_matrix_artifact.json",
                 "artifacts/status/history_read_domain_contract.json"
             ],

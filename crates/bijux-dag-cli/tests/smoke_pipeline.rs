@@ -31,7 +31,7 @@ fn dag_command() -> Command {
     let mut command = Command::new(cargo_bin);
     command.env("CARGO_TARGET_DIR", root.join("artifacts/target"));
     command.env("LLVM_PROFILE_FILE", root.join("artifacts/coverage/profraw/default_%m_%p.profraw"));
-    command.args(["run", "--quiet", "-p", "bijux-dag-cli", "--bin", "bijux", "--"]);
+    command.args(["run", "--quiet", "-p", "bijux-dag-cli", "--bin", "bijux-dag", "--"]);
     command
 }
 
@@ -95,20 +95,19 @@ fn cli_smoke_minimal_pipeline_validate_plan_run_replay_diff() {
     let replay_out = tempfile::tempdir().expect("replay output dir");
 
     let validate = dag_command()
-        .args(["dag", "validate", dag.to_str().expect("dag path")])
+        .args(["validate", dag.to_str().expect("dag path")])
         .output()
         .expect("validate output");
     assert!(validate.status.success(), "validate failed");
 
     let plan = dag_command()
-        .args(["dag", "show-effective-plan", dag.to_str().expect("dag path")])
+        .args(["show-effective-plan", dag.to_str().expect("dag path")])
         .output()
         .expect("plan output");
     assert!(plan.status.success(), "show-effective-plan failed");
 
     let run = dag_command()
         .args([
-            "dag",
             "run",
             dag.to_str().expect("dag path"),
             "--out",
@@ -122,7 +121,6 @@ fn cli_smoke_minimal_pipeline_validate_plan_run_replay_diff() {
 
     let replay = dag_command()
         .args([
-            "dag",
             "replay",
             first_run_dir.to_str().expect("run dir path"),
             "--out",
@@ -137,7 +135,6 @@ fn cli_smoke_minimal_pipeline_validate_plan_run_replay_diff() {
 
     let inspect = dag_command()
         .args([
-            "dag",
             "runs",
             "inspect",
             "--root",
@@ -151,7 +148,6 @@ fn cli_smoke_minimal_pipeline_validate_plan_run_replay_diff() {
 
     let diff = dag_command()
         .args([
-            "dag",
             "diff",
             first_run_dir.to_str().expect("first run path"),
             replay_run_dir.to_str().expect("replay run path"),
@@ -168,7 +164,6 @@ fn cli_smoke_artifact_inspect_and_verify() {
 
     let run = dag_command()
         .args([
-            "dag",
             "run",
             dag.to_str().expect("dag path"),
             "--out",
@@ -183,7 +178,6 @@ fn cli_smoke_artifact_inspect_and_verify() {
 
     let inspect = dag_command()
         .args([
-            "dag",
             "artifact-inspect",
             run_dir.to_str().expect("run dir path"),
             artifact_id.as_str(),
@@ -194,7 +188,7 @@ fn cli_smoke_artifact_inspect_and_verify() {
     assert!(inspect.status.success(), "artifact-inspect failed");
 
     let verify = dag_command()
-        .args(["dag", "verify", run_dir.to_str().expect("run dir path"), "--deep", "--json"])
+        .args(["verify", run_dir.to_str().expect("run dir path"), "--deep", "--json"])
         .output()
         .expect("verify output");
     assert!(verify.status.success(), "verify failed");
@@ -208,7 +202,6 @@ fn cli_smoke_export_import_and_fsck_verify_only() {
 
     let run = dag_command()
         .args([
-            "dag",
             "run",
             dag.to_str().expect("dag path"),
             "--out",
@@ -222,7 +215,6 @@ fn cli_smoke_export_import_and_fsck_verify_only() {
 
     let export = dag_command()
         .args([
-            "dag",
             "export",
             run_dir.to_str().expect("run dir path"),
             "--out",
@@ -234,19 +226,13 @@ fn cli_smoke_export_import_and_fsck_verify_only() {
     assert!(export.status.success(), "export failed");
 
     let import = dag_command()
-        .args([
-            "dag",
-            "import",
-            bundle_file.to_str().expect("bundle path"),
-            "--verify-only",
-            "--json",
-        ])
+        .args(["import", bundle_file.to_str().expect("bundle path"), "--verify-only", "--json"])
         .output()
         .expect("import verify-only output");
     assert!(import.status.success(), "import verify-only failed");
 
     let fsck = dag_command()
-        .args(["dag", "fsck", bundle_file.to_str().expect("bundle path"), "--json"])
+        .args(["fsck", bundle_file.to_str().expect("bundle path"), "--json"])
         .output()
         .expect("fsck output");
     assert!(fsck.status.success(), "bundle fsck failed");
@@ -259,7 +245,6 @@ fn cli_smoke_runs_history_list_show_timeline_and_tree() {
 
     let run = dag_command()
         .args([
-            "dag",
             "run",
             dag.to_str().expect("dag path"),
             "--out",
@@ -273,16 +258,8 @@ fn cli_smoke_runs_history_list_show_timeline_and_tree() {
     let run_id = run_id_from_run_dir(&run_dir);
 
     for args in [
+        vec!["runs", "list", "--root", run_out.path().to_str().expect("run out path"), "--json"],
         vec![
-            "dag",
-            "runs",
-            "list",
-            "--root",
-            run_out.path().to_str().expect("run out path"),
-            "--json",
-        ],
-        vec![
-            "dag",
             "runs",
             "show",
             "--root",
@@ -290,16 +267,8 @@ fn cli_smoke_runs_history_list_show_timeline_and_tree() {
             run_id.as_str(),
             "--json",
         ],
+        vec!["runs", "history", "--root", run_out.path().to_str().expect("run out path"), "--json"],
         vec![
-            "dag",
-            "runs",
-            "history",
-            "--root",
-            run_out.path().to_str().expect("run out path"),
-            "--json",
-        ],
-        vec![
-            "dag",
             "runs",
             "timeline",
             "--root",
@@ -308,7 +277,6 @@ fn cli_smoke_runs_history_list_show_timeline_and_tree() {
             "--json",
         ],
         vec![
-            "dag",
             "runs",
             "tree",
             "--root",

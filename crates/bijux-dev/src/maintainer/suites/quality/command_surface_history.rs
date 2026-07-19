@@ -5,9 +5,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
     match contract_id {
         "STATUS-CONTRACT-GENERATE-HISTORY-DEEP-BEHAVIOR-REPORTS" => {
             let tests = [
-                "crates/bijux-cli/tests/integration/cli/history/history_command_matrix.rs",
+                "crates/bijux-cli/tests/integration/cli/history/history_command_coverage.rs",
                 "crates/bijux-cli/tests/integration/cli/history/history_parity.rs",
-                "crates/bijux-cli/tests/integration/cli/history/history_deep_behavior_extra.rs",
+                "crates/bijux-cli/tests/integration/cli/history/history_output_stability.rs",
             ];
             let mut sources = BTreeMap::<String, String>::new();
             for path in tests {

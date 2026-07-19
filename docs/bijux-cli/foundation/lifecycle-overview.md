@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # Lifecycle Overview
@@ -55,6 +55,15 @@ sequenceDiagram
 - one route decision before handler execution
 - one final exit code surfaced to the process host
 - help and usage failures use explicit short-circuit paths
+
+## Executable Contracts
+
+- `crates/bijux-cli/tests/routing/parser/parser_intent.rs` checks intent and
+  global-flag normalization.
+- `crates/bijux-cli/tests/routing/laws/route_law_consistency.rs` checks route
+  selection against the command registry.
+- `crates/bijux-cli/tests/integration/cli/root/bin_core_integration.rs` checks
+  startup, stream, usage, and exit behavior at the process boundary.
 
 ## Reading Rule
 

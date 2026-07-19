@@ -5,12 +5,12 @@ use crate::simulated_platform::{
     WorkerHeartbeat,
 };
 use crate::{
-    cancel_batch_attempt, default_forced_cleanup, duplicate_status_delivery_detected,
-    retry_allowed, validate_task_contracts, BackoffStrategy, BatchAttemptState,
-    BatchLifecycleEvent, ForcedCancellationCleanup, Graph, InterruptionClass,
-    ManualInterventionRecord, NodeState, NodeTransition, OperatorRetryPolicy, ResumePolicy,
-    RetryPolicyV2, RunPausePolicy, RunState, RunTransition, RuntimeConfig, RuntimeError,
-    StateConsistencyReport, TaskIsolationMode,
+    cancel_batch_attempt, contract_retry_backoff_ms, default_forced_cleanup,
+    duplicate_status_delivery_detected, evaluate_retry_decision, retry_observation,
+    validate_task_contracts, BackoffStrategy, BatchAttemptState, BatchLifecycleEvent,
+    ForcedCancellationCleanup, Graph, InterruptionClass, ManualInterventionRecord, NodeState,
+    NodeTransition, OperatorRetryPolicy, ResumePolicy, RetryPolicyV2, RunPausePolicy, RunState,
+    RunTransition, RuntimeConfig, RuntimeError, StateConsistencyReport, TaskIsolationMode,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -39,6 +39,28 @@ pub struct ExecutionIsolationReport {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolicyGuardSemanticsReport {
+    pub guard: String,
+    pub enforcement_mode: String,
+    pub guarantee: String,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolicyEnforcementSurfaceReport {
+    pub executor_surface: String,
+    pub isolation_mode: TaskIsolationMode,
+    pub isolation_claim: String,
+    pub guards: Vec<PolicyGuardSemanticsReport>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PolicyEnforcementReport {
+    pub surfaces: Vec<PolicyEnforcementSurfaceReport>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DispatchKeyRecord {
     pub run_id: String,
     pub node_id: String,
@@ -62,11 +84,15 @@ pub struct RetryDecisionReport {
     pub max_attempts: u32,
     pub retryable: bool,
     pub retry_allowed: bool,
+    pub reason: String,
     pub next_attempt: Option<u32>,
     pub backoff_strategy: String,
     pub base_backoff_ms: u64,
     pub deterministic_jitter_ms: u64,
     pub next_wait_ms: Option<u64>,
+    pub timeout_retry_policy: String,
+    pub retryable_exit_codes: Vec<i32>,
+    pub matched_exit_code: Option<i32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -225,6 +251,154 @@ pub fn build_execution_isolation_report(
     })
 }
 
+pub fn build_policy_enforcement_report(
+    graph: &Graph,
+    options: &RuntimeConfig,
+) -> Result<PolicyEnforcementReport, RuntimeError> {
+    let mut surfaces = validate_task_contracts(graph, options)?
+        .into_iter()
+        .map(|contract| policy_enforcement_surface(&contract.isolation_mode, options))
+        .collect::<Vec<_>>();
+    surfaces.sort_by(|left, right| left.executor_surface.cmp(&right.executor_surface));
+    surfaces.dedup_by(|left, right| {
+        left.executor_surface == right.executor_surface
+            && left.isolation_mode == right.isolation_mode
+    });
+    Ok(PolicyEnforcementReport { surfaces })
+}
+
+fn policy_enforcement_surface(
+    isolation_mode: &TaskIsolationMode,
+    options: &RuntimeConfig,
+) -> PolicyEnforcementSurfaceReport {
+    match isolation_mode {
+        TaskIsolationMode::InProcess => PolicyEnforcementSurfaceReport {
+            executor_surface: "inline-kernel".to_string(),
+            isolation_mode: TaskIsolationMode::InProcess,
+            isolation_claim: "no_process_boundary".to_string(),
+            guards: vec![
+                effect_gate_guard("deny-network", "network"),
+                effect_gate_guard("deny-env", "environment"),
+                effect_gate_guard("deny-clock", "clock"),
+            ],
+            limitations: vec![
+                "inline execution does not create a subprocess boundary".to_string(),
+                "host side effects remain visible inside the current process".to_string(),
+            ],
+        },
+        TaskIsolationMode::Subprocess => PolicyEnforcementSurfaceReport {
+            executor_surface: "local-subprocess".to_string(),
+            isolation_mode: TaskIsolationMode::Subprocess,
+            isolation_claim: "best_effort_process_boundary".to_string(),
+            guards: vec![
+                effect_gate_guard("deny-network", "network"),
+                effect_gate_guard("deny-env", "environment"),
+                effect_gate_guard("deny-clock", "clock"),
+                clean_env_guard(),
+            ],
+            limitations: vec![
+                "subprocess mode does not firewall network access".to_string(),
+                "subprocess mode does not virtualize clocks or time syscalls".to_string(),
+                "subprocess mode does not sandbox arbitrary filesystem reads".to_string(),
+                "subprocess mode cannot prevent host-visible side effects after spawn".to_string(),
+            ],
+        },
+        TaskIsolationMode::Container => PolicyEnforcementSurfaceReport {
+            executor_surface: "container-engine".to_string(),
+            isolation_mode: TaskIsolationMode::Container,
+            isolation_claim: "container_runtime_boundary".to_string(),
+            guards: vec![
+                PolicyGuardSemanticsReport {
+                    guard: "deny-network".to_string(),
+                    enforcement_mode: "container_runtime_flag".to_string(),
+                    guarantee: "passes network isolation flags to the container engine and fails closed when the engine cannot honor them".to_string(),
+                    limitations: vec![
+                        "network isolation semantics depend on the selected container engine".to_string(),
+                        "container networking controls do not claim full host sandboxing".to_string(),
+                    ],
+                },
+                container_image_reference_guard(
+                    options.policy.container_image_reference_policy,
+                ),
+                effect_gate_guard("deny-env", "environment"),
+                effect_gate_guard("deny-clock", "clock"),
+                clean_env_guard(),
+            ],
+            limitations: vec![
+                "container mode constrains declared mounts and environment but is not a virtual machine".to_string(),
+                "clock denial remains declaration-based unless a stronger backend is added".to_string(),
+            ],
+        },
+        TaskIsolationMode::ExternalAdapter => PolicyEnforcementSurfaceReport {
+            executor_surface: "remote-adapter".to_string(),
+            isolation_mode: TaskIsolationMode::ExternalAdapter,
+            isolation_claim: "adapter_defined_boundary".to_string(),
+            guards: vec![
+                effect_gate_guard("deny-network", "network"),
+                effect_gate_guard("deny-env", "environment"),
+                effect_gate_guard("deny-clock", "clock"),
+                clean_env_guard(),
+            ],
+            limitations: vec![
+                "runtime policy is enforced before adapter handoff, then adapter behavior owns the remaining boundary".to_string(),
+                "remote adapters may provide stronger isolation, but this runtime does not claim it without adapter-specific evidence".to_string(),
+            ],
+        },
+    }
+}
+
+fn container_image_reference_guard(
+    policy: crate::ContainerImageReferencePolicy,
+) -> PolicyGuardSemanticsReport {
+    match policy {
+        crate::ContainerImageReferencePolicy::RequireDigest => PolicyGuardSemanticsReport {
+            guard: "container-image-reference".to_string(),
+            enforcement_mode: "reference_digest_gate".to_string(),
+            guarantee:
+                "refuses container nodes whose image reference is not pinned with an @sha256 digest before execution starts".to_string(),
+            limitations: vec![
+                "validates the declared image reference, not registry signatures or publisher trust".to_string(),
+                "trace evidence still depends on the selected engine reporting image identity".to_string(),
+            ],
+        },
+        crate::ContainerImageReferencePolicy::AllowUnpinned => PolicyGuardSemanticsReport {
+            guard: "container-image-reference".to_string(),
+            enforcement_mode: "operator_override".to_string(),
+            guarantee:
+                "permits unpinned container image references for this execution profile".to_string(),
+            limitations: vec![
+                "mutable tags weaken replay identity guarantees compared with digest-pinned references".to_string(),
+                "trace evidence still depends on the selected engine reporting image identity".to_string(),
+            ],
+        },
+    }
+}
+
+fn effect_gate_guard(guard: &str, effect: &str) -> PolicyGuardSemanticsReport {
+    PolicyGuardSemanticsReport {
+        guard: guard.to_string(),
+        enforcement_mode: "declared_effect_gate".to_string(),
+        guarantee: format!("refuses nodes that declare {effect} effects before execution starts"),
+        limitations: vec![
+            "depends on accurate effect declarations in the DAG".to_string(),
+            "does not interpose on syscalls after the executor has started".to_string(),
+        ],
+    }
+}
+
+fn clean_env_guard() -> PolicyGuardSemanticsReport {
+    PolicyGuardSemanticsReport {
+        guard: "clean-env".to_string(),
+        enforcement_mode: "environment_shaping".to_string(),
+        guarantee: "starts executors with a stripped environment and optional allowlist"
+            .to_string(),
+        limitations: vec![
+            "does not sandbox filesystem access".to_string(),
+            "does not prevent subprocess side effects outside environment variables".to_string(),
+        ],
+    }
+}
+
 pub fn audit_dispatch_discipline(
     dispatches: &[DispatchKeyRecord],
     remote_status_events: &[RemoteStatusEvent],
@@ -260,6 +434,7 @@ pub fn build_retry_decision_report(
     node_id: &str,
     attempt: u32,
     failure_class: &str,
+    exit_code: Option<i32>,
 ) -> Result<RetryDecisionReport, RuntimeError> {
     let contracts = validate_task_contracts(graph, options)?;
     let contract = contracts
@@ -267,17 +442,13 @@ pub fn build_retry_decision_report(
         .find(|contract| contract.node_id == node_id)
         .ok_or_else(|| RuntimeError::Executor(format!("unknown node '{node_id}'")))?;
 
-    let expected_failure_class = normalize_failure_class(failure_class);
-    let retryable =
-        contract.retry_policy.retryable_failure_classes.iter().any(|class| {
-            normalize_failure_class(&format!("{:?}", class)) == expected_failure_class
-        });
-    let retry_allowed = retryable
-        && retry_allowed(
-            attempt,
-            &retry_policy_semantics(&contract.node_id, &contract.retry_policy),
-        );
-    let base_backoff_ms = backoff_for_attempt(&contract.retry_policy, attempt);
+    let decision = evaluate_retry_decision(
+        &contract.node_id,
+        &contract.retry_policy,
+        attempt,
+        &retry_observation(failure_class, None, exit_code),
+    );
+    let base_backoff_ms = contract_retry_backoff_ms(&contract.retry_policy, attempt);
     let deterministic_jitter_ms = deterministic_jitter(
         &contract.node_id,
         attempt,
@@ -290,14 +461,20 @@ pub fn build_retry_decision_report(
         failure_class: failure_class.to_string(),
         attempt,
         max_attempts: contract.retry_policy.max_attempts,
-        retryable,
-        retry_allowed,
-        next_attempt: retry_allowed.then_some(attempt.saturating_add(1)),
+        retryable: decision.retryable,
+        retry_allowed: decision.retry_allowed,
+        reason: decision.reason,
+        next_attempt: decision.retry_allowed.then_some(attempt.saturating_add(1)),
         backoff_strategy: format!("{:?}", contract.retry_policy.backoff_strategy).to_lowercase(),
         base_backoff_ms,
         deterministic_jitter_ms,
-        next_wait_ms: retry_allowed
+        next_wait_ms: decision
+            .retry_allowed
             .then_some(base_backoff_ms.saturating_add(deterministic_jitter_ms)),
+        timeout_retry_policy: format!("{:?}", contract.retry_policy.timeout_retry_policy)
+            .to_lowercase(),
+        retryable_exit_codes: contract.retry_policy.retryable_exit_codes,
+        matched_exit_code: decision.matched_exit_code,
     })
 }
 
@@ -610,21 +787,6 @@ fn retry_policy_semantics(node_id: &str, policy: &RetryPolicyV2) -> crate::Retry
     }
 }
 
-fn backoff_for_attempt(policy: &RetryPolicyV2, attempt: u32) -> u64 {
-    if attempt == 0 {
-        return 0;
-    }
-    let ordinal = attempt.saturating_sub(1) as u64;
-    match policy.backoff_strategy {
-        BackoffStrategy::Fixed => policy.backoff_ms,
-        BackoffStrategy::Linear => policy.backoff_ms.saturating_mul(ordinal),
-        BackoffStrategy::Exponential => {
-            let multiplier = 1u64.checked_shl(ordinal.min(20) as u32).unwrap_or(u64::MAX);
-            policy.backoff_ms.saturating_mul(multiplier)
-        }
-    }
-}
-
 fn deterministic_jitter(node_id: &str, attempt: u32, failure_class: &str, jitter_ms: u64) -> u64 {
     if jitter_ms == 0 {
         return 0;
@@ -638,10 +800,6 @@ fn deterministic_jitter(node_id: &str, attempt: u32, failure_class: &str, jitter
 
 fn duration_exceeds(observed_ms: Option<u64>, limit_ms: Option<u64>) -> bool {
     matches!((observed_ms, limit_ms), (Some(observed), Some(limit)) if observed > limit)
-}
-
-fn normalize_failure_class(value: &str) -> String {
-    value.chars().filter(|ch| ch.is_ascii_alphanumeric()).flat_map(|ch| ch.to_lowercase()).collect()
 }
 
 fn recommend_resume_action(
@@ -664,7 +822,10 @@ fn recommend_resume_action(
 
 #[cfg(test)]
 mod tests {
-    use super::{audit_dispatch_discipline, build_execution_isolation_report, DispatchKeyRecord};
+    use super::{
+        audit_dispatch_discipline, build_execution_isolation_report,
+        build_policy_enforcement_report, DispatchKeyRecord,
+    };
     use crate::simulated_platform::{
         HeartbeatClass, HeartbeatSemantics, LivenessPolicy, TaskLeaseSemantics, WorkLease,
         WorkerHeartbeat,
@@ -686,18 +847,17 @@ mod tests {
                 owners: Vec::new(),
                 tags: Vec::new(),
             }),
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![
                 Node {
                     id: "const1".to_string(),
                     kind: NodeKind::Const,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: Vec::new(),
-                    outputs: vec![FileOutput {
-                        name: "out".to_string(),
-                        path: "a/out".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out".to_string(), "a/out".to_string())],
                     params: ParamValue::Object(BTreeMap::from([(
                         "value".to_string(),
                         ParamValue::Literal(serde_json::json!("1")),
@@ -707,21 +867,20 @@ mod tests {
                     resources: None,
                     tags: Vec::new(),
                     retry: Default::default(),
+                    cache: Default::default(),
                     effects: Vec::new(),
                     env_allowlist: Vec::new(),
                     group: None,
                     trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
                     branch: None,
+                    dynamic: None,
                 },
                 Node {
                     id: "shell1".to_string(),
                     kind: NodeKind::Shell,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec!["in".to_string()],
-                    outputs: vec![FileOutput {
-                        name: "out".to_string(),
-                        path: "b/out".to_string(),
-                    }],
+                    outputs: vec![FileOutput::new("out".to_string(), "b/out".to_string())],
                     params: ParamValue::Object(BTreeMap::from([(
                         "argv".to_string(),
                         ParamValue::Array(vec![
@@ -735,11 +894,13 @@ mod tests {
                     resources: None,
                     tags: Vec::new(),
                     retry: Default::default(),
+                    cache: Default::default(),
                     effects: vec![bijux_dag_core::Effect::Filesystem],
                     env_allowlist: Vec::new(),
                     group: None,
                     trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
                     branch: None,
+                    dynamic: None,
                 },
             ],
             edges: vec![Edge {
@@ -759,6 +920,122 @@ mod tests {
         assert_eq!(report.total_nodes, 2);
         assert!(report.isolation_counts.contains_key("in_process"));
         assert!(report.isolation_counts.contains_key("subprocess"));
+    }
+
+    #[test]
+    fn policy_enforcement_report_marks_subprocess_as_best_effort() {
+        let report = build_policy_enforcement_report(&graph_fixture(), &RuntimeConfig::default())
+            .expect("policy report");
+        let subprocess = report
+            .surfaces
+            .iter()
+            .find(|surface| surface.executor_surface == "local-subprocess")
+            .expect("subprocess surface");
+        assert_eq!(subprocess.isolation_claim, "best_effort_process_boundary");
+        assert!(subprocess
+            .limitations
+            .iter()
+            .any(|entry| entry.contains("does not firewall network access")));
+        assert!(subprocess.guards.iter().any(|guard| guard.guard == "deny-network"
+            && guard.enforcement_mode == "declared_effect_gate"));
+    }
+
+    #[test]
+    fn policy_enforcement_report_marks_container_network_as_runtime_enforced() {
+        let mut graph = graph_fixture();
+        graph.nodes.push(Node {
+            id: "container1".to_string(),
+            kind: NodeKind::Container,
+            semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+            inputs: Vec::new(),
+            outputs: vec![FileOutput::new("out".to_string(), "c/out".to_string())],
+            params: ParamValue::default(),
+            container: Some(bijux_dag_core::ContainerSpec {
+                image: "alpine:3.19".to_string(),
+                argv: vec!["echo".to_string(), "ok".to_string()],
+                env_allowlist: Vec::new(),
+                workdir: None,
+                engine: "docker".to_string(),
+            }),
+            timeout_ms: None,
+            resources: None,
+            tags: Vec::new(),
+            retry: Default::default(),
+            cache: Default::default(),
+            effects: vec![bijux_dag_core::Effect::Filesystem],
+            env_allowlist: Vec::new(),
+            group: None,
+            trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+            branch: None,
+            dynamic: None,
+        });
+        let report = build_policy_enforcement_report(&graph, &RuntimeConfig::default())
+            .expect("policy report");
+        let container = report
+            .surfaces
+            .iter()
+            .find(|surface| surface.executor_surface == "container-engine")
+            .expect("container surface");
+        assert_eq!(container.isolation_claim, "container_runtime_boundary");
+        assert!(container.guards.iter().any(|guard| {
+            guard.guard == "deny-network" && guard.enforcement_mode == "container_runtime_flag"
+        }));
+        assert!(container.guards.iter().any(|guard| {
+            guard.guard == "container-image-reference"
+                && guard.enforcement_mode == "reference_digest_gate"
+        }));
+    }
+
+    #[test]
+    fn policy_enforcement_report_reflects_unpinned_container_override() {
+        let mut graph = graph_fixture();
+        graph.nodes.push(Node {
+            id: "container1".to_string(),
+            kind: NodeKind::Container,
+            semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
+            inputs: Vec::new(),
+            outputs: vec![FileOutput::new("out".to_string(), "c/out".to_string())],
+            params: ParamValue::default(),
+            container: Some(bijux_dag_core::ContainerSpec {
+                image: "alpine:3.19".to_string(),
+                argv: vec!["echo".to_string(), "ok".to_string()],
+                env_allowlist: Vec::new(),
+                workdir: None,
+                engine: "docker".to_string(),
+            }),
+            timeout_ms: None,
+            resources: None,
+            tags: Vec::new(),
+            retry: Default::default(),
+            cache: Default::default(),
+            effects: vec![bijux_dag_core::Effect::Filesystem],
+            env_allowlist: Vec::new(),
+            group: None,
+            trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
+            branch: None,
+            dynamic: None,
+        });
+        let report = build_policy_enforcement_report(
+            &graph,
+            &RuntimeConfig {
+                policy: crate::PolicyConfig {
+                    container_image_reference_policy:
+                        crate::ContainerImageReferencePolicy::AllowUnpinned,
+                    ..crate::PolicyConfig::default()
+                },
+                ..RuntimeConfig::default()
+            },
+        )
+        .expect("policy report");
+        let container = report
+            .surfaces
+            .iter()
+            .find(|surface| surface.executor_surface == "container-engine")
+            .expect("container surface");
+        assert!(container.guards.iter().any(|guard| {
+            guard.guard == "container-image-reference"
+                && guard.enforcement_mode == "operator_override"
+        }));
     }
 
     #[test]
@@ -816,13 +1093,95 @@ mod tests {
             "shell1",
             2,
             "artifact_transient",
+            None,
         )
         .expect("report");
         assert!(report.retryable);
         assert!(report.retry_allowed);
+        assert_eq!(report.reason, "retryable_failure_class_matched");
         assert_eq!(report.base_backoff_ms, 20);
         assert!(report.deterministic_jitter_ms <= 7);
         assert_eq!(report.next_attempt, Some(3));
+    }
+
+    #[test]
+    fn linear_retry_backoff_waits_for_the_first_retry_window() {
+        let mut graph = graph_fixture();
+        graph.nodes[1].retry.max_attempts = 3;
+        graph.nodes[1].retry.backoff_ms = 15;
+        graph.nodes[1].params = bijux_dag_core::ParamValue::Object(BTreeMap::from([(
+            "argv".to_string(),
+            bijux_dag_core::ParamValue::Array(vec![
+                bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                bijux_dag_core::ParamValue::Literal(serde_json::json!("true")),
+            ]),
+        )]));
+
+        let report = super::build_retry_decision_report(
+            &graph,
+            &RuntimeConfig::default(),
+            "shell1",
+            1,
+            "execution_transient",
+            None,
+        )
+        .expect("report");
+        assert_eq!(report.base_backoff_ms, 15);
+    }
+
+    #[test]
+    fn retry_report_explains_exit_code_and_timeout_overrides() {
+        let mut graph = graph_fixture();
+        graph.nodes[1].retry.max_attempts = 2;
+        graph.nodes[1].retry.backoff_ms = 10;
+        graph.nodes[1].params = bijux_dag_core::ParamValue::Object(BTreeMap::from([
+            (
+                "argv".to_string(),
+                bijux_dag_core::ParamValue::Array(vec![
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("true")),
+                ]),
+            ),
+            (
+                "timeout_retry_policy".to_string(),
+                bijux_dag_core::ParamValue::Literal(serde_json::json!("never")),
+            ),
+            (
+                "retryable_exit_codes".to_string(),
+                bijux_dag_core::ParamValue::Array(vec![bijux_dag_core::ParamValue::Literal(
+                    serde_json::json!(75),
+                )]),
+            ),
+        ]));
+
+        let exit_code_report = super::build_retry_decision_report(
+            &graph,
+            &RuntimeConfig::default(),
+            "shell1",
+            1,
+            "execution",
+            Some(75),
+        )
+        .expect("exit code report");
+        assert!(exit_code_report.retry_allowed);
+        assert_eq!(exit_code_report.reason, "retryable_exit_code_matched");
+        assert_eq!(exit_code_report.matched_exit_code, Some(75));
+        assert_eq!(exit_code_report.retryable_exit_codes, vec![75]);
+
+        let timeout_report = super::build_retry_decision_report(
+            &graph,
+            &RuntimeConfig::default(),
+            "shell1",
+            1,
+            "timeout",
+            Some(124),
+        )
+        .expect("timeout report");
+        assert!(!timeout_report.retryable);
+        assert_eq!(timeout_report.reason, "timeout_retry_policy_denies_timeout_retry");
+        assert_eq!(timeout_report.timeout_retry_policy, "never");
     }
 
     #[test]

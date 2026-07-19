@@ -29,7 +29,9 @@ flowchart LR
 ## Package Boundaries
 
 - `crates/bijux-cli`: CLI command runtime and plugin behavior
-- `crates/bijux-dag-*`: DAG parse/run/replay/diff and artifact behavior
+- `crates/bijux-dag-core`, `crates/bijux-dag-artifacts`, `crates/bijux-dag-runtime`,
+  `crates/bijux-dag-app`, and `crates/bijux-dag-cli`: DAG parse/run/replay/diff
+  and artifact behavior
 - `crates/bijux-cli-python`: Python package and bridge behavior
 - `crates/bijux-dev`: maintainer automation, suites, and evidence reports
 
@@ -47,13 +49,13 @@ who owns the behavior.
 
 ## Code Anchors
 
-- `crates/bijux-cli/CONTRACT.md`
-- `crates/bijux-dag-app/CONTRACT.md`
-- `crates/bijux-dev/CONTRACT.md`
+- `crates/bijux-cli/src/lib.rs`
+- `crates/bijux-dag-app/docs/CONTRACTS.md`
+- `crates/bijux-dev/docs/CONTRACTS.md`
 - `docs/bijux-cli/index.md`
 
 ## Next Reads
 
-- [Change Management](change-management.md)
+- [Change Management](../operations/change-management.md)
 - [Decision Record Policy](decision-record-policy.md)
 - [Dependency Direction](../architecture/dependency-direction.md)

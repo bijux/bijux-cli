@@ -1,0 +1,64 @@
+{
+  "schema_version": "foundation-repository-work-routing/v1",
+  "issue_classes": [
+    {
+      "issue_class": "foundation-ownership-boundary",
+      "owning_crate": "bijux-dev",
+      "allowed_workspace_deps": [
+        "bijux-cli",
+        "bijux-cli-python",
+        "bijux-dag-core",
+        "bijux-dag-runtime",
+        "bijux-dag-artifacts",
+        "bijux-dag-app",
+        "bijux-dag-cli",
+        "bijux-dag-testkit",
+        "bijux-dev"
+      ],
+      "evidence_location": "contracts/foundation/"
+    },
+    {
+      "issue_class": "foundation-governance",
+      "owning_crate": "bijux-dev",
+      "allowed_workspace_deps": [
+        "bijux-dev"
+      ],
+      "evidence_location": "docs/reports/governance/"
+    },
+    {
+      "issue_class": "foundation-compatibility-lanes",
+      "owning_crate": "bijux-cli",
+      "allowed_workspace_deps": [
+        "bijux-cli",
+        "bijux-dag-app",
+        "bijux-dag-core",
+        "bijux-dag-runtime",
+        "bijux-dag-artifacts"
+      ],
+      "evidence_location": "contracts/schemas/"
+    },
+    {
+      "issue_class": "foundation-release-gate",
+      "owning_crate": "bijux-dev",
+      "allowed_workspace_deps": [
+        "bijux-dev",
+        "bijux-cli",
+        "bijux-dag-core",
+        "bijux-dag-runtime",
+        "bijux-dag-artifacts",
+        "bijux-dag-app",
+        "bijux-dag-testkit"
+      ],
+      "evidence_location": "crates/bijux-dev/tests/"
+    },
+    {
+      "issue_class": "foundation-operator-diagnostics",
+      "owning_crate": "bijux-cli",
+      "allowed_workspace_deps": [
+        "bijux-cli",
+        "bijux-cli-python"
+      ],
+      "evidence_location": "crates/bijux-cli/src/interface/cli/handlers/"
+    }
+  ]
+}

@@ -4,7 +4,7 @@ use std::process::Command;
 
 use serde_json::json;
 
-use crate::contracts::{known_bijux_tool_by_query, ProductEntrypointKind};
+use crate::contracts::{known_bijux_tool_by_query, KnownBijuxTool, ProductEntrypointKind};
 use crate::features::apps::{resolve_control_command, resolve_runtime_command, ResolvedAppCommand};
 
 use super::AppRunResult;
@@ -12,7 +12,8 @@ use super::AppRunResult;
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct DelegatedKnownToolCommand {
     resolved: ResolvedAppCommand,
-    install_hint: Option<String>,
+    install_commands: Vec<String>,
+    public_help_binary: Option<String>,
     command_surface: String,
     forwarded_args: Vec<String>,
 }
@@ -176,7 +177,8 @@ fn delegate_to_embedded_handler(
 
 fn delegate_to_resolved_command(
     resolved: &ResolvedAppCommand,
-    install_hint: Option<&str>,
+    install_commands: &[String],
+    public_help_binary: Option<&str>,
     command_surface: &str,
     forwarded_args: &[String],
 ) -> AppRunResult {
@@ -195,13 +197,28 @@ fn delegate_to_resolved_command(
                 "failed to run `{command_surface}` via `{}`: {error}\n",
                 resolved.display_command
             );
-            if let Some(install_hint) = install_hint {
+            if !install_commands.is_empty() {
+                message.push_str("install with:\n");
+                for command in install_commands {
+                    message.push_str(&format!("  {command}\n"));
+                }
+            }
+            if let Some(public_help_binary) = public_help_binary {
                 message.push_str(&format!(
-                    "install with `cargo install {install_hint}` or `pip install {install_hint}`\n"
+                    "use `{public_help_binary} --help` for the public command surface\n"
                 ));
             }
             AppRunResult { exit_code: 1, stdout: String::new(), stderr: message }
         }
+    }
+}
+
+fn install_commands_for_known_tool(tool: &KnownBijuxTool, control_plane: bool) -> Vec<String> {
+    let package_name =
+        if control_plane { tool.control_package_name } else { tool.runtime_package_name };
+    match tool.language {
+        "python" => vec![format!("pip install {package_name}")],
+        _ => vec![format!("cargo install {package_name}")],
     }
 }
 
@@ -220,13 +237,13 @@ fn delegated_known_bijux_tool_command(argv: &[String]) -> Option<DelegatedKnownT
                 namespace: tool.namespace.to_string(),
                 descriptor: tool.descriptor(),
             }),
-            install_hint: Some(tool.control_package().to_string()),
+            install_commands: install_commands_for_known_tool(tool, true),
+            public_help_binary: None,
             command_surface: format!("bijux dev {}", tool.namespace),
             forwarded_args: argv[forwarded_start..].to_vec(),
         })
     } else {
-        let install_hint =
-            known_bijux_tool_by_query(&query).map(|tool| tool.runtime_package().to_string());
+        let tool = known_bijux_tool_by_query(&query);
         let resolved = if let Some(tool) = known_bijux_tool_by_query(&query) {
             resolve_runtime_command(&query).unwrap_or_else(|| ResolvedAppCommand {
                 command: tool.runtime_binary(),
@@ -242,8 +259,11 @@ fn delegated_known_bijux_tool_command(argv: &[String]) -> Option<DelegatedKnownT
         };
         Some(DelegatedKnownToolCommand {
             command_surface: format!("bijux {}", resolved.namespace),
+            install_commands: tool
+                .map(|tool| install_commands_for_known_tool(tool, false))
+                .unwrap_or_default(),
+            public_help_binary: tool.map(|tool| tool.runtime_binary_name.to_string()),
             resolved,
-            install_hint,
             forwarded_args: argv[forwarded_start..].to_vec(),
         })
     }
@@ -265,7 +285,8 @@ pub(super) fn try_delegate_known_bijux_tool(argv: &[String]) -> Option<AppRunRes
     let command = delegated_known_bijux_tool_command(argv)?;
     Some(delegate_to_resolved_command(
         &command.resolved,
-        command.install_hint.as_deref(),
+        &command.install_commands,
+        command.public_help_binary.as_deref(),
         &command.command_surface,
         &command.forwarded_args,
     ))

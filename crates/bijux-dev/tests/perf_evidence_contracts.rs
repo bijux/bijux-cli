@@ -24,6 +24,30 @@ fn load_perf_metadata(root: &PathBuf) -> Value {
 }
 
 #[test]
+fn perf_metadata_contract_reference_resolves_and_matches_scenarios() {
+    let root = repo_root();
+    let metadata = load_perf_metadata(&root);
+    let contract_reference = metadata["contract_reference"].as_str().expect("contract_reference");
+    assert!(
+        root.join(contract_reference).exists(),
+        "perf metadata contract reference must resolve: {contract_reference}"
+    );
+
+    let scenarios = metadata["scenarios"].as_object().expect("scenarios object");
+    for (path, entry) in scenarios {
+        let scenario_contract = entry["contract_reference"].as_str().expect("scenario contract");
+        assert_eq!(
+            scenario_contract, contract_reference,
+            "scenario contract reference must match top-level perf contract: {path}"
+        );
+        assert!(
+            root.join(scenario_contract).exists(),
+            "scenario contract reference must resolve: {path} -> {scenario_contract}"
+        );
+    }
+}
+
+#[test]
 fn release_blocking_perf_assets_require_threshold_references() {
     let root = repo_root();
     let metadata = load_perf_metadata(&root);

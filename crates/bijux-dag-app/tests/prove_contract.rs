@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -85,7 +84,7 @@ fn prove_reports_incomplete_for_corrupt_run() {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn prove_reports_backend_origin_and_unsigned_trust_boundary() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");

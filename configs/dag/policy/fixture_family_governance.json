@@ -106,7 +106,7 @@
       "owner_suite": "runtime_adapter_scope_reports_contracts",
       "roots": [
         "configs/policy/runtime_adapter_surface_catalog.json",
-        "evidence/reports/backend_capability_matrix_generated.json"
+        "evidence/reports/backend_capability_report_generated.json"
       ]
     },
     {

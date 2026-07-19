@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -27,7 +26,7 @@ fn run_dag(args: &[&str], cwd: &Path) -> (i32, String, String) {
 }
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn hash_graph_cli_output_matches_core_graph_id() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");

@@ -1,0 +1,98 @@
+{
+  "schema_version": "foundation-dag-release-truth-table/v1",
+  "release": "v0.4.0",
+  "owner": "bijux-dag",
+  "stable_operator_surface": {
+    "summary": "visible bijux-dag --help surface for local DAG authoring, execution, replay, and evidence inspection",
+    "root_commands": [
+      "validate",
+      "artifact-inspect",
+      "artifact",
+      "commands",
+      "plan",
+      "run",
+      "replay",
+      "runs",
+      "diff",
+      "explain",
+      "verify",
+      "doctor",
+      "cache",
+      "version",
+      "completions"
+    ],
+    "capabilities": [
+      "local DAG validation",
+      "local DAG execution",
+      "kubernetes job submission for container nodes through kubectl and a shared persistent volume claim",
+      "shared-filesystem SLURM submission through sbatch and sacct",
+      "run and artifact evidence inspection",
+      "replay and diff classification",
+      "cache verification and maintenance",
+      "machine-readable CLI JSON output"
+    ]
+  },
+  "experimental_operator_surface": {
+    "summary": "callable by explicit path and repository-tested, but outside the stable operator compatibility lane",
+    "root_commands": [
+      "init",
+      "canonicalize",
+      "graph",
+      "graph-lint",
+      "fingerprint",
+      "hash",
+      "status",
+      "node",
+      "trace-artifact",
+      "why-rerun",
+      "why-cache-missed",
+      "export",
+      "import",
+      "migrate",
+      "adapters",
+      "config",
+      "policy",
+      "fsck",
+      "prove",
+      "proof-summary"
+    ]
+  },
+  "simulated_surface": {
+    "summary": "modeled platform and control-plane namespaces that require BIJUX_DAG_ENABLE_SIMULATED=1, not production backends or services",
+    "root_commands": [
+      "control-plane",
+      "state-store",
+      "dataset",
+      "enterprise",
+      "fleet",
+      "governance",
+      "federation",
+      "incident",
+      "lab"
+    ]
+  },
+  "internal_surface": {
+    "summary": "maintainer-only and contract-only routes that require BIJUX_DAG_ENABLE_INTERNAL=1 and stay outside the public operator boundary",
+    "root_commands": [
+      "security",
+      "durability",
+      "performance",
+      "release",
+      "runtime",
+      "schedule",
+      "version-inspect",
+      "capabilities",
+      "semantic-portability",
+      "equivalence-proof"
+    ]
+  },
+  "unreleased_surface": {
+    "summary": "not a v0.4.0 product promise; promotion requires separate implementation, documentation, tests, and compatibility review",
+    "capabilities": [
+      "generic hpc execution backend beyond the shared-filesystem slurm lane",
+      "remote worker execution model",
+      "public enterprise, fleet, federation, and governance operator APIs",
+      "full scheduler service"
+    ]
+  }
+}

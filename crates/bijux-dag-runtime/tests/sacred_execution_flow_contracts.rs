@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -11,11 +10,9 @@ use tempfile as _;
 use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
-use bijux_dag_runtime::state_machine::{run_transition_allowed, RunLifecycleState};
 use bijux_dag_runtime::{
-    execution_context::{ExecutionContext, NodeExecutionContext},
-    node_result::NodeResult,
-    scheduler_contract_profile, Runtime, RuntimeConfig,
+    run_transition_allowed, scheduler_contract_profile, ExecutionContext, NodeExecutionContext,
+    NodeResult, RunLifecycleState, Runtime, RuntimeConfig,
 };
 
 #[test]
@@ -50,7 +47,7 @@ fn scheduler_profile_is_deterministic_and_lexicographic() {
     let as_json = serde_json::to_value(profile).expect("serialize");
     assert_eq!(as_json["canonical_unit"], "node");
     assert_eq!(as_json["model"], "event_driven");
-    assert_eq!(as_json["ready_tie_break"], "priority_cpu_fit_then_node_id");
+    assert_eq!(as_json["ready_tie_break"], "priority_cpu_memory_fit_then_node_id");
 }
 
 #[test]

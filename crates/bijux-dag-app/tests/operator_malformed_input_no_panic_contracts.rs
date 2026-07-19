@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -44,14 +43,14 @@ fn prove_and_verify_commands_handle_malformed_run_dir_without_panicking() {
     fs::write(run.join("graph.snapshot.json"), b"{not-json").expect("write malformed snapshot");
 
     let prove = dag_command()
-        .try_get_matches_from(["dag", "--json", "prove", run.to_str().expect("run path")])
+        .try_get_matches_from(["bijux-dag", "--json", "prove", run.to_str().expect("run path")])
         .expect("prove matches");
     let prove_result = std::panic::catch_unwind(AssertUnwindSafe(|| dag_run(&prove)));
     assert!(prove_result.is_ok(), "prove command panicked on malformed run dir");
 
     let verify = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "verify",
             run.to_str().expect("run path"),

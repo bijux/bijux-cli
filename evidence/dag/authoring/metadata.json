@@ -42,6 +42,14 @@
       "command_surfaces": ["dag validate", "dag run", "dag show-effective-plan"],
       "consumers": ["dag-validate", "docs-examples"]
     },
+    "evidence/authoring/examples/parameterized-report.dag.json": {
+      "group": "examples",
+      "authoring_mode": "illustrative",
+      "expected_validation": "pass",
+      "expected_lowering": "required",
+      "command_surfaces": ["dag validate", "dag run", "dag show-effective-plan"],
+      "consumers": ["dag-validate", "docs-examples"]
+    },
     "evidence/authoring/examples/replay-heavy-branching.dag.json": {
       "group": "examples",
       "authoring_mode": "illustrative",

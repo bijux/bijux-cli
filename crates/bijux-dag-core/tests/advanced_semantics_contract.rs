@@ -1,3 +1,5 @@
+#![cfg(feature = "experimental-public-api")]
+
 use criterion as _;
 use hex as _;
 use serde as _;
@@ -46,7 +48,7 @@ fn validates_semantic_normalization_and_late_binding_rules() {
 
 #[test]
 fn computes_semantic_diff_static_analysis_and_complexity() {
-    let before = bijux_dag_core::parse_graph_strict(&read_fixture("template_composition.json"))
+    let before = bijux_dag_core::parse_graph_strict(&read_fixture("templated_composition.json"))
         .expect("before graph parse should pass");
     let after = bijux_dag_core::parse_graph_strict(&read_fixture("conditional_branch_join.json"))
         .expect("after graph parse should pass");

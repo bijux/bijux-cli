@@ -1,0 +1,93 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "parameterized-report",
+    "description": "A report graph with graph inputs, downstream output references, and explicit cache and environment policy.",
+    "owners": ["platform"],
+    "tags": ["authoring", "reporting"]
+  },
+  "inputs": {
+    "dataset_uri": {
+      "type": "string",
+      "default": "s3://warehouse/catalog"
+    },
+    "publish_channel": {
+      "type": "enum",
+      "values": ["daily-summary", "weekly-summary"],
+      "default": "daily-summary"
+    },
+    "region": {
+      "type": "string",
+      "default": "eu-west-1"
+    }
+  },
+  "nodes": [
+    {
+      "id": "plan_request",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{ "name": "request", "path": "plan/request.json" }],
+      "params": {
+        "value": {
+          "dataset_uri": { "graph_input": "dataset_uri" },
+          "region": { "graph_input": "region" }
+        }
+      }
+    },
+    {
+      "id": "build_report",
+      "kind": "shell",
+      "inputs": ["request"],
+      "outputs": [{ "name": "report", "path": "report/report.json" }],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "cp ../inputs/plan_request/request ../outputs/report/report.json"
+        ]
+      },
+      "timeout_ms": 30000,
+      "resources": { "cpu": 1, "mem_mb": 256 },
+      "retry": { "max_attempts": 2, "backoff_ms": 1000 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "publish_summary",
+      "kind": "shell",
+      "inputs": ["report"],
+      "outputs": [{ "name": "receipt", "path": "publish/receipt.txt" }],
+      "params": {
+        "channel": { "graph_input": "publish_channel" },
+        "report_source": {
+          "node_output": {
+            "node_id": "build_report",
+            "output_name": "report"
+          }
+        },
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "printf 'published %s\\n' \"$(cat ../inputs/build_report/report)\" > ../outputs/publish/receipt.txt"
+        ]
+      },
+      "timeout_ms": 15000,
+      "retry": { "max_attempts": 1, "backoff_ms": 0 },
+      "cache": {
+        "enabled": false,
+        "reason": "publishes externally visible summary"
+      },
+      "effects": ["filesystem", "env"],
+      "env_allowlist": ["REPORT_CHANNEL"]
+    }
+  ],
+  "edges": [
+    {
+      "from": { "node_id": "plan_request", "port": "request" },
+      "to": { "node_id": "build_report", "port": "request" }
+    },
+    {
+      "from": { "node_id": "build_report", "port": "report" },
+      "to": { "node_id": "publish_summary", "port": "report" }
+    }
+  ]
+}

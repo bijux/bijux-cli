@@ -1,19 +1,19 @@
 [workspace]
 members = [
     "crates/bijux-cli",
-  "crates/bijux-cli-python",
-  "crates/bijux-dag-core",
-  "crates/bijux-dag-artifacts",
-  "crates/bijux-dag-runtime",
-  "crates/bijux-dag-app",
-  "crates/bijux-dag-cli",
-  "crates/bijux-dag-testkit",
-  "crates/bijux-dev",
-  ]
+    "crates/bijux-cli-python",
+    "crates/bijux-dag-core",
+    "crates/bijux-dag-artifacts",
+    "crates/bijux-dag-runtime",
+    "crates/bijux-dag-app",
+    "crates/bijux-dag-cli",
+    "crates/bijux-dag-testkit",
+    "crates/bijux-dev",
+]
 resolver = "2"
 
 [workspace.package]
-version = "0.3.5"
+version = "0.4.0"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/bijux/bijux-core"
@@ -24,7 +24,10 @@ rust-version = "1.86"
 
 [workspace.dependencies]
 anyhow = "1.0.100"
-bijux-cli = { version = "0.3.5", path = "crates/bijux-cli" }
+bijux-cli = { version = "0.4.0", path = "crates/bijux-cli" }
+chrono = { version = "0.4.42", default-features = false, features = ["clock", "std"] }
+chrono-tz = "0.10.4"
+croner = "3.0.1"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.150", default-features = false, features = ["std"] }
 serde_yaml = "0.9.34"
@@ -39,6 +42,8 @@ hex = "0.4.3"
 tar = "0.4.46"
 flate2 = "1.1.4"
 base64 = "0.22.1"
+reqwest = { version = "0.12.24", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+nix = { version = "0.31.2", features = ["process", "signal"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

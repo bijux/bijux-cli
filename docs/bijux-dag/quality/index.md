@@ -4,7 +4,7 @@ audience: maintainers
 type: section-index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # DAG Quality
@@ -12,23 +12,53 @@ last_reviewed: 2026-04-06
 DAG quality defines the proof required for behavior changes, compatibility
 claims, and operational trust.
 
-## Section Map
-
 ```mermaid
 flowchart LR
-  quality["DAG quality"] --> validate["Change validation"]
-  quality --> tests["Test strategy"]
-  quality --> invariants["Invariants"]
-  quality --> review["Review checklist"]
-  quality --> risk["Risk register"]
+    change["Behavior or contract change"]
+    classify{"What can regress?"}
+    semantics["Graph or execution semantics"]
+    evidence["Artifact, replay, or diff evidence"]
+    interface["CLI, schema, or exit behavior"]
+    operations["Resource or recovery behavior"]
+    proof["Focused contract tests"]
+    suite["Affected crate and integration suites"]
+    review["Risk, limits, and docs review"]
+    release{"Evidence complete?"}
+
+    change --> classify
+    classify --> semantics --> proof
+    classify --> evidence --> proof
+    classify --> interface --> proof
+    classify --> operations --> proof
+    proof --> suite --> review --> release
+    release -->|"yes"| ready["Release candidate"]
+    release -->|"no"| revise["Revise behavior or claim"]
 ```
+
+Quality is not the absence of a test failure. It is agreement among the
+implemented invariant, retained evidence, public contract, and stated limit.
 
 ## Quality Goals
 
 - keep replay and diff semantics stable across change
 - require evidence-backed validation before release
-- maintain explicit risk and limitation documentation
+- maintain explicit risk and limitation records
 - align docs with real command and code behavior
+
+## Choose The Required Proof
+
+| Changed surface | Minimum proof | Additional review |
+| --- | --- | --- |
+| graph parsing, identity, or validation | unit and contract tests for accepted and rejected graphs | canonicalization and compatibility consequences |
+| scheduling, retry, timeout, or cancellation | deterministic runtime tests with terminal-state assertions | resource accounting and failure propagation |
+| artifact, lineage, cache, replay, or diff behavior | round-trip and tamper/failure tests against retained evidence | schema compatibility and provenance completeness |
+| command, JSON, or exit behavior | application and command-boundary integration tests | stdout/stderr separation and machine-consumer compatibility |
+| concurrency or resource limits | tests that force contention and prove bounded completion | deadlock, starvation, and recovery risks |
+| documentation-only capability claim | source and test anchors that prove the claim | risk register and known-limit alignment |
+
+An example run can illustrate behavior, but it does not replace a contract
+test. A generated report can support a review, but it does not replace the
+source invariant that makes the report reproducible.
 
 ## Core Quality Pages
 
@@ -43,7 +73,24 @@ flowchart LR
 - [Dependency Governance](dependency-governance.md)
 - [Risk Register](risk-register.md)
 - [Known Limitations](known-limitations.md)
+- [Comparison Evidence Surfaces](comparison-evidence-surfaces.md)
 - [Documentation Standards](documentation-standards.md)
+
+## Release Evidence
+
+A DAG change is ready to release only when:
+
+- the owning crate and public boundary are identified;
+- focused tests prove success, refusal, and failure behavior;
+- retained artifacts are sufficient to explain the result after execution;
+- public schemas, commands, and examples agree with implementation;
+- new operational risk appears in the risk register or is demonstrably
+  mitigated;
+- known limits are narrowed only when executable evidence justifies the claim.
+
+Do not convert a failing invariant into a looser assertion merely to recover a
+green suite. Either restore the promised behavior or change the contract,
+documentation, and compatibility treatment together.
 
 ## Reading Rule
 

@@ -39,7 +39,7 @@ flowchart LR
 - `crates/bijux-cli/src/contracts/envelope.rs`
 - `crates/bijux-cli/src/contracts/plugin.rs`
 - `crates/bijux-cli/tests/routing/snapshots/`
-- `tools/docs/publish_contract_assets.py`
+- `docs/automation/publish_contract_assets.py`
 
 ## Artifact Rules
 

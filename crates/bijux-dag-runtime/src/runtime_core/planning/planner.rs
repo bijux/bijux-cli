@@ -1,4 +1,5 @@
 use crate::execution_plan::{ExecutionPlan, PlannedDependency, PlannedNode};
+use crate::{compute_downstream_run_closure, compute_upstream_run_closure};
 use crate::{RuntimeConfig, Selector, SelectorSet};
 use bijux_dag_core::{
     node_io_contract, Effect, Graph, Node, NodeIoContract, NodeKind, PlanOptions, PlannerSeverity,
@@ -14,6 +15,18 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
         .map(|selector| crate::requested_selector_label("include", selector))
         .chain(
             options
+                .upstream_selection_targets
+                .iter()
+                .map(|node_id| crate::requested_upstream_target_label(node_id)),
+        )
+        .chain(
+            options
+                .downstream_selection_roots
+                .iter()
+                .map(|node_id| crate::requested_downstream_root_label(node_id)),
+        )
+        .chain(
+            options
                 .selectors
                 .exclude
                 .iter()
@@ -25,6 +38,32 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
     for node in &graph.nodes {
         if let Some(reason) = filter_reason(node, &options.selectors) {
             filter_reasons.insert(node.id.clone(), reason);
+        }
+    }
+    if !options.upstream_selection_targets.is_empty() {
+        let keep = compute_upstream_run_closure(graph, &options.upstream_selection_targets);
+        for node_id in &keep {
+            filter_reasons.remove(node_id);
+        }
+        for node in &graph.nodes {
+            if !keep.contains(&node.id) {
+                filter_reasons
+                    .entry(node.id.clone())
+                    .or_insert_with(|| "not_selected_by_to_node".to_string());
+            }
+        }
+    }
+    if !options.downstream_selection_roots.is_empty() {
+        let keep = compute_downstream_run_closure(graph, &options.downstream_selection_roots);
+        for node_id in &keep {
+            filter_reasons.remove(node_id);
+        }
+        for node in &graph.nodes {
+            if !keep.contains(&node.id) {
+                filter_reasons
+                    .entry(node.id.clone())
+                    .or_insert_with(|| "not_selected_by_from_node".to_string());
+            }
         }
     }
     if options.partial_rerun_dependency_closure {
@@ -104,6 +143,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                         outputs: node.outputs.clone(),
                         side_effects: node.side_effects.clone(),
                         retry: node.retry.clone(),
+                        cache: node.cache.clone(),
                         trigger_rule: node.trigger_rule.clone(),
                         timeout_ms: node.timeout_ms,
                         resources: node.resources.clone(),
@@ -170,6 +210,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
                         outputs: node.outputs.clone(),
                         side_effects: node.effects.clone(),
                         retry: node.retry.clone(),
+                        cache: node.cache.clone(),
                         trigger_rule: node.trigger_rule.clone(),
                         timeout_ms: node.timeout_ms,
                         resources: node.resources.clone(),
@@ -204,10 +245,7 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
             diagnostics.push(format!("P4021:{}:unsupported-runtime-capability", node.id));
         }
         let requires_network = node.effects.iter().any(|effect| matches!(effect, Effect::Network));
-        if !bijux_dag_core::resource_iteration13::planner_runnable_from_capabilities(
-            node.kind.as_str(),
-            requires_network,
-        ) {
+        if !planner_runnable_from_runtime_capabilities(node.kind.as_str(), requires_network) {
             diagnostics.push(format!("P4022:{}:capability-registry-refusal", node.id));
         }
     }
@@ -238,11 +276,30 @@ pub fn build_plan(graph: &Graph, options: &RuntimeConfig) -> ExecutionPlan {
 }
 
 fn node_kind_supported(kind: &str) -> bool {
-    matches!(kind, "const" | "shell" | "container")
+    matches!(kind, "const" | "http" | "file_transform" | "shell" | "python" | "container")
 }
 
 fn runtime_resource_capability_supported(kind: &NodeKind) -> bool {
-    matches!(kind, NodeKind::Shell | NodeKind::Container)
+    matches!(
+        kind,
+        NodeKind::Http
+            | NodeKind::FileTransform
+            | NodeKind::Shell
+            | NodeKind::Python
+            | NodeKind::Container
+    )
+}
+
+fn planner_runnable_from_runtime_capabilities(kind: &str, requires_network: bool) -> bool {
+    match kind {
+        "const" => !requires_network,
+        "http" => true,
+        "file_transform" => !requires_network,
+        "shell" => !requires_network,
+        "python" => !requires_network,
+        "container" => true,
+        _ => false,
+    }
 }
 
 fn build_dep_map(graph: &Graph) -> HashMap<String, BTreeSet<String>> {
@@ -331,6 +388,7 @@ fn expand_dependencies(
 
 fn selector_matches(node: &Node, selector: &Selector) -> bool {
     match selector {
+        Selector::Id(id) => node.id == *id,
         Selector::IdPrefix(prefix) => node.id.starts_with(prefix),
         Selector::Tag(tag) => node.tags.iter().any(|t| t == tag),
         Selector::Kind(kind) => node.kind.as_str() == kind,
@@ -346,44 +404,50 @@ mod tests {
         Graph {
             spec: "bijux-dag/v0.1".to_string(),
             meta: None,
-            inputs: serde_json::Map::new(),
+            inputs: std::collections::BTreeMap::new(),
             nondeterminism_allowed: false,
+            subgraphs: std::collections::BTreeMap::new(),
+            subgraph_instances: Vec::new(),
             nodes: vec![
                 Node {
                     id: "a".to_string(),
                     kind: NodeKind::Const,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                    outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                     params: Default::default(),
                     container: None,
                     timeout_ms: None,
                     resources: None,
                     tags: vec!["etl".to_string()],
                     retry: RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
                     trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
                     branch: None,
+                    dynamic: None,
                 },
                 Node {
                     id: "b".to_string(),
                     kind: NodeKind::Shell,
                     semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                     inputs: vec![],
-                    outputs: vec![FileOutput { name: "out".to_string(), path: "out".to_string() }],
+                    outputs: vec![FileOutput::new("out".to_string(), "out".to_string())],
                     params: Default::default(),
                     container: None,
                     timeout_ms: None,
                     resources: None,
                     tags: vec!["gpu".to_string()],
                     retry: RetryPolicy::default(),
+                    cache: Default::default(),
                     effects: vec![],
                     env_allowlist: vec![],
                     group: None,
                     trigger_rule: bijux_dag_core::TriggerRule::AllSuccess,
                     branch: None,
+                    dynamic: None,
                 },
             ],
             edges: vec![],

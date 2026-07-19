@@ -23,9 +23,9 @@ fn parse_rejects_unknown_fields_fixture() {
 }
 
 #[test]
-fn parse_rejects_future_required_behavior_fixture() {
+fn parse_rejects_unsupported_behavior_contract_fixture() {
     let payload = include_str!(
-        "../../../configs/dag/schema/fixtures/v0.1/negative/future-required-behavior.json"
+        "../../../configs/dag/schema/fixtures/v0.1/negative/unsupported_behavior_contract.json"
     );
     assert!(parse_graph_strict(payload).is_err());
 }
@@ -92,6 +92,32 @@ fn diagnostics_order_and_message_stability() {
     .join("\n");
 
     assert_eq!(snapshot, expected);
+}
+
+#[test]
+fn namespaced_tags_remain_valid_for_scheduler_routing_contracts() {
+    let graph = parse(&format!(
+        r#"{{
+  "spec": "{}",
+  "meta": {{"name": "graph", "tags": ["release.candidate:2026"]}},
+  "nodes": [
+    {{
+      "id":"render",
+      "kind":"shell",
+      "inputs":[],
+      "outputs":[{{"name":"out","path":"render/out"}}],
+      "tags":["slurm.partition:gpu","slurm.queue:priority","team_render"],
+      "effects":["filesystem"],
+      "params":{{"argv":["echo","ok"]}}
+    }}
+  ],
+  "edges": []
+}}"#,
+        SPEC_VERSION
+    ));
+
+    let diagnostics = graph.validate_with_warnings();
+    assert!(!diagnostics.iter().any(|diagnostic| diagnostic.code == "E1026"));
 }
 
 #[test]

@@ -28,6 +28,36 @@
       "source_test": "explain_why_cache_missed_reports_corrupt_entry_verification_failure"
     },
     {
+      "id": "why-cache-miss-changed-params",
+      "scenario": "why-cache-missed reports changed params from a prior node cache entry",
+      "source_test": "explain_run_node_cache_miss_reports_changed_params"
+    },
+    {
+      "id": "why-cache-miss-changed-inputs",
+      "scenario": "why-cache-missed reports changed input hashes from a prior node cache entry",
+      "source_test": "explain_run_node_cache_miss_reports_changed_input_hashes"
+    },
+    {
+      "id": "why-cache-miss-changed-command",
+      "scenario": "why-cache-missed reports changed command from a prior node cache entry",
+      "source_test": "explain_run_node_cache_miss_reports_changed_command"
+    },
+    {
+      "id": "why-cache-miss-changed-adapter",
+      "scenario": "why-cache-missed reports changed adapter identity from a prior node cache entry",
+      "source_test": "explain_run_node_cache_miss_reports_changed_adapter_identity"
+    },
+    {
+      "id": "why-cache-miss-policy-bypass",
+      "scenario": "why-cache-missed reports policy-based cache bypass from run configuration",
+      "source_test": "explain_run_node_cache_miss_reports_policy_bypass"
+    },
+    {
+      "id": "why-cache-miss-missing-entry",
+      "scenario": "why-cache-missed reports a missing cache entry for a rerun node",
+      "source_test": "explain_run_node_cache_miss_reports_missing_entry"
+    },
+    {
       "id": "trace-artifact-replayed-provenance",
       "scenario": "trace-artifact supports replayed run provenance context",
       "source_test": "trace_artifact_supports_replayed_run_provenance_surface"

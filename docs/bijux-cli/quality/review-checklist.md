@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Review Checklist
@@ -12,32 +12,33 @@ last_reviewed: 2026-04-06
 Use this checklist for every `bijux-cli` change that touches runtime behavior,
 contracts, or documentation.
 
-## Visual Summary
-
-```mermaid
-flowchart TD
-    change["proposed change"] --> scope["scope and boundary review"]
-    scope --> tests["targeted tests and gates"]
-    tests --> docs["docs and diagram updates"]
-    docs --> release["compatibility and release impact check"]
-```
+The goal is not to mechanically clear boxes. The goal is to stop reviewers from
+approving a change whose behavior, evidence, and written contract do not agree.
 
 ## Checklist
 
-1. Scope: does the change stay in CLI ownership boundaries?
-2. Contracts: do command grammar, payloads, or exits change?
-3. Tests: are targeted routing/integration/architecture tests updated?
-4. Docs: are handbook pages updated with concrete code anchors?
-5. Diagrams: do page diagrams still reflect real behavior?
-6. Compatibility: are impact notes explicit for script users?
-7. Gates: do docs structure and test gates pass?
+1. Scope: does the change stay inside CLI ownership, or is it actually a DAG or repo-level change?
+2. Contracts: do command grammar, payloads, output streams, or exit semantics change?
+3. Tests: are the owning routing, integration, or architecture lanes updated and sufficient?
+4. Docs: do the affected handbook pages explain the new behavior in reader language?
+5. Compatibility: would a script, plugin author, or operator need an explicit warning?
+6. Risk: did the change increase trust, plugin, or persistence risk without naming it?
+7. Gates: do the relevant docs and test surfaces pass on the actual change set?
 
-## Docs Structure Gate
+## What Reviewers Should Refuse To Merge
+
+| Smell | Why it is a blocker |
+| --- | --- |
+| tests pass but docs still describe old behavior | readers and automation receive conflicting truth |
+| docs changed without code or evidence for the claim | the page becomes aspirational instead of factual |
+| compatibility impact is implied but not written down | downstream callers absorb breakage silently |
+| a change crosses ownership boundaries without saying so | the wrong surface gets reviewed and trusted |
+
+## Documentation Shape Guardrails
 
 - `docs/bijux-cli/` contains exactly 6 directories and 51 files
 - exactly 5 section directories under the package root
 - each section contains exactly 10 pages
-- each page includes at least one Mermaid diagram
 
 ## Code Anchors
 
@@ -45,7 +46,13 @@ flowchart TD
 - `docs/bijux-cli/`
 - `crates/bijux-cli/tests/`
 
-## Next Reads
+## Reader Shortcut
+
+If the review conversation depends on "everyone knows what this really means,"
+the checklist has already found a gap. The change is only ready when a new
+reviewer can infer the same conclusion from code, tests, and docs alone.
+
+## Continue Reading
 
 - [Documentation Standards](documentation-standards.md)
 - [Definition of Done](definition-of-done.md)

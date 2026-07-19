@@ -1,13 +1,17 @@
 [package]
 name = "bijux-dag-cli"
 version.workspace = true
-publish = false
+description = "Installable command-line package for validating, running, replaying, and inspecting Bijux DAG graphs."
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-homepage.workspace = true
+homepage = "https://bijux.io/bijux-core/bijux-dag/"
+documentation = "https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-cli/"
 rust-version.workspace = true
+readme = "README.md"
+keywords = ["bijux", "dag", "cli", "workflow", "graphs"]
+categories = ["command-line-interface", "development-tools"]
 
 [lints]
 workspace = true
@@ -15,7 +19,7 @@ workspace = true
 [dependencies]
 clap = { workspace = true }
 clap_complete = { workspace = true }
-bijux_dag_app = { package = "bijux-dag-app", path = "../bijux-dag-app", version = "0.3.5" }
+"bijux-dag-app" = { path = "../bijux-dag-app", version = "0.4.0" }
 
 [dev-dependencies]
 tempfile = { workspace = true }

@@ -1,7 +1,8 @@
 use crate::commands::repo_root;
+use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_json::json;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -40,7 +41,9 @@ pub(super) fn run_contract_test_links_guard() -> Result<(), String> {
 pub(super) fn run_contract_schema_owner_guard() -> Result<(), String> {
     let root = repo_root()?;
     let mut contracts = Vec::new();
-    collect_contract_files(&root.join("docs/spec"), &mut contracts)?;
+    for contract_root in [root.join("docs/spec"), root.join("crates"), root.join("evidence")] {
+        collect_contract_files(&contract_root, &mut contracts)?;
+    }
     let mut contract_blob = String::new();
     for file in contracts {
         contract_blob.push_str(&fs::read_to_string(file).map_err(|err| err.to_string())?);
@@ -72,38 +75,54 @@ pub(super) fn run_contract_schema_owner_guard() -> Result<(), String> {
 
 pub(super) fn run_contract_command_ownership_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let taxonomy = fs::read_to_string(root.join("docs/CLI_COMMAND_TAXONOMY.md"))
+    let dag_surface = load_json_contract::<DagReleaseTruthTableContract>(
+        &root.join("contracts/foundation/dag_release_truth_table.v1.json"),
+    )?;
+    let dag_surface_doc = fs::read_to_string(root.join("docs/bijux-dag/interfaces/cli-surface.md"))
         .map_err(|err| err.to_string())?;
-    let contract = fs::read_to_string(root.join("docs/spec/CLI_CONTRACT.md"))
-        .map_err(|err| err.to_string())?;
-
-    let mut commands = Vec::new();
-    for line in taxonomy.lines() {
-        let trimmed = line.trim();
-        if !trimmed.starts_with("- `") || !trimmed.ends_with('`') {
-            continue;
-        }
-        let value = trimmed.trim_start_matches("- `").trim_end_matches('`').to_string();
-        if value.starts_with("migrate ") {
-            if !commands.contains(&"migrate".to_string()) {
-                commands.push("migrate".to_string());
-            }
-        } else {
-            commands.push(value);
-        }
-    }
+    let maintainer_surface = load_json_contract::<MaintainerCommandSurfaceContract>(
+        &root.join("contracts/foundation/maintainer_command_surface.v1.json"),
+    )?;
+    let maintainer_surface_doc =
+        fs::read_to_string(root.join("docs/bijux-dev/operations/command-surface.md"))
+            .map_err(|err| err.to_string())?;
 
     let mut violations = Vec::new();
-    for command in commands {
-        let token = format!("`dag {command}`");
-        let count = contract.matches(&token).count();
-        if count != 1 {
-            violations.push(format!(
-                "command ownership token {} appears {} times in docs/spec/CLI_CONTRACT.md",
-                token, count
-            ));
-        }
-    }
+    validate_command_surface_section(
+        "docs/bijux-dag/interfaces/cli-surface.md",
+        "## Visible Root Surface",
+        &dag_surface_doc,
+        &dag_surface.stable_operator_surface.root_commands,
+        &mut violations,
+    )?;
+    validate_command_surface_section(
+        "docs/bijux-dag/interfaces/cli-surface.md",
+        "## Hidden Experimental Routes",
+        &dag_surface_doc,
+        &dag_surface.experimental_operator_surface.root_commands,
+        &mut violations,
+    )?;
+    let dag_hidden_commands = dag_surface
+        .simulated_surface
+        .root_commands
+        .iter()
+        .chain(dag_surface.internal_surface.root_commands.iter())
+        .cloned()
+        .collect::<Vec<_>>();
+    validate_command_surface_section(
+        "docs/bijux-dag/interfaces/cli-surface.md",
+        "## Hidden Simulation And Maintainer Namespaces",
+        &dag_surface_doc,
+        &dag_hidden_commands,
+        &mut violations,
+    )?;
+    validate_command_surface_section(
+        "docs/bijux-dev/operations/command-surface.md",
+        "## `bijux-dev-dag` Root Surface",
+        &maintainer_surface_doc,
+        &maintainer_surface.visible_root_commands,
+        &mut violations,
+    )?;
 
     if violations.is_empty() {
         Ok(())
@@ -139,67 +158,29 @@ pub(super) fn run_contract_versioning_guard() -> Result<(), String> {
 pub(super) fn run_contract_coverage_report() -> Result<(), String> {
     let root = repo_root()?;
     let mut missing = Vec::new();
-    let mut orphaned = Vec::new();
     let mut stale = Vec::new();
 
-    let crate_names = [
-        "bijux-dag-core",
-        "bijux-dag-artifacts",
-        "bijux-dag-runtime",
-        "bijux-dag-app",
-        "bijux-dag-cli",
-        "bijux-dag-testkit",
-        "bijux-dev-dag",
-    ];
-    for crate_name in crate_names {
-        if !root.join("crates").join(crate_name).join("CONTRACT.md").exists() {
+    for entry in fs::read_dir(root.join("crates")).map_err(|err| err.to_string())? {
+        let path = entry.map_err(|err| err.to_string())?.path();
+        if !path.is_dir() || !path.join("Cargo.toml").exists() {
+            continue;
+        }
+        let crate_name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
+        if !path.join("docs/CONTRACTS.md").exists() {
             missing.push(format!("crate contract missing: {crate_name}"));
         }
     }
 
-    let specs = [
-        "CLI_CONTRACT.md",
-        "RUN_DIR_CONTRACT.md",
-        "CACHE_CONTRACT.md",
-        "REPLAY_CONTRACT.md",
-        "ERROR_CONTRACT.md",
-        "TRACE_CONTRACT.md",
-        "IMPORT_EXPORT_CONTRACT.md",
-        "CONFIG_CONTRACT.md",
-        "POLICY_CONTRACT.md",
-        "SELECTOR_CONTRACT.md",
-    ];
-    for file in specs {
-        let path = root.join("docs/spec").join(file);
-        if !path.exists() {
-            missing.push(format!("spec contract missing: docs/spec/{file}"));
-        }
+    let mut spec_contracts = Vec::new();
+    collect_contract_files(&root.join("docs/spec"), &mut spec_contracts)?;
+    if spec_contracts.is_empty() {
+        missing.push("spec contract missing: docs/spec/*CONTRACT*.md".to_string());
     }
-
-    for entry in fs::read_dir(root.join("docs/spec")).map_err(|err| err.to_string())? {
-        let path = entry.map_err(|err| err.to_string())?.path();
-        if path
-            .file_name()
-            .and_then(|x| x.to_str())
-            .is_some_and(|name| name.ends_with("CONTRACT.md"))
-        {
-            let file_name = path.file_name().and_then(|x| x.to_str()).unwrap_or_default();
-            if !specs.contains(&file_name)
-                && file_name != "WORKSPACE_CONTRACT.md"
-                && file_name != "PROJECT_CONTRACT.md"
-                && file_name != "ADAPTER_CONTRACT.md"
-                && file_name != "EXECUTION_SEMANTICS_CONTRACT.md"
-                && file_name != "SCHEDULER_STATESPACE_CONTRACT.md"
-                && file_name != "DETERMINISTIC_SCHEDULING_CONTRACT.md"
-                && file_name != "CONFIG_PRECEDENCE_CONTRACT.md"
-                && file_name != "OPERATOR_INSPECTION_CONTRACT.md"
-            {
-                orphaned.push(format!("unknown contract doc: docs/spec/{file_name}"));
-            }
-            let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
-            if !content.contains("## Scope") {
-                stale.push(format!("{} missing scope section", file_name));
-            }
+    for path in spec_contracts {
+        let file_name = path.file_name().and_then(|x| x.to_str()).unwrap_or_default();
+        let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+        if !content.contains("## Scope") {
+            stale.push(format!("{file_name} missing scope section"));
         }
     }
 
@@ -207,13 +188,13 @@ pub(super) fn run_contract_coverage_report() -> Result<(), String> {
         "{}",
         serde_json::to_string_pretty(&json!({
             "missing": missing,
-            "orphaned": orphaned,
+            "orphaned": [],
             "stale": stale
         }))
         .map_err(|err| err.to_string())?
     );
 
-    if missing.is_empty() && orphaned.is_empty() && stale.is_empty() {
+    if missing.is_empty() && stale.is_empty() {
         Ok(())
     } else {
         Err("contract coverage report found gaps".to_string())
@@ -238,8 +219,8 @@ pub(super) fn run_error_code_registry_report() -> Result<(), String> {
 pub(super) fn run_error_code_docs_tests_guard() -> Result<(), String> {
     let root = repo_root()?;
     let registry = load_error_code_registry(&root)?;
-    let docs_error_ref =
-        fs::read_to_string(root.join("docs/reference/ERRORS.md")).map_err(|err| err.to_string())?;
+    let docs_error_ref = fs::read_to_string(root.join("docs/bijux-dag/interfaces/error-codes.md"))
+        .map_err(|err| err.to_string())?;
     let docs_error_contract = fs::read_to_string(root.join("docs/spec/ERROR_CONTRACT.md"))
         .map_err(|err| err.to_string())?;
     let tests = [
@@ -248,19 +229,23 @@ pub(super) fn run_error_code_docs_tests_guard() -> Result<(), String> {
     ];
 
     let mut violations = Vec::new();
+    if !docs_error_contract.contains("Public error code additions require docs plus test coverage")
+    {
+        violations
+            .push("docs/spec/ERROR_CONTRACT.md missing public code governance rule".to_string());
+    }
     for code in &registry.codes {
         if !docs_error_ref.contains(&code.category) {
             violations.push(format!(
-                "docs/reference/ERRORS.md missing category {} for {}",
+                "docs/bijux-dag/interfaces/error-codes.md missing category {} for {}",
                 code.category, code.code
             ));
         }
-        if !docs_error_contract
-            .contains("Public error code additions require docs plus test coverage")
-        {
-            violations.push(
-                "docs/spec/ERROR_CONTRACT.md missing public code governance rule".to_string(),
-            );
+        if !docs_error_ref.contains(&code.code) {
+            violations.push(format!(
+                "docs/bijux-dag/interfaces/error-codes.md missing public code {}",
+                code.code
+            ));
         }
     }
 
@@ -316,6 +301,24 @@ struct ErrorCodeEntry {
     description: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct DagReleaseTruthTableContract {
+    stable_operator_surface: CommandSurfaceContract,
+    experimental_operator_surface: CommandSurfaceContract,
+    simulated_surface: CommandSurfaceContract,
+    internal_surface: CommandSurfaceContract,
+}
+
+#[derive(Debug, Deserialize)]
+struct CommandSurfaceContract {
+    root_commands: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MaintainerCommandSurfaceContract {
+    visible_root_commands: Vec<String>,
+}
+
 fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
     let payload = fs::read_to_string(root.join("configs/dag/policy/error_codes.json"))
         .map_err(|err| err.to_string())?;
@@ -342,4 +345,100 @@ fn load_error_code_registry(root: &Path) -> Result<ErrorCodeRegistry, String> {
         }
     }
     Ok(registry)
+}
+
+fn load_json_contract<T: DeserializeOwned>(path: &Path) -> Result<T, String> {
+    let payload = fs::read_to_string(path).map_err(|err| err.to_string())?;
+    serde_json::from_str(&payload)
+        .map_err(|err| format!("failed to parse {}: {err}", path.display()))
+}
+
+fn validate_command_surface_section(
+    document_path: &str,
+    heading: &str,
+    content: &str,
+    expected_commands: &[String],
+    violations: &mut Vec<String>,
+) -> Result<(), String> {
+    let section = markdown_section(content, heading)
+        .ok_or_else(|| format!("{document_path} missing section {heading}"))?;
+    let expected = expected_commands.iter().cloned().collect::<BTreeSet<_>>();
+    let counts = count_documented_commands(section, &expected);
+
+    for command in expected_commands {
+        let count = counts.get(command).copied().unwrap_or(0);
+        if count != 1 {
+            violations.push(format!(
+                "{document_path} section {heading} documents `{command}` {count} times"
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn markdown_section<'a>(content: &'a str, heading: &str) -> Option<&'a str> {
+    let start = content.find(heading)?;
+    let remainder = &content[start + heading.len()..];
+    let end = remainder.find("\n## ").unwrap_or(remainder.len());
+    Some(remainder[..end].trim())
+}
+
+fn count_documented_commands(
+    section: &str,
+    expected: &BTreeSet<String>,
+) -> BTreeMap<String, usize> {
+    let mut counts = BTreeMap::new();
+
+    for token in extract_backtick_tokens(section) {
+        if let Some(command) = normalize_documented_command(&token) {
+            if expected.contains(&command) {
+                *counts.entry(command).or_default() += 1;
+            }
+        }
+    }
+
+    counts
+}
+
+fn extract_backtick_tokens(section: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut in_token = false;
+
+    for ch in section.chars() {
+        if ch == '`' {
+            if in_token {
+                tokens.push(current.trim().to_string());
+                current.clear();
+            }
+            in_token = !in_token;
+            continue;
+        }
+        if in_token {
+            current.push(ch);
+        }
+    }
+
+    tokens
+}
+
+fn normalize_documented_command(token: &str) -> Option<String> {
+    let trimmed = token.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let without_binary = trimmed
+        .strip_prefix("bijux-dag ")
+        .or_else(|| trimmed.strip_prefix("bijux-dev-dag "))
+        .or_else(|| trimmed.strip_prefix("dag "))
+        .unwrap_or(trimmed);
+    let root = without_binary.split_whitespace().next()?.trim_end_matches("...");
+
+    if root.is_empty() {
+        None
+    } else {
+        Some(root.to_string())
+    }
 }

@@ -12,11 +12,30 @@ last_reviewed: 2026-04-28
 `bijux-dag` lowers a validated graph into an execution plan before the runtime
 decides scheduling, replay posture, or evidence handling.
 
+## Scope
+
+This contract defines the planner output that must stay stable across graph
+validation, execution-plan schema, runtime lowering, and operator-facing plan
+inspection surfaces.
+
 This contract exists so three surfaces stay aligned:
 
 - graph semantics in `bijux-dag-core`
 - executable plan shape in `configs/dag/schema/execution_plan.schema.json`
 - runtime consumption in `bijux-dag-runtime`
+
+## Lowering pipeline
+
+The planner is the boundary between four distinct states that must not be
+blurred together:
+
+- parsed graph: strict syntax and structural decoding from the input DAG file
+- validated graph: graph semantics after validation has accepted the DAG
+- canonical graph: deterministic normalized graph identity used for planning and fingerprints
+- execution plan: lowered runtime-facing plan with ordered nodes, dependencies, diagnostics, and identity boundaries
+
+The maintainer-facing `dag plan-dump` command must expose the execution plan
+without bypassing these boundaries.
 
 ## What The Planner Must Preserve
 
@@ -116,6 +135,18 @@ The planner may refuse a graph for runtime compatibility reasons, but it must
 not silently reinterpret an invalid graph. Branch decisions, conditional edges,
 and trigger rules must be validated before lowering.
 
+## Planning diagnostics
+
+Planner diagnostics are part of the stable proof surface, not incidental debug
+strings.
+
+- `P4021` means the graph requested a runtime capability that the selected node
+  kind cannot satisfy during lowering.
+- capability-oriented planner diagnostics must remain visible in `dag plan-dump`
+  output and in runtime-facing plan evidence.
+- diagnostic codes must stay stable enough to support contract tests and trust
+  property review.
+
 ## Required Regression Proof
 
 Any change to planner contract fields or planner identity rules must update:
@@ -127,3 +158,18 @@ Any change to planner contract fields or planner identity rules must update:
 
 Operator-facing docs may describe a plan surface as authoritative only when they
 cite `docs/spec/PLANNER_CONTRACT.md` directly.
+
+## Related tests
+
+- `crates/bijux-dag-core/tests/planner_contract.rs`
+- `crates/bijux-dag-core/tests/planner_fixture_contracts.rs`
+- `crates/bijux-dag-core/tests/planner_validation_edge_case_contracts.rs`
+- `crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs`
+- `crates/bijux-dag-app/tests/plan_command_contract.rs`
+
+## Versioning and change policy
+
+Planner output shape, identity boundaries, and branch reachability semantics are
+stable contract surfaces. Any incompatible change requires updating this
+document, the execution plan schema, and the linked planner, runtime, and app
+contract tests in the same change.

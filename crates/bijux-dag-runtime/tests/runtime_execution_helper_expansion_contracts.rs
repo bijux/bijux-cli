@@ -1,21 +1,18 @@
 use bijux_dag_artifacts as _;
-use bijux_dag_runtime::state_machine::{
-    failure_propagation_is_deterministic, node_transition_allowed, run_transition_allowed,
-    NodeLifecycleState, RunLifecycleState,
-};
 use bijux_dag_runtime::{
     apply_backfill_throttling, build_backfill_plan, build_plan, build_planner_analysis,
     build_scheduler, classify_failure, compute_partial_run_closure, deduplicate_trigger_events,
     deterministic_schedule_order, diff_plans, evaluate_sla_metrics, explain_plan,
-    failure_allows_downstream_readiness, fingerprint_plan, run_batches, scheduler_contract_profile,
+    failure_allows_downstream_readiness, failure_propagation_is_deterministic, fingerprint_plan,
+    node_transition_allowed, run_batches, run_transition_allowed, scheduler_contract_profile,
     scheduler_invariants_hold, validate_cron_expression, validate_schedule_policy_combination,
-    validate_schedule_registry, BackfillRequest, BackfillThrottlingPolicy, CatchUpPolicy,
-    ConcurrencyPolicyLayers, FailurePropagationMode, PlannerGuardrails, PlannerPhase,
-    PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyNode, RetryPolicySemantics,
-    RunBatchPolicy, RuntimeConfig, ScheduleDefinition, ScheduleRegistry, ScheduleSubmissionStatus,
-    ScheduledSubmission, SchedulerFairness, SchedulerPolicy, SelectorSet, TriggerSpec,
+    validate_schedule_registry, BackfillFailurePolicy, BackfillRequest, BackfillThrottlingPolicy,
+    CatchUpPolicy, ConcurrencyPolicyLayers, FailurePropagationMode, NodeLifecycleState,
+    PlannerGuardrails, PlannerPhase, PriorityClass, QueueIdentity, QueueIsolationPolicy, ReadyNode,
+    RetryPolicySemantics, RunBatchPolicy, RunLifecycleState, RuntimeConfig, ScheduleDefinition,
+    ScheduleRegistry, ScheduleSubmissionStatus, ScheduledSubmission, SchedulerFairness,
+    SchedulerPolicy, SelectorSet, TriggerSpec,
 };
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -53,6 +50,62 @@ fn scheduler_equal_priority_ready_sets_are_deterministic() {
     let ordered = deterministic_schedule_order(nodes, &BTreeMap::new());
     assert_eq!(ordered[0].node_id, "a");
     assert_eq!(ordered[1].node_id, "b");
+}
+
+#[test]
+fn schedule_validation_accepts_ranges_lists_steps_and_timezone() {
+    let schedule = ScheduleDefinition {
+        id: "weekday-window".to_string(),
+        dag_name: "dag.example".to_string(),
+        dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
+        trigger: TriggerSpec::Cron {
+            expression: "*/15 9-17 * * 1,3,5".to_string(),
+            timezone: "America/New_York".to_string(),
+        },
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+        priority: PriorityClass::Standard,
+        concurrency: ConcurrencyPolicyLayers {
+            per_dag: Some(1),
+            per_queue: Some(1),
+            per_tenant: None,
+            per_node_group: None,
+        },
+        catch_up: CatchUpPolicy { enabled: true, max_catch_up_runs: 4 },
+    };
+
+    validate_cron_expression("*/15 9-17 * * 1,3,5").expect("cron");
+    validate_schedule_registry(&ScheduleRegistry { definitions: vec![schedule] })
+        .expect("registry");
+}
+
+#[test]
+fn schedule_validation_rejects_unknown_cron_timezone() {
+    let schedule = ScheduleDefinition {
+        id: "bad-timezone".to_string(),
+        dag_name: "dag.example".to_string(),
+        dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
+        trigger: TriggerSpec::Cron {
+            expression: "0 1 * * *".to_string(),
+            timezone: "Mars/Olympus".to_string(),
+        },
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+        priority: PriorityClass::Standard,
+        concurrency: ConcurrencyPolicyLayers {
+            per_dag: Some(1),
+            per_queue: Some(1),
+            per_tenant: None,
+            per_node_group: None,
+        },
+        catch_up: CatchUpPolicy { enabled: false, max_catch_up_runs: 0 },
+    };
+
+    let err = validate_schedule_registry(&ScheduleRegistry { definitions: vec![schedule] })
+        .expect_err("invalid timezone");
+    assert!(err.contains("unsupported cron timezone"));
 }
 
 #[test]
@@ -160,8 +213,12 @@ fn planner_analysis_diagnostics_and_fingerprints_are_deterministic() {
     assert!(!second.plan_fingerprint.is_empty());
 
     let diff = diff_plans(&first, &second);
-    assert!(diff.changed_order_nodes.is_empty());
-    assert!(diff.changed_annotations.is_empty());
+    assert!(!diff.graph_fingerprint_changed);
+    assert!(!diff.execution_fingerprint_changed);
+    assert!(!diff.execution_affecting_changed);
+    assert!(!diff.metadata_only_changed);
+    assert!(diff.added_nodes.is_empty());
+    assert!(diff.changed_params.is_empty());
 
     let explain = explain_plan(&first);
     assert!(explain.phases.contains(&PlannerPhase::ScheduleReadyTransform));
@@ -175,6 +232,8 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
         id: "sched-1".to_string(),
         dag_name: "dag".to_string(),
         dag_version_policy: "pinned".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Cron {
             expression: "* * * * *".to_string(),
             timezone: "UTC".to_string(),
@@ -204,13 +263,16 @@ fn scheduler_backpressure_and_registry_validation_paths_are_exercised() {
     let scheduler = build_scheduler(&SchedulerPolicy {
         max_parallelism: 1,
         cpu_budget: Some(1),
+        memory_budget_mb: None,
+        gpu_device_budget: None,
+        named_resource_capacities: std::collections::BTreeMap::new(),
         fairness: SchedulerFairness::Deterministic,
         queue_isolation: QueueIsolationPolicy::SingleQueue,
         bounded_executor_capacity: 1,
         prefer_throughput_scheduler: false,
     });
     let profile = scheduler_contract_profile();
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuFitThenNodeId");
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuMemoryFitThenNodeId");
     assert!(failure_allows_downstream_readiness(FailurePropagationMode::ContinueIndependent));
 
     let graph = tiny_graph();
@@ -226,6 +288,8 @@ fn schedule_validation_rejects_blank_queue_and_noncron_catchup() {
         id: "manual-catchup".to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Manual,
         queue: QueueIdentity {
             queue_name: "   ".to_string(),
@@ -251,6 +315,8 @@ fn schedule_validation_rejects_zero_or_inconsistent_concurrency_layers() {
         id: "zero-cap".to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Cron {
             expression: "* * * * *".to_string(),
             timezone: "UTC".to_string(),
@@ -276,12 +342,15 @@ fn schedule_validation_rejects_backfill_that_exceeds_queue_capacity() {
         id: "backfill-over-cap".to_string(),
         dag_name: "dag.example".to_string(),
         dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
         trigger: TriggerSpec::Backfill(BackfillRequest {
             window_start_unix_ms: 100,
             window_end_unix_ms: 200,
             partition_by: Some("sample".to_string()),
+            partition_keys: Vec::new(),
             max_parallelism: 4,
-            failure_policy: "continue".to_string(),
+            failure_policy: BackfillFailurePolicy::Continue,
         }),
         queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
         priority: PriorityClass::High,
@@ -296,6 +365,37 @@ fn schedule_validation_rejects_backfill_that_exceeds_queue_capacity() {
 
     let err = validate_schedule_policy_combination(&schedule).expect_err("invalid backfill");
     assert!(err.contains("exceeds queue concurrency cap"));
+}
+
+#[test]
+fn schedule_validation_rejects_partition_list_without_partition_name() {
+    let schedule = ScheduleDefinition {
+        id: "backfill-partition-list".to_string(),
+        dag_name: "dag.example".to_string(),
+        dag_version_policy: "run-latest".to_string(),
+        input_contract: BTreeMap::new(),
+        input_bindings: BTreeMap::new(),
+        trigger: TriggerSpec::Backfill(BackfillRequest {
+            window_start_unix_ms: 100,
+            window_end_unix_ms: 200,
+            partition_by: None,
+            partition_keys: vec!["sample-a".to_string()],
+            max_parallelism: 1,
+            failure_policy: BackfillFailurePolicy::Continue,
+        }),
+        queue: QueueIdentity { queue_name: "default".to_string(), tenant: None },
+        priority: PriorityClass::High,
+        concurrency: ConcurrencyPolicyLayers {
+            per_dag: Some(1),
+            per_queue: Some(1),
+            per_tenant: None,
+            per_node_group: None,
+        },
+        catch_up: CatchUpPolicy { enabled: false, max_catch_up_runs: 0 },
+    };
+
+    let err = validate_schedule_policy_combination(&schedule).expect_err("invalid partition list");
+    assert!(err.contains("partition_keys require partition_by"));
 }
 
 #[test]

@@ -1,9 +1,11 @@
 use std::collections::BTreeSet;
+use std::fs;
 use std::path::Path;
 
 use super::{
-    build_audit_report, build_diff_report, build_generators_report, build_migrated_report,
-    build_remaining_report, build_requirement_catalog_report, build_status_contracts_report,
+    build_audit_report, build_diff_report, build_generators_report, build_ignored_dag_tests_report,
+    build_migrated_report, build_remaining_report, build_requirement_catalog_report,
+    build_status_contracts_report,
 };
 
 #[test]
@@ -18,6 +20,7 @@ fn contract_reports_are_shaped() {
     assert!(audit.get("status_contracts").is_some());
     assert!(audit.get("requirement_catalog").is_some());
     assert!(audit.get("flaky_tests").is_some());
+    assert!(audit.get("ignored_dag_tests").is_some());
 }
 
 #[test]
@@ -140,4 +143,51 @@ fn status_inventory_commands_use_canonical_maintenance_route() {
             "{contract_id} must use canonical maintenance status route: {command}"
         );
     }
+}
+
+#[test]
+fn ignored_dag_tests_report_flags_source_level_ignored_tests_outside_governance() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let workspace_root = root.path();
+    let governance_dir = workspace_root.join("configs/dag/policy");
+    fs::create_dir_all(&governance_dir).expect("governance dir");
+    fs::write(
+        governance_dir.join("release_test_lane_governance.json"),
+        serde_json::json!({
+            "required_release_lane": { "make_target": "test-release-rs" },
+            "full_verification_lane": { "make_target": "test-all-rs" },
+            "portfolios": [{
+                "path": "crates/bijux-dag-app/tests/governed.rs",
+                "ignore_reason": "experimental",
+                "tests": ["governed_case"]
+            }]
+        })
+        .to_string(),
+    )
+    .expect("write governance");
+
+    let governed = workspace_root.join("crates/bijux-dag-app/tests");
+    fs::create_dir_all(&governed).expect("governed dir");
+    fs::write(
+        governed.join("governed.rs"),
+        "#[ignore = \"experimental\"]\nfn governed_case() {}\n",
+    )
+    .expect("write governed");
+
+    let stray = workspace_root.join("crates/bijux-dag-app/src/commands");
+    fs::create_dir_all(&stray).expect("stray dir");
+    fs::write(
+        stray.join("reference_docs.rs"),
+        "#[ignore = \"internal\"]\nfn stray_refresh_helper() {}\n",
+    )
+    .expect("write stray");
+
+    let report = build_ignored_dag_tests_report(workspace_root);
+    let missing = report["missing_from_governance"].as_array().expect("missing array");
+    assert_eq!(missing.len(), 1);
+    assert_eq!(
+        missing[0].as_str(),
+        Some("crates/bijux-dag-app/src/commands/reference_docs.rs::internal::stray_refresh_helper")
+    );
+    assert_eq!(report["integrity_status"], "degraded");
 }

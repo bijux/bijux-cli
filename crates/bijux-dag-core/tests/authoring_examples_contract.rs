@@ -43,8 +43,10 @@ fn bad_examples_fail_parse_or_validation() {
     for path in [
         "evidence/authoring/negative/undeclared_outputs.json",
         "evidence/authoring/negative/invalid_refs.json",
+        "evidence/dag/authoring/negative/invalid_container_workdir.json",
         "evidence/authoring/negative/cycle.json",
         "evidence/authoring/negative/invalid_selectors.json",
+        "evidence/dag/authoring/negative/missing_required_input_binding.json",
         "evidence/authoring/negative/unsupported_adapter_payload.json",
     ] {
         let parsed = parse_graph_strict(&load(path));

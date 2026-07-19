@@ -9,6 +9,16 @@ pub struct InvariantDefinition {
 
 pub const INVARIANT_REGISTRY: &[InvariantDefinition] = &[
     InvariantDefinition {
+        id: "INV-GRAPH-SHAPE-001",
+        title: "canonical graph shape remains acyclic, unique, and structurally deterministic",
+        enforcement: "dag-core graph identity property contracts + runtime formal invariant property contracts",
+    },
+    InvariantDefinition {
+        id: "INV-PLAN-SHAPE-001",
+        title: "execution plan shape remains deterministic for equivalent graph structure",
+        enforcement: "runtime formal invariant property contracts + planner lowering contracts",
+    },
+    InvariantDefinition {
         id: "INV-RUN-COUNTS-001",
         title: "manifest node counts match observed terminal node statuses",
         enforcement: "runtime::invariants::run_summary_invariant_ok + app verify_run",
@@ -30,13 +40,18 @@ pub const INVARIANT_REGISTRY: &[InvariantDefinition] = &[
     },
     InvariantDefinition {
         id: "INV-PLAN-DEPENDENCY-001",
-        title: "planned dependency counts are stable and deterministic",
+        title: "planned dependency counts remain stable for equivalent lowered graphs",
         enforcement: "planner and scheduler contract tests",
     },
     InvariantDefinition {
         id: "INV-CACHE-PROOF-001",
         title: "cache hit requires proof metadata compatibility",
         enforcement: "cache evolution contract tests",
+    },
+    InvariantDefinition {
+        id: "INV-ARTIFACT-REF-001",
+        title: "artifact references remain attributable, present, and integrity-checkable",
+        enforcement: "app smoke artifact inspect contracts + import or export artifact corruption contracts",
     },
 ];
 
@@ -46,6 +61,7 @@ pub struct RunNodeCounts {
     pub failed: u32,
     pub skipped: u32,
     pub cached: u32,
+    pub cancelled: u32,
 }
 
 pub fn run_summary_invariant_ok(manifest: RunNodeCounts, traces: &[crate::NodeStatus]) -> bool {
@@ -56,6 +72,7 @@ pub fn run_summary_invariant_ok(manifest: RunNodeCounts, traces: &[crate::NodeSt
             crate::NodeStatus::Failed => observed.failed += 1,
             crate::NodeStatus::Skipped => observed.skipped += 1,
             crate::NodeStatus::Cached => observed.cached += 1,
+            crate::NodeStatus::Cancelled => observed.cancelled += 1,
         }
     }
     manifest == observed
@@ -69,6 +86,7 @@ pub fn terminal_run_has_terminal_node(statuses: &[crate::NodeStatus]) -> bool {
                 | crate::NodeStatus::Failed
                 | crate::NodeStatus::Cached
                 | crate::NodeStatus::Skipped
+                | crate::NodeStatus::Cancelled
         )
     })
 }

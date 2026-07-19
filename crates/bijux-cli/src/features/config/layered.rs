@@ -984,8 +984,10 @@ fn write_json_pretty(path: &Path, payload: &Value) -> Result<(), ConfigError> {
 
 #[cfg(test)]
 mod tests {
+    use std::ffi::OsString;
     use std::fs;
     use std::path::PathBuf;
+    use std::sync::{LazyLock, Mutex, MutexGuard};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use serde_json::json;
@@ -998,6 +1000,35 @@ mod tests {
         repair_env_text, resolve_layered_config, schema_docs_report, schema_report,
         validate_report, LayeredConfigOptions,
     };
+
+    static ENV_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+
+    struct EnvVarGuard {
+        key: &'static str,
+        original: Option<OsString>,
+    }
+
+    impl EnvVarGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            let original = std::env::var_os(key);
+            std::env::set_var(key, value);
+            Self { key, original }
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            if let Some(value) = &self.original {
+                std::env::set_var(self.key, value);
+            } else {
+                std::env::remove_var(self.key);
+            }
+        }
+    }
+
+    fn env_lock() -> MutexGuard<'static, ()> {
+        ENV_LOCK.lock().expect("env lock")
+    }
 
     fn temp_dir(name: &str) -> PathBuf {
         let nanos = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
@@ -1064,6 +1095,7 @@ mod tests {
 
     #[test]
     fn layered_resolution_merges_global_project_and_env_layers() {
+        let _env_lock = env_lock();
         let root = temp_dir("resolve");
         let global = root.join("global.env");
         let project = root.join("project");
@@ -1072,7 +1104,7 @@ mod tests {
         fs::write(project.join(".bijux/config.toml"), "[dag]\njobs = 3\n").expect("project");
         fs::write(project.join(".bijux/profiles/dev.toml"), "[dag]\ncache_mode = 'strict'\n")
             .expect("profile");
-        std::env::set_var("BIJUX_DAG_JOBS", "6");
+        let _dag_jobs = EnvVarGuard::set("BIJUX_DAG_JOBS", "6");
 
         let resolved = resolve_layered_config(&global, &project, Some("dev")).expect("resolved");
         assert_eq!(
@@ -1084,8 +1116,6 @@ mod tests {
             resolved.effective_entries.get("dag_cache_mode").map(String::as_str),
             Some("strict")
         );
-
-        std::env::remove_var("BIJUX_DAG_JOBS");
     }
 
     #[test]
@@ -1120,6 +1150,7 @@ mod tests {
 
     #[test]
     fn validate_report_declares_deterministic_precedence_and_cli_overrides() {
+        let _env_lock = env_lock();
         let root = temp_dir("validate-precedence");
         let global = root.join("global.env");
         let project = root.join("project");
@@ -1127,7 +1158,7 @@ mod tests {
         fs::write(&global, "BIJUXCLI_CLI_LOG_LEVEL=info\n").expect("global");
         fs::write(project.join(".bijux/config.toml"), "[cli]\nlog_level = 'warn'\n")
             .expect("project");
-        std::env::set_var("BIJUXCLI_CLI_LOG_LEVEL", "error");
+        let _log_level = EnvVarGuard::set("BIJUXCLI_CLI_LOG_LEVEL", "error");
 
         let payload =
             validate_report(&global, &project, None, &["cli.log_level=debug".to_string()])
@@ -1145,8 +1176,6 @@ mod tests {
             ])
         );
         assert_eq!(payload["effective"]["cli.log_level"]["value"], "debug");
-
-        std::env::remove_var("BIJUXCLI_CLI_LOG_LEVEL");
     }
 
     #[test]

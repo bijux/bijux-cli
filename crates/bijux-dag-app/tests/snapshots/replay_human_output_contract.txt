@@ -3,7 +3,7 @@
   "forbid_reason": null,
   "jobs": 1,
   "mutates_source": false,
-  "parent_run_id": "run-fixed",
+  "parent_run_id": "fixed",
   "planned_actions": [
     {
       "action": "reexecute",
@@ -23,10 +23,12 @@
   "prove_requested": false,
   "sandbox_mode": "standard",
   "selectors": {
+    "downstream_roots": [],
     "exclude": [],
-    "select": []
+    "select": [],
+    "selected_node_ids": []
   },
   "source_run_dir": "<TMP>/runs/run-fixed",
-  "source_run_id": "run-fixed",
+  "source_run_id": "fixed",
   "target_out_dir": "<TMP>/runs"
 }

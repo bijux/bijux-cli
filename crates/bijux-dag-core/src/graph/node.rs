@@ -1,11 +1,14 @@
-use crate::{Effect, FileOutput, Graph, Node, ParamValue, RefSpec};
+use crate::{
+    env_allowlist_pattern_is_exact, Effect, Graph, Node, OutputKind, OutputSpec, ParamValue,
+    RefSpec,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeInterfaceContract {
     pub declared_inputs: Vec<String>,
-    pub declared_outputs: Vec<FileOutput>,
+    pub declared_outputs: Vec<OutputSpec>,
     pub declared_params: Vec<String>,
     pub declared_effects: Vec<Effect>,
 }
@@ -38,6 +41,7 @@ pub struct NodeInputBinding {
 pub enum ParamBindingSource {
     GraphInput { input_name: String },
     NodeOutput { node_id: String, output_name: String },
+    PathVariable { name: String, relative_path: Option<String> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -56,8 +60,10 @@ pub struct NodeEnvBinding {
 pub struct NodeOutputContract {
     pub name: String,
     pub path: String,
+    pub kind: OutputKind,
     pub required: bool,
     pub media_type: String,
+    pub promotable: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -76,7 +82,14 @@ pub struct NodeTypeRegistry {
 impl NodeTypeRegistry {
     pub fn default_registry() -> Self {
         Self {
-            known_types: vec!["const".to_string(), "shell".to_string(), "container".to_string()],
+            known_types: vec![
+                "const".to_string(),
+                "shell".to_string(),
+                "python".to_string(),
+                "http".to_string(),
+                "file_transform".to_string(),
+                "container".to_string(),
+            ],
         }
     }
 
@@ -141,7 +154,10 @@ pub fn node_io_contract(graph: &Graph, node_id: &str) -> Option<NodeIoContract> 
         env_bindings: node
             .env_allowlist
             .iter()
-            .map(|name| NodeEnvBinding { name: name.clone(), required: true })
+            .map(|name| NodeEnvBinding {
+                name: name.clone(),
+                required: env_allowlist_pattern_is_exact(name),
+            })
             .collect(),
         outputs: node
             .outputs
@@ -149,8 +165,10 @@ pub fn node_io_contract(graph: &Graph, node_id: &str) -> Option<NodeIoContract> 
             .map(|output| NodeOutputContract {
                 name: output.name.clone(),
                 path: output.path.clone(),
-                required: true,
-                media_type: "application/octet-stream".to_string(),
+                kind: output.kind.clone(),
+                required: output.required,
+                media_type: output.effective_media_type(),
+                promotable: output.promotable,
             })
             .collect(),
     })
@@ -194,11 +212,63 @@ fn param_binding_from_ref(key_path: &str, reference: &RefSpec) -> Option<NodePar
             source: ParamBindingSource::GraphInput { input_name: input_name.clone() },
         });
     }
-    reference.node_output.as_ref().map(|node_output| NodeParamBinding {
+    if let Some(node_output) = &reference.node_output {
+        return Some(NodeParamBinding {
+            key_path: key_path.to_string(),
+            source: ParamBindingSource::NodeOutput {
+                node_id: node_output.node_id.clone(),
+                output_name: node_output.output_name.clone(),
+            },
+        });
+    }
+    reference.path_var.as_ref().map(|path_var| NodeParamBinding {
         key_path: key_path.to_string(),
-        source: ParamBindingSource::NodeOutput {
-            node_id: node_output.node_id.clone(),
-            output_name: node_output.path.clone(),
+        source: ParamBindingSource::PathVariable {
+            name: path_var.name().to_string(),
+            relative_path: path_var.relative_path().map(str::to_string),
         },
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::node_io_contract;
+    use crate::{Graph, NodeOutputContract};
+    use serde_json::json;
+
+    #[test]
+    fn node_io_contract_preserves_promotable_output_declarations() {
+        let graph: Graph = serde_json::from_value(json!({
+            "spec": "bijux-dag/v0.1",
+            "nodes": [
+                {
+                    "id": "publish",
+                    "kind": "const",
+                    "outputs": [
+                        {
+                            "name": "report",
+                            "path": "publish/report.json",
+                            "promotable": true
+                        }
+                    ],
+                    "params": {"value": "ok"}
+                }
+            ],
+            "edges": []
+        }))
+        .expect("graph");
+
+        let contract = node_io_contract(&graph, "publish").expect("io contract");
+        assert_eq!(
+            contract.outputs,
+            vec![NodeOutputContract {
+                name: "report".to_string(),
+                path: "publish/report.json".to_string(),
+                kind: crate::OutputKind::File,
+                required: true,
+                media_type: "application/octet-stream".to_string(),
+                promotable: true,
+            }]
+        );
+    }
 }

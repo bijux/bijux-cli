@@ -34,10 +34,10 @@ flowchart LR
 ## Example Loop
 
 ```bash
-bijux dag validate ./pipelines/main.dag.json
-bijux dag run ./pipelines/main.dag.json --out ./runs/dev
-bijux dag replay ./runs/dev/latest --out ./runs/dev-replay
-bijux dag diff ./runs/baseline/latest ./runs/dev/latest --mode semantic --explain
+bijux-dag validate ./pipelines/main.dag.json
+bijux-dag run ./pipelines/main.dag.json --out ./runs/dev
+bijux-dag replay ./runs/dev/latest --out ./runs/dev-replay
+bijux-dag diff ./runs/baseline/latest ./runs/dev/latest --mode semantic --explain
 ```
 
 ## Code Anchors

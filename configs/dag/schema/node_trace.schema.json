@@ -22,11 +22,120 @@
     "resources": {"type": ["object", "null"]},
     "inputs_index": {"type": ["string", "null"]},
     "resolved_params": {},
+    "exit_code": {"type": ["integer", "null"]},
+    "stdout": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["path", "size_bytes", "tail_lines"],
+      "properties": {
+        "path": {"type": "string"},
+        "size_bytes": {"type": "integer"},
+        "tail_lines": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "stderr": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["path", "size_bytes", "tail_lines"],
+      "properties": {
+        "path": {"type": "string"},
+        "size_bytes": {"type": "integer"},
+        "tail_lines": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "path", "kind", "required", "present", "media_type", "size_bytes"],
+        "properties": {
+          "name": {"type": "string"},
+          "path": {"type": "string"},
+          "kind": {"type": "string"},
+          "required": {"type": "boolean"},
+          "present": {"type": "boolean"},
+          "media_type": {"type": "string"},
+          "size_bytes": {"type": ["integer", "null"]},
+          "sha256": {"type": ["string", "null"]},
+          "promotable": {"type": "boolean"}
+        }
+      }
+    },
     "container": {"type": ["object", "null"]},
     "cache_proof": {"type": ["object", "null"]},
+    "cache_identity": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "cache_key",
+        "node_definition_fingerprint",
+        "declared_environment_fingerprint",
+        "input_lineage_fingerprint",
+        "params_fingerprint",
+        "policy_fingerprint",
+        "execution_contract_fingerprint",
+        "backend_class"
+      ],
+      "properties": {
+        "cache_key": {"type": "string"},
+        "node_definition_fingerprint": {"type": "string"},
+        "declared_environment_fingerprint": {"type": "string"},
+        "input_lineage_fingerprint": {"type": "string"},
+        "params_fingerprint": {"type": "string"},
+        "command_fingerprint": {"type": ["string", "null"]},
+        "policy_fingerprint": {"type": "string"},
+        "execution_contract_fingerprint": {"type": "string"},
+        "backend_class": {"type": "string"}
+      }
+    },
+    "branch_decision": {"type": ["string", "null"]},
+    "trigger_evaluation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["trigger_rule", "satisfied", "reason", "parent_statuses"],
+      "properties": {
+        "trigger_rule": {"type": "string"},
+        "satisfied": {"type": "boolean"},
+        "reason": {"type": "string"},
+        "parent_statuses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["node_id", "status"],
+            "properties": {
+              "node_id": {"type": "string"},
+              "status": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
     "skip_reason": {"type": ["object", "null"]},
     "failure": {"type": ["object", "null"]},
     "transition_cause": {"type": ["string", "null"]},
+    "lifecycle_state": {"type": ["string", "null"]},
+    "lifecycle_transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from_state", "to_state", "cause", "unix_ms"],
+        "properties": {
+          "from_state": {"type": "string"},
+          "to_state": {"type": "string"},
+          "cause": {"type": "string"},
+          "unix_ms": {"type": "integer"}
+        }
+      }
+    },
     "replay_provenance": {"type": ["object", "null"]}
   }
 }

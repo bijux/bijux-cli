@@ -1,7 +1,10 @@
 use bijux_dag_core::{Edge, EdgeKind, Graph, NodeKind, PortRef};
-use bijux_dag_testkit::DagFixture;
 use serde_json::json;
 use std::collections::BTreeMap;
+
+mod support;
+
+use support::DagFixture;
 
 fn lcg_next(state: &mut u64) -> u64 {
     *state = state.wrapping_mul(2862933555777941757).wrapping_add(3037000493);

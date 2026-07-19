@@ -32,7 +32,7 @@ pub(super) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/precedence_regression_matrix.json",
+                "artifacts/status/precedence_regression_report.json",
                 "artifacts/parity/command_precedence_report.json",
                 "artifacts/status/precedence_contract.json"
             ],
@@ -163,29 +163,29 @@ pub(super) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/flag_normalization_matrix.json"
+                "artifacts/status/flag_normalization_report.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX",
         }),
         json!({
-            "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
+            "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-COVERAGE",
             "kind": "generate",
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/plugin_lifecycle_test_matrix.json"
+                "artifacts/status/plugin_lifecycle_test_coverage.json"
             ],
-            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-MATRIX",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-LIFECYCLE-TEST-COVERAGE",
         }),
         json!({
-            "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX",
+            "contract_id": "STATUS-CONTRACT-GENERATE-PLUGIN-ROLLBACK-TEST-COVERAGE",
             "kind": "generate",
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/plugin_failure_rollback_test_matrix.json"
+                "artifacts/status/plugin_rollback_test_coverage.json"
             ],
-            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-FAILURE-ROLLBACK-TEST-MATRIX",
+            "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-PLUGIN-ROLLBACK-TEST-COVERAGE",
         }),
         json!({
             "contract_id": "STATUS-CONTRACT-GENERATE-RESERVED-NAMESPACE-TEST-MATRIX",

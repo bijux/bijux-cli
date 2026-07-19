@@ -40,6 +40,7 @@ fn transition_cause_mapping_is_stable() {
     assert_eq!(transition_cause_for_status(&NodeStatus::Cached), "CachedReuse");
     assert_eq!(
         transition_cause_for_failure(Some(&FailureInfo {
+            class: Some(bijux_dag_artifacts::FailureClass::Policy),
             kind: "Policy".to_string(),
             code: "POLICY_DENIED".to_string(),
             message: "policy denied".to_string(),
@@ -49,6 +50,7 @@ fn transition_cause_mapping_is_stable() {
     );
     assert_eq!(
         transition_cause_for_failure(Some(&FailureInfo {
+            class: Some(bijux_dag_artifacts::FailureClass::Timeout),
             kind: "Execution".to_string(),
             code: "EXEC_TIMEOUT".to_string(),
             message: "timed out".to_string(),
@@ -58,6 +60,7 @@ fn transition_cause_mapping_is_stable() {
     );
     assert_eq!(
         transition_cause_for_failure(Some(&FailureInfo {
+            class: Some(bijux_dag_artifacts::FailureClass::Infrastructure),
             kind: "Infrastructure".to_string(),
             code: "CONTAINER_ENGINE_UNAVAILABLE".to_string(),
             message: "missing engine".to_string(),
@@ -67,6 +70,7 @@ fn transition_cause_mapping_is_stable() {
     );
     assert_eq!(
         transition_cause_for_failure(Some(&FailureInfo {
+            class: Some(bijux_dag_artifacts::FailureClass::User),
             kind: "Execution".to_string(),
             code: "OUTPUT_MISSING".to_string(),
             message: "missing output".to_string(),

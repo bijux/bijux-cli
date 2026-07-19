@@ -52,6 +52,6 @@ and the repository needs a durable explanation rather than a passing PR note.
 
 ## Next Reads
 
-- [Change Management](change-management.md)
-- [Release and Versioning](release-and-versioning.md)
+- [Change Management](../operations/change-management.md)
+- [Release and Versioning](../operations/release-and-versioning.md)
 - [Risk and Exceptions](risk-and-exceptions.md)

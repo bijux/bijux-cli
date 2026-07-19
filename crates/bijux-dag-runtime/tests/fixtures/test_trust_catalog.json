@@ -1,45 +1,13 @@
 {
-  "semantic": [
-    "runtime_semantics_contracts.rs",
-    "engine_correctness_contracts.rs"
+  "critical": [
+    "runtime_scheduler_determinism_contracts.rs",
+    "runtime_failure_contracts.rs",
+    "runtime_replay_contracts.rs",
+    "planner_lowering_contracts.rs"
   ],
-  "adversarial": [
-    "runtime_adversarial_contracts.rs"
-  ],
-  "failure": [
-    "runtime_failure_contracts.rs"
-  ],
-  "replay": [
-    "runtime_replay_contracts.rs"
-  ],
-  "scheduler": [
-    "runtime_scheduler_contracts.rs"
-  ],
-  "policy": [
-    "runtime_policy_contracts.rs"
-  ],
-  "cache": [
-    "runtime_cache_contracts.rs"
-  ],
-  "artifact": [
-    "runtime_artifact_contracts.rs"
-  ],
-  "cancellation": [
-    "runtime_cancellation_contracts.rs"
-  ],
-  "state_machine": [
-    "runtime_state_machine_contracts.rs"
-  ],
-  "recovery": [
-    "runtime_recovery_contracts.rs"
-  ],
-  "import_export": [
-    "runtime_import_export_contracts.rs"
-  ],
-  "node_execution": [
-    "runtime_node_execution_contracts.rs"
-  ],
-  "scheduler_determinism": [
-    "runtime_scheduler_determinism_contracts.rs"
+  "useful": [
+    "observability_contracts.rs",
+    "battle_workflow_harness_contracts.rs",
+    "runtime_semantics_contracts.rs"
   ]
 }

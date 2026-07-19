@@ -6,7 +6,10 @@ use crate::{
     DependencyCounter, NodeResult, NodeStatus, ReadyQueue, RetryPolicy, RunContext, RuntimeConfig,
     RuntimeError,
 };
-use bijux_dag_artifacts::{ContainerTrace, FailureInfo, InputsIndex, NodeCounts, ReplayProvenance};
+use bijux_dag_artifacts::{
+    ContainerTrace, FailureInfo, InputsIndex, NodeCounts, NodeLifecycleTransition,
+    ReplayProvenance, TriggerEvaluation,
+};
 use bijux_dag_core::{Graph, Node};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -14,12 +17,13 @@ use std::sync::Arc;
 
 pub(crate) fn run_retry_logic(
     adapter: &dyn Adapter,
+    graph: &Graph,
     node: &Node,
     params: &Value,
     ctx: &RunContext,
     retry: &RetryPolicy,
 ) -> Result<NodeResult, RuntimeError> {
-    crate::execute_with_retries(adapter, node, params, ctx, retry)
+    crate::execute_with_retries(adapter, graph, node, params, ctx, retry)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -29,6 +33,7 @@ pub(crate) fn run_write_trace(
     node_id: &str,
     status: NodeStatus,
     failure: Option<FailureInfo>,
+    output_evidence: Vec<bijux_dag_artifacts::TraceOutputArtifact>,
     started_unix_ms: u128,
     finished_unix_ms: u128,
     attempt: u32,
@@ -38,9 +43,12 @@ pub(crate) fn run_write_trace(
     adapter_outputs_schema_version: &str,
     container_meta: Option<ContainerTrace>,
     adapter_binary_sha256: Option<String>,
+    trigger_evaluation: Option<TriggerEvaluation>,
     branch_decision: Option<String>,
     skip_reason: Option<bijux_dag_artifacts::SkipReason>,
     transition_cause: Option<String>,
+    lifecycle_state: Option<String>,
+    lifecycle_transitions: Vec<NodeLifecycleTransition>,
     replay_provenance: Option<ReplayProvenance>,
 ) -> Result<(), RuntimeError> {
     write_trace(
@@ -49,6 +57,7 @@ pub(crate) fn run_write_trace(
         node_id,
         status,
         failure,
+        output_evidence,
         started_unix_ms,
         finished_unix_ms,
         attempt,
@@ -58,9 +67,12 @@ pub(crate) fn run_write_trace(
         adapter_outputs_schema_version,
         container_meta,
         adapter_binary_sha256,
+        trigger_evaluation,
         branch_decision,
         skip_reason,
         transition_cause,
+        lifecycle_state,
+        lifecycle_transitions,
         replay_provenance,
     )
 }
@@ -68,10 +80,11 @@ pub(crate) fn run_write_trace(
 pub(crate) fn run_materialize_inputs(
     ctx: &RunContext,
     graph: &Graph,
-    node_id: &str,
+    node: &Node,
     mode: crate::MaterializeMode,
+    parent_statuses: &HashMap<String, NodeStatus>,
 ) -> Result<InputsIndex, RuntimeError> {
-    materialize_inputs(ctx, graph, node_id, mode)
+    materialize_inputs(ctx, graph, node, mode, parent_statuses)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -83,6 +96,7 @@ pub(crate) fn run_cache_lookup(
     fs: Arc<dyn crate::Fs>,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_binary_sha256: Option<&str>,
     adapter_outputs_schema_version: &str,
 ) -> Result<CacheRead, RuntimeError> {
     try_cache_read(
@@ -93,6 +107,7 @@ pub(crate) fn run_cache_lookup(
         fs,
         adapter_id,
         adapter_version,
+        adapter_binary_sha256,
         adapter_outputs_schema_version,
     )
 }
@@ -106,6 +121,7 @@ pub(crate) fn run_cache_write(
     fs: Arc<dyn crate::Fs>,
     adapter_id: &str,
     adapter_version: &str,
+    adapter_binary_sha256: Option<&str>,
     adapter_outputs_schema_version: &str,
 ) -> Result<(), RuntimeError> {
     try_cache_write(
@@ -116,6 +132,7 @@ pub(crate) fn run_cache_write(
         fs,
         adapter_id,
         adapter_version,
+        adapter_binary_sha256,
         adapter_outputs_schema_version,
     )
 }
@@ -138,7 +155,8 @@ pub(crate) fn guard_terminal_node_status(to: &NodeStatus) -> Result<(), RuntimeE
         NodeStatus::Success => (S::Running, S::Succeeded),
         NodeStatus::Failed => (S::Running, S::Failed),
         NodeStatus::Skipped => (S::Ready, S::Skipped),
-        NodeStatus::Cached => (S::Running, S::Cached),
+        NodeStatus::Cached => (S::Ready, S::Cached),
+        NodeStatus::Cancelled => (S::Running, S::Cancelled),
     };
     if node_transition_allowed(from, target) {
         Ok(())

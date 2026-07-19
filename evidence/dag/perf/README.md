@@ -1,13 +1,16 @@
 # Performance Evidence
 
-Purpose: workload scenarios and approved baselines for performance trust.
+Use performance evidence for workload scenarios, approved fixtures, and any
+baseline that is allowed to influence a release decision.
 
-Subdirectories:
+## What Lives Here
+
 - `scenarios/`
 - `baselines/`
 - `fixtures/`
 
-Classification policy:
+## Classification Policy
+
 - Mark scenarios as `core`, `advisory`, or `experimental` in metadata.
 - Keep the release-relevant set intentionally small and explicitly listed in metadata.
 - Mark a scenario `release_blocking: true` only when a threshold reference is enforced.

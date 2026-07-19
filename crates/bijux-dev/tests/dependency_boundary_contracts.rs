@@ -120,10 +120,17 @@ fn core_dependencies_match_kernel_allowed_list() {
 #[test]
 fn runtime_dependencies_match_runtime_allowed_list() {
     let allowed: BTreeSet<String> = [
+        "base64",
         "bijux-dag-artifacts",
         "bijux-dag-core",
+        "chrono",
+        "chrono-tz",
+        "croner",
         "ctrlc",
         "hex",
+        "flate2",
+        "nix",
+        "reqwest",
         "serde",
         "serde_json",
         "sha2",
@@ -142,11 +149,11 @@ fn runtime_dependencies_match_runtime_allowed_list() {
 }
 
 #[test]
-#[ignore = "legacy dependency allowlist contract reflects historical module partitioning"]
 fn dev_governance_dependencies_match_allowed_list() {
     let allowed: BTreeSet<String> = [
         "anyhow",
         "bijux-cli",
+        "bijux-dag-app",
         "bijux-dag-artifacts",
         "bijux-dag-core",
         "bijux-dag-runtime",

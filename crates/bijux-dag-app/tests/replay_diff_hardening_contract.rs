@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -119,7 +118,6 @@ fn run_and_replay_with_prove(
 }
 
 #[test]
-#[ignore = "slow"]
 fn replay_proof_schema_lockstep_and_mismatch_grouping() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
@@ -167,7 +165,6 @@ fn replay_proof_schema_lockstep_and_mismatch_grouping() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn replay_exactness_covers_minimal_diamond_and_cache_oriented_graphs() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
@@ -190,8 +187,7 @@ fn replay_exactness_covers_minimal_diamond_and_cache_oriented_graphs() {
 }
 
 #[test]
-#[ignore = "slow"]
-fn replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported() {
+fn replay_from_selected_node_dry_run_is_supported() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
     let out_dir = tmp.path().join("runs");
@@ -219,7 +215,23 @@ fn replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported() 
         &root,
     );
     assert!(dry["data"]["dry_run_plan"].is_object());
+}
 
+#[test]
+#[ignore = "experimental"]
+fn replay_imported_bundle_round_trip_is_supported() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = tmp.path().join("diamond.json");
+    write_const_graph(&graph, "diamond");
+
+    let _ = run_json(
+        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "import-src"],
+        &root,
+    );
+    let source_run = out_dir.join("run-import-src");
     let bundle = tmp.path().join("bundle.json");
     let _ = run_json(
         &["export", "--json", &out(&source_run), "--out", &out(&bundle), "--manifest-only"],
@@ -230,7 +242,6 @@ fn replay_from_selected_node_dry_run_and_imported_bundle_replay_are_supported() 
 }
 
 #[test]
-#[ignore = "slow"]
 fn replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
@@ -296,8 +307,7 @@ fn replay_missing_artifacts_and_environment_mismatch_downgrade_fidelity() {
 }
 
 #[test]
-#[ignore = "slow"]
-fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
+fn replay_diff_schema_is_lockstep_and_semantic() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");
     let out_dir = tmp.path().join("runs");
@@ -320,7 +330,23 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
     for field in required_fields("configs/dag/schema/operator/run_diff.schema.json") {
         assert!(run_diff["data"].get(&field).is_some(), "run diff missing field `{field}`");
     }
+}
 
+#[test]
+#[ignore = "experimental"]
+fn canonical_diff_and_artifact_trace_schemas_are_lockstep() {
+    let root = repo_root();
+    let tmp = tempfile::tempdir().expect("tmp");
+    let out_dir = tmp.path().join("runs");
+    fs::create_dir_all(&out_dir).expect("mkdir");
+    let graph = tmp.path().join("diamond.json");
+    write_const_graph(&graph, "diamond");
+
+    let _ = run_json(
+        &["run", "--json", &out(&graph), "--out", &out(&out_dir), "--run-id", "diff-a"],
+        &root,
+    );
+    let run_a = out_dir.join("run-diff-a");
     let canonical_diff = run_json(&["canonical-diff", "--json", &out(&graph)], &root);
     for field in required_fields("configs/dag/schema/operator/graph_diff.schema.json") {
         assert!(canonical_diff["data"].get(&field).is_some(), "graph diff missing field `{field}`");
@@ -333,7 +359,6 @@ fn replay_diff_and_explain_schemas_are_lockstep_and_semantic() {
 }
 
 #[test]
-#[ignore = "slow"]
 fn explain_failure_schema_lockstep_and_human_readable_snapshots_are_stable() {
     let root = repo_root();
     let tmp = tempfile::tempdir().expect("tmp");

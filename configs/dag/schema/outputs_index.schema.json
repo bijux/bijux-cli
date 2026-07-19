@@ -11,12 +11,26 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["path", "sha256", "node_id", "node_fingerprint"],
+        "required": [
+          "name",
+          "path",
+          "kind",
+          "media_type",
+          "size_bytes",
+          "sha256",
+          "node_id",
+          "node_fingerprint"
+        ],
         "properties": {
+          "name": {"type": "string"},
           "path": {"type": "string"},
+          "kind": {"type": "string"},
+          "media_type": {"type": "string"},
+          "size_bytes": {"type": "integer", "minimum": 0},
           "sha256": {"type": "string"},
           "node_id": {"type": "string"},
-          "node_fingerprint": {"type": "string"}
+          "node_fingerprint": {"type": "string"},
+          "promotable": {"type": "boolean"}
         }
       }
     }

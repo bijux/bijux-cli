@@ -1,4 +1,4 @@
-"""Python facade and app-author helpers for bijux-cli."""
+"""Python facade, DAG helpers, and app-author helpers for bijux-cli."""
 
 from __future__ import annotations
 
@@ -18,6 +18,16 @@ from .app_sdk import (
     failure,
     run_json_app,
     success,
+)
+from .dag_sdk import (
+    dag_command_json,
+    dag_post_install_diagnostics,
+    inspect_dag_run,
+    load_dag_graph,
+    plan_dag_graph,
+    query_dag_artifacts,
+    run_dag_graph,
+    validate_dag_graph,
 )
 
 _FACADE_EXPORTS = {
@@ -65,6 +75,14 @@ __all__ = [
     "run_json_app",
     "build_python_mount_manifest",
     "compatibility_report",
+    "dag_command_json",
+    "dag_post_install_diagnostics",
+    "inspect_dag_run",
+    "load_dag_graph",
+    "plan_dag_graph",
+    "query_dag_artifacts",
+    "run_dag_graph",
+    "validate_dag_graph",
 ]
 
 

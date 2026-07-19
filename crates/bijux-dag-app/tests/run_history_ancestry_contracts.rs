@@ -6,7 +6,6 @@ use bijux_dag_app::{
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -276,7 +275,7 @@ fn strict_verify_rejects_tampered_timestamps_environment_summary_and_missing_eve
 
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "runs",
             "verify",
             "stable",
@@ -306,7 +305,7 @@ fn strict_verify_rejects_run_id_mutation_after_completion() {
 
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "runs",
             "verify",
             "frozen",
@@ -341,7 +340,7 @@ fn strict_verify_reports_missing_event_traces_referenced_by_manifest() {
 
     let matches = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "runs",
             "verify",
             "missing-events",

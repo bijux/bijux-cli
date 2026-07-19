@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -50,6 +49,8 @@ fn policy_modes_are_observably_different() {
             deny_env: true,
             deny_clock: true,
             clean_env: true,
+            container_image_reference_policy:
+                bijux_dag_runtime::ContainerImageReferencePolicy::RequireDigest,
             allowed_env: vec!["PATH".into()],
         }),
         ..PartialRuntimeSurfaceConfig::default()
@@ -60,6 +61,8 @@ fn policy_modes_are_observably_different() {
             deny_env: false,
             deny_clock: false,
             clean_env: false,
+            container_image_reference_policy:
+                bijux_dag_runtime::ContainerImageReferencePolicy::AllowUnpinned,
             allowed_env: vec!["PATH".into(), "HOME".into()],
         }),
         ..PartialRuntimeSurfaceConfig::default()

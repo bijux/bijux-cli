@@ -1,11 +1,14 @@
 # Fault Evidence
 
-Purpose: fault class scenarios and expected resilience behavior.
+Use fault evidence when the question is how the runtime reacts to a failure,
+corrupt run, or missing prerequisite.
 
-Subdirectories:
+## What Lives Here
+
 - `classes/`
 - `corrupt_runs/`
 
-Boundary:
+## Boundary
+
 - Fault evidence owns fault-class and reaction truth.
 - Fault fixtures are not authoring negatives and must carry runtime reaction expectations.

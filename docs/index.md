@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-19
 ---
 
 # Bijux Core
@@ -13,31 +13,24 @@ last_reviewed: 2026-04-12
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
 [![CI](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
 [![Docs](https://github.com/bijux/bijux-core/workflows/deploy-docs/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml)
-[![Crates Publish](https://github.com/bijux/bijux-core/workflows/release-crates/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml)
-[![PyPI Publish](https://github.com/bijux/bijux-core/workflows/release-pypi/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml)
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
-[![GHCR packages](https://img.shields.io/badge/ghcr-1%20package-181717?logo=github)](https://github.com/bijux?tab=packages&repo_name=bijux-core)
-[![Published packages](https://img.shields.io/badge/published%20packages-1-2563EB)](https://github.com/bijux/bijux-core/tree/main/crates)
-
-[![bijux-cli](https://img.shields.io/crates/v/bijux-cli?label=bijux--cli&logo=rust)](https://crates.io/crates/bijux-cli) [![bijux-cli](https://img.shields.io/pypi/v/bijux-cli?label=bijux--cli&logo=pypi)](https://pypi.org/project/bijux-cli/) [![bijux-cli](https://img.shields.io/badge/bijux--cli-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli)
-
-[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` is the shared runtime backbone of the Bijux repository family. It
-brings together the `bijux` command runtime, the DAG execution system, and the
-repository machinery that keeps both products governed, testable, and
-releasable from one source tree.
+`bijux-core` is one repository with two public products:
 
-Start here when you need fast orientation: which handbook owns the current
-question, which package family carries the implementation, and which
-repository-level surfaces sit above the product handbooks.
+- `bijux`, the command runtime for mounted apps, plugins, layered config,
+  diagnostics, history, memory, and REPL workflows
+- `bijux-dag`, the local-first DAG toolchain for validated graphs, repeatable
+  execution, retained evidence, replay, comparison, and verification
 
-<div class="bijux-callout"><strong>Start with the surface you care about.</strong>
-Repository docs explain workspace rules and release boundaries. CLI docs own
-the <code>bijux</code> command product. DAG docs own graph truth, execution,
-replay, and artifacts. Maintainer docs own repository gates, diagnostics, and
-release proof.</div>
+The same repository also carries the private maintainer surfaces that release,
+audit, and prove those products. Most readers should start with a product
+handbook, not the repository or maintainer handbooks.
+
+<div class="bijux-callout"><strong>Start with the thing you want to run.</strong>
+Use the CLI handbook for <code>bijux</code>. Use the DAG handbook for
+<code>bijux-dag</code>. Use the repository handbook only when the question
+crosses products, packages, or release rules.</div>
 
 <div class="bijux-panel-grid">
   <div class="bijux-panel"><h3>Repository</h3><p>Use the repository handbook when the question crosses package boundaries, release policy, or shared ownership rules.</p></div>
@@ -53,39 +46,79 @@ release proof.</div>
 <a class="md-button" href="bijux-dev/">Open the maintainer handbook</a>
 </div>
 
-## Handbook Map
+## What Ships Today
+
+| Surface | Delivery | What you can rely on today |
+| --- | --- | --- |
+| `bijux` | Rust crate, PyPI distribution, release bundles | the visible `bijux --help` runtime, including apps, plugins, layered config, REPL, diagnostics, history, and memory |
+| `bijux-dag` | Rust crates and release bundles | the visible `bijux-dag --help` local DAG surface for validate, plan, run, replay, inspect, compare, cache, and verify workflows |
+| maintainer tooling | repository-internal only | contributor and release workflows, not end-user product API |
+
+`bijux-dag` is intentionally honest about its current boundary. The stable lane
+is local-first. Experimental, simulated, and maintainer-only routes exist in
+the repository, but they are not presented here as the default product story.
+
+## Start In The Right Place
+
+| If you want to... | Open this handbook |
+| --- | --- |
+| run `bijux`, mount apps, work with plugins, or debug runtime behavior | [CLI Handbook](bijux-cli/index.md) |
+| author DAGs, run them locally, inspect artifacts, or replay a run | [DAG Handbook](bijux-dag/index.md) |
+| understand what the repository publishes, how crates divide work, or how release boundaries are enforced | [Repository Handbook](bijux-core/index.md) |
+| work on repository gates, release proof, or documentation and automation pipelines | [Maintainer Handbook](bijux-dev/index.md) |
+
+## Practical Starting Points
+
+- Read [Executable Examples](bijux-dag/interfaces/runnable-examples.md) when you
+  want real DAG workflows with expected outputs, not just feature descriptions.
+- Read [First-Run Tutorial](bijux-dag/operations/first-run-tutorial.md)
+  when you want the shortest route from checkout to a real retained DAG run.
+- Read [CLI Runtime Package](bijux-cli/packages/bijux-cli.md) when you already
+  know the question belongs to `bijux` and need the crate boundary.
+- Read [DAG Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) when
+  you want the current release claim in one place.
+
+## How To Read This Site
+
+- Start with a handbook, not a package page.
+- Move to package pages when you need the exact crate boundary or Rust import
+  lane.
+- Move to repository pages when the question crosses more than one product.
+- Move to maintainer pages only when you are changing or validating the
+  repository itself.
+
+## Documentation Authority
+
+The website contains curated reader guidance. Executable specifications and
+generated evidence remain versioned in the repository but are not presented as
+product handbook pages. Read the
+[documentation system](bijux-core/foundation/documentation-system.md) for the
+authority and maintenance rules.
 
 ```mermaid
 flowchart LR
-    home["Bijux Core"] --> repo["Repository handbook"]
-    home --> cli["CLI handbook"]
-    home --> dag["DAG handbook"]
-    home --> dev["Maintainer handbook"]
+    question["Reader or maintainer question"]
+    handbook["Published handbook<br/>supported behavior and workflow"]
+    package["Crate README and internal docs<br/>code ownership and change boundary"]
+    contract["Executable specification<br/>enforced invariant"]
+    implementation["Source and tests<br/>implemented behavior"]
+    evidence["Governed report<br/>observation at a revision"]
+
+    question --> handbook
+    handbook -->|implementation detail| package
+    handbook -->|normative detail| contract
+    package --> implementation
+    contract <--> implementation
+    implementation -->|governed evaluation| evidence
 ```
 
-## Start Here
+Arrows do not make every document equally authoritative. Handbooks explain the
+supported product, crate pages locate implementation ownership, specifications
+state enforced behavior, and reports retain observations. A report cannot
+override a contract, and an internal package detail cannot widen the public
+product promise.
 
-- open [Repository Handbook](bijux-core/index.md) when the issue spans CLI,
-  DAG, and maintainer ownership or touches release policy
-- open [CLI Handbook](bijux-cli/index.md) for the `bijux` command product and
-  its Python bridge
-- open [DAG Handbook](bijux-dag/index.md) for graph truth, runtime policy,
-  artifacts, replay, and DAG command behavior
-- open [Maintainer Handbook](bijux-dev/index.md) for repository gates,
-  diagnostics, docs verification, and release proof
-
-## Package Flow
-
-| Handbook | Package destinations | Use it when |
-| --- | --- | --- |
-| [Repository Handbook](bijux-core/index.md) | [Repository Packages](bijux-core/packages/index.md) | the question is about workspace scope, release policy, or cross-package ownership |
-| [CLI Handbook](bijux-cli/index.md) | [`bijux-cli`](bijux-cli/packages/bijux-cli.md), [`bijux-cli-python`](bijux-cli/packages/bijux-cli-python.md) | the issue is command behavior, runtime routing, REPL semantics, or Python distribution |
-| [DAG Handbook](bijux-dag/index.md) | [`bijux-dag-core`](bijux-dag/packages/bijux-dag-core.md), [`bijux-dag-runtime`](bijux-dag/packages/bijux-dag-runtime.md), [`bijux-dag-app`](bijux-dag/packages/bijux-dag-app.md), [`bijux-dag-cli`](bijux-dag/packages/bijux-dag-cli.md), [`bijux-dag-artifacts`](bijux-dag/packages/bijux-dag-artifacts.md), [`bijux-dag-testkit`](bijux-dag/packages/bijux-dag-testkit.md) | the issue is graph, execution, replay, artifacts, or DAG command behavior |
-| [Maintainer Handbook](bijux-dev/index.md) | [`bijux-dev`](bijux-dev/packages/bijux-dev.md) | the issue is repository diagnostics, release proof, or control-plane automation |
-
-## Reading Rule
-
-Start from the handbook that owns the question, then move into its package
-pages when you need the exact implementation boundary. If two branches seem to
-own the same behavior, verify the split from the
-[Repository Handbook](bijux-core/index.md).
+The [v0.4.0 Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) define
+the current DAG release. [Future Direction](bijux-dag/foundation/future-direction.md)
+is non-binding direction; if it conflicts with the release boundary, the
+narrower shipped claim wins.

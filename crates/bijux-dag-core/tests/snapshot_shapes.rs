@@ -12,8 +12,12 @@ use bijux_dag_core::parse_graph_strict;
 use std::fs;
 use std::path::PathBuf;
 
-fn snapshot_path(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests").join("snapshots").join(name)
+fn planner_fixture_path(name: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures")
+        .join("planner")
+        .join(name)
 }
 
 #[test]
@@ -29,7 +33,7 @@ fn canonical_shape_fixtures_parse_strictly() {
         "replay_oriented.dag.json",
     ];
     for fixture in fixtures {
-        let text = fs::read_to_string(snapshot_path(fixture)).unwrap();
+        let text = fs::read_to_string(planner_fixture_path(fixture)).unwrap();
         parse_graph_strict(&text).unwrap();
     }
 }

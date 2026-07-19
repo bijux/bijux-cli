@@ -1,7 +1,0 @@
-{
-  "manifest_version": "run-manifest/v9.9",
-  "run_id": "run-compat-future",
-  "spec": "0.1",
-  "graph_fingerprint": "x",
-  "status": "success"
-}

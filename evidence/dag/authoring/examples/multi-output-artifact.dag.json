@@ -11,7 +11,7 @@
       "id": "seed",
       "kind": "const",
       "inputs": [],
-      "outputs": [{ "name": "value", "path": "seed.txt" }],
+      "outputs": [{ "name": "value", "path": "seed.txt", "kind": "value", "media_type": "application/json" }],
       "params": { "value": "artifact-seed" }
     },
     {
@@ -19,14 +19,14 @@
       "kind": "shell",
       "inputs": ["seed_input"],
       "outputs": [
-        { "name": "primary", "path": "primary.json" },
-        { "name": "secondary", "path": "secondary.txt" }
+        { "name": "primary", "path": "primary.json", "kind": "value", "media_type": "application/json" },
+        { "name": "secondary", "path": "secondary.txt", "kind": "log", "required": false, "media_type": "text/plain" }
       ],
       "params": {
         "argv": [
           "/bin/sh",
           "-c",
-          "cat <<EOF > ../outputs/primary.json\n{\"status\":\"ready\"}\nEOF\nprintf '%s' \"$(cat ../inputs/seed/seed.txt)\" > ../outputs/secondary.txt"
+          "cat <<EOF > ../outputs/primary.json\n{\"status\":\"ready\"}\nEOF\nprintf '%s' \"$(cat ../inputs/seed/seed_input)\" > ../outputs/secondary.txt"
         ]
       },
       "effects": ["filesystem"]

@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -39,7 +38,7 @@ fn load_recipe_commands(docs_path: &Path, recipe_id: &str) -> Vec<String> {
     block
         .lines()
         .map(str::trim)
-        .filter(|line| line.starts_with("bijux dag "))
+        .filter(|line| line.starts_with("bijux-dag "))
         .map(str::to_string)
         .collect()
 }
@@ -54,7 +53,7 @@ fn substitute_vars(line: &str, vars: &BTreeMap<&str, String>) -> String {
 
 fn run_recipe_command(root: &Path, command: &str) -> Value {
     let args = command
-        .strip_prefix("bijux dag ")
+        .strip_prefix("bijux-dag ")
         .expect("command prefix")
         .split_whitespace()
         .map(str::to_string)
@@ -101,7 +100,7 @@ fn docs_major_dag_recipe_is_ci_executable() {
     vars.insert("EXPORT_BUNDLE", export_bundle.to_string_lossy().into_owned());
     vars.insert("DIAG_BUNDLE", diagnostics_bundle.to_string_lossy().into_owned());
 
-    let docs_path = root.join("docs/bijux-dag/interfaces/executable-recipes.md");
+    let docs_path = root.join("docs/bijux-dag/interfaces/runnable-examples.md");
     let commands = load_recipe_commands(&docs_path, "ci-major-dag-commands");
     assert!(
         commands.len() >= 10,
@@ -115,7 +114,7 @@ fn docs_major_dag_recipe_is_ci_executable() {
         if !payload.is_null() {
             assert!(payload.is_object(), "json mode must return a top-level object");
         }
-        if rendered.starts_with("bijux dag run ") {
+        if rendered.starts_with("bijux-dag run ") {
             let run_dir = payload
                 .get("data")
                 .and_then(|data| data.get("run_dir"))
@@ -136,4 +135,127 @@ fn docs_major_dag_recipe_is_ci_executable() {
     assert!(run_root.join(".bijux-run-history-index.json").exists(), "run index must be present");
     assert!(diagnostics_bundle.exists(), "diagnostics bundle must be exported");
     assert!(export_bundle.exists(), "export bundle must be exported");
+}
+
+#[test]
+fn docs_evidence_backed_bulletin_recipe_is_ci_executable() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let run_root = temp.path().join("runs");
+    let cache_root = temp.path().join("cache");
+    let deliverables_root = temp.path().join("deliverables");
+    fs::create_dir_all(&run_root).expect("run root");
+    fs::create_dir_all(&cache_root).expect("cache root");
+    fs::create_dir_all(&deliverables_root).expect("deliverables root");
+
+    let mut vars = BTreeMap::new();
+    vars.insert(
+        "GRAPH",
+        root.join("evidence/dag/authoring/examples/audience-branch-bulletin.dag.json")
+            .canonicalize()
+            .expect("canonical graph fixture")
+            .to_string_lossy()
+            .into_owned(),
+    );
+    vars.insert("RUN_ROOT", run_root.to_string_lossy().into_owned());
+    vars.insert("CACHE_ROOT", cache_root.to_string_lossy().into_owned());
+    vars.insert("DELIVERABLES_ROOT", deliverables_root.to_string_lossy().into_owned());
+    vars.insert(
+        "SOURCE_NOTE",
+        root.join("evidence/dag/authoring/examples/audience-branch-source/team-update.md")
+            .canonicalize()
+            .expect("canonical source note")
+            .to_string_lossy()
+            .into_owned(),
+    );
+    vars.insert(
+        "REVISED_NOTE",
+        root.join("evidence/dag/authoring/examples/audience-branch-source/team-update-revised.md")
+            .canonicalize()
+            .expect("canonical revised note")
+            .to_string_lossy()
+            .into_owned(),
+    );
+
+    let docs_path = root.join("docs/bijux-dag/interfaces/runnable-examples.md");
+    let commands = load_recipe_commands(&docs_path, "ci-evidence-backed-bulletin");
+    assert!(
+        commands.len() >= 8,
+        "expected evidence-backed bulletin recipe set, got {} commands",
+        commands.len()
+    );
+
+    for command in commands {
+        let rendered = substitute_vars(&command, &vars);
+        let payload = run_recipe_command(&root, &rendered);
+        if !payload.is_null() {
+            assert!(payload.is_object(), "json mode must return a top-level object");
+        }
+    }
+
+    assert!(
+        run_root.join("run-branch-bulletin-replay").exists(),
+        "replay run must be materialized"
+    );
+    assert!(
+        deliverables_root
+            .join("release/branch-bulletin-updated/publish_bulletin/bulletin/payload/bulletin.md")
+            .exists(),
+        "promoted bulletin must be materialized"
+    );
+}
+
+#[test]
+fn docs_first_run_tutorial_recipe_is_ci_executable() {
+    let root = repo_root();
+    let temp = tempfile::tempdir().expect("tempdir");
+    let run_root = temp.path().join("runs");
+    let cache_root = temp.path().join("cache");
+    fs::create_dir_all(&run_root).expect("run root");
+    fs::create_dir_all(&cache_root).expect("cache root");
+
+    let mut vars = BTreeMap::new();
+    vars.insert(
+        "FILE_PROCESSING_GRAPH",
+        root.join("evidence/dag/authoring/examples/file-processing-report.dag.json")
+            .canonicalize()
+            .expect("canonical graph fixture")
+            .to_string_lossy()
+            .into_owned(),
+    );
+    vars.insert(
+        "FILE_PROCESSING_SOURCE_DIR",
+        root.join("evidence/dag/authoring/examples/file-processing-source")
+            .canonicalize()
+            .expect("canonical source directory")
+            .to_string_lossy()
+            .into_owned(),
+    );
+    vars.insert("RUN_ROOT", run_root.to_string_lossy().into_owned());
+    vars.insert("CACHE_ROOT", cache_root.to_string_lossy().into_owned());
+
+    let docs_path = root.join("docs/bijux-dag/interfaces/runnable-examples.md");
+    let commands = load_recipe_commands(&docs_path, "ci-first-run-tutorial");
+    assert!(
+        commands.len() >= 8,
+        "expected first-run tutorial recipe set, got {} commands",
+        commands.len()
+    );
+
+    for command in commands {
+        let rendered = substitute_vars(&command, &vars);
+        let payload = run_recipe_command(&root, &rendered);
+        if !payload.is_null() {
+            assert!(payload.is_object(), "json mode must return a top-level object");
+        }
+    }
+
+    assert!(
+        run_root.join("run-first-run-tutorial-cold").exists(),
+        "cold tutorial run must be materialized"
+    );
+    assert!(
+        run_root.join("run-first-run-tutorial-replay").exists(),
+        "replay tutorial run must be materialized"
+    );
 }

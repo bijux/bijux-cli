@@ -3,7 +3,6 @@ use bijux_dag_app::{dag_command, dag_run, explain_run_id};
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -54,7 +53,7 @@ fn runs_history_and_id_explain_are_json_capable() {
 
     let history = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "runs",
             "history",
@@ -66,7 +65,7 @@ fn runs_history_and_id_explain_are_json_capable() {
 
     let explain = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "runs",
             "id-explain",

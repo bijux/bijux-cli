@@ -29,6 +29,24 @@ fn crate_rs_sources(workspace_root: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
+fn website_api_doc_candidates(workspace_root: &Path) -> Vec<String> {
+    collect_files_recursive(&workspace_root.join("docs"))
+        .into_iter()
+        .filter(|path| path.extension().is_some_and(|ext| ext == "md"))
+        .map(|path| relative_to_root(&path, workspace_root))
+        .filter(|path| {
+            matches!(
+                path.as_str(),
+                "docs/bijux-cli/interfaces/api-surface.md"
+                    | "docs/bijux-cli/interfaces/public-imports.md"
+                    | "docs/bijux-cli/interfaces/generated-config-reference.md"
+                    | "docs/bijux-dag/interfaces/api-surface.md"
+                    | "docs/bijux-dag/interfaces/public-imports.md"
+            )
+        })
+        .collect()
+}
+
 fn path_has_generated_or_hidden_component(path: &Path, workspace_root: &Path) -> bool {
     let relative = path.strip_prefix(workspace_root).unwrap_or(path);
     relative.components().any(|component| match component {
@@ -183,8 +201,7 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
         .filter(|p| !path_has_generated_or_hidden_component(p, workspace_root))
         .map(|p| relative_to_root(&p, workspace_root))
         .collect();
-    let reference_docs: Vec<String> =
-        docs_files.iter().filter(|p| p.starts_with("docs/06-reference/")).cloned().collect();
+    let reference_docs = website_api_doc_candidates(workspace_root);
 
     json!({
         "coverage": coverage,
@@ -207,32 +224,7 @@ pub fn build_audit_report(workspace_root: &Path) -> Value {
 /// `bijux-dev-cli rustdoc migrate-website-api-docs`
 #[must_use]
 pub fn build_migration_report(workspace_root: &Path) -> Value {
-    let legacy_reference_root = workspace_root.join("docs/06-reference");
-    let mut candidates: Vec<String> = if legacy_reference_root.exists() {
-        collect_files_recursive(&legacy_reference_root)
-            .into_iter()
-            .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
-            .map(|p| relative_to_root(&p, workspace_root))
-            .collect()
-    } else {
-        collect_files_recursive(&workspace_root.join("docs"))
-            .into_iter()
-            .filter(|p| p.extension().is_some_and(|ext| ext == "md"))
-            .map(|p| relative_to_root(&p, workspace_root))
-            .filter(|path| {
-                path.starts_with("docs/bijux-core/")
-                    || path.starts_with("docs/bijux-cli/")
-                    || path.starts_with("docs/bijux-dag/")
-                    || path.starts_with("docs/bijux-dev/")
-            })
-            .collect()
-    };
-    // Keep the legacy canonical marker for compatibility contracts that still
-    // assert this path directly during migration windows.
-    let legacy_marker = "docs/06-reference/index.md".to_string();
-    if !candidates.contains(&legacy_marker) {
-        candidates.push(legacy_marker);
-    }
+    let candidates = website_api_doc_candidates(workspace_root);
     json!({
         "delete_candidates": candidates,
         "safe_mode": true,
@@ -272,13 +264,13 @@ pub fn build_workspace_coverage_proof_report(workspace_root: &Path) -> Value {
 /// `bijux-dev-cli rustdoc python-link-proof`
 #[must_use]
 pub fn build_python_link_proof_report(workspace_root: &Path) -> Value {
-    let legacy =
-        read(&workspace_root.join("docs/06-reference/integrations-and-routed-runtimes.md"));
+    let python_distribution =
+        read(&workspace_root.join("docs/bijux-cli/packages/bijux-cli-python.md"));
     let core_distribution =
         read(&workspace_root.join("docs/bijux-core/architecture/distribution-model.md"));
     let cli_entrypoints =
         read(&workspace_root.join("docs/bijux-cli/interfaces/entrypoints-and-examples.md"));
-    let docs = [legacy, core_distribution, cli_entrypoints].join("\n");
+    let docs = [python_distribution, core_distribution, cli_entrypoints].join("\n");
     let linked = docs.contains("Python package")
         && (docs.contains("Rust runtime") || docs.contains("runtime"));
     json!({"status": if linked {"pass"} else {"fail"}, "python_docs_link_to_rust_truth": linked})
@@ -304,20 +296,21 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "legacy canonical reference tree contract no longer matches migrated docs layout"]
-    fn migration_report_reads_the_canonical_reference_tree() {
+    fn migration_report_targets_current_website_api_doc_candidates() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = build_migration_report(&root);
         let candidates = report["delete_candidates"].as_array().expect("candidates");
-        assert!(candidates
-            .iter()
-            .filter_map(Value::as_str)
-            .any(|path| path == "docs/06-reference/index.md"));
+        let paths = candidates.iter().filter_map(Value::as_str).collect::<Vec<_>>();
+        assert!(paths.contains(&"docs/bijux-cli/interfaces/api-surface.md"));
+        assert!(paths.contains(&"docs/bijux-cli/interfaces/public-imports.md"));
+        assert!(paths.contains(&"docs/bijux-dag/interfaces/api-surface.md"));
+        assert!(paths.contains(&"docs/bijux-dag/interfaces/public-imports.md"));
+        assert!(paths.contains(&"docs/bijux-cli/interfaces/generated-config-reference.md"));
+        assert!(!paths.iter().any(|path| path.starts_with("docs/06-reference/")));
     }
 
     #[test]
-    #[ignore = "legacy canonical python reference page contract no longer matches migrated docs layout"]
-    fn python_link_proof_reads_the_canonical_reference_page() {
+    fn python_link_proof_reads_current_python_distribution_docs() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let report = build_python_link_proof_report(&root);
         assert_eq!(report["status"], "pass");

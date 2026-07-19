@@ -2,11 +2,11 @@
   "schema_version": "foundation-root-policy-surface-inventory/v1",
   "policy_files": [
     {
-      "path": "contracts/foundation/backlog_issue_class_routing.v1.json",
-      "gates_behavior": "enforces backlog issue-class ownership and forbids uncategorized intake",
+      "path": "contracts/foundation/repository_work_routing.v1.json",
+      "gates_behavior": "enforces repository work-class ownership and forbids uncategorized intake",
       "owning_crate": "bijux-dev",
       "enforced_by": [
-        "crates/bijux-dev/tests/foundation_backlog_issue_routing_contracts.rs"
+        "crates/bijux-dev/tests/foundation_repository_work_routing_contracts.rs"
       ]
     },
     {
@@ -26,11 +26,35 @@
       ]
     },
     {
+      "path": "contracts/foundation/dag_release_truth_table.v1.json",
+      "gates_behavior": "defines the authoritative DAG operator surface truth table for stable, experimental, simulated, internal, and future routes",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_release_boundary_contracts.rs"
+      ]
+    },
+    {
+      "path": "contracts/foundation/workspace_package_boundary.v1.json",
+      "gates_behavior": "defines the authoritative workspace package public/private boundary and crates.io publication intent",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_workspace_package_boundary_contracts.rs"
+      ]
+    },
+    {
       "path": "contracts/foundation/hard_release_gate.v1.json",
       "gates_behavior": "defines the deterministic foundation release gate workflow and required lifecycle checks",
       "owning_crate": "bijux-dev",
       "enforced_by": [
         "crates/bijux-dev/tests/foundation_hard_release_gate_contracts.rs"
+      ]
+    },
+    {
+      "path": "contracts/foundation/maintainer_command_surface.v1.json",
+      "gates_behavior": "defines the visible bijux-dev-dag root command inventory and freezes maintainer command-surface drift",
+      "owning_crate": "bijux-dev",
+      "enforced_by": [
+        "crates/bijux-dev/tests/foundation_maintainer_command_surface_contracts.rs"
       ]
     },
     {

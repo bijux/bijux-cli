@@ -4,62 +4,144 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # CLI Surface
 
-This page explains how the DAG command surface groups work by intent rather than
-by crate layout.
+The `bijux-dag` command tree has four release lanes. This page explains what
+those lanes mean and routes readers by intent; it is not a handwritten copy of
+Clap help.
 
-The useful split is not the full command count. It is whether the operator is
-defining work, running it, inspecting evidence, comparing outcomes, or managing
-the environment around it.
+Use [Generated CLI Reference](generated-cli-reference.md) for the exact stable
+commands, arguments, and flags generated from the binary. Use
+[Gated Command Inventory](gated-command-inventory.md) for the generated
+experimental, simulated, and internal tree.
 
-## Route Map
+## v0.4.0 Surface Truth Table
 
-```mermaid
-flowchart LR
-    dag["bijux dag"] --> define["define and validate"]
-    dag --> execute["execute and replay"]
-    dag --> inspect["inspect runs and artifacts"]
-    dag --> compare["compare outcomes"]
-    dag --> operate["manage cache and policy"]
-```
+| Class | Compatibility meaning | Discovery and access |
+| --- | --- | --- |
+| stable | supported operator surface for local authoring, execution, replay, and evidence inspection | visible in `bijux-dag --help` and `bijux-dag commands` |
+| experimental | repository-tested operator helpers outside the stable compatibility promise | callable by explicit path; inventory with `bijux-dag commands --lane experimental` |
+| simulated | modeled platform and control-plane behavior, not a production backend or service | inventory with `--lane simulated`; execute only with `BIJUX_DAG_ENABLE_SIMULATED=1` |
+| internal | maintainer and contract-verification routes outside the product API | inventory with `--lane internal`; execute only with `BIJUX_DAG_ENABLE_INTERNAL=1` |
+| unreleased | capabilities that v0.4.0 does not promise | no supported command contract |
 
-## Command Families
+The canonical classification is
+[Release Boundary](../foundation/release-boundary.md), backed by
+`contracts/foundation/dag_release_truth_table.v1.json`. A command moving
+between rows is a release-boundary change, not a documentation-only edit.
 
-- definition: `init`, `validate`, `canonicalize`, `lint`, `graph-lint`, `fingerprint`
-- execution and replay: `run`, `replay`, `prove`, `proof-summary`, `verify`, `fsck`
-- inspect and history: `status`, `explain`, `node`, `runs ...`, `artifact-inspect`
-- comparison: `diff`, `why-rerun`, `why-cache-missed`, `trace-artifact`
-- operations: `cache ...`, `adapters ...`, `export`, `import`, `config ...`, `policy ...`
+## Choose A Stable Route
 
-## Global Flags
+| Operator intent | Start with | Continue with |
+| --- | --- | --- |
+| validate authored work | `validate`, `plan` | [Graph Schema](graph-schema.md) |
+| execute or reproduce work | `run`, `replay`, `verify` | [Operator Workflows](operator-workflows.md) |
+| inspect retained evidence | `runs`, `artifact`, `artifact-inspect`, `explain` | [Run Evidence Layout](run-evidence-layout.md) |
+| compare outcomes | `diff` and retained-run comparison routes | [Reproducibility Model](reproducibility-model.md) |
+| inspect local health or cache | `doctor`, `cache` | [Failure Recovery](../operations/failure-recovery.md) |
+| discover the interface | `commands`, `version`, `completions` | [Generated CLI Reference](generated-cli-reference.md) |
 
-- `--json`: machine-readable output mode
-- `--quiet`: reduced human-oriented output noise
+Global output flags such as `--json` and `--quiet` are documented with their
+owning commands in the generated reference. Scripts should use structured
+output and machine-readable status fields rather than parsing human prose.
+
+## Visible Root Surface
+
+The stable root commands are:
+
+- authoring and planning: `validate`, `plan`
+- execution and verification: `run`, `replay`, `verify`
+- retained evidence: `runs`, `artifact`, `artifact-inspect`, `diff`, `explain`
+- local operation and discovery: `doctor`, `cache`, `version`, `commands`,
+  `completions`
+
+Stable does not mean every behavior beneath a command is equivalent. For
+example, a plan preview is advisory, while a retained run can support evidence
+claims. The command reference states accepted input; the owning contract page
+states what the result proves.
+
+## Hidden Experimental Routes
+
+Experimental routes are callable by explicit path but remain absent from the
+default root help and default catalog:
+
+- graph helpers: `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`,
+  `hash`
+- inspection helpers: `status`, `node`, `trace-artifact`, `why-rerun`,
+  `why-cache-missed`
+- bundle and policy helpers: `export`, `import`, `migrate`, `adapters`,
+  `config`, `policy`, `fsck`, `prove`, `proof-summary`
+
+These commands may have tests and useful behavior without carrying the stable
+compatibility promise. Automation that depends on one must acknowledge that
+release posture rather than presenting it as a stable operator API.
+
+## Hidden Simulation And Maintainer Namespaces
+
+Simulated root namespaces are `control-plane`, `state-store`, `dataset`,
+`enterprise`, `fleet`, `governance`, `federation`, `incident`, and `lab`.
+They model contracts and organizational workflows; they do not claim deployed
+services or production backends.
+
+Internal root namespaces are `security`, `durability`, `performance`,
+`release`, `runtime`, `schedule`, `version-inspect`, `capabilities`,
+`semantic-portability`, and `equivalence-proof`. They support repository
+governance and contract verification, not public operator integrations.
+
+Inventory and execution are separate controls:
+
+- `bijux-dag commands --lane simulated` lists modeled routes;
+- `BIJUX_DAG_ENABLE_SIMULATED=1` permits deliberate simulated execution;
+- `bijux-dag commands --lane internal` lists maintainer routes;
+- `BIJUX_DAG_ENABLE_INTERNAL=1` permits deliberate internal execution.
+
+The environment variables do not promote a route into the stable lane.
+
+## What Lives Elsewhere
+
+| Question | Owning page |
+| --- | --- |
+| What exact flags does a stable command accept? | [Generated CLI Reference](generated-cli-reference.md) |
+| Which gated routes exist today? | [Gated Command Inventory](gated-command-inventory.md) |
+| How do selection, path preview, or resource budgets behave? | generated reference plus [Operator Workflows](operator-workflows.md) |
+| What evidence does a run retain? | [Run Evidence Layout](run-evidence-layout.md) |
+| Why did replay or cache reuse succeed or refuse? | [Reproducibility Model](reproducibility-model.md) |
+| Which capabilities are intentionally unsupported? | [Known Limitations](../quality/known-limitations.md) |
+
+This separation prevents a prose overview from drifting into a second CLI
+reference. Generated pages answer what the binary accepts; contract and
+workflow pages answer what the behavior means.
+
+## Change Discipline
+
+A command-surface change is complete only when:
+
+- the machine-readable release lane matches the intended compatibility;
+- Clap help and generated references are regenerated;
+- routing and release-boundary contracts pass;
+- operator guidance describes any new evidence or failure semantics;
+- hidden routes remain absent from default discovery unless promotion is
+  intentional.
+
+Deprecation and removal require explicit compatibility treatment. Hiding a
+route or renaming it in prose is not a substitute for governing the binary
+surface.
 
 ## Code Anchors
 
-- `crates/bijux-dag-cli/src/main.rs`
-- `crates/bijux-dag-app/src/commands/mod.rs`
-- `crates/bijux-dag-app/tests/cli_contract.rs`
-- `crates/bijux-dag-app/tests/command_surface_routing_contracts.rs`
-
-## CLI Surface Rules
-
-- command additions require docs and contract test updates
-- classification commands must preserve explicit outcome vocabulary
-- hidden or deprecated paths should remain tested until removal is intentional
-
-## Reading Rule
-
-Use this page when the question is which command family should own a DAG task
-before you inspect one concrete route or crate.
+- binary handoff: `crates/bijux-dag-cli/src/main.rs`
+- command definitions: `crates/bijux-dag-app/src/commands/`
+- release classification:
+  `contracts/foundation/dag_release_truth_table.v1.json`
+- generated references:
+  `crates/bijux-dag-app/src/commands/reference_docs.rs`
 
 ## Next Reads
 
+- [Generated CLI Reference](generated-cli-reference.md)
 - [Operator Workflows](operator-workflows.md)
-- [Entrypoints and Examples](entrypoints-and-examples.md)
-- [Compatibility Commitments](compatibility-commitments.md)
+- [Entrypoints And Examples](entrypoints-and-examples.md)
+- [Release Boundary](../foundation/release-boundary.md)

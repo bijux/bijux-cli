@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -16,6 +15,20 @@ use thiserror as _;
 
 use bijux_dag_app::{dag_command, dag_run};
 use std::fs;
+
+fn run_with_internal_lane(
+    matches: &clap::ArgMatches,
+) -> Result<std::process::ExitCode, std::process::ExitCode> {
+    let previous = std::env::var_os("BIJUX_DAG_ENABLE_INTERNAL");
+    std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", "1");
+    let result = dag_run(matches);
+    if let Some(value) = previous {
+        std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", value);
+    } else {
+        std::env::remove_var("BIJUX_DAG_ENABLE_INTERNAL");
+    }
+    result
+}
 
 #[test]
 fn version_inspect_reports_supported_graph_versions() {
@@ -30,14 +43,14 @@ fn version_inspect_reports_supported_graph_versions() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "version-inspect",
             "--dag",
             dag.to_string_lossy().as_ref(),
         ])
         .expect("parse args");
-    let code = dag_run(&matches).expect("run inspect");
+    let code = run_with_internal_lane(&matches).expect("run inspect");
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
 
@@ -54,14 +67,14 @@ fn version_inspect_rejects_unsupported_graph_versions() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "version-inspect",
             "--dag",
             dag.to_string_lossy().as_ref(),
         ])
         .expect("parse args");
-    let result = dag_run(&matches);
+    let result = run_with_internal_lane(&matches);
     assert!(result.is_err());
 }
 
@@ -79,7 +92,7 @@ fn migrate_noop_supported_and_cross_version_rejected() {
     let noop = cmd
         .clone()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "migrate",
             "dag",
             dag.to_string_lossy().as_ref(),
@@ -93,7 +106,7 @@ fn migrate_noop_supported_and_cross_version_rejected() {
 
     let reject = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "migrate",
             "dag",
             dag.to_string_lossy().as_ref(),

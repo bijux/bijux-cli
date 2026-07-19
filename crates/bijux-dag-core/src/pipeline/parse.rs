@@ -28,5 +28,10 @@ fn graph_has_ambiguous_output_path(graph: &Graph) -> bool {
             }
         }
     }
+    for definition in graph.subgraphs.values() {
+        if graph_has_ambiguous_output_path(&definition.graph) {
+            return true;
+        }
+    }
     false
 }

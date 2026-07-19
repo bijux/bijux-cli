@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -82,7 +81,7 @@ fn scheduler_contract_profile_is_explicit_and_stable() {
     assert_eq!(format!("{:?}", profile.canonical_unit), "Node");
     assert_eq!(format!("{:?}", profile.model), "EventDriven");
     assert_eq!(format!("{:?}", profile.priority_model), "StaticHints");
-    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuFitThenNodeId");
+    assert_eq!(format!("{:?}", profile.ready_tie_break), "PriorityCpuMemoryFitThenNodeId");
 }
 
 #[test]
@@ -258,10 +257,134 @@ fn deterministic_scheduler_packs_smaller_ready_nodes_within_cpu_budget() {
     assert_eq!(decision.batch, vec!["small-a".to_string(), "small-b".to_string()]);
     assert!(decision.blocked_by_budget.contains(&"big".to_string()));
     assert_eq!(decision.blocked_reasons.get("big").map(String::as_str), Some("blocked_by_cpu"));
-    assert_eq!(decision.tie_break_reason.as_deref(), Some("priority_cpu_fit_then_node_id"));
+    assert_eq!(decision.tie_break_reason.as_deref(), Some("priority_cpu_memory_fit_then_node_id"));
     assert_eq!(
         decision.ready_candidates,
         vec!["small-a".to_string(), "small-b".to_string(), "big".to_string()]
+    );
+}
+
+#[test]
+fn deterministic_scheduler_packs_smaller_ready_nodes_within_memory_budget() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {"id":"memory-heavy","kind":"const","outputs":[{"name":"out","path":"memory-heavy/out"}],"resources":{"cpu":1,"mem_mb":2048},"params":{"value":1}},
+            {"id":"memory-light-a","kind":"const","outputs":[{"name":"out","path":"memory-light-a/out"}],"resources":{"cpu":1,"mem_mb":512},"params":{"value":2}},
+            {"id":"memory-light-b","kind":"const","outputs":[{"name":"out","path":"memory-light-b/out"}],"resources":{"cpu":1,"mem_mb":512},"params":{"value":3}}
+          ],
+          "edges": []
+        }"#,
+    )
+    .unwrap();
+    let mut options = RuntimeConfig::default();
+    options.jobs = 3;
+    options.scheduler_policy.max_parallelism = 3;
+    options.scheduler_policy.cpu_budget = Some(3);
+    options.scheduler_policy.memory_budget_mb = Some(1024);
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let decision =
+        scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), false);
+    assert_eq!(decision.batch, vec!["memory-light-a".to_string(), "memory-light-b".to_string()]);
+    assert!(decision.blocked_by_budget.contains(&"memory-heavy".to_string()));
+    assert_eq!(
+        decision.blocked_reasons.get("memory-heavy").map(String::as_str),
+        Some("blocked_by_memory")
+    );
+    assert_eq!(decision.tie_break_reason.as_deref(), Some("priority_cpu_memory_fit_then_node_id"));
+    assert_eq!(
+        decision.ready_candidates,
+        vec![
+            "memory-light-a".to_string(),
+            "memory-light-b".to_string(),
+            "memory-heavy".to_string()
+        ]
+    );
+}
+
+#[test]
+fn deterministic_scheduler_respects_gpu_device_budget() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec": "bijux-dag/v0.1",
+          "nodes": [
+            {"id":"gpu-a","kind":"const","tags":["gpu"],"outputs":[{"name":"out","path":"gpu-a/out"}],"params":{"value":1}},
+            {"id":"gpu-b","kind":"const","resources":{"cpu":1,"mem_mb":64,"gpu_devices":1},"outputs":[{"name":"out","path":"gpu-b/out"}],"params":{"value":2}},
+            {"id":"cpu","kind":"const","outputs":[{"name":"out","path":"cpu/out"}],"params":{"value":3}}
+          ],
+          "edges": []
+        }"#,
+    )
+    .unwrap();
+    let mut options = RuntimeConfig::default();
+    options.jobs = 3;
+    options.scheduler_policy.max_parallelism = 3;
+    options.scheduler_policy.cpu_budget = Some(3);
+    options.scheduler_policy.gpu_device_budget = Some(1);
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let decision =
+        scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), false);
+    let scheduled_gpu_nodes = decision
+        .batch
+        .iter()
+        .filter(|node_id| node_id.starts_with("gpu-"))
+        .cloned()
+        .collect::<Vec<_>>();
+    assert_eq!(scheduled_gpu_nodes.len(), 1);
+    assert!(decision.batch.contains(&"cpu".to_string()));
+    let blocked_gpu_nodes = decision
+        .blocked_by_budget
+        .iter()
+        .filter(|node_id| node_id.starts_with("gpu-"))
+        .cloned()
+        .collect::<Vec<_>>();
+    assert_eq!(blocked_gpu_nodes.len(), 1);
+    let blocked_gpu = &blocked_gpu_nodes[0];
+    assert_eq!(
+        decision.blocked_reasons.get(blocked_gpu).map(String::as_str),
+        Some("blocked_by_gpu")
+    );
+}
+
+#[test]
+fn deterministic_scheduler_respects_named_resource_capacities() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {"id":"a","kind":"const","resources":{"cpu":1,"mem_mb":64,"named_resources":{"database_slot":1}},"outputs":[{"name":"out","path":"a/out"}],"params":{"value":1}},
+            {"id":"b","kind":"const","resources":{"cpu":1,"mem_mb":64,"named_resources":{"database_slot":1}},"outputs":[{"name":"out","path":"b/out"}],"params":{"value":2}},
+            {"id":"cpu","kind":"const","outputs":[{"name":"out","path":"cpu/out"}],"params":{"value":3}}
+          ],
+          "edges":[]
+        }"#,
+    )
+    .unwrap();
+    let mut options = RuntimeConfig::default();
+    options.jobs = 3;
+    options.scheduler_policy.max_parallelism = 3;
+    options.scheduler_policy.cpu_budget = Some(3);
+    options.named_resource_capacities =
+        std::collections::BTreeMap::from([("database_slot".to_string(), 1)]);
+    let plan = build_plan(&graph, &options);
+    let dep_counter = DependencyCounter::from_plan(&plan);
+    let mut ready = ReadyQueue::from_indegree(dep_counter.indegree_map());
+    let mut scheduler = build_scheduler(&options.scheduler_policy);
+    let decision =
+        scheduler.next_batch(&graph, &mut ready, &options, std::time::Instant::now(), false);
+    assert!(decision.batch.contains(&"a".to_string()));
+    assert!(decision.batch.contains(&"cpu".to_string()));
+    assert!(!decision.batch.contains(&"b".to_string()));
+    assert_eq!(
+        decision.blocked_reasons.get("b").map(String::as_str),
+        Some("blocked_by_named_resource:database_slot")
     );
 }
 
@@ -308,6 +431,7 @@ fn checkpoint_replay_reconstructs_ready_and_completed_state() {
             ("a".to_string(), "success".to_string()),
             ("b".to_string(), "cached".to_string()),
         ]),
+        decision_reason: "ready_batch".to_string(),
         failure_propagation_mode: "isolate_branch".to_string(),
         dependency_closure_enabled: true,
         generated_unix_ms: 42,
@@ -315,6 +439,47 @@ fn checkpoint_replay_reconstructs_ready_and_completed_state() {
     let state = replay_scheduler_checkpoint(&plan, &checkpoint).expect("replay");
     assert_eq!(state.ready_snapshot(), vec!["c".to_string()]);
     assert!(scheduler_invariant_violations(&state).is_empty());
+}
+
+#[test]
+fn checkpoint_deserialization_preserves_recorded_decision_reason() {
+    let checkpoint: ExecutionCheckpoint = serde_json::from_value(serde_json::json!({
+        "loop_index": 7,
+        "ready_queue_depth": 2,
+        "ready_queue": ["publish", "archive"],
+        "inflight": ["build"],
+        "scheduled": ["build"],
+        "blocked_by_budget": ["notify"],
+        "blocked_reasons": {"notify": "memory budget exhausted"},
+        "completed_statuses": {"extract": "success"},
+        "decision_reason": "ready_batch",
+        "failure_propagation_mode": "continue_independent",
+        "dependency_closure_enabled": false,
+        "generated_unix_ms": 100
+    }))
+    .expect("checkpoint");
+
+    assert_eq!(checkpoint.decision_reason, "ready_batch");
+}
+
+#[test]
+fn checkpoint_deserialization_defaults_missing_legacy_decision_reason() {
+    let checkpoint: ExecutionCheckpoint = serde_json::from_value(serde_json::json!({
+        "loop_index": 7,
+        "ready_queue_depth": 0,
+        "ready_queue": [],
+        "inflight": [],
+        "scheduled": [],
+        "blocked_by_budget": [],
+        "blocked_reasons": {},
+        "completed_statuses": {},
+        "failure_propagation_mode": "fail_fast",
+        "dependency_closure_enabled": false,
+        "generated_unix_ms": 100
+    }))
+    .expect("checkpoint");
+
+    assert_eq!(checkpoint.decision_reason, "not_recorded");
 }
 
 #[test]

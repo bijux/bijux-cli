@@ -461,6 +461,40 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/invalid_container_workdir.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/invalid_container_workdir.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/invalid_container_workdir.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/invalid_container_workdir.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts"
+    },
+    {
       "canonical_location": "crates/bijux-dag-core/tests/fixtures/invalid_env_reference.json",
       "canonical_path": "crates/bijux-dag-core/tests/fixtures/invalid_env_reference.json",
       "consumer_surfaces": [
@@ -597,6 +631,40 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/missing_required_input_binding.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/missing_required_input_binding.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/missing_required_input_binding.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/missing_required_input_binding.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "validate core graph parse and validation contracts"
+    },
+    {
       "canonical_location": "crates/bijux-dag-core/tests/fixtures/orphan.json",
       "canonical_path": "crates/bijux-dag-core/tests/fixtures/orphan.json",
       "consumer_surfaces": [
@@ -699,6 +767,384 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/diamond.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/diamond.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/diamond.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/diamond.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "validate deterministic planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/fan_in.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/fan_in.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/fan_in.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/fan_in.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "validate deterministic planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/fan_out.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/fan_out.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/fan_out.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/fan_out.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "validate deterministic planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/imported_bundle_replay.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/imported_bundle_replay.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/imported_bundle_replay.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/imported_bundle_replay.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate deterministic replay-oriented planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/isolated_groups.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/isolated_groups.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/isolated_groups.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/isolated_groups.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "validate deterministic planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/linear.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/linear.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "runtime-contracts"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "runtime-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/linear.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/linear.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "schema-compatibility"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "validate deterministic planner lowering, runtime execution contracts, and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/replay_oriented.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/replay_oriented.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/replay_oriented.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/replay_oriented.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate deterministic replay-oriented planner lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/resource_heavy.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/resource_heavy.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/resource_heavy.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/resource_heavy.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "resource-accounting",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "resource-accounting",
+        "schema-compatibility"
+      ],
+      "trust_property": "resource-accounting",
+      "why_exists": "validate deterministic planner resource accounting and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/retry_heavy.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/retry_heavy.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/retry_heavy.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/retry_heavy.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "failure-propagation",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "failure-propagation",
+        "schema-compatibility"
+      ],
+      "trust_property": "failure-propagation",
+      "why_exists": "validate deterministic planner retry policy lowering and execution-plan schema compatibility"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json",
+      "consumer_surfaces": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "consumers": [
+        "planner-contracts",
+        "planner-hardening-report",
+        "replay-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-core",
+      "path": "crates/bijux-dag-core/tests/fixtures/planner/selective_replay.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "determinism",
+        "replay-equivalence",
+        "schema-compatibility"
+      ],
+      "trust_property": "replay-equivalence",
+      "why_exists": "validate deterministic selective replay planning and execution-plan schema compatibility"
+    },
+    {
       "canonical_location": "crates/bijux-dag-core/tests/fixtures/retry_nondet.json",
       "canonical_path": "crates/bijux-dag-core/tests/fixtures/retry_nondet.json",
       "consumer_surfaces": [
@@ -767,8 +1213,8 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
-      "canonical_location": "crates/bijux-dag-core/tests/fixtures/template_composition.json",
-      "canonical_path": "crates/bijux-dag-core/tests/fixtures/template_composition.json",
+      "canonical_location": "crates/bijux-dag-core/tests/fixtures/templated_composition.json",
+      "canonical_path": "crates/bijux-dag-core/tests/fixtures/templated_composition.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -782,11 +1228,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "authoring",
-      "id": "crates/bijux-dag-core/tests/fixtures/template_composition.json",
+      "id": "crates/bijux-dag-core/tests/fixtures/templated_composition.json",
       "implementation_status": "implemented",
       "kind": "authoring",
       "owner": "team-core",
-      "path": "crates/bijux-dag-core/tests/fixtures/template_composition.json",
+      "path": "crates/bijux-dag-core/tests/fixtures/templated_composition.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -903,6 +1349,182 @@
       "why_exists": "validate core graph parse and validation contracts"
     },
     {
+      "canonical_location": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "canonical_path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "consumer_surfaces": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide app integration descriptor fixture used by release and integration scenarios"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "canonical_path": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "consumer_surfaces": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "app-integration",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide app integration plugin manifest fixture used by release and integration scenarios"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "canonical_path": "evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "branching-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "branching-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/audience-branch-bulletin.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide a branching bulletin authoring reference that exercises conditional routing, skipped lanes, and retained publish outputs"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/audience-branch-source/team-update-revised.md",
+      "canonical_path": "evidence/authoring/examples/audience-branch-source/team-update-revised.md",
+      "consumer_surfaces": [
+        "branching-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "branching-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": "evidence/authoring/examples/audience-branch-source/team-update.md",
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/audience-branch-source/team-update-revised.md",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/audience-branch-source/team-update-revised.md",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide the revised retained source note consumed by the evidence-backed bulletin workflow and executable recipe coverage"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/audience-branch-source/team-update.md",
+      "canonical_path": "evidence/authoring/examples/audience-branch-source/team-update.md",
+      "consumer_surfaces": [
+        "branching-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "branching-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/audience-branch-source/team-update.md",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/audience-branch-source/team-update.md",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide the retained source note consumed by the branching bulletin authoring example and branch workflow contracts"
+    },
+    {
       "canonical_location": "evidence/authoring/examples/cached-branched-report.dag.json",
       "canonical_path": "evidence/authoring/examples/cached-branched-report.dag.json",
       "consumer_surfaces": [
@@ -935,6 +1557,78 @@
       ],
       "trust_property": "schema-compatibility",
       "why_exists": "provide executable authoring references"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
+      "canonical_path": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "policy-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "policy-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/compliance-gated-bulletin.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide a policy-gated bulletin authoring reference that exercises compliance checks before publication"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/compliance-gated-source/team-update.md",
+      "canonical_path": "evidence/authoring/examples/compliance-gated-source/team-update.md",
+      "consumer_surfaces": [
+        "policy-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "policy-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/compliance-gated-source/team-update.md",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/compliance-gated-source/team-update.md",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide the retained source note consumed by the compliance-gated bulletin authoring example"
     },
     {
       "canonical_location": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
@@ -1005,6 +1699,150 @@
       "why_exists": "provide executable authoring references"
     },
     {
+      "canonical_location": "evidence/authoring/examples/file-processing-report.dag.json",
+      "canonical_path": "evidence/authoring/examples/file-processing-report.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "file-processing-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "file-processing-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/file-processing-report.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/file-processing-report.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide an executable authoring reference for file ingestion, transformation, and promotable report output flows"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/file-processing-source/alpha.txt",
+      "canonical_path": "evidence/authoring/examples/file-processing-source/alpha.txt",
+      "consumer_surfaces": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/file-processing-source/alpha.txt",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/file-processing-source/alpha.txt",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide a retained source file used by the file-processing authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/file-processing-source/beta.txt",
+      "canonical_path": "evidence/authoring/examples/file-processing-source/beta.txt",
+      "consumer_surfaces": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/file-processing-source/beta.txt",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/file-processing-source/beta.txt",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide a retained source file used by the file-processing authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/file-processing-source/gamma.txt",
+      "canonical_path": "evidence/authoring/examples/file-processing-source/gamma.txt",
+      "consumer_surfaces": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "file-processing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/file-processing-source/gamma.txt",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/file-processing-source/gamma.txt",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide a retained source file used by the file-processing authoring example"
+    },
+    {
       "canonical_location": "evidence/authoring/examples/hello.dag.json",
       "canonical_path": "evidence/authoring/examples/hello.dag.json",
       "consumer_surfaces": [
@@ -1037,6 +1875,42 @@
       ],
       "trust_property": "schema-compatibility",
       "why_exists": "provide executable authoring references"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "canonical_path": "evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "scheduler-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "scheduler-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/historical-catalog-backfill.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide an executable authoring reference for historical catalog backfill workflows"
     },
     {
       "canonical_location": "evidence/authoring/examples/minimal_consumer.dag.json",
@@ -1107,6 +1981,220 @@
       "why_exists": "provide executable authoring references"
     },
     {
+      "canonical_location": "evidence/authoring/examples/parameterized-report.dag.json",
+      "canonical_path": "evidence/authoring/examples/parameterized-report.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/parameterized-report.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/parameterized-report.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide executable authoring references that exercise typed inputs and downstream output references"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "canonical_path": "evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "data-pipeline-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "data-pipeline-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/regional-sales-pipeline.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide a typed-input authoring reference for regional sales transformation and reporting flows"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/regional-sales-source/orders.csv",
+      "canonical_path": "evidence/authoring/examples/regional-sales-source/orders.csv",
+      "consumer_surfaces": [
+        "data-pipeline-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "data-pipeline-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/regional-sales-source/orders.csv",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/regional-sales-source/orders.csv",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide retained order input data for the regional sales pipeline authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/regional-sales-source/targets.json",
+      "canonical_path": "evidence/authoring/examples/regional-sales-source/targets.json",
+      "consumer_surfaces": [
+        "data-pipeline-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "data-pipeline-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/regional-sales-source/targets.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/regional-sales-source/targets.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide retained target input data for the regional sales pipeline authoring example"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/release-note-bundle.dag.json",
+      "canonical_path": "evidence/authoring/examples/release-note-bundle.dag.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts",
+        "publishing-guides"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts",
+        "publishing-guides"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/release-note-bundle.dag.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/release-note-bundle.dag.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide an executable authoring reference for bundling and promoting release notes"
+    },
+    {
+      "canonical_location": "evidence/authoring/examples/release-note-source/weekly-update.md",
+      "canonical_path": "evidence/authoring/examples/release-note-source/weekly-update.md",
+      "consumer_surfaces": [
+        "publishing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "publishing-guides",
+        "dag-run",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/examples/release-note-source/weekly-update.md",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/examples/release-note-source/weekly-update.md",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "fixture-integrity"
+      ],
+      "trust_properties_protected": [
+        "fixture-integrity"
+      ],
+      "trust_property": "fixture-integrity",
+      "why_exists": "provide the retained markdown source consumed by the release-note bundle authoring example"
+    },
+    {
       "canonical_location": "evidence/authoring/examples/replay-heavy-branching.dag.json",
       "canonical_path": "evidence/authoring/examples/replay-heavy-branching.dag.json",
       "consumer_surfaces": [
@@ -1141,26 +2229,28 @@
       "why_exists": "provide executable authoring references"
     },
     {
-      "canonical_location": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
-      "canonical_path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "canonical_location": "evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
+      "canonical_path": "evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
       "consumer_surfaces": [
-        "app-integration",
-        "authoring-contracts"
+        "dag-validate",
+        "authoring-contracts",
+        "scheduler-guides"
       ],
       "consumers": [
-        "app-integration",
-        "authoring-contracts"
+        "dag-validate",
+        "authoring-contracts",
+        "scheduler-guides"
       ],
       "decision": "keep",
       "deletion_review": "retain",
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "id": "evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
       "implementation_status": "implemented",
       "kind": "authoring",
       "owner": "team-authoring",
-      "path": "evidence/authoring/examples/app-integration/mock-official-app.mount.json",
+      "path": "evidence/authoring/examples/scheduled-catalog-refresh.dag.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -1172,41 +2262,7 @@
         "schema-compatibility"
       ],
       "trust_property": "schema-compatibility",
-      "why_exists": "provide app integration descriptor fixture used by release and integration scenarios"
-    },
-    {
-      "canonical_location": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
-      "canonical_path": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
-      "consumer_surfaces": [
-        "app-integration",
-        "authoring-contracts"
-      ],
-      "consumers": [
-        "app-integration",
-        "authoring-contracts"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "authoring",
-      "id": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
-      "implementation_status": "implemented",
-      "kind": "authoring",
-      "owner": "team-authoring",
-      "path": "evidence/authoring/examples/app-integration/mock-plugin.manifest.json",
-      "release_blocking": false,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "schema-compatibility"
-      ],
-      "trust_properties_protected": [
-        "schema-compatibility"
-      ],
-      "trust_property": "schema-compatibility",
-      "why_exists": "provide app integration plugin manifest fixture used by release and integration scenarios"
+      "why_exists": "provide an executable authoring reference for scheduled catalog refresh workflows"
     },
     {
       "canonical_location": "evidence/authoring/negative/cycle.json",
@@ -1229,6 +2285,40 @@
       "kind": "authoring",
       "owner": "team-authoring",
       "path": "evidence/authoring/negative/cycle.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide negative authoring validation references"
+    },
+    {
+      "canonical_location": "evidence/authoring/negative/invalid_container_workdir.json",
+      "canonical_path": "evidence/authoring/negative/invalid_container_workdir.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/negative/invalid_container_workdir.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/negative/invalid_container_workdir.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -1297,6 +2387,40 @@
       "kind": "authoring",
       "owner": "team-authoring",
       "path": "evidence/authoring/negative/invalid_selectors.json",
+      "release_blocking": false,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "schema-compatibility"
+      ],
+      "trust_properties_protected": [
+        "schema-compatibility"
+      ],
+      "trust_property": "schema-compatibility",
+      "why_exists": "provide negative authoring validation references"
+    },
+    {
+      "canonical_location": "evidence/authoring/negative/missing_required_input_binding.json",
+      "canonical_path": "evidence/authoring/negative/missing_required_input_binding.json",
+      "consumer_surfaces": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "consumers": [
+        "dag-validate",
+        "authoring-contracts"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "authoring",
+      "id": "evidence/authoring/negative/missing_required_input_binding.json",
+      "implementation_status": "implemented",
+      "kind": "authoring",
+      "owner": "team-authoring",
+      "path": "evidence/authoring/negative/missing_required_input_binding.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -2093,6 +3217,74 @@
       "why_exists": "exercise runtime subsystem contract fixtures"
     },
     {
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json",
+      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "battle",
+      "id": "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json",
+      "implementation_status": "implemented",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "path": "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/const.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures"
+    },
+    {
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json",
+      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json",
+      "consumer_surfaces": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "crate-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "battle",
+      "id": "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json",
+      "implementation_status": "implemented",
+      "kind": "battle",
+      "owner": "team-runtime",
+      "path": "crates/bijux-dag-runtime/tests/fixtures/node_execution_contract_conformance/shell.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "determinism"
+      ],
+      "trust_properties_protected": [
+        "determinism"
+      ],
+      "trust_property": "determinism",
+      "why_exists": "exercise runtime subsystem contract fixtures"
+    },
+    {
       "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/operations/slo_indicators.json",
       "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/operations/slo_indicators.json",
       "consumer_surfaces": [
@@ -2229,8 +3421,8 @@
       "why_exists": "exercise runtime subsystem contract fixtures"
     },
     {
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
-      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json",
+      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -2244,11 +3436,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "battle",
-      "id": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
+      "id": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json",
       "implementation_status": "implemented",
       "kind": "battle",
       "owner": "team-runtime",
-      "path": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_candidate.json",
+      "path": "crates/bijux-dag-runtime/tests/fixtures/performance/benchmark_regression_probe.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -2297,8 +3489,8 @@
       "why_exists": "exercise runtime subsystem contract fixtures"
     },
     {
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json",
-      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_reference.json",
+      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_reference.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -2312,11 +3504,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "battle",
-      "id": "crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json",
+      "id": "crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_reference.json",
       "implementation_status": "simulated",
       "kind": "battle",
       "owner": "team-runtime",
-      "path": "crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_example.json",
+      "path": "crates/bijux-dag-runtime/tests/fixtures/plugins/plugin_metadata_reference.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "simulated",
@@ -2671,8 +3863,8 @@
       "why_exists": "exercise runtime subsystem contract fixtures"
     },
     {
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json",
-      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json",
+      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json",
+      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -2686,79 +3878,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "battle",
-      "id": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json",
+      "id": "crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json",
       "implementation_status": "implemented",
       "kind": "battle",
       "owner": "team-runtime",
-      "path": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/const.json",
-      "release_blocking": true,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "determinism"
-      ],
-      "trust_properties_protected": [
-        "determinism"
-      ],
-      "trust_property": "determinism",
-      "why_exists": "exercise runtime subsystem contract fixtures"
-    },
-    {
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
-      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
-      "consumer_surfaces": [
-        "crate-contracts",
-        "runtime-tests"
-      ],
-      "consumers": [
-        "crate-contracts",
-        "runtime-tests"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "battle",
-      "id": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
-      "implementation_status": "implemented",
-      "kind": "battle",
-      "owner": "team-runtime",
-      "path": "crates/bijux-dag-runtime/tests/fixtures/task_contract_conformance/shell.json",
-      "release_blocking": true,
-      "retirement_date": null,
-      "simulation_status": "implemented",
-      "status": "keep",
-      "trust_properties": [
-        "determinism"
-      ],
-      "trust_properties_protected": [
-        "determinism"
-      ],
-      "trust_property": "determinism",
-      "why_exists": "exercise runtime subsystem contract fixtures"
-    },
-    {
-      "canonical_location": "crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json",
-      "canonical_path": "crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json",
-      "consumer_surfaces": [
-        "crate-contracts",
-        "runtime-tests"
-      ],
-      "consumers": [
-        "crate-contracts",
-        "runtime-tests"
-      ],
-      "decision": "keep",
-      "deletion_review": "retain",
-      "derived_from": null,
-      "duplicate_of": null,
-      "evidence_class": "battle",
-      "id": "crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json",
-      "implementation_status": "implemented",
-      "kind": "battle",
-      "owner": "team-runtime",
-      "path": "crates/bijux-dag-runtime/tests/fixtures/tenancy/isolation_matrix.json",
+      "path": "crates/bijux-dag-runtime/tests/fixtures/tenancy/tenant_isolation_expectations.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -4777,6 +5901,40 @@
       "why_exists": "exercise cache corruption and warm/cold semantics"
     },
     {
+      "canonical_location": "evidence/cache/corrupt/missing_manifest.json",
+      "canonical_path": "evidence/cache/corrupt/missing_manifest.json",
+      "consumer_surfaces": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "consumers": [
+        "cache-contracts",
+        "runtime-tests"
+      ],
+      "decision": "keep",
+      "deletion_review": "retain",
+      "derived_from": null,
+      "duplicate_of": null,
+      "evidence_class": "cache",
+      "id": "evidence/cache/corrupt/missing_manifest.json",
+      "implementation_status": "implemented",
+      "kind": "cache",
+      "owner": "team-runtime",
+      "path": "evidence/cache/corrupt/missing_manifest.json",
+      "release_blocking": true,
+      "retirement_date": null,
+      "simulation_status": "implemented",
+      "status": "keep",
+      "trust_properties": [
+        "cache-correctness"
+      ],
+      "trust_properties_protected": [
+        "cache-correctness"
+      ],
+      "trust_property": "cache-correctness",
+      "why_exists": "exercise cache corruption and warm/cold semantics"
+    },
+    {
       "canonical_location": "evidence/cache/corrupt/missing_meta.json",
       "canonical_path": "evidence/cache/corrupt/missing_meta.json",
       "consumer_surfaces": [
@@ -5801,8 +6959,8 @@
       "why_exists": "schema failure fixture ensures unknown top-level keys are rejected"
     },
     {
-      "canonical_location": "evidence/compat/export_bundle/unsupported_past/bundle.json",
-      "canonical_path": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "canonical_location": "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
+      "canonical_path": "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -5816,11 +6974,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "compat",
-      "id": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "id": "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
       "implementation_status": "implemented",
       "kind": "compat",
       "owner": "team-runtime",
-      "path": "evidence/compat/export_bundle/unsupported_past/bundle.json",
+      "path": "evidence/compat/export_bundle/unsupported_older_version/bundle.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -5937,8 +7095,8 @@
       "why_exists": "minimal supported export bundle example for compatibility fixtures"
     },
     {
-      "canonical_location": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
-      "canonical_path": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "canonical_location": "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
+      "canonical_path": "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -5952,11 +7110,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "compat",
-      "id": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "id": "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
       "implementation_status": "implemented",
       "kind": "compat",
       "owner": "team-runtime",
-      "path": "evidence/compat/graph_schema/unsupported_future/minimal.dag.json",
+      "path": "evidence/compat/graph_schema/unsupported_newer_version/minimal.dag.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -5968,11 +7126,11 @@
         "compatibility"
       ],
       "trust_property": "compatibility",
-      "why_exists": "verify unsupported future graph schema fixture is rejected"
+      "why_exists": "verify unsupported forward-version graph schema fixture is rejected"
     },
     {
-      "canonical_location": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
-      "canonical_path": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "canonical_location": "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
+      "canonical_path": "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -5986,11 +7144,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "compat",
-      "id": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "id": "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
       "implementation_status": "implemented",
       "kind": "compat",
       "owner": "team-runtime",
-      "path": "evidence/compat/graph_schema/unsupported_past/minimal.dag.json",
+      "path": "evidence/compat/graph_schema/unsupported_older_version/minimal.dag.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -6039,8 +7197,8 @@
       "why_exists": "verify supported graph schema fixture remains accepted"
     },
     {
-      "canonical_location": "evidence/compat/run_dir/unsupported_future/manifest.json",
-      "canonical_path": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "canonical_location": "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
+      "canonical_path": "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
       "consumer_surfaces": [
         "crate-contracts",
         "runtime-tests"
@@ -6054,11 +7212,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "compat",
-      "id": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "id": "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
       "implementation_status": "implemented",
       "kind": "compat",
       "owner": "team-runtime",
-      "path": "evidence/compat/run_dir/unsupported_future/manifest.json",
+      "path": "evidence/compat/run_dir/unsupported_newer_version/manifest.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -6107,8 +7265,8 @@
       "why_exists": "verify supported run-dir manifest format remains accepted"
     },
     {
-      "canonical_location": "evidence/compat/scenarios/legacy_fixture_validation.json",
-      "canonical_path": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "canonical_location": "evidence/compat/scenarios/historical_fixture_validation.json",
+      "canonical_path": "evidence/compat/scenarios/historical_fixture_validation.json",
       "consumer_surfaces": [
         "compatibility-contracts",
         "e2e-matrix"
@@ -6122,11 +7280,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "compat",
-      "id": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "id": "evidence/compat/scenarios/historical_fixture_validation.json",
       "implementation_status": "implemented",
       "kind": "compat",
       "owner": "team-runtime",
-      "path": "evidence/compat/scenarios/legacy_fixture_validation.json",
+      "path": "evidence/compat/scenarios/historical_fixture_validation.json",
       "release_blocking": true,
       "retirement_date": null,
       "simulation_status": "implemented",
@@ -6309,8 +7467,8 @@
       "why_exists": "scheduler regression corpus supports performance guardrail tests"
     },
     {
-      "canonical_location": "evidence/perf/baselines/example_v1.json",
-      "canonical_path": "evidence/perf/baselines/example_v1.json",
+      "canonical_location": "evidence/perf/baselines/benchmark_report_reference_v1.json",
+      "canonical_path": "evidence/perf/baselines/benchmark_report_reference_v1.json",
       "consumer_surfaces": [
         "benchmark-suite",
         "performance-evidence"
@@ -6324,11 +7482,11 @@
       "derived_from": null,
       "duplicate_of": null,
       "evidence_class": "perf",
-      "id": "evidence/perf/baselines/example_v1.json",
+      "id": "evidence/perf/baselines/benchmark_report_reference_v1.json",
       "implementation_status": "implemented",
       "kind": "perf",
       "owner": "team-performance",
-      "path": "evidence/perf/baselines/example_v1.json",
+      "path": "evidence/perf/baselines/benchmark_report_reference_v1.json",
       "release_blocking": false,
       "retirement_date": null,
       "simulation_status": "implemented",

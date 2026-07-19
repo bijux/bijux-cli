@@ -163,7 +163,7 @@ mod tests {
         fs::create_dir_all(temp_root.join("artifacts/status")).expect("mkdir");
         fs::write(
             temp_root.join("artifacts/status/config_ownership_truth.json"),
-            r#"{"owners":{"rust":["crates/bijux-cli"],"python":["crates/bijux-cli-python"]},"schemas":["config-v1"],"sources":["core::config"],"precedence_proofs":["artifacts/status/config_source_precedence_contract.json"],"rollback_proofs":["artifacts/status/config_mutation_matrix_artifact.json"],"corruption_evidence":["artifacts/status/config_corruption_campaign_artifact.json"],"compatibility_shims":[]}"#,
+            r#"{"owners":{"rust":["crates/bijux-cli"],"python":["crates/bijux-cli-python"]},"schemas":["config-v1"],"sources":["core::config"],"precedence_proofs":["artifacts/status/config_source_precedence_contract.json"],"rollback_proofs":["artifacts/status/config_mutation_coverage_artifact.json"],"corruption_evidence":["artifacts/status/config_corruption_campaign_artifact.json"],"compatibility_shims":[]}"#,
         )
         .expect("write truth");
 

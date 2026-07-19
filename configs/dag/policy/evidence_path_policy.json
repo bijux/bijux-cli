@@ -35,12 +35,11 @@
     "tests/e2e/fixtures",
     "tests/e2e/replay/fixtures",
     "tests/compatibility/graph_schema",
-    "crates/bijux-dag-core/tests/compat",
-    "crates/bijux-dag-core/tests/snapshots"
+    "crates/bijux-dag-core/tests/compat"
   ],
   "legacy_scenario_paths": [
     "tests/e2e/fixtures/e2e_minimal.json",
-    "tests/e2e/compat/legacy_fixture_validation.json",
+    "tests/e2e/compat/historical_fixture_validation.json",
     "tests/e2e/container/container_execution_if_supported.json"
   ],
   "helper_allowlist": [

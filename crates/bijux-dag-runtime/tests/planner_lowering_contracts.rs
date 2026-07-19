@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit::branch_semantics_graph_json;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -12,6 +11,10 @@ use thiserror as _;
 
 use bijux_dag_core::parse_graph_strict;
 use bijux_dag_runtime::{build_plan, RuntimeConfig, Selector, SelectorSet};
+
+mod support;
+
+use support::branch_semantics_graph_json;
 
 fn graph_a() -> &'static str {
     r#"{
@@ -119,7 +122,7 @@ fn runtime_plan_preserves_node_io_contracts() {
               "outputs":[{"name":"bam","path":"align/out.bam"}],
               "params":{
                 "argv":["aligner","--threads",{"graph_input":"threads"}],
-                "seed":{"node_output":{"node_id":"seed","path":"out"}}
+                "seed":{"node_output":{"node_id":"seed","output_name":"out"}}
               },
               "effects":["filesystem","env"],
               "env_allowlist":["REFGENOME"]
@@ -138,6 +141,33 @@ fn runtime_plan_preserves_node_io_contracts() {
     assert_eq!(run.io_contract.outputs[0].name, "bam");
     assert_eq!(run.io_contract.env_bindings[0].name, "REFGENOME");
     assert_eq!(run.io_contract.param_bindings.len(), 2);
+}
+
+#[test]
+fn runtime_plan_preserves_declared_cache_policy() {
+    let graph = parse_graph_strict(
+        r#"{
+          "spec":"bijux-dag/v0.1",
+          "nodes":[
+            {
+              "id":"fetch",
+              "kind":"shell",
+              "inputs":[],
+              "outputs":[{"name":"out","path":"fetch/out.json"}],
+              "params":{"argv":["/bin/sh","-c","date > ../outputs/fetch/out.json"]},
+              "cache":{"enabled":false,"reason":"external clock dependency"},
+              "effects":["filesystem","clock"]
+            }
+          ],
+          "edges":[]
+        }"#,
+    )
+    .expect("parse graph");
+
+    let plan = build_plan(&graph, &RuntimeConfig::default());
+    let fetch = plan.planned_nodes.iter().find(|node| node.id == "fetch").expect("fetch node");
+    assert!(!fetch.cache.enabled);
+    assert_eq!(fetch.cache.reason.as_deref(), Some("external clock dependency"));
 }
 
 #[test]

@@ -277,7 +277,7 @@ fn contract_alignment_payload(simulation: &Path) -> Result<ContractAlignmentRepo
     let mut missing_sections = Vec::new();
     for contract in &simulation.contracts {
         if !contract.has_contract {
-            missing_sections.push(format!("{} missing CONTRACT.md", contract.crate_name));
+            missing_sections.push(format!("{} missing docs/CONTRACTS.md", contract.crate_name));
         }
         if !contract.has_ownership {
             missing_sections.push(format!("{} missing ownership section", contract.crate_name));

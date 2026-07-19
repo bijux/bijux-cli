@@ -7,12 +7,5 @@ pub const IDS: &[&str] = &[
     "evidence-bundle",
 ];
 
-pub const VERIFY_FLOW: &[&str] = &[
-    "checks.run",
-    "tests.run",
-    "contracts.run",
-    "docs.run",
-    "repo.run",
-    "release.readiness",
-    "release.compatibility-matrix",
-];
+pub const VERIFY_FLOW: &[&str] =
+    &["release.validation-suite", "release.readiness", "release.compatibility-matrix"];

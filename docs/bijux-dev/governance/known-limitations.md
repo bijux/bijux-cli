@@ -4,22 +4,17 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-09
 ---
 
 # Known Limitations
 
-Known limitations keep maintainer expectations realistic and prevent false
-confidence in gate and report outcomes.
+Use this page when a maintainer result is technically green but still needs
+human judgment, extra runtime, or environment awareness before you trust it.
 
-## Visual Summary
-
-```mermaid
-flowchart TD
-    capability[documented capability] --> limit[current limitation]
-    limit --> impact[operational impact]
-    impact --> mitigation[mitigation strategy]
-```
+Known limitations are not an apology for weak tooling. They are the boundary
+between what the repository can prove today and what still requires operator
+care.
 
 ## Limitation Categories
 
@@ -34,13 +29,27 @@ flowchart TD
 - remove obsolete limitations when capability matures
 - do not label unresolved limitations as complete coverage
 
+## How To Read A Limitation
+
+| Question | Why it matters |
+| --- | --- |
+| what does the limitation block? | tells you whether release, recovery, or diagnosis is affected |
+| what mitigation exists today? | gives the maintainer a usable fallback instead of vague caution |
+| when should the limitation be removed? | prevents stale caveats from becoming permanent folklore |
+
+## Reader Shortcut
+
+A limitation is honest documentation only when it names the operational cost.
+If the page says something is limited but does not explain the practical
+consequence, it is still hiding the real problem.
+
 ## Code Anchors
 
 - `crates/bijux-dev/tests/`
 - `crates/bijux-dev/src/suites/`
 - `makes/`
 
-## Next Reads
+## Continue Reading
 
 - [Test Policy](test-policy.md)
 - [Incident Response](../operations/incident-response.md)

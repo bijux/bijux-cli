@@ -1,0 +1,9 @@
+# Tests repeatedly measured outside the 10-second fast-lane budget.
+# Explicitly slow tests use the `slow__` namespace and are not duplicated here.
+# `make test` excludes roster entries; `make test-slow` and `make test-all` include them.
+
+adapters_admit_json_reports_unsupported_nodes
+binary_and_python_bridge_parity_report_is_generated
+cache_corruption_fixtures_are_classified_by_verify_and_explain
+dag_root_help_uses_the_same_product_sentence
+maintainer_root_help_matches_governed_command_surface

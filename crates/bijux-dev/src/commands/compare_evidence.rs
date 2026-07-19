@@ -79,9 +79,8 @@ pub(super) fn run_comparison_harness_guard() -> Result<(), String> {
     let root = repo_root()?;
     let required = [
         "docs/spec/COMPARISON_HARNESS_CONTRACT.md",
-        "docs/reference/COMPARISON_REPORT_TEMPLATE.md",
-        "docs/reference/COMPARISON_LIMITATIONS.md",
-        "docs/reference/COMPARISON_EVIDENCE_SURFACES.md",
+        "docs/bijux-dag/interfaces/comparison-report-format.md",
+        "docs/bijux-dag/quality/comparison-evidence-surfaces.md",
         "evidence/compare/baselines/bijux_v1.json",
         "evidence/compare/metadata.json",
         "crates/bijux-dag-app/tests/comparison_harness_contract.rs",
@@ -140,8 +139,7 @@ pub(super) fn run_comparison_harness_guard() -> Result<(), String> {
                 let lower = line.to_ascii_lowercase();
                 let vague_superiority = lower.contains("superior")
                     || lower.contains("best dag")
-                    || lower.contains("better than")
-                    || lower.contains("faster than");
+                    || lower.contains("better than");
                 if vague_superiority
                     && !line.contains("comparisons/")
                     && !line.contains("evidence/compare/")

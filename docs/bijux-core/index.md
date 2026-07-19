@@ -4,22 +4,20 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-19
 ---
 
 # Repository Handbook
 
-The repository handbook covers the parts of `bijux-core` that sit above any
-single product surface. It explains why the workspace is split, where
-repository authority begins and ends, and how cross-program architecture,
-operations, and release rules stay reviewable.
+This handbook explains the parts of `bijux-core` that sit above any single
+crate or command. Read it when you need the shape of the repository, the
+public-versus-private package line, or the release rules that keep `bijux` and
+`bijux-dag` honest.
 
-Open it when a question crosses CLI, DAG, Python bridge, and maintainer
-boundaries, or when the handbook tree itself needs a clear owner.
-
-<div class="bijux-callout"><strong>Use this branch when ownership is broader than one product.</strong>
-It is the right route for workspace rules, cross-program architecture, release
-boundaries, and shared automation at the repository root.</div>
+<div class="bijux-callout"><strong>Use this handbook when the question crosses products.</strong>
+If the answer needs both <code>bijux</code> and <code>bijux-dag</code>, or if
+it depends on package boundaries, release policy, or shared automation, this
+is the right starting point.</div>
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="foundation/">Open foundation</a>
@@ -27,43 +25,86 @@ boundaries, and shared automation at the repository root.</div>
 <a class="md-button" href="operations/">Open operations</a>
 </div>
 
-## Section Map
+## What This Handbook Helps You Answer
 
-```mermaid
-flowchart LR
-    repo["Repository handbook"] --> foundation["Foundation"]
-    repo --> architecture["Architecture"]
-    repo --> operations["Operations"]
-    repo --> governance["Governance"]
-```
+- What does this repository actually publish today?
+- Which crates are public, and which remain repository-internal?
+- Where should a reader or contributor start before opening source files?
+- Which repository rules affect both `bijux` and `bijux-dag`?
+- Which root workflows validate, release, and document the whole workspace?
 
 ## Start Here
 
-- open [Foundation](foundation/index.md) when you still need the repository
-  split, ownership model, and vocabulary explained
-- open [Core Architecture](architecture/index.md) when the workspace structure
-  and dependency direction are the real question
-- open [Operations](operations/index.md) when the work is about validation,
-  release, review, automation, or repository change flow
-
-## Task Map
-
-| If you need to... | Start page |
+| Question | Best starting page |
 | --- | --- |
-| understand why the workspace is split the way it is | [Foundation](foundation/index.md) |
-| identify the owning package before reading code | [Package Map](foundation/package-map.md) |
-| understand workspace structure and crate boundaries | [Core Architecture](architecture/index.md) |
-| evaluate release, validation, or review policy | [Operations](operations/index.md) |
-| decide which handbook owns a behavior | [Decision Rules](foundation/decision-rules.md) |
-| review dependency and ownership constraints | [Dependency Direction](architecture/dependency-direction.md) |
+| What does `bijux-core` publish today? | [Foundation](foundation/index.md) |
+| Which package owns this behavior? | [Package Map](foundation/package-map.md) |
+| Which crates are public and which stay internal? | [Package Boundary](foundation/package-boundary.md) |
+| How is the workspace laid out and why? | [Core Architecture](architecture/index.md) |
+| What do contributors run before review or release? | [Operations](operations/index.md) |
 
-## When To Use This Handbook
+## Repository Snapshot
 
-- when a policy affects more than one program handbook
-- when ownership boundaries across crates must be clarified
-- when release, compatibility, or validation policy is repository-wide
-- when a root file such as `Makefile`, `mkdocs.yml`, `contracts/`, or
-  `.github/workflows/` is part of the answer
+`bijux-core` publishes two public product families:
+
+- `bijux`, the operator-facing command runtime
+- `bijux-dag`, the local-first DAG runtime and crate family
+
+It also carries repository-internal support crates that make those products
+shippable and auditable:
+
+- `bijux-cli-python` for Python packaging and bridge parity
+- `bijux-dag-testkit` for deterministic DAG fixtures and shared assertions
+- `bijux-dev` for repository diagnostics, governance, evidence, and release
+  tooling
+
+That split matters because many questions that look like one command problem
+are really package-boundary or release-boundary questions.
+
+```mermaid
+flowchart TB
+    repo["bijux-core workspace"]
+
+    subgraph public["Published product families"]
+        cli["bijux<br/>bijux-cli"]
+        dag["bijux-dag<br/>core · artifacts · runtime · app · cli"]
+    end
+
+    subgraph private["Repository-only support"]
+        py["bijux-cli-python<br/>Python distribution build"]
+        testkit["bijux-dag-testkit<br/>fixtures and assertions"]
+        dev["bijux-dev<br/>governance and evidence"]
+    end
+
+    repo --> public
+    repo --> private
+    py --> cli
+    testkit -. verifies .-> dag
+    dev -. governs release evidence .-> public
+```
+
+This is an ownership map, not a Cargo dependency graph. Use the
+[Package Map](foundation/package-map.md) for package purpose and the
+[Package Boundary](foundation/package-boundary.md) before treating a private
+support crate as a distributable API.
+
+## What You Will Find Here
+
+- the public-versus-private crate line
+- the workspace layout under `crates/`, `contracts/`, `docs/`, `makes/`, and
+  `.github/workflows/`
+- the release and validation rules that apply across both product families
+- the ownership rules that keep package pages, READMEs, and shipped surfaces
+  aligned
+
+## When Not To Stay Here
+
+- If the question is only about `bijux` behavior, move to the
+  [CLI Handbook](../bijux-cli/index.md).
+- If the question is only about DAG authoring, execution, replay, or retained
+  evidence, move to the [DAG Handbook](../bijux-dag/index.md).
+- If the question is about maintainer automation, release proof, or repository
+  gates, move to the [Maintainer Handbook](../bijux-dev/index.md).
 
 ## Program Handbooks
 

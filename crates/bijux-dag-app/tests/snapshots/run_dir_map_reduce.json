@@ -7,6 +7,8 @@
     "manifest.finalized.json",
     "manifest.json",
     "nodes/map_left/attempts.json",
+    "nodes/map_left/attempts/1/stderr.log",
+    "nodes/map_left/attempts/1/stdout.log",
     "nodes/map_left/inputs/index.json",
     "nodes/map_left/inputs/seed/in",
     "nodes/map_left/outputs/index.json",
@@ -16,6 +18,8 @@
     "nodes/map_left/stdout.log",
     "nodes/map_left/trace.json",
     "nodes/map_mid/attempts.json",
+    "nodes/map_mid/attempts/1/stderr.log",
+    "nodes/map_mid/attempts/1/stdout.log",
     "nodes/map_mid/inputs/index.json",
     "nodes/map_mid/inputs/seed/in",
     "nodes/map_mid/outputs/index.json",
@@ -25,6 +29,8 @@
     "nodes/map_mid/stdout.log",
     "nodes/map_mid/trace.json",
     "nodes/map_right/attempts.json",
+    "nodes/map_right/attempts/1/stderr.log",
+    "nodes/map_right/attempts/1/stdout.log",
     "nodes/map_right/inputs/index.json",
     "nodes/map_right/inputs/seed/in",
     "nodes/map_right/outputs/index.json",
@@ -34,6 +40,8 @@
     "nodes/map_right/stdout.log",
     "nodes/map_right/trace.json",
     "nodes/reduce/attempts.json",
+    "nodes/reduce/attempts/1/stderr.log",
+    "nodes/reduce/attempts/1/stdout.log",
     "nodes/reduce/inputs/index.json",
     "nodes/reduce/inputs/map_left/left",
     "nodes/reduce/inputs/map_mid/mid",
@@ -45,6 +53,8 @@
     "nodes/reduce/stdout.log",
     "nodes/reduce/trace.json",
     "nodes/seed/attempts.json",
+    "nodes/seed/attempts/1/stderr.log",
+    "nodes/seed/attempts/1/stdout.log",
     "nodes/seed/inputs/index.json",
     "nodes/seed/outputs/index.json",
     "nodes/seed/outputs/seed/out.json",
@@ -258,7 +268,7 @@
             "argv": [
               "/bin/sh",
               "-c",
-              "printf '%s-%s-%s' \"$(cat ../inputs/map_left/map_left.txt)\" \"$(cat ../inputs/map_mid/map_mid.txt)\" \"$(cat ../inputs/map_right/map_right.txt)\" > ../outputs/reduce.txt"
+              "printf '%s-%s-%s' \"$(cat ../inputs/map_left/left)\" \"$(cat ../inputs/map_mid/mid)\" \"$(cat ../inputs/map_right/right)\" > ../outputs/reduce.txt"
             ]
           },
           "resources": null,
@@ -302,7 +312,7 @@
       "nondeterminism_allowed": false,
       "spec": "bijux-dag/v0.1"
     },
-    "graph_fingerprint": "83d6435fc8d75a636aaa48dbeb9344657a5be99bf6a890d5b1eba26f7f0b924f"
+    "graph_fingerprint": "bde68ff17a248c5616e41623a2d8c0cc9df639a1fce32c79d2ac28b3cd5bdc41"
   },
   "manifest": {
     "adapters": [
@@ -319,6 +329,28 @@
         ]
       },
       {
+        "adapter_id": "file_transform",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
+        "adapter_id": "http",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem",
+          "network"
+        ]
+      },
+      {
+        "adapter_id": "python",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
         "adapter_id": "shell",
         "adapter_version": "0.1",
         "effects": [
@@ -327,10 +359,10 @@
       }
     ],
     "created_unix_ms": 0,
-    "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
-    "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
+    "evidence_fingerprint": "45c7315bc8941e3a239d4bdd39746404c8e1430f044ec04a3f546bd693664fe6",
+    "execution_fingerprint": "b32295baff6b402ec9ed9896e5e6bc5588b9da143091767a690200d7e3ef9110",
     "finished_unix_ms": 0,
-    "graph_fingerprint": "83d6435fc8d75a636aaa48dbeb9344657a5be99bf6a890d5b1eba26f7f0b924f",
+    "graph_fingerprint": "bde68ff17a248c5616e41623a2d8c0cc9df639a1fce32c79d2ac28b3cd5bdc41",
     "graph_snapshot": "graph.snapshot.json",
     "jobs": 1,
     "manifest_version": "run-manifest/v0.1",
@@ -342,40 +374,61 @@
     },
     "outputs": [
       {
-        "file": "map_left.txt",
-        "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "5a1e16ba11915a6e9b9d4de055a342a65e37a0ffd1df36415d3f407a020aa8e9",
         "node_id": "map_left",
-        "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
+        "path": "map_left.txt",
+        "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480",
+        "size_bytes": 4
       },
       {
-        "file": "map_mid.txt",
-        "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "20685590ae61b4f403e6d1e199e592f1d83fcb82aecd205832b0d2aec9a97ab5",
         "node_id": "map_mid",
-        "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
+        "path": "map_mid.txt",
+        "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2",
+        "size_bytes": 3
       },
       {
-        "file": "map_right.txt",
-        "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "786ebca4aff27b24d99331e17da0da7eaab96d79317cb834f6ae81d4399c4ec8",
         "node_id": "map_right",
-        "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
+        "path": "map_right.txt",
+        "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9",
+        "size_bytes": 5
       },
       {
-        "file": "reduce.txt",
-        "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "8bb0b123c969ff978b66cad5ca80bd301afcb86505091aca841d53e51c7dbd17",
         "node_id": "reduce",
-        "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
+        "path": "reduce.txt",
+        "sha256": "2a34d5e7e369ee7118972e3d549f5ea421c31de8081464b54a71084df7417998",
+        "size_bytes": 14
       },
       {
-        "file": "seed/out.json",
-        "node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "1659ade2266e23851ec402a41ec2dd93e12f59a9c76335286d6a752e6ea285ae",
         "node_id": "seed",
-        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        "path": "seed/out.json",
+        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+        "size_bytes": 4
       }
     ],
     "planner_contract_version": "bijux-dag-planner/v1",
-    "planner_fingerprint": "399475149cb1a9960d0e7dfeeda3f2b5df263e55a793dcb78df152bf38da018d",
+    "planner_fingerprint": "f4a14b9507ece0ae782641a1e2281202903f475dd4384482b9ab385b69609503",
     "policy": {
       "clean_env": true,
+      "container_image_reference_policy": "require_digest",
       "deny_clock": false,
       "deny_env": false,
       "deny_network": false
@@ -404,21 +457,26 @@
       "inputs": {
         "files": [
           {
-            "from_node": "seed",
-            "from_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
-            "from_output": "out",
-            "path": "seed/in",
-            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+            "local_path": "seed/in",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "1659ade2266e23851ec402a41ec2dd93e12f59a9c76335286d6a752e6ea285ae",
+            "source_node_id": "seed",
+            "source_output_name": "out",
+            "source_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
           }
         ]
       },
       "outputs": {
         "files": [
           {
-            "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
+            "node_fingerprint": "5a1e16ba11915a6e9b9d4de055a342a65e37a0ffd1df36415d3f407a020aa8e9",
             "node_id": "map_left",
             "path": "map_left.txt",
-            "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
+            "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480",
+            "size_bytes": 4
           }
         ]
       }
@@ -427,21 +485,26 @@
       "inputs": {
         "files": [
           {
-            "from_node": "seed",
-            "from_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
-            "from_output": "out",
-            "path": "seed/in",
-            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+            "local_path": "seed/in",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "1659ade2266e23851ec402a41ec2dd93e12f59a9c76335286d6a752e6ea285ae",
+            "source_node_id": "seed",
+            "source_output_name": "out",
+            "source_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
           }
         ]
       },
       "outputs": {
         "files": [
           {
-            "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
+            "node_fingerprint": "20685590ae61b4f403e6d1e199e592f1d83fcb82aecd205832b0d2aec9a97ab5",
             "node_id": "map_mid",
             "path": "map_mid.txt",
-            "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
+            "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2",
+            "size_bytes": 3
           }
         ]
       }
@@ -450,21 +513,26 @@
       "inputs": {
         "files": [
           {
-            "from_node": "seed",
-            "from_node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
-            "from_output": "out",
-            "path": "seed/in",
-            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+            "local_path": "seed/in",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "1659ade2266e23851ec402a41ec2dd93e12f59a9c76335286d6a752e6ea285ae",
+            "source_node_id": "seed",
+            "source_output_name": "out",
+            "source_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
           }
         ]
       },
       "outputs": {
         "files": [
           {
-            "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
+            "node_fingerprint": "786ebca4aff27b24d99331e17da0da7eaab96d79317cb834f6ae81d4399c4ec8",
             "node_id": "map_right",
             "path": "map_right.txt",
-            "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
+            "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9",
+            "size_bytes": 5
           }
         ]
       }
@@ -473,35 +541,42 @@
       "inputs": {
         "files": [
           {
-            "from_node": "map_left",
-            "from_node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
-            "from_output": "out",
-            "path": "map_left/left",
-            "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
+            "local_path": "map_left/left",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "5a1e16ba11915a6e9b9d4de055a342a65e37a0ffd1df36415d3f407a020aa8e9",
+            "source_node_id": "map_left",
+            "source_output_name": "out",
+            "source_sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
           },
           {
-            "from_node": "map_mid",
-            "from_node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
-            "from_output": "out",
-            "path": "map_mid/mid",
-            "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
+            "local_path": "map_mid/mid",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "20685590ae61b4f403e6d1e199e592f1d83fcb82aecd205832b0d2aec9a97ab5",
+            "source_node_id": "map_mid",
+            "source_output_name": "out",
+            "source_sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
           },
           {
-            "from_node": "map_right",
-            "from_node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
-            "from_output": "out",
-            "path": "map_right/right",
-            "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
+            "local_path": "map_right/right",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "786ebca4aff27b24d99331e17da0da7eaab96d79317cb834f6ae81d4399c4ec8",
+            "source_node_id": "map_right",
+            "source_output_name": "out",
+            "source_sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
           }
         ]
       },
       "outputs": {
         "files": [
           {
-            "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
+            "node_fingerprint": "8bb0b123c969ff978b66cad5ca80bd301afcb86505091aca841d53e51c7dbd17",
             "node_id": "reduce",
             "path": "reduce.txt",
-            "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
+            "sha256": "2a34d5e7e369ee7118972e3d549f5ea421c31de8081464b54a71084df7417998",
+            "size_bytes": 14
           }
         ]
       }
@@ -513,10 +588,14 @@
       "outputs": {
         "files": [
           {
-            "node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
+            "node_fingerprint": "1659ade2266e23851ec402a41ec2dd93e12f59a9c76335286d6a752e6ea285ae",
             "node_id": "seed",
             "path": "seed/out.json",
-            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+            "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+            "size_bytes": 4
           }
         ]
       }
@@ -533,7 +612,7 @@
       "outputs/map_right.txt": "right"
     },
     "reduce": {
-      "outputs/reduce.txt": "--"
+      "outputs/reduce.txt": "left-mid-right"
     }
   },
   "node_traces": {
@@ -542,12 +621,63 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
-      "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
-      "fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "5bcd9f6a7f6beebcad85920e47e179ec7ee8dfe8e76ae7ea7392ec4276043133",
+        "command_fingerprint": "830d3734694c67d0809919fad86a002d83a228bdac14c84be5794949bfe4e727",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "d46b92edf713b168c88482170a2489563e0a9b62fa53491062b4141563db64c7",
+        "node_definition_fingerprint": "9c76fec4f5f66138bf4761caf02ee8bd061b8602a0425cf1621722bc1b747a1e",
+        "params_fingerprint": "8378d812cf30ede401b989495ac61e5df499ac5319cecf74fe1cf318a043e1c8",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "45c7315bc8941e3a239d4bdd39746404c8e1430f044ec04a3f546bd693664fe6",
+      "execution_fingerprint": "b32295baff6b402ec9ed9896e5e6bc5588b9da143091767a690200d7e3ef9110",
+      "exit_code": 0,
+      "fingerprint": "5a1e16ba11915a6e9b9d4de055a342a65e37a0ffd1df36415d3f407a020aa8e9",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "map_left",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "map_left.txt",
+          "present": true,
+          "required": true,
+          "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480",
+          "size_bytes": 4
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -562,19 +692,89 @@
       },
       "started_unix_ms": 0,
       "status": "success",
-      "transition_cause": "ExecutionSucceeded"
+      "stderr": {
+        "path": "nodes/map_left/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/map_left/stdout.log",
+        "size_bytes": 0
+      },
+      "transition_cause": "ExecutionSucceeded",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "seed",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
     },
     "map_mid": {
       "adapter_id": "shell",
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
-      "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
-      "fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "e3e50d47b706e18f1498d2d1198c1ebaead0437f4e992b07c769314a5a7843ad",
+        "command_fingerprint": "103b269b78b1c43182300807fa900360d8266957d17b948bf78f5f3e7cb9f60c",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "d46b92edf713b168c88482170a2489563e0a9b62fa53491062b4141563db64c7",
+        "node_definition_fingerprint": "2d00483ce90ceeb2a022209724b0815ca916e38d199411d496182575e0972568",
+        "params_fingerprint": "2ac005c615e82698bf50bc541965f6910bd6ea6a8922d55cf3ae7a9ed146b4e2",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "45c7315bc8941e3a239d4bdd39746404c8e1430f044ec04a3f546bd693664fe6",
+      "execution_fingerprint": "b32295baff6b402ec9ed9896e5e6bc5588b9da143091767a690200d7e3ef9110",
+      "exit_code": 0,
+      "fingerprint": "20685590ae61b4f403e6d1e199e592f1d83fcb82aecd205832b0d2aec9a97ab5",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "map_mid",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "map_mid.txt",
+          "present": true,
+          "required": true,
+          "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2",
+          "size_bytes": 3
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -589,19 +789,89 @@
       },
       "started_unix_ms": 0,
       "status": "success",
-      "transition_cause": "ExecutionSucceeded"
+      "stderr": {
+        "path": "nodes/map_mid/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/map_mid/stdout.log",
+        "size_bytes": 0
+      },
+      "transition_cause": "ExecutionSucceeded",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "seed",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
     },
     "map_right": {
       "adapter_id": "shell",
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
-      "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
-      "fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "9075cbfc353a635a20995f71da8c460935ef62c8bdff76edc917a768ad7965ad",
+        "command_fingerprint": "ef12bc45a057b47bf06e8d56b990459d527a2edf9addbd9df8918820b234b990",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "d46b92edf713b168c88482170a2489563e0a9b62fa53491062b4141563db64c7",
+        "node_definition_fingerprint": "8ad0209c636c35813bc241be9aa0f8a007c477431a7c74613a176a98d05ea184",
+        "params_fingerprint": "ec41a9274eb4931b4f499eedc72b0a35131e6fd5efaf07f1dbdba6ceb6bd99f3",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "45c7315bc8941e3a239d4bdd39746404c8e1430f044ec04a3f546bd693664fe6",
+      "execution_fingerprint": "b32295baff6b402ec9ed9896e5e6bc5588b9da143091767a690200d7e3ef9110",
+      "exit_code": 0,
+      "fingerprint": "786ebca4aff27b24d99331e17da0da7eaab96d79317cb834f6ae81d4399c4ec8",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "map_right",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "map_right.txt",
+          "present": true,
+          "required": true,
+          "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9",
+          "size_bytes": 5
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -616,19 +886,89 @@
       },
       "started_unix_ms": 0,
       "status": "success",
-      "transition_cause": "ExecutionSucceeded"
+      "stderr": {
+        "path": "nodes/map_right/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/map_right/stdout.log",
+        "size_bytes": 0
+      },
+      "transition_cause": "ExecutionSucceeded",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "seed",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
     },
     "reduce": {
       "adapter_id": "shell",
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
-      "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
-      "fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "3d97557de0292a5692d1bba6f143cce7bbec7bf3857079795857d0fd0e1e6343",
+        "command_fingerprint": "843fde852ef3bf111ebb9966cb5fb837303672adf4e0596b24ea42edec84a7c9",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "4e87641eec5672fcf97acdca487e5d2274b8df6afa1aec72da556cfc3292858e",
+        "node_definition_fingerprint": "8dc3116486736342a6c5555b729521c4ea00eb50436e96020c958dfe125e99f9",
+        "params_fingerprint": "7b44db8e2c1a8afc2ce3dcec091d5fa0d736a4b2233fc2cdb1863c41fc1f5c11",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "45c7315bc8941e3a239d4bdd39746404c8e1430f044ec04a3f546bd693664fe6",
+      "execution_fingerprint": "b32295baff6b402ec9ed9896e5e6bc5588b9da143091767a690200d7e3ef9110",
+      "exit_code": 0,
+      "fingerprint": "8bb0b123c969ff978b66cad5ca80bd301afcb86505091aca841d53e51c7dbd17",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "reduce",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "reduce.txt",
+          "present": true,
+          "required": true,
+          "sha256": "2a34d5e7e369ee7118972e3d549f5ea421c31de8081464b54a71084df7417998",
+          "size_bytes": 14
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -638,24 +978,100 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "printf '%s-%s-%s' \"$(cat ../inputs/map_left/map_left.txt)\" \"$(cat ../inputs/map_mid/map_mid.txt)\" \"$(cat ../inputs/map_right/map_right.txt)\" > ../outputs/reduce.txt"
+          "printf '%s-%s-%s' \"$(cat ../inputs/map_left/left)\" \"$(cat ../inputs/map_mid/mid)\" \"$(cat ../inputs/map_right/right)\" > ../outputs/reduce.txt"
         ]
       },
       "started_unix_ms": 0,
       "status": "success",
-      "transition_cause": "ExecutionSucceeded"
+      "stderr": {
+        "path": "nodes/reduce/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/reduce/stdout.log",
+        "size_bytes": 0
+      },
+      "transition_cause": "ExecutionSucceeded",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "map_left",
+            "status": "success"
+          },
+          {
+            "node_id": "map_mid",
+            "status": "success"
+          },
+          {
+            "node_id": "map_right",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
     },
     "seed": {
       "adapter_id": "const",
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "fe381d0c6cc5864503ba0aa014545c04c7a80f80df1694f0689ce5288a4a577c",
-      "execution_fingerprint": "c52ed93abf2384b1c197d18abaee1b0bd039b3f62a3d7c6bda4b3020be7c2f7a",
-      "fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "8a9b6faa7f20990e197bffd5d408e65a0140dc819e3390704599a83e6ada97ad",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "node_definition_fingerprint": "a7aa0f80a0a32de813bec5f64433bc6567623848ce7d322d23ac2c5d666d1769",
+        "params_fingerprint": "1ef7a7f832aa621bd3593c3548e6d9bdc35e72c736930ced4e8e337b7b091012",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "45c7315bc8941e3a239d4bdd39746404c8e1430f044ec04a3f546bd693664fe6",
+      "execution_fingerprint": "b32295baff6b402ec9ed9896e5e6bc5588b9da143091767a690200d7e3ef9110",
+      "fingerprint": "1659ade2266e23851ec402a41ec2dd93e12f59a9c76335286d6a752e6ea285ae",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "seed",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "seed/out.json",
+          "present": true,
+          "required": true,
+          "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+          "size_bytes": 4
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -670,40 +1086,68 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/seed/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/seed/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded"
     }
   },
   "outputs_index": {
     "files": [
       {
-        "node_fingerprint": "c15001186caaa5285d64078c0f2293a3efbf2862f0fd7f78ed197d2ae4c2a69b",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "5a1e16ba11915a6e9b9d4de055a342a65e37a0ffd1df36415d3f407a020aa8e9",
         "node_id": "map_left",
         "path": "nodes/map_left/outputs/map_left.txt",
-        "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480"
+        "sha256": "360f84035942243c6a36537ae2f8673485e6c04455a0a85a0db19690f2541480",
+        "size_bytes": 4
       },
       {
-        "node_fingerprint": "9fc8d780a6e8dfd26e3ee8f11a1c50e9e1cff14dc84e848c4ba9c8cd6e700c2c",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "20685590ae61b4f403e6d1e199e592f1d83fcb82aecd205832b0d2aec9a97ab5",
         "node_id": "map_mid",
         "path": "nodes/map_mid/outputs/map_mid.txt",
-        "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2"
+        "sha256": "90ac16783fbc54c3689c63b3ab89b39cea28f8743a88ff34e6a1c61ed746d0e2",
+        "size_bytes": 3
       },
       {
-        "node_fingerprint": "bbebc5222ef547ebeddc00b1d9534d8478cbce4b34b1d915160b292d410dfe44",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "786ebca4aff27b24d99331e17da0da7eaab96d79317cb834f6ae81d4399c4ec8",
         "node_id": "map_right",
         "path": "nodes/map_right/outputs/map_right.txt",
-        "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9"
+        "sha256": "27042f4e6eca7d0b2a7ee4026df2ecfa51d3339e6d122aa099118ecd8563bad9",
+        "size_bytes": 5
       },
       {
-        "node_fingerprint": "41e2cd40e4a0151024b136c4f8bcc6ee14fa2ee71de0693b8a17320c744859c9",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "8bb0b123c969ff978b66cad5ca80bd301afcb86505091aca841d53e51c7dbd17",
         "node_id": "reduce",
         "path": "nodes/reduce/outputs/reduce.txt",
-        "sha256": "d8156bae0c4243d3742fc4e9774d8aceabe0410249d720c855f98afc88ff846c"
+        "sha256": "2a34d5e7e369ee7118972e3d549f5ea421c31de8081464b54a71084df7417998",
+        "size_bytes": 14
       },
       {
-        "node_fingerprint": "ff4af213eaccf7200950bbc4b5a7dddc6e591c674c75ddd700756e6e8ab0d6f3",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "1659ade2266e23851ec402a41ec2dd93e12f59a9c76335286d6a752e6ea285ae",
         "node_id": "seed",
         "path": "nodes/seed/outputs/seed/out.json",
-        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+        "size_bytes": 4
       }
     ]
   },
@@ -741,7 +1185,7 @@
         "seed"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -775,7 +1219,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "seed",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -839,7 +1285,7 @@
         "map_right"
       ],
       "ready_queue_depth": 2,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -885,7 +1331,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "map_left",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -907,7 +1355,7 @@
         "map_right"
       ],
       "ready_queue_depth": 1,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -947,7 +1395,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "map_mid",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -964,7 +1414,7 @@
         "map_right"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -998,7 +1448,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "map_right",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -1030,7 +1482,7 @@
         "reduce"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -1064,7 +1516,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "reduce",
+      "reason": null,
       "status": "success",
       "ts": 0
     },

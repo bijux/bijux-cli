@@ -21,13 +21,6 @@ BADGE_BLOCK_RE = re.compile(
     re.DOTALL,
 )
 TOKEN_RE = re.compile(r"{{\s*(?P<name>[a-z0-9_]+)\s*}}")
-BADGE_GROUPS: tuple[str, ...] = (
-    "family-crates-badge",
-    "family-rustdocs-badge",
-    "family-pypi-badge",
-    "family-ghcr-badge",
-    "family-docs-badge",
-)
 
 
 @dataclass(frozen=True)
@@ -37,6 +30,7 @@ class PackageRecord:
     kind: str
     published: bool
     display_name: str
+    badge_label: str
     purpose: str
     docs_url: str
     source_url: str
@@ -81,25 +75,89 @@ def _shield_text(value: str) -> str:
 
 
 def package_records() -> dict[str, PackageRecord]:
-    rust_manifest_path = REPO_ROOT / "crates" / "bijux-cli" / "Cargo.toml"
     python_manifest_path = REPO_ROOT / "crates" / "bijux-cli-python" / "pyproject.toml"
-    rust_crate_name = _read_section_value(rust_manifest_path, "package", "name")
     python_package_name = _read_section_value(python_manifest_path, "project", "name")
 
-    return {
-        "bijux-cli": PackageRecord(
-            key="bijux-cli",
-            family_key="bijux-cli",
+    def rust_record(
+        *,
+        key: str,
+        family_key: str,
+        badge_label: str,
+        purpose: str,
+        docs_section: str,
+        source_dir: str,
+        ghcr_url: str | None = None,
+    ) -> PackageRecord:
+        manifest_path = REPO_ROOT / "crates" / source_dir / "Cargo.toml"
+        crate_name = _read_section_value(manifest_path, "package", "name")
+        return PackageRecord(
+            key=key,
+            family_key=family_key,
             kind="rust",
             published=True,
-            display_name="bijux-cli",
-            purpose="Public release family for the `bijux` command runtime, spanning the Rust crate, Python distribution, and release bundle.",
-            docs_url="https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/",
-            source_url="https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli",
-            crate_name=rust_crate_name,
-            crates_url=f"https://crates.io/crates/{rust_crate_name}",
-            docsrs_url=f"https://docs.rs/{rust_crate_name}",
+            display_name=crate_name,
+            badge_label=badge_label,
+            purpose=purpose,
+            docs_url=f"https://bijux.io/bijux-core/bijux-dag/packages/{docs_section}/"
+            if key.startswith("bijux-dag-")
+            else f"https://bijux.io/bijux-core/bijux-cli/packages/{docs_section}/",
+            source_url=f"https://github.com/bijux/bijux-core/tree/main/crates/{source_dir}",
+            crate_name=crate_name,
+            crates_url=f"https://crates.io/crates/{crate_name}",
+            docsrs_url=f"https://docs.rs/{crate_name}",
+            ghcr_url=ghcr_url,
+        )
+
+    return {
+        "bijux-cli": rust_record(
+            key="bijux-cli",
+            family_key="bijux-cli",
+            badge_label="bijux-cli",
+            purpose="Public Rust runtime for the `bijux` command surface, including routing, runtime behavior, and deterministic output contracts.",
+            docs_section="bijux-cli",
+            source_dir="bijux-cli",
             ghcr_url="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli",
+        ),
+        "bijux-dag-artifacts": rust_record(
+            key="bijux-dag-artifacts",
+            family_key="bijux-dag",
+            badge_label="artifacts",
+            purpose="Artifact identity, storage layout, retention, integrity, and lineage helpers for retained DAG run evidence.",
+            docs_section="bijux-dag-artifacts",
+            source_dir="bijux-dag-artifacts",
+        ),
+        "bijux-dag-core": rust_record(
+            key="bijux-dag-core",
+            family_key="bijux-dag",
+            badge_label="core",
+            purpose="Deterministic graph kernel for parsing, validation, canonicalization, planning, and semantic identity.",
+            docs_section="bijux-dag-core",
+            source_dir="bijux-dag-core",
+        ),
+        "bijux-dag-runtime": rust_record(
+            key="bijux-dag-runtime",
+            family_key="bijux-dag",
+            badge_label="runtime",
+            purpose="Execution engine and replay policy layer for DAG runs, cache decisions, and retained runtime diagnostics.",
+            docs_section="bijux-dag-runtime",
+            source_dir="bijux-dag-runtime",
+        ),
+        "bijux-dag-app": rust_record(
+            key="bijux-dag-app",
+            family_key="bijux-dag",
+            badge_label="app",
+            purpose="Application orchestration and response-shaping layer that turns DAG runtime behavior into user-facing workflows.",
+            docs_section="bijux-dag-app",
+            source_dir="bijux-dag-app",
+        ),
+        "bijux-dag-cli": rust_record(
+            key="bijux-dag-cli",
+            family_key="bijux-dag",
+            badge_label="bijux-dag",
+            purpose="Installable `bijux-dag` command package for validating, running, replaying, and inspecting DAG workflows.",
+            docs_section="bijux-dag-cli",
+            source_dir="bijux-dag-cli",
+            ghcr_url="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag",
         ),
         "bijux-cli-python": PackageRecord(
             key="bijux-cli-python",
@@ -107,6 +165,7 @@ def package_records() -> dict[str, PackageRecord]:
             kind="python",
             published=False,
             display_name="bijux-cli-python",
+            badge_label="bijux-cli-python",
             purpose="Python distribution and native bridge for installing and launching `bijux`.",
             docs_url="https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli-python/",
             source_url="https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli-python",
@@ -141,120 +200,28 @@ def _record_context(record: PackageRecord) -> dict[str, str]:
     badge_title = record.pypi_name if record.kind == "python" else record.display_name
     return {
         "badge_title": badge_title,
-        "crate_badge_label": _shield_text(record.display_name),
+        "crate_badge_label": _shield_text(record.badge_label),
         "crate_name": record.crate_name or "",
         "crates_url": record.crates_url or "",
         "docs_badge_alt": f"{record.display_name} docs",
-        "docs_badge_label": _shield_text(record.display_name),
+        "docs_badge_label": _shield_text(record.badge_label),
         "docs_url": record.docs_url,
         "docsrs_badge_alt": f"{record.display_name} docs.rs",
-        "docsrs_badge_label": _shield_text(f"{record.display_name} docs.rs"),
+        "docsrs_badge_label": _shield_text(f"{record.badge_label} docs.rs"),
         "docsrs_url": record.docsrs_url or "",
-        "ghcr_badge_label": _shield_text(record.display_name),
+        "ghcr_badge_label": _shield_text(record.badge_label),
         "ghcr_url": record.ghcr_url or "",
-        "pypi_badge_label": _shield_text(record.pypi_name or record.display_name),
+        "pypi_badge_label": _shield_text(record.pypi_name or record.badge_label),
         "pypi_name": record.pypi_name or "",
         "pypi_url": record.pypi_url or "",
     }
 
 
-def _ordered_records(
-    records: tuple[PackageRecord, ...], current: PackageRecord | None = None
-) -> tuple[PackageRecord, ...]:
-    if current is None:
-        return records
-    return (current,) + tuple(record for record in records if record.key != current.key)
-
-
-def _records_for_group(
-    records: tuple[PackageRecord, ...], group_name: str
-) -> tuple[PackageRecord, ...]:
-    if group_name == "family-crates-badge":
-        return tuple(record for record in records if record.crates_url)
-    if group_name == "family-rustdocs-badge":
-        return tuple(record for record in records if record.docsrs_url)
-    if group_name == "family-pypi-badge":
-        return tuple(record for record in records if record.pypi_url)
-    if group_name == "family-ghcr-badge":
-        return tuple(record for record in records if record.ghcr_url)
-    if group_name == "family-docs-badge":
-        return tuple(record for record in records if record.docs_url)
-    return ()
-
-
-def _published_records(records: tuple[PackageRecord, ...]) -> tuple[PackageRecord, ...]:
-    return tuple(record for record in records if record.published)
-
-
-def _public_family_count(records: tuple[PackageRecord, ...]) -> int:
-    return len({record.family_key for record in records if record.published})
-
-
-def _render_group(
-    template: str, records: tuple[PackageRecord, ...], group_name: str
-) -> str:
-    rendered = [
-        _render_template(template, _record_context(record))
-        for record in _records_for_group(records, group_name)
-    ]
-    return "\n".join(rendered)
-
-
-def _render_badge_line(
-    catalog: dict[str, str],
-    group_records: dict[str, tuple[PackageRecord, ...]],
-    group_names: tuple[str, ...],
-) -> str:
-    parts = [
-        _render_group(catalog[group_name], group_records[group_name], group_name)
-        for group_name in group_names
-    ]
-    return " ".join(part for part in parts if part)
-
-
 def render_repository_badges(
     catalog: dict[str, str], records: tuple[PackageRecord, ...]
 ) -> str:
-    published_records = _published_records(records)
-    sections = [
-        _render_template(
-            catalog["repository-summary"],
-            {
-                "ghcr_package_count": str(
-                    len({record.family_key for record in published_records if record.ghcr_url})
-                ),
-                "public_package_count": str(_public_family_count(records)),
-            },
-        )
-    ]
-    repository_group_records = {
-        "family-crates-badge": published_records,
-        "family-rustdocs-badge": published_records,
-        "family-pypi-badge": tuple(record for record in records if record.pypi_url),
-        "family-ghcr-badge": published_records,
-        "family-docs-badge": published_records,
-    }
-    release_line = _render_badge_line(
-        catalog,
-        repository_group_records,
-        ("family-crates-badge", "family-pypi-badge", "family-ghcr-badge"),
-    )
-    if release_line:
-        sections.append(release_line)
-    docs_line = _render_badge_line(
-        catalog,
-        repository_group_records,
-        ("family-docs-badge", "family-rustdocs-badge"),
-    )
-    docs_parts: list[str] = []
-    repository_docs_badge = catalog.get("repository-docs-badge", "").strip()
-    if repository_docs_badge:
-        docs_parts.append(repository_docs_badge)
-    if docs_line:
-        docs_parts.append(docs_line)
-    if docs_parts:
-        sections.append(" ".join(docs_parts))
-    return "\n\n".join(sections)
+    del records
+    return catalog["repository-summary"]
 
 
 def render_package_badges(
@@ -262,41 +229,18 @@ def render_package_badges(
     current: PackageRecord,
     records: tuple[PackageRecord, ...],
 ) -> str:
-    ordered = _ordered_records(records, current)
-    published_records = _published_records(records)
-    summary_name = "rust-package-summary" if current.kind == "rust" else "python-package-summary"
+    del records
+    summary_name = (
+        "rust-package-summary" if current.kind == "rust" else "python-package-summary"
+    )
     sections = [_render_template(catalog[summary_name], _record_context(current))]
-    package_group_records = {
-        "family-crates-badge": ordered,
-        "family-rustdocs-badge": ordered,
-        "family-pypi-badge": ordered,
-        "family-ghcr-badge": ordered,
-        "family-docs-badge": (current,)
-        if current.published
-        else (current,) + tuple(
-            record for record in published_records if record.family_key == current.family_key
-        ),
-    }
-    release_line = _render_badge_line(
-        catalog,
-        package_group_records,
-        ("family-crates-badge", "family-pypi-badge", "family-ghcr-badge"),
-    )
-    if release_line:
-        sections.append(release_line)
-    docs_line = _render_badge_line(
-        catalog,
-        package_group_records,
-        ("family-docs-badge", "family-rustdocs-badge"),
-    )
-    docs_parts: list[str] = []
+    docs_parts = [
+        _render_template(catalog["family-docs-badge"], _record_context(current))
+    ]
     repository_docs_badge = catalog.get("repository-docs-badge", "").strip()
     if repository_docs_badge:
-        docs_parts.append(repository_docs_badge)
-    if docs_line:
-        docs_parts.append(docs_line)
-    if docs_parts:
-        sections.append(" ".join(docs_parts))
+        docs_parts.insert(0, repository_docs_badge)
+    sections.append(" ".join(docs_parts))
     return "\n\n".join(sections)
 
 
@@ -314,7 +258,9 @@ def _link_badge(href: str, alt: str, src: str) -> str:
     return f'<a href="{href}"><img alt="{alt}" src="{src}" height="18"></a>'
 
 
-def _package_map_links(record: PackageRecord, family_records: tuple[PackageRecord, ...]) -> str:
+def _package_map_links(
+    record: PackageRecord, family_records: tuple[PackageRecord, ...]
+) -> str:
     links: list[str] = []
     if record.crates_url and record.crate_name:
         links.append(
@@ -329,10 +275,12 @@ def _package_map_links(record: PackageRecord, family_records: tuple[PackageRecor
             _link_badge(
                 record.docsrs_url,
                 "Rust docs",
-                f"https://img.shields.io/badge/rust--docs-{_shield_text(record.display_name)}-DEA584?logo=rust&logoColor=white",
+                f"https://img.shields.io/badge/rust--docs-{_shield_text(record.badge_label)}-DEA584?logo=rust&logoColor=white",
             )
         )
-    python_record = next((candidate for candidate in family_records if candidate.pypi_url), None)
+    python_record = next(
+        (candidate for candidate in family_records if candidate.pypi_url), None
+    )
     if python_record and python_record.pypi_url and python_record.pypi_name:
         links.append(
             _link_badge(
@@ -345,7 +293,7 @@ def _package_map_links(record: PackageRecord, family_records: tuple[PackageRecor
         _link_badge(
             record.docs_url,
             "Docs",
-            f"https://img.shields.io/badge/docs-{_shield_text(record.display_name)}-2563EB?logo=materialformkdocs&logoColor=white",
+            f"https://img.shields.io/badge/docs-{_shield_text(record.badge_label)}-2563EB?logo=materialformkdocs&logoColor=white",
         )
     )
     if record.ghcr_url:
@@ -353,7 +301,7 @@ def _package_map_links(record: PackageRecord, family_records: tuple[PackageRecor
             _link_badge(
                 record.ghcr_url,
                 "GHCR",
-                f"https://img.shields.io/badge/{_shield_text(record.display_name)}-ghcr-181717?logo=github&logoColor=white",
+                f"https://img.shields.io/badge/{_shield_text(record.badge_label)}-ghcr-181717?logo=github&logoColor=white",
             )
         )
     links.append(
@@ -376,10 +324,12 @@ def render_package_map(records: dict[str, PackageRecord]) -> str:
     ]
     for record in ordered:
         family_records = tuple(
-            candidate for candidate in records.values() if candidate.family_key == record.family_key
+            candidate
+            for candidate in records.values()
+            if candidate.family_key == record.family_key
         )
         lines.append(
-            f"| `{record.family_key}` | {record.purpose} | {_package_map_links(record, family_records)} |"
+            f"| `{record.display_name}` | {record.purpose} | {_package_map_links(record, family_records)} |"
         )
     return "\n".join(lines)
 
@@ -388,7 +338,9 @@ def iter_targets() -> tuple[BadgeTarget, ...]:
     return (
         BadgeTarget(REPO_ROOT / "README.md", "repository"),
         BadgeTarget(REPO_ROOT / "docs" / "index.md", "repository"),
-        BadgeTarget(REPO_ROOT / "crates" / "bijux-cli" / "README.md", "package", "bijux-cli"),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-cli" / "README.md", "package", "bijux-cli"
+        ),
         BadgeTarget(
             REPO_ROOT / "docs" / "bijux-cli" / "packages" / "bijux-cli.md",
             "package",
@@ -400,13 +352,59 @@ def iter_targets() -> tuple[BadgeTarget, ...]:
             "bijux-cli-python",
         ),
         BadgeTarget(
-            REPO_ROOT
-            / "docs"
-            / "bijux-cli"
-            / "packages"
-            / "bijux-cli-python.md",
+            REPO_ROOT / "docs" / "bijux-cli" / "packages" / "bijux-cli-python.md",
             "package",
             "bijux-cli-python",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-dag-artifacts" / "README.md",
+            "package",
+            "bijux-dag-artifacts",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "docs" / "bijux-dag" / "packages" / "bijux-dag-artifacts.md",
+            "package",
+            "bijux-dag-artifacts",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-dag-core" / "README.md",
+            "package",
+            "bijux-dag-core",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "docs" / "bijux-dag" / "packages" / "bijux-dag-core.md",
+            "package",
+            "bijux-dag-core",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-dag-runtime" / "README.md",
+            "package",
+            "bijux-dag-runtime",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "docs" / "bijux-dag" / "packages" / "bijux-dag-runtime.md",
+            "package",
+            "bijux-dag-runtime",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-dag-app" / "README.md",
+            "package",
+            "bijux-dag-app",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "docs" / "bijux-dag" / "packages" / "bijux-dag-app.md",
+            "package",
+            "bijux-dag-app",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "crates" / "bijux-dag-cli" / "README.md",
+            "package",
+            "bijux-dag-cli",
+        ),
+        BadgeTarget(
+            REPO_ROOT / "docs" / "bijux-dag" / "packages" / "bijux-dag-cli.md",
+            "package",
+            "bijux-dag-cli",
         ),
     )
 
@@ -420,7 +418,9 @@ def render_target(
     text = target.path.read_text(encoding="utf-8")
     if target.kind == "repository":
         body = render_repository_badges(catalog, records)
-        updated = _replace_managed_block(text, START_MARKER, END_MARKER, body, target.path)
+        updated = _replace_managed_block(
+            text, START_MARKER, END_MARKER, body, target.path
+        )
         if target.path == REPO_ROOT / "README.md":
             updated = _replace_managed_block(
                 updated,

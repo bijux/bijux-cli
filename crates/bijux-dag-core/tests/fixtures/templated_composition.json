@@ -1,0 +1,28 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "templated-composition",
+    "owners": ["platform"],
+    "tags": ["template", "composition"]
+  },
+  "nodes": [
+    {
+      "id": "entry",
+      "kind": "const",
+      "inputs": [],
+      "outputs": [{"name": "out", "path": "entry/out.json"}],
+      "params": {"value": {"template": "etl_base"}}
+    },
+    {
+      "id": "expand",
+      "kind": "shell",
+      "inputs": ["in"],
+      "outputs": [{"name": "out", "path": "expand/out.json"}],
+      "group": "composed",
+      "params": {"argv": ["sh", "-c", "cat inputs/entry/in > outputs/expand.json"]}
+    }
+  ],
+  "edges": [
+    {"from": {"node_id": "entry", "port": "out"}, "to": {"node_id": "expand", "port": "in"}}
+  ]
+}

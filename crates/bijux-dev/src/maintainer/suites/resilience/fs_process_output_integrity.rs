@@ -115,10 +115,10 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .join("crates/bijux-cli-output/tests/output_envelope_fuzz_targets.rs");
             let output_regression = workspace_root
                 .join("crates/bijux-cli-output/tests/output_envelope_fuzz_regressions.rs");
-            let bridge_targets = workspace_root
-                .join("crates/bijux-cli-python/tests/bridge_conversion_fuzz_targets.rs");
+            let bridge_targets =
+                workspace_root.join("crates/bijux-cli-python/tests/bridge_conversion_stability.rs");
             let bridge_regression = workspace_root
-                .join("crates/bijux-cli-python/tests/bridge_conversion_fuzz_regressions.rs");
+                .join("crates/bijux-cli-python/tests/bridge_conversion_case_replays.rs");
             let output_min_dir =
                 workspace_root.join("crates/bijux-cli-output/tests/fuzz/output_minimized_cases");
             let bridge_min_dir = workspace_root
@@ -188,19 +188,14 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 run(&["test", "-p", "bijux-cli", "--test", "output_envelope_fuzz_targets"]);
             let output_reg_ok =
                 run(&["test", "-p", "bijux-cli", "--test", "output_envelope_fuzz_regressions"]);
-            let bridge_targets_ok = run(&[
-                "test",
-                "-p",
-                "bijux-cli-python",
-                "--test",
-                "bridge_conversion_fuzz_targets",
-            ]);
+            let bridge_targets_ok =
+                run(&["test", "-p", "bijux-cli-python", "--test", "bridge_conversion_stability"]);
             let bridge_reg_ok = run(&[
                 "test",
                 "-p",
                 "bijux-cli-python",
                 "--test",
-                "bridge_conversion_fuzz_regressions",
+                "bridge_conversion_case_replays",
             ]);
             let missing_ids: Vec<i64> = coverage_rows
                 .iter()

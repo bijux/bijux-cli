@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -16,7 +15,7 @@ use thiserror as _;
 
 use bijux_dag_app::{
     dag_command, dag_run, doctor_run, explain_failure, format_inspect_human, format_show_human,
-    inspect_summary, list_runs, run_timeline, run_tree,
+    inspect_summary, list_runs, run_scheduler_checkpoint, run_timeline, run_tree,
 };
 use serde_json::json;
 use std::fs;
@@ -62,10 +61,91 @@ fn write_run_fixture(base: &std::path::Path, run_id: &str) -> std::path::PathBuf
     .expect("write trace a");
     fs::write(
         run.join("nodes").join("b").join("trace.json"),
-        serde_json::to_vec_pretty(&json!({"status":"failed","started_unix_ms":1055u64,"finished_unix_ms":1099u64,"attempt":2})).expect("trace b"),
+        serde_json::to_vec_pretty(&json!({
+            "status":"failed",
+            "started_unix_ms":1055u64,
+            "finished_unix_ms":1099u64,
+            "attempt":2,
+            "failure":{
+                "kind":"Execution",
+                "code":"EXEC_FAIL",
+                "message":"command exited with status 7"
+            }
+        }))
+        .expect("trace b"),
     )
     .expect("write trace b");
+    fs::write(
+        run.join("observability.timeline.json"),
+        serde_json::to_vec_pretty(&json!({
+            "schema_version":"v0.1",
+            "entries":[
+                {
+                    "unix_ms":1000u64,
+                    "category":"run",
+                    "label":"run_started",
+                    "node_id": null,
+                    "source_event":"run_started"
+                },
+                {
+                    "unix_ms":1001u64,
+                    "category":"ready",
+                    "label":"node_ready",
+                    "node_id":"a",
+                    "source_event":"node_ready"
+                },
+                {
+                    "unix_ms":1050u64,
+                    "category":"cache_hit",
+                    "label":"node_cached",
+                    "node_id":"a",
+                    "status":"cached",
+                    "source_event":"node_finished"
+                },
+                {
+                    "unix_ms":1099u64,
+                    "category":"failure",
+                    "label":"node_failed",
+                    "node_id":"b",
+                    "status":"failed",
+                    "reason":"execution_failed",
+                    "source_event":"node_finished"
+                },
+                {
+                    "unix_ms":1100u64,
+                    "category":"run",
+                    "label":"run_completed",
+                    "node_id": null,
+                    "source_event":"run_finished"
+                }
+            ]
+        }))
+        .expect("timeline json"),
+    )
+    .expect("write timeline");
     run
+}
+
+fn write_scheduler_checkpoint(run: &std::path::Path) {
+    fs::write(
+        run.join("scheduler.checkpoint.json"),
+        serde_json::to_vec_pretty(&json!({
+            "loop_index": 3,
+            "ready_queue_depth": 1,
+            "ready_queue": ["publish"],
+            "inflight": ["package"],
+            "scheduled": ["package"],
+            "blocked_by_budget": ["notify"],
+            "blocked_reasons": {"notify": "memory budget exhausted"},
+            "completed_statuses": {"build": "success"},
+            "decision_reason": "ready_batch",
+            "failure_propagation_mode": "continue_independent",
+            "dependency_closure_enabled": false,
+            "generated_unix_ms": 1110u64
+        }))
+        .expect("checkpoint json"),
+    )
+    .expect("write checkpoint");
 }
 
 #[test]
@@ -75,10 +155,11 @@ fn operator_summary_and_human_output_are_stable() {
     let summary = inspect_summary(&run).expect("summary");
     assert_eq!(summary["retry_count"], 1);
     assert_eq!(summary["artifact_count"], 1);
+    assert_eq!(summary["failure_classes"], json!(["execution"]));
     assert_eq!(summary["integrity_state"], "healthy");
     let text = format_inspect_human(&summary);
     assert!(text.contains("run_id: \"run-1\""));
-    assert!(text.contains("status: \"failed\""));
+    assert!(text.contains("status: \"failed\" [execution]"));
     assert!(text.contains("integrity_state: \"healthy\""));
     let show_text = format_show_human(&summary);
     assert!(show_text.contains("timing_ms"));
@@ -91,15 +172,26 @@ fn operator_tree_timeline_and_failure_explain_work_from_explicit_run_dir() {
     let tree = run_tree(&run).expect("tree");
     assert_eq!(tree["nodes"].as_array().expect("nodes").len(), 2);
     let timeline = run_timeline(&run).expect("timeline");
-    assert_eq!(timeline["events"].as_array().expect("events").len(), 2);
+    assert_eq!(timeline["source"], "observability_timeline");
+    assert_eq!(timeline["events"].as_array().expect("events").len(), 5);
     let events = timeline["events"].as_array().expect("events");
-    assert_eq!(events[0]["node_id"], "a");
-    assert_eq!(events[0]["cache_hit"], true);
-    assert_eq!(events[0]["event_kind"], "cache_hit");
-    assert_eq!(events[1]["attempt"], 2);
-    assert_eq!(events[1]["event_kind"], "retry");
+    assert_eq!(events[0]["label"], "run_started");
+    assert_eq!(events[2]["node_id"], "a");
+    assert_eq!(events[2]["label"], "node_cached");
+    assert_eq!(events[2]["status"], "cached");
+    assert_eq!(events[3]["node_id"], "b");
+    assert_eq!(events[3]["label"], "node_failed");
+    assert_eq!(events[3]["reason"], "execution_failed");
     let explain = explain_failure(&run).expect("explain");
     assert_eq!(explain["root_failure"], "b");
+    assert_eq!(explain["root_failure_class"], "execution");
+    assert_eq!(explain["root_failure_code"], "EXEC_FAIL");
+    assert_eq!(explain["root_failure_message"], "command exited with status 7");
+    assert_eq!(explain["root_failure_reason"], "execution_failed");
+    assert_eq!(explain["failure_classes"]["b"], "execution");
+    assert_eq!(explain["primary_failure"]["node_id"], "b");
+    assert_eq!(explain["propagated_failures"], json!([]));
+    assert_eq!(explain["propagated_skips"], json!([]));
 }
 
 #[test]
@@ -189,10 +281,41 @@ fn operator_timing_summary_is_trace_coherent() {
     assert!(finished >= started);
     let timeline = run_timeline(&run).expect("timeline");
     let events = timeline["events"].as_array().unwrap();
-    let min_start = events.iter().filter_map(|e| e["started_unix_ms"].as_u64()).min().unwrap();
-    let max_finish = events.iter().filter_map(|e| e["finished_unix_ms"].as_u64()).max().unwrap();
-    assert!(min_start >= started);
-    assert!(max_finish <= finished);
+    let min_unix_ms = events.iter().filter_map(|e| e["unix_ms"].as_u64()).min().unwrap();
+    let max_unix_ms = events.iter().filter_map(|e| e["unix_ms"].as_u64()).max().unwrap();
+    assert!(min_unix_ms >= started);
+    assert!(max_unix_ms <= finished);
+}
+
+#[test]
+fn operator_timeline_falls_back_to_node_traces_for_older_runs() {
+    let tmp = tempfile::tempdir().expect("tmpdir");
+    let run = write_run_fixture(tmp.path(), "run-fallback");
+    fs::remove_file(run.join("observability.timeline.json")).expect("remove timeline");
+
+    let timeline = run_timeline(&run).expect("timeline");
+    assert_eq!(timeline["source"], "node_traces");
+    let events = timeline["events"].as_array().expect("events");
+    assert_eq!(events.len(), 2);
+    assert_eq!(events[0]["label"], "node_cached");
+    assert_eq!(events[0]["source_event"], "trace_projection");
+    assert_eq!(events[1]["label"], "node_failed");
+}
+
+#[test]
+fn operator_scheduler_checkpoint_reports_ready_and_blocked_state() {
+    let tmp = tempfile::tempdir().expect("tmpdir");
+    let run = write_run_fixture(tmp.path(), "run-checkpoint");
+    write_scheduler_checkpoint(&run);
+
+    let report = run_scheduler_checkpoint(&run).expect("checkpoint report");
+    assert_eq!(report["inspection_state"], "present");
+    assert_eq!(report["decision_reason"], "ready_batch");
+    assert_eq!(report["ready_queue"], json!(["publish"]));
+    assert_eq!(report["scheduled_batch"], json!(["package"]));
+    assert_eq!(report["inflight_nodes"], json!(["package"]));
+    assert_eq!(report["resource_blocked_nodes"], json!(["notify"]));
+    assert_eq!(report["blocked_reasons"]["notify"], "memory budget exhausted");
 }
 
 #[test]
@@ -222,11 +345,32 @@ fn operator_cli_inspect_works_without_ambient_repo_state() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "runs",
             "inspect",
             "run-cli",
+            "--root",
+            tmp.path().to_string_lossy().as_ref(),
+        ])
+        .expect("parse");
+    assert!(dag_run(&matches).is_ok());
+}
+
+#[test]
+fn operator_cli_scheduler_checkpoint_works_without_ambient_repo_state() {
+    let tmp = tempfile::tempdir().expect("tmpdir");
+    let run = write_run_fixture(tmp.path(), "run-scheduler-cli");
+    write_scheduler_checkpoint(&run);
+
+    let cmd = dag_command();
+    let matches = cmd
+        .try_get_matches_from([
+            "bijux-dag",
+            "--json",
+            "runs",
+            "scheduler-checkpoint",
+            "run-scheduler-cli",
             "--root",
             tmp.path().to_string_lossy().as_ref(),
         ])

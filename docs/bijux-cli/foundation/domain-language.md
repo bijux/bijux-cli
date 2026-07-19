@@ -33,7 +33,8 @@ flowchart LR
 - `global flags`: top-level options (format, color, log-level, quiet, config-path)
 - `execution policy`: resolved runtime policy used by rendering and execution
 - `route target`: selected owner (`BuiltIn` or `Plugin(namespace)`)
-- `envelope`: typed success/error contract structures in `contracts/envelope.rs`
+- `envelope`: typed success/error contract structures in
+  `crates/bijux-cli/src/contracts/envelope.rs`
 
 ## Plugin Terms
 

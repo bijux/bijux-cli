@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -55,12 +54,18 @@ fn timeline_and_overlay_renderers_produce_deterministic_output() {
                 category: "retry".to_string(),
                 label: "node_attempt_started".to_string(),
                 node_id: Some("n1".to_string()),
+                status: None,
+                reason: None,
+                source_event: None,
             },
             TimelineEntry {
                 unix_ms: 1,
                 category: "schedule".to_string(),
                 label: "cache_hit".to_string(),
                 node_id: Some("n1".to_string()),
+                status: None,
+                reason: None,
+                source_event: None,
             },
         ],
     };

@@ -1,5 +1,4 @@
-proof id: "proof-run-fixed"
-status: "incomplete"
-complete: false
-determinism: "insufficient-evidence"
-incomplete_reasons: ["verification errors present"]
+proof id: "proof-fixed"
+status: "complete"
+complete: true
+determinism: "verified"

@@ -47,7 +47,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                     "official_namespaces": namespaces,
                                     "placeholder_entries": placeholder_entries,
                                     "metadata_contract": contract,
-                                    "freeze_rule": "future-ready via metadata and tests; no speculative runtime expansion",
+                                    "freeze_rule": "release-boundary enforced via metadata and tests; no speculative runtime expansion",
                                 }),
                             )
                             .ok()?;
@@ -97,16 +97,16 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
         }
         "STATUS-CONTRACT-GENERATE-CONFIG-FUZZ-HARDENING-REPORTS" => {
             let targets = workspace_root
-                .join("crates/bijux-cli/tests/integration/cli/config/config_fuzz_targets.rs");
+                .join("crates/bijux-cli/tests/integration/cli/config/config_parser_stability.rs");
             let regression = workspace_root
-                .join("crates/bijux-cli/tests/integration/cli/config/config_fuzz_regressions.rs");
+                .join("crates/bijux-cli/tests/integration/cli/config/config_case_replays.rs");
             let min_dir = workspace_root.join("crates/bijux-cli/tests/fuzz/config_minimized_cases");
             let targets_text = fs::read_to_string(&targets).unwrap_or_default();
             let regression_text = fs::read_to_string(&regression).unwrap_or_default();
             let required: BTreeMap<i64, &str> = BTreeMap::from([
                 (41, "fuzz_dotenv_style_config_parsing_is_stable"),
                 (42, "fuzz_malformed_config_lines_fail_consistently"),
-                (43, "fuzz_duplicate_key_handling_keeps_last_value"),
+                (43, "fuzz_duplicate_key_handling_rejects_ambiguous_state"),
                 (44, "fuzz_weird_whitespace_handling_is_stable"),
                 (45, "fuzz_quote_parsing_and_escape_parsing_are_stable"),
                 (46, "fuzz_quote_parsing_and_escape_parsing_are_stable"),
@@ -134,9 +134,9 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "test": test_name,
                                         "status": if source.contains(&format!("fn {test_name}(")) { "covered" } else { "missing" },
                                         "evidence": if *test_name == "minimized_config_cases_replay_with_stable_exit_behavior" {
-                                            "crates/bijux-cli/tests/integration/cli/config/config_fuzz_regressions.rs"
+                                            "crates/bijux-cli/tests/integration/cli/config/config_case_replays.rs"
                                         } else {
-                                            "crates/bijux-cli/tests/integration/cli/config/config_fuzz_targets.rs"
+                                            "crates/bijux-cli/tests/integration/cli/config/config_parser_stability.rs"
                                         },
                                     })
                                 })
@@ -147,20 +147,20 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .map(|p| rel(&p, workspace_root))
                 .collect();
             let replay_ok = Command::new("cargo")
+                .args(["test", "-p", "bijux-cli", "--test", "integration", "config_case_replays::"])
+                .current_dir(workspace_root)
+                .status()
+                .ok()
+                .is_some_and(|s| s.success());
+            let targets_ok = Command::new("cargo")
                 .args([
                     "test",
                     "-p",
                     "bijux-cli",
                     "--test",
                     "integration",
-                    "config_fuzz_regressions::",
+                    "config_parser_stability::",
                 ])
-                .current_dir(workspace_root)
-                .status()
-                .ok()
-                .is_some_and(|s| s.success());
-            let targets_ok = Command::new("cargo")
-                .args(["test", "-p", "bijux-cli", "--test", "integration", "config_fuzz_targets::"])
                 .current_dir(workspace_root)
                 .status()
                 .ok()

@@ -22,12 +22,41 @@
     "tool_version": {"type": "string"},
     "jobs": {"type": "integer"},
     "adapters": {"type": "array"},
-    "outputs": {"type": "array"},
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "node_id",
+          "node_fingerprint",
+          "name",
+          "path",
+          "kind",
+          "media_type",
+          "size_bytes",
+          "sha256"
+        ],
+        "properties": {
+          "node_id": {"type": "string"},
+          "node_fingerprint": {"type": "string"},
+          "name": {"type": "string"},
+          "path": {"type": "string"},
+          "kind": {"type": "string"},
+          "media_type": {"type": "string"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string"},
+          "promotable": {"type": "boolean"}
+        }
+      }
+    },
     "node_counts": {"type": "object"},
     "policy": {"type": "object"},
     "cache_mode": {"type": ["string", "null"]},
     "cache_dir": {"type": ["string", "null"]},
     "run_timeout_ms": {"type": ["integer", "null"]},
+    "run_timeout_behavior": {"type": ["string", "null"]},
+    "run_cancellation_cause": {"type": ["string", "null"]},
     "run_metadata": {"type": ["object", "null"]},
     "run_summary": {"type": ["object", "null"]}
   }

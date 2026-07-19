@@ -23,7 +23,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "legacy contract file inventory no longer matches merged repository layout"]
     fn workspace_root_contains_required_contract_files() {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         assert!(all_required_present(&root));

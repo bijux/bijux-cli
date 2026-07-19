@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -12,8 +11,8 @@ use thiserror as _;
 
 use bijux_dag_runtime::{
     imported_run_distinguishable, terminal_transition_audit_events, validate_node_transition,
-    validate_run_transition, verify_post_run_state_consistency, NodeState, NodeTransition, RunId,
-    RunSnapshot, RunState, RunTransition, TransitionCause,
+    validate_run_transition, verify_post_run_state_consistency, NodeState, NodeTransition,
+    ResumeFailureMode, ResumeSummary, RunId, RunSnapshot, RunState, RunTransition, TransitionCause,
 };
 
 #[test]
@@ -48,6 +47,13 @@ fn cached_and_skipped_states_are_terminal_and_unambiguous() {
         cause: TransitionCause::SelectionFiltered,
     };
     assert!(validate_node_transition(&skipped_ok).is_ok());
+
+    let timed_out_ok = NodeTransition {
+        from: NodeState::Running,
+        to: NodeState::TimedOut,
+        cause: TransitionCause::TimeoutExceeded,
+    };
+    assert!(validate_node_transition(&timed_out_ok).is_ok());
 }
 
 #[test]
@@ -62,6 +68,13 @@ fn cancelled_and_failed_runs_must_be_coherent() {
     let failed_without_cause =
         verify_post_run_state_consistency(RunState::Failed, &[NodeState::Failed], 0);
     assert!(!failed_without_cause.valid);
+
+    let timed_out = verify_post_run_state_consistency(
+        RunState::TimedOut,
+        &[NodeState::TimedOut, NodeState::Success],
+        0,
+    );
+    assert!(timed_out.valid);
 }
 
 #[test]
@@ -71,12 +84,19 @@ fn retry_attempts_keep_node_identity_but_change_attempt_identity() {
         run_id: RunId("run-1".to_string()),
         parent_run_id: None,
         reason: "initial".to_string(),
+        resume_summary: None,
     };
     let second = bijux_dag_runtime::RunAttempt {
         attempt_index: 2,
         run_id: RunId("run-1".to_string()),
         parent_run_id: Some(RunId("run-1".to_string())),
         reason: "retry".to_string(),
+        resume_summary: Some(ResumeSummary {
+            failure_mode: ResumeFailureMode::RerunIncomplete,
+            reused_nodes: vec!["extract".to_string()],
+            rerun_nodes: vec!["publish".to_string()],
+            rejected_nodes: Vec::new(),
+        }),
     };
     assert_eq!(first.run_id, second.run_id);
     assert_ne!(first.attempt_index, second.attempt_index);
@@ -114,8 +134,8 @@ fn terminal_transition_audit_events_emit_for_terminal_paths() {
     }];
     let run_transitions = vec![RunTransition {
         from: RunState::Running,
-        to: RunState::Failed,
-        cause: TransitionCause::ExecutionFailed,
+        to: RunState::TimedOut,
+        cause: TransitionCause::TimeoutExceeded,
     }];
     let events = terminal_transition_audit_events(&node_transitions, &run_transitions);
     assert_eq!(events.len(), 2);

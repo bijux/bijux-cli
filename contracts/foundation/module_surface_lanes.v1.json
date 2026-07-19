@@ -25,12 +25,15 @@
         "builder",
         "canonical",
         "compile",
+        "composition",
         "contract",
         "edge",
         "effects",
         "error",
+        "expansion",
         "fingerprint",
         "graph",
+        "input",
         "meta",
         "model",
         "node",
@@ -42,43 +45,17 @@
         "semantics",
         "stable",
         "topology",
+        "trigger_rules",
         "validate"
       ],
-      "experimental_public_modules": ["authoring_iteration03", "execution_iteration12", "experimental", "performance_iteration19_contracts", "planner_iteration05", "resource_iteration13", "scientific_integration_contracts", "semantics_iteration04"],
+      "experimental_public_modules": ["experimental"],
       "simulated_public_modules": []
     },
     {
       "crate": "bijux-dag-runtime",
       "default_internal_lane": "private",
-      "stable_public_modules": [
-        "adapter_api",
-        "adapter_conformance",
-        "adapters",
-        "api",
-        "builtins",
-        "cache",
-        "config",
-        "execution",
-        "execution_context",
-        "invariants",
-        "node_result",
-        "policy",
-        "run_context",
-        "runtime_core",
-        "selectors",
-        "services",
-        "state_machine",
-        "subprocess",
-        "trace"
-      ],
-      "experimental_public_modules": [
-        "iteration06_contracts",
-        "iteration09_contracts",
-        "iteration13_contracts",
-        "iteration14_contracts",
-        "iteration15_contracts",
-        "iteration17_contracts"
-      ],
+      "stable_public_modules": ["prelude", "stable"],
+      "experimental_public_modules": ["experimental"],
       "simulated_public_modules": ["simulated_platform"]
     },
     {
@@ -95,32 +72,28 @@
         "platform",
         "promotion",
         "proof",
+        "prelude",
         "retention",
         "schema",
         "services",
+        "stable",
         "store"
       ],
-      "experimental_public_modules": [
-        "iteration07_contracts",
-        "iteration16_contracts"
-      ],
+      "experimental_public_modules": ["experimental"],
       "simulated_public_modules": []
     },
     {
       "crate": "bijux-dag-app",
       "default_internal_lane": "private",
-      "stable_public_modules": [],
-      "experimental_public_modules": [
-        "iteration08_contracts",
-        "iteration11_contracts"
-      ],
+      "stable_public_modules": ["prelude", "stable"],
+      "experimental_public_modules": ["experimental"],
       "simulated_public_modules": []
     },
     {
       "crate": "bijux-dag-testkit",
       "default_internal_lane": "private",
       "stable_public_modules": ["fake_adapter", "workflows"],
-      "experimental_public_modules": ["iteration10_scenarios"],
+      "experimental_public_modules": ["product_scenarios"],
       "simulated_public_modules": []
     },
     {

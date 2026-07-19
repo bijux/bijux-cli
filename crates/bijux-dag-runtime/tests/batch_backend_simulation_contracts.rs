@@ -1,7 +1,6 @@
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use ctrlc as _;
 use hex as _;
 use serde as _;
@@ -57,6 +56,9 @@ fn fake_batch_state_handles_cancel_and_duplicate_status_detection() {
 fn mode_report_separates_implemented_simulated_and_aspirational() {
     let report = execution_mode_report();
     assert!(report.implemented.contains(&"local".to_string()));
+    assert!(report.implemented.contains(&"container".to_string()));
     assert!(report.simulated.contains(&"fake-batch-backend".to_string()));
-    assert!(report.aspirational.contains(&"slurm-backend".to_string()));
+    assert!(report.simulated.contains(&"slurm-backend".to_string()));
+    assert!(!report.simulated.contains(&"container-contract".to_string()));
+    assert!(!report.aspirational.contains(&"slurm-backend".to_string()));
 }

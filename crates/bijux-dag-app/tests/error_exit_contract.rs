@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -21,7 +20,7 @@ use std::process::ExitCode;
 fn validation_errors_map_to_contract_exit_code() {
     let cmd = dag_command();
     let matches = cmd
-        .try_get_matches_from(["dag", "validate", "/definitely/missing/file.json"])
+        .try_get_matches_from(["bijux-dag", "validate", "/definitely/missing/file.json"])
         .expect("clap parse");
 
     let code = dag_run(&matches).expect_err("expected failure");
@@ -36,7 +35,7 @@ fn parse_errors_return_non_success_without_panic() {
 
     let cmd = dag_command();
     let matches = cmd
-        .try_get_matches_from(["dag", "validate", invalid.to_string_lossy().as_ref()])
+        .try_get_matches_from(["bijux-dag", "validate", invalid.to_string_lossy().as_ref()])
         .expect("clap parse");
 
     let code = dag_run(&matches).expect_err("expected parse failure");

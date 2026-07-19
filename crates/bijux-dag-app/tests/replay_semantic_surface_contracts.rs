@@ -3,7 +3,6 @@ use bijux_dag_app::{dag_command, dag_run};
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -49,7 +48,7 @@ fn write_basic_run(run: &Path, run_id: &str, extras: Value) {
     fs::write(
         run.join("outputs/index.json"),
         serde_json::to_vec_pretty(&json!({
-            "files":[{"node_id":"a","node_fingerprint":"fp-a","sha256":"239f59ed55e737c77147cf55ad0c1b03f9c6a27ddc8e2ba69ec4b8b4b09e4e7d","path":"nodes/a/outputs/out"}]
+            "files":[{"node_id":"a","node_fingerprint":"fp-a","name":"out","kind":"file","media_type":"application/octet-stream","size_bytes":2,"sha256":"239f59ed55e737c77147cf55ad0c1b03f9c6a27ddc8e2ba69ec4b8b4b09e4e7d","path":"nodes/a/outputs/out"}]
         }))
         .expect("index"),
     )
@@ -75,7 +74,7 @@ fn semantic_diff_equivalence_surface_reports_equivalent_for_cosmetic_plan_change
 
     let cmd = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "why-rerun",
             run_a.to_string_lossy().as_ref(),
@@ -122,7 +121,7 @@ fn explain_why_rerun_supports_imported_run_ancestry_context() {
 
     let cmd = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "why-rerun",
             run_a.to_string_lossy().as_ref(),
@@ -154,7 +153,7 @@ fn explain_why_cache_missed_reports_corrupt_entry_verification_failure() {
     fs::write(
         entry.join("outputs/index.json"),
         serde_json::to_vec_pretty(&json!({
-            "files":[{"path":"x.txt","sha256":"deadbeef","node_id":"a","node_fingerprint": key}]
+            "files":[{"name":"out","path":"x.txt","kind":"file","media_type":"text/plain","size_bytes":1,"sha256":"deadbeef","node_id":"a","node_fingerprint": key}]
         }))
         .expect("index"),
     )
@@ -162,7 +161,7 @@ fn explain_why_cache_missed_reports_corrupt_entry_verification_failure() {
 
     let cmd = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "why-cache-missed",
             key,
@@ -200,7 +199,7 @@ fn trace_artifact_supports_replayed_run_provenance_surface() {
 
     let cmd = dag_command()
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "trace-artifact",
             replayed.to_string_lossy().as_ref(),

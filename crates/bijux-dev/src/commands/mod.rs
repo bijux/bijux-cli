@@ -1,4 +1,4 @@
-use clap::{CommandFactory, Parser};
+use clap::Parser;
 use serde::Deserialize;
 use serde_json::json;
 use serde_json::Value;
@@ -24,6 +24,7 @@ mod file_catalog;
 mod model;
 mod ops;
 mod perf_evidence;
+mod release_validation_suite;
 mod reporting;
 mod shared_io;
 mod suite_dispatch;
@@ -52,7 +53,7 @@ use contract_governance::{
 };
 use docs_governance::{
     run_docs_config_reduction_guard, run_docs_contract_reference_guard, run_docs_coverage_report,
-    run_docs_governance_guard, run_docs_index_generate, run_docs_link_check,
+    run_docs_governance_guard, run_docs_inventory_generate, run_docs_link_check,
     run_docs_schema_reference_guard, run_naming_governance_guard,
 };
 use evidence_access::{
@@ -69,7 +70,8 @@ use evidence_registry::{
     run_evidence_registry_orphans, run_evidence_registry_rebuild, run_evidence_registry_verify,
 };
 use file_catalog::{
-    collect_all_files, collect_files_with_extension, newest_run, two_latest_runs, wildcard_match,
+    collect_all_files, collect_files_with_extension, newest_run, repository_files_with_extension,
+    two_latest_runs, wildcard_match,
 };
 use model::{CommandContext, CommandEffect, SuiteDef};
 use ops::*;
@@ -77,6 +79,7 @@ use perf_evidence::{
     run_perf_evidence_policy_verify, run_perf_evidence_summary, run_perf_release_set,
     run_performance_evidence_guard, run_performance_evidence_report,
 };
+use release_validation_suite::run_release_suite_explain;
 use reporting::run_command_reported;
 use shared_io::{read_json_value, write_pretty_json};
 use suite_dispatch::{run_suite_explain, run_suite_group, run_suite_list};
@@ -84,8 +87,8 @@ use suite_dispatch::{run_suite_explain, run_suite_group, run_suite_list};
 mod cli;
 
 use cli::{
-    ApiCommand, Cli, CommandLine, ControlCommand, DagCommand, ReleaseCommand, RepoCommand,
-    ScheduleCommand, VerifyCommand, ADAPTER_KIND_FREEZE_BASELINE, CLI_COMMAND_FREEZE_BASELINE,
+    root_command_names, ApiCommand, Cli, CommandLine, ControlCommand, DagCommand, ReleaseCommand,
+    RepoCommand, ScheduleCommand, VerifyCommand, ADAPTER_KIND_FREEZE_BASELINE,
 };
 
 #[derive(Debug, Deserialize)]
@@ -302,7 +305,7 @@ fn run(cli: Cli) -> Result<(), String> {
             ),
             ReleaseCommand::List => run_suite_list(&context, "release", RELEASE_SUITES),
             ReleaseCommand::Explain { suite } => {
-                run_suite_explain(&context, "release", &suite, RELEASE_SUITES)
+                run_release_suite_explain(&context, &suite, RELEASE_SUITES)
             }
         },
         CommandLine::Repo { command } => match command {
@@ -1015,12 +1018,12 @@ fn run(cli: Cli) -> Result<(), String> {
             json!({}),
             || run_observability_report(),
         ),
-        CommandLine::DocsIndex => run_command_reported(
+        CommandLine::DocsInventory => run_command_reported(
             &context,
-            "docs-index",
+            "docs-inventory",
             CommandEffect::ReadWrite,
             json!({}),
-            || run_docs_index_generate(),
+            || run_docs_inventory_generate(),
         ),
         CommandLine::E2eMatrix => run_command_reported(
             &context,
@@ -1209,7 +1212,10 @@ fn run(cli: Cli) -> Result<(), String> {
         ),
         CommandLine::Compat => {
             run_command_reported(&context, "compat", CommandEffect::ReadWrite, json!({}), || {
-                run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])
+                run_status(
+                    "cargo",
+                    &["run", "-p", "bijux-dag-cli", "--bin", "bijux-dag", "--", "compat"],
+                )
             })
         }
         CommandLine::Api { command } => match command {
@@ -1397,7 +1403,7 @@ fn run_ci() -> Result<(), String> {
     run_missing_workspace_dependency_checks()?;
     run_status("cargo", &["test", "--workspace"])?;
     run_golden()?;
-    run_status("cargo", &["run", "-p", "bijux-dag-cli", "--", "dag", "compat"])?;
+    run_status("cargo", &["run", "-p", "bijux-dag-cli", "--bin", "bijux-dag", "--", "compat"])?;
 
     let root = repo_root()?;
     let scratch = std::env::temp_dir().join(format!("bijux-dag-ci-{}", now_secs()));
@@ -1410,8 +1416,9 @@ fn run_ci() -> Result<(), String> {
             "run",
             "-p",
             "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
             "--",
-            "dag",
             "run",
             "evidence/authoring/examples/hello.dag.json",
             "--out",
@@ -1422,7 +1429,16 @@ fn run_ci() -> Result<(), String> {
     run_status_in_dir(
         &root,
         "cargo",
-        &["run", "-p", "bijux-dag-cli", "--", "dag", "verify", run_dir.to_str().expect("utf-8")],
+        &[
+            "run",
+            "-p",
+            "bijux-dag-cli",
+            "--bin",
+            "bijux-dag",
+            "--",
+            "verify",
+            run_dir.to_str().expect("utf-8"),
+        ],
     )
 }
 
@@ -1580,7 +1596,10 @@ fn run_schedule_validate(file: &Path) -> Result<(), String> {
 fn run_release_verify() -> Result<(), String> {
     let flow = crate::suites::release_verify_suite_ids();
     println!("release verify flow: {}", flow.join(" -> "));
-    run_ci()
+    let root = repo_root()?;
+    run_with_root(&root, "make", &["release-validate-rs"])?;
+    run_release_readiness_report()?;
+    run_release_compatibility_matrix()
 }
 
 fn run_release_readiness_report() -> Result<(), String> {
@@ -1723,8 +1742,8 @@ fn run_release_evidence_bundle(out: Option<&Path>) -> Result<(), String> {
         "artifacts": {
             "readiness_report": readiness,
             "compatibility_matrix": matrix,
-            "known_limitations_path": "docs/tracking/KNOWN_LIMITATIONS.md",
-            "release_note_template_path": "docs/reference/RELEASE_NOTE_TEMPLATE.md"
+            "known_limitations_path": "docs/bijux-dag/quality/known-limitations.md",
+            "release_note_template_path": "docs/bijux-core/operations/release-notes-template.md"
         }
     });
 
@@ -2465,7 +2484,7 @@ fn run_benchmark_baseline() -> Result<(), String> {
     let report = json!({
         "benchmark_format": "benchmark-report/v1",
         "profile": "deterministic-regression-baseline",
-        "runner": "cargo run -p bijux-dag-cli -- dag run",
+        "runner": "cargo run -p bijux-dag-cli --bin bijux-dag -- run",
         "commit_sha": commit_sha,
         "rust_version": rust_version,
         "machine": machine,
@@ -2755,20 +2774,18 @@ fn workspace_dependency_edges() -> Result<BTreeSet<(String, String)>, String> {
 
 fn run_workspace_manifest_policy_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let cli_manifest = fs::read_to_string(root.join("crates/bijux-dag-cli/Cargo.toml"))
-        .map_err(|err| err.to_string())?;
-    if cli_manifest.contains("bijux-dag-runtime") || cli_manifest.contains("bijux-dag-core") {
+    let cli_deps = manifest_dependency_keys(&root.join("crates/bijux-dag-cli/Cargo.toml"))?;
+    if cli_deps.contains("bijux-dag-runtime") || cli_deps.contains("bijux-dag-core") {
         return Err(
             "bijux-dag-cli must stay thin and only depend on bijux-dag-app plus cli wiring dependencies"
                 .into(),
         );
     }
 
-    let app_manifest = fs::read_to_string(root.join("crates/bijux-dag-app/Cargo.toml"))
-        .map_err(|err| err.to_string())?;
-    if !app_manifest.contains("bijux_dag_runtime")
-        || !app_manifest.contains("bijux_dag_core")
-        || !app_manifest.contains("bijux_dag_artifacts")
+    let app_deps = manifest_dependency_keys(&root.join("crates/bijux-dag-app/Cargo.toml"))?;
+    if !app_deps.contains("bijux-dag-runtime")
+        || !app_deps.contains("bijux-dag-core")
+        || !app_deps.contains("bijux-dag-artifacts")
     {
         return Err(
             "bijux-dag-app must depend on runtime/core/artifacts orchestration surfaces".into()
@@ -2777,26 +2794,110 @@ fn run_workspace_manifest_policy_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn manifest_dependency_keys(path: &Path) -> Result<BTreeSet<String>, String> {
+    let manifest = fs::read_to_string(path).map_err(|err| err.to_string())?;
+    let value: toml::Value = toml::from_str(&manifest).map_err(|err| err.to_string())?;
+    Ok(value
+        .get("dependencies")
+        .and_then(toml::Value::as_table)
+        .map(|table| table.keys().cloned().collect())
+        .unwrap_or_default())
+}
+
+#[derive(Debug, Deserialize)]
+struct ModuleSurfaceContract {
+    schema_version: String,
+    crates: Vec<ModuleSurfaceCrate>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ModuleSurfaceCrate {
+    #[serde(rename = "crate")]
+    crate_name: String,
+    stable_public_modules: Vec<String>,
+    experimental_public_modules: Vec<String>,
+    simulated_public_modules: Vec<String>,
+}
+
+fn load_module_surface_contract(root: &Path) -> Result<ModuleSurfaceContract, String> {
+    let path = root.join("contracts/foundation/module_surface_lanes.v1.json");
+    let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    serde_json::from_str(&content).map_err(|err| err.to_string())
+}
+
+fn expected_public_modules(crate_entry: &ModuleSurfaceCrate) -> BTreeSet<String> {
+    crate_entry
+        .stable_public_modules
+        .iter()
+        .chain(crate_entry.experimental_public_modules.iter())
+        .chain(crate_entry.simulated_public_modules.iter())
+        .cloned()
+        .collect()
+}
+
+fn crate_package_doc_rel(crate_name: &str) -> Option<&'static str> {
+    match crate_name {
+        "bijux-cli" => Some("docs/bijux-cli/packages/bijux-cli.md"),
+        "bijux-cli-python" => Some("docs/bijux-cli/packages/bijux-cli-python.md"),
+        "bijux-dag-core" => Some("docs/bijux-dag/packages/bijux-dag-core.md"),
+        "bijux-dag-artifacts" => Some("docs/bijux-dag/packages/bijux-dag-artifacts.md"),
+        "bijux-dag-runtime" => Some("docs/bijux-dag/packages/bijux-dag-runtime.md"),
+        "bijux-dag-app" => Some("docs/bijux-dag/packages/bijux-dag-app.md"),
+        "bijux-dag-cli" => Some("docs/bijux-dag/packages/bijux-dag-cli.md"),
+        "bijux-dag-testkit" => Some("docs/bijux-dag/packages/bijux-dag-testkit.md"),
+        "bijux-dev" => Some("docs/bijux-dev/packages/bijux-dev.md"),
+        _ => None,
+    }
+}
+
+fn crate_api_doc_rel(crate_name: &str) -> Option<&'static str> {
+    match crate_name {
+        "bijux-cli" => Some("docs/bijux-cli/interfaces/api-surface.md"),
+        "bijux-dag-core" | "bijux-dag-artifacts" | "bijux-dag-runtime" | "bijux-dag-app" => {
+            Some("docs/bijux-dag/interfaces/api-surface.md")
+        }
+        _ => None,
+    }
+}
+
 fn run_public_export_docs_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let policy_text = fs::read_to_string(root.join("configs/dag/policy/crate_ownership.json"))
-        .map_err(|err| err.to_string())?;
-    let policy: CrateOwnershipPolicy =
-        serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
-    let docs = fs::read_to_string(root.join("docs/spec/CRATE_API_POLICY.md"))
-        .map_err(|err| err.to_string())?;
+    let contract = load_module_surface_contract(&root)?;
+    if contract.schema_version != "foundation-module-surface-lanes/v1" {
+        return Err("module surface contract schema drift".to_string());
+    }
     let mut missing = Vec::new();
 
-    for crate_entry in policy.crates {
-        let lib_rs = root.join(&crate_entry.path).join("src/lib.rs");
+    for crate_entry in contract.crates {
+        let lib_rs = root.join("crates").join(&crate_entry.crate_name).join("src/lib.rs");
         let actual = public_modules_from_lib(&lib_rs)?;
         if actual.is_empty() {
             continue;
         }
-        if !docs.contains(&crate_entry.name) {
+        let Some(package_doc_rel) = crate_package_doc_rel(&crate_entry.crate_name) else {
             missing.push(format!(
-                "{} has public exports but no crate mention in docs/spec/CRATE_API_POLICY.md",
-                crate_entry.name
+                "{} has public exports but no package documentation mapping",
+                crate_entry.crate_name
+            ));
+            continue;
+        };
+        let package_doc =
+            fs::read_to_string(root.join(package_doc_rel)).map_err(|err| err.to_string())?;
+        if !package_doc.contains(&crate_entry.crate_name) {
+            missing.push(format!(
+                "{} package doc does not mention its crate name: {}",
+                crate_entry.crate_name, package_doc_rel
+            ));
+        }
+
+        let Some(api_doc_rel) = crate_api_doc_rel(&crate_entry.crate_name) else {
+            continue;
+        };
+        let api_doc = fs::read_to_string(root.join(api_doc_rel)).map_err(|err| err.to_string())?;
+        if !api_doc.contains(&crate_entry.crate_name) {
+            missing.push(format!(
+                "{} API doc does not mention its crate name: {}",
+                crate_entry.crate_name, api_doc_rel
             ));
         }
     }
@@ -2810,23 +2911,26 @@ fn run_public_export_docs_guard() -> Result<(), String> {
 
 fn run_crate_ownership_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let policy_text = fs::read_to_string(root.join("configs/dag/policy/crate_ownership.json"))
-        .map_err(|err| err.to_string())?;
-    let policy: CrateOwnershipPolicy =
-        serde_json::from_str(&policy_text).map_err(|err| err.to_string())?;
+    let contract = load_module_surface_contract(&root)?;
+    if contract.schema_version != "foundation-module-surface-lanes/v1" {
+        return Err("module surface contract schema drift".to_string());
+    }
     let mut violations = Vec::new();
 
-    for crate_entry in policy.crates {
-        if crate_entry.domains.is_empty() {
-            violations.push(format!("{} has no declared domains", crate_entry.name));
-        }
-        let lib_rs = root.join(&crate_entry.path).join("src/lib.rs");
+    for crate_entry in contract.crates {
+        let lib_rs = root.join("crates").join(&crate_entry.crate_name).join("src/lib.rs");
         let actual = public_modules_from_lib(&lib_rs)?;
-        let allowed: BTreeSet<String> = crate_entry.public_modules.into_iter().collect();
+        let allowed = expected_public_modules(&crate_entry);
         for module in actual.difference(&allowed) {
             violations.push(format!(
                 "{} exports undeclared public module `{}`",
-                crate_entry.name, module
+                crate_entry.crate_name, module
+            ));
+        }
+        for module in allowed.difference(&actual) {
+            violations.push(format!(
+                "{} is missing declared public module `{}`",
+                crate_entry.crate_name, module
             ));
         }
     }
@@ -2844,31 +2948,67 @@ fn public_modules_from_lib(path: &Path) -> Result<BTreeSet<String>, String> {
     }
     let content = fs::read_to_string(path).map_err(|err| err.to_string())?;
     let mut modules = BTreeSet::new();
+    let mut depth = 0usize;
     for line in content.lines() {
-        let trimmed = line.trim();
-        if !trimmed.starts_with("pub mod ") {
-            continue;
+        if depth == 0 {
+            let trimmed = line.trim();
+            if trimmed.starts_with("pub mod ") {
+                let raw = trimmed.trim_start_matches("pub mod ").trim();
+                let name = raw
+                    .trim_end_matches(';')
+                    .split_whitespace()
+                    .next()
+                    .unwrap_or_default()
+                    .to_string();
+                if !name.is_empty() {
+                    modules.insert(name);
+                }
+            }
         }
-        let raw = trimmed.trim_start_matches("pub mod ").trim();
-        let name =
-            raw.trim_end_matches(';').split_whitespace().next().unwrap_or_default().to_string();
-        if !name.is_empty() {
-            modules.insert(name);
-        }
+        let opens = line.matches('{').count();
+        let closes = line.matches('}').count();
+        depth = depth.saturating_add(opens).saturating_sub(closes);
     }
     Ok(modules)
 }
 
 fn run_cli_command_freeze() -> Result<(), String> {
-    let count = Cli::command().get_subcommands().count();
-    if count > CLI_COMMAND_FREEZE_BASELINE {
-        Err(format!(
-            "cli command freeze violated: {} > baseline {}",
-            count, CLI_COMMAND_FREEZE_BASELINE
-        ))
-    } else {
-        Ok(())
+    #[derive(Debug, Deserialize)]
+    struct MaintainerCommandSurfaceContract {
+        schema_version: String,
+        binary: String,
+        visible_root_commands: Vec<String>,
     }
+
+    let root = repo_root()?;
+    let path = root.join("contracts/foundation/maintainer_command_surface.v1.json");
+    let content = fs::read_to_string(&path).map_err(|err| err.to_string())?;
+    let contract: MaintainerCommandSurfaceContract =
+        serde_json::from_str(&content).map_err(|err| err.to_string())?;
+    if contract.schema_version != "foundation-maintainer-command-surface/v1" {
+        return Err("maintainer command surface contract schema drift".to_string());
+    }
+    if contract.binary != "bijux-dev-dag" {
+        return Err("maintainer command surface contract binary drift".to_string());
+    }
+
+    let actual = root_command_names();
+    if actual == contract.visible_root_commands {
+        return Ok(());
+    }
+
+    let expected = contract.visible_root_commands;
+    let actual_set = actual.iter().cloned().collect::<BTreeSet<_>>();
+    let expected_set = expected.iter().cloned().collect::<BTreeSet<_>>();
+    let missing = expected_set.difference(&actual_set).cloned().collect::<Vec<_>>();
+    let unexpected = actual_set.difference(&expected_set).cloned().collect::<Vec<_>>();
+    let order_drift = actual != expected;
+
+    Err(format!(
+        "cli command freeze violated: missing={missing:?}, unexpected={unexpected:?}, order_drift={order_drift}, actual_count={}, expected_count={}",
+        actual.len(),
+        expected.len()
+    ))
 }
 
 fn run_adapter_kind_freeze() -> Result<(), String> {
@@ -2909,21 +3049,8 @@ fn run_docs_guarantee_guard() -> Result<(), String> {
             .to_string_lossy()
             .replace('\\', "/");
         let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
-        for (idx, line) in content.lines().enumerate() {
-            let lower = line.to_lowercase();
-            let has_guarantee = lower.contains("guarantee") || lower.contains("guarantees");
-            if !has_guarantee {
-                continue;
-            }
-            let has_link = line.contains("](")
-                && (line.contains("docs/spec/")
-                    || line.contains("tests/")
-                    || line.contains("benchmarks/")
-                    || line.contains("artifacts/benchmarks/")
-                    || line.contains("artifacts/memory/"));
-            if !has_link {
-                violations.push(format!("{rel}:{} guarantee claim missing proof link", idx + 1));
-            }
+        for line in crate::suites::docs::guarantee_claims_without_evidence(&content) {
+            violations.push(format!("{rel}:{line} guarantee claim missing proof reference"));
         }
     }
     if violations.is_empty() {
@@ -2989,12 +3116,16 @@ fn run_schema_contracts_guard() -> Result<(), String> {
 fn run_repo_docs_guard() -> Result<(), String> {
     let root = repo_root()?;
     for rel in [
-        "docs/spec/WORKSPACE_CONTRACT.md",
-        "docs/spec/BOUNDARY_RULES.md",
-        "docs/spec/CRATE_OWNERSHIP.md",
-        "docs/spec/EVIDENCE_MODEL.md",
-        "docs/spec/GLOSSARY.md",
-        "docs/spec/CRATE_API_POLICY.md",
+        "docs/bijux-core/foundation/documentation-system.md",
+        "docs/bijux-core/foundation/domain-language.md",
+        "docs/bijux-core/foundation/module-surface-lanes.md",
+        "docs/bijux-core/foundation/package-boundary.md",
+        "docs/bijux-core/governance/package-ownership.md",
+        "docs/bijux-core/operations/artifact-governance.md",
+        "docs/bijux-cli/interfaces/api-surface.md",
+        "docs/bijux-dag/interfaces/api-surface.md",
+        "docs/bijux-dag/interfaces/public-imports.md",
+        "docs/bijux-dev/operations/repository-gates.md",
         "docs/spec/ADAPTER_CONTRACT.md",
     ] {
         if !root.join(rel).exists() {
@@ -3027,8 +3158,14 @@ fn run_root_directory_guard() -> Result<(), String> {
         "CHANGELOG.md",
         "CONTRIBUTING.md",
         "LICENSE",
+        "NOTICE",
+        "SECURITY.md",
         ".gitignore",
+        "audit-allowlist.toml",
+        "mkdocs.shared.yml",
+        "mkdocs.yml",
         "rust-toolchain.toml",
+        "rustfmt.toml",
         "Makefile",
     ];
     let mut violations = Vec::new();
@@ -3094,7 +3231,7 @@ fn run_repo_manifests_guard() -> Result<(), String> {
         "bijux-dag-runtime",
         "bijux-dag-app",
         "bijux-dag-cli",
-        "bijux-dev-dag",
+        "bijux-dev",
     ] {
         let manifest = root.join("crates").join(crate_name).join("Cargo.toml");
         let text = fs::read_to_string(&manifest).map_err(|err| err.to_string())?;
@@ -3107,18 +3244,24 @@ fn run_repo_manifests_guard() -> Result<(), String> {
 
 fn run_repo_api_guard() -> Result<(), String> {
     let root = repo_root()?;
-    let docs = fs::read_to_string(root.join("docs/spec/CRATE_API_POLICY.md"))
+    let dag_docs = fs::read_to_string(root.join("docs/bijux-dag/interfaces/api-surface.md"))
         .map_err(|err| err.to_string())?;
-    for crate_name in [
-        "bijux-dag-core",
-        "bijux-dag-artifacts",
-        "bijux-dag-runtime",
-        "bijux-dag-app",
-        "bijux-dag-cli",
-    ] {
-        if !docs.contains(crate_name) {
-            return Err(format!("crate api policy missing coverage mention for {crate_name}"));
+    for crate_name in
+        ["bijux-dag-core", "bijux-dag-artifacts", "bijux-dag-runtime", "bijux-dag-app"]
+    {
+        if !dag_docs.contains(crate_name) {
+            return Err(format!("dag api surface docs missing coverage mention for {crate_name}"));
         }
+    }
+    let cli_docs = fs::read_to_string(root.join("docs/bijux-cli/interfaces/api-surface.md"))
+        .map_err(|err| err.to_string())?;
+    if !cli_docs.contains("bijux-cli") {
+        return Err("cli api surface docs missing coverage mention for bijux-cli".to_string());
+    }
+    let dag_cli_docs = fs::read_to_string(root.join("docs/bijux-dag/packages/bijux-dag-cli.md"))
+        .map_err(|err| err.to_string())?;
+    if !dag_cli_docs.contains("bijux-dag-cli") {
+        return Err("dag package docs missing coverage mention for bijux-dag-cli".to_string());
     }
     Ok(())
 }

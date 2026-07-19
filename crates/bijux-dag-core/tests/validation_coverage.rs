@@ -9,15 +9,18 @@ use thiserror as _;
 use unicode_normalization as _;
 
 use bijux_dag_core::{
-    parse_graph_strict, BranchSpec, Edge, EdgeKind, FileOutput, Graph, GraphMeta, Node, NodeKind,
-    PortRef, SemanticNodeKind, Severity, TriggerRule, SPEC_VERSION,
+    parse_graph_strict, BranchSpec, CacheBehavior, Edge, EdgeKind, FileOutput, Graph, GraphMeta,
+    Node, NodeKind, PortRef, SemanticNodeKind, Severity, TriggerRule, SPEC_VERSION,
 };
 
 #[test]
 fn validation_error_and_warning_coverage() {
     let expected_error_codes = [
-        "E1001", "E1002", "E1003", "E1004", "E1007", "E1008", "E1009", "E1010", "E1011", "E1020",
-        "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030",
+        "E1001", "E1002", "E1003", "E1004", "E1005", "E1007", "E1008", "E1009", "E1010", "E1011",
+        "E1020", "E1021", "E1022", "E1023", "E1024", "E1025", "E1027", "E1028", "E1029", "E1030",
+        "E1031", "E1032", "E1035", "E1039", "E1040", "E1041", "E1042", "E1043", "E1044", "E1045",
+        "E1046", "E1047", "E1048", "E1049", "E1050", "E1051", "E1052", "E1053", "E1054", "E1055",
+        "E1056", "E1057", "E1058", "E1059", "E1060", "E1061", "E1062",
     ];
 
     for code in expected_error_codes {
@@ -95,8 +98,10 @@ fn topo_order_is_dependency_sensitive() {
     let graph = Graph {
         spec: SPEC_VERSION.to_string(),
         meta: None,
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
+        subgraphs: std::collections::BTreeMap::new(),
+        subgraph_instances: Vec::new(),
         nodes: vec![
             build_node("a", vec![], "out"),
             build_node("b", vec!["in".to_string()], "out"),
@@ -166,6 +171,7 @@ fn property_param_reference_validation() {
             bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
                 graph_input: Some("missing_input".to_string()),
                 node_output: None,
+                path_var: None,
             }),
         )]
         .into_iter()
@@ -173,6 +179,69 @@ fn property_param_reference_validation() {
     );
     let diags = graph.validate_with_warnings();
     assert!(diags.iter().any(|d| d.code == "E1020"));
+}
+
+#[test]
+fn path_variable_reference_validation_rejects_unknown_bindings() {
+    let mut graph = base_graph();
+    graph.nodes[0].params = bijux_dag_core::ParamValue::Object(
+        [(
+            "target".to_string(),
+            bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
+                graph_input: None,
+                node_output: None,
+                path_var: Some(bijux_dag_core::PathVarRef::Name("unknown_dir".to_string())),
+            }),
+        )]
+        .into_iter()
+        .collect(),
+    );
+    let diags = graph.validate_with_warnings();
+    assert!(diags.iter().any(|d| d.code == "E1020"));
+}
+
+#[test]
+fn path_variable_reference_validation_rejects_traversal_suffixes() {
+    let mut graph = base_graph();
+    graph.nodes[0].params = bijux_dag_core::ParamValue::Object(
+        [(
+            "target".to_string(),
+            bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
+                graph_input: None,
+                node_output: None,
+                path_var: Some(bijux_dag_core::PathVarRef::Binding(
+                    bijux_dag_core::PathVarBinding {
+                        name: "outputs_dir".to_string(),
+                        relative_path: Some("../escape.txt".to_string()),
+                    },
+                )),
+            }),
+        )]
+        .into_iter()
+        .collect(),
+    );
+    let diags = graph.validate_with_warnings();
+    assert!(diags.iter().any(|d| d.code == "E1025"));
+}
+
+#[test]
+fn container_workdir_validation_rejects_relative_escapes() {
+    let mut graph = base_graph();
+    graph.nodes[0].kind = NodeKind::Container;
+    graph.nodes[0].container = Some(bijux_dag_core::ContainerSpec {
+        image: "alpine".to_string(),
+        argv: vec!["echo".to_string(), "ok".to_string()],
+        env_allowlist: vec![],
+        workdir: Some("../escape".to_string()),
+        engine: "docker".to_string(),
+    });
+    graph.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+
+    let diags = graph.validate_with_warnings();
+
+    assert!(diags
+        .iter()
+        .any(|d| { d.code == "E1025" && d.path == "/nodes/source/container/workdir" }));
 }
 
 #[test]
@@ -198,8 +267,10 @@ fn base_graph() -> Graph {
             owners: vec!["ops".to_string()],
             tags: vec!["ci".to_string()],
         }),
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
+        subgraphs: std::collections::BTreeMap::new(),
+        subgraph_instances: Vec::new(),
         nodes,
         edges: vec![Edge {
             id: None,
@@ -245,8 +316,10 @@ fn graph_for_code(code: &str) -> Graph {
             let g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
-                inputs: serde_json::Map::new(),
+                inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
+                subgraphs: std::collections::BTreeMap::new(),
+                subgraph_instances: Vec::new(),
                 nodes: vec![
                     build_node("a", vec![], "out"),
                     build_node("b", vec!["in".to_string()], "out"),
@@ -270,6 +343,11 @@ fn graph_for_code(code: &str) -> Graph {
             };
             g
         }
+        "E1005" => {
+            let mut g = base_graph();
+            g.edges.clear();
+            g
+        }
         "E1007" => {
             let mut g = base_graph();
             g.nodes.push(build_node("bad node", vec![], "out"));
@@ -277,10 +355,8 @@ fn graph_for_code(code: &str) -> Graph {
         }
         "E1008" => {
             let mut g = base_graph();
-            g.nodes[0].outputs =
-                vec![FileOutput { name: "same".to_string(), path: "out.txt".to_string() }];
-            g.nodes[1].outputs =
-                vec![FileOutput { name: "same".to_string(), path: "out.txt".to_string() }];
+            g.nodes[0].outputs = vec![FileOutput::new("same".to_string(), "out.txt".to_string())];
+            g.nodes[1].outputs = vec![FileOutput::new("same".to_string(), "out.txt".to_string())];
             g
         }
         "E1009" => {
@@ -309,6 +385,7 @@ fn graph_for_code(code: &str) -> Graph {
                     bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
                         graph_input: Some("missing_seed".to_string()),
                         node_output: None,
+                        path_var: None,
                     }),
                 )]
                 .into_iter()
@@ -323,27 +400,27 @@ fn graph_for_code(code: &str) -> Graph {
                 kind: NodeKind::Const,
                 semantic_kind: bijux_dag_core::SemanticNodeKind::Task,
                 inputs: vec!["in".to_string()],
-                outputs: vec![FileOutput {
-                    name: "out".to_string(),
-                    path: "dep/out.txt".to_string(),
-                }],
+                outputs: vec![FileOutput::new("out".to_string(), "dep/out.txt".to_string())],
                 params: bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
                     graph_input: None,
                     node_output: Some(bijux_dag_core::NodeOutputRef {
                         node_id: "ghost".to_string(),
-                        path: "out".to_string(),
+                        output_name: "out".to_string(),
                     }),
+                    path_var: None,
                 }),
                 container: None,
                 timeout_ms: None,
                 resources: None,
                 tags: vec![],
                 retry: Default::default(),
+                cache: Default::default(),
                 effects: vec![],
                 env_allowlist: vec![],
                 group: None,
                 trigger_rule: TriggerRule::AllSuccess,
                 branch: None,
+                dynamic: None,
             });
             g
         }
@@ -351,8 +428,10 @@ fn graph_for_code(code: &str) -> Graph {
             let mut g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
-                inputs: serde_json::Map::new(),
+                inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
+                subgraphs: std::collections::BTreeMap::new(),
+                subgraph_instances: Vec::new(),
                 nodes: vec![
                     build_node("source", vec!["in".to_string()], "out"),
                     build_node("sink", vec!["in".to_string()], "out"),
@@ -369,8 +448,9 @@ fn graph_for_code(code: &str) -> Graph {
                 graph_input: None,
                 node_output: Some(bijux_dag_core::NodeOutputRef {
                     node_id: "sink".to_string(),
-                    path: "out".to_string(),
+                    output_name: "out".to_string(),
                 }),
+                path_var: None,
             });
             g
         }
@@ -394,8 +474,7 @@ fn graph_for_code(code: &str) -> Graph {
         }
         "E1025" => {
             let mut g = base_graph();
-            g.nodes[0].outputs =
-                vec![FileOutput { name: "out".to_string(), path: "../bad.out".to_string() }];
+            g.nodes[0].outputs = vec![FileOutput::new("out".to_string(), "../bad.out".to_string())];
             g
         }
         "E1027" => {
@@ -419,24 +498,27 @@ fn graph_for_code(code: &str) -> Graph {
             let mut g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
-                inputs: serde_json::Map::new(),
+                inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
+                subgraphs: std::collections::BTreeMap::new(),
+                subgraph_instances: Vec::new(),
                 nodes: vec![
                     Node {
                         id: "branch".to_string(),
                         kind: NodeKind::Shell,
                         semantic_kind: SemanticNodeKind::Branch,
                         inputs: vec!["in".to_string()],
-                        outputs: vec![FileOutput {
-                            name: "decision".to_string(),
-                            path: "branch/decision.txt".to_string(),
-                        }],
+                        outputs: vec![FileOutput::new(
+                            "decision".to_string(),
+                            "branch/decision.txt".to_string(),
+                        )],
                         params: bijux_dag_core::ParamValue::default(),
                         container: None,
                         timeout_ms: None,
                         resources: None,
                         tags: vec![],
                         retry: Default::default(),
+                        cache: Default::default(),
                         effects: vec![bijux_dag_core::Effect::Filesystem],
                         env_allowlist: vec![],
                         group: None,
@@ -446,6 +528,7 @@ fn graph_for_code(code: &str) -> Graph {
                             default_decision: Some("left".to_string()),
                             decision_output: "decision".to_string(),
                         }),
+                        dynamic: None,
                     },
                     build_node("sink", vec!["in".to_string()], "out"),
                 ],
@@ -464,24 +547,27 @@ fn graph_for_code(code: &str) -> Graph {
             let mut g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
-                inputs: serde_json::Map::new(),
+                inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
+                subgraphs: std::collections::BTreeMap::new(),
+                subgraph_instances: Vec::new(),
                 nodes: vec![
                     Node {
                         id: "branch".to_string(),
                         kind: NodeKind::Shell,
                         semantic_kind: SemanticNodeKind::Branch,
                         inputs: vec!["in".to_string()],
-                        outputs: vec![FileOutput {
-                            name: "decision".to_string(),
-                            path: "branch/decision.txt".to_string(),
-                        }],
+                        outputs: vec![FileOutput::new(
+                            "decision".to_string(),
+                            "branch/decision.txt".to_string(),
+                        )],
                         params: bijux_dag_core::ParamValue::default(),
                         container: None,
                         timeout_ms: None,
                         resources: None,
                         tags: vec![],
                         retry: Default::default(),
+                        cache: Default::default(),
                         effects: vec![bijux_dag_core::Effect::Filesystem],
                         env_allowlist: vec![],
                         group: None,
@@ -491,6 +577,7 @@ fn graph_for_code(code: &str) -> Graph {
                             default_decision: Some("left".to_string()),
                             decision_output: "decision".to_string(),
                         }),
+                        dynamic: None,
                     },
                     build_node("sink", vec!["in".to_string()], "out"),
                 ],
@@ -505,6 +592,512 @@ fn graph_for_code(code: &str) -> Graph {
             g.nodes[1].trigger_rule = TriggerRule::AllSuccess;
             g
         }
+        "E1031" => {
+            let mut g = base_graph();
+            g.inputs.insert(
+                "seed".to_string(),
+                bijux_dag_core::GraphInputSpec::from_default_value(serde_json::json!(7))
+                    .expect("seed spec"),
+            );
+            g.nodes[1].params = bijux_dag_core::ParamValue::Ref(bijux_dag_core::RefSpec {
+                graph_input: Some("seed".to_string()),
+                node_output: Some(bijux_dag_core::NodeOutputRef {
+                    node_id: "source".to_string(),
+                    output_name: "out".to_string(),
+                }),
+                path_var: None,
+            });
+            g
+        }
+        "E1032" => {
+            let mut g = base_graph();
+            g.nodes[0].cache = CacheBehavior { enabled: false, reason: None };
+            g
+        }
+        "E1035" => {
+            let mut g = base_graph();
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Env];
+            g
+        }
+        "E1039" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Python;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Literal(serde_json::json!("bad"));
+            g
+        }
+        "E1040" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Python;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "function".to_string(),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("run")),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1041" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Python;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "module".to_string(),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("demo_module")),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1042" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Http;
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Literal(serde_json::json!("bad"));
+            g
+        }
+        "E1043" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Http;
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "url".to_string(),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("https://example.test")),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1044" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Http;
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "method".to_string(),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("GET")),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1045" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Http;
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "method".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("GET")),
+                    ),
+                    (
+                        "url".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!(
+                            "https://example.test"
+                        )),
+                    ),
+                    (
+                        "headers".to_string(),
+                        bijux_dag_core::ParamValue::Object(
+                            [(
+                                "authorization".to_string(),
+                                bijux_dag_core::ParamValue::Literal(serde_json::json!(true)),
+                            )]
+                            .into_iter()
+                            .collect(),
+                        ),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1046" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Http;
+            g.nodes[0].effects =
+                vec![bijux_dag_core::Effect::Filesystem, bijux_dag_core::Effect::Network];
+            g.nodes[0].outputs.clear();
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "method".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("GET")),
+                    ),
+                    (
+                        "url".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!(
+                            "https://example.test"
+                        )),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1047" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Literal(serde_json::json!("bad"));
+            g
+        }
+        "E1048" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "operation".to_string(),
+                    bijux_dag_core::ParamValue::Literal(serde_json::json!("rename")),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1049" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("copy")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("../escape.txt")),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1050" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("concatenate")),
+                    ),
+                    (
+                        "sources".to_string(),
+                        bijux_dag_core::ParamValue::Array(vec![
+                            bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                            bijux_dag_core::ParamValue::Literal(serde_json::json!("../bad.txt")),
+                        ]),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1051" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].outputs =
+                vec![FileOutput::new("chunk".to_string(), "source/chunk-1.txt".to_string())];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("split")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                    ),
+                    (
+                        "chunk_bytes".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!(0)),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1052" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("checksum")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                    ),
+                    (
+                        "checksum_algorithm".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("md5")),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1053" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("gzip_compress")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                    ),
+                    (
+                        "compression_level".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!(12)),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1054" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0].outputs[0].kind = bijux_dag_core::OutputKind::Directory;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("copy")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1055" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::FileTransform;
+            g.nodes[0].effects = vec![bijux_dag_core::Effect::Filesystem];
+            g.nodes[0]
+                .outputs
+                .push(FileOutput::new("extra".to_string(), "source/extra.txt".to_string()));
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "operation".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("copy")),
+                    ),
+                    (
+                        "source".to_string(),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("seed/in.txt")),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1056" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Shell;
+            g.nodes[0].semantic_kind = SemanticNodeKind::Map;
+            g.nodes[0].inputs = vec!["in".to_string()];
+            g.nodes[0].outputs.clear();
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "argv".to_string(),
+                    bijux_dag_core::ParamValue::Array(vec![
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("printf ok")),
+                    ]),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1057" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Shell;
+            g.nodes[0].semantic_kind = SemanticNodeKind::Map;
+            g.nodes[0].inputs = vec!["in".to_string()];
+            g.nodes[0].outputs[0].kind = bijux_dag_core::OutputKind::File;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "argv".to_string(),
+                    bijux_dag_core::ParamValue::Array(vec![
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("printf ok")),
+                    ]),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1058" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Shell;
+            g.nodes[0].semantic_kind = SemanticNodeKind::Map;
+            g.nodes[0].inputs = vec!["left".to_string(), "right".to_string()];
+            g.nodes[0].outputs[0].kind = bijux_dag_core::OutputKind::Directory;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "argv".to_string(),
+                    bijux_dag_core::ParamValue::Array(vec![
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("printf ok")),
+                    ]),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1059" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Shell;
+            g.nodes[0].semantic_kind = SemanticNodeKind::Reduce;
+            g.nodes[0].inputs = vec!["mapped".to_string()];
+            g.nodes[0]
+                .outputs
+                .push(FileOutput::new("extra".to_string(), "source/extra.txt".to_string()));
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "argv".to_string(),
+                    bijux_dag_core::ParamValue::Array(vec![
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("printf ok")),
+                    ]),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1060" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Shell;
+            g.nodes[0].semantic_kind = SemanticNodeKind::Reduce;
+            g.nodes[0].inputs = vec!["mapped".to_string()];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "argv".to_string(),
+                        bijux_dag_core::ParamValue::Array(vec![
+                            bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                            bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                            bijux_dag_core::ParamValue::Literal(serde_json::json!("printf ok")),
+                        ]),
+                    ),
+                    (
+                        "reduce".to_string(),
+                        bijux_dag_core::ParamValue::Object(
+                            [(
+                                "mode".to_string(),
+                                bijux_dag_core::ParamValue::Literal(serde_json::json!(
+                                    "best_effort"
+                                )),
+                            )]
+                            .into_iter()
+                            .collect(),
+                        ),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1061" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Shell;
+            g.nodes[0].semantic_kind = SemanticNodeKind::Reduce;
+            g.nodes[0].inputs = vec!["mapped".to_string()];
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [
+                    (
+                        "argv".to_string(),
+                        bijux_dag_core::ParamValue::Array(vec![
+                            bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                            bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                            bijux_dag_core::ParamValue::Literal(serde_json::json!("printf ok")),
+                        ]),
+                    ),
+                    (
+                        "reduce".to_string(),
+                        bijux_dag_core::ParamValue::Object(
+                            [(
+                                "empty".to_string(),
+                                bijux_dag_core::ParamValue::Literal(serde_json::json!("maybe")),
+                            )]
+                            .into_iter()
+                            .collect(),
+                        ),
+                    ),
+                ]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
+        "E1062" => {
+            let mut g = base_graph();
+            g.nodes[0].kind = NodeKind::Shell;
+            g.nodes[0].semantic_kind = SemanticNodeKind::Reduce;
+            g.nodes[0].inputs = vec!["mapped".to_string()];
+            g.nodes[0].trigger_rule = TriggerRule::AnySuccess;
+            g.nodes[0].params = bijux_dag_core::ParamValue::Object(
+                [(
+                    "argv".to_string(),
+                    bijux_dag_core::ParamValue::Array(vec![
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("/bin/sh")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("-c")),
+                        bijux_dag_core::ParamValue::Literal(serde_json::json!("printf ok")),
+                    ]),
+                )]
+                .into_iter()
+                .collect(),
+            );
+            g
+        }
         "W2001" => {
             let mut g = base_graph();
             g.nodes.push(build_node("isolated", vec!["in".to_string()], "out"));
@@ -514,8 +1107,10 @@ fn graph_for_code(code: &str) -> Graph {
             let g = Graph {
                 spec: SPEC_VERSION.to_string(),
                 meta: None,
-                inputs: serde_json::Map::new(),
+                inputs: std::collections::BTreeMap::new(),
                 nondeterminism_allowed: false,
+                subgraphs: std::collections::BTreeMap::new(),
+                subgraph_instances: Vec::new(),
                 nodes: vec![
                     build_node("source", vec![], "out"),
                     build_node("orphan", vec!["in".to_string()], "out"),
@@ -534,18 +1129,20 @@ fn build_node(id: &str, mut inputs: Vec<String>, name: &str) -> Node {
         kind: NodeKind::Const,
         semantic_kind: SemanticNodeKind::Task,
         inputs: std::mem::take(&mut inputs),
-        outputs: vec![FileOutput { name: name.to_string(), path: format!("{id}/{name}.txt") }],
+        outputs: vec![FileOutput::new(name.to_string(), format!("{id}/{name}.txt"))],
         params: bijux_dag_core::ParamValue::default(),
         container: None,
         timeout_ms: None,
         resources: None,
         tags: vec![],
         retry: Default::default(),
+        cache: Default::default(),
         effects: vec![bijux_dag_core::Effect::Filesystem],
         env_allowlist: vec![],
         group: None,
         trigger_rule: TriggerRule::AllSuccess,
         branch: None,
+        dynamic: None,
     }
 }
 
@@ -578,8 +1175,10 @@ fn chain_graph(len: usize) -> Graph {
     Graph {
         spec: SPEC_VERSION.to_string(),
         meta: None,
-        inputs: serde_json::Map::new(),
+        inputs: std::collections::BTreeMap::new(),
         nondeterminism_allowed: false,
+        subgraphs: std::collections::BTreeMap::new(),
+        subgraph_instances: Vec::new(),
         nodes,
         edges,
     }

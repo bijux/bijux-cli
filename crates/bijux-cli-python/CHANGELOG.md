@@ -7,16 +7,26 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="unreleased"></a>
 
+---
+
+### Added
+- Added `bijux_cli_py.dag_sdk` with Python helpers for loading DAG graph JSON,
+  delegating validation/planning/execution to `bijux-dag`, inspecting runs, and
+  querying artifact registries while preserving the CLI JSON payload contract.
+
+<!-- towncrier start -->
+
+<a id="v0-4-0"></a>
+
+## 0.4.0 – 2026-07-20
+
 ### Added
 - Added `bijux_cli_py.app_sdk` with mounted-app manifest builders, compatibility-window helpers, JSON success/failure envelopes, and a callable runner that preserves clean stdout contracts.
 
 ### Changed
+- Advanced the Python distribution to the `v0.4.0` release line alongside the public DAG Rust crate family.
 - Relaxed facade fallback behavior so packaging and helper tests can keep working when the native bridge is unavailable but explicit Python fallback is allowed.
-- Documented the mounted-app packaging flow and shared it with the Rust root runtime contract.
-
----
-
-<!-- towncrier start -->
+- Published mounted-app packaging guidance that matches the Rust root runtime contract.
 
 <a id="v0-3-6"></a>
 
@@ -83,7 +93,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ### Removed
 - Legacy `bijux-cli` compatibility executable naming; `bijux` is now the only runtime command name
 - Legacy runtime ownership of maintainer/dev namespaces from the end-user command surface
-- Legacy `scripts/` automation paths, root git-hook wiring, root OpenAPI/Node release remnants, and the previous MkDocs builder pipeline
+- Legacy automation script paths, root git-hook wiring, root OpenAPI/Node release remnants, and the previous MkDocs builder pipeline
 - Legacy duplicate Python distribution/test roots outside `crates/bijux-cli-python`
 - Legacy docs trees, stale policy fragments, and compatibility shims that no longer matched the canonical runtime/docs layout
 - Demo-grade root commands, placeholder plugin execution paths, and stale maintainer fallback behavior that no longer matched the shipped runtime contract
@@ -150,26 +160,26 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## 0.1.2 – 2025-08-17
 
 ### Added
-* **New Documentation Engine:** Introduced a new modular documentation builder in `scripts/docs_builder/` that replaces the previous helper script.
+* **New Documentation Engine:** Introduced a new modular documentation builder that replaced the previous helper script.
 * **CI Artifact Pages:** The documentation site now automatically generates detailed pages for all CI artifacts, including tests, linting, code quality, security, API tests, SBOMs, and citation files.
 * **Release Evidence:** The `publish` workflow now downloads all artifacts from the `CI` run, packages them as `evidence/*.tar.gz` bundles, and attaches them to the GitHub Release for traceability.
 * **Build Hygiene:** Makefiles now enforce a "hygienic" build process, ensuring all temporary files, caches, and build outputs are stored under the `artifacts/` directory to prevent root directory pollution.
 
 ### Changed
 * **CI/CD Overhaul:**
-    * The `ci.yml` workflow now uploads each category of artifact separately for better organization and downstream consumption.
-    * The `docs.yml` workflow now waits for the main `CI` run to complete, downloads all artifacts, and uses them to build a data-rich documentation site.
-    * The `publish.yml` workflow has been streamlined and made more robust, removing the optional "wait for docs" step and improving tag detection.
-* **Documentation Content:** All top-level Markdown documents (`README.md`, `USAGE.md`, `TESTS.md`, `TOOLING.md`, `CONTRIBUTING.md`, etc.) have been significantly rewritten and expanded with tables of contents, `back-to-top` links, and cross-references to the new artifact pages.
+    * The CI workflow now uploads each category of artifact separately for better organization and downstream consumption.
+    * The docs-build workflow now waits for the main CI run to complete, downloads all artifacts, and uses them to build a data-rich documentation site.
+    * The release publish workflow has been streamlined and made more robust, removing the optional "wait for docs" step and improving tag detection.
+* **Documentation Content:** The top-level Markdown set, including the README, usage, test, contributor, project-map, and tooling pages, was significantly rewritten and expanded with tables of contents, `back-to-top` links, and cross-references to the new artifact pages.
 * **Build System:**
     * All `Makefile` modules have been refactored to use the new hygienic `artifacts/` directory structure for outputs and caches.
     * `tox.ini` has been updated to align with the new Makefile targets and to run a comprehensive suite of checks for the `py311` environment, mirroring the full CI validation process.
 * **API Schema:** The OpenAPI `schema.yaml` has been improved with stricter validation (`additionalProperties: false`), better descriptions, response links, and more detailed examples.
-* **Source Code:** Refactored async handling in `src/bijux_cli/api.py` and improved type safety across multiple modules with clearer casts.
+* **Source Code:** Refactored async handling in the legacy Python API module and improved type safety across multiple modules with clearer casts.
 
 ### Fixed
 * **Type Safety:** Resolved numerous previously ignored type errors throughout the codebase and test suite.
-* **API Endpoint Logic:** Corrected the item update logic in `src/bijux_cli/httpapi.py` by removing a faulty check for duplicate names that was causing incorrect 409 Conflict errors.
+* **API Endpoint Logic:** Corrected the item update logic in the legacy HTTP API module by removing a faulty check for duplicate names that was causing incorrect 409 Conflict errors.
 * **Test Suite:** Improved the stability and correctness of E2E tests by enhancing golden file comparisons and fixing brittle assertions.
 
 
@@ -180,28 +190,28 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## 0.1.1 – 2025-08-14
 
 ### Added
-* **Publish pipeline:** GitHub Actions `publish.yml` that publishes via `make publish` only after required checks are green and a tag is present.
-* **Project map:** `PROJECT_TREE.md` (and `docs/project_tree.md`) with a curated overview.
-* **Developer Tooling page:** `TOOLING.md` (and `docs/tooling.md`) with embedded configs, Makefile snippets, and CI workflows via `include-markdown`.
+* **Publish pipeline:** GitHub Actions publish workflow that publishes via `make publish` only after required checks are green and a tag is present.
+* **Project map:** Project-map pages with a curated overview.
+* **Developer Tooling page:** Tooling pages with embedded configs, Makefile snippets, and CI workflows via `include-markdown`.
 * **Docs assets:** Community landing page, Plausible analytics partial, and CSS overrides.
 
 ### Changed
-* **Docs generator (`scripts/docs_builder/mkdocs_manager.py`):**
-  * Copies **README**, **USAGE**, **TESTS**, **PROJECT_TREE**, and **TOOLING** into the site with link rewrites and `{#top}` anchors.
-  * Generates mkdocstrings pages for all modules under `src/bijux_cli/**`.
+* **Docs generator:**
+  * Copies the top-level README plus the earlier usage, test, project-map, and tooling pages into the site with link rewrites and `{#top}` anchors.
+  * Generates mkdocstrings pages for the legacy Python package tree.
   * Builds **one** consolidated **API Reference** with this structure:
     * top: **Api Module**, **Cli Module**, **Httpapi Module**
     * sections (collapsed by default): **Commands**, **Contracts**, **Core**, **Infra**, **Services**
     * nested groups for command subpackages (`config/`, `dev/`, `history/`, `memory/`, `plugins/`) beneath **Commands**.
   * Emits `reference/**/index.md` to power Material’s section indexes.
 * **MkDocs config (`mkdocs.yml`):** tightened plugin ordering and settings for `include-markdown`, enabled section indexes, and strict mode; added watch paths for configs and scripts.
-* **README / USAGE:** Refined copy; standardized **top anchors** and links to **TESTS.md**/**PROJECT_TREE.md**/**TOOLING.md**.
+* **README / usage pages:** Refined copy; standardized top anchors and companion-page cross-links.
 * **SECURITY.md:** Rewritten with clearer reporting, SLAs, scope, and safe harbor.
 * **Makefiles:** macOS-safe env handling; Cairo-less Interrogate wrapper for doc coverage.
 * **Config:** Expanded lints/dictionary.
 
 ### Fixed
-* **Docs build (strict):** resolved broken/unknown links in **TOOLING.md** and removed duplicate **API Reference** sections; left sidebar now stays populated when deep-linking into API pages.
+* **Docs build (strict):** resolved broken and unknown links in the tooling pages and removed duplicate API Reference sections; left sidebar now stays populated when deep-linking into API pages.
 * **Tests:** E2E version fixtures cleaned up.
 
 ### Packaging
@@ -281,9 +291,9 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 * **Makefile architecture**
 
-    * Modularized the Makefile into `makefiles/*.mk` for maintainability and clear separation of concerns.
+    * Modularized the Makefile into focused include files for maintainability and clear separation of concerns.
     * Centralized all developer workflows (`test`, `lint`, `quality`, `security`, `api`, `docs`, `build`, `sbom`, `citation`, `changelog`, `publish`) in one consistent interface.
-    * Added `bootstrap` target for idempotent virtualenv setup and Git hook installation from `scripts/git-hooks` (skips re-installation if already linked).
+    * Added `bootstrap` target for idempotent virtualenv setup and Git hook installation from the repository hook templates (skips re-installation if already linked).
     * Added `all-parallel` target to run independent checks (`quality`, `security`, `api`, `docs`) concurrently for faster CI/CD.
     * Added `make help` for self-documenting targets with grouped sections.
     * Provided helper macros (`run_tool`, `read_pyproject_version`) to standardize tooling invocation.
@@ -313,7 +323,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 * None
 
 
-[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.3.6...HEAD
+[Unreleased]: https://github.com/bijux/bijux-core/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/bijux/bijux-core/compare/v0.3.6...v0.4.0
 [0.3.6]: https://github.com/bijux/bijux-core/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/bijux/bijux-core/compare/v0.3.4...v0.3.5
 [0.3.0]: https://github.com/bijux/bijux-core/compare/v0.2.0...v0.3.0

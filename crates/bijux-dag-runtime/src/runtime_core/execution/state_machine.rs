@@ -2,14 +2,16 @@
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum NodeLifecycleState {
-    Queued,
+    Pending,
     Ready,
+    Queued,
     Running,
     Succeeded,
     Failed,
     Cached,
     Skipped,
     Cancelled,
+    TimedOut,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -28,15 +30,24 @@ pub fn node_transition_allowed(from: NodeLifecycleState, to: NodeLifecycleState)
     use NodeLifecycleState as S;
     matches!(
         (from, to),
-        (S::Queued, S::Ready)
-            | (S::Ready, S::Running)
+        (S::Pending, S::Ready)
+            | (S::Ready, S::Queued)
+            | (S::Queued, S::Running)
             | (S::Running, S::Succeeded)
             | (S::Running, S::Failed)
-            | (S::Running, S::Cached)
+            | (S::Ready, S::Cached)
+            | (S::Queued, S::Cached)
+            | (S::Pending, S::Skipped)
             | (S::Ready, S::Skipped)
-            | (S::Queued, S::Cancelled)
+            | (S::Queued, S::Skipped)
+            | (S::Pending, S::Cancelled)
             | (S::Ready, S::Cancelled)
+            | (S::Queued, S::Cancelled)
             | (S::Running, S::Cancelled)
+            | (S::Pending, S::TimedOut)
+            | (S::Ready, S::TimedOut)
+            | (S::Queued, S::TimedOut)
+            | (S::Running, S::TimedOut)
     )
 }
 

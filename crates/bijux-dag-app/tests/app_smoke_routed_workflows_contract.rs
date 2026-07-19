@@ -3,7 +3,6 @@ use bijux_dag_app::{dag_command, dag_run};
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit::{graph_chain, graph_diamond};
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -16,10 +15,29 @@ use tar as _;
 use tempfile as _;
 use thiserror as _;
 
+mod support;
+
+use support::{graph_chain, graph_diamond};
+
 fn run_ok(args: &[String]) {
     let refs: Vec<&str> = args.iter().map(String::as_str).collect();
     let matches = dag_command().try_get_matches_from(refs).expect("parse command");
     let code = dag_run(&matches).expect("run command");
+    assert_eq!(code, std::process::ExitCode::SUCCESS);
+}
+
+fn run_ok_with_internal_lane(args: &[String]) {
+    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    let matches = dag_command().try_get_matches_from(refs).expect("parse command");
+    let previous = std::env::var_os("BIJUX_DAG_ENABLE_INTERNAL");
+    std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", "1");
+    let result = dag_run(&matches);
+    if let Some(value) = previous {
+        std::env::set_var("BIJUX_DAG_ENABLE_INTERNAL", value);
+    } else {
+        std::env::remove_var("BIJUX_DAG_ENABLE_INTERNAL");
+    }
+    let code = result.expect("run command");
     assert_eq!(code, std::process::ExitCode::SUCCESS);
 }
 
@@ -63,15 +81,15 @@ fn smoke_validate_plan_run_inspect_replay_diff() {
     fs::create_dir_all(&runs_root).expect("create runs root");
     write_graph(&graph_path, &graph_chain());
 
-    run_ok(&["dag".to_string(), "validate".to_string(), graph_path.display().to_string()]);
+    run_ok(&["bijux-dag".to_string(), "validate".to_string(), graph_path.display().to_string()]);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "plan".to_string(),
         "explain".to_string(),
         graph_path.display().to_string(),
     ]);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "run".to_string(),
         graph_path.display().to_string(),
         "--out".to_string(),
@@ -79,9 +97,9 @@ fn smoke_validate_plan_run_inspect_replay_diff() {
     ]);
 
     let first = first_run_dir(&runs_root);
-    run_ok(&["dag".to_string(), "status".to_string(), first.display().to_string()]);
+    run_ok(&["bijux-dag".to_string(), "status".to_string(), first.display().to_string()]);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "replay".to_string(),
         first.display().to_string(),
         "--out".to_string(),
@@ -89,7 +107,7 @@ fn smoke_validate_plan_run_inspect_replay_diff() {
     ]);
     let second = first_run_dir(&runs_root);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "diff".to_string(),
         first.display().to_string(),
         second.display().to_string(),
@@ -104,7 +122,7 @@ fn smoke_artifact_hash_inspect_trace() {
     fs::create_dir_all(&runs_root).expect("create runs root");
     write_graph(&graph_path, &graph_chain());
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "run".to_string(),
         graph_path.display().to_string(),
         "--out".to_string(),
@@ -113,19 +131,19 @@ fn smoke_artifact_hash_inspect_trace() {
     let run_dir = first_run_dir(&runs_root);
     let (artifact_ref, artifact_path) = first_artifact_ref(&run_dir);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "hash".to_string(),
         "artifact".to_string(),
         artifact_path.display().to_string(),
     ]);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "artifact-inspect".to_string(),
         run_dir.display().to_string(),
         artifact_ref.clone(),
     ]);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "trace-artifact".to_string(),
         run_dir.display().to_string(),
         artifact_ref,
@@ -141,7 +159,7 @@ fn smoke_export_import_verify_only_and_fsck() {
     fs::create_dir_all(&runs_root).expect("create runs root");
     write_graph(&graph_path, &graph_chain());
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "run".to_string(),
         graph_path.display().to_string(),
         "--out".to_string(),
@@ -149,19 +167,19 @@ fn smoke_export_import_verify_only_and_fsck() {
     ]);
     let run_dir = first_run_dir(&runs_root);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "export".to_string(),
         run_dir.display().to_string(),
         "--out".to_string(),
         bundle.display().to_string(),
     ]);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "import".to_string(),
         bundle.display().to_string(),
         "--verify-only".to_string(),
     ]);
-    run_ok(&["dag".to_string(), "fsck".to_string(), run_dir.display().to_string()]);
+    run_ok(&["bijux-dag".to_string(), "fsck".to_string(), run_dir.display().to_string()]);
 }
 
 #[test]
@@ -172,7 +190,7 @@ fn smoke_history_show_summary_timeline() {
     fs::create_dir_all(&runs_root).expect("create runs root");
     write_graph(&graph_path, &graph_diamond());
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "run".to_string(),
         graph_path.display().to_string(),
         "--out".to_string(),
@@ -181,14 +199,14 @@ fn smoke_history_show_summary_timeline() {
     let run_dir = first_run_dir(&runs_root);
     let run_id = run_alias_of(&run_dir);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "runs".to_string(),
         "history".to_string(),
         "--root".to_string(),
         runs_root.display().to_string(),
     ]);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "runs".to_string(),
         "show".to_string(),
         run_id.clone(),
@@ -196,14 +214,14 @@ fn smoke_history_show_summary_timeline() {
         runs_root.display().to_string(),
     ]);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "runs".to_string(),
         "summary".to_string(),
         "--root".to_string(),
         runs_root.display().to_string(),
     ]);
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "runs".to_string(),
         "timeline".to_string(),
         run_id,
@@ -220,23 +238,23 @@ fn smoke_prove_verify_and_surface_queries() {
     fs::create_dir_all(&runs_root).expect("create runs root");
     write_graph(&graph_path, &graph_chain());
     run_ok(&[
-        "dag".to_string(),
+        "bijux-dag".to_string(),
         "run".to_string(),
         graph_path.display().to_string(),
         "--out".to_string(),
         runs_root.display().to_string(),
     ]);
     let run_dir = first_run_dir(&runs_root);
-    run_ok(&["dag".to_string(), "prove".to_string(), run_dir.display().to_string()]);
-    run_ok(&["dag".to_string(), "verify".to_string(), run_dir.display().to_string()]);
-    run_ok(&[
-        "dag".to_string(),
+    run_ok(&["bijux-dag".to_string(), "prove".to_string(), run_dir.display().to_string()]);
+    run_ok(&["bijux-dag".to_string(), "verify".to_string(), run_dir.display().to_string()]);
+    run_ok_with_internal_lane(&[
+        "bijux-dag".to_string(),
         "semantic-portability".to_string(),
         "--backend".to_string(),
         "hpc".to_string(),
     ]);
-    run_ok(&[
-        "dag".to_string(),
+    run_ok_with_internal_lane(&[
+        "bijux-dag".to_string(),
         "capabilities".to_string(),
         "--backend".to_string(),
         "hpc".to_string(),

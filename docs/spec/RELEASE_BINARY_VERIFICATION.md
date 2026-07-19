@@ -17,18 +17,29 @@ paths from a clean environment:
 
 The command surfaces below are the minimum release proof contract.
 
+This is a maintainer release-gate recipe, not a public operator quickstart. It
+therefore includes one internal probe (`capabilities`) in addition to the
+stable operator commands from the `v0.4.0` release boundary. That maintainer
+probe now requires `BIJUX_DAG_ENABLE_INTERNAL=1` so the release recipe matches
+the executable boundary enforced by the binary.
+
+The release-boundary source of truth for this distinction is the
+[Release Boundary](../bijux-dag/foundation/release-boundary.md) page, which is
+backed by the machine-readable contract
+`contracts/foundation/dag_release_truth_table.v1.json`.
+
 ## Required Command Surface
 
 ```bash
 bijux --json doctor
 bijux --json cli paths
-bijux dag version --json
-bijux dag capabilities --json
-bijux dag validate --json evidence/authoring/examples/hello.dag.json
-bijux dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}
-bijux dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json
-bijux dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}
-bijux dag status --json ${RUN_DIR}
+bijux-dag version --json
+BIJUX_DAG_ENABLE_INTERNAL=1 bijux-dag capabilities --json
+bijux-dag validate --json evidence/dag/authoring/examples/hello.dag.json
+bijux-dag run --json evidence/dag/authoring/examples/hello.dag.json --out ${RUN_ROOT}
+bijux-dag validate --json evidence/dag/authoring/examples/etl-constant-to-shell.dag.json
+bijux-dag run --json evidence/dag/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}
+bijux-dag explain --json ${RUN_DIR}
 ```
 
 ## Scenario Source of Truth

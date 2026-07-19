@@ -187,7 +187,8 @@ mod tests {
 
     #[test]
     fn dataset_routes_reject_missing_simulation_without_panic() {
-        let cli = DagCli::parse_from(["dag", "--json", "dataset", "mapping", "/missing/file.json"]);
+        let cli =
+            DagCli::parse_from(["bijux-dag", "--json", "dataset", "mapping", "/missing/file.json"]);
         let result = std::panic::catch_unwind(|| {
             let _ = handle_dataset_command(
                 &cli,

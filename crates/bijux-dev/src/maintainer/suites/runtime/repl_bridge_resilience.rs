@@ -392,11 +392,11 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
             ]}))
         }
         "STATUS-CONTRACT-GENERATE-FLAG-NORMALIZATION-MATRIX" => {
-            let source =
-                fs::read_to_string(workspace_root.join(
-                    "crates/bijux-cli/tests/integration/cli/root/flag_normalization_matrix.rs",
-                ))
-                .unwrap_or_default();
+            let source = fs::read_to_string(
+                workspace_root
+                    .join("crates/bijux-cli/tests/integration/cli/root/flag_normalization_laws.rs"),
+            )
+            .unwrap_or_default();
             let rows: Vec<(i64, &str)> = vec![
                 (81, "global_flags_before_namespace_are_accepted"),
                 (82, "global_flags_after_namespace_are_accepted_when_supported"),
@@ -425,7 +425,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                                         "coverage_id": coverage_id,
                                         "test_name": name,
                                         "status": if source.contains(&format!("fn {name}(")) { "complete" } else { "missing" },
-                                        "evidence": "crates/bijux-cli/tests/integration/cli/root/flag_normalization_matrix.rs",
+                                        "evidence": "crates/bijux-cli/tests/integration/cli/root/flag_normalization_laws.rs",
                                     })
                                 })
                                 .collect();
@@ -435,7 +435,7 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                 .count();
             write_status_artifact_json(
                 workspace_root,
-                "artifacts/status/flag_normalization_matrix.json",
+                "artifacts/status/flag_normalization_report.json",
                 &json!({
                     "generated_at": generated_at_utc(),
                     "generator": "bijux-dev-cli",
@@ -445,13 +445,13 @@ pub(super) fn run(workspace_root: &Path, contract_id: &str) -> Option<Value> {
                         "complete": complete,
                         "missing": rows.len() - complete,
                         "coverage_window_end": 100,
-                        "artifact_path": "artifacts/status/flag_normalization_matrix.json",
+                        "artifact_path": "artifacts/status/flag_normalization_report.json",
                     },
                 }),
             )
             .ok()?;
             Some(json!({"status":"ok","contract_id":contract_id,"implementation":"rust","outputs":[
-                "artifacts/status/flag_normalization_matrix.json"
+                "artifacts/status/flag_normalization_report.json"
             ]}))
         }
         _ => None,

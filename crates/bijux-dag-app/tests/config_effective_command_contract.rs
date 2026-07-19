@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -21,7 +20,7 @@ fn config_show_effective_accepts_cli_overrides() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "config",
             "show-effective",
             "--jobs",
@@ -41,7 +40,7 @@ fn policy_show_effective_emits_trace_surface() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "--json",
             "policy",
             "show-effective",
@@ -64,7 +63,7 @@ fn config_show_effective_rejects_malformed_file_before_execution() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "config",
             "show-effective",
             "--config",

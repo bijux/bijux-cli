@@ -10,7 +10,6 @@ use sha2 as _;
 use tempfile as _;
 
 #[test]
-#[ignore = "legacy fixture helper suite contract enforces pre-merge governance contract inventory"]
 fn fixture_helpers_fast_suite_covers_shared_loader_and_governance_contracts() {
     let suite_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../configs/dag/suites/fixture_helpers_fast.json");

@@ -7,22 +7,42 @@
     "manifest.finalized.json",
     "manifest.json",
     "nodes/branch_a_transform/attempts.json",
+    "nodes/branch_a_transform/attempts/1/stderr.log",
+    "nodes/branch_a_transform/attempts/1/stdout.log",
     "nodes/branch_a_transform/inputs/index.json",
     "nodes/branch_a_transform/inputs/seed_a/seed",
+    "nodes/branch_a_transform/outputs/branch_a.txt",
+    "nodes/branch_a_transform/outputs/index.json",
     "nodes/branch_a_transform/resolved_params.json",
     "nodes/branch_a_transform/stderr.log",
     "nodes/branch_a_transform/stdout.log",
     "nodes/branch_a_transform/trace.json",
     "nodes/branch_b_transform/attempts.json",
+    "nodes/branch_b_transform/attempts/1/stderr.log",
+    "nodes/branch_b_transform/attempts/1/stdout.log",
     "nodes/branch_b_transform/inputs/index.json",
     "nodes/branch_b_transform/inputs/seed_b/seed",
+    "nodes/branch_b_transform/outputs/branch_b.txt",
+    "nodes/branch_b_transform/outputs/index.json",
     "nodes/branch_b_transform/resolved_params.json",
     "nodes/branch_b_transform/stderr.log",
     "nodes/branch_b_transform/stdout.log",
     "nodes/branch_b_transform/trace.json",
+    "nodes/join_report/attempts.json",
+    "nodes/join_report/attempts/1/stderr.log",
+    "nodes/join_report/attempts/1/stdout.log",
+    "nodes/join_report/inputs/branch_a_transform/branch_a",
+    "nodes/join_report/inputs/branch_b_transform/branch_b",
+    "nodes/join_report/inputs/index.json",
+    "nodes/join_report/outputs/index.json",
+    "nodes/join_report/outputs/report.txt",
     "nodes/join_report/resolved_params.json",
+    "nodes/join_report/stderr.log",
+    "nodes/join_report/stdout.log",
     "nodes/join_report/trace.json",
     "nodes/seed_a/attempts.json",
+    "nodes/seed_a/attempts/1/stderr.log",
+    "nodes/seed_a/attempts/1/stdout.log",
     "nodes/seed_a/inputs/index.json",
     "nodes/seed_a/outputs/index.json",
     "nodes/seed_a/outputs/seed_a.txt",
@@ -31,6 +51,8 @@
     "nodes/seed_a/stdout.log",
     "nodes/seed_a/trace.json",
     "nodes/seed_b/attempts.json",
+    "nodes/seed_b/attempts/1/stderr.log",
+    "nodes/seed_b/attempts/1/stdout.log",
     "nodes/seed_b/inputs/index.json",
     "nodes/seed_b/outputs/index.json",
     "nodes/seed_b/outputs/seed_b.txt",
@@ -133,7 +155,7 @@
             "argv": [
               "/bin/sh",
               "-c",
-              "tr '\\n' ':' < ../inputs/seed_a/seed_a.txt > ../outputs/branch_a.txt"
+              "tr '\\n' ':' < ../inputs/seed_a/seed > ../outputs/branch_a.txt"
             ]
           },
           "resources": null,
@@ -166,7 +188,7 @@
             "argv": [
               "/bin/sh",
               "-c",
-              "tr '\\n' ';' < ../inputs/seed_b/seed_b.txt > ../outputs/branch_b.txt"
+              "tr '\\n' ';' < ../inputs/seed_b/seed > ../outputs/branch_b.txt"
             ]
           },
           "resources": null,
@@ -200,7 +222,7 @@
             "argv": [
               "/bin/sh",
               "-c",
-              "printf '%s %s' \"$(cat ../inputs/branch_a_transform/branch_a.txt)\" \"$(cat ../inputs/branch_b_transform/branch_b.txt)\" > ../outputs/report.txt"
+              "printf '%s %s' \"$(cat ../inputs/branch_a_transform/branch_a)\" \"$(cat ../inputs/branch_b_transform/branch_b)\" > ../outputs/report.txt"
             ]
           },
           "resources": null,
@@ -265,7 +287,7 @@
       "nondeterminism_allowed": false,
       "spec": "bijux-dag/v0.1"
     },
-    "graph_fingerprint": "7226e0d9695df3ac95a4f75bfa446464279569ec998b92390bf55a2cf43fa71a"
+    "graph_fingerprint": "06adf92fc776cf0ce6b9e681cf74901f7b684937fdb14f34bec5896c399d8c1f"
   },
   "manifest": {
     "adapters": [
@@ -282,6 +304,28 @@
         ]
       },
       {
+        "adapter_id": "file_transform",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
+        "adapter_id": "http",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem",
+          "network"
+        ]
+      },
+      {
+        "adapter_id": "python",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
         "adapter_id": "shell",
         "adapter_version": "0.1",
         "effects": [
@@ -290,37 +334,76 @@
       }
     ],
     "created_unix_ms": 0,
-    "evidence_fingerprint": "63b6417ae9b28edd4adbfb1cf7a52bb2764e9844a523109a8308ab34e112d426",
-    "execution_fingerprint": "d780ecc0aa88c5ebd37e3f1a136bfa598a3f3d1f2399d76ccb01ed8833c468f7",
+    "evidence_fingerprint": "c1ada179ef4f7f5f582a90a2791ee0e205eed1a333cf8f3b47216a2609ff37e3",
+    "execution_fingerprint": "379ea99089b50b882fe895eb4dcbc83d3f2bf6214e0cc146b2d3254b24d400c8",
     "finished_unix_ms": 0,
-    "graph_fingerprint": "7226e0d9695df3ac95a4f75bfa446464279569ec998b92390bf55a2cf43fa71a",
+    "graph_fingerprint": "06adf92fc776cf0ce6b9e681cf74901f7b684937fdb14f34bec5896c399d8c1f",
     "graph_snapshot": "graph.snapshot.json",
     "jobs": 1,
     "manifest_version": "run-manifest/v0.1",
     "node_counts": {
       "cached": 0,
-      "failed": 3,
+      "failed": 0,
       "skipped": 0,
-      "success": 2
+      "success": 5
     },
     "outputs": [
       {
-        "file": "seed_a.txt",
-        "node_fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
-        "node_id": "seed_a",
-        "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "value",
+        "node_fingerprint": "6571805ff766bb0434d7b7613c454850129b31e4647e30bce3c676a048dd1799",
+        "node_id": "branch_a_transform",
+        "path": "branch_a.txt",
+        "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+        "size_bytes": 12
       },
       {
-        "file": "seed_b.txt",
-        "node_fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "value",
+        "node_fingerprint": "23519b86d467307f1fb52cd61e8d556078aa2530baef942559abf81092970129",
+        "node_id": "branch_b_transform",
+        "path": "branch_b.txt",
+        "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+        "size_bytes": 12
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "value",
+        "node_fingerprint": "75c87ef2e08293588884844c7736e87f2c383ce84e8783ae7770185c22d37b9e",
+        "node_id": "join_report",
+        "path": "report.txt",
+        "sha256": "715d5308e1159896bf9c5bc390464ec6c50bece1bcf92ef52cdf219374e376c9",
+        "size_bytes": 25
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "value",
+        "node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
+        "node_id": "seed_a",
+        "path": "seed_a.txt",
+        "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+        "size_bytes": 12
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "value",
+        "node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
         "node_id": "seed_b",
-        "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+        "path": "seed_b.txt",
+        "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+        "size_bytes": 12
       }
     ],
     "planner_contract_version": "bijux-dag-planner/v1",
-    "planner_fingerprint": "d6120099f54dcf3e29527e1d7f74582fcec616de69980206d9bfe7006001c0e5",
+    "planner_fingerprint": "271ed2d83864421fd2c116104e8f68c9e7ddcd296c9dd271ce8fc86aebc2ffc3",
     "policy": {
       "clean_env": true,
+      "container_image_reference_policy": "require_digest",
       "deny_clock": false,
       "deny_env": false,
       "deny_network": false
@@ -334,14 +417,14 @@
     },
     "run_summary": {
       "cached": 0,
-      "failed": 3,
+      "failed": 0,
       "skipped": 0,
-      "success": 2,
+      "success": 5,
       "total_nodes": 5
     },
     "spec": "bijux-dag/v0.1",
     "started_unix_ms": 0,
-    "status": "failed",
+    "status": "success",
     "tool_version": "0.0.0+snapshot"
   },
   "node_indexes": {
@@ -349,11 +432,26 @@
       "inputs": {
         "files": [
           {
-            "from_node": "seed_a",
-            "from_node_fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
-            "from_output": "value",
-            "path": "seed_a/seed",
-            "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+            "local_path": "seed_a/seed",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
+            "source_node_id": "seed_a",
+            "source_output_name": "value",
+            "source_sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "value",
+            "node_fingerprint": "6571805ff766bb0434d7b7613c454850129b31e4647e30bce3c676a048dd1799",
+            "node_id": "branch_a_transform",
+            "path": "branch_a.txt",
+            "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+            "size_bytes": 12
           }
         ]
       }
@@ -362,11 +460,62 @@
       "inputs": {
         "files": [
           {
-            "from_node": "seed_b",
-            "from_node_fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
-            "from_output": "value",
-            "path": "seed_b/seed",
-            "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+            "local_path": "seed_b/seed",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
+            "source_node_id": "seed_b",
+            "source_output_name": "value",
+            "source_sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "value",
+            "node_fingerprint": "23519b86d467307f1fb52cd61e8d556078aa2530baef942559abf81092970129",
+            "node_id": "branch_b_transform",
+            "path": "branch_b.txt",
+            "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+            "size_bytes": 12
+          }
+        ]
+      }
+    },
+    "join_report": {
+      "inputs": {
+        "files": [
+          {
+            "local_path": "branch_a_transform/branch_a",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "6571805ff766bb0434d7b7613c454850129b31e4647e30bce3c676a048dd1799",
+            "source_node_id": "branch_a_transform",
+            "source_output_name": "value",
+            "source_sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+          },
+          {
+            "local_path": "branch_b_transform/branch_b",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "23519b86d467307f1fb52cd61e8d556078aa2530baef942559abf81092970129",
+            "source_node_id": "branch_b_transform",
+            "source_output_name": "value",
+            "source_sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "value",
+            "node_fingerprint": "75c87ef2e08293588884844c7736e87f2c383ce84e8783ae7770185c22d37b9e",
+            "node_id": "join_report",
+            "path": "report.txt",
+            "sha256": "715d5308e1159896bf9c5bc390464ec6c50bece1bcf92ef52cdf219374e376c9",
+            "size_bytes": 25
           }
         ]
       }
@@ -378,10 +527,14 @@
       "outputs": {
         "files": [
           {
-            "node_fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "value",
+            "node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
             "node_id": "seed_a",
             "path": "seed_a.txt",
-            "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+            "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+            "size_bytes": 12
           }
         ]
       }
@@ -393,16 +546,29 @@
       "outputs": {
         "files": [
           {
-            "node_fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "value",
+            "node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
             "node_id": "seed_b",
             "path": "seed_b.txt",
-            "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+            "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+            "size_bytes": 12
           }
         ]
       }
     }
   },
   "node_outputs": {
+    "branch_a_transform": {
+      "outputs/branch_a.txt": "\"branch-a\\n\""
+    },
+    "branch_b_transform": {
+      "outputs/branch_b.txt": "\"branch-b\\n\""
+    },
+    "join_report": {
+      "outputs/report.txt": "\"branch-a\\n\" \"branch-b\\n\""
+    },
     "seed_a": {
       "outputs/seed_a.txt": "\"branch-a\\n\""
     },
@@ -416,17 +582,63 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "63b6417ae9b28edd4adbfb1cf7a52bb2764e9844a523109a8308ab34e112d426",
-      "execution_fingerprint": "d780ecc0aa88c5ebd37e3f1a136bfa598a3f3d1f2399d76ccb01ed8833c468f7",
-      "failure": {
-        "code": "OUTPUT_MISSING",
-        "kind": "Execution",
-        "message": "missing output file: branch_a.txt"
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "6a074323c01eae90b05b395cf5ff428f326901cdbaf8b55968a220f98bbe2497",
+        "command_fingerprint": "282f2003ab8f43c180bf8f76a686fde8754bd4cb250586ea6febc6afefddd002",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "5080154f45eae9e027ddddc2f056d461fd5f97e759bbeb9717027ea0fab1d0b9",
+        "node_definition_fingerprint": "c01805a378ece3ad94e017368d0cb4d8c810eaf775fa59398644976d39f499b4",
+        "params_fingerprint": "89cdb44e0e0b7b8b0e75c3e8353d334706d0b696609ad6de75c88143faa564b2",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
       },
-      "fingerprint": "6397907444f1053efc2746f4dfa41277f2d75b98a984ec3faa6ecc3429bccfd3",
+      "evidence_fingerprint": "c1ada179ef4f7f5f582a90a2791ee0e205eed1a333cf8f3b47216a2609ff37e3",
+      "execution_fingerprint": "379ea99089b50b882fe895eb4dcbc83d3f2bf6214e0cc146b2d3254b24d400c8",
+      "exit_code": 0,
+      "fingerprint": "6571805ff766bb0434d7b7613c454850129b31e4647e30bce3c676a048dd1799",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "branch_a_transform",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "value",
+          "path": "branch_a.txt",
+          "present": true,
+          "required": true,
+          "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+          "size_bytes": 12
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -436,29 +648,94 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "tr '\\n' ':' < ../inputs/seed_a/seed_a.txt > ../outputs/branch_a.txt"
+          "tr '\\n' ':' < ../inputs/seed_a/seed > ../outputs/branch_a.txt"
         ]
       },
       "started_unix_ms": 0,
-      "status": "failed",
-      "transition_cause": "MissingRequiredOutput"
+      "status": "success",
+      "stderr": {
+        "path": "nodes/branch_a_transform/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/branch_a_transform/stdout.log",
+        "size_bytes": 0
+      },
+      "transition_cause": "ExecutionSucceeded",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "seed_a",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
     },
     "branch_b_transform": {
       "adapter_id": "shell",
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "63b6417ae9b28edd4adbfb1cf7a52bb2764e9844a523109a8308ab34e112d426",
-      "execution_fingerprint": "d780ecc0aa88c5ebd37e3f1a136bfa598a3f3d1f2399d76ccb01ed8833c468f7",
-      "failure": {
-        "code": "OUTPUT_MISSING",
-        "kind": "Execution",
-        "message": "missing output file: branch_b.txt"
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "b31cbbc89027e5af9482d41b6cdb59340a70b5d5d3b043fddb184975ad9e7281",
+        "command_fingerprint": "06acc67b6a434637b9051422e5b4fabab9f0d2d69bde64ec5a9468de2b8df9a5",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "99bb4f85e9060552f74a63a6b6d0684099795d0864d4e0bacdc1e451aab24717",
+        "node_definition_fingerprint": "55f25d62c50266d43b208c8c3a06e9bb44f2977b2e9ccd1eec2f35f5846d0154",
+        "params_fingerprint": "e8c4b11f95cc4f67727cf2d4d74c8b23b6e68f902db02912bff9010e6208c773",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
       },
-      "fingerprint": "e4e6004045175044ea5a6d1e6e2c088777de11b87ee0478850c1a8b3c4b80bcd",
+      "evidence_fingerprint": "c1ada179ef4f7f5f582a90a2791ee0e205eed1a333cf8f3b47216a2609ff37e3",
+      "execution_fingerprint": "379ea99089b50b882fe895eb4dcbc83d3f2bf6214e0cc146b2d3254b24d400c8",
+      "exit_code": 0,
+      "fingerprint": "23519b86d467307f1fb52cd61e8d556078aa2530baef942559abf81092970129",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "branch_b_transform",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "value",
+          "path": "branch_b.txt",
+          "present": true,
+          "required": true,
+          "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+          "size_bytes": 12
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -468,34 +745,94 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "tr '\\n' ';' < ../inputs/seed_b/seed_b.txt > ../outputs/branch_b.txt"
+          "tr '\\n' ';' < ../inputs/seed_b/seed > ../outputs/branch_b.txt"
         ]
       },
       "started_unix_ms": 0,
-      "status": "failed",
-      "transition_cause": "MissingRequiredOutput"
+      "status": "success",
+      "stderr": {
+        "path": "nodes/branch_b_transform/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/branch_b_transform/stdout.log",
+        "size_bytes": 0
+      },
+      "transition_cause": "ExecutionSucceeded",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "seed_b",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
     },
     "join_report": {
       "adapter_id": "shell",
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "63b6417ae9b28edd4adbfb1cf7a52bb2764e9844a523109a8308ab34e112d426",
-      "execution_fingerprint": "d780ecc0aa88c5ebd37e3f1a136bfa598a3f3d1f2399d76ccb01ed8833c468f7",
-      "failure": {
-        "code": "UPSTREAM_FAILED",
-        "details": {
-          "dependencies": [
-            "branch_a_transform",
-            "branch_b_transform"
-          ]
-        },
-        "kind": "Dependency",
-        "message": "upstream dependency did not complete successfully"
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "883982838af78f87e1c123f104aa3a09de2fe3d8387dbff1064217b6e5d892f3",
+        "command_fingerprint": "09fef70c83d4d23f5a163e654d00a190eb87a5b7d7fb92209f3389514fade771",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "21b333816b56fd25eb845c8b2b0d948cffc60fcbc34d09ce9d022a552fce0148",
+        "node_definition_fingerprint": "3c48f894fd11e944d2eea2d3b1dcef6b1a59b753d6d089b0c06eeefda24db41b",
+        "params_fingerprint": "2a52e20d1c6fb0093fe261cfce81ae2184b692b8d4d6f8ee18312301e348b47f",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
       },
-      "fingerprint": "55cd4d2e90f0c98e7e9f142fabbd8349a2b8686221a5cf248a89c06f0f0c8fb4",
+      "evidence_fingerprint": "c1ada179ef4f7f5f582a90a2791ee0e205eed1a333cf8f3b47216a2609ff37e3",
+      "execution_fingerprint": "379ea99089b50b882fe895eb4dcbc83d3f2bf6214e0cc146b2d3254b24d400c8",
+      "exit_code": 0,
+      "fingerprint": "75c87ef2e08293588884844c7736e87f2c383ce84e8783ae7770185c22d37b9e",
       "finished_unix_ms": 0,
+      "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "join_report",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "value",
+          "path": "report.txt",
+          "present": true,
+          "required": true,
+          "sha256": "715d5308e1159896bf9c5bc390464ec6c50bece1bcf92ef52cdf219374e376c9",
+          "size_bytes": 25
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -505,24 +842,96 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "printf '%s %s' \"$(cat ../inputs/branch_a_transform/branch_a.txt)\" \"$(cat ../inputs/branch_b_transform/branch_b.txt)\" > ../outputs/report.txt"
+          "printf '%s %s' \"$(cat ../inputs/branch_a_transform/branch_a)\" \"$(cat ../inputs/branch_b_transform/branch_b)\" > ../outputs/report.txt"
         ]
       },
       "started_unix_ms": 0,
-      "status": "failed",
-      "transition_cause": "DependencyFailed"
+      "status": "success",
+      "stderr": {
+        "path": "nodes/join_report/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/join_report/stdout.log",
+        "size_bytes": 0
+      },
+      "transition_cause": "ExecutionSucceeded",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "branch_a_transform",
+            "status": "success"
+          },
+          {
+            "node_id": "branch_b_transform",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
     },
     "seed_a": {
       "adapter_id": "const",
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "63b6417ae9b28edd4adbfb1cf7a52bb2764e9844a523109a8308ab34e112d426",
-      "execution_fingerprint": "d780ecc0aa88c5ebd37e3f1a136bfa598a3f3d1f2399d76ccb01ed8833c468f7",
-      "fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "5b6605932c54dbd69c9f541d8a94b7a8e8d3ea82bab7d40b69e9359eb9c5e808",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "node_definition_fingerprint": "37e6751d656284c1d260ab7e0ef855f6de56b891b19aaed0eaab1794ed8eb473",
+        "params_fingerprint": "5a1613d88fd28b394c92990176b54f994980c7a13c0d4ecc2f1bde92f7eb23aa",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "c1ada179ef4f7f5f582a90a2791ee0e205eed1a333cf8f3b47216a2609ff37e3",
+      "execution_fingerprint": "379ea99089b50b882fe895eb4dcbc83d3f2bf6214e0cc146b2d3254b24d400c8",
+      "fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "seed_a",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "value",
+          "path": "seed_a.txt",
+          "present": true,
+          "required": true,
+          "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+          "size_bytes": 12
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -533,6 +942,14 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/seed_a/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/seed_a/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded"
     },
     "seed_b": {
@@ -540,12 +957,61 @@
       "adapter_outputs_schema_version": "v0.1",
       "adapter_version": "0.1",
       "attempt": 1,
-      "evidence_fingerprint": "63b6417ae9b28edd4adbfb1cf7a52bb2764e9844a523109a8308ab34e112d426",
-      "execution_fingerprint": "d780ecc0aa88c5ebd37e3f1a136bfa598a3f3d1f2399d76ccb01ed8833c468f7",
-      "fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "dc86976fe8983840a53d3b5221c626f2213c204507f3c0d9b565780336f77b20",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "node_definition_fingerprint": "02278c51af07cfcefbf01dea903f9a9833fb0aafbb2c21959a568ab19cb28e4e",
+        "params_fingerprint": "59098a13ed4bfccdd642b1e07a982b0d132335b3231b67fcaeac6467e59ea015",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "c1ada179ef4f7f5f582a90a2791ee0e205eed1a333cf8f3b47216a2609ff37e3",
+      "execution_fingerprint": "379ea99089b50b882fe895eb4dcbc83d3f2bf6214e0cc146b2d3254b24d400c8",
+      "fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
       "finished_unix_ms": 0,
       "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
       "node_id": "seed_b",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "value",
+          "path": "seed_b.txt",
+          "present": true,
+          "required": true,
+          "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+          "size_bytes": 12
+        }
+      ],
       "planner_contract_version": "bijux-dag-planner/v1",
       "replay_provenance": {
         "node_action": "reexecuted",
@@ -556,22 +1022,68 @@
       },
       "started_unix_ms": 0,
       "status": "success",
+      "stderr": {
+        "path": "nodes/seed_b/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/seed_b/stdout.log",
+        "size_bytes": 0
+      },
       "transition_cause": "ExecutionSucceeded"
     }
   },
   "outputs_index": {
     "files": [
       {
-        "node_fingerprint": "6756cdefc53346b31de01df5264b11450794cc193a89180ac95103e17b39e71e",
-        "node_id": "seed_a",
-        "path": "nodes/seed_a/outputs/seed_a.txt",
-        "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e"
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "value",
+        "node_fingerprint": "6571805ff766bb0434d7b7613c454850129b31e4647e30bce3c676a048dd1799",
+        "node_id": "branch_a_transform",
+        "path": "nodes/branch_a_transform/outputs/branch_a.txt",
+        "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+        "size_bytes": 12
       },
       {
-        "node_fingerprint": "b7ed80236e5bf8f01e2f0c490db86ccd71e7728df534b71d6aec89fba1558c8f",
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "value",
+        "node_fingerprint": "23519b86d467307f1fb52cd61e8d556078aa2530baef942559abf81092970129",
+        "node_id": "branch_b_transform",
+        "path": "nodes/branch_b_transform/outputs/branch_b.txt",
+        "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+        "size_bytes": 12
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "value",
+        "node_fingerprint": "75c87ef2e08293588884844c7736e87f2c383ce84e8783ae7770185c22d37b9e",
+        "node_id": "join_report",
+        "path": "nodes/join_report/outputs/report.txt",
+        "sha256": "715d5308e1159896bf9c5bc390464ec6c50bece1bcf92ef52cdf219374e376c9",
+        "size_bytes": 25
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "value",
+        "node_fingerprint": "2ab532746dcb0000d731257cfcd82b909f946d47d36900b2814e7b7b1de05766",
+        "node_id": "seed_a",
+        "path": "nodes/seed_a/outputs/seed_a.txt",
+        "sha256": "dd6d1eab18403cf9ab6444fa93fbbead2566f6b14a6f1193d16bd3cd06e7567e",
+        "size_bytes": 12
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "value",
+        "node_fingerprint": "d3e6168751e7226260a6107fc1079ec65cffda53f316af7490993678039bb24c",
         "node_id": "seed_b",
         "path": "nodes/seed_b/outputs/seed_b.txt",
-        "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1"
+        "sha256": "5adb3039aa3fd24a240c8a8584ebe25e82b85ad005aaf3e0cb8000ed4b73c2a1",
+        "size_bytes": 12
       }
     ]
   },
@@ -624,7 +1136,7 @@
         "seed_b"
       ],
       "ready_queue_depth": 1,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -664,7 +1176,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "seed_a",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -699,7 +1213,7 @@
         "seed_b"
       ],
       "ready_queue_depth": 1,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -734,13 +1248,15 @@
       "attempt": 1,
       "event": "node_attempt_finished",
       "node_id": "branch_a_transform",
-      "status": "failed",
+      "status": "success",
       "ts": 0
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "branch_a_transform",
-      "status": "failed",
+      "reason": null,
+      "status": "success",
       "ts": 0
     },
     {
@@ -756,7 +1272,7 @@
         "seed_b"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -790,7 +1306,9 @@
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "seed_b",
+      "reason": null,
       "status": "success",
       "ts": 0
     },
@@ -820,7 +1338,7 @@
         "branch_b_transform"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
@@ -849,13 +1367,15 @@
       "attempt": 1,
       "event": "node_attempt_finished",
       "node_id": "branch_b_transform",
-      "status": "failed",
+      "status": "success",
       "ts": 0
     },
     {
       "event": "node_finished",
+      "failure_code": null,
       "node_id": "branch_b_transform",
-      "status": "failed",
+      "reason": null,
+      "status": "success",
       "ts": 0
     },
     {
@@ -885,23 +1405,12 @@
         "join_report"
       ],
       "ready_queue_depth": 0,
-      "tie_break_reason": "priority_cpu_fit_then_node_id",
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
       "ts": 0
     },
     {
-      "blocking_nodes": [
-        "branch_a_transform",
-        "branch_b_transform"
-      ],
-      "event": "node_blocked",
+      "event": "cache_miss",
       "node_id": "join_report",
-      "reason": "blocked_by_dependency",
-      "ts": 0
-    },
-    {
-      "event": "node_finished",
-      "node_id": "join_report",
-      "status": "failed",
       "ts": 0
     },
     {
@@ -916,8 +1425,29 @@
       "ts": 0
     },
     {
+      "attempt": 1,
+      "event": "node_attempt_started",
+      "node_id": "join_report",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "join_report",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "failure_code": null,
+      "node_id": "join_report",
+      "reason": null,
+      "status": "success",
+      "ts": 0
+    },
+    {
       "event": "run_finished",
-      "status": "failed",
+      "status": "success",
       "ts": 0
     }
   ]

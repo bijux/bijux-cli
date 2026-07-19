@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -28,6 +27,8 @@ fn strict_and_permissive_modes_differ_in_effect_policy() {
                 deny_env: true,
                 deny_clock: true,
                 clean_env: true,
+                container_image_reference_policy:
+                    bijux_dag_runtime::ContainerImageReferencePolicy::RequireDigest,
                 allowed_env: vec!["PATH".into()],
             }),
             ..PartialRuntimeSurfaceConfig::default()
@@ -44,6 +45,8 @@ fn strict_and_permissive_modes_differ_in_effect_policy() {
                 deny_env: false,
                 deny_clock: false,
                 clean_env: false,
+                container_image_reference_policy:
+                    bijux_dag_runtime::ContainerImageReferencePolicy::AllowUnpinned,
                 allowed_env: vec!["PATH".into(), "HOME".into()],
             }),
             ..PartialRuntimeSurfaceConfig::default()
@@ -61,4 +64,10 @@ fn strict_and_permissive_modes_differ_in_effect_policy() {
     let permissive_trace = policy_evaluation_trace(&permissive.policy);
     assert!(strict_trace.iter().any(|e| e.contains("rule:deny_network decision:deny")));
     assert!(permissive_trace.iter().any(|e| e.contains("rule:deny_network decision:allow")));
+    assert!(strict_trace
+        .iter()
+        .any(|e| e.contains("rule:container_image_reference decision:require_digest")));
+    assert!(permissive_trace
+        .iter()
+        .any(|e| e.contains("rule:container_image_reference decision:allow_unpinned")));
 }

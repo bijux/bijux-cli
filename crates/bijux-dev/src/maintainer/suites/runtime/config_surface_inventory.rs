@@ -9,7 +9,7 @@ pub(super) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/config_read_matrix_artifact.json",
+                "artifacts/status/config_read_coverage_artifact.json",
                 "artifacts/status/config_read_domain_contract.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-READ-SURFACE-REPORTS",
@@ -20,7 +20,7 @@ pub(super) fn rows() -> Vec<Value> {
             "source_ref": Value::Null,
             "implementation": "rust",
             "outputs": [
-                "artifacts/status/config_mutation_matrix_artifact.json",
+                "artifacts/status/config_mutation_coverage_artifact.json",
                 "artifacts/status/config_mutation_domain_contract.json"
             ],
             "command": "bijux-dev-cli maintenance status run --id STATUS-CONTRACT-GENERATE-CONFIG-MUTATION-SURFACE-REPORTS",

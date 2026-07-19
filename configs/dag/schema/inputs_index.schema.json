@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bijux.dev/schema/dag/inputs_index.schema.json",
+  "title": "Bijux DAG Node Inputs Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["files"],
+  "properties": {
+    "collections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "semantic_kind", "manifest_path", "items"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "semantic_kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "manifest_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mode": {
+            "type": "string",
+            "minLength": 1
+          },
+          "empty_policy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "input_port",
+                "source_node_id",
+                "source_output_name",
+                "status"
+              ],
+              "properties": {
+                "input_port": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_node_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_output_name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "local_path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "local_path",
+          "source_sha256",
+          "source_node_id",
+          "source_node_fingerprint",
+          "source_output_name",
+          "materialization_mode"
+        ],
+        "properties": {
+          "local_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "source_node_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_node_fingerprint": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_output_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "materialization_mode": {
+            "type": "string",
+            "enum": ["copy", "hardlink", "symlink"]
+          }
+        }
+      }
+    }
+  }
+}

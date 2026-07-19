@@ -6,9 +6,9 @@
       "description": "clean-room hello DAG validation and run",
       "graph": "evidence/authoring/examples/hello.dag.json",
       "required_commands": [
-        "bijux dag validate --json evidence/authoring/examples/hello.dag.json",
-        "bijux dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}",
-        "bijux dag status --json ${RUN_DIR}"
+        "bijux-dag validate --json evidence/authoring/examples/hello.dag.json",
+        "bijux-dag run --json evidence/authoring/examples/hello.dag.json --out ${RUN_ROOT}",
+        "bijux-dag explain --json ${RUN_DIR}"
       ]
     },
     {
@@ -16,9 +16,9 @@
       "description": "shell ETL DAG validation and run",
       "graph": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
       "required_commands": [
-        "bijux dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json",
-        "bijux dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}",
-        "bijux dag status --json ${RUN_DIR}"
+        "bijux-dag validate --json evidence/authoring/examples/etl-constant-to-shell.dag.json",
+        "bijux-dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}",
+        "bijux-dag explain --json ${RUN_DIR}"
       ]
     }
   ]

@@ -1,5 +1,5 @@
 use crate::{NodeResult, RunContext, RuntimeError};
-use bijux_dag_core::{Effect, Node};
+use bijux_dag_core::{Effect, Graph, Node};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -45,6 +45,7 @@ impl EffectSet {
 }
 
 pub struct NodeCtx<'a> {
+    pub graph: &'a Graph,
     pub node: &'a Node,
     pub exec: &'a RunContext,
     pub params: &'a serde_json::Value,

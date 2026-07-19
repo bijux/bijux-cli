@@ -4,8 +4,12 @@ use crate::{
     check_engine, config_fingerprint, default_runtime_config, parse_graph, read_file, Graph,
     LintDiagnostic, Severity, SPEC_VERSION,
 };
-use bijux_dag_runtime::{registered_adapters, Selector, SelectorSet};
+use bijux_dag_runtime::{
+    compute_downstream_run_closure, compute_upstream_run_closure, registered_adapters, Selector,
+    SelectorSet,
+};
 use serde_json::json;
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -27,15 +31,91 @@ pub(crate) fn parse_selectors(
 pub(crate) fn parse_selector(raw: &str) -> Result<Selector, ExitCode> {
     let selector = parse_selector_expression(raw)?;
     match selector.field {
-        SelectorField::Id | SelectorField::Node => Ok(Selector::IdPrefix(selector.value)),
+        SelectorField::Id | SelectorField::Node => Ok(Selector::Id(selector.value)),
+        SelectorField::IdPrefix | SelectorField::NodePrefix => {
+            Ok(Selector::IdPrefix(selector.value))
+        }
         SelectorField::Tag => Ok(Selector::Tag(selector.value)),
         SelectorField::Kind => Ok(Selector::Kind(selector.value)),
         SelectorField::Run
+        | SelectorField::Graph
         | SelectorField::State
         | SelectorField::Artifact
         | SelectorField::Branch
         | SelectorField::Attempt => Err(ExitCode::from(2)),
     }
+}
+
+pub(crate) fn validate_partial_selection_surface(
+    from_node: &[String],
+    to_node: &[String],
+    include: &[String],
+    exclude: &[String],
+    dependency_closure: bool,
+) -> Result<(), ExitCode> {
+    if from_node.is_empty() && to_node.is_empty() {
+        return Ok(());
+    }
+    if !from_node.is_empty() && !to_node.is_empty() {
+        return Err(ExitCode::from(2));
+    }
+    if !include.is_empty() || !exclude.is_empty() || dependency_closure {
+        return Err(ExitCode::from(2));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_downstream_selection_surface(
+    from_node: &[String],
+    include: &[String],
+    exclude: &[String],
+    dependency_closure: bool,
+) -> Result<(), ExitCode> {
+    validate_partial_selection_surface(from_node, &[], include, exclude, dependency_closure)
+}
+
+pub(crate) fn resolve_downstream_run_selection(
+    graph: &Graph,
+    from_node: &[String],
+) -> Result<(Vec<String>, Vec<String>), ExitCode> {
+    if from_node.is_empty() {
+        return Ok((Vec::new(), Vec::new()));
+    }
+
+    let declared = graph.nodes.iter().map(|node| node.id.as_str()).collect::<BTreeSet<_>>();
+    let mut roots = BTreeSet::new();
+    for node_id in from_node {
+        if !declared.contains(node_id.as_str()) {
+            return Err(ExitCode::from(2));
+        }
+        roots.insert(node_id.clone());
+    }
+
+    let roots = roots.into_iter().collect::<Vec<_>>();
+    let selected = compute_downstream_run_closure(graph, &roots).into_iter().collect::<Vec<_>>();
+    Ok((roots, selected))
+}
+
+pub(crate) fn resolve_upstream_run_selection(
+    graph: &Graph,
+    to_node: &[String],
+) -> Result<(Vec<String>, Vec<String>), ExitCode> {
+    if to_node.is_empty() {
+        return Ok((Vec::new(), Vec::new()));
+    }
+
+    let declared = graph.nodes.iter().map(|node| node.id.as_str()).collect::<BTreeSet<_>>();
+    let mut targets = BTreeSet::new();
+    for node_id in to_node {
+        if !declared.contains(node_id.as_str()) {
+            return Err(ExitCode::from(2));
+        }
+        targets.insert(node_id.clone());
+    }
+
+    let targets = targets.into_iter().collect::<Vec<_>>();
+    let selected = compute_upstream_run_closure(graph, &targets).into_iter().collect::<Vec<_>>();
+    Ok((targets, selected))
 }
 
 pub(crate) fn lint_graph(graph: &Graph) -> Vec<LintDiagnostic> {
@@ -358,7 +438,10 @@ pub(crate) fn run_compat_suite() -> Result<serde_json::Value, ExitCode> {
 mod tests {
     use super::{
         doctor_report, inspect_migrate_dag, inspect_migrate_run, parse_selector, parse_selectors,
+        resolve_downstream_run_selection, resolve_upstream_run_selection,
+        validate_partial_selection_surface,
     };
+    use crate::parse_graph;
     use serde_json::json;
     use std::process::ExitCode;
 
@@ -373,7 +456,10 @@ mod tests {
         )
         .expect("selector set");
 
-        assert_eq!(format!("{by_id:?}"), "IdPrefix(\"train\")");
+        let by_id_prefix = parse_selector("id-prefix:train").expect("id-prefix selector");
+
+        assert_eq!(format!("{by_id:?}"), "Id(\"train\")");
+        assert_eq!(format!("{by_id_prefix:?}"), "IdPrefix(\"train\")");
         assert_eq!(format!("{by_tag:?}"), "Tag(\"gpu\")");
         assert_eq!(format!("{by_kind:?}"), "Kind(\"shell\")");
         assert_eq!(set.include.len(), 2);
@@ -391,7 +477,85 @@ mod tests {
     #[test]
     fn selector_parser_accepts_node_alias_for_execution_selectors() {
         let by_node = parse_selector("node:train").expect("node selector");
-        assert_eq!(format!("{by_node:?}"), "IdPrefix(\"train\")");
+        let by_node_prefix = parse_selector("node-prefix:train").expect("node-prefix selector");
+        assert_eq!(format!("{by_node:?}"), "Id(\"train\")");
+        assert_eq!(format!("{by_node_prefix:?}"), "IdPrefix(\"train\")");
+    }
+
+    #[test]
+    fn partial_selection_rejects_selector_mode_mixes() {
+        let error = validate_partial_selection_surface(
+            &["train".to_string()],
+            &[],
+            &["id:report".to_string()],
+            &[],
+            false,
+        )
+        .expect_err("mixed mode must fail");
+        assert_eq!(error, ExitCode::from(2));
+    }
+
+    #[test]
+    fn partial_selection_rejects_multiple_direction_modes() {
+        let error = validate_partial_selection_surface(
+            &["train".to_string()],
+            &["report".to_string()],
+            &[],
+            &[],
+            false,
+        )
+        .expect_err("conflicting mode must fail");
+        assert_eq!(error, ExitCode::from(2));
+    }
+
+    #[test]
+    fn downstream_selection_resolves_exact_root_and_descendants() {
+        let graph = parse_graph(
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "nodes":[
+                {"id":"source","kind":"const","outputs":[{"name":"out","path":"source/out"}],"params":{"value":1}},
+                {"id":"branch","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"branch/out"}],"params":{"value":2}},
+                {"id":"sink","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"sink/out"}],"params":{"value":3}}
+              ],
+              "edges":[
+                {"from":{"node_id":"source","port":"out"},"to":{"node_id":"branch","port":"in"}},
+                {"from":{"node_id":"branch","port":"out"},"to":{"node_id":"sink","port":"in"}}
+              ]
+            }"#,
+        )
+        .expect("graph");
+        let (roots, selected_nodes) =
+            resolve_downstream_run_selection(&graph, &["branch".to_string()]).expect("selection");
+        assert_eq!(roots, vec!["branch"]);
+        assert_eq!(selected_nodes, vec!["branch".to_string(), "sink".to_string()]);
+    }
+
+    #[test]
+    fn upstream_selection_resolves_exact_target_and_ancestors() {
+        let graph = parse_graph(
+            r#"{
+              "spec":"bijux-dag/v0.1",
+              "nodes":[
+                {"id":"source","kind":"const","outputs":[{"name":"out","path":"source/out"}],"params":{"value":1}},
+                {"id":"branch","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"branch/out"}],"params":{"value":2}},
+                {"id":"sink","kind":"const","inputs":["in"],"outputs":[{"name":"out","path":"sink/out"}],"params":{"value":3}},
+                {"id":"side","kind":"const","outputs":[{"name":"out","path":"side/out"}],"params":{"value":4}}
+              ],
+              "edges":[
+                {"from":{"node_id":"source","port":"out"},"to":{"node_id":"branch","port":"in"}},
+                {"from":{"node_id":"branch","port":"out"},"to":{"node_id":"sink","port":"in"}}
+              ]
+            }"#,
+        )
+        .expect("graph");
+        let (targets, selected_nodes) =
+            resolve_upstream_run_selection(&graph, &["sink".to_string()]).expect("selection");
+        assert_eq!(targets, vec!["sink"]);
+        assert_eq!(
+            selected_nodes,
+            vec!["branch".to_string(), "sink".to_string(), "source".to_string()]
+        );
     }
 
     #[test]

@@ -1,0 +1,136 @@
+{
+  "spec": "bijux-dag/v0.1",
+  "meta": {
+    "name": "file-processing-report",
+    "description": "Validate text inputs, normalize file content, aggregate metrics, and render a promotable report artifact.",
+    "owners": ["platform"],
+    "tags": ["authoring", "file-processing", "reporting"]
+  },
+  "inputs": {
+    "source_dir": {
+      "type": "path",
+      "required": true
+    },
+    "report_title": {
+      "type": "string",
+      "default": "Repository File Processing Report"
+    }
+  },
+  "nodes": [
+    {
+      "id": "validate_files",
+      "kind": "shell",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "manifest",
+          "path": "validate/manifest.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "source_dir": { "graph_input": "source_dir" },
+        "report_title": { "graph_input": "report_title" },
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nsource_dir = pathlib.Path(\"{params.source_dir}\")\nif not source_dir.is_dir():\n    raise SystemExit(\"source_dir is not a directory: \" + str(source_dir))\n\nfiles = sorted(path for path in source_dir.glob(\"*.txt\") if path.is_file())\nif not files:\n    raise SystemExit(\"source_dir does not contain any .txt files: \" + str(source_dir))\n\nrecords = []\nfor path in files:\n    text = path.read_text().strip()\n    if not text:\n        raise SystemExit(\"input file is empty: \" + path.name)\n    line_count = sum(1 for line in text.splitlines() if line.strip())\n    records.append(dict(name=path.name, source_path=str(path.resolve()), line_count=line_count))\n\nout_dir = pathlib.Path(\"../outputs/validate\")\nout_dir.mkdir(parents=True, exist_ok=True)\npayload = dict(title=\"{params.report_title}\", source_dir=str(source_dir.resolve()), files=records)\n(out_dir / \"manifest.json\").write_text(json.dumps(payload, indent=2) + \"\\n\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "transform_files",
+      "kind": "shell",
+      "inputs": ["manifest"],
+      "outputs": [
+        {
+          "name": "normalized_files",
+          "path": "transform/files",
+          "kind": "directory",
+          "media_type": "application/vnd.bijux.directory"
+        },
+        {
+          "name": "index",
+          "path": "transform/index.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nmanifest = json.loads(pathlib.Path(\"../inputs/validate_files/manifest\").read_text())\nout_root = pathlib.Path(\"../outputs/transform\")\nfiles_dir = out_root / \"files\"\nfiles_dir.mkdir(parents=True, exist_ok=True)\nindex = []\nfor record in manifest[\"files\"]:\n    source = pathlib.Path(record[\"source_path\"])\n    normalized_lines = [line.strip().upper() for line in source.read_text().splitlines() if line.strip()]\n    target = files_dir / record[\"name\"]\n    target.write_text(\"\\n\".join(normalized_lines) + \"\\n\")\n    index.append(dict(name=record[\"name\"], local_path=\"files/\" + record[\"name\"], line_count=len(normalized_lines)))\n(out_root / \"index.json\").write_text(json.dumps(dict(files=index), indent=2) + \"\\n\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "aggregate_metrics",
+      "kind": "shell",
+      "inputs": ["normalized_files"],
+      "outputs": [
+        {
+          "name": "summary",
+          "path": "aggregate/summary.json",
+          "kind": "value",
+          "media_type": "application/json"
+        }
+      ],
+      "params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nroot = pathlib.Path(\"../inputs/transform_files/normalized_files\")\nfiles = sorted(path for path in root.glob(\"*.txt\") if path.is_file())\nsummary_files = []\ntotal_lines = 0\nfor path in files:\n    line_count = sum(1 for line in path.read_text().splitlines() if line.strip())\n    total_lines += line_count\n    summary_files.append(dict(name=path.name, line_count=line_count))\n\nout_dir = pathlib.Path(\"../outputs/aggregate\")\nout_dir.mkdir(parents=True, exist_ok=True)\npayload = dict(file_count=len(summary_files), total_lines=total_lines, files=summary_files)\n(out_dir / \"summary.json\").write_text(json.dumps(payload, indent=2) + \"\\n\")\nPY"
+        ]
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    },
+    {
+      "id": "render_report",
+      "kind": "shell",
+      "inputs": ["summary"],
+      "outputs": [
+        {
+          "name": "report",
+          "path": "report/report.md",
+          "media_type": "text/markdown",
+          "promotable": true
+        }
+      ],
+      "params": {
+        "report_title": { "graph_input": "report_title" },
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 - <<'PY'\nimport json\nimport pathlib\n\nsummary = json.loads(pathlib.Path(\"../inputs/aggregate_metrics/summary\").read_text())\nlines = [\"# {params.report_title}\", \"\", \"Processed files: \" + str(summary[\"file_count\"]), \"Total non-empty lines: \" + str(summary[\"total_lines\"]), \"\", \"## Files\"]\nfor item in summary[\"files\"]:\n    lines.append(\"- \" + item[\"name\"] + \": \" + str(item[\"line_count\"]) + \" lines\")\n\nout_dir = pathlib.Path(\"../outputs/report\")\nout_dir.mkdir(parents=True, exist_ok=True)\n(out_dir / \"report.md\").write_text(\"\\n\".join(lines) + \"\\n\")\nPY"
+        ]
+      },
+      "cache": {
+        "enabled": false,
+        "reason": "final report is explicitly promoted and should always be regenerated at the replay boundary"
+      },
+      "resources": { "cpu": 1, "mem_mb": 128 },
+      "effects": ["filesystem"]
+    }
+  ],
+  "edges": [
+    {
+      "from": { "node_id": "validate_files", "port": "manifest" },
+      "to": { "node_id": "transform_files", "port": "manifest" }
+    },
+    {
+      "from": { "node_id": "transform_files", "port": "normalized_files" },
+      "to": { "node_id": "aggregate_metrics", "port": "normalized_files" }
+    },
+    {
+      "from": { "node_id": "aggregate_metrics", "port": "summary" },
+      "to": { "node_id": "render_report", "port": "summary" }
+    }
+  ]
+}

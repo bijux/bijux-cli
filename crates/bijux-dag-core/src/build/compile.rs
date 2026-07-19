@@ -1,4 +1,5 @@
 use crate::contract::{normalize_graph_with_defaults, GraphContract};
+use crate::expansion::expand_graph;
 use crate::node::{derive_interface, NodeTypeRegistry, TypedNode};
 use crate::resources::GraphDefaults;
 use crate::{
@@ -43,7 +44,8 @@ pub fn compile_graph_with_defaults(
     graph: &Graph,
     defaults: &GraphDefaults,
 ) -> Result<DagCompileResult, GraphError> {
-    let normalized_graph = normalize_graph_with_defaults(graph, defaults).canonicalize();
+    let expanded_graph = expand_graph(graph).map_err(|_| GraphError::ValidationFailed)?;
+    let normalized_graph = normalize_graph_with_defaults(&expanded_graph, defaults).canonicalize();
     let diagnostics = normalized_graph.validate_with_warnings();
     let graph_fingerprint = normalized_graph.graph_fingerprint()?;
     let deterministic_topology_order = normalized_graph.topo_order()?;

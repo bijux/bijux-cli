@@ -1,12 +1,15 @@
 # Battle Evidence
 
-Purpose: release-critical trust scenarios proving end-to-end behavior.
+Use battle evidence for release-critical end-to-end workflows that back the
+strongest product claims.
 
-Subdirectories:
+## What Lives Here
+
 - `workflows/`
 - `registries/`
 
-Registries:
+## Registries
+
 - `registries/scenario_registry.json`: canonical battle scenario-to-path mapping with trust properties.
 - `registries/trust_property_registry.json`: stable battle trust-property registry and top trust set.
 

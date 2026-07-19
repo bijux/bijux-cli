@@ -52,6 +52,12 @@ pub(super) fn run_perf_evidence_policy_verify() -> Result<(), String> {
     let root = repo_root()?;
     verify_scenario_registry(&root)?;
     let metadata = load_perf_metadata(&root)?;
+    let contract_reference = metadata["contract_reference"]
+        .as_str()
+        .ok_or_else(|| "perf metadata contract_reference must be a string".to_string())?;
+    if !root.join(contract_reference).exists() {
+        return Err(format!("perf metadata references missing contract: {contract_reference}"));
+    }
     let scenarios = metadata["scenarios"]
         .as_object()
         .ok_or_else(|| "perf metadata scenarios must be an object".to_string())?;
@@ -93,6 +99,22 @@ pub(super) fn run_perf_evidence_policy_verify() -> Result<(), String> {
             .get("threshold_reference")
             .and_then(Value::as_str)
             .ok_or_else(|| format!("perf scenario missing threshold_reference: {rel}"))?;
+        let scenario_contract_reference =
+            entry
+                .get("contract_reference")
+                .and_then(Value::as_str)
+                .ok_or_else(|| format!("perf scenario missing contract_reference: {rel}"))?;
+
+        if !root.join(scenario_contract_reference).exists() {
+            return Err(format!(
+                "perf scenario references missing contract: {rel} -> {scenario_contract_reference}"
+            ));
+        }
+        if scenario_contract_reference != contract_reference {
+            return Err(format!(
+                "perf scenario contract_reference must match perf metadata contract_reference: {rel}"
+            ));
+        }
 
         if release_blocking {
             if threshold_reference.trim().is_empty() {
@@ -202,17 +224,23 @@ pub(super) fn run_perf_release_set() -> Result<(), String> {
 
 pub(super) fn run_performance_evidence_guard() -> Result<(), String> {
     let root = repo_root()?;
+    let metadata = load_perf_metadata(&root)?;
+    let contract_reference = metadata["contract_reference"]
+        .as_str()
+        .ok_or_else(|| "perf metadata contract_reference must be a string".to_string())?;
     for rel in [
-        "docs/spec/PERFORMANCE_CONTRACT.md",
         "configs/dag/schema/benchmarks/benchmark_report.schema.json",
         "evidence/perf/baselines/regression_thresholds.json",
         "evidence/perf/metadata.json",
         "evidence/reports/perf_obsolete_candidates.md",
-        "crates/bijux-dev/tests/benchmark_scenario_contract.rs",
+        "crates/bijux-dev/tests/perf_evidence_contracts.rs",
     ] {
         if !root.join(rel).exists() {
             return Err(format!("missing performance evidence artifact: {rel}"));
         }
+    }
+    if !root.join(contract_reference).exists() {
+        return Err(format!("missing performance evidence artifact: {contract_reference}"));
     }
     run_perf_evidence_policy_verify()
 }

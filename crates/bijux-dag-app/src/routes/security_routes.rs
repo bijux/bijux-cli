@@ -2613,7 +2613,7 @@ mod tests {
             &simulation,
             r#"{
               "run_id":"run-77",
-              "binaries":[{"id":"bijux-dag","version":"0.3.5","checksum":"sha256:111"}],
+              "binaries":[{"id":"bijux-dag","version":"0.4.0","checksum":"sha256:111"}],
               "containers":[{"id":"ghcr.io/bijux/runtime","version":"2026.04","checksum":"sha256:222"}],
               "plugins":[{"id":"builtin-python","version":"1.2.0","checksum":"sha256:333"}],
               "adapters":[{"id":"shell","version":"1","checksum":"sha256:444"}]
@@ -2642,7 +2642,7 @@ mod tests {
             &simulation,
             r#"{
               "run_id":"run-88",
-              "binaries":[{"id":"bijux-dag","version":"0.3.5","checksum":null}],
+              "binaries":[{"id":"bijux-dag","version":"0.4.0","checksum":null}],
               "containers":[{"id":"ghcr.io/bijux/runtime","version":"2026.04","checksum":" "}],
               "plugins":[{"id":"builtin-python","version":"1.2.0","checksum":"sha256:333"}],
               "adapters":[{"id":"shell","version":"","checksum":"sha256:444"}]
@@ -2652,7 +2652,7 @@ mod tests {
         let report = super::supply_inventory_payload(&simulation).expect("report");
         assert!(!report.inventory_complete);
         for expected in [
-            "binary component bijux-dag@0.3.5 is missing a checksum",
+            "binary component bijux-dag@0.4.0 is missing a checksum",
             "container component ghcr.io/bijux/runtime@2026.04 is missing a checksum",
             "adapter component has missing id/version fields",
         ] {

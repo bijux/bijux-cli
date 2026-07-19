@@ -1,0 +1,967 @@
+{
+  "files": [
+    ".run-complete.json",
+    "failure-propagation.json",
+    "graph.snapshot.json",
+    "lineage.snapshot.json",
+    "manifest.finalized.json",
+    "manifest.json",
+    "nodes/map/attempts.json",
+    "nodes/map/attempts/1/stderr.log",
+    "nodes/map/attempts/1/stdout.log",
+    "nodes/map/inputs/index.json",
+    "nodes/map/inputs/seed/in",
+    "nodes/map/map.execution.json",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/attempts/1/stderr.log",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/attempts/1/stdout.log",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/inputs/index.json",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/inputs/seed/in",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/outputs/index.json",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/outputs/mapped/value.txt",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/stderr.log",
+    "nodes/map/mapped_items/run-position-000000-902cf2b4/nodes/map/stdout.log",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/attempts/1/stderr.log",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/attempts/1/stdout.log",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/inputs/index.json",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/inputs/seed/in",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/outputs/index.json",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/outputs/mapped/value.txt",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/stderr.log",
+    "nodes/map/mapped_items/run-position-000001-aca89214/nodes/map/stdout.log",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/attempts/1/stderr.log",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/attempts/1/stdout.log",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/inputs/index.json",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/inputs/seed/in",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/outputs/index.json",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/outputs/mapped/value.txt",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/stderr.log",
+    "nodes/map/mapped_items/run-position-000002-ca44c452/nodes/map/stdout.log",
+    "nodes/map/outputs/index.json",
+    "nodes/map/outputs/mapped/items/position-000000-902cf2b4/value.txt",
+    "nodes/map/outputs/mapped/items/position-000001-aca89214/value.txt",
+    "nodes/map/outputs/mapped/items/position-000002-ca44c452/value.txt",
+    "nodes/map/resolved_params.json",
+    "nodes/map/stderr.log",
+    "nodes/map/stdout.log",
+    "nodes/map/trace.json",
+    "nodes/reduce/attempts.json",
+    "nodes/reduce/attempts/1/stderr.log",
+    "nodes/reduce/attempts/1/stdout.log",
+    "nodes/reduce/inputs/index.json",
+    "nodes/reduce/inputs/map/mapped/items/position-000000-902cf2b4/value.txt",
+    "nodes/reduce/inputs/map/mapped/items/position-000001-aca89214/value.txt",
+    "nodes/reduce/inputs/map/mapped/items/position-000002-ca44c452/value.txt",
+    "nodes/reduce/inputs/reduce.collection.json",
+    "nodes/reduce/outputs/index.json",
+    "nodes/reduce/outputs/reduce.txt",
+    "nodes/reduce/reduce.execution.json",
+    "nodes/reduce/resolved_params.json",
+    "nodes/reduce/stderr.log",
+    "nodes/reduce/stdout.log",
+    "nodes/reduce/trace.json",
+    "nodes/seed/attempts.json",
+    "nodes/seed/attempts/1/stderr.log",
+    "nodes/seed/attempts/1/stdout.log",
+    "nodes/seed/inputs/index.json",
+    "nodes/seed/outputs/index.json",
+    "nodes/seed/outputs/seed/out.json",
+    "nodes/seed/resolved_params.json",
+    "nodes/seed/stderr.log",
+    "nodes/seed/stdout.log",
+    "nodes/seed/trace.json",
+    "observability.events.json",
+    "observability.graph-visualization.json",
+    "observability.lineage-visualization.json",
+    "observability.metrics.json",
+    "observability.root-causes.json",
+    "observability.timeline.json",
+    "outputs/index.json",
+    "provenance.json",
+    "run-log.index.json",
+    "run.attempts.json",
+    "run.audit.json",
+    "run.log.jsonl",
+    "run.schema.json",
+    "run.snapshot.json",
+    "scheduler.checkpoint.json"
+  ],
+  "graph_snapshot": {
+    "graph": {
+      "edges": [
+        {
+          "from": {
+            "node_id": "map",
+            "port": "out"
+          },
+          "to": {
+            "node_id": "reduce",
+            "port": "mapped"
+          }
+        },
+        {
+          "from": {
+            "node_id": "seed",
+            "port": "out"
+          },
+          "to": {
+            "node_id": "map",
+            "port": "in"
+          }
+        }
+      ],
+      "inputs": {},
+      "meta": null,
+      "nodes": [
+        {
+          "container": null,
+          "effects": [
+            "filesystem"
+          ],
+          "env_allowlist": [],
+          "group": null,
+          "id": "map",
+          "inputs": [
+            "in"
+          ],
+          "kind": "shell",
+          "outputs": [
+            {
+              "kind": "directory",
+              "name": "out",
+              "path": "mapped"
+            }
+          ],
+          "params": {
+            "argv": [
+              "/bin/sh",
+              "-c",
+              "value=$(tr -d '\"' < ../inputs/seed/in); mkdir -p ../outputs/mapped; printf '%s' \"$value\" > ../outputs/mapped/value.txt"
+            ]
+          },
+          "resources": null,
+          "retry": {
+            "backoff_ms": 0,
+            "max_attempts": 0
+          },
+          "semantic_kind": "map",
+          "tags": [],
+          "timeout_ms": null
+        },
+        {
+          "container": null,
+          "effects": [
+            "filesystem"
+          ],
+          "env_allowlist": [],
+          "group": null,
+          "id": "reduce",
+          "inputs": [
+            "mapped"
+          ],
+          "kind": "shell",
+          "outputs": [
+            {
+              "name": "out",
+              "path": "reduce.txt"
+            }
+          ],
+          "params": {
+            "argv": [
+              "/bin/sh",
+              "-c",
+              "python3 -c \"import json, pathlib; manifest=json.load(open('../inputs/reduce.collection.json')); values=[]; base=pathlib.Path('../inputs'); collect=lambda rel: sorted((base / rel).rglob('value.txt')) if (base / rel).is_dir() else [base / rel]; paths=[]; [paths.extend(collect(item['local_path'])) for item in manifest['items'] if item.get('local_path')]; values=[path.read_text() for path in paths]; (pathlib.Path('../outputs') / 'reduce.txt').write_text(','.join(values))\""
+            ]
+          },
+          "resources": null,
+          "retry": {
+            "backoff_ms": 0,
+            "max_attempts": 0
+          },
+          "semantic_kind": "reduce",
+          "tags": [],
+          "timeout_ms": null
+        },
+        {
+          "container": null,
+          "effects": [],
+          "env_allowlist": [],
+          "group": null,
+          "id": "seed",
+          "inputs": [],
+          "kind": "const",
+          "outputs": [
+            {
+              "name": "out",
+              "path": "seed/out.json"
+            }
+          ],
+          "params": {
+            "value": [
+              "alpha",
+              "beta",
+              "gamma"
+            ]
+          },
+          "resources": null,
+          "retry": {
+            "backoff_ms": 0,
+            "max_attempts": 0
+          },
+          "tags": [],
+          "timeout_ms": null
+        }
+      ],
+      "nondeterminism_allowed": false,
+      "spec": "bijux-dag/v0.1"
+    },
+    "graph_fingerprint": "6454877ead8e9efd7d688f52558bc1ba1ac201f5d883857c29e5848d413d2c47"
+  },
+  "manifest": {
+    "adapters": [
+      {
+        "adapter_id": "const",
+        "adapter_version": "0.1",
+        "effects": []
+      },
+      {
+        "adapter_id": "container",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
+        "adapter_id": "file_transform",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
+        "adapter_id": "http",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem",
+          "network"
+        ]
+      },
+      {
+        "adapter_id": "python",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      },
+      {
+        "adapter_id": "shell",
+        "adapter_version": "0.1",
+        "effects": [
+          "filesystem"
+        ]
+      }
+    ],
+    "created_unix_ms": 0,
+    "evidence_fingerprint": "987d3e66ef0d4e1f4a0a8c6765d613d817d784f6c7fff5384514773c9025ce4b",
+    "execution_fingerprint": "9d8a223bb60407d9dd22305c7d601fe8378ae1cd42c87793cac3e27c315d736f",
+    "finished_unix_ms": 0,
+    "graph_fingerprint": "6454877ead8e9efd7d688f52558bc1ba1ac201f5d883857c29e5848d413d2c47",
+    "graph_snapshot": "graph.snapshot.json",
+    "jobs": 1,
+    "manifest_version": "run-manifest/v0.1",
+    "node_counts": {
+      "cached": 0,
+      "failed": 0,
+      "skipped": 0,
+      "success": 3
+    },
+    "outputs": [
+      {
+        "kind": "directory",
+        "media_type": "application/vnd.bijux.directory",
+        "name": "out",
+        "node_fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
+        "node_id": "map",
+        "path": "mapped",
+        "sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27",
+        "size_bytes": 14
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "6fc084c557a46859ab08ee55e0b8c17e13785130ed8d0f3cf3f88add75f7b1c8",
+        "node_id": "reduce",
+        "path": "reduce.txt",
+        "sha256": "5eb44ddd90abcf863056fcc7b344424553a7c159909118b850196bb51598cad1",
+        "size_bytes": 16
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
+        "node_id": "seed",
+        "path": "seed/out.json",
+        "sha256": "279e88d971aa53cd1482808e8c25b869a8d55b6377aed1813f70294548a61453",
+        "size_bytes": 34
+      }
+    ],
+    "planner_contract_version": "bijux-dag-planner/v1",
+    "planner_fingerprint": "b4923d87b9549d5bbfcfb40b358cfe824b791aeaeed55f1317bc833e453f1fd3",
+    "policy": {
+      "clean_env": true,
+      "container_image_reference_policy": "require_digest",
+      "deny_clock": false,
+      "deny_env": false,
+      "deny_network": false
+    },
+    "run_id": "semantic-map-reduce-fixed",
+    "run_metadata": {
+      "labels": [],
+      "operator": "unknown",
+      "submission_source": "manual",
+      "trigger_source": "cli"
+    },
+    "run_summary": {
+      "cached": 0,
+      "failed": 0,
+      "skipped": 0,
+      "success": 3,
+      "total_nodes": 3
+    },
+    "spec": "bijux-dag/v0.1",
+    "started_unix_ms": 0,
+    "status": "success",
+    "tool_version": "0.0.0+snapshot"
+  },
+  "node_indexes": {
+    "map": {
+      "inputs": {
+        "files": [
+          {
+            "local_path": "seed/in",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
+            "source_node_id": "seed",
+            "source_output_name": "out",
+            "source_sha256": "279e88d971aa53cd1482808e8c25b869a8d55b6377aed1813f70294548a61453"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "kind": "directory",
+            "media_type": "application/vnd.bijux.directory",
+            "name": "out",
+            "node_fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
+            "node_id": "map",
+            "path": "mapped",
+            "sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27",
+            "size_bytes": 14
+          }
+        ]
+      }
+    },
+    "reduce": {
+      "inputs": {
+        "collections": [
+          {
+            "empty_policy": "forbid",
+            "items": [
+              {
+                "input_port": "mapped",
+                "local_path": "map/mapped",
+                "source_node_id": "map",
+                "source_output_name": "out",
+                "source_sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27",
+                "status": "success"
+              }
+            ],
+            "manifest_path": "reduce.collection.json",
+            "mode": "all_success",
+            "name": "reduce_inputs",
+            "semantic_kind": "reduce"
+          }
+        ],
+        "files": [
+          {
+            "local_path": "map/mapped",
+            "materialization_mode": "copy",
+            "source_node_fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
+            "source_node_id": "map",
+            "source_output_name": "out",
+            "source_sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27"
+          }
+        ]
+      },
+      "outputs": {
+        "files": [
+          {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
+            "node_fingerprint": "6fc084c557a46859ab08ee55e0b8c17e13785130ed8d0f3cf3f88add75f7b1c8",
+            "node_id": "reduce",
+            "path": "reduce.txt",
+            "sha256": "5eb44ddd90abcf863056fcc7b344424553a7c159909118b850196bb51598cad1",
+            "size_bytes": 16
+          }
+        ]
+      }
+    },
+    "seed": {
+      "inputs": {
+        "files": []
+      },
+      "outputs": {
+        "files": [
+          {
+            "kind": "file",
+            "media_type": "application/octet-stream",
+            "name": "out",
+            "node_fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
+            "node_id": "seed",
+            "path": "seed/out.json",
+            "sha256": "279e88d971aa53cd1482808e8c25b869a8d55b6377aed1813f70294548a61453",
+            "size_bytes": 34
+          }
+        ]
+      }
+    }
+  },
+  "node_outputs": {
+    "reduce": {
+      "outputs/reduce.txt": "alpha,beta,gamma"
+    }
+  },
+  "node_traces": {
+    "map": {
+      "adapter_id": "shell",
+      "adapter_outputs_schema_version": "v0.1",
+      "adapter_version": "0.1",
+      "attempt": 1,
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "612416fd76b0e54bd5e02e5703e86992e904302a79a8f76eba354d8c49d8d208",
+        "command_fingerprint": "024ee9192a1fe78fe59d30efb97b56a62af2ff1d77aad70c6a6f5e6033b4028a",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "48fad35e186810a6ee438711828f033170ee24121cd2fb977ddb4e33052c90eb",
+        "node_definition_fingerprint": "52ff8543cbdba6dce1626dd3c61e620bebaeb507500477dc643c8cad37e62c82",
+        "params_fingerprint": "eecc96e630cfd1596b724dacb2608e6bcb05eb2feacc85d03a17a179047d17c4",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "987d3e66ef0d4e1f4a0a8c6765d613d817d784f6c7fff5384514773c9025ce4b",
+      "execution_fingerprint": "9d8a223bb60407d9dd22305c7d601fe8378ae1cd42c87793cac3e27c315d736f",
+      "exit_code": 0,
+      "fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
+      "finished_unix_ms": 0,
+      "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
+      "node_id": "map",
+      "outputs": [
+        {
+          "kind": "directory",
+          "media_type": "application/vnd.bijux.directory",
+          "name": "out",
+          "path": "mapped",
+          "present": true,
+          "required": true,
+          "sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27",
+          "size_bytes": 14
+        }
+      ],
+      "planner_contract_version": "bijux-dag-planner/v1",
+      "replay_provenance": {
+        "node_action": "reexecuted",
+        "source_run_id": null
+      },
+      "resolved_params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "value=$(tr -d '\"' < ../inputs/seed/in); mkdir -p ../outputs/mapped; printf '%s' \"$value\" > ../outputs/mapped/value.txt"
+        ]
+      },
+      "started_unix_ms": 0,
+      "status": "success",
+      "stderr": {
+        "path": "nodes/map/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/map/stdout.log",
+        "size_bytes": 58,
+        "tail_lines": [
+          "mapped 3 items for map (success=3, failed=0, cancelled=0)"
+        ]
+      },
+      "transition_cause": "ExecutionSucceeded",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "seed",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
+    },
+    "reduce": {
+      "adapter_id": "shell",
+      "adapter_outputs_schema_version": "v0.1",
+      "adapter_version": "0.1",
+      "attempt": 1,
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "63f48d369b72758111093213a2e92c7f6be8e9e87b687503113913f7d3f9fe7b",
+        "command_fingerprint": "19d7a8f5039e189e1193a1833adc86afe9b147609011595a7419515eb91e1be2",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "d3f89ad4d54a933e9f04889a4ea26390c6421966eaf75b4999d3fd21b955f316",
+        "node_definition_fingerprint": "2f7097af928a8e4b6eba9c0a8f5bf5a614d82678afe9aff3e86eec07d1925fec",
+        "params_fingerprint": "7d343d5ae4a5db28b914a581ce68db2408654244e78312e38dbe0bef091ae6dd",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "987d3e66ef0d4e1f4a0a8c6765d613d817d784f6c7fff5384514773c9025ce4b",
+      "execution_fingerprint": "9d8a223bb60407d9dd22305c7d601fe8378ae1cd42c87793cac3e27c315d736f",
+      "exit_code": 0,
+      "fingerprint": "6fc084c557a46859ab08ee55e0b8c17e13785130ed8d0f3cf3f88add75f7b1c8",
+      "finished_unix_ms": 0,
+      "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
+      "node_id": "reduce",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "reduce.txt",
+          "present": true,
+          "required": true,
+          "sha256": "5eb44ddd90abcf863056fcc7b344424553a7c159909118b850196bb51598cad1",
+          "size_bytes": 16
+        }
+      ],
+      "planner_contract_version": "bijux-dag-planner/v1",
+      "replay_provenance": {
+        "node_action": "reexecuted",
+        "source_run_id": null
+      },
+      "resolved_params": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "python3 -c \"import json, pathlib; manifest=json.load(open('../inputs/reduce.collection.json')); values=[]; base=pathlib.Path('../inputs'); collect=lambda rel: sorted((base / rel).rglob('value.txt')) if (base / rel).is_dir() else [base / rel]; paths=[]; [paths.extend(collect(item['local_path'])) for item in manifest['items'] if item.get('local_path')]; values=[path.read_text() for path in paths]; (pathlib.Path('../outputs') / 'reduce.txt').write_text(','.join(values))\""
+        ]
+      },
+      "started_unix_ms": 0,
+      "status": "success",
+      "stderr": {
+        "path": "nodes/reduce/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/reduce/stdout.log",
+        "size_bytes": 0
+      },
+      "transition_cause": "ExecutionSucceeded",
+      "trigger_evaluation": {
+        "parent_statuses": [
+          {
+            "node_id": "map",
+            "status": "success"
+          }
+        ],
+        "reason": "requires every upstream to complete in success or cached status",
+        "satisfied": true,
+        "trigger_rule": "all_success"
+      }
+    },
+    "seed": {
+      "adapter_id": "const",
+      "adapter_outputs_schema_version": "v0.1",
+      "adapter_version": "0.1",
+      "attempt": 1,
+      "cache_identity": {
+        "backend_class": "local",
+        "cache_key": "111ee7baf07c7074533bf32b7f532113cefc9c39997fe63eaa7032a0c2832bb8",
+        "declared_environment_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "execution_contract_fingerprint": "42a4d3e6657c04fa5cad0317eafccbbb56833a7dad5754c324ed262359553407",
+        "input_lineage_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "node_definition_fingerprint": "0f9a6412db2247b48b99ef9a02d9c25ebb9c005a5157f41149d455cc0df09575",
+        "params_fingerprint": "6d14646521fef412d070533c88db88a17bdadda616605a59a9ab0e7d09244f1b",
+        "policy_fingerprint": "7b6351b131be83dce3ce53eddfdd230ed35efcc45be0a108f63ab6e955e43272"
+      },
+      "evidence_fingerprint": "987d3e66ef0d4e1f4a0a8c6765d613d817d784f6c7fff5384514773c9025ce4b",
+      "execution_fingerprint": "9d8a223bb60407d9dd22305c7d601fe8378ae1cd42c87793cac3e27c315d736f",
+      "fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
+      "finished_unix_ms": 0,
+      "inputs_index": "inputs/index.json",
+      "lifecycle_state": "succeeded",
+      "lifecycle_transitions": [
+        {
+          "cause": "scheduler_eligible",
+          "from_state": "pending",
+          "to_state": "ready",
+          "unix_ms": 0
+        },
+        {
+          "cause": "scheduler_queued",
+          "from_state": "ready",
+          "to_state": "queued",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_started",
+          "from_state": "queued",
+          "to_state": "running",
+          "unix_ms": 0
+        },
+        {
+          "cause": "execution_succeeded",
+          "from_state": "running",
+          "to_state": "succeeded",
+          "unix_ms": 0
+        }
+      ],
+      "node_id": "seed",
+      "outputs": [
+        {
+          "kind": "file",
+          "media_type": "application/octet-stream",
+          "name": "out",
+          "path": "seed/out.json",
+          "present": true,
+          "required": true,
+          "sha256": "279e88d971aa53cd1482808e8c25b869a8d55b6377aed1813f70294548a61453",
+          "size_bytes": 34
+        }
+      ],
+      "planner_contract_version": "bijux-dag-planner/v1",
+      "replay_provenance": {
+        "node_action": "reexecuted",
+        "source_run_id": null
+      },
+      "resolved_params": {
+        "value": [
+          "alpha",
+          "beta",
+          "gamma"
+        ]
+      },
+      "started_unix_ms": 0,
+      "status": "success",
+      "stderr": {
+        "path": "nodes/seed/stderr.log",
+        "size_bytes": 0
+      },
+      "stdout": {
+        "path": "nodes/seed/stdout.log",
+        "size_bytes": 0
+      },
+      "transition_cause": "ExecutionSucceeded"
+    }
+  },
+  "outputs_index": {
+    "files": [
+      {
+        "kind": "directory",
+        "media_type": "application/vnd.bijux.directory",
+        "name": "out",
+        "node_fingerprint": "c61d12aa675e300d178d7d22dde9df36a4764b5bcd8b45ec23e15db72271c8cf",
+        "node_id": "map",
+        "path": "nodes/map/outputs/mapped",
+        "sha256": "dc8779b8e5489a4824b90616191db384c24b6fd9b2ab4749a47567ff45918b27",
+        "size_bytes": 14
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "6fc084c557a46859ab08ee55e0b8c17e13785130ed8d0f3cf3f88add75f7b1c8",
+        "node_id": "reduce",
+        "path": "nodes/reduce/outputs/reduce.txt",
+        "sha256": "5eb44ddd90abcf863056fcc7b344424553a7c159909118b850196bb51598cad1",
+        "size_bytes": 16
+      },
+      {
+        "kind": "file",
+        "media_type": "application/octet-stream",
+        "name": "out",
+        "node_fingerprint": "4d3099ce9d5bccdd84607d25efb66b3cc8587c6d328ccc4fc5449a2c36381280",
+        "node_id": "seed",
+        "path": "nodes/seed/outputs/seed/out.json",
+        "sha256": "279e88d971aa53cd1482808e8c25b869a8d55b6377aed1813f70294548a61453",
+        "size_bytes": 34
+      }
+    ]
+  },
+  "root_outputs": {},
+  "run_log_events": [
+    {
+      "event": "run_started",
+      "ts": 0
+    },
+    {
+      "event": "plan_built",
+      "nodes": 3,
+      "ts": 0
+    },
+    {
+      "event": "node_ready",
+      "node_id": "seed",
+      "reason": {
+        "code": "root_ready",
+        "trigger_rule": "all_success",
+        "upstreams": []
+      },
+      "ts": 0
+    },
+    {
+      "batch": [
+        "seed"
+      ],
+      "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
+      "event": "scheduler_decision",
+      "loop_index": 1,
+      "ready_candidates": [
+        "seed"
+      ],
+      "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
+      "ts": 0
+    },
+    {
+      "event": "cache_miss",
+      "node_id": "seed",
+      "ts": 0
+    },
+    {
+      "event": "node_scheduled",
+      "node_id": "seed",
+      "reason": "ready",
+      "ts": 0
+    },
+    {
+      "event": "node_started",
+      "node_id": "seed",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_started",
+      "node_id": "seed",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "seed",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "failure_code": null,
+      "node_id": "seed",
+      "reason": null,
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_ready",
+      "node_id": "map",
+      "reason": {
+        "code": "dependencies_satisfied",
+        "released_by": "seed",
+        "trigger_rule": "all_success",
+        "upstreams": [
+          "seed"
+        ]
+      },
+      "ts": 0
+    },
+    {
+      "batch": [
+        "map"
+      ],
+      "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
+      "event": "scheduler_decision",
+      "loop_index": 2,
+      "ready_candidates": [
+        "map"
+      ],
+      "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
+      "ts": 0
+    },
+    {
+      "event": "cache_miss",
+      "node_id": "map",
+      "ts": 0
+    },
+    {
+      "event": "node_scheduled",
+      "node_id": "map",
+      "reason": "ready",
+      "ts": 0
+    },
+    {
+      "event": "node_started",
+      "node_id": "map",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_started",
+      "node_id": "map",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "map",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "failure_code": null,
+      "node_id": "map",
+      "reason": null,
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_ready",
+      "node_id": "reduce",
+      "reason": {
+        "code": "dependencies_satisfied",
+        "released_by": "map",
+        "trigger_rule": "all_success",
+        "upstreams": [
+          "map"
+        ]
+      },
+      "ts": 0
+    },
+    {
+      "batch": [
+        "reduce"
+      ],
+      "blocked_by_budget": [],
+      "blocked_reasons": {},
+      "decision_reason": "ready_batch",
+      "event": "scheduler_decision",
+      "loop_index": 3,
+      "ready_candidates": [
+        "reduce"
+      ],
+      "ready_queue_depth": 0,
+      "tie_break_reason": "priority_cpu_memory_fit_then_node_id",
+      "ts": 0
+    },
+    {
+      "event": "cache_miss",
+      "node_id": "reduce",
+      "ts": 0
+    },
+    {
+      "event": "node_scheduled",
+      "node_id": "reduce",
+      "reason": "ready",
+      "ts": 0
+    },
+    {
+      "event": "node_started",
+      "node_id": "reduce",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_started",
+      "node_id": "reduce",
+      "ts": 0
+    },
+    {
+      "attempt": 1,
+      "event": "node_attempt_finished",
+      "node_id": "reduce",
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "node_finished",
+      "failure_code": null,
+      "node_id": "reduce",
+      "reason": null,
+      "status": "success",
+      "ts": 0
+    },
+    {
+      "event": "run_finished",
+      "status": "success",
+      "ts": 0
+    }
+  ]
+}

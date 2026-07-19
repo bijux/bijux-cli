@@ -3,7 +3,6 @@ use bijux_dag_app as _;
 use bijux_dag_artifacts as _;
 use bijux_dag_core as _;
 use bijux_dag_runtime as _;
-use bijux_dag_testkit as _;
 use clap as _;
 use flate2 as _;
 use hex as _;
@@ -21,7 +20,7 @@ use bijux_dag_app::{dag_command, dag_run};
 mod support;
 
 #[test]
-#[ignore = "slow"]
+#[ignore = "experimental"]
 fn hash_artifact_cli_output_matches_internal_sha256() {
     let dir = tempfile::tempdir().expect("tmp");
     let file = dir.path().join("artifact.bin");
@@ -33,7 +32,7 @@ fn hash_artifact_cli_output_matches_internal_sha256() {
     let cmd = dag_command();
     let matches = cmd
         .try_get_matches_from([
-            "dag",
+            "bijux-dag",
             "hash",
             "artifact",
             "--json",

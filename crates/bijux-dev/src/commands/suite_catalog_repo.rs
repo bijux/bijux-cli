@@ -190,7 +190,7 @@ pub(super) const REPO_SUITES: &[SuiteDef] = &[
     },
     SuiteDef {
         id: "docs-links",
-        description: "markdown local link checker",
+        description: "markdown local link and code anchor checker",
         domain: "governance",
         slow: false,
         internal: false,
@@ -244,7 +244,7 @@ pub(super) const REPO_SUITES: &[SuiteDef] = &[
     },
     SuiteDef {
         id: "contract-command-ownership",
-        description: "public commands must be covered by exactly one CLI contract section entry",
+        description: "governed commands must be covered by exactly one command-surface section entry",
         domain: "governance",
         slow: false,
         internal: false,
@@ -324,13 +324,13 @@ pub(super) const REPO_SUITES: &[SuiteDef] = &[
         run: || run_test_trust_foundation_guard(),
     },
     SuiteDef {
-        id: "test-trust-cleanup",
-        description: "test trust ledger classification and semantic surface cleanup enforcement",
+        id: "test-trust-maintenance",
+        description: "test trust ledger classification and semantic surface maintenance enforcement",
         domain: "governance",
         slow: false,
         internal: false,
         effect: CommandEffect::Validation,
-        run: || run_test_trust_cleanup_guard(),
+        run: || run_test_trust_maintenance_guard(),
     },
     SuiteDef {
         id: "docs-config-reduction",

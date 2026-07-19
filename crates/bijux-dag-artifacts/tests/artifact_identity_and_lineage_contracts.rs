@@ -9,10 +9,9 @@ use bijux_dag_artifacts::store::{
     ArtifactStoreBackend, ArtifactStoreSupportLevel, FilesystemArtifactStore, ObjectArtifactStore,
 };
 use bijux_dag_artifacts::{
-    build_artifact_identity, hash::sha256_hex, write_outputs_index, OutputsIndex,
-    RunDirSchemaIndex, RunOutputFile, RunOutputsIndex,
+    build_artifact_identity, hash::sha256_hex, write_outputs_index, DeclaredOutputArtifact,
+    OutputsIndex, RunDirSchemaIndex, RunOutputFile, RunOutputsIndex,
 };
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;
@@ -58,6 +57,7 @@ fn canonical_artifact_identity_is_stable_and_explainable() {
 fn run_dir_schema_index_defaults_cover_root_and_node_requirements() {
     let schema = RunDirSchemaIndex::default();
     assert_eq!(schema.schema_version, "run-dir-schema/v0.1");
+    assert_eq!(schema.inputs_index_schema, "configs/dag/schema/inputs_index.schema.json");
     assert!(schema.required_root_files.contains(&"run.schema.json".to_string()));
     assert!(schema.required_root_files.contains(&"manifest.json".to_string()));
     assert!(schema.required_node_files.contains(&"trace.json".to_string()));
@@ -101,7 +101,22 @@ fn outputs_index_preserves_nested_paths_and_empty_file_identity() {
         dir.path(),
         "node-a",
         "fp-a",
-        &["nested/deeper/data.txt".to_string(), "nested/deeper/empty.txt".to_string()],
+        &[
+            DeclaredOutputArtifact {
+                name: "data".to_string(),
+                path: "nested/deeper/data.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+                promotable: false,
+            },
+            DeclaredOutputArtifact {
+                name: "empty".to_string(),
+                path: "nested/deeper/empty.txt".to_string(),
+                kind: "file".to_string(),
+                media_type: "application/octet-stream".to_string(),
+                promotable: false,
+            },
+        ],
     )
     .expect("write index");
     let index_raw = fs::read_to_string(dir.path().join("index.json")).expect("read index");
@@ -118,8 +133,13 @@ fn metadata_only_indexes_scale_without_payload_materialization() {
         .map(|i| RunOutputFile {
             node_id: "node-bulk".to_string(),
             node_fingerprint: "fp-bulk".to_string(),
+            name: format!("output-{i:05}"),
+            kind: "file".to_string(),
+            media_type: "application/octet-stream".to_string(),
+            size_bytes: i as u64,
             sha256: format!("{:064x}", i),
             path: format!("node-bulk/output-{i:05}.bin"),
+            promotable: false,
         })
         .collect::<Vec<_>>();
     let index = RunOutputsIndex { files };

@@ -15,7 +15,7 @@
     "replay",
     "runtime_core"
   ],
-  "allowed_top_level_files": ["lib.rs"],
+  "allowed_top_level_files": ["lib.rs", "simulated_platform.rs"],
   "sacred_modules": [
     "engine",
     "scheduler",
@@ -28,5 +28,5 @@
     "store",
     "trace"
   ],
-  "scope_policy": "configs/policy/runtime_scope_v2.json"
+  "scope_policy": "configs/dag/policy/runtime_scope_v2.json"
 }

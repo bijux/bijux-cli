@@ -28,5 +28,5 @@ Date: 2026-03-07
 - Sole proof pillar: yes, with remaining advisory perf/compare reduction backlog.
 - Minimal root pillars: yes, with `tests/` constrained to code and minimal docs.
 - Release honesty: yes, reports separate blocking/advisory and unsupported areas.
-- Weak overlap pruning: in progress; tracked in the final evidence audit report.
+- Weak overlap pruning: in progress; tracked in the evidence audit review report.
 - Operator-visible proofs: present in blocking set and claimed-proof surface checks.

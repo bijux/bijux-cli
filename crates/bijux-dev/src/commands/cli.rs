@@ -1,7 +1,6 @@
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 use std::path::PathBuf;
 
-pub(super) const CLI_COMMAND_FREEZE_BASELINE: usize = 29;
 pub(super) const ADAPTER_KIND_FREEZE_BASELINE: usize = 3;
 
 #[derive(Parser)]
@@ -128,8 +127,8 @@ pub(super) enum CommandLine {
     ArtifactVerify,
     /// Generate observability evidence report from run artifacts
     ObservabilityReport,
-    /// Generate taxonomy-based docs index
-    DocsIndex,
+    /// Generate documentation inventory and consolidation evidence
+    DocsInventory,
     /// Execute end-to-end matrix across binary and crate integration entrypoints
     E2eMatrix,
     /// Report tested and missing fault classes from fault suite catalog
@@ -381,9 +380,9 @@ pub(super) enum RepoCommand {
         contract_backing_out: PathBuf,
         #[arg(long, default_value = "docs/reports/foundation/RUNTIME_OPERATOR_SURFACE_REPORT.md")]
         operator_surface_out: PathBuf,
-        #[arg(long, default_value = "docs/reports/foundation/core_PUBLIC_API_SHRINK_REPORT.md")]
+        #[arg(long, default_value = "docs/reports/foundation/CORE_PUBLIC_API_SURFACE.md")]
         core_api_out: PathBuf,
-        #[arg(long, default_value = "docs/reports/foundation/runtime_PUBLIC_API_SHRINK_REPORT.md")]
+        #[arg(long, default_value = "docs/reports/foundation/RUNTIME_PUBLIC_API_SURFACE.md")]
         runtime_api_out: PathBuf,
     },
     /// Generate planner hardening report from canonical graph fixtures
@@ -555,3 +554,12 @@ pub(super) enum ApiCommand {
 }
 
 include!("cli_release_command.rs");
+
+pub(super) fn root_command_names() -> Vec<String> {
+    let mut commands = Cli::command()
+        .get_subcommands()
+        .map(|command| command.get_name().to_string())
+        .collect::<Vec<_>>();
+    commands.push("help".to_string());
+    commands
+}

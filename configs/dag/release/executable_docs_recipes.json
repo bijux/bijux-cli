@@ -4,13 +4,13 @@
     {
       "doc": "docs/bijux-dag/interfaces/executable-recipes.md",
       "commands": [
-        "bijux dag validate --json ${GRAPH}",
-        "bijux dag plan explain --json ${GRAPH}",
-        "bijux dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id ${RUN_ID}",
-        "bijux dag replay --json ${RUN_DIR} --out ${REPLAY_ROOT}",
-        "bijux dag diff --json ${RUN_DIR} ${RUN_DIR}",
-        "bijux dag export --json ${RUN_DIR} --out ${EXPORT_BUNDLE}",
-        "bijux dag import --json --verify-only ${EXPORT_BUNDLE}"
+        "bijux-dag validate --json ${GRAPH}",
+        "bijux-dag plan explain --json ${GRAPH}",
+        "bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id ${RUN_ID}",
+        "bijux-dag replay --json ${RUN_DIR} --out ${REPLAY_ROOT}",
+        "bijux-dag diff --json ${RUN_DIR} ${RUN_DIR}",
+        "bijux-dag export --json ${RUN_DIR} --out ${EXPORT_BUNDLE}",
+        "bijux-dag import --json --verify-only ${EXPORT_BUNDLE}"
       ]
     },
     {

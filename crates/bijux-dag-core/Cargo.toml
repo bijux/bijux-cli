@@ -1,16 +1,24 @@
 [package]
 name = "bijux-dag-core"
 version.workspace = true
-publish = false
+description = "Deterministic DAG kernel for graph parsing, validation, canonicalization, planning, and identity."
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-homepage.workspace = true
+homepage = "https://bijux.io/bijux-core/bijux-dag/"
+documentation = "https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/"
 rust-version.workspace = true
+readme = "README.md"
+keywords = ["bijux", "dag", "graph", "planning", "validation"]
+categories = ["data-structures", "development-tools", "parser-implementations"]
 
 [lints]
 workspace = true
+
+[features]
+default = []
+experimental-public-api = []
 
 [dependencies]
 serde = { workspace = true }
@@ -24,7 +32,6 @@ unicode-normalization = "0.1"
 tempfile = { workspace = true }
 criterion = "0.5"
 serde_yaml = "0.9"
-bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit", version = "0.3.5" }
 
 [[bench]]
 name = "micro_parse_validate"

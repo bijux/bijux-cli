@@ -30,7 +30,7 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "tr '\\n' ':' < ../inputs/seed_a/seed_a.txt > ../outputs/branch_a.txt"
+          "tr '\\n' ':' < ../inputs/seed_a/seed > ../outputs/branch_a.txt"
         ]
       },
       "effects": ["filesystem"]
@@ -44,7 +44,7 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "tr '\\n' ';' < ../inputs/seed_b/seed_b.txt > ../outputs/branch_b.txt"
+          "tr '\\n' ';' < ../inputs/seed_b/seed > ../outputs/branch_b.txt"
         ]
       },
       "effects": ["filesystem"]
@@ -58,7 +58,7 @@
         "argv": [
           "/bin/sh",
           "-c",
-          "printf '%s %s' \"$(cat ../inputs/branch_a_transform/branch_a.txt)\" \"$(cat ../inputs/branch_b_transform/branch_b.txt)\" > ../outputs/report.txt"
+          "printf '%s %s' \"$(cat ../inputs/branch_a_transform/branch_a)\" \"$(cat ../inputs/branch_b_transform/branch_b)\" > ../outputs/report.txt"
         ]
       },
       "effects": ["filesystem"]

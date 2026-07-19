@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "commands": [
+    {
+      "command_id": "validate",
+      "graph": "evidence/authoring/examples/hello.dag.json",
+      "command": "bijux-dag validate --json evidence/authoring/examples/hello.dag.json"
+    },
+    {
+      "command_id": "plan",
+      "graph": "evidence/authoring/examples/hello.dag.json",
+      "command": "bijux-dag plan explain --json evidence/authoring/examples/hello.dag.json"
+    },
+    {
+      "command_id": "run",
+      "graph": "evidence/authoring/examples/etl-constant-to-shell.dag.json",
+      "command": "bijux-dag run --json evidence/authoring/examples/etl-constant-to-shell.dag.json --out ${RUN_ROOT}"
+    },
+    {
+      "command_id": "replay",
+      "graph": "evidence/authoring/examples/replay-heavy-branching.dag.json",
+      "command": "bijux-dag replay --json ${RUN_DIR} --out ${REPLAY_ROOT}"
+    },
+    {
+      "command_id": "diff",
+      "graph": "evidence/authoring/examples/replay-heavy-branching.dag.json",
+      "command": "bijux-dag diff --json ${RUN_DIR_A} ${RUN_DIR_B}"
+    },
+    {
+      "command_id": "cache",
+      "graph": "evidence/authoring/examples/cached-branched-report.dag.json",
+      "command": "bijux-dag run --json evidence/authoring/examples/cached-branched-report.dag.json --cache-mode read-write --out ${RUN_ROOT}"
+    },
+    {
+      "command_id": "artifact",
+      "graph": "evidence/authoring/examples/multi-output-artifact.dag.json",
+      "command": "bijux-dag artifact inspect --json ${RUN_DIR} --id ${ARTIFACT_ID}"
+    },
+    {
+      "command_id": "app-mount",
+      "graph": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "command": "bijux apps list --json"
+    },
+    {
+      "command_id": "plugin",
+      "graph": "evidence/authoring/examples/minimal_consumer.dag.json",
+      "command": "bijux plugins list --json"
+    },
+    {
+      "command_id": "bundle",
+      "graph": "evidence/authoring/examples/replay-heavy-branching.dag.json",
+      "command": "bijux-dag runs diagnostics-bundle ${RUN_ID} --root ${RUN_ROOT} --out ${BUNDLE_PATH} --json --redact"
+    }
+  ]
+}

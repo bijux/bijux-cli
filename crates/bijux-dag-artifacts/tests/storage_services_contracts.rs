@@ -1,6 +1,5 @@
 use bijux_dag_artifacts::services::{RunArtifactStore, RunArtifactVerifier};
 use bijux_dag_artifacts::{ArtifactError, Manifest, RunDir};
-use bijux_dag_testkit as _;
 use hex as _;
 use serde as _;
 use sha2 as _;
@@ -47,7 +46,7 @@ fn sample_manifest() -> Manifest {
           "adapters":[],
           "outputs":[],
           "node_counts":{"success":1,"failed":0,"skipped":0,"cached":0},
-          "policy":{"deny_network":true,"deny_env":true,"deny_clock":true,"clean_env":true}
+          "policy":{"deny_network":true,"deny_env":true,"deny_clock":true,"clean_env":true,"container_image_reference_policy":"require_digest"}
         }"#,
     )
     .expect("manifest")

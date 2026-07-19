@@ -10,9 +10,9 @@ DEV_TOOL := LLVM_PROFILE_FILE="$(LLVM_PROFILE_FILE)" CARGO_TARGET_DIR="$(CARGO_T
 
 DAG_OUTPUT_PATHS := artifacts/runs artifacts/reports artifacts/target artifacts/contracts
 
-run_or_fail = @echo "--> $(1)"; @$(2) || (echo "--> failed: $(1)" >&2; echo "--> inspect artifacts: $(DAG_OUTPUT_PATHS)" >&2; exit 1)
+run_or_fail = @echo "--> $(1)"; $(2) || (echo "--> failed: $(1)" >&2; echo "--> inspect artifacts: $(DAG_OUTPUT_PATHS)" >&2; exit 1)
 
-.PHONY: dag-help dag-check dag-test dag-test-all dag-clippy dag-coverage dag-contracts dag-release
+.PHONY: dag-help dag-demo dag-check dag-test dag-test-all dag-clippy dag-coverage dag-contracts dag-release
 .PHONY: checks checks-fast checks-all contracts-all contract-all release-verify
 .PHONY: docs-governance-lint docs-inventory-generate module-hygiene-drift docs-truth-drift
 .PHONY: evidence-all evidence-verify evidence-battle evidence-authoring evidence-cache evidence-replay
@@ -21,12 +21,15 @@ run_or_fail = @echo "--> $(1)"; @$(2) || (echo "--> failed: $(1)" >&2; echo "-->
 
 # Shared gates first; DAG aliases keep the dedicated operator entrypoints.
 dag-help: ## Show DAG-oriented make targets
-	@printf '%s\n' "DAG targets: dag-check dag-test dag-test-all dag-clippy dag-coverage dag-contracts dag-release"
+	@printf '%s\n' "DAG targets: dag-demo dag-check dag-test dag-test-all dag-clippy dag-coverage dag-contracts dag-release"
+
+dag-demo: ## Run the canonical retained file-processing DAG proof command
+	@"$(ROOT_MK_DIR)/bin/run_file_processing_demo.sh"
 
 dag-check: ## Run shared workspace check gate
 	@CARGO_TARGET_DIR="$(CARGO_TARGET_DIR)" cargo check --workspace --all-targets
 
-dag-test: test-rs ## Run shared fast Rust tests
+dag-test: test-release-rs ## Run the required shared Rust release lane
 
 dag-test-all: test-all-rs ## Run shared full Rust test suite
 
@@ -51,7 +54,7 @@ docs-governance-lint: ## Lint docs governance metadata and boundaries
 	$(call run_or_fail,Run docs governance lint,$(DEV_TOOL) docs run --domain governance --fail-fast)
 
 docs-inventory-generate: ## Generate docs inventory and consolidation reports
-	$(call run_or_fail,Generate docs inventory reports,$(DEV_TOOL) docs-index)
+	$(call run_or_fail,Generate docs inventory reports,$(DEV_TOOL) docs-inventory)
 
 contract-all: ## Run all contract suites with evidence foundation verification
 	$(call run_or_fail,Run contracts,$(DEV_TOOL) contracts run)
@@ -69,7 +72,7 @@ module-hygiene-drift: ## Run module hygiene drift gate
 	$(call run_or_fail,Run module hygiene drift gate,cargo test -p bijux-dev --test module_hygiene_governance_contracts -- --nocapture)
 
 docs-truth-drift: ## Run documentation truth-boundary drift gate
-	$(call run_or_fail,Run docs truth drift gate,cargo test -p bijux-dev --test docs_truth_drift_contracts -- --nocapture)
+	$(call run_or_fail,Run docs truth drift gate,$(DEV_TOOL) docs run --domain docs --fail-fast)
 
 evidence-all: evidence-verify ## Run the canonical evidence verification entrypoint
 

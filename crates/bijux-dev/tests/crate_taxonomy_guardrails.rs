@@ -20,7 +20,6 @@ fn cargo_toml(path: &str) -> String {
 }
 
 #[test]
-#[ignore = "legacy crate taxonomy contract assumes single bin ownership from pre-merge layout"]
 fn only_cli_crate_declares_bin_target() {
     let crates_dir = root().join("crates");
     let mut offenders = Vec::new();
@@ -57,11 +56,16 @@ fn core_and_artifacts_do_not_depend_on_clap_or_process_execution_crates() {
 }
 
 #[test]
-fn dev_crate_does_not_depend_on_runtime_crates() {
+fn dev_crate_dependency_surface_matches_maintainer_routes() {
     let text = cargo_toml("crates/bijux-dev/Cargo.toml");
-    for forbidden in ["bijux-dag-app"] {
-        assert!(!text.contains(forbidden), "bijux-dev-dag must not depend on {forbidden}");
+    for required in ["bijux-dag-core", "bijux-dag-artifacts", "bijux-dag-runtime", "bijux-dag-app"]
+    {
+        assert!(text.contains(required), "bijux-dev-dag must declare {required}");
     }
+    assert!(
+        !text.contains("bijux-dag-cli"),
+        "bijux-dev-dag should depend on DAG product libraries, not the DAG binary crate"
+    );
 }
 
 #[test]

@@ -2,10 +2,88 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "run_explain_failure",
   "type": "object",
-  "required": ["failed_nodes", "propagated_or_skipped_nodes"],
+  "required": [
+    "roots",
+    "primary_failure",
+    "root_failure",
+    "failed_nodes",
+    "failure_classes",
+    "propagated_failures",
+    "propagated_skips",
+    "propagated_or_skipped_nodes",
+    "downstream_affected_nodes",
+    "downstream_affected_groups",
+    "root_failure_class",
+    "root_failure_code",
+    "root_failure_message",
+    "root_failure_reason"
+  ],
   "properties": {
+    "roots": {"type": "array", "items": {"type": "string"}},
+    "primary_failure": {
+      "type": ["object", "null"],
+      "required": [
+        "node_id"
+      ],
+      "properties": {
+        "node_id": {"type": "string"},
+        "failure_class": {"type": ["string", "null"]},
+        "failure_code": {"type": ["string", "null"]},
+        "message": {"type": ["string", "null"]},
+        "reason": {"type": ["string", "null"]},
+        "finished_unix_ms": {"type": ["integer", "null"]}
+      },
+      "additionalProperties": false
+    },
     "root_failure": {"type": ["string", "null"]},
+    "root_failure_class": {"type": ["string", "null"]},
+    "root_failure_code": {"type": ["string", "null"]},
+    "root_failure_message": {"type": ["string", "null"]},
+    "root_failure_reason": {"type": ["string", "null"]},
     "failed_nodes": {"type": "array", "items": {"type": "string"}},
-    "propagated_or_skipped_nodes": {"type": "array", "items": {"type": "string"}}
+    "failure_classes": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "propagated_failures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["node_id", "status", "reason", "blocking_nodes"],
+        "properties": {
+          "node_id": {"type": "string"},
+          "status": {"type": "string"},
+          "reason": {"type": "string"},
+          "blocking_nodes": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "propagated_skips": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["node_id", "status", "reason", "blocking_nodes"],
+        "properties": {
+          "node_id": {"type": "string"},
+          "status": {"type": "string"},
+          "reason": {"type": "string"},
+          "blocking_nodes": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "propagated_or_skipped_nodes": {"type": "array", "items": {"type": "string"}},
+    "downstream_affected_nodes": {"type": "array", "items": {"type": "string"}},
+    "downstream_affected_groups": {
+      "type": "object",
+      "required": ["failed", "skipped", "cancelled"],
+      "properties": {
+        "failed": {"type": "array", "items": {"type": "string"}},
+        "skipped": {"type": "array", "items": {"type": "string"}},
+        "cancelled": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
   }
 }

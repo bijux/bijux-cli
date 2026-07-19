@@ -24,12 +24,13 @@ sha2.workspace = true
 hex.workspace = true
 tempfile.workspace = true
 toml.workspace = true
-bijux-dag-core = { path = "../bijux-dag-core", version = "0.3.5" }
-bijux-dag-artifacts = { path = "../bijux-dag-artifacts", version = "0.3.5" }
-bijux-dag-runtime = { path = "../bijux-dag-runtime", version = "0.3.5" }
+bijux-dag-core = { path = "../bijux-dag-core", version = "0.4.0" }
+bijux-dag-artifacts = { path = "../bijux-dag-artifacts", version = "0.4.0" }
+bijux-dag-runtime = { path = "../bijux-dag-runtime", version = "0.4.0" }
+bijux-dag-app = { path = "../bijux-dag-app", version = "0.4.0" }
 
 [dev-dependencies]
-bijux_dag_testkit = { package = "bijux-dag-testkit", path = "../bijux-dag-testkit", version = "0.3.5" }
+"bijux-dag-testkit" = { path = "../bijux-dag-testkit", version = "0.4.0" }
 
 [lib]
 name = "bijux_dev_cli"

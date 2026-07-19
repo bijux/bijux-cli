@@ -1,6 +1,6 @@
 use bijux_dag_core::{
-    BranchSpec, ContainerSpec, DagBuilder, Effect, Graph, NodeBuilder, NodeKind, SemanticNodeKind,
-    TriggerRule,
+    BranchSpec, ContainerSpec, DagBuilder, Effect, Graph, NodeBuilder, NodeKind, OutputKind,
+    SemanticNodeKind, TriggerRule,
 };
 use serde_json::{json, Map, Value};
 use std::fs;
@@ -164,7 +164,7 @@ pub fn graph_map_reduce_fixture() -> Graph {
             &[
                 "/bin/sh",
                 "-c",
-                "printf '%s-%s-%s' \"$(cat ../inputs/map_left/map_left.txt)\" \"$(cat ../inputs/map_mid/map_mid.txt)\" \"$(cat ../inputs/map_right/map_right.txt)\" > ../outputs/reduce.txt",
+                "printf '%s-%s-%s' \"$(cat ../inputs/map_left/left)\" \"$(cat ../inputs/map_mid/mid)\" \"$(cat ../inputs/map_right/right)\" > ../outputs/reduce.txt",
             ],
             "reduce.txt",
         )
@@ -174,6 +174,63 @@ pub fn graph_map_reduce_fixture() -> Graph {
         .edge("map_left", "out", "reduce", "left")
         .edge("map_mid", "out", "reduce", "mid")
         .edge("map_right", "out", "reduce", "right")
+        .build()
+}
+
+fn reduce_collection_command(output_name: &str) -> String {
+    format!(
+        "python3 -c \"import json, pathlib; manifest=json.load(open('../inputs/reduce.collection.json')); values=[]; \
+base=pathlib.Path('../inputs'); collect=lambda rel: sorted((base / rel).rglob('value.txt')) if (base / rel).is_dir() else [base / rel]; \
+paths=[]; [paths.extend(collect(item['local_path'])) for item in manifest['items'] if item.get('local_path')]; \
+values=[path.read_text() for path in paths]; \
+(pathlib.Path('../outputs') / '{output_name}').write_text(','.join(values))\""
+    )
+}
+
+pub fn graph_semantic_map_reduce_fixture() -> Graph {
+    DagFixture::new()
+        .node(
+            NodeBuilder::new("seed", NodeKind::Const)
+                .output("out", "seed/out.json")
+                .param_literal(json!({"value": ["alpha", "beta", "gamma"]}))
+                .build(),
+        )
+        .node(
+            {
+                let mut node = NodeBuilder::new("map", NodeKind::Shell)
+                .semantic_kind(SemanticNodeKind::Map)
+                .input("in")
+                .output("out", "mapped")
+                .effect(Effect::Filesystem)
+                .param_literal(json!({
+                    "argv": [
+                        "/bin/sh",
+                        "-c",
+                        "value=$(tr -d '\"' < ../inputs/seed/in); mkdir -p ../outputs/mapped; printf '%s' \"$value\" > ../outputs/mapped/value.txt"
+                    ]
+                }))
+                .build();
+                node.outputs[0].kind = OutputKind::Directory;
+                node
+            },
+        )
+        .node(
+            NodeBuilder::new("reduce", NodeKind::Shell)
+                .semantic_kind(SemanticNodeKind::Reduce)
+                .input("mapped")
+                .output("out", "reduce.txt")
+                .effect(Effect::Filesystem)
+                .param_literal(json!({
+                    "argv": [
+                        "/bin/sh",
+                        "-c",
+                        reduce_collection_command("reduce.txt")
+                    ]
+                }))
+                .build(),
+        )
+        .edge("seed", "out", "map", "in")
+        .edge("map", "out", "reduce", "mapped")
         .build()
 }
 
@@ -192,7 +249,7 @@ pub fn graph_branch_join_fixture() -> Graph {
         .shell_node(
             "join",
             &["lhs"],
-            &["/bin/sh", "-c", "cat ../inputs/left/out.json > ../outputs/join.txt"],
+            &["/bin/sh", "-c", "cat ../inputs/left/lhs > ../outputs/join.txt"],
             "join.txt",
         )
         .edge("seed", "out", "decide", "in")

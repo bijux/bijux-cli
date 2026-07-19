@@ -7,7 +7,7 @@
     "collision_safe": true,
     "composed_from": {
       "artifact_sha256": "682c055ddf7d0afe32b7b2646e1635ab3c83f65884a37aecdc8549e7031a3417",
-      "node_fingerprint": "9b8015b28306d65c4926e24d611d75a7420b701ca671f777b5dba650d8d77cb4",
+      "node_fingerprint": "3b8a0f35131d3e74f299a36faf5ebcf6fb3ac545320cb2bbd4717a814acea788",
       "node_id": "produce_outputs",
       "output_name": "primary.json",
       "path": "nodes/produce_outputs/outputs/primary.json",
@@ -26,14 +26,15 @@
       "seed:*"
     ]
   },
-  "node_fingerprint": "9b8015b28306d65c4926e24d611d75a7420b701ca671f777b5dba650d8d77cb4",
+  "node_fingerprint": "3b8a0f35131d3e74f299a36faf5ebcf6fb3ac545320cb2bbd4717a814acea788",
   "node_id": "produce_outputs",
   "output_name": "primary.json",
   "path": "nodes/produce_outputs/outputs/primary.json",
   "payload_missing": false,
+  "promotable": false,
   "provenance": {
     "attempt": 0,
-    "graph_fingerprint": "37c9bfd1d1da9c320a075dc545d71f28d3dd0c714fd459017b9e7c915f5d3cb9",
+    "graph_fingerprint": "2f8a698f9cd290f24b68a8ffad879027931271187d95ff4f5abba99bd714d2e5",
     "run_id": "art-fixed"
   },
   "size_bytes": 19
