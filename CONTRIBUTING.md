@@ -1,7 +1,8 @@
 # Contributing to bijux-core
 
-This document stays intentionally operational. It lists the commands, review
-rules, and evidence expectations that govern this repository today.
+This document is the operational entrypoint for repository contributors. It
+lists the commands, review rules, and evidence expectations enforced by the
+current tree.
 
 ## Prerequisites
 
@@ -35,57 +36,52 @@ that newer release from `bijux version`.
 
 ## Commands
 
-Use `make help` to see current targets.
+Use `make help` to see current targets. The root entrypoints have deliberately
+different scopes:
 
-Python and docs:
+| Command | Scope |
+| --- | --- |
+| `make fmt` | Rust formatting verification |
+| `make lint` | Rust Clippy across the workspace with warnings denied |
+| `make test` | fast Rust release-profile lane plus Python tests marked `not nightly` |
+| `make test-slow` | governed slow Rust tests only |
+| `make test-all` | all Rust tests, including ignored tests, with retries disabled |
+| `make docs-check` | documentation contracts, strict build, navigation, and publication budget |
+| `make security` | Rust dependency policy and Python security checks |
+| `make build` | Python wheel and source distribution |
 
-- `make test-py`
-- `make lint-py`
-- `make security-py`
-- `make build-py`
-- `make docs`
-- `make docs-check`
-- `make docs-serve`
+Language-specific entrypoints remain available when the change is bounded:
 
-Rust:
+| Surface | Commands |
+| --- | --- |
+| Rust | `make fmt-rs`, `make lint-rs`, `make test-rs`, `make test-slow-rs`, `make test-all-rs`, `make audit-rs`, `make coverage-rs` |
+| Python | `make test-py`, `make test-nightly-py`, `make lint-py`, `make security-py`, `make build-py` |
+| Documentation | `make docs`, `make docs-check`, `make docs-serve` |
 
-- `make fmt-rs`
-- `make lint-rs`
-- `make test-rs`
-- `make test-all-rs`
-- `make audit-rs`
-- `make coverage-rs`
-
-Other:
-
-- `make fmt` runs `fmt-rs` and `fmt-py`
-- `make lint` runs `lint-rs` and `lint-py`
-- `make test` runs `test-rs` and `test-py`
-- `make security` runs `audit-rs` and `security-py`
-- `make build` runs `build-py`
-
-Direct pytest invocation (without Make):
+Direct tool invocation is appropriate for focused diagnosis. It proves only
+the selected surface. For Python:
 
 ```bash
-pytest -c configs/python/pytest.ini crates/bijux-cli-python/tests/python -q
+artifacts/python/.venv/bin/pytest \
+  -c configs/python/pytest.ini \
+  crates/bijux-cli-python/tests/python \
+  -q
 ```
 
-Direct Rust runtime verification that is useful for command-surface and docs
-changes:
+For focused Rust runtime and command-surface checks:
 
 ```bash
-cargo test -p bijux-cli
+cargo nextest run -p bijux-cli -E 'test(routing::)'
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- status --format json --no-pretty
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- parity --format json --no-pretty
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- docs-audit --format json --no-pretty
 cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
 ```
 
-Direct DAG verification that is useful for graph/runtime behavior and DAG docs
-changes:
+For focused DAG behavior:
 
 ```bash
-cargo test -p bijux-dag-app
+cargo nextest run -p bijux-dag-app -E 'test(cli_contract)'
 cargo run -q -p bijux-dag-cli --bin bijux-dag -- --help
 cargo run -q -p bijux-dev --bin bijux-dev-dag -- verify evidence-release-set
 ```
@@ -98,9 +94,13 @@ cargo build -p bijux-cli --bin bijux
 ./artifacts/rust/target/debug/bijux version --format json --no-pretty
 ```
 
+Cargo output remains under `artifacts/rust/target/` through
+`.cargo/config.toml`. Python environments, caches, coverage, and build products
+remain under `artifacts/python/`.
+
 ## Pull Requests
 
-Before opening a PR, run the checks relevant to your change.
+Before opening a PR, run the checks relevant to the changed boundary.
 
 Typical baseline:
 
@@ -116,6 +116,11 @@ For release-facing changes, prefer this fuller pass before asking for review:
 ```bash
 make all
 ```
+
+`make all` is not the same as `make test-all`: it combines the repository's
+configured format, lint, security, default test, and build entrypoints, while
+`make test-all` is the complete Rust test lane. Report the exact command rather
+than saying only that "all tests" passed.
 
 Keep PRs focused and small enough to review.
 

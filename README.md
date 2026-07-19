@@ -172,12 +172,20 @@ cargo install bijux-dag-cli
 python -m pip install bijux-cli
 ```
 
-Build and test from repository root:
+Prepare the repository-managed tool environment, then run the default
+cross-language test lane:
 
 ```bash
-cargo check --workspace
-cargo test --workspace
+make bootstrap
+make doctor
+make test
 ```
+
+`make test` runs the fast Rust lane and Python tests not marked `nightly`.
+It does not run governed slow Rust tests, ignored Rust tests, Python nightly
+tests, documentation checks, or lint. Use
+[Testing And Validation](docs/bijux-core/operations/testing-and-validation.md)
+to choose a broader lane without overstating what passed.
 
 Inspect the product command surfaces:
 
