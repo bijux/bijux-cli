@@ -4,7 +4,7 @@ All notable changes to **bijux-dev** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
-## 0.4.0 – 2026-07-19
+## 0.4.0 – 2026-07-20
 
 ### Added
 
