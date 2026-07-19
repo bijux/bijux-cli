@@ -1,8 +1,10 @@
 ---
 title: CLI Packages
 audience: maintainers
+type: index
 status: canonical
 owner: bijux-cli
+last_reviewed: 2026-07-19
 ---
 
 # CLI Packages
@@ -15,6 +17,20 @@ Python distribution surface and bridge back into the same runtime contract.
 
 Start here when you are deciding whether a change belongs to the runtime
 itself, the Python launcher and wheel distribution, or both.
+
+```mermaid
+flowchart LR
+    caller["Shell, Python, or embedded caller"]
+    distribution["Cargo binary or Python distribution"]
+    transport["Native bridge or governed process transport"]
+    runtime["bijux-cli runtime authority"]
+    result["Shared command outcome"]
+
+    caller --> distribution --> transport --> runtime --> result
+```
+
+Distribution and transport can vary. Parsing, route behavior, state semantics,
+output meaning, and exit behavior remain owned by `bijux-cli`.
 
 ## Choose The Owning Package
 
@@ -30,6 +46,21 @@ itself, the Python launcher and wheel distribution, or both.
 - Both should tell the same runtime story. If they disagree, the problem is a
   parity defect, not two different products.
 
+## Cross-Package Contract
+
+| Surface | Native authority | Python responsibility |
+| --- | --- | --- |
+| command tree | `bijux-cli` routing catalog and inspection API | query or transport it without maintaining a copy |
+| execution | `bijux-cli::api::runtime` | invoke through PyO3 or resolved process fallback |
+| config and plugin paths | native precedence contracts | expose equivalent helper results |
+| errors | runtime outcome and exit semantics | map to Python exceptions without losing diagnostics |
+| mounted Python apps | root mount and envelope contracts | callable, interpreter, descriptor, and packaging adaptation |
+| installation | Cargo package and release binary | wheel, console entrypoint, native extension, and platform diagnostics |
+
+The Python process fallback is a compatibility transport, not permission to
+reimplement command semantics. Installing `bijux-cli-python` also does not
+install or embed the separate `bijux-dag` runtime.
+
 ## Common Routing Decisions
 
 | Situation | Start here |
@@ -38,6 +69,19 @@ itself, the Python launcher and wheel distribution, or both.
 | a PyPI install launches the wrong thing or fails environment checks | [`bijux-cli-python`](bijux-cli-python.md) |
 | a mounted Python app behaves differently from the native runtime | [`bijux-cli-python`](bijux-cli-python.md) |
 | you need the public command contract before picking a crate | [CLI Interfaces](../interfaces/index.md) |
+
+## Changes That Require Both Packages
+
+- runtime outcome or error-envelope changes;
+- exported bridge method or conversion changes;
+- command-tree inspection changes consumed by Python;
+- config, history, plugin, or install path precedence changes;
+- Python-supported host version and compatibility changes;
+- release version or packaging changes that claim cross-language parity.
+
+For these changes, native tests establish behavior and bridge/process parity
+tests establish transport equivalence. One package suite cannot substitute for
+the other.
 
 ## Before You Move Deeper
 
