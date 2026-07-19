@@ -88,6 +88,9 @@ artifacts without taking on runtime execution or command orchestration.
   identity, hashing, proofs, corruption, lineage, cache, and replay evidence.
 - [`RUN_DIRECTORY.md`](docs/RUN_DIRECTORY.md): staging and final layout,
   atomic records, output indexing, resume, and reader rules.
+- [`SCHEMA_EVOLUTION.md`](docs/SCHEMA_EVOLUTION.md): schema families, reader
+  and writer compatibility, migration refusal, and integrity-preserving change
+  rules.
 - [`STORAGE_AND_LIFECYCLE.md`](docs/STORAGE_AND_LIFECYCLE.md): store
   capabilities, filesystem safety, promotion, retention, import, and archive.
 

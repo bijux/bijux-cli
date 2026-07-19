@@ -115,6 +115,9 @@ rather than part of the default public `v0.4.0` package story.
   parsing, diagnostics, canonicalization, fingerprints, and compatibility.
 - [`PLANNING_AND_PUBLIC_API.md`](docs/PLANNING_AND_PUBLIC_API.md): planner
   lowering, compile helpers, stable exports, and runtime handoff.
+- [`SERIALIZATION_AND_EVOLUTION.md`](docs/SERIALIZATION_AND_EVOLUTION.md):
+  strict input shape, version ownership, canonical compatibility, identity,
+  and schema-change procedure.
 
 ## Related links
 
