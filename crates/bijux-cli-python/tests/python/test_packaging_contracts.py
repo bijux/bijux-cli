@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import importlib.util
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
-import importlib.util
-from pathlib import Path
 
 import pytest
 
@@ -141,11 +141,25 @@ def test_source_distribution_supports_metadata_generation_from_the_published_lay
 
     project_root = _project_root()
     with tempfile.TemporaryDirectory() as temp_dir:
+        build_env = os.environ.copy()
+        build_env["PATH"] = os.pathsep.join(
+            [str(Path(sys.executable).parent), build_env.get("PATH", "")]
+        )
         result = subprocess.run(
-            [sys.executable, "-m", "build", "--sdist", "--outdir", temp_dir, str(project_root)],
+            [
+                sys.executable,
+                "-m",
+                "build",
+                "--sdist",
+                "--no-isolation",
+                "--outdir",
+                temp_dir,
+                str(project_root),
+            ],
             capture_output=True,
             text=True,
             check=False,
+            env=build_env,
         )
 
         assert result.returncode == 0, result.stderr or result.stdout
