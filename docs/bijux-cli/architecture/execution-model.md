@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # Execution Model
@@ -48,6 +48,15 @@ flowchart LR
 - help rendering can short-circuit without running full command handlers
 - quiet mode suppresses output streams but preserves command exit outcome
 - unknown routes include correction hints when similarity matches exist
+
+## Executable Contracts
+
+- `crates/bijux-cli/tests/integration/cli/root/flag_normalization_laws.rs`
+  checks global-flag normalization and usage failures.
+- `crates/bijux-cli/tests/integration/cli/root/root_command_coverage.rs` checks
+  quiet output, exit-code discipline, help failures, and route suggestions.
+- `crates/bijux-cli/tests/integration/cli/root/bin_core_integration.rs` checks
+  that binary and in-process execution agree on streams and exit outcomes.
 
 ## Next Reads
 

@@ -124,6 +124,11 @@ current guarantees.
 - planned fix: keep evidence protection separate from process-isolation claims until a stronger executor ships.
 - release target: source-run write protection is the complete `v0.4.x` replay sandbox guarantee.
 
+Executable coverage for sandbox planning and source-evidence handling is in
+`crates/bijux-dag-app/tests/replay_proof_contract.rs`. The complete enforcement
+boundary and its runtime contract tests are mapped in [Execution Security And
+Isolation](../operations/security-isolation-truth.md).
+
 ### LIM-010 Cache and replay proof depends on exact retained evidence
 
 - stability class: `stable-surface`
