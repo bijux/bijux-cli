@@ -238,9 +238,7 @@ def inspect_dag_run(*, run_id: str, root: str | Path) -> dict[str, Any]:
 
 
 def query_dag_artifacts(run_dir: str | Path) -> dict[str, Any]:
-    return dag_command_json(
-        ["artifact", "registry", str(Path(run_dir).expanduser())]
-    )
+    return dag_command_json(["artifact", "registry", str(Path(run_dir).expanduser())])
 
 
 def dag_post_install_diagnostics() -> dict[str, object]:

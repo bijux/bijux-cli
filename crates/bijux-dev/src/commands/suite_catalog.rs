@@ -63,7 +63,7 @@ pub(super) const TEST_SUITES: &[SuiteDef] = &[
         slow: false,
         internal: false,
         effect: CommandEffect::Validation,
-        run: || run_status("cargo", &["test", "-p", "bijux-dev-dag"]),
+        run: || run_status("cargo", &["test", "-p", "bijux-dev"]),
     },
     SuiteDef {
         id: "e2e-matrix",

@@ -117,9 +117,7 @@ def resolve_runtime_binary(
 ) -> RuntimeResolution:
     candidate = os.environ.get(env_key)
     if candidate:
-        return RuntimeResolution(
-            binary=validate_binary_candidate(candidate, env_key)
-        )
+        return RuntimeResolution(binary=validate_binary_candidate(candidate, env_key))
 
     for resolved in workspace_candidates:
         try:
@@ -136,10 +134,7 @@ def resolve_runtime_binary(
     resolved = shutil.which(binary_name)
     if resolved:
         resolved_path = Path(resolved).resolve()
-        if (
-            current_entrypoint_path is None
-            or resolved_path != current_entrypoint_path
-        ):
+        if current_entrypoint_path is None or resolved_path != current_entrypoint_path:
             return RuntimeResolution(
                 binary=validate_binary_candidate(str(resolved_path), "PATH")
             )
