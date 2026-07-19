@@ -4,7 +4,7 @@ audience: mixed
 type: reference
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-08
+last_reviewed: 2026-07-19
 ---
 
 # Graph Schema Reference
@@ -23,6 +23,28 @@ Two repository surfaces define the graph contract together:
 The parser and validator are authoritative when a question is about accepted
 input, canonicalization, or validation behavior. The JSON Schema is the right
 entry point for editors, completion, and repository-local schema validation.
+
+## Start From A Verified Graph
+
+Do not reconstruct a graph from isolated field snippets on this page. Copy the
+smallest checked-in example that matches the intended behavior, then validate
+the edited file before adding runtime policy:
+
+| Need | Starting graph |
+| --- | --- |
+| minimal parse and execution | `evidence/dag/authoring/examples/hello.dag.json` |
+| path inputs and retained report output | `evidence/dag/authoring/examples/file-processing-report.dag.json` |
+| conditional lanes | `evidence/dag/authoring/examples/audience-branch-bulletin.dag.json` |
+| container execution | `evidence/dag/authoring/examples/release-note-bundle.dag.json` |
+
+```bash
+bijux-dag validate ./workflow.dag.json
+bijux-dag plan explain ./workflow.dag.json --json
+```
+
+Successful editor validation is useful but insufficient: the Rust validator
+owns semantic rules that JSON Schema cannot fully express, including reference
+resolution, graph topology, branch constraints, and path authorization.
 
 ## Top-Level Graph Shape
 
@@ -554,9 +576,10 @@ Path-variable suffixes must stay normalized and relative. Traversal like
 - `crates/bijux-dag-core/src/graph/node.rs`
 - `crates/bijux-dag-core/src/pipeline/validate.rs`
 
-## Reading Rule
+## Related Authorities
 
-Use this page when the question is about which fields a DAG file may declare.
-Move to [Reusable Subgraphs](reusable-subgraphs.md) when the next
-question is about graph reuse, or back to [Data Contracts](data-contracts.md)
-when the next question is about run manifests, artifacts, or replay payloads.
+- [Authoring Guide](authoring-guide.md) owns the authoring workflow and
+  rejection fixtures.
+- [Reusable Subgraphs](reusable-subgraphs.md) owns reuse and instantiation.
+- [Data Contracts](data-contracts.md) owns run manifests, artifacts, and replay
+  payloads after graph validation.
