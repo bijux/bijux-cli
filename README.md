@@ -144,39 +144,6 @@ The canonical publication boundary lives in
 [`docs/bijux-core/foundation/package-boundary.md`](docs/bijux-core/foundation/package-boundary.md)
 and `contracts/foundation/workspace_package_boundary.v1.json`.
 
-## Public Rust Import Lanes
-
-The public DAG crates publish an intentional Rust docs surface.
-
-- browse `bijux_dag_core::stable` for the long-lived graph authoring,
-  validation, and planning lane
-- browse `bijux_dag_artifacts::stable` for the long-lived artifact identity,
-  persistence, and integrity lane
-- browse `bijux_dag_runtime::stable` for the long-lived execution, replay, and
-  scheduling lane
-- browse `bijux_dag_app::stable` for the long-lived command-orchestration and
-  response-shaping lane
-- use each crate's `prelude` module for common workflows
-- use focused crate-root imports only when you already know the exact item you
-  need
-- broad compatibility re-exports remain callable for Rust consumers, but they
-  stay hidden from the primary docs.rs lane so the published API surface reads
-  like a product boundary instead of an internal module dump
-
-## Repository Layout
-
-- [`crates/bijux-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli): Rust runtime crate behind the `bijux` executable.
-- [`crates/bijux-cli-python`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli-python): Python bridge package and native extension surface for CLI runtime distribution.
-- [`crates/bijux-dag-core`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-core): DAG schema, invariants, canonicalization, hashing, and replay/diff primitives.
-- [`crates/bijux-dag-runtime`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-runtime): DAG execution engine and run lifecycle behavior.
-- [`crates/bijux-dag-app`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-app): DAG command orchestration, response modeling, and render flows.
-- [`crates/bijux-dag-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli): thin binary entrypoint for `bijux-dag`.
-- [`crates/bijux-dag-artifacts`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-artifacts): artifact and persistence utilities for DAG evidence handling.
-- [`crates/bijux-dag-testkit`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-testkit): repository-internal fixtures and helpers for DAG contract testing.
-- [`crates/bijux-dev`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dev): maintainer control plane for governance, diagnostics, release contracts, and evidence tooling.
-- [`docs/`](https://github.com/bijux/bijux-core/tree/main/docs): canonical handbook set for repository, CLI, DAG, and maintainer surfaces.
-- [`makes/`](https://github.com/bijux/bijux-core/tree/main/makes): make modules for root workflows, Rust/Python validation, DAG commands, docs, and release automation.
-
 ## Workspace Pillars
 
 - [`crates/`](https://github.com/bijux/bijux-core/tree/main/crates) contains
