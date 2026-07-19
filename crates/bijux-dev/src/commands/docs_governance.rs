@@ -37,7 +37,7 @@ const REQUIRED_RISK_IDS: [&str; 10] = [
     "RISK-001", "RISK-002", "RISK-003", "RISK-004", "RISK-005", "RISK-006", "RISK-007", "RISK-008",
     "RISK-009", "RISK-010",
 ];
-const ROADMAP_REFERENCE_ALLOWLIST: [&str; 9] = [
+const ROADMAP_REFERENCE_ALLOWLIST: [&str; 10] = [
     "docs/index.md",
     "docs/bijux-dag/index.md",
     "docs/bijux-dag/foundation/release-boundary.md",
@@ -46,6 +46,7 @@ const ROADMAP_REFERENCE_ALLOWLIST: [&str; 9] = [
     "docs/bijux-dag/quality/known-limitations.md",
     "docs/bijux-dag/operations/v0-4-0-release-notes.md",
     "docs/bijux-core/governance/documentation-governance-alignment.md",
+    "docs/bijux-core/foundation/documentation-system.md",
     "docs/bijux-core/foundation/module-surface-lanes.md",
 ];
 
@@ -1188,6 +1189,7 @@ also good `docs/index.md`\n";
             "docs/bijux-dag/foundation/scope-and-boundaries.md",
             "docs/bijux-dag/interfaces/support-matrix.md",
             "docs/bijux-dag/quality/known-limitations.md",
+            "docs/bijux-core/foundation/documentation-system.md",
         ] {
             assert!(roadmap_reference_allowed(rel), "{rel} should allow roadmap routing");
         }

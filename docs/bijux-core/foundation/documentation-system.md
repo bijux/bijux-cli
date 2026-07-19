@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-19
 ---
 
 # Documentation System
@@ -52,8 +52,9 @@ Local command output, logs, sites, and ad hoc analysis belong under
 
 Planning material is not product truth. Current limitations belong beside the
 affected product; future direction belongs in an explicitly non-binding
-roadmap. Status ledgers that enforce a contract belong with the executable
-specification or generated evidence that owns them.
+[DAG roadmap](../../bijux-dag/roadmap.md). Status ledgers that enforce a
+contract belong with the executable specification or generated evidence that
+owns them.
 
 ## Repository And Crate Pages
 
