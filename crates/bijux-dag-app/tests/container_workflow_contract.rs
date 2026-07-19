@@ -172,6 +172,13 @@ exit 1
     docker
 }
 
+fn write_unavailable_docker_shim(bin_dir: &Path) -> PathBuf {
+    fs::create_dir_all(bin_dir).expect("bin dir");
+    let docker = bin_dir.join("docker");
+    write_executable(&docker, "#!/bin/sh\nexit 127\n");
+    docker
+}
+
 #[test]
 fn release_note_bundle_workflow_executes_through_container_and_records_identity() {
     let root = repo_root();
@@ -279,11 +286,12 @@ fn release_note_bundle_workflow_reports_missing_container_engine_clearly() {
     let runs_dir = temp.path().join("runs");
     let bin_dir = temp.path().join("bin");
     fs::create_dir_all(&runs_dir).expect("runs dir");
-    fs::create_dir_all(&bin_dir).expect("bin dir");
+    write_unavailable_docker_shim(&bin_dir);
 
     let graph = workflow_graph(&root);
     let source_arg = format!("source_note={}", output_path_string(&note));
     let label_arg = "bundle_label=Release Brief".to_string();
+    let isolated_path = prepend_path(&bin_dir);
 
     let (code, payload, stderr) = run_json_with_env_allow_failure(
         &[
@@ -300,7 +308,7 @@ fn release_note_bundle_workflow_reports_missing_container_engine_clearly() {
             &label_arg,
         ],
         &root,
-        &[("PATH", "/usr/bin:/bin")],
+        &[("PATH", &isolated_path)],
     );
     assert!(code == 0 || code == 3, "unexpected command code: {code} stderr={stderr}");
 
