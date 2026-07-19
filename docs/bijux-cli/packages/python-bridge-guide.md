@@ -7,27 +7,46 @@ owner: bijux-cli-docs
 last_reviewed: 2026-04-29
 ---
 
-# Python Bridge Guide
+# Python Distribution Bridge
 
-`bijux-cli-python` is the packaging and runtime bridge for Python-distributed
-CLI entrypoints.
+`bijux-cli-python` packages the `bijux` runtime for Python installation and
+provides helpers for Python-mounted apps. It is a distribution and process
+boundary, not an independent implementation of CLI semantics.
 
-## What It Owns
+## Owned Surface
 
-- `python -m bijux_cli_py ...`
-- Python wheel metadata and console-script entrypoints
-- Python mounted-app helpers in `bijux_cli_py.app_sdk`
-- parity expectations between Rust runtime and Python launch paths
+- wheel metadata and supported interpreter declarations
+- `python -m bijux_cli_py` and Python console-script entrypoints
+- native-extension loading when the installed wheel includes one
+- `bijux_cli_py.app_sdk` helpers for mounted Python apps
+- conversion between Python values and the runtime output envelope
 
-## What To Validate
+Routing, configuration precedence, plugin policy, and output semantics remain
+owned by `bijux-cli`. A Python entrypoint must produce the same stable result as
+the native entrypoint for equivalent input.
 
-- a supported Python interpreter is available
-- `bijux_cli_py` imports cleanly
-- the expected console script is present when wheel installs are in scope
-- Python-mounted apps keep stdout reserved for structured payloads
+## Diagnosis
 
-## Runtime Checks
+```bash
+python -c 'import bijux_cli_py; print(bijux_cli_py.__file__)'
+python -m bijux_cli_py version
+bijux doctor python
+bijux apps doctor <python-mounted-app>
+```
 
-- `bijux doctor python`
-- `bijux apps doctor <python-mounted-app>`
-- `python -m bijux_cli_py version`
+An import failure is a packaging or interpreter compatibility problem. A
+successful import followed by an app-doctor failure points to mount metadata,
+the app executable, or the app protocol. Diagnose those cases separately.
+
+Mounted apps must keep stdout available for their structured response and send
+diagnostics to stderr. They must not depend on repository source paths or the
+development virtual environment. Validate wheel behavior from an isolated
+installation when release packaging is in scope.
+
+## Compatibility
+
+The Python package version follows the workspace release line, but wheel tags
+and interpreter support are Python-distribution concerns. Changes to bridge
+conversion require parity tests in both Rust and Python; changes to the public
+app protocol require the owning CLI contract and package documentation to
+change together.

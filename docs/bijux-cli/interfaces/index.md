@@ -64,7 +64,7 @@ to the package documentation instead of redefining the runtime story here.
 - [App Integration Scenario](app-integration-scenario.md)
 - [Configuration Surface](configuration-surface.md)
 - [Config Guide](config-guide.md)
-- [Generated Config Reference](config-generated-reference.md)
+- [Generated Config Reference](generated-config-reference.md)
 - [Data Contracts](data-contracts.md)
 - [Artifact Contracts](artifact-contracts.md)
 - [Entrypoints and Examples](entrypoints-and-examples.md)
