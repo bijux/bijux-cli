@@ -78,10 +78,19 @@ fn dag_product_sentence_stays_backed_by_explicit_proof_maps() {
     assert!(handbook.contains("replayable run bundles"));
 
     let entrypoints = read_repo_file("docs/bijux-dag/interfaces/entrypoints-and-examples.md");
-    assert!(entrypoints.contains("## Proof Map"));
-    assert!(entrypoints.contains("retained node traces under `artifacts/`"));
-    assert!(entrypoints.contains("the cache-behavior workflow"));
-    assert!(entrypoints.contains("the reproducibility model for replay identity"));
+    for proof_boundary in [
+        "## Proof Boundaries",
+        "`validate` proves",
+        "a retained run directory records",
+        "`artifact registry` and `artifact-inspect`",
+        "replay and strict verification",
+        "semantic comparison attributes",
+    ] {
+        assert!(
+            entrypoints.contains(proof_boundary),
+            "DAG entrypoints must retain proof boundary `{proof_boundary}`"
+        );
+    }
 
     let first_run = read_repo_file("docs/bijux-dag/operations/first-run-tutorial.md");
     assert!(first_run.contains("shortest proof path for the `bijux-dag` product promise"));

@@ -244,7 +244,12 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
     assert_contains_all(
         &support_matrix,
         &[
-            "| `commands` | stable | visible CLI | route inventory for the stable surface plus deliberate `--lane experimental`, `--lane simulated`, and `--lane internal` discovery |",
+            "| `commands` | stable | visible CLI | route inventory for stable and non-stable command discovery |",
+            "`commands` defaults to the stable lane",
+            "`--lane experimental`",
+            "`--lane simulated`",
+            "`--lane internal`",
+            "do not promote those commands into the stable operator promise",
             "| `capabilities` | internal | `BIJUX_DAG_ENABLE_INTERNAL=1` | maintainer-only support probe outside the public operator lane |",
         ],
         "docs/bijux-dag/interfaces/support-matrix.md",
