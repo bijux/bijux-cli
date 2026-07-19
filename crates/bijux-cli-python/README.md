@@ -69,58 +69,37 @@ python -m bijux_cli_py --help
 
 ## DAG Workflow Helpers
 
-The package also ships `bijux_cli_py.dag_sdk` for Python callers that want the
-same structured DAG workflow payloads exposed by `bijux-dag --json`.
+`bijux_cli_py.dag_sdk` is a typed process client for `bijux-dag --json`; it is
+not an in-process DAG engine.
 
-These helpers delegate to the `bijux-dag` binary. They preserve the CLI JSON
-schema instead of wrapping results in a Python-only envelope.
+| Requirement | Behavior |
+| --- | --- |
+| executable | `bijux-dag` must be on `PATH`, or `BIJUX_DAG_BIN` must name the executable |
+| compatibility | the selected binary defines command availability and release behavior |
+| output | helpers preserve the CLI JSON envelope rather than inventing a Python-only schema |
+| failures | launch, command, and envelope failures remain distinguishable |
 
 ```python
 from pathlib import Path
 
-from bijux_cli_py import (
-    inspect_dag_run,
-    plan_dag_graph,
-    query_dag_artifacts,
-    run_dag_graph,
-    validate_dag_graph,
-)
+from bijux_cli_py import validate_dag_graph
 
-graph = Path("evidence/dag/authoring/examples/hello.dag.json")
-run_root = Path("./artifacts/python-dag-runs")
-
-validate = validate_dag_graph(graph)
-plan = plan_dag_graph(graph, out=run_root, run_id="python-plan")
-run = run_dag_graph(graph, out=run_root, run_id="python-run")
-inspect = inspect_dag_run(run_id="python-run", root=run_root)
-artifacts = query_dag_artifacts(run_root / "run-python-run")
+result = validate_dag_graph(Path("workflow.dag.json"))
 ```
 
-If the runtime binary is not on `PATH`, set `BIJUX_DAG_BIN` to the absolute
-path of the `bijux-dag` executable you want the Python helper to call.
+Use the [DAG command surface](../../docs/bijux-dag/interfaces/cli-surface.md)
+for supported behavior and the
+[release boundary](../../docs/bijux-dag/foundation/release-boundary.md) before
+depending on a non-stable route.
 
 ## Mounted Python Apps
 
-This package also ships `bijux_cli_py.app_sdk` for Python apps mounted under the
-root `bijux` runtime.
-
-It gives app authors:
-
-- `build_python_mount_manifest(...)` for root-mount descriptors with Python
-  `module` / `function` entrypoints,
-- `CompatibilityWindow` and `compatibility_report(...)` for host-runtime checks,
-- `success(...)` and `failure(...)` helpers that emit the same envelope shape as
-  the Rust runtime,
-- `run_json_app(...)` to keep structured JSON on stdout while redirecting ad hoc
-  app logs to stderr.
-
-Typical packaging flow:
+`bijux_cli_py.app_sdk` builds mount descriptors and root-compatible result
+envelopes for Python applications. Discovery policy and route execution remain
+owned by the Rust `bijux` runtime.
 
 ```python
-from bijux_cli_py.app_sdk import build_python_mount_manifest, run_json_app, success
-
-def main(argv: list[str]):
-    return success({"argv": argv}, command=["sample"])
+from bijux_cli_py.app_sdk import build_python_mount_manifest
 
 manifest = build_python_mount_manifest(
     namespace="sample",
@@ -131,9 +110,8 @@ manifest = build_python_mount_manifest(
 )
 ```
 
-Then publish the app package with a standard `pyproject.toml`, expose the
-callable through your module, and place the generated manifest under
-`.bijux/apps/<namespace>.mount.json` or a managed discovery path.
+The [mounted app guide](./docs/MOUNTED_APPS.md) owns callable shape,
+compatibility checks, manifest placement, stream discipline, and packaging.
 
 ## Related Surfaces
 
