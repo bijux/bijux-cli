@@ -4,7 +4,7 @@ audience: maintainers
 type: section-index
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # Dev Governance
@@ -17,26 +17,20 @@ Use this section for policy and boundary questions. Use
 [makes](../makes/index.md) for root command entrypoints, and
 [gh-workflows](../gh-workflows/index.md) for hosted automation triggers.
 
-## Pages In This Section
+## Choose The Governing Authority
 
-- [Ownership Model](ownership-model.md)
-- [Quality Policy](quality-policy.md)
-- [Test Policy](test-policy.md)
-- [Change Control](change-control.md)
-- [Contract Governance](contract-governance.md)
-- [Dependency Governance](dependency-governance.md)
-- [Documentation Standard](documentation-standard.md)
-- [Security and Secrets](security-and-secrets.md)
-- [Known Limitations](known-limitations.md)
+| Question | Authority | Expected decision |
+| --- | --- | --- |
+| which package or maintainer surface owns the change? | [Ownership Model](ownership-model.md) | one durable owner and explicit non-owners |
+| what evidence makes the change acceptable? | [Quality Policy](quality-policy.md) and [Test Policy](test-policy.md) | required proof and justified omissions |
+| does the change alter a repository promise? | [Contract Governance](contract-governance.md) | affected contract, implementation, tests, and consumers |
+| can a dependency be introduced or upgraded? | [Dependency Governance](dependency-governance.md) | owner, purpose, policy result, and update evidence |
+| is documentation authoritative and publishable? | [Documentation Standard](documentation-standard.md) | reader authority, metadata, links, and publication status |
+| does the workflow handle credentials or release tokens? | [Security And Secrets](security-and-secrets.md) | secret boundary and non-persistence proof |
+| is a known limitation acceptable for this release? | [Known Limitations](known-limitations.md) | explicit impact, workaround, and release decision |
+| how is an approved policy change delivered? | [Change Control](change-control.md) | review and validation path |
 
-## Related Maintainer Sections
-
-- [Dev Operations](../operations/index.md)
-- [makes](../makes/index.md)
-- [gh-workflows](../gh-workflows/index.md)
-
-## Reading Rule
-
-Use this section when the question is about which maintainer rule applies or
-how a policy boundary is defined. Move to Dev Operations when the rule is clear
-and the next question is how to execute it.
+Once the governing rule is clear, move to
+[Dev Operations](../operations/index.md) for execution,
+[makes](../makes/index.md) for local entrypoints, or
+[GitHub Workflows](../gh-workflows/index.md) for hosted automation.
