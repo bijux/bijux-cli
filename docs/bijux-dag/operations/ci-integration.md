@@ -12,9 +12,11 @@ last_reviewed: 2026-07-10
 Use this page when you need the minimum honest CI lane for `bijux-dag` without
 blurring the public operator surface and the maintainer-only support surface.
 
-For the deeper walkthrough, open
-[CI Integration Guide](ci-integration.md). For install prerequisites,
-open [Installation And Setup](installation-and-setup.md).
+For install prerequisites, open
+[Installation And Setup](installation-and-setup.md). The
+[Release Boundary](../foundation/release-boundary.md), backed by
+`contracts/foundation/dag_release_truth_table.v1.json`, governs which commands
+belong in an operator CI lane.
 
 ## Minimum lane
 

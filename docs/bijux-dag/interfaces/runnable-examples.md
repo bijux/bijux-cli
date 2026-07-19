@@ -23,8 +23,9 @@ present.
 
 The recipe blocks near the end of this page are executed by
 `crates/bijux-dag-app/tests/docs_executable_recipes_contract.rs`. Stable
-commands remain on the visible `bijux-dag --help` surface; experimental
-explicit-path routes are identified rather than presented as stable. The
+commands remain on the visible `bijux-dag --help` surface. Experimental
+commands are experimental explicit-path routes, identified rather than
+presented as stable. The
 [Release Boundary](../foundation/release-boundary.md) and
 `contracts/foundation/dag_release_truth_table.v1.json` govern those
 classifications.

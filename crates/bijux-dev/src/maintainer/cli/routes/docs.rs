@@ -129,10 +129,10 @@ mod tests {
         let workspace_root = dir.path();
         let payload = build_dag_cli_reference_write_payload(workspace_root, |root| {
             let interfaces_root = root.join("docs/bijux-dag/interfaces");
-            fs::create_dir_all(interfaces_root.join("reference")).map_err(|err| err.to_string())?;
+            fs::create_dir_all(&interfaces_root).map_err(|err| err.to_string())?;
             fs::write(interfaces_root.join("generated-cli-reference.md"), "stable\n")
                 .map_err(|err| err.to_string())?;
-            fs::write(interfaces_root.join("reference/gated-command-inventory.md"), "nonstable\n")
+            fs::write(interfaces_root.join("gated-command-inventory.md"), "nonstable\n")
                 .map_err(|err| err.to_string())?;
             Ok(())
         })

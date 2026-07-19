@@ -13,7 +13,7 @@ This page is generated from the live `bijux-dag` Clap command definitions.
 It records the stable `v0.4.0` operator surface exactly as the product presents
 it through `bijux-dag --help`. Experimental, simulated, and internal routes are
 deliberately excluded from this page and listed separately in
-[`reference/gated-command-inventory.md`](gated-command-inventory.md).
+[`gated-command-inventory.md`](gated-command-inventory.md).
 
 ## Placeholder Conventions
 

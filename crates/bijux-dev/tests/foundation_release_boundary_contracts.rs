@@ -172,7 +172,7 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
             "## v0.4.0 Surface Truth Table",
             "../foundation/release-boundary.md",
             "generated-cli-reference.md",
-            "reference/gated-command-inventory.md",
+            "gated-command-inventory.md",
             "BIJUX_DAG_ENABLE_SIMULATED=1",
             "BIJUX_DAG_ENABLE_INTERNAL=1",
         ],
@@ -333,10 +333,10 @@ fn dag_interface_indexes_link_generated_cli_references() {
     assert_contains_all(
         &handbook,
         &[
-            "interfaces/reference/graph-schema.md",
-            "interfaces/reference/run-evidence-layout.md",
+            "interfaces/graph-schema.md",
+            "interfaces/run-evidence-layout.md",
             "interfaces/generated-cli-reference.md",
-            "interfaces/reference/gated-command-inventory.md",
+            "interfaces/gated-command-inventory.md",
         ],
         "docs/bijux-dag/index.md",
     );
@@ -382,7 +382,7 @@ fn backend_release_docs_keep_shipped_lanes_and_future_lanes_separate() {
         &[
             "| `run --backend slurm` on a shared filesystem | stable | visible `run` surface with explicit backend selection | submits through `sbatch`, polls `sacct`, and records retained batch evidence when the scheduled worker can reopen the same run directory |",
             "| `run --backend kubernetes` for container nodes | stable | visible `run` surface with explicit backend selection | requires `--kubernetes-volume-claim`, `--kubernetes-shared-root`, and a shared persistent volume claim mounted into Job pods |",
-            "| Generic HPC beyond the shared-filesystem SLURM lane, public remote workers, full scheduler service | unreleased | not part of first-hour adoption | broader portability and distributed control are not a `v0.4.0` product promise |",
+            "| Generic HPC beyond the shared-filesystem SLURM lane, public remote workers, full scheduler service | unreleased | not part of first-run adoption | broader portability and distributed control are not a `v0.4.0` product promise |",
         ],
         "docs/bijux-dag/interfaces/support-matrix.md",
     );
@@ -416,14 +416,14 @@ fn dag_run_evidence_layout_reference_covers_retained_surfaces() {
     let artifact_contracts = read_repo_file("docs/bijux-dag/interfaces/artifact-contracts.md");
     assert_contains_all(
         &artifact_contracts,
-        &["reference/run-evidence-layout.md", "cache-entry manifests", "promotion ledgers"],
+        &["run-evidence-layout.md", "cache-entry manifests", "promotion ledgers"],
         "docs/bijux-dag/interfaces/artifact-contracts.md",
     );
 
     let artifact_package = read_repo_file("docs/bijux-dag/packages/bijux-dag-artifacts.md");
     assert_contains_all(
         &artifact_package,
-        &["../interfaces/reference/run-evidence-layout.md", "../interfaces/artifact-contracts.md"],
+        &["../interfaces/run-evidence-layout.md", "../interfaces/artifact-contracts.md"],
         "docs/bijux-dag/packages/bijux-dag-artifacts.md",
     );
 }

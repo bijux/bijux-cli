@@ -7,7 +7,7 @@ use clap::Command;
 use std::path::Path;
 
 const STABLE_REFERENCE_REL_PATH: &str = "generated-cli-reference.md";
-const GATED_REFERENCE_REL_PATH: &str = "reference/gated-command-inventory.md";
+const GATED_REFERENCE_REL_PATH: &str = "gated-command-inventory.md";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct ReferenceExample {
@@ -52,7 +52,7 @@ This page is generated from the live `bijux-dag` Clap command definitions.\n\
 It records the stable `v0.4.0` operator surface exactly as the product presents\n\
 it through `bijux-dag --help`. Experimental, simulated, and internal routes are\n\
 deliberately excluded from this page and listed separately in\n\
-[`reference/gated-command-inventory.md`](reference/gated-command-inventory.md).\n\n\
+[`gated-command-inventory.md`](gated-command-inventory.md).\n\n\
 ## Placeholder Conventions\n\n\
 - `${GRAPH}`: DAG graph file such as `evidence/workflows/file_processing/dag.json`\n\
 - `${GRAPH_A}` and `${GRAPH_B}`: two graph revisions to compare\n\
@@ -111,7 +111,7 @@ This page is generated from the live `bijux-dag` command tree. It is the\n\
 repository-owned inventory for routes that remain outside the stable\n\
 `v0.4.0` operator compatibility lane.\n\n\
 Stable commands belong in\n\
-[`../generated-cli-reference.md`](../generated-cli-reference.md). This page is\n\
+[`generated-cli-reference.md`](generated-cli-reference.md). This page is\n\
 only for deliberate access to experimental, simulated, or internal routes.\n\n",
     );
 
@@ -140,9 +140,8 @@ only for deliberate access to experimental, simulated, or internal routes.\n\n",
 fn write_cli_reference_docs(interfaces_root: &Path) -> Result<(), String> {
     let stable = render_stable_cli_reference_markdown()?;
     let gated = render_gated_command_inventory_markdown()?;
-    let reference_root = interfaces_root.join("reference");
-    std::fs::create_dir_all(&reference_root)
-        .map_err(|err| format!("create {} failed: {err}", reference_root.display()))?;
+    std::fs::create_dir_all(interfaces_root)
+        .map_err(|err| format!("create {} failed: {err}", interfaces_root.display()))?;
     std::fs::write(interfaces_root.join(STABLE_REFERENCE_REL_PATH), format!("{stable}\n"))
         .map_err(|err| {
             format!(
