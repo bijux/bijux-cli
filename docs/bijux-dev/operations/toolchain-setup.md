@@ -4,55 +4,177 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-19
 ---
 
 # Toolchain Setup
 
-This page explains the minimum local setup needed to work on `bijux-core`
-without drifting away from CI.
+Local verification is trustworthy only when the command, toolchain, dependency
+set, and artifact boundary match the repository contract. This page separates
+source requirements from hosted automation so a green local run is not
+misreported as CI parity.
 
-The goal is not to install everything possible. It is to make sure the local
-environment can produce the same signals the repository depends on for review.
+## Toolchain Authorities
 
-## Setup Flow
+| Concern | Authority | Current requirement |
+| --- | --- | --- |
+| Rust compiler | `rust-toolchain.toml` | `1.86.0`, minimal profile |
+| Rust components | `rust-toolchain.toml` | `clippy`, `rustfmt` |
+| package MSRV | workspace `Cargo.toml` | `1.86` |
+| Python | `crates/bijux-cli-python/pyproject.toml` | CPython 3.11 or newer |
+| Python environment | `makes/_internal.mk` | `artifacts/python/.venv` |
+| Python dependencies | `PYTHON_EDITABLE_SPEC` in `makes/_internal.mk` | editable package with test, lint, security, docs, and build extras |
+| Rust artifacts | `.cargo/config.toml` and Rust gates | `artifacts/rust/` |
+| documentation | `mkdocs.yml` and Python docs extras | MkDocs 1.x with pinned-compatible plugins |
 
-```mermaid
-flowchart TD
-    clone["clone repository"] --> install["install workspace tools"]
-    install --> build["build workspace"]
-    build --> verify["run baseline verification"]
-```
-
-## Setup Requirements
-
-- Rust `1.86.0`, pinned by `rust-toolchain.toml` and reused by CI and release automation
-- Python environment and MkDocs dependencies available for docs gates
-- `make` targets available for shared workflows
-
-## Baseline Setup Commands
+`rustup` reads `rust-toolchain.toml` when commands run in the checkout. Verify
+the result instead of relying on the shell’s default toolchain:
 
 ```bash
-make install
-cargo build --workspace
-cargo run -q -p bijux-dev --bin bijux-dev-cli -- quickcheck --format json --no-pretty
+rustc --version
+cargo --version
+rustup component list --installed --toolchain 1.86.0
+```
+
+## System Prerequisites
+
+Install these outside the repository before bootstrapping:
+
+- Git;
+- GNU Make;
+- Rustup with the pinned toolchain available;
+- CPython 3.11 or newer with `venv`;
+- a C/C++ build toolchain and platform linker required by Rust and Maturin.
+
+Network access is required when Rust or Python dependencies are not already
+cached. Container, Kubernetes, SLURM, or platform-specific workflow tests have
+additional environment requirements and are not part of baseline setup.
+
+## Bootstrap
+
+From repository root:
+
+```bash
+make bootstrap
+make doctor-rs
+cargo check --workspace --all-targets --locked
+cargo run -q -p bijux-dev --bin bijux-dev-cli -- \
+  quickcheck --format json --no-pretty
+```
+
+`make bootstrap` creates `artifacts/python/.venv`, upgrades its packaging
+tools, and installs `crates/bijux-cli-python` with the repository’s development
+extras. It may migrate or remove a legacy root `.venv`; the root environment is
+not the supported location.
+
+Bootstrap does not install Rust cargo subcommands. `make doctor-rs` verifies
+Cargo, gate scripts, nextest selection inputs, and policy files. Each Rust gate
+also refuses to run when its required cargo subcommand is missing.
+
+## Rust Gate Tools
+
+| Gate | Additional command |
+| --- | --- |
+| `make test-rs`, `make test-slow`, `make test-all` | `cargo-nextest` |
+| `make audit` | `cargo-deny`, `cargo-audit` |
+| `make coverage` | `cargo-nextest`, `cargo-llvm-cov` |
+
+The GitHub helper targets pin the tools used by managed CI:
+
+```bash
+make gh-test-install-rust-tools
+make gh-security-install-rust-tools
+```
+
+Those targets currently install `cargo-nextest 0.9.100`,
+`cargo-deny 0.18.3`, and `cargo-audit 0.22.1`. Coverage requires
+`cargo-llvm-cov`, but the repository does not currently define a pinned local
+installer for it. Record the installed version when coverage evidence is
+reviewed; do not claim exact tool parity where the repository has not governed
+one.
+
+## Documentation Environment
+
+The Python development extras include MkDocs and all configured plugins.
+`make docs-check` installs the documented requirements into the managed
+environment, synchronizes governed docs inputs, performs a strict MkDocs build,
+checks publication boundaries and navigation, and writes the site under
+`artifacts/docs/`.
+
+```bash
+make docs-require
 make docs-check
 ```
 
-## Reading Rule
+Use `make docs-require` to distinguish a missing tool or input from a content
+failure. Do not install a second root `.venv` or write a `site/` directory at
+repository root.
 
-Use this page when the local machine is not yet trustworthy enough for review
-work. Move to Repository Gates or CI and Automation once the environment itself
-is no longer the problem.
+## Hosted Automation Alignment
 
-## Code Anchors
+The source checkout currently has more than one hosted toolchain declaration:
 
-- `Makefile`
-- `makes/root.mk`
-- `crates/bijux-dev/src/tooling/`
+| Surface | Declared Rust |
+| --- | --- |
+| source toolchain and MSRV | `1.86.0` / `1.86` |
+| `bijux-canon` workflow | `1.86.0` |
+| release-validation workflow | `1.86.0` |
+| docs deployment configuration | `1.86.0` |
+| synchronized generic CI workflow | `1.85.0` |
+| synchronized release environment | `1.85.0` |
 
-## Next Reads
+This is a real mismatch. Local Rust 1.86.0 results align with the source
+contract and repository-owned validation workflows, but they do not establish
+parity with every synchronized GitHub job.
 
-- [Repository Gates](repository-gates.md)
-- [CI and Automation](ci-and-automation.md)
-- [Test Policy](../governance/test-policy.md)
+`.github/release.env`, synchronized workflows, and shared checksums are managed
+from `bijux-std`; do not edit them directly in this repository. The durable
+repair is to align the upstream repository manifest and generated standards,
+merge that standards change, then refresh this repository from the accepted
+GitHub commit and validate the shared checksum.
+
+Until that happens:
+
+- report the hosted toolchain mismatch in release and CI evidence;
+- do not call generic CI and local results equivalent;
+- treat a release that selects Rust 1.85.0 for packages requiring MSRV 1.86 as
+  blocked, not as a warning to bypass.
+
+Audit alignment directly when toolchain policy changes:
+
+```bash
+rg -n '1\.85|1\.86|RUST_TOOLCHAIN|rust_toolchain' \
+  rust-toolchain.toml Cargo.toml .github
+```
+
+## Failure Diagnosis
+
+| Symptom | Check first |
+| --- | --- |
+| wrong compiler or component | `rustc --version`, `rustup show active-toolchain` |
+| Cargo output outside artifacts | `.cargo/config.toml`, `CARGO_TARGET_DIR` |
+| Python import or MkDocs failure | `artifacts/python/.venv/bin/python`, install logs under `artifacts/python/install/` |
+| missing nextest or security command | the gate’s explicit missing-tool error |
+| local pass but hosted failure | exact workflow toolchain, OS, installed cargo tools, and environment |
+| release toolchain below MSRV | managed `.github/release.env` and upstream `bijux-std` manifest |
+
+Preserve command output under `artifacts/` and report the exact failing
+boundary. Recreating environments without first recording the mismatch makes
+toolchain failures harder to diagnose.
+
+## Repository Anchors
+
+- `rust-toolchain.toml`
+- `Cargo.toml`
+- `.cargo/config.toml`
+- `makes/_internal.mk`
+- `makes/rust.mk`
+- `makes/bin/run_core_rust_gate.sh`
+- `makes/docs.mk`
+- `.github/release.env`
+- `.github/workflows/ci.yml`
+- `.github/workflows/bijux-canon.yml`
+
+Continue with [Repository Gates](repository-gates.md) after the environment is
+known, and [CI and Automation](ci-and-automation.md) when the question concerns
+hosted execution rather than local setup.

@@ -26,13 +26,18 @@ keep telling the same story.
 ## Baseline Commands
 
 ```bash
-make install
-cargo check --workspace --all-targets
+make bootstrap
+make doctor-rs
+cargo check --workspace --all-targets --locked
 make docs-check
 ```
 
 Local runs should use the pinned Rust `1.86.0` toolchain from
-`rust-toolchain.toml` so the root commands agree with CI and release jobs.
+`rust-toolchain.toml`. That aligns with the source contract and
+repository-owned validation workflows. Synchronized generic CI and release
+configuration must be audited separately; the
+[Maintainer Toolchain Setup](../../bijux-dev/operations/toolchain-setup.md)
+records the current hosted-policy mismatch and its upstream ownership.
 
 ## Why These Entry Points Matter
 
