@@ -4,48 +4,45 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-08
+last_reviewed: 2026-07-19
 ---
 
 # Command Surface
 
-Use this page when you need to choose the right maintainer command family
-before digging through the source tree or guessing from binary names.
+Bijux has two maintainer binaries. Choose by ownership, not by whichever binary
+appears to expose a similarly named command.
 
-Source contract: `contracts/foundation/maintainer_command_surface.v1.json`.
-
-`bijux-dev-cli` carries the general repository workflow. `bijux-dev-dag` carries
-the DAG-specific verification and release surfaces that sit beside it.
-
-## What The Two Binaries Are For
-
-| Binary | Main job |
+| Binary | Owned work |
 | --- | --- |
-| `bijux-dev-cli` | general repository workflows, governance checks, reporting, and documentation automation |
-| `bijux-dev-dag` | DAG-specific verification, release proof, evidence audits, and runtime-facing maintainer diagnostics |
+| `bijux-dev-cli` | repository-wide status, documentation publishing, maintenance, and runtime diagnostics |
+| `bijux-dev-dag` | DAG contracts, retained evidence, release proof, backend diagnostics, and governed repository suites |
 
-## Command Families
+The machine authority for the visible `bijux-dev-dag` root is
+`contracts/foundation/maintainer_command_surface.v1.json`. Its order matches
+`bijux-dev-dag --help`; adding, removing, or renaming a root command requires
+the executable, contract, this page, and command-surface tests to change
+together.
 
-- validation commands for repository and contract checks
-- report commands for architecture, coverage, and evidence status
-- release commands for readiness and compatibility workflows
-- documentation and governance commands for handbook integrity
+## Select A Command
 
-Representative non-root maintainer routes in that last family include:
+| Intent | Start here | Result |
+| --- | --- | --- |
+| inspect general repository health | `bijux-dev-cli status --format json --no-pretty` | runtime and repository status envelope |
+| check runtime/docs parity | `bijux-dev-cli parity --format json --no-pretty` | drift findings |
+| run a governed DAG repository suite | `bijux-dev-dag repo run` | per-suite validation records and aggregate status |
+| explain why a suite exists | `bijux-dev-dag repo explain --suite <id>` | ownership, effect, and selection metadata |
+| inspect available suites | `bijux-dev-dag repo list` | governed suite catalog |
+| regenerate documentation inventories | `bijux-dev-dag docs-inventory` | governed inventory and consolidation reports |
+| verify release readiness | `bijux-dev-dag release verify` | release evidence, not a product command |
+| inspect performance evidence | `bijux-dev-dag performance-evidence-report` | governed scenario and threshold status |
 
-- `bijux-dev-cli docs publish-contract-assets` for publishing governed contract
-  assets into a built docs site
-- `bijux-dev-cli docs write-dag-cli-reference` for rewriting the checked-in DAG
-  CLI reference pages from the live Clap command surface
-- `bijux-dev-cli maintenance ignored-dag-tests` for auditing every ignored DAG
-  test across the full DAG crate tree against the governed quarantine
-  portfolios
+Repository-wide documentation publishing remains under
+`bijux-dev-cli docs publish-contract-assets`. Regeneration of the checked-in
+DAG CLI reference remains under
+`bijux-dev-cli docs write-dag-cli-reference`. Ignored-test governance remains
+under `bijux-dev-cli maintenance ignored-dag-tests`.
 
 ## `bijux-dev-dag` Root Surface
-
-The visible root inventory is intentionally governed rather than left to drift.
-Use the contract file above as the source of truth when adding, removing, or
-renaming a root command.
 
 | Family | Root commands |
 | --- | --- |
@@ -56,25 +53,40 @@ renaming a root command.
 | execution and policy diagnostics | `doctor`, `config-dump`, `policy-audit`, `execution-modes-report`, `distributed-semantics-report`, `invariants-report`, `observability-report` |
 | benchmarks and utilities | `artifacts-clean`, `env-summary`, `benchmark-baseline`, `benchmark-compare`, `resource-profile-summary`, `resource-budget-check`, `resource-trend-append`, `e2e-matrix`, `api`, `schedule`, `help` |
 
-## Reader Shortcut
+The table groups discovery; it does not replace `--help` for arguments or the
+machine contract for exact ordering.
 
-If the question is about repository-wide health, start with `bijux-dev-cli`.
-If the question is about DAG proof, release evidence, or runtime-facing DAG
-diagnostics, start with `bijux-dev-dag`.
+## Suite Execution
 
-## Command Design Rules
+`checks`, `tests`, `contracts`, `docs`, and `repo` expose governed suite
+catalogs rather than opaque shell batches.
 
-- commands must return actionable diagnostics
-- machine-readable output must remain stable for automation
-- command semantics must map to explicit ownership in code and docs
+- `list` reports the available suite identifiers.
+- `explain --suite <id>` reports intent, domain, effect, and selection rules.
+- `run` executes the selected catalog and returns non-zero when required suites
+  fail.
+- `--domain <name>` narrows by durable ownership domain.
+- `--include-slow` and `--include-internal` are explicit expansions.
+- `--advisory` changes aggregate enforcement and must not be reported as a
+  required-gate pass.
+- `--why` retains suite-selection reasoning in the command evidence.
 
-## What This Page Is Not Saying
+Unless a command explicitly says otherwise, generated outputs and reports
+belong under `artifacts/`. Commands that own governed files under `docs/reports`
+must identify those paths in their output and remain reproducible from the
+repository root.
 
-- It is not listing every subcommand in depth.
-- It is not replacing the source contract when root inventory changes.
-- It is not saying the two binaries have interchangeable responsibility.
+## Evidence Rules
 
-## Code Anchors
+- Record the exact binary, command, source revision, and terminal status.
+- A report path or started process is not proof that a command passed.
+- A narrowed domain or advisory run proves only that selection.
+- Keep product commands out of maintainer binaries and maintainer commands out
+  of `bijux` and `bijux-dag`.
+- Preserve machine-readable envelopes for automation; human text is not a
+  parser contract.
+
+## Review Anchors
 
 - `contracts/foundation/maintainer_command_surface.v1.json`
 - `crates/bijux-dev/src/commands/cli.rs`
@@ -83,9 +95,11 @@ diagnostics, start with `bijux-dev-dag`.
 - `crates/bijux-dev/src/commands/mod.rs`
 - `crates/bijux-dev/src/bin/bijux-dev-cli.rs`
 - `crates/bijux-dev/src/main.rs`
+- `crates/bijux-dev/tests/foundation_maintainer_command_surface_contracts.rs`
 
-## Continue Reading
+## Related Operations
 
-- [Diagnostics and Reporting](diagnostics-and-reporting.md)
+- [Diagnostics And Reporting](diagnostics-and-reporting.md)
+- [Repository Gates](repository-gates.md)
 - [Contract Governance](../governance/contract-governance.md)
-- [Core Maintainer Control Plane](../../bijux-core/architecture/maintainer-control-plane.md)
+- [Maintainer Control Plane](../../bijux-core/architecture/maintainer-control-plane.md)

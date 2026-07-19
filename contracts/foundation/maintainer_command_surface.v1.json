@@ -33,7 +33,7 @@
     "resource-trend-append",
     "artifact-verify",
     "observability-report",
-    "docs-index",
+    "docs-inventory",
     "e2e-matrix",
     "fault-summary",
     "storage-health",
