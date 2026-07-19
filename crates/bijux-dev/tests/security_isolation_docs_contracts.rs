@@ -56,7 +56,7 @@ fn operations_docs_route_security_questions_to_truth_reference() {
         "docs/bijux-dag/operations/security-and-safety.md",
         "docs/bijux-dag/operations/trust-boundaries.md",
         "docs/bijux-dag/operations/deployment-boundaries.md",
-        "docs/bijux-dag/operations/first-hour-with-bijux-dag.md",
+        "docs/bijux-dag/operations/first-run-tutorial.md",
         "docs/bijux-dag/index.md",
         "README.md",
     ] {

@@ -91,7 +91,15 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- commands
 ```
 
 You should see the current build identity plus the stable root operator
-inventory.
+inventory. Maintainer-only probes such as `capabilities` remain outside this
+first-run operator path and require `BIJUX_DAG_ENABLE_INTERNAL=1`.
+
+The [Release Boundary](../foundation/release-boundary.md) explains which
+commands are stable, experimental, simulated, internal, or unreleased. The
+machine-readable authority is
+`contracts/foundation/dag_release_truth_table.v1.json`. Read
+[Security And Isolation Truth](security-isolation-truth.md) before treating a
+policy flag or execution backend as a host sandbox.
 
 ## Inspect The Graph Before Execution
 

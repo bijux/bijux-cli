@@ -3747,7 +3747,7 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
         "docs/spec/ADOPTION_SURFACES.md",
         "docs/bijux-dag/operations/installation-and-setup.md",
         "docs/bijux-dag/operations/ci-integration.md",
-        "docs/bijux-dag/operations/first-hour-with-bijux-dag.md",
+        "docs/bijux-dag/operations/first-run-tutorial.md",
         "docs/bijux-dag/interfaces/support-matrix.md",
         "docs/spec/RELEASE_BINARY_VERIFICATION.md",
         "docs/bijux-dag/operations/trust-boundaries.md",
@@ -3775,8 +3775,8 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
         );
     }
 
-    let quickstart =
-        fs::read_to_string(root.join("docs/bijux-dag/operations/first-hour-with-bijux-dag.md"))
+    let onboarding =
+        fs::read_to_string(root.join("docs/bijux-dag/operations/first-run-tutorial.md"))
             .map_err(|err| err.to_string())?;
     let install =
         fs::read_to_string(root.join("docs/bijux-dag/operations/installation-and-setup.md"))
@@ -3798,27 +3798,27 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
         }
     }
     for forbidden in ["kubernetes", "hpc", "production-grade remote"] {
-        if quickstart.to_ascii_lowercase().contains(forbidden) {
+        if onboarding.to_ascii_lowercase().contains(forbidden) {
             return Err(format!(
-                "quickstart references unsupported surface `{}` as first-class",
+                "first-run tutorial references unsupported surface `{}` as first-class",
                 forbidden
             ));
         }
     }
     for required_cmd in [
         "cargo run -p bijux-dag-cli --bin bijux-dag -- commands",
-        "Maintainer-only probes such as `capabilities` remain outside this first-hour",
+        "Maintainer-only probes such as `capabilities` remain outside this",
     ] {
-        if !quickstart.contains(required_cmd) {
+        if !onboarding.contains(required_cmd) {
             return Err(format!(
-                "first-hour doc missing public-boundary reminder `{}`",
+                "first-run tutorial missing public-boundary reminder `{}`",
                 required_cmd
             ));
         }
     }
-    if quickstart.contains("cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json") {
+    if onboarding.contains("cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json") {
         return Err(
-            "first-hour doc must not present `capabilities --json` as part of the operator lane"
+            "first-run tutorial must not present `capabilities --json` as part of the operator lane"
                 .to_string(),
         );
     }

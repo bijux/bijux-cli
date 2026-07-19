@@ -27,7 +27,6 @@ predictable recovery under change.
 | --- | --- |
 | get from checkout to a real run quickly | [First-Run Tutorial](first-run-tutorial.md) |
 | install the tool and verify the environment | [Installation and Setup](installation-and-setup.md) |
-| bootstrap the first retained operator run | [First Hour With Bijux Dag](first-hour-with-bijux-dag.md) |
 | run the normal local workflow loop | [Common Workflows](common-workflows.md) |
 | inspect failures, traces, and retained evidence | [Observability and Diagnostics](observability-and-diagnostics.md) |
 | recover from runtime or workflow failures | [Failure Recovery](failure-recovery.md) |
@@ -45,7 +44,7 @@ predictable recovery under change.
 
 - [Installation and Setup](installation-and-setup.md)
 - [CI Integration](ci-integration.md)
-- [First Hour With Bijux Dag](first-hour-with-bijux-dag.md)
+- [First-Run Tutorial](first-run-tutorial.md)
 - [Local Development](local-development.md)
 - [Common Workflows](common-workflows.md)
 - [Observability and Diagnostics](observability-and-diagnostics.md)
@@ -64,8 +63,6 @@ predictable recovery under change.
 - [Data Pipeline Workflow](data-pipeline-workflow.md)
 - [Evidence-Backed Bulletin Workflow](evidence-backed-bulletin-workflow.md)
 - [File Processing Workflow](file-processing-workflow.md)
-- [First-Run Tutorial](first-run-tutorial.md)
-- [First Hour Guide](first-hour-with-bijux-dag.md)
 - [Historical Catalog Backfill Workflow](historical-catalog-backfill-workflow.md)
 - [Scheduled Catalog Refresh Workflow](scheduled-catalog-refresh-workflow.md)
 - [Security And Isolation Truth](security-isolation-truth.md)

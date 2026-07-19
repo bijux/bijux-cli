@@ -178,6 +178,5 @@ on the stable local operator surface.
 ## Next Reads
 
 - [First-Run Tutorial](first-run-tutorial.md)
-- [First Hour With Bijux Dag](first-hour-with-bijux-dag.md)
 - [Common Workflows](common-workflows.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)

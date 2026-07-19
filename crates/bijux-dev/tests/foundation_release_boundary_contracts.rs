@@ -250,18 +250,18 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         "docs/bijux-dag/interfaces/support-matrix.md",
     );
 
-    let first_hour = read_repo_file("docs/bijux-dag/operations/first-hour-with-bijux-dag.md");
+    let first_run = read_repo_file("docs/bijux-dag/operations/first-run-tutorial.md");
     assert_contains_all(
-        &first_hour,
+        &first_run,
         &[
             "cargo run -p bijux-dag-cli --bin bijux-dag -- commands",
-            "Maintainer-only probes such as `capabilities` remain outside this first-hour",
+            "Maintainer-only probes such as `capabilities` remain outside this",
         ],
-        "docs/bijux-dag/operations/first-hour-with-bijux-dag.md",
+        "docs/bijux-dag/operations/first-run-tutorial.md",
     );
     assert!(
-        !first_hour.contains("cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json"),
-        "first-hour doc must not present `capabilities --json` as part of the public operator lane"
+        !first_run.contains("cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json"),
+        "first-run tutorial must not present `capabilities --json` as part of the public operator lane"
     );
 
     let ci = read_repo_file("docs/bijux-dag/operations/ci-integration.md");
@@ -286,7 +286,7 @@ fn release_boundary_references_route_readers_to_handbook_pages() {
         "docs/bijux-dag/interfaces/executable-recipes.md",
         "docs/bijux-dag/interfaces/support-matrix.md",
         "docs/bijux-dag/operations/ci-integration.md",
-        "docs/bijux-dag/operations/first-hour-with-bijux-dag.md",
+        "docs/bijux-dag/operations/first-run-tutorial.md",
         "docs/spec/RELEASE_BINARY_VERIFICATION.md",
     ] {
         let content = read_repo_file(path);
