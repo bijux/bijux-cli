@@ -3189,11 +3189,17 @@ pub(super) fn run_container_remote_boundary_guard() -> Result<(), String> {
 
     let remote_doc = fs::read_to_string(root.join("docs/spec/REMOTE_EXECUTION_MODEL.md"))
         .map_err(|err| err.to_string())?;
-    if !remote_doc.contains("Not implemented: production Kubernetes/HPC") {
-        return Err(
-            "remote execution model must explicitly declare kubernetes/hpc not implemented"
-                .to_string(),
-        );
+    for required_boundary in [
+        "implemented Kubernetes Job backend",
+        "implemented shared-filesystem SLURM backend",
+        "public remote-worker service is not implemented",
+        "generic HPC backend is not implemented",
+    ] {
+        if !remote_doc.contains(required_boundary) {
+            return Err(format!(
+                "remote execution model missing release boundary: {required_boundary}"
+            ));
+        }
     }
     let deployment_doc =
         fs::read_to_string(root.join("docs/bijux-dag/operations/deployment-boundaries.md"))
