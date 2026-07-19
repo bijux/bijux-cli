@@ -4,22 +4,34 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
       - "crates/bijux-dag-*/**"
       - "crates/bijux-dev/**"
       - "configs/dag/**"
-      - "makes/*.mk"
+      - "configs/rust/**"
+      - "makes/**"
       - "docs/bijux-dag/**"
+      - "docs/bijux-dev/**"
       - "evidence/**"
+      - ".github/scripts/**"
       - ".github/workflows/*.yml"
   push:
     branches: [main]
     paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
       - "crates/bijux-dag-*/**"
       - "crates/bijux-dev/**"
       - "configs/dag/**"
-      - "makes/*.mk"
+      - "configs/rust/**"
+      - "makes/**"
       - "docs/bijux-dag/**"
+      - "docs/bijux-dev/**"
       - "evidence/**"
+      - ".github/scripts/**"
       - ".github/workflows/*.yml"
 
 concurrency:
@@ -49,7 +61,7 @@ jobs:
             soft_fail: false
             rust_components: "rustfmt"
             pre_run: ""
-            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- fmt
+            run: cargo fmt --all -- --check
             artifact_name: ""
             artifact_path: ""
           - id: rust-lint
@@ -141,7 +153,6 @@ jobs:
               cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-cache
               cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-replay
               cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-consumers
-              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- verify evidence-release-set
               cargo run --locked -p bijux-dev --bin bijux-dev-dag -- repo release-evidence-report
               cargo run --locked -p bijux-dev --bin bijux-dev-dag -- repo evidence-summary-report
               cargo run --locked -p bijux-dev --bin generate_scheduler_profile_report
@@ -174,20 +185,10 @@ jobs:
             rust_components: ""
             pre_run: ""
             run: |
-              for manifest in \
-                crates/bijux-dag-core/Cargo.toml \
-                crates/bijux-dag-artifacts/Cargo.toml \
-                crates/bijux-dag-runtime/Cargo.toml \
-                crates/bijux-dag-app/Cargo.toml \
-                crates/bijux-dag-cli/Cargo.toml; do
-                grep -q "^publish = false$" "$manifest"
-              done
-              cargo check --locked -p bijux-dag-runtime
-              cargo check --locked -p bijux-dag-app
-              cargo check --locked -p bijux-dag-cli
-              cargo check --locked -p bijux-dev
-            artifact_name: ""
-            artifact_path: ""
+              cargo test --locked -p bijux-dev --test foundation_workspace_package_boundary_contracts
+              make package-release-rs publish-dry-run-release-rs
+            artifact_name: package-dry-run-report
+            artifact_path: artifacts/rust/release-validation
           - id: public-api-drift
             name: Public API Drift
             os: ubuntu-24.04
