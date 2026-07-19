@@ -4891,7 +4891,7 @@ fn terminate_process_group_best_effort(
     let process_group_id = child.id();
     let mut termination = ControlledCommandTermination::new(unreachable_exit_status());
 
-    if let Err(error) = signal_process_group(process_group_id, "TERM") {
+    if let Err(error) = signal_process_group(process_group_id, nix::sys::signal::Signal::SIGTERM) {
         termination.cleanup_diagnostics.push(format!(
             "failed to send SIGTERM to subprocess group {process_group_id}: {error}"
         ));
@@ -4899,7 +4899,9 @@ fn terminate_process_group_best_effort(
     let leader_status = wait_for_child_exit(child, SIGNAL_GRACE_PERIOD)?;
 
     if process_group_exists(process_group_id)? {
-        if let Err(error) = signal_process_group(process_group_id, "KILL") {
+        if let Err(error) =
+            signal_process_group(process_group_id, nix::sys::signal::Signal::SIGKILL)
+        {
             termination.cleanup_diagnostics.push(format!(
                 "failed to send SIGKILL to subprocess group {process_group_id}: {error}"
             ));
@@ -4925,25 +4927,32 @@ fn terminate_process_group_best_effort(
 }
 
 #[cfg(unix)]
-fn signal_process_group(process_group_id: u32, signal: &str) -> std_io::Result<()> {
-    let target = format!("-{process_group_id}");
-    let status =
-        std::process::Command::new("kill").args([format!("-{signal}"), target]).status()?;
-    if status.success() {
-        return Ok(());
-    }
-    Err(std_io::Error::other(format!("kill exited with status {status}")))
+fn signal_process_group(
+    process_group_id: u32,
+    signal: nix::sys::signal::Signal,
+) -> std_io::Result<()> {
+    nix::sys::signal::killpg(process_group_pid(process_group_id)?, signal)
+        .map_err(std_io::Error::from)
 }
 
 #[cfg(unix)]
 fn process_group_exists(process_group_id: u32) -> std_io::Result<bool> {
-    let target = format!("-{process_group_id}");
-    let status = std::process::Command::new("kill")
-        .args(["-0", &target])
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()?;
-    Ok(status.success())
+    match nix::sys::signal::killpg(process_group_pid(process_group_id)?, None) {
+        Ok(()) => Ok(true),
+        Err(nix::errno::Errno::ESRCH) => Ok(false),
+        Err(error) => Err(std_io::Error::from(error)),
+    }
+}
+
+#[cfg(unix)]
+fn process_group_pid(process_group_id: u32) -> std_io::Result<nix::unistd::Pid> {
+    let process_group_id = i32::try_from(process_group_id).map_err(|error| {
+        std_io::Error::new(
+            std_io::ErrorKind::InvalidInput,
+            format!("process group id exceeds the platform pid range: {error}"),
+        )
+    })?;
+    Ok(nix::unistd::Pid::from_raw(process_group_id))
 }
 
 fn controlled_exit_code(status: std::process::ExitStatus) -> Option<i32> {

@@ -207,6 +207,7 @@ dependencies = [
  "ctrlc",
  "flate2",
  "hex",
+ "nix",
  "reqwest",
  "serde",
  "serde_json",
