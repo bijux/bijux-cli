@@ -4,65 +4,83 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
-# Documentation Standard
+# Maintainer Documentation Standard
 
-Use this page when you are writing or reviewing maintainer documentation and
-need the practical quality bar, not a style exercise.
+Maintainer documentation is read while a gate is red, a release is partially
+published, or evidence disagrees. Its quality is measured by whether a
+maintainer can identify the owner, reproduce the observation, preserve
+evidence, and choose a safe next action.
 
-The standard exists because maintainer docs are often read under pressure:
-while diagnosing a broken gate, preparing a release, or checking whether a
-governance claim is still true. A page that is technically correct but hard to
-scan is still bad documentation.
+The repository-wide [Documentation Standards](../../bijux-core/governance/documentation-standards.md)
+own page admission, authority, structure, and publication limits. This page
+adds the operational standard for `bijux-dev`, make, CI, governance, and report
+guidance.
 
-## What Good Maintainer Docs Must Do
+## Required Operational Content
 
-- use canonical frontmatter on every page
-- keep links inside the active handbook tree and route readers to the owning
-  page instead of a vague section index
-- connect policies to real commands, files, contracts, or tests
-- avoid placeholder language without operational meaning
-- make it clear what is real today versus what is only guidance or future work
+| Page type | Must answer |
+| --- | --- |
+| command guide | exact entrypoint, inputs, outputs, exit meaning, side effects, and artifact location |
+| gate guide | selection scope, exclusions, cost, failure classification, and what a pass proves |
+| workflow guide | trigger, permissions, delegated local target, final evidence, and retry boundary |
+| release runbook | source identity, ordered publication surfaces, verification, partial-failure response, and rollback limits |
+| incident guide | stabilization, evidence preservation, authority, remediation, verification, and disclosure route |
+| governance page | owned invariant, enforcement, exception process, and release consequence |
+| report guide | producer, inputs, source revision, governing contract, freshness check, and retention reason |
 
-## Writing Rules That Matter
+Do not label a command as safe, complete, or reproducible without stating the
+boundary that makes the claim true.
 
-- use direct declarative language when behavior is required
-- avoid hand-wavy phrasing that cannot be checked against commands or files
-- prefer short sentences that map to a maintainer action or decision
-- keep incident and remediation guidance ordered and concrete
-- explain the boundary of a page before diving into details
+## Evidence Language
 
-## What Readers Should Be Able To Learn Fast
+Use terms precisely:
 
-- what this page is for
-- what is required versus optional
-- which command, file, or contract proves the claim
-- where to go next if the question belongs to another handbook
+- **started** means a process was launched;
+- **passed** means the command completed successfully for its stated selection;
+- **green** means every required gate for the claimed scope passed;
+- **generated** means a producer wrote output, not that the output is correct;
+- **verified** means a named check evaluated the relevant invariant;
+- **release-ready** means all required release evidence for one source revision
+  is complete.
 
-## Alignment Rules
+A focused test cannot be reported as a full suite. An advisory run cannot be
+reported as a required gate. A background PID, report path, or uploaded artifact
+cannot be reported as success without final status and integrity.
 
-- `docs/bijux-core` and `docs/bijux-dev` follow parallel section patterns
-- maintainer docs avoid duplicating CLI and DAG product semantics
-- MkDocs nav remains synchronized with filesystem layout
+## Remediation Quality
 
-## Common Documentation Failures
+Failure guidance must preserve the failing signal and lead to the owner. It
+must not recommend:
 
-- pages that describe how documentation should behave instead of explaining the
-  repository surface itself
-- diagrams with no operational takeaway
-- policies with no command, contract, or file anchor
-- links that force readers to hunt across handbooks for the real owner
+- deleting evidence before capture;
+- regenerating output without reviewing semantic changes;
+- adding retries around a deterministic contract failure;
+- weakening a threshold or test to match current output;
+- editing synchronized standards in a downstream repository;
+- bypassing a required lane with a narrower command.
 
-## Code Anchors
+When a local repair belongs in shared standards, identify the upstream
+authority and the downstream refresh procedure.
 
-- `mkdocs.yml`
-- `docs/bijux-dev/`
-- `makes/docs.mk`
+## Review Rejection
 
-## Continue Reading
+Reject maintainer documentation that:
 
-- [Documentation Operations](../operations/docs-operations.md)
-- [Core Documentation Standards](../../bijux-core/governance/documentation-standards.md)
-- [Known Limitations](known-limitations.md)
+- lists commands without explaining selection or result meaning;
+- repeats workflow YAML instead of documenting ownership and reproduction;
+- cites paths that do not exist or no longer own the behavior;
+- presents generated reports as normative product truth;
+- hides unsupported, ignored, advisory, simulated, or partial behavior;
+- uses stock diagrams or section templates with no operational decision;
+- changes `last_reviewed` without checking code and command reality.
+
+## Verification
+
+Use [Documentation Operations](../operations/docs-operations.md) for the
+focused governance audit, strict site build, publication budget, navigation
+check, and manual review route. Product semantics remain owned by the CLI and
+DAG handbooks; maintainer pages should link to them rather than restating their
+contracts.

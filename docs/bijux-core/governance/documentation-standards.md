@@ -4,103 +4,113 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-19
 ---
 
 # Documentation Standards
 
-Documentation in `bijux-core` is expected to help a reader reach the truth
-faster, not just satisfy a formatting rule. These standards exist so pages
-remain accurate, navigable, and specific enough to survive release pressure
-and critical review.
+Documentation is part of the product contract. A page earns its place by
+answering a distinct reader question with current behavior, a clear owner, and
+a way to detect drift. Formatting, frontmatter, and a passing build are
+necessary but do not make weak content acceptable.
 
-## What Strong Repository Documentation Looks Like
+## Documentation Surfaces
 
-A good page in this repository does four things at once:
+| Surface | Reader and authority | Publication |
+| --- | --- | --- |
+| root `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, and release history | repository entry, contribution, disclosure, and release record | GitHub repository |
+| `docs/bijux-core`, `docs/bijux-cli`, `docs/bijux-dag`, `docs/bijux-dev` | curated reader handbooks | selected explicitly by `mkdocs.yml` |
+| `docs/spec` | executable prose contracts consumed by tests and tooling | excluded from the public site |
+| `docs/reports` | revision-bound generated or governed evidence | excluded from the public site |
+| crate `README.md`, `CONTRACT.md`, `CHANGELOG.md`, and crate-local `docs/` | package consumers and maintainers | crates.io, docs.rs, PyPI, or repository source as applicable |
+| `artifacts/` | local output, logs, built sites, and transient analysis | never a tracked documentation authority |
 
-- it tells the reader what surface the page owns
-- it distinguishes current supported behavior from internal, experimental, or
-  future work
-- it points the reader toward the next concrete source of truth
-- it stays close enough to code, contracts, and tests that drift is visible
+Do not merge specifications or reports into a handbook merely to simplify the
+filesystem. Their authority and lifecycle differ. Do not copy their normative
+text into a public page; explain supported behavior and link to the repository
+source when deeper review is necessary.
 
-## Standards That Matter Most
+## Page Admission
 
-### Write for the reader's question
+Add a durable page only when all of these are true:
 
-Start with the practical question the page answers. Pages should not open by
-describing documentation process unless the process itself is the subject.
+1. A named audience has a question not already owned by another page.
+2. The answer is stable enough to maintain across releases.
+3. Code, schema, command, test, or governance evidence can expose drift.
+4. The page has a durable owner and an intended navigation route.
+5. Adding it is better than extending or replacing an existing authority.
 
-### Name the owning surface clearly
+A new heading, initiative, package, or report does not automatically require a
+new page. If the content cannot survive without phrases such as "use this page
+when" and a generic list of anchors, the reader question is probably not yet
+clear enough.
 
-Readers should be able to tell whether the page is about the CLI runtime, the
-DAG stack, the maintainer control plane, or a shared repository boundary.
+## Publication Budget
 
-### State capability boundaries directly
+The governed policy in `configs/dag/policy/docs_lint_policy.json` limits:
 
-If something is stable, say so. If it is experimental, simulated, internal, or
-future, say that just as plainly. Avoid language that lets aspirational work
-sound shipped by accident.
+- the public MkDocs navigation to 100 Markdown pages;
+- product handbooks to `docs/<product>/<category>/<page>.md`;
+- each crate-local `docs/` tree to ten Markdown pages.
 
-### Use proof-bearing references
+The budget is a ceiling, not a target. A public addition should displace,
+consolidate, or justify itself against existing navigation. Internal
+specifications and generated reports do not consume the public-page budget, but
+they still require authority, provenance, and retention discipline.
 
-Behavior claims should route readers toward the code, contract, generated
-reference, or test suite that would expose drift.
+## Content Acceptance
 
-### Prefer realistic examples
+A canonical page must:
 
-Commands, paths, and examples should reflect how the repository actually works
-today. Placeholder-style examples are acceptable only when a page is about a
-pattern rather than a specific supported workflow.
+- state current behavior before background or aspiration;
+- distinguish stable, experimental, simulated, internal, and unsupported
+  surfaces;
+- name the component or process that owns the behavior;
+- explain failure, refusal, recovery, or release consequence where relevant;
+- use executable examples when the reader is expected to run a workflow;
+- cite real repository paths only when they help verify or change the behavior;
+- avoid decorative diagrams, invented measurements, placeholder sections, and
+  repeated navigation prose.
 
-## Language Rules
+Frontmatter under the four handbook roots must contain `title`, `audience`,
+`type`, `status`, `owner`, and `last_reviewed`. A current review date means the
+reviewer checked behavior and references; changing the date alone is not a
+review.
 
-- prefer direct declarative language over hedging
-- use ownership verbs such as `owns`, `publishes`, `enforces`, `proves`, and
-  `does not support`
-- avoid vague filler such as "basically," "generally," or "kind of"
-- when uncertainty is real, name the uncertainty and the validating surface
+## Authority Conflicts
 
-## Structural Rules
+Machine schemas own serialized shape. Executable specifications and tests own
+enforced behavior. Handbooks own supported reader-facing explanations. Package
+pages own package-local use and boundaries. Reports retain evidence for a
+revision.
 
-Every handbook page should make the following easy to find:
+When two surfaces disagree, determine the intended behavior and repair every
+affected authority and consumer. Do not preserve contradictory text because
+one copy is generated, or weaken a test to make stale prose pass.
 
-- what the page is about
-- which audience it is for
-- where the authoritative next read lives
+## Consolidation And Removal
 
-Canonical frontmatter remains required:
+Merge or remove a page when it:
 
-- `title`
-- `audience`
-- `type`
-- `status`
-- `owner`
-- `last_reviewed`
+- duplicates another authority;
+- has no distinct reader decision;
+- consists mainly of headings, generic bullets, or path catalogs;
+- describes a capability outside the release boundary without a necessary
+  limitation or roadmap role;
+- has no inbound route and no executable consumer;
+- records transient status better kept in an issue or artifact.
 
-The exact section order can vary when the page reads better that way. The
-important rule is that structure should help orientation, not become a ritual.
+Before removal, search Markdown, source, tests, generators, and workflow files
+for path consumers. Stable `docs/spec` and `docs/reports` paths can be
+interfaces; moving them requires updating producers and contract tests in the
+same change.
 
-## Common Documentation Failures
+## Required Review
 
-- process-oriented opening paragraphs on pages readers expect to be product or
-  repository guidance
-- claims that outgrow the real release boundary
-- reports that imply support instead of summarizing evidence
-- pages that name paths but never explain why the reader should care
-- examples that look synthetic enough to undermine trust
+Run `make docs-check` before handoff. Inspect the built entry pages and changed
+navigation under `artifacts/docs/site`; a strict build cannot judge whether a
+claim is honest or an example is useful.
 
-## Repository Anchors
-
-These roots and files shape most documentation decisions:
-
-- `mkdocs.yml` for published navigation
-- `mkdocs.shared.yml` for shared site behavior
-- `makes/docs.mk` for docs build and validation entrypoints
-- `docs/index.md` for top-level site routing
-
-## Documentation Authorities
-
-- [Decision Record Policy](decision-record-policy.md)
-- [Risk and Exceptions](risk-and-exceptions.md)
-- [Maintainer Documentation Standard](../../bijux-dev/governance/documentation-standard.md)
+Use the [Documentation System](../foundation/documentation-system.md) for the
+authority order and [Documentation Operations](../../bijux-dev/operations/docs-operations.md)
+for commands and evidence.
