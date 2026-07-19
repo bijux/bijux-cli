@@ -4,54 +4,88 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-19
 ---
 
-# Security and Secrets
+# Security And Secrets
 
-Use this page when a maintainer workflow touches credentials, release tokens,
-or generated evidence and the real question is: what must stay private so the
-repository can still trust its own automation?
+Maintainer automation can publish packages, write releases, upload containers,
+and retain evidence. Credentials for those operations are capabilities, not
+configuration convenience. Their scope, lifetime, and exposure path must match
+one owned operation.
 
-Security and secrets governance exists to protect three things at once:
-publication authority, evidence integrity, and operator confidence that green
-automation still means something.
+## Credential Boundaries
 
-## Security Rules
+| Capability | Preferred authority | Must not appear in |
+| --- | --- | --- |
+| GitHub release and repository writes | job-scoped `GITHUB_TOKEN` permissions | source, local config examples, or uploaded logs |
+| crates.io publication | release secret or approved trusted identity | Cargo config committed to the repository |
+| PyPI publication | trusted publishing with environment protection | package metadata, wheel contents, or command arguments |
+| container publication | job-scoped package permission | image layers, build arguments, or retained environment dumps |
+| local maintainer access | environment or OS credential store | shell history, reports, fixtures, or copied diagnostics |
 
-- do not embed secrets in source or generated artifacts
-- use scoped credentials with least-privilege access
-- sanitize logs and reports to avoid accidental leakage
-- rotate credentials after incident response events
+Prefer short-lived identity and trusted publishing over reusable bearer tokens.
+When a token is unavoidable, grant only the registry, package, and operation
+needed by the job.
 
-## Where Exposure Usually Happens
+## Workflow Review
 
-- CI workflow secrets and release tokens
-- local maintainer environments and shell history
-- generated reports that may include sensitive paths or identifiers
+For every workflow that can read a secret or write externally, verify:
 
-## What Maintainers Should Check
+1. The triggering event cannot execute untrusted pull-request code with the
+   credential.
+2. Permissions are declared at the workflow or job and are no broader than the
+   operation requires.
+3. The secret is not passed through command-line arguments, debug traces,
+   caches, matrices, artifacts, or generated reports.
+4. Fork and dependency behavior cannot replace the code that receives the
+   credential.
+5. Publication is tied to an accepted source revision and records artifact
+   identity.
+6. Failure and retry behavior cannot publish a conflicting or unreviewed
+   artifact.
 
-| Surface | Why it matters |
-| --- | --- |
-| workflow changes | a harmless-looking automation edit can widen secret exposure |
-| local helper commands | shell history, temp files, and copied output often leak before code does |
-| generated evidence | reports must stay useful without disclosing credentials or internal-only identifiers |
+`pull_request_target` requires particular scrutiny because it runs with base
+repository authority. Never combine that authority with checkout or execution
+of untrusted head-revision code.
 
-## Reader Shortcut
+## Local And Generated Evidence
 
-If a workflow requires a broader secret scope than the publication or evidence
-step it supports, the workflow is the problem. Do not normalize oversized
-credentials just because the happy path currently works.
+- Direct command output, caches, and reports to `artifacts/`.
+- Treat environment dumps as sensitive until reviewed and redacted.
+- Use synthetic credentials in tests and documentation.
+- Do not retain complete request headers, registry configuration, or credential
+  store paths in governed reports.
+- Redaction is a display control, not proof that the underlying value was never
+  stored or transmitted.
 
-## Code Anchors
+Before committing generated evidence, inspect both the content and its
+producer. A report that hides one known token format can still expose another
+secret, a private path, or a credential-bearing URL.
+
+## Incident Handling
+
+If exposure is suspected:
+
+1. Stop the affected workflow or publication path without deleting evidence.
+2. Revoke or rotate the credential at its authority.
+3. Record affected repositories, packages, registries, runs, and time window.
+4. Preserve workflow logs, artifact digests, release identities, and audit
+   records with access limited to responders.
+5. Determine whether unauthorized artifacts or releases were published.
+6. Repair the exposure path and add a regression control before restoring
+   publication.
+7. Follow the root [`SECURITY.md`](../../../SECURITY.md) disclosure process
+   when users or supported artifacts may be affected.
+
+Rotation limits future use; it does not remove a published artifact, erase a
+log, or prove the credential was not used.
+
+## Review Anchors
 
 - `.github/workflows/`
-- `crates/bijux-dev/src/tooling/git.rs`
-- `crates/bijux-dev/src/tooling/cargo.rs`
-
-## Continue Reading
-
+- `.github/release.env`
+- `makes/gh.mk`
+- [CI and Automation](../operations/ci-and-automation.md)
 - [Incident Response](../operations/incident-response.md)
-- [Risk and Exceptions](../../bijux-core/governance/risk-and-exceptions.md)
 - [Release Operations](../operations/release-operations.md)

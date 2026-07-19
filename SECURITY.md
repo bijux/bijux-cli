@@ -1,95 +1,114 @@
 # Security Policy
 
-This repository uses coordinated vulnerability disclosure. Security reports are
-handled privately until we understand impact and have a remediation path.
+Report suspected vulnerabilities privately. Do not open a public issue with
+exploit details, credentials, private data, or an unpatched reproduction.
 
-This repository is explicit about one important trust boundary:
+## Supported Releases
 
-- the runtime can execute installed plugins
-- plugins are not sandboxed
-- installing a plugin is a trust decision, not a security boundary
+| Surface | Support status |
+| --- | --- |
+| latest official tagged release and its repository-published artifacts | receives security assessment and fixes when the issue is confirmed and a fix is feasible |
+| older tagged releases | not ordinarily patched; reporters may be asked to verify the latest release |
+| `main`, development branches, and local source builds | reports are accepted, but these are not supported release artifacts |
+| private maintainer tooling | reports are assessed when they can compromise repository, CI, release, or published-artifact integrity |
+| third-party plugins, container engines, executors, and infrastructure | maintained by their owners unless the vulnerability is caused by a Bijux host boundary or integration defect |
 
-## What This Policy Covers
+An official artifact is produced by this repository's release workflows from a
+tag. A version string in an untagged checkout does not establish release
+support.
 
-Security reports may cover:
+## Report Privately
 
-- this monorepo and shared tooling under `makes/`, `configs/`, and `docs/`
-- workspace crates under `crates/`, including `bijux-cli`, `bijux-cli-python`,
-  and DAG runtime crates
-- published artifacts produced from official tagged releases in this repository
+Preferred channel:
 
-## What To Report
-
-Examples of in-scope reports include:
-
-- authentication or authorization bypass
-- unsafe defaults that expose data or execution surfaces
-- supply-chain weaknesses in build, publish, or artifact handling
-- secrets exposure in tracked files or generated release artifacts
-
-## Supported Versions
-
-Security fixes are applied to the latest released `bijux-cli` runtime only.
-For this policy, "released" means an official tagged release with published
-artifacts from this repository. Older versions may not receive patches.
-Development branches, untagged local checkouts, and workspace-only maintainer
-tooling are reviewed on a best-effort basis.
-
-## Reporting a Vulnerability
-
-Preferred:
-- GitHub private report: https://github.com/bijux/bijux-core/security/advisories/new
+- [GitHub private vulnerability reporting](https://github.com/bijux/bijux-core/security/advisories/new)
 
 Fallback:
-- Email: [bijan@bijux.io](mailto:bijan@bijux.io)
 
-Please include:
-- affected version and install method
-- whether the issue was observed on an official tagged release, a local checkout,
-  or a workspace build
-- operating system and runtime details
-- clear reproduction steps
-- expected impact
-- PoC (if available)
+- [bijan@bijux.io](mailto:bijan@bijux.io)
 
-Do not include secrets or private user data in reports.
+Include enough information to reproduce and assess the issue:
 
-## Response Expectations
+- affected package, command, version, and installation method;
+- operating system, architecture, and relevant runtime or backend;
+- minimal reproduction steps or proof of concept;
+- expected and observed security boundary;
+- impact, required privileges, and whether user interaction is required;
+- whether secrets or private data may have been exposed.
 
-This project is maintained on a best-effort basis.
+Remove live credentials and personal data. Use synthetic values and attach
+large or sensitive evidence only through a channel agreed during private
+triage.
 
-Current targets:
-- acknowledgement within 48 hours
-- initial assessment within 5 business days
+## Repository Trust Boundaries
 
-Complex issues can take longer to fix.
+### CLI plugins
 
-## Disclosure
+Installed plugins execute with the invoking user's privileges. They are not
+sandboxed. Namespace checks, manifest validation, checksums, environment
+shaping, and timeouts protect routing and lifecycle integrity; they do not
+establish publisher identity or restrict filesystem, network, credential, or
+subprocess access.
 
-Please do not disclose publicly before a fix or mitigation is available.
-We will publish a GitHub security advisory when appropriate.
+A flaw that lets plugin metadata bypass documented host validation is in scope.
+Malicious behavior by plugin code that the user deliberately installed is a
+third-party plugin issue unless the host promised and failed to enforce the
+affected boundary.
 
-## Scope
+### DAG execution
 
-In scope:
-- this repository
-- official release artifacts published from tagged releases in this repository
-- the runtime, Python compatibility package, and repository-owned docs or build flows when they affect supported release artifacts on Linux or macOS
+The local shell backend runs trusted commands as host processes. Policy flags
+validate declared effects but do not provide a general host sandbox. Container
+execution delegates isolation to the selected engine. Replay sandboxing
+protects retained source evidence from writes; it does not isolate executed
+code.
 
-Out of scope:
-- vulnerabilities in third-party plugins not maintained here
-- the trust or behavior of locally installed untrusted plugins
-- unsupported Windows runtime behavior
-- untagged local checkout version strings or source-tree-only release preparation state by themselves
-- social engineering and physical attacks
-- denial-of-service load testing
-- third-party infrastructure outside this project
+Path traversal, artifact-integrity bypass, policy-enforcement bypass, or a
+false isolation claim caused by repository code is in scope.
 
-## Notes
+### Build and publication
 
-- No public bug bounty program.
-- Non-security questions should go to regular GitHub issues.
-- If the report depends on a third-party plugin, say whether the issue is in the
-  runtime host or in the plugin itself.
-- A host-side bypass of the documented plugin trust boundary is in scope; the
-  ordinary risk of installing an untrusted plugin is not.
+Release workflows, package provenance, dependency handling, generated
+artifacts, and credential boundaries are in scope when a defect can compromise
+an official artifact or publication authority.
+
+## In-Scope Examples
+
+- path traversal or unauthorized writes outside an owned storage root;
+- command or plugin namespace validation bypass with security impact;
+- artifact, cache, replay, signature, checksum, or provenance validation bypass;
+- secret disclosure through command output, logs, reports, packages, or release
+  artifacts;
+- supply-chain or workflow defects that allow unauthorized publication;
+- isolation or policy behavior materially weaker than the documented enforced
+  boundary;
+- memory-safety defects in repository-owned native code.
+
+## Out Of Scope
+
+- behavior of third-party code within the privileges intentionally granted to
+  it;
+- unsupported versions or platforms unless the issue also affects a supported
+  release;
+- social engineering, physical access, and attacks requiring compromised
+  maintainer accounts without a repository defect;
+- availability testing that creates excessive traffic, resource exhaustion, or
+  service disruption;
+- vulnerabilities in external services with no repository-owned integration
+  defect;
+- version labels or untagged release-preparation state without security impact.
+
+## Coordinated Handling
+
+The maintainer will assess reproducibility, affected releases, impact, and the
+appropriate remediation and disclosure route. The project is maintained on a
+best-effort basis and does not guarantee a response or remediation deadline.
+Please allow private triage before public disclosure.
+
+When appropriate, remediation will include affected code, regression tests,
+release artifacts, and a GitHub security advisory. A report may be closed as
+out of scope, not reproducible, or already addressed, with the reasoning shared
+privately.
+
+There is no public bug bounty program. Non-security defects belong in regular
+GitHub issues.
