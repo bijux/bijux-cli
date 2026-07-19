@@ -1,5 +1,5 @@
 ---
-title: Runnable Examples
+title: Executable Examples
 audience: mixed
 type: reference
 status: canonical
@@ -7,9 +7,10 @@ owner: bijux-dag-docs
 last_reviewed: 2026-07-08
 ---
 
-# Runnable Examples
+# Executable Examples
 
-This page is the public examples index for `bijux-dag` v0.4.0.
+This page is the public, executable examples authority for `bijux-dag`
+v0.4.0.
 
 Use it when the question is "which repository example should I run for this
 behavior, and what should I expect to see when it works?"
@@ -19,6 +20,14 @@ fixture set, or a repository-tested guide. The index stays on the honest
 release boundary: local-first execution, retained evidence, cache and replay
 proof, branch visibility, and container packaging when the required engine is
 present.
+
+The recipe blocks near the end of this page are executed by
+`crates/bijux-dag-app/tests/docs_executable_recipes_contract.rs`. Stable
+commands remain on the visible `bijux-dag --help` surface; experimental
+explicit-path routes are identified rather than presented as stable. The
+[Release Boundary](../foundation/release-boundary.md) and
+`contracts/foundation/dag_release_truth_table.v1.json` govern those
+classifications.
 
 ## Example Map
 
@@ -238,10 +247,89 @@ Expected outputs:
 Guide:
 [Container Packaging Workflow](../operations/container-packaging-workflow.md)
 
+## CI-Executed Recipes
+
+The recipes use variables supplied by the test harness:
+
+- `${GRAPH}`, `${FILE_PROCESSING_GRAPH}`, and
+  `${FILE_PROCESSING_SOURCE_DIR}` identify checked-in fixtures
+- `${RUN_ROOT}`, `${RUN_ID}`, and `${RUN_DIR}` identify retained runs
+- `${REPLAY_ROOT}`, `${EXPORT_BUNDLE}`, and `${DIAG_BUNDLE}` identify evidence
+  outputs
+- `${SOURCE_NOTE}` and `${REVISED_NOTE}` identify bulletin inputs
+- `${CACHE_ROOT}` and `${DELIVERABLES_ROOT}` isolate cache and promoted output
+
+### Major Command Surface
+
+This recipe covers the stable execution and inspection flow plus the
+experimental explicit-path `prove`, `export`, `import`, and `migrate inspect`
+routes.
+
+<!-- recipe:ci-major-dag-commands:start -->
+```bash
+bijux-dag validate --json ${GRAPH}
+bijux-dag plan explain --json ${GRAPH}
+bijux-dag show-effective-graph --json ${GRAPH}
+bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id ${RUN_ID}
+bijux-dag show-effective-graph --json --run-dir ${RUN_DIR}
+bijux-dag explain --json ${RUN_DIR}
+bijux-dag runs history --json --root ${RUN_ROOT} --status success --offset 0 --limit 5 --select run:${RUN_ID}
+bijux-dag runs inspect ${RUN_ID} --root ${RUN_ROOT} --json
+bijux-dag runs diagnostics-bundle ${RUN_ID} --root ${RUN_ROOT} --out ${DIAG_BUNDLE} --json --redact
+bijux-dag runs index --root ${RUN_ROOT} --json
+bijux-dag replay --json ${RUN_DIR} --out ${REPLAY_ROOT}
+bijux-dag diff --json ${RUN_DIR} ${RUN_DIR}
+bijux-dag prove --json ${RUN_DIR}
+bijux-dag verify --json ${RUN_DIR}
+bijux-dag export --json ${RUN_DIR} --out ${EXPORT_BUNDLE}
+bijux-dag import --json --verify-only ${EXPORT_BUNDLE}
+bijux-dag migrate inspect --json --run-dir ${RUN_DIR} --from v0.1 --to v0.1
+```
+<!-- recipe:ci-major-dag-commands:end -->
+
+### Evidence-Backed Bulletin
+
+This recipe proves cold and warm execution, retained artifact inspection,
+changed-input comparison, focused replay, strict verification, and promotion.
+
+<!-- recipe:ci-evidence-backed-bulletin:start -->
+```bash
+bijux-dag validate ${GRAPH}
+bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id branch-bulletin-cold --cache readwrite --cache-dir ${CACHE_ROOT} --input source_note=${SOURCE_NOTE} --input audience_mode=technical
+bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id branch-bulletin-warm --cache readwrite --cache-dir ${CACHE_ROOT} --input source_note=${SOURCE_NOTE} --input audience_mode=technical
+bijux-dag artifact-inspect --json ${RUN_ROOT}/run-branch-bulletin-cold publish_bulletin:bulletin.md
+bijux-dag artifact lineage ${RUN_ROOT}/run-branch-bulletin-cold --json
+bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id branch-bulletin-updated --cache readwrite --cache-dir ${CACHE_ROOT} --input source_note=${REVISED_NOTE} --input audience_mode=executive
+bijux-dag runs compare branch-bulletin-warm branch-bulletin-updated --root ${RUN_ROOT} --json
+bijux-dag run --json ${GRAPH} --out ${RUN_ROOT} --run-id branch-bulletin-proof-source --input source_note=${SOURCE_NOTE} --input audience_mode=executive
+bijux-dag replay --json --source-run-id branch-bulletin-proof-source --source-run-root ${RUN_ROOT} --out ${RUN_ROOT} --run-id branch-bulletin-replay --select id:publish_bulletin --dependency-closure --prove
+bijux-dag verify --json ${RUN_ROOT}/run-branch-bulletin-replay --strict
+bijux-dag artifact promote ${RUN_ROOT}/run-branch-bulletin-updated publish_bulletin:bulletin.md --deliverables-root ${DELIVERABLES_ROOT} --to release --json
+```
+<!-- recipe:ci-evidence-backed-bulletin:end -->
+
+### First-Run Proof
+
+This is the compact executable form of the
+[First-Run Tutorial](../operations/first-run-tutorial.md).
+
+<!-- recipe:ci-first-run-tutorial:start -->
+```bash
+bijux-dag validate ${FILE_PROCESSING_GRAPH}
+bijux-dag show-effective-graph --json ${FILE_PROCESSING_GRAPH}
+bijux-dag run --json ${FILE_PROCESSING_GRAPH} --out ${RUN_ROOT} --run-id first-run-tutorial-cold --cache readwrite --cache-dir ${CACHE_ROOT} --input source_dir=${FILE_PROCESSING_SOURCE_DIR} --input report_title=First-Run-Tutorial-Report
+bijux-dag explain ${RUN_ROOT}/run-first-run-tutorial-cold
+bijux-dag artifact registry ${RUN_ROOT}/run-first-run-tutorial-cold --json
+bijux-dag artifact-inspect --json ${RUN_ROOT}/run-first-run-tutorial-cold render_report:report.md
+bijux-dag run --json ${FILE_PROCESSING_GRAPH} --out ${RUN_ROOT} --run-id first-run-tutorial-warm --cache readwrite --cache-dir ${CACHE_ROOT} --input source_dir=${FILE_PROCESSING_SOURCE_DIR} --input report_title=First-Run-Tutorial-Report
+bijux-dag replay --json --source-run-id first-run-tutorial-cold --source-run-root ${RUN_ROOT} --out ${RUN_ROOT} --run-id first-run-tutorial-replay --from-node render_report
+bijux-dag verify --json ${RUN_ROOT}/run-first-run-tutorial-replay --strict
+```
+<!-- recipe:ci-first-run-tutorial:end -->
+
 ## Next Reads
 
 - [Entrypoints and Examples](entrypoints-and-examples.md)
-- [Executable Recipes](executable-recipes.md)
 - [Operator Workflows](operator-workflows.md)
 - [First-Run Tutorial](../operations/first-run-tutorial.md)
 - [Cache Behavior Workflow](../operations/cache-behavior-workflow.md)

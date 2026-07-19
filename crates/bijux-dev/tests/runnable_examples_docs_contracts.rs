@@ -16,7 +16,7 @@ fn runnable_examples_catalog_covers_required_examples_with_expected_outputs() {
     let catalog = read_repo_file("docs/bijux-dag/interfaces/runnable-examples.md");
 
     for token in [
-        "# Runnable Examples",
+        "# Executable Examples",
         "minimal hello DAG",
         "file-processing DAG",
         "cache demo",
@@ -58,7 +58,7 @@ fn public_dag_entry_surfaces_route_example_questions_to_the_catalog() {
         let content = read_repo_file(path);
         assert!(
             content.contains("interfaces/examples/index.md")
-                || content.contains("Runnable Examples"),
+                || content.contains("Executable Examples"),
             "{path} must route example questions to the runnable examples catalog"
         );
     }

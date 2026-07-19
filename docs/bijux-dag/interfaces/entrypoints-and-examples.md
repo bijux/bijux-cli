@@ -14,7 +14,7 @@ concrete commands instead of conceptual overviews.
 
 If you want the repository-backed example set indexed by workflow and expected
 output instead of by interface surface, start with
-[Runnable Examples](runnable-examples.md).
+[Executable Examples](runnable-examples.md).
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
@@ -238,7 +238,7 @@ println!("spec={}", graph.spec);
 
 ## Next Reads
 
-- [Runnable Examples](runnable-examples.md)
+- [Executable Examples](runnable-examples.md)
 - [CLI Surface](cli-surface.md)
 - [Generated CLI Reference](generated-cli-reference.md)
 - [Gated Command Inventory](gated-command-inventory.md)

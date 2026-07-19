@@ -22,7 +22,7 @@ to the shipped public `v0.4.0` surface.
 | If you need to... | Open this page |
 | --- | --- |
 | inspect the visible `bijux-dag` command contract | [CLI Surface](cli-surface.md) |
-| see real runnable examples before adopting the tool | [Runnable Examples](runnable-examples.md) |
+| run repository examples with declared evidence | [Executable Examples](runnable-examples.md) |
 | embed DAG behavior from Rust | [API Surface](api-surface.md) |
 | understand graph, run, replay, and diff payloads | [Data Contracts](data-contracts.md) |
 | understand compatibility promises and boundaries | [Compatibility Commitments](compatibility-commitments.md) |
@@ -53,7 +53,7 @@ to the shipped public `v0.4.0` surface.
 - [Operator Command Index](operator-command-index.md)
 - [Operator Inspection Guide](operator-inspection-guide.md)
 - [Support Matrix](support-matrix.md)
-- [Runnable Examples](runnable-examples.md)
+- [Executable Examples](runnable-examples.md)
 - [API Surface](api-surface.md)
 - [Configuration Surface](configuration-surface.md)
 - [Data Contracts](data-contracts.md)
@@ -67,7 +67,6 @@ to the shipped public `v0.4.0` surface.
 - [Reusable Subgraphs](reusable-subgraphs.md)
 - [Artifact Contracts](artifact-contracts.md)
 - [Entrypoints and Examples](entrypoints-and-examples.md)
-- [Executable Recipes](executable-recipes.md)
 - [Operator Workflows](operator-workflows.md)
 - [Public Imports](public-imports.md)
 - [Compatibility Commitments](compatibility-commitments.md)

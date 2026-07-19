@@ -70,7 +70,7 @@ predictable recovery under change.
 
 ## Cross References
 
-- [Runnable Examples](../interfaces/runnable-examples.md)
+- [Executable Examples](../interfaces/runnable-examples.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Change Validation](../quality/change-validation.md)
 

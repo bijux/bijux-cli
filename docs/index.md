@@ -77,7 +77,7 @@ the repository, but they are not presented here as the default product story.
 
 ## Practical Starting Points
 
-- Read [Runnable Examples](bijux-dag/interfaces/runnable-examples.md) when you
+- Read [Executable Examples](bijux-dag/interfaces/runnable-examples.md) when you
   want real DAG workflows with expected outputs, not just feature descriptions.
 - Read [First-Run Tutorial](bijux-dag/operations/first-run-tutorial.md)
   when you want the shortest route from checkout to a real retained DAG run.

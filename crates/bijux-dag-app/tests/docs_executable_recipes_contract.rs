@@ -100,7 +100,7 @@ fn docs_major_dag_recipe_is_ci_executable() {
     vars.insert("EXPORT_BUNDLE", export_bundle.to_string_lossy().into_owned());
     vars.insert("DIAG_BUNDLE", diagnostics_bundle.to_string_lossy().into_owned());
 
-    let docs_path = root.join("docs/bijux-dag/interfaces/executable-recipes.md");
+    let docs_path = root.join("docs/bijux-dag/interfaces/runnable-examples.md");
     let commands = load_recipe_commands(&docs_path, "ci-major-dag-commands");
     assert!(
         commands.len() >= 10,
@@ -177,7 +177,7 @@ fn docs_evidence_backed_bulletin_recipe_is_ci_executable() {
             .into_owned(),
     );
 
-    let docs_path = root.join("docs/bijux-dag/interfaces/executable-recipes.md");
+    let docs_path = root.join("docs/bijux-dag/interfaces/runnable-examples.md");
     let commands = load_recipe_commands(&docs_path, "ci-evidence-backed-bulletin");
     assert!(
         commands.len() >= 8,
@@ -234,7 +234,7 @@ fn docs_first_run_tutorial_recipe_is_ci_executable() {
     vars.insert("RUN_ROOT", run_root.to_string_lossy().into_owned());
     vars.insert("CACHE_ROOT", cache_root.to_string_lossy().into_owned());
 
-    let docs_path = root.join("docs/bijux-dag/interfaces/executable-recipes.md");
+    let docs_path = root.join("docs/bijux-dag/interfaces/runnable-examples.md");
     let commands = load_recipe_commands(&docs_path, "ci-first-run-tutorial");
     assert!(
         commands.len() >= 8,

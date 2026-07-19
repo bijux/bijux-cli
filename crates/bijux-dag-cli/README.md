@@ -84,7 +84,7 @@ place to read is usually `bijux-dag-app`.
 
 ## Representative Workflows
 
-- [Runnable Examples](../../docs/bijux-dag/interfaces/runnable-examples.md)
+- [Executable Examples](../../docs/bijux-dag/interfaces/runnable-examples.md)
   maps the repository-backed hello, file-processing, cache, replay, failure,
   branch, and container proofs to their expected outputs.
 - [File Processing Workflow](../../docs/bijux-dag/operations/file-processing-workflow.md)

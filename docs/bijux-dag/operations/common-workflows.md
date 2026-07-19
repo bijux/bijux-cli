@@ -78,7 +78,7 @@ stop state.
 
 For one index of the repository-backed hello, file-processing, cache, replay,
 failure, branch, and container proofs, use
-[Runnable Examples](../interfaces/runnable-examples.md).
+[Executable Examples](../interfaces/runnable-examples.md).
 
 For one end-to-end local workflow that validates real input files, renders a
 promotable report, proves warm-cache reuse, and exercises focused replay, use
@@ -128,7 +128,7 @@ operator sequence is still unclear.
 
 ## Next Reads
 
-- [Runnable Examples](../interfaces/runnable-examples.md)
+- [Executable Examples](../interfaces/runnable-examples.md)
 - [Failure Recovery](failure-recovery.md)
 - [Branching Bulletin Workflow](branching-bulletin-workflow.md)
 - [Compliance-Gated Bulletin Workflow](compliance-gated-bulletin-workflow.md)

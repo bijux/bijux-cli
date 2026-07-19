@@ -228,7 +228,7 @@ nav:
           - Authoring Guide: bijux-dag/interfaces/authoring-guide.md
           - Graph Schema: bijux-dag/interfaces/graph-schema.md
           - Artifact Contracts: bijux-dag/interfaces/artifact-contracts.md
-          - Runnable Examples: bijux-dag/interfaces/runnable-examples.md
+          - Executable Examples: bijux-dag/interfaces/runnable-examples.md
           - Reproducibility Model: bijux-dag/interfaces/reproducibility-model.md
           - Run Evidence Layout: bijux-dag/interfaces/run-evidence-layout.md
           - Compatibility Matrix: bijux-dag/interfaces/compatibility-matrix.md

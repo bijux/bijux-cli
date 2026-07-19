@@ -231,7 +231,7 @@ real file-processing graph. It writes all retained output under
 explains each result and the [run evidence reference](docs/bijux-dag/interfaces/run-evidence-layout.md)
 defines the retained files.
 
-Use [Runnable Examples](docs/bijux-dag/interfaces/runnable-examples.md) for other
+Use [Executable Examples](docs/bijux-dag/interfaces/runnable-examples.md) for other
 repository-backed workflows, [Execution Security And Isolation](docs/bijux-dag/operations/security-isolation-truth.md)
 for the actual host boundary, [v0.4.0 Release Notes](docs/bijux-dag/operations/v0-4-0-release-notes.md)
 for the shipped release, and the [Bijux Dag Roadmap](docs/bijux-dag/roadmap.md)

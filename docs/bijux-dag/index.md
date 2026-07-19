@@ -45,7 +45,7 @@ inventory.
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/first-run-tutorial.md">Start with the first-run tutorial</a>
 <a class="md-button" href="operations/v0-4-0-release-notes.md">Read the v0.4.0 release notes</a>
-<a class="md-button" href="interfaces/runnable-examples.md">Open runnable examples</a>
+<a class="md-button" href="interfaces/runnable-examples.md">Open executable examples</a>
 <a class="md-button" href="packages/index.md">Open the package map</a>
 </div>
 
@@ -54,7 +54,7 @@ inventory.
 | If you want to... | Open this page |
 | --- | --- |
 | get a working DAG run as fast as possible | [First-Run Tutorial](operations/first-run-tutorial.md) |
-| browse real workflows with expected outputs | [Runnable Examples](interfaces/runnable-examples.md) |
+| browse real workflows with expected outputs | [Executable Examples](interfaces/runnable-examples.md) |
 | check whether a command or backend is part of the shipped boundary | [Release Boundary](foundation/release-boundary.md) |
 | understand retained run evidence on disk | [Run Evidence Layout](interfaces/run-evidence-layout.md) |
 | understand graph, plan, execution, cache, and replay identity | [Reproducibility Model](interfaces/reproducibility-model.md) |

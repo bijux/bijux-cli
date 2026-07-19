@@ -222,11 +222,11 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         );
     }
 
-    let recipes = read_repo_file("docs/bijux-dag/interfaces/executable-recipes.md");
+    let recipes = read_repo_file("docs/bijux-dag/interfaces/runnable-examples.md");
     assert_contains_all(
         &recipes,
         &["experimental explicit-path routes", "bijux-dag explain --json ${RUN_DIR}"],
-        "docs/bijux-dag/interfaces/executable-recipes.md",
+        "docs/bijux-dag/interfaces/runnable-examples.md",
     );
 
     let release_binary = read_repo_file("docs/spec/RELEASE_BINARY_VERIFICATION.md");
@@ -282,8 +282,7 @@ fn release_boundary_references_route_readers_to_handbook_pages() {
         "docs/bijux-cli/interfaces/entrypoints-and-examples.md",
         "docs/bijux-cli/interfaces/command-examples.md",
         "docs/bijux-cli/operations/migration-guide.md",
-        "docs/bijux-dag/interfaces/executable-recipes.md",
-        "docs/bijux-dag/interfaces/executable-recipes.md",
+        "docs/bijux-dag/interfaces/runnable-examples.md",
         "docs/bijux-dag/interfaces/support-matrix.md",
         "docs/bijux-dag/operations/ci-integration.md",
         "docs/bijux-dag/operations/first-run-tutorial.md",
