@@ -122,16 +122,16 @@ lane is opt-in behind `experimental-public-api`.
   inputs
 - open [`bijux-dag-app`](bijux-dag-app.md) for command orchestration and
   response shaping
-- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md)
+- open [Reproducibility Model](../interfaces/reproducibility-model.md)
   for the canonical explanation of plan identity, execution identity,
   environment identity, cache keys, and replay-bundle boundaries
-- open [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md)
+- open [Cache Behavior Workflow](../operations/cache-behavior-workflow.md)
   when you want a real execution path for cache hits, invalidation, corruption
   refusal, and proof-backed reuse rejection
-- open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)
+- open [Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md)
   when you want a real execution path for retry evidence, source-run input
   rematerialization, and repair verification
-- open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
+- open [Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md)
   when you want a real execution path for branch decisions, skipped-lane
   evidence, and replay stability
 

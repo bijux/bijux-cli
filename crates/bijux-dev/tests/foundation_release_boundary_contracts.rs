@@ -222,7 +222,7 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         );
     }
 
-    let recipes = read_repo_file("docs/bijux-dag/interfaces/guides/executable-recipes.md");
+    let recipes = read_repo_file("docs/bijux-dag/interfaces/executable-recipes.md");
     assert_contains_all(
         &recipes,
         &["experimental explicit-path routes", "bijux-dag explain --json ${RUN_DIR}"],
@@ -240,7 +240,7 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         "docs/spec/RELEASE_BINARY_VERIFICATION.md",
     );
 
-    let support_matrix = read_repo_file("docs/bijux-dag/interfaces/reference/support-matrix.md");
+    let support_matrix = read_repo_file("docs/bijux-dag/interfaces/support-matrix.md");
     assert_contains_all(
         &support_matrix,
         &[
@@ -250,8 +250,7 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         "docs/bijux-dag/interfaces/support-matrix.md",
     );
 
-    let first_hour =
-        read_repo_file("docs/bijux-dag/operations/guides/first-hour-with-bijux-dag.md");
+    let first_hour = read_repo_file("docs/bijux-dag/operations/first-hour-with-bijux-dag.md");
     assert_contains_all(
         &first_hour,
         &[
@@ -265,7 +264,7 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
         "first-hour doc must not present `capabilities --json` as part of the public operator lane"
     );
 
-    let ci = read_repo_file("docs/bijux-dag/operations/guides/ci-integration.md");
+    let ci = read_repo_file("docs/bijux-dag/operations/ci-integration.md");
     assert_contains_all(
         &ci,
         &[
@@ -281,13 +280,13 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
 fn release_boundary_references_route_readers_to_handbook_pages() {
     for path in [
         "docs/bijux-cli/interfaces/entrypoints-and-examples.md",
-        "docs/bijux-cli/interfaces/examples/command-examples.md",
-        "docs/bijux-cli/operations/reference/migration-guide.md",
+        "docs/bijux-cli/interfaces/command-examples.md",
+        "docs/bijux-cli/operations/migration-guide.md",
         "docs/bijux-dag/interfaces/executable-recipes.md",
-        "docs/bijux-dag/interfaces/guides/executable-recipes.md",
-        "docs/bijux-dag/interfaces/reference/support-matrix.md",
-        "docs/bijux-dag/operations/guides/ci-integration.md",
-        "docs/bijux-dag/operations/guides/first-hour-with-bijux-dag.md",
+        "docs/bijux-dag/interfaces/executable-recipes.md",
+        "docs/bijux-dag/interfaces/support-matrix.md",
+        "docs/bijux-dag/operations/ci-integration.md",
+        "docs/bijux-dag/operations/first-hour-with-bijux-dag.md",
         "docs/spec/RELEASE_BINARY_VERIFICATION.md",
     ] {
         let content = read_repo_file(path);
@@ -313,12 +312,12 @@ fn release_boundary_references_route_readers_to_handbook_pages() {
 fn dag_operator_reference_docs_use_public_binary_examples() {
     for path in [
         "docs/bijux-dag/interfaces/generated-cli-reference.md",
-        "docs/bijux-dag/interfaces/reference/command-taxonomy.md",
+        "docs/bijux-dag/interfaces/command-taxonomy.md",
         "docs/bijux-dag/interfaces/configuration-surface.md",
-        "docs/bijux-dag/interfaces/reference/node-inspection.md",
-        "docs/bijux-dag/interfaces/reference/gated-command-inventory.md",
-        "docs/bijux-dag/interfaces/reference/operator-command-index.md",
-        "docs/bijux-dag/interfaces/guides/operator-inspection-guide.md",
+        "docs/bijux-dag/interfaces/node-inspection.md",
+        "docs/bijux-dag/interfaces/gated-command-inventory.md",
+        "docs/bijux-dag/interfaces/operator-command-index.md",
+        "docs/bijux-dag/interfaces/operator-inspection-guide.md",
         "docs/bijux-dag/operations/failure-recovery.md",
     ] {
         let content = read_repo_file(path);
@@ -367,7 +366,7 @@ fn dag_interface_indexes_link_generated_cli_references() {
 #[test]
 fn backend_release_docs_keep_shipped_lanes_and_future_lanes_separate() {
     let release_boundary = read_repo_file("docs/bijux-dag/foundation/release-boundary.md");
-    let support_matrix = read_repo_file("docs/bijux-dag/interfaces/reference/support-matrix.md");
+    let support_matrix = read_repo_file("docs/bijux-dag/interfaces/support-matrix.md");
 
     assert_contains_all(
         &release_boundary,
@@ -386,13 +385,13 @@ fn backend_release_docs_keep_shipped_lanes_and_future_lanes_separate() {
             "| `run --backend kubernetes` for container nodes | stable | visible `run` surface with explicit backend selection | requires `--kubernetes-volume-claim`, `--kubernetes-shared-root`, and a shared persistent volume claim mounted into Job pods |",
             "| Generic HPC beyond the shared-filesystem SLURM lane, public remote workers, full scheduler service | unreleased | not part of first-hour adoption | broader portability and distributed control are not a `v0.4.0` product promise |",
         ],
-        "docs/bijux-dag/interfaces/reference/support-matrix.md",
+        "docs/bijux-dag/interfaces/support-matrix.md",
     );
 }
 
 #[test]
 fn dag_run_evidence_layout_reference_covers_retained_surfaces() {
-    let layout = read_repo_file("docs/bijux-dag/interfaces/reference/run-evidence-layout.md");
+    let layout = read_repo_file("docs/bijux-dag/interfaces/run-evidence-layout.md");
     assert_contains_all(
         &layout,
         &[
@@ -412,7 +411,7 @@ fn dag_run_evidence_layout_reference_covers_retained_surfaces() {
             "run_summary.promoted_outputs",
             "crates/bijux-dag-app/tests/snapshots/run_dir_hello.json",
         ],
-        "docs/bijux-dag/interfaces/reference/run-evidence-layout.md",
+        "docs/bijux-dag/interfaces/run-evidence-layout.md",
     );
 
     let artifact_contracts = read_repo_file("docs/bijux-dag/interfaces/artifact-contracts.md");
@@ -432,7 +431,7 @@ fn dag_run_evidence_layout_reference_covers_retained_surfaces() {
 
 #[test]
 fn dag_graph_schema_reference_covers_live_authoring_surface() {
-    let graph_schema = read_repo_file("docs/bijux-dag/interfaces/reference/graph-schema.md");
+    let graph_schema = read_repo_file("docs/bijux-dag/interfaces/graph-schema.md");
     assert_contains_all(
         &graph_schema,
         &[
@@ -453,7 +452,7 @@ fn dag_graph_schema_reference_covers_live_authoring_surface() {
             "`subgraph_instances`",
             "Validation diagnostics always carry",
         ],
-        "docs/bijux-dag/interfaces/reference/graph-schema.md",
+        "docs/bijux-dag/interfaces/graph-schema.md",
     );
 
     let dag_schema = read_repo_file("configs/dag/schema/dag.schema.json");
@@ -485,14 +484,14 @@ fn dag_registry_and_root_cli_docs_preserve_public_binary_identity() {
     assert_eq!(dag["runtime_binary"], "bijux-dag");
     assert_eq!(dag["runtime_package"], "bijux-dag-cli");
 
-    let examples = read_repo_file("docs/bijux-cli/interfaces/examples/command-examples.md");
+    let examples = read_repo_file("docs/bijux-cli/interfaces/command-examples.md");
     assert_contains_all(&examples, &["bijux-dag --help", "bijux apps which dag"], "examples.md");
     assert!(
         !examples.contains("bijux dag --help"),
         "root CLI examples must not present `bijux dag --help` as the public DAG operator surface"
     );
 
-    let migration = read_repo_file("docs/bijux-cli/operations/reference/migration-guide.md");
+    let migration = read_repo_file("docs/bijux-cli/operations/migration-guide.md");
     assert_contains_all(
         &migration,
         &[

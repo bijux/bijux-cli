@@ -14,7 +14,7 @@ and need the governed fixture set that defines the supported authoring
 experience.
 
 For field-level schema details, start with
-[Graph Schema Reference](reference/graph-schema.md). For the contract that
+[Graph Schema Reference](graph-schema.md). For the contract that
 governs the fixture set itself, open
 [Authoring UX Contract](../../spec/AUTHORING_UX_CONTRACT.md).
 

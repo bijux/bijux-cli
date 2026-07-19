@@ -39,5 +39,5 @@ The wider retained-history analytics lane also includes `summary`, `compare`,
 
 ## Detailed Taxonomy
 
-Use [Reference: Command Taxonomy](reference/command-taxonomy.md) for the
+Use [Reference: Command Taxonomy](command-taxonomy.md) for the
 fuller route grouping and subordinate command list.

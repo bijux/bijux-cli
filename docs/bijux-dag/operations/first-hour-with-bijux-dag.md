@@ -12,9 +12,12 @@ last_reviewed: 2026-07-10
 Use this page when you need the shortest operator-facing bootstrap path from a
 fresh checkout to one retained `bijux-dag` run.
 
+Read [Security And Isolation Truth](security-isolation-truth.md) before treating
+policy flags or an execution backend as a host sandbox.
+
 For the longer tutorial sequence, open
-[First Hour Guide](guides/first-hour-with-bijux-dag.md) and
-[First-Run Tutorial](guides/first-run-tutorial.md).
+[First Hour Guide](first-hour-with-bijux-dag.md) and
+[First-Run Tutorial](first-run-tutorial.md).
 
 ## First-hour sequence
 

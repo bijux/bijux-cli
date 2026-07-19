@@ -155,26 +155,26 @@ Node traces persist lifecycle evidence separately from terminal `status`.
 For the repository-backed example that exercises mounted container inputs,
 retained outputs, recorded image digest, and clear engine-unavailable failure
 behavior, use
-[Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md).
+[Container Packaging Workflow](../../docs/bijux-dag/operations/container-packaging-workflow.md).
 
 For the repository-backed example that exercises full-workflow cache hits,
 selective invalidation, corruption refusal, and proof-backed cache rejection on
 one retained workflow family, use
-[Cache Behavior Workflow](../../docs/bijux-dag/operations/guides/cache-behavior-workflow.md).
+[Cache Behavior Workflow](../../docs/bijux-dag/operations/cache-behavior-workflow.md).
 
 For the canonical explanation of how graph identity, plan identity,
 execution identity, environment identity, artifact hashes, cache keys, and
 replay bundles fit together, use
-[Reproducibility Model](../../docs/bijux-dag/interfaces/reference/reproducibility-model.md).
+[Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md).
 
 For the repository-backed example that exercises branch decisions, join trigger
 evaluation, skipped-lane evidence, and replay stability, use
-[Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).
+[Branching Bulletin Workflow](../../docs/bijux-dag/operations/branching-bulletin-workflow.md).
 
 For the repository-backed example that exercises retry accounting, replay
 boundary input rematerialization, and post-repair verification on a failed run,
 use
-[Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
+[Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/compliance-gated-bulletin-workflow.md).
 
 Repository-owned schedule and backfill execution flows are documented in the
 DAG handbook, but they remain internal workflow lanes rather than part of the

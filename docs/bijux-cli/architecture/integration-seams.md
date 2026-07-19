@@ -48,5 +48,5 @@ flowchart LR
 ## Next Reads
 
 - [Extensibility Model](extensibility-model.md)
-- [Deployment Boundaries](../operations/reference/deployment-boundaries.md)
+- [Deployment Boundaries](../operations/deployment-boundaries.md)
 - [Risk Register](../quality/risk-register.md)

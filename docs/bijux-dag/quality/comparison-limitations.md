@@ -13,7 +13,7 @@ Use this page when a comparison result is being interpreted too broadly and you
 need the governed limits of what the comparison harness can actually prove.
 
 For the deeper reference wording, open
-[Comparison Limitations Reference](reference/comparison-limitations.md). For
+[Comparison Limitations Reference](comparison-limitations.md). For
 the governing contract, open
 [Comparison Harness Contract](../../spec/COMPARISON_HARNESS_CONTRACT.md).
 

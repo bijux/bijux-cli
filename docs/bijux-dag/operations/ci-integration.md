@@ -13,7 +13,7 @@ Use this page when you need the minimum honest CI lane for `bijux-dag` without
 blurring the public operator surface and the maintainer-only support surface.
 
 For the deeper walkthrough, open
-[CI Integration Guide](guides/ci-integration.md). For install prerequisites,
+[CI Integration Guide](ci-integration.md). For install prerequisites,
 open [Installation And Setup](installation-and-setup.md).
 
 ## Minimum lane

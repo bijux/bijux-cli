@@ -72,7 +72,7 @@ bijux-dag migrate inspect --json --run-dir ${RUN_DIR} --from v0.1 --to v0.1
 ## CI Recipe: Evidence-Backed Bulletin Workflow
 
 This recipe executes the complete retained bulletin workflow described in
-[Evidence-Backed Bulletin Workflow](../operations/guides/evidence-backed-bulletin-workflow.md).
+[Evidence-Backed Bulletin Workflow](../operations/evidence-backed-bulletin-workflow.md).
 It stays on the stable operator surface except for `artifact-inspect`, which is
 part of the stable visible command inventory for retained artifact inspection.
 
@@ -95,7 +95,7 @@ bijux-dag artifact promote ${RUN_ROOT}/run-branch-bulletin-updated publish_bulle
 ## CI Recipe: First-Run Tutorial
 
 This recipe executes the compact onboarding path described in
-[First-Run Tutorial](../operations/guides/first-run-tutorial.md). It uses the
+[First-Run Tutorial](../operations/first-run-tutorial.md). It uses the
 stable visible operator surface for execution, retained artifacts, warm cache
 reuse, focused replay, and strict verification, plus the explicit-path
 `show-effective-graph` route for pre-execution graph inspection.

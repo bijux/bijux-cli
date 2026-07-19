@@ -42,7 +42,7 @@ const ROADMAP_REFERENCE_ALLOWLIST: [&str; 9] = [
     "docs/bijux-dag/index.md",
     "docs/bijux-dag/foundation/release-boundary.md",
     "docs/bijux-dag/foundation/scope-and-boundaries.md",
-    "docs/bijux-dag/interfaces/reference/support-matrix.md",
+    "docs/bijux-dag/interfaces/support-matrix.md",
     "docs/bijux-dag/quality/known-limitations.md",
     "docs/bijux-dag/operations/v0-4-0-release-notes.md",
     "docs/bijux-core/governance/documentation-governance-alignment.md",
@@ -1186,7 +1186,7 @@ also good `docs/index.md`\n";
             "docs/bijux-dag/index.md",
             "docs/bijux-dag/foundation/release-boundary.md",
             "docs/bijux-dag/foundation/scope-and-boundaries.md",
-            "docs/bijux-dag/interfaces/reference/support-matrix.md",
+            "docs/bijux-dag/interfaces/support-matrix.md",
             "docs/bijux-dag/quality/known-limitations.md",
         ] {
             assert!(roadmap_reference_allowed(rel), "{rel} should allow roadmap routing");
@@ -1197,7 +1197,7 @@ also good `docs/index.md`\n";
     fn roadmap_reference_allowlist_keeps_general_docs_outside_tracking_blocked() {
         assert!(!roadmap_reference_allowed("docs/bijux-dag/operations/common-workflows.md"));
         assert!(!roadmap_reference_allowed(
-            "docs/bijux-dag/architecture/reference/local-only-vs-remote-coordinated-runtime.md"
+            "docs/bijux-dag/architecture/local-only-vs-remote-coordinated-runtime.md"
         ));
     }
 

@@ -85,7 +85,7 @@ where
         "command": "bijux-dev-cli docs write-dag-cli-reference",
         "outputs": [
             "docs/bijux-dag/interfaces/generated-cli-reference.md",
-            "docs/bijux-dag/interfaces/reference/gated-command-inventory.md"
+            "docs/bijux-dag/interfaces/gated-command-inventory.md"
         ],
     }))
 }
@@ -144,7 +144,7 @@ mod tests {
             payload["outputs"],
             serde_json::json!([
                 "docs/bijux-dag/interfaces/generated-cli-reference.md",
-                "docs/bijux-dag/interfaces/reference/gated-command-inventory.md"
+                "docs/bijux-dag/interfaces/gated-command-inventory.md"
             ])
         );
     }

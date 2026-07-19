@@ -71,7 +71,7 @@ fn entry_points_and_boundary_docs_route_future_release_questions_to_roadmap() {
         "docs/bijux-dag/foundation/release-boundary.md",
         "docs/bijux-dag/foundation/scope-and-boundaries.md",
         "docs/bijux-dag/quality/known-limitations.md",
-        "docs/bijux-dag/interfaces/reference/support-matrix.md",
+        "docs/bijux-dag/interfaces/support-matrix.md",
     ] {
         let content = read_repo_file(path);
         assert!(

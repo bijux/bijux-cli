@@ -22,11 +22,11 @@ to the shipped public `v0.4.0` surface.
 | If you need to... | Open this page |
 | --- | --- |
 | inspect the visible `bijux-dag` command contract | [CLI Surface](cli-surface.md) |
-| see real runnable examples before adopting the tool | [Runnable Examples](examples/index.md) |
+| see real runnable examples before adopting the tool | [Runnable Examples](runnable-examples.md) |
 | embed DAG behavior from Rust | [API Surface](api-surface.md) |
 | understand graph, run, replay, and diff payloads | [Data Contracts](data-contracts.md) |
 | understand compatibility promises and boundaries | [Compatibility Commitments](compatibility-commitments.md) |
-| inspect hidden or intentionally gated routes | [Gated Command Inventory](reference/gated-command-inventory.md) |
+| inspect hidden or intentionally gated routes | [Gated Command Inventory](gated-command-inventory.md) |
 
 ## What This Section Covers
 
@@ -53,18 +53,18 @@ to the shipped public `v0.4.0` surface.
 - [Operator Command Index](operator-command-index.md)
 - [Operator Inspection Guide](operator-inspection-guide.md)
 - [Support Matrix](support-matrix.md)
-- [Runnable Examples](examples/index.md)
+- [Runnable Examples](runnable-examples.md)
 - [API Surface](api-surface.md)
 - [Configuration Surface](configuration-surface.md)
 - [Data Contracts](data-contracts.md)
 - [Compatibility Matrix](compatibility-matrix.md)
-- [Graph Schema Reference](reference/graph-schema.md)
-- [Reproducibility Model](reference/reproducibility-model.md)
-- [Run Evidence Layout](reference/run-evidence-layout.md)
+- [Graph Schema Reference](graph-schema.md)
+- [Reproducibility Model](reproducibility-model.md)
+- [Run Evidence Layout](run-evidence-layout.md)
 - [Error Codes](error-codes.md)
-- [Gated Command Inventory](reference/gated-command-inventory.md)
+- [Gated Command Inventory](gated-command-inventory.md)
 - [Authoring Guide](authoring-guide.md)
-- [Reusable Subgraphs](guides/reusable-subgraphs.md)
+- [Reusable Subgraphs](reusable-subgraphs.md)
 - [Artifact Contracts](artifact-contracts.md)
 - [Entrypoints and Examples](entrypoints-and-examples.md)
 - [Executable Recipes](executable-recipes.md)

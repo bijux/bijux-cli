@@ -34,11 +34,11 @@ to deeper explanation only as needed.
 
 ## Exact Retained Paths
 
-Use [Run Evidence Layout](reference/run-evidence-layout.md) when you need the
+Use [Run Evidence Layout](run-evidence-layout.md) when you need the
 exact retained file path for manifests, traces, indexes, cache records, or
 promotions before opening a run by hand.
 
 ## Detailed Walkthrough
 
-Use [Guide: Operator Inspection](guides/operator-inspection-guide.md) for the
+Use [Guide: Operator Inspection](operator-inspection-guide.md) for the
 longer operational walkthrough.

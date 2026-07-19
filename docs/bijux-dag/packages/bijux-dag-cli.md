@@ -59,15 +59,15 @@ maintainer namespaces require `BIJUX_DAG_ENABLE_SIMULATED=1` or
 
 - open [`bijux-dag-app`](./bijux-dag-app.md) for command orchestration and user-facing response shaping
 - open the [DAG Handbook](../index.md) for the wider system map and operator guidance
-- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md) when the visible `bijux-dag` command output is really a question about retained identity, cache proof, or replay-bundle semantics
-- open [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md) for a repository-backed cache verification and explicit-path diagnostic sequence that still runs through the published `bijux-dag` binary
-- open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) for a repository-backed recovery path that stays entirely on the public `bijux-dag` command surface
+- open [Reproducibility Model](../interfaces/reproducibility-model.md) when the visible `bijux-dag` command output is really a question about retained identity, cache proof, or replay-bundle semantics
+- open [Cache Behavior Workflow](../operations/cache-behavior-workflow.md) for a repository-backed cache verification and explicit-path diagnostic sequence that still runs through the published `bijux-dag` binary
+- open [Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md) for a repository-backed recovery path that stays entirely on the public `bijux-dag` command surface
 - open the [Repository Handbook](../../bijux-core/index.md) when process behavior intersects shared release policy
 
 ## Internal Evidence Lanes
 
-- open [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md) only when you intentionally need the repository-backed internal backfill lane through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`
-- open [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md) only when you intentionally need the repository-backed internal schedule lane through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`
+- open [Historical Catalog Backfill Workflow](../operations/historical-catalog-backfill-workflow.md) only when you intentionally need the repository-backed internal backfill lane through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`
+- open [Scheduled Catalog Refresh Workflow](../operations/scheduled-catalog-refresh-workflow.md) only when you intentionally need the repository-backed internal schedule lane through `bijux-dag` with `BIJUX_DAG_ENABLE_INTERNAL=1`
 
 ## Code Anchors
 

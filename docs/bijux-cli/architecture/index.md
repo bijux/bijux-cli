@@ -24,7 +24,7 @@ integration seams, and risk areas.
 
 ## Pages In This Section
 
-- [Root CLI Architecture](reference/root-cli-architecture.md)
+- [Root CLI Architecture](root-cli-architecture.md)
 - [Module Map](module-map.md)
 - [Dependency Direction](dependency-direction.md)
 - [Execution Model](execution-model.md)

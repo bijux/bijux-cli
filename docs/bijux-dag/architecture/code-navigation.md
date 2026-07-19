@@ -43,5 +43,5 @@ flowchart TB
 
 - [Module Map](module-map.md)
 - [Entrypoints and Examples](../interfaces/entrypoints-and-examples.md)
-- [Error Codes](../interfaces/reference/error-codes.md)
+- [Error Codes](../interfaces/error-codes.md)
 - [Review Checklist](../quality/review-checklist.md)

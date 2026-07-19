@@ -38,5 +38,5 @@ run record instead of whichever worker reported first.
 
 ## Detailed Walkthrough
 
-Use [Reference: Controller Backend Artifact Boundary](reference/controller-backend-artifact-boundary.md)
+Use [Reference: Controller Backend Artifact Boundary](controller-backend-artifact-boundary.md)
 for the lower-level handoff rules and examples.

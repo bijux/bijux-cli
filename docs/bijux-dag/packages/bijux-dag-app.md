@@ -72,13 +72,13 @@ visible `bijux-dag --help` release contract.
 - open the [DAG Handbook](../index.md) for the package-wide architecture and interfaces
 - open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question crosses from response shaping into execution policy
 - open [`bijux-dag-cli`](./bijux-dag-cli.md) when the concern is process wiring rather than app orchestration
-- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md) when the question is what the app is reporting about fingerprints, cache proofs, or replay-bundle fidelity
-- open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md) for a repository-backed example of the app surface reporting a real container run and a missing-engine failure
-- open [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md) for a repository-backed example of the app surface reporting changed-input cache misses and corruption-based reuse refusal through explicit diagnostics
-- open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md) for a repository-backed example of the app surface reporting a real branch decision and replay-stable publication path
-- open [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md) for a repository-backed example of the app surface reporting retry evidence, causal failure attribution, and a repaired replay boundary
-- open [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md) for a repository-backed example of the app surface reporting backfill fanout, aggregate summary counts, and failed-partition retry state
-- open [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md) for a repository-backed example of the app surface reporting internal schedule preview, same-slot suppression, queue dispatch, and run-manifest continuity
+- open [Reproducibility Model](../interfaces/reproducibility-model.md) when the question is what the app is reporting about fingerprints, cache proofs, or replay-bundle fidelity
+- open [Container Packaging Workflow](../operations/container-packaging-workflow.md) for a repository-backed example of the app surface reporting a real container run and a missing-engine failure
+- open [Cache Behavior Workflow](../operations/cache-behavior-workflow.md) for a repository-backed example of the app surface reporting changed-input cache misses and corruption-based reuse refusal through explicit diagnostics
+- open [Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md) for a repository-backed example of the app surface reporting a real branch decision and replay-stable publication path
+- open [Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md) for a repository-backed example of the app surface reporting retry evidence, causal failure attribution, and a repaired replay boundary
+- open [Historical Catalog Backfill Workflow](../operations/historical-catalog-backfill-workflow.md) for a repository-backed example of the app surface reporting backfill fanout, aggregate summary counts, and failed-partition retry state
+- open [Scheduled Catalog Refresh Workflow](../operations/scheduled-catalog-refresh-workflow.md) for a repository-backed example of the app surface reporting internal schedule preview, same-slot suppression, queue dispatch, and run-manifest continuity
 
 ## Code Anchors
 

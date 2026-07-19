@@ -35,7 +35,7 @@ Use this page when the question is about what a DAG run leaves behind, how that
 material is identified, and how artifact integrity is verified over time.
 
 For the exact retained filesystem map, open
-[Run Evidence Layout](../interfaces/reference/run-evidence-layout.md).
+[Run Evidence Layout](../interfaces/run-evidence-layout.md).
 
 The intended Rust import lanes are the crate root, `stable`, and `prelude`.
 Hidden compatibility modules remain available for repository-owned coverage, and
@@ -60,10 +60,10 @@ the `experimental` lane is opt-in behind `experimental-public-api`.
 
 ## Open Next
 
-- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md)
+- open [Reproducibility Model](../interfaces/reproducibility-model.md)
   when the question is how retained artifact hashes and producer fingerprints
   participate in cache proof and replay proof
-- open [Run Evidence Layout](../interfaces/reference/run-evidence-layout.md)
+- open [Run Evidence Layout](../interfaces/run-evidence-layout.md)
   when the question is where manifests, traces, indexes, cache entries, or
   promotion records live on disk
 - open [Artifact Contracts](../interfaces/artifact-contracts.md) when the

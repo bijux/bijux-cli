@@ -50,5 +50,5 @@ flowchart LR
 
 - [Extensibility Model](extensibility-model.md)
 - [Deployment Boundaries](../operations/deployment-boundaries.md)
-- [Trust Boundaries](../operations/reference/trust-boundaries.md)
+- [Trust Boundaries](../operations/trust-boundaries.md)
 - [Risk Register](../quality/risk-register.md)

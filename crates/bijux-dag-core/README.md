@@ -99,7 +99,7 @@ into a retryable compliance gate and a repairable publication boundary, use
 For the operator-facing explanation of how graph identity relates to plan,
 execution, cache, and replay identity after this crate lowers a graph into
 deterministic execution surfaces, use
-[Reproducibility Model](../../docs/bijux-dag/interfaces/reference/reproducibility-model.md).
+[Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md).
 
 Repository-owned schedule and backfill authoring examples also live under
 `evidence/dag/authoring/examples/`, but they remain internal workflow lanes

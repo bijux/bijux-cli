@@ -13,7 +13,7 @@ Use this page when automation, release review, or operator triage needs the
 stable public `bijux-dag` error identifiers rather than free-form prose.
 
 For the deeper reference wording, open
-[Error Codes Reference](reference/error-codes.md). Public error code behavior
+[Error Codes Reference](error-codes.md). Public error code behavior
 is governed by [Error Contract](../../spec/ERROR_CONTRACT.md).
 
 ## Public Registry

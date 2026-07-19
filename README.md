@@ -227,15 +227,17 @@ make dag-demo
 
 `make dag-demo` validates, executes, caches, replays, and strictly verifies a
 real file-processing graph. It writes all retained output under
-`artifacts/dag-demo/`. The [first-run tutorial](docs/bijux-dag/operations/guides/first-run-tutorial.md)
-explains each result and the [run evidence reference](docs/bijux-dag/interfaces/reference/run-evidence-layout.md)
+`artifacts/dag-demo/`. The [first-run tutorial](docs/bijux-dag/operations/first-run-tutorial.md)
+explains each result and the [run evidence reference](docs/bijux-dag/interfaces/run-evidence-layout.md)
 defines the retained files.
 
-Use [Runnable Examples](docs/bijux-dag/interfaces/examples/index.md) for other
-repository-backed workflows, [Security And Isolation Truth](docs/bijux-dag/operations/reference/security-isolation-truth.md)
+Use [Runnable Examples](docs/bijux-dag/interfaces/runnable-examples.md) for other
+repository-backed workflows, [Security And Isolation Truth](docs/bijux-dag/operations/security-isolation-truth.md)
 for the actual host boundary, [v0.4.0 Release Notes](docs/bijux-dag/operations/v0-4-0-release-notes.md)
 for the shipped release, and the [Bijux Dag Roadmap](docs/tracking/bijux-dag-roadmap.md)
 only for non-binding future direction.
+The [Reproducibility Model](docs/bijux-dag/interfaces/reproducibility-model.md)
+defines graph, plan, execution, cache, and replay identity.
 
 ## Documentation
 

@@ -50,7 +50,7 @@ before step 2.
 
 When the question is not "which command should I run?" but "which retained file
 should I inspect?", use
-[Run Evidence Layout](reference/run-evidence-layout.md) before opening the run
+[Run Evidence Layout](run-evidence-layout.md) before opening the run
 directory manually.
 
 After `bijux-dag run`, the command now prints a compact post-run summary in
@@ -106,7 +106,7 @@ back to a host shell.
 For the repository-backed workflow that proves mounted inputs, retained
 outputs, stdout/stderr capture, and recorded image identity on a real container
 step, use
-[Container Packaging Workflow](../operations/guides/container-packaging-workflow.md).
+[Container Packaging Workflow](../operations/container-packaging-workflow.md).
 
 ## Run A Branched Workflow Deliberately
 
@@ -123,7 +123,7 @@ which lane ran, and why the other lane did not.
 
 For the repository-backed workflow that demonstrates branch routing, retained
 skip evidence, join-trigger behavior, and replay stability, use
-[Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md).
+[Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md).
 
 ## Interpret Failure Fallout
 
@@ -151,7 +151,7 @@ exclusion.
 
 For a repository-backed recovery sequence that shows a transient retry, a
 separate retry exhaustion run, and a repaired approval boundary replay, use
-[Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md).
+[Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md).
 
 ## Inspect Retry Decisions
 
@@ -229,10 +229,10 @@ different cases:
 For one repository-backed workflow that demonstrates warm reuse, selective
 input invalidation, corruption refusal, and both explanation paths on the same
 retained run family, use
-[Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md).
+[Cache Behavior Workflow](../operations/cache-behavior-workflow.md).
 
 When the question shifts from workflow steps to identity semantics, use
-[Reproducibility Model](reference/reproducibility-model.md) for the retained
+[Reproducibility Model](reproducibility-model.md) for the retained
 meaning of graph, plan, execution, environment, and artifact identity.
 
 ## Stop an Active Run
@@ -481,7 +481,7 @@ bijux-dag schedule submit ./ops/schedule-registry.json \
 For a repository-backed workflow that keeps the internal boundary explicit
 while proving cron preview, same-slot suppression, queue dispatch, and
 ledger-to-run identity continuity, use
-[Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md).
+[Scheduled Catalog Refresh Workflow](../operations/scheduled-catalog-refresh-workflow.md).
 
 The schedule-input binding contract is:
 
@@ -737,7 +737,7 @@ The backfill control contract is:
   submitted runs were never issued
 
 For the repository-backed proof of that path, use
-[Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md).
+[Historical Catalog Backfill Workflow](../operations/historical-catalog-backfill-workflow.md).
 
 ## Run Only The Prerequisites For A Target Node
 
@@ -785,10 +785,10 @@ sequence turns a run into something you can defend with evidence.
 ## Next Reads
 
 - [Common Workflows](../operations/common-workflows.md)
-- [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
-- [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)
-- [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md)
-- [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md)
-- [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
+- [Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md)
+- [Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md)
+- [Historical Catalog Backfill Workflow](../operations/historical-catalog-backfill-workflow.md)
+- [Scheduled Catalog Refresh Workflow](../operations/scheduled-catalog-refresh-workflow.md)
+- [Container Packaging Workflow](../operations/container-packaging-workflow.md)
 - [Failure Recovery](../operations/failure-recovery.md)
 - [Review Checklist](../quality/review-checklist.md)

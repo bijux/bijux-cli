@@ -48,5 +48,5 @@ path.
 
 ## Detailed Inventory
 
-Use [Reference: Operator Command Index](reference/operator-command-index.md)
+Use [Reference: Operator Command Index](operator-command-index.md)
 for the lower-level inventory that also names internal recovery surfaces.

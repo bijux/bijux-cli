@@ -49,5 +49,5 @@ flowchart LR
 
 - [Compatibility Commitments](../interfaces/compatibility-commitments.md)
 - [Release and Versioning](release-and-versioning.md)
-- [Security And Isolation Truth](reference/security-isolation-truth.md)
+- [Security And Isolation Truth](security-isolation-truth.md)
 - [Security and Safety](security-and-safety.md)

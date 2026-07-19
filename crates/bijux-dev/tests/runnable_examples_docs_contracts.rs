@@ -13,7 +13,7 @@ fn read_repo_file(path: &str) -> String {
 
 #[test]
 fn runnable_examples_catalog_covers_required_examples_with_expected_outputs() {
-    let catalog = read_repo_file("docs/bijux-dag/interfaces/examples/index.md");
+    let catalog = read_repo_file("docs/bijux-dag/interfaces/runnable-examples.md");
 
     for token in [
         "# Runnable Examples",

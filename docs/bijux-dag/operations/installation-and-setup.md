@@ -76,8 +76,8 @@ bijux-dag artifact-inspect \
 
 ## Next Reads
 
-- [First-Run Tutorial](guides/first-run-tutorial.md)
+- [First-Run Tutorial](first-run-tutorial.md)
 - [Local Development](local-development.md)
 - [Common Workflows](common-workflows.md)
-- [File Processing Workflow](guides/file-processing-workflow.md)
+- [File Processing Workflow](file-processing-workflow.md)
 - [Failure Recovery](failure-recovery.md)

@@ -29,7 +29,7 @@ supported operator-facing release boundary.
 For the command-by-command stable reference generated from the live Clap help
 surface, use [Generated CLI Reference](generated-cli-reference.md). For the
 separate inventory of deliberate gated routes, use
-[Gated Command Inventory](reference/gated-command-inventory.md).
+[Gated Command Inventory](gated-command-inventory.md).
 
 ## v0.4.0 Surface Truth Table
 
@@ -104,15 +104,15 @@ persisted run snapshot.
 For one repository-backed example that uses the stable `cache verify` route
 plus the explicit cache-miss explanation route to explain changed-input misses
 and corruption refusal on the same retained workflow, use
-[Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md).
+[Cache Behavior Workflow](../operations/cache-behavior-workflow.md).
 
 When the next question is which retained fingerprint, cache-key component, or
 replay-bundle mode explains that output, use
-[Reproducibility Model](reference/reproducibility-model.md).
+[Reproducibility Model](reproducibility-model.md).
 
 For the full generated inventory of experimental, simulated, and internal
 routes, use
-[Gated Command Inventory](reference/gated-command-inventory.md).
+[Gated Command Inventory](gated-command-inventory.md).
 
 ## Full Command Families
 
@@ -123,7 +123,7 @@ routes, use
 - operations: `cache ...`, `adapters ...`, `export`, `import`, `config ...`, `policy ...`
 
 For the explicit node-evidence route, see
-[`node-inspection.md`](./reference/node-inspection.md).
+[`node-inspection.md`](node-inspection.md).
 
 ## Hidden Simulation And Maintainer Namespaces
 
@@ -140,11 +140,11 @@ pause and resume control, queue state inspection, priority-aware queue
 dispatch, queue ledger updates, and durable backfill control.
 
 For one repository-backed proof of the schedule submission and queue lane, use
-[Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md).
+[Scheduled Catalog Refresh Workflow](../operations/scheduled-catalog-refresh-workflow.md).
 
 For one repository-backed proof of the backfill planning, summary, and
 failed-partition retry lane, use
-[Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md).
+[Historical Catalog Backfill Workflow](../operations/historical-catalog-backfill-workflow.md).
 
 These routes still exist for explicit maintainer workflows and contract tests.
 Inventory them by lane: `bijux-dag commands --lane simulated` for modeled

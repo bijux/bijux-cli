@@ -14,7 +14,7 @@ concrete commands instead of conceptual overviews.
 
 If you want the repository-backed example set indexed by workflow and expected
 output instead of by interface surface, start with
-[Runnable Examples](examples/index.md).
+[Runnable Examples](runnable-examples.md).
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
@@ -140,7 +140,7 @@ bijux-dag run --json evidence/dag/authoring/examples/audience-branch-bulletin.da
 
 Continue with the dedicated guide for the full retained-run comparison, replay,
 verification, and promotion sequence:
-[Evidence-Backed Bulletin Workflow](../operations/guides/evidence-backed-bulletin-workflow.md).
+[Evidence-Backed Bulletin Workflow](../operations/evidence-backed-bulletin-workflow.md).
 
 ### Fastest Local Onboarding
 
@@ -155,7 +155,7 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
 ```
 
 Continue with the full path in
-[First-Run Tutorial](../operations/guides/first-run-tutorial.md).
+[First-Run Tutorial](../operations/first-run-tutorial.md).
 
 ### Container-Backed Workflow
 
@@ -238,19 +238,19 @@ println!("spec={}", graph.spec);
 
 ## Next Reads
 
-- [Runnable Examples](examples/index.md)
+- [Runnable Examples](runnable-examples.md)
 - [CLI Surface](cli-surface.md)
 - [Generated CLI Reference](generated-cli-reference.md)
-- [Gated Command Inventory](reference/gated-command-inventory.md)
+- [Gated Command Inventory](gated-command-inventory.md)
 - [Operator Workflows](operator-workflows.md)
-- [First-Run Tutorial](../operations/guides/first-run-tutorial.md)
-- [Evidence-Backed Bulletin Workflow](../operations/guides/evidence-backed-bulletin-workflow.md)
-- [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
-- [Compliance-Gated Bulletin Workflow](../operations/guides/compliance-gated-bulletin-workflow.md)
-- [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
-- [Cache Behavior Workflow](../operations/guides/cache-behavior-workflow.md)
-- [Data Pipeline Workflow](../operations/guides/data-pipeline-workflow.md)
-- [File Processing Workflow](../operations/guides/file-processing-workflow.md)
-- [Historical Catalog Backfill Workflow](../operations/guides/historical-catalog-backfill-workflow.md)
-- [Scheduled Catalog Refresh Workflow](../operations/guides/scheduled-catalog-refresh-workflow.md)
+- [First-Run Tutorial](../operations/first-run-tutorial.md)
+- [Evidence-Backed Bulletin Workflow](../operations/evidence-backed-bulletin-workflow.md)
+- [Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md)
+- [Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md)
+- [Container Packaging Workflow](../operations/container-packaging-workflow.md)
+- [Cache Behavior Workflow](../operations/cache-behavior-workflow.md)
+- [Data Pipeline Workflow](../operations/data-pipeline-workflow.md)
+- [File Processing Workflow](../operations/file-processing-workflow.md)
+- [Historical Catalog Backfill Workflow](../operations/historical-catalog-backfill-workflow.md)
+- [Scheduled Catalog Refresh Workflow](../operations/scheduled-catalog-refresh-workflow.md)
 - [Local Development](../operations/local-development.md)

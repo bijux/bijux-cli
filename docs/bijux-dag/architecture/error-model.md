@@ -46,7 +46,7 @@ flowchart TD
 
 ## Next Reads
 
-- [Error Codes](../interfaces/reference/error-codes.md)
+- [Error Codes](../interfaces/error-codes.md)
 - [Data Contracts](../interfaces/data-contracts.md)
 - [Failure Recovery](../operations/failure-recovery.md)
 - [Invariants](../quality/invariants.md)

@@ -84,26 +84,26 @@ place to read is usually `bijux-dag-app`.
 
 ## Representative Workflows
 
-- [Runnable Examples](../../docs/bijux-dag/interfaces/examples/index.md)
+- [Runnable Examples](../../docs/bijux-dag/interfaces/runnable-examples.md)
   maps the repository-backed hello, file-processing, cache, replay, failure,
   branch, and container proofs to their expected outputs.
-- [File Processing Workflow](../../docs/bijux-dag/operations/guides/file-processing-workflow.md)
+- [File Processing Workflow](../../docs/bijux-dag/operations/file-processing-workflow.md)
   demonstrates a host-shell artifact workflow with replay and promotion.
-- [Cache Behavior Workflow](../../docs/bijux-dag/operations/guides/cache-behavior-workflow.md)
+- [Cache Behavior Workflow](../../docs/bijux-dag/operations/cache-behavior-workflow.md)
   demonstrates stable cache verification, explicit-path cache-miss
   explanation, selective invalidation, and corruption refusal.
-- [Reproducibility Model](../../docs/bijux-dag/interfaces/reference/reproducibility-model.md)
+- [Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md)
   explains the retained identity surfaces behind cache verification, replay,
   export bundles, and artifact comparison.
-- [Data Pipeline Workflow](../../docs/bijux-dag/operations/guides/data-pipeline-workflow.md)
+- [Data Pipeline Workflow](../../docs/bijux-dag/operations/data-pipeline-workflow.md)
   demonstrates retained-run comparison and changed-input attribution.
-- [Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md)
+- [Branching Bulletin Workflow](../../docs/bijux-dag/operations/branching-bulletin-workflow.md)
   demonstrates retained branch decisions, skipped lanes, join-trigger evidence,
   and replay stability.
-- [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md)
+- [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/compliance-gated-bulletin-workflow.md)
   demonstrates transient retry evidence, focused replay repair, and strict
   verification after recovery.
-- [Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md)
+- [Container Packaging Workflow](../../docs/bijux-dag/operations/container-packaging-workflow.md)
   demonstrates mounted container inputs, retained outputs, and recorded image
   identity.
 

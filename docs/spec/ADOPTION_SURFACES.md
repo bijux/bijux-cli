@@ -22,10 +22,10 @@ for `v0.4.0`.
 ## Required adoption bundle
 
 - installation path: `docs/bijux-dag/operations/installation-and-setup.md`
-- CI path: `docs/bijux-dag/operations/guides/ci-integration.md`
-- first-hour walkthrough: `docs/bijux-dag/operations/guides/first-hour-with-bijux-dag.md`
-- support framing: `docs/bijux-dag/interfaces/reference/support-matrix.md`
-- trust boundary: `docs/bijux-dag/operations/reference/trust-boundaries.md`
+- CI path: `docs/bijux-dag/operations/ci-integration.md`
+- first-hour walkthrough: `docs/bijux-dag/operations/first-hour-with-bijux-dag.md`
+- support framing: `docs/bijux-dag/interfaces/support-matrix.md`
+- trust boundary: `docs/bijux-dag/operations/trust-boundaries.md`
 - release verification: `docs/spec/RELEASE_BINARY_VERIFICATION.md`
 - starter fixture: `evidence/dag/authoring/examples/minimal_consumer.dag.json`
 - testkit fixture README:

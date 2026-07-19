@@ -146,7 +146,7 @@ nav:
               - Failure Recovery: bijux-cli/operations/failure-recovery.md
               - Release and Versioning: bijux-cli/operations/release-and-versioning.md
               - Security and Safety: bijux-cli/operations/security-and-safety.md
-              - Deployment Boundaries: bijux-cli/operations/reference/deployment-boundaries.md
+              - Deployment Boundaries: bijux-cli/operations/deployment-boundaries.md
           - Quality:
               - Quality: bijux-cli/quality/index.md
               - Test Strategy: bijux-cli/quality/test-strategy.md
@@ -191,17 +191,17 @@ nav:
               - Interfaces: bijux-dag/interfaces/index.md
               - CLI Surface: bijux-dag/interfaces/cli-surface.md
               - Generated CLI Reference: bijux-dag/interfaces/generated-cli-reference.md
-              - Runnable Examples: bijux-dag/interfaces/examples/index.md
+              - Runnable Examples: bijux-dag/interfaces/runnable-examples.md
               - API Surface: bijux-dag/interfaces/api-surface.md
               - Configuration Surface: bijux-dag/interfaces/configuration-surface.md
               - Data Contracts: bijux-dag/interfaces/data-contracts.md
-              - Graph Schema Reference: bijux-dag/interfaces/reference/graph-schema.md
+              - Graph Schema Reference: bijux-dag/interfaces/graph-schema.md
               - Artifact Contracts: bijux-dag/interfaces/artifact-contracts.md
               - Entrypoints and Examples: bijux-dag/interfaces/entrypoints-and-examples.md
-              - Authoring Guide: bijux-dag/interfaces/guides/authoring-guide.md
-              - Reusable Subgraphs: bijux-dag/interfaces/guides/reusable-subgraphs.md
+              - Authoring Guide: bijux-dag/interfaces/authoring-guide.md
+              - Reusable Subgraphs: bijux-dag/interfaces/reusable-subgraphs.md
               - Operator Workflows: bijux-dag/interfaces/operator-workflows.md
-              - Gated Command Inventory: bijux-dag/interfaces/reference/gated-command-inventory.md
+              - Gated Command Inventory: bijux-dag/interfaces/gated-command-inventory.md
               - Public Imports: bijux-dag/interfaces/public-imports.md
               - Compatibility Commitments: bijux-dag/interfaces/compatibility-commitments.md
           - Operations:
@@ -277,7 +277,7 @@ nav:
               - release-crates: bijux-dev/gh-workflows/release-crates.md
               - release-pypi: bijux-dev/gh-workflows/release-pypi.md
               - release-github: bijux-dev/gh-workflows/release-github.md
-              - bijux-canon: bijux-dev/gh-workflows/reference/bijux-canon.md
+              - bijux-canon: bijux-dev/gh-workflows/bijux-canon.md
           - Packages:
               - Packages: bijux-dev/packages/index.md
               - bijux-dev: bijux-dev/packages/bijux-dev.md

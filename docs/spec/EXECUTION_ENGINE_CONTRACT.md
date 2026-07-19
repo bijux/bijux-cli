@@ -53,7 +53,7 @@ Cleanup is a contractual obligation, not an optional best effort.
 - `crates/bijux-dag-runtime/src/backend/runtime/execution_backend.rs`
 - `crates/bijux-dag-runtime/tests/execution_backend_contract.rs`
 - `crates/bijux-dag-runtime/tests/engine_flow_contract.rs`
-- `docs/bijux-dag/architecture/reference/engine-backend-responsibilities.md`
+- `docs/bijux-dag/architecture/engine-backend-responsibilities.md`
 
 ## Related tests
 

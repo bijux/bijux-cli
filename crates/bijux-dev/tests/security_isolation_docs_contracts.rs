@@ -23,7 +23,7 @@ fn read_repo_file(path: &str) -> String {
 
 #[test]
 fn security_truth_reference_covers_current_runtime_boundaries() {
-    let truth = read_repo_file("docs/bijux-dag/operations/reference/security-isolation-truth.md");
+    let truth = read_repo_file("docs/bijux-dag/operations/security-isolation-truth.md");
 
     for token in [
         "shell backend",
@@ -54,9 +54,9 @@ fn operations_docs_route_security_questions_to_truth_reference() {
     for path in [
         "docs/bijux-dag/operations/index.md",
         "docs/bijux-dag/operations/security-and-safety.md",
-        "docs/bijux-dag/operations/reference/trust-boundaries.md",
+        "docs/bijux-dag/operations/trust-boundaries.md",
         "docs/bijux-dag/operations/deployment-boundaries.md",
-        "docs/bijux-dag/operations/guides/first-hour-with-bijux-dag.md",
+        "docs/bijux-dag/operations/first-hour-with-bijux-dag.md",
         "docs/bijux-dag/index.md",
         "README.md",
     ] {

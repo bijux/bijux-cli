@@ -13,9 +13,9 @@ Use this page when you need the top-level operational boundary for what
 `bijux-dag` actually proves versus what it intentionally does not claim.
 
 For the deeper reference wording, open
-[Trust Boundaries Reference](reference/trust-boundaries.md). For isolation and
+[Trust Boundaries Reference](trust-boundaries.md). For isolation and
 security nuance, open
-[Security And Isolation Truth](reference/security-isolation-truth.md).
+[Security And Isolation Truth](security-isolation-truth.md).
 
 ## Trust what is implemented
 

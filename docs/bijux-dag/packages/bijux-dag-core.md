@@ -77,13 +77,13 @@ effects begin.
   boundaries
 - open [`bijux-dag-runtime`](bijux-dag-runtime.md) when the question moves
   from graph truth to execution policy
-- open [Reproducibility Model](../interfaces/reference/reproducibility-model.md)
+- open [Reproducibility Model](../interfaces/reproducibility-model.md)
   when the question is how graph identity flows into plan, execution, cache,
   and replay identity downstream
-- open [Branching Bulletin Workflow](../operations/guides/branching-bulletin-workflow.md)
+- open [Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md)
   when you want a real example of graph-owned branch inputs becoming a retained
   execution decision
-- open [Container Packaging Workflow](../operations/guides/container-packaging-workflow.md)
+- open [Container Packaging Workflow](../operations/container-packaging-workflow.md)
   when you want a graph-owned label and command contract carried into real
   container execution
 

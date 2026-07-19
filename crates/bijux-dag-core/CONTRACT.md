@@ -32,7 +32,7 @@ Allowed utility dependencies:
 - collections and deterministic ordering utilities
 
 ## Validation model
-Validation diagnostics must carry stable IDs and severities and remain documented in `docs/bijux-dag/interfaces/data-contracts.md` and `docs/bijux-dag/interfaces/reference/error-codes.md`.
+Validation diagnostics must carry stable IDs and severities and remain documented in `docs/bijux-dag/interfaces/data-contracts.md` and `docs/bijux-dag/interfaces/error-codes.md`.
 
 ## Related schemas
 

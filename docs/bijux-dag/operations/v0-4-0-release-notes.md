@@ -138,7 +138,7 @@ Operators adopting `v0.4.0` should align around the durable public forms:
   on hidden explicit-path routes
 
 For the routed-root compatibility details, use the CLI
-[Migration Guide](../../bijux-cli/operations/reference/migration-guide.md).
+[Migration Guide](../../bijux-cli/operations/migration-guide.md).
 
 ## Examples
 
@@ -147,13 +147,13 @@ operator proofs:
 
 - `make dag-demo` for the shortest honest end-to-end proof of local execution,
   retained artifacts, warm cache reuse, focused replay, and strict verification
-- [First-Run Tutorial](guides/first-run-tutorial.md) for the same proof path as
+- [First-Run Tutorial](first-run-tutorial.md) for the same proof path as
   a step-by-step walkthrough
-- [File Processing Workflow](guides/file-processing-workflow.md) for one real
+- [File Processing Workflow](file-processing-workflow.md) for one real
   retained workflow family on the stable local operator surface
-- [Data Pipeline Workflow](guides/data-pipeline-workflow.md) for retained-run
+- [Data Pipeline Workflow](data-pipeline-workflow.md) for retained-run
   comparison and changed-input attribution
-- [Cache Behavior Workflow](guides/cache-behavior-workflow.md) for cache reuse,
+- [Cache Behavior Workflow](cache-behavior-workflow.md) for cache reuse,
   invalidation, and cache-miss explanation
 
 ## Validation Commands

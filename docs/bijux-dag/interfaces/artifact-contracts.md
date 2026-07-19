@@ -56,8 +56,8 @@ ephemeral command output.
 
 ## Next Reads
 
-- [Reproducibility Model](reference/reproducibility-model.md)
-- [Run Evidence Layout](reference/run-evidence-layout.md)
+- [Reproducibility Model](reproducibility-model.md)
+- [Run Evidence Layout](run-evidence-layout.md)
 - [Data Contracts](data-contracts.md)
 - [State and Persistence](../architecture/state-and-persistence.md)
 - [Documentation Standards](../quality/documentation-standards.md)

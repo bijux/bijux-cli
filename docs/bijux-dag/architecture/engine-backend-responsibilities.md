@@ -27,5 +27,5 @@ work required to carry out one node attempt on a specific execution substrate.
 
 ## Detailed Walkthrough
 
-Use [Reference: Engine Backend Responsibilities](reference/engine-backend-responsibilities.md)
+Use [Reference: Engine Backend Responsibilities](engine-backend-responsibilities.md)
 for the fuller lifecycle map and code-level anchors.

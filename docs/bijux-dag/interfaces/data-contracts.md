@@ -41,7 +41,7 @@ graph file can declare graph-scoped inputs, node-local params, output
 contracts, execution policy, and environment policy without relying on
 undocumented adapter behavior.
 
-Use [Graph Schema Reference](reference/graph-schema.md) for the full DAG
+Use [Graph Schema Reference](graph-schema.md) for the full DAG
 file-format reference, including top-level graph fields, reusable subgraphs,
 dynamic controllers, trigger rules, path variables, and validation diagnostics.
 

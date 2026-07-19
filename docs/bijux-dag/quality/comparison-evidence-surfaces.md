@@ -13,7 +13,7 @@ Use this page when the question is which comparison files and tests are
 authoritative for `bijux-dag` comparison claims.
 
 For the deeper reference wording, open
-[Comparison Evidence Surfaces Reference](reference/comparison-evidence-surfaces.md).
+[Comparison Evidence Surfaces Reference](comparison-evidence-surfaces.md).
 For the governing contract, open
 [Comparison Harness Contract](../../spec/COMPARISON_HARNESS_CONTRACT.md).
 

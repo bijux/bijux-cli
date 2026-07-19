@@ -68,7 +68,7 @@ owner is not obvious yet.
 ## Good First Reads
 
 - Read [CLI Surface](interfaces/cli-surface.md) for the command-level contract.
-- Read [Configuration Guide](interfaces/config/guide.md) for layered config
+- Read [Configuration Guide](interfaces/config-guide.md) for layered config
   behavior and operator workflows.
 - Read [Diagnostics Guide](operations/diagnostics-guide.md) when the question
   starts with `bijux doctor` or runtime health.

@@ -46,5 +46,5 @@ must stop short of broader claims.
 
 ## Detailed Walkthrough
 
-Use [Reference: Execution Mode Responsibilities](reference/execution-mode-responsibilities.md)
+Use [Reference: Execution Mode Responsibilities](execution-mode-responsibilities.md)
 for the narrower mode-by-mode proof inventory.

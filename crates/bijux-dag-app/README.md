@@ -94,26 +94,26 @@ that product promise coherent at the command and response boundary.
 For the repository-backed example that shows how the app surface reports a real
 cache verification and diagnostic sequence, including changed-input cache
 misses and corruption-based reuse refusal, use
-[Cache Behavior Workflow](../../docs/bijux-dag/operations/guides/cache-behavior-workflow.md).
+[Cache Behavior Workflow](../../docs/bijux-dag/operations/cache-behavior-workflow.md).
 
 For the canonical explanation of which retained fingerprints and bundle modes
 those commands are actually reporting, use
-[Reproducibility Model](../../docs/bijux-dag/interfaces/reference/reproducibility-model.md).
+[Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md).
 
 For the repository-backed example that shows how the app surface reports a real
 container run, retained outputs, and a missing-engine infrastructure failure,
 use
-[Container Packaging Workflow](../../docs/bijux-dag/operations/guides/container-packaging-workflow.md).
+[Container Packaging Workflow](../../docs/bijux-dag/operations/container-packaging-workflow.md).
 
 For the repository-backed example that shows how the app surface reports a real
 branch decision, a skipped lane, and replay stability at the publication
 boundary, use
-[Branching Bulletin Workflow](../../docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).
+[Branching Bulletin Workflow](../../docs/bijux-dag/operations/branching-bulletin-workflow.md).
 
 For the repository-backed example that shows how the app surface separates root
 failure from propagated skips, replays only the failed approval boundary, and
 verifies the repaired run strictly, use
-[Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
+[Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/compliance-gated-bulletin-workflow.md).
 
 Repository-owned schedule and backfill application flows are documented in the
 DAG handbook, but they remain internal workflow lanes rather than part of the

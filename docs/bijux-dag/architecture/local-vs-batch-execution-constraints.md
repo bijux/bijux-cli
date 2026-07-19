@@ -9,6 +9,9 @@ last_reviewed: 2026-07-10
 
 # Local Vs Batch Execution Constraints
 
+See [Known Limitations](../quality/known-limitations.md) for constraints shared
+by these execution modes and for claims the current release does not make.
+
 Local execution and batch-oriented execution in `bijux-dag` do not carry the
 same ownership model, recovery guarantees, or release posture.
 
@@ -41,5 +44,5 @@ same ownership model, recovery guarantees, or release posture.
 
 ## Detailed Walkthrough
 
-Use [Reference: Local Vs Batch Execution Constraints](reference/local-vs-batch-execution-constraints.md)
+Use [Reference: Local Vs Batch Execution Constraints](local-vs-batch-execution-constraints.md)
 for the lower-level constraint inventory.

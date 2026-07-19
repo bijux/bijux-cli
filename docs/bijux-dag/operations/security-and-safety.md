@@ -15,7 +15,7 @@ local shell execution is best-effort isolation, while stronger isolation claims
 are only made where the runtime can actually enforce them.
 
 For the precise enforcement matrix, open
-[Security And Isolation Truth](reference/security-isolation-truth.md).
+[Security And Isolation Truth](security-isolation-truth.md).
 
 ## Visual Summary
 
@@ -108,8 +108,8 @@ best-effort detail.
 
 ## Next Reads
 
-- [Security And Isolation Truth](reference/security-isolation-truth.md)
+- [Security And Isolation Truth](security-isolation-truth.md)
 - [Deployment Boundaries](deployment-boundaries.md)
-- [Trust Boundaries](reference/trust-boundaries.md)
+- [Trust Boundaries](trust-boundaries.md)
 - [Risk Register](../quality/risk-register.md)
 - [Artifact Contracts](../interfaces/artifact-contracts.md)

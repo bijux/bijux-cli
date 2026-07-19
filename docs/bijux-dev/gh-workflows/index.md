@@ -21,7 +21,7 @@ debugging jobs directly in CI logs.
 - [release-crates](release-crates.md)
 - [release-pypi](release-pypi.md)
 - [release-github](release-github.md)
-- [bijux-canon](reference/bijux-canon.md)
+- [bijux-canon](bijux-canon.md)
 
 ## Workflow Ownership Map
 
@@ -33,7 +33,7 @@ debugging jobs directly in CI logs.
 | [release-crates](release-crates.md) | Rust crate release orchestration | crates release process, publish ordering, or registry upload issues appear |
 | [release-pypi](release-pypi.md) | Python release orchestration | PyPI publication, packaging metadata, or python release gates fail |
 | [release-github](release-github.md) | GitHub release record and release artifacts | release notes, release tagging, or artifact publication on GitHub breaks |
-| [bijux-canon](reference/bijux-canon.md) | Cross-repo canon integration workflow | canon handoff integration or shared validation contracts fail |
+| [bijux-canon](bijux-canon.md) | Cross-repo canon integration workflow | canon handoff integration or shared validation contracts fail |
 
 ## Reading Rule
 

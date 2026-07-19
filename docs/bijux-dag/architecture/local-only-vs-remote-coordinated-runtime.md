@@ -9,6 +9,9 @@ last_reviewed: 2026-07-10
 
 # Local Only Vs Remote Coordinated Runtime
 
+See [Known Limitations](../quality/known-limitations.md) for constraints that
+must remain visible when evaluating either execution boundary.
+
 The current `bijux-dag` runtime is a local controller runtime with modeled
 remote coordination contracts layered around it.
 
@@ -43,5 +46,5 @@ the surface is implemented and stable.
 
 ## Detailed Walkthrough
 
-Use [Reference: Local Only Vs Remote Coordinated Runtime](reference/local-only-vs-remote-coordinated-runtime.md)
+Use [Reference: Local Only Vs Remote Coordinated Runtime](local-only-vs-remote-coordinated-runtime.md)
 for the narrower comparison between local control and modeled remote lanes.

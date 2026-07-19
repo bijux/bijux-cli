@@ -14,9 +14,12 @@ the shipped operator promise, an internal maintainer probe, or an unreleased
 boundary.
 
 For the detailed reference version, open
-[Support Matrix Reference](reference/support-matrix.md). For the governing
+[Support Matrix Reference](support-matrix.md). For the governing
 release policy, open
 [Release Boundary](../foundation/release-boundary.md).
+The [Known Limitations](../quality/known-limitations.md) page records current
+constraints. The [Bijux Dag Roadmap](../../tracking/bijux-dag-roadmap.md) is
+future direction, not a supported-surface claim.
 
 | Surface | Status | Access path | Notes |
 | --- | --- | --- | --- |

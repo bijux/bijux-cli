@@ -78,44 +78,44 @@ stop state.
 
 For one index of the repository-backed hello, file-processing, cache, replay,
 failure, branch, and container proofs, use
-[Runnable Examples](../interfaces/examples/index.md).
+[Runnable Examples](../interfaces/runnable-examples.md).
 
 For one end-to-end local workflow that validates real input files, renders a
 promotable report, proves warm-cache reuse, and exercises focused replay, use
-[File Processing Workflow](guides/file-processing-workflow.md).
+[File Processing Workflow](file-processing-workflow.md).
 
 For a structured analytics-style workflow that changes one explicit graph input
 and then compares retained runs to identify the affected stages, use
-[Data Pipeline Workflow](guides/data-pipeline-workflow.md).
+[Data Pipeline Workflow](data-pipeline-workflow.md).
 
 For one repository-backed cache integrity workflow that proves warm reuse,
 changed-input invalidation, corruption refusal, and explicit
 `why-cache-missed` evidence on the same retained run family, use
-[Cache Behavior Workflow](guides/cache-behavior-workflow.md).
+[Cache Behavior Workflow](cache-behavior-workflow.md).
 
 For a real local container execution path that mounts upstream inputs, writes
 retained outputs, records image identity, and fails clearly when Docker is not
 available, use
-[Container Packaging Workflow](guides/container-packaging-workflow.md).
+[Container Packaging Workflow](container-packaging-workflow.md).
 
 For one real conditional workflow that records the selected branch, retains the
 unselected lane as a skip, and proves join behavior plus replay stability, use
-[Branching Bulletin Workflow](guides/branching-bulletin-workflow.md).
+[Branching Bulletin Workflow](branching-bulletin-workflow.md).
 
 For one real recovery workflow that retries a transient node, separates the
 root approval failure from propagated fallout, and repairs the failed tail with
 `replay --from-node`, use
-[Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md).
+[Compliance-Gated Bulletin Workflow](compliance-gated-bulletin-workflow.md).
 
 For one repository-backed schedule workflow that stays explicit about the
 internal boundary while still proving cron preview, same-slot suppression,
 queue dispatch, and ledger-to-run identity continuity, use
-[Scheduled Catalog Refresh Workflow](guides/scheduled-catalog-refresh-workflow.md).
+[Scheduled Catalog Refresh Workflow](scheduled-catalog-refresh-workflow.md).
 
 For one repository-backed backfill workflow that stays explicit about the
 internal boundary while proving partition fanout, failed-partition retry, and
 aggregate state summaries, use
-[Historical Catalog Backfill Workflow](guides/historical-catalog-backfill-workflow.md).
+[Historical Catalog Backfill Workflow](historical-catalog-backfill-workflow.md).
 
 Those two workflow families remain proof-backed internal surfaces in `v0.4.x`,
 not stable scheduler APIs. Use [Known Limitations](../quality/known-limitations.md)
@@ -128,15 +128,15 @@ operator sequence is still unclear.
 
 ## Next Reads
 
-- [Runnable Examples](../interfaces/examples/index.md)
+- [Runnable Examples](../interfaces/runnable-examples.md)
 - [Failure Recovery](failure-recovery.md)
-- [Branching Bulletin Workflow](guides/branching-bulletin-workflow.md)
-- [Compliance-Gated Bulletin Workflow](guides/compliance-gated-bulletin-workflow.md)
-- [Container Packaging Workflow](guides/container-packaging-workflow.md)
-- [Cache Behavior Workflow](guides/cache-behavior-workflow.md)
-- [Data Pipeline Workflow](guides/data-pipeline-workflow.md)
-- [Historical Catalog Backfill Workflow](guides/historical-catalog-backfill-workflow.md)
-- [Scheduled Catalog Refresh Workflow](guides/scheduled-catalog-refresh-workflow.md)
+- [Branching Bulletin Workflow](branching-bulletin-workflow.md)
+- [Compliance-Gated Bulletin Workflow](compliance-gated-bulletin-workflow.md)
+- [Container Packaging Workflow](container-packaging-workflow.md)
+- [Cache Behavior Workflow](cache-behavior-workflow.md)
+- [Data Pipeline Workflow](data-pipeline-workflow.md)
+- [Historical Catalog Backfill Workflow](historical-catalog-backfill-workflow.md)
+- [Scheduled Catalog Refresh Workflow](scheduled-catalog-refresh-workflow.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Known Limitations](../quality/known-limitations.md)
 - [Review Checklist](../quality/review-checklist.md)

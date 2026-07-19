@@ -23,7 +23,7 @@ fn read_repo_file(path: &str) -> String {
 
 #[test]
 fn reproducibility_reference_covers_identity_layers_cache_and_replay_bundle_boundary() {
-    let reference = read_repo_file("docs/bijux-dag/interfaces/reference/reproducibility-model.md");
+    let reference = read_repo_file("docs/bijux-dag/interfaces/reproducibility-model.md");
 
     for token in [
         "# Reproducibility Model",

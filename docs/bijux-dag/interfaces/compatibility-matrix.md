@@ -14,7 +14,7 @@ graph payload belongs to a supported compatibility lane.
 
 This page is the top-level interface authority for the released compatibility
 lanes. For the deeper reference table, open
-[Compatibility Matrix Reference](reference/compatibility-matrix.md). For the
+[Compatibility Matrix Reference](compatibility-matrix.md). For the
 policy and evolution rules behind those lanes, open
 [Compatibility Commitments](compatibility-commitments.md).
 

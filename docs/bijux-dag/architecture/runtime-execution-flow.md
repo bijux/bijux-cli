@@ -32,5 +32,5 @@ helpers.
 
 ## Detailed Walkthrough
 
-Use [Reference: Runtime Execution Flow](reference/runtime-execution-flow.md)
+Use [Reference: Runtime Execution Flow](runtime-execution-flow.md)
 for the full code-anchor map and lifecycle details.

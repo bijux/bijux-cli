@@ -154,7 +154,7 @@ mutation:
   instead of only dotenv-style env files
 
 The generated handbook reference lives at
-[`docs/bijux-cli/interfaces/config/generated-reference.md`](https://github.com/bijux/bijux-core/blob/main/docs/bijux-cli/interfaces/config/generated-reference.md).
+[`docs/bijux-cli/interfaces/config-generated-reference.md`](https://github.com/bijux/bijux-core/blob/main/docs/bijux-cli/interfaces/config-generated-reference.md).
 
 ## Tests
 
