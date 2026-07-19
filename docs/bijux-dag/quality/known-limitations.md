@@ -4,270 +4,148 @@ audience: operators
 type: quality
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-08
+last_reviewed: 2026-07-19
 ---
 
 # Known Limitations
 
-Known limitations are the release-facing list of things `bijux-dag v0.4.x`
-does not promise.
+This register states what `bijux-dag v0.4.x` does not promise. A limitation is
+not an implied roadmap commitment: the release target records the current
+decision, and the planned fix states the evidence required before that decision
+can change.
 
-This page exists so operators can tell the difference between:
-
-- a stable local capability that is intentionally narrow
-- an experimental or simulated surface that is callable but not stable
-- a future-facing idea that still lacks a release promise
-
-Read this page alongside [Release Boundary](../foundation/release-boundary.md).
-Use the release boundary to decide whether a surface is stable, experimental,
-simulated, internal, or future-facing. Use this page to decide what the
-currently shipped surface still does not guarantee even when it is real.
-For the future release lanes that may address those gaps, use the
-[Bijux Dag Roadmap](../roadmap.md).
-
-## Visual Summary
-
-```mermaid
-flowchart TD
-    limitations[Known limitations]
-    limitations --> local[stable local execution]
-    limitations --> shell[shell isolation]
-    limitations --> container[container]
-    limitations --> scheduling[scheduling]
-    limitations --> remote[remote and distributed]
-    limitations --> api[API stability]
-    limitations --> replay[cache and replay]
-```
-
-## Active Limitation Records
+Use [Release Boundary](../foundation/release-boundary.md) to classify a surface
+as stable, experimental, simulated, internal, or future-facing. Use this
+register to assess operational consequences within that classification. The
+[Bijux Dag Roadmap](../roadmap.md) records candidate release lanes rather than
+current guarantees.
 
 ## Stable Local Execution Limitations
-
-The stable `v0.4.x` promise is a serious local DAG runtime, not a replicated
-controller service.
 
 ### LIM-007 Stable local execution remains a single-controller runtime
 
 - stability class: `stable-surface`
-- affected command or API: `bijux-dag run`, `bijux-dag replay`, local controller runtime
-- limitation: one controller process owns scheduler state, cache decisions, and
-  run-state mutation. Restart recovery is scoped to retained local run
-  directories and local runtime records, not to a replicated scheduler service.
-- impact: operators must not assume multi-controller failover, durable remote
-  coordination, or high-availability scheduler semantics when the local
-  controlling process exits or the host is interrupted.
-- workaround: treat stable DAG execution as an explicit local job boundary with
-  retained run roots and host-level supervision. Use external schedulers only
-  as submitters into the local `bijux-dag run` surface.
-- planned fix: widen this claim only after multi-controller recovery semantics,
-  remote coordination durability, and release-boundary coverage are implemented
-  and tested as product behavior.
-- release target: a replicated controller or scheduler service is not part of
-  `v0.4.x`.
+- affected command or API: `bijux-dag run`, `bijux-dag replay`, and the local controller
+- limitation: one process owns scheduling, cache decisions, and run-state mutation; retained local evidence supports inspection, not replicated controller recovery.
+- impact: controller exit or host loss has no multi-controller failover or high-availability scheduler guarantee.
+- workaround: supervise each local job externally, retain its run root, and use external schedulers only as submitters into the local `bijux-dag run` surface.
+- planned fix: require implemented and tested multi-controller recovery, coordination durability, and an explicit release-boundary promotion.
+- release target: replicated controller semantics are outside `v0.4.x`.
 
 ## Shell Isolation Limitations
-
-The stable local shell path is useful, but it is not a kernel sandbox.
 
 ### LIM-001 Shell policy denial is not a syscall sandbox
 
 - stability class: `stable-surface`
-- affected command or API: `bijux-dag run`, `bijux-dag replay`, local shell execution
-- limitation: `--deny-network`, `--deny-env`, and `--deny-clock` are enforced as
-  declared-effect policy gates. `--clean-env` only shapes environment variables.
-- impact: a shell task that lies about its effects still runs as a host process
-  unless another boundary blocks it.
-- workaround: treat local shell execution as best-effort isolation and
-  rely on preflight policy-surface inspection, trusted graphs, and host-level
-  containment where stronger guarantees are required.
-- planned fix: add a genuinely sandboxed local execution boundary before
-  claiming host-process network, clock, or arbitrary filesystem isolation.
-- release target: not part of `v0.4.x`; no stronger shell isolation guarantee exists until a dedicated sandboxed executor and contract coverage ship.
+- affected command or API: local shell execution through `run` and `replay`
+- limitation: deny flags reject declared effects, while `--clean-env` only shapes environment bindings.
+- impact: a command that omits an effect still executes as a host process unless another boundary contains it.
+- workaround: run only trusted shell graphs and add host-level containment when process behavior is not trusted.
+- planned fix: require a dedicated sandboxed executor and executable isolation contracts before widening the claim.
+- release target: host-process network, clock, and arbitrary-filesystem isolation are not promised in `v0.4.x`.
 
 ### LIM-003 Clock denial does not virtualize time
 
 - stability class: `stable-surface`
-- affected command or API: `bijux-dag run`, `bijux-dag replay`, local shell and container execution
-- limitation: `--deny-clock` prevents declared clock effects from being allowed;
-  it does not freeze, fake, or virtualize wall-clock access inside a process.
-- impact: time-sensitive tools must still be treated as ambient-time consumers
-  unless they are wrapped by a stronger host-level control.
-- workaround: reserve `--deny-clock` for workflows whose nodes declare
-  time access honestly.
-- planned fix: only claim clock isolation after the runtime can inject and
-  enforce an explicit time source across supported execution boundaries.
-- release target: no wall-clock virtualization in `v0.4.x`; future promotion requires runtime and backend enforcement work, not just CLI flags.
+- affected command or API: shell and container execution with `--deny-clock`
+- limitation: the flag rejects declared clock effects; it does not freeze, replace, or intercept wall-clock access.
+- impact: tools can still observe ambient time when their execution boundary permits it.
+- workaround: declare clock use honestly and provide an external deterministic time source where reproducibility requires one.
+- planned fix: require an enforceable time source across every supported backend before claiming clock isolation.
+- release target: wall-clock virtualization is outside `v0.4.x`.
 
 ## Container Limitations
-
-Container execution can enforce more than local shell execution in some cases,
-but it still does not upgrade `bijux-dag` into a virtual machine or cluster
-platform.
 
 ### LIM-002 Container no-network enforcement depends on the runtime boundary
 
 - stability class: `stable-surface`
-- affected command or API: container execution, `runtime isolation`
-- limitation: the runtime only claims stronger network isolation when the
-  selected container engine can enforce a no-network mode.
-- impact: container execution is stronger than local shell execution for network
-  denial, but it is still not equivalent to a full virtual machine boundary.
-- workaround: inspect `runtime isolation` output to confirm that
-  `deny-network` is reported as a runtime-enforced container flag.
-- planned fix: expand engine-specific contract coverage and only widen the
-  published claim where container runtimes can actually enforce it.
-- release target: keep this conditional through `v0.4.x`; broader container
-  isolation claims require additional backend enforcement evidence.
+- affected command or API: container execution and `runtime isolation`
+- limitation: no-network enforcement is claimed only when the selected Docker or Podman boundary accepts the required engine flag.
+- impact: the container path is stronger than shell declaration checks but is not equivalent to a virtual machine boundary.
+- workaround: inspect `runtime isolation` and reject execution unless network denial is reported as engine-enforced.
+- planned fix: widen the claim only for engines covered by enforcement and failure contracts.
+- release target: network isolation remains engine-conditional throughout `v0.4.x`.
 
 ## Scheduling Limitations
-
-The repository contains schedule and backfill proof lanes, but `v0.4.x` does
-not yet publish a stable scheduler service.
 
 ### LIM-008 Internal schedule and backfill lanes are not stable scheduler APIs
 
 - stability class: `stable-surface`
-- affected command or API: internal `schedule` namespace, scheduled refresh and
-  historical backfill workflow families, `BIJUX_DAG_ENABLE_INTERNAL=1`
-- limitation: schedule preview, queue dispatch, ledger mutation, and backfill
-  control remain internal maintainer surfaces. They are repository-tested, but
-  they are not part of the visible stable operator contract in `bijux-dag --help`.
-- impact: production automation that depends on those internal lanes may drift,
-  rename, or narrow within the `v0.4.x` line without violating the stable DAG
-  operator contract.
-- workaround: use the stable `run` surface with an external scheduler or job
-  launcher for real operations, and treat the internal schedule and backfill
-  workflows as repository-owned proof lanes only.
-- planned fix: promote a public scheduler lane only after its persistence,
-  compatibility, and operator lifecycle expectations are defined and covered by
-  dedicated release docs and tests.
+- affected command or API: internal `schedule` routes, backfill workflows, and `BIJUX_DAG_ENABLE_INTERNAL=1`
+- limitation: preview, dispatch, ledger mutation, and backfill controls are maintainer proof surfaces, not visible stable operator commands.
+- impact: internal automation can narrow or change within `v0.4.x` without violating the public CLI contract.
+- workaround: submit stable `run` commands from an external scheduler; do not build production control paths on the internal namespace.
+- planned fix: require defined persistence, compatibility, recovery, and operator lifecycle contracts before public promotion.
 - release target: the schedule namespace remains internal throughout `v0.4.x`.
 
 ## Remote/Distributed Limitations
 
-The repository models remote coordination and future batch backends, but the
-stable runtime remains local.
-
 ### LIM-009 Remote coordination and batch backends are modeled, not shipped
 
 - stability class: `stable-surface`
-- affected command or API: remote coordination model, fake batch execution,
-  future Kubernetes, Slurm, HPC, and public remote-worker surfaces
-- limitation: worker payloads, leases, heartbeats, fake batch metadata, and
-  cluster-oriented backend contracts exist as typed model or simulation
-  surfaces. They do not upgrade the current release into a distributed
-  scheduler, batch platform, or public remote execution service.
-- impact: operators must not read distributed tests, modeled control surfaces,
-  or future backend docs as proof that `v0.4.x` already ships Kubernetes,
-  Slurm, HPC, or public remote-worker execution as a supported product lane.
-- workaround: deploy the stable local controller runtime for real DAG work and
-  treat remote or batch materials as contract and design proof until the
-  release boundary explicitly promotes them.
-- planned fix: implement production backend semantics and operator docs, then
-  promote them through the release boundary, support matrix, and end-to-end
-  workflow coverage in the same release train.
-- release target: remote and distributed execution remain outside the stable
-  `v0.4.x` product promise.
+- affected command or API: coordination models, fake batch execution, and future Kubernetes, Slurm, HPC, or remote-worker surfaces
+- limitation: leases, heartbeats, worker payloads, and batch metadata are typed models or simulations, not production backend semantics.
+- impact: their presence does not prove a distributed scheduler, batch platform, or supported remote execution service.
+- workaround: use the local controller for real work and treat remote or batch material only as design and contract evidence.
+- planned fix: implement production semantics, operator lifecycle documentation, support commitments, and end-to-end backend evidence before promotion.
+- release target: remote and distributed execution remain outside the stable `v0.4.x` product promise.
 
 ## API Stability Limitations
-
-The visible `bijux-dag --help` surface and the callable hidden namespaces do
-not carry the same compatibility guarantee.
 
 ### LIM-005 Hidden experimental DAG routes are callable but not stable operator APIs
 
 - stability class: `experimental-surface`
-- affected command or API: hidden routes such as `init`, `canonicalize`, `graph`,
-  `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`,
-  `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`,
-  `policy`, `fsck`, `prove`, and `proof-summary`
-- limitation: these routes remain callable by explicit path, but they are
-  intentionally excluded from the visible `bijux-dag --help` contract and are
-  allowed to evolve without stable operator compatibility guarantees.
-- impact: automation or procedures that depend on hidden experimental routes may
-  break within the `v0.4.x` line even when the visible operator surface stays
-  compatible.
-- workaround: build production automation on the visible `bijux-dag --help`
-  surface and documented stable crate-root APIs only. Use
-  `bijux-dag commands --lane experimental` only when you intentionally accept
-  repository-owned, non-stable helper routes.
-- planned fix: either promote individual routes with explicit docs, tests, and
-  compatibility commitments or keep them outside the public operator boundary.
-- release target: no stability guarantee in `v0.4.x`; promotion requires explicit contract review in a later release line.
+- affected command or API: explicit hidden routes including `graph-lint`, `why-cache-missed`, `export`, `import`, `fsck`, and `prove`
+- limitation: these routes are callable but excluded from the visible `bijux-dag --help` compatibility contract.
+- impact: automation using them can break within `v0.4.x` while the stable operator surface remains compatible.
+- workaround: use visible commands and stable crate-root APIs for production; opt into `commands --lane experimental` only with explicit version control.
+- planned fix: promote routes individually with documentation, compatibility commitments, and release tests, or keep them hidden.
+- release target: experimental routes have no `v0.4.x` stability guarantee.
 
 ### LIM-006 Simulated platform-control namespaces remain repository-owned modeling surfaces
 
 - stability class: `simulation-surface`
-- affected command or API: hidden namespaces such as `control-plane`, `dataset`,
-  `enterprise`, `fleet`, `federation`, `governance`, `incident`, and `lab`
-- limitation: these namespaces model distributed, organizational, or platform
-  behavior for evidence and contract coverage. They require
-  `BIJUX_DAG_ENABLE_SIMULATED=1` and do not represent shipped production
-  runtime capabilities in `v0.4.0`.
-- impact: operators must not treat these commands as proof that DAG currently
-  ships a production scheduler, enterprise control plane, or distributed
-  execution fabric.
-- workaround: treat these namespaces as repository-owned modeling and evidence
-  surfaces only; use `bijux-dag commands --lane simulated` and
-  `BIJUX_DAG_ENABLE_SIMULATED=1` only for deliberate modeling work, and use the
-  visible operator contract for real DAG workflows.
-- planned fix: either quarantine these modeled namespaces further or implement
-  real backend semantics, tests, and release docs before any promotion.
-- release target: remain non-public throughout `v0.4.x`; any promotion requires a dedicated future release decision with new evidence and compatibility rules.
+- affected command or API: hidden `control-plane`, `dataset`, `enterprise`, `fleet`, `federation`, `governance`, `incident`, and `lab` namespaces
+- limitation: these namespaces require `BIJUX_DAG_ENABLE_SIMULATED=1` and model behavior that the production runtime does not ship.
+- impact: command availability is not evidence of an enterprise control plane or distributed execution fabric.
+- workaround: use simulated routes only for deliberate modeling and use the visible operator surface for real workflows.
+- planned fix: retain the simulation boundary or implement real semantics, tests, support policy, and release documentation before promotion.
+- release target: simulated namespaces remain non-public throughout `v0.4.x`.
 
 ## Cache/Replay Limitations
-
-Cache and replay are real stable surfaces in `v0.4.x`, but their guarantees are
-exact and evidence-bound rather than broad portability promises.
 
 ### LIM-004 Replay sandbox protects the source run directory only
 
 - stability class: `stable-surface`
 - affected command or API: `bijux-dag replay --sandbox`
-- limitation: replay sandboxing is a write-boundary rule that blocks writes into
-  the source run directory.
-- impact: the replay process still uses the host process model and does not gain
-  network, clock, or filesystem syscall isolation.
-- workaround: use `--sandbox` to protect evidence integrity, not to model
-  a secure container runtime.
-- planned fix: keep replay evidence protection separate from process-isolation
-  claims until a stronger execution boundary actually exists.
-- release target: `v0.4.x` keeps replay sandboxing scoped to source-run write
-  protection only.
+- limitation: sandbox mode forbids writes to the source run directory; it does not isolate replay process syscalls.
+- impact: the replayed process retains the network, clock, and filesystem reach of its execution backend.
+- workaround: use `--sandbox` for evidence integrity and choose a stronger backend or host boundary for untrusted code.
+- planned fix: keep evidence protection separate from process-isolation claims until a stronger executor ships.
+- release target: source-run write protection is the complete `v0.4.x` replay sandbox guarantee.
 
 ### LIM-010 Cache and replay proof depends on exact retained evidence
 
 - stability class: `stable-surface`
-- affected command or API: `bijux-dag cache verify`, `why-cache-missed`,
-  `replay`, `export`, `import`
-- limitation: cache reuse depends on exact proof fields such as execution
-  fingerprint, declared environment fingerprint, input lineage fingerprint,
-  adapter identity, execution-contract fingerprint, backend class, and retained
-  output hashes. Replay and import can only prove what the retained run
-  directory or the chosen export-bundle mode actually preserves.
-- impact: cache entries are not a general promise of cross-backend,
-  cross-environment, or broad portability reuse, and structural bundles such as
-  `manifest-only` or `without-artifacts` cannot support artifact-backed replay
-  proof.
-- workaround: use retained run directories or `export --with-files` whenever
-  artifact-backed replay proof matters, and inspect `cache verify`,
-  `why-cache-missed`, and retained output hashes before assuming equivalence.
-- planned fix: widen portability claims only after broader bundle, backend, and
-  compatibility contracts are implemented and enforced as stable surfaces.
-- release target: the exact local proof model remains the `v0.4.x` guarantee.
+- affected command or API: `cache verify`, `why-cache-missed`, `replay`, `export`, and `import`
+- limitation: reuse requires matching execution, environment, input-lineage, adapter, contract, backend, and output-hash evidence; replay proves only what the retained run or export mode preserves.
+- impact: cache entries do not promise cross-backend or cross-environment portability, and `manifest-only` or `without-artifacts` bundles cannot prove artifact-backed replay.
+- workaround: retain the run directory or use `export --with-files`, then inspect cache verification, miss reasons, and output hashes before claiming equivalence.
+- planned fix: require broader bundle, backend, and compatibility contracts before expanding portability claims.
+- release target: exact local evidence remains the `v0.4.x` cache and replay proof boundary.
 
-## Record Rules
+## Register Governance
 
-- every limitation record must live under the section that matches its release
-  boundary
-- every limitation record must keep its stable `LIM-` identifier
-- every limitation record must include affected surface, impact, workaround,
-  planned fix, and release target fields
-- resolved limitations must be removed in the same release train
-- limitation language must avoid ambiguous severity claims
+- Every active record keeps a stable `LIM-` identifier and all seven fields.
+- A record belongs under the release boundary that owns its operational impact.
+- A planned fix describes proof required to change the claim; it is not a date
+  promise.
+- A resolved limitation is removed with the release evidence that closes it.
+- Risks with uncertain outcomes belong in the [Risk Register](risk-register.md),
+  not in this register.
 
 ## Next Reads
 
 - [Risk Register](risk-register.md)
-- [Failure Recovery](../operations/failure-recovery.md)
+- [Execution Security And Isolation](../operations/security-isolation-truth.md)
 - [Compatibility Commitments](../interfaces/compatibility-commitments.md)
