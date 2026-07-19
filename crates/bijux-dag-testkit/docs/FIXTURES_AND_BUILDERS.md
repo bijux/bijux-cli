@@ -4,6 +4,34 @@ Fixtures provide stable inputs for graph, runtime, artifact, app, and CLI
 contracts. Builders make semantic intent visible and reduce irrelevant JSON
 noise.
 
+## Choose A Fixture Source
+
+```mermaid
+flowchart LR
+    behavior["Behavior under test"]
+    source{"Required authority"}
+    builder["Typed builder"]
+    file["Repository fixture"]
+    evidence["Governed evidence asset"]
+    consumer["Focused consumer"]
+    assertion["Semantic assertion"]
+
+    behavior --> source
+    source -->|small controlled semantics| builder
+    source -->|serialized compatibility| file
+    source -->|retained observation or trust property| evidence
+    builder --> consumer
+    file --> consumer
+    evidence --> consumer
+    consumer --> assertion
+```
+
+Use the least authoritative fixture that proves the behavior. A small typed
+builder is preferable for one graph law; a checked-in serialized fixture is
+appropriate when byte shape or compatibility matters; governed evidence is
+required when ownership, provenance, or a retained trust property is the
+subject.
+
 ## Graph Builders
 
 Canonical builders cover chain, diamond, fan-out, disconnected, retry,
@@ -34,6 +62,16 @@ to simplify a unit test.
 
 The registry records evidence ownership and consumers. Tests should use asset
 identifiers where that relationship matters.
+
+## Ownership Rules
+
+| Asset | Owner | Change rule |
+| --- | --- | --- |
+| typed graph builder | testkit | preserve valid current defaults and expose scenario-specific semantics |
+| serialized contract fixture | consuming product contract | update only with schema/compatibility intent and refusal coverage |
+| governed evidence asset | evidence registry and owning domain | update through the registered producer and consumer governance |
+| snapshot | owning consumer | review semantic differences; update mode does not approve them |
+| corruption fixture | testkit plus refusal consumer | name one fault precisely and assert the product classification |
 
 ## Snapshot Builders
 

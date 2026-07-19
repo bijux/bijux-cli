@@ -3,6 +3,28 @@
 Artifact evidence is trustworthy only when identity, bytes, provenance, and
 relationships can be checked independently.
 
+## Evidence Chain
+
+```mermaid
+flowchart LR
+    producer["Producing run and node"]
+    bytes["Rooted artifact bytes"]
+    digest["Canonical content digest"]
+    identity["Artifact identity"]
+    lineage["Lineage relationship"]
+    proof["Verification proof"]
+    consumer["Replay, cache, promotion, or inspection"]
+
+    producer --> bytes --> digest --> identity
+    producer --> lineage
+    identity --> lineage --> proof --> consumer
+    digest --> proof
+```
+
+No link is interchangeable with another. Equal bytes do not establish the
+same producer. A lineage edge does not prove content integrity. A valid digest
+does not establish that a required output set is complete.
+
 ## Artifact Identity
 
 `build_artifact_identity` binds run, node, output path/name, node fingerprint,
@@ -36,6 +58,21 @@ reuse, replay, import/export, retention, and archive operations.
 
 Deduplication may share storage but cannot erase distinct producing run or node
 relationships.
+
+## Verification Outcomes
+
+| Observation | Classification | Allowed conclusion |
+| --- | --- | --- |
+| expected identity, bytes, proof, and required relationships agree | verified | evidence may support its declared consumer |
+| governed path or required member is absent | missing | run or bundle is incomplete |
+| bytes or canonical directory composition differs | changed | refuse the old identity; create new identity only through a producing operation |
+| entry cannot be read or its kind is unsupported | unverifiable | no integrity claim |
+| content matches but producer or lineage differs | distinct provenance | deduplication may share bytes, but histories remain separate |
+| one bundle member verifies while another required member fails | incomplete bundle | refuse bundle-level verification |
+
+Verification code must preserve these distinctions. Collapsing them into a
+boolean would allow missing or unreadable evidence to appear equivalent to
+known corruption or verified content.
 
 ## Cache And Replay Evidence
 

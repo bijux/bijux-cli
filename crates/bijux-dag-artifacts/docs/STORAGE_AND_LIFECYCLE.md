@@ -12,6 +12,27 @@ backend cannot claim atomic rename, conditional writes, consistent listing, or
 verification it does not provide. Runtime selects workflow policy; this crate
 reports support and performs evidence operations.
 
+## Lifecycle Authority
+
+```mermaid
+stateDiagram-v2
+    [*] --> Materialized: accepted write
+    Materialized --> Verified: identity and integrity check
+    Verified --> Promoted: explicit promotion
+    Verified --> Exported: portable bundle
+    Exported --> Verified: compatible import
+    Verified --> Retained: retention decision
+    Promoted --> Retained
+    Retained --> Archived: verified archive
+    Retained --> Collected: lineage-safe deletion
+    Materialized --> Rejected: incomplete or unsafe
+    Exported --> Rejected: incompatible or corrupt
+```
+
+These are evidence states, not storage implementation classes. A backend may
+provide different physical operations, but it cannot skip verification or
+lineage checks when moving between accepted states.
+
 ## Filesystem Safety
 
 Filesystem storage rejects absolute, traversing, non-normalized, symbolic-link,
@@ -25,6 +46,20 @@ Object storage uses the same logical identities and schemas. Backend keys are
 transport details. Import, replication, packing, compression, chunking, and
 signing preserve canonical identity and lineage. Eventual consistency and
 missing conditional operations remain explicit capabilities.
+
+## Capability Decisions
+
+| Backend condition | Required behavior |
+| --- | --- |
+| atomic replacement is unavailable | use a contract-approved commit protocol or refuse operations that require atomic publication |
+| conditional create/update is unavailable | do not claim race-free uniqueness or compare-and-swap behavior |
+| listing is eventually consistent | verify required identities directly; do not treat one listing as authoritative completeness |
+| symbolic links or traversing paths are encountered | reject them where regular rooted content is required |
+| inventory cannot be verified | block collection, destructive retention, and bundle completeness claims |
+| cleanup partly fails | preserve the primary evidence and return an actionable lifecycle failure |
+
+Capability declarations are operational inputs. They are not documentation
+labels that allow callers to proceed with weaker semantics silently.
 
 ## Promotion And Retention
 

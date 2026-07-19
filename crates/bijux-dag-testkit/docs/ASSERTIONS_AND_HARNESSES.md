@@ -4,6 +4,33 @@ Shared assertions encode durable product laws, not convenient output
 equivalence. Harnesses isolate process and filesystem state while preserving
 the complete observable result.
 
+## Observable Result
+
+```mermaid
+flowchart LR
+    setup["Isolated fixture and resources"]
+    action["Product action"]
+    status["Status or exit code"]
+    streams["stdout and stderr"]
+    state["Typed state and retained evidence"]
+    assertion["Law-specific assertions"]
+    diagnosis["Failure with identity and path context"]
+
+    setup --> action
+    action --> status
+    action --> streams
+    action --> state
+    status --> assertion
+    streams --> assertion
+    state --> assertion
+    assertion -->|mismatch| diagnosis
+```
+
+A harness captures observations; it does not decide which observations prove
+success. The consuming test must assert every output required by the contract
+and preserve distinctions among process status, streams, typed response, and
+retained state.
+
 ## Manifest Assertions
 
 `assert_manifest_eq_normalized` converts manifests to structured values and
@@ -39,6 +66,17 @@ the product's precise refusal or recovery behavior.
 
 Unknown corruption names should not be used to imply a fault was introduced.
 Add a named implementation and consumer together.
+
+## Assertion Failure Modes
+
+| Tempting shortcut | Defect introduced | Correct approach |
+| --- | --- | --- |
+| normalize a newly unstable field | hides an undeclared identity or determinism change | prove the field non-semantic in the owning contract first |
+| assert only exit success | misses corrupt or incomplete retained evidence | assert status plus contract-bearing outputs and state |
+| merge stdout and stderr | erases stream ownership and automation behavior | retain and assert streams independently |
+| compare debug strings for typed data | couples tests to incidental formatting | parse and compare the semantic structure |
+| reuse checkout paths across tests | creates order and concurrency sensitivity | allocate per-test directories and resources |
+| accept any error for a corruption case | permits wrong refusal classifications | assert the precise error class and evidence state |
 
 ## Assertion Quality
 

@@ -16,6 +16,27 @@ classification. Nodes declare inputs, outputs, params, container settings,
 timeout, resources, tags, retries, cache behavior, effects, environment
 allowlisting, grouping, trigger rules, branching, and dynamic expansion.
 
+```mermaid
+flowchart LR
+    authored["Authored graph"]
+    parse["Strict parse"]
+    model["Typed Graph model"]
+    validate["Validation and reference resolution"]
+    canonical["Canonical graph and identity"]
+    plan["Execution planning"]
+    refuse["Structured refusal"]
+
+    authored --> parse
+    parse -->|known fields and version| model --> validate
+    parse -->|unknown or malformed| refuse
+    validate -->|valid| canonical --> plan
+    validate -->|missing, cyclic, ambiguous, or incompatible| refuse
+```
+
+Core owns every transition in this diagram. Runtime receives a valid planned
+contract; it does not reinterpret unknown authored fields or repair invalid
+references.
+
 `OutputSpec` defines name, relative path, kind, requirement, media type, and
 promotion eligibility. Artifact persistence and path hardening belong to
 `bijux-dag-artifacts`.
@@ -54,6 +75,21 @@ incompatible specifications rather than renaming authored nodes implicitly.
 - Use exact environment allowlist entries; wildcard patterns are invalid.
 - Declare nondeterminism explicitly when semantics require it.
 - Treat required-output and cache defaults as serialization compatibility.
+
+## Change Impact
+
+| Change | Required review |
+| --- | --- |
+| add or change a graph field | strict parse, schema round trip, defaults, canonicalization, and compatibility |
+| change identifier or map ordering | graph identity, cache keys, replay, diff, and fixture determinism |
+| add a node or output kind | typed validation, planner lowering, runtime support, artifact meaning, and refusal on unsupported paths |
+| change reference syntax | parser, type compatibility, cycle detection, path-variable ownership, and diagnostics |
+| change composition or expansion | collision rules, generated identifiers, exported outputs, topology, and source attribution |
+| change trigger or branch semantics | validation, planning, scheduler eligibility, retained decisions, replay, and comparison |
+
+Model changes are rarely local to serialization. If a field influences
+execution or evidence, its identity and downstream compatibility effect must
+be explicit before the model is accepted.
 
 ## Verification
 

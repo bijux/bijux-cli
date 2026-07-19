@@ -13,6 +13,29 @@ node kinds, aligned with topology and triggers, and sufficient for execution.
 Planner errors map through owned conversions. Callers must not classify planner
 messages by string matching.
 
+## Lowering Pipeline
+
+```mermaid
+flowchart LR
+    graph["Resolved valid graph"]
+    options["Explicit PlanOptions"]
+    lower["Deterministic lowering"]
+    diagnostics["Typed diagnostics"]
+    plan["ExecutionPlan"]
+    runtime["Runtime handoff"]
+    refusal["Planner refusal"]
+
+    graph --> lower
+    options --> lower
+    lower --> diagnostics
+    lower -->|supported semantics| plan --> runtime
+    lower -->|unsupported or inconsistent| refusal
+```
+
+Planning is pure with respect to execution infrastructure. Backend discovery,
+filesystem allocation, process creation, cache lookup, and retained evidence
+must not influence the plan. Those effects belong after the handoff.
+
 ## Compile Helpers
 
 - `compile_graph` is the normal compile path.
@@ -38,12 +61,31 @@ stable promise. Workspace usage alone does not justify promotion. Stable
 promotion requires durable consumers, ownership, documentation, compatibility
 tests, and release review.
 
+## API Selection
+
+| Consumer need | Entry surface | Stability obligation |
+| --- | --- | --- |
+| ordinary graph compilation | `compile_graph` | preserve stable input, diagnostics, and plan behavior |
+| strict compatibility enforcement | `compile_graph_strict` | fail when compatibility requirements are not met |
+| caller-owned defaults | `compile_graph_with_defaults` | make defaults explicit and test their identity effect |
+| contract inspection | `compile_graph_contract` | preserve contract-oriented shape and classifications |
+| broad downstream integration | `bijux_dag_core::stable` | covered by public compatibility review |
+| repository research | `experimental-public-api` | no stable promise; callers must opt in deliberately |
+
+Crate-root compatibility re-exports are not the preferred discovery surface.
+Do not add a new re-export as a shortcut around module ownership or stability
+review.
+
 ## Runtime Handoff
 
 Core hands runtime canonical node and dependency identity, resolved params,
 branch and trigger behavior, declared resources, retries, effects, outputs,
 and refusal diagnostics. Runtime owns scheduling, adapters, concrete paths,
 attempts, cache lookup, and retained evidence.
+
+The handoff must be sufficient for runtime to execute without reopening the
+authored graph. If runtime needs to infer a graph rule, planning has leaked an
+authority or the plan contract is incomplete.
 
 ## Verification
 
