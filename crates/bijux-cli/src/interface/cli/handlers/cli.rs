@@ -1115,7 +1115,7 @@ fn docs_inventory_report_at(workspace_root: &Path) -> Value {
         ("migration-guide", "docs/bijux-cli/operations/migration-guide.md"),
         ("diagnostics-guide", "docs/bijux-cli/operations/diagnostics-guide.md"),
         ("plugin-workflows", "docs/bijux-cli/interfaces/operator-workflows.md"),
-        ("python-bridge-guide", "docs/bijux-cli/packages/python-bridge-guide.md"),
+        ("python-distribution", "docs/bijux-cli/packages/bijux-cli-python.md"),
         ("examples", "docs/bijux-cli/interfaces/examples.md"),
         ("compatibility", "docs/bijux-cli/interfaces/compatibility-commitments.md"),
         ("quality-review", "docs/bijux-cli/quality/review-checklist.md"),

@@ -29,12 +29,8 @@ itself, the Python launcher and wheel distribution, or both.
 | --- | --- |
 | the binary parses or renders something incorrectly | [`bijux-cli`](bijux-cli.md) |
 | a PyPI install launches the wrong thing or fails environment checks | [`bijux-cli-python`](bijux-cli-python.md) |
-| a mounted Python app behaves differently from the native runtime | [Python Bridge Guide](python-bridge-guide.md) and [`bijux-cli-python`](bijux-cli-python.md) |
+| a mounted Python app behaves differently from the native runtime | [`bijux-cli-python`](bijux-cli-python.md) |
 | you need the public command contract before picking a crate | [CLI Interfaces](../interfaces/index.md) |
-
-## Supporting Guide
-
-- [Python Bridge Guide](python-bridge-guide.md)
 
 ## Before You Move Deeper
 

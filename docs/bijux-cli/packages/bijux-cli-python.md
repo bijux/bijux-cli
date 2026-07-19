@@ -56,6 +56,39 @@ Python callers and the Rust runtimes.
 - explicit compatibility checks instead of silent drift between launcher paths
 - DAG helper payloads that stay aligned with the retained `bijux-dag` JSON
   contracts
+- structured responses on stdout while mounted-app diagnostics use stderr
+
+## Diagnose The Bridge
+
+Check the import, package entrypoint, runtime bridge, and mounted application
+separately:
+
+```bash
+python -c 'import bijux_cli_py; print(bijux_cli_py.__file__)'
+python -m bijux_cli_py version
+bijux doctor python
+bijux apps doctor <python-mounted-app>
+```
+
+An import failure belongs to packaging, wheel compatibility, or interpreter
+selection. A successful import followed by an app-doctor failure points instead
+to mount metadata, callable resolution, or the mounted-app protocol. Keeping
+those cases separate avoids treating every Python failure as a native bridge
+defect.
+
+Mounted apps must reserve stdout for their structured response and send
+diagnostics to stderr. They must not depend on repository source paths or a
+development virtual environment. When release packaging is in scope, build the
+wheel and validate it from an isolated installation rather than importing from
+the checkout.
+
+## Compatibility Boundary
+
+The Python distribution follows the workspace release line, while wheel tags
+and supported interpreters remain package-specific concerns. A conversion
+change requires Rust and Python parity tests. A public mounted-app protocol
+change requires the owning CLI contract, package documentation, and app SDK
+tests to change together.
 
 ## Source Layout
 
@@ -73,8 +106,6 @@ Python callers and the Rust runtimes.
 - open the [CLI Handbook](../index.md) for product-level runtime behavior
 - open [`bijux-cli`](bijux-cli.md) when the question is native runtime
   ownership rather than distribution or bridge mechanics
-- open [Python Bridge Guide](python-bridge-guide.md) when you want the shortest
-  route to the bridge-specific validation story
 - open [`bijux-dag`](../../bijux-dag/index.md) when the question is DAG runtime
   semantics rather than Python delegation
 - open the [Repository Handbook](../../bijux-core/index.md) when the issue
