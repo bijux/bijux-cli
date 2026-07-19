@@ -80,7 +80,6 @@ pub(super) fn run_comparison_harness_guard() -> Result<(), String> {
     let required = [
         "docs/spec/COMPARISON_HARNESS_CONTRACT.md",
         "docs/bijux-dag/interfaces/comparison-report-format.md",
-        "docs/bijux-dag/quality/comparison-limitations.md",
         "docs/bijux-dag/quality/comparison-evidence-surfaces.md",
         "evidence/compare/baselines/bijux_v1.json",
         "evidence/compare/metadata.json",

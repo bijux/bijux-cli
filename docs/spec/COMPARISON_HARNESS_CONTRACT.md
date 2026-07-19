@@ -46,7 +46,6 @@ named evidence surface under `evidence/compare/`.
 ## Related surfaces
 
 - `docs/bijux-dag/interfaces/comparison-report-format.md`
-- `docs/bijux-dag/quality/comparison-limitations.md`
 - `docs/bijux-dag/quality/comparison-evidence-surfaces.md`
 
 ## Related tests
