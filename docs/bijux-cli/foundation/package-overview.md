@@ -28,6 +28,28 @@ flowchart LR
     output --> exit["stable exit code"]
 ```
 
+The Python distribution joins before command execution:
+
+```mermaid
+flowchart LR
+    rust_dist["cargo: bijux-cli"]
+    python_dist["PyPI: bijux-cli"]
+    launcher["Resolved bijux runtime"]
+    contract["Shared command contract"]
+    runtime["bijux-cli execution"]
+
+    rust_dist --> launcher
+    python_dist --> launcher
+    python_dist --> contract
+    launcher --> runtime
+    contract <--> runtime
+```
+
+`bijux-cli-python` owns packaging, bridge conversion, and Python-facing
+fallback behavior. It does not own a competing parser, route catalog, or output
+schema. Runtime behavior changes belong in `bijux-cli`; distribution-specific
+failures belong in `bijux-cli-python`.
+
 ## What This Package Owns
 
 - canonical command parsing and path normalization
@@ -36,6 +58,18 @@ flowchart LR
 - structured output rendering for `json`, `yaml`, and `text`
 - command, envelope, diagnostics, plugin, and config contracts used by the
   runtime
+
+## Ownership Decisions
+
+| Question | Owner | Reason |
+| --- | --- | --- |
+| how argv becomes a normalized route | `bijux-cli` routing | one parser model must serve help, CLI, and REPL behavior |
+| how a built-in command behaves | `bijux-cli` feature and handler modules | command semantics are runtime behavior |
+| how results become text, JSON, YAML, and exit status | `bijux-cli` contracts and shared output | every distribution must preserve one envelope contract |
+| how the wheel locates or invokes runtime behavior | `bijux-cli-python` | executable and native-bridge resolution are distribution concerns |
+| how Python values and failures map across the bridge | `bijux-cli-python` | conversion must remain explicit without redefining core semantics |
+| how DAG workflows execute | DAG package family | `bijux` does not embed the DAG engine |
+| how repository evidence is generated | `bijux-dev` | proof tooling must remain outside product runtime |
 
 ## Reader Shortcut
 
@@ -54,6 +88,17 @@ If the problem starts with one of these questions, you are in the right place:
 - `--quiet` changes stream emission, not exit semantics
 - structured output formatting does not change payload meaning
 
+## Change Boundary
+
+When a runtime change affects parser models, command envelopes, global policy,
+or persisted state, verify both native behavior and Python distribution parity.
+When only wheel metadata or Python conversion changes, keep the Rust command
+contract fixed and prove the distribution boundary directly.
+
+Do not add behavior to the Python fallback simply because the bridge cannot
+reach it. A parity gap is a defect to classify and repair, not permission to
+create two product definitions.
+
 ## Code Anchors
 
 - `crates/bijux-cli/src/bin/bijux.rs`
@@ -68,3 +113,5 @@ If the problem starts with one of these questions, you are in the right place:
 - [Execution Model](../architecture/execution-model.md) for runtime assembly
 - [Package Index](../packages/index.md) when the question might still belong to
   `bijux-cli-python` instead
+- [Python Package](../packages/bijux-cli-python.md) for packaging and bridge
+  ownership
