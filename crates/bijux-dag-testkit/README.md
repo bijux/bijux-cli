@@ -41,6 +41,19 @@ assertions without duplicating fixtures across crates.
 - `src/fake_adapter.rs`: deterministic adapter harness support
 - `src/lib.rs`: exported fixture and assertion helpers
 
+## Internal Documentation
+
+- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): private test-support boundaries,
+  dependency direction, determinism, and extension decisions.
+- [`ASSERTIONS_AND_HARNESSES.md`](docs/ASSERTIONS_AND_HARNESSES.md): semantic
+  normalization, trace laws, command isolation, and corruption builders.
+- [`CONTRACTS.md`](docs/CONTRACTS.md): fixture, fake, assertion, dependency,
+  publication, and change contracts.
+- [`FAKES_AND_SCENARIOS.md`](docs/FAKES_AND_SCENARIOS.md): adapter fakes,
+  deterministic outcomes, product scenario reports, and fault design.
+- [`FIXTURES_AND_BUILDERS.md`](docs/FIXTURES_AND_BUILDERS.md): graph builders,
+  repository assets, synthetic/evidence distinction, and snapshots.
+
 ## Related links
 
 - [Crate contracts](docs/CONTRACTS.md)

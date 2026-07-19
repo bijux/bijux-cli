@@ -109,6 +109,19 @@ Internal schedule and backfill guides remain available in the DAG handbook for
 deliberate maintainer work with `BIJUX_DAG_ENABLE_INTERNAL=1`, but they are not
 front-door examples for the public `bijux-dag` package.
 
+## Internal Documentation
+
+- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): thin entrypoint flow, dependency
+  boundary, ownership, panic containment, and change decisions.
+- [`COMPLETIONS_AND_COMMAND_SURFACE.md`](docs/COMPLETIONS_AND_COMMAND_SURFACE.md):
+  app-owned command authority, supported shells, compatibility, and references.
+- [`CONTRACTS.md`](docs/CONTRACTS.md): process ownership, thinness,
+  compatibility, failure, and verification contracts.
+- [`PROCESS_AND_EXIT.md`](docs/PROCESS_AND_EXIT.md): parsing, dispatch status,
+  streams, exit classes, signals, and process testing.
+- [`TESTING_AND_RELEASE.md`](docs/TESTING_AND_RELEASE.md): test layers,
+  isolation, release checks, and failure ownership.
+
 ## Related links
 
 - [Crate contracts](docs/CONTRACTS.md)
