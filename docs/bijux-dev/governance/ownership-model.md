@@ -4,54 +4,119 @@ audience: maintainers
 type: governance
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # Ownership Model
 
-Use this page when the question is "who owns this maintainer behavior?" rather
-than "which command mentioned it first?"
+Use this page to decide where a repository-wide behavior, policy, or piece of
+evidence belongs. Ownership follows the authority that can change the meaning
+of a result, not the command that happens to display it.
 
-The point of the ownership model is to stop maintainer tooling from gradually
-absorbing product semantics or hiding product behavior behind repository
-automation.
+`bijux-dev` is a private maintainer package. It may inspect product crates,
+execute their public interfaces, and combine repository evidence. It must not
+become a second implementation of CLI routing, DAG execution, artifact
+semantics, or Python bridge behavior.
 
-## Ownership Rules
+## Authority Order
 
-- `bijux-dev` owns governance automation and evidence orchestration
-- CLI and DAG crates own product runtime behavior and user contracts
-- shared policy updates require coordinated documentation across handbooks
+When two files appear to describe the same rule, resolve ownership in this
+order:
 
-## What `bijux-dev` Should Own
+1. Product source and public product contracts own runtime semantics.
+2. Repository contracts and policy configuration own enforceable repository
+   rules.
+3. Maintainer suites own how those rules are evaluated and combined.
+4. Checked-in reports record reproducible observations; they do not redefine
+   the rule that produced them.
+5. Handbook pages explain how to use and maintain the governed surface.
 
-| Surface | Why it belongs here |
+If a report and its source contract disagree, repair the producer or regenerate
+the report from the authoritative input. Do not edit the observation to make a
+gate pass.
+
+## Product And Maintainer Boundaries
+
+| Surface | Owner | Maintainer role |
 | --- | --- |
-| suites and contract checks | they evaluate repository health across products |
-| evidence reporting | they summarize health, drift, and release proof for maintainers |
-| release automation | it coordinates publication and verification across crate families |
-| governance diagnostics | it checks whether docs, contracts, and workflows stay aligned |
+| `bijux` routing, plugins, output, state, and recovery | `bijux-cli` | query public behavior and detect cross-surface drift |
+| DAG graph, execution, adapters, artifacts, and application commands | owning `bijux-dag-*` crate | compose contract and release evidence without replacing domain logic |
+| Python API, native loading, and subprocess compatibility | `bijux-cli-python` and its native boundary | run parity and packaging checks |
+| repository layout, policy, documentation, and evidence governance | `bijux-dev` | define and execute maintainer checks |
+| organization-wide synchronized Make and GitHub policy | `bijux-std` source consumed through `.bijux/shared/` and `.github/` | validate the synchronized revision; do not redefine it locally |
 
-## Boundary Violations
+A product crate must not depend on `bijux-dev`. The maintainer package may
+depend on product crates because its purpose is to inspect and verify their
+combined repository contract.
 
-- maintainer commands changing product behavior semantics
-- product crates importing maintainer-only policy logic
-- docs claims with no owning code anchor
+## Maintainer Package Boundaries
 
-## Reader Shortcut
+The package exposes two maintainer binaries with different responsibilities:
 
-If the answer changes what an operator sees in `bijux` or `bijux-dag`, the
-owning product crate or handbook should lead. If the answer changes how the
-repository checks, proves, or releases that behavior, `bijux-dev` is the
-likely owner.
+| Binary | Source boundary | Responsibility |
+| --- | --- | --- |
+| `bijux-dev-cli` | `src/bin/bijux-dev-cli.rs` and `src/maintainer/` | repository status, diagnostics, reports, and read-oriented maintainer queries |
+| `bijux-dev-dag` | `src/main.rs`, `src/commands/`, `src/suites/`, `src/repo/`, `src/report/`, and `src/tooling/` | governed suite execution, evidence production, repository operations, and aggregate gate status |
 
-## Code Anchors
+The public library modules declared in `src/lib.rs` are backed by
+`src/maintainer/`. The similarly named modules beside `src/main.rs` belong to
+the `bijux-dev-dag` binary. A change should follow the owning entrypoint instead
+of sharing code merely because two modules have similar names.
 
-- `crates/bijux-dev/src/lib.rs`
-- `crates/bijux-dev/src/maintainer/`
-- `crates/bijux-dev/src/suites/`
+Within the diagnostic control plane:
+
+- `maintainer/cli/` owns parsing and dispatch
+- `maintainer/runtime/` owns query execution and the process entrypoint
+- `maintainer/suites/` owns diagnostic suite selection and orchestration
+- `maintainer/reports/` owns report composition
+- `maintainer/contracts/` and `maintainer/schema/` own maintainer result shapes
+- `maintainer/infra/` owns filesystem, process, clock, and artifact adapters
+
+Within the governance binary:
+
+- `commands/` owns command behavior and evidence commands
+- `suites/` owns reusable gate composition
+- `repo/` owns repository discovery and repository-local operations
+- `report/` owns common result writing
+- `tooling/` owns controlled Cargo and Git process access
+
+## Policy And Evidence Locations
+
+| Location | Meaning | Change discipline |
+| --- | --- | --- |
+| `contracts/` | machine-readable public and repository contracts | change with the owning behavior and contract tests |
+| `configs/` | enforceable policy and suite configuration | review as executable policy |
+| `docs/spec/` | canonical or generated technical contracts consumed by tests and tools | preserve producer, schema, and explicit authority |
+| `docs/reports/` | checked-in reproducible observations and governance evidence | regenerate through the named producer; never treat as policy by itself |
+| `artifacts/` | transient logs, reports, frozen checkouts, and local run products | never cite as checked-in authority |
+| public handbook trees under `docs/` | public explanatory guidance | explain authorities and remediation without duplicating executable truth |
+
+`docs/spec` and `docs/reports` remain separate from the public handbook because
+tests and producers address their stable repository paths directly. Folding
+them into `docs/bijux-dev` would confuse public guidance with executable
+contracts and generated evidence, and would publish a large internal surface
+without improving operator understanding.
+
+## Ownership Review
+
+Before adding or changing maintainer behavior, answer these questions in the
+change itself:
+
+- Which product, repository contract, or policy file supplies the fact?
+- Which binary and module boundary performs the check?
+- Is the output transient evidence or a governed checked-in report?
+- Which focused test fails when the authority and consumer drift?
+- Does remediation point to the owner rather than asking users to edit a
+  derived file?
+
+Reject changes that make a maintainer command authoritative for product
+semantics, allow product crates to import maintainer policy, hand-edit
+generated evidence, or duplicate synchronized `bijux-std` content.
 
 ## Continue Reading
 
 - [Change Control](change-control.md)
 - [Contract Governance](contract-governance.md)
+- [Evidence Collection](../operations/evidence-collection.md)
+- [Maintainer Package](../packages/bijux-dev.md)
 - [Core Package Ownership](../../bijux-core/governance/package-ownership.md)
