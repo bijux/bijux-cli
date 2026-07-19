@@ -153,6 +153,8 @@ The runtime implementations live outside this crate:
 - [`PACKAGING_AND_COMPATIBILITY.md`](docs/PACKAGING_AND_COMPATIBILITY.md):
   wheel construction, entrypoint ownership, path precedence, and release
   verification.
+- [`RUNTIME_SELECTION.md`](docs/RUNTIME_SELECTION.md): native import policy,
+  subprocess resolution, timeout, failure classification, and parity rules.
 
 ## References
 

@@ -114,6 +114,8 @@ manifest placement, compatibility checks, and packaging.
   effects, and failure behavior.
 - [`PUBLIC_API.md`](docs/PUBLIC_API.md): supported Rust facade, contract types,
   SDK surface, and compatibility rules.
+- [`PLUGINS_AND_APPS.md`](docs/PLUGINS_AND_APPS.md): extension ownership,
+  namespace collision law, lifecycle, execution, and trust boundaries.
 - [`ROUTING_AND_EXECUTION.md`](docs/ROUTING_AND_EXECUTION.md): canonical route
   resolution, execution policy, lifecycle, and external dispatch.
 - [`STATE_AND_EFFECTS.md`](docs/STATE_AND_EFFECTS.md): configuration, durable
