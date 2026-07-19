@@ -4,50 +4,43 @@ audience: mixed
 type: reference
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-08
+last_reviewed: 2026-07-19
 ---
 
 # Executable Examples
 
-This page is the public, executable examples authority for `bijux-dag`
-v0.4.0.
+This page maps operator questions to checked-in graphs and retained evidence.
+It has two trust levels:
 
-Use it when the question is "which repository example should I run for this
-behavior, and what should I expect to see when it works?"
+- the example catalog names fixtures, commands, and expected observations;
+- the marked CI recipes are extracted and executed by
+  `docs_executable_recipes_contract.rs`.
 
-Every example listed here is backed by a checked-in graph, a repository-owned
-fixture set, or a repository-tested guide. The index stays on the honest
-release boundary: local-first execution, retained evidence, cache and replay
-proof, branch visibility, and container packaging when the required engine is
-present.
+An expected observation is not a pass claim until the named command has run
+against the current binary. Stable commands stay on the visible operator
+surface. The experimental explicit-path routes are labeled and remain outside
+the stable compatibility promise.
 
-The recipe blocks near the end of this page are executed by
-`crates/bijux-dag-app/tests/docs_executable_recipes_contract.rs`. Stable
-commands remain on the visible `bijux-dag --help` surface. Experimental
-commands are experimental explicit-path routes, identified rather than
-presented as stable. The
-[Release Boundary](../foundation/release-boundary.md) and
-`contracts/foundation/dag_release_truth_table.v1.json` govern those
-classifications.
+[Release Boundary](../foundation/release-boundary.md) explains the command
+lanes; `contracts/foundation/dag_release_truth_table.v1.json` is the
+machine-readable classification authority.
 
-## Example Map
+## Choose An Example
 
-| Example | Primary surface | Graph or guide | Expected outputs |
-| --- | --- | --- | --- |
-| minimal hello DAG | validate and run a tiny graph | `evidence/dag/authoring/examples/hello.dag.json` | retained run directory, constant output, shell output |
-| file-processing DAG | run one practical local report workflow | `evidence/dag/authoring/examples/file-processing-report.dag.json` | rendered report, artifact registry entry, replayable run per [Replay Contract](../../spec/REPLAY_CONTRACT.md) |
-| cache demo | prove warm reuse and selective invalidation | [Cache Behavior Workflow](../operations/cache-behavior-workflow.md) | warm cache hits, changed-input invalidation, cache-miss explanation |
-| failure demo | prove retry evidence and focused repair | [Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md) | retry attempt record, failed approval boundary, repaired verified run |
-| replay demo | rerun a selected boundary from retained evidence | [First-Run Tutorial](../operations/first-run-tutorial.md) | replay proof, node-scoped rerun diff, strict verification success |
-| branch demo | prove selected and skipped lanes stay visible | `evidence/dag/authoring/examples/audience-branch-bulletin.dag.json` | branch decision artifact, one rendered lane, one skipped lane |
-| container demo | prove mounted inputs, retained outputs, and recorded engine identity | `evidence/dag/authoring/examples/release-note-bundle.dag.json` | bundled release note, container summary, recorded image digest |
+| Question | Example | Strongest retained evidence |
+| --- | --- | --- |
+| Can the runtime validate and execute a tiny graph? | minimal hello DAG | finalized run and two node outputs |
+| Can inputs become a verifiable report? | file-processing DAG | manifest inputs, report artifact, and output digest |
+| Why did cache reuse or refusal occur? | cache demo | cache decision and `why-cache-missed` reason |
+| Can a failed boundary be repaired without hiding attempts? | failure demo | attempt history, failed gate, and verified replay |
+| Can one downstream boundary rerun from retained evidence? | replay demo | `replay_proof`, lineage, focused diff, and strict verification |
+| Are selected and skipped branch lanes both visible? | branch demo | branch decision, skipped trace, and selected output |
+| Does a real container step retain engine and image identity? | container demo | container trace and `container-summary.json` |
 
 ## Minimal Hello DAG
 
-Graph:
-`evidence/dag/authoring/examples/hello.dag.json`
-
-Run:
+Use `evidence/dag/authoring/examples/hello.dag.json` to prove the smallest
+graph and shell-output path:
 
 ```bash
 bijux-dag validate evidence/dag/authoring/examples/hello.dag.json
@@ -58,116 +51,63 @@ bijux-dag run --json evidence/dag/authoring/examples/hello.dag.json \
 
 Expected outputs:
 
-- the validation command succeeds without additional graph inputs
-- the run envelope returns `ok: true` and reports
-  `./artifacts/hello-runs/run-hello-example`
-- the retained run contains node output directories for `const1` and `echo`
-- the shell node writes the retained `out_echo` artifact with the text
-  `from shell`
+- a finalized `run-hello-example` directory;
+- retained outputs for `const1` and `echo`;
+- `out_echo` containing `from shell`.
 
 ## File-Processing DAG
 
-Graph:
-`evidence/dag/authoring/examples/file-processing-report.dag.json`
-
-Run:
+Use `evidence/dag/authoring/examples/file-processing-report.dag.json` for a
+typed-input report workflow:
 
 ```bash
 SOURCE_DIR="$(pwd)/evidence/dag/authoring/examples/file-processing-source"
 bijux-dag run --json evidence/dag/authoring/examples/file-processing-report.dag.json \
   --out ./artifacts/file-processing-runs \
   --run-id file-processing-source \
-  --cache readwrite \
-  --cache-dir ./artifacts/file-processing-cache \
   --input "source_dir=${SOURCE_DIR}" \
   --input "report_title=Examples Index Report"
 ```
 
 Expected outputs:
 
-- the retained manifest records `source_dir` and `report_title` under
-  `run_metadata.graph_inputs`
-- the final report is materialized at
-  `nodes/render_report/outputs/report/report.md`
-- the report includes the supplied title, processed file count, and aggregate
-  line totals
-- `bijux-dag artifact registry ./artifacts/file-processing-runs/run-file-processing-source --json`
-  lists the final report as a retained artifact
+- effective inputs retained in the run manifest;
+- `nodes/render_report/outputs/report/report.md`;
+- a report entry in the artifact registry.
 
-Guide:
-[File Processing Workflow](../operations/file-processing-workflow.md)
+The full procedure is [File Processing Workflow](../operations/file-processing-workflow.md).
 
 ## Cache Demo
 
-Graph family:
-`evidence/dag/authoring/examples/regional-sales-pipeline.dag.json`
-
-Primary proof path:
-
-```bash
-bijux-dag run --json evidence/dag/authoring/examples/regional-sales-pipeline.dag.json \
-  --out ./artifacts/regional-sales-runs \
-  --run-id regional-sales-warm \
-  --cache readwrite \
-  --cache-dir ./artifacts/regional-sales-cache \
-  --input "orders_csv=${ORDERS_CSV}" \
-  --input "targets_json=${TARGETS_JSON}" \
-  --input "report_title=Regional Revenue Attainment"
-
-bijux-dag --json why-cache-missed \
-  --run-dir ./artifacts/regional-sales-runs/run-regional-sales-updated \
-  --node clean_orders \
-  --cache-dir ./artifacts/regional-sales-cache
-```
+Use `evidence/dag/authoring/examples/regional-sales-pipeline.dag.json` and
+[Cache Behavior Workflow](../operations/cache-behavior-workflow.md).
 
 Expected outputs:
 
-- the warm run reports cached reuse for the independent retained stages
-- a changed orders input invalidates only the dependent branch
-- the targets branch stays cached across the changed run
-- `why-cache-missed` surfaces the changed input hash or cache-identity reason
-  instead of a generic miss
+- warm reuse for unchanged independent stages;
+- invalidation limited to the branch affected by changed input;
+- integrity refusal for a corrupted exact entry;
+- a specific `why-cache-missed` identity or integrity reason.
 
-Guide:
-[Cache Behavior Workflow](../operations/cache-behavior-workflow.md)
+`why-cache-missed` is a tested experimental explicit-path route, not a stable
+root-help command.
 
 ## Failure Demo
 
-Graph family:
-`evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json`
-
-Primary proof path:
-
-```bash
-bijux-dag run --json evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json \
-  --out ./artifacts/compliance-gated-runs \
-  --run-id compliance-gated-source \
-  --input "source_note=${SOURCE_NOTE}" \
-  --input "retry_plan=$(pwd)/artifacts/compliance-gated-retry-plan.json" \
-  --input "publication_gate=$(pwd)/artifacts/compliance-gated-publication-gate.json"
-
-bijux-dag replay --json --source-run-id compliance-gated-source \
-  --source-run-root ./artifacts/compliance-gated-runs \
-  --out ./artifacts/compliance-gated-runs \
-  --run-id compliance-gated-repaired \
-  --from-node validate_publication_gate
-```
+Use `evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json` and
+[Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md).
 
 Expected outputs:
 
-- the first run records transient retry behavior on `fetch_compliance_gate`
-- approval failure stays visible at `validate_publication_gate`
-- the repaired replay reruns only the failed approval boundary and downstream
-  publication step
-- `bijux-dag verify --json ./artifacts/compliance-gated-runs/run-compliance-gated-repaired --strict`
-  succeeds after repair
-
-Guide:
-[Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md)
+- attempt evidence for the transient fetch failure;
+- a visible failed approval boundary;
+- replay limited to the repaired boundary and descendants;
+- strict verification of the repaired run.
 
 ## Replay Demo
 
-Primary proof path:
+Use the retained source from the
+[First-Run Tutorial](../operations/first-run-tutorial.md):
 
 ```bash
 bijux-dag replay --json --source-run-id first-run-tutorial-cold \
@@ -175,28 +115,18 @@ bijux-dag replay --json --source-run-id first-run-tutorial-cold \
   --out ./artifacts/first-run-tutorial-runs \
   --run-id first-run-tutorial-replay \
   --from-node render_report
-
-bijux-dag verify --json \
-  ./artifacts/first-run-tutorial-runs/run-first-run-tutorial-replay \
-  --strict
 ```
 
 Expected outputs:
 
-- the replay envelope contains `replay_proof`
-- the replay response reports `node_rerun_diff.node_id` as `render_report`
-- the replayed run directory records `parent_run_id` and `source_run_id`
-- strict verification succeeds on the replayed run
-
-Guide:
-[First-Run Tutorial](../operations/first-run-tutorial.md)
+- `replay_proof` in the response;
+- a focused diff for `render_report`;
+- retained source and parent run identity;
+- strict verification success.
 
 ## Branch Demo
 
-Graph:
-`evidence/dag/authoring/examples/audience-branch-bulletin.dag.json`
-
-Run:
+Use `evidence/dag/authoring/examples/audience-branch-bulletin.dag.json`:
 
 ```bash
 SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/audience-branch-source/team-update.md"
@@ -209,22 +139,15 @@ bijux-dag run --json evidence/dag/authoring/examples/audience-branch-bulletin.da
 
 Expected outputs:
 
-- `choose_audience_lane` writes a retained branch decision artifact
-- `render_technical_bulletin` succeeds while
-  `render_executive_bulletin` is retained as skipped
-- `publish_bulletin` emits the selected bulletin plus
-  `publish/selection.json` with `selected_lane: technical`
-- replaying the run from the retained source keeps the same lane selection
-
-Guide:
-[Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md)
+- a retained branch decision;
+- technical success and executive skip evidence;
+- `selected_lane: technical` in `publish/selection.json`;
+- stable branch selection under replay.
 
 ## Container Demo
 
-Graph:
-`evidence/dag/authoring/examples/release-note-bundle.dag.json`
-
-Run:
+Use `evidence/dag/authoring/examples/release-note-bundle.dag.json` with an
+available supported container engine:
 
 ```bash
 SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/release-note-source/weekly-update.md"
@@ -237,34 +160,25 @@ bijux-dag run --json evidence/dag/authoring/examples/release-note-bundle.dag.jso
 
 Expected outputs:
 
-- `prepare_note` copies the retained source note into node inputs
-- `package_bundle` writes `bundle/release-note.txt` and
-  `bundle/container-summary.json`
-- the retained trace records container engine details and the configured image
-  digest
-- if the container engine is unavailable, the run fails as a clear
-  infrastructure error instead of a silent skip
+- retained `bundle/release-note.txt`;
+- retained `bundle/container-summary.json`;
+- engine version and image identity in the node trace;
+- an explicit infrastructure failure when no engine is available.
 
-Guide:
-[Container Packaging Workflow](../operations/container-packaging-workflow.md)
+See [Container Packaging Workflow](../operations/container-packaging-workflow.md)
+for mount, stream, and image-verification details.
 
-## CI-Executed Recipes
+## CI Recipe Contract
 
-The recipes use variables supplied by the test harness:
-
-- `${GRAPH}`, `${FILE_PROCESSING_GRAPH}`, and
-  `${FILE_PROCESSING_SOURCE_DIR}` identify checked-in fixtures
-- `${RUN_ROOT}`, `${RUN_ID}`, and `${RUN_DIR}` identify retained runs
-- `${REPLAY_ROOT}`, `${EXPORT_BUNDLE}`, and `${DIAG_BUNDLE}` identify evidence
-  outputs
-- `${SOURCE_NOTE}` and `${REVISED_NOTE}` identify bulletin inputs
-- `${CACHE_ROOT}` and `${DELIVERABLES_ROOT}` isolate cache and promoted output
+The test harness supplies isolated values for graph, run, cache, bundle, input,
+and deliverable variables. Commands inside the markers below are executable
+contract material: changing them requires running their owning integration
+test, not only building the docs.
 
 ### Major Command Surface
 
-This recipe covers the stable execution and inspection flow plus the
-experimental explicit-path `prove`, `export`, `import`, and `migrate inspect`
-routes.
+This recipe covers stable execution and inspection plus the experimental
+explicit-path `prove`, `export`, `import`, and `migrate inspect` routes.
 
 <!-- recipe:ci-major-dag-commands:start -->
 ```bash
@@ -290,8 +204,8 @@ bijux-dag migrate inspect --json --run-dir ${RUN_DIR} --from v0.1 --to v0.1
 
 ### Evidence-Backed Bulletin
 
-This recipe proves cold and warm execution, retained artifact inspection,
-changed-input comparison, focused replay, strict verification, and promotion.
+This recipe proves cold and warm execution, changed-input comparison, focused
+replay, strict verification, and artifact promotion.
 
 <!-- recipe:ci-evidence-backed-bulletin:start -->
 ```bash
@@ -311,7 +225,7 @@ bijux-dag artifact promote ${RUN_ROOT}/run-branch-bulletin-updated publish_bulle
 
 ### First-Run Proof
 
-This is the compact executable form of the
+This is the executable form of the
 [First-Run Tutorial](../operations/first-run-tutorial.md).
 
 <!-- recipe:ci-first-run-tutorial:start -->
@@ -330,8 +244,7 @@ bijux-dag verify --json ${RUN_ROOT}/run-first-run-tutorial-replay --strict
 
 ## Next Reads
 
-- [Entrypoints and Examples](entrypoints-and-examples.md)
 - [Operator Workflows](operator-workflows.md)
+- [Run Evidence Layout](run-evidence-layout.md)
 - [First-Run Tutorial](../operations/first-run-tutorial.md)
 - [Cache Behavior Workflow](../operations/cache-behavior-workflow.md)
-- [Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md)
