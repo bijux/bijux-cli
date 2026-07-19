@@ -74,87 +74,32 @@ bijux apps --help
 
 ## Mounted App SDK
 
-`bijux-cli` now exposes a crate-native SDK for mounted Rust apps under [`src/sdk`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli/src/sdk).
-
-Core surfaces:
-
-- `ProductMount`: high-level mounted-app builder for binary, Python-module, console-script, plugin-process, and embedded-Rust entrypoints
-- `BijuxApp`: trait for routed app implementations
-- `CommandContext`: stable execution context for mounted handlers
-- `CommandResult`: root-compatible result envelope with explicit stream policy
-- `BijuxCliHarness`: in-process harness for mounted app tests
-- `SnapshotHelper`: stable rendering helper for app-level snapshot contracts
-
-Minimal example:
+The crate-native SDK under
+[`src/sdk`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli/src/sdk)
+uses the same routing context and output envelope as the installed command.
+`ProductMount` declares the mount, `BijuxApp` handles routed calls, and
+`BijuxCliHarness` exercises the boundary without spawning a process.
 
 ```rust
-use bijux_cli::sdk::{
-    BijuxApp, CommandContext, CommandResult, OutputEnvelopeHelper, ProductMount,
-};
+use bijux_cli::sdk::ProductMount;
 
-struct HelloApp;
-
-impl BijuxApp for HelloApp {
-    fn mount(&self) -> ProductMount {
-        ProductMount::new("hello")
-            .expect("namespace")
-            .binary("bijux-hello")
-            .summary("Minimal hello app")
-    }
-
-    fn route(&self, argv: &[String], ctx: &CommandContext) -> CommandResult {
-        let command = ctx.command_path(&["status"]).expect("command path");
-        CommandResult::success(
-            OutputEnvelopeHelper::success(
-                command,
-                serde_json::json!({ "status": "ok", "argv": argv }),
-                "1970-01-01T00:00:00Z",
-            )
-            .expect("success envelope"),
-        )
-    }
-}
+let mount = ProductMount::new("hello")?
+    .binary("bijux-hello")
+    .summary("Hello application");
 ```
 
-Python-mounted apps use the same descriptor contract. The runtime validates
-`python_module` entrypoints with optional callable fields, resolves a concrete
-interpreter from the active environment or project `.venv`, and exposes
-`bijux apps doctor <namespace>` for import, version, and callable diagnostics.
-The companion package guide lives at
-[`crates/bijux-cli-python/docs/MOUNTED_APPS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/MOUNTED_APPS.md).
+Python-mounted apps use the same descriptor contract. See the
+[mounted Python app guide](../bijux-cli-python/docs/MOUNTED_APPS.md) for interpreter discovery,
+manifest placement, compatibility checks, and packaging.
 
-## Runtime Diagnostics
+## Operator References
 
-The root `doctor` surface now acts as the operator-facing runtime diagnostic entrypoint:
-
-- `bijux doctor`: unified install, state-path, plugin, app-mount, routing, and shim health
-- `bijux doctor --bundle`: export a bug-report-ready runtime bundle under `./artifacts`
-- `bijux doctor paths`: resolved state files plus read/write diagnostics
-- `bijux doctor python`: Python bridge interpreter, import, and console-script diagnostics
-- `bijux doctor routing`: canonical built-in routes, aliases, and namespace inventory
-- `bijux doctor shims`: deprecated alias-binary detection without flagging declared product binaries such as `bijux-dag`
-- `bijux doctor <app>`: focused official app discovery and runtime diagnostics
-
-## Layered Configuration
-
-The config surface now supports a stronger operator workflow than plain key-value
-mutation:
-
-- `bijux config schema [scope]`: inspect the built-in config registry for `cli`,
-  `dag`, and mounted-app scopes
-- `bijux config docs [scope]`: generate a markdown reference from the same
-  built-in schema registry
-- `bijux config validate [--profile name]`: validate effective config across the
-  global env file, named profile overlays, project `.bijux/config.{toml,json}`,
-  and environment overrides
-- `bijux config explain KEY`: show the effective source chain for one key with
-  secret-aware redaction
-- `bijux config repair`: recover malformed global env state and write a backup
-- `bijux config export/load --portable`: round-trip a logical-key JSON bundle
-  instead of only dotenv-style env files
-
-The generated handbook reference lives at
-[`docs/bijux-cli/interfaces/generated-config-reference.md`](https://github.com/bijux/bijux-core/blob/main/docs/bijux-cli/interfaces/generated-config-reference.md).
+| Question | Authority |
+| --- | --- |
+| which commands and output contracts are supported? | [CLI Surface](../../docs/bijux-cli/interfaces/cli-surface.md) |
+| how are global, profile, project, and environment values resolved? | [Configuration Surface](../../docs/bijux-cli/interfaces/configuration-surface.md) |
+| how do I diagnose paths, routing, plugins, Python, or mounted apps? | [Diagnostics Guide](../../docs/bijux-cli/operations/diagnostics-guide.md) |
+| which generated keys and scopes exist? | [Generated Configuration Reference](../../docs/bijux-cli/interfaces/generated-config-reference.md) |
 
 ## Tests
 
