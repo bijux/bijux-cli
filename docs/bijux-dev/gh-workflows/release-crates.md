@@ -1,52 +1,78 @@
 ---
-title: release-crates
+title: Rust Crates Release
 audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-19
 ---
 
-# release-crates
+# Rust Crates Release
 
-`release-crates.yml` publishes the Rust release surface after a version tag is
-present and CI on the tagged commit is healthy.
+`release-crates.yml` owns crates.io publication for the public Rust package
+surface. It is reusable and manually dispatchable. Stable tag pushes enter
+through `release-on-tag.yml`, which calls this lane independently of PyPI,
+GHCR, and GitHub Release publication.
 
-## Trigger
+## Eligibility
 
-- `push` on tags matching `v*`
-- manual `workflow_dispatch`
+The workflow resolves its enabled state and commands from inputs,
+`.github/release.env`, repository variables, and defaults. The repository
+configuration selects Rust `1.85.0`, `make gh-release-plan-crates`, and
+`make publish-rs` with real publication and existing-version skips enabled.
 
-## Job Shape
+`make gh-release-plan-crates` requires a stable `vMAJOR.MINOR.PATCH` tag on the
+candidate commit. It probes every public package at that version and returns
+only packages absent from crates.io. If all packages exist, the lane ends
+without publishing.
 
-- wait for `ci.yml` to pass on the tagged commit
-- provision Rust `1.86.0` so crates publication uses the same toolchain as the workspace and CI
-- decide whether crates publication is needed with `make gh-release-plan-crates`
-- verify crates.io credentials
-- publish through `make publish-rs`
+## Package Boundary
 
-## Publication Order
+The canonical public/private classification lives in
+`contracts/foundation/workspace_package_boundary.v1.json`. Publication follows
+dependency order:
 
-The canonical publication contract lives in
-`contracts/foundation/workspace_package_boundary.v1.json`.
+1. `bijux-dag-core`
+2. `bijux-dag-artifacts`
+3. `bijux-dag-runtime`
+4. `bijux-dag-app`
+5. `bijux-dag-cli`
+6. `bijux-cli`
 
-The default publish order is dependency-first:
+`bijux-dag-testkit`, `bijux-dev`, and `bijux-cli-python` are repository support
+packages and are not published as Rust crates.
 
-- `bijux-dag-core`
-- `bijux-dag-artifacts`
-- `bijux-dag-runtime`
-- `bijux-dag-app`
-- `bijux-dag-cli`
-- `bijux-cli`
+## Publication Path
 
-That order keeps the DAG crate family coherent on crates.io before the separate
-`bijux` runtime crate is published.
+For an eligible run, the workflow waits for `ci.yml` on a tag push, resolves
+the unpublished package set, verifies `CARGO_REGISTRY_TOKEN`, and passes the
+tag-derived version and package list to `make publish-rs`.
 
-`bijux-dag-testkit`, `bijux-dev`, and `bijux-cli-python` stay outside this
-publication order because they remain repository-internal support crates.
+The Make target creates a clean release tree stamped with the release version,
+resolves each package version from Cargo metadata, and invokes
+`cargo publish --locked` in dependency order. It checks crates.io before each
+upload and also recognizes the registry's already-uploaded response. These two
+guards make retries safe; they do not make the multi-package release atomic.
+
+## Failure Meaning
+
+A failure before publication leaves registry state unchanged. A failure after
+one or more uploads leaves a partial crates.io release because registries do
+not support rollback. Keep the tag fixed, confirm which packages exist, and
+rerun the lane. The planner and publisher will skip completed packages and
+continue in dependency order.
+
+## Source Authorities
+
+- `.github/workflows/release-on-tag.yml`
+- `.github/workflows/release-crates.yml`
+- `.github/release.env`
+- `makes/gh.mk`
+- `makes/rust.mk`
+- `contracts/foundation/workspace_package_boundary.v1.json`
 
 ## Next Reads
 
-- [release-pypi](release-pypi.md)
-- [release-github](release-github.md)
+- [PyPI Release](release-pypi.md)
+- [GitHub Release](release-github.md)
 - [Release Surfaces](../makes/release-surfaces.md)
