@@ -1,58 +1,106 @@
 # bijux-dev
 
-`bijux-dev` is the repository-internal maintainer crate for `bijux-core`.
-It powers repository diagnostics, release verification, governance checks, and
-the support commands that keep the public products honest.
+`bijux-dev` is the private maintainer package for the `bijux-core` repository.
+It turns repository policy, product contracts, retained evidence, and release
+requirements into inspectable commands and test suites.
 
-## Release Status
+The package is intentionally not published. End users should install
+`bijux-cli` or the relevant `bijux-dag` package instead.
 
-- repository-internal crate
-- intentionally not published
-- exists to validate, document, and release the public products
+## Choose A Binary
 
-## Good Fit
+| Binary | Owns | Typical output |
+| --- | --- | --- |
+| `bijux-dev-cli` | repository status, runtime/package diagnostics, documentation publishing, maintenance audits, and cross-surface parity views | text, JSON, or YAML maintainer reports |
+| `bijux-dev-dag` | governed checks, tests, contracts, evidence verification, DAG diagnostics, release proof, and suite catalogs | validation envelopes, generated governed evidence, and process status |
 
-- running repository diagnostics and release verification locally
-- generating maintainer reports and checked-in command references
-- enforcing repository contracts around documentation, dependencies, evidence,
-  and publication boundaries
-- wiring shared governance and release suites into make targets and CI
+The binaries are complementary, not aliases. `bijux-dev-cli` presents
+repository and product observations. `bijux-dev-dag` composes enforceable
+governance and evidence suites. A similarly named command in one binary is not
+permission to duplicate the other's behavior.
 
-## What It Provides
+Discover the live surfaces with:
 
-- maintainer automation and diagnostics through `bijux-dev-cli`
-- repository governance, contracts, evidence, and release verification flows
-- shared reports, inventories, and suite orchestration used by repository gates
+```bash
+cargo run -p bijux-dev --bin bijux-dev-cli -- --help
+cargo run -p bijux-dev --bin bijux-dev-dag -- --help
+```
 
-## Typical Entry Points
+The exact visible `bijux-dev-dag` root command order is governed by
+[`contracts/foundation/maintainer_command_surface.v1.json`](../../contracts/foundation/maintainer_command_surface.v1.json).
 
-- `bijux-dev-cli` for maintainer automation and diagnostics
-- `bijux-dev-dag` for repository-owned DAG governance and release surfaces
-- `bijux-dev-cli docs write-dag-cli-reference` for rewriting the checked-in DAG
-  CLI reference pages without relying on ignored tests
+## Package Boundary
 
-## Code Layout
+This package may depend on product crates to inspect their public facts and
+verify cross-surface contracts. Product crates must not depend on
+`bijux-dev`.
 
-- `src/maintainer`: maintainer control-plane modules
-- `src/commands`, `src/suites`, `src/repo`, `src/report`: governance and
-  evidence control-plane modules
-- `src/bin`: control-plane support binaries
-- `tests`: governance and maintainer contract suites
+`bijux-dev` owns:
 
-## Reach For Another Surface When
+- repository layout, dependency, documentation, and policy checks;
+- suite discovery, selection, explanation, and aggregate status;
+- generated governance and release evidence with explicit source identity;
+- release-readiness and compatibility verification;
+- maintainer diagnostics that read product contracts without redefining them.
 
-- you need end-user runtime command semantics: `bijux-cli`
-- you need DAG execution behavior or artifact semantics: `bijux-dag-*`
-- you need repository handbook guidance instead of control-plane code:
-  `docs/bijux-dev/`
+It does not own:
 
-## Non-Goals
+- `bijux` command routing, plugin behavior, or user state;
+- graph semantics, scheduling, backend execution, or artifact meaning;
+- Python bridge runtime behavior;
+- GitHub workflow policy synchronized from `bijux-std`.
 
-- end-user runtime command semantics
-- DAG semantic runtime ownership
+## Validation And Mutation
 
-## Related links
+Most commands validate or report and must not modify governed source. Commands
+that generate checked-in references or reports are explicit about their output
+paths and producer.
 
-- [Crate contract](./CONTRACT.md)
-- [Crate changelog](./CHANGELOG.md)
-- [Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/)
+- Validation commands return non-zero when required selected checks fail.
+- Advisory selection changes enforcement and must not be reported as a required
+  gate pass.
+- Generated local logs, run products, and one-off reports belong under
+  `artifacts/`.
+- Checked-in output under `docs/reports`, `docs/spec`, or another governed path
+  must have an identifiable producer and contract test.
+- A process start, report path, or generated file is not evidence of success
+  without final status and integrity review.
+
+## Source Ownership
+
+| Path | Responsibility |
+| --- | --- |
+| `src/commands/` | `bijux-dev-dag` command behavior and governed command families |
+| `src/suites/` | reusable suite definitions, metadata, and selection |
+| `src/maintainer/` | repository and product diagnostic report composition |
+| `src/repo/` | repository inspection and repository-owned operations |
+| `src/report/` | shared report and evidence presentation |
+| `src/bin/bijux-dev-cli.rs` | `bijux-dev-cli` process entrypoint |
+| `src/main.rs` | `bijux-dev-dag` process entrypoint |
+| `tests/` | architecture, command, policy, evidence, and release contracts |
+
+Product behavior belongs in the product crate even when a maintainer test is
+the first place that exposes drift.
+
+## Verification
+
+Run focused tests by owning test binary while editing. The root make targets
+compose broader required lanes:
+
+```bash
+cargo test -p bijux-dev --test docs_source_reference_contracts
+make lint
+make test
+```
+
+Do not describe a focused `bijux-dev` test as proof that all runtime, Python,
+documentation, or release lanes passed.
+
+## Maintainer References
+
+- [Package contract](./CONTRACT.md)
+- [Package changelog](./CHANGELOG.md)
+- [Maintainer handbook](../../docs/bijux-dev/index.md)
+- [Command surface](../../docs/bijux-dev/operations/command-surface.md)
+- [Repository gates](../../docs/bijux-dev/operations/repository-gates.md)
+- [Evidence collection](../../docs/bijux-dev/operations/evidence-collection.md)
