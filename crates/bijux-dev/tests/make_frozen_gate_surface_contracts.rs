@@ -36,11 +36,16 @@ fn pinned_ref_launcher_isolates_artifacts_and_bootstrap_state() {
     let launcher = read_repo_file(".bijux/shared/bijux-makes/scripts/run_pinned_gate.sh");
 
     for needle in [
+        "pinned_ref=\"${PINNED_REF:-${TEST_ALL_FROZEN_REF:-HEAD}}\"",
         "artifact_root=\"${repo_root}/artifacts/${short_sha}\"",
         "pinned_repo_dir=\"${artifact_root}/frozen-repo\"",
         "background_dir=\"${artifact_root}/background\"",
-        "export ARTIFACT_ROOT=\"${artifact_root}\"",
+        "artifact_execution_root=\"${pinned_repo_dir}/artifacts\"",
+        "export PROJECT_ROOT=\"${pinned_repo_dir}\"",
+        "export ARTIFACT_ROOT=\"${artifact_execution_root}\"",
         "export RUN_ID=\"${short_sha}\"",
+        "artifact publication conflict:",
+        "ln -s ",
         "console_log=${console_log}",
         "status_file=${status_file}",
     ] {

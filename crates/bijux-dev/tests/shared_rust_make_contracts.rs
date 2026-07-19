@@ -65,10 +65,27 @@ fn core_adapter_retains_binary_preparation_and_delegates_execution() {
 
 #[test]
 fn complete_lane_includes_ignored_tests_and_disables_retries() {
+    let root = repo_root();
     let shared_gate =
-        fs::read_to_string(repo_root().join(".bijux/shared/bijux-makes-rs/scripts/rust_gate.sh"))
+        fs::read_to_string(root.join(".bijux/shared/bijux-makes-rs/scripts/rust_gate.sh"))
             .expect("read shared Rust gate");
+    let rust_make = fs::read_to_string(root.join("makes/rust.mk")).expect("read Rust Make policy");
+    let nextest =
+        fs::read_to_string(root.join("configs/rust/nextest.toml")).expect("read nextest policy");
+
     assert!(shared_gate.contains("args+=(--run-ignored all --retries 0)"));
+    assert!(shared_gate.contains("\"nextest-summary:\""));
+    assert!(shared_gate.contains("return \"${status}\""));
+    assert!(rust_make.contains("NEXTEST_FULL_PROFILE ?= ci"));
+
+    let full_profile = nextest
+        .split("[profile.ci]")
+        .nth(1)
+        .expect("complete-lane nextest profile")
+        .split("\n[")
+        .next()
+        .expect("complete-lane nextest profile body");
+    assert!(full_profile.contains("fail-fast = false"));
 }
 
 #[test]
