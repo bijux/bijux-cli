@@ -4,7 +4,7 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-19
 ---
 
 # bijux-dag-runtime
@@ -69,51 +69,15 @@ lane is opt-in behind `experimental-public-api`.
 - package release policy and maintainer reports belong to repository and
   maintainer surfaces rather than this runtime crate
 
-## Identity Guarantees
+## Contract Authorities
 
-- runtime manifests and provenance records derive `tool_version` from the crate
-  build, not from the operator's current shell environment
-- a Git short SHA may appear only when it was captured during the build itself
-  or injected through `BIJUX_DAG_BUILD_GIT_SHA` for a clean release tree
-- runtime fingerprints stay stable when the same binary is executed from a
-  different working directory
-- unrelated ambient Git repositories are not allowed to rewrite replay or cache
-  identity
-
-## Lifecycle Evidence Contract
-
-- node traces keep coarse terminal `status` separate from `lifecycle_state`
-- the stable lifecycle vocabulary is `pending`, `ready`, `queued`, `running`,
-  `succeeded`, `failed`, `skipped`, `cached`, `cancelled`, and `timed_out`
-- `queued` is the scheduler handoff state after dependency readiness and before
-  adapter execution starts
-- `lifecycle_transitions` records the validated path through those states so
-  cached reuse, timeout, cancellation, and pre-start failure paths remain
-  inspectable after the run completes
-
-## External Adapter Contract
-
-- executable discovery reads from `BIJUX_DAG_ADAPTERS_DIR`
-- `info --json` must emit descriptor JSON on stdout only; handshake stderr is a
-  protocol violation
-- `execute` receives `--node-spec`, `--workdir`, `--outdir`, and
-  `--failure-path`
-- nonzero adapter exits should write a `FailureInfo` JSON envelope to
-  `--failure-path` when they need precise runtime failure classification
-- the external adapter binary SHA-256 participates in cache identity and node
-  trace evidence, so a binary change invalidates cached reuse even if the
-  adapter keeps the same declared identity
-
-## Source Layout
-
-- `crates/bijux-dag-runtime/src/runtime_core`
-- `crates/bijux-dag-runtime/src/adapters`
-- `crates/bijux-dag-runtime/src/backend`
-- `crates/bijux-dag-runtime/src/artifacts`
-- `crates/bijux-dag-runtime/src/cache`
-- `crates/bijux-dag-runtime/src/policy`
-- `crates/bijux-dag-runtime/src/replay`
-- `crates/bijux-dag-runtime/src/diagnostics`
+| Question | Authority |
+| --- | --- |
+| graph, execution, environment, cache, and replay identity | [Reproducibility Model](../interfaces/reproducibility-model.md) |
+| retained lifecycle and node evidence | [Run Evidence Layout](../interfaces/run-evidence-layout.md) |
+| adapter handshake and execution protocol | [Adapter Contract](../../spec/ADAPTER_CONTRACT.md) |
+| security and subprocess isolation limits | [Execution Security And Isolation](../operations/security-isolation-truth.md) |
+| Rust imports and implementation modules | [crate README](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-runtime) and [docs.rs](https://docs.rs/bijux-dag-runtime) |
 
 ## Practical Starting Points
 
@@ -122,9 +86,6 @@ lane is opt-in behind `experimental-public-api`.
   inputs
 - open [`bijux-dag-app`](bijux-dag-app.md) for command orchestration and
   response shaping
-- open [Reproducibility Model](../interfaces/reproducibility-model.md)
-  for the canonical explanation of plan identity, execution identity,
-  environment identity, cache keys, and replay-bundle boundaries
 - open [Cache Behavior Workflow](../operations/cache-behavior-workflow.md)
   when you want a real execution path for cache hits, invalidation, corruption
   refusal, and proof-backed reuse rejection
@@ -134,15 +95,6 @@ lane is opt-in behind `experimental-public-api`.
 - open [Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md)
   when you want a real execution path for branch decisions, skipped-lane
   evidence, and replay stability
-
-## Code Anchors
-
-- `crates/bijux-dag-runtime/README.md`
-- `crates/bijux-dag-runtime/CONTRACT.md`
-- `crates/bijux-dag-runtime/src/lib.rs`
-- `crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs`
-- `crates/bijux-dag-runtime/src/policy/evaluator.rs`
-- `crates/bijux-dag-runtime/src/replay/verifier.rs`
 
 ## Review Focus
 
