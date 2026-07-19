@@ -9,49 +9,71 @@ last_reviewed: 2026-07-09
 
 # Documentation System
 
-`bijux-core` keeps documentation authority split by durable responsibility so
-operators, maintainers, and contributors can tell which page governs which
-claim.
+This repository contains four different kinds of written material. They have
+different readers and different authority. Keeping those roles explicit is
+more important than maximizing page count.
 
-## Authority Layers
+## Public Handbooks
 
-- Foundation pages define repository scope, package boundaries, durable
-  language, and ownership rules.
-- Architecture pages explain subsystem shape, boundary decisions, and
-  integration rules inside the repository.
-- Interface pages describe operator-visible or maintainer-visible surfaces and
-  point back to their governing contracts.
-- Operations pages cover repeatable procedures, verification flows, and
-  evidence-backed maintenance steps.
-- Report pages summarize governed facts generated from repository policy,
-  contract tests, or curated evidence.
+The pages under `docs/bijux-core`, `docs/bijux-cli`, `docs/bijux-dag`, and
+`docs/bijux-dev` are the published website. They answer reader questions:
 
-## Reading Rules
+- what the products do and do not promise
+- how to install, operate, diagnose, and verify them
+- how packages divide responsibility
+- how maintainers develop and release the repository
 
-- Start in Foundation when the question is about what belongs in this
-  repository, which crate owns a capability, or which terms are allowed to
-  harden into durable names.
-- Use Architecture when the repository boundary is already clear and the next
-  question is subsystem shape or integration behavior.
-- Use Interfaces when the claim is about a command, schema, API, or another
-  surfaced contract.
-- Use Operations when the task is procedural and must stay aligned with the
-  repository's verification flow.
-- Treat report pages as derived summaries. When a report and a governing
-  contract disagree, the contract wins and the report must be refreshed.
+Each page must own a distinct question. A page that repeats another page,
+exists only to satisfy a numeric quota, or provides headings without usable
+content should be merged or removed.
 
-## Durable Authoring Rules
+## Executable Specifications
 
-- Repository docs must cite repository-relative contracts, schemas, and source
-  files that exist on disk.
-- Release-boundary claims must point to the corresponding truth-table or
-  package-boundary contract.
-- Generated reports must say what governs them and should not invent authority
-  that lives elsewhere.
+`docs/spec` contains prose contracts read by repository tooling and tests.
+These files are versioned inputs to governance, not a browsing hierarchy.
+Their exact language and paths can be executable interfaces. A handbook may
+explain a contract and link to its repository source, but must not duplicate it
+as a second authority.
 
-## Next Reads
+## Generated Evidence
 
-- [Foundation Index](index.md)
-- [Package Boundary](package-boundary.md)
-- [Repository Scope](repository-scope.md)
-- [Root Policy Surface Report](root-policy-surface-report.md)
+`docs/reports` contains generated or mechanically governed evidence. Reports
+show what a check observed at a particular repository state. They do not define
+product behavior, and they are not published as user guidance. When a report
+and its source contract disagree, the report is stale.
+
+Local command output, logs, sites, and ad hoc analysis belong under
+`artifacts/`, not in `docs/reports`.
+
+## Planning Records
+
+Planning material is not product truth. Current limitations belong beside the
+affected product; future direction belongs in an explicitly non-binding
+roadmap. Status ledgers that enforce a contract belong with the executable
+specification or generated evidence that owns them.
+
+## Repository And Crate Pages
+
+The root `README.md` orients a new reader and provides the shortest verified
+start. It does not reproduce the operator handbooks. Each crate `README.md`
+states that crate's responsibility, public surface, dependencies, and
+verification entrypoint. `CONTRACT.md` records package ownership constraints,
+while `CHANGELOG.md` records released changes.
+
+Crate-local `docs/` directories are appropriate only for detail that is useful
+to that crate's consumers and too specific for its README. They are not a
+place to mirror the public website.
+
+## Authority Order
+
+When two sources appear to disagree, use this order:
+
+1. machine-readable schemas and contracts for serialized or release-governed
+   behavior
+2. executable specifications and tests for enforced repository behavior
+3. public handbooks for supported reader-facing behavior
+4. crate pages for package-local detail
+5. generated reports for evidence about a particular revision
+
+An inconsistency is a defect. The order identifies which source must be
+examined first; it does not excuse leaving the other source stale.

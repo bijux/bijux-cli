@@ -212,323 +212,30 @@ cargo check --workspace
 cargo test --workspace
 ```
 
-Inspect product command surfaces:
+Inspect the product command surfaces:
 
 ```bash
 cargo run -p bijux-cli --bin bijux -- --help
 cargo run -p bijux-dag-cli --bin bijux-dag -- --help
-cargo run -p bijux-dag-cli --bin bijux-dag -- validate --help
-cargo run -p bijux-dag-cli --bin bijux-dag -- commands
-cargo run -p bijux-dag-cli --bin bijux-dag -- commands --lane experimental
 ```
 
-For longer DAG runs, add `--progress compact`. In human mode that keeps a
-single live status line on stderr. With `--json`, it also streams
-`dag.run.progress` events before the final `dag.run` envelope so automation can
-track elapsed time, active nodes, cache hits, and the latest failure while the
-run is still in flight.
-
-For the shortest repository-backed proof that `bijux-dag` is real, run:
+Run the repository-backed DAG demonstration:
 
 ```bash
 make dag-demo
 ```
 
-That command builds or reuses `bijux-dag`, resolves the repository example
-inputs to absolute paths, and proves the retained file-processing workflow end
-to end:
-
-- graph inspection before execution
-- cold retained run creation
-- retained artifact registry and final report inspection
-- warm cache reuse on the second run
-- focused replay of the final reporting boundary
-- strict verification of the replayed run
-
-It writes its retained evidence under `artifacts/dag-demo/`.
-
-For the same workflow as a step-by-step operator walkthrough, start with
-[`docs/bijux-dag/operations/guides/first-run-tutorial.md`](docs/bijux-dag/operations/guides/first-run-tutorial.md).
-That tutorial covers:
-
-- graph inspection before execution
-- one real workflow with runtime inputs
-- retained run and artifact inspection
-- warm cache reuse on a second run
-- focused replay and strict verification
-
-For one user-facing index of the repository-backed hello, file-processing,
-cache, replay, failure, branch, and container examples, use
-[`docs/bijux-dag/interfaces/examples/index.md`](docs/bijux-dag/interfaces/examples/index.md).
-
-For the exact retained file map after that first run, including manifests,
-node traces, input and output indexes, cache-entry layout, and promotion
-records, use
-[`docs/bijux-dag/interfaces/reference/run-evidence-layout.md`](docs/bijux-dag/interfaces/reference/run-evidence-layout.md).
-
-For the honest `v0.4.0` DAG release framing in one place, including stable
-features, non-stable lanes, known limitations, migration notes, examples, and
-validation commands, use
-[`docs/bijux-dag/operations/v0-4-0-release-notes.md`](docs/bijux-dag/operations/v0-4-0-release-notes.md).
-
-For the post-`v0.4.0` product direction after those current workflows, use
-[`docs/tracking/bijux-dag-roadmap.md`](docs/tracking/bijux-dag-roadmap.md).
-
-For the actual local security model, including what shell execution, container
-execution, `--clean-env`, `--deny-network`, `--deny-clock`, and replay
-`--sandbox` do and do not enforce, use
-[`docs/bijux-dag/operations/reference/security-isolation-truth.md`](docs/bijux-dag/operations/reference/security-isolation-truth.md).
-
-For the repository-backed internal schedule workflow that proves cron preview,
-same-slot suppression, queue dispatch, and explicit run linkage without
-claiming a public scheduler service, use
-[`docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md`](docs/bijux-dag/operations/guides/scheduled-catalog-refresh-workflow.md).
-
-For the repository-backed internal backfill workflow that proves partition
-fanout, aggregate summary reporting, failed-partition retry, and explicit
-handoff into retained DAG runs without claiming a public scheduler service, use
-[`docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md`](docs/bijux-dag/operations/guides/historical-catalog-backfill-workflow.md).
-
-For one retained workflow family that demonstrates branch selection, cache
-reuse, changed-run comparison, replay proof, strict verification, and artifact
-promotion together, start with the evidence-backed bulletin workflow:
-
-```bash
-SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/audience-branch-source/team-update.md"
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
-  evidence/dag/authoring/examples/audience-branch-bulletin.dag.json
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- run --json \
-  evidence/dag/authoring/examples/audience-branch-bulletin.dag.json \
-  --out artifacts/evidence-backed-bulletin-runs \
-  --run-id branch-bulletin-cold \
-  --cache readwrite \
-  --cache-dir artifacts/evidence-backed-bulletin-cache \
-  --input "source_note=${SOURCE_NOTE}" \
-  --input "audience_mode=technical"
-```
-
-Then continue with
-[`docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md`](docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md)
-for the full retained-run comparison, replay, verification, and promotion
-sequence.
-
-Run a real DAG workflow against the repository file-processing example:
-
-```bash
-SOURCE_DIR="$(pwd)/evidence/dag/authoring/examples/file-processing-source"
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
-  evidence/dag/authoring/examples/file-processing-report.dag.json
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- run \
-  evidence/dag/authoring/examples/file-processing-report.dag.json \
-  --out artifacts/file-processing-runs \
-  --run-id file-processing-source \
-  --cache readwrite \
-  --cache-dir artifacts/file-processing-cache \
-  --input "source_dir=${SOURCE_DIR}" \
-  --input "report_title=Repository File Processing Report"
-```
-
-Inspect the retained report artifact, lineage, focused replay boundary, and
-promotion path:
-
-```bash
-cargo run -p bijux-dag-cli --bin bijux-dag -- artifact-inspect \
-  artifacts/file-processing-runs/run-file-processing-source \
-  render_report:report.md
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- artifact lineage \
-  artifacts/file-processing-runs/run-file-processing-source \
-  --json
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- replay --json \
-  --source-run-id file-processing-source \
-  --source-run-root artifacts/file-processing-runs \
-  --out artifacts/file-processing-runs \
-  --run-id file-processing-rerun \
-  --from-node render_report
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- artifact promote \
-  artifacts/file-processing-runs/run-file-processing-source \
-  render_report:report.md \
-  --deliverables-root artifacts/file-processing-deliverables \
-  --to release \
-  --json
-```
-
-Run a structured data pipeline against the repository regional sales example:
-
-```bash
-ORDERS_CSV="$(pwd)/evidence/dag/authoring/examples/regional-sales-source/orders.csv"
-TARGETS_JSON="$(pwd)/evidence/dag/authoring/examples/regional-sales-source/targets.json"
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
-  evidence/dag/authoring/examples/regional-sales-pipeline.dag.json
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- run \
-  evidence/dag/authoring/examples/regional-sales-pipeline.dag.json \
-  --out artifacts/regional-sales-runs \
-  --run-id regional-sales-cold \
-  --cache readwrite \
-  --cache-dir artifacts/regional-sales-cache \
-  --input "orders_csv=${ORDERS_CSV}" \
-  --input "targets_json=${TARGETS_JSON}" \
-  --input "report_title=Regional Revenue Attainment"
-```
-
-Inspect cache behavior on the same retained workflow family:
-
-```bash
-cargo run -p bijux-dag-cli --bin bijux-dag -- runs compare \
-  regional-sales-warm regional-sales-updated \
-  --root artifacts/regional-sales-runs \
-  --json
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- --json why-cache-missed \
-  --run-dir artifacts/regional-sales-runs/run-regional-sales-updated \
-  --node clean_orders \
-  --cache-dir artifacts/regional-sales-cache
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- --json cache verify \
-  --cache-dir artifacts/regional-sales-cache
-```
-
-`cache verify` is on the stable operator surface. `why-cache-missed` is
-repository-tested and callable by explicit path, but it is still outside the
-default `bijux-dag --help` contract in `v0.4.0`.
-
-Run a real container-backed packaging workflow against the repository release
-note example:
-
-```bash
-SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/release-note-source/weekly-update.md"
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
-  evidence/dag/authoring/examples/release-note-bundle.dag.json
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- run --json \
-  evidence/dag/authoring/examples/release-note-bundle.dag.json \
-  --out artifacts/release-note-bundle-runs \
-  --run-id release-note-bundle \
-  --input "source_note=${SOURCE_NOTE}" \
-  --input "bundle_label=Release Brief"
-```
-
-Inspect the retained container trace and outputs:
-
-```bash
-cat artifacts/release-note-bundle-runs/run-release-note-bundle/nodes/package_bundle/trace.json
-cat artifacts/release-note-bundle-runs/run-release-note-bundle/nodes/package_bundle/outputs/bundle/release-note.txt
-```
-
-Run a real branch-backed publishing workflow against the repository audience
-bulletin example:
-
-```bash
-SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/audience-branch-source/team-update.md"
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
-  evidence/dag/authoring/examples/audience-branch-bulletin.dag.json
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- run --json \
-  evidence/dag/authoring/examples/audience-branch-bulletin.dag.json \
-  --out artifacts/audience-branch-runs \
-  --run-id audience-branch-technical \
-  --input "source_note=${SOURCE_NOTE}" \
-  --input "audience_mode=technical"
-```
-
-Inspect the retained branch and join evidence:
-
-```bash
-cat artifacts/audience-branch-runs/run-audience-branch-technical/nodes/choose_audience_lane/trace.json
-cat artifacts/audience-branch-runs/run-audience-branch-technical/nodes/publish_bulletin/outputs/publish/selection.json
-```
-
-Run a real failure-recovery workflow against the repository compliance-gated
-bulletin example:
-
-```bash
-SOURCE_NOTE="$(pwd)/evidence/dag/authoring/examples/compliance-gated-source/team-update.md"
-
-cat > artifacts/compliance-gated-retry-plan.json <<'EOF'
-{"fail_until_attempt":1,"gate_policy":"manual-approval","expected_reviewer_group":"release-managers"}
-EOF
-
-cat > artifacts/compliance-gated-publication-gate.json <<'EOF'
-{"approved":false,"reviewer":"","reviewer_group":"release-managers"}
-EOF
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- validate \
-  evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- run --json \
-  evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json \
-  --out artifacts/compliance-gated-runs \
-  --run-id compliance-gated-source \
-  --input "source_note=${SOURCE_NOTE}" \
-  --input "retry_plan=$(pwd)/artifacts/compliance-gated-retry-plan.json" \
-  --input "publication_gate=$(pwd)/artifacts/compliance-gated-publication-gate.json"
-```
-
-Repair only the failed publication boundary after updating approval:
-
-```bash
-cat > artifacts/compliance-gated-publication-gate.json <<'EOF'
-{"approved":true,"reviewer":"A. Reviewer","reviewer_group":"release-managers"}
-EOF
-
-cargo run -p bijux-dag-cli --bin bijux-dag -- replay --json \
-  --source-run-id compliance-gated-source \
-  --source-run-root artifacts/compliance-gated-runs \
-  --out artifacts/compliance-gated-runs \
-  --run-id compliance-gated-repaired \
-  --from-node validate_publication_gate
-```
-
-Inspect retry evidence and verify the repaired run strictly:
-
-```bash
-cat artifacts/compliance-gated-runs/run-compliance-gated-source/nodes/fetch_compliance_gate/attempts.json
-cat artifacts/compliance-gated-runs/run-compliance-gated-repaired/nodes/publish_bulletin/outputs/publish/bulletin.md
-cargo run -p bijux-dag-cli --bin bijux-dag -- verify --json \
-  artifacts/compliance-gated-runs/run-compliance-gated-repaired \
-  --strict
-```
-
-For the warm-cache run, changed-input comparison, and retained-run attribution
-path, use
-[`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md).
-
-For the full cache story on that same regional sales workflow, including
-warm-cache reuse, selective invalidation, corruption refusal, and explicit
-cache-miss explanation, plus exact retained-output restoration from a still
-verified cache entry, use
-[`docs/bijux-dag/operations/guides/cache-behavior-workflow.md`](docs/bijux-dag/operations/guides/cache-behavior-workflow.md).
-
-For the retained meaning of graph fingerprints, plan fingerprints, execution
-fingerprints, cache keys, export bundles, and replay proof boundaries, use
-[`docs/bijux-dag/interfaces/reference/reproducibility-model.md`](docs/bijux-dag/interfaces/reference/reproducibility-model.md).
-
-For the container prerequisites, retained output layout, and missing-engine
-failure behavior, use
-[`docs/bijux-dag/operations/guides/container-packaging-workflow.md`](docs/bijux-dag/operations/guides/container-packaging-workflow.md).
-
-For retained branch decisions, skipped-lane evidence, join-trigger behavior,
-and replay stability, use
-[`docs/bijux-dag/operations/guides/branching-bulletin-workflow.md`](docs/bijux-dag/operations/guides/branching-bulletin-workflow.md).
-
-For one workflow family that ties branch evidence, warm cache reuse,
-changed-input attribution, replay proof, strict verification, and final
-promotion together, use
-[`docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md`](docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md).
-
-For retry evidence, approval-boundary repair, replay input rematerialization,
-and strict post-repair verification, use
-[`docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md`](docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md).
+`make dag-demo` validates, executes, caches, replays, and strictly verifies a
+real file-processing graph. It writes all retained output under
+`artifacts/dag-demo/`. The [first-run tutorial](docs/bijux-dag/operations/guides/first-run-tutorial.md)
+explains each result and the [run evidence reference](docs/bijux-dag/interfaces/reference/run-evidence-layout.md)
+defines the retained files.
+
+Use [Runnable Examples](docs/bijux-dag/interfaces/examples/index.md) for other
+repository-backed workflows, [Security And Isolation Truth](docs/bijux-dag/operations/reference/security-isolation-truth.md)
+for the actual host boundary, [v0.4.0 Release Notes](docs/bijux-dag/operations/v0-4-0-release-notes.md)
+for the shipped release, and the [Bijux Dag Roadmap](docs/tracking/bijux-dag-roadmap.md)
+only for non-binding future direction.
 
 ## Documentation
 
@@ -539,25 +246,11 @@ and strict post-repair verification, use
 | [DAG handbook](https://bijux.io/bijux-core/bijux-dag/) | DAG validation, planning, execution, replay, artifacts, compatibility, and operator workflows |
 | [Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/) | repository gates, release verification, docs operations, governance, and evidence collection |
 
-Representative DAG workflow guides:
-
-- [`docs/bijux-dag/interfaces/examples/index.md`](docs/bijux-dag/interfaces/examples/index.md) for the public runnable examples catalog, including the shortest proof path and expected outputs for each repository-backed example
-- [`docs/bijux-dag/interfaces/reference/reproducibility-model.md`](docs/bijux-dag/interfaces/reference/reproducibility-model.md) for the canonical explanation of graph, plan, execution, environment, and artifact identity, plus cache-key and replay-bundle boundaries
-- [`docs/bijux-dag/operations/guides/first-run-tutorial.md`](docs/bijux-dag/operations/guides/first-run-tutorial.md) for the five-minute path from build to graph inspection, retained artifacts, warm cache reuse, replay, and strict verification
-- [`docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md`](docs/bijux-dag/operations/guides/evidence-backed-bulletin-workflow.md) for one retained workflow family that demonstrates branch selection, cache reuse, run comparison, replay proof, strict verification, and artifact promotion together
-- [`docs/bijux-dag/operations/guides/file-processing-workflow.md`](docs/bijux-dag/operations/guides/file-processing-workflow.md) for a host-shell artifact workflow
-- [`docs/bijux-dag/operations/guides/cache-behavior-workflow.md`](docs/bijux-dag/operations/guides/cache-behavior-workflow.md) for selective invalidation, corruption refusal, cache-miss explanation, and exact cache-backed repair of retained outputs on a retained workflow family
-- [`docs/bijux-dag/operations/guides/data-pipeline-workflow.md`](docs/bijux-dag/operations/guides/data-pipeline-workflow.md) for changed-input attribution and retained-run comparison
-- [`docs/bijux-dag/operations/guides/branching-bulletin-workflow.md`](docs/bijux-dag/operations/guides/branching-bulletin-workflow.md) for retained branch decisions, skipped lanes, and replay stability
-- [`docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md`](docs/bijux-dag/operations/guides/compliance-gated-bulletin-workflow.md) for transient retry evidence, focused replay repair, and strict verification after recovery
-- [`docs/bijux-dag/operations/guides/container-packaging-workflow.md`](docs/bijux-dag/operations/guides/container-packaging-workflow.md) for mounted container inputs, retained outputs, and recorded image identity
-
-If you are reading code and need the owning package before the owning command,
-start with:
-
-- [`docs/bijux-core/foundation/package-map.md`](docs/bijux-core/foundation/package-map.md)
-- [`docs/bijux-dag/packages/index.md`](docs/bijux-dag/packages/index.md)
-- [`docs/bijux-cli/packages/index.md`](docs/bijux-cli/packages/index.md)
+The website is the reader-facing guide. Machine-enforced specifications and
+generated evidence remain in the repository, but are not substitutes for
+product documentation. The
+[documentation system](docs/bijux-core/foundation/documentation-system.md)
+defines those boundaries.
 
 ## Maintainer Workflows
 

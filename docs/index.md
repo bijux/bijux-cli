@@ -95,9 +95,15 @@ the repository, but they are not presented here as the default product story.
 - Move to maintainer pages only when you are changing or validating the
   repository itself.
 
-## For Readers Evaluating Future Work
+## Documentation Authority
 
-Use [Bijux Dag Roadmap](tracking/bijux-dag-roadmap.md) only for what comes
-after the shipped `v0.4.0` DAG boundary. Use the DAG handbook for what is real
-today. If the roadmap and the release boundary ever disagree, the narrower
-release boundary wins.
+The website contains curated reader guidance. Executable specifications and
+generated evidence remain versioned in the repository but are not presented as
+product handbook pages. Read the
+[documentation system](bijux-core/foundation/documentation-system.md) for the
+authority and maintenance rules.
+
+The [v0.4.0 Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) define
+the current DAG release. The [Bijux Dag Roadmap](tracking/bijux-dag-roadmap.md)
+is non-binding direction; if it conflicts with the release boundary, the
+narrower shipped claim wins.
