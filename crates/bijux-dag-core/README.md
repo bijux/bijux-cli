@@ -103,6 +103,19 @@ Repository-owned schedule and backfill authoring examples also live under
 `evidence/dag/authoring/examples/`, but they remain internal workflow lanes
 rather than part of the default public `v0.4.0` package story.
 
+## Internal Documentation
+
+- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): pure-kernel data flow, source
+  boundaries, dependency direction, and extension decisions.
+- [`CONTRACTS.md`](docs/CONTRACTS.md): owned graph semantics, purity,
+  validation, identity, and stability contracts.
+- [`GRAPH_MODEL.md`](docs/GRAPH_MODEL.md): graph, node, reference, output,
+  edge, trigger, composition, and expansion model.
+- [`IDENTITY_AND_VALIDATION.md`](docs/IDENTITY_AND_VALIDATION.md): strict
+  parsing, diagnostics, canonicalization, fingerprints, and compatibility.
+- [`PLANNING_AND_PUBLIC_API.md`](docs/PLANNING_AND_PUBLIC_API.md): planner
+  lowering, compile helpers, stable exports, and runtime handoff.
+
 ## Related links
 
 - [Crate contracts](docs/CONTRACTS.md)

@@ -78,6 +78,19 @@ artifacts without taking on runtime execution or command orchestration.
 - you need graph parsing, validation, or planner lowering:
   `bijux-dag-core`
 
+## Internal Documentation
+
+- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): retained-evidence boundaries,
+  evidence flow, compatibility surfaces, and extension decisions.
+- [`CONTRACTS.md`](docs/CONTRACTS.md): owned models, effects, dependency
+  direction, invariants, and stability.
+- [`INTEGRITY_AND_LINEAGE.md`](docs/INTEGRITY_AND_LINEAGE.md): artifact
+  identity, hashing, proofs, corruption, lineage, cache, and replay evidence.
+- [`RUN_DIRECTORY.md`](docs/RUN_DIRECTORY.md): staging and final layout,
+  atomic records, output indexing, resume, and reader rules.
+- [`STORAGE_AND_LIFECYCLE.md`](docs/STORAGE_AND_LIFECYCLE.md): store
+  capabilities, filesystem safety, promotion, retention, import, and archive.
+
 ## Related links
 
 - [Crate contracts](docs/CONTRACTS.md)
