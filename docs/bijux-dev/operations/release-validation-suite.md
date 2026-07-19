@@ -4,64 +4,70 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-19
 ---
 
 # Release Validation Suite
 
-Use this page when a commit looks releaseable and you need proof that the
-committed `HEAD`, not an ambient local workspace, can survive the full release
-candidate gate.
+The release validation suite answers one narrow question: can the committed
+Rust release candidate be built, tested, documented, packaged, and dry-run
+published from an isolated tree?
 
-The release validation suite is the hard boundary between "this change seems
-ready" and "this commit is a publishable candidate." It proves formatting,
-linting, testing, documentation, packaging, and dry-run publishing from a
-clean release tree.
+It is not a substitute for focused development tests, and launching it is not
+evidence that it passed.
 
 ## Canonical Entrypoints
 
-- local shell entrypoint: `make release-validate-rs`
-- CI entrypoint: `make gh-release-validate`
-- maintainer command surface: `cargo run -q -p bijux-dev --bin bijux-dev-cli -- release verify`
+| Context | Entrypoint | Responsibility |
+| --- | --- | --- |
+| local release review | `make release-validate-rs` | runs the canonical Rust release suite |
+| hosted CI | `make gh-release-validate` | delegates to the same suite after CI setup |
+| maintainer control plane | `cargo run -q -p bijux-dev --bin bijux-dev-cli -- release verify` | coordinates release readiness and compatibility evidence |
 
-`make release-validate-rs` is the canonical local entrypoint. The CI wrapper
-must stay thin and must delegate back to the same suite through
-`make gh-release-validate`.
+The CI wrapper must remain thin. A check that exists only in hosted workflow
+YAML or only in a local shell path creates two release definitions.
 
-## Execution Model
+## Evidence States
 
-The suite prepares a clean release tree from committed `HEAD` before any cargo
-validation runs. It does not validate against ambient local edits. That keeps
-local release evidence aligned with the publish surface used by CI and prevents
-an uncommitted worktree from hiding a broken candidate.
-
-The staged release tree patches the public DAG family back into the local
-crates.io view for dry-run verification. That patch exists only to simulate the
-topological release order for public crates that have not been published yet.
-It must not be used to hide private crate dependencies inside public package
-manifests.
-
-The end-to-end release verification flow is:
-
-```text
-release.validation-suite -> release.readiness -> release.compatibility-matrix
-```
-
-The make target executes the cargo release checks. The maintainer command then
-follows with the readiness report and compatibility matrix so the release lane
-produces both validation status and the evidence consumed by release review.
-
-## What This Suite Proves
-
-| Proof point | Why it matters |
+| State | Honest claim |
 | --- | --- |
-| clean-tree validation | release evidence must match committed content, not uncommitted local state |
-| package listing and dry-run publish | crates.io-facing packaging boundaries stay honest before tagging |
-| readiness and compatibility artifacts | release review gets concrete evidence, not verbal reassurance |
+| prepared | an isolated release tree was created from a named commit |
+| running | one or more suite commands have started; no pass claim is valid |
+| failed | the candidate or validation infrastructure failed at a recorded command |
+| passed | every required suite command exited successfully for the same prepared tree |
+| superseded | a newer commit exists; the result remains historical evidence for the older commit |
 
-## Command Coverage
+A PID, log path, prepared workspace, readiness file, or partial command list
+does not establish `passed`. Release review needs the source commit, terminal
+status, and complete command outcomes from one run.
 
-The suite must run the following commands exactly:
+## Isolation Boundary
+
+The suite exports committed `HEAD` into
+`artifacts/rust/release-validation/<run-id>/workspace/` before Cargo
+validation. Uncommitted files in the live worktree are intentionally absent.
+This makes a local run comparable to CI and prevents ambient edits from making
+an unpublishable commit appear healthy.
+
+The prepared tree patches the public DAG family into a local crates.io view
+for topological dry-run verification before those versions exist remotely.
+That mechanism simulates publication order; it must not conceal a private
+dependency in a public package manifest.
+
+## Required Proof
+
+The suite covers these proof classes:
+
+| Proof class | Required observation |
+| --- | --- |
+| source quality | formatting and Clippy pass with warnings denied |
+| behavior | workspace tests pass with the release feature surface |
+| API documentation | Rust documentation builds without dependency docs |
+| package contents | every public DAG crate produces the intended file list |
+| publication | every public DAG crate passes locked dry-run publication in governed order |
+| installed boundary | the DAG CLI smoke pipeline passes from the release tree |
+
+The concrete command contract is:
 
 ```bash
 cargo fmt --all -- --check
@@ -81,58 +87,77 @@ cargo publish -p bijux-dag-cli --dry-run --locked
 cargo test -p bijux-dag-cli --test smoke_pipeline --locked -- --nocapture
 ```
 
-The public DAG release family covered by this suite is:
-
-- `bijux-dag-core`
-- `bijux-dag-artifacts`
-- `bijux-dag-runtime`
-- `bijux-dag-app`
-- `bijux-dag-cli`
-
-The publish order remains governed by
+The publish order and public/private boundary are governed by
 `contracts/foundation/workspace_package_boundary.v1.json`.
 
-## Outputs
+## What A Pass Does Not Prove
 
-The suite writes its release-candidate outputs under the repository
-`artifacts/` tree:
+A green release validation result does not by itself prove:
 
-- clean release tree: `artifacts/rust/release-validation/<run-id>/workspace/`
-- shared target directory: `artifacts/rust/release-validation/<run-id>/target/`
-- command logs and run outputs: `artifacts/rust/release-validation/<run-id>/`
-- readiness report: `artifacts/release/readiness_report.json`
-- compatibility matrix: `artifacts/release/compatibility_matrix.json`
+- that uncommitted work in the live checkout is correct;
+- that Python packaging or Python tests passed;
+- that external services, remote workers, or unavailable platforms work;
+- that performance, soak, or live-environment claims were exercised;
+- that a later commit is releaseable;
+- that release notes accurately describe the candidate.
 
-Use the release-tree directory when a failure appears to depend on staged
-content, packaging boundaries, or publish inputs. Use the readiness report and
-compatibility matrix during release review and release-note preparation.
+Those claims need their own lanes and evidence. Do not broaden the release
+suite result in a pull request or tag recommendation.
 
-## How To Read A Failure
+## Outputs And Provenance
 
-- formatter, clippy, test, doc, package, or publish failures belong to the release candidate; fix the candidate commit or its governed release inputs before tagging
-- clean release-tree export failures belong to `.github/scripts/prepare_release_tree.py`; repair the export path so the candidate can be validated in isolation
-- CI wrapper or workflow setup failures belong to `.github/workflows/release-validation.yml` and `makes/gh.mk`; repair the wrapper so hosted automation still runs the same suite as local maintainers
+| Output | Purpose |
+| --- | --- |
+| `artifacts/rust/release-validation/<run-id>/workspace/` | exact prepared release tree |
+| `artifacts/rust/release-validation/<run-id>/target/` | isolated Cargo products |
+| `artifacts/rust/release-validation/<run-id>/` | command logs, statuses, and run evidence |
+| `artifacts/release/readiness_report.json` | readiness observations consumed by release review |
+| `artifacts/release/compatibility_matrix.json` | compatibility observations for the candidate |
+
+Readiness and compatibility files are evidence, not independent pass signals.
+They are trustworthy only when their provenance identifies the candidate and
+the producing command completed successfully.
+
+## Failure Ownership
+
+| Failure | First owner to inspect |
+| --- | --- |
+| format, lint, test, doc, package, publish, or smoke command | candidate code, manifest, lockfile, or governed release input |
+| release-tree export | `.github/scripts/prepare_release_tree.py` |
+| local/CI command disagreement | `makes/gh.mk` and `.github/workflows/release-validation.yml` |
+| missing or ambiguous terminal status | release-suite orchestration and status recording |
+| stale readiness or compatibility output | producing maintainer command and source revision |
+
+Fix the cause. Do not delete a command, weaken a warning policy, or relabel an
+incomplete run to obtain a green release claim.
 
 ## When To Run It
 
-Run the suite whenever a change is close enough to a release boundary that the
-next question is release viability rather than implementation correctness. In
-practice that means:
+Run the suite before recommending a tag and after changes to:
 
-- before recommending a tag
-- after changing public DAG crate packaging or publish metadata
-- after changing release-tree preparation, release CI wiring, or release docs
-- before relying on readiness or compatibility artifacts in release review
+- public crate manifests, package contents, or publish order;
+- release-tree preparation or CI delegation;
+- release compatibility and readiness contracts;
+- the installed DAG CLI boundary.
 
-## Reader Shortcut
+During implementation, use the smallest honest lane from
+[Repository Gates](repository-gates.md). Release validation is deliberately
+broader and more expensive because it evaluates a candidate, not an edit.
 
-If a release command passes only in the live workspace and fails in the clean
-release tree, the repository has not proved release readiness. The clean tree
-is the truth surface.
+## Review Record
+
+A release recommendation should record:
+
+- full source commit SHA;
+- suite entrypoint and terminal status;
+- artifact run directory;
+- failed command and exit status when not green;
+- checks outside this suite that support additional claims;
+- any relevant platform or environment omissions.
 
 ## Related Surfaces
 
+- [Repository Gates](repository-gates.md)
 - [Release Operations](release-operations.md)
 - [release-validation workflow](../gh-workflows/release-validation.md)
 - [Release Surfaces](../makes/release-surfaces.md)
-- [CI Targets](../makes/ci-targets.md)
