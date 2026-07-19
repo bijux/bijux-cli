@@ -103,9 +103,18 @@ or schema authority.
 - `mkdocs.yml` defines the curated public handbook rather than publishing every
   internal contract and report.
 
-## Continue Reading
+## Apply The Model
 
-- [Dependency Direction](dependency-direction.md)
-- [Artifact and Contract Flow](artifact-and-contract-flow.md)
-- [Documentation System](../foundation/documentation-system.md)
-- [Architecture Risks](architecture-risks.md)
+Before accepting a cross-crate change, route each open question to one
+authority:
+
+| Question | Authority |
+| --- | --- |
+| Is this dependency allowed to point at that package? | [Dependency Direction](dependency-direction.md) |
+| Which schema, snapshot, report, and handbook must move with the behavior? | [Artifact and Contract Flow](artifact-and-contract-flow.md) |
+| Is this text a public explanation, executable specification, or generated observation? | [Documentation System](../foundation/documentation-system.md) |
+| Which unresolved structural failure could invalidate the release claim? | [Architecture Risks](architecture-risks.md) |
+
+The review is incomplete when one behavior has several apparent owners or when
+the only proof is prose. Resolve ownership first, then require evidence from the
+layer that can actually detect the defect.
