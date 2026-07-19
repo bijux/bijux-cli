@@ -9,46 +9,40 @@ last_reviewed: 2026-07-19
 
 # Run Evidence Layout
 
-This reference describes the retained filesystem layout for one finalized
-`bijux-dag` run.
+This reference identifies retained files for one finalized `bijux-dag` run and
+states what each file can prove.
 
-Use it when you need to know which files are authoritative, which files are
-derived, and where node-level evidence is kept after execution finishes.
+The live storage models and checked-in snapshots are the implementation
+authority:
 
-The examples on this page are based on the checked-in run-directory snapshots in
-`crates/bijux-dag-app/tests/snapshots/` together with the live storage models in
-`crates/bijux-dag-artifacts/src/storage/models.rs` and
-`crates/bijux-dag-artifacts/src/lib.rs`.
+- `crates/bijux-dag-artifacts/src/storage/models.rs`
+- `crates/bijux-dag-artifacts/src/lib.rs`
+- `crates/bijux-dag-app/tests/snapshots/run_dir_hello.json`
+- `crates/bijux-dag-app/tests/snapshots/run_dir_cached_branch.json`
 
-## Evidence Trust Hierarchy
+## Trust Order
 
-Not every retained file carries the same authority:
+| Evidence | Use |
+| --- | --- |
+| `manifest.json`, `graph.snapshot.json`, `run.schema.json` | establish run, graph, planner, and schema identity |
+| `nodes/<node_id>/trace.json`, attempt records, input/output indexes | establish node outcome and materialized contracts |
+| `outputs/index.json`, lineage, and provenance | establish artifact identity and dependency history |
+| `run.log.jsonl`, events, and timeline | reconstruct ordered runtime observations |
+| summaries and visualizations | orient investigation; do not replace underlying records |
+| work and temporary directories | execution staging, never finalized proof |
 
-| Evidence class | Examples | Use |
-| --- | --- | --- |
-| identity and contract | `manifest.json`, `graph.snapshot.json`, `run.schema.json` | establish what ran, under which graph and schema |
-| node execution | `nodes/<node_id>/trace.json`, `attempts.json`, input/output indexes | explain node status, attempts, materialized inputs, and declared outputs |
-| integrity and lineage | `outputs/index.json`, `lineage.snapshot.json`, `provenance.json` | verify artifact identity and dependency history |
-| ordered observation | `run.log.jsonl`, observability events and timeline | reconstruct what the runtime observed and when |
-| derived convenience | visualizations, root-cause summaries, compact snapshots | accelerate inspection; verify consequential claims against underlying evidence |
-| transient work | `nodes/<node_id>/work/`, `run.tmp-<run_id>` | execution staging only, never finalized proof |
+A successful command envelope proves neither retained integrity nor replay
+eligibility. Verify hashes and schemas before making consequential claims.
 
-A successful command envelope is not a substitute for retained evidence.
-Likewise, the presence of a file does not prove its integrity: use
-`bijux-dag verify` and artifact inspection when the decision depends on hashes,
-schema validity, or replayability.
+## Finalized Directory
 
-## Directory shape
-
-A retained run directory is named `run-<run_id>`.
-
-The staging directory used during execution is `run.tmp-<run_id>`, but
-operators normally work only with the finalized `run-<run_id>` tree.
+Execution stages in `run.tmp-<run_id>` and finalizes to `run-<run_id>`.
 
 ```text
 run-<run_id>/
 ├── manifest.json
 ├── graph.snapshot.json
+├── run.schema.json
 ├── outputs/
 │   └── index.json
 ├── nodes/
@@ -72,388 +66,171 @@ run-<run_id>/
 ├── provenance.json
 ├── observability.events.json
 ├── observability.timeline.json
-├── run.log.jsonl
-└── run.schema.json
+└── run.log.jsonl
 ```
 
-Standard runs can also retain supporting files such as:
+Optional supporting files include `manifest.finalized.json`,
+`.run-complete.json`, `.run-incomplete.json`, `run.snapshot.json`,
+`run-log.index.json`, `run.audit.json`, `scheduler.checkpoint.json`,
+`failure-propagation.json`, observability summaries, and `plan.json`.
 
-- `manifest.finalized.json`
-- `.run-complete.json` or `.run-incomplete.json`
-- `run.snapshot.json`
-- `run-log.index.json`
-- `run.audit.json`
-- `scheduler.checkpoint.json`
-- `failure-propagation.json`
-- `observability.metrics.json`
-- `observability.root-causes.json`
-- `observability.graph-visualization.json`
-- `observability.lineage-visualization.json`
+## Root Evidence
 
-Those supporting files are useful for audit, repair, and inspection, but the
-authoritative run evidence still starts with the manifest, graph snapshot,
-node traces, indexes, event log, and timeline.
+### Run Identity
 
-### `scheduler.checkpoint.json`
+`manifest.json` is the first inspection point. It records:
 
-When retained, `scheduler.checkpoint.json` records one scheduler loop boundary.
+- run ID, status, timestamps, and node outcome counts;
+- graph, planner, execution, and evidence fingerprints;
+- adapter inventory and selected policy;
+- effective run inputs and cache configuration;
+- output and promotion summaries.
 
-It is the durable checkpoint surface for:
+The manifest records `cache_mode` and `cache_dir`; cache payloads live under
+the configured cache root, not inside the run.
 
-- the ready queue and ready queue depth
-- the batch scheduled in that loop
-- resource-blocked nodes and their block reasons
-- inflight nodes still owned by the scheduler
-- completed terminal statuses already observed
-- the scheduler decision reason that explains why that loop scheduled or held
-  work
+`graph.snapshot.json` preserves authored graph intent and graph identity.
+Operator tools use it instead of reconstructing nodes, edges, inputs, output
+contracts, branches, retries, or resources from logs.
 
-Use `bijux-dag runs scheduler-checkpoint` when the question is "what exact
-scheduler state did this run persist?" without reconstructing it from the
-full timeline by hand.
+`run.schema.json` indexes required and optional root/node files and their live
+schema versions.
 
-## Root evidence files
+### Artifact Identity
 
-### `manifest.json`
+`outputs/index.json` is the run-level artifact index. Entries identify output
+name, producer node, relative path, kind, media type, size, digest, producer
+fingerprint, and promotion eligibility.
 
-`manifest.json` is the retained run summary.
+`provenance.json` retains the run source and identity envelope.
+`lineage.snapshot.json` retains run-wide dependency and artifact lineage used by
+replay and comparison.
 
-It records:
+### Ordered Observation
 
-- run identity such as `run_id`, `status`, and timestamps
-- graph identity through `spec`, `graph_fingerprint`, and `graph_snapshot`
-- planner and execution identity through `planner_contract_version`,
-  `planner_fingerprint`, `execution_fingerprint`, and `evidence_fingerprint`
-- adapter inventory and node outcome counts
-- run-level output summaries from `outputs/index.json`
-- policy, cache, timeout, and run metadata
+- `observability.events.json` retains structured events;
+- `observability.timeline.json` retains normalized lifecycle order;
+- `run.log.jsonl` retains the append-only audit and repair stream.
 
-This is the first file to open when the question is "what happened in this
-run?"
+Failed, skipped, cached, cancelled, timed-out, and successful outcomes remain
+distinct. Sequence evidence explains what the runtime observed; it does not
+override terminal state or artifact verification.
 
-### `graph.snapshot.json`
+### Scheduler State
 
-`graph.snapshot.json` is the persisted authored graph plus its resolved graph
-fingerprint.
+When present, `scheduler.checkpoint.json` records one scheduler-loop boundary:
+ready queue, scheduled batch, resource blocks, inflight ownership, completed
+states, and decision reason.
 
-It is the reference surface for:
+### Optional Plan
 
-- declared nodes and edges
-- graph-scoped inputs
-- output contracts
-- retry, timeout, resource, branch, and cache declarations
+`plan.json` may preserve the lowered plan under
+`configs/dag/schema/execution_plan.schema.json`. Standard local runs do not
+promise it. Planner identity is always carried in the manifest, while graph
+intent is retained in `graph.snapshot.json`.
 
-When operator tools need planned structure after a run completes, they read the
-retained graph snapshot instead of reconstructing intent from logs.
+## Node Evidence
 
-### `outputs/index.json`
+Every executed or terminally classified node has a directory under
+`nodes/<node_id>/`.
 
-`outputs/index.json` is the run-level artifact index.
+| Path | Meaning |
+| --- | --- |
+| `nodes/<node_id>/trace.json` | authoritative node status, timing, identity, policy, outputs, cache, branch, failure, and replay record |
+| `nodes/<node_id>/attempts.json` | retry and attempt summary |
+| `nodes/<node_id>/attempts/<attempt>/` | per-attempt stdout and stderr |
+| `nodes/<node_id>/resolved_params.json` | values handed to the adapter after reference and path resolution |
+| `nodes/<node_id>/stdout.log` | terminal/latest retained stdout |
+| `nodes/<node_id>/stderr.log` | terminal/latest retained stderr |
 
-It aggregates the outputs retained by the run and records stable evidence per
-artifact, including:
+Structured stream evidence in `trace.json` is preferable for automation.
+Retained log files remain useful for direct diagnosis and repair.
 
-- `name`
-- `path`
-- `kind`
-- `media_type`
-- `size_bytes`
-- `sha256`
-- `node_id`
-- `node_fingerprint`
-- `promotable`
+## Materialized Inputs
 
-This file answers "which final artifacts did the run retain?" without forcing a
-consumer to scan every node directory.
+`nodes/<node_id>/inputs/index.json` maps each consumed payload to:
 
-### `provenance.json` and `lineage.snapshot.json`
+- local path;
+- source node and source output;
+- source node fingerprint and content digest;
+- materialization mode (`copy`, `hardlink`, or `symlink`).
 
-These files retain run-wide provenance and lineage context.
+Payloads live below
+`nodes/<node_id>/inputs/<source_node_id>/<input_port>`. The payload is what the
+adapter consumed; the index is why that payload can be attributed upstream.
 
-- `provenance.json` records the source and identity envelope for the run
-- `lineage.snapshot.json` keeps the run-level lineage material used by replay,
-  comparison, and artifact identity work
+## Retained Outputs
 
-### `observability.events.json`, `observability.timeline.json`, and `run.log.jsonl`
+`nodes/<node_id>/outputs/index.json` maps declared output contracts to retained
+payloads and digests. Payloads stay at their declared relative paths beneath
+the node output root.
 
-These files retain the chronological execution record.
+The node index proves one producer boundary. The root `outputs/index.json`
+aggregates run-level artifact visibility.
 
-- `observability.events.json` is the structured event stream
-- `observability.timeline.json` is the ordered per-run timeline for run and
-  node transitions
-- `run.log.jsonl` is the append-only event log used by audit and repair flows
+## Cache Evidence
 
-The timeline normalizes raw runtime events into durable lifecycle labels such
-as:
-
-- `run_started`
-- `node_ready`
-- `node_scheduled`
-- `node_started`
-- `node_completed`
-- `node_failed`
-- `node_skipped`
-- `node_cached`
-- `node_cancelled`
-- `run_completed`
-
-Failed, skipped, cached, and cancelled nodes still live in the same ordered
-stream, and every retained run closes the stream with `run_completed` even when
-the run status is `failed`, `timed_out`, or `cancelled`.
-
-Use the timeline when sequence and duration matter, and use the event log when
-the exact retained raw event stream matters.
-
-### `run.schema.json`
-
-`run.schema.json` is the run-directory schema index.
-
-It points to the live schema surfaces for:
-
-- `manifest.json`
-- `trace.json`
-- `inputs/index.json`
-- `outputs/index.json`
-- lineage, timeline, and event-log versions
-
-It also declares the required and optional root and node files for the current
-retained run-directory format.
-
-### `plan.json`
-
-`plan.json` is an optional retained execution-plan file.
-
-When present, it is expected to follow
-`configs/dag/schema/execution_plan.schema.json` and preserve the lowered plan
-shape that fed execution.
-
-Current local run snapshots do not retain `plan.json` by default. The planner
-evidence that is always present today lives in:
-
-- `manifest.json` through planner identity fields such as
-  `planner_contract_version` and `planner_fingerprint`
-- `graph.snapshot.json` through the persisted authored graph
-- `run.snapshot.json` when operator and repair surfaces need retained runtime
-  state beyond the manifest
-
-That split is deliberate: this page documents `plan.json` because the run
-inspection surface will read it if available, but it does not claim that every
-standard local run currently emits one.
-
-## Node evidence directories
-
-Each executed node retains evidence under `nodes/<node_id>/`.
-
-The node directory is the durable answer to "what happened for this one node?"
-
-The core retained node files are:
-
-- `nodes/<node_id>/trace.json`
-- `nodes/<node_id>/attempts.json`
-- `nodes/<node_id>/resolved_params.json`
-- `nodes/<node_id>/inputs/index.json`
-- `nodes/<node_id>/outputs/index.json`
-
-### `trace.json`
-
-`trace.json` is the authoritative node outcome record.
-
-It retains:
-
-- node identity and final `status`
-- start and finish timestamps
-- terminal `attempt`
-- node fingerprint and planner identity
-- adapter identity and output schema version
-- resolved resources, exit code, and declared outputs
-- cache proof and cache identity when cache was involved
-- branch, trigger-rule, skip, lifecycle, failure, and replay provenance data
-- structured `stdout` and `stderr` evidence when available
-
-### `attempts.json` and `attempts/<attempt>/`
-
-`attempts.json` summarizes retry history for the node.
-
-`attempts/<attempt>/` retains per-attempt logs:
-
-- `stdout.log`
-- `stderr.log`
-
-Use the attempt subtree when the question is about retries, transient failures,
-or per-attempt output rather than only the final terminal state.
-
-### `resolved_params.json`
-
-`resolved_params.json` keeps the execution-time parameter payload after graph
-input binding, path binding, and node-output reference resolution.
-
-This is the file to read when the question is "what did the runtime actually
-hand to the adapter?"
-
-### `stdout.log` and `stderr.log`
-
-The node root also retains the latest node-level `stdout.log` and `stderr.log`.
-
-Newer runs prefer the structured stdout and stderr evidence embedded in
-`trace.json`, but these retained log files remain important for direct
-inspection, cache capture, and repair flows.
-
-## Input directories
-
-Each node keeps its materialized inputs under `nodes/<node_id>/inputs/`.
-
-The authoritative index is:
-
-- `nodes/<node_id>/inputs/index.json`
-
-Materialized payloads live under paths such as:
-
-- `nodes/<node_id>/inputs/<source_node_id>/<input_port>`
-
-The input index records:
-
-- `local_path`
-- `source_node_id`
-- `source_node_fingerprint`
-- `source_output_name`
-- `source_sha256`
-- `materialization_mode`
-
-That split matters:
-
-- the payload files are what the node consumed
-- the index explains where each payload came from and why it is trusted
-
-## Output directories
-
-Each node keeps its retained outputs under `nodes/<node_id>/outputs/`.
-
-The authoritative index is:
-
-- `nodes/<node_id>/outputs/index.json`
-
-Declared output payloads are retained at their contract paths beneath the node
-output root, for example:
-
-- `nodes/const1/outputs/out_const`
-- `nodes/echo/outputs/out_echo`
-
-The node output index uses the same evidence shape as the run-level output
-index, but it stays scoped to one producer node.
-
-## Artifact manifests
-
-The run evidence surface uses two different manifest ideas:
-
-- `manifest.json` is the run-level manifest for the whole execution
-- cache entries also keep a separate `manifest.json` that describes one cached
-  node result
-
-The cache-entry manifest is intentionally narrow. It records:
-
-- `manifest_version`
-- `cache_key`
-- `node_id`
-- declared output contracts for the cached node result
-
-This distinction matters because a cache entry is not a miniature run
-directory. It is one reusable node result with enough metadata to prove that it
-still matches the node contract and retained outputs.
-
-## Cache entries
-
-Cache entries live outside the run directory under the configured cache root.
-
-The manifest records the cache configuration that was used for the run through:
-
-- `cache_mode`
-- `cache_dir`
-
-Each cache entry lives under its cache key:
+Cache entries are reusable node results, not miniature run directories:
 
 ```text
-<cache_root>/
-└── <cache_key>/
-    ├── manifest.json
-    ├── meta.json
-    ├── outputs/
-    │   ├── index.json
-    │   └── <cached output payloads>
-    └── logs/
-        ├── stdout.log
-        ├── stderr.log
-        └── trace.json
+<cache_root>/<cache_key>/
+├── manifest.json
+├── meta.json
+├── outputs/
+│   ├── index.json
+│   └── <payloads>
+└── logs/
+    ├── stdout.log
+    ├── stderr.log
+    └── trace.json
 ```
 
-`meta.json` carries the explainability and integrity inputs used to judge cache
-reuse, including:
+The cache manifest binds `manifest_version`, cache key, node ID, and output
+contracts. `meta.json` records explainability and integrity inputs such as node,
+environment, lineage, params, command, adapter, policy, execution-contract,
+and backend fingerprints.
 
-- `cache_key`
-- `node_fingerprint`
-- `node_definition_fingerprint`
-- `declared_environment_fingerprint`
-- `input_lineage_fingerprint`
-- `params_fingerprint`
-- `command_fingerprint`
-- `adapter_id`
-- `adapter_version`
-- `policy_fingerprint`
-- `execution_contract_fingerprint`
-- `backend_class`
+Reuse is valid only when the exact entry remains identity-compatible and its
+retained files verify.
 
-Use the cache entry when the question is "why was this node result reusable or
-not reusable?" rather than "what happened in the run overall?"
+## Promotion Evidence
 
-## Promoted outputs
-
-Promotions are retained inside the run directory under `promotions/`.
+Promotions are retained inside the source run:
 
 ```text
-run-<run_id>/
-└── promotions/
-    ├── index.json
-    └── <promotion-record-slug>.json
+run-<run_id>/promotions/
+├── index.json
+└── <promotion-record>.json
 ```
 
-`promotions/index.json` is the run-local promotion ledger. Per-record JSON files
-keep the full record for one promoted artifact, including:
-
-- canonical and legacy artifact ids
-- source run, node, output name, and output path
-- artifact sha256
-- payload kind and relative payload path
-- destination path
-- source and target environments
-- promotion timestamp
-- upstream and downstream lineage summaries
-
-The run manifest also carries a promotion summary under
+`promotions/index.json` is the run-local ledger. A record binds source run,
+node, output, digest, destination, source/target environments, timestamp, and
+lineage. The manifest carries a compact summary at
 `run_summary.promoted_outputs`.
 
-Use the manifest summary for a compact answer to "which outputs from this run
-were promoted?" Use the `promotions/` records when the question is destination,
-lineage, or environment-specific audit detail.
+Use the summary for discovery and the promotion ledger for audit.
 
-## Execution work directories
+## Transient Work
 
-During execution the runtime also allocates:
+`nodes/<node_id>/work/` and `nodes/<node_id>/work/temp/` are execution
+scratch. They are not durable evidence and must not be required for replay,
+verification, or post-run explanation.
 
-- `nodes/<node_id>/work/`
-- `nodes/<node_id>/work/temp/`
+## Choose Evidence By Question
 
-Those directories are staging-time execution surfaces, not part of the durable
-retained evidence contract. Finalized run snapshots are expected to preserve the
-inputs, outputs, trace, and logs rather than the transient work tree.
+| Question | Start with | Corroborate with |
+| --- | --- | --- |
+| What ran and how did it finish? | `manifest.json` | graph snapshot and timeline |
+| What happened to one node? | `trace.json` | attempts, streams, and resolved params |
+| What input did a node consume? | input index | materialized payload and upstream output index |
+| Which artifacts survived? | root output index | node output index and content digest |
+| Why was cache reused or refused? | node cache proof | cache manifest and `meta.json` |
+| What was promoted? | `run_summary.promoted_outputs` | `promotions/index.json` and record |
+| Can this run be replayed? | manifest and retained inputs | [Reproducibility Model](reproducibility-model.md) |
 
-## Code anchors
-
-- `crates/bijux-dag-artifacts/src/lib.rs`
-- `crates/bijux-dag-artifacts/src/storage/models.rs`
-- `crates/bijux-dag-app/tests/snapshots/run_dir_hello.json`
-- `crates/bijux-dag-app/tests/snapshots/run_dir_cached_branch.json`
-
-## Related references
+## Related References
 
 - [Artifact Contracts](artifact-contracts.md)
 - [Node Inspection](node-inspection.md)
-- [State and Persistence](../architecture/state-and-persistence.md)
+- [State And Persistence](../architecture/state-and-persistence.md)
+- [Reproducibility Model](reproducibility-model.md)
