@@ -7,12 +7,14 @@
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` ships two public commands and the crates that implement them.
+`bijux-core` is the release workspace for two public commands. They share
+package governance and release evidence, but they solve different problems and
+are installed separately.
 
-| Product | Install | Use it for | Primary authority |
-| --- | --- | --- | --- |
-| `bijux` | `cargo install bijux-cli` or `python -m pip install bijux-cli` | mounted apps, plugins, layered configuration, diagnostics, history, memory, and REPL workflows | [CLI handbook](https://bijux.io/bijux-core/bijux-cli/) |
-| `bijux-dag` | `cargo install bijux-dag-cli` | graph validation, planning, execution, retained evidence, cache explanation, replay, comparison, and verification | [DAG handbook](https://bijux.io/bijux-core/bijux-dag/) |
+| Product | Install | Use it for | It does not provide | Primary authority |
+| --- | --- | --- | --- | --- |
+| `bijux` | `cargo install bijux-cli` or `python -m pip install bijux-cli` | mounted apps, plugins, layered configuration, diagnostics, history, memory, and REPL workflows | the `bijux-dag` executable or in-process DAG execution | [CLI handbook](https://bijux.io/bijux-core/bijux-cli/) |
+| `bijux-dag` | `cargo install bijux-dag-cli` | graph validation, planning, execution, retained evidence, cache explanation, replay, comparison, and verification | the root `bijux` plugin, configuration, or REPL runtime | [DAG handbook](https://bijux.io/bijux-core/bijux-dag/) |
 
 `bijux-dev`, the executable specifications, and governed reports are repository
 maintenance surfaces. They are not additional end-user products.
@@ -41,19 +43,27 @@ operator decisions, the [v0.4.0 Release Notes](docs/bijux-dag/operations/v0-4-0-
 for the shipped release, and the [Bijux Dag Roadmap](docs/bijux-dag/roadmap.md)
 only for non-binding future direction.
 
-## Install And Inspect
+## Install And Verify
 
 ```bash
 cargo install bijux-cli
-cargo install bijux-dag-cli
-
 bijux --help
-bijux-dag --help
+bijux doctor
 ```
 
-The PyPI package installs `bijux`; it does not install `bijux-dag`. See the
-[Python package boundary](crates/bijux-cli-python/README.md) before using the
-Python DAG client.
+Install the DAG command only when the workflow runtime is required:
+
+```bash
+cargo install bijux-dag-cli
+bijux-dag --help
+bijux-dag commands
+```
+
+The PyPI package is an alternative distribution of `bijux`; it does not install
+`bijux-dag`. The Python DAG helpers invoke an independently installed
+`bijux-dag` process and do not embed the runtime. See the
+[Python package boundary](crates/bijux-cli-python/README.md) before depending
+on that process client.
 
 ## Package Families
 
@@ -76,8 +86,19 @@ and `contracts/foundation/workspace_package_boundary.v1.json`.
 
 ## Develop The Repository
 
-Local builds, CI, and release jobs all use the pinned Rust `1.86.0` toolchain
-declared in `rust-toolchain.toml`.
+The source checkout declares its development requirements directly:
+
+| Requirement | Authority | Used for |
+| --- | --- | --- |
+| Rust `1.86.0` with `rustfmt` and Clippy | `rust-toolchain.toml`, consistent with the workspace `rust-version` | Rust builds, tests, lint, docs.rs-compatible API checks, and native Python builds |
+| CPython 3.11 or newer | `crates/bijux-cli-python/pyproject.toml` | Python distribution, bridge, lint, and tests |
+| repository-managed Python environment | `make bootstrap` under `artifacts/python/` | reproducible local Python and documentation tools |
+| optional Docker, Podman, SLURM, or Kubernetes access | owning DAG backend guide | backend-specific execution only |
+
+Generated CI and release workflows select their own hosted toolchains. Those
+values must satisfy the workspace minimum and are governed through
+`bijux-std`; the root README does not override them or imply alignment merely
+because local development is pinned.
 
 ```bash
 make bootstrap
@@ -90,6 +111,11 @@ It does not run governed slow Rust tests, ignored Rust tests, Python nightly
 tests, documentation checks, or lint. Use
 [Testing And Validation](docs/bijux-core/operations/testing-and-validation.md)
 to select a broader lane without overstating what passed.
+
+Before review, add the gates owned by the changed surface. Documentation
+changes require `make docs-check`; Rust API and behavior changes require lint
+and the relevant focused or broad Rust lane; Python bridge changes require the
+Python checks in addition to Rust verification.
 
 ```bash
 make dag-demo
