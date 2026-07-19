@@ -21,12 +21,35 @@ From repository root:
 make dag-demo
 ```
 
-The target validates and executes the file-processing graph, performs a warm
-cache run, replays the reporting boundary, and strictly verifies the result.
-Evidence is retained under `artifacts/dag-demo/`.
+This is the shortest proof path for the `bijux-dag` product promise. The target
+does not rely on a successful exit alone: it validates the file-processing
+graph, inspects the effective graph, executes a cold run, checks retained
+artifacts, performs a warm cache run, replays the reporting boundary, and
+strictly verifies the replay.
+
+The target removes and recreates `artifacts/dag-demo/`, then asserts:
+
+| Claim | Machine-checked evidence |
+| --- | --- |
+| graph contract is accepted | `validate.json` has `ok = true` and `status = "ok"` |
+| the expected graph is selected | `graph.json` contains exactly the four file-processing nodes |
+| cold execution completed | `cold-run.json` reports four successful nodes |
+| the report is retained and promotable | registry and inspection results contain `render_report:report.md`, with payload present |
+| cache reuse is real | `warm-run.json` reports at least three cached nodes and one regenerated node |
+| replay input is intact | `replay.json` reports verified upstream artifacts |
+| replay evidence is valid | `verify.json` reports `status = "ok"` and `mode = "strict"` |
+
+The final console lines print the artifact root, cold run, warm run, replay
+run, and rendered report paths. Keep the JSON files when reviewing a failure;
+they show the last completed proof boundary.
 
 Use the manual path below when you need to understand each boundary or replace
 the example paths with your own.
+
+The demonstration proves one checked-in local workflow against the current
+binary. It does not establish workload-specific correctness, hostile-code
+isolation, or suitability for an environment with different storage and
+process constraints.
 
 ## Prepare The Checkout
 
@@ -66,7 +89,8 @@ cargo run -p bijux-dag-cli --bin bijux-dag -- validate "${GRAPH_PATH}"
 ```
 
 Validation proves that the graph is accepted under the current schema and
-policy. It does not prove successful execution or artifact integrity.
+policy. It does not prove successful execution, output correctness, or
+artifact integrity.
 
 If you need structural inspection before execution, the repository-tested
 `show-effective-graph` explicit-path route can expose nodes, edges, roots,
@@ -94,6 +118,9 @@ artifacts/first-run-tutorial-runs/run-first-run-tutorial-cold/
 The command result is an orientation aid. The finalized directory is the
 evidence boundary.
 
+Do not continue to warm reuse if the cold run is not successful. A cache result
+cannot repair or validate a failed source run.
+
 ## Inspect Retained Evidence
 
 ```bash
@@ -118,6 +145,11 @@ Check that:
 - artifact inspection resolves the declared `render_report:report.md` output;
 - retained indexes and content digests agree.
 
+The report payload should begin with the requested title and contain the
+processed-file summary. A promotable artifact with the wrong domain content is
+still the wrong result; artifact integrity and workflow correctness are
+separate review decisions.
+
 [Run Evidence Layout](../interfaces/run-evidence-layout.md) defines which
 files are authoritative and which are summaries.
 
@@ -139,6 +171,9 @@ The upstream processing stages should be reused. `render_report` is
 intentionally regenerated. Cache reuse is valid only when the retained
 identity and integrity checks admit it; a fast second run alone is not proof.
 
+Compare the retained node counts rather than elapsed time. The expected warm
+result has at least three cached nodes and one successful regenerated node.
+
 ## Replay And Verify
 
 ```bash
@@ -159,6 +194,28 @@ rerunning `render_report`. Strict verification then checks that the replayed
 run still satisfies its retained contracts. The [Replay
 Contract](../../spec/REPLAY_CONTRACT.md) defines the claim boundary.
 
+Do not describe replay as successful if execution completed but
+`upstream_artifact_verification.verified` is false or strict verification
+fails. Those results preserve useful failure evidence, not a reproduction
+proof.
+
+## Failure Triage
+
+Stop at the first failed boundary and preserve its output:
+
+| Failure point | Inspect first | Correct response |
+| --- | --- | --- |
+| validation | command error and graph path | fix graph/schema input; do not create a run |
+| cold run | finalized run directory and `explain` output | classify node, input, policy, or environment failure |
+| artifact inspection | registry entry, payload presence, and digest evidence | repair artifact production or retention before cache testing |
+| warm run | cache decisions and node counts | explain each miss; do not infer reuse from runtime duration |
+| replay | upstream artifact verification | preserve the refusal and repair the retained source boundary |
+| strict verification | verification JSON and replay run directory | treat the replay as unverified even if node execution succeeded |
+
+For failures after a retained run exists, continue with [Failure
+Recovery](failure-recovery.md). Never overwrite the failed run directory while
+investigating it.
+
 ## Completion Evidence
 
 The tutorial is complete when you can point to:
@@ -171,7 +228,8 @@ The tutorial is complete when you can point to:
 - a successful strict verification result.
 
 If any item is missing, state that gap rather than describing the demonstration
-as end-to-end proof.
+as end-to-end proof. Command success, artifact integrity, domain correctness,
+cache reuse, and replay verification are distinct claims.
 
 ## Next Reads
 
