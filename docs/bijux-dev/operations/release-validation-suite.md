@@ -90,6 +90,23 @@ cargo test -p bijux-dag-cli --test smoke_pipeline --locked -- --nocapture
 The publish order and public/private boundary are governed by
 `contracts/foundation/workspace_package_boundary.v1.json`.
 
+## Performance And Environment Evidence
+
+Release validation does not execute benchmarks, soak workloads, or
+live-environment scenarios. Those claims have separate evidence boundaries:
+
+| Claim | Required authority |
+| --- | --- |
+| release-relevant performance | `bijux-dev-dag performance-evidence-report` evaluated against `evidence/perf/metadata.json` |
+| benchmark regression | a completed benchmark report under `artifacts/benchmarks/` and the governed threshold referenced by the scenario |
+| soak behavior | a named soak command, duration, workload, terminal status, and retained artifact directory |
+| live environment | the exact platform or service, configuration boundary, command, and retained result |
+
+A release recommendation may cite those results alongside this suite, but it
+must not imply that release validation produced them. Missing external evidence
+means the corresponding claim is unverified, not implicitly covered by a green
+release result.
+
 ## What A Pass Does Not Prove
 
 A green release validation result does not by itself prove:
