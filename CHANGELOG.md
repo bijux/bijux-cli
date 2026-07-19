@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-4-0"></a>
 
-## 0.4.0 – 2026-07-04
+## 0.4.0 – 2026-07-19
 
 Operator-facing DAG release notes:
 [`docs/bijux-dag/operations/v0-4-0-release-notes.md`](docs/bijux-dag/operations/v0-4-0-release-notes.md)

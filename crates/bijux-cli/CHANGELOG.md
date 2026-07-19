@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-4-0"></a>
 
-## 0.4.0 – 2026-07-04
+## 0.4.0 – 2026-07-19
 
 ### Added
 - Added a crate-native mounted-app SDK with `ProductMount`, `BijuxApp`, `CommandContext`, `CommandResult`, diagnostics builders, output-envelope helpers, an in-process harness, and snapshot helpers for Rust app authors.
