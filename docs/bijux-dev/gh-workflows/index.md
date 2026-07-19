@@ -34,7 +34,7 @@ repository behavior. Neither layer should duplicate the other's decisions.
 | --- | --- | --- |
 | `ci.yml` | required formatting, lint, security, and test jobs | [CI](ci.md) |
 | `release-validation.yml` | committed-source release-candidate proof | [Release Validation](release-validation.md) |
-| `bijux-canon.yml` | broader canon and evidence integration | [Bijux Canon](bijux-canon.md) |
+| `repository-governance.yml` | broader governance and evidence integration | [Repository Governance](repository-governance.md) |
 | `bijux-std-checks.yml`, `bijux-std.yml` | shared standards and contract validation | [CI and Automation](../operations/ci-and-automation.md) |
 | `github-policy.yml`, `pr-approval-policy.yml`, `automerge-pr.yml` | repository settings, review policy, and approved merge automation | [CI and Automation](../operations/ci-and-automation.md) |
 

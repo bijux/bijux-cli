@@ -117,28 +117,23 @@ The source checkout currently has more than one hosted toolchain declaration:
 | Surface | Declared Rust |
 | --- | --- |
 | source toolchain and MSRV | `1.86.0` / `1.86` |
-| `bijux-canon` workflow | `1.86.0` |
+| repository governance workflow | `1.86.0` |
 | release-validation workflow | `1.86.0` |
 | docs deployment configuration | `1.86.0` |
-| synchronized generic CI workflow | `1.85.0` |
-| synchronized release environment | `1.85.0` |
+| synchronized generic CI workflow | `1.86.0` |
+| synchronized release environment | `1.86.0` |
 
-This is a real mismatch. Local Rust 1.86.0 results align with the source
-contract and repository-owned validation workflows, but they do not establish
-parity with every synchronized GitHub job.
+These hosted declarations align with the source contract at Rust 1.86.0.
+Alignment prevents CI and publication jobs from validating the repository with
+a compiler below the workspace MSRV, but a local result still does not
+establish hosted parity unless the operating system, installed tools, and
+workflow environment also match.
 
 `.github/release.env`, synchronized workflows, and shared checksums are managed
 from `bijux-std`; do not edit them directly in this repository. The durable
-repair is to align the upstream repository manifest and generated standards,
-merge that standards change, then refresh this repository from the accepted
-GitHub commit and validate the shared checksum.
-
-Until that happens:
-
-- report the hosted toolchain mismatch in release and CI evidence;
-- do not call generic CI and local results equivalent;
-- treat a release that selects Rust 1.85.0 for packages requiring MSRV 1.86 as
-  blocked, not as a warning to bypass.
+invariant is to update the upstream repository manifest when the workspace MSRV
+changes, merge that standards change, refresh this repository from the accepted
+GitHub commit, and validate the shared checksum in the same change set.
 
 Audit alignment directly when toolchain policy changes:
 
@@ -173,7 +168,7 @@ toolchain failures harder to diagnose.
 - `makes/docs.mk`
 - `.github/release.env`
 - `.github/workflows/ci.yml`
-- `.github/workflows/bijux-canon.yml`
+- `.github/workflows/repository-governance.yml`
 
 Continue with [Repository Gates](repository-gates.md) after the environment is
 known, and [CI and Automation](ci-and-automation.md) when the question concerns

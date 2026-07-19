@@ -1,4 +1,4 @@
-name: Bijux Canon
+name: "repo / governance"
 
 on:
   workflow_dispatch:

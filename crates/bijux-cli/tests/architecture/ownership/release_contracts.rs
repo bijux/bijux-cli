@@ -354,12 +354,12 @@ fn repo_owned_toolchain_overrides_match_workspace_rust_version() {
         quoted_value_after(&workspace_manifest, "rust-version = ").expect("workspace rust-version");
     let exact_toolchain = format!("{workspace_rust_version}.0");
 
-    let canon_workflow = read_repo_file(".github/workflows/bijux-canon.yml");
+    let governance_workflow = read_repo_file(".github/workflows/repository-governance.yml");
     let unquoted = format!("RUST_TOOLCHAIN_VERSION: {exact_toolchain}");
     let quoted = format!("RUST_TOOLCHAIN_VERSION: \"{exact_toolchain}\"");
     assert!(
-        canon_workflow.contains(&unquoted) || canon_workflow.contains(&quoted),
-        ".github/workflows/bijux-canon.yml must keep RUST_TOOLCHAIN_VERSION aligned with the workspace rust-version"
+        governance_workflow.contains(&unquoted) || governance_workflow.contains(&quoted),
+        ".github/workflows/repository-governance.yml must keep RUST_TOOLCHAIN_VERSION aligned with the workspace rust-version"
     );
 
     let docs_deploy_env = read_repo_file(".github/docs-deploy.env");

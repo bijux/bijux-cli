@@ -1,5 +1,5 @@
 ---
-title: Bijux Canon
+title: Repository Governance
 audience: maintainer
 type: operations
 status: canonical
@@ -7,10 +7,10 @@ owner: bijux-dev-docs
 last_reviewed: 2026-07-19
 ---
 
-# Bijux Canon
+# Repository Governance
 
-`bijux-canon.yml` is the repository's blocking governance workflow for DAG
-packages and their maintainer control plane. It checks source policy,
+`repository-governance.yml` is the repository's blocking governance workflow
+for DAG packages and their maintainer control plane. It checks source policy,
 cross-platform governance behavior, generated evidence, package readiness, and
 public API drift. It is not the complete `bijux-core` test suite and must not be
 reported as one.
@@ -31,8 +31,9 @@ Maintainers can start the workflow manually. Pull requests and pushes to
 - evidence assets, GitHub scripts, or workflow definitions.
 
 Path filtering deliberately avoids running this matrix for unrelated package
-or documentation changes. A change outside those paths receives no Canon
-evidence. Reviewers must not infer a skipped workflow result from an older run.
+or documentation changes. A change outside those paths receives no repository
+governance evidence. Reviewers must not infer a skipped workflow result from an
+older run.
 
 Concurrency is keyed by workflow and Git ref. A newer run cancels an older run
 for the same ref so that the visible result belongs to the latest commit.
@@ -128,7 +129,7 @@ green result.
 
 ## What Green Does Not Prove
 
-A successful Canon run does not prove:
+A successful repository governance run does not prove:
 
 - the complete Rust or Python test suites;
 - ignored, nightly, benchmark, fuzzing, or live-platform behavior;
