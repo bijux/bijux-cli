@@ -72,10 +72,10 @@ jobs:
             rust_components: "clippy rustfmt"
             pre_run: ""
             run: |
-              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain policy --advisory
-              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain quality --advisory
-              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain style --advisory
-              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain supply-chain --advisory
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain policy
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain quality --include-slow
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain style
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain supply-chain
             artifact_name: checks-report
             artifact_path: artifacts/reports
           - id: rust-test-ubuntu
@@ -85,7 +85,7 @@ jobs:
             soft_fail: false
             rust_components: ""
             pre_run: ""
-            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- tests run --domain governance --advisory
+            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- tests run --domain governance
             artifact_name: test-reports-ubuntu-24.04
             artifact_path: artifacts/reports
           - id: rust-test-macos
@@ -95,7 +95,7 @@ jobs:
             soft_fail: false
             rust_components: ""
             pre_run: ""
-            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- tests run --domain governance --advisory
+            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- tests run --domain governance
             artifact_name: test-reports-macos-14
             artifact_path: artifacts/reports
           - id: compatibility-fixture-drift
@@ -105,7 +105,7 @@ jobs:
             soft_fail: false
             rust_components: ""
             pre_run: ""
-            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- contracts run --domain compat --advisory
+            run: cargo run --locked -p bijux-dev --bin bijux-dev-dag -- contracts run --domain compat
             artifact_name: compatibility-fixture-report
             artifact_path: artifacts/reports
           - id: dependency-audit
@@ -127,7 +127,7 @@ jobs:
             pre_run: ""
             run: |
               cargo doc --locked --workspace --no-deps
-              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- docs run --advisory
+              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- docs run
             artifact_name: docs-report
             artifact_path: artifacts/reports
           - id: ecosystem-contracts
