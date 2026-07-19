@@ -1,3 +1,12 @@
+---
+title: Root Policy Ownership
+audience: maintainers
+type: report
+status: canonical
+owner: bijux-dev
+last_reviewed: 2026-07-19
+---
+
 # Root Policy Ownership
 
 This report maps cross-package repository claims to their machine-readable

@@ -59,7 +59,7 @@ fn read_repository_work_routing_contract() -> RepositoryWorkRoutingContract {
 }
 
 fn read_routing_evidence_rows() -> Vec<RoutingEvidenceRow> {
-    let path = repo_root().join("docs/reports/governance/repository-work-routing.md");
+    let path = repo_root().join("docs/reports/governance/REPOSITORY_WORK_ROUTING.md");
     let raw = fs::read_to_string(&path)
         .unwrap_or_else(|err| panic!("failed to read {}: {err}", path.display()));
 

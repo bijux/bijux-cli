@@ -1,3 +1,12 @@
+---
+title: Repository Work Routing
+audience: maintainers
+type: report
+status: canonical
+owner: bijux-dev
+last_reviewed: 2026-07-19
+---
+
 # Repository Work Routing
 
 This governed evidence maps repository-level work classes to their owning crate

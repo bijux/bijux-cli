@@ -90,7 +90,7 @@ fn maintainer_root_help_matches_governed_command_surface() {
 fn maintainer_command_surface_docs_and_policy_inventory_stay_linked() {
     let command_surface = read_repo_file("docs/bijux-dev/operations/command-surface.md");
     let package_doc = read_repo_file("docs/bijux-dev/packages/bijux-dev.md");
-    let root_policy_report = read_repo_file("docs/reports/governance/root-policy-ownership.md");
+    let root_policy_report = read_repo_file("docs/reports/governance/ROOT_POLICY_OWNERSHIP.md");
     let root_policy_inventory =
         read_repo_file("contracts/foundation/root_policy_surface_inventory.v1.json");
     let release_operations = read_repo_file("docs/bijux-dev/operations/release-operations.md");

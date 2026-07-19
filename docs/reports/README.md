@@ -64,10 +64,15 @@ origin should be moved to `artifacts/` or removed.
 
 ## Naming And Retention
 
-Existing report paths are consumed by source code and CI and therefore cannot
-be normalized casually. New reports use lowercase kebab-case and a name that
-states the measured surface, such as `runtime-module-ownership.md`; avoid
-delivery history, sequence numbers, and broad names such as `final-report`.
+Internal specifications and retained reports use descriptive uppercase
+snake-case filenames, such as `RUNTIME_MODULE_OWNERSHIP_REPORT.md`. `README.md`
+is the only conventional mixed-case filename in these roots. Public handbook
+pages use lowercase kebab-case because their paths are published URLs.
+Producers, consumers, and contract tests must change in the same commit as any
+governed report rename.
+
+Names state the measured surface or governed decision. They do not encode
+delivery order, review sequence, or broad claims such as `FINAL_REPORT.md`.
 
 Retain a report in Git only when review depends on comparing it across commits
 or a repository contract requires it. High-volume logs, build products, local

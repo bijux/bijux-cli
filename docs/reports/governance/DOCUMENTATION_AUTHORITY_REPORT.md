@@ -1,3 +1,12 @@
+---
+title: Documentation Authority Report
+audience: maintainers
+type: report
+status: canonical
+owner: bijux-core-docs
+last_reviewed: 2026-07-19
+---
+
 # Documentation Authority Report
 
 ## Purpose
@@ -16,3 +25,10 @@ obsolete surfaces rather than add parallel authority files.
 The roadmap growth freeze in `configs/dag/policy/docs_config_governance.json`
 remains enabled while the repository keeps reducing obsolete documentation
 surfaces.
+
+## Limits Of This Evidence
+
+This report describes authority and growth rules. It does not establish that a
+page is accurate or necessary. `bijux-dev-dag docs-inventory` supplies link and
+metadata evidence; subject-matter review remains responsible for technical
+claims.
