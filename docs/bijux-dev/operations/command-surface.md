@@ -42,6 +42,26 @@ DAG CLI reference remains under
 `bijux-dev-cli docs write-dag-cli-reference`. Ignored-test governance remains
 under `bijux-dev-cli maintenance ignored-dag-tests`.
 
+```mermaid
+flowchart LR
+    intent["Maintainer intent"]
+    observe{"Observe repository state?"}
+    cli["bijux-dev-cli"]
+    govern{"Execute governed suites?"}
+    dag["bijux-dev-dag"]
+    output["Structured result and terminal status"]
+
+    intent --> observe
+    observe -->|yes| cli --> output
+    observe -->|no| govern
+    govern -->|yes| dag --> output
+    govern -->|no| product["Use the owning product command"]
+```
+
+Use a product command when the requested operation changes or exercises
+product behavior. Maintainer binaries may verify that behavior, but they are
+not an alternate user interface to it.
+
 ## `bijux-dev-dag` Root Surface
 
 | Family | Root commands |
@@ -75,6 +95,22 @@ Unless a command explicitly says otherwise, generated outputs and reports
 belong under `artifacts/`. Commands that own governed files under `docs/reports`
 must identify those paths in their output and remain reproducible from the
 repository root.
+
+```mermaid
+flowchart LR
+    catalog["Governed suite catalog"]
+    selection["Domain and lane selection"]
+    execution["Selected suite execution"]
+    records["Per-suite records"]
+    aggregate{"Required result"}
+
+    catalog --> selection --> execution --> records --> aggregate
+    aggregate -->|all required suites pass| success["exit 0"]
+    aggregate -->|any required suite fails| failure["non-zero exit"]
+```
+
+Advisory execution changes enforcement at the aggregate boundary; it does not
+turn a failed suite record into a passed record.
 
 ## Evidence Rules
 

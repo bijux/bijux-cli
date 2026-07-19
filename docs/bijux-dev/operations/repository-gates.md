@@ -32,6 +32,31 @@ integration, and release readiness.
 or every governance command also ran. Select those gates separately when the
 change crosses their ownership boundary.
 
+```mermaid
+flowchart TB
+    change["Changed surface"]
+    focused["Owning focused check"]
+    rust["Rust lane<br/>fmt · lint · test · test-slow · test-all"]
+    python["Python lane<br/>test-py · test-nightly-py"]
+    docs["Documentation lane<br/>docs-check"]
+    release["Release and governance verification"]
+    report["Record exact commands, revision, and omissions"]
+
+    change --> focused
+    focused --> rust
+    focused --> python
+    focused --> docs
+    focused --> release
+    rust --> report
+    python --> report
+    docs --> report
+    release --> report
+```
+
+Follow only the branches owned by the change, but follow every applicable
+branch. A broad Rust run cannot compensate for omitted Python, documentation,
+or release validation.
+
 ## Focused Tests First
 
 For one failed Rust test, rerun its owning binary and test name before using a
@@ -64,6 +89,28 @@ For frozen suites, use the printed console log, status file, and primary
 nextest report under `artifacts/<commit>/`. Preserve the final nextest summary:
 passed, failed, slow, skipped, and leaky counts are part of the evidence even
 when the command exits unsuccessfully.
+
+```mermaid
+sequenceDiagram
+    participant M as Maintainer
+    participant L as Pinned gate launcher
+    participant C as Immutable checkout
+    participant N as nextest
+    participant A as artifacts/commit
+
+    M->>L: PINNED_REF=commit make test-all-frozen
+    L->>C: verify or create clean detached checkout
+    L-->>M: print PID, console, status, and artifact paths
+    C->>N: make test-all
+    N->>N: run complete selected suite
+    N->>A: write full log and final summary
+    C->>A: write terminal exit status
+```
+
+The launch command returning successfully proves only that the background
+process started. Completion is established by the status file together with
+the terminal nextest summary. Individual test failures do not suppress the
+remaining selected tests or the summary.
 
 ## What A Green Gate Should Mean
 

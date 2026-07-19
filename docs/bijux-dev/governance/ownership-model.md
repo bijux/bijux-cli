@@ -35,6 +35,26 @@ If a report and its source contract disagree, repair the producer or regenerate
 the report from the authoritative input. Do not edit the observation to make a
 gate pass.
 
+```mermaid
+flowchart TB
+    product["Product source and public contracts"]
+    policy["Repository contracts and policy configuration"]
+    suites["Maintainer suites"]
+    reports["Checked-in reports"]
+    handbook["Handbook guidance"]
+
+    product -->|supplies runtime truth| suites
+    policy -->|supplies repository rules| suites
+    suites -->|produces observations| reports
+    product -->|explained by| handbook
+    policy -->|explained by| handbook
+    reports -. never redefine .-> product
+    reports -. never redefine .-> policy
+```
+
+Arrows describe authority and evidence flow, not package imports. Product code
+does not depend on maintainer suites merely because those suites evaluate it.
+
 ## Product And Maintainer Boundaries
 
 | Surface | Owner | Maintainer role |
@@ -79,6 +99,25 @@ Within the governance binary:
 - `repo/` owns repository discovery and repository-local operations
 - `report/` owns common result writing
 - `tooling/` owns controlled Cargo and Git process access
+
+```mermaid
+flowchart LR
+    cli_entry["bijux-dev-cli"]
+    cli_runtime["maintainer runtime"]
+    observations["Status, diagnostics, and reports"]
+    dag_entry["bijux-dev-dag"]
+    commands["commands"]
+    suites["suites"]
+    governed["Gate records and aggregate status"]
+
+    cli_entry --> cli_runtime --> observations
+    dag_entry --> commands
+    commands --> suites --> governed
+```
+
+Code shared across these paths belongs in a neutral library boundary only when
+the behavior and contract are genuinely identical. Similar command labels are
+not sufficient justification.
 
 ## Policy And Evidence Locations
 
