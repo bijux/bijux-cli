@@ -125,10 +125,10 @@
   ],
   "reports": [
     {
-      "report_path": "docs/reports/foundation/release_evidence_dashboard.json",
+      "report_path": "docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md",
       "severity_class": "release-critical",
       "audience": "release-engineering",
-      "docs_page": "docs/spec/RELEASE_POLICY.md"
+      "docs_page": "docs/spec/RELEASE_BINARY_VERIFICATION.md"
     },
     {
       "report_path": "docs/reports/foundation/advisory_evidence_dashboard.json",
@@ -157,10 +157,8 @@
   ],
   "duplicate_signal_ownership": {
     "release_decision_summary": {
-      "owner_output": "docs/reports/foundation/release_evidence_dashboard.json",
-      "duplicates_retired": [
-        "docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md"
-      ]
+      "owner_output": "docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md",
+      "duplicates_retired": []
     },
     "benchmark_signal_summary": {
       "owner_output": "docs/reports/foundation/PERFORMANCE_EVIDENCE_REPORT.md",
