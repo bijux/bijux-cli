@@ -166,7 +166,7 @@ pub(super) fn run_contract_coverage_report() -> Result<(), String> {
             continue;
         }
         let crate_name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
-        if !path.join("CONTRACT.md").exists() {
+        if !path.join("docs/CONTRACTS.md").exists() {
             missing.push(format!("crate contract missing: {crate_name}"));
         }
     }

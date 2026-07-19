@@ -50,8 +50,8 @@ who owns the behavior.
 ## Code Anchors
 
 - `crates/bijux-cli/src/lib.rs`
-- `crates/bijux-dag-app/CONTRACT.md`
-- `crates/bijux-dev/CONTRACT.md`
+- `crates/bijux-dag-app/docs/CONTRACTS.md`
+- `crates/bijux-dev/docs/CONTRACTS.md`
 - `docs/bijux-cli/index.md`
 
 ## Next Reads

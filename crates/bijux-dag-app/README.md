@@ -119,7 +119,7 @@ default public `v0.4.0` app story.
 
 ## Related links
 
-- [Crate contract](./CONTRACT.md)
+- [Crate contracts](docs/CONTRACTS.md)
 - [Crate changelog](./CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
 - [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/)

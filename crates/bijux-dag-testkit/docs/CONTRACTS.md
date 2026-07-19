@@ -1,4 +1,4 @@
-# bijux-dag-testkit Contract
+# bijux-dag-testkit Contracts
 
 Responsibility: Shared deterministic test fixtures, builders, and assertion helpers for workspace crates.
 

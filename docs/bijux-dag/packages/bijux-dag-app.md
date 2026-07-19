@@ -81,7 +81,7 @@ visible `bijux-dag --help` release contract.
 ## Code Anchors
 
 - `crates/bijux-dag-app/README.md`
-- `crates/bijux-dag-app/CONTRACT.md`
+- `crates/bijux-dag-app/docs/CONTRACTS.md`
 - `crates/bijux-dag-app/src/lib.rs`
 - `crates/bijux-dag-app/src/commands/mod.rs`
 - `crates/bijux-dag-app/src/routes/run_routes.rs`

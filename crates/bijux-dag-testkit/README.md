@@ -43,7 +43,7 @@ assertions without duplicating fixtures across crates.
 
 ## Related links
 
-- [Crate contract](./CONTRACT.md)
+- [Crate contracts](docs/CONTRACTS.md)
 - [Crate changelog](./CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
 - [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-testkit/)

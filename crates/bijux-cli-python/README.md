@@ -142,6 +142,7 @@ The runtime implementations live outside this crate:
 
 ## References
 
+- Package contracts: [`docs/CONTRACTS.md`](docs/CONTRACTS.md)
 - Runtime crate: [`crates/bijux-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli)
 - DAG runtime crate: [`crates/bijux-dag-runtime`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-runtime)
 - DAG executable crate: [`crates/bijux-dag-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli)

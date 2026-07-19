@@ -84,7 +84,7 @@ passed.
 ## Maintainer References
 
 - [Package README](../../../crates/bijux-dev/README.md)
-- [Package contract](../../../crates/bijux-dev/CONTRACT.md)
+- [Package contracts](../../../crates/bijux-dev/docs/CONTRACTS.md)
 - [Command Surface](../operations/command-surface.md)
 - [Repository Gates](../operations/repository-gates.md)
 - [Evidence Collection](../operations/evidence-collection.md)

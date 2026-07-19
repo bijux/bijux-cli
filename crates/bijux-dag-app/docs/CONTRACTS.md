@@ -1,4 +1,4 @@
-# bijux-dag-app Contract
+# bijux-dag-app Contracts
 
 Responsibility: Application orchestration services, command response modeling, and user-facing render flows.
 
@@ -12,15 +12,16 @@ This crate is the owner of command orchestration behavior, command-level respons
 - Business orchestration is implemented here, not in `bijux-dag-cli`.
 - Each command path returns a typed response model before rendering.
 - This crate does not own DAG schema/model semantics (`bijux-dag-core`) or runtime execution internals (`bijux-dag-runtime`).
-- `src/lib.rs` is the only root Rust file; command logic must live in bounded domain folders.
+- `../src/lib.rs` is the only root Rust file; command logic must live in bounded domain folders.
 
 ## Internal boundaries
-- `src/commands/`: orchestration command surfaces and runtime config resolution.
-- `src/graph/`: graph-oriented command surfaces and validation entrypoints.
-- `src/read/` and `src/write/`: input/output IO shaping boundaries.
-- `src/inspect/`: run status, doctor, and run-view presentation boundaries.
-- `src/replay/`: replay and diff command boundaries.
-- `src/cache/`, `src/explain/`, `src/format/`, `src/migrate/`: focused domain command helpers.
+- `../src/commands/`: orchestration command surfaces and runtime config resolution.
+- `../src/graph/`: graph-oriented command surfaces and validation entrypoints.
+- `../src/read/` and `../src/write/`: input/output IO shaping boundaries.
+- `../src/inspect/`: run status, doctor, and run-view presentation boundaries.
+- `../src/replay/`: replay and diff command boundaries.
+- `../src/cache/`, `../src/explain/`, `../src/format/`, `../src/migrate/`:
+  focused domain command helpers.
 
 ## Allowed changes
 - Add or evolve orchestration modules while keeping command contracts backward-compatible with `docs/bijux-dag/interfaces/compatibility-commitments.md`.

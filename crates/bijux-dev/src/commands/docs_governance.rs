@@ -658,8 +658,8 @@ pub(super) fn run_docs_contract_reference_guard() -> Result<(), String> {
         if !crate_dir.join("README.md").exists() {
             violations.push(format!("{crate_name} missing README.md"));
         }
-        if !crate_dir.join("CONTRACT.md").exists() {
-            violations.push(format!("{crate_name} missing CONTRACT.md"));
+        if !crate_dir.join("docs/CONTRACTS.md").exists() {
+            violations.push(format!("{crate_name} missing docs/CONTRACTS.md"));
         }
         let doc_path = root.join(doc_rel);
         if !doc_path.exists() {
@@ -693,7 +693,7 @@ pub(super) fn run_docs_coverage_report() -> Result<(), String> {
 
     let mut missing = Vec::new();
     for (crate_name, doc_rel) in crate_docs {
-        if !root.join("crates").join(crate_name).join("CONTRACT.md").exists() {
+        if !root.join("crates").join(crate_name).join("docs/CONTRACTS.md").exists() {
             missing.push(format!("missing contract doc for {crate_name}"));
         }
         if !root.join(doc_rel).exists() {

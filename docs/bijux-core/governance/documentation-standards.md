@@ -22,7 +22,7 @@ necessary but do not make weak content acceptable.
 | `docs/bijux-core`, `docs/bijux-cli`, `docs/bijux-dag`, `docs/bijux-dev` | curated reader handbooks | selected explicitly by `mkdocs.yml` |
 | `docs/spec` | executable prose contracts consumed by tests and tooling | excluded from the public site |
 | `docs/reports` | revision-bound generated or governed evidence | excluded from the public site |
-| crate `README.md`, `CONTRACT.md`, `CHANGELOG.md`, and crate-local `docs/` | package consumers and maintainers | crates.io, docs.rs, PyPI, or repository source as applicable |
+| crate `README.md`, `CHANGELOG.md`, and crate-local `docs/` | package consumers and maintainers | crates.io, docs.rs, PyPI, or repository source as applicable |
 | `artifacts/` | local output, logs, built sites, and transient analysis | never a tracked documentation authority |
 
 Do not merge specifications or reports into a handbook merely to simplify the

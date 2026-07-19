@@ -36,7 +36,7 @@ under `src/bin/`:
 
 - `contracts/foundation/maintainer_command_surface.v1.json` owns the command
   classification and package boundary.
-- `crates/bijux-dev/CONTRACT.md` states package invariants.
+- `crates/bijux-dev/docs/CONTRACTS.md` states package invariants.
 - `crates/bijux-dev/src/suites/` owns reusable suite composition.
 - `crates/bijux-dev/src/commands/` owns maintainer command behavior.
 - `crates/bijux-dev/tests/` checks command, policy, evidence, and ownership

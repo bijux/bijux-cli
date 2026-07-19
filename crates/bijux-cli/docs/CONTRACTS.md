@@ -1,4 +1,4 @@
-# bijux-cli contract
+# bijux-cli Contracts
 
 Responsibility: Public command runtime, route normalization, plugin-aware execution, and structured output for the `bijux` binary.
 

@@ -1,4 +1,4 @@
-# bijux-dev Package Contract
+# bijux-dev Contracts
 
 ## Responsibility
 

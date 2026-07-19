@@ -61,7 +61,7 @@ owns them.
 The root `README.md` orients a new reader and provides the shortest verified
 start. It does not reproduce the operator handbooks. Each crate `README.md`
 states that crate's responsibility, public surface, dependencies, and
-verification entrypoint. `CONTRACT.md` records package ownership constraints,
+verification entrypoint. The crate-local contracts page records package ownership constraints,
 while `CHANGELOG.md` records released changes.
 
 Crate-local `docs/` directories are appropriate only for detail that is useful

@@ -74,7 +74,7 @@ the `experimental` lane is opt-in behind `experimental-public-api`.
 ## Code Anchors
 
 - `crates/bijux-dag-artifacts/README.md`
-- `crates/bijux-dag-artifacts/CONTRACT.md`
+- `crates/bijux-dag-artifacts/docs/CONTRACTS.md`
 - `crates/bijux-dag-artifacts/src/lib.rs`
 - `crates/bijux-dag-artifacts/src/storage/models.rs`
 - `crates/bijux-dag-artifacts/src/integrity/proof.rs`

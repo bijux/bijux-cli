@@ -111,7 +111,7 @@ validator.
 
 ## Source Authorities
 
-- `crates/bijux-dag-testkit/CONTRACT.md`
+- `crates/bijux-dag-testkit/docs/CONTRACTS.md`
 - `crates/bijux-dag-testkit/src/lib.rs`
 - `crates/bijux-dag-testkit/src/workflows.rs`
 - `crates/bijux-dag-testkit/src/fake_adapter.rs`

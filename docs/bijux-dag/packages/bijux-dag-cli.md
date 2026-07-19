@@ -70,7 +70,7 @@ maintainer namespaces require `BIJUX_DAG_ENABLE_SIMULATED=1` or
 ## Code Anchors
 
 - `crates/bijux-dag-cli/README.md`
-- `crates/bijux-dag-cli/CONTRACT.md`
+- `crates/bijux-dag-cli/docs/CONTRACTS.md`
 - `crates/bijux-dag-cli/src/main.rs`
 
 ## Review Lens

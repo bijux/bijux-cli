@@ -376,12 +376,12 @@ fn source_reference_markdown_files(root: &Path) -> Vec<PathBuf> {
         root.join("crates/bijux-dag-runtime/README.md"),
         root.join("crates/bijux-dag-testkit/README.md"),
         root.join("crates/bijux-dev/README.md"),
-        root.join("crates/bijux-dag-app/CONTRACT.md"),
-        root.join("crates/bijux-dag-artifacts/CONTRACT.md"),
-        root.join("crates/bijux-dag-cli/CONTRACT.md"),
-        root.join("crates/bijux-dag-core/CONTRACT.md"),
-        root.join("crates/bijux-dag-runtime/CONTRACT.md"),
-        root.join("crates/bijux-dag-testkit/CONTRACT.md"),
+        root.join("crates/bijux-dag-app/docs/CONTRACTS.md"),
+        root.join("crates/bijux-dag-artifacts/docs/CONTRACTS.md"),
+        root.join("crates/bijux-dag-cli/docs/CONTRACTS.md"),
+        root.join("crates/bijux-dag-core/docs/CONTRACTS.md"),
+        root.join("crates/bijux-dag-runtime/docs/CONTRACTS.md"),
+        root.join("crates/bijux-dag-testkit/docs/CONTRACTS.md"),
         root.join("crates/bijux-cli/CHANGELOG.md"),
         root.join("crates/bijux-cli-python/CHANGELOG.md"),
     ]);
@@ -487,12 +487,12 @@ fn package_readme_source_references_resolve() {
 fn dag_crate_contract_source_references_resolve() {
     let root = repo_root();
     let markdown_files = [
-        root.join("crates/bijux-dag-app/CONTRACT.md"),
-        root.join("crates/bijux-dag-artifacts/CONTRACT.md"),
-        root.join("crates/bijux-dag-cli/CONTRACT.md"),
-        root.join("crates/bijux-dag-core/CONTRACT.md"),
-        root.join("crates/bijux-dag-runtime/CONTRACT.md"),
-        root.join("crates/bijux-dag-testkit/CONTRACT.md"),
+        root.join("crates/bijux-dag-app/docs/CONTRACTS.md"),
+        root.join("crates/bijux-dag-artifacts/docs/CONTRACTS.md"),
+        root.join("crates/bijux-dag-cli/docs/CONTRACTS.md"),
+        root.join("crates/bijux-dag-core/docs/CONTRACTS.md"),
+        root.join("crates/bijux-dag-runtime/docs/CONTRACTS.md"),
+        root.join("crates/bijux-dag-testkit/docs/CONTRACTS.md"),
     ];
     assert_source_references_resolve(markdown_files, "DAG crate contract pages");
 }

@@ -108,6 +108,7 @@ manifest placement, compatibility checks, and packaging.
 
 ## Release References
 
+- Package contracts: [`docs/CONTRACTS.md`](docs/CONTRACTS.md)
 - Repository handbook: [CLI handbook](https://bijux.io/bijux-core/bijux-cli/)
 - Crate changelog: [`crates/bijux-cli/CHANGELOG.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/CHANGELOG.md)
 - Root release log: [`CHANGELOG.md`](https://github.com/bijux/bijux-core/blob/main/CHANGELOG.md)

@@ -24,10 +24,10 @@ responsibility.
 
 ## Code Anchors
 
-- `crates/bijux-dag-app/CONTRACT.md`
-- `crates/bijux-dag-core/CONTRACT.md`
-- `crates/bijux-dag-runtime/CONTRACT.md`
-- `crates/bijux-dag-artifacts/CONTRACT.md`
+- `crates/bijux-dag-app/docs/CONTRACTS.md`
+- `crates/bijux-dag-core/docs/CONTRACTS.md`
+- `crates/bijux-dag-runtime/docs/CONTRACTS.md`
+- `crates/bijux-dag-artifacts/docs/CONTRACTS.md`
 
 ## Pages In This Section
 

@@ -80,7 +80,7 @@ artifacts without taking on runtime execution or command orchestration.
 
 ## Related links
 
-- [Crate contract](./CONTRACT.md)
+- [Crate contracts](docs/CONTRACTS.md)
 - [Crate changelog](./CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
 - [Reproducibility model](https://bijux.io/bijux-core/bijux-dag/interfaces/reproducibility-model/)

@@ -98,7 +98,7 @@ documentation, or release lanes passed.
 
 ## Maintainer References
 
-- [Package contract](./CONTRACT.md)
+- [Package contracts](docs/CONTRACTS.md)
 - [Package changelog](./CHANGELOG.md)
 - [Maintainer handbook](../../docs/bijux-dev/index.md)
 - [Command surface](../../docs/bijux-dev/operations/command-surface.md)

@@ -88,7 +88,7 @@ effects begin.
 ## Code Anchors
 
 - `crates/bijux-dag-core/README.md`
-- `crates/bijux-dag-core/CONTRACT.md`
+- `crates/bijux-dag-core/docs/CONTRACTS.md`
 - `crates/bijux-dag-core/src/lib.rs`
 - `crates/bijux-dag-core/src/pipeline/validate.rs`
 - `crates/bijux-dag-core/src/planner/planner.rs`

@@ -1,4 +1,4 @@
-# bijux-cli-python contract
+# bijux-cli-python Contracts
 
 Responsibility: Python packaging, native bridge, and runtime parity boundary for
 the `bijux` command runtime, plus Python delegation helpers for the

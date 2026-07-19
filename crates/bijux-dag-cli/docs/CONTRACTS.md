@@ -1,4 +1,4 @@
-# bijux-dag-cli Contract
+# bijux-dag-cli Contracts
 
 Responsibility: Thin process entrypoint that delegates to app command surfaces.
 
