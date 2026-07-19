@@ -25,7 +25,7 @@ integration, and release readiness.
 | `make test` | required Rust release lane plus Python tests | normal repository test gate; governed slow Rust tests are excluded |
 | `make test-slow` | governed slow Rust roster | deliberate expensive behavior, performance, and stress coverage |
 | `make test-all` | complete Rust suite including ignored tests | broad local proof; not the default edit loop |
-| `TEST_ALL_FROZEN_REF=<commit> make test-all-frozen` | `test-all` from an immutable checkout | long-running evidence tied to an exact commit |
+| `PINNED_REF=<commit> make test-all-frozen` | `test-all` from an immutable checkout | long-running evidence tied to an exact commit |
 | `make docs-check` | source contracts, strict MkDocs build, publication budget, and navigation | every reader-facing documentation or navigation change |
 
 `make test-all` is a complete Rust lane, not a claim that Python, docs, release,

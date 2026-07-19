@@ -63,7 +63,7 @@ For a local or CI gate:
    environment.
 7. Review the retained output for secrets before sharing or attaching it.
 
-For `TEST_ALL_FROZEN_REF=<commit> make test-all-frozen`, the launch output is
+For `PINNED_REF=<commit> make test-all-frozen`, the launch output is
 only a locator. The console log, status file, primary nextest report, frozen
 source revision, and final nextest summary together establish the result. A
 PID or artifact directory alone establishes only that work was prepared or

@@ -60,9 +60,6 @@ than the live checkout:
 PINNED_REF=<commit> make test-all-frozen
 ```
 
-`TEST_ALL_FROZEN_REF` remains accepted for compatibility, but new operational
-records use `PINNED_REF`.
-
 The launcher:
 
 1. resolves the ref to a full commit SHA;
