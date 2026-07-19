@@ -27,6 +27,29 @@ The testkit may construct valid and deliberately invalid domain values. It
 must not define what those values mean; product contract tests remain the
 authority.
 
+```mermaid
+flowchart TB
+    core["bijux-dag-core models"]
+    artifacts["bijux-dag-artifacts models"]
+    testkit["bijux-dag-testkit"]
+    runtime_tests["runtime dev tests"]
+    app_tests["app dev tests"]
+    cli_tests["CLI dev tests"]
+    maintainer_tests["maintainer dev tests"]
+    product["Product runtime dependencies"]
+
+    core --> testkit
+    artifacts --> testkit
+    testkit -. dev dependency .-> runtime_tests
+    testkit -. dev dependency .-> app_tests
+    testkit -. dev dependency .-> cli_tests
+    testkit -. dev dependency .-> maintainer_tests
+    testkit -. forbidden .-> product
+```
+
+The testkit can share construction and assertions across test targets. It must
+never appear in a published package's normal dependency graph.
+
 ## Determinism
 
 Helpers receive paths and scenario inputs explicitly. They do not read
@@ -44,6 +67,21 @@ failure behavior. Neither silently substitutes a nearby fixture.
 
 Corruption helpers name the fault they introduce so expected product refusal
 remains reviewable.
+
+```mermaid
+flowchart LR
+    explicit["Explicit scenario inputs"]
+    builder["Typed fixture builder"]
+    fixture["Deterministic fixture or fake adapter"]
+    product["Owning product behavior"]
+    assertion["Semantic assertion"]
+
+    explicit --> builder --> fixture --> product --> assertion
+```
+
+Expected results are asserted after the owning product interprets the fixture.
+Encoding the expected product decision inside the fixture builder would create
+an alternate implementation and invalidate the test.
 
 ## Extension Decisions
 

@@ -14,6 +14,23 @@ product runtime or redefining product contracts.
 The binaries may share models and infrastructure, but similar names do not
 justify duplicate implementations. One authority owns each operation.
 
+```mermaid
+flowchart LR
+    repo["Repository source, contracts, and policy"]
+    cli["bijux-dev-cli"]
+    dag["bijux-dev-dag"]
+    reports["Read-oriented structured reports"]
+    suites["Governed suite records"]
+    status["Aggregate gate or release status"]
+
+    repo --> cli --> reports
+    repo --> dag --> suites --> status
+```
+
+The report path observes repository state. The suite path evaluates governed
+selection and enforcement. Neither path becomes an owner of product
+semantics.
+
 ## Source Boundaries
 
 | Area | Responsibility |
@@ -52,6 +69,26 @@ Every command is classified:
 
 The default is read-only. Any source or governed-output write must be visible
 in command naming, help, implementation, and tests.
+
+```mermaid
+flowchart TB
+    command["Maintainer command"]
+    classify{"Declared effect"}
+    inspect["Inspection<br/>read only"]
+    validate["Validation<br/>transient artifacts"]
+    generate["Generation<br/>named governed output"]
+    mutate["Mutation<br/>explicit repository target"]
+    result["Structured result with effect and status"]
+
+    command --> classify
+    classify --> inspect --> result
+    classify --> validate --> result
+    classify --> generate --> result
+    classify --> mutate --> result
+```
+
+An implementation whose writes exceed its declared branch violates the
+command contract even if the generated content is correct.
 
 ## Runtime Boundaries
 

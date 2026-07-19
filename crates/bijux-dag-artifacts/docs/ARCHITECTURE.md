@@ -22,18 +22,26 @@ The crate has deliberate IO. Pure graph interpretation stays in
 
 ## Evidence Flow
 
-```text
-planned run
-    |
-    v
-staging run directory
-    |
-    +--> manifest, graph snapshot, params, logs, traces
-    +--> input and output indexes
-    +--> hashes, provenance, lineage, cache evidence
-    |
-    v
-validated final run directory
+```mermaid
+flowchart TB
+    plan["Planned run identity"]
+    staging["Staging run directory"]
+    records["Manifest, graph, parameters, logs, and traces"]
+    indexes["Input and output indexes"]
+    proofs["Hashes, provenance, lineage, and cache evidence"]
+    verify{"Finalization verification"}
+    final["Finalized run directory"]
+    rejected["Incomplete or corrupt staging evidence"]
+
+    plan --> staging
+    staging --> records
+    staging --> indexes
+    staging --> proofs
+    records --> verify
+    indexes --> verify
+    proofs --> verify
+    verify -->|complete and consistent| final
+    verify -->|missing or inconsistent| rejected
 ```
 
 Staging evidence is incomplete until finalization. Readers must distinguish it
@@ -49,6 +57,24 @@ layout. App and CLI layers render artifact data without redefining it.
 Run paths, manifest fields, schema versions, hash interpretation, identity,
 verification results, and lifecycle transitions are compatibility-sensitive.
 `stable` is the curated API; feature-gated contracts remain experimental.
+
+```mermaid
+flowchart LR
+    core["Core graph and plan identity"]
+    runtime["Runtime attempts and statuses"]
+    artifacts["Artifact models, persistence, and integrity"]
+    app["App inspection and rendering"]
+    store["Filesystem or artifact store"]
+
+    core --> artifacts
+    runtime --> artifacts
+    artifacts <--> store
+    artifacts --> app
+```
+
+The crate records facts supplied by core and runtime using its own persistence
+contracts. It does not infer graph validity from files or execution success
+from the mere presence of a run directory.
 
 ## Extension Decisions
 

@@ -6,16 +6,19 @@ completion generation, parse arguments, delegate, and return status.
 
 ## Entrypoint Flow
 
-```text
-process argv
-    |
-    v
-bijux-dag-app command tree
-    |
-    +--> completions -> clap_complete -> stdout
-    |
-    v
-bijux-dag-app dispatch -> ExitCode
+```mermaid
+flowchart LR
+    argv["Process argv"]
+    tree["bijux-dag-app command tree"]
+    branch{"Completion request?"}
+    completion["clap_complete"]
+    dispatch["bijux-dag-app dispatch"]
+    stdout["Completion text on stdout"]
+    status["Application ExitCode"]
+
+    argv --> tree --> branch
+    branch -->|yes| completion --> stdout
+    branch -->|no| dispatch --> status
 ```
 
 The executable does not build an independent DAG command model. Every
@@ -33,6 +36,22 @@ Runtime dependencies are limited to:
 The package must not depend directly on graph core, runtime, artifacts,
 testkit, or maintainer crates. Needing one of those dependencies indicates
 that behavior belongs in the app or its domain owner.
+
+```mermaid
+flowchart TB
+    wrapper["bijux-dag-cli"]
+    app["bijux-dag-app"]
+    clap["clap and clap_complete"]
+    domain["core, runtime, and artifacts"]
+
+    wrapper --> app
+    wrapper --> clap
+    app --> domain
+    wrapper -. forbidden direct dependency .-> domain
+```
+
+The dotted edge is a prohibited shortcut. The wrapper cannot bypass
+application policy even for a command that appears operationally simple.
 
 ## Owned Responsibilities
 
