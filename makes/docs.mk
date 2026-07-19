@@ -107,6 +107,13 @@ docs-hygiene: ## Verify that documentation outputs stay out of the repo root
 	@test ! -e "site"   || (echo "ERROR: root 'site/' is forbidden"; exit 1)
 	@test ! -e ".cache" || (echo "ERROR: root '.cache/' is forbidden"; exit 1)
 	@test ! -d "docs/artifacts" || (echo "ERROR: generated 'docs/artifacts' is forbidden"; exit 1)
+	@leaked=$$(find docs crates \
+	  -path '*/.venv' -prune -o \
+	  -path '*/.venv*' -prune -o \
+	  \( -type d \( -name '__pycache__' -o -name '.pytest_cache' \) \
+	     -o -type f \( -name '*.pyc' -o -name '*.pyo' \) \) -print); \
+	  test -z "$$leaked" || \
+	    (echo "ERROR: Python caches must be written under artifacts/:"; echo "$$leaked"; exit 1)
 	@test -f "$(DOCS_CONTRACT_DIR)/schemas/output-envelope-v1.schema.json" || (echo "ERROR: published contract schema copy is missing"; exit 1)
 	@test -f "$(DOCS_CONTRACT_DIR)/schemas/error-envelope-v1.schema.json" || (echo "ERROR: published contract error schema copy is missing"; exit 1)
 	@test -f "$(DOCS_CONTRACT_DIR)/schemas/plugin-manifest-v2.schema.json" || (echo "ERROR: published contract plugin schema copy is missing"; exit 1)
