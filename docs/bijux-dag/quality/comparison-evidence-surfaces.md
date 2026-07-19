@@ -82,8 +82,8 @@ limits overstates the evidence.
 - Keep environment and fixture identity with reported measurements.
 - Treat a baseline as a governed regression reference, not timeless external
   truth.
-- Use [Comparison Report Format](../interfaces/comparison-report-format.md) for
-  the output schema consumed by automation.
+- Use [Comparison Report Format](../interfaces/comparison-report-format.md) to
+  preserve the complete authority chain when publishing a result.
 
 ## Release Use
 

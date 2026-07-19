@@ -90,6 +90,7 @@ exclude_docs: |
   !/bijux-dag/interfaces/reproducibility-model.md
   !/bijux-dag/interfaces/run-evidence-layout.md
   !/bijux-dag/interfaces/compatibility-matrix.md
+  !/bijux-dag/interfaces/comparison-report-format.md
   !/bijux-dag/interfaces/error-codes.md
   !/bijux-dag/operations/installation-and-setup.md
   !/bijux-dag/operations/first-run-tutorial.md
@@ -234,6 +235,7 @@ nav:
           - Reproducibility Model: bijux-dag/interfaces/reproducibility-model.md
           - Run Evidence Layout: bijux-dag/interfaces/run-evidence-layout.md
           - Compatibility Matrix: bijux-dag/interfaces/compatibility-matrix.md
+          - Comparison Reports: bijux-dag/interfaces/comparison-report-format.md
           - Error Codes: bijux-dag/interfaces/error-codes.md
       - Operations:
           - Installation: bijux-dag/operations/installation-and-setup.md
