@@ -4,119 +4,142 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-19
 ---
 
-# Testing and Validation
+# Testing And Validation
 
-Validation is the point where `bijux-core` decides whether a change is merely
-edited or actually supported. A passing narrow test can show that one crate is
-healthy. It does not automatically prove that shared contracts, generated
-references, released surfaces, or retained evidence still match the repository
-story.
+Validation claims must match the lane that produced them. A focused test can
+prove one behavior; it cannot prove the workspace, documentation, packaging,
+or a different language surface.
 
-The job is not to run the most commands. The job is to run the right commands
-for the surface that changed.
+Start with the smallest lane that can fail for the change, then widen only when
+the changed boundary requires it.
 
-## Start With The Surface, Not The Tool
+## Test Lane Contract
 
-Choose validation by asking what could have drifted:
+| Command | Includes | Excludes | Honest claim |
+| --- | --- | --- | --- |
+| focused `cargo nextest run ...` or `pytest ...` | explicitly selected tests | every unselected test and gate | named behavior passed |
+| `make test` | fast Rust lane plus Python tests marked `not nightly` | governed slow Rust tests, ignored Rust tests, Python `nightly`, docs, lint | default cross-language test lane passed |
+| `make test-slow` | Rust tests selected by `slow__` naming or the governed slow roster | ordinary Rust tests and all Python tests | governed slow Rust lane passed |
+| `make test-all` | all Rust tests, including ignored tests, with retries disabled | Python, docs, lint, packaging | complete Rust test lane passed |
+| `make docs-check` | documentation contracts, source-of-truth checks, strict MkDocs build, navigation and page budget | code tests and lint | published documentation boundary passed |
+| `make fmt` | Rust formatting check | Python formatting and all lint/test behavior | Rust source formatting passed |
+| `make lint` | workspace Rust Clippy with warnings denied | tests, docs, Python lint | Rust lint lane passed |
 
-| Changed surface | What needs proof |
-| --- | --- |
-| one implementation detail inside a crate | the owning crate still behaves as intended |
-| public command output or schema | compatibility, snapshots, and generated references still match |
-| DAG runtime or retained artifact behavior | runtime suites and retained evidence layouts still agree |
-| root docs or navigation | the handbook still builds and routes readers correctly |
-| root workflow, release, or contract behavior | repository-level gates still enforce the published boundary |
+The command names are convenient entrypoints, not permission to broaden a
+claim. In particular, `make test-all` means all Rust tests in this repository,
+not every repository gate.
 
-## Evidence Layers
+## Fast And Slow Classification
 
-Repository validation uses complementary layers rather than one universal
-command:
+The Rust fast lane excludes:
 
-| Layer | Question answered |
-| --- | --- |
-| crate unit and integration tests | does the owning package still behave correctly? |
-| contract and schema checks | did a retained or machine-readable interface drift? |
-| maintainer governance suites | do ownership, layout, and release policies still hold? |
-| documentation checks | are published claims, navigation, and generated references coherent? |
+- test names matching the configured `slow__` convention;
+- tests listed in `configs/rust/nextest-slow-roster.txt`;
+- ignored tests unless a complete lane explicitly enables them.
 
-A change may need several layers, but each selected layer must correspond to a
-real risk introduced by the change.
+The slow roster exists for expensive tests whose durable names should describe
+behavior rather than execution cost. A test belongs in the roster only when
+its runtime or environment cost makes it unsuitable for the default lane.
 
-## Useful Root Entry Points
+Do not move a failing test into the roster to make `make test` green. Fix the
+failure first, then classify cost independently.
 
-These root commands are the standard starting points when the change crosses a
-repository boundary:
+Python uses pytest markers. The default Python lane is `not nightly`;
+`make test-nightly-py` is the explicit Python nightly lane. It is not currently
+aggregated by `make test-slow` or `make test-all`.
+
+## Frozen Complete Rust Gate
+
+Use a frozen gate when the evidence must describe an immutable commit rather
+than the live checkout:
 
 ```bash
-make test
-make dag-test
-make docs-check
+PINNED_REF=<commit> make test-all-frozen
 ```
 
-They are entrypoints, not an excuse to skip ownership analysis. If the change
-is narrower, a focused crate or suite may be the better first proof.
+`TEST_ALL_FROZEN_REF` remains accepted for compatibility, but new operational
+records use `PINNED_REF`.
 
-## Validation By Change Type
+The launcher:
 
-### Crate-local implementation work
+1. resolves the ref to a full commit SHA;
+2. creates or reuses a clean detached checkout under
+   `artifacts/<sha>/frozen-repo/`;
+3. starts `make test-all` in the background;
+4. writes console, PID, metadata, and terminal status under
+   `artifacts/<sha>/background/`;
+5. publishes Rust test evidence under `artifacts/<sha>/rust/`.
 
-Start with the owning crate's tests when the change clearly stays inside one
-implementation boundary and does not alter a shared contract or public output.
+The launch message proves only that a process started. The result is known
+when the status file exists and the console contains the terminal nextest
+summary. A missing status file means running, interrupted, or orphaned; it
+does not mean passed.
 
-### Public output, schema, or snapshot work
+## Choose By Changed Surface
 
-Add the checks that prove visible behavior, machine-readable envelopes,
-generated references, or golden outputs still match the documented contract.
+| Changed surface | Minimum useful evidence |
+| --- | --- |
+| one Rust behavior | focused owning test, then `make test` if shared behavior can drift |
+| one Python behavior | focused pytest selection, then `make test` for native bridge risk |
+| slow scheduler, stress, or environment behavior | focused test plus `make test-slow` when roster peers share the risk |
+| ignored or complete Rust behavior | `make test-all`, or frozen execution for commit-level evidence |
+| public command or schema | owning contract tests plus generated-reference checks |
+| retained DAG run or artifact behavior | runtime, artifact, replay, and evidence contract tests that cross the changed join |
+| Markdown, MkDocs navigation, or documentation automation | `make docs-check` |
+| release packaging or publication | [Release Validation Suite](../../bijux-dev/operations/release-validation-suite.md) |
 
-### DAG runtime and retained artifact work
+`make dag-test` delegates to the required fast Rust release-profile lane. Use
+it when DAG-focused workflow convention calls for that name; it does not add a
+different test population.
 
-Expect cross-crate proof more often here. Runtime behavior, manifests, replay,
-and retained run directories can drift apart if only one layer is exercised.
+## Reading Results
 
-### Docs and navigation work
+A trustworthy test report records:
 
-When a public or maintainer-facing explanation changed, run the docs build or
-the narrower docs checks that prove the site still renders and routes cleanly.
+- the exact command and selection expression;
+- the source commit and whether the worktree contained relevant edits;
+- passed, failed, skipped, and slow counts from the terminal summary;
+- artifact or console path when the run is retained;
+- tests or platforms intentionally omitted.
 
-### Root automation or release work
+Nextest is configured to continue across failures and print a terminal summary.
+The wrapper preserves nextest's exit status after teeing the log. A summary is
+evidence about what ran, not a reason to ignore a nonzero result.
 
-Use the repository gates that prove workflow, release, and contract surfaces
-still behave honestly above any one crate.
+## Failure Discipline
 
-## What Good Evidence Looks Like
+When a lane fails:
 
-A strong validation set is:
+- read the first causal error and the terminal summary;
+- reproduce the smallest failing test without changing its semantics;
+- determine whether code, fixture, generated evidence, or the asserted
+  contract is wrong;
+- check adjacent contracts before changing shared behavior;
+- rerun the focused failure and the smallest lane that covers its boundary.
 
-- tied to the owning surface
-- broad enough to cover the changed meaning
-- narrow enough that a reviewer can understand why it was chosen
-- explicit about any skipped gate and why it was skipped
+Do not use retries to hide determinism defects, remove assertions to accept
+drift, or short-circuit a complete lane after the first failure. Infrastructure
+failures should remain distinguishable from test failures in the handoff.
 
-## Under-Validation Mistakes
+## Evidence Gaps
 
-- relying on unit tests after changing public command output
-- updating retained artifact behavior without checking golden or integration
-  evidence
-- changing docs claims without confirming the site still builds
-- touching release or workflow surfaces without root-level proof
+State gaps directly. Examples:
 
-## Over-Validation Mistakes
+- `make test` passed; slow Rust and Python nightly lanes were not run.
+- focused release contract tests passed; package dry-run publication was not
+  run.
+- `make docs-check` passed; no product code tests were required for the prose
+  change.
 
-- running the heaviest repository gate when a focused suite already proves the
-  change
-- repeating large root suites after a bounded prose-only clarification
-- using "I ran everything" as a substitute for understanding ownership
+This is stronger evidence than saying “all checks passed” when only one lane
+ran.
 
-## Working Rule
-
-Validation should prove the changed surface honestly and no broader than
-necessary.
-
-## Validation References
+## Related Guidance
 
 - [Review Expectations](review-expectations.md)
 - [Change Management](change-management.md)
-- [Compatibility and Schema](../governance/compatibility-and-schema.md)
+- [Repository Gates](../../bijux-dev/operations/repository-gates.md)
+- [Release Validation Suite](../../bijux-dev/operations/release-validation-suite.md)
