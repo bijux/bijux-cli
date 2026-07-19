@@ -51,5 +51,5 @@ flowchart TD
 ## Next Reads
 
 - [Configuration Surface](../interfaces/configuration-surface.md)
-- [Observability and Diagnostics](../operations/observability-and-diagnostics.md)
+- [Diagnostics Guide](../operations/diagnostics-guide.md)
 - [Known Limitations](../quality/known-limitations.md)

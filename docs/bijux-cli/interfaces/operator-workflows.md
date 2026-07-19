@@ -56,5 +56,5 @@ safe sequence gets an operator from uncertainty back to a verified state.
 ## Next Reads
 
 - [Common Workflows](../operations/common-workflows.md)
-- [Observability and Diagnostics](../operations/observability-and-diagnostics.md)
+- [Diagnostics Guide](../operations/diagnostics-guide.md)
 - [Review Checklist](../quality/review-checklist.md)

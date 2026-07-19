@@ -64,6 +64,6 @@ the smallest possible surface.
 
 ## Continue Reading
 
-- [Observability and Diagnostics](observability-and-diagnostics.md)
+- [Diagnostics Guide](diagnostics-guide.md)
 - [Risk Register](../quality/risk-register.md)
 - [Change Validation](../quality/change-validation.md)

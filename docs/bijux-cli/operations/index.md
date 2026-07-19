@@ -24,7 +24,7 @@ from a failure, understand diagnostics, or prepare a release.
 | work on the codebase locally | [Local Development](local-development.md) |
 | run normal operator flows | [Common Workflows](common-workflows.md) |
 | diagnose failures or odd runtime output | [Diagnostics Guide](diagnostics-guide.md) |
-| understand observability and telemetry surfaces | [Observability and Diagnostics](observability-and-diagnostics.md) |
+| understand diagnostics and telemetry surfaces | [Diagnostics Guide](diagnostics-guide.md) |
 | release the CLI or review versioning rules | [Release and Versioning](release-and-versioning.md) |
 | understand safety boundaries before deployment | [Security and Safety](security-and-safety.md) |
 
@@ -56,7 +56,6 @@ from a failure, understand diagnostics, or prepare a release.
 - [Local Development](local-development.md)
 - [Common Workflows](common-workflows.md)
 - [Diagnostics Guide](diagnostics-guide.md)
-- [Observability and Diagnostics](observability-and-diagnostics.md)
 - [Performance and Scaling](performance-and-scaling.md)
 - [Failure Recovery](failure-recovery.md)
 - [Migration Guide](migration-guide.md)

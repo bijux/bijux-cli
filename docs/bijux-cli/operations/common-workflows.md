@@ -66,6 +66,6 @@ shape, not optional ceremony.
 
 ## Continue Reading
 
-- [Observability and Diagnostics](observability-and-diagnostics.md)
+- [Diagnostics Guide](diagnostics-guide.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Review Checklist](../quality/review-checklist.md)
