@@ -152,6 +152,6 @@ strategy.
 
 - [Operator Workflows](operator-workflows.md)
 - [Configuration Surface](configuration-surface.md)
-- [Plugin Surface](plugin-surface.md)
+- [App Integration Guide](app-integration-guide.md)
 - [Entrypoints and Examples](entrypoints-and-examples.md)
 - [Compatibility Commitments](compatibility-commitments.md)
