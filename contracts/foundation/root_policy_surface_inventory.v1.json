@@ -2,11 +2,11 @@
   "schema_version": "foundation-root-policy-surface-inventory/v1",
   "policy_files": [
     {
-      "path": "contracts/foundation/backlog_issue_class_routing.v1.json",
-      "gates_behavior": "enforces backlog issue-class ownership and forbids uncategorized intake",
+      "path": "contracts/foundation/repository_work_routing.v1.json",
+      "gates_behavior": "enforces repository work-class ownership and forbids uncategorized intake",
       "owning_crate": "bijux-dev",
       "enforced_by": [
-        "crates/bijux-dev/tests/foundation_backlog_issue_routing_contracts.rs"
+        "crates/bijux-dev/tests/foundation_repository_work_routing_contracts.rs"
       ]
     },
     {

@@ -1,5 +1,5 @@
 {
-  "schema_version": "foundation-backlog-issue-class-routing/v1",
+  "schema_version": "foundation-repository-work-routing/v1",
   "issue_classes": [
     {
       "issue_class": "foundation-ownership-boundary",
@@ -18,12 +18,12 @@
       "evidence_location": "contracts/foundation/"
     },
     {
-      "issue_class": "foundation-backlog-governance",
+      "issue_class": "foundation-governance",
       "owning_crate": "bijux-dev",
       "allowed_workspace_deps": [
         "bijux-dev"
       ],
-      "evidence_location": "docs/bijux-core/foundation/"
+      "evidence_location": "docs/reports/governance/"
     },
     {
       "issue_class": "foundation-compatibility-lanes",
