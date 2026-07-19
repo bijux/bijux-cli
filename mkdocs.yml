@@ -22,6 +22,9 @@ watch:
 # Only curated handbook pages are published. Specifications and reports remain
 # governed repository inputs, but they are not reader-facing website pages.
 exclude_docs: |
+  /automation/
+  /badges.md
+  /overrides/
   /spec/
   /reports/
   /bijux-core/**
