@@ -4,68 +4,108 @@ audience: mixed
 type: architecture
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # System Overview
 
-The system architecture starts with responsibility and dependency direction,
-then narrows to crate-level implementation. This view explains the shared shape
-without collapsing distinct runtimes into one diagram.
+`bijux-core` is one release-governed Rust workspace with distinct runtime and
+proof boundaries. The repository structure is intended to make a behavior
+traceable from its public entrypoint to its owner, retained evidence, and
+release check.
 
-`bijux-core` is a single Rust workspace, but it is not a single runtime. It
-contains:
+## Ownership Map
 
-- the `bijux` command runtime
-- the `bijux-dag` graph and execution stack
-- the Python bridge that distributes the CLI runtime
-- the maintainer surfaces that validate, release, and audit the repository
+```mermaid
+flowchart LR
+    users["users and automation"] --> cli["bijux command"]
+    users --> dag["bijux-dag command"]
+    python["Python distribution"] --> cli
+    cli --> cli_owner["bijux-cli"]
+    dag --> dag_app["bijux-dag-cli / app"]
+    dag_app --> dag_runtime["runtime"]
+    dag_runtime --> dag_core["core"]
+    dag_runtime --> artifacts["artifacts"]
+    maint["bijux-dev"] -. verifies .-> cli_owner
+    maint -. verifies .-> dag_app
+    maint -. verifies .-> artifacts
+```
 
-## System Components
+Solid arrows are runtime or distribution relationships. Dotted arrows are
+maintainer observation and verification; they must not become product runtime
+dependencies.
 
-- `crates/bijux-cli` owns CLI runtime behavior
-- `crates/bijux-dag-core`, `crates/bijux-dag-artifacts`, `crates/bijux-dag-runtime`,
-  `crates/bijux-dag-app`, and `crates/bijux-dag-cli` own DAG execution,
-  replay, diff, and artifacts
-- `crates/bijux-cli-python` owns Python packaging and bridge integration
-- `crates/bijux-dev` owns maintainer-only diagnostics and governance workflows
+## Owned Surfaces
 
-## What Each Layer Is For
+| Surface | Owner | Stable responsibility | Does not own |
+| --- | --- | --- | --- |
+| `bijux` command | `bijux-cli` | routing, command execution, envelopes, state, diagnostics, and plugin lifecycle | DAG execution or repository governance |
+| Python `bijux-cli` distribution | `bijux-cli-python` | packaging, bridge conversion, launcher behavior, and mounted Python app integration | independent CLI or DAG semantics |
+| graph semantics | `bijux-dag-core` | graph types, validation, identity, planning inputs, and domain errors | process execution or persistence |
+| run evidence | `bijux-dag-artifacts` | run directories, manifests, integrity, import/export, and artifact lookup | scheduling decisions |
+| execution | `bijux-dag-runtime` | planning, scheduling, backends, replay inputs, and runtime state transitions | command presentation |
+| DAG orchestration | `bijux-dag-app` and `bijux-dag-cli` | route composition, response envelopes, and executable entrypoint | core graph semantics |
+| repository proof | `bijux-dev` | policy checks, generated evidence, release verification, and diagnostics | user-facing runtime behavior |
 
-| Layer | Main job |
-| --- | --- |
-| CLI runtime | parse commands, route work, and return stable operator-facing output |
-| DAG stack | define graphs, execute work, retain evidence, and compare runs |
-| Python bridge | ship the CLI runtime through Python packaging without inventing a different product |
-| maintainer surface | prove release readiness, repository integrity, and documentation alignment |
+The authoritative public/private classification and publish order live in
+`contracts/foundation/workspace_package_boundary.v1.json`, not in this table.
 
-## Architectural Boundary
+## Change Flow
 
-- runtime behavior belongs to CLI and DAG program crates
-- repository policy and release evidence belong to maintainer workflows
-- shared workspace policy belongs to root manifests, configs, and make targets
+A public behavior change should move through the repository in this order:
 
-## Non-Goals
+1. Change the behavior in its owning product crate.
+2. Update schemas, prose specifications, snapshots, or fixtures that govern
+   the affected contract.
+3. Run the focused owning tests and the cross-surface contract tests.
+4. Regenerate checked-in references or evidence from their owning commands.
+5. Update the relevant handbook and package README.
+6. Include the affected product in release verification.
 
-- this page does not define command-by-command CLI behavior
-- this page does not redefine DAG runtime semantics already owned by DAG docs
-- this page does not replace executable contract and test evidence
+This is a consistency rule, not a requirement to modify every layer for every
+change. A private implementation change stops at the layer whose externally
+observable behavior remains unchanged.
 
-## Boundary Smells
+## Boundary Decisions
 
-- adding maintainer-only logic into user runtime crates
-- changing product behavior through repository scripts without crate-level review
-- documenting cross-program policy without linking owning code anchors
+### Runtime code needs repository information
 
-## Code Anchors
+Prefer a stable contract, generated asset, or explicit input. Do not import
+`bijux-dev` to obtain repository state from a product crate.
 
-- `Cargo.toml`
-- `crates/bijux-cli/src/lib.rs`
-- `crates/bijux-dag-app/src/lib.rs`
-- `crates/bijux-dev/src/lib.rs`
+### Maintainer tooling needs product information
 
-## Architecture References
+Consume public product queries, schemas, or read-only contracts. Maintainer
+code may inspect product facts; it must not become the alternate implementation
+of those facts.
 
-- [Workspace Topology](workspace-topology.md)
+### Two products need similar behavior
+
+First determine whether the behavior is truly one contract. Shared vocabulary
+or serialization may belong in a narrow authority. Similar command names alone
+do not justify coupling CLI and DAG runtime implementations.
+
+### A generated report disagrees with code
+
+Treat the report as stale until the producer and source contract are checked.
+Generated evidence records an observation; it cannot override implementation
+or schema authority.
+
+## Where To Verify The Model
+
+- `Cargo.toml` defines workspace membership and shared package policy.
+- `contracts/foundation/workspace_package_boundary.v1.json` classifies package
+  ownership and publication.
+- `crates/bijux-dev/tests/foundation_workspace_package_boundary_contracts.rs`
+  checks the classification against Cargo metadata.
+- `crates/bijux-dev/tests/docs_source_reference_contracts.rs` checks source
+  references in governed documentation.
+- `mkdocs.yml` defines the curated public handbook rather than publishing every
+  internal contract and report.
+
+## Continue Reading
+
 - [Dependency Direction](dependency-direction.md)
-- [Repository Scope](../foundation/repository-scope.md)
+- [Artifact and Contract Flow](artifact-and-contract-flow.md)
+- [Documentation System](../foundation/documentation-system.md)
+- [Architecture Risks](architecture-risks.md)

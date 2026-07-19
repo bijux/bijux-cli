@@ -4,56 +4,61 @@ audience: mixed
 type: architecture
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # Architecture Risks
 
-Architecture risks track where structure drift can cause expensive debugging,
-compatibility loss, or unreliable release outcomes.
+This register covers repository-level failure modes that can invalidate more
+than one package or release surface. Product-specific operational risks remain
+in the CLI and DAG risk registers.
 
-## Risk Relationships
+## Active Risks
 
-```mermaid
-quadrantChart
-    title Architecture Risk Map
-    x-axis Low impact --> High impact
-    y-axis Easy to detect --> Hard to detect
-    quadrant-1 Prioritize mitigation
-    quadrant-2 Watch closely
-    quadrant-3 Accept or monitor
-    quadrant-4 Improve detection
-    hidden coupling: [0.79, 0.76]
-    state drift: [0.68, 0.72]
-    boundary leakage: [0.73, 0.45]
-    version mismatch: [0.58, 0.64]
-    extension breakage: [0.61, 0.55]
-    recovery gaps: [0.82, 0.35]
-```
+| Risk | Failure mode | Detection | Release consequence |
+| --- | --- | --- | --- |
+| package-boundary drift | a public crate gains a runtime or build dependency on a private crate, or publish order becomes invalid | `foundation_workspace_package_boundary_contracts` compares the governed boundary with Cargo metadata | block crate publication until ownership and dependency direction agree |
+| product/maintainer coupling | user runtime code imports repository proof logic or maintainer commands become hidden product entrypoints | source-layout guardrails and package-boundary tests | block the affected runtime release |
+| contract divergence | code, schema, generated reference, and handbook describe different behavior | owning contract tests, generated-reference checks, and `make docs-check` | block publication of every surface carrying the inconsistent behavior |
+| release identity split | crates, Python package, containers, docs, or evidence are produced from different source identities | release plans, tag checks, package metadata checks, and retained release evidence | discard or rebuild artifacts; never publish a mixed release set |
+| retained-evidence ambiguity | reports or artifacts omit provenance, integrity state, or the contract used to interpret them | report producers, artifact integrity checks, and evidence governance contracts | evidence cannot support a release decision |
+| configuration drift | local, CI, and release invocations resolve different effective inputs without making the difference visible | configuration precedence contracts and reproducible gate commands | investigate and align inputs before accepting a green result |
 
-## Key Risk Areas
+## Acceptance Standard
 
-- runtime and maintainer boundaries becoming coupled
-- command behavior changing faster than contracts and docs
-- schema evolution without migration or compatibility notes
-- multiple orchestration paths diverging from shared gates
+A risk is not mitigated because a handbook says that a control exists.
+Mitigation requires all of the following:
 
-## Risk Controls
+- one owner can change the behavior and the control;
+- an executable check fails when the invariant is violated;
+- the failure names the affected surface rather than reporting a generic gate
+  error;
+- release guidance states whether the failure blocks publication;
+- any accepted exception has a bounded scope, evidence, and removal condition.
 
-- ownership checks in maintainer suites
-- contract tests for replay/diff and output semantics
-- docs-check and link validation on every release candidate
-- explicit change and decision records for compatibility-sensitive updates
+## Review Triggers
 
-## Code Anchors
+Review this register when a change:
 
-- `crates/bijux-dev/tests/source_layout_guardrails.rs`
-- `crates/bijux-dag-app/tests/replay_diff_hardening_contract.rs`
-- `makes/docs.mk`
-- `mkdocs.yml`
+- adds a workspace crate or changes publication metadata;
+- introduces a dependency across product or maintainer families;
+- changes a public schema, output envelope, or generated reference;
+- adds a release channel or changes artifact provenance;
+- creates a new checked-in report or evidence class;
+- changes configuration precedence used by CI or release automation.
 
-## Risk Governance
+## Evidence Boundaries
 
+The risk register identifies what must be detected; it is not proof that the
+controls passed. Use the current test output and generated evidence for the
+reviewed commit. A report from another revision, a focused test presented as a
+full gate, or a successful background launch without its final status is not
+release evidence.
+
+## Related Authorities
+
+- [Dependency Direction](dependency-direction.md)
+- [Artifact and Contract Flow](artifact-and-contract-flow.md)
 - [Risk and Exceptions](../governance/risk-and-exceptions.md)
-- [Change Management](../operations/change-management.md)
-- [Release and Versioning](../operations/release-and-versioning.md)
+- [Testing and Validation](../operations/testing-and-validation.md)
+- [Documentation System](../foundation/documentation-system.md)
