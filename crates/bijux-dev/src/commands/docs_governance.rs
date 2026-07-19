@@ -861,16 +861,22 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
         let content = fs::read_to_string(root.join(rel_path)).map_err(|err| err.to_string())?;
         let lines = content.lines().collect::<Vec<_>>();
         let head = lines.iter().take(60).map(|line| line.to_ascii_lowercase()).collect::<Vec<_>>();
+        let metadata_required = required_exact.contains(rel_path)
+            || policy.metadata_required_prefixes.iter().any(|prefix| rel_path.starts_with(prefix));
         let status = head
             .iter()
             .find(|line| line.starts_with("status:"))
             .map(|line| line.trim_start_matches("status:").trim().to_ascii_lowercase())
             .filter(|status| valid_documentation_status(status))
-            .unwrap_or_else(|| "missing_or_invalid".to_string());
+            .unwrap_or_else(|| {
+                if metadata_required {
+                    "missing_or_invalid".to_string()
+                } else {
+                    "metadata_not_required".to_string()
+                }
+            });
         *status_counts.entry(status).or_insert(0) += 1;
 
-        let metadata_required = required_exact.contains(rel_path)
-            || policy.metadata_required_prefixes.iter().any(|prefix| rel_path.starts_with(prefix));
         if metadata_required {
             if !head.iter().any(|line| line.starts_with("audience:")) {
                 metadata_gaps.push(format!("{rel_path}: missing `audience`"));
@@ -919,7 +925,15 @@ pub(super) fn run_docs_inventory_generate() -> Result<(), String> {
         inventory_lines.push(format!("- `{section}`: {count}"));
     }
     inventory_lines.push(String::new());
-    inventory_lines.push("## Counts by status".to_string());
+    inventory_lines.push("## Counts by declared status".to_string());
+    inventory_lines.push(String::new());
+    inventory_lines.push(
+        "Executable specifications and generated reports outside the metadata-governed".to_string(),
+    );
+    inventory_lines.push(
+        "handbook roots are counted as `metadata_not_required` when they do not declare a status."
+            .to_string(),
+    );
     inventory_lines.push(String::new());
     for (status, count) in status_counts {
         inventory_lines.push(format!("- `{status}`: {count}"));
