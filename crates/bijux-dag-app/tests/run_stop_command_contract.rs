@@ -5,23 +5,15 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
+mod support;
+
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().expect("workspace root")
 }
 
 fn dag_command(root: &Path) -> Command {
-    let cargo_bin = std::env::var("CARGO")
-        .ok()
-        .or_else(|| option_env!("CARGO").map(ToOwned::to_owned))
-        .unwrap_or_else(|| "cargo".to_string());
-    let mut command = Command::new(cargo_bin);
-    command.current_dir(root).env("CARGO_TARGET_DIR", root.join("artifacts/target")).args([
-        "run",
-        "--quiet",
-        "-p",
-        "bijux-dag-cli",
-        "--",
-    ]);
+    let mut command = Command::new(support::resolve_bijux_dag_binary(root));
+    command.current_dir(root);
     command
 }
 

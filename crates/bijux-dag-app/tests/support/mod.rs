@@ -398,7 +398,7 @@ impl DagFixture {
     }
 }
 
-fn resolve_bijux_dag_binary(cwd: &Path) -> PathBuf {
+pub fn resolve_bijux_dag_binary(cwd: &Path) -> PathBuf {
     static BIN_PATH: OnceLock<PathBuf> = OnceLock::new();
     BIN_PATH
         .get_or_init(|| {
