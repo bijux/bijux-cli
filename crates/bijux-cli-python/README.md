@@ -12,72 +12,73 @@
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli-python docs](https://img.shields.io/badge/docs-bijux--cli--python-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli-python/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/) [![bijux-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli) [![bijux-dag-artifacts docs.rs](https://img.shields.io/badge/rust--docs-artifacts-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-artifacts) [![bijux-dag-core docs.rs](https://img.shields.io/badge/rust--docs-core-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-core) [![bijux-dag-runtime docs.rs](https://img.shields.io/badge/rust--docs-runtime-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-runtime) [![bijux-dag-app docs.rs](https://img.shields.io/badge/rust--docs-app-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-app) [![bijux-dag-cli docs.rs](https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-cli)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-cli-python` is the Python distribution for installing and launching the
-`bijux` command runtime, and for delegating DAG workflow calls to
-`bijux-dag`.
+`bijux-cli-python` is the Python distribution for installing and launching the Bijux
+`bijux` command through PyPI. It provides the Python launcher, native bridge,
+fallback facade, mounted-app SDK, and a process client for an independently
+installed `bijux-dag` executable.
 
-It is the PyPI boundary for the public `bijux` product. The Python package
-does not redefine runtime behavior; it packages, launches, and validates the
-same command contracts owned by the Rust `bijux-cli` and `bijux-dag-cli`
-crates.
+Installing this wheel does **not** install the `bijux-dag` binary. The DAG
+helpers are clients of that binary; they are not an in-process workflow engine
+and do not define independent DAG semantics.
 
-## Release Status
-
-- public PyPI distribution on the `v0.4.0` release line
-- companion surface to the Rust `bijux-cli` crate
-- not a separate command product from `bijux`
-
-## What This Package Owns
-
-- the `bijux` console entrypoint for Python installs
-- the optional native Rust bridge module (`bijux_cli_py._native`)
-- a Python fallback facade for compatibility and portability checks
-- `bijux_cli_py.app_sdk` for mounted Python apps
-- `bijux_cli_py.dag_sdk` for Python callers that need to load graphs, validate
-  them, produce plans, run workflows, inspect run state, and query artifact
-  registries through `bijux-dag`
-
-## What It Does Not Own
-
-- independent runtime semantics
-- independent DAG semantics
-- maintainer control-plane commands
-- repository-level governance and release policy
-
-## Source Layout
-
-- `python/bijux_cli_py`: Python entrypoints, packaging helpers, and mounted-app
-  SDK
-- Rust bridge crate: `crates/bijux-cli-python`
-- runtime implementation: `crates/bijux-cli`
-- DAG runtime implementation: `crates/bijux-dag-cli`
-
-## Reach For Another Surface When
-
-- you need the runtime command semantics themselves: `bijux-cli`
-- you need mounted app authoring guidance and contracts:
-  `crates/bijux-cli-python/docs/MOUNTED_APPS.md`
-- you need repository governance or release automation: `bijux-dev`
-
-## Quick Usage
+## Install And Verify
 
 ```bash
 python -m pip install bijux-cli
 bijux --help
+bijux doctor
 python -m bijux_cli_py --help
 ```
 
-## DAG Workflow Helpers
+The package is on the `v0.4.0` release line and requires Python 3.11 or newer.
+The `bijux` console entrypoint and `python -m bijux_cli_py` resolve the same
+runtime contract.
 
-`bijux_cli_py.dag_sdk` is a typed process client for `bijux-dag --json`; it is
-not an in-process DAG engine.
+## Package Boundary
+
+| Surface | This package owns | Upstream authority |
+| --- | --- | --- |
+| Python installation | wheel and source-distribution metadata, `bijux` entrypoint, platform compatibility diagnostics | `pyproject.toml` and packaging tests |
+| native bridge | Python/Rust conversion and invocation boundary | `bijux-cli` runtime semantics |
+| fallback facade | compatible Python access when the native bridge is unavailable | the same public `bijux` command contract |
+| mounted apps | descriptor construction and root-compatible result envelopes | `bijux` discovery and routing policy |
+| DAG helpers | argument construction, executable resolution, timeout, and JSON-envelope decoding | installed `bijux-dag` command |
+
+This package does not own maintainer commands, repository governance, a
+Python-only command schema, or a Python implementation of the DAG runtime.
+
+## Runtime Resolution
+
+The Python launcher and DAG client resolve different executables:
+
+| Client | Required executable | Override |
+| --- | --- | --- |
+| `bijux` launcher/facade | packaged or discoverable `bijux` runtime | runtime resolution owned by `bijux_cli_py._runtime` |
+| `bijux_cli_py.dag_sdk` | `bijux-dag` on `PATH` | `BIJUX_DAG_BIN` |
+
+Repository checkouts may resolve workspace binaries for development. Installed
+applications should treat `PATH` or the explicit override as the deployment
+contract, not depend on checkout discovery.
+
+`BIJUX_DAG_PY_SUBPROCESS_TIMEOUT` controls the DAG process timeout. The selected
+binary defines available commands and release behavior.
+
+## DAG Workflow Client
+
+Install the DAG executable separately before using `dag_sdk`:
+
+```bash
+cargo install bijux-dag-cli
+bijux-dag version
+```
 
 | Requirement | Behavior |
 | --- | --- |
 | executable | `bijux-dag` must be on `PATH`, or `BIJUX_DAG_BIN` must name the executable |
-| compatibility | the selected binary defines command availability and release behavior |
+| transport | every operation invokes `bijux-dag --json` as a subprocess |
 | output | helpers preserve the CLI JSON envelope rather than inventing a Python-only schema |
-| failures | launch, command, and envelope failures remain distinguishable |
+| temporary input | dictionary graph inputs are written to a temporary JSON file and removed after the command |
+| failures | binary resolution, timeout, non-zero command status, and malformed JSON remain distinguishable |
 
 ```python
 from pathlib import Path
@@ -113,10 +114,39 @@ manifest = build_python_mount_manifest(
 The [mounted app guide](./docs/MOUNTED_APPS.md) owns callable shape,
 compatibility checks, manifest placement, stream discipline, and packaging.
 
-## Related Surfaces
+## Source Map
+
+| Path | Responsibility |
+| --- | --- |
+| `python/bijux_cli_py/cli.py` | Python console entrypoint |
+| `python/bijux_cli_py/_facade.py` | public facade and native/fallback selection |
+| `python/bijux_cli_py/_runtime.py` | executable discovery, subprocess execution, timeout, and error classification |
+| `python/bijux_cli_py/app_sdk.py` | mounted-app descriptors and result envelopes |
+| `python/bijux_cli_py/dag_sdk.py` | typed `bijux-dag --json` process client |
+| `src/lib.rs` | PyO3 native bridge |
+| `tests/python/` | Python packaging, parity, app SDK, and DAG transport contracts |
+
+The runtime implementations live outside this crate:
+
+- `crates/bijux-cli` owns `bijux` command semantics.
+- `crates/bijux-dag-runtime` owns DAG execution behavior.
+- `crates/bijux-dag-cli` owns the thin `bijux-dag` executable boundary.
+
+## Failure Decisions
+
+- Run `bijux doctor` when the installed `bijux` runtime cannot be resolved.
+- Use `dag_post_install_diagnostics()` before offering DAG features from a
+  Python application.
+- Treat an unavailable `bijux-dag` executable as a deployment error.
+- Treat invalid JSON from `bijux-dag` as a runtime contract failure, not a
+  successful empty result.
+- Preserve the original structured command failure for diagnosis.
+
+## References
 
 - Runtime crate: [`crates/bijux-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli)
-- DAG runtime crate: [`crates/bijux-dag-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli)
+- DAG runtime crate: [`crates/bijux-dag-runtime`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-runtime)
+- DAG executable crate: [`crates/bijux-dag-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli)
 - Python bridge crate: [`crates/bijux-cli-python`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli-python)
 - Mounted app guide: [`crates/bijux-cli-python/docs/MOUNTED_APPS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/MOUNTED_APPS.md)
 - Package changelog: [`crates/bijux-cli-python/CHANGELOG.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/CHANGELOG.md)
