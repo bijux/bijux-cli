@@ -135,32 +135,6 @@ extra:
     repository: bijux-core
     nav_mode: default
     theme_key: bijux:theme
-    hub_links:
-      - key: bijux
-        label: Bijux
-        url: https://bijux.io/
-      - key: bijux-core
-        label: Core
-        url: https://bijux.io/bijux-core/
-      - key: bijux-proteomics
-        label: Proteomics
-        url: https://bijux.io/bijux-proteomics/
-      - key: bijux-pollenomics
-        label: Pollenomics
-        url: https://bijux.io/bijux-pollenomics/
-      - key: bijux-phylogenetics
-        label: Phylogenetics
-        url: https://bijux.io/bijux-phylogenetics/
-      - key: bijux-canon
-        label: Canon
-        url: https://bijux.io/bijux-canon/
-      - key: bijux-atlas
-        label: Atlas
-        url: https://bijux.io/bijux-atlas/
-      - key: bijux-masterclass
-        label: Masterclass
-        url: https://bijux.io/bijux-masterclass/
-
 nav:
   - Home: index.md
   - Repository Handbook:
