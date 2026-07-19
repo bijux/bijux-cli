@@ -23,11 +23,11 @@ paths.
 | Surface | Authority | What it decides |
 | --- | --- | --- |
 | Rust data models | `bijux-dag-artifacts/src/storage/models.rs` | typed manifest, trace, index, and lifecycle meaning |
-| JSON schemas | `configs/dag/schema/*.schema.json` | accepted serialized shape |
+| JSON schemas | `configs/dag/schema/` | accepted serialized shapes grouped by owned surface |
 | run schema index | `run.schema.json` | schema versions and required files for one run |
 | retained records | manifest, graph snapshot, traces, indexes, provenance | identity, status, dependencies, and produced artifacts |
 | retained payloads | node input and output files | bytes consumed or produced |
-| lifecycle records | cache proofs, lineage, retention, promotion ledgers | reuse and movement decisions |
+| lifecycle records | cache-entry manifests, cache proofs, lineage, retention, promotion ledgers | reuse and movement decisions |
 | summaries and terminal envelopes | command output and derived reports | orientation only |
 
 When surfaces disagree, do not select the most convenient record. Preserve the
