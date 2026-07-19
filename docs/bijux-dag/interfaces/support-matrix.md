@@ -4,7 +4,7 @@ audience: mixed
 type: interface
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-10
+last_reviewed: 2026-07-19
 ---
 
 # Support Matrix
@@ -25,10 +25,14 @@ future direction, not a supported-surface claim.
 | Surface | Status | Access path | Notes |
 | --- | --- | --- | --- |
 | `validate`, `plan`, `run`, `replay`, `verify`, `doctor`, `version` | stable | visible CLI | primary operator surface |
-| `commands` | stable | visible CLI | route inventory for the stable surface plus deliberate `--lane experimental`, `--lane simulated`, and `--lane internal` discovery |
+| `commands` | stable | visible CLI | route inventory for stable and non-stable command discovery |
 | `capabilities` | internal | `BIJUX_DAG_ENABLE_INTERNAL=1` | maintainer-only support probe outside the public operator lane |
 | `prove`, `export`, `import`, `migrate inspect` | experimental | explicit-path routes | supported with narrower expectations |
 | control-plane, governance, incident, lab, federation, enterprise | simulated or internal | `commands --lane simulated` plus opt-in env for execution | repository proof and modeling surfaces |
+
+`commands` defaults to the stable lane. The deliberate `--lane experimental`,
+`--lane simulated`, and `--lane internal` views expose classified discovery;
+they do not promote those commands into the stable operator promise.
 
 ## Execution Backends
 

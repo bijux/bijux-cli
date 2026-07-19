@@ -4,7 +4,7 @@ audience: mixed
 type: interface
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-10
+last_reviewed: 2026-07-19
 ---
 
 # Compatibility Matrix
@@ -31,10 +31,10 @@ semantics will be repaired automatically.
 
 | Surface | Current identifiers | Accepted previous identifiers | Explicitly refused identifiers | Executable evidence |
 | --- | --- | --- | --- | --- |
-| graph specification | `bijux-dag/v0.1` | `v1`, `v0.1`, `0.1` | `v9`, `bijux-dag/v9` | `evidence/compat/graph_schema/` |
+| graph schema and specification | `bijux-dag/v0.1` | `v1`, `v0.1`, `0.1` | `v9`, `bijux-dag/v9` | `evidence/compat/graph_schema/` |
 | run manifest | `run-manifest/v0.1` | none | `run-manifest/v0`, `run-manifest/v2` | `evidence/compat/run_dir/` |
-| artifact index | `run-dir-schema/v0.1` | none | `run-dir-schema/v0`, `run-dir-schema/v2` | `evidence/compat/run_dir/` |
-| replay bundles | `export-bundle/v0.1`, `proof-bundle/v0.1` | none | corresponding `v0` and `v2` bundle identifiers | `evidence/compat/export_bundle/` |
+| run-dir format and artifact index | `run-dir-schema/v0.1` | none | `run-dir-schema/v0`, `run-dir-schema/v2` | `evidence/compat/run_dir/` |
+| export bundle and proof bundle | `export-bundle/v0.1`, `proof-bundle/v0.1` | none | corresponding `v0` and `v2` bundle identifiers | `evidence/compat/export_bundle/` |
 
 The graph spellings in the accepted column are aliases for the same retained
 graph contract, not four independent schema generations. Run manifests,
