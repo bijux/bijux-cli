@@ -4,6 +4,9 @@ This document is the operational entrypoint for repository contributors. It
 lists the commands, review rules, and evidence expectations enforced by the
 current tree.
 
+When this checkout is part of a multi-repository Bijux workspace, read the
+workspace-root `AGENTS.md` before contributing.
+
 ## Prerequisites
 
 - Python 3.11 or newer
@@ -146,6 +149,42 @@ When describing release posture, use the latest real git tag or published
 artifact as the release source of truth instead of the bumped workspace manifest
 line by itself.
 
+## Documentation Structure
+
+Each documentation surface has one job:
+
+| Surface | Authority |
+| --- | --- |
+| root `README.md` | repository products, installation, package families, development entrypoints, and documentation routing |
+| crate `README.md` | package purpose, public boundary, use, and crate-local documentation index |
+| `docs/bijux-*` | public handbooks rendered by MkDocs |
+| `crates/*/docs/` | internal package architecture, contracts, development, operations, and verification |
+| `docs/spec/` | canonical or generated cross-package technical contracts |
+| `docs/reports/` | checked-in reproducible observations with named producers |
+
+Public handbook roots contain only `index.md` and named directories. Place a
+page under the directory that owns its subject rather than accumulating loose
+root pages. Crate-local documentation stays flat and contains no more than ten
+Markdown pages per crate; a new page must own a distinct package concern that
+cannot be explained clearly in an existing page.
+
+Use Mermaid when a relationship, state transition, dependency direction, or
+execution sequence is clearer as a diagram. Introduce the question the diagram
+answers and explain the important boundary afterward. Do not add decorative
+flowcharts that merely repeat a nearby list.
+
+For documentation changes, run:
+
+```bash
+make docs-governance-lint
+cargo test --locked -p bijux-dev --test docs_source_reference_contracts
+make docs-check
+```
+
+`make docs-check` is the publication gate. If a managed standards mismatch
+blocks it, report that blocker and repair the synchronized source through its
+owner; do not edit generated shared content downstream to manufacture a pass.
+
 ## Evidence Rules
 
 Before merging a behavior claim about the runtime, make sure at least one of
@@ -176,4 +215,8 @@ Examples:
 
 - `fix(cli): normalize --version behavior`
 - `docs(changelog): clarify unreleased notes`
-- `refactor(runtime): replace placeholder command handlers`
+- `refactor(runtime): isolate scheduler policy from backend adapters`
+
+Scopes and subjects describe durable ownership and intent. Do not use
+sequence labels, delivery-stage names, placeholder terminology, or generic
+subjects that only make sense in the context of one work session.
