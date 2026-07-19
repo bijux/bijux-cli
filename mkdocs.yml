@@ -240,7 +240,7 @@ nav:
           - Cache Behavior: bijux-dag/operations/cache-behavior-workflow.md
           - Evidence Workflow: bijux-dag/operations/evidence-backed-bulletin-workflow.md
           - Container Workflow: bijux-dag/operations/container-packaging-workflow.md
-          - Security And Isolation: bijux-dag/operations/security-isolation-truth.md
+          - Execution Security And Isolation: bijux-dag/operations/security-isolation-truth.md
           - Failure Recovery: bijux-dag/operations/failure-recovery.md
           - Release Notes: bijux-dag/operations/v0-4-0-release-notes.md
       - Quality:

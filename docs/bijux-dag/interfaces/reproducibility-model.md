@@ -283,7 +283,7 @@ Current replay limitations are:
   silently claiming equivalence
 
 For the security boundary around replay execution, use
-[Security And Isolation Truth](../operations/security-isolation-truth.md).
+[Execution Security And Isolation](../operations/security-isolation-truth.md).
 For the proof boundary itself, use
 [`docs/spec/REPLAY_CONTRACT.md`](../../spec/REPLAY_CONTRACT.md).
 

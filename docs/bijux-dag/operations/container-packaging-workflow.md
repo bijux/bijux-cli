@@ -124,4 +124,4 @@ identity rather than acting as a decorative graph marker.
 - [Common Workflows](common-workflows.md)
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Deployment Boundaries](deployment-boundaries.md)
-- [Security and Safety](security-and-safety.md)
+- [Execution Security And Isolation](security-isolation-truth.md)

@@ -98,7 +98,7 @@ The [Release Boundary](../foundation/release-boundary.md) explains which
 commands are stable, experimental, simulated, internal, or unreleased. The
 machine-readable authority is
 `contracts/foundation/dag_release_truth_table.v1.json`. Read
-[Security And Isolation Truth](security-isolation-truth.md) before treating a
+[Execution Security And Isolation](security-isolation-truth.md) before treating a
 policy flag or execution backend as a host sandbox.
 
 ## Inspect The Graph Before Execution

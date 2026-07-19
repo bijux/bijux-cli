@@ -53,8 +53,6 @@ fn security_truth_reference_covers_current_runtime_boundaries() {
 fn operations_docs_route_security_questions_to_truth_reference() {
     for path in [
         "docs/bijux-dag/operations/index.md",
-        "docs/bijux-dag/operations/security-and-safety.md",
-        "docs/bijux-dag/operations/trust-boundaries.md",
         "docs/bijux-dag/operations/deployment-boundaries.md",
         "docs/bijux-dag/operations/first-run-tutorial.md",
         "docs/bijux-dag/index.md",
@@ -63,7 +61,7 @@ fn operations_docs_route_security_questions_to_truth_reference() {
         let content = read_repo_file(path);
         assert!(
             content.contains("security-isolation-truth.md")
-                || content.contains("Security And Isolation Truth"),
+                || content.contains("Execution Security And Isolation"),
             "{path} must route security boundary questions to the truth reference"
         );
     }

@@ -104,7 +104,7 @@ For the public-versus-private crate boundary behind that split, use
   deliberate lane inventory.
 - If the next question sounds like a security claim rather than a workflow
   claim, route it to
-  [Security And Isolation Truth](operations/security-isolation-truth.md)
+  [Execution Security And Isolation](operations/security-isolation-truth.md)
   before treating a flag or backend as an enforced boundary.
 
 ## Good First Reads

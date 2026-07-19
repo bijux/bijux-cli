@@ -126,5 +126,5 @@ flowchart LR
 ## Next Reads
 
 - [Known Limitations](known-limitations.md)
-- [Security and Safety](../operations/security-and-safety.md)
+- [Execution Security And Isolation](../operations/security-isolation-truth.md)
 - [Release and Versioning](../operations/release-and-versioning.md)

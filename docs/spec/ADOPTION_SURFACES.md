@@ -25,7 +25,7 @@ for `v0.4.0`.
 - CI path: `docs/bijux-dag/operations/ci-integration.md`
 - first-run tutorial: `docs/bijux-dag/operations/first-run-tutorial.md`
 - support framing: `docs/bijux-dag/interfaces/support-matrix.md`
-- trust boundary: `docs/bijux-dag/operations/trust-boundaries.md`
+- trust boundary: `docs/bijux-dag/operations/security-isolation-truth.md`
 - release verification: `docs/spec/RELEASE_BINARY_VERIFICATION.md`
 - starter fixture: `evidence/dag/authoring/examples/minimal_consumer.dag.json`
 - testkit fixture README:

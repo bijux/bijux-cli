@@ -53,7 +53,6 @@ predictable recovery under change.
 ## Boundary and Governance Pages
 
 - [Deployment Boundaries](deployment-boundaries.md)
-- [Trust Boundaries](trust-boundaries.md)
 - [v0.4.0 Release Notes](v0-4-0-release-notes.md)
 - [Branching Bulletin Workflow](branching-bulletin-workflow.md)
 - [CI Integration Guide](ci-integration.md)
@@ -65,11 +64,9 @@ predictable recovery under change.
 - [File Processing Workflow](file-processing-workflow.md)
 - [Historical Catalog Backfill Workflow](historical-catalog-backfill-workflow.md)
 - [Scheduled Catalog Refresh Workflow](scheduled-catalog-refresh-workflow.md)
-- [Security And Isolation Truth](security-isolation-truth.md)
-- [Trust Boundaries Reference](trust-boundaries.md)
+- [Execution Security And Isolation](security-isolation-truth.md)
 - [Performance and Scaling](performance-and-scaling.md)
 - [Release and Versioning](release-and-versioning.md)
-- [Security and Safety](security-and-safety.md)
 
 ## Cross References
 

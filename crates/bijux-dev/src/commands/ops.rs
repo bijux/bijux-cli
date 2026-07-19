@@ -3750,7 +3750,7 @@ pub(super) fn run_adoption_surfaces_guard() -> Result<(), String> {
         "docs/bijux-dag/operations/first-run-tutorial.md",
         "docs/bijux-dag/interfaces/support-matrix.md",
         "docs/spec/RELEASE_BINARY_VERIFICATION.md",
-        "docs/bijux-dag/operations/trust-boundaries.md",
+        "docs/bijux-dag/operations/security-isolation-truth.md",
         "evidence/authoring/examples/minimal_consumer.dag.json",
         "crates/bijux-dag-testkit/fixtures/minimal_consumer/README.md",
     ];

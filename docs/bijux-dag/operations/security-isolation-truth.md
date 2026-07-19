@@ -1,5 +1,5 @@
 ---
-title: Security And Isolation Truth
+title: Execution Security And Isolation
 audience: operators
 type: reference
 status: canonical
@@ -7,7 +7,7 @@ owner: bijux-dag-docs
 last_reviewed: 2026-07-08
 ---
 
-# Security And Isolation Truth
+# Execution Security And Isolation
 
 This page states the actual execution-boundary guarantees for `bijux-dag`
 `v0.4.0`.
@@ -20,6 +20,19 @@ protected at all?
 The release posture is intentionally local-first and honest. `bijux-dag` is a
 serious local DAG runtime, but it is not a general-purpose host sandbox, VM
 boundary, network firewall, or clock virtualization layer.
+
+## Operator Decision
+
+Use the shell backend only when the node command and host environment are
+inside the same trust boundary. Use a supported container engine when the
+workflow needs mount shaping or engine-enforced no-network mode. Neither
+backend turns untrusted code into safe code, and replay `--sandbox` protects
+the source run from writes rather than isolating the replayed process.
+
+Before execution, `runtime isolation`, `run --preflight-only`, and
+`replay --dry-run` expose whether a requested control is a declared-effect
+gate, environment shaping, or a container-runtime flag. Treat a control as
+enforced only when this page and the command evidence both say it is enforced.
 
 ## Truth table
 
@@ -195,6 +208,32 @@ not about complete host sandboxing.
 - host writes outside governed helper paths are not prevented by a kernel-level
   sandbox
 
+## Artifact And Failure Integrity
+
+Execution isolation is only one part of the safety boundary. Retained evidence
+must also remain attributable and verifiable:
+
+- graph and input validation must complete before execution
+- declared outputs are authorized before a backend launches
+- output indexes, hashes, and proofs are verified before downstream use
+- unknown policy mismatches fail closed instead of being silently downgraded
+- timed-out or cancelled Unix subprocesses are terminated as a process group
+  so descendants do not continue unnoticed
+- cleanup degradation is recorded in node stderr when group termination cannot
+  complete cleanly
+
+These controls protect the governed run and its evidence. They do not prevent a
+host process from reading unrelated files or producing side effects outside
+the storage helpers.
+
+Configuration and secrets remain operator-owned inputs. Keep secret material
+out of graph definitions, command arguments, retained stdout, and telemetry.
+Use the smallest environment allowlist required by each node.
+
+The current release risks for execution isolation and cleanup are tracked as
+`RISK-001` and `RISK-006` in the
+[Risk Register](../quality/risk-register.md).
+
 ## What to trust
 
 Trust these as current `v0.4.0` guarantees:
@@ -224,13 +263,15 @@ Do not trust these as current `v0.4.0` guarantees:
 - `crates/bijux-dag-runtime/src/artifacts/storage/path_authorization.rs`
 - `crates/bijux-dag-runtime/src/artifacts/storage/store.rs`
 - `crates/bijux-dag-runtime/src/backend/runtime/container_execution.rs`
+- `crates/bijux-dag-app/src/routes/policy_surface.rs`
+- `crates/bijux-dag-artifacts/src/integrity/proof.rs`
 - `crates/bijux-dag-runtime/tests/policy_cache_contract.rs`
 - `crates/bijux-dag-runtime/tests/security_model_contracts.rs`
 - `crates/bijux-dag-runtime/tests/subprocess_cleanup_contracts.rs`
 - `crates/bijux-dag-app/tests/policy_enforcement_surface_contract.rs`
 
-## Related references
+## Related References
 
-- [Security and Safety](security-and-safety.md)
-- [Trust Boundaries](trust-boundaries.md)
+- [Deployment Boundaries](deployment-boundaries.md)
 - [Known Limitations](../quality/known-limitations.md)
+- [Artifact Contracts](../interfaces/artifact-contracts.md)
