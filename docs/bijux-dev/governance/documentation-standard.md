@@ -63,6 +63,6 @@ scan is still bad documentation.
 
 ## Continue Reading
 
-- [Docs Operations](../operations/docs-operations.md)
+- [Documentation Operations](../operations/docs-operations.md)
 - [Core Documentation Standards](../../bijux-core/governance/documentation-standards.md)
 - [Known Limitations](known-limitations.md)

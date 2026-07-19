@@ -29,7 +29,7 @@ repository.
 
 ## Next Reads
 
-- [deploy-docs](deploy-docs.md)
+- [Documentation Deployment](deploy-docs.md)
 - [release-validation](release-validation.md)
 - [release-crates](release-crates.md)
 - [CI Targets](../makes/ci-targets.md)

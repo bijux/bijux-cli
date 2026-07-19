@@ -23,7 +23,7 @@ automation entrypoints, use [gh-workflows](../gh-workflows/index.md).
 - [Repository Gates](repository-gates.md)
 - [Evidence Collection](evidence-collection.md)
 - [Diagnostics and Reporting](diagnostics-and-reporting.md)
-- [Docs Operations](docs-operations.md)
+- [Documentation Operations](docs-operations.md)
 - [CI and Automation](ci-and-automation.md)
 - [Incident Response](incident-response.md)
 - [Release Validation Suite](release-validation-suite.md)

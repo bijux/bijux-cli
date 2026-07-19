@@ -35,5 +35,5 @@ exists. If the file is renamed later, update this page in the same change.
 ## Next Reads
 
 - [ci](ci.md)
-- [deploy-docs](deploy-docs.md)
+- [Documentation Deployment](deploy-docs.md)
 - [Maintainer Handbook](../index.md)
