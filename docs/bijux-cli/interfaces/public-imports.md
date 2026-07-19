@@ -1,59 +1,114 @@
 ---
 title: Public Imports
-audience: mixed
-type: explanation
+audience: developers
+type: guide
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-19
 ---
 
 # Public Imports
 
-This page records the import paths `bijux-cli` wants downstream Rust callers to
-prefer.
+`bijux-cli` exposes three Rust integration lanes. Choose the lane by what the
+caller owns; do not reach through a public facade into its private
+implementation.
 
-The reason is simple: integrations stay easier to upgrade when they depend on
-the intended facade instead of deep internal paths.
+| Caller need | Import root | Contract |
+| --- | --- | --- |
+| invoke or inspect CLI behavior | `bijux_cli::api` | runtime facade |
+| exchange typed data with the CLI | `bijux_cli::contracts` | data contract |
+| mount a Rust application below `bijux` | `bijux_cli::sdk` | app integration |
 
-## Import Map
+The crate root intentionally keeps `bootstrap`, `features`, `infrastructure`,
+`interface`, `kernel`, `routing`, and `shared` private. Their paths describe
+implementation ownership, not supported downstream dependencies.
 
-```mermaid
-flowchart TB
-    caller["Rust caller"] --> api["use crate::api facade"]
-    api --> runtime["runtime interfaces"]
-    api --> parser["parser and routing interfaces"]
-    api --> output["output interfaces"]
-    caller -.avoid.-> internals["deep internal module paths"]
+## Invoke CLI Behavior
+
+Use `api` when a Rust process needs the behavior of the command runtime without
+spawning the `bijux` executable.
+
+```rust
+use bijux_cli::api::runtime::run_app;
+
+let argv = vec!["bijux".to_string(), "status".to_string()];
+let result = run_app(&argv)?;
+assert_eq!(result.exit_code, 0);
 ```
 
-## Preferred Imports
+Import the narrowest facade module that owns the operation:
 
-- `bijux_cli::api::runtime::*`
-- `bijux_cli::api::parser::*`
-- `bijux_cli::api::routing::*`
-- `bijux_cli::api::output::*`
-- `bijux_cli::api::diagnostics::*`
-- `bijux_cli::api::repl::*`
+- `api::runtime` for process-independent command execution;
+- `api::parser` and `api::routing` for command intent and route queries;
+- `api::output` for root-compatible rendering;
+- `api::config`, `api::diagnostics`, `api::install`, and `api::plugins` for
+  focused runtime queries;
+- `api::repl` for interactive-session contracts;
+- `api::kernel`, `api::telemetry`, and `api::version` for their named runtime
+  surfaces.
 
-## Import Guidance
+Do not use `api` merely to obtain a data type. If the type is a command,
+envelope, execution-policy, plugin, schema, or product-mount contract, import
+it from `contracts` so the dependency states its real purpose.
 
-- import from `api` when building tools or tests against runtime behavior
-- avoid importing private module internals that are not part of facade intent
-- when new facade exports are added, document them in this page
+## Exchange Typed Contracts
 
-## Reading Rule
+Use `contracts` when code serializes, validates, stores, or reasons about data
+shared with the CLI. The module exports versioned envelopes, execution policy,
+command paths, plugin manifests, product descriptors, schema generators, and
+read-only contract queries.
 
-Use this page when a Rust integration needs CLI behavior but the correct import
-boundary is still unclear.
+```rust
+use bijux_cli::contracts::{
+    command_envelope_v1_schema, CommandPath, OutputFormat, PluginManifestV2,
+};
+```
 
-## Code Anchors
+Version suffixes such as `OutputEnvelopeV1` identify a wire-shape generation.
+An unversioned Rust type is not permission to persist its serialized form
+without reviewing its `serde` contract and the compatibility commitments.
 
-- `crates/bijux-cli/src/api/mod.rs`
-- `crates/bijux-cli/src/lib.rs`
-- `crates/bijux-cli/Cargo.toml`
+## Mount A Rust App
 
-## Next Reads
+Use `sdk` when a product needs a namespace, entrypoint, root-compatible output,
+diagnostics, or an in-process test harness.
 
-- [API Surface](api-surface.md)
-- [Compatibility Commitments](compatibility-commitments.md)
-- [Dependency Governance](../quality/dependency-governance.md)
+```rust
+use bijux_cli::sdk::ProductMount;
+
+let mount = ProductMount::new("hello")?
+    .binary("bijux-hello")
+    .summary("Hello application");
+
+let descriptor = mount.build_descriptor()?;
+assert_eq!(descriptor.namespace.as_str(), "hello");
+```
+
+`ProductMount` builds the descriptor consumed by the root runtime.
+`CommandContext` and `CommandResult` carry invocation and output semantics.
+`BijuxCliHarness` verifies an app without launching a child process. Use the
+[App Integration Guide](app-integration-guide.md) for the complete mounted-app
+workflow.
+
+## Dependency Review
+
+Before accepting a new `bijux-cli` import in another crate, verify:
+
+1. The import begins with `api`, `contracts`, or `sdk`.
+2. The chosen lane matches behavior, data, or app integration ownership.
+3. A narrower module cannot express the dependency more clearly.
+4. Persisted JSON uses an explicitly governed schema or versioned envelope.
+5. Upgrade tests cover the behavior or payload the caller relies on.
+
+An internal refactor may move code behind these roots without preserving its
+old source path. A public contract change still requires the compatibility
+review and release notes described in
+[Compatibility Commitments](compatibility-commitments.md).
+
+## Authorities
+
+- `crates/bijux-cli/src/lib.rs` defines the public roots.
+- `crates/bijux-cli/src/api/mod.rs` defines runtime facade modules.
+- `crates/bijux-cli/src/contracts/mod.rs` defines typed contract exports.
+- `crates/bijux-cli/src/sdk/mod.rs` defines mounted-app integration.
+- [API Surface](api-surface.md) maps facade modules to their ownership.
