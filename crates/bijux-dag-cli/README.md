@@ -117,6 +117,8 @@ front-door examples for the public `bijux-dag` package.
   app-owned command authority, supported shells, compatibility, and references.
 - [`CONTRACTS.md`](docs/CONTRACTS.md): process ownership, thinness,
   compatibility, failure, and verification contracts.
+- [`INSTALLED_BINARY_CONTRACT.md`](docs/INSTALLED_BINARY_CONTRACT.md):
+  executable identity, argv, streams, status, isolation, and release evidence.
 - [`PROCESS_AND_EXIT.md`](docs/PROCESS_AND_EXIT.md): parsing, dispatch status,
   streams, exit classes, signals, and process testing.
 - [`TESTING_AND_RELEASE.md`](docs/TESTING_AND_RELEASE.md): test layers,

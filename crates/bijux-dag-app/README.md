@@ -127,6 +127,8 @@ default public `v0.4.0` app story.
   stability, dependency, and failure contracts.
 - [`RESPONSES_AND_FAILURES.md`](docs/RESPONSES_AND_FAILURES.md): typed
   responses, JSON/human parity, failure classes, causality, and references.
+- [`ROUTE_AUTHORING.md`](docs/ROUTE_AUTHORING.md): command ownership, lane
+  policy, dispatch, preconditions, response integrity, and route review.
 - [`WORKFLOWS_AND_SERVICES.md`](docs/WORKFLOWS_AND_SERVICES.md): graph, run,
   evidence, cache, replay, configuration, and service design.
 
