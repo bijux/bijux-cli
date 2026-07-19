@@ -4,259 +4,155 @@ audience: operators
 type: reference
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-08
+last_reviewed: 2026-07-19
 ---
 
 # Execution Security And Isolation
 
-This page states the actual execution-boundary guarantees for `bijux-dag`
-`v0.4.0`.
+`bijux-dag v0.4.x` is a local DAG runtime with policy gates, rooted evidence
+storage, and backend-specific execution controls. It is not a general-purpose
+host sandbox.
 
-It exists to answer one question clearly:
+The practical rule is:
 
-What does the runtime really enforce, what is only best-effort, and what is not
-protected at all?
+- use the shell backend only for code inside the host's trust boundary
+- use the container backend when engine-enforced mount shaping or no-network
+  mode is required
+- use replay `--sandbox` to protect source evidence from writes, not to isolate
+  the replayed process
 
-The release posture is intentionally local-first and honest. `bijux-dag` is a
-serious local DAG runtime, but it is not a general-purpose host sandbox, VM
-boundary, network firewall, or clock virtualization layer.
+`runtime isolation`, `run --preflight-only`, and `replay --dry-run` expose the
+controls selected for a run. A control is enforced only when both that evidence
+and this page identify an enforcement boundary.
 
-## Operator Decision
-
-Use the shell backend only when the node command and host environment are
-inside the same trust boundary. Use a supported container engine when the
-workflow needs mount shaping or engine-enforced no-network mode. Neither
-backend turns untrusted code into safe code, and replay `--sandbox` protects
-the source run from writes rather than isolating the replayed process.
-
-Before execution, `runtime isolation`, `run --preflight-only`, and
-`replay --dry-run` expose whether a requested control is a declared-effect
-gate, environment shaping, or a container-runtime flag. Treat a control as
-enforced only when this page and the command evidence both say it is enforced.
-
-## Truth table
+## Enforcement Matrix
 
 | Surface | What is enforced | What is best-effort | What is not protected |
 | --- | --- | --- | --- |
-| shell backend | declared-effect policy gates for `network`, `env`, and `clock`; shaped environment; non-blank `argv[0]` validation; declared output target preflight; output-root and run-dir path validation | subprocess boundary; Unix subprocess-group cleanup on timeout or cancellation | socket-level network firewalling; clock or syscall interposition; arbitrary filesystem-read sandboxing; host side effects after spawn |
-| container backend | declared-effect policy gates; engine no-network flags for supported engines; digest policy for container image references when required; constrained node mounts; declared output target preflight; shaped environment | isolation quality of the selected container runtime; engine-reported image identity | VM-grade isolation; clock virtualization; registry signature trust; full host sandboxing beyond the container runtime |
-| clean environment | environment shaping through an allowlist and denylist model | correctness depends on honest allowlist declarations | filesystem, process, network, or clock isolation |
-| deny-network | refuse nodes that declare the `network` effect; pass `--network none` to supported container engines | only as strong as accurate effect declarations and the chosen container engine | host-level network isolation for shell subprocesses or dishonest nodes |
-| deny-clock | refuse nodes that declare the `clock` effect | only as strong as accurate effect declarations | time freezing, fake clocks, or wall-clock syscall isolation |
-| filesystem boundaries | output-path authorization, storage-relative path validation, run-dir write ownership, container mount-root checks | host-process discipline for shell commands that run inside their node work tree | arbitrary host reads by shell code; full host write prevention outside the governed output and storage helpers |
-| replay `--sandbox` | forbids writes into the source run directory | safe evidence reuse for inspection when retained evidence is complete | process sandboxing, network isolation, clock isolation, or a general filesystem sandbox |
+| shell backend | declared-effect refusal; clean environment shaping; command validation; declared output target preflight; rooted evidence paths | Unix subprocess-group cleanup; command discipline inside the node work tree | sockets, time syscalls, arbitrary host reads, or host side effects after launch |
+| container backend | declared-effect refusal; supported-engine no-network flags; validated mounts; optional image-digest policy; declared output target preflight | isolation and reported image identity supplied by Docker or Podman | VM-grade isolation, clock virtualization, registry signature trust, or controls beyond the engine boundary |
+| replay `--sandbox` | writes to the source run directory are forbidden | inspection and replay from complete retained evidence | process, network, clock, or general filesystem isolation |
+| clean environment | allowlist and denylist environment shaping; required-binding preflight | accuracy of graph declarations | filesystem, process, network, or clock isolation |
 
-## Shell backend
+These guarantees assume that graph effect declarations are honest. Policy gates
+fail closed on declared effects; they do not inspect arbitrary process
+behavior.
 
-The shell backend is a host-process execution model with policy gates in front
-of it.
+## Shell Backend
 
-### Enforced
+The shell backend launches a host process after validating its declared
+contract.
 
-- `deny-network` refuses nodes that declare `Effect::Network`
-- `deny-env` refuses nodes that declare `Effect::Env`
-- `deny-clock` refuses nodes that declare `Effect::Clock`
-- shell `argv` must be a non-empty array of strings and `argv[0]` must be a
-  non-blank executable token before the runtime attempts process launch
-- `clean-env` shapes the launched environment through the effective allowlist
-- missing required exact environment bindings fail before execution starts
-- declared output targets are authorized before launch, so paths such as
-  `../escape.txt` never become writable targets
-- symlinked existing parent components in declared output paths are rejected
-  before the shell subprocess starts
-- undeclared or missing outputs fail finalization
-- retained output and run-directory paths stay rooted under governed storage
+### What is enforced
 
-### Best-effort
+- `deny-network`, `deny-env`, and `deny-clock` reject nodes that declare the
+  corresponding effect.
+- Shell `argv` must contain a non-blank executable token.
+- `clean-env` constructs the launched environment from permitted bindings;
+  missing exact required bindings fail before launch.
+- Declared outputs are authorized before launch. Traversal such as
+  `../escape.txt` and symlinked existing parent components are rejected.
+- Finalization rejects undeclared or missing outputs.
+- Governed run, output, and cache paths remain beneath owned storage roots.
 
-- shell execution gets a subprocess boundary rather than in-process execution
-- on Unix hosts, timed-out or cancelled subprocesses are terminated as a
-  process group so background descendants do not keep running after node exit
+### What is best-effort
 
-### Not protected
+- The subprocess boundary keeps command execution out of the controller
+  process.
+- On Unix, timeout and cancellation terminate the subprocess group so known
+  descendants do not continue silently.
+
+### What is not protected
 
 - there is no socket firewall for shell subprocesses
-- there is no wall-clock or time-syscall virtualization
-- there is no arbitrary host filesystem-read sandbox
-- the runtime does not interpose on syscalls after the executor has started
-- a node that lies about its effects still runs as host code unless another
-  boundary blocks it
+- no wall-clock or time-syscall virtualization is provided
+- arbitrary host filesystem reads are not sandboxed
+- syscalls and side effects are not interposed after process launch
 
-## Container backend
+## Container Backend
 
-The container backend is stronger than the shell backend for mount shaping and
-engine-managed no-network mode, but the claim stops at the container runtime
-boundary.
+The container backend delegates process isolation to Docker or Podman while
+`bijux-dag` validates the execution contract and mount plan.
 
-### Enforced
+### What is enforced
 
-- the runtime validates the container contract before launch
-- built-in container execution supports `docker` and `podman`
-- `deny-network` passes container runtime no-network flags and fails closed
-  when the built-in adapter cannot honor them
-- input, output, and work mounts are validated against the node root
-- inputs are mounted read-only
-- outputs and work are mounted writable
-- declared output targets are authorized before the container starts
-- declared output paths must stay normalized and relative
-- traversal such as `../escape.txt` and symlinked existing parent components
-  are rejected before a writable output target is handed to the adapter
-- digest-pinned image references can be required by policy before execution
+- Built-in execution accepts supported Docker and Podman contracts.
+- `deny-network` passes the engine's no-network flag and fails closed when the
+  adapter cannot honor it.
+- Input mounts are read-only; output and work mounts are writable only at
+  validated paths beneath the node root.
+- Declared output target preflight rejects absolute paths, traversal, and
+  symlink escapes before the engine starts.
+- Policy can require a digest-pinned image reference.
 
-### Best-effort
+### What is best-effort
 
-- isolation strength depends on the selected container engine and host runtime
-- image identity evidence still depends on what the engine reports back
+- Isolation strength and image identity evidence are limited to guarantees
+  provided and reported by the selected engine.
 
-### Not protected
+### What is not protected
 
 - this is not a VM boundary
-- the runtime does not claim registry signature verification or publisher trust
-- clock denial is still declaration-based rather than syscall-based
-- full host isolation is not claimed beyond the container runtime boundary
-
-## Clean environment
-
-`clean-env` is environment shaping, not process isolation.
-
-### Enforced
-
-- the runtime computes an effective allowlist from node and container
-  declarations
-- exact required bindings that are absent from the ambient environment fail
-  before execution
-- denylist matches are dropped
-- when `clean_env` is enabled, the launched environment starts from a stripped
-  view and only permitted bindings are reintroduced
-
-### Best-effort
-
-- environment discipline is only as precise as the graph’s declared allowlist
-
-### Not protected
-
-- `clean-env` does not sandbox filesystem access
-- `clean-env` does not prevent host-visible side effects
-- `clean-env` does not stop a process from using network or time syscalls by
-  itself
+- registry signatures and publisher identity are not verified
+- clock denial remains declaration-based rather than syscall-based
+- host isolation beyond the container engine is not claimed
 
 ## Network policy
 
-`deny-network` is implemented in two different ways depending on the executor.
+`deny-network` has two distinct enforcement boundaries:
 
-### Enforced
+- every backend refuses a node that declares the `network` effect
+- supported container engines additionally receive an explicit no-network flag
 
-- all executors refuse nodes that declare network effects when policy denies
-  them
-- supported container engines receive explicit no-network flags
-
-### Best-effort
-
-- the shell backend depends entirely on honest effect declarations
-- container no-network semantics depend on the selected engine
-
-### Not protected
-
-- shell subprocesses do not get a runtime network firewall
-- dishonest or incomplete effect declarations can weaken the practical outcome
+For shell execution, declaration refusal is the complete guarantee. A dishonest
+or incomplete graph declaration can still permit socket use because there is
+no host-process network firewall.
 
 ## Clock policy
 
-`deny-clock` is a declaration gate, not a time sandbox.
-
-### Enforced
-
-- the runtime refuses nodes that declare clock effects when policy denies them
-
-### Best-effort
-
-- the guarantee depends on honest effect declarations in the DAG
-
-### Not protected
-
-- there is no fake clock
-- there is no frozen wall clock
-- there is no syscall interception for time access
+`deny-clock` refuses nodes that declare the `clock` effect. It does not freeze
+time, inject a deterministic clock, or intercept time syscalls. Workflows that
+depend on this policy must declare clock use honestly.
 
 ## Filesystem boundaries
 
-Filesystem safety in `bijux-dag` is about rooted writes and validated paths,
-not about complete host sandboxing.
+Filesystem enforcement protects governed paths and retained evidence; it does
+not sandbox all host access.
 
-### Enforced
+- Storage-relative paths reject absolute paths, traversal, and backslash
+  escapes.
+- Declared input and output paths must remain within their authorized roots.
+- Container mounts must remain beneath the validated node root.
+- Replay sandbox mode forbids writes to the source run directory.
+- Output hashes and proofs are verified before downstream use.
 
-- storage-relative paths reject traversal, absolute paths, and backslash escapes
-- run outputs, cache keys, and governed storage writes go through owned storage
-  helpers
-- declared output targets are preflight-authorized before adapter execution
-- input and output authorization rejects paths that escape the rooted input or
-  output tree
-- malicious declared output paths such as `../x` or symlinked parent escapes
-  are rejected before the runtime hands out a write path
-- container mounts are restricted to validated paths beneath the node root
-- replay sandbox mode forbids writing into the source run directory
+Shell code can still read arbitrary files available to its host identity and
+can attempt writes outside repository-owned storage helpers. Use host-level
+containment when untrusted code requires a stronger boundary.
 
-### Best-effort
+## Failure And Evidence Integrity
 
-- shell commands still run as host processes that are expected to respect the
-  node work, input, and output layout
+The runtime preserves attribution when execution fails:
 
-### Not protected
+- graph, policy, input, and declared-output validation complete before launch
+- unknown policy mismatches fail closed rather than silently degrading
+- output indexes, hashes, and proofs are checked before downstream use
+- Unix timeout and cancellation target the subprocess group
+- degraded cleanup is recorded in node stderr
 
-- shell code can still attempt arbitrary host reads
-- the runtime does not claim a general syscall sandbox for file access
-- host writes outside governed helper paths are not prevented by a kernel-level
-  sandbox
+These controls protect run evidence. They do not erase side effects already
+made by a host process.
 
-## Artifact And Failure Integrity
+Configuration and secrets remain operator-owned inputs. Keep secrets out of
+graph definitions, command arguments, retained stdout, and telemetry. Grant
+each node the smallest environment allowlist it requires.
 
-Execution isolation is only one part of the safety boundary. Retained evidence
-must also remain attributable and verifiable:
+Execution-isolation and cleanup risks are tracked as `RISK-001` and `RISK-006`
+in the [Risk Register](../quality/risk-register.md).
 
-- graph and input validation must complete before execution
-- declared outputs are authorized before a backend launches
-- output indexes, hashes, and proofs are verified before downstream use
-- unknown policy mismatches fail closed instead of being silently downgraded
-- timed-out or cancelled Unix subprocesses are terminated as a process group
-  so descendants do not continue unnoticed
-- cleanup degradation is recorded in node stderr when group termination cannot
-  complete cleanly
+## Review Anchors
 
-These controls protect the governed run and its evidence. They do not prevent a
-host process from reading unrelated files or producing side effects outside
-the storage helpers.
-
-Configuration and secrets remain operator-owned inputs. Keep secret material
-out of graph definitions, command arguments, retained stdout, and telemetry.
-Use the smallest environment allowlist required by each node.
-
-The current release risks for execution isolation and cleanup are tracked as
-`RISK-001` and `RISK-006` in the
-[Risk Register](../quality/risk-register.md).
-
-## What to trust
-
-Trust these as current `v0.4.0` guarantees:
-
-- fail-closed policy denial for honestly declared `network`, `env`, and `clock`
-  effects
-- deterministic environment shaping and exact required-env preflight failure
-- rooted run-dir, output, and cache-storage path validation
-- stronger mount and no-network controls for supported container engines
-- source-run write protection for replay sandbox mode
-- Unix subprocess-group cleanup for timeout and cancellation
-
-Do not trust these as current `v0.4.0` guarantees:
-
-- shell sandboxing
-- shell network firewalling
-- shell filesystem sandboxing
-- clock virtualization
-- VM-grade container isolation
-- replay process sandboxing
-- registry signature or publisher-trust enforcement
-
-## Code anchors
+Implementation:
 
 - `crates/bijux-dag-runtime/src/internal/control/runtime_controls.rs`
 - `crates/bijux-dag-runtime/src/internal/identity/security_env.rs`
@@ -265,6 +161,9 @@ Do not trust these as current `v0.4.0` guarantees:
 - `crates/bijux-dag-runtime/src/backend/runtime/container_execution.rs`
 - `crates/bijux-dag-app/src/routes/policy_surface.rs`
 - `crates/bijux-dag-artifacts/src/integrity/proof.rs`
+
+Executable contracts:
+
 - `crates/bijux-dag-runtime/tests/policy_cache_contract.rs`
 - `crates/bijux-dag-runtime/tests/security_model_contracts.rs`
 - `crates/bijux-dag-runtime/tests/subprocess_cleanup_contracts.rs`
