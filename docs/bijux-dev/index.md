@@ -4,58 +4,66 @@ audience: maintainers
 type: index
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-19
 ---
 
 # Maintainer Handbook
 
-Use the maintainer handbook when the question is about keeping `bijux-core`
-healthy: repository gates, release proof, diagnostics, documentation
-generation, and the commands that maintain the repository itself.
+This handbook covers the private control plane used to inspect and govern the
+`bijux-core` repository. It explains repository gates, release proof,
+diagnostics, documentation generation, and the commands that maintain those
+surfaces.
 
-This is not the end-user product story. It is the contributor and maintainer
-route for the tooling that proves the product story is real.
+It does not define `bijux` behavior or DAG semantics. Those contracts remain
+with the product packages even when a maintainer command is the first place
+that exposes drift.
 
 <div class="bijux-quicklinks">
-<a class="md-button md-button--primary" href="packages/bijux-dev.md">Open the bijux-dev package</a>
-<a class="md-button" href="operations/">Open operations</a>
-<a class="md-button" href="makes/">Open makes</a>
+<a class="md-button md-button--primary" href="operations/repository-gates.md">Run repository gates</a>
+<a class="md-button" href="operations/diagnostics-and-reporting.md">Investigate a failure</a>
+<a class="md-button" href="packages/bijux-dev.md">Inspect package ownership</a>
 </div>
 
-## Start Here
+## Choose The Owning Surface
 
-| If you need to... | Open this page |
+| Question or action | Authority |
 | --- | --- |
-| set up or validate maintainer tooling | [Toolchain Setup](operations/toolchain-setup.md) |
-| run repository gates before review or release | [Repository Gates](operations/repository-gates.md) |
-| investigate failing verification output | [Diagnostics and Reporting](operations/diagnostics-and-reporting.md) |
-| handle release or automation incidents | [Incident Response](operations/incident-response.md) |
-| change a policy for contracts, dependencies, docs, or tests | [Governance](governance/index.md) |
-| understand shared make entrypoints and automation surfaces | [makes](makes/index.md) |
+| install or validate the local toolchain | [Toolchain Setup](operations/toolchain-setup.md) |
+| select the required pre-review or release gate | [Repository Gates](operations/repository-gates.md) |
+| inspect repository or product health | `bijux-dev-cli`, described by the [command surface](operations/command-surface.md) |
+| execute governed checks or compose release proof | `bijux-dev-dag`, described by the [command surface](operations/command-surface.md) |
+| interpret a failed or incomplete run | [Diagnostics and Reporting](operations/diagnostics-and-reporting.md) |
+| decide whether an artifact is acceptable proof | [Evidence Collection](operations/evidence-collection.md) |
+| respond to a publication, automation, or evidence incident | [Incident Response](operations/incident-response.md) |
+| change repository policy | [Governance](governance/index.md) |
+| change make or workflow orchestration | [makes](makes/index.md) |
+| change package or release ownership across products | [Repository Handbook](../bijux-core/index.md) |
+| change end-user CLI behavior | [CLI Handbook](../bijux-cli/index.md) |
+| change graph, runtime, backend, or artifact semantics | [DAG Handbook](../bijux-dag/index.md) |
 
-## What Lives Here
+## Two Binaries, Two Authorities
 
-- [`bijux-dev`](packages/bijux-dev.md), the repository control plane for
-  maintainer automation, diagnostics, contracts, and release verification
-- operational guides for gates, evidence collection, incident handling, and
-  release work
-- governance pages for dependencies, contracts, docs, security, and quality
-- the make and GitHub workflow pages that drive repository automation
+| Binary | Owns | Does not own |
+| --- | --- | --- |
+| `bijux-dev-cli` | repository status, product diagnostics, maintenance audits, documentation publishing, and structured observations | governed suite policy or product runtime behavior |
+| `bijux-dev-dag` | suite catalogs, policy and contract execution, DAG evidence verification, aggregate status, and release-proof composition | alternate implementations of CLI or DAG semantics |
 
-## Use This Handbook When
+The binaries are complementary. Similar command names do not make their
+responsibilities interchangeable. The [`bijux-dev` package page](packages/bijux-dev.md)
+maps each authority to source code and its machine-readable contract.
 
-- the question is about repository health rather than product behavior
-- a release or docs workflow failed and you need the owning maintainer route
-- you are changing a repository gate, report, or automation surface
-- you need to know which maintainer command or make target owns a validation
-  path
+## What A Result Proves
 
-## When To Leave This Handbook
+A maintainer result is credible only when it identifies:
 
-- Move to the [CLI Handbook](../bijux-cli/index.md) when the question is about
-  `bijux` runtime behavior seen by end users.
-- Move to the [DAG Handbook](../bijux-dag/index.md) when the question is about
-  DAG authoring, execution, replay, or retained evidence.
-- Move to the [Repository Handbook](../bijux-core/index.md) when the question
-  is about cross-product package boundaries or shared release policy rather
-  than maintainer tooling itself.
+- the source revision and repository state it evaluated;
+- the selected checks, including exclusions and advisory-only work;
+- the producer and contract for generated evidence;
+- the final process or aggregate status, not merely a process ID or output
+  path.
+
+A focused command proves only its selected scope. A background run is
+incomplete until its terminal status and final report have been inspected.
+Generated output under `artifacts/` is local run evidence; checked-in material
+under `docs/reports`, `docs/spec`, or another governed path requires its named
+producer and contract test.
