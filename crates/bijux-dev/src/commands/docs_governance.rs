@@ -603,6 +603,13 @@ pub(super) fn run_docs_config_reduction_guard() -> Result<(), String> {
     Ok(())
 }
 
+fn schema_reference_path(token: &str) -> Option<&str> {
+    let clean = token.trim_matches(|c: char| {
+        matches!(c, ')' | '(' | '[' | ']' | ',' | ';' | ':' | '!' | '?' | '.' | '"' | '`')
+    });
+    clean.find("configs/dag/schema/").map(|idx| &clean[idx..])
+}
+
 pub(super) fn run_docs_schema_reference_guard() -> Result<(), String> {
     let root = repo_root()?;
     let mut files = Vec::new();
@@ -612,16 +619,8 @@ pub(super) fn run_docs_schema_reference_guard() -> Result<(), String> {
     for file in files {
         let content = fs::read_to_string(&file).map_err(|err| err.to_string())?;
         for token in content.split_whitespace() {
-            if !token.contains("configs/dag/schema/") {
+            let Some(path) = schema_reference_path(token) else {
                 continue;
-            }
-            let clean = token
-                .trim_matches(|c: char| matches!(c, ')' | '(' | '[' | ']' | ',' | ';' | '"' | '`'));
-            let path = if clean.contains("configs/dag/schema/") {
-                let idx = clean.find("configs/dag/schema/").unwrap_or(0);
-                &clean[idx..]
-            } else {
-                clean
             };
             if !root.join(path).exists() {
                 let rel = file
@@ -1183,9 +1182,10 @@ mod tests {
     use super::{
         broken_inline_code_anchors, collect_inbound_counts, collect_mkdocs_nav_entries,
         documentation_scope, documentation_shape_violations, extract_inline_code_spans,
-        repo_code_anchor_candidate, roadmap_reference_allowed, should_skip_markdown_link,
-        validate_known_limitations_content, validate_risk_register_content, DocsLintPolicy,
-        KNOWN_LIMITATIONS_REL_PATH, REQUIRED_RISK_IDS, RISK_REGISTER_REL_PATH,
+        repo_code_anchor_candidate, roadmap_reference_allowed, schema_reference_path,
+        should_skip_markdown_link, validate_known_limitations_content,
+        validate_risk_register_content, DocsLintPolicy, KNOWN_LIMITATIONS_REL_PATH,
+        REQUIRED_RISK_IDS, RISK_REGISTER_REL_PATH,
     };
     use std::fs;
     use std::path::Path;
@@ -1477,6 +1477,19 @@ also good `docs/index.md`\n";
             .expect("read known limitations handbook");
 
         assert!(validate_known_limitations_content(&content).is_ok());
+    }
+
+    #[test]
+    fn schema_reference_path_ignores_markdown_and_sentence_punctuation() {
+        assert_eq!(
+            schema_reference_path("`configs/dag/schema/execution_plan.schema.json`."),
+            Some("configs/dag/schema/execution_plan.schema.json")
+        );
+        assert_eq!(
+            schema_reference_path("[schema](configs/dag/schema/graph.schema.json),"),
+            Some("configs/dag/schema/graph.schema.json")
+        );
+        assert_eq!(schema_reference_path("ordinary prose"), None);
     }
 
     fn complete_risk_record(id: &str, component: &str) -> String {
