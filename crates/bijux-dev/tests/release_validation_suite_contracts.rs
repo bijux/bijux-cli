@@ -306,7 +306,8 @@ fn release_validation_suite_entrypoints_are_wired_into_make_and_ci() {
 }
 
 #[test]
-fn release_validation_suite_explain_output_matches_governed_contract() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__release_validation_suite_explain_output_matches_governed_contract() {
     let suite = read_suite();
     let explain = run_release_explain_verify();
     let explain_data = &explain["data"];

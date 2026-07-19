@@ -40,7 +40,8 @@ fn run_dir_from(payload: &Value) -> PathBuf {
 }
 
 #[test]
-fn hello_workflow_run_dir_snapshot_is_stable() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__hello_workflow_run_dir_snapshot_is_stable() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
     let out_dir = temp.path().join("runs");
@@ -65,7 +66,8 @@ fn hello_workflow_run_dir_snapshot_is_stable() {
 }
 
 #[test]
-fn cached_branch_workflow_run_dir_snapshot_is_stable() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__cached_branch_workflow_run_dir_snapshot_is_stable() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
     let out_dir = temp.path().join("runs");
@@ -93,7 +95,8 @@ fn cached_branch_workflow_run_dir_snapshot_is_stable() {
 }
 
 #[test]
-fn map_reduce_workflow_run_dir_snapshot_is_stable() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__map_reduce_workflow_run_dir_snapshot_is_stable() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
     let graph_path = temp.path().join("map_reduce.json");
@@ -122,7 +125,8 @@ fn map_reduce_workflow_run_dir_snapshot_is_stable() {
 }
 
 #[test]
-fn semantic_map_reduce_workflow_run_dir_snapshot_is_stable() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__semantic_map_reduce_workflow_run_dir_snapshot_is_stable() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("tempdir");
     let graph_path = temp.path().join("semantic_map_reduce.json");

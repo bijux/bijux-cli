@@ -108,7 +108,8 @@ fn dag_release_truth_table_contract_is_current() {
 }
 
 #[test]
-fn dag_root_help_matches_stable_release_boundary() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__dag_root_help_matches_stable_release_boundary() {
     let truth_table = read_truth_table();
     let help = dag_root_help();
     let commands = parse_root_help_commands(&help);
@@ -510,7 +511,8 @@ fn dag_registry_and_root_cli_docs_preserve_public_binary_identity() {
 }
 
 #[test]
-fn root_cli_help_for_dag_points_back_to_the_public_binary() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__root_cli_help_for_dag_points_back_to_the_public_binary() {
     let output = Command::new("cargo")
         .args(["run", "-q", "-p", "bijux-cli", "--", "help", "dag"])
         .current_dir(repo_root())

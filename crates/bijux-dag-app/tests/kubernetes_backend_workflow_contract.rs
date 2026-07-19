@@ -35,7 +35,8 @@ fn write_executable(path: &Path, script: &str) {
 }
 
 #[test]
-fn kubernetes_backend_run_executes_container_nodes_and_persists_batch_job_evidence() {
+#[allow(non_snake_case, reason = "nextest slow-tier namespace contract")]
+fn slow__kubernetes_backend_run_executes_container_nodes_and_persists_batch_job_evidence() {
     let root = repo_root();
     let temp = tempfile::tempdir().expect("temp dir");
     let graph_path = temp.path().join("kubernetes.dag.json");
