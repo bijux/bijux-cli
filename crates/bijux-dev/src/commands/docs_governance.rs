@@ -37,7 +37,7 @@ const REQUIRED_RISK_IDS: [&str; 10] = [
     "RISK-001", "RISK-002", "RISK-003", "RISK-004", "RISK-005", "RISK-006", "RISK-007", "RISK-008",
     "RISK-009", "RISK-010",
 ];
-const ROADMAP_REFERENCE_ALLOWLIST: [&str; 10] = [
+const ROADMAP_REFERENCE_ALLOWLIST: [&str; 11] = [
     "docs/index.md",
     "docs/bijux-dag/index.md",
     "docs/bijux-dag/foundation/release-boundary.md",
@@ -48,6 +48,7 @@ const ROADMAP_REFERENCE_ALLOWLIST: [&str; 10] = [
     "docs/bijux-core/governance/documentation-governance-alignment.md",
     "docs/bijux-core/foundation/documentation-system.md",
     "docs/bijux-core/foundation/module-surface-lanes.md",
+    "docs/reports/governance/documentation-authority-report.md",
 ];
 
 #[derive(Debug, Deserialize, Default)]
@@ -133,6 +134,7 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
 
     let mut files = Vec::new();
     collect_markdown_files(&docs_root, &mut files)?;
+    let mut unauthorized_roadmap_references = Vec::new();
     for file in files {
         let rel = file
             .strip_prefix(&root)
@@ -150,15 +152,19 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
             && rel != "docs/bijux-dag/roadmap.md"
             && !roadmap_reference_allowed(&rel)
         {
-            return Err(format!(
-                "speculative roadmap content must live in the owned product roadmap: {rel}"
-            ));
+            unauthorized_roadmap_references.push(rel.clone());
         }
         if content.contains("AUTO-GENERATED") && !rel.starts_with("docs/generated/") {
             return Err(format!(
                 "generated-doc marker must only appear under docs/generated: {rel}"
             ));
         }
+    }
+    if !unauthorized_roadmap_references.is_empty() {
+        return Err(format!(
+            "speculative roadmap content must live in the owned product roadmap: {}",
+            unauthorized_roadmap_references.join(", ")
+        ));
     }
 
     run_known_limitations_guard()?;
@@ -1190,6 +1196,7 @@ also good `docs/index.md`\n";
             "docs/bijux-dag/interfaces/support-matrix.md",
             "docs/bijux-dag/quality/known-limitations.md",
             "docs/bijux-core/foundation/documentation-system.md",
+            "docs/reports/governance/documentation-authority-report.md",
         ] {
             assert!(roadmap_reference_allowed(rel), "{rel} should allow roadmap routing");
         }

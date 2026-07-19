@@ -53,8 +53,8 @@ Before changing normative behavior:
    committing them.
 
 A contract may describe an unsupported capability only when it states that
-limit explicitly. Future direction belongs in a roadmap, not in normative
-language.
+limit explicitly. Future direction belongs in the product planning authority,
+not in normative language.
 
 ## Authority And Conflict
 
