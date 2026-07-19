@@ -24,17 +24,22 @@ runtime layer that executes, records, replays, and verifies that promise.
 ## Release Status
 
 - public crate on the `v0.4.0` DAG release line
-- execution-time layer for the public local DAG product
-- contains modeled platform support lanes, but those are not public operator
-  promises by default
+- execution-time layer for the local-first controller
+- stable local, Kubernetes Job, and shared-filesystem SLURM execution lanes
+- modeled remote-worker and generic scheduler contracts that remain outside
+  the public operator promise
 
 ## What It Provides
 
 - execution planning and node orchestration
 - policy evaluation and runtime diagnostics
 - replay, diff, cache, and artifact integration behavior
-- adapter boundaries for local shell, local container, and external execution
-  backends
+- local shell and local container execution
+- Kubernetes Job execution for container nodes through `kubectl` and a shared
+  persistent volume claim
+- SLURM submission through `sbatch`, terminal-state polling through `sacct`,
+  and result collection from a shared run directory
+- versioned external-adapter handshakes for repository-integrated executors
 - container engine detection, mounted input and output layout, stdout/stderr
   capture, and retained container identity
 - branch pruning, skipped-lane recording, trigger-rule evaluation, and replay
@@ -75,13 +80,32 @@ Use these rules when reviewing runtime fingerprint drift or provenance output.
 | Boundary | Runtime commitment | Authority |
 | --- | --- | --- |
 | external adapters | descriptor handshake, explicit execution paths, typed failure information, and adapter-binary identity in cache evidence | [Adapter Contract](../../docs/spec/ADAPTER_CONTRACT.md) |
+| Kubernetes | container nodes submitted as Jobs, shared-volume workspace mapping, resource and deadline mapping, pod-state mapping, logs, and retained batch evidence | [Batch Execution Model](../../docs/spec/BATCH_EXECUTION_MODEL.md) |
+| SLURM | shared-filesystem jobs submitted with `sbatch`, polled with `sacct`, and collected into the retained node result | [Batch Execution Model](../../docs/spec/BATCH_EXECUTION_MODEL.md) |
 | retained lifecycle evidence | terminal status, validated lifecycle transitions, per-attempt output, and bounded log summaries | [Run Evidence Layout](../../docs/bijux-dag/interfaces/run-evidence-layout.md) |
 | subprocess cleanup | process-group termination on Unix and explicit best-effort behavior on other hosts | [Execution Security And Isolation](../../docs/bijux-dag/operations/security-isolation-truth.md) |
 | replay and cache | identity-aware reuse, refusal evidence, and replay verification | [Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md) |
 
 These boundaries are observable contracts, not claims of host isolation.
-Shell execution is not a VM boundary, and external adapter support does not
-turn modeled distributed backends into stable public services.
+Shell execution is not a VM boundary. Kubernetes and SLURM support is bounded
+by the documented shared-storage contracts; it does not imply a public remote
+worker service, generic HPC abstraction, or durable scheduler control plane.
+
+## Backend Selection
+
+The application layer selects the backend through `run --backend` and supplies
+backend-specific configuration. This crate owns execution after that selection.
+
+| Backend | Accepted work | Required environment | Explicit non-guarantee |
+| --- | --- | --- | --- |
+| `local` | shell and local-container nodes | host process or configured container engine | no VM or syscall isolation |
+| `kubernetes` | container nodes | `kubectl`, a shared persistent volume claim, and a host/cluster path mapping | no general Kubernetes workflow controller |
+| `slurm` | nodes executable by the configured worker command | `sbatch`, `sacct`, and a run directory visible to controller and worker | no support for arbitrary HPC storage or scheduler semantics |
+
+The controller remains authoritative for accepted run state and retained
+evidence in all three lanes. Scheduler status is input to that state machine,
+not a replacement for it. Controller restart recovery is not currently part
+of the batch-lane promise.
 
 ## Public Rust Surface
 
@@ -92,8 +116,9 @@ turn modeled distributed backends into stable public services.
   item you need
 - use `bijux_dag_runtime::simulated_platform` only for deliberate modeled-platform
   and control-plane evidence work
-- backend-heavy compatibility helpers remain callable for repository-owned
-  support work, but stay hidden from the primary docs.rs lane
+- Kubernetes and SLURM runtime configuration is available in the stable lane;
+  backend-heavy compatibility helpers remain callable for repository-owned
+  support work but stay hidden from the primary docs.rs lane
 - use lane-scoped command discovery in `bijux-dag-app` or `bijux-dag-cli`
   when you need to inspect experimental, simulated, or internal runtime
   surfaces without widening the default operator contract
@@ -102,7 +127,10 @@ turn modeled distributed backends into stable public services.
 
 - `src/runtime_core`: planning, execution, governance, and state transitions
 - `src/adapters`: built-in and external adapter boundaries
-- `src/backend`: local and distributed backend support
+- `src/backend/runtime`: local, container, Kubernetes, SLURM, and batch
+  execution
+- `src/backend/distributed`: modeled coordination and remote-worker contracts,
+  not stable operator services
 - `src/artifacts`, `src/cache`, `src/replay`, `src/policy`: core runtime
   behavior around persisted evidence and reuse
 - `src/diagnostics`: runtime-facing diagnostic helpers
@@ -121,6 +149,7 @@ turn modeled distributed backends into stable public services.
 | Claim | Repository-backed proof |
 | --- | --- |
 | container inputs, outputs, and engine identity | [Container Packaging Workflow](../../docs/bijux-dag/operations/container-packaging-workflow.md) |
+| Kubernetes and shared-filesystem SLURM support boundary | [Execution Mode Responsibilities](../../docs/bijux-dag/architecture/execution-mode-responsibilities.md) |
 | cache reuse, invalidation, corruption refusal, and miss explanation | [Cache Behavior Workflow](../../docs/bijux-dag/operations/cache-behavior-workflow.md) |
 | graph, execution, cache, and replay identity | [Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md) |
 | branch selection, skipped lanes, and replay stability | [Branching Bulletin Workflow](../../docs/bijux-dag/operations/branching-bulletin-workflow.md) |
