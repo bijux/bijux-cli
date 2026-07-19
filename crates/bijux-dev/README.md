@@ -108,6 +108,9 @@ documentation, or release lanes passed.
   report families, generation, rendering, integrity, and review.
 - [`GOVERNANCE_AND_RELEASES.md`](docs/GOVERNANCE_AND_RELEASES.md): governance
   domains, shared standards, release inputs, status, mutation, and ownership.
+- [`GOVERNED_OUTPUTS.md`](docs/GOVERNED_OUTPUTS.md): command effect classes,
+  destination ownership, atomic generation, determinism, concurrency, and
+  failure discipline.
 
 ## Maintainer References
 
