@@ -57,6 +57,16 @@ The change affects any of the following:
 Those changes need stronger explanation because readers and reviewers will
 encounter them from more than one direction.
 
+## Impact Classification
+
+Classify the change before choosing evidence or migration work:
+
+| Class | Meaning | Required response |
+| --- | --- | --- |
+| internal | behavior stays inside one owned implementation surface without changing public or retained meaning | focused owner tests and an explicit scope statement |
+| interface | a user-facing, machine-facing, or reader-facing interface changes without necessarily breaking compatibility | interface proof and matching documentation |
+| compatibility-sensitive | a retained contract may affect downstream users, stored runs, schemas, or release surfaces | migration analysis, contract validation, and release framing |
+
 ## The Rule About Docs
 
 If public meaning changed, the owning documentation should move with the
@@ -77,6 +87,10 @@ Strong change management avoids both under-explaining and over-proving.
 The question is always the same: what is the smallest honest evidence bundle
 for this surface?
 
+For a cross-surface change, the review bundle must identify the ownership
+boundary, affected handbook pages, relevant command or test evidence, and the
+compatibility impact as `none`, `additive`, or `breaking`.
+
 ## Common Failure Modes
 
 - changing a downstream file instead of the owning contract or source
@@ -90,8 +104,9 @@ for this surface?
 Every completed change should leave behind a reviewer-friendly chain from
 surface to owner to evidence to explanation.
 
-## Next Reads
+## Change References
 
 - [Review Expectations](review-expectations.md)
 - [Testing and Validation](testing-and-validation.md)
-- [Core Change Management](../governance/change-management.md)
+- [Decision Record Policy](../governance/decision-record-policy.md)
+- [Risk and Exceptions](../governance/risk-and-exceptions.md)

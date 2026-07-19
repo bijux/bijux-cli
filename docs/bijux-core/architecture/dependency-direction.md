@@ -58,4 +58,4 @@ repository split.
 
 - [Maintainer Control Plane](maintainer-control-plane.md)
 - [Testing and Validation](../governance/testing-and-validation.md)
-- [Change Management](../governance/change-management.md)
+- [Change Management](../operations/change-management.md)

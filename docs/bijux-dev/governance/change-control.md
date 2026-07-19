@@ -59,4 +59,4 @@ therefore depends on the surface being touched, not just the line count.
 
 - [Contract Governance](contract-governance.md)
 - [Dependency Governance](dependency-governance.md)
-- [Core Change Management](../../bijux-core/governance/change-management.md)
+- [Core Change Management](../../bijux-core/operations/change-management.md)

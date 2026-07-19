@@ -56,6 +56,6 @@ who owns the behavior.
 
 ## Next Reads
 
-- [Change Management](change-management.md)
+- [Change Management](../operations/change-management.md)
 - [Decision Record Policy](decision-record-policy.md)
 - [Dependency Direction](../architecture/dependency-direction.md)

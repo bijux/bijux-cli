@@ -55,5 +55,5 @@ quadrantChart
 ## Next Reads
 
 - [Risk and Exceptions](../governance/risk-and-exceptions.md)
-- [Change Management](../governance/change-management.md)
+- [Change Management](../operations/change-management.md)
 - [Release and Versioning](../governance/release-and-versioning.md)

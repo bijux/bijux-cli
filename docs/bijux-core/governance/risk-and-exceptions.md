@@ -75,5 +75,5 @@ Use this structure for every exception request:
 ## Next Reads
 
 - [Testing and Validation](testing-and-validation.md)
-- [Change Management](change-management.md)
+- [Change Management](../operations/change-management.md)
 - [Architecture Risks](../architecture/architecture-risks.md)

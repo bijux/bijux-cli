@@ -80,5 +80,5 @@ instead of repository truth.
 ## Next Reads
 
 - [Documentation Standards](documentation-standards.md)
-- [Change Management](change-management.md)
+- [Change Management](../operations/change-management.md)
 - [Testing and Validation](testing-and-validation.md)
