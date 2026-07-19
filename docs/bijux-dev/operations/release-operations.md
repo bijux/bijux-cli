@@ -57,6 +57,25 @@ Canonical package status and publish order are defined by
 | tag and publish | published artifacts point back to the reviewed commit identity |
 | post-release monitoring | the public result still behaves like the reviewed release lane predicted |
 
+```mermaid
+stateDiagram-v2
+    [*] --> Candidate
+    Candidate --> Validated: required gates and release validation pass
+    Candidate --> Blocked: any required proof fails or is missing
+    Validated --> Reviewed: compatibility, docs, inventory, and owners agree
+    Reviewed --> Tagged: immutable source identity created
+    Tagged --> Published: required packages and assets uploaded
+    Published --> Reconciled: registries, images, docs, and checks agree
+    Published --> Rollback: identity, health, or inventory mismatch
+    Reconciled --> [*]
+    Blocked --> Candidate: owner repairs source or governed input
+    Rollback --> Candidate: incident contained and new candidate prepared
+```
+
+There is no valid transition from `Candidate` directly to `Tagged` or
+`Published`. An upload that bypasses validation and review is an incident to
+reconcile or roll back, not a release success.
+
 ## Preflight Checklist
 
 - required release-lane tests and maintainer verification commands are green
@@ -82,6 +101,10 @@ Canonical package status and publish order are defined by
   reconciled against the expected publication inventory
 - docs site builds and serves expected handbook routes
 - no new unresolved failures in release-monitoring workflows
+
+Postflight reconciliation must compare immutable identities, not names alone:
+the tag target, package checksums, image digest, release assets, and deployed
+documentation revision must all resolve to the reviewed candidate.
 
 ## Standard Commands
 

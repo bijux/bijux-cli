@@ -49,6 +49,30 @@ Every evidence claim should answer:
 If one of these fields is not relevant, say why. Do not silently omit it and
 broaden the resulting claim.
 
+```mermaid
+flowchart LR
+    authority["Source contract or policy"]
+    producer["Named command, suite, or workflow"]
+    selection["Recorded selection and environment"]
+    output["Logs, records, reports, or assets"]
+    integrity["Source identity and integrity binding"]
+    status["Terminal component and aggregate status"]
+    claim{"Bounded claim"}
+
+    authority --> producer
+    selection --> producer
+    producer --> output
+    output --> integrity
+    output --> status
+    integrity --> claim
+    status --> claim
+    claim -->|complete and consistent| accept["Accept for stated scope"]
+    claim -->|missing, stale, edited, or inconsistent| reject["Reject or mark incomplete"]
+```
+
+Evidence is a chain, not a file type. Breaking any link narrows or invalidates
+the claim even when the retained output looks plausible.
+
 ## Collect Run Evidence
 
 For a local or CI gate:
@@ -92,6 +116,26 @@ Checked-in reports and specifications have a different role. They summarize
 or render governed facts for review. Their generator and contract remain the
 authority for freshness; hand-editing output to satisfy prose expectations
 breaks that chain.
+
+```mermaid
+flowchart TB
+    governed["Governed inputs<br/>contracts · configs · evidence"]
+    producer["Repository-owned producer"]
+    transient["artifacts/<run>"]
+    checked["docs/reports or docs/spec"]
+    contracts["Freshness and consumer contracts"]
+
+    governed --> producer
+    producer --> transient
+    producer --> checked
+    governed --> contracts
+    checked --> contracts
+    contracts -->|drift| producer
+```
+
+When a checked-in output drifts, rerun or repair its producer from governed
+inputs. The feedback arrow does not authorize editing generated observations
+until the contract passes.
 
 ## Accept Or Reject Evidence
 
