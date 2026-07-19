@@ -1,50 +1,63 @@
 ---
-title: Package Dispatch
-audience: mixed
+title: Make Dispatch Boundaries
+audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-19
 ---
 
-# Package Dispatch
+# Make Dispatch Boundaries
 
-Use this page when a root `make` target fails and you need to know which
-underlying package, toolchain, or binary actually owns the work.
-
-The make surface exists partly to hide mechanical repetition, but it should not
-hide ownership. A maintainer should be able to predict where a failure lands
-before opening the implementation.
+Make owns orchestration, not product behavior. Use this page to trace a failed
+root target to the command, package, and evidence surface that can actually
+explain it.
 
 ## Dispatch Map
 
-| Root target family | What it usually dispatches to |
-| --- | --- |
-| Rust targets | workspace `cargo` commands |
-| Python targets | `crates/bijux-cli-python` packaging and release flows |
-| DAG targets | `cargo run -p bijux-dev --bin bijux-dev-dag -- ...` |
-| docs targets | MkDocs and documentation automation helpers |
+| Root family | Immediate adapter | Behavioral owner | Typical evidence |
+| --- | --- | --- | --- |
+| `fmt`, `lint`, Rust tests, audit, coverage, Rust docs | shared Rust gate plus `makes/rust.mk` parameters | Cargo workspace and focused crate tests | `artifacts/rust/` |
+| Python test, lint, security, build, publish | `makes/python.mk` | `crates/bijux-cli-python` and native `bijux-cli` bridge | `artifacts/python/` |
+| documentation checks and serving | `makes/docs.mk`, `makes/bijux-docs.mk` | Markdown, MkDocs configuration, and docs automation | `artifacts/docs/` |
+| DAG governance and evidence | `makes/dag.mk` | `bijux-dev-dag` commands and owning product contracts | named DAG or report artifact roots |
+| GitHub entrypoints | `makes/gh.mk` | delegated local target; workflow owns hosted setup | workflow log plus repository artifacts |
+| standards validation and refresh | `makes/bijux-std.mk` | accepted `bijux-std` source and sync tooling | checksum and refresh report |
 
-## Why Dispatch Exists
+The adapter is the first debugging location only when it changed selection,
+environment, status, or paths. A product assertion failure belongs to the
+owning crate even when Make launched it.
 
-- It gives maintainers one predictable shell surface for repeated workflows.
-- It keeps package-local complexity out of the root command line.
-- It still leaves a clear ownership trail when a command fails.
+## Trace A Failure
 
-## Dispatch Rule
+1. Read the exact command printed by the target and its final exit status.
+2. Identify the local fragment and any shared target it delegates to.
+3. Inspect caller overrides and effective environment.
+4. Open the retained console or report under `artifacts/`.
+5. Reproduce the smallest owning command without changing selection.
+6. Fix the layer that introduced the defect.
 
-The root target should describe the owning package or surface clearly enough
-that a maintainer can predict where failures will land.
+Do not copy a product command into a workflow to avoid a broken Make target.
+That creates two orchestration contracts and hides the local failure.
 
-## What Good Dispatch Looks Like
+## Boundary Tests
 
-- a root target name that hints at the owning surface
-- output that still reveals the underlying tool or package
-- documentation that explains the fan-out without forcing maintainers to read
-  every make fragment
+A dispatch wrapper must preserve:
 
-## Continue Reading
+- source commit and worktree assumptions;
+- test or suite selection;
+- toolchain and feature flags;
+- stdout, stderr, and structured report locations;
+- terminal status and complete summary;
+- artifact containment.
 
-- [CI Targets](ci-targets.md)
+If the wrapper adds retries, filtering, advisory mode, environment variables,
+or ignored-test behavior, that behavior is part of the wrapper contract and
+requires focused coverage.
+
+## Related Guidance
+
 - [Make Execution Model](make-system-overview.md)
-- [Maintainer Package Destination](../packages/bijux-dev.md)
+- [Make Target Authoring](authoring-rules.md)
+- [Root Entrypoints](root-entrypoints.md)
+- [Repository Gates](../operations/repository-gates.md)
