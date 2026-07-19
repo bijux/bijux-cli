@@ -56,6 +56,7 @@ exclude_docs: |
   !/bijux-cli/architecture/error-model.md
   !/bijux-cli/architecture/architecture-risks.md
   !/bijux-cli/interfaces/cli-surface.md
+  !/bijux-cli/interfaces/app-integration-guide.md
   !/bijux-cli/interfaces/configuration-surface.md
   !/bijux-cli/interfaces/operator-workflows.md
   !/bijux-cli/interfaces/public-imports.md
@@ -194,6 +195,7 @@ nav:
           - Architecture Risks: bijux-cli/architecture/architecture-risks.md
       - Use:
           - Command Surface: bijux-cli/interfaces/cli-surface.md
+          - App Integration: bijux-cli/interfaces/app-integration-guide.md
           - Configuration: bijux-cli/interfaces/configuration-surface.md
           - Operator Workflows: bijux-cli/interfaces/operator-workflows.md
           - Public Rust Imports: bijux-cli/interfaces/public-imports.md
