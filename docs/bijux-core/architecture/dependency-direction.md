@@ -57,5 +57,5 @@ repository split.
 ## Next Reads
 
 - [Maintainer Control Plane](maintainer-control-plane.md)
-- [Testing and Validation](../governance/testing-and-validation.md)
+- [Testing and Validation](../operations/testing-and-validation.md)
 - [Change Management](../operations/change-management.md)

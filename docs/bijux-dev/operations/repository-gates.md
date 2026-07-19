@@ -70,4 +70,4 @@ automation, then move to the relevant surface.
 
 - [Evidence Collection](evidence-collection.md)
 - [Quality Policy](../governance/quality-policy.md)
-- [Core Testing and Validation](../../bijux-core/governance/testing-and-validation.md)
+- [Core Testing and Validation](../../bijux-core/operations/testing-and-validation.md)

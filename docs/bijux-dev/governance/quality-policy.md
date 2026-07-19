@@ -56,4 +56,4 @@ make a real failure harder to understand than it should be.
 
 - [Test Policy](test-policy.md)
 - [Dependency Governance](dependency-governance.md)
-- [Core Testing and Validation](../../bijux-core/governance/testing-and-validation.md)
+- [Core Testing and Validation](../../bijux-core/operations/testing-and-validation.md)

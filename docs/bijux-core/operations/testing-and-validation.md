@@ -30,6 +30,21 @@ Choose validation by asking what could have drifted:
 | root docs or navigation | the handbook still builds and routes readers correctly |
 | root workflow, release, or contract behavior | repository-level gates still enforce the published boundary |
 
+## Evidence Layers
+
+Repository validation uses complementary layers rather than one universal
+command:
+
+| Layer | Question answered |
+| --- | --- |
+| crate unit and integration tests | does the owning package still behave correctly? |
+| contract and schema checks | did a retained or machine-readable interface drift? |
+| maintainer governance suites | do ownership, layout, and release policies still hold? |
+| documentation checks | are published claims, navigation, and generated references coherent? |
+
+A change may need several layers, but each selected layer must correspond to a
+real risk introduced by the change.
+
 ## Useful Root Entry Points
 
 These root commands are the standard starting points when the change crosses a
@@ -100,8 +115,8 @@ A strong validation set is:
 Validation should prove the changed surface honestly and no broader than
 necessary.
 
-## Next Reads
+## Validation References
 
 - [Review Expectations](review-expectations.md)
 - [Change Management](change-management.md)
-- [Core Testing and Validation](../governance/testing-and-validation.md)
+- [Compatibility and Schema](../governance/compatibility-and-schema.md)

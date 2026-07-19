@@ -81,4 +81,4 @@ instead of repository truth.
 
 - [Documentation Standards](documentation-standards.md)
 - [Change Management](../operations/change-management.md)
-- [Testing and Validation](testing-and-validation.md)
+- [Testing and Validation](../operations/testing-and-validation.md)

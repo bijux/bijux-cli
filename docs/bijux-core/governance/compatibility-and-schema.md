@@ -70,6 +70,6 @@ A compatibility-sensitive change is usually incomplete unless it carries:
 
 ## Next Reads
 
-- [Testing and Validation](testing-and-validation.md)
+- [Testing and Validation](../operations/testing-and-validation.md)
 - [Change Management](../operations/change-management.md)
 - [CLI Compatibility Commitments](../../bijux-cli/interfaces/compatibility-commitments.md)

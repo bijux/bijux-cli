@@ -32,7 +32,6 @@ repository workflow is executed rather than which rule justifies it.
 ## Pages In This Section
 
 - [Package Ownership](package-ownership.md)
-- [Testing and Validation](testing-and-validation.md)
 - [Release and Versioning](release-and-versioning.md)
 - [Compatibility and Schema](compatibility-and-schema.md)
 - [Documentation Standards](documentation-standards.md)
