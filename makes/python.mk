@@ -29,7 +29,8 @@ PYTEST_CACHE_DIR        ?= $(abspath $(TEST_ARTIFACTS_DIR)/.pytest_cache)
 PYTEST_INI := $(abspath $(PYTHON_CONFIG_DIR)/pytest.ini)
 COVCFG_INI := $(abspath $(PYTHON_CONFIG_DIR)/coveragerc.ini)
 
-PY_RUNTIME_BIN ?= artifacts/rust/target/debug/bijux
+PY_RUNTIME_BIN     ?= artifacts/rust/target/debug/bijux
+PY_DAG_RUNTIME_BIN ?= artifacts/rust/target/debug/bijux-dag
 
 PYTEST_DEFAULT_MARKER_EXPR ?= not nightly
 PYTEST_MARKER_EXPR         ?= $(PYTEST_DEFAULT_MARKER_EXPR)
@@ -52,10 +53,10 @@ PYPI_TOKEN_ENV       ?= PYPI_API_TOKEN
 define run_pytest
 	@echo "→ Running Python tests on $(PYTHON_TEST_DIR)"
 	@mkdir -p "$(TEST_ARTIFACTS_DIR)"
-	@if [ ! -x "$(PY_RUNTIME_BIN)" ]; then \
-	  echo "→ Building Rust runtime binary for Python parity tests"; \
-	  cargo build -q -p bijux-cli --bin bijux; \
-	fi
+	@echo "→ Building Rust runtime binaries for Python parity tests"
+	@cargo build -q --locked \
+	  -p bijux-cli --bin bijux \
+	  -p bijux-dag-cli --bin bijux-dag
 	@echo "   • JUnit XML → $(abspath $(TEST_ARTIFACTS_DIR)/junit.xml)"
 	@echo "   • Using pytest → $(PYTEST)"
 	@set -euo pipefail; \
@@ -63,6 +64,7 @@ define run_pytest
 	status=0; \
 	PYTHONPATH="$(abspath $(PYTHON_SRC_DIR))$${PYTHONPATH:+:$${PYTHONPATH}}" \
 	BIJUX_BIN="$(abspath $(PY_RUNTIME_BIN))" \
+	BIJUX_DAG_BIN="$(abspath $(PY_DAG_RUNTIME_BIN))" \
 	$(PYTEST) -c "$(PYTEST_INI)" "$(abspath $(PYTHON_TEST_DIR))" \
 	  --junitxml "$(abspath $(TEST_ARTIFACTS_DIR)/junit.xml)" \
 	  -o cache_dir="$(PYTEST_CACHE_DIR)" \

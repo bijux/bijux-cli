@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import subprocess
-
-import pytest
 
 from bijux_cli_py import (
     inspect_dag_run,
@@ -19,16 +18,24 @@ def _workspace_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
 
-def _dag_wrapper(path: Path) -> Path:
+def _dag_runtime() -> Path:
     root = _workspace_root()
-    path.write_text(
-        "#!/bin/sh\n"
-        f"cd '{root}'\n"
-        "exec cargo run -q -p bijux-dag-cli --bin bijux-dag -- \"$@\"\n",
-        encoding="utf-8",
-    )
-    path.chmod(0o755)
-    return path
+    configured = os.environ.get("BIJUX_DAG_BIN")
+    candidates = [
+        Path(configured).expanduser() if configured else None,
+        root / "artifacts" / "rust" / "target" / "debug" / "bijux-dag",
+        root / "artifacts" / "rust" / "target" / "release" / "bijux-dag",
+        root / "target" / "debug" / "bijux-dag",
+        root / "target" / "release" / "bijux-dag",
+    ]
+    for candidate in candidates:
+        if (
+            candidate is not None
+            and candidate.is_file()
+            and os.access(candidate, os.X_OK)
+        ):
+            return candidate.resolve()
+    raise RuntimeError("bijux-dag runtime binary not found")
 
 
 def _hello_graph() -> Path:
@@ -54,23 +61,16 @@ def _direct_dag_json(runtime: Path, *args: str) -> dict[str, object]:
     return payload
 
 
-def test_validate_dag_graph_matches_direct_runtime(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    runtime = _dag_wrapper(tmp_path / "bijux-dag")
-    monkeypatch.setenv("BIJUX_DAG_BIN", str(runtime))
-
+def test_validate_dag_graph_matches_direct_runtime() -> None:
+    runtime = _dag_runtime()
     sdk_payload = validate_dag_graph(_hello_graph())
     direct_payload = _direct_dag_json(runtime, "validate", str(_hello_graph()))
 
     assert sdk_payload == direct_payload
 
 
-def test_plan_dag_graph_matches_direct_runtime(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    runtime = _dag_wrapper(tmp_path / "bijux-dag")
-    monkeypatch.setenv("BIJUX_DAG_BIN", str(runtime))
+def test_plan_dag_graph_matches_direct_runtime(tmp_path: Path) -> None:
+    runtime = _dag_runtime()
     out = tmp_path / "plan-runs"
 
     sdk_payload = plan_dag_graph(_hello_graph(), out=out, run_id="sdk-plan")
@@ -99,10 +99,9 @@ def test_plan_dag_graph_matches_direct_runtime(
 
 
 def test_run_inspect_and_artifact_queries_match_direct_runtime(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    tmp_path: Path,
 ) -> None:
-    runtime = _dag_wrapper(tmp_path / "bijux-dag")
-    monkeypatch.setenv("BIJUX_DAG_BIN", str(runtime))
+    runtime = _dag_runtime()
     out = tmp_path / "run-runs"
 
     run_payload = run_dag_graph(_hello_graph(), out=out, run_id="sdk-run")
