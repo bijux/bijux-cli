@@ -52,6 +52,24 @@ The binaries are complementary. Similar command names do not make their
 responsibilities interchangeable. The [`bijux-dev` package page](packages/bijux-dev.md)
 maps each authority to source code and its machine-readable contract.
 
+```mermaid
+flowchart LR
+    source["Repository source and contracts"]
+    observe["bijux-dev-cli<br/>observe and diagnose"]
+    govern["bijux-dev-dag<br/>select and execute suites"]
+    evidence["Structured reports under artifacts/"]
+    decision["Aggregate status or release decision"]
+
+    source --> observe --> evidence
+    source --> govern --> evidence
+    evidence --> decision
+    decision -. never redefines .-> source
+```
+
+The control plane reads product and repository truth; it must not become a
+second implementation of that truth. A failed contract changes the decision,
+not the contract being evaluated.
+
 ## What A Result Proves
 
 A maintainer result is credible only when it identifies:

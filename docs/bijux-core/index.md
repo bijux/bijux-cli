@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-04-12
+last_reviewed: 2026-07-19
 ---
 
 # Repository Handbook
@@ -60,6 +60,33 @@ shippable and auditable:
 
 That split matters because many questions that look like one command problem
 are really package-boundary or release-boundary questions.
+
+```mermaid
+flowchart TB
+    repo["bijux-core workspace"]
+
+    subgraph public["Published product families"]
+        cli["bijux<br/>bijux-cli"]
+        dag["bijux-dag<br/>core · artifacts · runtime · app · cli"]
+    end
+
+    subgraph private["Repository-only support"]
+        py["bijux-cli-python<br/>Python distribution build"]
+        testkit["bijux-dag-testkit<br/>fixtures and assertions"]
+        dev["bijux-dev<br/>governance and evidence"]
+    end
+
+    repo --> public
+    repo --> private
+    py --> cli
+    testkit -. verifies .-> dag
+    dev -. governs release evidence .-> public
+```
+
+This is an ownership map, not a Cargo dependency graph. Use the
+[Package Map](foundation/package-map.md) for package purpose and the
+[Package Boundary](foundation/package-boundary.md) before treating a private
+support crate as a distributable API.
 
 ## What You Will Find Here
 

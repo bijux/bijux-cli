@@ -21,6 +21,30 @@ are installed separately.
 `bijux-dev`, the executable specifications, and governed reports are repository
 maintenance surfaces. They are not additional end-user products.
 
+```mermaid
+flowchart LR
+    operator[Operator]
+    maintainer[Maintainer]
+    bijux["bijux<br/>command runtime"]
+    dag["bijux-dag<br/>workflow runtime"]
+    cli_pkg["bijux-cli<br/>Rust or Python distribution"]
+    dag_pkgs["DAG crate family"]
+    governance["bijux-dev<br/>private control plane"]
+    contracts["Contracts and governed evidence"]
+
+    operator --> bijux --> cli_pkg
+    operator --> dag --> dag_pkgs
+    maintainer --> governance
+    governance --> contracts
+    contracts -. validate release claims .-> cli_pkg
+    contracts -. validate release claims .-> dag_pkgs
+```
+
+The solid paths are user installation and execution paths. The dotted paths
+show verification, not runtime dependency injection: maintainers use the
+private control plane to prove product claims, while product behavior remains
+owned by the product crates.
+
 The current workspace release line is `0.4.0`.
 
 `bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows

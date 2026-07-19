@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-19
 ---
 
 # DAG Handbook
@@ -41,6 +41,23 @@ for the stable command surface generated from the live binary, and
 [Gated Command Inventory](interfaces/gated-command-inventory.md)
 when you deliberately need the experimental, simulated, or internal route
 inventory.
+
+```mermaid
+flowchart LR
+    source["Workflow source"]
+    graph["Validated canonical graph"]
+    plan["Deterministic execution plan"]
+    run["Backend execution"]
+    evidence["Retained run evidence"]
+    inspect["Verify, explain, diff, or replay"]
+
+    source --> graph --> plan --> run --> evidence --> inspect
+    evidence -. replay input .-> plan
+```
+
+The retained evidence is part of the product result, not incidental logging.
+Validation can stop before execution; execution is not accepted as
+reproducible until its artifacts and identity-bearing records can be verified.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/first-run-tutorial.md">Start with the first-run tutorial</a>

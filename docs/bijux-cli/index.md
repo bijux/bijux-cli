@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-19
 ---
 
 # CLI Handbook
@@ -35,6 +35,25 @@ The visible `bijux --help` surface currently groups into four kinds of work:
 Official apps such as `atlas`, `dag`, `dna`, `gnss`, `rag`, `rar`, and `vex`
 mount through this runtime rather than defining their own root command
 contract.
+
+```mermaid
+flowchart LR
+    invocation["CLI, REPL, or Python launcher"]
+    parse["Parse and normalize input"]
+    config["Resolve layered configuration"]
+    route["Route root command, app, or plugin"]
+    execute["Execute owned runtime behavior"]
+    state["Read or write local state"]
+    response["Render stable human or JSON output"]
+
+    invocation --> parse --> config --> route --> execute --> response
+    config <--> state
+    execute <--> state
+```
+
+Every entry path converges on the same native runtime contract. The Python
+package owns distribution and process launching; it does not define a second
+parser, router, state model, or output schema.
 
 ## Start Here
 
