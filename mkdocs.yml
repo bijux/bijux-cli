@@ -95,6 +95,7 @@ exclude_docs: |
   !/bijux-dag/operations/installation-and-setup.md
   !/bijux-dag/operations/first-run-tutorial.md
   !/bijux-dag/operations/common-workflows.md
+  !/bijux-dag/operations/observability-and-diagnostics.md
   !/bijux-dag/operations/cache-behavior-workflow.md
   !/bijux-dag/operations/evidence-backed-bulletin-workflow.md
   !/bijux-dag/operations/container-packaging-workflow.md
@@ -241,6 +242,7 @@ nav:
           - Installation: bijux-dag/operations/installation-and-setup.md
           - First Run: bijux-dag/operations/first-run-tutorial.md
           - Common Workflows: bijux-dag/operations/common-workflows.md
+          - Observability And Diagnostics: bijux-dag/operations/observability-and-diagnostics.md
           - Cache Behavior: bijux-dag/operations/cache-behavior-workflow.md
           - Evidence Workflow: bijux-dag/operations/evidence-backed-bulletin-workflow.md
           - Container Workflow: bijux-dag/operations/container-packaging-workflow.md
