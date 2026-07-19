@@ -26,6 +26,25 @@ policy, broad tests, and release validation remain maintainer concerns.
 
 Do not report the smoke check as workflow execution evidence.
 
+## Surface Discovery
+
+Source-checkout CI can verify the stable command inventory through the public
+binary:
+
+```bash
+cargo run -p bijux-dag-cli --bin bijux-dag -- commands
+```
+
+Release maintainers may separately exercise the gated support probe:
+
+```bash
+BIJUX_DAG_ENABLE_INTERNAL=1 cargo run -p bijux-dag-cli --bin bijux-dag -- capabilities --json
+```
+
+The support probe is not part of the public operator boundary. It validates
+maintainer-facing capability evidence and must not be reported as a stable
+command-surface check or used instead of `commands`.
+
 ## Repository Proof Lane
 
 From the `bijux-core` root:

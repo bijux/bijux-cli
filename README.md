@@ -56,6 +56,8 @@ artifacts, cache explanation, and replayable run bundles.
 The machine-readable release authority is
 [`contracts/foundation/dag_release_truth_table.v1.json`](contracts/foundation/dag_release_truth_table.v1.json).
 
+### `bijux-dag` v0.4.0 Surface Truth Table
+
 | Class | Current boundary |
 | --- | --- |
 | stable | visible `bijux-dag --help` commands plus bounded local, container, shared-filesystem SLURM, and Kubernetes Job execution |
