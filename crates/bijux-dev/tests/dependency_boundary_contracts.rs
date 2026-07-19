@@ -129,6 +129,7 @@ fn runtime_dependencies_match_runtime_allowed_list() {
         "ctrlc",
         "hex",
         "flate2",
+        "nix",
         "reqwest",
         "serde",
         "serde_json",
