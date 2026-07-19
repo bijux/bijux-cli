@@ -1,51 +1,112 @@
-# bijux-dag-core Contracts
+# `bijux-dag-core` Contracts
 
-Responsibility: DAG schema, parsing, canonicalization, validation, and deterministic semantic graph logic.
+`bijux-dag-core` is the deterministic graph kernel. It defines what a DAG
+means before runtime policy, filesystem state, clocks, or external processes
+can influence execution.
 
-## Responsibility
-`bijux-dag-core` owns DAG model, parse, validation, resolve, canonicalization, topology, and fingerprint semantics.
+## Owned Surface
 
-## Internal boundaries
-- `../src/lib.rs` is a thin export surface and should not contain core algorithms.
-- `../src/graph/model.rs` owns graph domain types.
-- `../src/graph/canonical.rs` owns canonicalization and normalization.
-- `../src/graph/topology.rs` owns deterministic ordering.
-- `../src/pipeline/` owns parse, resolve, and validate entrypoints.
-- `../src/analysis/` owns fingerprinting and semantic analysis.
-- `../src/build/contract.rs` owns optional packaging metadata and default application.
-- `../src/planner/` owns lowering and planning surfaces.
-- `../src/build/` owns authoring helpers and compile-oriented wrappers around the kernel.
-- `../src/contracts/` owns error and compatibility contract types.
+The crate owns:
 
-## Purity boundary
-Core is pure logic and data transformation.
+- graph, node, edge, input, resource, and metadata models;
+- strict parsing and schema-aligned validation;
+- reference resolution and authoring defaults;
+- canonical graph representation;
+- deterministic topology and trigger-rule evaluation;
+- graph, node, and planner identity inputs;
+- lowering from a validated graph into planner-facing structures;
+- stable diagnostics for graph contract violations.
 
-Forbidden direct dependencies in core source:
-- filesystem APIs
-- process execution APIs
-- environment-variable reads
-- wall-clock/time sourcing
+It does not own adapters, scheduler state, artifact persistence, command
+routing, rendering, or repository governance.
 
-Allowed utility dependencies:
-- serialization
-- hashing
-- collections and deterministic ordering utilities
+## Internal Boundaries
 
-## Validation model
-Validation diagnostics must carry stable IDs and severities and remain documented in `docs/bijux-dag/interfaces/data-contracts.md` and `docs/bijux-dag/interfaces/error-codes.md`.
+| Path | Responsibility |
+| --- | --- |
+| `../src/graph/` | graph-domain models, composition, expansion, topology, and resources |
+| `../src/pipeline/` | parse, resolve, and validate entrypoints |
+| `../src/analysis/` | effects, fingerprints, semantics, and trigger rules |
+| `../src/planner/` | deterministic planner lowering |
+| `../src/build/` | builders and compile-oriented wrappers |
+| `../src/contracts/` | kernel-owned compatibility and invariant checks |
+| `../src/lib.rs` | curated exports, stable lane, prelude, and experimental lane |
 
-## Related schemas
+Algorithms belong in their owning modules, not in the crate root. Exporting a
+type does not transfer ownership away from its domain module.
 
-- `configs/dag/schema/dag.schema.json`
-- `configs/dag/schema/extension_descriptor.schema.json`
-- `configs/dag/schema/graph_canonical_diff.schema.json`
-- `configs/dag/schema/graph_fingerprint_explain.schema.json`
-- `configs/dag/schema/migration_report.schema.json`
-- `configs/dag/schema/planner_explain.schema.json`
-- `configs/dag/schema/policy_config.schema.json`
+## Purity Boundary
 
-## Architectural guardrails
-- Domain types should stay independent from compile-orchestration conveniences.
-- New algorithms belong in focused modules, not in `../src/lib.rs`.
-- Integration-oriented wrappers must not become the primary place where core semantics live.
-- Core compilation must work directly from `Graph`; contract wrappers are optional adapters, not the primary API.
+Product behavior in this crate is pure data transformation. Core source must
+not read the filesystem, inspect environment variables, spawn processes,
+source wall-clock time, or persist state. Serialization, hashing, allocation,
+Unicode normalization, and deterministic collection operations are allowed.
+
+A caller supplies all data needed to parse, resolve, validate, canonicalize,
+fingerprint, or plan a graph.
+
+## Identity Contract
+
+Canonicalization must remove representation differences without erasing
+semantic differences. Equal canonical graphs produce equal graph identity.
+Changes to execution-relevant fields must affect the appropriate identity;
+presentation-only fields must not change execution identity unless the
+governing identity contract says otherwise.
+
+Topology is deterministic for the same valid graph. Cycles, missing
+dependencies, duplicate identifiers, invalid selectors, unresolved inputs, and
+incompatible trigger rules are errors rather than opportunities for heuristic
+repair.
+
+## Validation Contract
+
+Validation diagnostics carry stable identifiers, severity, location, and
+actionable context where available. Validation must:
+
+- report malformed graph structure before planner lowering;
+- reject references that cannot be resolved unambiguously;
+- preserve deterministic diagnostic ordering;
+- avoid reading runtime state to decide graph validity;
+- distinguish schema, semantic, topology, and resource failures.
+
+The public error registry and graph data contracts govern operator-facing
+codes. New diagnostics require registry, handbook, and focused test updates.
+
+## Dependency Direction
+
+`bijux-dag-runtime`, `bijux-dag-app`, `bijux-dag-testkit`, and `bijux-dev` may
+depend on this crate. This crate must not depend on any of them.
+`bijux-dag-artifacts` is a sibling data boundary; core graph meaning must not
+depend on retained run layout.
+
+## Stability
+
+The `stable` module is the curated compatibility lane. The `prelude` supports
+common graph workflows. Experimental exports require the
+`experimental-public-api` feature and do not become stable merely because they
+are callable.
+
+Serialized graph shape, canonicalization, identity, diagnostics, and planner
+lowering are compatibility-sensitive. A change to any of them requires
+explicit fixture and downstream impact review.
+
+## Verification
+
+| Claim | Required evidence |
+| --- | --- |
+| canonical representation | `crates/bijux-dag-core/tests/canonical_contract.rs` |
+| graph and node identity | `graph_identity_contract.rs` plus identity property contracts |
+| deterministic topology | `graph_kernel_determinism.rs` and topology fuzz contracts |
+| planner lowering | `planner_contract.rs` and planner fixture contracts |
+| validation behavior | validation entrypoint, adversarial, diagnostics, and fixture contracts |
+| serialized compatibility | schema round-trip, serde round-trip, and snapshot-shape contracts |
+
+Run the focused package suite for broad kernel changes:
+
+```bash
+cargo test --locked -p bijux-dag-core
+```
+
+The normative cross-crate authorities remain under `docs/spec/`; this
+crate-local page defines package ownership and does not duplicate those
+behavioral specifications.
