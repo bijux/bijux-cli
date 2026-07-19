@@ -10,6 +10,7 @@ include $(ROOT_MK_DIR)/python.mk
 include $(ROOT_MK_DIR)/docs.mk
 include $(ROOT_MK_DIR)/bijux-docs.mk
 include $(ROOT_MK_DIR)/bijux-std.mk
+include $(ROOT_MK_DIR)/contracts.mk
 include $(ROOT_MK_DIR)/gh.mk
 include $(ROOT_MK_DIR)/dag.mk
 include $(BIJUX_MAKES_SHARED_ROOT)/bijux-makes-rs/bijux.mk

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-repo_root="$(CDPATH= cd -- "${script_dir}/../.." && pwd)"
+script_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+repo_root="$(CDPATH='' cd -- "${script_dir}/../.." && pwd)"
 artifact_root="${BIJUX_DAG_DEMO_ROOT:-${repo_root}/artifacts/dag-demo}"
 run_root="${artifact_root}/runs"
 cache_root="${artifact_root}/cache"

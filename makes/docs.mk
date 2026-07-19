@@ -12,6 +12,7 @@ DOCS_REQUIREMENTS ?= configs/docs/requirements-docs.txt
 # Keep documentation build outputs and caches under `artifacts/`.
 DOCS_SITE_DIR    ?= artifacts/docs/site
 DOCS_CACHE_DIR   ?= artifacts/docs/.cache
+DOCS_PYCACHE_DIR ?= artifacts/docs/pycache
 DOCS_CONTRACT_DIR ?= $(DOCS_SITE_DIR)/contracts
 
 define docs_search_file
@@ -39,9 +40,9 @@ DOCS_PORT           ?= 8000
 ifeq ($(shell uname -s),Darwin)
   BREW_PREFIX   := $(shell command -v brew >/dev/null 2>&1 && brew --prefix)
   LIBFFI_PREFIX := $(shell test -n "$(BREW_PREFIX)" && brew --prefix libffi)
-  DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true DYLD_FALLBACK_LIBRARY_PATH="$(BREW_PREFIX)/lib:$(LIBFFI_PREFIX)/lib:$$DYLD_FALLBACK_LIBRARY_PATH"
+  DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true PYTHONPYCACHEPREFIX="$(abspath $(DOCS_PYCACHE_DIR))" DYLD_FALLBACK_LIBRARY_PATH="$(BREW_PREFIX)/lib:$(LIBFFI_PREFIX)/lib:$$DYLD_FALLBACK_LIBRARY_PATH"
 else
-  DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true
+  DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true PYTHONPYCACHEPREFIX="$(abspath $(DOCS_PYCACHE_DIR))"
 endif
 
 .PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-publication-check docs-navigation-check
