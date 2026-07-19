@@ -7,6 +7,23 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## 0.4.0 – 2026-07-04
 
 ### Added
-- First public crates.io release of `bijux-dag-runtime` as the execution engine behind `bijux-dag`.
-- Stable Rust import lanes for execution planning, policy enforcement, replay classification, cache behavior, and runtime diagnostics.
-- Public adapter boundaries for local process execution, container-backed nodes, external adapters, and retained execution evidence.
+- First public crates.io release of `bijux-dag-runtime` as the execution engine
+  behind `bijux-dag`.
+- Stable and prelude import lanes for supported execution, cache, replay, and
+  verification workflows.
+- Deterministic plan execution with dependency scheduling, selector closure,
+  retries, timeouts, and terminal node outcomes.
+- Local process and container-backed execution boundaries with explicit
+  capability and infrastructure failure reporting.
+- Adapter contracts, registries, conformance checks, and external adapter
+  integration without moving graph semantics into runtime code.
+- Built-in constant, shell, file-transform, and container adapters for the
+  supported local workflow surface.
+- Policy evaluation and retained policy traces for declared effects and
+  execution decisions.
+- Content-addressed cache keys, cache proof verification, corruption refusal,
+  and lineage-aware reuse records.
+- Replay classification, retained-evidence verification, and difference
+  reporting for focused reruns.
+- Structured diagnostics, stable error classification, lifecycle events, and
+  ordered execution timelines.

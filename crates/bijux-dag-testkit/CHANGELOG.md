@@ -7,6 +7,22 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## 0.4.0 – 2026-07-04
 
 ### Added
-- Declared `bijux-dag-testkit` as the shared repository-internal crate for deterministic DAG fixtures, fake adapters, and retained-run assertions.
-- Reusable workflow builders, fixtures, and assertion helpers for DAG contract, integration, and regression suites.
-- Shared support for cross-crate scenario coverage so graph, runtime, and application tests exercise the same canonical workflows.
+- Declared `bijux-dag-testkit` as the repository-internal support crate for
+  shared DAG tests.
+- Deterministic graph builders for chains, diamonds, fan-out, disconnected,
+  retry, timeout, cache, replay, branch, and failure scenarios.
+- Canonical node and edge builders that keep repeated test graphs aligned
+  across package boundaries.
+- Fake adapter harnesses for exercising runtime contracts without production
+  process or service dependencies.
+- Product scenario helpers for cross-crate graph, runtime, artifact, and
+  application tests.
+- Retained manifest normalization and comparison helpers for deterministic
+  assertions.
+- Evidence-registry readers and asset resolution by governed identifier.
+- Compatibility path resolution for repository evidence consumed by existing
+  test suites.
+- Checked APIs that report missing or malformed evidence rather than relying
+  only on panic-based fixture access.
+- An explicit internal-only boundary: production crates do not depend on the
+  testkit at runtime and the crate is not part of the public crates.io release.

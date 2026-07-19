@@ -7,6 +7,21 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ## 0.4.0 – 2026-07-04
 
 ### Added
-- First public crates.io release of `bijux-dag-core` as the deterministic DAG kernel in `bijux-core`.
-- Stable Rust import lanes for graph parsing, validation, canonicalization, topology, identity, and planner lowering.
-- Public branch-contract and graph-input resolution surfaces that keep execution planning deterministic before runtime side effects begin.
+- First public crates.io release of `bijux-dag-core` as the deterministic graph
+  kernel behind `bijux-dag`.
+- Stable and prelude import lanes for supported graph authoring, validation,
+  canonicalization, and planning workflows.
+- Strict parsing and schema validation for the `bijux-dag/v0.1` graph contract.
+- Semantic validation for references, topology, paths, effects, resources,
+  retries, cache declarations, and output contracts.
+- Deterministic graph canonicalization, topology ordering, and fingerprint
+  inputs for reproducible planning.
+- Typed graph inputs with defaults, enum and collection constraints, and
+  reference materialization before execution.
+- Planner lowering that produces execution plans, node identities, and stable
+  planner diagnostics without runtime side effects.
+- Branch decisions, conditional edges, trigger rules, and selected-path
+  analysis as explicit graph semantics.
+- Reusable subgraph composition and deterministic dynamic-expansion contracts.
+- Opt-in experimental Rust contracts behind `experimental-public-api`, kept
+  outside the default stable documentation surface.
