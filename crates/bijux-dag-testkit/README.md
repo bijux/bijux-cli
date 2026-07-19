@@ -53,6 +53,8 @@ assertions without duplicating fixtures across crates.
   deterministic outcomes, product scenario reports, and fault design.
 - [`FIXTURES_AND_BUILDERS.md`](docs/FIXTURES_AND_BUILDERS.md): graph builders,
   repository assets, synthetic/evidence distinction, and snapshots.
+- [`HERMETIC_TESTS.md`](docs/HERMETIC_TESTS.md): per-test resource ownership,
+  process and environment isolation, golden updates, and narrow serialization.
 
 ## Related links
 

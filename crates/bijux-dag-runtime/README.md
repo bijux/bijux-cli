@@ -168,6 +168,9 @@ presence in repository evidence is not a public runtime commitment.
   state, backend, cache, replay, and failure contracts.
 - [`EXECUTION_AND_SCHEDULING.md`](docs/EXECUTION_AND_SCHEDULING.md): admission,
   readiness, attempts, retries, cancellation, state invariants, and recovery.
+- [`FAILURE_AND_CANCELLATION.md`](docs/FAILURE_AND_CANCELLATION.md): failure
+  classes, success acceptance, retry eligibility, cancellation propagation,
+  and retained recovery evidence.
 
 ## Related links
 
