@@ -4,298 +4,194 @@ audience: mixed
 type: reference
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-08
+last_reviewed: 2026-07-19
 ---
 
 # Reproducibility Model
 
-This reference explains how `bijux-dag` decides whether two runs describe the
-same graph, the same plan, the same execution inputs, the same cache entry, or
-the same retained outputs.
+Bijux DAG uses separate identities for authored structure, planned work,
+executed work, declared environment, cache eligibility, and retained output.
+No single fingerprint proves that two runs are equivalent.
 
-Use this page when the question is "what identity does this field actually
-represent?" rather than "which command should I run next?"
+Behavioral authority:
 
-The examples and claims on this page are grounded in the retained run evidence
-documented in [Run Evidence Layout](run-evidence-layout.md), the replay
-boundary rules in [`docs/spec/REPLAY_CONTRACT.md`](../../spec/REPLAY_CONTRACT.md),
-the export and import rules in
-[`docs/spec/IMPORT_EXPORT_CONTRACT.md`](../../spec/IMPORT_EXPORT_CONTRACT.md),
-and the live runtime and app surfaces under:
+- retained layout: [Run Evidence Layout](run-evidence-layout.md);
+- replay semantics: `docs/spec/REPLAY_CONTRACT.md`;
+- bundle semantics: `docs/spec/IMPORT_EXPORT_CONTRACT.md`;
+- planner, execution, and cache code:
+  `crates/bijux-dag-runtime/src/runtime_core/` and
+  `crates/bijux-dag-runtime/src/cache/`.
 
-- `crates/bijux-dag-runtime/src/runtime_core/planning/`
-- `crates/bijux-dag-runtime/src/runtime_core/execution/engine.rs`
-- `crates/bijux-dag-runtime/src/cache/mod.rs`
-- `crates/bijux-dag-app/src/cache/service.rs`
-- `crates/bijux-dag-app/src/replay/service.rs`
+## Identity Matrix
 
-## Identity Layers
-
-`bijux-dag` does not use one catch-all fingerprint for every question.
-Different surfaces answer different questions:
-
-- graph fingerprint: "did the authored graph resolve to the same canonical DAG
-  structure?"
-- plan fingerprint: "did planning lower the graph to the same execution plan?"
-- execution fingerprint: "would the runtime execute the same work under the
-  same execution-relevant settings?"
-- environment fingerprint: "did this node declare the same environment
-  contract for cache reuse?"
-- output fingerprint: "did the retained artifacts keep the same bytes and
-  producer identity?"
-
-That split is deliberate. It lets operators distinguish metadata drift,
-execution drift, cache invalidation, and artifact mutation instead of collapsing
-everything into a single opaque hash.
+| Identity | Question | Retained evidence | Does not prove |
+| --- | --- | --- | --- |
+| graph | Is canonical authored structure equal? | `graph_fingerprint` | same plan, environment, or output |
+| plan | Did lowering produce the same plan? | `planner_fingerprint` | same runtime inputs or artifacts |
+| execution | Is execution-relevant work equal? | `execution_fingerprint` and node fingerprints | same external side effects |
+| environment | Is the declared node environment equal? | `declared_environment_fingerprint` | same ambient host |
+| cache key | Is one node result eligible for exact reuse? | cache `meta.json` and manifest | retained payload integrity by itself |
+| output | Are bytes and producer identity equal? | artifact digest and producer fingerprint | business-level equivalence |
 
 ## Graph Fingerprint
 
-The graph fingerprint is the canonical identity of the authored DAG structure.
+The graph fingerprint identifies canonical DAG structure. It appears in
+`manifest.json`, `graph.snapshot.json`, and replay/diff payloads.
 
-Today it is retained in:
+It changes for canonical node, edge, port, branch, or node-definition changes.
+It can remain stable across ordering or presentation differences that
+canonicalization removes.
 
-- `manifest.json` as `graph_fingerprint`
-- `graph.snapshot.json` as `graph_fingerprint`
-- replay and diff payloads that compare one run against another
-
-It is intended to stay stable when only cosmetic ordering or non-semantic
-presentation changes occur in the graph source.
-
-It is allowed to change when the canonical graph meaning changes, including:
-
-- nodes or edges being added or removed
-- dependency ports or branch decisions changing
-- node definitions changing in a way that affects canonical graph structure
-
-The graph fingerprint answers "is this the same canonical DAG?" It does not, by
-itself, prove that every execution-relevant runtime setting stayed the same.
+Equal graph fingerprints answer only “same canonical graph.” Runtime policy,
+effective inputs, environment, and retained bytes require their own evidence.
 
 ## Plan Fingerprint
 
-The plan fingerprint is the identity of the lowered execution plan.
+The retained field is `planner_fingerprint`. It identifies the lowered
+execution plan and appears in:
 
-The retained field name today is `planner_fingerprint`. This page calls it the
-plan fingerprint because that is the operator-facing role it serves.
+- `manifest.json`;
+- `provenance.json`;
+- optional `plan.json`;
+- runtime `ExecutionPlan` values.
 
-Today it is retained in:
-
-- `manifest.json` as `planner_fingerprint`
-- `provenance.json` as `planner_fingerprint`
-- `plan.json` when that optional plan artifact is retained
-- `ExecutionPlan` values built by the runtime planner
-
-The plan fingerprint exists because graph identity and execution identity are
-not the same question. Two graphs can be semantically equivalent after
-canonicalization and lower to the same plan even when cosmetic metadata differs.
-
-Current planner tests lock that behavior in place:
-
-- `crates/bijux-dag-runtime/tests/planner_lowering_contracts.rs`
-- `crates/bijux-dag-runtime/tests/planner_analysis_contract.rs`
+Plan identity separates authored structure from executable lowering. Cosmetic
+graph metadata may differ while the lowered plan remains equal. Conversely,
+planner policy can change execution meaning even when source structure looks
+similar.
 
 ## Execution Fingerprint
 
-The execution fingerprint is the identity of execution-relevant work.
+`execution_fingerprint` identifies execution-relevant work. It is retained in
+the run manifest, provenance, node traces, and cache identity.
 
-Today it is retained in:
+It changes when execution meaning changes, including:
 
-- `manifest.json` as `execution_fingerprint`
-- `provenance.json` as `execution_fingerprint`
-- `nodes/<node_id>/trace.json` as `execution_fingerprint`
-- cache metadata as `node_fingerprint` for the exact executed node instance
+- effective parameters or input lineage;
+- retry, timeout, trigger, cache, or branch behavior;
+- policy or execution-contract inputs;
+- adapter or backend meaning that participates in execution identity.
 
-This fingerprint is expected to change when the runtime would do materially
-different work, including changes to:
-
-- execution-relevant node parameters
-- declared inputs and their lineage
-- retry, timeout, trigger, cache, or branch behavior that affects execution
-- policy or execution-contract settings that participate in cache reuse
-
-It is expected to remain stable across operator-only drift such as run ids,
-submission metadata, or other retained metadata that does not change execution
-semantics.
-
-Current planner and cache tests lock that split in place:
-
-- `crates/bijux-dag-runtime/tests/planner_analysis_contract.rs`
-- `crates/bijux-dag-runtime/tests/policy_cache_contract.rs`
-- `crates/bijux-dag-runtime/tests/cache_evolution_contracts.rs`
+Run IDs, submission labels, and non-execution metadata should not alter it.
+Equality does not prove that an external service produced the same side effect.
 
 ## Environment Fingerprint
 
-The environment fingerprint is the declared environment identity used for cache
-reuse decisions.
+Environment identity is node-scoped, not one run-wide host hash. The field
+`declared_environment_fingerprint` appears in cache `meta.json` and node
+`trace.json` cache identity.
 
-The live retained field today is `declared_environment_fingerprint`.
+It covers the declared environment contract used for reuse. It does not hash
+the operator’s entire shell, working directory, machine, or undeclared ambient
+state.
 
-Important boundary: there is no single run-wide `environment_fingerprint` field
-in the retained manifest today. Environment identity is tracked per node where
-cache reuse needs it.
-
-Today it appears in:
-
-- cache entry metadata `meta.json` as `declared_environment_fingerprint`
-- node `trace.json` under `cache_identity.declared_environment_fingerprint`
-
-This fingerprint tracks the node's declared runtime environment contract. It is
-not a hash of the operator's full host shell, current working directory, or
-ambient machine state.
-
-That distinction matters:
-
-- declared environment drift should invalidate cache reuse
-- unrelated ambient shell drift should not silently rewrite cache identity
+Declared environment drift should invalidate reuse. Undeclared ambient
+dependencies are a reproducibility defect, not inputs the cache can safely
+infer.
 
 ## Output Fingerprint
 
-There is no single top-level retained field named `output_fingerprint` in the
-standard run manifest today.
+There is no standard top-level `output_fingerprint`. Artifact identity is
+carried per output through:
 
-Instead, output identity is carried per artifact through:
+- `sha256`;
+- producer `node_id`;
+- producer `node_fingerprint`;
+- retained path, kind, and media metadata.
 
-- `sha256`
-- `node_id`
-- `node_fingerprint`
-- retained artifact path and media metadata
+Those values live in `outputs/index.json`,
+`nodes/<node_id>/outputs/index.json`, and replay-boundary input indexes.
 
-Those fields live in:
-
-- `outputs/index.json`
-- `nodes/<node_id>/outputs/index.json`
-- replay boundary input indexes where upstream artifacts are rematerialized
-
-In practice, the current output identity question is answered as:
-
-- are the retained bytes the same?
-- did they come from the same execution fingerprint?
-- do the retained indexes still agree with the materialized files on disk?
-
-That is why replay, verify, repair, and cache verification all inspect artifact
-hashes and producer fingerprints instead of relying on a single manifest-level
-output hash.
+Output equivalence requires matching bytes and compatible producer evidence.
+Matching paths or names are insufficient.
 
 ## Cache Key
 
-The cache key is the exact reuse identity for one node execution.
+The cache key is exact reuse identity for one node. `CacheKeyInput` includes:
 
-The runtime derives it from intentional inputs recorded in
-`CacheKeyInput`. Today those inputs are:
+- execution and node-definition fingerprints;
+- `declared_environment_fingerprint`;
+- input-lineage fingerprint;
+- adapter ID and version;
+- output schema version;
+- policy and execution-contract fingerprints;
+- backend class.
 
-- `execution_fingerprint`
-- `node_definition_fingerprint`
-- `declared_environment_fingerprint`
-- `input_lineage_fingerprint`
-- `adapter_id`
-- `adapter_version`
-- `output_schema_version`
-- `policy_fingerprint`
-- `execution_contract_fingerprint`
-- `backend_class`
-
-Those fields are hashed deterministically by the runtime cache layer and are
-then persisted into cache entry metadata and cache identity reports.
-
-The important operational split is:
-
-- graph and plan identity explain the workflow as a whole
-- cache key explains exact reuse eligibility for one node execution
-
-That is why two runs can share a graph fingerprint while still producing a
-different cache key for one node.
+Graph equality does not imply cache equality. One node can miss while the rest
+of an unchanged graph remains reusable.
 
 ## Cache Verification
 
-Cache verification does not trust the key alone.
+A key identifies a candidate entry; verification decides whether it is safe to
+reuse. Three surfaces must agree:
 
-An eligible cache entry must keep three proof surfaces aligned:
+- `meta.json`;
+- cache `manifest.json`;
+- `outputs/index.json` and materialized payloads.
 
-- `meta.json`
-- `manifest.json`
-- `outputs/index.json` plus the retained output payloads
+Verification checks:
 
-Verification checks include:
+- requested and stored keys agree;
+- persisted proof fields re-hash to that key;
+- adapter, schema, manifest, and metadata versions are supported;
+- required proof fields exist;
+- indexed outputs exist and their digests match;
+- output producer fingerprints agree with cache proof.
 
-- the stored `cache_key` matches the requested key
-- persisted proof fields re-hash to the same computed cache key
-- adapter identity and schema version match
-- cache metadata and manifest versions are supported
-- required proof fields are present
-- every indexed output exists
-- every indexed output hash matches the materialized file
-- node fingerprints in the output index match the cache proof
-
-When any of those checks fail, the runtime or app layer refuses reuse instead
-of silently downgrading trust.
-
-Current executable references:
-
-- `bijux-dag cache verify`
-- `bijux-dag cache explain-key`
-- `bijux-dag --json why-cache-missed`
-- `docs/bijux-dag/operations/cache-behavior-workflow.md`
+Failure refuses reuse rather than silently reducing assurance. Use
+`bijux-dag cache verify` for integrity and the tested explicit-path
+`why-cache-missed` route for one node’s decision.
 
 ## Replay Bundle
 
-The portable replay bundle surface is the export bundle, not the diagnostics
-bundle.
+The portable replay surface is `export-bundle/v0.1`, governed by
+`docs/spec/IMPORT_EXPORT_CONTRACT.md`.
 
-Today the supported export bundle version is `export-bundle/v0.1`.
+| Mode | Carries | Honest use |
+| --- | --- | --- |
+| `with-files` (`--with-files`) | structure, provenance, and file payloads | artifact-backed portable replay |
+| `manifest-only` (`--manifest-only`) | structural evidence without files | inspection and structural compatibility |
+| `without-artifacts` (`--without-artifacts`) | intentionally omitted artifacts | structure-only transfer |
 
-The bundle modes matter:
-
-- `--with-files`: the portable replay bundle surface because it carries file
-  payloads as well as structural evidence
-- `--manifest-only`: structural replay and inspection only; it preserves run
-  shape and provenance without file payloads
-- `--without-artifacts`: structural compatibility only; it keeps outputs and
-  files absent on purpose
-
-The diagnostics bundle is different:
-
-- bundle version: `dag-diagnostics-bundle/v0.1`
-- purpose: operator inspection and support capture
-- not a replay import surface
-
-Use an export bundle when the question is portability across checkouts or
-origin classes. Use a diagnostics bundle when the question is "collect the
-retained facts about this run for inspection."
+`dag-diagnostics-bundle/v0.1` is for inspection and support capture. It is not
+an importable replay bundle.
 
 ## Replay Limitations
 
-Replay is intentionally narrower than "run it again and hope it looks close
-enough."
+Replay can compare only retained evidence. It cannot invent missing manifests,
+traces, indexes, inputs, or artifacts.
 
-Current replay limitations are:
+Further boundaries:
 
-- replay depends on retained run evidence; it cannot invent missing manifests,
-  traces, indexes, or artifacts
-- boundary replay proves rematerialized inputs against retained hashes and node
-  fingerprints, not against external business truth
-- replay does not prove external side effects outside the retained artifact and
-  runtime boundary
-- replay sandboxing protects the source run directory from writes, but it is
-  not a process-isolation or network-isolation boundary
-- `--manifest-only` and `--without-artifacts` export bundles preserve structure,
-  but they do not carry the full file payload needed for artifact-backed replay
-- replay classification vocabulary is contract-governed; when evidence is
-  missing or incompatible, replay must fail or downgrade explicitly rather than
-  silently claiming equivalence
+- rematerialized inputs are checked against retained digests and producer
+  identity, not external business truth;
+- external side effects outside retained evidence are not reproduced or proven;
+- replay `--sandbox` protects the source run directory from writes but is not
+  process, network, or host isolation;
+- `manifest-only` and `without-artifacts` lack payloads required for
+  artifact-backed proof;
+- missing, corrupt, or incompatible evidence must cause explicit refusal or
+  reduced classification, never silent equivalence.
 
-For the security boundary around replay execution, use
-[Execution Security And Isolation](../operations/security-isolation-truth.md).
-For the proof boundary itself, use
-[`docs/spec/REPLAY_CONTRACT.md`](../../spec/REPLAY_CONTRACT.md).
+Use [Execution Security And Isolation](../operations/security-isolation-truth.md)
+for host boundaries and `docs/spec/REPLAY_CONTRACT.md` for normative replay
+classification.
 
-## Reading Guide
+## Review Questions
 
-- use [Run Evidence Layout](run-evidence-layout.md) when you need file paths and
-  retained filesystem locations
-- use [Cache Behavior Workflow](../operations/cache-behavior-workflow.md)
-  when you want a full worked example of warm reuse, selective invalidation,
-  corruption refusal, and cache-miss explanation
-- use [Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md)
-  and [Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md)
-  when you want replay behavior on checked-in workflow families
-- use [Known Limitations](../quality/known-limitations.md) when the question
-  is release-facing scope rather than identity semantics
+Before claiming reproducibility, record:
+
+1. Which identity layer is being compared?
+2. Which retained fields and files support it?
+3. Were payload digests recomputed?
+4. Which environment and backend inputs participate?
+5. Are external effects outside the retained boundary?
+6. Is the bundle artifact-bearing or structural only?
+
+## Continue By Question
+
+- file locations: [Run Evidence Layout](run-evidence-layout.md);
+- cache behavior: [Cache Behavior Workflow](../operations/cache-behavior-workflow.md);
+- active scope limits: [Known Limitations](../quality/known-limitations.md);
+- replay contract: `docs/spec/REPLAY_CONTRACT.md`;
+- import/export contract: `docs/spec/IMPORT_EXPORT_CONTRACT.md`.
