@@ -50,7 +50,7 @@ renaming a root command.
 | Family | Root commands |
 | --- | --- |
 | workspace checks | `fmt`, `lint`, `security`, `sanity`, `checks`, `tests`, `contracts`, `docs`, `verify-tools`, `resolve-check`, `ci`, `foundation`, `foundation-hardening`, `compat` |
-| repository governance | `repo`, `verify`, `dep-guard`, `crate-graph`, `docs-index`, `drift-dashboard`, `repo-trust-summary`, `foundation-review-report`, `public-api` |
+| repository governance | `repo`, `verify`, `dep-guard`, `crate-graph`, `docs-inventory`, `drift-dashboard`, `repo-trust-summary`, `foundation-review-report`, `public-api` |
 | DAG verification | `dag`, `golden`, `artifact-verify`, `storage-health`, `run-dir-audit`, `fault-summary`, `unsafe-audit`, `error-codes` |
 | release and evidence | `release`, `release-artifact-verify`, `comparison-evidence-report`, `performance-evidence-report`, `backend-registry-report`, `compatibility-report`, `cache-coverage-report` |
 | execution and policy diagnostics | `doctor`, `config-dump`, `policy-audit`, `execution-modes-report`, `distributed-semantics-report`, `invariants-report`, `observability-report` |

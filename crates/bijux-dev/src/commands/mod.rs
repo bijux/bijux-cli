@@ -53,7 +53,7 @@ use contract_governance::{
 };
 use docs_governance::{
     run_docs_config_reduction_guard, run_docs_contract_reference_guard, run_docs_coverage_report,
-    run_docs_governance_guard, run_docs_index_generate, run_docs_link_check,
+    run_docs_governance_guard, run_docs_inventory_generate, run_docs_link_check,
     run_docs_schema_reference_guard, run_naming_governance_guard,
 };
 use evidence_access::{
@@ -1018,12 +1018,12 @@ fn run(cli: Cli) -> Result<(), String> {
             json!({}),
             || run_observability_report(),
         ),
-        CommandLine::DocsIndex => run_command_reported(
+        CommandLine::DocsInventory => run_command_reported(
             &context,
-            "docs-index",
+            "docs-inventory",
             CommandEffect::ReadWrite,
             json!({}),
-            || run_docs_index_generate(),
+            || run_docs_inventory_generate(),
         ),
         CommandLine::E2eMatrix => run_command_reported(
             &context,

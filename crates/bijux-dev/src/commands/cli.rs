@@ -127,8 +127,8 @@ pub(super) enum CommandLine {
     ArtifactVerify,
     /// Generate observability evidence report from run artifacts
     ObservabilityReport,
-    /// Generate taxonomy-based docs index
-    DocsIndex,
+    /// Generate documentation inventory and consolidation evidence
+    DocsInventory,
     /// Execute end-to-end matrix across binary and crate integration entrypoints
     E2eMatrix,
     /// Report tested and missing fault classes from fault suite catalog

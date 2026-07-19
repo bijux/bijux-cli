@@ -54,7 +54,7 @@ docs-governance-lint: ## Lint docs governance metadata and boundaries
 	$(call run_or_fail,Run docs governance lint,$(DEV_TOOL) docs run --domain governance --fail-fast)
 
 docs-inventory-generate: ## Generate docs inventory and consolidation reports
-	$(call run_or_fail,Generate docs inventory reports,$(DEV_TOOL) docs-index)
+	$(call run_or_fail,Generate docs inventory reports,$(DEV_TOOL) docs-inventory)
 
 contract-all: ## Run all contract suites with evidence foundation verification
 	$(call run_or_fail,Run contracts,$(DEV_TOOL) contracts run)
