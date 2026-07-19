@@ -75,7 +75,6 @@ jobs:
               cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain policy
               cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain quality --include-slow
               cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain style
-              cargo run --locked -p bijux-dev --bin bijux-dev-dag -- checks run --domain supply-chain
             artifact_name: checks-report
             artifact_path: artifacts/reports
           - id: rust-test-ubuntu

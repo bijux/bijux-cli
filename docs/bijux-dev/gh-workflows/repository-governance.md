@@ -62,11 +62,11 @@ explicitly includes its slow suite because that suite owns the Clippy check.
 | Lane | Required proof |
 | --- | --- |
 | Rust Format | `cargo fmt --all -- --check` leaves the checkout unchanged. |
-| Rust Lint | Dependency policy, Clippy with warnings denied, formatting, and supply-chain checks pass. |
+| Rust Lint | Dependency policy, Clippy with warnings denied, and formatting checks pass. |
 | Rust Test on Ubuntu | The governance test domain passes on Ubuntu 24.04. |
 | Rust Test on macOS | The same governance test domain passes on macOS 14. |
 | Compatibility Fixture Drift | The compatibility contract suite passes against checked-in fixtures. |
-| Dependency Audit | `cargo-audit` `0.22.1` and the repository security command accept the dependency state. |
+| Dependency Audit | `cargo-audit` `0.22.1`, audit-allowlist governance, dependency-policy deviations, and the dependency state pass the repository security command. |
 | Docs Build | Rust API documentation builds and the maintainer documentation suite passes. |
 | Ecosystem Contracts | Control-plane and evidence-suite contract tests pass. |
 | Evidence Verify | Release, battle, cache, replay, and consumer evidence verifies; governed reports regenerate without drift. |
