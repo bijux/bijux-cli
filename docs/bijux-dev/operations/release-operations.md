@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-19
 ---
 
 # Release Operations
@@ -12,9 +12,10 @@ last_reviewed: 2026-07-09
 Use this page when the repository is close to a release boundary and the next
 question is sequence, ownership, and proof rather than implementation.
 
-The release path is intentionally conservative. Every step exists so the tagged
-result still matches the behavior, compatibility notes, and docs the
-repository is prepared to stand behind in public.
+The release path is intentionally conservative. A tag is credible only when
+the source requirements, generated release policy, tested behavior, package
+inventory, compatibility notes, and published artifacts all identify the same
+candidate.
 
 Visible maintainer command ownership remains governed by
 `contracts/foundation/maintainer_command_surface.v1.json`.
@@ -22,10 +23,17 @@ Visible maintainer command ownership remains governed by
 ## Release Workflow Rules
 
 - only tag commits with green required gates
-- keep release lanes on Rust `1.86.0`, matching `Cargo.toml`, `rust-toolchain.toml`, and `ci.yml`
+- use the workspace `rust-version` as the source-owned compiler requirement
+- require synchronized CI, release, and package-policy inputs to match the
+  workspace before recommending a tag
 - include compatibility notes for CLI and DAG changes
 - ensure docs navigation and links are valid before publishing
 - verify post-release health and rollback readiness
+
+Generated workflow and release-policy files are managed by `bijux-std`. A
+downstream mismatch is a release blocker to resolve upstream and refresh
+through the governed standards process. Do not hand-edit synchronized files or
+describe a failing alignment contract as release ready.
 
 ## Current Publication Policy
 
@@ -44,6 +52,7 @@ Canonical package status and publish order are defined by
 | Step | What it should prove |
 | --- | --- |
 | release validation | the candidate commit is publishable from a clean release tree |
+| generated-policy alignment | toolchain, package allowlist, and build matrices cover the same release boundary as the repository |
 | compatibility and docs review | public readers can understand what changed and whether compatibility moved |
 | tag and publish | published artifacts point back to the reviewed commit identity |
 | post-release monitoring | the public result still behaves like the reviewed release lane predicted |
@@ -51,6 +60,9 @@ Canonical package status and publish order are defined by
 ## Preflight Checklist
 
 - required release-lane tests and maintainer verification commands are green
+- release ownership contracts confirm the synchronized Rust toolchain,
+  publishable package allowlist, and CLI/DAG build matrices match repository
+  policy
 - `make release-validate-rs` is green before any release recommendation
 - `make test-release-rs` is green before any release recommendation
 - `make test-all-rs` is green whenever DAG experimental or internal ignored coverage changed or ignored-test governance changed
@@ -59,11 +71,15 @@ Canonical package status and publish order are defined by
   test helpers changed
 - compatibility notes are prepared for changed public behavior
 - documentation tree and MkDocs navigation are synchronized
+- the candidate worktree is clean and every cited result identifies its full
+  source commit
 - release owner and rollback owner are explicitly assigned
 
 ## Postflight Checklist
 
 - published artifacts match tagged commit identity
+- package registries, GitHub release assets, images, and deployed docs are
+  reconciled against the expected publication inventory
 - docs site builds and serves expected handbook routes
 - no new unresolved failures in release-monitoring workflows
 
@@ -91,19 +107,24 @@ At the release-operations level, the important rule is sequence: release
 validation happens before tag creation and before any publish command is trusted
 as release evidence.
 
-## Reader Shortcut
+## Broken Sequence
 
 If a tag, artifact, or release note gets ahead of release validation and
 compatibility review, the repository has already broken sequence even if the
-publish technically succeeds.
+publish technically succeeds. The same is true when generated release policy
+does not match workspace ownership: a successful individual upload is not
+proof that the intended release family was validated or published.
 
 ## Code Anchors
 
 - `crates/bijux-dev/src/commands/cli_release_command.rs`
 - `crates/bijux-dev/src/suites/release.rs`
+- `crates/bijux-cli/tests/architecture/ownership/release_contracts.rs`
+- `contracts/foundation/workspace_package_boundary.v1.json`
+- `.github/standards/repo-config.manifest.json`
 - `.github/workflows/`
 
-## Continue Reading
+## Related Guidance
 
 - [Release Validation Suite](release-validation-suite.md)
 - [Core Release and Versioning](../../bijux-core/operations/release-and-versioning.md)
