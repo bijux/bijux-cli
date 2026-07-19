@@ -26,6 +26,31 @@ proof, and evidence that can be inspected after the check runs.
 The layers are complementary. A generated report cannot create a product
 promise, and a prose contract without executable proof is an unverified claim.
 
+## Claim Acceptance Flow
+
+```mermaid
+flowchart LR
+    claim["Supported claim"]
+    boundary["Release boundary"]
+    authority["Contract or schema"]
+    proof["Named executable proof"]
+    result["Terminal result"]
+    evidence["Revision-bound evidence"]
+    decision{"Complete and consistent?"}
+    accept["Accept for stated scope"]
+    narrow["Reject or narrow claim"]
+
+    claim --> boundary --> authority --> proof --> result --> evidence --> decision
+    decision -->|yes| accept
+    decision -->|no| narrow
+    narrow -. repair owner, proof, or evidence .-> authority
+```
+
+Acceptance is scoped. A proof can support only the behavior, platform,
+selection, and source identity it evaluated. Missing evidence narrows the
+claim; it does not transfer confidence from another package or an older
+revision.
+
 ## Test Trust Audit
 
 The test-trust catalog groups must-never-break semantics by owned behavior.
@@ -70,6 +95,25 @@ regenerated or removed; it must not be edited to resemble the desired result.
 The narrowest proven claim wins until contracts, tests, evidence, and release
 artifacts agree.
 
+## Review Record
+
+A trust decision should make these facts inspectable:
+
+| Fact | Required record |
+| --- | --- |
+| claim | one bounded statement tied to a public or repository contract |
+| authority | exact schema, contract, release truth table, or package boundary |
+| proof | test, suite, generator, or artifact verification command |
+| source | full commit identity and relevant worktree state |
+| selection | packages, features, platforms, ignored-test mode, and exclusions |
+| outcome | terminal status plus passed, failed, skipped, slow, or leaky counts where emitted |
+| retained location | immutable workflow run, release asset, governed report, or local artifact path |
+| limitation | unsupported backend, simulated environment, omitted lane, or stale external input |
+
+The record need not be one new file. Existing test logs, generated reports,
+release manifests, and review text may provide the chain when they use the
+same source identity and do not contradict one another.
+
 ## Explicit Limits
 
 This model does not claim formal verification of the full repository, complete
@@ -77,3 +121,10 @@ absence of defects, or universal platform coverage. Coverage data helps locate
 unexercised code; it is not a substitute for semantic proof. Simulated backend
 tests prove modeled behavior only unless a real backend contract says
 otherwise.
+
+## Related Authorities
+
+- [Architecture Risks](../architecture/architecture-risks.md)
+- [Testing And Validation](../operations/testing-and-validation.md)
+- [Documentation System](../foundation/documentation-system.md)
+- [Evidence Collection](../../bijux-dev/operations/evidence-collection.md)
