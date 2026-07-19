@@ -1,4 +1,7 @@
 {
+  "public_page_budget": 100,
+  "public_page_max_depth": 4,
+  "crate_docs_page_budget": 10,
   "exclude_prefixes": [
     "docs/generated/",
     "docs/badges.md",

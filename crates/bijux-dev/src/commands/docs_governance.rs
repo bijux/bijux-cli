@@ -54,6 +54,12 @@ const ROADMAP_REFERENCE_ALLOWLIST: [&str; 11] = [
 #[derive(Debug, Deserialize, Default)]
 struct DocsLintPolicy {
     #[serde(default)]
+    public_page_budget: Option<usize>,
+    #[serde(default)]
+    public_page_max_depth: Option<usize>,
+    #[serde(default)]
+    crate_docs_page_budget: Option<usize>,
+    #[serde(default)]
     exclude_prefixes: Vec<String>,
     #[serde(default)]
     orphan_exempt_prefixes: Vec<String>,
@@ -89,19 +95,6 @@ pub(super) fn run_docs_governance_guard() -> Result<(), String> {
         if !allowed_dirs.contains(&name.as_str()) {
             return Err(format!("docs taxonomy violation: docs/{name} is not allowed"));
         }
-    }
-
-    let root_markdown_count = fs::read_dir(&docs_root)
-        .map_err(|err| err.to_string())?
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.path().extension().and_then(|v| v.to_str()) == Some("md"))
-        .count();
-    let max_root_docs = 110usize;
-    if root_markdown_count > max_root_docs {
-        return Err(format!(
-            "docs root budget exceeded: {} > {}",
-            root_markdown_count, max_root_docs
-        ));
     }
 
     for rel in [
@@ -741,6 +734,7 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
     let standalone_allowlist: BTreeSet<String> =
         policy.standalone_allowlist.iter().cloned().collect();
     let nav_entries = collect_mkdocs_nav_entries(&root)?;
+    let shape_violations = documentation_shape_violations(&root, &nav_entries, &policy)?;
 
     let mut metadata_errors = Vec::new();
     let mut bad_status = Vec::new();
@@ -835,6 +829,7 @@ pub(super) fn run_docs_governance_lint() -> Result<(), String> {
     violations.extend(duplicate_titles);
     violations.extend(duplicate_topics);
     violations.extend(orphan_docs.into_iter().map(|path| format!("orphan doc: {path}")));
+    violations.extend(shape_violations);
     if violations.is_empty() {
         Ok(())
     } else {
@@ -1081,6 +1076,59 @@ fn documentation_scope(rel_path: &str) -> String {
     rel_path.split('/').nth(1).unwrap_or("repository").to_string()
 }
 
+fn documentation_shape_violations(
+    root: &Path,
+    nav_entries: &BTreeSet<String>,
+    policy: &DocsLintPolicy,
+) -> Result<Vec<String>, String> {
+    let mut violations = Vec::new();
+
+    if let Some(budget) = policy.public_page_budget {
+        if nav_entries.len() > budget {
+            violations.push(format!(
+                "public documentation budget exceeded: {} > {budget}",
+                nav_entries.len()
+            ));
+        }
+    }
+
+    if let Some(max_depth) = policy.public_page_max_depth {
+        for rel_path in nav_entries {
+            let depth = Path::new(rel_path).components().count();
+            if depth > max_depth {
+                violations.push(format!(
+                    "public documentation depth exceeded: {rel_path} has depth {depth} > {max_depth}"
+                ));
+            }
+        }
+    }
+
+    if let Some(budget) = policy.crate_docs_page_budget {
+        let crates_root = root.join("crates");
+        if crates_root.exists() {
+            for entry in fs::read_dir(&crates_root).map_err(|err| err.to_string())? {
+                let crate_dir = entry.map_err(|err| err.to_string())?.path();
+                if !crate_dir.is_dir() {
+                    continue;
+                }
+                let docs_dir = crate_dir.join("docs");
+                let mut pages = Vec::new();
+                collect_markdown_files(&docs_dir, &mut pages)?;
+                if pages.len() > budget {
+                    let crate_name =
+                        crate_dir.file_name().and_then(|name| name.to_str()).unwrap_or("<unknown>");
+                    violations.push(format!(
+                        "crate documentation budget exceeded: crates/{crate_name}/docs has {} pages > {budget}",
+                        pages.len()
+                    ));
+                }
+            }
+        }
+    }
+
+    Ok(violations)
+}
+
 fn valid_documentation_status(status: &str) -> bool {
     matches!(status, "canonical" | "stable" | "generated" | "historical" | "internal")
 }
@@ -1120,10 +1168,10 @@ fn collect_source_files_with_extension(
 mod tests {
     use super::{
         broken_inline_code_anchors, collect_inbound_counts, collect_mkdocs_nav_entries,
-        documentation_scope, extract_inline_code_spans, repo_code_anchor_candidate,
-        roadmap_reference_allowed, should_skip_markdown_link, validate_known_limitations_content,
-        validate_risk_register_content, DocsLintPolicy, KNOWN_LIMITATIONS_REL_PATH,
-        REQUIRED_RISK_IDS, RISK_REGISTER_REL_PATH,
+        documentation_scope, documentation_shape_violations, extract_inline_code_spans,
+        repo_code_anchor_candidate, roadmap_reference_allowed, should_skip_markdown_link,
+        validate_known_limitations_content, validate_risk_register_content, DocsLintPolicy,
+        KNOWN_LIMITATIONS_REL_PATH, REQUIRED_RISK_IDS, RISK_REGISTER_REL_PATH,
     };
     use std::fs;
     use std::path::Path;
@@ -1229,6 +1277,41 @@ also good `docs/index.md`\n";
         let entries = collect_mkdocs_nav_entries(root.path()).expect("nav entries");
 
         assert!(entries.contains("docs/bijux-core/governance/trust-evidence.md"));
+    }
+
+    #[test]
+    fn documentation_shape_limits_publication_and_crate_growth() {
+        let root = tempdir().expect("tempdir");
+        let crate_docs = root.path().join("crates/example/docs");
+        fs::create_dir_all(&crate_docs).expect("crate docs");
+        fs::write(crate_docs.join("architecture.md"), "# Architecture\n").expect("architecture");
+        fs::write(crate_docs.join("operations.md"), "# Operations\n").expect("operations");
+
+        let nav_entries = [
+            "docs/index.md",
+            "docs/product/operations/run.md",
+            "docs/product/operations/deep/run.md",
+        ]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+        let policy = DocsLintPolicy {
+            public_page_budget: Some(2),
+            public_page_max_depth: Some(4),
+            crate_docs_page_budget: Some(1),
+            ..DocsLintPolicy::default()
+        };
+
+        let violations =
+            documentation_shape_violations(root.path(), &nav_entries, &policy).expect("shape");
+
+        assert!(violations
+            .iter()
+            .any(|message| message.contains("public documentation budget exceeded: 3 > 2")));
+        assert!(violations.iter().any(|message| message.contains("has depth 5 > 4")));
+        assert!(violations
+            .iter()
+            .any(|message| message.contains("crates/example/docs has 2 pages > 1")));
     }
 
     #[test]
