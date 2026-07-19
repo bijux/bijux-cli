@@ -85,8 +85,7 @@
   "snapshot_surface_policy": {
     "allowed_assertion_files": [
       "crates/bijux-dag-core/tests/serde_roundtrip.rs",
-      "crates/bijux-dag-cli/tests/contract_surface.rs",
-      "crates/bijux-dev-dag/tests/crate_taxonomy_v2_contracts.rs"
+      "crates/bijux-dag-cli/tests/contract_surface.rs"
     ],
     "forbidden_macros": [
       "insta::assert_snapshot",

@@ -1,29 +1,84 @@
+---
+title: Test Trust Contract
+audience: maintainer
+type: specification
+status: canonical
+owner: bijux-core-quality
+last_reviewed: 2026-07-19
+---
+
 # Test Trust Contract
 
 ## Scope
 
-This contract defines the minimal repository surfaces that make runtime test
-trust explicit instead of implicit.
+This contract governs how the repository connects supported behavior to named
+tests and prevents test inventory from being mistaken for semantic proof.
 
-## Required trust surfaces
+## Authorities
 
-- a human-readable testing philosophy document
-- an architecture-facing audit page for the trust model
-- a machine-readable runtime test trust catalog
-- executable runtime and maintainer tests that keep the catalog current
+| Authority | Responsibility |
+| --- | --- |
+| `TEST_PHILOSOPHY.md` | human test-design and evidence standard |
+| `configs/dag/policy/test_trust_ledger.json` | policy classification, critical tests, required semantic surfaces, and coverage families |
+| `crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json` | runtime test inventory grouped by trust class |
+| `crates/bijux-dev/tests/test_trust_maintenance_contracts.rs` | executable policy and reference validation |
+| `docs/reports/foundation/TEST_TRUST_COVERAGE_REPORT.md` | generated coverage observation |
+| `docs/reports/foundation/TEST_TRUST_MAINTENANCE_REPORT.md` | generated maintenance observation |
 
-## Catalog rules
+The policy ledger is normative. Reports are revision-specific evidence and
+cannot redefine classification rules.
 
-`crates/bijux-dag-runtime/tests/fixtures/test_trust_catalog.json` must group
-runtime tests into non-empty trust classes, and every listed file must exist.
+## Required Properties
 
-## Related tests
+- Every cataloged test path exists.
+- Every required semantic surface maps to an existing runtime test.
+- Every trust family is nonempty and maps to existing tests.
+- Critical tests are explicitly listed in `must_never_break`.
+- Snapshot macros appear only in existing allowlisted files.
+- Cosmetic or duplicate classifications cannot support release-blocking claims.
+- Advisory, filtered, ignored, simulated, and platform-limited results remain
+  visible in evidence.
 
-- `crates/bijux-dev/src/commands/ops.rs`
-- `crates/bijux-dev/tests/test_trust_maintenance_contracts.rs`
+Classification does not make a weak test strong. Reviewers still verify that
+the test reaches the claimed behavior and asserts a meaningful result.
 
-## Versioning and change policy
+## Trust Classes
 
-Trust catalog structure and the requirement for explicit test classification are
-stable contract surfaces. Any incompatible change requires updating this
-document, the philosophy and audit pages, and the catalog in the same change.
+| Class | Meaning |
+| --- | --- |
+| critical | protects behavior whose regression invalidates a supported runtime or safety claim |
+| useful | provides meaningful behavior or boundary evidence but is not the sole proof of a release-critical claim |
+| shallow | reaches a surface but needs stronger semantic assertions or broader failure coverage |
+| cosmetic | verifies presentation without product semantics |
+| duplicate | repeats another test without an independent trust property |
+
+Shallow, cosmetic, and duplicate tests are visible debt. They are not removed
+merely to improve a count; they are strengthened, consolidated, or deleted
+with review of the behavior they currently cover.
+
+## Change Contract
+
+A new supported runtime behavior requires:
+
+1. an owning specification or package contract;
+2. a named executable proof;
+3. ledger and catalog classification when it belongs to a governed family;
+4. failure or adversarial evidence appropriate to its risk;
+5. generated trust reports refreshed from their producer.
+
+Removing or renaming a test requires updating every ledger, catalog, report
+producer, and handbook reference in the same change.
+
+## Failure Meaning
+
+A missing test path is a governance failure. A passing catalog validator proves
+reference integrity, not behavior correctness. A stale generated report is an
+evidence failure. A release claim with no critical proof is unsupported even
+when unrelated suites are green.
+
+## Versioning
+
+Trust classes, required semantic surfaces, and the meaning of
+`must_never_break` are stable governance interfaces. Incompatible changes
+require policy, tests, reports, and maintainer documentation to change
+together.
