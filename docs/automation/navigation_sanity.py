@@ -108,10 +108,10 @@ def main() -> int:
 
     sample_paths = [
         args.site_dir / "index.html",
-        args.site_dir / "bijux-core" / "architecture" / "index.html",
-        args.site_dir / "bijux-cli" / "interfaces" / "index.html",
-        args.site_dir / "bijux-dag" / "operations" / "index.html",
-        args.site_dir / "bijux-dev" / "governance" / "index.html",
+        args.site_dir / "bijux-core" / "architecture" / "system-overview" / "index.html",
+        args.site_dir / "bijux-cli" / "interfaces" / "cli-surface" / "index.html",
+        args.site_dir / "bijux-dag" / "operations" / "first-run-tutorial" / "index.html",
+        args.site_dir / "bijux-dev" / "governance" / "test-policy" / "index.html",
     ]
 
     issues: list[str] = []
