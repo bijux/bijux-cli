@@ -1,13 +1,13 @@
 ---
-title: Subsystem Strength Assessment
+title: Subsystem Strength Assessment Report
 audience: maintainer
 type: report
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-19
 ---
 
-# Subsystem Strength Assessment
+# Subsystem Strength Assessment Report
 
 ## Assessment
 

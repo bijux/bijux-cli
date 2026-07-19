@@ -1,5 +1,5 @@
 ---
-title: Foundation Governance Maintenance
+title: Foundation Governance Maintenance Report
 audience: maintainer
 type: report
 status: canonical
@@ -7,7 +7,7 @@ owner: bijux-dag-docs
 last_reviewed: 2026-07-19
 ---
 
-# Foundation Governance Maintenance
+# Foundation Governance Maintenance Report
 
 This report defines the conditions that keep foundation evidence trustworthy
 after its initial review. It records durable maintenance obligations rather

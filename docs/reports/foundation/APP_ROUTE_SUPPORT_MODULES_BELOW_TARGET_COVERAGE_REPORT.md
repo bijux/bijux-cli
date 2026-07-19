@@ -1,4 +1,4 @@
-# App Route-Support Modules Below Target Coverage Report
+# App Route Support Modules Below Target Coverage Report
 
 | file | line_coverage_pct | target_pct | status |
 | --- | ---: | ---: | --- |

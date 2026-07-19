@@ -1,4 +1,4 @@
-# Docs Root Inventory Report
+# Documentation Root Inventory Report
 
 ## Purpose
 

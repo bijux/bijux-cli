@@ -4,7 +4,7 @@
 
 This statement explains what “proof” means in this repository.
 
-## Proof sources
+## Proof Sources
 
 - contract documents under `docs/spec/`
 - handbook ownership pages under `docs/bijux-core/`, `docs/bijux-cli/`,

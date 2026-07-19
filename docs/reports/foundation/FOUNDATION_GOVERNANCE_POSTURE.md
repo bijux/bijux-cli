@@ -1,5 +1,5 @@
 ---
-title: Foundation Governance Posture
+title: Foundation Governance Posture Report
 audience: maintainer
 type: report
 status: canonical
@@ -7,7 +7,7 @@ owner: bijux-dag-docs
 last_reviewed: 2026-07-19
 ---
 
-# Foundation Governance Posture
+# Foundation Governance Posture Report
 
 This report records what the foundation governance suite can establish about
 repository structure and evidence ownership. It is an index of governed proof,
@@ -32,11 +32,11 @@ not a declaration that every product capability is complete or release-ready.
 - architecture review: `docs/spec/ARCHITECTURE_REVIEW_CHECKLIST.md`
 - release evidence: `docs/reports/foundation/RELEASE_EVIDENCE_REPORT.md`
 - repository proof scope:
-  `docs/reports/foundation/repository-proof-statement.md`
+  `docs/reports/foundation/REPOSITORY_PROOF_STATEMENT.md`
 - subsystem assessment:
-  `docs/reports/foundation/subsystem_strength_assessment.md`
+  `docs/reports/foundation/SUBSYSTEM_STRENGTH_ASSESSMENT.md`
 - governed maintenance:
-  `docs/reports/foundation/foundation-governance-maintenance.md`
+  `docs/reports/foundation/FOUNDATION_GOVERNANCE_MAINTENANCE.md`
 
 ## Limits
 

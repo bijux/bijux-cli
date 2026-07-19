@@ -18,6 +18,6 @@ evidence.
 
 - release binary verification: `docs/spec/RELEASE_BINARY_VERIFICATION.md`
 - repository proof statement:
-  `docs/reports/foundation/repository-proof-statement.md`
+  `docs/reports/foundation/REPOSITORY_PROOF_STATEMENT.md`
 - foundation governance posture:
-  `docs/reports/foundation/foundation-governance-posture.md`
+  `docs/reports/foundation/FOUNDATION_GOVERNANCE_POSTURE.md`

@@ -1,4 +1,4 @@
-# Zero Direct Line Coverage Report
+# Direct Line Coverage Gaps Report
 
 Files in crate source trees with 0% line coverage.
 

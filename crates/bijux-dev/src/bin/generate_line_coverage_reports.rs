@@ -225,7 +225,7 @@ fn render_app_route_support_below_target_report(
     targets: &BTreeMap<String, f64>,
 ) -> String {
     let mut lines = vec![
-        "# App Route-Support Modules Below Target Coverage Report".to_string(),
+        "# App Route Support Modules Below Target Coverage Report".to_string(),
         String::new(),
         "| file | line_coverage_pct | target_pct | status |".to_string(),
         "| --- | ---: | ---: | --- |".to_string(),
@@ -283,11 +283,11 @@ fn main() -> Result<(), String> {
     let root = repo_root();
     let lcov_path = resolve_lcov_path(&root);
     let allowlist_path = root.join("configs/dag/policy/protected_zero_coverage_allowlist.json");
-    let out_under_50 = root.join("docs/reports/foundation/line_coverage_under_50_report.md");
-    let out_under_25 = root.join("docs/reports/foundation/line_coverage_under_25_report.md");
-    let out_zero = root.join("docs/reports/foundation/line_coverage_zero_direct_report.md");
+    let out_under_50 = root.join("docs/reports/foundation/LINE_COVERAGE_UNDER_50_REPORT.md");
+    let out_under_25 = root.join("docs/reports/foundation/LINE_COVERAGE_UNDER_25_REPORT.md");
+    let out_zero = root.join("docs/reports/foundation/LINE_COVERAGE_ZERO_DIRECT_REPORT.md");
     let out_app_route_support = root
-        .join("docs/reports/foundation/app_route_support_modules_below_target_coverage_report.md");
+        .join("docs/reports/foundation/APP_ROUTE_SUPPORT_MODULES_BELOW_TARGET_COVERAGE_REPORT.md");
     let app_route_policy = root.join("configs/dag/policy/app_routing_coverage_targets.json");
 
     if !lcov_path.exists() {
@@ -310,7 +310,7 @@ fn main() -> Result<(), String> {
     write_text(
         &out_under_50,
         &render_threshold_report(
-            "Line Coverage Under 50% Report",
+            "Line Coverage Below 50% Report",
             "Files in crate `src/` trees below 50% line coverage.",
             &rows,
             50.0,
@@ -319,7 +319,7 @@ fn main() -> Result<(), String> {
     write_text(
         &out_under_25,
         &render_threshold_report(
-            "Line Coverage Under 25% Report",
+            "Line Coverage Below 25% Report",
             "Files in crate `src/` trees below 25% line coverage.",
             &rows,
             25.0,
@@ -327,7 +327,7 @@ fn main() -> Result<(), String> {
     )?;
 
     let mut zero_lines = vec![
-        "# Zero Direct Line Coverage Report".to_string(),
+        "# Direct Line Coverage Gaps Report".to_string(),
         String::new(),
         "Files in crate `src/` trees with 0% line coverage.".to_string(),
         String::new(),

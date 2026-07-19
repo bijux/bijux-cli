@@ -1,17 +1,12 @@
-# Line Coverage Under 50% Report
+# Line Coverage Below 25% Report
 
-Files in crate source trees below 50% line coverage.
+Files in crate source trees below 25% line coverage.
 
 | file | covered_lines | instrumented_lines | line_coverage_pct |
 | --- | ---: | ---: | ---: |
 | crates/bijux-cli/src/features/install/query.rs | 0 | 22 | 0.00 |
 | crates/bijux-dag-app/src/commands/mod.rs | 12 | 151 | 7.95 |
-| crates/bijux-dag-app/src/graph/helpers.rs | 81 | 220 | 36.82 |
 | crates/bijux-dag-app/src/inspect/mod.rs | 0 | 6 | 0.00 |
-| crates/bijux-dag-app/src/routes/replay_routes.rs | 88 | 199 | 44.22 |
-| crates/bijux-dag-app/src/routes/validate_routes.rs | 47 | 97 | 48.45 |
-| crates/bijux-dag-runtime/src/backend/runtime/subprocess.rs | 6 | 14 | 42.86 |
-| crates/bijux-dag-runtime/src/internal/identity/secrets_security.rs | 47 | 113 | 41.59 |
 | crates/bijux-dev/src/bin/bijux-dev-cli.rs | 0 | 3 | 0.00 |
 | crates/bijux-dev/src/bin/generate_app_route_coverage_reports.rs | 0 | 62 | 0.00 |
 | crates/bijux-dev/src/bin/generate_app_router_architecture_reports.rs | 0 | 155 | 0.00 |
@@ -26,34 +21,24 @@ Files in crate source trees below 50% line coverage.
 | crates/bijux-dev/src/bin/generate_run_history_reports.rs | 0 | 35 | 0.00 |
 | crates/bijux-dev/src/bin/generate_runtime_adapter_scope_reports.rs | 0 | 145 | 0.00 |
 | crates/bijux-dev/src/bin/generate_scheduler_profile_report.rs | 0 | 69 | 0.00 |
-| crates/bijux-dev/src/bin/trust_health.rs | 9 | 26 | 34.62 |
 | crates/bijux-dev/src/commands/authoring_evidence.rs | 32 | 247 | 12.96 |
 | crates/bijux-dev/src/commands/battle_evidence.rs | 41 | 371 | 11.05 |
 | crates/bijux-dev/src/commands/cli.rs | 0 | 109 | 0.00 |
 | crates/bijux-dev/src/commands/cli_control_command.rs | 0 | 8 | 0.00 |
 | crates/bijux-dev/src/commands/cli_release_command.rs | 0 | 2 | 0.00 |
-| crates/bijux-dev/src/commands/command_runtime.rs | 24 | 55 | 43.64 |
 | crates/bijux-dev/src/commands/compare_evidence.rs | 8 | 193 | 4.15 |
 | crates/bijux-dev/src/commands/contract_governance.rs | 0 | 270 | 0.00 |
 | crates/bijux-dev/src/commands/docs_governance.rs | 0 | 638 | 0.00 |
-| crates/bijux-dev/src/commands/evidence_control_plane.rs | 213 | 475 | 44.84 |
-| crates/bijux-dev/src/commands/evidence_registry.rs | 147 | 312 | 47.12 |
 | crates/bijux-dev/src/commands/mod.rs | 0 | 2790 | 0.00 |
 | crates/bijux-dev/src/commands/ops.rs | 11 | 3873 | 0.28 |
-| crates/bijux-dev/src/commands/perf_evidence.rs | 54 | 206 | 26.21 |
-| crates/bijux-dev/src/commands/suite_catalog.rs | 25 | 79 | 31.65 |
 | crates/bijux-dev/src/commands/suite_catalog_repo.rs | 0 | 74 | 0.00 |
 | crates/bijux-dev/src/main.rs | 0 | 3 | 0.00 |
-| crates/bijux-dev/src/maintainer/cli/routes/docs.rs | 34 | 71 | 47.89 |
 | crates/bijux-dev/src/maintainer/cli/routes/maintenance.rs | 16 | 80 | 20.00 |
-| crates/bijux-dev/src/maintainer/cli/routes/root.rs | 52 | 139 | 37.41 |
 | crates/bijux-dev/src/maintainer/contracts/maintenance/generators.rs | 21 | 102 | 20.59 |
 | crates/bijux-dev/src/maintainer/contracts/maintenance/inventory.rs | 52 | 346 | 15.03 |
 | crates/bijux-dev/src/maintainer/infra/clock.rs | 0 | 10 | 0.00 |
 | crates/bijux-dev/src/maintainer/infra/fs.rs | 0 | 6 | 0.00 |
 | crates/bijux-dev/src/maintainer/infra/process.rs | 0 | 3 | 0.00 |
-| crates/bijux-dev/src/maintainer/reports/control_plane.rs | 37 | 143 | 25.87 |
-| crates/bijux-dev/src/maintainer/reports/python.rs | 85 | 187 | 45.45 |
 | crates/bijux-dev/src/maintainer/reports/release.rs | 0 | 206 | 0.00 |
 | crates/bijux-dev/src/maintainer/runtime/query_provider.rs | 33 | 210 | 15.71 |
 | crates/bijux-dev/src/maintainer/schema/report_envelope.rs | 0 | 11 | 0.00 |

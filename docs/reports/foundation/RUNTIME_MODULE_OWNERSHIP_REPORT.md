@@ -4,7 +4,7 @@ audience: maintainer
 type: report
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-19
 ---
 
 # Runtime Module Ownership Report
