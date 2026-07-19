@@ -47,6 +47,36 @@ source code, tests, reports, and external review links. Moving a contract is an
 interface change: update all consumers in one commit and verify the relevant
 contract suite rather than adding redirect copies.
 
+## Traceability Contract
+
+Every specification must make four facts discoverable, either directly in the
+document or through an obvious repository reference:
+
+| Fact | Required answer |
+| --- | --- |
+| scope | Which behavior, schema, state machine, or decision does this file govern? |
+| owner | Which crate or repository subsystem implements the behavior? |
+| enforcement | Which test, suite, or maintainer command detects disagreement? |
+| evidence | Which report or runtime artifact demonstrates the evaluated result, if evidence is retained? |
+
+```mermaid
+flowchart LR
+    specification["Normative specification"]
+    owner["Owning crate or subsystem"]
+    test["Named enforcement"]
+    producer["Evidence producer"]
+    report["Retained report"]
+
+    specification --> owner
+    specification --> test
+    owner --> test
+    test --> producer --> report
+```
+
+A contract with no identifiable owner or enforcement is an unverified design
+note and does not belong in this directory. Not every contract needs a retained
+report, but every retained report needs a producer and a governing contract.
+
 ## Editing A Contract
 
 Before changing normative behavior:
@@ -64,6 +94,12 @@ Before changing normative behavior:
 A contract may describe an unsupported capability only when it states that
 limit explicitly. Future direction belongs in the product planning authority,
 not in normative language.
+
+When a contract changes serialized data, include compatibility direction:
+whether old data remains readable, whether writers emit only the current
+shape, what invalid input returns, and which version boundary permits removal.
+When a contract changes execution behavior, include refusal, cancellation, and
+partial-failure semantics rather than documenting only the successful path.
 
 ## Authority And Conflict
 

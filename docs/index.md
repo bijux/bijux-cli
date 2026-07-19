@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-19
 ---
 
 # Bijux Core
@@ -94,6 +94,29 @@ generated evidence remain versioned in the repository but are not presented as
 product handbook pages. Read the
 [documentation system](bijux-core/foundation/documentation-system.md) for the
 authority and maintenance rules.
+
+```mermaid
+flowchart LR
+    question["Reader or maintainer question"]
+    handbook["Published handbook<br/>supported behavior and workflow"]
+    package["Crate README and internal docs<br/>code ownership and change boundary"]
+    contract["Executable specification<br/>enforced invariant"]
+    implementation["Source and tests<br/>implemented behavior"]
+    evidence["Governed report<br/>observation at a revision"]
+
+    question --> handbook
+    handbook -->|implementation detail| package
+    handbook -->|normative detail| contract
+    package --> implementation
+    contract <--> implementation
+    implementation -->|governed evaluation| evidence
+```
+
+Arrows do not make every document equally authoritative. Handbooks explain the
+supported product, crate pages locate implementation ownership, specifications
+state enforced behavior, and reports retain observations. A report cannot
+override a contract, and an internal package detail cannot widen the public
+product promise.
 
 The [v0.4.0 Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) define
 the current DAG release. [Future Direction](bijux-dag/foundation/future-direction.md)

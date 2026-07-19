@@ -30,6 +30,28 @@ Generated and curated reports coexist, but their update rules differ. Generated
 files must be reproduced by their owning command. Curated ledgers must identify
 the check or evidence supporting each status claim.
 
+## Evidence Chain
+
+```mermaid
+flowchart LR
+    revision["Source revision and declared inputs"]
+    contract["Governing contract"]
+    producer["Named producer"]
+    observation["Measured observation"]
+    report["Versioned report"]
+    gate["Freshness or consistency gate"]
+
+    revision --> producer
+    contract --> producer
+    producer --> observation --> report --> gate
+    contract --> gate
+```
+
+A report is trustworthy only when the chain can be reconstructed. The source
+revision may be implicit when the report is generated and committed in the
+same revision, but external inputs, comparison baselines, and non-default
+configuration must be named.
+
 ## Evidence Is Not Authority
 
 The relationship between specifications and reports is directional:
@@ -61,6 +83,26 @@ Before committing a report change:
 Reports without an identifiable producer must state their owner, evidence
 source, and review condition in the document. A snapshot with no reproducible
 origin should be moved to `artifacts/` or removed.
+
+## Freshness And Failure
+
+A report is stale when its governed inputs changed without regeneration, its
+producer no longer emits the checked shape, or its retained claim no longer
+matches the enforcing test. Staleness is a failing repository condition, not a
+documentation warning.
+
+When regeneration fails:
+
+1. preserve the producer's non-zero status and diagnostics under `artifacts/`;
+2. leave the last valid report unchanged rather than writing a partial result;
+3. fix the implementation, producer, or declared contract according to the
+   intended behavior;
+4. regenerate and review the complete semantic diff;
+5. commit the report only after its freshness gate passes.
+
+Generated reports should be written atomically when practical so interruption
+cannot replace valid evidence with a truncated file. Curated ledgers must not
+delete unresolved rows merely to satisfy a count or status assertion.
 
 ## Naming And Retention
 

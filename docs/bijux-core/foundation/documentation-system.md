@@ -68,6 +68,53 @@ Crate-local `docs/` directories are appropriate only for detail that is useful
 to that crate's consumers and too specific for its README. They are not a
 place to mirror the public website.
 
+Each crate documentation directory is capped at ten Markdown pages. That cap is
+a design constraint, not a target. A page is admitted only when it owns a
+durable package question such as architecture, contracts, data evolution,
+failure semantics, effect ownership, or verification. The crate README must
+link every admitted page so internal guidance remains discoverable without
+searching the tree.
+
+## Change And Evidence Flow
+
+```mermaid
+flowchart TB
+    product["Supported product claim"]
+    handbook["Public handbook"]
+    crate["Crate README and internal docs"]
+    spec["Executable specification"]
+    code["Implementation"]
+    tests["Contract and behavior tests"]
+    report["Governed evidence"]
+    artifact["Local run artifacts"]
+
+    product --> handbook
+    handbook --> crate
+    handbook --> spec
+    crate --> code
+    spec <--> code
+    code --> tests
+    spec --> tests
+    tests --> report
+    tests --> artifact
+```
+
+Only reviewable, revision-relevant evidence enters `docs/reports`. Logs,
+temporary sites, and local diagnostics terminate under `artifacts/`. This
+separation keeps the documentation tree useful to readers and prevents a
+successful local run from becoming an undocumented product claim.
+
+## Ownership Matrix
+
+| Surface | Primary reader | Owns | Must not own |
+| --- | --- | --- | --- |
+| root `README.md` | new users and contributors | product orientation and verified entrypoints | complete command or package reference |
+| public handbooks | users, operators, contributors | supported workflows, limits, and package routing | private implementation details |
+| crate README and `docs/` | crate consumers and maintainers | package boundary, internal contracts, and change guidance | repository-wide policy or duplicate user tutorials |
+| `docs/spec/` | maintainers and contract tests | enforced behavioral intent | unevaluated proposals or run results |
+| `docs/reports/` | reviewers and release maintainers | reproducible evidence at a source revision | normative behavior |
+| `artifacts/` | local operators and automation | transient output and diagnostics | versioned authority |
+
 ## Authority Order
 
 When two sources appear to disagree, use this order:
