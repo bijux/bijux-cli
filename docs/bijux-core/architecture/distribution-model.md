@@ -4,102 +4,110 @@ audience: mixed
 type: architecture
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # Distribution Model
 
-`bijux-core` ships several public surfaces from one repository. That only works
-if release outputs all point back to the same verified source state instead of
-drifting into separate stories.
-
-In practice, that means a tag, a crate release, Python packaging output,
-published documentation, and release evidence should all describe the same
-repository truth. If one surface advertises more or less than the tagged source
-actually supports, the distribution model has failed.
+`bijux-core` publishes multiple artifacts from one source identity: Rust
+crates, the Python `bijux-cli` distribution, release bundles, container images,
+and documentation. A release is coherent only when every artifact can be
+traced to the same reviewed commit and the package boundary declares it
+publishable.
 
 ## Distribution Flow
 
 ```mermaid
-flowchart LR
-    commits["verified commits"] --> tag["version tag"]
-    tag --> publish["publish workflows"]
-    publish --> crates_release["Rust crates"]
-    publish --> python_release["Python bridge"]
-    publish --> docs_site["documentation site"]
-    publish --> evidence["release evidence"]
+flowchart TB
+    source["reviewed source commit"]
+    boundary["package and release contracts"]
+    validation["required gates and release validation"]
+    tag["immutable version tag"]
+    plan["publication plan"]
+
+    subgraph outputs["Published identities"]
+        crates["crates.io packages"]
+        python["PyPI distribution"]
+        bundles["GitHub release assets"]
+        images["GHCR images"]
+        docs["documentation revision"]
+    end
+
+    reconcile["digest, version, tag, and source reconciliation"]
+    accept["accepted release"]
+    incident["publication incident"]
+
+    source --> boundary --> validation --> tag --> plan
+    plan --> crates
+    plan --> python
+    plan --> bundles
+    plan --> images
+    plan --> docs
+    crates --> reconcile
+    python --> reconcile
+    bundles --> reconcile
+    images --> reconcile
+    docs --> reconcile
+    reconcile -->|all identities agree| accept
+    reconcile -->|missing, conflicting, or unverifiable| incident
 ```
 
-## Public Distribution Surfaces
+Tag creation is the transition from mutable candidate to immutable release
+identity. Publication is not accepted at upload time; it is accepted after
+external identities and digests reconcile with that tag.
 
-- Rust crate release channels for applicable published crates
-- Python package release for `bijux-cli-python`
-- repository documentation publication via MkDocs pipeline
-- build and evidence artifacts for validation and governance
+## Published Surfaces
 
-## What This Repository Actually Ships
+| Surface | Product role | Identity that must reconcile | Not published from this repository |
+| --- | --- | --- | --- |
+| `bijux-cli` on crates.io | native `bijux` runtime | crate version, checksum, repository, and tag | `bijux-dev` |
+| `bijux-cli` on PyPI | Python launcher, native bridge, and Python API | wheel/sdist version, supported interpreter tags, native runtime parity, and tag | `bijux-dag` executable |
+| DAG crates on crates.io | graph, artifact, runtime, application, and command packages | dependency order, crate versions, checksums, and tag | `bijux-dag-testkit` |
+| GitHub release assets | stamped CLI and DAG binary families | archive digest, embedded version, platform, and tag | local validation artifacts |
+| GHCR | packaged CLI and DAG executables | image digest, labels, executable version, and tag | a claim of host or cluster isolation |
+| documentation site | supported behavior and generated references | deployed revision and release boundary | internal specifications and governed reports |
 
-The repository does not publish every crate equally.
+The machine-readable package set and publication status live in
+`contracts/foundation/workspace_package_boundary.v1.json`. Release workflows
+consume that boundary; prose does not expand it.
 
-- public Rust crates carry the `bijux` and `bijux-dag` runtime families to
-  crates.io
-- the Python bridge packages the CLI-facing surface for Python consumers
-- the docs site publishes reader-facing guidance and generated references
-- release evidence proves what was built, verified, and published from a tag
+## Identity Handoffs
 
-The distribution model is therefore not just "publish all crates." It is a
-controlled release of the repository's public product surfaces.
+| Handoff | Required proof | Refusal condition |
+| --- | --- | --- |
+| source to candidate | clean source identity and required selected gates | dirty, ambiguous, or unverified source |
+| candidate to tag | release validation, package plan, compatibility review, and documentation integrity | any required proof missing or generated policy misaligned |
+| tag to artifact | reproducible build inputs and artifact metadata bound to the tag | artifact cannot identify the tagged source |
+| artifact to registry | accepted external version and immutable digest or checksum | conflict, partial upload, or wrong repository identity |
+| registry to release acceptance | complete inventory across registries, assets, images, and docs | any surface absent, conflicting, or unverifiable |
 
-## Distribution Rules
-
-- release channels must map to tagged, verified repository state
-- runtime identity must stay consistent across CLI and Python surfaces
-- maintainer tooling remains repository-owned and audit-focused
-
-## Why Repository Truth Comes First
-
-Readers encounter the repository through different entry points:
-
-- crates.io package pages
-- Python package consumers
-- published docs and CLI references
-- release notes and evidence artifacts
-
-Those entry points can only be trusted if they all describe the same release
-boundary. The repository therefore treats distribution as a coordination
-problem, not just a packaging problem.
-
-## Typical Sources Of Drift
+## Drift And Incident Triggers
 
 Distribution becomes misleading when one surface moves without the others. The
-most common failure modes are:
+release must stop when:
 
 - docs promise a command or field that the released tag does not contain
 - a public crate is released without matching compatibility notes
 - Python packaging presents a different runtime identity than the CLI release
 - release evidence or workflow matrices omit a published surface
+- a package, archive, image, or deployed site resolves to a different commit
+- publication succeeds only partially and a retry could create conflicting
+  external state
 
-## Where Distribution Ownership Lives
+## Distribution Authorities
 
-The release story is spread across a small number of root surfaces:
+The principal authorities are:
 
-- `.github/workflows/`
-- `crates/bijux-cli-python/`
-- `.github/release.env`
-- `makes/gh.mk`
+- `contracts/foundation/workspace_package_boundary.v1.json` for package status
+  and order;
+- `.github/release.env` and generated workflow policy for release orchestration;
+- package manifests for distribution metadata;
+- the version tag for immutable source identity;
+- release evidence for the observed result of validation and publication.
 
-Those files are the right starting points when the question is not "how does
-this crate work?" but "how does this verified repository become a public
-release?"
-
-## What Readers Should Expect From A Good Release
-
-A release is in good shape when:
-
-- the public crate set matches published documentation
-- tagged source and release automation agree on version identity
-- generated references and package READMEs match shipped capabilities
-- evidence artifacts can explain what was built and from which source revision
+When these sources disagree, publication remains incomplete. A successful
+individual upload cannot override the package boundary, repair a mixed source
+identity, or prove that omitted surfaces were reconciled.
 
 ## Distribution References
 

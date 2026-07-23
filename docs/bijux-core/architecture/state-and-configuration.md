@@ -4,108 +4,74 @@ audience: mixed
 type: architecture
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # State and Configuration
 
-`bijux-core` resolves runtime behavior from a layered set of defaults, files,
-environment variables, and invocation-time flags. That layering is deliberate:
-operators need local convenience, automation needs explicit overrides, and both
-need the same precedence rules every time.
+Configuration and state are owned by the product that interprets them.
+`bijux`, `bijux-dag`, and maintainer automation do not share a hidden global
+configuration object or a common persistence transaction.
 
-When these rules are clear, a reader can answer practical questions quickly:
-
-- why a command used one value instead of another
-- where a persisted state file should live
-- which part of the repository owns retained run metadata
-- whether a surprising behavior is configuration drift or a code defect
-
-## Resolution Flow
+## Ownership Topology
 
 ```mermaid
-flowchart LR
-    defaults["defaults"] --> config["config files"]
-    config --> env["environment overrides"]
-    env --> flags["flags"]
-    flags --> resolved["resolved runtime state"]
+flowchart TB
+    cli_input["CLI flags · environment · CLI config"]
+    cli_resolver["bijux configuration resolver"]
+    cli_state["config · history · memory · plugin registry"]
+
+    dag_input["graph · command flags · backend inputs"]
+    dag_resolver["bijux-dag admission and runtime policy"]
+    dag_state["run manifest · attempts · traces · artifact index"]
+
+    dev_input["make target · suite selection · environment"]
+    dev_control["maintainer control plane"]
+    dev_state["logs · reports · validation artifacts"]
+
+    cli_input --> cli_resolver --> cli_state
+    dag_input --> dag_resolver --> dag_state
+    dev_input --> dev_control --> dev_state
 ```
 
-## Configuration Precedence
+Each resolver must explain its own effective inputs. Similar names across
+products do not create shared precedence or shared persistence ownership.
 
-The repository resolves runtime state in a stable order:
+## Configuration Boundaries
 
-- default values provide a stable baseline for local and CI runs
-- config files declare persistent preferences and scoped paths
-- environment overrides are explicit and auditable in automation
-- flags are highest precedence and apply per invocation
+| Surface | Configuration authority | Persisted state | Diagnostic authority |
+| --- | --- | --- | --- |
+| `bijux` | CLI defaults, compatibility file, environment, and applicable flags under the CLI precedence contract | user configuration, history, memory, plugin content, and registry | `bijux cli paths`, `config explain`, `status`, `doctor`, and `audit` |
+| `bijux-dag` | graph contract, command arguments, execution policy, and backend-specific inputs | rooted run directory, attempts, traces, declared artifacts, and integrity records | plan, inspect, explain, verify, backend diagnostics, and retained run evidence |
+| repository maintenance | make target, suite catalog, environment, generated policy, and explicit command options | outputs under `artifacts/` or an explicitly governed report destination | maintainer command envelope, component logs, aggregate status, and evidence manifest |
 
-That order matters because it makes the final runtime view explainable. The
-reader should not have to guess whether a value came from a file, an exported
-variable, or a one-off command flag.
+The CLI's exact path and value precedence is documented in
+[CLI State and Persistence](../../bijux-cli/architecture/state-and-persistence.md)
+and [Configuration Surface](../../bijux-cli/interfaces/configuration-surface.md).
+The DAG graph, run, and backend inputs are documented in the
+[DAG Execution Model](../../bijux-dag/architecture/execution-model.md) and
+[Run Evidence Layout](../../bijux-dag/interfaces/run-evidence-layout.md).
 
-## What Counts As Configuration
+## Configuration Versus Evidence
 
-The configuration layer usually answers questions about intent before execution
-starts, such as:
+Configuration states intent before effects. State records what an owner
+retained during or after effects. Evidence is the subset of state that carries
+enough identity, status, provenance, and integrity to support a bounded claim.
+A file does not become evidence merely because it was written under a run or
+artifact directory.
 
-- profile and path selection
-- artifact locations
-- plugin and CLI behavior toggles
-- runtime backend choices and execution options
-- environment requirements that must be declared before a run
+## Cross-Surface Rules
 
-## What Counts As State
-
-State is the data created or retained while the repository is operating:
-
-- CLI state files and resolved config views
-- DAG run directories and manifests
-- artifact storage records
-- maintainer evidence and generated reports
-
-Configuration tells the runtime what to do. State records what it did.
-
-## Ownership By Surface
-
-- CLI state files are owned by CLI runtime contracts
-- DAG run state and artifact records are owned by DAG runtime and artifact crates
-- maintainer evidence state is generated, reviewable, and disposable
-
-That split prevents one product family from accidentally becoming the hidden
-owner of another surface's retained data.
-
-## Why Stable Precedence Matters
-
-Without fixed precedence, the same command can behave differently across local
-development, CI, and release automation for reasons that are hard to recover
-after the fact. Stable precedence gives the repository three durable benefits:
-
-- reproducible local debugging
-- auditable CI and release execution
-- clearer failure reports when required configuration is missing or invalid
-
-## Common Reader Questions
-
-### "Why did this invocation pick that value?"
-
-Start by checking whether the value was supplied by:
-
-1. a command-line flag
-2. an environment override
-3. a repository or user config file
-4. the built-in default
-
-### "Who owns this retained file?"
-
-If the file explains a DAG run, artifact, or manifest, the owning surface is
-usually in the DAG runtime and artifact crates. If it explains command
-configuration or CLI behavior, the owning surface is usually in the CLI crate.
-
-### "Should this be committed?"
-
-Most generated or retained state belongs in governed artifact locations, not in
-tracked source. Source defines the rules; runtime state proves a run.
+- Record effective inputs when reproducibility or incident analysis depends on
+  them; do not infer configuration from defaults after the run.
+- Keep CLI user state separate from DAG run roots and repository validation
+  artifacts.
+- Do not treat environment variables as provenance unless their names, values,
+  redaction rules, and owner are deliberately captured.
+- Generated local state belongs under `artifacts/` unless a repository-owned
+  producer explicitly governs a checked-in destination.
+- State repair remains an operation of the owning product; deleting or
+  rewriting another product's files is not recovery.
 
 ## Code Anchors
 

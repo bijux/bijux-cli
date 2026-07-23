@@ -4,13 +4,14 @@ audience: mixed
 type: inventory
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-23
 ---
 
-# Core Packages
+# Package Ownership
 
-This page is the fastest way to answer a practical repository question: which
-package owns this behavior, and is that package public or repository-internal?
+Every behavior has one first package owner and one release status. Package
+ownership determines where semantics change; release status determines whether
+downstream consumers may depend on the crate directly.
 
 The workspace stays readable because the split is deliberate. Root runtime
 surfaces live in CLI, graph and execution truth live in DAG, and repository
@@ -25,15 +26,7 @@ The canonical contract for that release status lives in
 [Package Boundary](../foundation/package-boundary.md) and
 `contracts/foundation/workspace_package_boundary.v1.json`.
 
-## How To Use This Page
-
-- Start with the table below when you know the behavior but not the crate.
-- Move to the owning handbook for the full product or maintainer story.
-- Move to the package page when you need the exact crate boundary.
-- Treat public-versus-private status here as a quick routing aid; the canonical
-  release contract still lives in [Package Boundary](../foundation/package-boundary.md).
-
-## Package Map
+## Ownership Graph
 
 ```mermaid
 flowchart TB
@@ -50,11 +43,20 @@ flowchart TB
     dag --> dag_artifacts["bijux-dag-artifacts"]
     dag --> dag_testkit["bijux-dag-testkit"]
     dev --> dev_pkg["bijux-dev"]
+
+    classDef public fill:#e8f5e9,stroke:#2e7d32,color:#102a13
+    classDef private fill:#fff3e0,stroke:#ef6c00,color:#3e2400
+    class cli_runtime,dag_core,dag_runtime,dag_app,dag_cli,dag_artifacts public
+    class cli_python,dag_testkit,dev_pkg private
 ```
 
-## Workspace Table
+Green nodes are public Rust crates. Orange nodes are repository-internal Rust
+packages; `bijux-cli-python` still produces the public PyPI distribution but is
+not itself a crates.io release.
 
-| Package | Release status | Area | Owns | Open Next |
+## Route Behavior To Its Owner
+
+| Package | Release status | Area | Owns | Product authority |
 | --- | --- | --- | --- | --- |
 | `bijux-cli` | public | CLI | command parsing, runtime execution, plugins, REPL, structured output | [CLI](../../bijux-cli/index.md) |
 | `bijux-cli-python` | private | CLI | Python packaging, launcher bridge, native module distribution | [CLI](../../bijux-cli/index.md) |
@@ -66,7 +68,7 @@ flowchart TB
 | `bijux-dag-testkit` | private | DAG | deterministic fixtures, builders, shared assertion helpers | [DAG](../../bijux-dag/index.md) |
 | `bijux-dev` | private | Maintainer | release governance, repository evidence, diagnostics, control-plane commands | [Maintainer](../../bijux-dev/index.md) |
 
-## Common Routing Decisions
+## Product And Proof Boundaries
 
 - Open [CLI](../../bijux-cli/index.md) for `bijux` command behavior, plugin
   routing, REPL semantics, and Python distribution surfaces.
@@ -74,16 +76,21 @@ flowchart TB
   runtime policy, artifacts, replay, and DAG command behavior.
 - Open [Maintainer](../../bijux-dev/index.md) for repository health, release
   proof, docs gates, and evidence collection.
-- Stay in the [Repository Handbook](../index.md) only when the question
-  genuinely crosses those boundaries.
+- Use the [Repository Handbook](../index.md) for release identity, dependency
+  direction, and changes that cross product or proof boundaries.
 
-## What This Table Protects Against
+An application route may compose core, runtime, and artifact behavior without
+becoming their semantic owner. The CLI binary may expose state diagnostics
+without owning Python packaging. Maintainer tooling may verify a public
+package without becoming a runtime dependency of that package.
+
+## Boundary Failures
 
 - assuming a repository-internal support crate is part of the published API
 - reading the wrong handbook because a command name mentions another product
 - changing shared behavior in one package without noticing the real owner
 
-## Related Pages
+## Authorities
 
 - [Package Boundary](../foundation/package-boundary.md)
 - [Ownership Model](../foundation/ownership-model.md)
