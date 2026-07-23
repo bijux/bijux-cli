@@ -9,37 +9,68 @@ last_reviewed: 2026-07-07
 
 # Failure Recovery
 
-Failure recovery in DAG should preserve evidence first, then restore a runnable
-state with clear attribution.
-
-## Visual Summary
+Recovery begins with the failed run as evidence. Never edit or overwrite that
+run to make it appear healthy. Diagnose the first causal failure, create a new
+run for remediation or replay, and compare the two results under the same
+identity and policy rules.
 
 ```mermaid
-flowchart TD
-    fail[detect run failure] --> capture[capture evidence and failure details]
-    capture --> classify[classify root cause scope]
-    classify --> remediate[apply targeted remediation]
-    remediate --> replay[replay and diff verification]
+flowchart LR
+    fail["failed, interrupted,<br/>or unverifiable run"]
+    preserve["preserve run and<br/>command evidence"]
+    verify{"retained evidence<br/>internally valid?"}
+    classify["identify causal node,<br/>attempt, and failure class"]
+    remediate["change one owned input,<br/>policy, environment, or graph"]
+    child["execute or replay<br/>into a new run"]
+    compare["strict verify and<br/>semantic/artifact diff"]
+    accept{"recovery criteria met?"}
+
+    fail --> preserve --> verify
+    verify -->|"yes"| classify
+    verify -->|"no"| integrity["classify missing or corrupt evidence"] --> classify
+    classify --> remediate --> child --> compare --> accept
+    accept -->|"no"| classify
+    accept -->|"yes"| recovered["retain both runs and decision"]
 ```
 
-## Recovery Sequence
+## Preserve The Failure
 
-1. record run status and retain failing artifact directory
-2. classify failure as graph, input, runtime, environment, or backend issue
-3. remediate one scope at a time and rerun
-4. replay the recovered run to verify determinism behavior
-5. diff against last known good run before promotion
+Record before any mutation:
+
+- exact binary version, graph source, invocation, inputs, backend, and policy;
+- stdout, stderr, command exit status, run root, and run ID;
+- manifest, output index, node traces, attempt records, scheduler checkpoint,
+  failure propagation, and backend evidence;
+- strict verification result, including missing or corrupt paths;
+- environment facts needed to reproduce the selected backend.
+
+An incomplete run remains useful incident evidence. A valid failed run can
+pass structural verification because verification checks retained truth, not
+whether every node succeeded.
 
 ## Diagnostic Commands
 
 ```bash
-bijux-dag explain ./runs/failed-20260406-01
-bijux-dag explain ./runs/failed-20260406-01 --node publish
-bijux-dag runs explain-failure failed-20260406-01 --root ./runs
-bijux-dag runs inspect failed-20260406-01 --root ./runs
-bijux-dag replay ./runs/failed-20260406-01 --out ./runs/replay-failed
-bijux-dag replay --source-run-id failed-20260406-01 --source-run-root ./runs --out ./runs/replay-failed --from-node publish
-bijux-dag diff ./runs/good-20260405-77 ./runs/recovered-20260406-02 --mode semantic --explain
+RUNS_ROOT="./artifacts/runs"
+FAILED_RUN_ID="<failed-run-id>"
+FAILED_RUN_DIR="${RUNS_ROOT}/run-${FAILED_RUN_ID}"
+RECOVERY_ROOT="./artifacts/recovery"
+
+bijux-dag verify "${FAILED_RUN_DIR}" --strict
+bijux-dag explain "${FAILED_RUN_DIR}"
+bijux-dag explain "${FAILED_RUN_DIR}" --node publish
+bijux-dag runs explain-failure "${FAILED_RUN_ID}" --root "${RUNS_ROOT}"
+bijux-dag runs inspect "${FAILED_RUN_ID}" --root "${RUNS_ROOT}"
+
+bijux-dag replay \
+  --source-run-id "${FAILED_RUN_ID}" \
+  --source-run-root "${RUNS_ROOT}" \
+  --out "${RECOVERY_ROOT}" \
+  --from-node publish
+
+bijux-dag diff "${FAILED_RUN_DIR}" "<recovered-run-dir>" \
+  --mode semantic \
+  --explain
 ```
 
 `bijux-dag runs explain-failure` is the fastest way to separate the primary fault
@@ -72,6 +103,25 @@ When a node did retry or the runtime vetoed a retry, inspect
 attempt now records a durable retry decision reason, so operators can separate
 budget exhaustion, timeout-policy vetoes, exit-code matches, class matches, and
 non-retriable policy failures without reconstructing the control path by hand.
+
+## Classify Before Remediation
+
+| Failure class | Evidence | Appropriate remediation |
+| --- | --- | --- |
+| graph or schema | validation envelope and exact source | correct the graph; a retry of unchanged input has no value |
+| missing or invalid input | declared input contract and materialization result | supply or repair the owned input |
+| policy denial | effective policy and denied declaration | change the request or policy through its owner |
+| execution | attempt records, exit code, timeout, stdout, stderr | correct node code, dependency, or bounded retry policy |
+| dependency propagation | first causal failure, trigger rule, propagation mode | repair the ancestor or deliberately change graph semantics |
+| backend | submission identity, polling evidence, worker/pod result | repair scheduler, cluster, adapter configuration, or shared storage |
+| artifact integrity | output index, hashes, proofs, and filesystem evidence | preserve the run; restore from an authoritative source or re-execute |
+| cache | lookup identity and miss/rejection reason | repair identity or invalid entry; never force reuse |
+| compatibility | schema/tool versions and migration support | use a supported reader or governed migration |
+| unknown or internal | complete structured payload and diagnostic bundle | retain uncertainty and escalate to the owning implementation |
+
+Do not add retries to graph, policy, compatibility, or deterministic integrity
+failures. Retry is valid only when the recorded class and policy identify a
+transient attempt boundary.
 
 ## Concrete Repository Workflow
 
@@ -124,6 +174,22 @@ execution.
 - never replace failing evidence in-place
 - never classify unknown mismatch as success
 - never skip replay or diff after high-impact remediation
+
+## Recovery Acceptance
+
+A recovered run is acceptable only when:
+
+1. the original failure remains preserved and attributable;
+2. the remediation names one owning boundary;
+3. the new run uses a distinct identity and records the changed input;
+4. strict verification passes for the new retained evidence;
+5. the original workload's domain assertions pass;
+6. semantic, artifact, provenance, timing, policy, or cache comparison is
+   interpreted only for its selected mode;
+7. any remaining difference or unsupported environment is explicit.
+
+If broad deletion or an unrecorded environment change is required to make the
+workflow pass, the cause remains unresolved.
 
 ## Next Reads
 
