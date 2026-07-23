@@ -113,6 +113,42 @@ None of these commands proves an optional backend is available. Container,
 SLURM, and Kubernetes execution each have additional environment contracts in
 the [DAG operations handbook](docs/bijux-dag/operations/index.md).
 
+## Get A Useful Result
+
+For the root runtime, inspect a typed configuration contract without changing
+local state:
+
+```bash
+mkdir -p artifacts
+bijux config schema cli --format json --no-pretty \
+  > artifacts/cli-config-schema.json
+```
+
+The result is suitable for automation because the command uses the same route,
+schema registry, structured envelope, and exit semantics as other built-in
+operations. It does not prove that a plugin or mounted application is safe or
+available.
+
+For the workflow runtime, use the repository demonstration:
+
+```bash
+make dag-demo
+```
+
+The demonstration produces a cold run, a cache-aware warm run, a replay, an
+artifact inspection, and strict verification beneath `artifacts/dag-demo/`.
+The meaningful result is the combination of the graph, command envelopes, run
+directories, declared artifact, and verification status—not the console
+message alone.
+
+| Result you need | First evidence | Stronger evidence |
+| --- | --- | --- |
+| one `bijux` route is callable | structured command result and exit status | route-specific state or delegated-process diagnostics |
+| configuration is understood | schema plus `config explain` provenance | validation against the exact environment and project |
+| a DAG is accepted | validation envelope | deterministic plan and identity |
+| a DAG run completed | run envelope and terminal status | strict run verification and domain-specific output assertions |
+| a run can be reused | cache or replay decision | matching identities, integrity proofs, and semantic comparison |
+
 ## From Workflow To Evidence
 
 A DAG run is not only a process invocation. The runtime validates the graph,
@@ -225,7 +261,7 @@ changes require `make docs-check`; Rust API and behavior changes require lint
 and the relevant focused or broad Rust lane; Python bridge changes require the
 Python checks in addition to Rust verification.
 
-## Documentation Authority
+## Find Operational Truth
 
 | Question | Authority |
 | --- | --- |
@@ -237,11 +273,10 @@ Python checks in addition to Rust verification.
 | which package owns a behavior? | [Package Ownership](docs/bijux-core/governance/package-ownership.md) and the owning crate's contracts page |
 | how do maintainers validate changes? | [Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/) |
 
-`docs/spec/` contains cross-package normative contracts. `docs/reports/`
-contains versioned evidence produced or mechanically checked by repository
-tooling. Neither directory is published as a reader handbook. Crate-local
-contracts define package ownership, while local logs and generated sites
-belong under `artifacts/`.
+Use the public handbook for supported behavior, the owning crate contract for
+implementation boundaries, and a completed run or gate for revision-specific
+evidence. A generated report records an observation; it cannot broaden the
+release boundary or make a private command public.
 
 ## License
 

@@ -114,45 +114,43 @@ replay, comparison, and post-run verification depend on durable evidence.
 
 ## Practical Starting Points
 
-- Read [Executable Examples](bijux-dag/interfaces/runnable-examples.md) when you
-  want real DAG workflows with expected outputs, not just feature descriptions.
-- Read [First-Run Tutorial](bijux-dag/operations/first-run-tutorial.md)
-  when you want the shortest route from checkout to a real retained DAG run.
-- Read [CLI Runtime Package](bijux-cli/packages/bijux-cli.md) when you already
-  know the question belongs to `bijux` and need the crate boundary.
-- Read [DAG Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) when
-  you want the current release claim in one place.
+- To automate `bijux`, begin with the
+  [CLI surface](bijux-cli/interfaces/cli-surface.md), then use the
+  [configuration guide](bijux-cli/interfaces/config-guide.md) and
+  [diagnostics guide](bijux-cli/operations/diagnostics-guide.md).
+- To execute a real graph, follow the
+  [first-run tutorial](bijux-dag/operations/first-run-tutorial.md), then read
+  the [run evidence layout](bijux-dag/interfaces/run-evidence-layout.md).
+- To diagnose a failed run, preserve it and follow
+  [observability and diagnostics](bijux-dag/operations/observability-and-diagnostics.md)
+  before attempting recovery.
+- To evaluate a release or repository change, start with
+  [testing and validation](bijux-core/operations/testing-and-validation.md)
+  and the [maintainer gate map](bijux-dev/operations/repository-gates.md).
 
-## Documentation Authority
-
-The website contains curated reader guidance. Executable specifications and
-generated evidence remain versioned in the repository but are not presented as
-product handbook pages. Read the
-[documentation system](bijux-core/foundation/documentation-system.md) for the
-authority and maintenance rules.
+## From Outcome To Trust
 
 ```mermaid
 flowchart LR
-    question["Reader or maintainer question"]
-    handbook["Published handbook<br/>supported behavior and workflow"]
-    package["Crate README and internal docs<br/>code ownership and change boundary"]
-    contract["Executable specification<br/>enforced invariant"]
-    implementation["Source and tests<br/>implemented behavior"]
-    evidence["Governed report<br/>observation at a revision"]
+    request["command or graph request"]
+    contract["validated route, schema,<br/>graph, or policy"]
+    execution["owned execution"]
+    outcome["streams, status,<br/>state, or run directory"]
+    verification["diagnostics, integrity,<br/>replay, or gate"]
+    decision["bounded operational decision"]
 
-    question --> handbook
-    handbook -->|implementation detail| package
-    handbook -->|normative detail| contract
-    package --> implementation
-    contract <--> implementation
-    implementation -->|governed evaluation| evidence
+    request --> contract --> execution --> outcome --> verification --> decision
+    verification -->|"missing or inconsistent evidence"| refuse["refuse or narrow the claim"]
 ```
 
-Arrows do not make every document equally authoritative. Handbooks explain the
-supported product, crate pages locate implementation ownership, specifications
-state enforced behavior, and reports retain observations. A report cannot
-override a contract, and an internal package detail cannot widen the public
-product promise.
+| Outcome | Trust it for | Do not infer |
+| --- | --- | --- |
+| successful `bijux` result | that one route completed under the observed state | that delegated code was isolated or all plugins are healthy |
+| accepted DAG validation | that graph syntax and semantics passed the active contract | that any node executed |
+| finalized run directory | that execution reached a retained terminal result | that files remain intact or domain output is correct |
+| strict verification | that retained structural and integrity contracts pass | scientific, business, or workload correctness |
+| replay or semantic comparison | the recorded identity and difference classification | equivalence outside the selected evidence and environment |
+| green maintainer gate | the exact selected suite at the recorded revision | omitted platforms, external services, or broader release claims |
 
 The [v0.4.0 Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) define
 the current DAG release. [Future Direction](bijux-dag/foundation/future-direction.md)
