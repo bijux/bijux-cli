@@ -4,7 +4,7 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # bijux-dag-app
@@ -19,78 +19,147 @@ last_reviewed: 2026-07-09
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-dag-app docs](https://img.shields.io/badge/docs-app-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-dag-app` is the application layer behind `bijux-dag`. It translates
-command intent into service calls across the DAG crates, coordinates reads and
-writes, and shapes the typed responses that the CLI renders.
+`bijux-dag-app` is the application boundary behind the `bijux-dag` command.
+It turns operator intent into calls across graph, runtime, and evidence
+packages, then returns a typed outcome for human or machine consumption.
 
-At the product level, `bijux-dag` v0.4.0 is a local-first DAG runtime for
-reproducible workflows with explicit graph contracts, deterministic execution
-records, verified artifacts, cache explanation, and replayable run bundles.
-The [Replay Contract](../../spec/REPLAY_CONTRACT.md) defines the replay authority.
-This package keeps that promise coherent at the command and response boundary.
+Use this crate when a command composes the wrong workflow, resolves the wrong
+inputs, exposes the wrong route, or describes a domain result incorrectly.
 
-Use this page when the issue is about command behavior or output shape rather
-than graph truth or execution internals.
+## Command Workflow
 
-The intended Rust import lanes are the crate root, `stable`, and `prelude`.
-Hidden compatibility helpers remain repository-owned, and the `experimental`
-lane is opt-in behind `experimental-public-api`.
+```mermaid
+flowchart LR
+    Intent["Parsed command intent"]
+    Resolve["Resolve paths,<br/>configuration, and policy"]
+    Preconditions["Check mutation and<br/>capability preconditions"]
+    Domain["Delegate to core,<br/>runtime, or artifacts"]
+    Response["Typed response<br/>and exit classification"]
+    Output{"Selected output"}
+    Human["Human rendering"]
+    JSON["JSON envelope"]
 
-This crate also houses repository-owned experimental operator routes plus
-modeled-platform and maintainer routes that stay in the repository for
-coverage and evidence work. Experimental routes stay on explicit paths, while
-simulated and maintainer lanes require `BIJUX_DAG_ENABLE_SIMULATED=1` or
-`BIJUX_DAG_ENABLE_INTERNAL=1`. Those paths are intentionally kept outside the
-visible `bijux-dag --help` release contract.
+    Intent --> Resolve --> Preconditions --> Domain --> Response --> Output
+    Output --> Human
+    Output --> JSON
+```
 
-## Responsibility Map
+Human and JSON output describe the same operation. Human text can add guidance;
+it cannot weaken a refusal, omit the causal class, or turn an unsuccessful
+domain outcome into success.
 
-| Surface | Ownership |
+## Authority
+
+| Domain | This crate decides |
 | --- | --- |
-| command orchestration | argument-to-service routing, workflow dispatch, output selection, and public-versus-hidden route guardrails |
-| response shaping | render flows, response models, diagnostics views, command-specific output contracts |
-| app-level services | read, write, replay, inspect, graph, cache, migration, and export/import orchestration |
-| container-facing operator surface | run summaries, failure reasons, and retained response shapes for container-backed nodes |
-| branch-facing operator surface | retained branch decisions, skipped-lane explanations, join-trigger summaries, and replay proof output |
-| boundary | does not own kernel semantics, runtime scheduler internals, or artifact storage authority |
+| command model | command tree below process startup, arguments, route selection, and surface-lane guardrails |
+| input resolution | source files, run roots, run identities, output destinations, configuration precedence, and deprecation behavior |
+| orchestration | validate, plan, run, inspect, replay, diff, cache, import, export, migration, repair, and diagnostic workflows |
+| preconditions | unsafe path relationships, mutation intent, capability requirements, and route availability |
+| response contract | typed command outcomes, diagnostics views, JSON envelopes, human rendering, and recovery guidance |
+| generated reference | checked-in command reference derived from the owned command model |
 
-## Source Layout
+The app does not redefine graph semantics, schedule nodes, implement backends,
+or invent serialized artifact formats. Those decisions remain in core,
+runtime, and artifacts.
 
-- `crates/bijux-dag-app/src/commands`
-- `crates/bijux-dag-app/src/routes`
-- `crates/bijux-dag-app/src/inspect`
-- `crates/bijux-dag-app/src/replay`
-- `crates/bijux-dag-app/src/graph`
-- `crates/bijux-dag-app/src/format`
-- `crates/bijux-dag-app/src/read`
-- `crates/bijux-dag-app/src/write`
+## Read-Only And Mutating Routes
 
-## Open Next
+Inspection and preview commands must not mutate retained state. Mutating
+commands identify their destination, validate unsafe source/destination
+relationships before domain execution, and report what changed.
 
-- open the [DAG Handbook](../index.md) for the package-wide architecture and interfaces
-- open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when the question crosses from response shaping into execution policy
-- open [`bijux-dag-cli`](./bijux-dag-cli.md) when the concern is process wiring rather than app orchestration
-- open [Reproducibility Model](../interfaces/reproducibility-model.md) when the question is what the app is reporting about fingerprints, cache proofs, or replay-bundle fidelity
-- open [Container Packaging Workflow](../operations/container-packaging-workflow.md) for a repository-backed example of the app surface reporting a real container run and a missing-engine failure
-- open [Cache Behavior Workflow](../operations/cache-behavior-workflow.md) for a repository-backed example of the app surface reporting changed-input cache misses and corruption-based reuse refusal through explicit diagnostics
-- open [Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md) for a repository-backed example of the app surface reporting a real branch decision and replay-stable publication path
-- open [Compliance-Gated Bulletin Workflow](../operations/compliance-gated-bulletin-workflow.md) for a repository-backed example of the app surface reporting retry evidence, causal failure attribution, and a repaired replay boundary
-- open [Historical Catalog Backfill Workflow](../operations/historical-catalog-backfill-workflow.md) for a repository-backed example of the app surface reporting backfill fanout, aggregate summary counts, and failed-partition retry state
-- open [Scheduled Catalog Refresh Workflow](../operations/scheduled-catalog-refresh-workflow.md) for a repository-backed example of the app surface reporting internal schedule preview, same-slot suppression, queue dispatch, and run-manifest continuity
+Repair, replay, migration, import, and export preserve the distinction between
+source evidence and new output. A failed source run is never rewritten into
+successful history.
 
-## Code Anchors
+Explicit invalid configuration is an error. The application must not silently
+replace it with a profile, environment value, or default merely to continue.
 
-- `crates/bijux-dag-app/README.md`
-- `crates/bijux-dag-app/docs/CONTRACTS.md`
-- `crates/bijux-dag-app/src/lib.rs`
-- `crates/bijux-dag-app/src/commands/mod.rs`
-- `crates/bijux-dag-app/src/routes/run_routes.rs`
-- `crates/bijux-dag-app/src/inspect/service.rs`
+## Surface Lanes
 
-## Review Lens
+The crate contains more routes than the stable release exposes:
 
-- command routing should stay thin enough to explain and thick enough to keep user-facing contracts coherent
-- orchestration should delegate kernel and runtime work instead of re-implementing it
-- repository-owned experimental routes must not quietly expand the visible operator contract
-- modeled-platform and maintainer routes must not blur the public operator-facing contract
-- output contracts should remain explicit and test-backed
+| Lane | App responsibility |
+| --- | --- |
+| stable | construct and maintain the supported operator surface |
+| experimental | keep repository-tested helpers callable only by deliberate lane |
+| simulated | guard modeled platform namespaces behind `BIJUX_DAG_ENABLE_SIMULATED=1` |
+| internal | guard maintainer and contract routes behind `BIJUX_DAG_ENABLE_INTERNAL=1` |
+
+Source presence is not promotion. Route guards, `bijux-dag commands`, generated
+reference material, and the release truth table must agree.
+
+## Failure Contract
+
+Operator-controlled input must not panic the application. Failures preserve
+their domain:
+
+- malformed arguments or input;
+- graph rejection;
+- policy refusal;
+- unsupported backend or adapter capability;
+- runtime execution failure;
+- missing or corrupt evidence;
+- unsafe paths;
+- incompatible replay, cache, import, or migration material; and
+- internal rendering or orchestration defects.
+
+When JSON output is selected and the command promises an envelope, failure
+remains parseable JSON. Diagnostics belong on their documented stream, and the
+selected exit classification must survive the CLI handoff.
+
+## Cross-Package Delegation
+
+| Operator question | Owning package | App role |
+| --- | --- | --- |
+| Is the graph valid and what is its plan? | [`bijux-dag-core`](bijux-dag-core.md) | load input, call the kernel, and shape diagnostics |
+| What should execute, retry, replay, or reuse? | [`bijux-dag-runtime`](bijux-dag-runtime.md) | establish explicit runtime inputs and report the outcome |
+| Is retained evidence safe and intact? | [`bijux-dag-artifacts`](bijux-dag-artifacts.md) | locate evidence, call verification, and present findings |
+| How does the process start and terminate? | [`bijux-dag-cli`](bijux-dag-cli.md) | supply the command model and selected process result |
+
+If a route begins to implement a domain algorithm, move that behavior to its
+owner and keep the app responsible for preconditions and composition.
+
+## Public Rust Surface
+
+`stable` is the curated long-lived integration lane; `prelude` provides common
+application imports. Crate-root compatibility exports remain available for
+focused use, while experimental helpers require explicit feature opt-in.
+
+Command names, arguments, configuration precedence, JSON envelopes, human
+output semantics, exits, and retained destination behavior are
+compatibility-bearing even when the Rust API is unchanged.
+
+## Verification Evidence
+
+| Claim | Evidence |
+| --- | --- |
+| package and dependency boundary | `crates/bijux-dag-app/tests/crate_boundary_contract.rs` |
+| command tree and route policy | CLI surface and command-routing contracts |
+| machine output | output, error-output, schema lockstep, and snapshot contracts |
+| operator-input safety | route-entrypoint and no-panic contracts |
+| run, replay, import, and export | owning workflow and retained-evidence contracts |
+| public Rust lane | `crates/bijux-dag-app/tests/public_api_contract.rs` |
+
+For broad orchestration changes, run:
+
+```bash
+cargo test --locked -p bijux-dag-app
+```
+
+## Source Authorities
+
+- package contract: `crates/bijux-dag-app/docs/CONTRACTS.md`
+- command model and surface policy: `crates/bijux-dag-app/src/commands/`
+- route preconditions and dispatch: `crates/bijux-dag-app/src/routes/`
+- graph loading and orchestration: `crates/bijux-dag-app/src/graph/` and
+  `crates/bijux-dag-app/src/read/`
+- evidence inspection: `crates/bijux-dag-app/src/inspect/`
+- replay and comparison: `crates/bijux-dag-app/src/replay/`
+- cache and repair orchestration: `crates/bijux-dag-app/src/cache/` and
+  `crates/bijux-dag-app/src/repair/`
+
+See the [CLI Surface](../interfaces/cli-surface.md) for the installed command
+contract and the [Release Boundary](../foundation/release-boundary.md) for
+lane status.
