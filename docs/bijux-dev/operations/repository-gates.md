@@ -109,14 +109,15 @@ process started. Completion is established by the status file together with
 the terminal nextest summary. Individual test failures do not suppress the
 remaining selected tests or the summary.
 
-## What A Green Gate Should Mean
+## Evidence Semantics
 
-| Signal | What it should prove |
-| --- | --- |
-| local gate success | the change is reproducible on a maintainer workstation |
-| CI gate success | the change survives repository automation and baseline environments |
-| docs gate success | published guidance still matches the code and file layout |
-| contract gate success | public promises still align with behavior and schemas |
+| Signal | Accepted meaning | Excluded claim |
+| --- | --- | --- |
+| local gate success | selected checks passed on the recorded revision, worktree, toolchain, and host | hosted permissions, credentials, or runner behavior also work |
+| CI gate success | selected checks passed under the recorded workflow, runner, permissions, and source identity | behavior outside the workflow matrix is covered |
+| docs gate success | source contracts, links, strict build, publication boundary, and rendered navigation passed | every behavioral claim is true without owning product evidence |
+| contract gate success | the selected public promises align with their schemas, fixtures, or implementations | unrelated runtime, security, or release surfaces are ready |
+| release gate success | the candidate satisfied the declared pre-publication evidence set | external registries have accepted and reconciled every artifact |
 
 ## Select Gates By Risk
 
@@ -148,7 +149,7 @@ repository-wide test, or a background launch as a successful result.
 - `makes/docs.mk`
 - `crates/bijux-dev/src/suites/`
 
-## Continue Reading
+## Authorities
 
 - [Evidence Collection](evidence-collection.md)
 - [Test Policy](../governance/test-policy.md)

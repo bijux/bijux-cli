@@ -4,18 +4,15 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Release Operations
 
-Use this page when the repository is close to a release boundary and the next
-question is sequence, ownership, and proof rather than implementation.
-
-The release path is intentionally conservative. A tag is credible only when
-the source requirements, generated release policy, tested behavior, package
-inventory, compatibility notes, and published artifacts all identify the same
-candidate.
+A release is an identity-preserving transition from a reviewed source
+candidate to reconciled public artifacts. A tag is credible only when source
+requirements, generated release policy, tested behavior, package inventory,
+compatibility notes, and every published identity resolve to that candidate.
 
 Visible maintainer command ownership remains governed by
 `contracts/foundation/maintainer_command_surface.v1.json`.
@@ -47,15 +44,16 @@ Canonical package status and publish order are defined by
 - `bijux-dag-testkit`, `bijux-dev`, and `bijux-cli-python` remain repository-internal support crates and are not published to crates.io.
 - The canonical repository for both products is `https://github.com/bijux/bijux-core`.
 
-## Sequence That Must Hold
+## Required Release Proof
 
-| Step | What it should prove |
-| --- | --- |
-| release validation | the candidate commit is publishable from a clean release tree |
-| generated-policy alignment | toolchain, package allowlist, and build matrices cover the same release boundary as the repository |
-| compatibility and docs review | public readers can understand what changed and whether compatibility moved |
-| tag and publish | published artifacts point back to the reviewed commit identity |
-| post-release monitoring | the public result still behaves like the reviewed release lane predicted |
+| Control | Accepted evidence | Failure consequence |
+| --- | --- | --- |
+| release validation | required gates and release suite pass from the clean candidate revision | candidate remains blocked |
+| generated-policy alignment | toolchain, package allowlist, build matrices, and shared standard match repository ownership | refresh the governed source before tagging |
+| compatibility and docs review | public behavior changes, migration needs, and release lanes are explicit | release claim is incomplete |
+| tag creation | immutable tag resolves to the reviewed candidate commit | stop publication and repair identity |
+| publication | each registry, release asset, and image reports the expected version, checksum, or digest | enter partial-publication reconciliation |
+| post-release monitoring | packages, assets, images, docs, and health checks agree with the publication inventory | contain the incident and reconcile or supersede |
 
 ```mermaid
 stateDiagram-v2
@@ -75,6 +73,20 @@ stateDiagram-v2
 There is no valid transition from `Candidate` directly to `Tagged` or
 `Published`. An upload that bypasses validation and review is an incident to
 reconcile or roll back, not a release success.
+
+## Partial Publication Reconciliation
+
+| Observed state | Safe action |
+| --- | --- |
+| no external destination accepted an artifact | repair the candidate and restart only after release validation |
+| one or more registries accepted immutable artifacts | freeze further mutation, record accepted identities, and classify every remaining destination |
+| tag identity differs from an accepted package or asset | treat the release as compromised; do not overwrite or reuse the version |
+| packages agree but image, release assets, or docs differ | preserve accepted identities, repair the missing surface from the same candidate when policy permits, then reconcile again |
+| credentials or provenance may be compromised | revoke credentials, preserve audit evidence, and follow incident response before any retry |
+
+Independent registries do not provide an atomic transaction. A retry is safe
+only after the accepted external state is known and the remaining operation
+cannot overwrite, contradict, or detach artifacts from the reviewed identity.
 
 ## Preflight Checklist
 

@@ -91,15 +91,15 @@ flowchart TB
 The claim determines the suite. The desire for a green result does not
 determine the selection, exclusions, or threshold.
 
-## What A Result Proves
+## Result Acceptance
 
-A maintainer result is credible only when it identifies:
-
-- the source revision and repository state it evaluated;
-- the selected checks, including exclusions and advisory-only work;
-- the producer and contract for generated evidence;
-- the final process or aggregate status, not merely a process ID or output
-  path.
+| Evidence element | Accepted condition | Insufficient substitute |
+| --- | --- | --- |
+| source identity | full revision and observed worktree state | branch name or current-directory assumption |
+| selection | named checks, domains, exclusions, and advisory policy | a broad label such as “tests” without its governed roster |
+| producer | binary, command, version, and evidence contract | an output path with no producer identity |
+| completion | terminal process status and aggregate required-suite result | process ID, launch success, or partial log |
+| claim scope | explicit statement of what the selected evidence establishes | general repository or release readiness inferred from a focused command |
 
 A focused command proves only its selected scope. A background run is
 incomplete until its terminal status and final report have been inspected.
