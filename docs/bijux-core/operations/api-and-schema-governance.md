@@ -4,81 +4,118 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # API and Schema Governance
 
-`bijux-core` carries contracts that are larger than any one crate. Once a
-field, status vocabulary, manifest shape, CLI envelope, or replay schema is
-depended on across product families, documentation, or release surfaces, it
-stops being just a crate-local detail.
+An API or schema becomes a repository contract when more than one package,
+tool, retained artifact, or release consumer depends on its meaning. The owner
+still lives at a concrete package or contract path; repository governance
+keeps that owner, its consumers, executable proof, documentation, and
+migration behavior aligned.
 
-This page explains how those shared API and schema changes are kept honest
-across code, contracts, docs, and release expectations.
-
-## Governance Map
+## Contract Change Flow
 
 ```mermaid
 flowchart LR
-    behavior["package public behavior"] --> schemas["shared contracts and schemas"]
-    schemas --> checks["drift and compatibility checks"]
-    checks --> review["review and merge"]
-    review --> behavior
+    proposal["Proposed behavior<br/>or shape change"]
+    inventory["Identify owner,<br/>consumers, and retained data"]
+    classify{"Compatible for all<br/>supported readers and writers?"}
+    additive["Additive implementation<br/>and contract proof"]
+    migration["Migration, version,<br/>or deprecation design"]
+    verify["Fixtures, schemas, tests,<br/>generated references, docs"]
+    release["Release note and<br/>installed-boundary proof"]
+
+    proposal --> inventory --> classify
+    classify -->|"yes"| additive --> verify --> release
+    classify -->|"no or unknown"| migration --> verify
 ```
 
-## Shared Governance Surfaces
+Do not start by regenerating snapshots. First identify the authority and every
+reader and writer. Generated output can reveal a change; it cannot decide
+whether the change is compatible.
 
-- shared contract assets under `contracts/`
-- package contract tests in CLI, DAG, and maintainer crates
-- documentation pages that explain compatibility commitments
+## Governed Surfaces
 
-## When A Change Becomes Repository-Level
+| Contract surface | Authority and affected meaning |
+| --- | --- |
+| CLI output and error envelopes | `contracts/schemas/output-envelope-v1.schema.json`, `error-envelope-v1.schema.json`; fields, status vocabulary, stream and exit semantics |
+| configuration | generated and checked configuration schema plus precedence, origin, validation, and redaction behavior |
+| plugin manifests | `contracts/schemas/plugin-manifest-v2.schema.json`; discovery, compatibility, capability, and trust declarations |
+| public command inventory | owning command implementation, generated reference, completion, machine output, and release lane |
+| DAG graphs | graph schema and canonicalization; node, edge, trigger, policy, and identity meaning |
+| DAG evidence | manifests, output indexes, traces, attempts, proofs, scheduler checkpoints, and integrity rules |
+| replay, diff, and cache | source identity, comparison classification, migration, cache keys, and rejection behavior |
+| maintainer evidence | producer command, report schema, selected scope, revision identity, and terminal status |
+| package and release boundaries | foundation contracts that distinguish public, private, stable, experimental, simulated, and unreleased surfaces |
 
-A schema or API change is repository-level when it affects more than one of the
-following:
+The schema file owns serialized shape. It does not replace behavioral
+authority. For example, an output envelope schema can require a `status`
+field, while the owning command contract determines what each status means and
+which exit code accompanies it.
 
-- a public command or published crate surface
-- retained DAG artifacts or manifests
-- shared machine-readable outputs
-- generated documentation or checked references
-- release compatibility or migration expectations
+## Compatibility Is About Meaning
 
-At that point, a crate-local fix is no longer enough. The repository needs one
-coherent explanation of the new supported shape.
+Classify compatibility in both directions:
 
-## What Good Governance Looks Like
+- **new reader, old data:** can the upgraded tool safely interpret retained
+  configurations, manifests, reports, and runs?
+- **old reader, new data:** can a supported older tool safely ignore an
+  additive field, or must the writer declare a new version?
+- **new writer, old environment:** do commands, plugins, caches, and backends
+  reject unsupported capabilities before mutation?
+- **same syntax, new meaning:** has identity, ordering, policy, status,
+  retention, or comparison behavior changed despite an unchanged field name?
 
-Shared API and schema work is in good shape when:
+Unknown versions and required unknown fields fail closed where accepting them
+could corrupt state, weaken policy, or misclassify evidence. Optional additive
+metadata may be preserved or ignored only when the owning contract permits it.
 
-- the owning contract surface is explicit
-- dependent tests and snapshots move with the change
-- documentation explains the supported behavior in reader language
-- compatibility expectations are updated where readers rely on them
-- release surfaces do not silently advertise stale structure
+## Change Requirements
 
-## Common Governance Failures
+A complete cross-package contract change carries all applicable elements in
+one reviewable chain:
 
-- changing output structure without updating the checked schema or snapshot
-- renaming fields while leaving docs and release notes on the old vocabulary
-- treating a cross-crate contract as if it were only one crate's implementation
-- updating generated references without updating the governing source
-- changing meaning while preserving syntax, which is harder to spot but equally risky
+1. owner and consumer inventory, including retained data;
+2. compatibility classification and release-lane impact;
+3. owning implementation and machine-readable contract change;
+4. old and new fixtures that exercise valid, invalid, and unknown input;
+5. reader/writer, migration, round-trip, or rejection tests;
+6. regenerated references produced from the governing source;
+7. reader documentation and explicit migration or deprecation guidance;
+8. installable-artifact verification before publication.
 
-## Questions To Ask During A Contract Change
+When a transition requires dual reading, keep one canonical write format and
+make the removal condition explicit. Silent fallback between incompatible
+meanings is not migration.
 
-1. who consumes this field, status, or envelope today?
-2. where is the governing schema or checked reference?
-3. which docs explain the promised behavior?
-4. what compatibility or migration expectation does this change create?
+## Evidence And Failure Interpretation
 
-## Governance Rule
+| Observation | Interpretation |
+| --- | --- |
+| implementation changed, schema did not | contract drift; do not publish |
+| schema changed, behavior and fixtures did not | unproved declaration; do not publish |
+| new fixtures pass but retained old fixtures fail | backward-compatibility break or missing migration |
+| snapshots changed without an explained semantic change | possible accidental drift; inspect the producer |
+| docs or generated references disagree with the command | stale reader contract |
+| source-tree tests pass but packaged smoke fails | release-boundary defect |
+| version is unknown but accepted as current | unsafe compatibility ambiguity |
 
-If a schema or contract change crosses package boundaries, the repository
-handbook should explain that change before release notes try to summarize it.
+The narrowest verified behavior wins. A release note cannot authorize a shape
+that its installed reader, schema, and compatibility tests do not support.
 
-## Next Reads
+## Source And Proof Anchors
+
+- `contracts/schemas/`
+- `contracts/foundation/`
+- `crates/bijux-dag-app/tests/`
+- `crates/bijux-dev/tests/evidence_schema_contracts.rs`
+- `crates/bijux-dev/src/commands/contract_governance.rs`
+
+## Continue Reading
 
 - [Artifact Governance](artifact-governance.md)
 - [Change Management](change-management.md)
 - [Compatibility and Schema](../governance/compatibility-and-schema.md)
+- [Repository Trust Evidence](../governance/trust-evidence.md)
