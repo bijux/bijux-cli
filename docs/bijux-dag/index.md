@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # DAG Handbook
@@ -18,9 +18,8 @@ Inside `bijux-core`, that promise covers graph validation, execution planning,
 local run orchestration, replay, artifact identity, evidence inspection, cache
 reasoning, and changed-run comparison.
 
-Use this handbook when the question is about DAG behavior itself: what gets
-validated, what gets executed, what evidence is written, what is stable today,
-and which crate owns the answer once the route is clear.
+The product boundary covers DAG behavior itself: what is admitted, what is
+executed, which evidence is retained, and which crate owns each decision.
 
 ## v0.4.0 Surface Truth Table
 
@@ -72,6 +71,28 @@ reproducible until its artifacts and identity-bearing records can be verified.
 | replay or comparison | the selected evidence is complete and compatible for the requested operation | identity or evidence gaps prevent a defensible result |
 
 This acceptance chain is why a process exit code alone is not a DAG result.
+
+## Controller And Substrate
+
+```mermaid
+flowchart TB
+    graph["validated graph and policy"]
+    controller["bijux-dag controller"]
+    schedule["ready frontier and resource admission"]
+    backend["local, container, SLURM, or Kubernetes substrate"]
+    observation["status, streams, outputs, backend identity"]
+    acceptance["lifecycle, output, and integrity acceptance"]
+    run["retained run truth"]
+
+    graph --> controller --> schedule --> backend --> observation --> acceptance --> run
+    acceptance -->|"retry or refuse"| schedule
+```
+
+The controller owns graph meaning, scheduling, lifecycle transitions, and
+accepted run state. A backend owns substrate-specific preparation, launch,
+observation, finalization, and cleanup. Scheduler or container status remains
+provisional until the controller validates it against node, output, and
+evidence contracts.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/first-run-tutorial.md">Start with the first-run tutorial</a>
@@ -152,12 +173,11 @@ For the public-versus-private crate boundary behind that split, use
 - [Failure Recovery](operations/failure-recovery.md) for preserving and
   verifying an interrupted or failed run
 
-## When To Leave This Handbook
+## Adjacent Authorities
 
-- Move to the [Repository Handbook](../bijux-core/index.md) when the answer
-  depends on publication rules, shared release policy, or cross-product
-  ownership.
-- Move to the [Maintainer Handbook](../bijux-dev/index.md) when the work is
-  about governance suites, release proof, or repository gates.
-- Move to [Future Direction](foundation/future-direction.md) only when
-  the question is about future work rather than shipped `v0.4.0` behavior.
+- [Repository Handbook](../bijux-core/index.md) — publication rules, shared
+  release policy, and cross-product ownership.
+- [Maintainer Handbook](../bijux-dev/index.md) — governance suites, release
+  proof, and repository gates.
+- [Future Direction](foundation/future-direction.md) — non-binding capability
+  direction beyond shipped `v0.4.0` behavior.

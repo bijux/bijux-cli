@@ -4,7 +4,7 @@ audience: operators
 type: reference
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Execution Security And Isolation
@@ -175,6 +175,22 @@ each node the smallest environment allowlist it requires.
 
 Execution-isolation and cleanup risks are tracked as `RISK-001` and `RISK-006`
 in the [Risk Register](../quality/risk-register.md).
+
+## Threats Across The Run Lifecycle
+
+| Lifecycle boundary | Primary threat | Required control or external containment |
+| --- | --- | --- |
+| authoring | hidden effects, unsafe argv, mutable image, or secret in source | review graph, declare effects, pin identity, keep secrets outside graph text |
+| admission | path escape, unsupported capability, impossible resource request, or policy mismatch | fail-before-effects validation and preflight |
+| launch | excess host, network, filesystem, environment, or cluster authority | least-privilege account, container policy, restricted cluster identity, or external sandbox |
+| observation | forged, stale, partial, or unreachable substrate status | controller-owned lifecycle validation and preserved backend identity |
+| output collection | undeclared file, symlink escape, missing output, or corrupt payload | rooted authorization, declaration matching, hashes, and proof validation |
+| cache or replay | identity collision, ambient-state drift, or corrupted source evidence | identity comparison, integrity verification, and source-run write protection |
+| retention and sharing | secrets in streams, parameters, paths, telemetry, or bundles | minimal inputs, redaction, access control, and human review before sharing |
+
+Security review begins before execution and continues after a backend reports
+completion. An integrity-valid run can still contain harmful domain output or
+evidence that should not be distributed.
 
 ## Post-Run Security Review
 

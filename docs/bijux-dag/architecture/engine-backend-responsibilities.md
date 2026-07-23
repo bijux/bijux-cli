@@ -4,7 +4,7 @@ audience: mixed
 type: architecture
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Engine Backend Responsibilities
@@ -112,6 +112,27 @@ The error classes preserve where execution failed:
 - `Observe` and `ObserveTimeout` distinguish status collection from timeout.
 - `Finalize` includes rejected or invalid output evidence.
 - `Cleanup` means execution completed but resource release did not.
+
+## Observation And Backpressure
+
+A backend may observe a long-lived external job without granting it immediate
+controller acceptance. The controller must remain able to distinguish:
+
+| Substrate observation | Controller interpretation |
+| --- | --- |
+| launch accepted | an external identity exists; the node is not yet successful |
+| pending or queued | capacity belongs to the substrate; the node remains non-terminal |
+| running | work is active; timeout and cancellation policy still apply |
+| successful exit | output and lifecycle evidence are provisional |
+| failed, timed out, or cancelled | terminal cause must be mapped without erasing substrate detail |
+| unreachable or unknown | evidence is insufficient; success cannot be inferred |
+| cleanup failure | resource ownership remains unresolved even if execution completed |
+
+Polling intervals, scheduler queues, API availability, and external rate limits
+can delay observation. Backends must surface that delay through their lifecycle
+and errors; they must not synthesize completion to keep the controller moving.
+The controller’s bounded queue protects local orchestration, while cluster
+backpressure remains an explicit substrate condition.
 
 ## Why This Boundary Matters
 
