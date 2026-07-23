@@ -48,6 +48,28 @@ Help and delegation occur before ordinary route execution by design. A help
 request must not initialize mutable state or run a command handler merely to
 describe the surface.
 
+```mermaid
+flowchart TB
+    argv["decoded argv"]
+    early{"help, version, or usage?"}
+    normalize["normalize aliases and global flags"]
+    resolve{"route owner"}
+    builtin["built-in handler"]
+    delegated["mounted app or plugin process"]
+    render["render structured payload"]
+    preserve["preserve native streams and exit code"]
+    result["AppRunResult"]
+    emit["emit stdout and stderr; exit"]
+
+    argv --> early
+    early -->|"yes"| result
+    early -->|"no"| normalize --> resolve
+    resolve -->|"built-in"| builtin --> render --> result
+    resolve -->|"delegated"| delegated --> preserve --> result
+    resolve -->|"unknown"| result
+    result --> emit
+```
+
 ## Route Resolution
 
 The parser produces both the requested command path and a normalized path.
@@ -88,6 +110,21 @@ Output policy is resolved once from global flags and terminal context:
 
 `cli version` and completion scripts have intentional text renderers. They do
 not pass through the generic structured renderer in text mode.
+
+## Failure Propagation
+
+| Origin | `AppRunResult` behavior | Operator meaning |
+| --- | --- | --- |
+| argument decoding | error before ordinary parsing | invocation cannot be interpreted safely |
+| Clap help or usage | generated text and its classified exit | no handler was executed |
+| unknown route | empty success stream, classified diagnostic, nonzero exit | no matching owner accepted the command |
+| built-in handler | structured failure rendered to stderr | the owning feature rejected or failed the operation |
+| delegated process | captured streams and native exit code | the child outcome is preserved, not translated into built-in success |
+| stream emission | process-level write failure | command work may have completed even though the caller did not receive all output |
+
+Consumers must evaluate the exit status before interpreting stdout as a
+successful payload. Empty stdout is not evidence that a command had no effect,
+and a captured result is not evidence that execution was side-effect free.
 
 ## Result And Telemetry Boundaries
 

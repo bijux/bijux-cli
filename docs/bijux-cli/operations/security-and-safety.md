@@ -16,6 +16,28 @@ Installing or invoking a plugin is therefore a code-execution decision. Review
 the manifest, entrypoint, and dependency source with the same care as a script
 you would run directly.
 
+```mermaid
+flowchart TB
+    source["plugin source, manifest, and dependencies"]
+    review{"source and authority acceptable?"}
+    compatibility["install and compatibility checks"]
+    isolate{"host authority acceptable?"}
+    restricted["use a restricted account or external sandbox"]
+    inspect["inspect record and run plugin diagnostics"]
+    invoke["invoke plugin"]
+    evidence["preserve streams, exit status, and lifecycle evidence"]
+
+    source --> review
+    review -->|"no"| stop["do not install"]
+    review -->|"yes"| compatibility --> isolate
+    isolate -->|"no"| restricted --> inspect
+    isolate -->|"yes"| inspect
+    inspect --> invoke --> evidence
+```
+
+The restricted environment in this flow is supplied by the operating system
+or deployment platform. It is not created by `bijux`.
+
 ## Threat Boundary
 
 | Concern | Enforced by the CLI | Not enforced by the CLI |
@@ -77,6 +99,17 @@ untrusted plugin:
 4. Run plugin diagnostics after changing the CLI version or plugin files.
 5. Do not publish command output produced with `--include-secrets`.
 
+## Evidence To Preserve
+
+| Evidence | Why it matters | Caution |
+| --- | --- | --- |
+| `plugins inspect` structured output | records identity, source, compatibility, lifecycle, and manifest checksum | checksum covers the manifest, not all executable content |
+| `plugins doctor` structured output | records registry-wide health at investigation time | health is not a trust attestation |
+| canonical manifest and entrypoint paths | identifies the code selected by the runtime | a path may point into mutable content |
+| stdout, stderr, and exit status | preserves the delegated process outcome | keep streams separate |
+| relevant environment variable names | identifies possible credential paths | redact values before sharing |
+| CLI and Python versions | makes compatibility findings reproducible | version agreement does not prove safety |
+
 ## Incident Response
 
 Disable a suspect plugin before investigation. Disabling preserves its record
@@ -87,6 +120,11 @@ changing files. Uninstall only after preserving the evidence you need.
 If a plugin process may have accessed credentials, treat those credentials as
 exposed. CLI lifecycle state cannot revoke tokens or undo filesystem and
 network access granted by the host account.
+
+After containment, verify that the disabled route is no longer executable,
+rotate exposed credentials outside the CLI, inspect files and network systems
+available to the host account, and retain the investigation evidence before
+uninstalling the plugin.
 
 ## Implementation Map
 
