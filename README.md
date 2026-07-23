@@ -29,28 +29,37 @@ are installed separately.
 maintenance surfaces. They are not additional end-user products.
 
 ```mermaid
-flowchart LR
-    operator[Operator]
-    maintainer[Maintainer]
-    bijux["bijux<br/>command runtime"]
-    dag["bijux-dag<br/>workflow runtime"]
-    cli_pkg["bijux-cli<br/>Rust or Python distribution"]
-    dag_pkgs["DAG crate family"]
-    governance["bijux-dev<br/>private control plane"]
-    contracts["Contracts and governed evidence"]
+flowchart TB
+    request["operator or automation"]
 
-    operator --> bijux --> cli_pkg
-    operator --> dag --> dag_pkgs
-    maintainer --> governance
-    governance --> contracts
-    contracts -. validate release claims .-> cli_pkg
-    contracts -. validate release claims .-> dag_pkgs
+    subgraph command["Command result"]
+        bijux["bijux"]
+        route["owned route or delegated process"]
+        streams["stdout · stderr · exit status"]
+        state["optional governed local state"]
+        bijux --> route --> streams
+        route --> state
+    end
+
+    subgraph workflow["Workflow result"]
+        dag["bijux-dag"]
+        plan["validated graph and plan"]
+        execute["bounded backend execution"]
+        run["retained run directory"]
+        proof["manifest · traces · artifacts · integrity"]
+        dag --> plan --> execute --> run --> proof
+    end
+
+    request --> bijux
+    request --> dag
+    proof -. "verify · compare · replay" .-> plan
 ```
 
-The solid paths are user installation and execution paths. The dotted paths
-show verification, not runtime dependency injection: maintainers use the
-private control plane to prove product claims, while product behavior remains
-owned by the product crates.
+The two products deliberately finish at different boundaries. A `bijux`
+operation is accepted through its process result and any command-owned state.
+A `bijux-dag` operation also retains graph, attempt, artifact, and integrity
+evidence because verification, comparison, and replay depend on more than
+console output.
 
 The current workspace release line is `0.4.0`.
 
@@ -194,6 +203,27 @@ Read [CLI Security and Safety](docs/bijux-cli/operations/security-and-safety.md)
 before executing third-party plugins. Read
 [DAG Execution Security and Isolation](docs/bijux-dag/operations/security-isolation-truth.md)
 before treating a backend, container, or path policy as a security boundary.
+
+## Operational Depth
+
+The repository carries more than command implementations. Its operating model
+includes:
+
+- deterministic route, stream, exit, and local-state contracts for `bijux`;
+- graph admission, resource-aware scheduling, timeout, cancellation, retry,
+  cache, and backend lifecycle policy for `bijux-dag`;
+- rooted run storage, declared-output authorization, hashes, lineage,
+  import/export checks, and replay evidence;
+- local, container, shared-filesystem SLURM, and Kubernetes Job contracts with
+  explicit infrastructure and isolation limits;
+- repository-owned test selection, documentation publication, security,
+  packaging, release, and incident-recovery controls.
+
+These are bounded capabilities, not blanket production claims. The
+[DAG execution model](docs/bijux-dag/architecture/execution-model.md) explains
+runtime authority, while the
+[Maintainer handbook](docs/bijux-dev/index.md) explains how repository and
+release claims are proved.
 
 ## Package Families
 

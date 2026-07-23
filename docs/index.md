@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Bijux Core
@@ -33,16 +33,17 @@ The same repository carries private verification surfaces that test release
 claims against code, schemas, fixtures, and generated evidence. Those
 maintainer tools validate the products; they are not hidden product APIs.
 
-<div class="bijux-callout"><strong>Start with the thing you want to run.</strong>
-Use the CLI handbook for <code>bijux</code>. Use the DAG handbook for
-<code>bijux-dag</code>. Use the repository handbook only when the question
-crosses products, packages, or release rules.</div>
+<div class="bijux-callout"><strong>Two executables, two result models.</strong>
+<code>bijux</code> resolves one command and preserves process semantics.
+<code>bijux-dag</code> executes one graph and retains an integrity-bearing run
+record. Repository and maintainer material governs ownership and proof around
+those products.</div>
 
 <div class="bijux-panel-grid">
-  <div class="bijux-panel"><h3>Repository</h3><p>Use the repository handbook when the question crosses package boundaries, release policy, or shared ownership rules.</p></div>
-  <div class="bijux-panel"><h3>CLI</h3><p>Use the CLI handbook for command semantics, runtime behavior, plugin surfaces, REPL behavior, and Python distribution.</p></div>
-  <div class="bijux-panel"><h3>DAG</h3><p>Use the DAG handbook for graph compilation, execution, replay, artifacts, and DAG command workflows.</p></div>
-  <div class="bijux-panel"><h3>Maintainer</h3><p>Use the maintainer handbook for repository diagnostics, evidence collection, release verification, and policy enforcement.</p></div>
+  <div class="bijux-panel"><h3>Repository</h3><p>Package boundaries, dependency direction, compatibility, release policy, and shared ownership.</p></div>
+  <div class="bijux-panel"><h3>CLI</h3><p>Command semantics, routing, plugins, configuration, state, REPL behavior, and Python distribution.</p></div>
+  <div class="bijux-panel"><h3>DAG</h3><p>Graph admission, planning, scheduling, backends, retained evidence, cache, comparison, and replay.</p></div>
+  <div class="bijux-panel"><h3>Maintainer</h3><p>Toolchains, repository gates, evidence production, security checks, automation, release, and incident response.</p></div>
 </div>
 
 <div class="bijux-quicklinks">
@@ -63,6 +64,28 @@ crosses products, packages, or release rules.</div>
 `bijux-dag` is intentionally honest about its current boundary. The stable lane
 is local-first. Experimental, simulated, and maintainer-only routes exist in
 the repository, but they are not presented here as the default product story.
+
+## Operational Model
+
+```mermaid
+flowchart LR
+    intent["operator intent"]
+    admission["parse · validate · resolve policy"]
+    work["owned execution boundary"]
+    result["process result or retained run"]
+    integrity["diagnose · verify · compare"]
+    decision["bounded decision"]
+
+    intent --> admission --> work --> result --> integrity --> decision
+    admission -->|"unsupported or unsafe"| refuse["refuse before effects"]
+    integrity -->|"missing or inconsistent"| quarantine["preserve and investigate"]
+```
+
+Admission prevents unsupported work from becoming effects. Integrity checks
+prevent an incomplete or corrupted result from becoming trusted evidence. The
+CLI and DAG runtimes implement different versions of that lifecycle, while the
+maintainer control plane applies the same discipline to tests, documentation,
+packages, and releases.
 
 ## Two Execution Paths
 

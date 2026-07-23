@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Repository Handbook
@@ -14,26 +14,26 @@ command-line products. It keeps runtime code, machine-readable contracts,
 retained evidence, and publication automation in one workspace so a shipped
 claim can be traced to both an implementation owner and a verification owner.
 
-<div class="bijux-callout"><strong>Use this handbook when the question crosses products.</strong>
-If the answer needs both <code>bijux</code> and <code>bijux-dag</code>, or if
-it depends on package boundaries, release policy, or shared automation, this
-is the right starting point.</div>
+<div class="bijux-callout"><strong>The repository boundary starts where one
+product handbook stops.</strong> Cross-product contracts, package publication,
+dependency direction, shared automation, and release evidence are governed
+here without merging the two runtime authorities.</div>
 
 <div class="bijux-quicklinks">
-<a class="md-button md-button--primary" href="foundation/">Open foundation</a>
-<a class="md-button" href="architecture/">Open architecture</a>
-<a class="md-button" href="operations/">Open operations</a>
+<a class="md-button md-button--primary" href="foundation/platform-overview/">Explore the platform</a>
+<a class="md-button" href="architecture/system-overview/">Trace ownership</a>
+<a class="md-button" href="operations/testing-and-validation/">Select verification</a>
 </div>
 
 ## Start Here
 
 | Question | Best starting page |
 | --- | --- |
-| What does `bijux-core` publish today? | [Foundation](foundation/index.md) |
+| What does `bijux-core` publish today? | [Platform Overview](foundation/platform-overview.md) |
 | Which package owns this behavior? | [Package Map](foundation/package-map.md) |
 | Which crates are public and which stay internal? | [Package Boundary](foundation/package-boundary.md) |
-| How is the workspace laid out and why? | [Core Architecture](architecture/index.md) |
-| What do contributors run before review or release? | [Operations](operations/index.md) |
+| How is the workspace laid out and why? | [System Overview](architecture/system-overview.md) |
+| What do contributors run before review or release? | [Testing and Validation](operations/testing-and-validation.md) |
 
 ## Repository Snapshot
 
@@ -121,6 +121,21 @@ flowchart LR
   simulated, or maintainer-only capabilities.
 - Partial publication is handled as an incident, not retried as though no
   external state changed.
+
+## Claim Ownership
+
+| Claim | Implementation owner | Proof owner |
+| --- | --- | --- |
+| a `bijux` route behaves consistently | `bijux-cli` | CLI integration and contract suites |
+| Python and Rust installations expose one CLI contract | `bijux-cli-python` and `bijux-cli` | bridge parity and packaging checks |
+| graph meaning is deterministic | `bijux-dag-core` | graph, canonicalization, and planner contracts |
+| an execution result is reusable | `bijux-dag-runtime` and `bijux-dag-artifacts` | cache, replay, lineage, and integrity contracts |
+| a backend is supported | runtime backend plus application routing | conformance, real-substrate evidence, and release truth table |
+| a release is publishable | package and release contracts | `bijux-dev`, make targets, and hosted release validation |
+
+Implementation and proof are deliberately different responsibilities. A test
+or generated report can reject a claim, but it cannot silently redefine the
+runtime contract to make the claim pass.
 
 ## Product And Maintainer Handbooks
 
