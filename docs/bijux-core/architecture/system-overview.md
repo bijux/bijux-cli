@@ -4,7 +4,7 @@ audience: mixed
 type: architecture
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # System Overview
@@ -83,6 +83,62 @@ from masquerading as runtime support.
 
 The authoritative public/private classification and publish order live in
 `contracts/foundation/workspace_package_boundary.v1.json`, not in this table.
+
+## Runtime, Evidence, And Control Paths
+
+```mermaid
+flowchart TB
+    subgraph runtime["Runtime path"]
+        request["command or graph"]
+        admission["parse · validate · plan"]
+        execution["handler or backend"]
+        outcome["streams, state, or run"]
+        request --> admission --> execution --> outcome
+    end
+
+    subgraph evidence["Evidence path"]
+        identity["source and semantic identity"]
+        records["attempts · events · artifacts"]
+        verification["integrity and compatibility"]
+        identity --> records --> verification
+    end
+
+    subgraph control["Control path"]
+        selection["named suite or release plan"]
+        aggregation["complete component status"]
+        publication["bounded publication decision"]
+        selection --> aggregation --> publication
+    end
+
+    admission --> identity
+    execution --> records
+    outcome --> verification
+    verification -. observed by .-> aggregation
+```
+
+These paths meet through data, not callbacks into maintainer policy. The
+runtime owns behavior; evidence binds observations to that behavior; the
+control plane selects and evaluates proof. A release workflow may reject a
+runtime claim, but the product never imports release tooling to decide its own
+semantics.
+
+## Capacity And External Authority
+
+The architecture contains real scheduling and operational depth without
+claiming an unlimited control plane:
+
+| Concern | Repository-owned mechanism | External or bounded assumption |
+| --- | --- | --- |
+| CLI throughput | one invocation has deterministic routing, output, and state contracts | no multi-tenant CLI service or global rate limiter |
+| DAG parallelism | ready-frontier scheduling, worker count, CPU, memory, GPU, named-resource, and queue limits | capacity is configured for one controller and its selected backend |
+| process isolation | child-process boundaries, environment shaping, timeout, cancellation, and output authorization | host permissions and subprocess behavior remain OS concerns |
+| container isolation | validated mounts, engine-specific no-network flags, and image policy | Docker or Podman supplies the actual isolation boundary |
+| batch execution | bounded SLURM and Kubernetes adapters reconcile scheduler observations into controller-owned state | shared storage and cluster access are operator-supplied |
+| release mutation | dependency-ordered, registry-specific publication with retained identities | registries and deployment services retain external state |
+
+Scale claims therefore belong to named scenarios and retained measurements.
+They are not inferred from the presence of concurrency controls or a backend
+adapter.
 
 ## Change Flow
 

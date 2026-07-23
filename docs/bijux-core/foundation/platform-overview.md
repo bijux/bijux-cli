@@ -84,6 +84,38 @@ Co-location does not imply one compatibility surface. A CLI configuration
 change, DAG run-schema change, and maintainer report-schema change have
 different owners and consumers even when one release contains all three.
 
+## Operating Surfaces
+
+The workspace owns a chain of operational controls around both products:
+
+| Surface | Control | Retained or inspectable result |
+| --- | --- | --- |
+| command admission | typed parsing, canonical routes, configuration validation, plugin lifecycle checks | structured envelope, classified diagnostic, and exit status |
+| graph admission | schema, graph, selector, policy, capability, resource, and output-path validation | canonical graph, plan, diagnostics, and identities |
+| execution | bounded concurrency, resources, retry, timeout, cancellation, and backend lifecycle | node attempts, scheduler events, terminal state, and streams |
+| evidence | rooted storage, declared outputs, hashes, indexes, lineage, and completion markers | self-describing run directory |
+| repository governance | named suites, source identity, generated references, and aggregate status | reports and gate evidence under `artifacts/` or governed paths |
+| publication | package order, registry-specific plans, immutable identities, and non-cancelling release jobs | package versions, image digests, release assets, and deployed revision |
+
+```mermaid
+flowchart LR
+    input["input and declared intent"]
+    admission["admission controls"]
+    effects["owned effects"]
+    evidence["retained evidence"]
+    decision["operator or release decision"]
+
+    input --> admission --> effects --> evidence --> decision
+    admission -->|"unsupported"| refusal["classified refusal"]
+    evidence -->|"incomplete or corrupt"| incident["preserve · diagnose · reconcile"]
+```
+
+The sequence is intentionally fail-closed at admission and evidence
+acceptance. It cannot prevent every external side effect: plugin code, shell
+nodes, container engines, schedulers, registries, and deployment platforms
+retain authority outside the process. Their prerequisites and limitations are
+part of the corresponding product or maintainer contract.
+
 ## Trust Boundaries
 
 | Boundary | What is guaranteed | What is deliberately not implied |
