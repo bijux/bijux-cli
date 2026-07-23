@@ -4,15 +4,14 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Common Workflows
 
-Use this page after learning the command surface to choose the operational proof
-that matches the decision you need to make. Commands and expected outputs live
-in the linked guides so one tested page remains authoritative for each
-workflow.
+Every operator workflow must connect a declared graph to retained evidence and
+a bounded decision. Choose the workflow by the proof required, not merely by
+the command that initiates it.
 
 ## Normal Operator Loop
 
@@ -86,7 +85,7 @@ Promote an output only when:
 - `crates/bijux-dag-app/src/routes/inspect_routes.rs`
 - `crates/bijux-dag-app/src/routes/replay_routes.rs`
 
-## Next Reads
+## Recovery And Evidence
 
 - [Failure Recovery](failure-recovery.md)
 - [Run Evidence Layout](../interfaces/run-evidence-layout.md)

@@ -4,18 +4,17 @@ audience: mixed
 type: interface
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Compatibility Matrix
 
-This matrix states which version identifiers `bijux-dag` accepts today and
-which it refuses before interpreting payload contents. The machine-readable
-authority is
-`contracts/foundation/version_compatibility_lanes.v1.json`; this page explains
-the DAG-owned subset for operators and integration authors.
+`bijux-dag` accepts only declared compatibility lanes and refuses unknown
+versions before interpreting payload contents. The machine-readable authority
+is `contracts/foundation/version_compatibility_lanes.v1.json`; the DAG-owned
+lanes below govern graph, run, index, and bundle readers.
 
-## How To Read A Lane
+## Lane Semantics
 
 | Classification | Meaning |
 | --- | --- |
@@ -27,7 +26,7 @@ Acceptance means the reader recognizes the declared version. It does not
 promise that malformed payloads, missing required evidence, or incompatible
 semantics will be repaired automatically.
 
-## Reader Decision
+## Compatibility Decision
 
 ```mermaid
 flowchart LR
@@ -115,18 +114,19 @@ Adding an accepted predecessor is a deliberate compatibility expansion.
 Removing one or reinterpreting an existing identifier is incompatible and
 requires explicit release treatment.
 
-## Compatibility Review Questions
+## Required Change Evidence
 
-Before accepting a change, reviewers should be able to answer:
+| Decision | Required evidence |
+| --- | --- |
+| add a readable alias | emitting writer, consuming readers, normalization rule, and acceptance fixture |
+| add a new canonical identifier | schema or rulebook, current writer, reader behavior, refusal fixture, and release boundary |
+| migrate retained evidence | immutable source, governed destination writer, integrity comparison, and recovery path |
+| remove an accepted identifier | incompatible release treatment, retained-evidence impact, refusal fixture, and removal notice |
+| compare different identifiers | compatibility classification before cache, replay, export, import, or semantic comparison |
 
-- Which writer emits the identifier and which readers consume it?
-- Is the change an alias, an additive readable shape, a migration, or a refusal?
-- Can old evidence remain inspectable without in-place mutation?
-- Does cache, replay, export, import, and diff classify the new relationship
-  consistently?
-- Which fixture proves both acceptance and refusal at the boundary?
-- Which release first emits the new canonical identifier, and when may the old
-  read lane be removed?
+Every change must identify the first emitting release and the conditions under
+which an older read lane may be removed. Similar JSON shape is not
+compatibility evidence.
 
 ## Related Contracts
 

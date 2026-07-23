@@ -4,16 +4,15 @@ audience: mixed
 type: interface
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-10
+last_reviewed: 2026-07-23
 ---
 
 # Error Codes
 
 `bijux-dag` exposes registry-governed error identifiers so automation can
-classify failures without parsing human messages. This page is the
-operator-facing registry; [Error Contract](../../spec/ERROR_CONTRACT.md)
-governs how the registry, output envelope, exit behavior, and tests evolve
-together.
+classify failures without parsing human messages. The
+[Error Contract](../../spec/ERROR_CONTRACT.md) governs how the registry,
+output envelope, exit behavior, and tests evolve together.
 
 ## Automation Contract
 
@@ -78,13 +77,28 @@ a public error identifier even if similar text appears in logs or source.
 - Do not retry `policy`, `schema`, or `validation` failures without changing
   the request or governed input.
 
+## Retry And Remediation
+
+| Category | Retry posture | Required action before another attempt |
+| --- | --- | --- |
+| `parse`, `schema`, `validation` | do not retry unchanged input | repair syntax, contract shape, or graph semantics and validate again |
+| `config`, `policy` | do not bypass or blindly retry | correct effective configuration or obtain an authorized policy decision |
+| `execution`, `io` | retry only after classifying the cause | inspect attempt records, backend state, paths, quotas, and retained streams |
+| `replay`, `cache` | preserve evidence before repair | inspect identity and integrity material; invalidate or rerun only through the governed workflow |
+| `compatibility` | do not reinterpret the payload | use a supported reader or explicit migration while preserving the source |
+| `internal` | do not coerce into a known category | retain the full envelope, command context, and diagnostics for investigation |
+
+A retry that changes neither the failed condition nor the applicable policy
+adds attempts without adding evidence.
+
 ## Change Compatibility
 
 Adding a code is additive only when existing meanings remain unchanged.
 Removing a code, changing its category, reassigning its semantic owner, or
 giving it a different meaning is an incompatible contract change. Such a
 change must update the registry, [Error Contract](../../spec/ERROR_CONTRACT.md),
-this page, and both executable error contracts in one reviewable change.
+the public registry documentation, and both executable error contracts in one
+reviewable change.
 
 ## Implementation And Proof
 
@@ -99,7 +113,7 @@ this page, and both executable error contracts in one reviewable change.
 - `crates/bijux-dev/src/commands/contract_governance.rs` checks registry,
   documentation, and test coverage.
 
-## Related Interfaces
+## Authorities
 
 - [Error Model](../architecture/error-model.md)
 - [Data Contracts](data-contracts.md)
