@@ -4,18 +4,14 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # Installation and Setup
 
-Use this page when you need to install `bijux` and prove that the binary,
-resolved paths, and diagnostics surfaces are trustworthy before any automation
-or daily usage begins.
-
-A good setup result is not just "the command exists on PATH." It means one
-clear runtime binary is active, state locations are visible, and the CLI can
-describe its own health without ambiguity.
+An accepted `bijux` installation has one intended executable, a known
+distribution owner, visible state locations, and clean runtime diagnostics.
+Finding a command on `PATH` establishes none of those properties by itself.
 
 ## Choose A Distribution
 
@@ -75,15 +71,15 @@ python -m bijux_cli_py --help
 bijux doctor python
 ```
 
-## What These Checks Should Tell You
+## Installation Acceptance
 
-| Check | What it should confirm |
-| --- | --- |
-| `bijux version` | the invoked binary is the one you expect to trust |
-| `bijux status` | runtime identity, state, and plugin context look sane |
-| `bijux cli paths` | config, state, and plugin directories resolve where you think they do |
-| `bijux doctor` | install, config, bridge, and routing health are coherent |
-| `bijux audit` | the CLI is not already reporting known operational problems |
+| Check | Accepted evidence | Failure owner |
+| --- | --- | --- |
+| `bijux version` | reported version matches the selected Cargo or Python installation | executable resolution or package ownership |
+| `bijux status` | runtime identity, state, and extension context are internally coherent | runtime or selected state root |
+| `bijux cli paths` | config, history, memory, and plugin locations match the intended account and environment | path precedence or environment |
+| `bijux doctor` | installation, configuration, bridge, routing, and extension checks have no unresolved required finding | the named diagnostic component |
+| `bijux audit` | no reported operational finding remains unreviewed | runtime, state, plugin, or policy owner identified by the finding |
 
 ## Resolve Multiple Installations
 
@@ -118,12 +114,10 @@ to audit.
 - pin a release through the chosen package manager when reproducibility matters
 - record the distribution and command version in deployment evidence
 
-## Reader Shortcut
+If `bijux` executes but cannot explain its binary identity, paths, or state,
+the installation remains ambiguous and should not be promoted into automation.
 
-If `bijux` works only until you ask it where its state lives or which binary is
-active, the installation is not complete. Diagnose setup first, then automate.
-
-## Continue Reading
+## Operate And Recover
 
 - [Local Development](local-development.md)
 - [Failure Recovery](failure-recovery.md)

@@ -4,19 +4,13 @@ audience: maintainers
 type: index
 status: canonical
 owner: bijux-cli
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # CLI Packages
 
-Use this page when you already know the question belongs to `bijux`, but you
-still need the correct package boundary.
-
 `bijux-cli` holds native command behavior. `bijux-cli-python` carries the
 Python distribution surface and bridge back into the same runtime contract.
-
-Start here when you are deciding whether a change belongs to the runtime
-itself, the Python launcher and wheel distribution, or both.
 
 ```mermaid
 flowchart LR
@@ -39,7 +33,7 @@ output meaning, and exit behavior remain owned by `bijux-cli`.
 | [`bijux-cli`](bijux-cli.md) | Native runtime semantics, command routing, executable behavior, and contract-facing CLI surfaces | the issue is flags, output shape, exit behavior, routing, or runtime execution semantics |
 | [`bijux-cli-python`](bijux-cli-python.md) | Python distribution surface, launcher bridge behavior, packaging metadata, and cross-language runtime parity | the issue is Python install/entrypoint behavior, bridge compatibility, or release packaging alignment |
 
-## The Split In Plain Terms
+## Semantic Authority
 
 - `bijux-cli` is the source of truth for what the command runtime does.
 - `bijux-cli-python` is the distribution and bridge layer for Python callers.
@@ -61,7 +55,7 @@ The Python process fallback is a compatibility transport, not permission to
 reimplement command semantics. Installing `bijux-cli-python` also does not
 install or embed the separate `bijux-dag` runtime.
 
-## Common Routing Decisions
+## Failure Routing
 
 | Situation | Start here |
 | --- | --- |
@@ -83,10 +77,10 @@ For these changes, native tests establish behavior and bridge/process parity
 tests establish transport equivalence. One package suite cannot substitute for
 the other.
 
-## Before You Move Deeper
+## Boundary Rule
 
-- Stay here until you know the first durable owner.
-- If a change crosses both packages, treat it as an explicit parity or release
-  boundary change and review both package pages before implementation.
-- Move back to the CLI handbook when the question is product behavior rather
-  than crate ownership.
+Runtime semantics have one owner even when two distributions expose them. A
+change crossing both packages is an explicit parity or release-boundary change
+and requires native behavior proof plus Python transport and packaging proof.
+Product usage belongs in the [CLI handbook](../index.md); package pages define
+ownership and integration boundaries.
