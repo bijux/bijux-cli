@@ -59,6 +59,20 @@ The retained evidence is part of the product result, not incidental logging.
 Validation can stop before execution; execution is not accepted as
 reproducible until its artifacts and identity-bearing records can be verified.
 
+## Result Acceptance
+
+| Boundary | Accepted when | Refused when |
+| --- | --- | --- |
+| graph | schema, identifiers, dependencies, and declared contracts validate | the source is ambiguous, cyclic, invalid, or incompatible |
+| plan | canonical graph meaning and execution identity are derivable | planning cannot preserve declared dependency or policy meaning |
+| node attempt | the adapter result reaches a valid terminal transition | launch, timeout, cancellation, retry, or lifecycle rules fail |
+| output | every required declaration, path, hash, and proof is satisfied | output is missing, undeclared, escaped, incomplete, or corrupt |
+| cache entry | reusable evidence matches active identities and integrity rules | lookup reports an explainable miss or invalid proof |
+| run | terminal counts, manifest, traces, output index, and run identity agree | retained evidence is incomplete or internally inconsistent |
+| replay or comparison | the selected evidence is complete and compatible for the requested operation | identity or evidence gaps prevent a defensible result |
+
+This acceptance chain is why a process exit code alone is not a DAG result.
+
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/first-run-tutorial.md">Start with the first-run tutorial</a>
 <a class="md-button" href="operations/v0-4-0-release-notes.md">Read the v0.4.0 release notes</a>
@@ -124,7 +138,7 @@ For the public-versus-private crate boundary behind that split, use
   [Execution Security And Isolation](operations/security-isolation-truth.md)
   before treating a flag or backend as an enforced boundary.
 
-## Good First Reads
+## Operate The Product
 
 - [CLI Surface](interfaces/cli-surface.md) for the operator contract
 - [Graph Schema Reference](interfaces/graph-schema.md) for authoring
@@ -135,6 +149,8 @@ For the public-versus-private crate boundary behind that split, use
   for container-backed execution
 - [Branching Bulletin Workflow](operations/branching-bulletin-workflow.md)
   for branch decisions, skipped lanes, and join behavior
+- [Failure Recovery](operations/failure-recovery.md) for preserving and
+  verifying an interrupted or failed run
 
 ## When To Leave This Handbook
 

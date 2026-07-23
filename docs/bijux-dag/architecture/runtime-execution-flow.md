@@ -28,6 +28,35 @@ Concurrency changes when work can finish, not who owns acceptance. Worker or
 backend completion must return through the engine before it can change
 dependency readiness or durable run state.
 
+```mermaid
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Ready: dependencies accepted
+    Ready --> Queued: scheduler accepts node
+    Queued --> Running: attempt starts
+    Running --> Succeeded: result and outputs accepted
+    Running --> Failed: terminal failure accepted
+    Running --> Cancelled: cancellation accepted
+    Running --> TimedOut: timeout accepted
+    Ready --> Cached: valid reusable evidence
+    Queued --> Cached: valid reusable evidence
+    Pending --> Skipped: selection or dependency excludes node
+    Ready --> Skipped: trigger excludes node
+    Queued --> Skipped: dispatch no longer eligible
+    Succeeded --> [*]
+    Failed --> [*]
+    Cancelled --> [*]
+    TimedOut --> [*]
+    Cached --> [*]
+    Skipped --> [*]
+```
+
+The retained vocabulary is contract-owned by the implementation and schemas;
+this diagram shows the central execution path and representative early
+terminal transitions. Cancellation and timeout are also valid before running.
+Retry policy creates governed attempts; it does not reverse a terminal
+lifecycle transition.
+
 ## Node-Level Flow
 
 For an executable node, the engine orders:
@@ -45,6 +74,22 @@ A cache hit still produces governed node evidence; it is not an unrecorded
 shortcut. A failed attempt still reaches trace writing with structured failure
 information. Cache publication follows accepted execution and trace handling
 so an incomplete result cannot become reusable proof.
+
+## Dependency Consequences
+
+| Accepted node outcome | Scheduler consequence | Retained consequence |
+| --- | --- | --- |
+| succeeded | dependants may become ready when their remaining conditions pass | successful attempt, output, and cache eligibility evidence |
+| failed | retry or terminal dependency consequences follow owned policy | every attempt and the terminal failure remain attributable |
+| cancelled | no new work is inferred from the cancelled node | cancellation and cleanup outcome remain visible |
+| skipped | trigger-aware dependants are re-evaluated | skip reason remains distinct from success |
+| dependency-blocked skip | dependent work that cannot become eligible stays unexecuted | skip status and causal dependency result remain inspectable |
+| valid cache hit | node is accepted without a new execution attempt | lookup decision and reused identity are recorded |
+| invalid cache candidate | execution continues as a miss or fails under policy | rejection reason is preserved; candidate is not proof |
+
+Dependency advancement consumes accepted state, never raw worker completion.
+This prevents a late event, malformed result, or invalid transition from
+unlocking downstream work.
 
 ## Sacred Boundary
 

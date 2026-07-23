@@ -25,6 +25,32 @@ The practical rule is:
 controls selected for a run. A control is enforced only when both that evidence
 and this page identify an enforcement boundary.
 
+## Choose The Execution Boundary
+
+```mermaid
+flowchart TB
+    code{"Is every node trusted as the host user?"}
+    host["shell backend may be appropriate"]
+    controls{"Need enforced mount shaping or no-network mode?"}
+    container["supported Docker or Podman backend"]
+    stronger{"Need protection beyond the container engine?"}
+    external["supply a VM, restricted host, or other external sandbox"]
+    preflight["inspect isolation and run preflight"]
+    execute["execute with least authority"]
+    verify["verify run evidence and host-side effects"]
+
+    code -->|"yes"| controls
+    code -->|"no"| external
+    controls -->|"no"| host --> preflight
+    controls -->|"yes"| container --> stronger
+    stronger -->|"no"| preflight
+    stronger -->|"yes"| external --> preflight
+    preflight --> execute --> verify
+```
+
+Backend choice changes enforcement mechanics; it does not change whether the
+workflow author must declare effects honestly.
+
 ## Enforcement Matrix
 
 | Surface | What is enforced | What is best-effort | What is not protected |
@@ -149,6 +175,22 @@ each node the smallest environment allowlist it requires.
 
 Execution-isolation and cleanup risks are tracked as `RISK-001` and `RISK-006`
 in the [Risk Register](../quality/risk-register.md).
+
+## Post-Run Security Review
+
+| Check | Evidence of acceptance | Escalation signal |
+| --- | --- | --- |
+| policy selection | effective isolation and preflight output match the intended lane | requested control is absent, advisory, or unsupported |
+| process cleanup | terminal trace records normal completion or successful cancellation cleanup | degraded cleanup or a surviving descendant |
+| filesystem scope | output index contains only declared, rooted, verified paths | traversal, symlink escape, undeclared output, or host-side mutation |
+| network posture | container engine received the enforced no-network control where required | shell execution was used for code that required socket isolation |
+| environment scope | required bindings are present and unnecessary values are absent | secret value appears in argv, stdout, stderr, graph, or trace |
+| image identity | accepted engine evidence and required digest policy agree | mutable tag, missing digest, or identity mismatch under required policy |
+
+If a run violates its trust assumption, stop downstream consumption, preserve
+the run directory and command evidence, verify whether host credentials or
+external systems were reachable, and rotate or remediate outside the DAG
+runtime. Deleting the run directory does not reverse process side effects.
 
 ## Review Anchors
 
