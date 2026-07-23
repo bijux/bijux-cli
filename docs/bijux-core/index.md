@@ -9,10 +9,10 @@ last_reviewed: 2026-07-19
 
 # Repository Handbook
 
-This handbook explains the parts of `bijux-core` that sit above any single
-crate or command. Read it when you need the shape of the repository, the
-public-versus-private package line, or the release rules that keep `bijux` and
-`bijux-dag` honest.
+`bijux-core` is the release and compatibility boundary for two public
+command-line products. It keeps runtime code, machine-readable contracts,
+retained evidence, and publication automation in one workspace so a shipped
+claim can be traced to both an implementation owner and a verification owner.
 
 <div class="bijux-callout"><strong>Use this handbook when the question crosses products.</strong>
 If the answer needs both <code>bijux</code> and <code>bijux-dag</code>, or if
@@ -24,14 +24,6 @@ is the right starting point.</div>
 <a class="md-button" href="architecture/">Open architecture</a>
 <a class="md-button" href="operations/">Open operations</a>
 </div>
-
-## What This Handbook Helps You Answer
-
-- What does this repository actually publish today?
-- Which crates are public, and which remain repository-internal?
-- Where should a reader or contributor start before opening source files?
-- Which repository rules affect both `bijux` and `bijux-dag`?
-- Which root workflows validate, release, and document the whole workspace?
 
 ## Start Here
 
@@ -88,26 +80,52 @@ This is an ownership map, not a Cargo dependency graph. Use the
 [Package Boundary](foundation/package-boundary.md) before treating a private
 support crate as a distributable API.
 
-## What You Will Find Here
+## Repository Control Loops
 
-- the public-versus-private crate line
-- the workspace layout under `crates/`, `contracts/`, `docs/`, `makes/`, and
-  `.github/workflows/`
-- the release and validation rules that apply across both product families
-- the ownership rules that keep package pages, READMEs, and shipped surfaces
-  aligned
+Four connected loops keep the workspace coherent:
 
-## When Not To Stay Here
+| Loop | Input | Accepted output | Refusal condition |
+| --- | --- | --- | --- |
+| runtime | command or graph input | streams and exit status, or a retained DAG run | parsing, validation, execution, integrity, or policy failure |
+| contract | schema, invariant, or compatibility rule | machine-checkable agreement between producer and consumer | drift, unknown versions, incompatible meaning, or missing ownership |
+| evidence | source revision plus named scenario or suite | retained observation with producer, selection, and status | stale, partial, unverifiable, or non-comparable result |
+| release | accepted package set and version | dependency-ordered registry and release artifacts | missing gate, version disagreement, partial publication, or unsupported claim |
 
-- If the question is only about `bijux` behavior, move to the
-  [CLI Handbook](../bijux-cli/index.md).
-- If the question is only about DAG authoring, execution, replay, or retained
-  evidence, move to the [DAG Handbook](../bijux-dag/index.md).
-- If the question is about maintainer automation, release proof, or repository
-  gates, move to the [Maintainer Handbook](../bijux-dev/index.md).
+The loops are intentionally separate. A runtime success does not satisfy a
+release gate. A generated report does not redefine the contract it evaluates.
+A private maintainer command cannot widen the product surface.
 
-## Program Handbooks
+```mermaid
+flowchart LR
+    change["owned source change"]
+    contract["contract and compatibility review"]
+    focused["owner verification"]
+    evidence["retained evidence"]
+    release["release decision"]
+    publish["publication"]
 
-- [CLI Handbook](../bijux-cli/index.md)
-- [DAG Handbook](../bijux-dag/index.md)
-- [Maintainer Handbook](../bijux-dev/index.md)
+    change --> contract --> focused --> evidence --> release --> publish
+    focused -->|"failure"| change
+    evidence -->|"stale or incomplete"| focused
+    release -->|"claim not proven"| change
+```
+
+## Boundary Promises
+
+- Product crates never depend on `bijux-dev` for runtime behavior.
+- Public and private package status is explicit and contract-tested.
+- Generated references describe the live binaries instead of a manually
+  maintained command inventory.
+- DAG evidence is retained separately from source and local build products.
+- A release claim names its supported lane and does not inherit experimental,
+  simulated, or maintainer-only capabilities.
+- Partial publication is handled as an incident, not retried as though no
+  external state changed.
+
+## Product And Maintainer Handbooks
+
+| Scope | Handbook |
+| --- | --- |
+| `bijux` routing, config, plugins, state, REPL, and output | [CLI Handbook](../bijux-cli/index.md) |
+| graph authoring, execution, artifacts, cache, replay, and comparison | [DAG Handbook](../bijux-dag/index.md) |
+| repository gates, evidence generation, automation, and release response | [Maintainer Handbook](../bijux-dev/index.md) |

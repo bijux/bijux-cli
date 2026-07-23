@@ -23,72 +23,62 @@ without collapsing them into one blurred interface.
 ## Surface Map
 
 ```mermaid
-flowchart LR
-    user["users and automation"] --> cli["CLI surface"]
-    user --> dag["DAG surface"]
-    cli --> handlers["handlers and plugins"]
-    dag --> engine["routes and runtime"]
-    handlers --> contracts["shared output contracts"]
-    engine --> contracts
+flowchart TB
+    user["users and automation"]
+    cli["bijux"]
+    dag["bijux-dag"]
+    builtin["built-in route"]
+    plugin["mounted app or plugin process"]
+    engine["validated DAG execution"]
+    streams["stdout · stderr · exit status"]
+    run["run identity · manifest · traces · artifacts"]
+
+    user --> cli
+    user --> dag
+    cli --> builtin --> streams
+    cli --> plugin --> streams
+    dag --> engine --> streams
+    engine --> run
 ```
 
-## The Public Runtime Boundary
+## Product Outcomes
 
-### `bijux`
+| Concern | `bijux` | `bijux-dag` |
+| --- | --- | --- |
+| primary input | argv, REPL line, layered config, mounted namespace | graph source, execution options, backend selection |
+| pre-execution truth | normalized route, lifecycle state, compatibility, configuration provenance | parsed and canonical graph, validation result, deterministic plan |
+| effects | built-in state mutation or delegated process execution | node attempts, backend work, artifact and run-directory writes |
+| immediate result | stdout, stderr, and exit status | command streams, exit status, and run identity |
+| durable result | config, history, memory, and plugin records owned by the command | manifest, node traces, output index, declared artifacts, and replay inputs |
+| diagnostic question | which route, layer, plugin, or process produced the outcome? | which graph, plan, node, attempt, backend, or artifact produced the outcome? |
+| security limit | plugins are not sandboxed from the current user account | backend selection is not itself an isolation guarantee |
 
-The `bijux` surface is where operators and automation manage command routing,
-configuration layering, plugin lifecycle, and user-facing diagnostics.
+## Shared Runtime Rules
 
-Readers should expect `bijux` docs and output to answer questions such as:
+Both products preserve the following invariants even though their state models
+are different:
 
-- which command owns this operation
-- which configuration source supplied a value
-- what happened during plugin install, inspect, or removal
-- whether a failure is recoverable, user-correctable, or a repository bug
+- human, JSON, JSON Lines, or YAML presentation cannot change command meaning;
+- a nonzero delegated outcome cannot be wrapped as built-in success;
+- aliases resolve to a canonical identity before execution and diagnostics;
+- a compatibility or integrity refusal occurs before untrusted state is used;
+- reason codes and lifecycle states remain machine-readable;
+- internal or gated routes do not become supported merely because they compile.
 
-### `bijux-dag`
+## Delegation And Authority
 
-The `bijux-dag` surface is where DAG authors and automation validate,
-execute, inspect, replay, diff, and retain workflow evidence.
+`bijux` may invoke a mounted app or plugin. `bijux-dag` may invoke a process,
+container engine, scheduler adapter, or Kubernetes API. In both cases the
+external actor supplies work, but the owning product still controls acceptance:
 
-Readers should expect `bijux-dag` docs and output to answer questions such as:
+1. validate the request and compatibility boundary;
+2. start the delegated work under the documented environment policy;
+3. preserve native failure information;
+4. accept only outputs that satisfy the owning contract;
+5. expose the result through stable status and evidence.
 
-- what the runtime executed
-- which nodes succeeded, failed, skipped, or were blocked
-- what evidence was retained in the run directory
-- how replay, diff, and status commands interpret that retained state
-
-### Shared contract layer
-
-Although the commands differ, both surfaces still depend on common repository
-rules:
-
-- machine-readable outputs must preserve the same meaning as human-readable ones
-- reason codes and status vocabularies must stay stable once documented
-- public examples and generated references must track the shipped binaries
-- release evidence must reflect what the runtime actually supports
-
-## Surface Contract
-
-- CLI surfaces provide command routing, plugin lifecycle, and config behavior
-- DAG surfaces provide validate, run, replay, diff, status, and inspect flows
-- output envelopes must keep machine and human formats semantically aligned
-- command behavior changes require corresponding docs and compatibility evidence
-
-## What This Page Separates Clearly
-
-This page helps distinguish questions that often get mixed together:
-
-- a CLI routing problem is not the same thing as a DAG execution problem
-- a runtime engine change is not complete if it breaks output contracts
-- a human-facing explanation is not enough if machine-readable meaning drifted
-- a crate-local implementation detail is not automatically a public runtime surface
-
-## Surface Non-Goals
-
-- no silent alias behavior that bypasses canonical route handling
-- no runtime-only shortcuts that produce undocumented output schemas
-- no cross-surface drift between machine-readable and human-readable meaning
+A successful child process is insufficient when its output is malformed,
+incomplete, or fails integrity checks.
 
 ## Where Each Surface Starts In Code
 
@@ -101,12 +91,13 @@ Those anchors matter because public runtime behavior is defined by more than
 one crate. The CLI binary, route layer, and runtime engine each own part of the
 delivered surface.
 
-## Useful Review Questions
+## Compatibility Review
 
-1. does this change alter public command meaning?
-2. does it change output schema or reason-code vocabulary?
-3. are docs and contract tests updated in the same change set?
-4. is the behavior truly public, or only an internal crate detail?
+Before changing a runtime surface, identify whether the change affects route
+identity, configuration precedence, output schema, lifecycle state, artifact
+layout, replay meaning, exit classification, or the supported backend lane.
+Each affected meaning needs an owning contract and consumer verification; a
+source-compatible Rust change can still be an incompatible automation change.
 
 ## Next Reads
 

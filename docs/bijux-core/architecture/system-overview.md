@@ -14,6 +14,15 @@ proof boundaries. The repository structure is intended to make a behavior
 traceable from its public entrypoint to its owner, retained evidence, and
 release check.
 
+The architecture separates three planes:
+
+- the **product plane** parses, validates, executes, and reports user work;
+- the **evidence plane** retains run facts and evaluates governed scenarios;
+- the **release plane** decides whether packages and claims may be published.
+
+Information flows upward as structured facts. Product behavior never calls
+back into release tooling to decide what it means.
+
 ## Ownership Map
 
 ```mermaid
@@ -34,6 +43,31 @@ flowchart LR
 Solid arrows are runtime or distribution relationships. Dotted arrows are
 maintainer observation and verification; they must not become product runtime
 dependencies.
+
+## End-To-End Responsibility
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Entry as CLI entrypoint
+    participant Owner as owning product crate
+    participant State as local state or run evidence
+    participant Verify as bijux-dev verification
+    participant Release as publication workflow
+
+    User->>Entry: command and explicit inputs
+    Entry->>Owner: normalized route or execution request
+    Owner->>State: governed mutation or retained evidence
+    Owner-->>User: stdout, stderr, exit status, or run identity
+    Verify->>Owner: contract and behavior checks
+    Verify->>State: integrity and freshness checks
+    Verify-->>Release: aggregate evidence and final status
+    Release-->>Release: verify versions, package order, and credentials
+```
+
+The first response is a product outcome. The later verification path is a
+release decision. Keeping them distinct prevents a maintainer-only success
+from masquerading as runtime support.
 
 ## Owned Surfaces
 
@@ -90,6 +124,22 @@ do not justify coupling CLI and DAG runtime implementations.
 Treat the report as stale until the producer and source contract are checked.
 Generated evidence records an observation; it cannot override implementation
 or schema authority.
+
+## Failure Containment
+
+| Failure domain | Contained by | Must remain visible as |
+| --- | --- | --- |
+| CLI parse or route error | command boundary | classified stderr, stable exit status, and bounded suggestion |
+| plugin process failure | delegated process boundary | original streams and delegated exit status |
+| graph validation failure | DAG core boundary | structured validation errors before execution |
+| node attempt failure | runtime state machine | attempt trace, terminal node status, and dependency consequences |
+| artifact integrity failure | artifact boundary | verification refusal; never a reusable cache or replay proof |
+| maintainer suite failure | aggregate gate | nonzero final status and complete component results |
+| publication failure | registry-specific release operation | partial-publication inventory and incident response |
+
+Containment does not mean suppression. Every boundary prevents a failure from
+being reclassified as success while preserving enough context to locate its
+owner.
 
 ## Where To Verify The Model
 
