@@ -4,7 +4,7 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # bijux-dag-artifacts
@@ -19,70 +19,162 @@ last_reviewed: 2026-07-09
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-dag-artifacts docs](https://img.shields.io/badge/docs-artifacts-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-artifacts/)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-dag-artifacts` owns run evidence material: artifact models, persistence
-helpers, storage layout, integrity proofs, and lifecycle policy helpers.
+`bijux-dag-artifacts` owns the retained evidence boundary: models, normalized
+paths, filesystem publication, hashes, integrity proofs, lineage, promotion,
+and retention primitives.
 
-At the product level, `bijux-dag` v0.4.0 is a local-first DAG runtime for
-reproducible workflows with explicit graph contracts, deterministic execution
-records, verified artifacts, cache explanation, and replayable run bundles.
-The [Replay Contract](../../spec/REPLAY_CONTRACT.md) defines the replay authority.
-This package owns the verified-artifact and persisted-evidence part of that
-promise.
+Use it when the question is what a run leaves behind, how those bytes acquire
+an identity, or whether retained material can still support an inspection,
+cache, replay, or audit decision.
 
-Use this page when the question is about what a DAG run leaves behind, how that
-material is identified, and how artifact integrity is verified over time.
+## Evidence Lifecycle
 
-For the exact retained filesystem map, open
-[Run Evidence Layout](../interfaces/run-evidence-layout.md).
+```mermaid
+flowchart LR
+    Runtime["Runtime produces<br/>typed evidence"]
+    Stage["Staging run directory"]
+    Index["Manifests, traces,<br/>input/output indexes"]
+    Verify["Schema, path, size,<br/>and hash verification"]
+    Final["Final run directory"]
+    Use["Inspect, diff,<br/>cache, or replay"]
+    Lifecycle["Retention, promotion,<br/>and lineage"]
 
-The intended Rust import lanes are the crate root, `stable`, and `prelude`.
-Hidden compatibility modules remain available for repository-owned coverage, and
-the `experimental` lane is opt-in behind `experimental-public-api`.
+    Runtime --> Stage --> Index --> Verify
+    Verify -->|"valid completion"| Final --> Use
+    Final --> Lifecycle
+    Verify -->|"incomplete or corrupt"| Refuse["Explicit refusal<br/>and diagnostics"]
+```
 
-## Responsibility Map
+A retained run is published as evidence only through an explicit finalization
+path. Verification can describe damage; it does not silently repair evidence
+while claiming to inspect it.
 
-| Surface | Ownership |
+## Authority
+
+| Domain | This crate decides |
 | --- | --- |
-| artifact identity | storage models, paths, platform layout, manifests, output indexes, and lineage material |
-| integrity | hashes, proofs, schema material, and verification helpers |
-| lifecycle | promotion, retention, and persistence service helpers |
-| boundary | does not own CLI routing or runtime scheduler behavior |
+| retained models | run manifests, node traces, input and output indexes, provenance, and artifact pack metadata |
+| layout | run-directory structure, normalized relative paths, and platform-safe path representation |
+| persistence | filesystem-backed stores, durable JSON writes, incomplete markers, and finalization |
+| identity | content hashes, sizes, artifact identifiers, and deduplication inputs |
+| integrity | schema checks, proof models, corruption classification, and run-directory audit results |
+| lifecycle | lineage edges, retention policy data, promotion records, and safe-garbage-collection explanations |
 
-## Source Layout
+The runtime decides **when** evidence is produced and what an execution outcome
+means. This crate decides **how** that evidence is represented, persisted, and
+verified. It does not validate graphs, schedule nodes, route commands, or infer
+an operator's policy from ambient state.
 
-- `crates/bijux-dag-artifacts/src/storage`
-- `crates/bijux-dag-artifacts/src/layout`
-- `crates/bijux-dag-artifacts/src/integrity`
-- `crates/bijux-dag-artifacts/src/lifecycle`
-- `crates/bijux-dag-artifacts/src/io`
+## A Valid Path Is Part Of Integrity
 
-## Open Next
+Artifact paths are normalized relative paths beneath an explicitly supplied
+root. The crate rejects:
 
-- open [Reproducibility Model](../interfaces/reproducibility-model.md)
-  when the question is how retained artifact hashes and producer fingerprints
-  participate in cache proof and replay proof
-- open [Run Evidence Layout](../interfaces/run-evidence-layout.md)
-  when the question is where manifests, traces, indexes, cache entries, or
-  promotion records live on disk
-- open [Artifact Contracts](../interfaces/artifact-contracts.md) when the
-  question is which evidence surfaces are compatibility-bearing rather than only
-  where they are stored
-- open [`bijux-dag-runtime`](./bijux-dag-runtime.md) when artifact work is tied to execution and replay policy
-- open the [DAG Handbook](../index.md) for the full DAG ownership map
-- open the [Repository Handbook](../../bijux-core/index.md) when artifact contracts affect shared governance
+- absolute paths where a retained relative path is required;
+- traversal outside the owned root;
+- platform-dependent ambiguity;
+- missing required output; and
+- layouts that cannot be interpreted under the supported contract.
 
-## Code Anchors
+Path safety is not separate from evidence validity. Bytes with a valid digest
+at an unsafe or ambiguous location are not a valid retained artifact.
 
-- `crates/bijux-dag-artifacts/README.md`
-- `crates/bijux-dag-artifacts/docs/CONTRACTS.md`
-- `crates/bijux-dag-artifacts/src/lib.rs`
-- `crates/bijux-dag-artifacts/src/storage/models.rs`
-- `crates/bijux-dag-artifacts/src/integrity/proof.rs`
-- `crates/bijux-dag-artifacts/src/lifecycle/retention.rs`
+## Integrity Is Not Success
 
-## Review Lens
+Verification distinguishes failure classes instead of collapsing them:
 
-- artifact identity and integrity should stay authoritative and inspectable
-- persisted evidence shapes should stay stable enough for inspection and replay
-- lifecycle helpers should not drift into execution-engine policy
-- retention and promotion rules should remain explicit enough to audit
+| Finding | Meaning |
+| --- | --- |
+| missing | required evidence is absent |
+| unreadable | storage could not be inspected |
+| hash or size mismatch | retained bytes no longer match their recorded identity |
+| malformed | an index, manifest, trace, or schema-bearing record cannot be decoded |
+| unsupported schema | evidence belongs to a shape this reader cannot safely interpret |
+| unsafe path | a retained reference violates the owned-root boundary |
+| incomplete lineage | provenance is insufficient for the requested lifecycle decision |
+
+A clean integrity result proves consistency with the retained contract. It does
+not prove that the workload was scientifically correct, that the execution
+environment was trusted, or that two runs are equivalent.
+
+## Publication And Crash Safety
+
+Run material is assembled in a staging directory. Completion writes and
+finalization must avoid exposing a partially valid final directory as complete.
+An interrupted run retains an explicit incomplete state rather than borrowing
+the appearance of a successful run.
+
+Durability depends on the filesystem and storage environment supplied by the
+caller. Atomic rename and durable-write helpers protect the publication
+protocol; they cannot manufacture storage guarantees that the underlying
+platform does not provide.
+
+## Compatibility-Bearing Evidence
+
+The following schemas govern serialized run evidence:
+
+- `configs/dag/schema/inputs_index.schema.json`
+- `configs/dag/schema/node_trace.schema.json`
+- `configs/dag/schema/outputs_index.schema.json`
+- `configs/dag/schema/run_manifest.schema.json`
+
+Readers refuse incompatible required fields rather than defaulting malformed
+evidence into validity. Additive optional fields still require round-trip and
+consumer evidence. Breaking shape changes require schema-evolution, migration,
+and downstream replay/import review.
+
+Run layout, path normalization, digest interpretation, verification outcomes,
+and finalization behavior are compatibility-sensitive even when Rust source
+compatibility is unchanged.
+
+## Public Rust Surface
+
+| Import lane | Intended use | Compatibility |
+| --- | --- | --- |
+| `bijux_dag_artifacts::stable` | long-lived storage, identity, integrity, and lifecycle integration | curated public contract |
+| `bijux_dag_artifacts::prelude` | common read, write, hash, and validate workflow | curated convenience surface |
+| crate root | focused access when the exact item is known | public, with broad compatibility modules hidden from default docs |
+| `experimental` feature surface | advisory run-layout and lifecycle contracts | opt-in and outside the stable lane |
+
+## Route A Change
+
+| Change | First owner | Required consumer review |
+| --- | --- | --- |
+| manifest, trace, or index shape | storage and schema modules | runtime writers, app readers, import/export, and replay |
+| path or run-directory layout | layout and IO modules | every persisted-evidence consumer |
+| hash, proof, or verification outcome | integrity modules | cache, replay, verify, and operator diagnostics |
+| retention, promotion, or lineage model | lifecycle modules | maintainer and policy consumers |
+| retry, scheduling, replay eligibility, or execution outcome | [`bijux-dag-runtime`](bijux-dag-runtime.md) | artifacts persists the decision but does not own it |
+
+## Verification Evidence
+
+| Claim | Evidence |
+| --- | --- |
+| artifact identity and lineage | `artifact_identity_and_lineage_contracts.rs` |
+| manifest identity and round trip | run-manifest identity, round-trip, and retention contracts |
+| path and store safety | IO/store and storage-resilience contracts |
+| corruption refusal and hardening | artifact hardening contracts |
+| public import boundary | `public_api_contract.rs` |
+
+For a broad retained-evidence change, run:
+
+```bash
+cargo test --locked -p bijux-dag-artifacts
+```
+
+## Source Authorities
+
+- package contract: `crates/bijux-dag-artifacts/docs/CONTRACTS.md`
+- curated exports and run-directory entrypoints:
+  `crates/bijux-dag-artifacts/src/lib.rs`
+- retained models and services: `crates/bijux-dag-artifacts/src/storage/`
+- path and platform rules: `crates/bijux-dag-artifacts/src/layout/`
+- hashes, proofs, schemas, and audits:
+  `crates/bijux-dag-artifacts/src/integrity/`
+- filesystem operations: `crates/bijux-dag-artifacts/src/io/`
+- lineage, promotion, and retention:
+  `crates/bijux-dag-artifacts/src/lifecycle/`
+
+See [Run Evidence Layout](../interfaces/run-evidence-layout.md) for the exact
+filesystem map and [Artifact Contracts](../interfaces/artifact-contracts.md)
+for compatibility-bearing evidence surfaces.
