@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Execution Model
@@ -126,6 +126,35 @@ Consumers must evaluate the exit status before interpreting stdout as a
 successful payload. Empty stdout is not evidence that a command had no effect,
 and a captured result is not evidence that execution was side-effect free.
 
+## Automation Acceptance
+
+An automation consumer accepts one invocation from three independent channels:
+
+| Channel | Read as | Failure mode if ignored |
+| --- | --- | --- |
+| exit status | authoritative completion class for the invocation | a rendered diagnostic or delegated failure can be mistaken for success |
+| stdout | successful result data or delegated native output | mixed streams can corrupt JSON, JSON Lines, or YAML consumers |
+| stderr | usage, classified failure, warning, or delegated diagnostic | discarded ownership and remediation context |
+
+```mermaid
+flowchart LR
+    result["AppRunResult"]
+    status{"exit status"}
+    success["decode stdout under selected format"]
+    failure["preserve stderr and classify owner"]
+    side_effects["inspect command-owned state when relevant"]
+
+    result --> status
+    status -->|"zero"| success --> side_effects
+    status -->|"nonzero"| failure --> side_effects
+```
+
+A zero exit does not make stdout JSON unless JSON was explicitly selected or
+the output policy selected it for a non-interactive stream. A nonzero delegated
+result is not converted into a built-in error envelope. Consumers that require
+one stable serialization should select the format explicitly and keep the
+three channels separate.
+
 ## Result And Telemetry Boundaries
 
 Telemetry is observational and opt-in. It records bounded route, status,
@@ -135,6 +164,11 @@ unbounded user input. A telemetry failure must not become command behavior.
 The app runner can still perform command-owned filesystem or subprocess
 effects. Returning streams in memory does not make command execution pure.
 State mutation and plugin process boundaries are documented separately.
+
+One process executes one route at a time. Throughput, process supervision,
+rate limits, and multi-tenant isolation belong to the caller or deployment
+environment; the in-process API does not turn the CLI into a concurrent
+service.
 
 ## Execution Invariants
 

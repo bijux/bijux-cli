@@ -4,19 +4,16 @@ audience: mixed
 type: guide
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # Diagnostics Guide
 
-Use this page when `bijux` behaves unexpectedly, an automation health check
-needs structured evidence, or a support report must explain what the runtime
-actually observed.
-
 Diagnostics are a product surface, not a collection of debug conveniences.
 `status`, `doctor`, `audit`, plugin diagnostics, and bounded telemetry answer
-different questions. Use the narrowest surface that can either confirm the
-suspected fault or produce evidence for the next investigation.
+different questions. A reliable investigation starts with the narrowest
+surface that can confirm the suspected fault or produce evidence for the next
+decision.
 
 ## Choose The Evidence Surface
 
@@ -129,6 +126,24 @@ Do not begin by deleting state broadly. If a claim cannot be checked through a
 command result, `status`, `doctor`, `audit`, plugin diagnostics, or bounded
 telemetry, identify that observability gap in the report rather than inventing
 an explanation.
+
+## Diagnostic Record
+
+The investigation record remains useful after machine state changes only when
+it binds the observation to its context:
+
+| Field | Minimum content |
+| --- | --- |
+| invocation | exact argv, working directory, selected format, and whether the terminal was interactive |
+| runtime | `bijux` version, installation path, Python interpreter when involved, and canonical route |
+| state | active configuration, state, and plugin paths plus relevant lifecycle state |
+| outcome | separate stdout, stderr, and exit status |
+| diagnostic | exact focused command, bundle path, findings, and diagnostic exit status |
+| chronology | observation before repair, one applied remediation, and repeated original invocation |
+| confidentiality | redacted values and an explicit review of the bundle before sharing |
+
+A post-repair healthy result does not erase the initial failure. Preserve both
+observations and record the state transition that connects them.
 
 ## Implementation Ownership
 

@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # CLI Handbook
@@ -15,9 +15,8 @@ configuration, local state, the REPL, and structured output. That common
 contract lets operators move between interactive use and automation without
 learning a different failure or output model.
 
-Use this handbook when the question is about what `bijux` does at the command
-line, how it behaves under automation, or how the Python distribution reaches
-the same runtime contract.
+The runtime contract covers interactive and automated invocation, including
+the Python distribution’s path into the native command implementation.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="packages/bijux-cli.md">Open the runtime package</a>
@@ -72,6 +71,30 @@ parser, router, state model, or output schema.
 that third-party code is trustworthy, and it does not sandbox that code from
 the current user account.
 
+## Operation Lifecycle
+
+```mermaid
+sequenceDiagram
+    actor Caller
+    participant CLI as bijux runtime
+    participant Config as config and state
+    participant Owner as built-in or delegated owner
+
+    Caller->>CLI: argv and process context
+    CLI->>Config: resolve layers and route state
+    Config-->>CLI: values, provenance, lifecycle
+    CLI->>Owner: canonical route and bounded inputs
+    Owner-->>CLI: payload or native process result
+    CLI-->>Caller: stdout, stderr, exit status
+```
+
+The canonical route identifies ownership; the result preserves the owner’s
+meaning. Built-in handlers return typed payloads for common rendering.
+Delegated products and plugins retain their own streams and exit status.
+Configuration and state can influence the operation, so a reproducible report
+records the working directory, active paths, version, route, streams, and
+status rather than argv alone.
+
 ## Start Here
 
 | If you want to... | Open this page |
@@ -110,11 +133,11 @@ The [Diagnostics Guide](operations/diagnostics-guide.md) expands this path;
 the [CLI Surface](interfaces/cli-surface.md) defines command ownership and
 aliases.
 
-## When To Leave This Handbook
+## Adjacent Authorities
 
-- Move to the [Repository Handbook](../bijux-core/index.md) when the answer
-  depends on shared release rules or cross-product ownership.
-- Move to the [DAG Handbook](../bijux-dag/index.md) when the question is about
-  graph execution or the `bijux-dag` surface rather than the root runtime.
-- Move to the [Maintainer Handbook](../bijux-dev/index.md) when the question
-  is about repository gates, documentation generation, or release proof.
+- [Repository Handbook](../bijux-core/index.md) — shared release rules and
+  cross-product ownership.
+- [DAG Handbook](../bijux-dag/index.md) — graph execution and retained run
+  evidence.
+- [Maintainer Handbook](../bijux-dev/index.md) — repository gates,
+  documentation generation, and release proof.

@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Security and Safety
@@ -75,6 +75,23 @@ manifest root at the front of `sys.path`. That makes the selected plugin source
 authoritative for its imported module; it is another reason to verify the
 installed source path.
 
+## Authority Inventory Before Execution
+
+The plugin inherits more authority than its manifest describes. Inventory that
+authority before enabling a route:
+
+| Authority | Question to answer | Stronger containment |
+| --- | --- | --- |
+| identity | which user and groups will own the child process? | dedicated unprivileged account |
+| filesystem | which home, project, temporary, configuration, and credential files are readable or writable? | restricted mounts, permissions, or disposable workspace |
+| network | which local sockets, services, and external destinations are reachable? | host firewall, container network policy, or isolated VM |
+| environment | which `BIJUX_*`, `PYTHON*`, path, locale, and host variables are exposed? | minimal wrapper environment with no ambient credentials |
+| process tree | can the entrypoint spawn descendants that outlive the direct child? | external supervisor, cgroup, container, or VM |
+| dependencies | can imports or executable paths resolve mutable or unreviewed code? | immutable environment and verified dependency lock |
+
+The manifest checksum, compatibility range, lifecycle state, and timeout are
+useful admission evidence. None replaces this host-authority inventory.
+
 ## Configuration And Secrets
 
 Configuration keys are normalized to ASCII identifiers. Values reject
@@ -125,6 +142,19 @@ After containment, verify that the disabled route is no longer executable,
 rotate exposed credentials outside the CLI, inspect files and network systems
 available to the host account, and retain the investigation evidence before
 uninstalling the plugin.
+
+```mermaid
+flowchart LR
+    suspect["suspected plugin incident"]
+    disable["disable route"]
+    preserve["preserve manifest, record,<br/>paths, streams, and status"]
+    scope["inventory host authority<br/>and possible effects"]
+    external["rotate credentials and<br/>repair external systems"]
+    verify["verify route refusal<br/>and registry health"]
+    uninstall["uninstall after evidence is retained"]
+
+    suspect --> disable --> preserve --> scope --> external --> verify --> uninstall
+```
 
 ## Implementation Map
 
