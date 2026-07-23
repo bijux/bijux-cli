@@ -39,6 +39,33 @@ involves configuration or environment state, and to the plugin-specific
 commands when the evidence already points to plugin ownership. `audit` is an
 inventory, not a substitute for a focused diagnosis.
 
+```mermaid
+flowchart TB
+    failure["unexpected command result"]
+    preserve["preserve command, streams,<br/>exit status, cwd, and version"]
+    status["status"]
+    owner{"suspected owner"}
+    path["doctor paths or shims"]
+    route["doctor routing or app"]
+    plugin["plugins inspect, explain, or doctor"]
+    config["config explain or validate"]
+    bundle["doctor --bundle"]
+    repair["one owned remediation"]
+    verify["repeat original command"]
+
+    failure --> preserve --> status --> owner
+    owner -->|"path or install"| path --> bundle
+    owner -->|"route or mounted app"| route --> bundle
+    owner -->|"plugin"| plugin --> bundle
+    owner -->|"configuration"| config --> bundle
+    bundle --> repair --> verify
+```
+
+Capture before broad diagnostics when plugin-registry corruption is plausible:
+`status`, `audit`, and `doctor` can invoke state diagnostics that quarantine a
+corrupt registry. The [Failure Recovery](failure-recovery.md) guide defines
+that mutation boundary.
+
 ## Capture A Reproducible Bundle
 
 `bijux doctor --bundle` writes evidence under
@@ -53,6 +80,15 @@ Run the command again when configuration or installed components change. A
 bundle is a snapshot, not a live view, and should be attached to a report with
 the command that failed and the smallest reproducible input.
 
+| Bundle item | Establishes | Does not establish |
+| --- | --- | --- |
+| `doctor.json` | post-diagnostic health observations and classifications | raw pre-diagnostic state or absence of side effects |
+| `docs.json` | generated command/reference observations | that every documented workflow executed |
+| `config/generated-reference.md` | configuration registry rendering | effective values or secret-safe deployment |
+
+Record the bundle-producing command and exit status. Directory presence alone
+does not prove a complete diagnostic run.
+
 ## Read Telemetry Conservatively
 
 Telemetry can record invocation start and finish, route completion,
@@ -66,6 +102,20 @@ Treat telemetry as potentially sensitive operational data:
 - keep recorded fields bounded rather than copying arbitrary payloads
 - inspect the sink before sharing it outside the machine
 - disable it after the investigation when continuous collection is unnecessary
+
+Telemetry is ordered observation, not authority. If telemetry and the command
+result disagree, preserve both and inspect the dispatch and write boundaries;
+do not rewrite the command outcome from telemetry.
+
+## Interpret Diagnostic Status
+
+| Observation | Meaning | Next action |
+| --- | --- | --- |
+| healthy | selected checks found no owned defect | keep the scope narrow; this is not whole-system proof |
+| degraded | operation remains available with a detected problem or repair | inspect every finding and preserved pre-repair state |
+| failed | an owned check could not establish required health | route to the named owner before retry |
+| unknown or incomplete | evidence was unavailable or unsupported | retain uncertainty; do not translate it to healthy |
+| command and focused diagnostic disagree | scope, state, or timing differs | compare exact paths, inputs, and mutation chronology |
 
 ## Escalate Without Guessing
 
