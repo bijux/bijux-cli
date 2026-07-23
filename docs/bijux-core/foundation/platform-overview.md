@@ -4,86 +4,115 @@ audience: mixed
 type: foundation
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # Platform Overview
 
-`bijux-core` is not one monolithic product. It is one repository that ships two
-public product families and one private maintainer surface:
+`bijux-core` is the source, contract, evidence, and release home for two public
+products:
 
-- `bijux`, the command runtime for mounted apps, plugins, config, diagnostics,
-  history, memory, and REPL workflows
-- `bijux-dag`, the local-first DAG toolchain for graph validation, execution,
-  retained evidence, replay, and comparison
-- `bijux-dev`, the private maintainer surface that audits, releases, and proves
-  the repository without pretending to be an end-user product
+- `bijux` is a command runtime for automation, mounted applications, trusted
+  plugins, configuration, diagnostics, state, and interactive use.
+- `bijux-dag` is a local-first execution system for validating graphs, planning
+  work, running supported backends, retaining evidence, replaying decisions,
+  and comparing outcomes.
 
-That split is the first fact a reader should understand, because almost every
-other repository question depends on it. Public runtime behavior lives in the
-CLI and DAG handbooks. Repository-wide proof, publishing, and governance live
-in the maintainer surface and the root handbook.
+The private `bijux-dev` control plane observes and proves those products. It is
+substantial repository infrastructure, but it is not an alternate public
+runtime.
 
-## The Three Surfaces At A Glance
+## Platform Shape
 
-| Surface | What it is for | Where to read next |
+```mermaid
+flowchart LR
+    users["Operators and automation"]
+    cli["bijux<br/>command runtime"]
+    dag["bijux-dag<br/>DAG runtime"]
+    state["Configuration, state,<br/>plugins, and command results"]
+    runs["Graphs, run evidence,<br/>replay, and comparisons"]
+    contracts["Repository contracts<br/>schemas and release boundaries"]
+    control["bijux-dev<br/>maintainer control plane"]
+    proof["Tests, reports, packages,<br/>docs, and release evidence"]
+
+    users --> cli --> state
+    users --> dag --> runs
+    contracts --> cli
+    contracts --> dag
+    contracts --> control
+    cli --> control
+    dag --> control
+    control --> proof
+    proof -. "supports, never defines" .-> contracts
+```
+
+The solid edges show consumption and observation. The dotted edge is a trust
+limit: generated proof can validate or challenge a contract, but cannot
+silently redefine one.
+
+## Choose The Right Surface
+
+| Outcome | Public entrypoint | Durable result | Handbook |
+| --- | --- | --- | --- |
+| inspect or operate the command runtime | `bijux` | structured envelope, human output, state, or diagnostic result | [CLI](../../bijux-cli/index.md) |
+| validate, plan, or execute a graph | `bijux-dag` | plan or retained run directory with inspectable evidence | [DAG](../../bijux-dag/index.md) |
+| discover repository health | `bijux-dev-cli` | revision-bound observation or report | [Maintainer](../../bijux-dev/index.md) |
+| execute governed repository suites | `bijux-dev-dag` | component records and aggregate gate status | [Maintainer](../../bijux-dev/index.md) |
+| understand shared ownership or publication | repository contracts | package, compatibility, or release decision | [Repository](../index.md) |
+
+Mounted applications create a routing integration between `bijux` and another
+product. They do not transfer product semantics into the root CLI. For
+example, `bijux` may route to an installed DAG executable, while graph and run
+meaning remain owned by `bijux-dag`.
+
+## Shared Repository, Separate Authority
+
+The products live together because their release and trust boundaries meet:
+
+- shared output, plugin, package, and release contracts need one reviewable
+  authority;
+- the Python distribution must deliver the same `bijux` behavior as the Rust
+  runtime;
+- the DAG package family must publish in dependency order while retaining one
+  command and evidence story;
+- documentation and release proof must describe the installable products, not
+  only the source checkout;
+- maintainer automation needs access to both product contracts without either
+  product depending on maintainer code.
+
+Co-location does not imply one compatibility surface. A CLI configuration
+change, DAG run-schema change, and maintainer report-schema change have
+different owners and consumers even when one release contains all three.
+
+## Trust Boundaries
+
+| Boundary | What is guaranteed | What is deliberately not implied |
 | --- | --- | --- |
-| `bijux` | command runtime behavior and operator workflows | [CLI handbook](../../bijux-cli/index.md) |
-| `bijux-dag` | DAG authoring, execution, inspection, replay, and verification | [DAG handbook](../../bijux-dag/index.md) |
-| `bijux-dev` | repository diagnostics, evidence, release checks, and governance automation | [Maintainer handbook](../../bijux-dev/index.md) |
-| repository root | shared contracts, docs, release rules, and multi-product ownership | [Repository handbook](../index.md) |
+| built-in `bijux` route | native command, envelope, stream, and exit semantics | safety of external plugin code |
+| plugin or mounted app | validated namespace and integration contract | sandboxing or ownership of delegated behavior |
+| `bijux-dag` stable lane | documented graph, execution, backend, and evidence contract | every simulated or internal repository capability |
+| maintainer result | observation for the recorded revision and selection | a new public product promise |
+| public package | supported registry publication boundary | that every workspace crate is public |
 
-## Why They Share One Repository
+The current package and command release boundaries are machine-readable under
+`contracts/foundation/`. When prose, generated reports, and those contracts
+disagree, treat the release claim as unresolved.
 
-These surfaces live together because they are not independent:
+## Read By Question
 
-- the repository publishes shared contracts and reference material
-- release and compatibility decisions often cross product boundaries
-- maintainer automation has to prove what the public products actually ship
-- documentation must stay coherent across command, DAG, and release surfaces
+- [Repository Scope](repository-scope.md) — which questions belong above one
+  product.
+- [Package Map](package-map.md) — which package owns a behavior.
+- [Package Boundary](package-boundary.md) — which crates publish and in what
+  order.
+- [System Overview](../architecture/system-overview.md) — how the code and
+  contract layers depend on one another.
+- [Repository Trust Evidence](../governance/trust-evidence.md) — how a release
+  claim becomes inspectable.
 
-Keeping them together makes those shared boundaries reviewable instead of
-hiding them in separate repos with duplicated policy and drift.
+## Authority Anchors
 
-## What The Repository Organizes
-
-- `bijux-cli` owns the operator-facing command runtime and the Python bridge
-- `bijux-dag-*` owns graph truth, execution, replay, and artifact semantics
-- `bijux-dev` owns repository-health automation, evidence, and release control
-- the repository root owns cross-program rules, shared docs, contracts, and
-  automation entrypoints
-
-## What Readers Can Rely On Today
-
-- `bijux` is a public command runtime.
-- `bijux-dag` is a public local-first DAG product.
-- `bijux-cli-python`, `bijux-dag-testkit`, and `bijux-dev` are repository
-  support crates, not end-user product surfaces.
-- Simulated DAG namespaces and maintainer-only routes may exist in the code and
-  docs, but they are not public `v0.4.0` product promises.
-
-## Why The Split Matters In Practice
-
-- command runtime behavior and DAG behavior have different public contracts
-- release and documentation evidence must stay reviewable above both products
-- maintainer automation should stay explicit instead of leaking into product
-  packages
-
-## Route By Responsibility
-
-If the question starts with "what does the command do?", leave this page and go
-to the owning product handbook. If it starts with "how do these surfaces fit
-together?" or "which of these surfaces is public?", stay here.
-
-## Product Boundary
-
-- It is not saying the repository is one product with one audience.
-- It is not saying every crate is public just because it sits in the workspace.
-- It is not replacing package pages when you need exact crate ownership.
-
-## Choose The Owning Handbook
-
-- [Repository Scope](repository-scope.md)
-- [Package Map](package-map.md)
-- [Package Boundary](package-boundary.md)
-- [Core Architecture](../architecture/index.md)
+- `contracts/foundation/workspace_product_map.v1.json`
+- `contracts/foundation/workspace_package_boundary.v1.json`
+- `contracts/foundation/dag_release_truth_table.v1.json`
+- `Cargo.toml`

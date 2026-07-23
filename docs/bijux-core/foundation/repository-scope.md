@@ -4,18 +4,41 @@ audience: mixed
 type: foundation
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # Repository Scope
 
-`bijux-core` has repository-level documentation because some questions cannot
-be answered honestly from a single product handbook. The root scope is not
-"everything in the repo." It is the smaller set of questions that cross
-products, packages, release boundaries, or shared contracts.
+Repository authority begins where a question crosses product, package,
+contract, documentation, or release boundaries. It ends as soon as one
+product or maintainer surface can answer the question completely.
 
-This page defines that line so the repository handbook stays useful instead of
-becoming a vague duplicate of the CLI, DAG, or maintainer handbooks.
+## Route A Question
+
+```mermaid
+flowchart TD
+    question["Question or proposed change"]
+    cross{"Crosses products, packages,<br/>contracts, or release targets?"}
+    root["Repository handbook<br/>and root contracts"]
+    owner{"Single behavior owner?"}
+    cli["CLI handbook"]
+    dag["DAG handbook"]
+    dev["Maintainer handbook"]
+    unresolved["Establish ownership<br/>before implementation"]
+
+    question --> cross
+    cross -->|"yes"| root
+    cross -->|"no"| owner
+    owner -->|"bijux"| cli
+    owner -->|"bijux-dag"| dag
+    owner -->|"repository control"| dev
+    owner -->|"unclear"| unresolved
+    root --> owner
+```
+
+Repository documentation establishes the cross-cutting decision, then routes
+behavioral detail back to its owner. It must not become a duplicate command
+manual or a second definition of DAG semantics.
 
 ## Use The Repository Handbook When The Question Crosses Boundaries
 
@@ -38,22 +61,20 @@ to the owning handbook:
 - [Maintainer Handbook](../../bijux-dev/index.md) for repository automation,
   release proof, and governance tooling
 
-## What The Repository Layer Actually Covers
+## Repository Authorities
 
-The repository handbook is the shared layer between those handbooks. It exists
-to explain:
+| Root surface | Authority | Consumer-visible consequence |
+| --- | --- | --- |
+| `Cargo.toml` and workspace manifests | membership, shared versions, profiles, and dependency resolution | which packages build and release together |
+| `contracts/` | machine-readable product, package, schema, lane, and release boundaries | what automation and documentation may claim |
+| `Makefile` and `makes/` | reproducible repository entrypoints and artifact routing | how local and CI validation reach the same owner |
+| `mkdocs.yml` and reader handbooks | public information architecture and published product guidance | which pages users can rely on |
+| `.github/release.env` and release workflows | generated hosted publication plan and credentials boundary | which validated artifacts reach each registry |
+| `docs/spec/`, `evidence/`, and `docs/reports/` | executable contracts, governed inputs, and maintained observations | how repository claims are tested and reviewed |
 
-- how the workspace is divided into public products and private support crates
-- how contracts, docs, and release rules stay aligned across that divide
-- which top-level directories and entrypoints are stable repository surfaces
-- which root rules contributors must understand before changing more than one
-  package family
-
-Repository scope includes workspace membership, shared dependency policy,
-cross-product compatibility, documentation publication, and release criteria
-that span more than one product. It does not transfer command semantics, DAG
-execution rules, or maintainer implementation detail to the repository layer.
-Those remain owned by their product or maintainer handbooks.
+The last row contains different trust classes. A specification or governed
+input may be authoritative; a generated report remains evidence for its
+recorded producer and revision.
 
 ## What Usually Falls Out Of Scope
 
@@ -65,7 +86,23 @@ These belong elsewhere unless the root boundary itself is the subject:
 - crate-local behavior that does not affect release, docs, contracts, or
   shared ownership
 
-## A Practical Test
+## Authority Precedence
+
+When sources disagree:
+
+1. executable product behavior and its owning public contract establish what
+   the current implementation does;
+2. machine-readable repository contracts establish package, lane, and release
+   policy;
+3. focused tests and governed suites show whether those authorities agree;
+4. generated reports record observations;
+5. public documentation explains the supported result.
+
+This order does not make stale code correct or stale documentation harmless.
+Disagreement blocks the affected claim until owner, contract, proof, and reader
+guidance converge.
+
+## Scope Test
 
 Stay here if at least one of these is true:
 
@@ -78,15 +115,13 @@ Stay here if at least one of these is true:
 If none of those are true, the repository layer is probably the wrong starting
 point.
 
-## Drift Signs
+## Review A Cross-Boundary Change
 
-A repository page has drifted when it starts doing any of the following:
-
-- teaching one command family in product-level detail
-- restating DAG execution behavior that already belongs in the DAG handbook
-- documenting maintainer internals that should live under `docs/bijux-dev/`
-- listing code paths without explaining the shared repository decision they
-  support
+Record the affected product families, package owners, contracts, public and
+private release surfaces, retained data, documentation routes, and validation
+lanes. A change is not root-scoped merely because its files are at the
+repository root; it is root-scoped because more than one owned boundary must
+move coherently.
 
 ## Durable Anchors
 
@@ -96,10 +131,12 @@ The repository layer is grounded in a small set of root surfaces:
 - `Makefile` and `makes/` for root entrypoints
 - `contracts/` for shared machine-readable truth
 - `mkdocs.yml` for published handbook structure
+- `.github/release.env` for generated publication inventory
 
 ## Scope References
 
 - [Workspace Layout](workspace-layout.md)
-- [Decision Rules](decision-rules.md)
 - [Platform Overview](platform-overview.md)
+- [Package Boundary](package-boundary.md)
+- [API and Schema Governance](../operations/api-and-schema-governance.md)
 - [Repository Handbook](../index.md)
