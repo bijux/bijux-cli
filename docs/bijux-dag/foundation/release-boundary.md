@@ -4,80 +4,147 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-06
+last_reviewed: 2026-07-23
 ---
 
 # Release Boundary
 
-`bijux-dag` is only trustworthy if a reader can tell which surfaces are
-supported in `v0.4.0`, which ones are still experimental, which ones are
-simulation-only, and which claims remain unreleased.
+The repository contains more command routes than the supported `v0.4.0`
+operator surface. Release status is explicit so that discoverability cannot be
+mistaken for compatibility.
 
-The contract source for this page is
-`contracts/foundation/dag_release_truth_table.v1.json`.
+The machine-readable authority is
+`contracts/foundation/dag_release_truth_table.v1.json`. This page explains how
+to use that authority when operating, integrating, or reviewing the product.
 
-This page governs operator-surface release status. For public/private crate
-publication status, use
-[Package Boundary](../../bijux-core/foundation/package-boundary.md) and
-`contracts/foundation/workspace_package_boundary.v1.json`.
-For post-`v0.4.0` direction that is not yet a release promise, use the
-[Future Direction](future-direction.md).
+## Four Command Lanes And One Exclusion Boundary
 
-## v0.4.0 Surface Truth Table
+```mermaid
+flowchart LR
+    Stable["Stable<br/>visible and supported"]
+    Experimental["Experimental<br/>callable by explicit lane"]
+    Simulated["Simulated<br/>modeled, not production"]
+    Internal["Internal<br/>maintainer and contract use"]
+    Unreleased["Unreleased<br/>not a product promise"]
 
-| Class | `v0.4.0` meaning | Representative surfaces |
+    Stable -->|"compatibility review"| Experimental
+    Experimental -->|"may inform"| Stable
+    Simulated -. "requires real implementation" .-> Experimental
+    Internal -. "does not imply promotion" .-> Experimental
+    Unreleased -. "must cross acceptance gates" .-> Experimental
+```
+
+The arrows do not describe an automatic maturity sequence. Promotion requires
+a deliberate release decision backed by implementation, documentation,
+contract tests, compatibility review, and operator evidence.
+
+## `v0.4.0` Surface Truth
+
+| Lane | Operator meaning | Discovery and activation |
 | --- | --- | --- |
-| stable | supported visible `bijux-dag --help` surface for local DAG authoring, execution, replay, and evidence inspection | `validate`, `plan`, `run`, `replay`, `runs ...`, `artifact`, `artifact-inspect`, `diff`, `explain`, `verify`, `doctor`, `cache`, `version`, `commands`, `completions` |
-| experimental | callable by explicit path and repository-tested, but outside the stable operator compatibility lane | `init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`, `status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`, `import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, `proof-summary` |
-| simulated | modeled platform and control-plane namespaces that require `BIJUX_DAG_ENABLE_SIMULATED=1`, not production backends or services | `control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`, `governance`, `federation`, `incident`, `lab` |
-| internal | maintainer-only and contract-only routes that require `BIJUX_DAG_ENABLE_INTERNAL=1` and stay outside the public operator boundary | `security`, `durability`, `performance`, `release`, `runtime`, `schedule`, `version-inspect`, `capabilities`, `semantic-portability`, `equivalence-proof` |
-| unreleased | not a `v0.4.0` product promise | generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service |
+| stable | supported visible command surface for authoring, executing, replaying, and inspecting DAG work | `bijux-dag --help` and `bijux-dag commands` |
+| experimental | repository-tested helpers callable by deliberate opt-in, outside stable compatibility | `bijux-dag commands --lane experimental` |
+| simulated | modeled platform namespaces, not production services or backends | `BIJUX_DAG_ENABLE_SIMULATED=1` and `bijux-dag commands --lane simulated` |
+| internal | maintainer-only and contract-only routes outside the public operator boundary | `BIJUX_DAG_ENABLE_INTERNAL=1` and `bijux-dag commands --lane internal` |
+| unreleased | absent from the `v0.4.0` product promise | no supported activation path |
 
-## Stable Capabilities
+### Stable commands
 
-The stable `v0.4.0` release contract covers:
+`validate`, `artifact-inspect`, `artifact`, `commands`, `plan`, `run`,
+`replay`, `runs`, `diff`, `explain`, `verify`, `doctor`, `cache`, `version`,
+and `completions`.
 
-- local DAG validation
-- local DAG execution
-- Kubernetes Job submission through `run --backend kubernetes` for container
-  nodes, including request and limit mapping, active deadline mapping, pod
-  phase mapping, shared-volume workspace mounting, and retained batch evidence
-- shared-filesystem SLURM submission through `run --backend slurm`, including
-  `sbatch` submission, `sacct` polling, and retained batch evidence
-- run and artifact evidence inspection
-- replay and diff classification
-- cache verification and maintenance
-- machine-readable CLI JSON output
+### Experimental commands
 
-Use `bijux-dag commands` to inspect the stable operator surface itself.
-Inventory gated routes only by deliberate lane:
-`bijux-dag commands --lane experimental`,
-`bijux-dag commands --lane simulated`, or
-`bijux-dag commands --lane internal`.
+`init`, `canonicalize`, `graph`, `graph-lint`, `fingerprint`, `hash`,
+`status`, `node`, `trace-artifact`, `why-rerun`, `why-cache-missed`, `export`,
+`import`, `migrate`, `adapters`, `config`, `policy`, `fsck`, `prove`, and
+`proof-summary`.
 
-## Reading Rules
+### Simulated namespaces
 
-- build operator procedures on the stable row only
-- use `bijux-dag commands --lane experimental` when you intentionally need
-  repository-tested but non-stable operator helpers
-- use `bijux-dag commands --lane simulated` or `bijux-dag commands --lane internal`
-  only for deliberate modeled or maintainer workflows
-- set `BIJUX_DAG_ENABLE_SIMULATED=1` or `BIJUX_DAG_ENABLE_INTERNAL=1` only for
-  deliberate maintainer or contract workflows
-- do not treat simulated namespaces as production backends
-- do not describe generic scheduler services or public remote workers as already shipped
+`control-plane`, `state-store`, `dataset`, `enterprise`, `fleet`,
+`governance`, `federation`, `incident`, and `lab`.
 
-## Code Anchors
+### Internal namespaces
 
-- `contracts/foundation/dag_release_truth_table.v1.json`
-- `crates/bijux-dag-app/src/commands/mod.rs`
-- `crates/bijux-dag-app/src/routes/command_routes.rs`
-- `crates/bijux-dag-cli/src/main.rs`
+`security`, `durability`, `performance`, `release`, `runtime`, `schedule`,
+`version-inspect`, `capabilities`, `semantic-portability`, and
+`equivalence-proof`.
 
-## Next Reads
+The lists above describe root routes. Subcommand availability, arguments, and
+response schemas remain governed by the command help and documented interface
+contracts.
 
-- [CLI Surface](../interfaces/cli-surface.md)
-- [Package Boundary](../../bijux-core/foundation/package-boundary.md)
-- [Future Direction](future-direction.md)
-- [Scope and Boundaries](scope-and-boundaries.md)
-- [Known Limitations](../quality/known-limitations.md)
+## Stable Capability Envelope
+
+The stable release includes:
+
+- local DAG validation and local execution;
+- Kubernetes Job submission for container nodes through `kubectl`, with
+  request and limit mapping, active-deadline mapping, pod-phase mapping, shared
+  workspace mounting, and retained batch evidence;
+- shared-filesystem SLURM submission through `sbatch` and `sacct`, with
+  retained batch evidence;
+- run and artifact evidence inspection;
+- replay and diff classification;
+- cache verification and maintenance; and
+- machine-readable JSON output.
+
+The Kubernetes and SLURM lanes are stable within those exact constraints.
+“Stable” does not mean the runtime owns cluster availability, admission,
+identity, secrets, quota, networking, or storage policy.
+
+## Unreleased Claims
+
+The following are not `v0.4.0` promises:
+
+- generic HPC execution beyond the shared-filesystem SLURM lane;
+- public remote-worker execution;
+- public enterprise, fleet, federation, or governance operator APIs; and
+- a full scheduler service.
+
+Simulated namespaces may model vocabulary associated with these capabilities.
+That modeling is useful for contract exploration, but it is not evidence of a
+production implementation.
+
+## Integration Rules
+
+- Build production procedures and automation on the stable lane only.
+- Pin the product version and validate machine-readable output against the
+  documented schema instead of scraping human text.
+- Treat an experimental command as an explicit integration risk; it can change
+  without the stable compatibility guarantees.
+- Never enable simulated or internal lanes globally in an operator
+  environment. Enable them only for the bounded invocation that needs them.
+- Reject documentation, release notes, or support claims that promote a route
+  merely because it exists in source.
+
+## What Promotion Requires
+
+A capability can enter the stable lane only when all of the following are true:
+
+1. The implementation represents a real operator path, not a simulated
+   response.
+2. Failure, timeout, cancellation, and partial-evidence behavior are defined.
+3. Human and machine-readable interfaces have compatibility contracts.
+4. Backend prerequisites and security boundaries are documented.
+5. Tests exercise the supported path and its failure modes.
+6. The release truth table, CLI discovery, docs, and release evidence agree.
+
+## Package Publication Is A Separate Boundary
+
+Command stability and crate publication answer different questions. Five DAG
+crates are public release artifacts; `bijux-dag-testkit` is private repository
+support. Use [Package Boundary](../../bijux-core/foundation/package-boundary.md)
+and `contracts/foundation/workspace_package_boundary.v1.json` for that
+authority.
+
+## Continue Reading
+
+- [Scope and Boundaries](scope-and-boundaries.md) for the product promise
+- [CLI Surface](../interfaces/cli-surface.md) for command contracts
+- [DAG Packages](../packages/index.md) for implementation ownership
+- [Known Limitations](../quality/known-limitations.md) for current gaps
+- [Future Direction](future-direction.md) for direction that is not a release
+  commitment
