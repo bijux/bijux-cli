@@ -70,6 +70,27 @@ The control plane reads product and repository truth; it must not become a
 second implementation of that truth. A failed contract changes the decision,
 not the contract being evaluated.
 
+## Decision Lifecycle
+
+```mermaid
+flowchart TB
+    claim["claim to evaluate"]
+    owner["identify implementation and contract owner"]
+    select["select named suite and source revision"]
+    execute["execute every selected component"]
+    collect["retain component results and final status"]
+    assess{"claim proven?"}
+    accept["record bounded evidence"]
+    reject["route failure to owning boundary"]
+
+    claim --> owner --> select --> execute --> collect --> assess
+    assess -->|"yes"| accept
+    assess -->|"no"| reject --> owner
+```
+
+The claim determines the suite. The desire for a green result does not
+determine the selection, exclusions, or threshold.
+
 ## What A Result Proves
 
 A maintainer result is credible only when it identifies:
@@ -85,3 +106,14 @@ incomplete until its terminal status and final report have been inspected.
 Generated output under `artifacts/` is local run evidence; checked-in material
 under `docs/reports`, `docs/spec`, or another governed path requires its named
 producer and contract test.
+
+## Authority Separation
+
+| Layer | May decide | Must not decide |
+| --- | --- | --- |
+| product crate | runtime semantics and product-owned compatibility | whether its own failing release proof may be ignored |
+| `bijux-dev-cli` | what repository or product facts were observed | alternate product behavior |
+| `bijux-dev-dag` | selected suite execution and aggregate gate status | new runtime meaning for the product under test |
+| make target | reproducible local composition and tool invocation | hidden policy absent from the owning suite or contract |
+| hosted workflow | event, permissions, runner, credentials, and delegated target | a divergent hosted-only implementation of the gate |
+| release workflow | publication sequence after proof is accepted | treating partial external mutation as a clean retry |

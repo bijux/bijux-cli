@@ -70,6 +70,22 @@ fail before the suite runs. For long-running background validation, publish the
 PID, console path, status path, and source commit immediately; completion
 evidence still requires the final status and summary.
 
+## Route A Failure
+
+| First reliable symptom | Inspect before rerunning | Owning boundary |
+| --- | --- | --- |
+| command is missing or rejects its arguments | live help, binary version, and command-surface contract | maintainer binary or invocation |
+| selected component fails locally and in CI | component log and its product or repository contract | implementation or owned test |
+| local and hosted results disagree | source SHA, toolchain, environment, permissions, cache, and target | workflow setup or undeclared environment dependency |
+| component results exist but aggregate status is wrong | suite selection and aggregation report | `bijux-dev-dag` suite composition |
+| generated report is absent, stale, or malformed | producer, input identity, output contract, and final producer status | evidence producer |
+| checksum or managed content drifts | canonical upstream reference and managed manifest | shared-standard source or refresh process |
+| publication only partly succeeds | every external registry and accepted artifact identity | release incident response |
+
+Rerun only after the first result is preserved and the next run tests a named
+hypothesis. Repetition without a changed input distinguishes neither a
+deterministic defect nor environmental noise.
+
 ## Failure Discipline
 
 - Do not pipe away or overwrite the command's exit status.

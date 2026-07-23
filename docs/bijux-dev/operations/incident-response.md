@@ -30,6 +30,25 @@ If more than one class applies, use the stricter handling. A credential
 exposure during publication is a security incident, not only a release
 failure.
 
+## Response State
+
+```mermaid
+stateDiagram-v2
+    [*] --> Detected
+    Detected --> Contained: stop further authority
+    Contained --> Scoped: preserve evidence and inventory impact
+    Scoped --> Repaired: fix owning boundary
+    Repaired --> Verified: focused and required proof pass
+    Verified --> Reconciled: external state and consumers addressed
+    Reconciled --> Closed: record learning and remaining risk
+    Scoped --> Contained: impact expands
+    Repaired --> Scoped: verification reveals wider impact
+```
+
+States must not be collapsed. A repair is not recovery while external state is
+unknown, and a successful rerun is not closure while affected consumers or
+credentials remain unresolved.
+
 ## Contain Before Repair
 
 1. Stop the affected workflow, deployment, or publication path without
@@ -133,6 +152,19 @@ Recovery is complete only when all applicable statements are true:
 
 A process ID, a new artifact path, or one successful component is not recovery
 evidence.
+
+## Recovery Proof
+
+| Proof | Required linkage |
+| --- | --- |
+| containment | authority disabled or constrained, with timestamp and owner |
+| scope | first affected and last known-good identity, plus consumer and external-state inventory |
+| repair | owning change linked to the violated contract or invariant |
+| regression control | test, validator, policy, or monitor that detects the same failure mode |
+| focused verification | exact reproduction against the repaired source |
+| complete verification | required suite selection and final aggregate status |
+| external reconciliation | registry, deployment, credential, or consumer outcome for every affected surface |
+| closure | incident record, communication decision, residual risk, and accountable owner |
 
 ## Close And Learn
 

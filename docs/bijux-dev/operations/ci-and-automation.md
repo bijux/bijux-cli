@@ -14,6 +14,26 @@ second implementation of those gates. A workflow should establish permissions,
 toolchains, caches, and credentials, then delegate behavior to a make target
 that maintainers can run from the same committed source.
 
+## Automation Responsibility Chain
+
+```mermaid
+flowchart LR
+    event["event and source SHA"]
+    workflow["workflow permissions and runner"]
+    tools["pinned tools and cache inputs"]
+    target["repository make target"]
+    suite["owned suite or contract"]
+    report["logs, reports, artifacts, exit status"]
+    check["GitHub check conclusion"]
+
+    event --> workflow --> tools --> target --> suite --> report --> check
+```
+
+Each arrow is an attribution boundary. A failed tool installation does not
+mean the product test failed; a green wrapper step does not overrule a nonzero
+suite status; a check conclusion without the expected report is incomplete
+evidence.
+
 ## Required Pull-Request Proof
 
 | Workflow | Hosted entrypoint | Local reproduction | Result meaning |
@@ -71,6 +91,20 @@ configuration. A skipped required proof is not equivalent to a pass.
 A printed PID only proves launch. Use the status file and final console summary
 under `artifacts/<commit>/background/`; report passed, failed, slow, skipped,
 and leaky counts when nextest provides them.
+
+## Failure Attribution
+
+| Failure point | Evidence | Correct response |
+| --- | --- | --- |
+| event or source selection | event payload, ref, SHA, path-filter evaluation | correct the trigger or required-check configuration |
+| permission or credential setup | declared workflow permissions and provider error | change the narrow owning permission or credential authority |
+| tool installation | pinned version, checksum/source, installer output | repair the managed setup path; do not weaken the gate |
+| cache restore | cache key, source inputs, restored path | retry without cache to test the hypothesis, then repair cache ownership |
+| make adapter | invoked target and propagated status | reproduce the same target locally and fix orchestration if composition differs |
+| suite component | component command, log, and report | repair the product, contract, fixture, or owned test |
+| aggregation | complete component set and final summary | repair selection or status composition; keep all failures visible |
+| artifact upload | expected path, existence, digest, upload status | preserve the gate result and restore evidence delivery |
+| publication | registry response and accepted external identity | enter incident response and reconcile every external surface |
 
 ## Change Rules
 
