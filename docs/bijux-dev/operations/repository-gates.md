@@ -4,13 +4,10 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Repository Gates
-
-Use this page when a change is ready for scrutiny and you need to know which
-gate families are supposed to prove it safe to merge.
 
 Repository gates matter because `bijux-core` does not treat CI as a ceremonial
 green badge. The same evidence should support local review, continuous
@@ -121,6 +118,23 @@ remaining selected tests or the summary.
 | docs gate success | published guidance still matches the code and file layout |
 | contract gate success | public promises still align with behavior and schemas |
 
+## Select Gates By Risk
+
+| Changed risk | Required starting evidence | Broader evidence when the boundary crosses |
+| --- | --- | --- |
+| public documentation | `make docs-check` | owning product contract for changed behavior claims |
+| Rust runtime behavior | focused test, `make fmt`, and `make lint` | `make test`, slow roster, or complete Rust lane according to reach |
+| Python distribution or bridge | focused pytest plus Python formatting and lint | `make test` when native parity or packaging is affected |
+| graph, cache, replay, or artifacts | focused owning and join contracts | DAG contract/evidence family and required Rust lane |
+| dependency or vulnerability | affected advisory and policy check | `make security` plus package or release verification |
+| generated evidence or schema | named producer plus freshness contract | consumers, compatibility, and release evidence set |
+| package or release surface | package plan and focused publication checks | complete release validation and external reconciliation |
+| shared managed standard | upstream `bijux-std` proof and exact source SHA | downstream checksum and repository contract checks |
+
+Gate selection follows the failure authority. A broad test run does not replace
+the documentation, security, compatibility, or publication control that can
+actually detect the risk.
+
 ## Reporting Rule
 
 Report the exact command, commit, result, and any intentionally omitted lane.
@@ -137,5 +151,5 @@ repository-wide test, or a background launch as a successful result.
 ## Continue Reading
 
 - [Evidence Collection](evidence-collection.md)
-- [Quality Policy](../governance/quality-policy.md)
+- [Test Policy](../governance/test-policy.md)
 - [Core Testing and Validation](../../bijux-core/operations/testing-and-validation.md)

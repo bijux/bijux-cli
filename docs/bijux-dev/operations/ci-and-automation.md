@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # CI and Automation
@@ -67,6 +67,25 @@ Release workflows are intentionally non-cancelling once publication starts.
 Treat a partial release as an incident; do not rerun blindly without checking
 which registries already accepted an artifact.
 
+## Hosted Security Boundary
+
+| Authority | Narrow requirement | Evidence |
+| --- | --- | --- |
+| event and ref | trigger only intended branches, tags, pull requests, or merge groups | event payload, selected ref, and exact SHA |
+| token permissions | declare the minimum read or write permissions at workflow or job scope | rendered workflow permissions and provider audit |
+| third-party action | immutable pin and managed provenance | synchronized workflow source and standards checksum |
+| dependency download | locked or pinned source where supported | lockfile, checksum, installer output, or package identity |
+| cache | key includes every input that affects reusable output | cache key, restored path, and cache-hit status |
+| secret | expose only to the job and step that requires it | environment mapping and provider-side credential scope |
+| artifact | upload only expected paths with source identity | artifact name, digest, producer status, and retention |
+| deployment or registry | separate proof from mutation and retain accepted external identity | deployment revision, package version, image digest, or release asset checksum |
+
+Pull-request code must not receive publication authority. Release credentials
+belong only on the event and job that performs the named external mutation.
+Logs and artifacts require the same secret review as console output because
+structured reports, command arguments, environment diagnostics, and paths can
+carry confidential values.
+
 ## Diagnose A Mismatch
 
 ### Local failure, hosted success
@@ -121,8 +140,8 @@ and leaky counts when nextest provides them.
 
 ## Operational Routes
 
-- [Workflow Ownership](../gh-workflows/index.md)
 - [CI Targets](../makes/ci-targets.md)
 - [Repository Gates](repository-gates.md)
+- [Evidence Collection](evidence-collection.md)
 - [Incident Response](incident-response.md)
 - [Release Operations](release-operations.md)

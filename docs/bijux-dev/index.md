@@ -4,15 +4,14 @@ audience: maintainers
 type: index
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Maintainer Handbook
 
-This handbook covers the private control plane used to inspect and govern the
-`bijux-core` repository. It explains repository gates, release proof,
-diagnostics, documentation generation, and the commands that maintain those
-surfaces.
+The private `bijux-core` control plane inspects and governs repository gates,
+release proof, diagnostics, documentation generation, and the commands that
+maintain those surfaces.
 
 It does not define `bijux` behavior or DAG semantics. Those contracts remain
 with the product packages even when a maintainer command is the first place
@@ -20,7 +19,8 @@ that exposes drift.
 
 <div class="bijux-quicklinks">
 <a class="md-button md-button--primary" href="operations/repository-gates.md">Run repository gates</a>
-<a class="md-button" href="operations/diagnostics-and-reporting.md">Investigate a failure</a>
+<a class="md-button" href="operations/evidence-collection.md">Assess evidence</a>
+<a class="md-button" href="operations/incident-response.md">Respond to an incident</a>
 <a class="md-button" href="packages/bijux-dev.md">Inspect package ownership</a>
 </div>
 
@@ -32,11 +32,11 @@ that exposes drift.
 | select the required pre-review or release gate | [Repository Gates](operations/repository-gates.md) |
 | inspect repository or product health | `bijux-dev-cli`, described by the [command surface](operations/command-surface.md) |
 | execute governed checks or compose release proof | `bijux-dev-dag`, described by the [command surface](operations/command-surface.md) |
-| interpret a failed or incomplete run | [Diagnostics and Reporting](operations/diagnostics-and-reporting.md) |
+| interpret a failed or incomplete repository result | [Evidence Collection](operations/evidence-collection.md) |
 | decide whether an artifact is acceptable proof | [Evidence Collection](operations/evidence-collection.md) |
 | respond to a publication, automation, or evidence incident | [Incident Response](operations/incident-response.md) |
-| change repository policy | [Governance](governance/index.md) |
-| change make or workflow orchestration | [makes](makes/index.md) |
+| change repository policy | [Ownership Model](governance/ownership-model.md) and [Test Policy](governance/test-policy.md) |
+| change make or workflow orchestration | [Make System](makes/make-system-overview.md) and [CI Targets](makes/ci-targets.md) |
 | change package or release ownership across products | [Repository Handbook](../bijux-core/index.md) |
 | change end-user CLI behavior | [CLI Handbook](../bijux-cli/index.md) |
 | change graph, runtime, backend, or artifact semantics | [DAG Handbook](../bijux-dag/index.md) |
@@ -117,3 +117,43 @@ producer and contract test.
 | make target | reproducible local composition and tool invocation | hidden policy absent from the owning suite or contract |
 | hosted workflow | event, permissions, runner, credentials, and delegated target | a divergent hosted-only implementation of the gate |
 | release workflow | publication sequence after proof is accepted | treating partial external mutation as a clean retry |
+
+## Operational Control Map
+
+```mermaid
+flowchart TB
+    change["source, contract, evidence, or dependency change"]
+    select["select owning verification"]
+    local["local make target"]
+    hosted["hosted workflow adapter"]
+    suite["bijux-dev suite or product contract"]
+    artifacts["logs · reports · status · immutable identities"]
+    decide{"claim established?"}
+    merge["review or release decision"]
+    respond["repair owner or enter incident response"]
+
+    change --> select
+    select --> local --> suite
+    select --> hosted --> suite
+    suite --> artifacts --> decide
+    decide -->|"yes, within recorded scope"| merge
+    decide -->|"no or incomplete"| respond --> select
+```
+
+The same suite can run locally or in hosted automation, but the environments
+are not identical. Hosted workflows additionally own event selection,
+permissions, credentials, runner setup, and artifact delivery. A green wrapper
+cannot replace the suite’s terminal status, and a local success cannot erase a
+hosted permission or publication incident.
+
+## Reliability Boundary
+
+| Control | Prevents | Cannot guarantee |
+| --- | --- | --- |
+| named suite selection | accidental substitution of an easier check | correctness outside the selected scope |
+| complete aggregation | first-failure masking and partial green summaries | availability of external services |
+| source and producer identity | evidence detached from the evaluated revision | that the producer’s contract is sufficient |
+| generated-output contracts | hand-maintained drift in references and reports | product truth beyond the generator’s inputs |
+| least-privilege workflows | unnecessary hosted authority | security of third-party services or actions |
+| non-cancelling publication | loss of mutation evidence after one registry accepts output | atomic release across independent registries |
+| incident reconciliation | blind retry over partial external state | reversal of already consumed artifacts or leaked credentials |

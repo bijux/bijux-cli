@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Evidence Collection
@@ -72,6 +72,40 @@ flowchart LR
 
 Evidence is a chain, not a file type. Breaking any link narrows or invalidates
 the claim even when the retained output looks plausible.
+
+## Evidence Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Produced
+    Produced --> Complete: producer exits with terminal status
+    Produced --> Incomplete: interrupted or aggregate status missing
+    Complete --> Accepted: source, selection, integrity, and scope agree
+    Complete --> Rejected: stale, edited, corrupt, or inconsistent
+    Accepted --> Superseded: a newer source or contract becomes authoritative
+    Accepted --> Revoked: defect or incident invalidates the claim
+    Incomplete --> [*]
+    Rejected --> [*]
+    Superseded --> [*]
+    Revoked --> [*]
+```
+
+Acceptance is a review decision bound to one claim and source. Copying a file
+does not preserve that decision unless producer, metadata, integrity, and
+limitations travel with it. Historical evidence can remain valuable without
+serving as proof for current source.
+
+## Freshness And Comparability
+
+| Change | Effect on existing evidence |
+| --- | --- |
+| source SHA changes outside the observed surface | historical until ownership and selection rules establish continued applicability |
+| owning contract or schema changes | revalidate or regenerate under the new compatibility rule |
+| producer implementation changes | regenerate when output meaning or completeness can change |
+| toolchain, platform, backend, or dependency changes | compare only within the declared environment boundary |
+| selected tests or scenario inputs change | treat as a different claim population |
+| retained output is edited | reject unless the format has a governed, integrity-preserving transformation |
+| external registry or deployment state changes | reconcile against immutable package, digest, asset, or revision identity |
 
 ## Collect Run Evidence
 
@@ -183,8 +217,7 @@ not execute every scenario represented by the assets.
 
 ## Related Guidance
 
-- [Diagnostics and Reporting](diagnostics-and-reporting.md)
 - [Repository Gates](repository-gates.md)
 - [Incident Response](incident-response.md)
-- [Change Control](../governance/change-control.md)
-- [Risk and Exceptions](../../bijux-core/governance/risk-and-exceptions.md)
+- [Test Policy](../governance/test-policy.md)
+- [Repository Trust Evidence](../../bijux-core/governance/trust-evidence.md)
