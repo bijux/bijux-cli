@@ -16,18 +16,18 @@ last_reviewed: 2026-07-23
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` is one repository with two public products:
+`bijux-core` is the release and verification workspace for two public
+products:
 
 - `bijux`, the command runtime for mounted apps, plugins, layered config,
   diagnostics, history, memory, and REPL workflows
 - `bijux-dag`, the local-first DAG toolchain for validated graphs, repeatable
   execution, retained evidence, replay, comparison, and verification
 
-Both products are built for operations that must remain explainable under
-automation. `bijux` resolves a command to one owned runtime and preserves its
-stream and exit semantics. `bijux-dag` turns a graph into a validated plan,
-executes it through an explicit backend, and retains the evidence needed to
-inspect, compare, or replay the result.
+Both products make operational authority visible. `bijux` resolves a command
+to one owner and preserves streams and exit semantics. `bijux-dag` turns a
+graph into a validated plan, executes it through an explicit backend, and
+retains the evidence needed to inspect, compare, or replay the result.
 
 The same repository carries private verification surfaces that test release
 claims against code, schemas, fixtures, and generated evidence. Those
@@ -53,7 +53,7 @@ those products.</div>
 <a class="md-button" href="bijux-dev/">Open the maintainer handbook</a>
 </div>
 
-## What Ships Today
+## Released Product Boundary
 
 | Surface | Delivery | What you can rely on today |
 | --- | --- | --- |
@@ -126,7 +126,7 @@ replay, comparison, and post-run verification depend on durable evidence.
 | honest isolation | enforced checks are separated from host, container, scheduler, and cluster assumptions | [Execution security](bijux-dag/operations/security-isolation-truth.md) |
 | release traceability | publication boundaries and required evidence are machine-readable and contract-tested | [Repository release operations](bijux-core/operations/release-and-versioning.md) |
 
-## Start In The Right Place
+## Choose By Responsibility
 
 | If you want to... | Open this handbook |
 | --- | --- |
@@ -135,7 +135,7 @@ replay, comparison, and post-run verification depend on durable evidence.
 | understand what the repository publishes, how crates divide work, or how release boundaries are enforced | [Repository Handbook](bijux-core/index.md) |
 | work on repository gates, release proof, or documentation and automation pipelines | [Maintainer Handbook](bijux-dev/index.md) |
 
-## Practical Starting Points
+## First Operational Journeys
 
 - To automate `bijux`, begin with the
   [CLI surface](bijux-cli/interfaces/cli-surface.md), then use the
@@ -151,7 +151,7 @@ replay, comparison, and post-run verification depend on durable evidence.
   [testing and validation](bijux-core/operations/testing-and-validation.md)
   and the [maintainer gate map](bijux-dev/operations/repository-gates.md).
 
-## From Outcome To Trust
+## Evidence Strength
 
 ```mermaid
 flowchart LR
@@ -174,6 +174,11 @@ flowchart LR
 | strict verification | that retained structural and integrity contracts pass | scientific, business, or workload correctness |
 | replay or semantic comparison | the recorded identity and difference classification | equivalence outside the selected evidence and environment |
 | green maintainer gate | the exact selected suite at the recorded revision | omitted platforms, external services, or broader release claims |
+
+Evidence becomes stronger only when the next authority is present. A process
+status establishes completion, retained state establishes what was recorded,
+integrity establishes whether that state is intact, and replay or comparison
+establishes only the equivalence claim encoded by its selected contract.
 
 The [v0.4.0 Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) define
 the current DAG release. [Future Direction](bijux-dag/foundation/future-direction.md)

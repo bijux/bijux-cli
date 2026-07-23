@@ -7,23 +7,27 @@
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` provides two command-line products built around the same design
-principle: an operation should be understandable before it runs and
-investigable after it finishes. `bijux` owns command routing and local
-extension workflows. `bijux-dag` owns graph execution and retained run
-evidence. The repository also contains the contracts and private verification
-tools that keep those product claims synchronized with the shipped binaries.
+`bijux-core` ships two command-line products for operations that must remain
+explainable. `bijux` resolves one command through built-in, mounted-app,
+plugin, or delegated execution and preserves its process result. `bijux-dag`
+validates and executes a graph, then retains the identities, attempts,
+artifacts, and integrity records required for later verification. Contracts
+and private verification tools keep those claims aligned with the shipped
+binaries.
 
-## Products
+Choose by the durable result you need: use `bijux` when stdout, stderr, exit
+status, and command-owned state are the result; use `bijux-dag` when the result
+must also survive as a replayable, comparable run record.
 
-`bijux-core` is the release workspace for two public commands. They share
-package governance and release evidence, but they solve different problems and
-are installed separately.
+## Choose The Runtime
 
-| Product | Install | Use it for | It does not provide | Primary authority |
-| --- | --- | --- | --- | --- |
-| `bijux` | `cargo install bijux-cli` or `python -m pip install bijux-cli` | mounted apps, plugins, layered configuration, diagnostics, history, memory, and REPL workflows | the `bijux-dag` executable or in-process DAG execution | [CLI handbook](https://bijux.io/bijux-core/bijux-cli/) |
-| `bijux-dag` | `cargo install bijux-dag-cli` | graph validation, planning, execution, retained evidence, cache explanation, replay, comparison, and verification | the root `bijux` plugin, configuration, or REPL runtime | [DAG handbook](https://bijux.io/bijux-core/bijux-dag/) |
+The commands share release governance, but they are installed separately and
+do not route through one another.
+
+| Needed outcome | Product and install | Durable result | Boundary |
+| --- | --- | --- | --- |
+| execute or extend one command runtime | `bijux` via `cargo install bijux-cli` or `python -m pip install bijux-cli` | streams, exit status, and optional governed CLI state | does not install or embed `bijux-dag` |
+| execute and investigate a dependency graph | `bijux-dag` via `cargo install bijux-dag-cli` | validated plan, attempt history, run manifest, declared artifacts, traces, and integrity status | does not expose `bijux` plugins, configuration, history, memory, or REPL state |
 
 `bijux-dev`, the executable specifications, and governed reports are repository
 maintenance surfaces. They are not additional end-user products.
@@ -204,10 +208,9 @@ before executing third-party plugins. Read
 [DAG Execution Security and Isolation](docs/bijux-dag/operations/security-isolation-truth.md)
 before treating a backend, container, or path policy as a security boundary.
 
-## Operational Depth
+## What The Repository Proves
 
-The repository carries more than command implementations. Its operating model
-includes:
+The repository proves more than command availability:
 
 - deterministic route, stream, exit, and local-state contracts for `bijux`;
 - graph admission, resource-aware scheduling, timeout, cancellation, retry,
@@ -219,7 +222,8 @@ includes:
 - repository-owned test selection, documentation publication, security,
   packaging, release, and incident-recovery controls.
 
-These are bounded capabilities, not blanket production claims. The
+Each proof is bounded by its selected command, backend, evidence, environment,
+and source revision; none is a blanket production claim. The
 [DAG execution model](docs/bijux-dag/architecture/execution-model.md) explains
 runtime authority, while the
 [Maintainer handbook](docs/bijux-dev/index.md) explains how repository and
