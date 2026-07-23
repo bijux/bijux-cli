@@ -21,6 +21,30 @@ released local-first product.
 DAG operations focus on repeatable execution, retained artifacts, and
 predictable recovery under change.
 
+## Operating Loop
+
+```mermaid
+flowchart LR
+    discover["identify binary and stable lane"]
+    validate["validate graph and explicit inputs"]
+    plan["inspect canonical plan and policy"]
+    run["execute through selected backend"]
+    verify["verify retained run and outputs"]
+    use["consume, compare, cache, or replay"]
+    recover["preserve and diagnose"]
+
+    discover --> validate --> plan --> run --> verify --> use
+    validate -->|"refused"| recover
+    run -->|"failed or interrupted"| recover
+    verify -->|"incomplete or corrupt"| recover
+    recover --> validate
+```
+
+Every boundary answers a different question. Validation does not prove
+execution, a terminal run does not prove retained integrity, and strict
+verification does not prove the domain correctness of a generated report or
+dataset.
+
 ## Start With The Situation You Have
 
 | If you need to... | Open this page |
@@ -33,40 +57,34 @@ predictable recovery under change.
 | understand release boundaries and what the shipped product claims today | [v0.4.0 Release Notes](v0-4-0-release-notes.md) |
 | understand runtime limits before deployment or isolation work | [Deployment Boundaries](deployment-boundaries.md) |
 
-## Operating Priorities
+## Choose A Workflow By Proof
 
-- prefer deterministic runs over convenience shortcuts
-- preserve evidence before remediation actions
-- diagnose with command output and artifacts, not assumptions
-- keep release policy and runtime behavior synchronized
+| Workflow | Demonstrates | Retained proof |
+| --- | --- | --- |
+| [File Processing](file-processing-workflow.md) | explicit inputs, file transformation, and declared output | graph, run manifest, trace, report artifact, strict verification |
+| [Data Pipeline](data-pipeline-workflow.md) | staged processing and dependency flow | node outcomes, intermediate lineage, final outputs |
+| [Branching Bulletin](branching-bulletin-workflow.md) | conditions, skips, and join behavior | branch decisions and terminal node classifications |
+| [Compliance-Gated Bulletin](compliance-gated-bulletin-workflow.md) | retry exhaustion, approval repair, and targeted replay | attempt records, failure propagation, child run, focused diff |
+| [Evidence-Backed Bulletin](evidence-backed-bulletin-workflow.md) | artifact-backed reporting and verification | source lineage, report output, verification result |
+| [Container Packaging](container-packaging-workflow.md) | container-node execution and mount contract | adapter identity, mounted inputs/outputs, container trace |
+| [Historical Backfill](historical-catalog-backfill-workflow.md) | bounded historical processing | run family and per-item evidence |
+| [Scheduled Refresh](scheduled-catalog-refresh-workflow.md) | repeated catalog refresh behavior | comparable retained runs and refresh results |
 
-## Core Runbook Pages
+Select the workflow that exercises the disputed property. A larger example is
+not automatically stronger evidence when it obscures the boundary under
+review.
 
-- [Installation and Setup](installation-and-setup.md)
-- [CI Integration](ci-integration.md)
-- [First-Run Tutorial](first-run-tutorial.md)
-- [Local Development](local-development.md)
-- [Common Workflows](common-workflows.md)
-- [Observability and Diagnostics](observability-and-diagnostics.md)
-- [Failure Recovery](failure-recovery.md)
+## Preserve These Facts
 
-## Boundary and Governance Pages
+For every operational decision, retain:
 
-- [Deployment Boundaries](deployment-boundaries.md)
-- [v0.4.0 Release Notes](v0-4-0-release-notes.md)
-- [Branching Bulletin Workflow](branching-bulletin-workflow.md)
-- [CI Integration Guide](ci-integration.md)
-- [Cache Behavior Workflow](cache-behavior-workflow.md)
-- [Compliance-Gated Bulletin Workflow](compliance-gated-bulletin-workflow.md)
-- [Container Packaging Workflow](container-packaging-workflow.md)
-- [Data Pipeline Workflow](data-pipeline-workflow.md)
-- [Evidence-Backed Bulletin Workflow](evidence-backed-bulletin-workflow.md)
-- [File Processing Workflow](file-processing-workflow.md)
-- [Historical Catalog Backfill Workflow](historical-catalog-backfill-workflow.md)
-- [Scheduled Catalog Refresh Workflow](scheduled-catalog-refresh-workflow.md)
-- [Execution Security And Isolation](security-isolation-truth.md)
-- [Performance and Scaling](performance-and-scaling.md)
-- [Release and Versioning](release-and-versioning.md)
+- exact binary version and stable/non-stable command lane;
+- graph source and canonical identity;
+- explicit inputs, policy, backend, and execution options;
+- run root, run ID, terminal command status, and structured envelope;
+- manifest, node attempts, traces, output index, and declared artifacts;
+- verification mode and result;
+- environment or backend facts required to interpret comparison and replay.
 
 ## Cross References
 
@@ -74,11 +92,7 @@ predictable recovery under change.
 - [Operator Workflows](../interfaces/operator-workflows.md)
 - [Change Validation](../quality/change-validation.md)
 
-## Before You Move Deeper
-
-- Stay in this section when the question is how to execute, diagnose, or
-  recover real graph runs.
-- Move to Interfaces when the next question is what operators or tooling can
-  depend on.
-- Move to package pages when you already know the issue belongs to one crate
-  such as graph truth, runtime policy, or response shaping.
+Read [Execution Security And Isolation](security-isolation-truth.md) before
+running untrusted work, [Performance And Scaling](performance-and-scaling.md)
+before making capacity claims, and [Release And Versioning](release-and-versioning.md)
+before depending on a non-stable command lane.
