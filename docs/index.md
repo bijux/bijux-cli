@@ -23,9 +23,15 @@ last_reviewed: 2026-07-19
 - `bijux-dag`, the local-first DAG toolchain for validated graphs, repeatable
   execution, retained evidence, replay, comparison, and verification
 
-The same repository also carries the private maintainer surfaces that release,
-audit, and prove those products. Most readers should start with a product
-handbook, not the repository or maintainer handbooks.
+Both products are built for operations that must remain explainable under
+automation. `bijux` resolves a command to one owned runtime and preserves its
+stream and exit semantics. `bijux-dag` turns a graph into a validated plan,
+executes it through an explicit backend, and retains the evidence needed to
+inspect, compare, or replay the result.
+
+The same repository carries private verification surfaces that test release
+claims against code, schemas, fixtures, and generated evidence. Those
+maintainer tools validate the products; they are not hidden product APIs.
 
 <div class="bijux-callout"><strong>Start with the thing you want to run.</strong>
 Use the CLI handbook for <code>bijux</code>. Use the DAG handbook for
@@ -58,6 +64,45 @@ crosses products, packages, or release rules.</div>
 is local-first. Experimental, simulated, and maintainer-only routes exist in
 the repository, but they are not presented here as the default product story.
 
+## Two Execution Paths
+
+```mermaid
+flowchart TB
+    operator["operator or automation"]
+
+    subgraph cli_path["Command runtime"]
+        cli_input["CLI, REPL, or Python launcher"]
+        cli_route["normalize config and resolve route"]
+        cli_run["built-in, mounted app, or plugin execution"]
+        cli_result["stdout · stderr · exit status"]
+    end
+
+    subgraph dag_path["Workflow runtime"]
+        dag_input["graph source"]
+        dag_plan["validate, canonicalize, and plan"]
+        dag_run["backend execution"]
+        dag_result["run directory · traces · artifacts · identity"]
+    end
+
+    operator --> cli_input --> cli_route --> cli_run --> cli_result
+    operator --> dag_input --> dag_plan --> dag_run --> dag_result
+```
+
+The paths deliberately end differently. A CLI command returns process-facing
+streams and status. A DAG run also leaves an integrity-bearing record because
+replay, comparison, and post-run verification depend on durable evidence.
+
+## Trust Properties
+
+| Property | What the repository preserves | Where to verify it |
+| --- | --- | --- |
+| owned command routing | aliases normalize to canonical routes; delegated processes retain native streams and exit status | [CLI execution model](bijux-cli/architecture/execution-model.md) |
+| explicit configuration | layered values can be traced to their source and secret-like fields are redacted by default | [CLI configuration guide](bijux-cli/interfaces/config-guide.md) |
+| deterministic graph meaning | canonical graph and plan identities are separate from runtime and artifact identity | [DAG reproducibility model](bijux-dag/interfaces/reproducibility-model.md) |
+| failure evidence | failed, skipped, blocked, cancelled, cached, and successful work remain distinguishable | [DAG failure recovery](bijux-dag/operations/failure-recovery.md) |
+| honest isolation | enforced checks are separated from host, container, scheduler, and cluster assumptions | [Execution security](bijux-dag/operations/security-isolation-truth.md) |
+| release traceability | publication boundaries and required evidence are machine-readable and contract-tested | [Repository release operations](bijux-core/operations/release-and-versioning.md) |
+
 ## Start In The Right Place
 
 | If you want to... | Open this handbook |
@@ -77,15 +122,6 @@ the repository, but they are not presented here as the default product story.
   know the question belongs to `bijux` and need the crate boundary.
 - Read [DAG Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) when
   you want the current release claim in one place.
-
-## How To Read This Site
-
-- Start with a handbook, not a package page.
-- Move to package pages when you need the exact crate boundary or Rust import
-  lane.
-- Move to repository pages when the question crosses more than one product.
-- Move to maintainer pages only when you are changing or validating the
-  repository itself.
 
 ## Documentation Authority
 

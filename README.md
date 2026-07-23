@@ -7,6 +7,13 @@
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
 <!-- bijux-core-badges:generated:end -->
 
+`bijux-core` provides two command-line products built around the same design
+principle: an operation should be understandable before it runs and
+investigable after it finishes. `bijux` owns command routing and local
+extension workflows. `bijux-dag` owns graph execution and retained run
+evidence. The repository also contains the contracts and private verification
+tools that keep those product claims synchronized with the shipped binaries.
+
 ## Products
 
 `bijux-core` is the release workspace for two public commands. They share
@@ -93,6 +100,65 @@ The PyPI package is an alternative distribution of `bijux`; it does not install
 [Python package boundary](crates/bijux-cli-python/README.md) before depending
 on that process client.
 
+The first commands establish different facts:
+
+| Command | What a successful result establishes |
+| --- | --- |
+| `bijux --help` | the native command is installed and its visible route inventory can be rendered |
+| `bijux doctor` | the CLI can evaluate its local runtime, configuration, state, and extension health |
+| `bijux-dag commands` | the installed DAG binary can report its supported command lanes |
+| `bijux-dag doctor` | the DAG runtime can inspect the local execution prerequisites it owns |
+
+None of these commands proves an optional backend is available. Container,
+SLURM, and Kubernetes execution each have additional environment contracts in
+the [DAG operations handbook](docs/bijux-dag/operations/index.md).
+
+## From Workflow To Evidence
+
+A DAG run is not only a process invocation. The runtime validates the graph,
+constructs a deterministic plan, executes eligible nodes, and retains the
+identity and artifact records required for inspection or replay.
+
+```mermaid
+flowchart LR
+    source["workflow source"]
+    validate["validate and canonicalize"]
+    plan["construct execution plan"]
+    execute["execute through selected backend"]
+    retain["retain manifests, traces, and artifacts"]
+    inspect["verify, explain, compare, or replay"]
+
+    source --> validate --> plan --> execute --> retain --> inspect
+    retain -. verified replay input .-> plan
+```
+
+From a source checkout, the shortest repository-owned demonstration is:
+
+```bash
+make bootstrap
+make dag-demo
+```
+
+The demonstration writes beneath `artifacts/dag-demo/`; it does not modify
+product source or turn local output into checked-in evidence. Follow the
+[first-run tutorial](docs/bijux-dag/operations/first-run-tutorial.md) for the
+commands that inspect the resulting run directory and verify its artifacts.
+
+## Operational Trust Boundaries
+
+| Boundary | Current guarantee | Important limit |
+| --- | --- | --- |
+| CLI extensions | manifests, namespaces, compatibility, lifecycle, output, and bounded execution are validated | plugins execute with the current user’s filesystem and network authority; the CLI is not a sandbox |
+| DAG identity | graph, plan, runtime, adapter, and retained artifact identities are recorded for comparison and replay | equal source text alone does not prove equivalent execution |
+| retained evidence | terminal state, traces, manifests, and declared artifacts are integrity-checked through owned contracts | a console log by itself is not a replay or artifact proof |
+| execution backends | local, container, shared-filesystem SLURM, and Kubernetes Job lanes have explicit contracts | backend selection does not create isolation or infrastructure that the host does not provide |
+| performance | named scenarios have owned baselines, thresholds, and evidence classes | repository measurements are not universal capacity or production-sizing claims |
+
+Read [CLI Security and Safety](docs/bijux-cli/operations/security-and-safety.md)
+before executing third-party plugins. Read
+[DAG Execution Security and Isolation](docs/bijux-dag/operations/security-isolation-truth.md)
+before treating a backend, container, or path policy as a security boundary.
+
 ## Package Families
 
 <!-- bijux-core-package-map:generated:start -->
@@ -158,14 +224,6 @@ Before review, add the gates owned by the changed surface. Documentation
 changes require `make docs-check`; Rust API and behavior changes require lint
 and the relevant focused or broad Rust lane; Python bridge changes require the
 Python checks in addition to Rust verification.
-
-```bash
-make dag-demo
-```
-
-`make dag-demo` writes retained proof under `artifacts/dag-demo/`. The
-[First-Run Tutorial](docs/bijux-dag/operations/first-run-tutorial.md) explains
-how to inspect and verify it.
 
 ## Documentation Authority
 
