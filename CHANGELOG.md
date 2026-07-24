@@ -13,7 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-4-0"></a>
 
-## 0.4.0 – 2026-07-20
+## 0.4.0 – 2026-07-24
 
 Operator-facing DAG release notes:
 [`docs/bijux-dag/operations/v0-4-0-release-notes.md`](docs/bijux-dag/operations/v0-4-0-release-notes.md)
@@ -26,10 +26,13 @@ Operator-facing DAG release notes:
 - Advanced the repository release line to `v0.4.0` across workspace metadata, release automation, and maintained compatibility defaults.
 - Declared the visible `bijux-dag --help` surface as the stable local operator boundary for `v0.4.0`, while keeping experimental and maintainer routes callable by explicit path.
 - Aligned release operations around the combined `bijux` and `bijux-dag` publication path, including the repository-internal maintainer role of `bijux-dev`.
+- Refreshed the `v0.4.0` publication record on Friday, July 24, 2026 with the latest repository documentation updates so CLI, DAG, core, and maintainer handbooks now state release authority, evidence flow, and operator-facing boundaries consistently.
+- Brought the release branch onto the current `bijux-std` governance baseline and folded the outstanding GitHub Actions and Rust dependency updates into the release line, superseding the blocked Dependabot pull requests for workflow pins and Cargo packages.
 
 ### Fixed
 - Removed stale package and release references that still treated the DAG crates as internal-only or deferred beyond the active release line.
 - Aligned mounted-app and release-facing fixtures with the `v0.4.0` compatibility floor so release evidence and examples report the same version line as published artifacts.
+- Restored managed docs shell source-of-truth coverage, release and distribution proof contracts, and Rust gate bootstrapping so publication checks no longer depend on unrelated Python bootstrap paths.
 
 <a id="v0-3-6"></a>
 
