@@ -19,6 +19,10 @@ last_reviewed: 2026-07-23
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-dag-runtime docs](https://img.shields.io/badge/docs-runtime-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-runtime/)
 <!-- bijux-core-badges:generated:end -->
 
+bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with
+explicit graph contracts, deterministic execution records, verified artifacts,
+cache explanation, and replayable run bundles.
+
 `bijux-dag-runtime` is the effectful execution kernel. It turns a validated
 plan into governed node attempts, backend operations, retained traces, cache
 decisions, and replay outcomes.
@@ -174,6 +178,9 @@ cargo test --locked -p bijux-dag-runtime
   `crates/bijux-dag-runtime/src/diagnostics/` and
   `crates/bijux-dag-runtime/src/error/`
 
-Continue with [Run Evidence Layout](../interfaces/run-evidence-layout.md) for
-retained state or [Execution Security And Isolation](../operations/security-isolation-truth.md)
+Continue with the
+[Reproducibility Model](../interfaces/reproducibility-model.md) for identity,
+cache, and replay boundaries; [Run Evidence Layout](../interfaces/run-evidence-layout.md)
+for retained state; or
+[Execution Security And Isolation](../operations/security-isolation-truth.md)
 for effect-boundary limits.

@@ -8,6 +8,10 @@ last_reviewed: 2026-07-23
 
 # DAG Packages
 
+bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with
+explicit graph contracts, deterministic execution records, verified artifacts,
+cache explanation, and replayable run bundles.
+
 The DAG workspace is split by authority, not by command count. Graph truth,
 execution policy, operator orchestration, process startup, and retained
 evidence have different owners so that a command cannot silently redefine a
@@ -52,8 +56,9 @@ surface may expose a result, but it cannot move ownership upward.
 | [`bijux-dag-testkit`](bijux-dag-testkit.md) | private | deterministic fixtures, fake adapters, reusable assertions, and repository test support | public runtime or operator compatibility |
 
 The canonical publication status is recorded in
-`contracts/foundation/workspace_package_boundary.v1.json`. Public crates are
-published in dependency order:
+`contracts/foundation/workspace_package_boundary.v1.json` and explained in the
+[Package Boundary](../../bijux-core/foundation/package-boundary.md). Public
+crates are published in dependency order:
 
 1. `bijux-dag-core`
 2. `bijux-dag-artifacts`
@@ -133,6 +138,9 @@ contract changed.
   contracts.
 - Start with [CLI](bijux-dag-cli.md) for the executable boundary.
 - Start with [Testkit](bijux-dag-testkit.md) only for repository test support.
+- Use the [Reproducibility Model](../interfaces/reproducibility-model.md) when
+  the question crosses graph, plan, execution, environment, output, cache, or
+  replay identity.
 
 For command support rather than code ownership, use the
 [Release Boundary](../foundation/release-boundary.md).

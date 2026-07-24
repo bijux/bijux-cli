@@ -19,6 +19,10 @@ last_reviewed: 2026-07-23
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-dag-artifacts docs](https://img.shields.io/badge/docs-artifacts-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-artifacts/)
 <!-- bijux-core-badges:generated:end -->
 
+bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with
+explicit graph contracts, deterministic execution records, verified artifacts,
+cache explanation, and replayable run bundles.
+
 `bijux-dag-artifacts` owns the retained evidence boundary: models, normalized
 paths, filesystem publication, hashes, integrity proofs, lineage, promotion,
 and retention primitives.
@@ -177,4 +181,7 @@ cargo test --locked -p bijux-dag-artifacts
 
 See [Run Evidence Layout](../interfaces/run-evidence-layout.md) for the exact
 filesystem map and [Artifact Contracts](../interfaces/artifact-contracts.md)
-for compatibility-bearing evidence surfaces.
+for compatibility-bearing evidence surfaces. Use the
+[Reproducibility Model](../interfaces/reproducibility-model.md) to distinguish
+artifact identity from graph, plan, execution, environment, output, cache, and
+replay identity.

@@ -19,6 +19,10 @@ last_reviewed: 2026-07-23
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-dag-cli docs](https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-cli/)
 <!-- bijux-core-badges:generated:end -->
 
+bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with
+explicit graph contracts, deterministic execution records, verified artifacts,
+cache explanation, and replayable run bundles.
+
 `bijux-dag-cli` is the installable process boundary for `bijux-dag`. It owns
 startup, shell completion generation, application dispatch, panic containment,
 and final process status. Command meaning belongs to `bijux-dag-app`.
@@ -116,3 +120,7 @@ cargo test --locked -p bijux-dag-cli
 - executable implementation: `crates/bijux-dag-cli/src/main.rs`
 - command semantics: `crates/bijux-dag-app/docs/CONTRACTS.md`
 - installed command contract: [CLI Surface](../interfaces/cli-surface.md)
+
+Use the [Reproducibility Model](../interfaces/reproducibility-model.md) when a
+CLI result raises a graph, plan, execution, environment, output, cache, or
+replay identity question.

@@ -19,6 +19,10 @@ last_reviewed: 2026-07-23
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-dag-app docs](https://img.shields.io/badge/docs-app-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/)
 <!-- bijux-core-badges:generated:end -->
 
+bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with
+explicit graph contracts, deterministic execution records, verified artifacts,
+cache explanation, and replayable run bundles.
+
 `bijux-dag-app` is the application boundary behind the `bijux-dag` command.
 It turns operator intent into calls across graph, runtime, and evidence
 packages, then returns a typed outcome for human or machine consumption.
@@ -161,5 +165,6 @@ cargo test --locked -p bijux-dag-app
   `crates/bijux-dag-app/src/repair/`
 
 See the [CLI Surface](../interfaces/cli-surface.md) for the installed command
-contract and the [Release Boundary](../foundation/release-boundary.md) for
-lane status.
+contract, the [Reproducibility Model](../interfaces/reproducibility-model.md)
+for the identities those workflows expose, and the
+[Release Boundary](../foundation/release-boundary.md) for lane status.
