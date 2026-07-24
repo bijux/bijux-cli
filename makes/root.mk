@@ -24,7 +24,7 @@ check-badges: ## Verify generated badge blocks match docs/badges.md
 	@"$(DOCS_PYTHON_BIN)" docs/automation/badge_sync.py check
 
 workspace-verify: ## Verify unified workspace layout contracts
-	 test -p bijux-dev --test source_layout_guardrails -- --nocapture
+	@cargo test -p bijux-dev --test source_layout_guardrails -- --nocapture
 
 repo-verify: workspace-verify ## Verify workspace layout and cargo health from repository root
 	@cargo metadata --no-deps --format-version 1 >/dev/null
