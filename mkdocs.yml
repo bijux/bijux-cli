@@ -94,6 +94,7 @@ exclude_docs: |
   !/bijux-dag/interfaces/error-codes.md
   !/bijux-dag/operations/installation-and-setup.md
   !/bijux-dag/operations/first-run-tutorial.md
+  !/bijux-dag/operations/local-development.md
   !/bijux-dag/operations/ci-integration.md
   !/bijux-dag/operations/common-workflows.md
   !/bijux-dag/operations/observability-and-diagnostics.md

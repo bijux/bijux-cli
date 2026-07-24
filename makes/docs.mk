@@ -146,8 +146,11 @@ docs-publication-check: ## Enforce the curated public documentation boundary
 	    (echo "ERROR: internal documentation boundary $${path} is not excluded" && exit 1); \
 	done
 	@core_pages=$$(awk '/^  !\/bijux-core\// { path=$$0; sub(/^  !\//, "docs/", path); print path }' "$(MKDOCS_CFG)"); \
-	  stock=$$(printf '%s\n' "$$core_pages" | xargs rg -n \
-	    '^## (Visual Summary|Reader Shortcut|Continue Reading|Next Reads|Reading Rule|What This Page Is Not Saying|Open Next)$$|^Use this page when' || true); \
+	  stock=""; \
+	  if [ -n "$$core_pages" ]; then \
+	    stock=$$(printf '%s\n' "$$core_pages" | xargs rg -n \
+	      '^## (Visual Summary|Reader Shortcut|Continue Reading|Next Reads|Reading Rule|What This Page Is Not Saying|Open Next)$$|^Use this page when' || true); \
+	  fi; \
 	  test -z "$$stock" || (echo "ERROR: published repository handbook uses stock presentation prose:"; echo "$$stock"; exit 1)
 	@echo "Documentation publication boundary OK"
 
