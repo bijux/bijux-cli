@@ -270,9 +270,13 @@ pub fn build_python_link_proof_report(workspace_root: &Path) -> Value {
         read(&workspace_root.join("docs/bijux-core/architecture/distribution-model.md"));
     let cli_entrypoints =
         read(&workspace_root.join("docs/bijux-cli/interfaces/entrypoints-and-examples.md"));
-    let docs = [python_distribution, core_distribution, cli_entrypoints].join("\n");
-    let linked = docs.contains("Python package")
-        && (docs.contains("Rust runtime") || docs.contains("runtime"));
+    let linked = python_distribution.contains("Python distribution")
+        && python_distribution.contains("Rust runtimes")
+        && python_distribution.contains("source of runtime truth")
+        && core_distribution.contains("| `bijux-cli` on PyPI |")
+        && core_distribution.contains("native runtime parity")
+        && cli_entrypoints.contains("`bijux` binary")
+        && cli_entrypoints.contains("api::runtime::run_app");
     json!({"status": if linked {"pass"} else {"fail"}, "python_docs_link_to_rust_truth": linked})
 }
 

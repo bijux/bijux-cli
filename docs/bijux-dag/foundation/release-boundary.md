@@ -81,11 +81,12 @@ contracts.
 The stable release includes:
 
 - local DAG validation and local execution;
-- Kubernetes Job submission for container nodes through `kubectl`, with
-  request and limit mapping, active-deadline mapping, pod-phase mapping, shared
-  workspace mounting, and retained batch evidence;
-- shared-filesystem SLURM submission through `sbatch` and `sacct`, with
-  retained batch evidence;
+- Kubernetes Job submission through `run --backend kubernetes` for container
+  nodes, using `kubectl` with request and limit mapping, active-deadline
+  mapping, pod-phase mapping, shared workspace mounting, and retained batch
+  evidence;
+- shared-filesystem SLURM submission through `run --backend slurm`, using
+  `sbatch` and `sacct` with retained batch evidence;
 - run and artifact evidence inspection;
 - replay and diff classification;
 - cache verification and maintenance; and
