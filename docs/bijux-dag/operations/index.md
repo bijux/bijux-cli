@@ -51,6 +51,7 @@ dataset.
 | --- | --- |
 | get from checkout to a real run quickly | [First-Run Tutorial](first-run-tutorial.md) |
 | install the tool and verify the environment | [Installation and Setup](installation-and-setup.md) |
+| iterate on a local run, replay, and diff loop before merge | [Local Development](local-development.md) |
 | run the normal local workflow loop | [Common Workflows](common-workflows.md) |
 | inspect failures, traces, and retained evidence | [Observability and Diagnostics](observability-and-diagnostics.md) |
 | recover from runtime or workflow failures | [Failure Recovery](failure-recovery.md) |
@@ -95,4 +96,6 @@ For every operational decision, retain:
 Read [Execution Security And Isolation](security-isolation-truth.md) before
 running untrusted work, [Performance And Scaling](performance-and-scaling.md)
 before making capacity claims, and [Release And Versioning](release-and-versioning.md)
-before depending on a non-stable command lane.
+before depending on a non-stable command lane. Open
+[Local Development](local-development.md) when the question is how to keep a
+checkout's validate, run, replay, and diff loop honest before CI.

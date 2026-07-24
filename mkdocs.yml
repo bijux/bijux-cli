@@ -216,6 +216,7 @@ nav:
       - Operations:
           - Installation: bijux-dag/operations/installation-and-setup.md
           - First Run: bijux-dag/operations/first-run-tutorial.md
+          - Local Development: bijux-dag/operations/local-development.md
           - CI Integration: bijux-dag/operations/ci-integration.md
           - Common Workflows: bijux-dag/operations/common-workflows.md
           - Observability And Diagnostics: bijux-dag/operations/observability-and-diagnostics.md

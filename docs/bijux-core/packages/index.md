@@ -7,7 +7,7 @@ owner: bijux-core-docs
 last_reviewed: 2026-07-23
 ---
 
-# Package Ownership
+# Repository Packages
 
 Every behavior has one first package owner and one release status. Package
 ownership determines where semantics change; release status determines whether

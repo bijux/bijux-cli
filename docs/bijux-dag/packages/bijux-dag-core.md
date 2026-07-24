@@ -22,6 +22,8 @@ last_reviewed: 2026-07-23
 bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with
 explicit graph contracts, deterministic execution records, verified artifacts,
 cache explanation, and replayable run bundles.
+Replay claims on this page are governed by the
+[Replay Contract](../../spec/REPLAY_CONTRACT.md).
 
 `bijux-dag-core` is the deterministic graph kernel. It decides what a workflow
 means before clocks, filesystems, schedulers, processes, or retained run state
