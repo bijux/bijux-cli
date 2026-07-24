@@ -56,6 +56,11 @@ fragment:
 4. runs formatting, Clippy, workspace tests, Rust documentation, package file
    listings, locked publish dry-runs, and the installed CLI smoke test.
 
+The suite also bounds Cargo parallelism inside that clean-tree run. This is not
+a workflow-only shortcut; it is part of the repository-owned release suite so
+hosted execution does not exhaust runner disk during parallel link phases while
+local and CI behavior remain aligned.
+
 The suite is deliberately sequential. It stops when a required command fails,
 so later command logs may be absent. That is fail-fast release validation, not
 a complete inventory of every possible candidate defect.

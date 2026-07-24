@@ -54,6 +54,11 @@ for topological dry-run verification before those versions exist remotely.
 That mechanism simulates publication order; it must not conceal a private
 dependency in a public package manifest.
 
+Release validation also reuses one governed target directory and caps Cargo
+parallelism for the suite. The intent is durability, not optimization: keep one
+comparable artifact tree while preventing clean-tree validation from exhausting
+common hosted runner disk during concurrent link steps.
+
 ## Required Proof
 
 The suite covers these proof classes:
