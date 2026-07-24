@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-23
 ---
 
 # Package Overview
@@ -14,35 +14,22 @@ where the root command stops being a brand and becomes actual command behavior:
 argv parsing, routing, runtime policy, handler execution, output rendering, and
 exit mapping.
 
-Use this page when you already know the question belongs to the CLI runtime and
-you need the package boundary before reading code.
-
-## Visual Summary
+## Runtime Boundary
 
 ```mermaid
-flowchart LR
-    argv["OS argv"] --> parse["routing::parser"]
+flowchart TB
+    cargo["Cargo binary"]
+    python["Python launcher or native bridge"]
+    repl["REPL and in-process caller"]
+    argv["normalized command input"]
+    parse["routing::parser"]
     parse --> policy["kernel policy resolution"]
     policy --> dispatch["interface::cli::dispatch"]
     dispatch --> output["shared output renderer"]
     output --> exit["stable exit code"]
-```
-
-The Python distribution joins before command execution:
-
-```mermaid
-flowchart LR
-    rust_dist["cargo: bijux-cli"]
-    python_dist["PyPI: bijux-cli"]
-    launcher["Resolved bijux runtime"]
-    contract["Shared command contract"]
-    runtime["bijux-cli execution"]
-
-    rust_dist --> launcher
-    python_dist --> launcher
-    python_dist --> contract
-    launcher --> runtime
-    contract <--> runtime
+    cargo --> argv
+    python --> argv
+    repl --> argv
 ```
 
 `bijux-cli-python` owns packaging, bridge conversion, and Python-facing
@@ -71,15 +58,14 @@ failures belong in `bijux-cli-python`.
 | how DAG workflows execute | DAG package family | `bijux` does not embed the DAG engine |
 | how repository evidence is generated | `bijux-dev` | proof tooling must remain outside product runtime |
 
-## Reader Shortcut
+## Ownership Signals
 
-If the problem starts with one of these questions, you are in the right place:
+The defect belongs to `bijux-cli` when it changes:
 
-- Why did `bijux` parse or route this command the way it did?
-- Which package owns root command behavior rather than Python packaging?
-- Where do help text, output envelopes, and exit behavior become concrete?
-- Which modules define contract-bearing runtime behavior rather than helper
-  internals?
+- command parsing, path normalization, or canonical route selection
+- built-in behavior, runtime policy, or handler execution
+- help text, output envelopes, stream selection, or exit mapping
+- public runtime contracts or the modules that own them
 
 ## Behavior To Expect
 
@@ -107,7 +93,7 @@ create two product definitions.
 - `crates/bijux-cli/src/routing/parser.rs`
 - `crates/bijux-cli/src/contracts/`
 
-## Read Next
+## Authorities
 
 - [CLI Surface](../interfaces/cli-surface.md) for the user-visible command contract
 - [Execution Model](../architecture/execution-model.md) for runtime assembly

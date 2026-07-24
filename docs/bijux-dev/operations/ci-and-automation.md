@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # CI and Automation
@@ -13,6 +13,26 @@ Hosted automation is an execution environment for repository-owned gates, not a
 second implementation of those gates. A workflow should establish permissions,
 toolchains, caches, and credentials, then delegate behavior to a make target
 that maintainers can run from the same committed source.
+
+## Automation Responsibility Chain
+
+```mermaid
+flowchart LR
+    event["event and source SHA"]
+    workflow["workflow permissions and runner"]
+    tools["pinned tools and cache inputs"]
+    target["repository make target"]
+    suite["owned suite or contract"]
+    report["logs, reports, artifacts, exit status"]
+    check["GitHub check conclusion"]
+
+    event --> workflow --> tools --> target --> suite --> report --> check
+```
+
+Each arrow is an attribution boundary. A failed tool installation does not
+mean the product test failed; a green wrapper step does not overrule a nonzero
+suite status; a check conclusion without the expected report is incomplete
+evidence.
 
 ## Required Pull-Request Proof
 
@@ -47,6 +67,25 @@ Release workflows are intentionally non-cancelling once publication starts.
 Treat a partial release as an incident; do not rerun blindly without checking
 which registries already accepted an artifact.
 
+## Hosted Security Boundary
+
+| Authority | Narrow requirement | Evidence |
+| --- | --- | --- |
+| event and ref | trigger only intended branches, tags, pull requests, or merge groups | event payload, selected ref, and exact SHA |
+| token permissions | declare the minimum read or write permissions at workflow or job scope | rendered workflow permissions and provider audit |
+| third-party action | immutable pin and managed provenance | synchronized workflow source and standards checksum |
+| dependency download | locked or pinned source where supported | lockfile, checksum, installer output, or package identity |
+| cache | key includes every input that affects reusable output | cache key, restored path, and cache-hit status |
+| secret | expose only to the job and step that requires it | environment mapping and provider-side credential scope |
+| artifact | upload only expected paths with source identity | artifact name, digest, producer status, and retention |
+| deployment or registry | separate proof from mutation and retain accepted external identity | deployment revision, package version, image digest, or release asset checksum |
+
+Pull-request code must not receive publication authority. Release credentials
+belong only on the event and job that performs the named external mutation.
+Logs and artifacts require the same secret review as console output because
+structured reports, command arguments, environment diagnostics, and paths can
+carry confidential values.
+
 ## Diagnose A Mismatch
 
 ### Local failure, hosted success
@@ -72,6 +111,20 @@ A printed PID only proves launch. Use the status file and final console summary
 under `artifacts/<commit>/background/`; report passed, failed, slow, skipped,
 and leaky counts when nextest provides them.
 
+## Failure Attribution
+
+| Failure point | Evidence | Correct response |
+| --- | --- | --- |
+| event or source selection | event payload, ref, SHA, path-filter evaluation | correct the trigger or required-check configuration |
+| permission or credential setup | declared workflow permissions and provider error | change the narrow owning permission or credential authority |
+| tool installation | pinned version, checksum/source, installer output | repair the managed setup path; do not weaken the gate |
+| cache restore | cache key, source inputs, restored path | retry without cache to test the hypothesis, then repair cache ownership |
+| make adapter | invoked target and propagated status | reproduce the same target locally and fix orchestration if composition differs |
+| suite component | component command, log, and report | repair the product, contract, fixture, or owned test |
+| aggregation | complete component set and final summary | repair selection or status composition; keep all failures visible |
+| artifact upload | expected path, existence, digest, upload status | preserve the gate result and restore evidence delivery |
+| publication | registry response and accepted external identity | enter incident response and reconcile every external surface |
+
 ## Change Rules
 
 - Keep workflow permissions least-privilege and declare them at the narrowest
@@ -87,8 +140,8 @@ and leaky counts when nextest provides them.
 
 ## Operational Routes
 
-- [Workflow Ownership](../gh-workflows/index.md)
 - [CI Targets](../makes/ci-targets.md)
 - [Repository Gates](repository-gates.md)
+- [Evidence Collection](evidence-collection.md)
 - [Incident Response](incident-response.md)
 - [Release Operations](release-operations.md)

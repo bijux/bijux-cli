@@ -4,7 +4,7 @@ audience: maintainers
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # bijux-dag-testkit
@@ -16,6 +16,25 @@ public `v0.4.0` crates.io package family.
 Use it to remove duplicated fixture construction or evidence assertions. Do
 not move production semantics into it and do not use a helper result as a
 substitute for exercising the boundary under test.
+
+## Trust Boundary
+
+```mermaid
+flowchart LR
+    Fixture["Deterministic fixture<br/>or fake adapter"]
+    Consumer["Owning package test"]
+    Boundary["Real product boundary"]
+    Evidence["Observed evidence"]
+    Claim["Supported claim"]
+
+    Fixture --> Consumer
+    Consumer --> Boundary --> Evidence --> Claim
+    Fixture -. "models, but does not prove" .-> Boundary
+```
+
+The testkit makes inputs and assertions consistent. A product claim still
+requires a consuming test that crosses the real boundary responsible for that
+claim.
 
 ## Owned Surfaces
 
@@ -85,6 +104,17 @@ The timeout scenario returns timeout-shaped evidence; it does not wait on or
 terminate a real process. The corrupt-output scenario produces unusual bytes;
 artifact verification still must be exercised by the owning artifacts or
 runtime test. Real backend claims require real boundary tests.
+
+## Match Evidence To The Claim
+
+| Claim | Minimum useful evidence |
+| --- | --- |
+| graph shape and canonical identity | shared graph fixture plus core contract test |
+| runtime transition or retry decision | fake adapter scenario plus runtime state assertion |
+| process timeout or termination | a real process boundary test; timeout-shaped fake evidence is insufficient |
+| artifact corruption refusal | corrupt fixture plus the owning verifier or runtime path |
+| Kubernetes or SLURM behavior | backend boundary evidence in the owning runtime suite |
+| release readiness | governed release evidence; a scenario report alone is insufficient |
 
 ## Scenario Reports
 

@@ -157,7 +157,7 @@ security: audit-rs security-py ## Run Rust and Python security checks
 build: build-py ## Build Python distribution packages
 .PHONY: fmt
 
-fmt lint test security docs build: | bootstrap
+test security docs build: | bootstrap
 
 env: ## Show the effective make environment
 	@printf '%s\n' \

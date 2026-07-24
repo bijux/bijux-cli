@@ -376,7 +376,10 @@ fn backend_release_docs_keep_shipped_lanes_and_future_lanes_separate() {
         &[
             "Kubernetes Job submission through `run --backend kubernetes`",
             "shared-filesystem SLURM submission through `run --backend slurm`",
-            "generic hpc execution beyond the shared-filesystem slurm lane, public remote workers, public enterprise or federation APIs, full scheduler service",
+            "generic HPC execution beyond the shared-filesystem SLURM lane",
+            "public remote-worker execution",
+            "public enterprise, fleet, federation, or governance operator APIs",
+            "a full scheduler service",
         ],
         "docs/bijux-dag/foundation/release-boundary.md",
     );

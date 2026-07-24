@@ -33,6 +33,39 @@ Correctness is evaluated before speed. A faster run with changed graph identity,
 missing artifacts, weakened verification, or different replay meaning is a
 behavioral regression, not an optimization.
 
+## Runtime Cost Topology
+
+```mermaid
+flowchart TB
+    graph["parse and validate graph"]
+    plan["canonicalize and plan"]
+    ready["evaluate readiness and triggers"]
+    attempt["dispatch node attempt"]
+    backend["local process or backend adapter"]
+    evidence["finalize traces, outputs, and artifacts"]
+    verify["verify, replay, diff, or inspect"]
+
+    graph --> plan --> ready --> attempt --> backend --> evidence --> verify
+    evidence -->|"newly ready nodes"| ready
+```
+
+Different graph shapes stress different boundaries. A deep graph amplifies
+readiness progression, a wide graph pressures scheduling, many small nodes
+emphasize orchestration overhead, large artifacts emphasize IO and hashing,
+and replay-heavy use emphasizes retained-evidence reads and verification.
+
+## Scaling Variables
+
+| Variable | Primary pressure | Correctness signal that must stay stable |
+| --- | --- | --- |
+| node and edge count | parse, canonicalization, dependency bookkeeping | graph identity and validation result |
+| ready-set width | scheduler and concurrency controls | deterministic dependency and trigger semantics |
+| attempt count | process/backend startup and trace volume | attempt numbering, retry policy, terminal state |
+| artifact count and bytes | hashing, storage, finalization, output index | declared identity, integrity, and atomic acceptance |
+| cache entries and metadata | lookup and verification | hit/miss reason and content validity |
+| run-history depth | inspect, diff, replay, and retention scans | selected run identity and comparison meaning |
+| backend latency | adapter submission, polling, and collection | backend state translation and accepted evidence |
+
 ## Governed Scenario Classes
 
 `evidence/perf/metadata.json` is the scenario registry. Its release-relevant set
@@ -73,6 +106,11 @@ different correctness boundary. Do not trade away:
 - cache validation and miss explanation;
 - replay and diff classification precision.
 
+Parallelism is not a monotonic speed control. Increasing it may move the
+bottleneck from scheduler readiness to process startup, memory, storage, or
+the selected backend. Tune one governed workload at a time and retain the
+effective concurrency and backend configuration with the measurement.
+
 ## Evidence Route
 
 Run `bijux-dev-dag performance-evidence-report` to validate the registry,
@@ -90,6 +128,22 @@ When comparing results:
 4. apply the scenario's owned threshold and noise classification;
 5. classify a failure as regression, environment drift, or insufficient
    evidence without silently moving the threshold.
+
+## Regression Triage
+
+| Symptom | Compare first | Do not conclude yet |
+| --- | --- | --- |
+| validate and plan both regress | identical canonical graph and toolchain | runtime scheduling is at fault |
+| run regresses but plan does not | attempt traces, backend timings, artifact volume | graph processing regressed |
+| cache-heavy scenario regresses | hit/miss classification and integrity checks | disabling verification is acceptable |
+| replay or diff regresses | run-history size, manifest shape, storage context | live execution is slower |
+| wide graph regresses | ready-set width, effective parallelism, process count | deeper graphs have the same behavior |
+| memory scenario regresses | peak context, node/edge/attempt counts, evidence volume | a timing improvement compensates for it |
+| only one machine changes | toolchain, OS, architecture, load, and storage | the owned baseline should move |
+
+If correctness or comparability cannot be established, classify the result as
+insufficient evidence. Moving a threshold, dropping a scenario, or changing a
+fixture is a governance change and requires its own justification.
 
 ## Code Anchors
 

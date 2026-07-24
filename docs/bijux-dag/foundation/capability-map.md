@@ -4,27 +4,26 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-23
 ---
 
 # Capability Map
 
-Use this page when you need the reader-facing answer to a basic question: what
-is `bijux-dag` actually good at today?
+`bijux-dag` turns a declared graph into retained evidence that can support a
+bounded operational conclusion. Graph truth, execution behavior, evidence
+integrity, and replay attribution remain separate authorities throughout that
+lifecycle.
 
-The higher-level split matters before crate ownership does. Most readers first
-need to know whether they are dealing with graph truth, execution behavior,
-retained evidence, or replay and comparison.
+## Operational Capabilities
 
-## What Readers Usually Come Here To Confirm
-
-| Capability area | What you can expect |
-| --- | --- |
-| graph truth | parse, validate, canonicalize, fingerprint, and lower graphs deterministically |
-| execution | plan, schedule, run, and classify node outcomes with explicit policy boundaries |
-| retained evidence | inspect runs, artifacts, traces, and integrity material after execution completes |
-| replay and comparison | decide whether two runs are equivalent, drifted, incomplete, or unknown |
-| operator decision support | explain cache reuse, replay boundaries, and first divergence with retained proof |
+| Capability | Operator result | Acceptance evidence |
+| --- | --- | --- |
+| graph truth | parsed, validated, canonicalized, fingerprinted, and lowered graph | canonical graph identity, validation result, and execution plan |
+| execution | planned and scheduled nodes with policy-aware outcome classification | attempt records, streams, declared outputs, backend identity, and final run state |
+| retained evidence | inspectable runs, artifacts, traces, and integrity material | manifest, output index, hashes, trace records, and verification result |
+| replay | equivalence, drift, refusal, or unknown classification | source identity, compatibility lane, retained inputs, and first divergent fact |
+| comparison | attributed differences between graphs, runs, nodes, or artifacts | normalized identities and structured divergence report |
+| cache decisions | explained reuse, miss, invalidation, or corruption refusal | cache key inputs, proof material, and recorded decision reason |
 
 ## Core Capability Inventory
 
@@ -85,13 +84,18 @@ Stable means the bounded lane is part of the current release contract. It does
 not mean all clusters, engines, security policies, storage classes, or failure
 modes are equivalent.
 
-## What This Map Is Not Saying
+## Capability Limits
 
-- It is not claiming universal backend equivalence.
-- It is not claiming that simulated or internal routes belong to the default
-  product story.
-- It is not replacing the release-boundary and package pages when you need the
-  exact lane or crate owner.
+- A stable backend lane is bounded to its declared submission, storage,
+  collection, and cleanup contract; it does not imply universal cluster
+  equivalence.
+- Simulated control-plane routes produce model evidence only and do not prove
+  a deployed service or production backend.
+- A completed process is not accepted run evidence until required artifacts
+  and integrity material verify.
+- Replay refuses equivalence when identity, compatibility, or retained inputs
+  are insufficient. Unknown is a valid result, not permission to infer
+  success.
 
 ## Code Anchors
 
@@ -101,7 +105,7 @@ modes are equivalent.
 - `crates/bijux-dag-artifacts/src/`
 - `crates/bijux-dag-cli/src/main.rs`
 
-## Continue Reading
+## Authorities
 
 - [DAG Packages](../packages/index.md)
 - [Domain Language](domain-language.md)

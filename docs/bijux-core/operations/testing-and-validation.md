@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Testing And Validation
@@ -15,6 +15,28 @@ or a different language surface.
 
 Start with the smallest lane that can fail for the change, then widen only when
 the changed boundary requires it.
+
+```mermaid
+flowchart LR
+    change["changed boundary"]
+    focused["owning test or validator"]
+    integration["cross-boundary contract"]
+    product["applicable product lane"]
+    publication["docs, package, or release proof"]
+    claim["report exact scope"]
+
+    change --> focused --> integration --> product --> publication --> claim
+    focused -->|"failure"| repair["repair owner"]
+    integration -->|"drift"| repair
+    product -->|"failure"| repair
+    publication -->|"failure"| repair
+    repair --> focused
+```
+
+Not every change traverses every node. A documentation-only change can move
+from its source checks to the documentation publication lane. A runtime change
+usually needs focused behavior, the contracts at its joins, and the owning
+product lane. The final claim always records which nodes were omitted.
 
 ## Test Lane Contract
 
@@ -86,7 +108,7 @@ does not mean passed.
 | public command or schema | owning contract tests plus generated-reference checks |
 | retained DAG run or artifact behavior | runtime, artifact, replay, and evidence contract tests that cross the changed join |
 | Markdown, MkDocs navigation, or documentation automation | `make docs-check` |
-| release packaging or publication | [Release Validation Suite](../../bijux-dev/operations/release-validation-suite.md) |
+| release packaging or publication | [Repository Gates](../../bijux-dev/operations/repository-gates.md) plus [Release Operations](../../bijux-dev/operations/release-operations.md) |
 
 `make dag-test` delegates to the required fast Rust release-profile lane. Use
 it when DAG-focused workflow convention calls for that name; it does not add a
@@ -134,9 +156,27 @@ State gaps directly. Examples:
 This is stronger evidence than saying “all checks passed” when only one lane
 ran.
 
+## Documentation Acceptance
+
+Reader-facing changes cross more than Markdown syntax:
+
+| Check | Defect it detects |
+| --- | --- |
+| shared documentation contract | drift in generated theme, shell, or shared assets |
+| badge contract | stale repository and website status blocks |
+| strict MkDocs build | malformed configuration, unresolved navigation, plugin failure, and build warnings |
+| publication boundary | accidental exposure of specifications, reports, automation, or an oversized site |
+| navigation sanity | missing handbook tabs, package routes, or shared chrome |
+| source-reference contracts | stale code, command, file, link, or anchor claims |
+
+`make docs-check` composes the documented publication lane. Its success proves
+that the curated site builds and passes those contracts at the evaluated
+revision; it does not prove product behavior that the documentation merely
+describes. Behavioral claims still need the owning executable contract.
+
 ## Related Guidance
 
-- [Review Expectations](review-expectations.md)
-- [Change Management](change-management.md)
+- [Local Development](local-development.md)
+- [Trust Evidence](../governance/trust-evidence.md)
 - [Repository Gates](../../bijux-dev/operations/repository-gates.md)
-- [Release Validation Suite](../../bijux-dev/operations/release-validation-suite.md)
+- [Release Operations](../../bijux-dev/operations/release-operations.md)

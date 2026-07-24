@@ -4,7 +4,7 @@ audience: operators
 type: operations
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Observability And Diagnostics
@@ -144,6 +144,39 @@ For retained IDs under one root, `runs compare` provides status, retry, cache,
 timing, artifact, and policy attribution. Use `runs trend`, `runs failures`,
 and `runs flakes` only after verifying that the root contains comparable run
 families; aggregation cannot repair inconsistent evidence.
+
+## Diagnose Capacity And Load
+
+Large graphs make summary counts less useful unless scheduling and workload
+identity are preserved. Diagnose delay from the controller outward:
+
+| Symptom | Inspect first | Distinguish from |
+| --- | --- | --- |
+| many ready nodes, little progress | scheduler checkpoint, jobs, parallelism, queue capacity, and resource budgets | dependency blocking |
+| nodes remain blocked | CPU, memory, GPU, named-resource, trigger, and branch decision reasons | backend outage |
+| admitted work starts slowly | backend identity, launch events, scheduler or cluster queue state | local controller saturation |
+| running work exceeds expectation | node timeout, run timeout, retry policy, and observation events | lost terminal evidence |
+| warm run is not faster | cache decision, identity mismatch, proof validity, and cache publication status | scheduler capacity |
+| controller result arrives late | event chronology, persistence duration, output hashing, finalization, and backend cleanup | workload execution time |
+| repeated runs diverge | semantic diff, environment, backend, policy, artifact, and timing modes | raw byte difference alone |
+
+```mermaid
+flowchart LR
+    graph["graph and plan identity"]
+    scheduler["ready · queued · blocked · inflight"]
+    backend["launch and observation"]
+    attempts["attempt duration and retry"]
+    finalize["hash · index · lineage · cleanup"]
+    compare["cross-run comparison"]
+
+    graph --> scheduler --> backend --> attempts --> finalize --> compare
+```
+
+Do not derive capacity from node count alone. A defensible measurement binds
+the graph and plan identity to scheduler policy, resource declarations,
+backend and environment identity, cache state, retry behavior, and
+finalization cost. Repository performance baselines are scenario evidence, not
+universal sizing guidance.
 
 ## Support Bundle
 

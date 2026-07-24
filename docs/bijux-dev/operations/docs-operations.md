@@ -4,15 +4,16 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Documentation Operations
 
-Use this runbook to prove that a documentation change is authoritative,
-reachable, structurally governed, and publishable. The final review still
-requires reading the changed pages and built site; automation cannot determine
-whether prose overstates support or gives a useful recovery path.
+A documentation change is accepted only when its authority is correct, its
+reader route is deliberate, its claims match owning evidence, and the
+published result remains usable. Automated structure and build checks are
+necessary; rendered review still determines whether prose overstates support
+or leaves readers without a recovery path.
 
 ## Validation Lanes
 
@@ -68,7 +69,7 @@ wrong handbook or duplicates an executable contract.
 Do not move `docs/spec` or `docs/reports` into a handbook to make the tree look
 uniform. Confirm path consumers before moving either surface.
 
-## Review The Source
+## Source Acceptance
 
 Before building:
 
@@ -84,7 +85,7 @@ Before building:
 6. Confirm removed pages have no source, test, generator, workflow, or external
    contract consumer.
 
-## Review The Built Site
+## Rendered Acceptance
 
 Inspect `artifacts/docs/site` after `make docs-check`:
 
@@ -126,7 +127,7 @@ Run the failed component directly while diagnosing, then rerun
 `make docs-check` because a component pass does not prove the composed
 publication gate.
 
-## Handoff Evidence
+## Completion Evidence
 
 Report:
 

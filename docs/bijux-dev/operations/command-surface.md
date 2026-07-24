@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Command Surface
@@ -20,10 +20,10 @@ appears to expose a similarly named command.
 The machine authority for the visible `bijux-dev-dag` root is
 `contracts/foundation/maintainer_command_surface.v1.json`. Its order matches
 `bijux-dev-dag --help`; adding, removing, or renaming a root command requires
-the executable, contract, this page, and command-surface tests to change
-together.
+the executable, contract, public command documentation, and command-surface
+tests to change together.
 
-## Select A Command
+## Route Maintainer Intent
 
 | Intent | Start here | Result |
 | --- | --- | --- |
@@ -61,6 +61,17 @@ flowchart LR
 Use a product command when the requested operation changes or exercises
 product behavior. Maintainer binaries may verify that behavior, but they are
 not an alternate user interface to it.
+
+## Failure Ownership
+
+| Failure | Owning boundary | Required response |
+| --- | --- | --- |
+| repository observation is absent, stale, or malformed | `bijux-dev-cli` command and output contract | repair observation or serialization before interpreting the result |
+| suite selection omits an applicable required check | `bijux-dev-dag` catalog or selection policy | correct the governed roster and rerun the complete selection |
+| selected product contract fails | owning CLI or DAG product package | repair product truth; do not weaken the maintainer aggregate |
+| root command differs from the machine inventory | command implementation and `maintainer_command_surface.v1.json` | restore one visible contract and regenerate governed references |
+| command starts but no terminal result exists | invocation or orchestration owner | retain partial logs, obtain final status, and report the run as incomplete |
+| report is written outside its declared evidence contract | producing command | move production into the owned path and verify freshness and schema |
 
 ## `bijux-dev-dag` Root Surface
 

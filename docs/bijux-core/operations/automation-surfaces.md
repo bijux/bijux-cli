@@ -4,104 +4,120 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # Automation Surfaces
 
-`bijux-core` contains a lot of automation, but not every helper script is an
-entrypoint. This page maps the durable places where contributors and CI should
-start a repeated repository workflow.
+Repository automation has one execution model across laptops and hosted
+runners: a documented Make target composes owned commands, lower-level
+implementations produce evidence under `artifacts/`, and CI supplies isolation,
+credentials, retention, and status publication. Workflow YAML is an outer
+execution boundary, not a separate definition of product or release policy.
 
-That distinction matters because maintainable automation depends on shared
-entrypoints. If important work only exists as an ad hoc shell command in one
-person's history, the repository cannot review, reuse, or govern it properly.
-
-## Automation Map
+## Execution Layers
 
 ```mermaid
-flowchart LR
-    automation["repository automation"] --> makefile["make entrypoints"]
-    automation --> workflows["github workflows"]
-    automation --> docs_auto["docs automation"]
-    automation --> artifacts["artifacts outputs"]
+flowchart TD
+    operator["Contributor or maintainer"]
+    ci["GitHub workflow"]
+    make["Root Make target"]
+    implementation["Owned script, Cargo command,<br/>or maintainer binary"]
+    authority["Source, contract,<br/>and policy inputs"]
+    evidence["Terminal result and<br/>artifacts"]
+    status["Review, gate, or<br/>release decision"]
+
+    operator --> make
+    ci --> make
+    authority --> implementation
+    make --> implementation --> evidence --> status
+    ci -->|"retains and publishes"| evidence
 ```
 
-## Primary Entry Surfaces
+The same named target should reach the same owned implementation locally and
+in CI. Environment setup may differ; required behavior, selection, and exit
+meaning must not.
 
-- `Makefile` and `makes/` for local and CI command composition
-- `.github/workflows/` for hosted verification and release execution
-- `docs/automation/` for documentation publication helpers
-- `artifacts/` for generated outputs consumed by later steps
+## Responsibility Matrix
 
-## What Each Surface Owns
+| Surface | Owns | Must not own |
+| --- | --- | --- |
+| root `Makefile` and `makes/` | stable human and CI entrypoints, command composition, artifact routing | product semantics or policy hidden from the invoked owner |
+| `crates/bijux-dev` | repository suites, diagnostics, evidence schemas, release-readiness composition | alternate CLI or DAG implementations |
+| package tests and commands | package behavior and focused proof | repository-wide conclusions they did not evaluate |
+| `.github/workflows/` | hosted triggers, permissions, concurrency, environment, artifact retention, publish credentials | a CI-only substitute for the documented local gate |
+| `docs/automation/` | site-specific generators, link and navigation checks, publication preparation | general product execution |
+| `artifacts/` | local and CI outputs, logs, prepared trees, reports, built packages and sites | checked-in contract authority |
 
-### `Makefile` and `makes/`
+Generated shared standards and synchronized workflow surfaces remain managed by
+their upstream source. Repository-specific automation composes those surfaces;
+it does not acquire authority to hand-edit a managed downstream copy.
 
-These are the normal starting points for repeatable local and CI work:
+## Select An Entrypoint
 
-- test and lint orchestration
-- release and publication helpers
-- docs build and validation commands
-- packaging and environment setup
+| Intent | Entry boundary |
+| --- | --- |
+| focused package behavior | the package's documented Cargo, Python, or command test |
+| repeatable repository check | an existing root Make target |
+| governed suite or evidence report | the owning `bijux-dev-cli` or `bijux-dev-dag` command, normally through Make |
+| hosted pull-request or policy check | a workflow that delegates to the same local target |
+| release validation | `make release-validate-rs` and the release control-plane checks |
+| tag publication | `release-on-tag.yml`, which delegates to registry-specific reusable workflows |
+| documentation validation or site build | `make docs-check`, `make bijux-docs-check`, or the documented narrower target |
 
-If a workflow matters often enough to document, it usually belongs behind a
-named make target or a script invoked by one.
+Call a lower-level script directly only while developing that implementation
+or when its contract explicitly names it as the entrypoint. A copied shell
+pipeline has no stable selection, evidence, or review boundary.
 
-### `.github/workflows/`
+## Local And CI Parity
 
-These files own hosted automation:
+For equivalent runs, compare:
 
-- pull request validation
-- release automation
-- publish and documentation pipelines
-- governance and compatibility checks that run in CI
+- source SHA and worktree cleanliness;
+- toolchain and locked dependency inputs;
+- selected packages, features, suites, ignored-test mode, and exclusions;
+- environment variables that intentionally alter policy or backend behavior;
+- exact Make target and owned command;
+- artifact paths, terminal status, and timeout or cancellation state.
 
-Workflow files should reflect documented repository behavior, not hidden local
-knowledge.
+A difference in any of these facts explains different scope before it proves a
+product defect. CI-only credentials and publishing permissions are expected
+differences; validation logic is not.
 
-### `docs/automation/`
+## Failure Attribution
 
-This surface explains how documentation publishing and supporting automation
-work. It is the right place when a reader needs to understand how the docs site
-is produced rather than how one runtime command behaves.
+| Symptom | Inspect first |
+| --- | --- |
+| target is absent or composes the wrong command | root `Makefile` or owning file under `makes/` |
+| command runs but evaluates the wrong contract | product owner, suite owner, or `contracts/` input |
+| local passes and CI fails before the command | workflow setup, runner image, permissions, toolchain, or cache boundary |
+| local and CI invoke different validation | workflow delegation and Make contract |
+| command exits but no terminal evidence exists | command orchestration or report producer |
+| generated output appears outside its owned root | Make variable, producer path, or workflow staging |
+| managed workflow and repository policy disagree | upstream standards source and governed refresh process |
+| publication succeeds for only some targets | release incident; reconcile immutable registry identities |
 
-### `artifacts/`
+Retries are appropriate for classified transient infrastructure failures, not
+deterministic contract, formatting, test, or policy failures.
 
-Generated outputs should land in `artifacts/` unless the point of the command
-is to update a governed destination such as `docs/`. This keeps automation
-reproducible and prevents disposable run products from becoming accidental
-source files.
+## Automation Review Record
 
-## How To Choose The Right Entrypoint
+A trustworthy automated result records the immutable source revision, entry
+target, selected scope, tool versions, meaningful environment differences,
+terminal outcome, output location, and omissions. A workflow start, background
+process ID, cache hit, or uploaded directory alone is not a passing result.
 
-Use the highest-level documented entrypoint that already expresses the intent
-of the work.
+## Source Anchors
 
-Choose:
+- `Makefile`
+- `makes/`
+- `crates/bijux-dev/src/`
+- `.github/workflows/`
+- `docs/automation/`
 
-- a make target when the workflow should be reproducible locally and in CI
-- a GitHub workflow when the concern is hosted validation or release execution
-- a docs automation helper when the output is documentation publication
-- a lower-level script only when it is clearly the owned implementation of one
-  of the surfaces above
-
-## Smells That The Automation Surface Is Wrong
-
-- a repeated workflow exists only in copied shell history
-- CI and local instructions describe different commands for the same job
-- generated outputs appear outside `artifacts/` without a governed reason
-- release behavior depends on a helper that no public entrypoint mentions
-- documentation tells readers to run a script directly even though a make
-  target already owns the workflow
-
-## Surface Rule
-
-Prefer documented entrypoints over bespoke shell commands. A repeated workflow
-that bypasses root entrypoints is a documentation and maintenance bug.
-
-## Next Reads
+## Continue Reading
 
 - [Contributor Workflows](contributor-workflows.md)
 - [Artifact Governance](artifact-governance.md)
+- [Release and Versioning](release-and-versioning.md)
 - [Maintainer Handbook](../../bijux-dev/index.md)

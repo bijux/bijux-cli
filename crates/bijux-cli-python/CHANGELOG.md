@@ -18,7 +18,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <a id="v0-4-0"></a>
 
-## 0.4.0 – 2026-07-20
+## 0.4.0 – 2026-07-24
 
 ### Added
 - Added `bijux_cli_py.app_sdk` with mounted-app manifest builders, compatibility-window helpers, JSON success/failure envelopes, and a callable runner that preserves clean stdout contracts.

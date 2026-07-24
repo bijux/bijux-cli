@@ -4,14 +4,15 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # CLI Surface
 
-The `bijux-dag` command tree has four release lanes. This page explains what
-those lanes mean and routes readers by intent; it is not a handwritten copy of
-Clap help.
+The `bijux-dag` command tree separates stable operator contracts from
+experimental helpers, modeled simulations, and internal verification routes.
+Release-lane classification determines discovery, execution controls, and
+compatibility promises.
 
 Use [Generated CLI Reference](generated-cli-reference.md) for the exact stable
 commands, arguments, and flags generated from the binary. Use
@@ -100,7 +101,7 @@ Inventory and execution are separate controls:
 
 The environment variables do not promote a route into the stable lane.
 
-## What Lives Elsewhere
+## Contract Authorities
 
 | Question | Owning page |
 | --- | --- |
@@ -111,9 +112,9 @@ The environment variables do not promote a route into the stable lane.
 | Why did replay or cache reuse succeed or refuse? | [Reproducibility Model](reproducibility-model.md) |
 | Which capabilities are intentionally unsupported? | [Known Limitations](../quality/known-limitations.md) |
 
-This separation prevents a prose overview from drifting into a second CLI
-reference. Generated pages answer what the binary accepts; contract and
-workflow pages answer what the behavior means.
+Generated references state what the binary accepts. Contract and workflow
+authorities state what a result means and which evidence can support a
+decision.
 
 ## Change Discipline
 
@@ -139,7 +140,7 @@ surface.
 - generated references:
   `crates/bijux-dag-app/src/commands/reference_docs.rs`
 
-## Next Reads
+## Operator Authorities
 
 - [Generated CLI Reference](generated-cli-reference.md)
 - [Operator Workflows](operator-workflows.md)

@@ -4,7 +4,7 @@ audience: mixed
 type: index
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Bijux Core
@@ -16,27 +16,34 @@ last_reviewed: 2026-07-19
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-core` is one repository with two public products:
+`bijux-core` is the release and verification workspace for two public
+products:
 
 - `bijux`, the command runtime for mounted apps, plugins, layered config,
   diagnostics, history, memory, and REPL workflows
 - `bijux-dag`, the local-first DAG toolchain for validated graphs, repeatable
   execution, retained evidence, replay, comparison, and verification
 
-The same repository also carries the private maintainer surfaces that release,
-audit, and prove those products. Most readers should start with a product
-handbook, not the repository or maintainer handbooks.
+Both products make operational authority visible. `bijux` resolves a command
+to one owner and preserves streams and exit semantics. `bijux-dag` turns a
+graph into a validated plan, executes it through an explicit backend, and
+retains the evidence needed to inspect, compare, or replay the result.
 
-<div class="bijux-callout"><strong>Start with the thing you want to run.</strong>
-Use the CLI handbook for <code>bijux</code>. Use the DAG handbook for
-<code>bijux-dag</code>. Use the repository handbook only when the question
-crosses products, packages, or release rules.</div>
+The same repository carries private verification surfaces that test release
+claims against code, schemas, fixtures, and generated evidence. Those
+maintainer tools validate the products; they are not hidden product APIs.
+
+<div class="bijux-callout"><strong>Two executables, two result models.</strong>
+<code>bijux</code> resolves one command and preserves process semantics.
+<code>bijux-dag</code> executes one graph and retains an integrity-bearing run
+record. Repository and maintainer material governs ownership and proof around
+those products.</div>
 
 <div class="bijux-panel-grid">
-  <div class="bijux-panel"><h3>Repository</h3><p>Use the repository handbook when the question crosses package boundaries, release policy, or shared ownership rules.</p></div>
-  <div class="bijux-panel"><h3>CLI</h3><p>Use the CLI handbook for command semantics, runtime behavior, plugin surfaces, REPL behavior, and Python distribution.</p></div>
-  <div class="bijux-panel"><h3>DAG</h3><p>Use the DAG handbook for graph compilation, execution, replay, artifacts, and DAG command workflows.</p></div>
-  <div class="bijux-panel"><h3>Maintainer</h3><p>Use the maintainer handbook for repository diagnostics, evidence collection, release verification, and policy enforcement.</p></div>
+  <div class="bijux-panel"><h3>Repository</h3><p>Package boundaries, dependency direction, compatibility, release policy, and shared ownership.</p></div>
+  <div class="bijux-panel"><h3>CLI</h3><p>Command semantics, routing, plugins, configuration, state, REPL behavior, and Python distribution.</p></div>
+  <div class="bijux-panel"><h3>DAG</h3><p>Graph admission, planning, scheduling, backends, retained evidence, cache, comparison, and replay.</p></div>
+  <div class="bijux-panel"><h3>Maintainer</h3><p>Toolchains, repository gates, evidence production, security checks, automation, release, and incident response.</p></div>
 </div>
 
 <div class="bijux-quicklinks">
@@ -46,7 +53,7 @@ crosses products, packages, or release rules.</div>
 <a class="md-button" href="bijux-dev/">Open the maintainer handbook</a>
 </div>
 
-## What Ships Today
+## Released Product Boundary
 
 | Surface | Delivery | What you can rely on today |
 | --- | --- | --- |
@@ -58,7 +65,68 @@ crosses products, packages, or release rules.</div>
 is local-first. Experimental, simulated, and maintainer-only routes exist in
 the repository, but they are not presented here as the default product story.
 
-## Start In The Right Place
+## Operational Model
+
+```mermaid
+flowchart LR
+    intent["operator intent"]
+    admission["parse · validate · resolve policy"]
+    work["owned execution boundary"]
+    result["process result or retained run"]
+    integrity["diagnose · verify · compare"]
+    decision["bounded decision"]
+
+    intent --> admission --> work --> result --> integrity --> decision
+    admission -->|"unsupported or unsafe"| refuse["refuse before effects"]
+    integrity -->|"missing or inconsistent"| quarantine["preserve and investigate"]
+```
+
+Admission prevents unsupported work from becoming effects. Integrity checks
+prevent an incomplete or corrupted result from becoming trusted evidence. The
+CLI and DAG runtimes implement different versions of that lifecycle, while the
+maintainer control plane applies the same discipline to tests, documentation,
+packages, and releases.
+
+## Two Execution Paths
+
+```mermaid
+flowchart TB
+    operator["operator or automation"]
+
+    subgraph cli_path["Command runtime"]
+        cli_input["CLI, REPL, or Python launcher"]
+        cli_route["normalize config and resolve route"]
+        cli_run["built-in, mounted app, or plugin execution"]
+        cli_result["stdout · stderr · exit status"]
+    end
+
+    subgraph dag_path["Workflow runtime"]
+        dag_input["graph source"]
+        dag_plan["validate, canonicalize, and plan"]
+        dag_run["backend execution"]
+        dag_result["run directory · traces · artifacts · identity"]
+    end
+
+    operator --> cli_input --> cli_route --> cli_run --> cli_result
+    operator --> dag_input --> dag_plan --> dag_run --> dag_result
+```
+
+The paths deliberately end differently. A CLI command returns process-facing
+streams and status. A DAG run also leaves an integrity-bearing record because
+replay, comparison, and post-run verification depend on durable evidence.
+
+## Trust Properties
+
+| Property | What the repository preserves | Where to verify it |
+| --- | --- | --- |
+| owned command routing | aliases normalize to canonical routes; delegated processes retain native streams and exit status | [CLI execution model](bijux-cli/architecture/execution-model.md) |
+| explicit configuration | layered values can be traced to their source and secret-like fields are redacted by default | [CLI configuration guide](bijux-cli/interfaces/config-guide.md) |
+| deterministic graph meaning | canonical graph and plan identities are separate from runtime and artifact identity | [DAG reproducibility model](bijux-dag/interfaces/reproducibility-model.md) |
+| failure evidence | failed, skipped, blocked, cancelled, cached, and successful work remain distinguishable | [DAG failure recovery](bijux-dag/operations/failure-recovery.md) |
+| honest isolation | enforced checks are separated from host, container, scheduler, and cluster assumptions | [Execution security](bijux-dag/operations/security-isolation-truth.md) |
+| release traceability | publication boundaries and required evidence are machine-readable and contract-tested | [Repository release operations](bijux-core/operations/release-and-versioning.md) |
+
+## Choose By Responsibility
 
 | If you want to... | Open this handbook |
 | --- | --- |
@@ -67,56 +135,50 @@ the repository, but they are not presented here as the default product story.
 | understand what the repository publishes, how crates divide work, or how release boundaries are enforced | [Repository Handbook](bijux-core/index.md) |
 | work on repository gates, release proof, or documentation and automation pipelines | [Maintainer Handbook](bijux-dev/index.md) |
 
-## Practical Starting Points
+## First Operational Journeys
 
-- Read [Executable Examples](bijux-dag/interfaces/runnable-examples.md) when you
-  want real DAG workflows with expected outputs, not just feature descriptions.
-- Read [First-Run Tutorial](bijux-dag/operations/first-run-tutorial.md)
-  when you want the shortest route from checkout to a real retained DAG run.
-- Read [CLI Runtime Package](bijux-cli/packages/bijux-cli.md) when you already
-  know the question belongs to `bijux` and need the crate boundary.
-- Read [DAG Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) when
-  you want the current release claim in one place.
+- To automate `bijux`, begin with the
+  [CLI surface](bijux-cli/interfaces/cli-surface.md), then use the
+  [configuration guide](bijux-cli/interfaces/config-guide.md) and
+  [diagnostics guide](bijux-cli/operations/diagnostics-guide.md).
+- To execute a real graph, follow the
+  [first-run tutorial](bijux-dag/operations/first-run-tutorial.md), then read
+  the [run evidence layout](bijux-dag/interfaces/run-evidence-layout.md).
+- To diagnose a failed run, preserve it and follow
+  [observability and diagnostics](bijux-dag/operations/observability-and-diagnostics.md)
+  before attempting recovery.
+- To evaluate a release or repository change, start with
+  [testing and validation](bijux-core/operations/testing-and-validation.md)
+  and the [maintainer gate map](bijux-dev/operations/repository-gates.md).
 
-## How To Read This Site
-
-- Start with a handbook, not a package page.
-- Move to package pages when you need the exact crate boundary or Rust import
-  lane.
-- Move to repository pages when the question crosses more than one product.
-- Move to maintainer pages only when you are changing or validating the
-  repository itself.
-
-## Documentation Authority
-
-The website contains curated reader guidance. Executable specifications and
-generated evidence remain versioned in the repository but are not presented as
-product handbook pages. Read the
-[documentation system](bijux-core/foundation/documentation-system.md) for the
-authority and maintenance rules.
+## Evidence Strength
 
 ```mermaid
 flowchart LR
-    question["Reader or maintainer question"]
-    handbook["Published handbook<br/>supported behavior and workflow"]
-    package["Crate README and internal docs<br/>code ownership and change boundary"]
-    contract["Executable specification<br/>enforced invariant"]
-    implementation["Source and tests<br/>implemented behavior"]
-    evidence["Governed report<br/>observation at a revision"]
+    request["command or graph request"]
+    contract["validated route, schema,<br/>graph, or policy"]
+    execution["owned execution"]
+    outcome["streams, status,<br/>state, or run directory"]
+    verification["diagnostics, integrity,<br/>replay, or gate"]
+    decision["bounded operational decision"]
 
-    question --> handbook
-    handbook -->|implementation detail| package
-    handbook -->|normative detail| contract
-    package --> implementation
-    contract <--> implementation
-    implementation -->|governed evaluation| evidence
+    request --> contract --> execution --> outcome --> verification --> decision
+    verification -->|"missing or inconsistent evidence"| refuse["refuse or narrow the claim"]
 ```
 
-Arrows do not make every document equally authoritative. Handbooks explain the
-supported product, crate pages locate implementation ownership, specifications
-state enforced behavior, and reports retain observations. A report cannot
-override a contract, and an internal package detail cannot widen the public
-product promise.
+| Outcome | Trust it for | Do not infer |
+| --- | --- | --- |
+| successful `bijux` result | that one route completed under the observed state | that delegated code was isolated or all plugins are healthy |
+| accepted DAG validation | that graph syntax and semantics passed the active contract | that any node executed |
+| finalized run directory | that execution reached a retained terminal result | that files remain intact or domain output is correct |
+| strict verification | that retained structural and integrity contracts pass | scientific, business, or workload correctness |
+| replay or semantic comparison | the recorded identity and difference classification | equivalence outside the selected evidence and environment |
+| green maintainer gate | the exact selected suite at the recorded revision | omitted platforms, external services, or broader release claims |
+
+Evidence becomes stronger only when the next authority is present. A process
+status establishes completion, retained state establishes what was recorded,
+integrity establishes whether that state is intact, and replay or comparison
+establishes only the equivalence claim encoded by its selected contract.
 
 The [v0.4.0 Release Notes](bijux-dag/operations/v0-4-0-release-notes.md) define
 the current DAG release. [Future Direction](bijux-dag/foundation/future-direction.md)

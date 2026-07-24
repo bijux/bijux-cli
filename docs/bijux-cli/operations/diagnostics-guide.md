@@ -4,19 +4,16 @@ audience: mixed
 type: guide
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # Diagnostics Guide
 
-Use this page when `bijux` behaves unexpectedly, an automation health check
-needs structured evidence, or a support report must explain what the runtime
-actually observed.
-
 Diagnostics are a product surface, not a collection of debug conveniences.
 `status`, `doctor`, `audit`, plugin diagnostics, and bounded telemetry answer
-different questions. Use the narrowest surface that can either confirm the
-suspected fault or produce evidence for the next investigation.
+different questions. A reliable investigation starts with the narrowest
+surface that can confirm the suspected fault or produce evidence for the next
+decision.
 
 ## Choose The Evidence Surface
 
@@ -39,6 +36,33 @@ involves configuration or environment state, and to the plugin-specific
 commands when the evidence already points to plugin ownership. `audit` is an
 inventory, not a substitute for a focused diagnosis.
 
+```mermaid
+flowchart TB
+    failure["unexpected command result"]
+    preserve["preserve command, streams,<br/>exit status, cwd, and version"]
+    status["status"]
+    owner{"suspected owner"}
+    path["doctor paths or shims"]
+    route["doctor routing or app"]
+    plugin["plugins inspect, explain, or doctor"]
+    config["config explain or validate"]
+    bundle["doctor --bundle"]
+    repair["one owned remediation"]
+    verify["repeat original command"]
+
+    failure --> preserve --> status --> owner
+    owner -->|"path or install"| path --> bundle
+    owner -->|"route or mounted app"| route --> bundle
+    owner -->|"plugin"| plugin --> bundle
+    owner -->|"configuration"| config --> bundle
+    bundle --> repair --> verify
+```
+
+Capture before broad diagnostics when plugin-registry corruption is plausible:
+`status`, `audit`, and `doctor` can invoke state diagnostics that quarantine a
+corrupt registry. The [Failure Recovery](failure-recovery.md) guide defines
+that mutation boundary.
+
 ## Capture A Reproducible Bundle
 
 `bijux doctor --bundle` writes evidence under
@@ -52,6 +76,15 @@ state without relying on terminal history. The bundle contains:
 Run the command again when configuration or installed components change. A
 bundle is a snapshot, not a live view, and should be attached to a report with
 the command that failed and the smallest reproducible input.
+
+| Bundle item | Establishes | Does not establish |
+| --- | --- | --- |
+| `doctor.json` | post-diagnostic health observations and classifications | raw pre-diagnostic state or absence of side effects |
+| `docs.json` | generated command/reference observations | that every documented workflow executed |
+| `config/generated-reference.md` | configuration registry rendering | effective values or secret-safe deployment |
+
+Record the bundle-producing command and exit status. Directory presence alone
+does not prove a complete diagnostic run.
 
 ## Read Telemetry Conservatively
 
@@ -67,6 +100,20 @@ Treat telemetry as potentially sensitive operational data:
 - inspect the sink before sharing it outside the machine
 - disable it after the investigation when continuous collection is unnecessary
 
+Telemetry is ordered observation, not authority. If telemetry and the command
+result disagree, preserve both and inspect the dispatch and write boundaries;
+do not rewrite the command outcome from telemetry.
+
+## Interpret Diagnostic Status
+
+| Observation | Meaning | Next action |
+| --- | --- | --- |
+| healthy | selected checks found no owned defect | keep the scope narrow; this is not whole-system proof |
+| degraded | operation remains available with a detected problem or repair | inspect every finding and preserved pre-repair state |
+| failed | an owned check could not establish required health | route to the named owner before retry |
+| unknown or incomplete | evidence was unavailable or unsupported | retain uncertainty; do not translate it to healthy |
+| command and focused diagnostic disagree | scope, state, or timing differs | compare exact paths, inputs, and mutation chronology |
+
 ## Escalate Without Guessing
 
 1. Re-run the failing command with the smallest input that still fails.
@@ -79,6 +126,24 @@ Do not begin by deleting state broadly. If a claim cannot be checked through a
 command result, `status`, `doctor`, `audit`, plugin diagnostics, or bounded
 telemetry, identify that observability gap in the report rather than inventing
 an explanation.
+
+## Diagnostic Record
+
+The investigation record remains useful after machine state changes only when
+it binds the observation to its context:
+
+| Field | Minimum content |
+| --- | --- |
+| invocation | exact argv, working directory, selected format, and whether the terminal was interactive |
+| runtime | `bijux` version, installation path, Python interpreter when involved, and canonical route |
+| state | active configuration, state, and plugin paths plus relevant lifecycle state |
+| outcome | separate stdout, stderr, and exit status |
+| diagnostic | exact focused command, bundle path, findings, and diagnostic exit status |
+| chronology | observation before repair, one applied remediation, and repeated original invocation |
+| confidentiality | redacted values and an explicit review of the bundle before sharing |
+
+A post-repair healthy result does not erase the initial failure. Preserve both
+observations and record the state transition that connects them.
 
 ## Implementation Ownership
 

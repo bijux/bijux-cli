@@ -4,7 +4,7 @@ audience: developers
 type: guide
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Public Imports
@@ -22,6 +22,25 @@ implementation.
 The crate root intentionally keeps `bootstrap`, `features`, `infrastructure`,
 `interface`, `kernel`, `routing`, and `shared` private. Their paths describe
 implementation ownership, not supported downstream dependencies.
+
+```mermaid
+flowchart LR
+    caller["Downstream Rust crate"]
+    api["bijux_cli::api<br/>invoke and query"]
+    contracts["bijux_cli::contracts<br/>exchange governed data"]
+    sdk["bijux_cli::sdk<br/>mount an application"]
+    internal["Private implementation<br/>free to move"]
+
+    caller --> api
+    caller --> contracts
+    caller --> sdk
+    api --> internal
+    sdk --> contracts
+    sdk --> api
+```
+
+The facade roots are compatibility boundaries. The arrows from `sdk` describe
+composition, not permission for downstream code to reach private modules.
 
 ## Invoke CLI Behavior
 
@@ -100,6 +119,44 @@ Before accepting a new `bijux-cli` import in another crate, verify:
 4. Persisted JSON uses an explicitly governed schema or versioned envelope.
 5. Upgrade tests cover the behavior or payload the caller relies on.
 
+## Stability By Lane
+
+| Lane | Compatibility expectation | Caller obligation |
+| --- | --- | --- |
+| `api` function or query | behavior, error classification, and returned public types follow documented compatibility | handle documented failure results and avoid depending on private side effects |
+| `contracts` versioned type or schema | serialized shape and semantic vocabulary change through governed versioning | persist only declared wire contracts and retain version identity |
+| `contracts` unversioned Rust type | source compatibility follows the public crate policy; serialized stability is not implied | do not invent a storage format from incidental `serde` output |
+| `sdk` mount descriptor and context | mounted apps retain root routing, output, and lifecycle expectations | keep product behavior inside the app and test root integration |
+
+Re-exporting a facade type from another crate creates a consumer of that
+contract. It does not transfer ownership or make private implementation paths
+stable.
+
+## Error And Process Boundary
+
+In-process calls do not have shell stream separation by themselves. Preserve
+the returned `CommandResult` or runtime result until the integration boundary
+decides how payload, stdout, stderr, and exit status are represented. Avoid
+turning all non-zero outcomes into one host-language exception; usage,
+validation, policy, delegated, and internal failures carry different
+operational meaning.
+
+Use the executable rather than the Rust API when process isolation, installed
+binary verification, shell-level stream behavior, or cross-language
+integration is the contract under test.
+
+## Upgrade Proof
+
+For a downstream integration:
+
+1. compile against the new public facade without private-path imports;
+2. run representative success, usage failure, and runtime failure cases;
+3. validate persisted envelopes or manifests against their governed schema;
+4. compare human and machine behavior only for their documented contracts;
+5. verify mounted namespace collision, descriptor, and lifecycle behavior when
+   using `sdk`;
+6. smoke-test the packaged binary separately when the application ships it.
+
 An internal refactor may move code behind these roots without preserving its
 old source path. A public contract change still requires the compatibility
 review and release notes described in
@@ -112,3 +169,7 @@ review and release notes described in
 - `crates/bijux-cli/src/contracts/mod.rs` defines typed contract exports.
 - `crates/bijux-cli/src/sdk/mod.rs` defines mounted-app integration.
 - [API Surface](api-surface.md) maps facade modules to their ownership.
+- [Data Contracts](data-contracts.md) defines cross-process and persisted
+  shapes.
+- [App Integration Guide](app-integration-guide.md) carries the end-to-end
+  mounted-product workflow.

@@ -4,73 +4,107 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-cli-docs
-last_reviewed: 2026-04-06
+last_reviewed: 2026-07-23
 ---
 
 # Scope and Boundaries
 
-Use this page when you need the honest version of the CLI story: what `bijux`
-is expected to do well today, and what it does not claim to solve yet.
+`bijux` owns one root command contract across the Rust binary and Python
+distribution. It normalizes intent, resolves command ownership, executes
+built-ins or explicitly delegated extensions, and returns coherent payload,
+stream, and exit semantics.
 
-The goal is not to sound smaller than the product really is. The goal is to
-keep readers from mistaking adjacent tooling, future ambitions, or unsafe
-assumptions for the current CLI contract.
+## Runtime Boundary
 
-## What `bijux` Is For
+```mermaid
+flowchart LR
+    caller["Shell, automation,<br/>REPL, or Rust caller"]
+    root["bijux root contract"]
+    builtin["Built-in runtime"]
+    app["Mounted product"]
+    plugin["Trusted plugin process"]
+    external["Known external tool"]
+    result["Envelope, streams,<br/>and exit status"]
 
-`bijux` is the operator-facing command runtime in this repository. It is built
-to parse commands predictably, execute built-in runtime features, mount apps,
-load plugins, and return stable output and exit behavior that automation can
-trust.
+    caller --> root
+    root --> builtin --> result
+    root --> app --> result
+    root --> plugin --> result
+    root --> external --> result
+```
 
-## In Scope
+The root owns parsing and route selection for every edge. Execution authority
+then changes. Built-ins remain native. Mounted products own their product
+semantics. Plugins and external tools execute code outside the built-in trust
+boundary.
 
-- deterministic parsing and normalization of command paths
-- runtime policy resolution from flags, config, and defaults
-- built-in command execution (`status`, `audit`, `docs`, `config`, `plugins`, and more)
-- plugin discovery, manifest checks, route registration, and lifecycle toggles
-- stable error shaping for usage, validation, and internal runtime failures
+## Supported Responsibilities
 
-## What Readers Should Not Assume
+| Responsibility | Supported boundary |
+| --- | --- |
+| command grammar | deterministic parsing, normalization, aliases, help, suggestions, and usage failures |
+| route ownership | built-in, official product, known-tool, app, and plugin namespaces resolved by one registry law |
+| runtime policy | format, color, quiet, debug, config, and path inputs resolved before execution |
+| built-in features | configuration, history, memory, plugins, apps, diagnostics, documentation, version, and REPL workflows |
+| output | human, JSON, and YAML rendering with explicit stdout, stderr, and exit classification |
+| persistent state | owned paths, atomic writes or rollback where promised, diagnostics, and explicit recovery |
+| Rust integration | public `api`, `contracts`, and `sdk` roots |
+| Python delivery | the same `bijux` root behavior through the packaged native bridge |
 
-- Plugin execution is a convenience and extensibility surface, not a hardened
-  sandbox.
-- The repository does not yet promise a stable in-process extension ABI for all
-  host integrations.
-- The CLI handbook does not absorb DAG semantics, maintainer gates, or every
-  repository-wide workflow just because they live beside `bijux`.
+## Delegated Ownership
 
-## Non-Goals
+| Surface | Root CLI owns | Delegated owner retains |
+| --- | --- | --- |
+| mounted application | namespace, descriptor validation, invocation context, root-compatible result | domain commands and product behavior |
+| plugin | manifest, namespace, compatibility, lifecycle, launcher policy | entrypoint code, dependencies, filesystem/network effects, domain output |
+| known tool | discovery and explicit delegation route | executable installation, internal commands, and tool-specific contract |
+| `bijux-dag` | optional command integration boundary | graph, run, replay, cache, backend, and evidence semantics |
 
-- treating plugin execution as a hardened security sandbox
-- promising a stable in-process extension ABI at current maturity
-- collapsing all repository behavior into the root handbook
-- claiming Windows host support as a complete product contract
+Route integration does not merge compatibility promises. A plugin manifest can
+be structurally valid while its code remains unsafe. A known tool can be
+discoverable while absent from the current installation.
 
-## Practical Reading Rule
+## Explicit Limits
 
-- Stay inside the CLI handbook when the issue is visible through `bijux`.
-- Move to the DAG handbook when the real question is graph execution or replay.
-- Move to maintainer and repository docs when the real question is release
-  proof, governance, or cross-product workflow.
+- Plugins are not sandboxed and execute with the invoking user's authority.
+- A stable in-process ABI is not promised for arbitrary host integration;
+  downstream Rust callers use the supported public facades.
+- Complete Windows host support is not part of the current release contract.
+- Installing the PyPI distribution does not install every delegated product
+  executable.
+- Repository gates, evidence generation, and release governance belong to
+  `bijux-dev`, not the public runtime.
 
-## Code Anchors
+## Contract Change Test
+
+A change is caller-visible when it alters any of these:
+
+- accepted argv or normalized command identity;
+- route precedence, namespace refusal, help, or suggestions;
+- effective configuration or state location;
+- public Rust imports or serialized contracts;
+- human or machine payload meaning;
+- stdout/stderr placement or exit classification;
+- plugin/app lifecycle or delegated process policy.
+
+Such changes require compatibility review, focused contract proof, reader
+guidance, and release notes where consumer action is needed. Internal movement
+behind a stable facade may remain implementation detail.
+
+## Ownership Anchors
 
 - `crates/bijux-cli/src/routing/model.rs`
 - `crates/bijux-cli/src/routing/registry.rs`
 - `crates/bijux-cli/src/features/plugins/`
 - `crates/bijux-cli/src/interface/cli/dispatch/policy.rs`
 - `crates/bijux-cli/src/kernel/`
-
-## Review Focus
-
-If behavior affects command compatibility, route identity, output payload shape,
-or exit semantics, it belongs in scope and must be reviewed as a contract
-change. If it is internal convenience with no external contract effect, it
-belongs in implementation detail.
+- `contracts/foundation/cli_dependency_direction.v1.json`
+- `contracts/foundation/workspace_product_map.v1.json`
 
 ## Continue Reading
 
 - [Ownership Boundary](ownership-boundary.md)
+- [Capability Map](capability-map.md)
 - [Compatibility Commitments](../interfaces/compatibility-commitments.md)
+- [Security and Safety](../operations/security-and-safety.md)
 - [Known Limitations](../quality/known-limitations.md)

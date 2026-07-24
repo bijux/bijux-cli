@@ -4,7 +4,7 @@ audience: mixed
 type: explanation
 status: canonical
 owner: bijux-dag-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Execution Model
@@ -74,6 +74,41 @@ node into the bounded execution queue. Only backend launch moves it to
 Concurrency changes completion order, not state ownership. Worker completion
 must return through the engine, pass terminal-transition validation, and
 produce retained trace evidence before dependants can use it.
+
+## Bounded Load Semantics
+
+The scheduler admits work through intersecting limits instead of treating
+`--jobs` as an unconditional thread count:
+
+| Limit | Decision it controls | Evidence when work waits |
+| --- | --- | --- |
+| maximum parallelism and `jobs` | upper bound on simultaneously admitted local work | ready or queued state plus scheduler decision |
+| bounded executor capacity | number of attempts allowed into the execution queue | queue admission refusal or wait |
+| CPU and memory budgets | aggregate declared demand of admitted nodes | resource-specific blocked reason |
+| GPU and named-resource budgets | availability of exclusive or counted capabilities | resource-specific blocked reason and inventory |
+| per-node timeout | maximum accepted duration for one attempt | timed-out attempt and lifecycle trace |
+| run timeout | admission and completion behavior for the entire run | run timeout event and configured behavior |
+| fail-fast or cancellation | whether new work may enter after a stop condition | causal event and visible terminal consequences |
+
+```mermaid
+flowchart LR
+    ready["dependency-ready nodes"]
+    order["deterministic ordering"]
+    limits{"queue, parallelism,<br/>resource, deadline"}
+    admitted["queued attempts"]
+    blocked["retained wait or stop reason"]
+    running["backend execution"]
+    accepted["accepted terminal state"]
+
+    ready --> order --> limits
+    limits -->|"fits"| admitted --> running --> accepted
+    limits -->|"does not fit"| blocked --> limits
+```
+
+These controls provide bounded execution within one controller. They do not
+establish cluster-wide admission, fairness between independent controllers,
+autoscaling, or service-level capacity. Performance and scale claims require a
+named scenario, configuration, backend, workload, and retained measurement.
 
 ## Node Execution Contract
 

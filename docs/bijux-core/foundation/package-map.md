@@ -4,23 +4,54 @@ audience: mixed
 type: foundation
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # Package Map
 
-Route work by the behavior being changed before choosing a crate. Package names
-are implementation boundaries, not a substitute for identifying the product or
-maintainer responsibility involved.
-
-The point is not to memorize crate names. The point is to route a reader,
-contributor, or reviewer to the right handbook and the right code surface
-without burning time in the wrong part of the repository.
+Package ownership follows semantic direction: deterministic models sit below
+execution, execution sits below orchestration, and public command wrappers sit
+at the outer edge. Test and maintainer support can depend inward; public
+products never depend on repository governance.
 
 For the authoritative public-versus-private release answer, use
 [Package Boundary](package-boundary.md).
 
-## Start With The Job To Be Done
+## Package Topology
+
+```mermaid
+flowchart TD
+    dag_cli["bijux-dag-cli<br/>binary wrapper"]
+    dag_app["bijux-dag-app<br/>command orchestration"]
+    dag_runtime["bijux-dag-runtime<br/>execution policy"]
+    dag_core["bijux-dag-core<br/>graph meaning"]
+    dag_artifacts["bijux-dag-artifacts<br/>retained evidence"]
+    dag_testkit["bijux-dag-testkit<br/>private fixtures"]
+    cli_py["bijux-cli-python<br/>private Python bridge"]
+    cli["bijux-cli<br/>command runtime"]
+    dev["bijux-dev<br/>private control plane"]
+
+    dag_cli --> dag_app
+    dag_app --> dag_runtime
+    dag_app --> dag_core
+    dag_app --> dag_artifacts
+    dag_runtime --> dag_core
+    dag_runtime --> dag_artifacts
+    dag_testkit -. "test support" .-> dag_core
+    dag_testkit -. "test support" .-> dag_artifacts
+    cli_py --> cli
+    dev -. "observes and verifies" .-> cli
+    dev -. "observes and verifies" .-> dag_app
+    dev -. "observes and verifies" .-> dag_runtime
+    dev -. "observes and verifies" .-> dag_core
+    dev -. "observes and verifies" .-> dag_artifacts
+```
+
+The CLI and DAG product families do not share runtime implementation through a
+Cargo edge. Mounted-product integration occurs at the command and process
+boundary.
+
+## Route By Behavior
 
 | If you need to understand... | Owning package family | Why that family owns it | Read next |
 | --- | --- | --- | --- |
@@ -29,25 +60,19 @@ For the authoritative public-versus-private release answer, use
 | release proof, repository diagnostics, docs automation, root gates, or evidence reporting | `bijux-dev` | this crate family owns repository control-plane behavior rather than end-user product behavior | [Maintainer Handbook](../../bijux-dev/index.md) |
 | publication boundaries, shared contracts, or cross-product repository rules | repository root plus the owning crate family | these questions cross more than one product lane and usually need both docs and code context | [Repository Handbook](../index.md) |
 
-## The Package Families In Plain Language
+## Package Responsibilities
 
-### CLI family
-
-Use the CLI family when the reader is asking what the `bijux` command does,
-how it is configured, how plugins are mounted, or how the same runtime is
-delivered through Rust and Python packaging.
-
-### DAG family
-
-Use the DAG family when the reader is asking what a graph means, how a run is
-planned or executed, what artifacts are retained, or how replay, comparison,
-and verification behave.
-
-### Maintainer family
-
-Use the maintainer family when the reader is asking how the repository proves a
-release, enforces root contracts, validates docs, or gathers evidence across
-the workspace.
+| Package | Owns | Must not absorb |
+| --- | --- | --- |
+| `bijux-cli` | root parsing, routing, built-ins, plugins, apps, state, output, and Rust SDK | DAG graph or run semantics |
+| `bijux-cli-python` | Python packaging and native bridge to the same runtime | a second Python implementation of command behavior |
+| `bijux-dag-core` | parsing, validation, canonicalization, graph identity, and planning meaning | filesystem, process, environment, clock, or scheduler behavior |
+| `bijux-dag-artifacts` | run paths, manifests, indexes, hashes, lineage, retention, and integrity | execution scheduling or command presentation |
+| `bijux-dag-runtime` | engine state, scheduling, attempts, adapters, cache and replay decisions | CLI parsing or application response shaping |
+| `bijux-dag-app` | use-case orchestration, inspection, replay, verification, and response schemas | binary startup or lower-layer implementation ownership |
+| `bijux-dag-cli` | executable startup and delegation into the application | domain logic |
+| `bijux-dag-testkit` | reusable deterministic fixtures, fake adapters, and assertions | production dependency or public release promise |
+| `bijux-dev` | repository suites, diagnostics, evidence, governance, and release proof | product semantics |
 
 ## Common Routing Mistakes
 
@@ -58,7 +83,7 @@ the workspace.
 | "The release job is failing, so I should inspect product docs first." | the maintainer family | release proof, standards sync, and repository gates live above any one product handbook |
 | "This schema lives under `contracts/`, so it is a root-only concern." | the root plus the crate that enforces it | shared contracts still need a concrete product or maintainer owner |
 
-## A Fast Ownership Check
+## Resolve Ambiguous Ownership
 
 Use these questions when the route is still unclear:
 
@@ -70,15 +95,15 @@ Use these questions when the route is still unclear:
 If those answers still span more than one family, stay in the repository
 handbook and then drill down from there.
 
-## What This Page Should Help You Avoid
-
-- treating crate names as if they were the same thing as product boundaries
-- staying in repository-level docs after the owning family is already obvious
-- debugging release or docs automation from product pages alone
-- changing a downstream surface while missing the real owner upstream
+If two packages appear to own the same fact, identify the narrowest semantic
+authority and expose a contract from it. Do not introduce a reverse dependency
+or duplicate an implementation to avoid a clean boundary. The dependency
+allowlists and architecture tests reject several common reverse edges, but
+review still owns whether a new permitted edge is conceptually correct.
 
 ## Package Boundary References
 
 - [Ownership Model](ownership-model.md)
 - [Package Boundary](package-boundary.md)
+- [Dependency Direction](../architecture/dependency-direction.md)
 - [Repository Packages](../packages/index.md)

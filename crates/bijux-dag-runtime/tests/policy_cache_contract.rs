@@ -232,7 +232,7 @@ fn graph_with_run_timeout_pending_node() -> String {
                 "kind": "shell",
                 "inputs": [],
                 "outputs": [{"name": "value", "path": "a.txt"}],
-                "params": {"argv": ["/bin/sh", "-c", "sleep 0.05; printf '%s' ok > ../outputs/a.txt"]},
+                "params": {"argv": ["/bin/sh", "-c", "sleep 0.5; printf '%s' ok > ../outputs/a.txt"]},
                 "effects": ["filesystem"]
             },
             {
@@ -1469,7 +1469,7 @@ fn runtime_marks_timed_out_runs_incomplete_when_deadline_is_exceeded() {
         .run(
             &graph,
             out.path(),
-            RuntimeConfig { run_timeout_ms: Some(10), ..RuntimeConfig::default() },
+            RuntimeConfig { run_timeout_ms: Some(100), ..RuntimeConfig::default() },
         )
         .expect("timed run");
 
@@ -1536,7 +1536,7 @@ fn runtime_can_cancel_inflight_nodes_when_run_timeout_behavior_requires_it() {
             &graph,
             out.path(),
             RuntimeConfig {
-                run_timeout_ms: Some(10),
+                run_timeout_ms: Some(100),
                 run_timeout_behavior: RunTimeoutBehavior::CancelRunning,
                 ..RuntimeConfig::default()
             },

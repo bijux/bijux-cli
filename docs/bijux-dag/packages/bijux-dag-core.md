@@ -4,7 +4,7 @@ audience: mixed
 type: package
 status: canonical
 owner: bijux-core-docs
-last_reviewed: 2026-07-09
+last_reviewed: 2026-07-23
 ---
 
 # bijux-dag-core
@@ -19,82 +19,156 @@ last_reviewed: 2026-07-09
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-dag-core docs](https://img.shields.io/badge/docs-core-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/)
 <!-- bijux-core-badges:generated:end -->
 
-`bijux-dag-core` owns the deterministic DAG kernel: graph types, parsing,
-validation, canonicalization, topology, identity, parameter resolution, and
-planner lowering primitives.
+bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with
+explicit graph contracts, deterministic execution records, verified artifacts,
+cache explanation, and replayable run bundles.
+Replay claims on this page are governed by the
+[Replay Contract](../../spec/REPLAY_CONTRACT.md).
 
-At the product level, `bijux-dag` v0.4.0 is a local-first DAG runtime for
-reproducible workflows with explicit graph contracts, deterministic execution
-records, verified artifacts, cache explanation, and replayable run bundles.
-The [Replay Contract](../../spec/REPLAY_CONTRACT.md) defines the replay authority.
-This package owns the explicit graph-contract boundary inside that promise.
+`bijux-dag-core` is the deterministic graph kernel. It decides what a workflow
+means before clocks, filesystems, schedulers, processes, or retained run state
+can influence the answer.
 
-Use this page when the question is about graph truth before runtime side
-effects begin.
+Use this crate when you need to author, parse, validate, canonicalize, inspect,
+or plan a graph without taking execution dependencies.
 
-## Reach For This Crate When
+## From Definition To Execution Plan
 
-- a graph should have validated differently
-- node identity, fingerprints, topology, or equivalence look wrong
-- you need a pure Rust dependency for authoring, inspection, or validation
-  without pulling in runtime execution
-- you are deciding whether a bug belongs to graph compilation or to later
-  execution behavior
+```mermaid
+flowchart LR
+    Source["JSON or typed graph"]
+    Parse["Strict parse"]
+    Resolve["Resolve inputs<br/>and defaults"]
+    Validate["Validate schema,<br/>semantics, topology,<br/>and resources"]
+    Canonical["Canonical graph<br/>and identities"]
+    Plan["Deterministic<br/>execution plan"]
+    Runtime["bijux-dag-runtime"]
 
-## What It Owns
+    Source --> Parse --> Resolve --> Validate --> Canonical --> Plan
+    Plan -->|"owned handoff"| Runtime
+```
 
-| Surface | Ownership |
+Every box before the handoff is a pure data transformation. A caller supplies
+all inputs; the crate does not consult ambient machine state to decide whether
+a graph is valid.
+
+## Authority
+
+| Domain | This crate decides |
 | --- | --- |
-| graph model | nodes, edges, resources, metadata, and canonical graph state |
-| compile path | parse, validate, resolve, build-contract wrappers, and planner inputs |
-| deterministic analysis | fingerprints, semantics, topology, and graph equivalence inputs |
-| command templates | graph-input and output-reference rules for shell and container command surfaces |
-| branch contracts | semantic branch nodes, conditional-edge validation, and trigger-rule compatibility rules |
-| boundary | no scheduler orchestration, CLI routing, or persistence side effects |
+| graph model | node, edge, input, output, resource, metadata, branch, subgraph, and trigger-rule meaning |
+| parsing | whether serialized input is structurally acceptable |
+| resolution | how declared references, inputs, and graph defaults become explicit |
+| validation | schema, semantic, topology, resource, selector, and reference violations |
+| canonicalization | which representational differences can be removed without erasing meaning |
+| identity | graph, node, fingerprint, and planner identity inputs |
+| topology | deterministic ordering and rejection of cycles or missing dependencies |
+| planning | lowering a valid graph into runtime-facing planned nodes and edges |
+| diagnostics | stable graph-contract findings with severity, location, and context |
 
-## What It Does Not Own
+The crate does **not** execute processes, inspect an environment, schedule
+nodes, persist artifacts, route commands, or format operator responses.
 
-- scheduler decisions, retry behavior, replay policy, and cache reuse belong to
-  [`bijux-dag-runtime`](bijux-dag-runtime.md)
-- command routing and operator-facing output shaping belong to
-  [`bijux-dag-app`](bijux-dag-app.md)
-- retained artifact storage authority belongs to `bijux-dag-artifacts`
+## Purity Is A Product Property
 
-## Source Layout
+Kernel purity makes four downstream guarantees possible:
 
-- `crates/bijux-dag-core/src/graph`
-- `crates/bijux-dag-core/src/pipeline`
-- `crates/bijux-dag-core/src/analysis`
-- `crates/bijux-dag-core/src/build`
-- `crates/bijux-dag-core/src/planner`
-- `crates/bijux-dag-core/src/contracts`
+- the same supplied graph data produces the same validation result;
+- canonical identity is independent of the machine performing validation;
+- planning can be inspected before any workload side effect;
+- cache and replay logic can rely on declared graph identity rather than
+  accidental runtime state.
 
-## Practical Starting Points
+Core product code must not read the filesystem, inspect environment variables,
+source wall-clock time, spawn processes, or persist state. Serialization,
+hashing, Unicode normalization, allocation, and deterministic collection
+operations are allowed.
 
-- open the [DAG Handbook](../index.md) for the product story before crate
-  boundaries
-- open [`bijux-dag-runtime`](bijux-dag-runtime.md) when the question moves
-  from graph truth to execution policy
-- open [Reproducibility Model](../interfaces/reproducibility-model.md)
-  when the question is how graph identity flows into plan, execution, cache,
-  and replay identity downstream
-- open [Branching Bulletin Workflow](../operations/branching-bulletin-workflow.md)
-  when you want a real example of graph-owned branch inputs becoming a retained
-  execution decision
-- open [Container Packaging Workflow](../operations/container-packaging-workflow.md)
-  when you want a graph-owned label and command contract carried into real
-  container execution
+If graph validity needs a fact from a cluster, filesystem, or tool probe, that
+fact belongs in an explicit input or a later runtime capability check—not in
+the graph kernel.
 
-## Code Anchors
+## Identity And Canonicalization
 
-- `crates/bijux-dag-core/README.md`
-- `crates/bijux-dag-core/docs/CONTRACTS.md`
-- `crates/bijux-dag-core/src/lib.rs`
-- `crates/bijux-dag-core/src/pipeline/validate.rs`
-- `crates/bijux-dag-core/src/planner/planner.rs`
+Canonicalization removes representation noise while preserving
+execution-relevant differences. The governing invariants are:
 
-## Review Focus
+1. Equal canonical graphs produce equal graph identities.
+2. An execution-relevant change affects the identity that protects its
+   downstream decision.
+3. Presentation-only changes do not affect execution identity unless a
+   documented contract explicitly includes them.
+4. Identity never repairs an invalid graph; validation precedes trusted
+   planning.
 
-- graph compilation should remain deterministic and side-effect free
-- runtime or CLI concerns should not leak into the kernel layer
-- package-local claims should map back to the DAG handbook when they affect the wider stack
+Changes to canonicalization are high-impact even when the Rust API remains
+source-compatible. They can alter cache keys, replay decisions, diffs, and the
+meaning of retained evidence.
+
+## Validation Refuses Ambiguity
+
+The kernel rejects rather than heuristically repairs:
+
+- cycles and missing dependencies;
+- duplicate identifiers;
+- unresolved or ambiguous references;
+- invalid selectors and path-variable bindings;
+- incompatible branch or trigger rules;
+- unsupported node or resource combinations; and
+- malformed schema or semantic state.
+
+Diagnostics remain deterministically ordered. New operator-facing findings
+require stable identifiers, focused tests, registry alignment, and handbook
+coverage.
+
+## Public Rust Surface
+
+| Import lane | Intended use | Compatibility |
+| --- | --- | --- |
+| `bijux_dag_core::stable` | deliberate long-lived graph integration | curated public contract |
+| `bijux_dag_core::prelude` | common parse, validate, canonicalize, and plan workflows | curated convenience surface |
+| crate root | focused imports when the exact item is already known | public, but broad compatibility re-exports are hidden from default docs |
+| `experimental` feature surface | contract research and opt-in evaluation | excluded from the stable lane |
+
+Serialized graph shape, diagnostics, canonicalization, identities, and planner
+lowering are compatibility-bearing regardless of import path.
+
+## Route A Change
+
+| Change | First owner | Required downstream review |
+| --- | --- | --- |
+| node, edge, input, resource, branch, or trigger semantics | graph and analysis modules | runtime interpretation and serialized fixtures |
+| parse, resolution, or validation behavior | pipeline modules | app diagnostics and compatibility fixtures |
+| canonical form or fingerprint inputs | graph and analysis modules | cache, replay, diff, and retained identity consumers |
+| planned node or edge shape | planner module | runtime and app consumers |
+| scheduler, retry, backend, or replay policy | [`bijux-dag-runtime`](bijux-dag-runtime.md) | not a core change unless the graph contract also changes |
+| persisted evidence model | [`bijux-dag-artifacts`](bijux-dag-artifacts.md) | core records identity inputs but does not own storage |
+
+## Verification Evidence
+
+| Claim | Evidence |
+| --- | --- |
+| canonical representation | `crates/bijux-dag-core/tests/canonical_contract.rs` |
+| graph and node identity | identity and property contracts under `crates/bijux-dag-core/tests/` |
+| deterministic topology | `graph_kernel_determinism.rs` and topology fuzz contracts |
+| planner lowering | planner contracts and planner fixtures |
+| validation behavior | entrypoint, adversarial, diagnostics, and fixture contracts |
+| serialized compatibility | schema and serde round trips plus snapshot-shape contracts |
+
+For a broad kernel change, run:
+
+```bash
+cargo test --locked -p bijux-dag-core
+```
+
+## Source Authorities
+
+- package contract: `crates/bijux-dag-core/docs/CONTRACTS.md`
+- curated exports: `crates/bijux-dag-core/src/lib.rs`
+- graph domain: `crates/bijux-dag-core/src/graph/`
+- parse, resolve, and validate: `crates/bijux-dag-core/src/pipeline/`
+- identities and semantics: `crates/bijux-dag-core/src/analysis/`
+- runtime handoff: `crates/bijux-dag-core/src/planner/`
+
+Continue with the [Reproducibility Model](../interfaces/reproducibility-model.md)
+to follow these identities into execution, cache, and replay.

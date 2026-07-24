@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-23
 ---
 
 # Incident Response
@@ -30,6 +30,39 @@ If more than one class applies, use the stricter handling. A credential
 exposure during publication is a security incident, not only a release
 failure.
 
+## Response Priority
+
+| Condition | Priority | First irreversible risk |
+| --- | --- | --- |
+| credential, signing identity, or untrusted-code exposure | immediate containment | continued unauthorized access or mutation |
+| wrong or conflicting artifact reached a registry or deployment | immediate containment and external inventory | additional consumers receive the artifact |
+| release stopped after any external publication | publication incident | blind retry creates conflicting external state |
+| required verification falsely passed or omitted selected work | block merge and release | unproved source advances |
+| checked-in or deployed evidence is corrupt or bound to the wrong source | quarantine the evidence | downstream decisions cite invalid proof |
+| documentation route or generated reference is broken without security impact | stop affected publication and repair owner | readers act on missing or stale guidance |
+
+Priority follows authority and propagation, not how easy the failure is to
+reproduce. A small credential leak outranks a large deterministic test failure.
+
+## Response State
+
+```mermaid
+stateDiagram-v2
+    [*] --> Detected
+    Detected --> Contained: stop further authority
+    Contained --> Scoped: preserve evidence and inventory impact
+    Scoped --> Repaired: fix owning boundary
+    Repaired --> Verified: focused and required proof pass
+    Verified --> Reconciled: external state and consumers addressed
+    Reconciled --> Closed: record learning and remaining risk
+    Scoped --> Contained: impact expands
+    Repaired --> Scoped: verification reveals wider impact
+```
+
+States must not be collapsed. A repair is not recovery while external state is
+unknown, and a successful rerun is not closure while affected consumers or
+credentials remain unresolved.
+
 ## Contain Before Repair
 
 1. Stop the affected workflow, deployment, or publication path without
@@ -37,7 +70,7 @@ failure.
 2. Prevent another automatic retry when it could publish, overwrite, rotate,
    or invalidate evidence.
 3. For suspected credential exposure, revoke or rotate the credential at its
-   authority and follow [Security and Secrets](../governance/security-and-secrets.md).
+   issuing authority before restoring automation.
 4. Preserve the source revision, command or workflow identity, timestamps,
    environment facts, final status, logs, and artifact digests.
 5. Name the incident class, affected surfaces, responder, and publication or
@@ -80,9 +113,9 @@ declared contract and answer:
 | what is the smallest owning boundary? | product package, maintainer suite, make adapter, workflow, or upstream shared standard |
 | who or what consumed the result? | users, registries, downstream automation, or release processes |
 
-Use [Diagnostics and Reporting](diagnostics-and-reporting.md) for ordinary
-repository triage. A local success can distinguish an environment failure from
-a source defect, but it does not invalidate the original incident.
+A local success can distinguish an environment failure from a source defect,
+but it does not invalidate the original incident. Preserve the original and
+reproduction evidence under the collection rules before changing state.
 
 ## Reconcile Partial Publication
 
@@ -134,6 +167,19 @@ Recovery is complete only when all applicable statements are true:
 A process ID, a new artifact path, or one successful component is not recovery
 evidence.
 
+## Recovery Proof
+
+| Proof | Required linkage |
+| --- | --- |
+| containment | authority disabled or constrained, with timestamp and owner |
+| scope | first affected and last known-good identity, plus consumer and external-state inventory |
+| repair | owning change linked to the violated contract or invariant |
+| regression control | test, validator, policy, or monitor that detects the same failure mode |
+| focused verification | exact reproduction against the repaired source |
+| complete verification | required suite selection and final aggregate status |
+| external reconciliation | registry, deployment, credential, or consumer outcome for every affected surface |
+| closure | incident record, communication decision, residual risk, and accountable owner |
+
 ## Close And Learn
 
 The incident record should state impact, timeline, root cause, affected
@@ -151,7 +197,6 @@ structure.
 ## Related Operations
 
 - [Release Operations](release-operations.md)
-- [Diagnostics and Reporting](diagnostics-and-reporting.md)
 - [Evidence Collection](evidence-collection.md)
-- [Risk and Exceptions](../../bijux-core/governance/risk-and-exceptions.md)
-- [Security and Secrets](../governance/security-and-secrets.md)
+- [Repository Trust Evidence](../../bijux-core/governance/trust-evidence.md)
+- [CI and Automation](ci-and-automation.md)
