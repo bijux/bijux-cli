@@ -4,7 +4,7 @@ audience: mixed
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-07
+last_reviewed: 2026-07-24
 ---
 
 # Release Surfaces
@@ -27,7 +27,7 @@ Rust crates, Python packages, GitHub release assets, and DAG bundles.
 - `make gh-release-require-cargo-token`
 - `make build-dag-release-bundle`
 - `make publish-rs`
-- `make publish-py`
+- `make publish-py` (manual or explicitly overridden PyPI publication path)
 
 ## Release Families
 
@@ -44,7 +44,7 @@ Rust crates, Python packages, GitHub release assets, and DAG bundles.
 | what publication plan should run? | `make gh-release-plan-github`, `make gh-release-plan-pypi`, or `make gh-release-plan-crates` |
 | are credentials and release prerequisites present? | `make gh-release-require-cargo-token` |
 | which artifact is actually being built for DAG distribution? | `make build-dag-release-bundle` |
-| which publish step pushes the final payload? | `make publish-rs` or `make publish-py` |
+| which publish step pushes the final payload? | crates.io uses `make publish-rs`; PyPI uses the managed `release-pypi.yml` trusted-publisher lane unless the repo explicitly overrides it with `BIJUX_PYPI_PUBLISH_COMMAND` |
 
 ## Release Rule
 
